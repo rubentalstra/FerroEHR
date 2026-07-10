@@ -42,18 +42,27 @@ mod stored_query;
 mod subject_proxy;
 mod tdd;
 mod template;
+mod tenant;
 mod terminology;
 mod version_id;
 mod versioned;
 mod vobject;
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use crate::signing::Signer;
 use crate::system_log::AuditSender;
+use ehrbase_sm::TenantContext;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
 use sqlx::PgPool;
+
+/// In-process cache of resolved tenants, keyed by the claim/header value (a
+/// tenant name or uuid string) the middleware resolves per request (ADR-015 §4;
+/// "cache in-process"). Shared across service clones (single registry view);
+/// cleared wholesale on any tenant CRUD write.
+type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
 
 /// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
 /// audit rows. Configurable per deployment (P18 wires it from config).
@@ -84,6 +93,10 @@ pub struct EhrbaseService {
     /// bundle only. Read through the [`TerminologyExpander`](crate::aql::TerminologyExpander)
     /// impl in `service::api::terminology`.
     pub(crate) external_terminology: Option<Arc<crate::terminology::FhirTerminologyProvider>>,
+    /// Multi-tenancy tenant registry cache (ADR-015 §4). Only ever populated
+    /// when tenancy is on (the middleware resolves through it); in single-tenant
+    /// mode it stays empty and is never consulted.
+    tenant_cache: TenantCache,
 }
 
 impl EhrbaseService {
@@ -98,7 +111,18 @@ impl EhrbaseService {
             signer: Arc::new(Signer::digest_default()),
             audit: None,
             external_terminology: None,
+            tenant_cache: TenantCache::default(),
         }
+    }
+
+    /// The openEHR `system_id` in effect for the current request: the resolved
+    /// tenant's own `system_id` when tenancy is on (ADR-015 §1), else the
+    /// service's configured default. Every request (read or write) runs inside
+    /// its tenant's task-local scope, so version ids / audits / `EHR.system_id`
+    /// pick up the right value ambiently; with tenancy off the task-local is
+    /// never set and this is byte-identical to the configured `system_id`.
+    pub(super) fn effective_system_id(&self) -> String {
+        ehrbase_sm::tenant::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
 
     /// Override the openEHR system id (identifies this CDR in versions/audit).
@@ -142,7 +166,7 @@ impl EhrbaseService {
     /// path so every versioned-object write signs its `ORIGINAL_VERSION`.
     pub(in crate::service) fn signing_ctx(&self) -> vobject::SigningCtx<'_> {
         vobject::SigningCtx {
-            system_id: &self.system_id,
+            system_id: self.effective_system_id(),
             signer: &self.signer,
         }
     }

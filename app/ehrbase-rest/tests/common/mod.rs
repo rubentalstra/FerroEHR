@@ -38,13 +38,14 @@ use ehrbase_sm::services::{
     DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
     EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
     EventSubscriptionAdapter, ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog,
-    TerminologyService, VersionMetaAdapter, WebTemplateService,
+    TenantAdapter, TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
 use ehrbase_sm::{
-    AuditEvent, CallStatusType, EmitOutcome, SmError, TerminologyDescription, TerminologyExtract,
+    AuditEvent, CallStatusType, EmitOutcome, SmError, TenantContext, TerminologyDescription,
+    TerminologyExtract,
 };
 
 /// A `501 Not Implemented` SM error — the un-hooked default (old `StubBackend`).
@@ -125,6 +126,14 @@ type EventSubGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type EventSubUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
 type EventSubDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
 
+// Tenant admin extension (ADR-015 §5; TenantAdapter).
+type TenantList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
+type TenantCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
+type TenantGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
+type TenantUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
+type TenantDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
+type TenantResolve = Arc<dyn Fn(String) -> Result<Option<TenantContext>, SmError> + Send + Sync>;
+
 /// The per-test override closures. Every field defaults to `None` (→ the
 /// `501`/trait-default behaviour); a test populates only what it exercises.
 #[derive(Default, Clone)]
@@ -189,6 +198,13 @@ pub struct Hooks {
     pub event_subscription_get: Option<EventSubGet>,
     pub event_subscription_update: Option<EventSubUpdate>,
     pub event_subscription_delete: Option<EventSubDelete>,
+    // Tenant admin extension (ADR-015 §5).
+    pub tenant_list: Option<TenantList>,
+    pub tenant_create: Option<TenantCreate>,
+    pub tenant_get: Option<TenantGet>,
+    pub tenant_update: Option<TenantUpdate>,
+    pub tenant_delete: Option<TenantDelete>,
+    pub tenant_resolve: Option<TenantResolve>,
     // SM System Log: an in-memory audit recorder. When set, the mock's
     // `SystemLog::emit` records every event (so a test can assert the ATNA
     // event a request produced); `audit_enabled()` is then true. Replaces the
@@ -633,6 +649,46 @@ impl EventSubscriptionAdapter for Mock {
         match &self.h.event_subscription_delete {
             Some(f) => f(a_subscription_id),
             None => Err(not_impl()),
+        }
+    }
+}
+
+#[async_trait]
+impl TenantAdapter for Mock {
+    async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
+        match &self.h.tenant_list {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
+        match &self.h.tenant_create {
+            Some(f) => f(a_tenant),
+            None => Err(not_impl()),
+        }
+    }
+    async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
+        match &self.h.tenant_get {
+            Some(f) => f(a_tenant_id),
+            None => Err(not_impl()),
+        }
+    }
+    async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError> {
+        match &self.h.tenant_update {
+            Some(f) => f(a_tenant_id, a_tenant),
+            None => Err(not_impl()),
+        }
+    }
+    async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
+        match &self.h.tenant_delete {
+            Some(f) => f(a_tenant_id),
+            None => Err(not_impl()),
+        }
+    }
+    async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
+        match &self.h.tenant_resolve {
+            Some(f) => f(key.to_owned()),
+            None => Ok(None),
         }
     }
 }

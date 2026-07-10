@@ -15,5 +15,5 @@ pub mod iden;
 
 pub use error::DbError;
 pub use migrate::run_migrations;
-pub use pool::connect;
+pub use pool::{connect, connect_tenant_scoped};
 pub use settings::DbSettings;

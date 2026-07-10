@@ -247,7 +247,7 @@ impl EhrbaseService {
             .get("audit")
             .and_then(|a| a.get("system_id"))
             .and_then(Value::as_str)
-            .map_or_else(|| self.system_id.clone(), str::to_owned);
+            .map_or_else(|| self.effective_system_id(), str::to_owned);
 
         let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(versions.len());
         // 666 attestations of existing versions (added to the same CONTRIBUTION,
@@ -504,7 +504,7 @@ impl EhrbaseService {
         let system_id = audit
             .and_then(|a| a.get("system_id"))
             .and_then(Value::as_str)
-            .map_or_else(|| self.system_id.clone(), str::to_owned);
+            .map_or_else(|| self.effective_system_id(), str::to_owned);
         AuditInput {
             system_id,
             change_type,
