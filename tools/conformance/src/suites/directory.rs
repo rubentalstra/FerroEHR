@@ -239,21 +239,24 @@ pub fn entries() -> Vec<CaseEntry> {
              GET /ehr/{ehr_id}/directory/{version_uid} (no versioned_directory resource in \
              ITS-REST development@e8a093e/Release-1.0.3); RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_empty,
-        ),
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
         entry_ver(
             "dir/get-versioned-directory-directory-with-two-versions",
             "Get versioned directory — directory with two versions",
             "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions realized as \
              GET /ehr/{ehr_id}/directory/{version_uid}; RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_two,
-        ),
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
         entry_ver(
             "dir/get-versioned-directory-bad-ehr",
             "Get versioned directory — bad EHR",
             "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-bad_ehr realized as \
              GET /ehr/{ehr_id}/directory/{version_uid}; RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
             run_versioned_bad,
-        ),
+        )
+        .with_schedule_ref("I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"),
         // update / delete on an EHR with no directory yet.
         entry(
             "dir/update-directory-empty-ehr",
@@ -302,6 +305,7 @@ fn entry_cap(
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

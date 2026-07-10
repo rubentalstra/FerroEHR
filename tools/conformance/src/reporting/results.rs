@@ -178,6 +178,13 @@ pub struct CaseOutcome {
     pub message: Option<String>,
     /// The spec citation.
     pub citation: String,
+    /// The CNF-schedule trace reference ([`crate::case::CaseMeta::schedule_ref`]),
+    /// when the case maps directly to a `<SERVICE>.<operation>` schedule id.
+    /// Carried into `results.json` so the Conformance Certificate's
+    /// per-conformance-point table is self-contained (regenerable via
+    /// `report --from`). Absent for ECC-original cases with no direct id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_ref: Option<String>,
     /// Wall-clock duration in milliseconds.
     pub duration_ms: u128,
 }

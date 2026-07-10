@@ -333,3 +333,5 @@ ECC-TS-007	TS	active	ts/fault-timeout	TERMINOLOGY expand (FHIR) — terminology-
 ECC-TS-008	TS	active	ts/fault-server-error	TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500)
 ECC-TS-009	TS	active	ts/fault-malformed	TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500)
 ECC-EHR-013	EHR	active	ehr/create-anonymous-ehr	Create anonymous (subject-less) EHR
+ECC-SEC-001	SEC	active	sec/unauthenticated-401	Unauthenticated request to a protected route is refused (401)
+ECC-SEC-002	SEC	active	sec/forbidden-role-403	Regular credential on an ADMIN-only route is forbidden (403)

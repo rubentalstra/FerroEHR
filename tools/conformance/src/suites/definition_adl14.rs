@@ -138,25 +138,29 @@ pub fn entries() -> Vec<CaseEntry> {
             "Delete OPT — delete non existing",
             DELETE_OPT_CITATION,
             run_delete_absent,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-existing",
             "Delete OPT — delete existing",
             DELETE_OPT_CITATION,
             run_delete_existing,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-latest-version",
             "Delete OPT — delete latest version",
             DELETE_OPT_CITATION,
             run_delete_latest,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-specific-version",
             "Delete OPT — delete specific version",
             DELETE_OPT_CITATION,
             run_delete_specific,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
     ]
 }
 
@@ -321,6 +325,10 @@ const DELETE_OPT_CITATION: &str = "SM I_DEFINITION_ADL14.delete_opt() (CNF maste
      (no DELETE on /definition/template/adl1.4/{id}; deletion is ADMIN-API-only); skipped, \
      see module docs";
 
+/// The CNF-schedule trace for the `delete_opt` cases (task 7): the SM operation +
+/// its schedule locus.
+const DELETE_OPT_SCHEDULE_REF: &str = "I_DEFINITION_ADL14.delete_opt (CNF master04:319)";
+
 const DELETE_OPT_SKIP: &str = "SM I_DEFINITION_ADL14.delete_opt() (CNF master04:319) has no ITS-REST ADL 1.4 binding — \
      ITS-REST development@e8a093e (and Release-1.0.3) define no DELETE verb on \
      /definition/template/adl1.4/{id}; OPT deletion lives in the ADMIN API only";
@@ -384,6 +392,7 @@ fn entry(
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

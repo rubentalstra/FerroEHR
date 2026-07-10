@@ -42,21 +42,24 @@ pub fn entries() -> Vec<CaseEntry> {
             "SM I_EHR_EXTRACT_SERVICE.export_ehrs; RM EHR Extract IM master05 (X_VERSIONED_*), \
              master09 (creation); CNF master13 §I_EHR_EXTRACT.export_ehrs (TBD)",
             skip_export_ehrs,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.export_ehrs (CNF master13, TBD)"),
         entry(
             "msg/export-ehr-extracts",
             "EHR Extract — spec-driven export (export_ehr_extracts)",
             "SM I_EHR_EXTRACT_SERVICE.export_ehr_extracts (EXTRACT_ENTITY_MANIFEST + \
              EXTRACT_VERSION_SPEC); CNF master13 §I_EHR_EXTRACT.export_ehr_extracts (TBD)",
             skip_export_ehr_extracts,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.export_ehr_extracts (CNF master13, TBD)"),
         entry(
             "msg/export-unknown-ehr",
             "EHR Extract — export of unknown EHR fails",
             "SM I_EHR_EXTRACT_SERVICE.export_ehrs (ehr_id_does_not_exist precondition); \
              CNF master13 §I_EHR_EXTRACT.export_ehr (TBD)",
             skip_export_unknown_ehr,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.export_ehrs (CNF master13, TBD)"),
         // ── I_EHR_EXTRACT_SERVICE — import ──────────────────────────────────
         entry(
             "msg/import-ehr-clone",
@@ -64,27 +67,31 @@ pub fn entries() -> Vec<CaseEntry> {
             "SM I_EHR_EXTRACT_SERVICE.import_ehr; RM common master06 §Copying Case 1 \
              (reuse source EHR identifier); CNF master13 (TBD)",
             skip_import_ehr_clone,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.import_ehr (CNF master13, TBD)"),
         entry(
             "msg/import-ehr-fixed-id",
             "EHR Extract — import whole EHR into a caller-fixed id (import_ehr)",
             "SM I_EHR_EXTRACT_SERVICE.import_ehr (same patient in another EHR service); \
              RM common master06 §Copying; CNF master13 (TBD)",
             skip_import_ehr_fixed_id,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.import_ehr (CNF master13, TBD)"),
         entry(
             "msg/import-ehr-duplicate",
             "EHR Extract — import into a duplicate target id fails",
             "SM I_EHR_EXTRACT_SERVICE.import_ehr (ehr_create_fail_duplicate_id); CNF master13 (TBD)",
             skip_import_ehr_duplicate,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.import_ehr (CNF master13, TBD)"),
         entry(
             "msg/import-ehr-extract",
             "EHR Extract — import extract into an existing EHR (import_ehr_extract)",
             "SM I_EHR_EXTRACT_SERVICE.import_ehr_extract; RM common master06 §Copying Case 2 \
              (first receipt clones VERSIONED_OBJECT; re-import is a conflict); CNF master13 (TBD)",
             skip_import_ehr_extract,
-        ),
+        )
+        .with_schedule_ref("I_EHR_EXTRACT_SERVICE.import_ehr_extract (CNF master13, TBD)"),
         // ── I_TDD_SERVICE — TDD import ──────────────────────────────────────
         entry(
             "msg/tdd-import-commits",
@@ -92,20 +99,23 @@ pub fn entries() -> Vec<CaseEntry> {
             "SM I_TDD_SERVICE.import_tdd; TDD → COMPOSITION over OPT/WebTemplate \
              (openehr_flat::from_tdd); CNF master13 §I_TDD.import_tdd (TBD)",
             skip_tdd_import_commits,
-        ),
+        )
+        .with_schedule_ref("I_TDD_SERVICE.import_tdd (CNF master13, TBD)"),
         entry(
             "msg/tdd-import-rejects",
             "TDD — import rejects malformed / non-TDD / unknown EHR / unknown template",
             "SM I_TDD_SERVICE.import_tdd (typed envelope rejections); CNF master13 \
              §I_TDD.import_tdd (TBD)",
             skip_tdd_import_rejects,
-        ),
+        )
+        .with_schedule_ref("I_TDD_SERVICE.import_tdd (CNF master13, TBD)"),
         entry(
             "msg/tdd-import-tdds-batch",
             "TDD — batch import commits all, fail-fast on error (import_tdds)",
             "SM I_TDD_SERVICE.import_tdds; CNF master13 §I_TDD.import_tdds (TBD)",
             skip_tdd_import_tdds_batch,
-        ),
+        )
+        .with_schedule_ref("I_TDD_SERVICE.import_tdds (CNF master13, TBD)"),
     ]
 }
 
@@ -121,6 +131,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

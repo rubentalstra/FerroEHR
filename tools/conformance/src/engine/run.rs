@@ -113,6 +113,7 @@ pub async fn run(transport: &dyn Transport, config: &RunConfig) -> Result<RunRes
                 total_data_sets,
                 message,
                 citation: meta.citation.to_owned(),
+                schedule_ref: meta.schedule_ref.map(str::to_owned),
                 duration_ms,
             });
         }
