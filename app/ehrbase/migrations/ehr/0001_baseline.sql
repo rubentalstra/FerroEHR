@@ -31,15 +31,24 @@
 -- role rationale (migrator/app/reader; NOLOGIN group roles).
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
-        CREATE ROLE ehrbase_migrator NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
-        CREATE ROLE ehrbase_app NOLOGIN;
-    END IF;
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
-        CREATE ROLE ehrbase_reader NOLOGIN;
-    END IF;
+    -- Graceful degradation (deployment reality): when the migration runs as a
+    -- user without CREATEROLE (dev/compose/testcontainers or a managed PG
+    -- without role rights), the role architecture is skipped with a NOTICE —
+    -- it is then a deployment-layer setup step (review doc 02 §3.1). When the
+    -- migrator has the privilege (production), roles are created idempotently.
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
+            CREATE ROLE ehrbase_migrator NOLOGIN;
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+            CREATE ROLE ehrbase_app NOLOGIN;
+        END IF;
+        IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
+            CREATE ROLE ehrbase_reader NOLOGIN;
+        END IF;
+    EXCEPTION WHEN insufficient_privilege THEN
+        RAISE NOTICE 'skipping role creation (no CREATEROLE privilege): create ehrbase_migrator/ehrbase_app/ehrbase_reader at deployment';
+    END;
 END $$;
 
 -- ── ehr ──────────────────────────────────────────────────────────────────────
@@ -506,17 +515,29 @@ CREATE INDEX idx_sp_data_set_creating_app ON sp_data_set (creating_app_id)
 COMMENT ON TABLE sp_data_set IS 'SM-6 SUBJECT_DATA_SET config: variables registered for a subject by an application (verbatim canonical JSON).';
 
 -- ── Grants (ADR-013 §3, review doc 02 §3.1/§3.2/§3.6) ─────────────────────────
--- Lock down the public schema (review doc 02 §3.6): no PUBLIC CREATE.
-REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-
--- The runtime writer (DML) and the read-only role. The migrator owns the objects
--- (it ran this DDL). No sequences to grant — all generated keys use uuidv7().
-GRANT USAGE ON SCHEMA ehr TO ehrbase_app, ehrbase_reader;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ehr TO ehrbase_app;
-GRANT SELECT ON ALL TABLES IN SCHEMA ehr TO ehrbase_reader;
--- Future ehr tables (later append-only migrations run as the migrator) are
--- reachable without a manual grant — the deploy-outage classic (review doc 02 §3.2).
-ALTER DEFAULT PRIVILEGES IN SCHEMA ehr
-    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ehrbase_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA ehr
-    GRANT SELECT ON TABLES TO ehrbase_reader;
+-- Guarded like the role block: applied when the roles exist (production
+-- migrator), skipped with a NOTICE otherwise (dev/compose without CREATEROLE).
+DO $$
+BEGIN
+    -- Lock down the public schema (review doc 02 §3.6): no PUBLIC CREATE.
+    BEGIN
+        REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+    EXCEPTION WHEN insufficient_privilege THEN
+        RAISE NOTICE 'skipping public-schema lockdown (not schema owner)';
+    END;
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+        -- The runtime writer (DML) and the read-only role. The migrator owns
+        -- the objects. No sequences — all generated keys use uuidv7().
+        GRANT USAGE ON SCHEMA ehr TO ehrbase_app, ehrbase_reader;
+        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA ehr TO ehrbase_app;
+        GRANT SELECT ON ALL TABLES IN SCHEMA ehr TO ehrbase_reader;
+        -- Future ehr tables reachable without a manual grant — the
+        -- deploy-outage classic (review doc 02 §3.2).
+        ALTER DEFAULT PRIVILEGES IN SCHEMA ehr
+            GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ehrbase_app;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA ehr
+            GRANT SELECT ON TABLES TO ehrbase_reader;
+    ELSE
+        RAISE NOTICE 'skipping ehr grants (roles absent — see the role block NOTICE)';
+    END IF;
+END $$;
