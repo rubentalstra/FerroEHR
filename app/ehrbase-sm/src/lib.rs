@@ -28,11 +28,11 @@ pub use services::{
     AdminArchive, AdminDumpLoad, AdminService, AuditEvent, CompressionFormat, DefinedTerm,
     DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService,
     DemographicService, DumpLoadFailReport, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrService, EhrStatusService, EmitOutcome, EventActionCode, EventOutcome,
-    ExportFormat, ExportSpec, ItemTagAdapter, ObjectClass, QueryService, StatTimeRange, SystemLog,
-    TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
-    TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
-    VersionMetaAdapter, WebTemplateService,
+    EhrDirectoryService, EhrExtractService, EhrService, EhrStatusService, EmitOutcome,
+    EventActionCode, EventOutcome, ExportFormat, ExportSpec, ItemTagAdapter, ObjectClass,
+    QueryService, StatTimeRange, SystemLog, TermCode, TermEntry, TermRelationship,
+    TerminologyDescription, TerminologyExtract, TerminologyRelation, TerminologyRelationError,
+    TerminologyService, TimeRange, ValidityChecker, VersionMetaAdapter, WebTemplateService,
 };
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,

@@ -34,6 +34,7 @@ mod dump_load;
 mod ehr;
 mod ehr_index;
 mod item_tag;
+mod message;
 mod opt_validation;
 mod relationship;
 mod stored_query;

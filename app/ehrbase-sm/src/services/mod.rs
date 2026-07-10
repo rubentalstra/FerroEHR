@@ -22,6 +22,7 @@ pub mod directory;
 pub mod ehr;
 pub mod ehr_index;
 pub mod ehr_status;
+pub mod message;
 pub mod query;
 pub mod relationship;
 pub mod system_log;
@@ -42,6 +43,7 @@ pub use directory::EhrDirectoryService;
 pub use ehr::EhrService;
 pub use ehr_index::EhrIndexService;
 pub use ehr_status::EhrStatusService;
+pub use message::EhrExtractService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
 pub use system_log::{
