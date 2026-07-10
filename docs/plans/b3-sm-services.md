@@ -29,7 +29,11 @@
       IMPORTED_VERSION replay through commit_import (master06 Cases 2/3,
       preserved 3-part identity + commit_audit, local import CONTRIBUTION
       249, synthetic local sys_period chain, trunk-only branching rejection
-      F-06-09); 4 import integration tests. Remaining: I_TDD_SERVICE.import_tdd.*
+      F-06-09); 4 import integration tests. TDD seam landed (b96c0a3be):
+      TddService trait + envelope layer (namespace/template_id/EHR/OPT
+      resolution, 6 corpus-fixture tests, typed rejections). Remaining
+      sub-item (explicit, not an open deferral): the OPT-guided TDD body →
+      COMPOSITION converter (archie TemplateDataDocument equivalent).*
 - [ ] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
       `I_DATA_BINDING` with the openEHR frame = AQL over our Query service;
       FHIR/HL7v2 frame seams stubbed.
