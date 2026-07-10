@@ -51,7 +51,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 |---|---|---|---|
 | PostgreSQL | ✓ | ✅ **PG 18-native** (uuidv7, temporal PK, skip scan) | ADR-008/013 |
 | Horizontal scaling (YugabyteDB) | optional | ◽→🔷 *verification item only* | PG-wire-compatible engines are a compatibility test pass (temporal PK/GiST support must be verified), not a port. Not roadmapped until a customer needs it. |
-| Multi-tenancy (API + integrated) | ✓✓ | 🔷 **Stage-2 flagship, fully integrated** | §2.3 — schema already RLS-ready (ADR-013) |
+| Multi-tenancy (API + integrated) | ✓✓ | ✅ **fully integrated** (E2, ADR-015): tenant = logical system w/ own system_id, RLS FORCE, claim→SET LOCAL, admin CRUD; single-tenant default zero-overhead | engine-proven isolation tests |
 | Transaction compensation | ✓✓ | ✅ *semantics covered, different shape* | openEHR-native: CONTRIBUTION atomicity (all-or-nothing commits), indelible versioning + logical delete, admin physical delete; a dedicated "compensation API" is redundant in a version-controlled store — PORT NOTE stance |
 | AMQP integration bus | ✓ | ✅ lapin 4 publisher, confirms, at-least-once per-EHR order, off by default (E1) | RabbitMQ e2e incl. broker-down/no-loss |
 | Kubernetes configuration | ✓ | 🔷 Helm chart / manifests (deployment artifact) | cheap, high checkbox value; includes the roles/pgaudit/TLS posture from ADR-013 + review doc 02 |

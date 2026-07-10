@@ -1,6 +1,6 @@
 # E2 — Fully-integrated multi-tenancy (Stage-2 flagship)
 
-- Status: in-progress
+- Status: done (2026-07-11)
 - Started: 2026-07-11   Owner: Ruben
 - Governing design: docs/enterprise/product-roadmap.md §2.3 (owner-confirmed)
   → ADR-015; spec basis BASE architecture-overview §The EHR System (one
@@ -32,5 +32,7 @@
 
 ## Exit criteria
 
-- [ ] ADR-015 accepted; isolation proven engine-level; default-mode ECC
-      341/315/0 zero drift; roadmap scorecard flipped.
+- [x] ADR-015 accepted; isolation engine-proven (RLS FORCE, non-superuser
+      two-tenant test); default-mode ECC 341/315/0 zero drift; scorecard
+      flipped. Follow-ups PORT-NOTEd: per-tenant unique scoping, per-tenant
+      outbox draining, two-tenant ECC smoke (rides with E3+ hardening).
