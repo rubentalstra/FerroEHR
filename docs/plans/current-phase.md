@@ -6,9 +6,9 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — B6: full conformance (P19)
+## Active work — B7: enterprise-grade schema review
 
-**Phase file: `docs/plans/b6-full-conformance.md`** (branch `claude/b6-full-conformance`).
+**Phase file: `docs/plans/b7-schema-enterprise.md`** (branch `claude/b7-schema-enterprise`).
 B2 closed 2026-07-10 (PR #37): ECC 293/319 zero-drift, ArchetypeValidation
 81→0. The single biggest gap: **81 failing ECC
 ArchetypeValidation cases (~76 % of all failures)** — template/archetype

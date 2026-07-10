@@ -90,26 +90,13 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    // ext: 0001_openehr_functions. ehr: 0001_schema + 0002_add_vo_version_signature
-    // (version signing — RM common §"Digital Signature") +
-    // 0003_demographic_party_storage (party kinds on the shared vo machinery;
-    // no new tables) + 0004_vo_attestation (ATTESTATION storage — RM common
-    // master06 §Change Control; adds the `vo_attestation` table below) +
-    // 0005_archetype_store (SM-2 ADL 1.4 source archetypes, I_DEFINITION_ADL14;
-    // adds the `archetype_store` table below) +
-    // 0006_adl2_artefact (SM-2 ADL2 artefacts, I_DEFINITION_ADL2; adds the
-    // `adl2_artefact` table below) +
-    // 0007_party_relationship_and_ehr_index (SM-3: the PARTY_RELATIONSHIP kind
-    // on the shared vo machinery + the `ehr_index` table below) +
-    // 0008_creating_system_id_and_audit_invariant (storage-semantics audit
-    // wave: the per-version `creating_system_id` column on `vo_version` [M2]
-    // and the `audit_system_id_nonempty` CHECK on `audit` [m6]; adds no table) +
-    // 0009_vo_archive (SM-4 I_ADMIN_ARCHIVE archive markers; adds the
-    // `vo_archive` table below) +
-    // 0010_subject_proxy_stores (SM-6 I_SUBJECT_PROXY_SERVICE config stores;
-    // adds the `sp_subject`/`sp_binding`/`sp_data_frame`/`sp_variable`/
-    // `sp_data_set` tables below).
-    assert_eq!((applied_ext, applied_ehr), (1, 10));
+    // Single squashed baseline per schema (ADR-013 §1 — the accreted
+    // 0001..0010 `ehr` chain and the `ext` functions were re-authored into one
+    // `0001` each; nothing was deployed, so the squash is sanctioned, and it is
+    // append-only from here). ext: 0001_openehr_functions (functions + roles +
+    // grants). ehr: 0001_baseline (all 18 tables + named constraints, comments,
+    // roles/grants, and the ADR-013 spec-compliance fixes).
+    assert_eq!((applied_ext, applied_ehr), (1, 1));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -208,8 +195,8 @@ async fn temporal_versioning_model_behaves() {
 
     // an overlapping period is impossible at the database
     let overlap = sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
-         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(now(), NULL), contribution_id, audit_id
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(now(), NULL), contribution_id, audit_id, creating_system_id
          FROM vo_version WHERE vo_id = $1",
     )
     .bind(vo)
@@ -228,8 +215,8 @@ async fn temporal_versioning_model_behaves() {
     .await
     .expect("close v1");
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
-         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id, creating_system_id
          FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
@@ -483,14 +470,17 @@ async fn seed_template(pool: &PgPool, template_id: &str) {
 async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     let ehr_id = Uuid::now_v7();
     let vo = Uuid::now_v7();
-    sqlx::query("INSERT INTO ehr (id) VALUES ($1)")
+    // ehr.system_id is NOT NULL (ADR-013 §5, req 2.1).
+    sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, 'ehrbase-rs.test')")
         .bind(ehr_id)
         .execute(pool)
         .await
         .expect("ehr row");
+    // audit.change_type is a coded audit_change_type value ('249' creation),
+    // enforced by ck_audit_change_type (ADR-013 §6, req 1.4.2) — not the rubric.
     let audit_id: Uuid = sqlx::query_scalar(
         "INSERT INTO audit (system_id, change_type, committer)
-         VALUES ('test.system', 'creation', '{\"_type\":\"PARTY_SELF\"}'::jsonb)
+         VALUES ('test.system', '249', '{\"_type\":\"PARTY_SELF\"}'::jsonb)
          RETURNING id",
     )
     .fetch_one(pool)
@@ -504,9 +494,10 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .fetch_one(pool)
     .await
     .expect("contribution row");
+    // creating_system_id is NOT NULL (ADR-013 §8 — no '' sentinel).
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
-         VALUES ($1, 'COMPOSITION', $2, 1, tstzrange(now(), NULL), $3, $4)",
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
+         VALUES ($1, 'COMPOSITION', $2, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
     )
     .bind(vo)
     .bind(ehr_id)
@@ -522,8 +513,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     // produce.
     let status_vo = Uuid::now_v7();
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id)
-         VALUES ($1, 'EHR_STATUS', $2, 1, tstzrange(now(), NULL), $3, $4)",
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
+         VALUES ($1, 'EHR_STATUS', $2, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
     )
     .bind(status_vo)
     .bind(ehr_id)

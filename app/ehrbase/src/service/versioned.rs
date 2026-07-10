@@ -147,7 +147,7 @@ impl EhrbaseService {
     /// stored signature fails verification.
     pub(super) fn original_version(&self, read: &VersionRead) -> Result<Value, ServiceError> {
         let mut ov = build_original_version(
-            self.creating_system_id(&read.creating_system_id),
+            &read.creating_system_id,
             read.vo_id,
             read.sys_version,
             read.contribution_id,

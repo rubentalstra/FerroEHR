@@ -100,7 +100,8 @@ fn relationship(name: &str, source: &str, target: &str) -> Value {
 /// Insert a bare EHR row so the EHR Index existence check + FK are satisfied.
 async fn seed_ehr(pool: &PgPool) -> Uuid {
     let id = Uuid::now_v7();
-    sqlx::query("INSERT INTO ehr (id) VALUES ($1)")
+    // ehr.system_id is NOT NULL (ADR-013 §5, req 2.1).
+    sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, 'ehrbase-rs.test')")
         .bind(id)
         .execute(pool)
         .await

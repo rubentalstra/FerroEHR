@@ -1,6 +1,6 @@
 # ADR-008: Greenfield PG18-native storage + AQL architecture; openEHR conformance replaces EHRbase parity
 
-- **Status:** accepted
+- **Status:** accepted. *(2026-07-10: the conformance runner (`scripts/conformance.sh`) is built and green — 341 executed · 315 passed · 0 failed, CORE/STANDARD PASS; the "full at P19" references below are the original roadmap, since executed as B1–B6.)*
 - **Date:** 2026-07-05
 - **Supersedes (in part):** ADR-006 §3/§4 ("follow EHRbase's algorithm as the
   reference", "the real EHRbase v2 schema is reused verbatim") and the
