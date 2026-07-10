@@ -943,11 +943,25 @@ fn closed_world_rejects_foreign_content() {
         {"_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.foreign.v1",
          "name": {"_type": "DV_TEXT", "value": "o"}}
     ]});
+    // ADR-012 rule 4 (scope amendment, B2 close): an unmatched
+    // *archetype-rooted* child is tolerated (the flat OPT does not enumerate
+    // the full slot-fill universe; the CNF corpus itself commits such ENTRYs).
     let msgs = walk_only(&inst, &root);
     assert!(
-        msgs.iter().any(|m| m.kind == ValidationKind::Unexpected
-            && m.message.contains("openEHR-EHR-OBSERVATION.foreign.v1")),
-        "expected an Unexpected violation for the foreign OBSERVATION, got {msgs:?}"
+        msgs.is_empty(),
+        "foreign archetype-rooted content is tolerated (ADR-012 rule 4), got {msgs:?}"
+    );
+    // At-coded children remain closed: an at-coded child matching no sibling
+    // constraint is rejected (ADR-012 rule 1).
+    let at_foreign = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
+        {"_type": "SECTION", "archetype_node_id": "at0099",
+         "name": {"_type": "DV_TEXT", "value": "s"}}
+    ]});
+    let msgs = walk_only(&at_foreign, &root);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Unexpected && m.message.contains("at0099")),
+        "expected an Unexpected violation for the foreign at-coded child, got {msgs:?}"
     );
     let ok = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
         {"_type": "SECTION", "archetype_node_id": "openEHR-EHR-SECTION.x.v1",
