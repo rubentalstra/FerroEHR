@@ -8,8 +8,23 @@ use super::object_ref_impl::namespace_valid;
 use super::party_ref::PartyRef;
 use crate::validate::{InvariantViolation, Validate};
 
-/// The party/demographic `type` values a `PARTY_REF` may point at (archie
-/// `PartyRef.VALID_PARTY_TYPES`).
+/// The party/demographic `type` values a `PARTY_REF` may point at.
+///
+/// The named subtypes + the abstract supertypes `PARTY`/`ACTOR` are the closed
+/// set of the BASE `Type_validity` invariant
+/// (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.party_ref.adoc`,
+/// §Invariants). The class's own Description sanctions **abstract supertypes**
+/// "if the referenced object is of a type not known by the current
+/// implementation"; `ANY` is the openEHR Foundation-Types universal supertype
+/// and the value the CNF platform corpus uses on its **positive** commit
+/// fixtures (`CNF/.../create_composition-persistent.robot` "Alternative flow 1 …
+/// TDD"; every `..__full` COMPOSITION/TDD sets `external_ref.type = "ANY"`). Per
+/// ADR-008 the CNF positive case wins over the strict prose enumeration, so
+/// `ANY` is admitted; an *unknown* type string (e.g. a typo) is still rejected.
+// PORT NOTE (spec vs CNF): the normative invariant lists a closed set that does
+// not include `ANY`; the CNF positive corpus commits `type="ANY"`. Admitting
+// exactly `ANY` (the universal supertype) reconciles the two without opening the
+// invariant to arbitrary strings — the intent the Description states.
 const VALID_PARTY_TYPES: &[&str] = &[
     "PERSON",
     "ORGANISATION",
@@ -18,6 +33,7 @@ const VALID_PARTY_TYPES: &[&str] = &[
     "ROLE",
     "PARTY",
     "ACTOR",
+    "ANY",
 ];
 
 impl Validate for PartyRef {
@@ -54,6 +70,13 @@ mod tests {
     #[test]
     fn valid_party_ref() {
         assert!(party_ref("local", "PERSON").invariants().is_empty());
+    }
+
+    /// `ANY` (the universal supertype) is admitted — the value the CNF positive
+    /// commit corpus uses (see `VALID_PARTY_TYPES` doc; ADR-008: CNF wins).
+    #[test]
+    fn valid_party_ref_any_supertype() {
+        assert!(party_ref("local", "ANY").invariants().is_empty());
     }
 
     #[test]

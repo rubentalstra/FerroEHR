@@ -313,3 +313,13 @@ ECC-SIG-003	SIG	active	sig/all-kinds	Version signing — all kinds
 ECC-SIG-004	SIG	active	sig/client-verbatim	Version signing — client verbatim
 ECC-SIG-005	SIG	active	sig/pgp-verifies	Version signing — pgp verifies
 ECC-VAL-119	VAL	active	val/dv-date-day-disallowed-pattern	Validate DV_DATE — day disallowed by C_DATE pattern (defective vendored fixture rejected)
+ECC-MSG-001	MSG	active	msg/export-ehrs	EHR Extract — export whole EHR (export_ehrs)
+ECC-MSG-002	MSG	active	msg/export-ehr-extracts	EHR Extract — spec-driven export (export_ehr_extracts)
+ECC-MSG-003	MSG	active	msg/export-unknown-ehr	EHR Extract — export of unknown EHR fails
+ECC-MSG-004	MSG	active	msg/import-ehr-clone	EHR Extract — import whole-EHR clone reusing source id (import_ehr)
+ECC-MSG-005	MSG	active	msg/import-ehr-fixed-id	EHR Extract — import whole EHR into a caller-fixed id (import_ehr)
+ECC-MSG-006	MSG	active	msg/import-ehr-duplicate	EHR Extract — import into a duplicate target id fails
+ECC-MSG-007	MSG	active	msg/import-ehr-extract	EHR Extract — import extract into an existing EHR (import_ehr_extract)
+ECC-MSG-008	MSG	active	msg/tdd-import-commits	TDD — import a TDD as a committed COMPOSITION (import_tdd)
+ECC-MSG-009	MSG	active	msg/tdd-import-rejects	TDD — import rejects malformed / non-TDD / unknown EHR / unknown template
+ECC-MSG-010	MSG	active	msg/tdd-import-tdds-batch	TDD — batch import commits all, fail-fast on error (import_tdds)

@@ -6,10 +6,11 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — B2: Validation depth
+## Active work — B3: SM-5/SM-6 services
 
-**Phase file: `docs/plans/b2-validation-depth.md`** (branch
-`claude/b2-validation-depth`). The single biggest gap: **81 failing ECC
+**Phase file: `docs/plans/b3-sm-services.md`** (branch `claude/b3-sm-services`).
+B2 closed 2026-07-10 (PR #37): ECC 293/319 zero-drift, ArchetypeValidation
+81→0. The single biggest gap: **81 failing ECC
 ArchetypeValidation cases (~76 % of all failures)** — template/archetype
 constraint-validation depth, with the ECC data sets as the oracle. Contents in
 dependency order (blueprint §3 B2): constraint-evaluation primitives
