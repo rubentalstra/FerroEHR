@@ -10,18 +10,33 @@
 //! `get_opt-*` round-trips a provisioned `template_id`
 //! (`GET /definition/template/adl1.4/{id}`); `validate_opt-*` is realized via
 //! the upload endpoint (which validates — 2xx valid / 4xx invalid);
-//! `upload_opt-*_twice` asserts the conflict/idempotency semantics; `delete_opt-*`
-//! drives `DELETE /definition/template/adl1.4/{id}` — a verb the standard ITS-REST
-//! surface does not define, so a missing endpoint surfaces as a genuine finding,
-//! never a skip (CNF guide: abstract op → REST realization).
+//! `upload_opt-*_twice` asserts the conflict/idempotency semantics.
+//!
+//! **`delete_opt-*` — D2 skip-with-reason.** The SM
+//! `I_DEFINITION_ADL14.delete_opt()` (CNF master04:319) has no ITS-REST ADL 1.4
+//! binding: neither Release-1.0.3 nor the tested development@e8a093e OAS defines
+//! a `DELETE` verb on `/definition/template/adl1.4/{id}` — ITS-REST puts template
+//! deletion in the **ADMIN** API only. So a 405 is a schedule-vs-ITS-REST gap,
+//! not a server defect; every `delete_opt` case reports `SKIPPED` rather than a
+//! fabricated failure (`docs/blueprint/07-cnf.md` D2).
+//!
+//! **CORE `Adl14ArchetypeProvisioning` evidencing (D5).** openEHR ITS-REST
+//! exposes no standalone ADL 1.4 *archetype* resource — archetypes are delivered
+//! to the platform **inside** OPTs (the operational template is the flattened
+//! archetype set). We therefore evidence the CORE "ADL 1.4 Archetype
+//! provisioning" capability by the OPT upload that provisions archetype-bearing
+//! content: `tpl/upload-opt-valid-opt` is tagged
+//! [`Capability::Adl14ArchetypeProvisioning`] (the remaining OPT cases stay
+//! [`Capability::Adl14OptProvisioning`]). This matches the schedule's
+//! EHRbase-derived reality (`EHRbase` provisions OPTs, not raw archetypes) and
+//! makes both CORE capabilities claimable from real, passing cases
+//! (`docs/blueprint/07-cnf.md` D5; `model::profile`).
 
 use crate::assert;
 use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
 use crate::catalog::Area;
 use crate::fixtures;
-use crate::harness::{
-    CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
-};
+use crate::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, RunContext};
 use crate::registry::CaseEntry;
 
 macro_rules! case {
@@ -34,11 +49,15 @@ macro_rules! case {
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
+        // D5: this OPT upload is the CORE `Adl14ArchetypeProvisioning` evidence —
+        // ADL 1.4 archetypes are provisioned to the platform inside the OPT (no
+        // standalone archetype resource in ITS-REST). See module docs.
         entry(
             "tpl/upload-opt-valid-opt",
-            "Upload OPT — valid OPT",
-            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-            Capability::Adl14OptProvisioning,
+            "Upload OPT — valid OPT (provisions ADL 1.4 archetypes)",
+            "ITS-REST DEFINITION ADL 1.4 API §upload OPT; AM 1.4 §OPERATIONAL_TEMPLATE; \
+             CORE Adl14ArchetypeProvisioning evidenced via OPT (archetypes embedded in the OPT)",
+            Capability::Adl14ArchetypeProvisioning,
             run_upload_valid,
         ),
         entry(
@@ -112,32 +131,36 @@ pub fn entries() -> Vec<CaseEntry> {
             "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             run_validate_invalid,
         ),
-        // delete_opt — DELETE /definition/template/adl1.4/{template_id}
-        // (no ITS-REST verb → a missing endpoint surfaces as a finding).
+        // delete_opt — D2: no ITS-REST ADL 1.4 DELETE verb (deletion is in the
+        // ADMIN API only) → skip-with-reason. See module docs.
         c(
             "tpl/delete-opt-delete-non-existing",
             "Delete OPT — delete non existing",
-            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            DELETE_OPT_CITATION,
             run_delete_absent,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-existing",
             "Delete OPT — delete existing",
-            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            DELETE_OPT_CITATION,
             run_delete_existing,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-latest-version",
             "Delete OPT — delete latest version",
-            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            DELETE_OPT_CITATION,
             run_delete_latest,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
         c(
             "tpl/delete-opt-delete-specific-version",
             "Delete OPT — delete specific version",
-            "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+            DELETE_OPT_CITATION,
             run_delete_specific,
-        ),
+        )
+        .with_schedule_ref(DELETE_OPT_SCHEDULE_REF),
     ]
 }
 
@@ -293,48 +316,41 @@ fn run_validate_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-async fn delete_template(ctx: &RunContext<'_>, path: String) -> Result<u16, CaseError> {
-    let resp = ctx.send(HttpRequest::new(Method::Delete, path)).await?;
-    Ok(resp.status)
+// delete_opt — D2 skip-with-reason (module docs): the SM
+// `I_DEFINITION_ADL14.delete_opt()` (CNF master04:319) has no ITS-REST ADL 1.4
+// binding — no DELETE verb on `/definition/template/adl1.4/{id}` in Release-1.0.3
+// or the tested development@e8a093e OAS (deletion is in the ADMIN API only). A
+// 405 there is a schedule gap, not a server defect, so every case is skipped.
+const DELETE_OPT_CITATION: &str = "SM I_DEFINITION_ADL14.delete_opt() (CNF master04:319) — no ITS-REST ADL 1.4 binding \
+     (no DELETE on /definition/template/adl1.4/{id}; deletion is ADMIN-API-only); skipped, \
+     see module docs";
+
+/// The CNF-schedule trace for the `delete_opt` cases (task 7): the SM operation +
+/// its schedule locus.
+const DELETE_OPT_SCHEDULE_REF: &str = "I_DEFINITION_ADL14.delete_opt (CNF master04:319)";
+
+const DELETE_OPT_SKIP: &str = "SM I_DEFINITION_ADL14.delete_opt() (CNF master04:319) has no ITS-REST ADL 1.4 binding — \
+     ITS-REST development@e8a093e (and Release-1.0.3) define no DELETE verb on \
+     /definition/template/adl1.4/{id}; OPT deletion lives in the ADMIN API only";
+
+fn skip_delete<'a>() -> CaseFuture<'a> {
+    Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped(DELETE_OPT_SKIP.to_owned())) })
 }
 
-fn run_delete_absent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let status = delete_template(
-            ctx,
-            "/definition/template/adl1.4/does.not.exist.v1".to_owned(),
-        )
-        .await?;
-        // No template to delete → 404 (or 405 if the verb is unmounted).
-        assert_in(status, &[404, 405])
-    })
+fn run_delete_absent<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_delete()
 }
 
-fn run_delete_existing<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let tid = ensure_present(ctx).await?;
-        let status = delete_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
-        // Delete is not a standard ITS-REST ADL1.4 verb; 200/204 if supported,
-        // else a finding (404/405) — driven, never skipped.
-        assert_in(status, &[200, 204])
-    })
+fn run_delete_existing<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_delete()
 }
 
-fn run_delete_latest<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let tid = ensure_present(ctx).await?;
-        let status = delete_template(ctx, format!("/definition/template/adl1.4/{tid}")).await?;
-        assert_in(status, &[200, 204])
-    })
+fn run_delete_latest<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_delete()
 }
 
-fn run_delete_specific<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let tid = ensure_present(ctx).await?;
-        let status =
-            delete_template(ctx, format!("/definition/template/adl1.4/{tid}/1.0.0")).await?;
-        assert_in(status, &[200, 204, 404])
-    })
+fn run_delete_specific<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    skip_delete()
 }
 
 /// Assert a status equals `want`, else a finding.
@@ -376,6 +392,7 @@ fn entry(
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }

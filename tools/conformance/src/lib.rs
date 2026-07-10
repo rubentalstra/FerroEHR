@@ -21,7 +21,8 @@
 //! - [`engine`] — execution: transport, SUT lifecycles, assertions, registry,
 //!   the runner.
 //! - [`reporting`] — the machine/human result artifacts (`results.json`,
-//!   `CONFORMANCE_REPORT`/`CATALOG` markdown, the four badges).
+//!   `CONFORMANCE_REPORT`/`CATALOG` markdown, the Conformance
+//!   Statement + Certificate, the four badges).
 //! - [`suites`] — the case implementations, one module per area/chapter.
 //!
 //! Two pedantic lints are allowed crate-wide because they fight the natural
@@ -43,6 +44,6 @@ pub mod ts;
 // suites, the CLI, and the integration tests); the directories above are the
 // maintenance layout.
 pub use engine::{assert, client, flow, harness, registry, run, sut};
-pub use model::{case, catalog, profile, version};
+pub use model::{case, catalog, profile, provenance, version};
 pub use reporting::{report, results};
 pub use testdata::fixtures;

@@ -25,6 +25,7 @@ mod directory;
 mod ehr;
 mod message;
 mod query;
+mod security;
 mod terminology;
 
 /// All implemented case entries, in registration order.
@@ -44,5 +45,6 @@ pub fn entries() -> Vec<CaseEntry> {
     all.extend(signing::entries()); // runner-defined SIGN-* (§4.6)
     all.extend(message::entries()); // master13 (SM-5 Messaging; native-API-only, skipped)
     all.extend(terminology::entries()); // B4 (AQL TERMINOLOGY family + FHIR-tx)
+    all.extend(security::entries()); // SECURITY_TESTS/I_OAuth2 intent (auth 401/403 surface)
     all
 }

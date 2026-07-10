@@ -206,7 +206,7 @@ semantic analysis (stages b/c typed rejects, PORT-NOTEd); /terminology
 extension wire (config-gated); TS ECC area (ECC-TS-001..009, wiremock
 fixture + --tx-server-url). ECC 338 executed · 298 passed · zero drift.*
 
-### B5 — tools/conformance spec-version update (chapter 7's findings)
+### B5 — tools/conformance spec-version update (chapter 7's findings) — **DONE** (2026-07-10, `docs/plans/b5-conformance-instrument.md`)
 1. **D1** — resolve the ITS-REST identity: pick Release-1.0.3 vs
    development@e8a093e, re-vendor `crates/openehr-its/vendor/rest-oas/`
    accordingly, derive `SpecVersions.its_rest` from provenance (not a
@@ -228,6 +228,12 @@ fixture + --tx-server-url). ECC 338 executed · 298 passed · zero drift.*
    `CaseMeta`.
 **Exit: the instrument is honest — every failure is a real server defect, the
 report claims the version it actually tests, CORE/STANDARD are claimable.**
+*Closed 2026-07-10: ECC 341 executed · 303 passed · 12 failed (all real
+defects — the B6 list); identity provenance-derived (development@e8a093e) +
+reconciliation guard; D2/D3 adjudications; CORE claimable (Versioning/
+AnonymousEhrs/Adl14ArchetypeProvisioning evidenced); full OPTIONS surface
+any-passes; Statement + Certificate artefacts; ECC-SEC-001/002 pass live;
+schedule_ref threaded.*
 
 ### B6 — P19: full conformance
 The convergence phase: burn down every remaining honest failure and wire tail.

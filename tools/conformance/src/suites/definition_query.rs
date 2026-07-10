@@ -7,7 +7,17 @@
 //! `200` list).
 //!
 //! The negative `valid_query-invalid`/`-bad_formalism` cases assert store-time AQL
-//! validation (`400`/`422`); `list_queries` is realized via `GET /definition/query`.
+//! validation (`400`/`422`).
+//!
+//! **`list_queries` — D2 split.** ITS-REST's list resource is
+//! `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a **bare**
+//! `GET /definition/query` does not exist in Release-1.0.3 or the tested
+//! development@e8a093e OAS. So `sqr/list-queries-non-empty` (a real
+//! `GET /definition/query/{name}`) stays a live wire case, while the two bare-list
+//! cases (`sqr/list-queries-empty`, `sqr/list-queries-select-items`) report
+//! `SKIPPED` — the SM `I_DEFINITION_QUERY.list_queries()` (CNF master05:93) has no
+//! ITS-REST binding, so a 404 there is a schedule-vs-ITS-REST gap, not a server
+//! defect (`docs/blueprint/07-cnf.md` D2).
 
 use uuid::Uuid;
 
@@ -40,19 +50,23 @@ pub fn entries() -> Vec<CaseEntry> {
             "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
             run_has_query,
         ),
-        // list_queries — GET /definition/query (the stored-query list).
+        // list_queries (bare) — D2: no ITS-REST binding → skip-with-reason.
         entry(
             "sqr/list-queries-empty",
             "List stored queries — empty",
-            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            "SM I_DEFINITION_QUERY.list_queries (CNF master05:93) — no ITS-REST binding \
+             (list resource is GET /definition/query/{qualified_query_name}); skipped, see module docs",
             run_list_all,
-        ),
+        )
+        .with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)"),
         entry(
             "sqr/list-queries-select-items",
             "List stored queries — select items",
-            "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
+            "SM I_DEFINITION_QUERY.list_queries (CNF master05:93) — no ITS-REST binding \
+             (list resource is GET /definition/query/{qualified_query_name}); skipped, see module docs",
             run_list_after_store,
-        ),
+        )
+        .with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)"),
         // valid_query negatives — store-time AQL validation → 400/422.
         entry(
             "sqr/valid-query-bad-formalism",
@@ -80,6 +94,7 @@ fn entry(id: &'static str, title: &'static str, citation: &'static str, run: Cas
             formats: &[Format::Json],
             citation,
             compare: Compare::Superset,
+            schedule_ref: None,
         },
         run,
     }
@@ -165,27 +180,25 @@ async fn store_bad(ctx: &RunContext<'_>, aql: &str) -> Result<u16, CaseError> {
     Ok(resp.status)
 }
 
-/// `list_queries` — GET /definition/query returns the stored-query list (200).
-fn run_list_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let resp = ctx
-            .send(HttpRequest::get("/definition/query").header("accept", "application/json"))
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
-    })
+// list_queries (bare) — D2 skip-with-reason (module docs): a bare
+// `GET /definition/query` has no ITS-REST binding (the list resource is
+// `GET /definition/query/{qualified_query_name}`), so the SM
+// `I_DEFINITION_QUERY.list_queries()` (CNF master05:93) is not wire-exercisable;
+// a 404 there is a schedule gap, not a server defect.
+const LIST_QUERIES_SKIP: &str = "SM I_DEFINITION_QUERY.list_queries() (CNF master05:93) has no ITS-REST binding — ITS-REST \
+     development@e8a093e (and Release-1.0.3) expose GET /definition/query/{qualified_query_name}, \
+     not a bare GET /definition/query collection";
+
+fn run_list_all<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(
+        async move { Err::<DataSetReport, _>(CaseError::Skipped(LIST_QUERIES_SKIP.to_owned())) },
+    )
 }
 
-/// `list_queries` after storing one → 200 (the list is non-empty / selectable).
-fn run_list_after_store<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        store_query(ctx).await?;
-        let resp = ctx
-            .send(HttpRequest::get("/definition/query").header("accept", "application/json"))
-            .await?;
-        assert::status(&resp, 200)?;
-        Ok(DataSetReport::SINGLE)
-    })
+fn run_list_after_store<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    Box::pin(
+        async move { Err::<DataSetReport, _>(CaseError::Skipped(LIST_QUERIES_SKIP.to_owned())) },
+    )
 }
 
 /// valid_query-bad_formalism — a non-AQL body is rejected at store time (400/422).

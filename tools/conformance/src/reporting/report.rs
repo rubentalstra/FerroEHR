@@ -2,8 +2,10 @@
 //! public artifact set — `results.json` (the single machine record),
 //! `CONFORMANCE_REPORT.md` (the run: identity, scope, per-area matrix,
 //! machine profile verdicts, failures, deviations), `CATALOG.md` (the full
-//! per-category catalogue), and the four badges (total +
-//! core/standard/options, shields endpoint schema).
+//! per-category catalogue), the Conformance **Statement**
+//! (`CONFORMANCE_STATEMENT.md`) + **Certificate** (`CONFORMANCE_CERTIFICATE.md`)
+//! artefacts ([`crate::reporting::statement`], R9/R10), and the four badges
+//! (total + core/standard/options, shields endpoint schema).
 //!
 //! Everything is **catalogue-driven**: the denominator is our own ECC
 //! catalogue, the identities are ECC numbers, and the claim is a pure
@@ -66,6 +68,17 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
     write_file(
         &out_dir.join("CATALOG.md"),
         &render_catalog_md(results, &catalog),
+    )?;
+    // The Conformance Statement + Certificate artefacts (R9/R10): both are pure
+    // functions of the machine verdicts, so `report --from results.json`
+    // regenerates them identically to a live run.
+    write_file(
+        &out_dir.join("CONFORMANCE_STATEMENT.md"),
+        &crate::reporting::statement::render_statement_md(results),
+    )?;
+    write_file(
+        &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
+        &crate::reporting::statement::render_certificate_md(results, &catalog),
     )?;
     write_file(
         &out_dir.join("badge.json"),
@@ -332,18 +345,24 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
         out.push('\n');
     }
 
-    out.push_str("## 4. Profile verdict (machine-computed, all-or-nothing)\n\n");
+    out.push_str("## 4. Profile verdict (machine-computed)\n\n");
+    out.push_str(
+        "CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is \
+         any-passes (obtained if ≥1 optional capability passes) — `master03-profiles.adoc`.\n\n",
+    );
     for profile in [
         crate::case::Profile::Core,
         crate::case::Profile::Standard,
         crate::case::Profile::Options,
     ] {
         let v = crate::profile::verdict(profile, results);
-        let _ = writeln!(
-            out,
-            "### {profile:?} — {}\n",
-            if v.pass { "**PASS**" } else { "not claimable" }
-        );
+        let outcome = match profile {
+            crate::case::Profile::Options if v.pass => "**OBTAINED** (any-passes)",
+            crate::case::Profile::Options => "not obtained",
+            _ if v.pass => "**PASS**",
+            _ => "not claimable",
+        };
+        let _ = writeln!(out, "### {profile:?} — {outcome}\n");
         out.push_str("| Capability | Passed | Failed | Errored | Skipped | Verdict |\n");
         out.push_str("|---|--:|--:|--:|--:|---|\n");
         for c in &v.capabilities {
@@ -355,7 +374,7 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
                 c.failed,
                 c.errored,
                 c.skipped,
-                if c.pass { "pass" } else { "fail" }
+                c.label()
             );
         }
         out.push('\n');
@@ -509,6 +528,8 @@ mod tests {
             "results.json",
             "CONFORMANCE_REPORT.md",
             "CATALOG.md",
+            "CONFORMANCE_STATEMENT.md",
+            "CONFORMANCE_CERTIFICATE.md",
             "badge.json",
             "badge-core.json",
             "badge-standard.json",
