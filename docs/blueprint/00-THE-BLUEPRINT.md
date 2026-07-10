@@ -235,7 +235,7 @@ AnonymousEhrs/Adl14ArchetypeProvisioning evidenced); full OPTIONS surface
 any-passes; Statement + Certificate artefacts; ECC-SEC-001/002 pass live;
 schedule_ref threaded.*
 
-### B6 — P19: full conformance
+### B6 — P19: full conformance — **DONE** (2026-07-10, `docs/plans/b6-full-conformance.md`)
 The convergence phase: burn down every remaining honest failure and wire tail.
 - ITS-REST protocol tail (map row 13): committal-header merge (MUST),
   `Last-Modified`, If-Match hardening, `OPTIONS /`, status-code fixes, query
@@ -249,6 +249,10 @@ The convergence phase: burn down every remaining honest failure and wire tail.
 **Exit: full ECC green (100% minus documented skip-with-reason adjudications);
 CORE + STANDARD claimed with the Statement/Certificate artefacts; OPTIONS
 report produced. This is the "first fully spec-compliant openEHR CDR" claim.**
+*Closed 2026-07-10: ECC 341 executed · 315 passed · 0 failed; machine
+verdicts CORE PASS · STANDARD PASS · OPTIONS OBTAINED. The claim state is
+reached — measured, not asserted. Remaining trajectory: P20 optimization,
+P99 cutover, P17 interop audit (not conformance-gated).*
 
 ### Tail — P20 optimization, P99 cleanup/release
 Unchanged from the phase plan: PERF(port) items, AIO tuning, index passes
