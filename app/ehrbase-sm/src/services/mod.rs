@@ -22,15 +22,21 @@ pub mod directory;
 pub mod ehr;
 pub mod ehr_index;
 pub mod ehr_status;
+pub mod message;
 pub mod query;
 pub mod relationship;
+pub mod subject_proxy;
 pub mod system_log;
+pub mod tdd;
 pub mod terminology;
 pub mod validity;
 pub mod web_template;
 
 pub use adapter::{ContributionAdapter, DefinitionAdapter, ItemTagAdapter, VersionMetaAdapter};
-pub use admin::{AdminArchive, AdminService, StatTimeRange};
+pub use admin::{
+    AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,
+    ExportSpec, StatTimeRange,
+};
 pub use composition::EhrCompositionService;
 pub use contribution::{EhrContributionService, TimeRange};
 pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
@@ -39,11 +45,17 @@ pub use directory::EhrDirectoryService;
 pub use ehr::EhrService;
 pub use ehr_index::EhrIndexService;
 pub use ehr_status::EhrStatusService;
+pub use message::EhrExtractService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
+pub use subject_proxy::{
+    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FrameMethod, FramePayload,
+    Sample, SubjectDataSet, SubjectProxyService, SubjectVariable, VariableSample, VariableValue,
+};
 pub use system_log::{
     AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
 };
+pub use tdd::TddService;
 pub use terminology::{
     DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation, TerminologyRelationError, TerminologyService,

@@ -17,6 +17,7 @@ pub mod example;
 pub mod flat;
 pub(crate) mod path;
 pub mod structured;
+pub mod tdd;
 pub mod validation;
 pub mod webtemplate;
 
@@ -24,6 +25,7 @@ pub use error::FlatError;
 pub use example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
 pub use flat::{from_flat, to_flat};
 pub use structured::{flat_to_structured, from_structured, structured_to_flat, to_structured};
+pub use tdd::from_tdd;
 pub use validation::{
     ValidationKind, ValidationMessage, validate_archetype_conformance,
     validate_archetype_conformance_incomplete, validate_composition, validate_rm_and_terminology,

@@ -94,6 +94,12 @@ impl EhrbaseService {
     /// A `VERSIONED_OBJECT` for `vo_id` owned by `ehr_id`, including the mandatory
     /// `time_created` (1..1) — the commit time of the object's first version
     /// (`VERSIONED_OBJECT.time_created`, RM `change_control`; F-06-05/F-01-08).
+    ///
+    /// PORT NOTE (EHR-Extract import): the earliest **held** version is used, not
+    /// a hardcoded `sys_version = 1`. A latest-only clone (`import_ehr` over an
+    /// `export_ehrs` extract, RM common master06 §Copying) legitimately holds a
+    /// partial trunk history whose lowest version is `> 1`; `time_created` is
+    /// then the earliest version this repository received.
     pub(super) async fn versioned_object(
         &self,
         vo_id: Uuid,
@@ -101,7 +107,7 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let time_created: jiff_sqlx::Timestamp = sqlx::query_scalar(
             "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-             WHERE v.vo_id = $1 AND v.sys_version = 1",
+             WHERE v.vo_id = $1 ORDER BY v.sys_version LIMIT 1",
         )
         .bind(vo_id)
         .fetch_optional(&self.pool)

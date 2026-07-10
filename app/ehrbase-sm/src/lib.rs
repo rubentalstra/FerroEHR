@@ -25,13 +25,17 @@ pub use ehr_handle::{
 pub use error::{CallStatus, CallStatusType, SmError};
 pub use platform::Platform;
 pub use services::{
-    AdminArchive, AdminService, AuditEvent, DefinedTerm, DefinitionAdapter, DefinitionAdl2Service,
-    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
-    EhrContributionService, EhrDirectoryService, EhrService, EhrStatusService, EmitOutcome,
-    EventActionCode, EventOutcome, ItemTagAdapter, ObjectClass, QueryService, StatTimeRange,
-    SystemLog, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
-    TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
-    VersionMetaAdapter, WebTemplateService,
+    AdminArchive, AdminDumpLoad, AdminService, AuditEvent, CompressionFormat, DataBinding,
+    DataFrame, DataFrameSample, DataSetResult, DefinedTerm, DefinitionAdapter,
+    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
+    DumpLoadFailReport, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrExtractService, EhrService, EhrStatusService, EmitOutcome, EnvBinding, EventActionCode,
+    EventOutcome, ExportFormat, ExportSpec, FrameMethod, FramePayload, ItemTagAdapter, ObjectClass,
+    QueryService, Sample, StatTimeRange, SubjectDataSet, SubjectProxyService, SubjectVariable,
+    SystemLog, TddService, TermCode, TermEntry, TermRelationship, TerminologyDescription,
+    TerminologyExtract, TerminologyRelation, TerminologyRelationError, TerminologyService,
+    TimeRange, ValidityChecker, VariableSample, VariableValue, VersionMetaAdapter,
+    WebTemplateService,
 };
 pub use types::{
     AqlQueryRequest, EhrSummary, Page, PartyKind, PlatformService, QueryDescriptor, QueryOutcome,

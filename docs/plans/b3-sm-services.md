@@ -1,0 +1,92 @@
+# B3 — SM-5/SM-6: the designed-but-unbuilt services
+
+- Status: done (2026-07-10)
+- Started: 2026-07-10   Owner: Ruben
+- Governing plan: `docs/blueprint/00-THE-BLUEPRINT.md` §3 B3; designs in
+  `docs/design/sm-platform/` (esp. `10-message-integration.md`)
+- Oracle: `docs/specs/openehr/SM/docs/openehr_platform/` (master09 Message,
+  master12), RM `ehr_extract`, CNF schedule; ECC baseline 293/319 (zero-drift
+  gate per phase step, `scripts/conformance.sh`)
+
+## Tasks (blueprint §3 B3)
+
+- [x] 1. SM-4 wave 3 — Admin dump/load: `export_ehrs`/`load_ehrs`,
+      `EXPORT_SPEC`, segmenting, `DUMP_LOAD_FAIL_REPORT`; round-trip test +
+      duplicate-id failure. *Done 2026-07-10: AdminDumpLoad trait (no default
+      bodies, ADR-011) + ExportSpec/DumpLoadFailReport catalog (spec-cited,
+      i_admin_dump_load.adoc); canonical-JSON archive with manifest +
+      greedy segmenting; lossless verbatim re-insert through the storage
+      codec; round-trip + duplicate-id tests green (ehrbase 226/226,
+      ehrbase-sm 9/9, rest 218/218). PORT NOTEs: native-API-only (no REST
+      wire), JSON-uncompressed-only this wave.*
+- [x] 2. SM-5 — Message service: `I_EHR_EXTRACT_SERVICE` (export whole-EHR +
+      spec-driven; import into fixed/existing EHR) over `vobject` + generated
+      `ehr_extract` types; import lands IMPORTED_VERSION storage, clone-EHR
+      with reused ehr_id, versioning Cases 2/3 (ch 1 reqs 13/31/35/50–53);
+      `I_TDD_SERVICE.import_tdd` (TDD → COMPOSITION over OPT/WebTemplate).
+      Decide version branching or keep the typed rejection PORT-NOTEd.
+      *Progress: export side done (db693b120); import side done 2026-07-10 —
+      IMPORTED_VERSION replay through commit_import (master06 Cases 2/3,
+      preserved 3-part identity + commit_audit, local import CONTRIBUTION
+      249, synthetic local sys_period chain, trunk-only branching rejection
+      F-06-09); 4 import integration tests. TDD seam landed (b96c0a3be):
+      TddService trait + envelope layer (namespace/template_id/EHR/OPT
+      resolution, 6 corpus-fixture tests, typed rejections). Remaining
+      sub-item (explicit, not an open deferral): the OPT-guided TDD body →
+      COMPOSITION converter (archie TemplateDataDocument equivalent).*
+      *Task 2 COMPLETE 2026-07-10: openehr_flat::from_tdd (WebTemplate-driven
+      walk, wrapper re-materialisation, FromXml-typed leaves; corpus pairs
+      persistent_minimal + nested convert, validate clean, and commit through
+      import_tdd/import_tdds); PARTY_REF type "ANY" accepted (BASE
+      party_ref.adoc abstract-supertype allowance + CNF __full fixtures,
+      PORT NOTEd). Version branching stays the PORT-NOTEd trunk-only typed
+      rejection (decided).*
+- [x] 3. SM-6 — Subject Proxy: subject/variable/data-set/binding stores,
+      `I_DATA_BINDING` with the openEHR frame = AQL over our Query service;
+      FHIR/HL7v2 frame seams stubbed. *Done 2026-07-10: SubjectProxyService
+      (15 SM calls) + DataBinding catalog traits (no default bodies), sp_*
+      config stores (migration 0010), openEHR frame = AQL through the
+      QueryService seam ($subject_id binding, RESULT_SET → OPENEHR_SAMPLE,
+      frame_path column selector PORT-NOTEd), FHIR/HL7v2 typed
+      NotImplemented; 4 testcontainer tests; sample history/currency
+      ordering + extension REST routes deferred to a later SM-6 wave
+      (PORT-NOTEd).* *Done 2026-07-10: `SubjectProxyService`
+      (15 SM calls) + `DataBinding.get_frame` catalog traits (no default
+      bodies, ADR-011) + the full information-structure hierarchy
+      (SUBJECT_VARIABLE/DATA_SET, SAMPLE/DATA_FRAME_SAMPLE/VARIABLE_SAMPLE,
+      VARIABLE_VALUE single/list/time-series, ENV_BINDING/DATA_FRAME,
+      spec-cited to master10 + UML classes). Migration
+      0010_subject_proxy_stores (sp_subject/sp_binding/sp_data_frame/
+      sp_variable/sp_data_set config tables, master10 §Persistence). EhrbaseService
+      impl: openEHR frame executes AQL through the existing QueryService seam
+      (execute_aql), $subject_id binding + UUID→EHR scoping; frame_path =
+      RESULT_SET column selector; FHIR/HL7v2 → typed NotImplemented. Native-API
+      only (no wire). 4 integration tests green (openEHR frame pull, app
+      data-set round-trip, FHIR stub rejection, preconditions+reset).
+      Gates: ehrbase-sm 9/9, ehrbase 245/245, ehrbase-rest 218/218. PORT NOTEs:
+      frame_path RESULT_SET-column semantics, currency/freshness + sp_sample
+      history deferred, register_application_data_set currency-tightening
+      deferred (nominal-duration ordering), subject-id resolution = $subject_id
+      + UUID scope (no MPI), extension routes/YAML ingestion a later wave.*
+- [x] 4. MSG ECC cases (`Area::Msg`, zero cases today) land with SM-5.
+      *Done 2026-07-10: ECC-MSG-001..010 (export/import/clone/TDD intents from
+      the CNF master13 TBD chapter mapped to SM operations), all honest
+      skip-with-reason NativeApiOnly citing the real testcontainer tests
+      (Messaging has no ITS-REST binding); Capability::Messaging reported
+      individually, deliberately outside the OPTIONS required set.*
+
+## Exit criteria
+
+- [x] Blueprint map rows 6 + 16 DONE (SM-5 export/import/TDD + SM-6 built); MSG area evidenced (ECC-MSG-001..010).
+- [x] Workspace suites green (ehrbase 245/245, sm 9/9, rest 218/218,
+      openehr-flat 116/116, conformance 35/35); phase-close ECC 2026-07-10:
+      329 executed · 293 passed · zero drift (10 new MSG skips).
+
+## Handoff for next session
+
+Phase opened from develop @ B2 merge (PR #37). Working discipline learned in
+B2: ONE cargo runner at a time (background parallelism caused every "stuck"
+lock wait); agents get isolated CARGO_TARGET_DIRs; ECC runs only via
+scripts/conformance.sh. Next action: task 1 — read
+docs/design/sm-platform/ (admin dump/load section) + SM master12, then
+implement export_ehrs/load_ehrs.

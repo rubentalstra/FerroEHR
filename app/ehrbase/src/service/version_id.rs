@@ -93,6 +93,37 @@ pub(super) fn parse_version_uid(raw: &str) -> Result<(Uuid, i32), VersionIdError
     Ok((object_id.value, version))
 }
 
+/// Parse a full `OBJECT_VERSION_ID` into all three storage components:
+/// (`vo_id` = the `object_id` UUID, `creating_system_id`, trunk `sys_version`).
+/// The EHR-Extract import path preserves the wrapped `ORIGINAL_VERSION`'s
+/// **complete** 3-part identity — object id, originating system, and trunk
+/// version — so the imported version keeps its source identity (RM common
+/// master06 §"Distributed Versioning": "if the version was imported,
+/// `creating_system_id` will already have been set to the identifier of the
+/// system of original creation"). Branch `version_tree_id`s are rejected
+/// (trunk-only, PORT NOTE F-06-09).
+pub(super) fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, i32), VersionIdError> {
+    let ovid = ObjectVersionId::from_str(raw).map_err(|source| VersionIdError::Malformed {
+        raw: raw.to_owned(),
+        source,
+    })?;
+    let Uid::Uuid(object_id) = ovid.object_id() else {
+        return Err(VersionIdError::NotAUuid(raw.to_owned()));
+    };
+    let tree = ovid.version_tree_id();
+    if tree.is_branch() {
+        return Err(VersionIdError::Branch(raw.to_owned()));
+    }
+    let version: i32 = tree
+        .trunk_version()
+        .parse()
+        .map_err(|_| VersionIdError::OutOfRange(raw.to_owned()))?;
+    // The strict `ObjectVersionId::from_str` above validated exactly three
+    // non-empty `::`-delimited parts, so the middle part is present.
+    let creating_system_id = raw.split("::").nth(1).unwrap_or_default().to_owned();
+    Ok((object_id.value, creating_system_id, version))
+}
+
 /// Decompose an already-parsed [`ObjectVersionId`] (the SM catalog's native
 /// version-id argument, ADR-011) into the storage key pair (`vo_id`, trunk
 /// version) — the ObjectVersionId-typed analogue of [`parse_version_uid`], used
@@ -175,6 +206,27 @@ mod tests {
         // Non-UUID object id.
         assert!(matches!(
             parse_version_uid("not-a-uuid::sys::1"),
+            Err(VersionIdError::NotAUuid(_))
+        ));
+    }
+
+    #[test]
+    fn object_version_id_preserves_all_three_parts() {
+        // The import path keeps the source's full 3-part identity.
+        let raw = format!("{VO}::sourceSystem.example.org::4");
+        let (vo_id, csid, version) = parse_object_version_id(&raw).unwrap();
+        assert_eq!(vo_id, Uuid::parse_str(VO).unwrap());
+        assert_eq!(csid, "sourceSystem.example.org");
+        assert_eq!(version, 4);
+
+        // Branch ids are rejected (trunk-only, F-06-09).
+        assert!(matches!(
+            parse_object_version_id(&format!("{VO}::sys::2.1.1")),
+            Err(VersionIdError::Branch(_))
+        ));
+        // Non-UUID object id.
+        assert!(matches!(
+            parse_object_version_id("not-a-uuid::sys::1"),
             Err(VersionIdError::NotAUuid(_))
         ));
     }

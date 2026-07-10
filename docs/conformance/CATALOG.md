@@ -374,3 +374,18 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-SIG-004 | Active | Version signing — client verbatim | passed |
 | ECC-SIG-005 | Active | Version signing — pgp verifies | skipped |
 
+## MSG — Messaging (10 cases, 10 active)
+
+| ECC id | Status | Title | Last run |
+|---|---|---|---|
+| ECC-MSG-001 | Active | EHR Extract — export whole EHR (export_ehrs) | skipped |
+| ECC-MSG-002 | Active | EHR Extract — spec-driven export (export_ehr_extracts) | skipped |
+| ECC-MSG-003 | Active | EHR Extract — export of unknown EHR fails | skipped |
+| ECC-MSG-004 | Active | EHR Extract — import whole-EHR clone reusing source id (import_ehr) | skipped |
+| ECC-MSG-005 | Active | EHR Extract — import whole EHR into a caller-fixed id (import_ehr) | skipped |
+| ECC-MSG-006 | Active | EHR Extract — import into a duplicate target id fails | skipped |
+| ECC-MSG-007 | Active | EHR Extract — import extract into an existing EHR (import_ehr_extract) | skipped |
+| ECC-MSG-008 | Active | TDD — import a TDD as a committed COMPOSITION (import_tdd) | skipped |
+| ECC-MSG-009 | Active | TDD — import rejects malformed / non-TDD / unknown EHR / unknown template | skipped |
+| ECC-MSG-010 | Active | TDD — batch import commits all, fail-fast on error (import_tdds) | skipped |
+
