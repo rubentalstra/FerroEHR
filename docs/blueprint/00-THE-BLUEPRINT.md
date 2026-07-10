@@ -148,7 +148,7 @@ zero drift elsewhere.**
 case; owned fixture register instituted; ADR-012 closed-archetype semantics;
 all 8 phase tasks done — remaining ECC failures are the B6 tails.*
 
-### B3 — SM-5 / SM-6 (the designed-but-unbuilt services)
+### B3 — SM-5 / SM-6 (the designed-but-unbuilt services) — **DONE** (2026-07-10, `docs/plans/b3-sm-services.md`)
 1. SM-4 wave 3 — Admin dump/load (`export_ehrs`/`load_ehrs`, `EXPORT_SPEC`,
    segmenting, `DUMP_LOAD_FAIL_REPORT`; round-trip test + duplicate-id failure).
 2. **SM-5 — Message service**: `I_EHR_EXTRACT_SERVICE` (export whole-EHR +
@@ -165,6 +165,13 @@ all 8 phase tasks done — remaining ECC failures are the B6 tails.*
    FHIR/HL7v2 frame seams stubbed.
 4. MSG ECC cases land with SM-5 (`Area::Msg` exists, zero cases today).
 **Exit: rows 6 and 16 of the map fully DONE; MSG area evidenced.**
+*Closed 2026-07-10: Admin dump/load; EhrExtractService export + import
+(IMPORTED_VERSION, master06 Cases 2/3, clone-EHR); the TDD → COMPOSITION
+converter (openehr_flat::from_tdd, corpus-verified); SM-6 Subject Proxy
+(I_SUBJECT_PROXY_SERVICE + I_DATA_BINDING, openEHR frame over AQL);
+ECC-MSG-001..010 (native-API-only, skip-with-reason). ECC 329 executed ·
+293 passed · zero drift. Remaining PORT-NOTEd: version branching
+(trunk-only), FHIR/HL7v2 frames, TDD constructs outside the corpus.*
 
 ### B4 — Terminology-server integration (+ its test harness)
 Design set: the terminology **client** is `docs/terminology-validation.md`; the

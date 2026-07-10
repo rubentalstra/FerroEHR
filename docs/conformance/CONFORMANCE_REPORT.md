@@ -8,9 +8,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-10T02:49:12.943719Z
+- Started: 2026-07-10T06:54:16.363431Z
 
-**319 case×format executions · 293 passed · 25 failed.**
+**329 case×format executions · 293 passed · 25 failed.**
 
 ### Per-area matrix
 
@@ -28,6 +28,7 @@
 | DEM — Demographic service | 24 | 18 | 6 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
 | SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
+| MSG — Messaging | 10 | 0 | 0 | 0 | 10 |
 
 ### Failures
 
@@ -65,8 +66,8 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 |---|---|
 | Profiles requested | all |
 | Data formats | json, xml |
-| Catalogue (active cases) | 311 |
-| Executed | 319 |
+| Catalogue (active cases) | 321 |
+| Executed | 329 |
 | Passed | 293 |
 | Failed | 25 |
 
@@ -393,6 +394,16 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-SIG-003 | Signing | json | 4/4 | PASS |
 | ECC-SIG-004 | Signing | json | 1/1 | PASS |
 | ECC-SIG-005 | Signing | json | 0/0 | skipped |
+| ECC-MSG-001 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-002 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-003 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-004 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-005 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-006 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-007 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-008 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-009 | Messaging | json | 0/0 | skipped |
+| ECC-MSG-010 | Messaging | json | 0/0 | skipped |
 
 ## 4. Profile verdict (machine-computed, all-or-nothing)
 
@@ -439,4 +450,14 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 
 | Reason | Cases |
 |---|--:|
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehr_extracts is exercised by app/ehrbase/tests/service_extract.rs::export_ehr_extracts_honours_item_list_and_all_versions — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs (unknown EHR) is exercised by app/ehrbase/tests/service_extract.rs::export_ehrs_unknown_ehr_is_ehr_id_does_not_exist — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs is exercised by app/ehrbase/tests/service_extract.rs::export_ehrs_carries_every_versioned_object_latest_only — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (duplicate id) is exercised by app/ehrbase/tests/service_import.rs::import_ehr_duplicate_target_is_rejected — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (fixed id) is exercised by app/ehrbase/tests/service_import.rs::import_ehr_into_fixed_fresh_id — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr is exercised by app/ehrbase/tests/service_import.rs::import_ehr_clone_into_fresh_target_reuses_source_id — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr_extract is exercised by app/ehrbase/tests/service_import.rs::import_ehr_extract_adds_a_versioned_object_and_rejects_re_import — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_TDD_SERVICE.import_tdd (typed rejections) is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_rejects_malformed_payload, tdd_import_rejects_non_tdd_xml, tdd_import_rejects_unknown_ehr, tdd_import_rejects_unknown_template} — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_TDD_SERVICE.import_tdd is exercised by app/ehrbase/tests/service_tdd.rs::tdd_import_commits_composition — Messaging has no ITS-REST binding | 1 |
+| NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — digest cases prove the capability | 1 |
