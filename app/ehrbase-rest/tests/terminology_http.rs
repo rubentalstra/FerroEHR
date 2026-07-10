@@ -156,6 +156,7 @@ fn config(terminology_enabled: bool) -> RestConfig {
             enabled: terminology_enabled,
         },
         event_subscription: EventSubscriptionConfig::default(),
+        tenancy: ehrbase_rest::TenancyConfig::default(),
     }
 }
 

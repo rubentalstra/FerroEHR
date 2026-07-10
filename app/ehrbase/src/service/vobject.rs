@@ -19,7 +19,10 @@ use super::versioned::build_original_version;
 /// Signature"; `docs/design/version-signing.md` §3.3). Borrows the service's
 /// system id and configured [`Signer`].
 pub(super) struct SigningCtx<'a> {
-    pub(super) system_id: &'a str,
+    /// The effective openEHR `system_id` for this write — the current tenant's
+    /// own id when tenancy is on (ADR-015 §1), else the service default. Owned
+    /// because it may come from the per-request tenant context, not `&self`.
+    pub(super) system_id: String,
     pub(super) signer: &'a Signer,
 }
 
@@ -529,7 +532,7 @@ fn sign_version(
         return Ok(None);
     }
     let ov = build_original_version(
-        ctx.system_id,
+        &ctx.system_id,
         vo_id,
         sys_version,
         contribution_id,
@@ -601,7 +604,7 @@ async fn apply_change(
                 ehr_id,
                 1,
                 &lifecycle,
-                ctx.system_id,
+                &ctx.system_id,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -614,7 +617,7 @@ async fn apply_change(
                 vo_id,
                 1,
                 contribution_id,
-                ctx.system_id,
+                &ctx.system_id,
                 committer_fallback,
                 time_committed,
                 &attestations,
@@ -668,7 +671,7 @@ async fn apply_change(
                 ehr_id,
                 next,
                 &lifecycle,
-                ctx.system_id,
+                &ctx.system_id,
                 contribution_id,
                 audit_id,
                 template_id.as_deref(),
@@ -681,7 +684,7 @@ async fn apply_change(
                 vo_id,
                 next,
                 contribution_id,
-                ctx.system_id,
+                &ctx.system_id,
                 committer_fallback,
                 time_committed,
                 &attestations,
@@ -726,7 +729,7 @@ async fn apply_change(
                 ehr_id,
                 next,
                 lifecycle::DELETED,
-                ctx.system_id,
+                &ctx.system_id,
                 contribution_id,
                 audit_id,
                 None,
@@ -1149,7 +1152,7 @@ pub(super) async fn commit_contribution(
     for attest_item in attests {
         let full = super::contribution::complete_attestation(
             &attest_item.partial,
-            ctx.system_id,
+            &ctx.system_id,
             committer_fallback,
             contribution_time,
         )?;

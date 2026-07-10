@@ -14,6 +14,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::error::SmError;
+use crate::tenant::TenantContext;
 use crate::types::{ResourceMeta, ServiceResponse};
 
 /// Current-version metadata for the `409`/`412` `ETag`/`Location` decoration.
@@ -197,6 +198,48 @@ pub trait EventSubscriptionAdapter: Send + Sync {
     /// `DELETE …/admin/event_subscription/{id}` — remove the subscription;
     /// `versioned_object_does_not_exist` (`404`) if unknown.
     async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError>;
+}
+
+/// **Tenant** admin extension — CRUD over the tenant registry, plus the
+/// claim/header → context resolution the middleware needs (ADR-015 §5).
+///
+/// PORT NOTE: not an SM interface call. The tenancy model is spec-silent
+/// (ADR-015 fills it), so — like [`EventSubscriptionAdapter`] — there is no
+/// `I_*` interface to transcribe; the CRUD is a config-gated `/admin/tenant`
+/// extension in `ehrbase-rest`, bodies are `serde_json::Value` (a tenant is a
+/// small `{name, system_id}` record). [`Self::tenant_resolve`] is the
+/// middleware seam, not a wire route: it maps a JWT-claim / header value (a
+/// tenant name or uuid) to the [`TenantContext`] that scopes the request. No
+/// default bodies — the platform component implements every method (ADR-011).
+#[async_trait]
+pub trait TenantAdapter: Send + Sync {
+    /// `GET …/admin/tenant` — every tenant as a JSON record
+    /// (`{id, name, system_id, created_at}`).
+    async fn tenant_list(&self) -> Result<Vec<Value>, SmError>;
+
+    /// `POST …/admin/tenant` — create a tenant from the JSON body (`name` +
+    /// `system_id` required). Returns the stored record (with its generated
+    /// `id`) for the `201` body. A malformed body is a `precondition_violation`
+    /// (`400`); a duplicate name is a `409`.
+    async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError>;
+
+    /// `GET …/admin/tenant/{id}` — the stored tenant; `404` if unknown.
+    async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError>;
+
+    /// `PUT …/admin/tenant/{id}` — update the tenant's `name`/`system_id` from
+    /// the JSON body, returning the updated record; `404` if unknown.
+    async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError>;
+
+    /// `DELETE …/admin/tenant/{id}` — remove the tenant; `404` if unknown.
+    /// Deletion is refused (`409`) unless the tenant owns no rows and is not the
+    /// reserved default tenant (ADR-015 §5 — physical purge of a non-empty
+    /// tenant goes through the per-EHR admin delete machinery first).
+    async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError>;
+
+    /// Resolve a claim/header value (a tenant name or uuid string) to its
+    /// [`TenantContext`], or `None` if unknown. The tenant-resolution middleware
+    /// calls this once per request; it is not exposed as a wire route.
+    async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError>;
 }
 
 /// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire

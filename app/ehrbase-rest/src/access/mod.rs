@@ -34,6 +34,7 @@
 
 pub mod authn;
 pub mod authz;
+pub mod tenant;
 
 // The authn surface (identity + the request-scoped principal). The middleware
 // + `AuthLayer` are `pub(crate)` and installed by the router via `authn::`

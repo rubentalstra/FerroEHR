@@ -82,7 +82,7 @@ impl EhrbaseService {
             }
         };
         let ctx = SqlCtx {
-            system_id: self.system_id.clone(),
+            system_id: self.effective_system_id(),
             ehr_id,
             subject_scope: request.subject_scope.clone(),
             limit,
