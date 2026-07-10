@@ -8,9 +8,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-10T06:54:16.363431Z
+- Started: 2026-07-10T08:44:26.39774Z
 
-**329 case×format executions · 293 passed · 25 failed.**
+**338 case×format executions · 298 passed · 25 failed.**
 
 ### Per-area matrix
 
@@ -29,6 +29,7 @@
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 |
 | SIG — Version signing | 5 | 4 | 1 | 0 | 1 |
 | MSG — Messaging | 10 | 0 | 0 | 0 | 10 |
+| TS — Terminology-server integration | 9 | 5 | 0 | 0 | 4 |
 
 ### Failures
 
@@ -66,9 +67,9 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 |---|---|
 | Profiles requested | all |
 | Data formats | json, xml |
-| Catalogue (active cases) | 321 |
-| Executed | 329 |
-| Passed | 293 |
+| Catalogue (active cases) | 330 |
+| Executed | 338 |
+| Passed | 298 |
 | Failed | 25 |
 
 ## 3. Detailed test report
@@ -404,6 +405,15 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | ECC-MSG-008 | Messaging | json | 0/0 | skipped |
 | ECC-MSG-009 | Messaging | json | 0/0 | skipped |
 | ECC-MSG-010 | Messaging | json | 0/0 | skipped |
+| ECC-TS-001 | Terminology | json | 1/1 | PASS |
+| ECC-TS-002 | Terminology | json | 2/2 | PASS |
+| ECC-TS-003 | Terminology | json | 1/1 | PASS |
+| ECC-TS-004 | Terminology | json | 1/1 | PASS |
+| ECC-TS-005 | Terminology | json | 1/1 | PASS |
+| ECC-TS-006 | Terminology | json | 0/0 | skipped |
+| ECC-TS-007 | Terminology | json | 0/0 | skipped |
+| ECC-TS-008 | Terminology | json | 0/0 | skipped |
+| ECC-TS-009 | Terminology | json | 0/0 | skipped |
 
 ## 4. Profile verdict (machine-computed, all-or-nothing)
 
@@ -460,4 +470,22 @@ Each failure must become a finding (`F-AA-NN`) before/with the fix — never an 
 | NativeApiOnly: I_TDD_SERVICE.import_tdd (typed rejections) is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_rejects_malformed_payload, tdd_import_rejects_non_tdd_xml, tdd_import_rejects_unknown_ehr, tdd_import_rejects_unknown_template} — Messaging has no ITS-REST binding | 1 |
 | NativeApiOnly: I_TDD_SERVICE.import_tdd is exercised by app/ehrbase/tests/service_tdd.rs::tdd_import_commits_composition — Messaging has no ITS-REST binding | 1 |
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:57453 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — digest cases prove the capability | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:57453 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+
+## 6. Terminology server (TS area)
+
+- Server: `http://127.0.0.1:57453`
+- Mode: fixture
+
+Recorded FHIR-tx exchange (4 request(s)):
+
+| # | Method | Path | Query |
+|--:|---|---|---|
+| 1 | GET | `/ValueSet/$expand` | url=http%3A%2F%2Fhl7.org%2Ffhir%2FValueSet%2Fsurface |
+| 2 | GET | `/ValueSet/$validate-code` | url=http%3A%2F%2Fhl7.org%2Ffhir%2FValueSet%2Fsurface&code=B |
+| 3 | GET | `/CodeSystem/$lookup` | code=B |
+| 4 | GET | `/CodeSystem/$subsumes` | codeA=L&codeB=O |

@@ -389,3 +389,17 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-MSG-009 | Active | TDD — import rejects malformed / non-TDD / unknown EHR / unknown template | skipped |
 | ECC-MSG-010 | Active | TDD — batch import commits all, fail-fast on error (import_tdds) | skipped |
 
+## TS — Terminology-server integration (9 cases, 9 active)
+
+| ECC id | Status | Title | Last run |
+|---|---|---|---|
+| ECC-TS-001 | Active | TERMINOLOGY expand (bundle) — accepted, well-formed RESULT_SET | passed |
+| ECC-TS-002 | Active | TERMINOLOGY expand (bundle) — expansion constrains matches to the value set's codes | passed |
+| ECC-TS-003 | Active | TERMINOLOGY expand (bundle) — explicit code merged with the expansion (matches list) | passed |
+| ECC-TS-004 | Active | TERMINOLOGY expand — unknown value set rejected (400) | passed |
+| ECC-TS-005 | Active | TERMINOLOGY expand — unknown service_api rejected (400) | passed |
+| ECC-TS-006 | Active | TERMINOLOGY expand (FHIR service_api) — accepted when a provider is configured | skipped |
+| ECC-TS-007 | Active | TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500) | skipped |
+| ECC-TS-008 | Active | TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500) | skipped |
+| ECC-TS-009 | Active | TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500) | skipped |
+
