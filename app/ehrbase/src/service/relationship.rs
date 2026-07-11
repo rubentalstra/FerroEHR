@@ -57,6 +57,21 @@ fn typed_check(data: &Value) -> Result<(), ServiceError> {
                 "PARTY_RELATIONSHIP requires a {field} PARTY_REF"
             )));
         }
+        // The refs denote the Version CONTAINER of a Party — an OBJECT_REF
+        // carrying a HIER_OBJECT_ID (the continuant), never an
+        // OBJECT_VERSION_ID (one particular version) — RM demographic
+        // master02 §Modelling of Parties and Relationships.
+        if let Some(id_type) = data
+            .pointer(&format!("/{field}/id/_type"))
+            .and_then(Value::as_str)
+            && id_type == "OBJECT_VERSION_ID"
+        {
+            return Err(ServiceError::Unprocessable(format!(
+                "PARTY_RELATIONSHIP.{field}.id must identify the party's version \
+                 container (HIER_OBJECT_ID), not one version (OBJECT_VERSION_ID) \
+                 — RM demographic master02"
+            )));
+        }
     }
     Ok(())
 }

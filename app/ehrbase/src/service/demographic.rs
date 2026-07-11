@@ -72,6 +72,46 @@ fn typed_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
             "{rm_type} violates PARTY invariant Identities_valid: identities must be non-empty"
         )));
     }
+    // "Present implies non-empty" list invariants — only checkable on the raw
+    // JSON (post-deserialize an absent and a present-empty list are the same
+    // Vec): PARTY.Contacts_valid + Relationships_validity (party.adoc),
+    // ACTOR.Roles_valid (actor.adoc), ROLE.Capabilities_valid (role.adoc).
+    for (attr, invariant) in [
+        ("contacts", "Contacts_valid"),
+        ("relationships", "Relationships_validity"),
+        ("roles", "Roles_valid"),
+        ("capabilities", "Capabilities_valid"),
+    ] {
+        if data
+            .get(attr)
+            .and_then(Value::as_array)
+            .is_some_and(|a| a.is_empty())
+        {
+            return Err(ServiceError::Unprocessable(format!(
+                "{rm_type}.{attr} is present but empty — a present list must be \
+                 non-empty ({invariant})"
+            )));
+        }
+    }
+    // Relationships_validity, second arm (party.adoc): every inline
+    // relationship's `source` must reference THIS party. The party's identity
+    // is its `uid` (copied from the version container); when the body carries
+    // one, an inline relationship pointing at another source is invalid.
+    if let (Some(uid), Some(relationships)) = (
+        data.pointer("/uid/value").and_then(Value::as_str),
+        data.get("relationships").and_then(Value::as_array),
+    ) {
+        for (i, rel) in relationships.iter().enumerate() {
+            let source = rel.pointer("/source/id/value").and_then(Value::as_str);
+            if source.is_some_and(|s| !s.eq_ignore_ascii_case(uid)) {
+                return Err(ServiceError::Unprocessable(format!(
+                    "{rm_type}.relationships[{i}].source must reference this party \
+                     (uid {uid}) — relationships are stored under their source \
+                     (PARTY.Relationships_validity)"
+                )));
+            }
+        }
+    }
     Ok(())
 }
 
@@ -414,7 +454,7 @@ impl EhrbaseService {
             .to_jiff();
 
         let version_rows = sqlx::query(
-            "SELECT vo_id, sys_version, creating_system_id, kind FROM vo_version \
+            "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, kind FROM vo_version \
              WHERE contribution_id = $1 ORDER BY vo_id",
         )
         .bind(contribution_id)

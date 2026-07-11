@@ -121,8 +121,10 @@ fn role(name: &str) -> Value {
             "namespace": "demographic",
             "type": "PERSON",
             "id": { "_type": "HIER_OBJECT_ID", "value": "cccccccc-cccc-4ccc-8ccc-cccccccccccc" }
-        },
-        "capabilities": []
+        }
+        // No `capabilities`: a PRESENT list must be non-empty
+        // (ROLE.Capabilities_valid, role.adoc) — absence is the valid way to
+        // carry "no capabilities".
     })
 }
 
