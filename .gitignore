@@ -39,3 +39,4 @@ lcov.info
 /website/book/book
 /docs-dist
 /.latest-src
+_check/
