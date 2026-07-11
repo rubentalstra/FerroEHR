@@ -46,7 +46,7 @@ persisted the moment they exist; commits after each phase.
         [x] 14 am-aom2-adl2 · [x] 15 term · [x] 16 query-aql ·
         [x] 17 sm-platform · [x] 18 sm-tdd · [x] 19 its-rest-general ·
         [x] 20 its-rest-ehr-composition ·
-        [x] 21 its-rest-query-definition-admin · [ ] 22 its-json ·
+        [x] 21 its-rest-query-definition-admin · [x] 22 its-json ·
         [ ] 23 its-xml · [ ] 24 cnf-cross-check
 - [ ] FINDINGS.md — consolidated register maintained as chapters close
       (confirmed defects + fix status + uncertain findings with probes)
