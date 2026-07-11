@@ -1254,3 +1254,52 @@ fn non_root_node_with_archetype_details_rejected() {
         );
     }
 }
+
+// ── "present implies non-empty" list invariants (A1 rm-composition) ──────────────
+
+/// `COMPOSITION.Content_valid` / `SECTION.Items_valid` /
+/// `INSTRUCTION.Activities_valid` etc.: a PRESENT empty list violates the
+/// invariant; an absent list does not (`composition.adoc` §Invariants and
+/// siblings).
+#[test]
+fn present_empty_lists_are_rejected() {
+    let base = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.x.v1",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    // Absent content: no Content_valid violation.
+    assert!(
+        !validate_rm_and_terminology(&base)
+            .iter()
+            .any(|m| m.message.contains("Content_valid")),
+        "absent content must not violate Content_valid"
+    );
+    // Present-empty content: violation.
+    let mut empty = base.clone();
+    empty
+        .as_object_mut()
+        .unwrap()
+        .insert("content".into(), json!([]));
+    let msgs = validate_rm_and_terminology(&empty);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Invariant
+            && m.message.contains("Content_valid")),
+        "present-empty content must violate Content_valid, got {msgs:?}"
+    );
+    // A nested SECTION with empty items: Items_valid violation at its path.
+    let mut nested = base;
+    nested.as_object_mut().unwrap().insert(
+        "content".into(),
+        json!([{
+            "_type": "SECTION", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "s"},
+            "items": []
+        }]),
+    );
+    let msgs = validate_rm_and_terminology(&nested);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("Items_valid") && m.path.contains("content")),
+        "present-empty SECTION.items must violate Items_valid, got {msgs:?}"
+    );
+}

@@ -234,6 +234,7 @@ impl Validator {
             }
         }
         self.check_archetyped_valid(obj, path);
+        self.check_nonempty_lists(obj, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -285,6 +286,76 @@ impl Validator {
                 ),
                 ValidationKind::Invariant,
             );
+        }
+    }
+
+    /// The RM's "present implies non-empty" list invariants, checkable only at
+    /// the JSON level (after typed deserialize an absent list and a
+    /// present-empty list are both an empty `Vec`):
+    ///
+    /// - `COMPOSITION.Content_valid`: `content /= Void implies not
+    ///   content.is_empty` (`composition.adoc`);
+    /// - `EVENT_CONTEXT.Participations_validity` (`event_context.adoc`);
+    /// - `SECTION.Items_valid` (`section.adoc`);
+    /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
+    ///   ENTRY subtype);
+    /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
+    fn check_nonempty_lists(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        const RULES: &[(&str, &str, &str)] = &[
+            ("COMPOSITION", "content", "Content_valid"),
+            ("EVENT_CONTEXT", "participations", "Participations_validity"),
+            ("SECTION", "items", "Items_valid"),
+            (
+                "OBSERVATION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "EVALUATION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "INSTRUCTION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "ACTION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "ADMIN_ENTRY",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "GENERIC_ENTRY",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            ("INSTRUCTION", "activities", "Activities_valid"),
+        ];
+        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+            return;
+        };
+        for (rule_ty, attr, invariant) in RULES {
+            if *rule_ty == ty
+                && obj
+                    .get(*attr)
+                    .and_then(Value::as_array)
+                    .is_some_and(Vec::is_empty)
+            {
+                self.push(
+                    norm_path(path),
+                    format!(
+                        "{ty}.{attr} is present but empty — a present list must be \
+                         non-empty ({ty}.{invariant})"
+                    ),
+                    ValidationKind::Invariant,
+                );
+            }
         }
     }
 

@@ -208,8 +208,8 @@ async fn temporal_versioning_model_behaves() {
 
     // an overlapping period is impossible at the database
     let overlap = sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(now(), NULL), contribution_id, audit_id, creating_system_id
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(now(), NULL), contribution_id, audit_id, creating_system_id
          FROM vo_version WHERE vo_id = $1",
     )
     .bind(vo)
@@ -228,8 +228,8 @@ async fn temporal_versioning_model_behaves() {
     .await
     .expect("close v1");
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
-         SELECT $1, 'COMPOSITION', $2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id, creating_system_id
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
+         SELECT $1, 'COMPOSITION', $2, 2, 2, tstzrange(upper(sys_period), NULL), contribution_id, audit_id, creating_system_id
          FROM vo_version WHERE vo_id = $1 AND sys_version = 1",
     )
     .bind(vo)
@@ -509,8 +509,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .expect("contribution row");
     // creating_system_id is NOT NULL (ADR-013 §8 — no '' sentinel).
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
-         VALUES ($1, 'COMPOSITION', $2, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
+         VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
     )
     .bind(vo)
     .bind(ehr_id)
@@ -526,8 +526,8 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     // produce.
     let status_vo = Uuid::now_v7();
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id)
-         VALUES ($1, 'EHR_STATUS', $2, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
+         VALUES ($1, 'EHR_STATUS', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",
     )
     .bind(status_vo)
     .bind(ehr_id)

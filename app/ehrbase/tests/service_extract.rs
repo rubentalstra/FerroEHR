@@ -120,7 +120,7 @@ async fn seed_ehr(svc: &EhrbaseService) -> (Uuid, String) {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),

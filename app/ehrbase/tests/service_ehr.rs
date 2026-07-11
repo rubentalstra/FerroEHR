@@ -403,7 +403,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     );
 
     // ── DIRECTORY (FOLDER) create/get/update/delete ──────────────────────────
-    let folder = json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } });
+    let folder = json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } });
     let dir_ovid = svc
         .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
         .await
@@ -452,7 +452,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .unwrap()
         .parse::<uuid::Uuid>()
         .expect("vo uuid");
-    let folder = json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } });
+    let folder = json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } });
     let dir_ovid = svc
         .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
         .await

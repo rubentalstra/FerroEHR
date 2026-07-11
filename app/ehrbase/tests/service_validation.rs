@@ -323,9 +323,14 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 
     // A composition missing its mandatory sections (content emptied): under the
     // IPS template each SECTION has occurrences min >= 1, so this is a pure
-    // lower-bound (Required/Occurrences) violation with no wrongness.
+    // lower-bound (Required/Occurrences) violation with no wrongness. Missing
+    // content is represented as ABSENT (Void) — a present-empty `content: []`
+    // violates COMPOSITION.Content_valid (`content /= Void implies not
+    // content.is_empty`, composition.adoc), an RM invariant that stays at full
+    // strictness even under 553 ("data may be missing, but it may not be
+    // wrong", RM common master06 §Incomplete Content).
     let mut missing = composition("ips_canonical.json");
-    missing["content"] = json!([]);
+    missing.as_object_mut().unwrap().remove("content");
 
     // Committed as `532|complete|` (the direct create path is always complete),
     // the missing-section lower bound is enforced → 422.
