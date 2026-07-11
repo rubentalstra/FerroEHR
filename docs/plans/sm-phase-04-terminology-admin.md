@@ -2,8 +2,8 @@
 
 - Status: in-progress
 - Started: 2026-07-09
-- Consumes: ADR-010; design `docs/design/sm-platform/` (04 digest §3–4, 07
-  §1.6/1.10, 08 §4.2/4.5, 09 §SM-4)
+- Consumes: ADR-010/ADR-011; the vendored SM spec at
+  `docs/specs/openehr/SM/docs/UML/classes/` (the oracle)
 - Compile required: yes
 
 ## Spec oracle (read per task — hard rule)
@@ -102,9 +102,9 @@ SM-3 merged (PR #33, develop 327dcb7b7). Branch
 Owner ruling: the SM specs are the shape — internal behaviour preservation
 is not a constraint (greenfield; everything may break EXCEPT the ITS-REST
 wire, which is what a protocol adapter is — ECC zero-drift 211/318 stays
-the gate). Spec sources: the digests `docs/design/sm-platform/01..04` carry
-every interface's verbatim call set with citations; the `.adoc` files under
-`docs/specs/openehr/SM/docs/UML/classes/` are the oracle.
+the gate). Spec sources: the `.adoc` files under
+`docs/specs/openehr/SM/docs/UML/classes/` are the oracle (each interface's
+verbatim call set with citations).
 
 - [ ] `ehrbase-sm` rebuilt as the transcribed SM catalog: exact call names/
       params/returns per interface; `SmError` over `CallStatusType`
