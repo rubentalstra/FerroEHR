@@ -44,3 +44,14 @@ website/book/theme/mermaid-init.js linguist-vendored
 website/api/spec/**    linguist-generated=true
 deploy/helm/golden/**  linguist-generated=true
 docs/conformance/**    linguist-generated=true
+
+# Only the product code counts toward the language bar: helper scripts, docs
+# website assets, packaging, hooks, and migrations are support material.
+website/**   linguist-documentation
+scripts/**   linguist-detectable=false
+docker/**    linguist-detectable=false
+deploy/**    linguist-detectable=false
+.githooks/** linguist-detectable=false
+.claude/**   linguist-detectable=false
+Dockerfile*  linguist-detectable=false
+app/ehrbase/migrations/** linguist-detectable=false
