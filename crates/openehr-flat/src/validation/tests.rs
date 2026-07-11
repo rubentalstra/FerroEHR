@@ -1112,7 +1112,7 @@ fn ordinal_node(rm: &str, scale: bool) -> WebTemplateNode {
     n
 }
 
-fn ordinal_value(rm: &str, v: Value, code: &str) -> Value {
+fn ordinal_value(rm: &str, v: &Value, code: &str) -> Value {
     json!({"_type": rm, "value": v, "symbol": {"_type": "DV_CODED_TEXT",
         "value": "s", "defining_code": {"_type": "CODE_PHRASE",
         "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"}, "code_string": code}}})
@@ -1121,10 +1121,10 @@ fn ordinal_value(rm: &str, v: Value, code: &str) -> Value {
 #[test]
 fn ordinal_pair_must_match() {
     let n = ordinal_node("DV_ORDINAL", false);
-    assert!(walk_only(&ordinal_value("DV_ORDINAL", json!(0), "at0014"), &n).is_empty());
+    assert!(walk_only(&ordinal_value("DV_ORDINAL", &json!(0), "at0014"), &n).is_empty());
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_ORDINAL", json!(1), "at0014"),
+            &ordinal_value("DV_ORDINAL", &json!(1), "at0014"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1132,7 +1132,7 @@ fn ordinal_pair_must_match() {
     );
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_ORDINAL", json!(0), "at0666"),
+            &ordinal_value("DV_ORDINAL", &json!(0), "at0666"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1143,10 +1143,10 @@ fn ordinal_pair_must_match() {
 #[test]
 fn scale_pair_must_match() {
     let n = ordinal_node("DV_SCALE", true);
-    assert!(walk_only(&ordinal_value("DV_SCALE", json!(0.0), "at0014"), &n).is_empty());
+    assert!(walk_only(&ordinal_value("DV_SCALE", &json!(0.0), "at0014"), &n).is_empty());
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_SCALE", json!(1.0), "at0014"),
+            &ordinal_value("DV_SCALE", &json!(1.0), "at0014"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1208,7 +1208,7 @@ fn timezone_validity_mandatory_and_disallowed() {
 // ── LOCATABLE.Archetyped_valid (A1 rm-common-change-control-R46) ─────────────────
 
 /// A non-root node — `archetype_node_id` an `at`/`id` term code — must not
-/// carry `archetype_details` (`locatable.adoc` §Archetyped_valid); an
+/// carry `archetype_details` (`locatable.adoc` §`Archetyped_valid`); an
 /// archetype-HRID node carrying them, and a nested archetype root *without*
 /// them (the CNF-corpus-sanctioned shape), both stay valid.
 #[test]
@@ -1307,8 +1307,8 @@ fn present_empty_lists_are_rejected() {
 // ── data-structure shape duties (A1 rm-data-structures) ─────────────────────────
 
 /// `CLUSTER.items` is 1..1 (`cluster.adoc`; the ITS-JSON CLUSTER schema
-/// requires it) and one HISTORY's events must all carry the same
-/// `ITEM_STRUCTURE` subtype in `data` (RM data_structures master06 §History).
+/// requires it) and one `HISTORY`'s events must all carry the same
+/// `ITEM_STRUCTURE` subtype in `data` (RM `data_structures` master06 §History).
 #[test]
 fn data_structure_shapes_are_enforced() {
     // CLUSTER without items → violation.
