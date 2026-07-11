@@ -1,6 +1,6 @@
 # E4 — DV_MULTIMEDIA externalization (S3-compatible; SeaweedFS dev/test)
 
-- Status: in-progress
+- Status: done (2026-07-11)
 - Started: 2026-07-11   Owner: Ruben
 - Governing design: docs/enterprise/product-roadmap.md §2.4 (owner-confirmed
   incl. SeaweedFS for dev/test/compose) → ADR-017; spec basis RM
@@ -33,5 +33,5 @@
 
 ## Exit criteria
 
-- [ ] ADR-017 accepted; SeaweedFS e2e green; default-mode ECC zero drift;
-      scorecard flipped.
+- [x] ADR-017 accepted; SeaweedFS e2e 7/7; default-mode ECC 341/315/0 zero
+      drift; scorecard flipped.
