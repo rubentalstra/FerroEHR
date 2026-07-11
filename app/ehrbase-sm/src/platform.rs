@@ -18,8 +18,9 @@ use crate::services::{
     AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
     DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
     EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
-    EventSubscriptionAdapter, ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog,
-    TenantAdapter, TerminologyService, VersionMetaAdapter, WebTemplateService,
+    EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter, PartyRelationshipService,
+    QueryService, SystemLog, TenantAdapter, TerminologyService, VersionMetaAdapter,
+    WebTemplateService,
 };
 
 /// The full server platform: everything the ITS-REST surface dispatches to.
@@ -32,6 +33,7 @@ pub trait Platform:
     + EhrContributionService
     + ContributionAdapter
     + EventSubscriptionAdapter
+    + FhirConnectorAdapter
     + TenantAdapter
     + VersionMetaAdapter
     + ItemTagAdapter
@@ -63,6 +65,7 @@ impl<T> Platform for T where
         + EhrContributionService
         + ContributionAdapter
         + EventSubscriptionAdapter
+        + FhirConnectorAdapter
         + TenantAdapter
         + VersionMetaAdapter
         + ItemTagAdapter
