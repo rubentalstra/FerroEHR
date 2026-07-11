@@ -1,0 +1,971 @@
+openapi: 3.0.3
+info:
+  title: Overview
+  version: latest
+  x-status: STABLE
+  x-spec: overview
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    <table>
+        <colgroup>
+            <col style="width: 20%;">
+            <col style="width: 80%;">
+        </colgroup>
+        <thead>
+        <tr>
+            <th colspan="2">© 2018 - 2025 The openEHR Foundation</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td colspan="2">
+                The <a href="https://www.openEHR.org" target="_blank" rel="noopener">openEHR Foundation</a> is an independent, non-profit foundation, facilitating the sharing of health records by consumers and clinicians via open specifications, clinical models and open platform implementations.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Licence</strong></td>
+            <td><span class="image"><img src="https://specifications.openehr.org/images/cc-by-nd-88x31.png" alt="image"></span> Creative Commons Attribution-NoDerivs 3.0 Unported.
+                <a href="https://creativecommons.org/licenses/by-nd/3.0/" class="bare">https://creativecommons.org/licenses/by-nd/3.0/</a>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Support</strong></td>
+            <td>Issues: <a href="https://specifications.openehr.org/components/ITS/open_issues" target="_blank" rel="noopener">Problem Reports</a><br>
+                Web: <a href="https://specifications.openehr.org" target="_blank" rel="noopener">specifications.openEHR.org</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+servers: []
+security: []
+tags:
+  - name: Acknowledgements
+    description: |+
+      [comment]: # (title: Acknowledgements)
+
+      ### Editor
+      - Sebastian Iancu, Architect, Code24, Netherlands
+
+      ### Contributors
+      This specification benefited from wide formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following people for their contributions.
+      - Alex Vidrean, vitagroup, Germany
+      - Birger Haarbrandt, PhD, vitagroup, Germany
+      - Bjørn Næss, DIPS, Norway
+      - Bostjan Lah, CTO, Better, Slovenia
+      - Erik Sundvall, Information Architect at Karolinska University Hospital, Sweden
+      - Heath Frankel, Ocean Informatics, Australia
+      - Ian McNicoll MD, FreshEHR, UK
+      - Jake Smolka, Software Engineer, Better, Slovenia
+      - Matija Polajnar, Tech Lead, Better, Slovenia
+      - Pablo Pazos Gutierrez, Senior engineer, CaboLabs, Uruguay
+      - Rong Chen MD, PhD, Cambio Healthcare Systems, Sweden
+      - Sebastian Iancu, Architect, Code24, Netherlands
+      - Seref Arikan, MEcon, Ocean Informatics UK, Centre for Health Informatics and Multi-professional Education (CHIME) UK
+      - Severin Kohler, Berlin Institute of Health (BIH) at Charite, Germany
+      - Thomas Beale, Ars Semantica UK, openEHR Foundation Management Board
+
+      ### Trademarks
+      - 'openEHR' is a trademark of the [openEHR Foundation](https://www.openEHR.org)
+      - 'OpenAPI' is a trademark of the [The Linux Foundation](https://www.linuxfoundation.org)
+
+  - name: Preface
+    description: |+
+      [comment]: # (title: Preface)
+
+      ### Purpose
+
+      This specification describes service endpoints, resources and operations as well as details of requests and responses that interact with an openEHR API in a RESTful manner.
+
+      ### Related Documents
+
+      Prerequisite documents for reading this document include:
+
+      - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+
+      Related documents include:
+
+      - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+      - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+      - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+      ### Status
+
+      This specification is in the `STABLE` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/overview-validation.openapi.yaml), or [for code generators](computable/OAS/overview-codegen.openapi.yaml).
+      Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+      The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/overview.html>.
+
+
+      ## Feedback
+
+      Feedback may be provided on the [Implementation Technology Specifications forum](https://discourse.openehr.org/c/specifications/its/41).
+
+      Issues may be raised on the [specifications Problem Report tracker](https://openehr.atlassian.net/browse/SPECPR).
+
+      To see changes made due to previously reported issues, see the [ITS component Change Request tracker](https://specifications.openehr.org/components/ITS/history).
+
+      ## Conformance
+
+      tbd.
+
+      ## Requirements
+
+      The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL"
+      in this document are to be interpreted as described in [BCP 14](https://tools.ietf.org/html/bcp14) [[RFC 2119](https://tools.ietf.org/html/rfc2119)],
+      [[RFC 8174](https://tools.ietf.org/html/rfc8174)] when, and only when, they appear in all capitals, as shown here.
+
+  - name: Glossary_and_conventions
+    x-displayName: Glossary and conventions
+    description: |
+      [comment]: # (title: Glossary and conventions)
+
+      Throughout this specification, a set of short terms is being used as described below:
+
+      | <div style="width:180px">Term</div> | Description                                                                                                                                                                                                                                        |
+      |-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+      | API                                 | Application Programming Interface                                                                                                                                                                                                                  |
+      | REST                                | [Representational state transfer](https://en.wikipedia.org/wiki/Representational_state_transfer), a type of Web service that allows clients to access and manipulate textual representations of Web resources.                                     |
+      | OAS                                 | An acronym for [OpenAPI Specification](https://spec.openapis.org/oas/v3.0.3)                                                                                                                                                                       |
+      | AQL                                 | openEHR's [Archetype Query Language](https://specifications.openehr.org/releases/QUERY/latest/AQL.html)                                                                                                                                            |
+      | RM                                  | openEHR's [Reference Model](https://specifications.openehr.org/releases/RM/latest)                                                                                                                                                                 |
+      | SEMVER                              | [Semantic Versioning 2.0.0](https://semver.org/)                                                                                                                                                                                                   |
+      | `UUID`                              | A universally unique identifier as described by [RFC 4122](https://tools.ietf.org/html/rfc4122) (e.g. 8849182c-82ad-4088-a07f-48ead4180515)                                                                                                        |
+      | `ehr_id`                            | The value for an EHR identifier, stored under EHR.ehr_id.value, in a form of a HIER_OBJECT_ID, usually an `UUID` or a `GUID` (e.g. 7d44b88c-4199-4bad-97dc-d78268e01398)                                                                           |
+      | `versioned_object_uid`              | The value of a VERSIONED_OBJECT unique identifier, stored under VERSIONED_OBJECT.uid.value, in a form of a HIER_OBJECT_ID (e.g. 8849182c-82ad-4088-a07f-48ead4180515)                                                                              |
+      | `version_uid`                       | The value of a VERSION unique identifier, stored under VERSION.uid.value, in a form of an OBJECT_VERSION_ID (e.g. 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2)                                                                 |
+      | `uid_based_id`                      | An abstract identifier: it can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`). |
+      | `preceding_version_uid`             | The value of a previous VERSION unique identifier, used usually for PUT or DELETE methods (e.g. 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1)                                                                                   |
+      | `version_at_time`                   | Time specifier used to retrieve the VERSION at a given time; the value is in the extended ISO 8601 format (e.g. 2015-01-20T19:30:22.765+01:00)                                                                                                     |
+  - name: Specifications
+    description: |
+      [comment]: # (title: Specifications)
+
+      The openEHR REST specifications include the following service endpoints: 
+       - [System API](system.html)
+       - [EHR API](ehr.html)
+       - [Demographic API](demographic.html)
+       - [Query API](query.html)
+       - [Definition API](definition.html)
+       - [Admin API](admin.html)
+
+      Specifications can be downloaded as YAML files in [OpenAPI Specification 3.0](https://spec.openapis.org/oas/v3.0.3) format.
+      For each API there are two flavours provided: 
+      - a file optimized for code generators, with the file name having the `-codegen.openapi.yaml` suffix; this file can be used with tools like [OpenAPI Generator](https://github.com/openapitools/openapi-generator), or [Swagger codegen](https://github.com/swagger-api/swagger-codegen),
+      - a file optimized for data validation, with the file name having the `-validation.openapi.yaml` suffix; this file can be used by (mock-)servers or applications to validate openEHR request and response payloads.
+
+      The main difference between these files (aside from schema model names) is that the codegen flavour is defining and using inheritance in model schemas, with the use of `allOf` property and discriminators, whereas the validation variant is flattening all these requirements (each model contains all RM-inherited properties), and is using `oneOf` property to define union-types. See [Polymorphism](https://spec.openapis.org/oas/v3.0.3#composition-and-inheritance-polymorphism) specification. 
+
+      The latest OpenAPI Specification files are available in GitHub at [openEHR/specifications-ITS-REST/computable/OAS](https://github.com/openEHR/specifications-ITS-REST/tree/master/computable/OAS).
+  - name: Requests_and_responses
+    x-displayName: Requests and responses
+    description: |
+      [comment]: # (title: Requests and Responses)
+
+      The following describes in details how HTTP [headers](#tag/Requests_and_responses/HTTP-headers) and [status codes](#tag/Requests_and_responses/HTTP-status-codes) MUST be used by an openEHR REST API implementation to ensure effective interaction between services and clients in accordance with this specification.
+
+      Additionally, general details about resources, [data representation](#tag/Resources/Data-representation) and content negotiation are described in this specification.
+
+      > NOTE: Examples primarily use the **JSON** format. However, this does not imply that **XML** is unsupported by the same service endpoint.
+
+
+      # HTTP Methods
+
+      HTTP Methods are described by [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-overview).
+      The following subset is used in this specification:
+
+      | Method  | Description                                                                              |
+      |---------|------------------------------------------------------------------------------------------|
+      | GET     | Transfer a current representation of the target resource.                                |
+      | HEAD    | Check existence of target resource and return the status, but does not transfer content. |
+      | POST    | Perform resource-specific processing on the request payload.                             |
+      | PUT     | Replace all current representations of the target resource with the request payload.     |
+      | DELETE  | Remove all current representations of the target resource.                               |
+      | OPTIONS | Describe the communication options for the target resource.                              |
+
+      A server receiving an unrecognized or unimplemented method SHOULD respond with the `501 Not Implemented` status code.
+      If a method is recognized but not allowed for the target resource, the response SHOULD be `405 Method Not Allowed` status code.
+
+
+      # Authentication and authorization
+
+      Services SHOULD implement and support an HTTP Authentication and Authorization framework, though this specification does not mandate a specific authentication scheme.
+      See [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-http-authentication) or [Mozilla's HTTP Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication)
+      for details on implementing an authentication and authorization.
+
+      If authentication and authorization are required, services MUST properly use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers, returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication` as applicable.
+      Clients MUST send valid `Authorization` and `Proxy-Authorization` headers in their requests when required.
+
+
+      # HTTP headers
+
+      Standard HTTP request and response headers are defined by [RFC 9110](https://tools.ietf.org/html/rfc9110) and the [IANA Message Headers Registry](http://www.iana.org/assignments/message-headers/message-headers.xhtml).
+
+      This section outlines the subset of these headers used in the openEHR API, along with custom headers specific to openEHR.
+
+      ## Deprecated headers
+
+      [Prior to Release 1.1.0](https://specifications.openehr.org/releases/ITS-REST/Release-1.0.3/overview.html#tag/Requests_and_responses/HTTP-headers), some openEHR custom headers included special characters that caused compatibility issues with HTTP standards. To ensure compliance and improve interoperability, these headers have been deprecated.
+
+      While the deprecated headers remain available for backward compatibility, their use is strongly discouraged. The table below lists the updated header names alongside their deprecated counterparts:
+
+      | Deprecated header     | New header            |
+      |-----------------------|-----------------------|
+      | openEHR-VERSION       | openehr-version       |
+      | openEHR-AUDIT_DETAILS | openehr-audit-details |
+      | openEHR-TEMPLATE_ID   | openehr-template-id   |
+      | openEHR-uri           | openehr-uri           |
+      | openEHR-EHR-id        | openehr-ehr-id        |
+
+      Some of the `GET` methods had a `Location` response header to indicate the canonical location of a representation. 
+      However, this was an incorrect use of the header, and it is now deprecated. 
+      Similarly, the `Location` response header was deprecated from responses of `DELETE` methods.
+      For more information see [Location header](#tag/Requests_and_responses/HTTP-headers/Location) section.
+
+      The `ETag` response header was used without a weakness indicator `W/`. 
+      This is now deprecated, all `ETag` headers that hold a resource identifier MUST include a weakness indicator `W/`.
+      For more information see [ETag and Last-Modified](#tag/Requests_and_responses/HTTP-headers/ETag-and-Last-Modified) section.
+
+      To ensure forward compatibility, clients are strongly encouraged to always include the `Prefer` request header explicitly. Although the current default behavior is equivalent to `Prefer=minimal`, this might change in the near future to `Prefer=identifier`. Explicitly stating the preference prevents unexpected behavior changes as the default evolves.
+      For more information see [Prefer only identifier](#tag/Requests_and_responses/Representation-details-negotiation/Prefer-only-identifier) section.
+
+      For long-term stability, all new implementations should adopt the updated header names and follow their prescribed usage.
+
+      ## openehr-version and openehr-audit-details
+
+      When it comes to committing content to an openEHR system, for all change-controlled resources (e.g. COMPOSITION, EHR_STATUS, FOLDER, etc.) the services are [performing versioning](https://specifications.openehr.org/releases/RM/latest/common.html#\_change_control_package) under the hood.
+      The 'native' way of committing is to use a [CONTRIBUTION](https://specifications.openehr.org/releases/RM/latest/common.html#\_contributions) and wrap the content as a [VERSION](https://specifications.openehr.org/releases/RM/latest/common.html#\_version_class).
+      To keep things simpler and consistent, services MUST also allow `PUT`, `POST` and `DELETE` methods directly on these change-controlled resources.
+      However, these operations MUST internally be executed using the 'native' way.
+
+      In order to allow clients to provide committal metadata, services MUST accept `openehr-version` and `openehr-audit-details` custom request headers.
+      For clients, it is RECOMMENDED to provision these headers based on [authentication and authorization](#tag/Requests_and_responses/Authentication-and-authorization) runtime data.
+      Through the `openehr-audit-details` header, clients MAY supply values for the AUDIT_DETAILS attributes `change_type`, `description`, `committer` and `system_id`.
+      The `time_committed` attribute is always set by the server.
+      Below is a complex example of these request headers used in a `PUT` action to update a COMPOSITION:
+
+      ```http
+      openehr-version: lifecycle_state.code_string="532"
+      openehr-audit-details: change_type.code_string="251"
+      openehr-audit-details: description.value="An updated composition contribution description"
+      openehr-audit-details: committer.name="John Doe",committer.external_ref.id="BC8132EA-8F4A-11E7-BB31-BE2E44B06B34",committer.external_ref.namespace="demographic",committer.external_ref.type="PERSON"
+      openehr-audit-details: system_id="example.openehr.systemid"
+      ```
+
+      None of these headers are mandatory, but whatever is provided it MUST be merged with the default VERSION and VERSION.audit_details attributes on commit runtime.
+      In particular, when `system_id` is not provided by the client, the server MUST set it to its own configured system identifier.
+
+      The list of `code_string` values and their meaning is specified by the [Audit Change Type](https://specifications.openehr.org/releases/TERM/latest/SupportTerminology.html#_audit_change_type) and [Version Lifecycle State](https://specifications.openehr.org/releases/TERM/latest/SupportTerminology.html#_version_lifecycle_state) openEHR terminology vocabularies.
+
+      ## openehr-item-tag and openehr-version-item-tag
+
+      The `openehr-item-tag` and `openehr-version-item-tag` headers provide a lightweight mechanism for associating tags with change-controlled resources (e.g. COMPOSITION, EHR_STATUS, FOLDER, etc.).
+
+      - `openehr-item-tag` applies to *VERSIONED_OBJECT* targets.
+      - `openehr-version-item-tag` applies to a specific target *VERSION* within a VERSIONED_OBJECT.
+
+      Below is an example of these headers:
+      ```http
+      openehr-item-tag: key="category",value="final"
+      openehr-version-item-tag: key="reviewed",value="true"; key="flag",value="follow-up",target_path="/composition/start_time/value"
+      ```
+
+      Both headers act as convenient wrappers around the dedicated ITEM_TAG operations (e.g. retrieving [COMPOSITION tags](ehr.html#tag/COMPOSITION/operation/composition_tags_get)), simplifying client interaction and reducing the number of API calls.
+
+      Tag values are provided as a list of key-value pairs, separated by semicolons. They both support the same syntax and schema, having the following attributes: `key`, `value` and `target_path`.
+      More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified by their `key` and `target_path` pair attributes.
+
+      If the server does not support ITEM_TAGs, these headers will also be unsupported.
+
+      #### Usage in Requests
+      When used as request headers for creation or update operations (`PUT`, `POST`), the header instructs the system which ITEM_TAG list should be associated with the target VERSION or VERSIONED_OBJECT resource (depending on the header name).
+
+      Providing an empty value for this header will effectively remove all ITEM_TAGs associated with the given target.
+
+      #### Usage in Responses
+      Servers MAY include the `openehr-item-tag` or `openehr-version-item-tag` header in responses to confirm the actual list of ITEM_TAGs stored on the server side.
+
+      When retrieving resources via `GET`, the server MAY also add these headers to the response, containing the list of ITEM_TAGs associated with the target VERSION or VERSIONED_OBJECT (depending on the header name).
+
+      ## openehr-template-id
+
+      The `openehr-template-id` request header MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a [Simplified Format](#header-alternative-data-formats) which does not support TEMPLATE_ID value under an equivalent `LOCATABLE.archetype_details.template_id` attribute of contained data.
+
+      ## Location
+
+      The `Location` header, as defined in [RFC 9110, Section 10.2.2](https://datatracker.ietf.org/doc/html/rfc9110#field.location), is used by a server to indicate the URL of a newly created resource.
+      In the openEHR REST API, it is used in `201 Created` responses when a new resource is successfully created (e.g., via `POST` method). 
+      It MUST NOT be used to indicate an alternate representation of an existing resource (e.g. via `GET` method).
+
+      > DEPRECATION: [Prior to Release 1.1.0](https://specifications.openehr.org/releases/ITS-REST/Release-1.0.3/overview.html#tag/Requests_and_responses/HTTP-headers), the `Location` header was used to indicate the canonical location of a representation in a response.
+      > This usage is now deprecated. 
+      > The `Location` header MUST ONLY be used for resource creation (e.g., `201 Created`) or redirect responses.
+
+      Example of a `Location` response header:
+
+      ```http
+      HTTP/1.1 201 Created
+      Location: https://openEHRSys.example.com/v1/ehr/347a5490-55ee-4da9-b91a-9bba710f730e/composition/8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2
+      Preference-Applied: return=minimal
+      ```
+
+      ## openehr-uri
+
+      If the service supports generating resource URIs in the format defined by the [DV_EHR_URI](https://specifications.openehr.org/releases/RM/development/data_types.html#_dv_ehr_uri_class) class, it MAY include the openehr-uri response header for applicable openEHR resources.
+
+      Example:
+
+      ```http
+      HTTP/1.1 200 OK
+      openehr-uri: ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B
+      ```
+
+      ## Prefer
+
+      The `Prefer` request header MAY be used by clients to negotiate the format or content of the resource representation in the response.
+      For more information, see the [representation details negotiation](#tag/Requests_and_responses/Representation-details-negotiation) section.
+
+      ## ETag and Last-Modified
+
+      The `ETag` and `Last-Modified` headers provide essential information about the state of a resource, enabling clients to manage caching, detect changes, and prevent unintentional overwrites.
+
+      The `ETag` (Entity Tag) header acts as a unique identifier for a specific version of a resource. It helps clients determine whether a resource has changed between requests, supporting efficient caching and optimistic concurrency control.
+
+      In this specification, the `ETag` value is independent of its resource serialization format (JSON/XML). This differs from standard HTTP behavior, where an `ETag` typically identifies a specific representation of a resource - see [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#field.etag). Therefore, the `ETag` is considered to be of weak-type and should have a weakness indicator `W/` prefix.
+
+      > DEPRECATION: [Prior to Release 1.1.0](https://specifications.openehr.org/releases/ITS-REST/Release-1.0.3/overview.html#tag/Requests_and_responses/HTTP-headers), the `ETag` header was used without a weakness indicator `W/`. This usage is now deprecated, but implementations MAY still support it alongside the updated header format that includes the weakness indicator `W/` prefix.
+
+      The `ETag` value is usually taken from e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc. It changes as soon as the resource changes (i.e. when a new version is created).
+
+      An example of `ETag` header value format is:
+
+      ```http
+      HTTP/1.1 200 OK
+      ETag: W/"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"
+      ```
+
+      Servers MAY add additional `ETag` response headers, consisting of an opaque quoted string, possibly prefixed by a weakness indicator.
+
+      The `Last-Modified` response HTTP header, indicates the date and time when the resource was last modified.
+      This helps clients determine freshness and manage conditional requests.
+      For openEHR resources, this value should be derived from VERSION.commit_audit.time_committed.value.
+
+      An example of `Last-Modified` header value format is:
+
+      ```http
+      HTTP/1.1 200 OK
+      Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT
+      ```
+
+      Both `ETag` and `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers.
+
+      ## If-Match and accidental overwrites
+
+      The `If-Match` request header SHOULD be used by the clients with state-changing methods (e.g., `PUT`) to prevent accidental overwrites when multiple user agents might be acting in parallel on the same resource (i.e., to prevent the "lost update" problem). This is only required by a small set of versioned resources in this specification, when the `preceding_version_uid` is not part of the endpoint path segment.
+      If a service receives this header, and the condition evaluates to `false`, it MUST NOT perform the requested method. Instead, it MUST respond with HTTP status code `412 Precondition Failed`, and SHOULD return also latest `version_uid` in the `ETag` response headers. When the service expects `If-Match` for an operation, but the client does not provide it, the service SHOULD respond with `400 Bad Request`. 
+
+      Example:
+      ```http
+      If-Match: "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"
+      ```
+
+      See also details for `If-Match` described by [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-if-match).
+
+
+      # HTTP status codes
+
+      HTTP Status codes are described by [RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110#name-status-codes) and by the [IANA Status Code Registry](https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml).
+      The following subset is used in this specification:
+
+      | Code | Reason-Phrase          | Meaning, use case and details                                                                                                                                              |
+      | ---- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+      | 200  | OK                     | The request succeeded, payload sent in a 200 response depends on the request method                                                                                        |
+      | 201  | Created                | The request has been fulfilled and has resulted in one or more new resources being created                                                                                 |
+      | 204  | No Content             | The request has been fulfilled and there is no additional content to send in the response payload body                                                                     |
+      | 400  | Bad Request            | The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content) |
+      | 401  | Unauthorized           | If the service requires authorization, this indicates that the request has not been applied because it lacks valid authentication credentials for the target resource      |
+      | 403  | Forbidden              | The service understood the request but refuses to authorize it                                                                                                             |
+      | 404  | Not Found              | The origin service did not find the target resource or is not willing to disclose that one exists                                                                          |
+      | 405  | Method Not Allowed     | The method received in the request-line is known by the origin service but not supported by the target resource                                                            |
+      | 406  | Not Acceptable         | The target resource does not have a current representation that would be acceptable to the user                                                                            |
+      | 408  | Request Timeout        | Request maximum execution time is reached, therefore the server aborted the request                                                                                        |
+      | 409  | Conflict               | Indicates that the request could not be processed because it might generate a duplicate or a conflict                                                                      |
+      | 412  | Precondition Failed    | One or more conditions given in the request header fields evaluated to false when tested on the server                                                                     |
+      | 415  | Unsupported Media Type | The service is refusing the request because the payload is in a format not supported by this method on the target resource                                                 |
+      | 422  | Unprocessable Entity   | The request was well-formed but was unable to be followed due to semantic errors                                                                                           |
+      | 500  | Internal Server Error  | The service encountered an unexpected condition that prevented it from fulfilling the request                                                                              |
+      | 501  | Not Implemented        | The service does not support the functionality required to fulfill the request                                                                                             |
+
+      To indicate the status of a request or operation, an appropriate HTTP status code MUST be used as described above. Additional status codes MAY be used as long as they do not conflict with the predefined codes.
+
+      Status code `400` indicates normally a bad request, as well as a generic client-side error, used when no other `4xx` error code is appropriate.
+      The client SHOULD NOT repeat the request without modifications.
+
+      For `4xx` and `5xx` status codes, services MAY return additional error details if the `Prefer: return=representation` header is present in the request.
+      Example error response:
+
+      ```json
+      {
+          "message": "Error message",
+          "code": 90000,
+          "errors": [
+              {
+                  "_type": "DV_CODED_TEXT",
+                  "value": "Error message",
+                  "defining_code": {
+                      "terminology_id": {
+                          "value": "local"
+                      },
+                      "code_string": "9000"
+                  }
+              },
+              {
+                  "_type": "DV_CODED_TEXT",
+                  "value": "Secondary error message",
+                  "defining_code": {
+                      "terminology_id": {
+                          "value": "local"
+                      },
+                      "code_string": "8000"
+                  }
+              }
+          ]
+      }
+      ```
+
+      # Representation details negotiation
+
+      When using `POST`, `PUT`, or `DELETE` to create, update, or delete a resource, the client can specify its preferred response format using the `Prefer` header, as defined in [RFC 7240, Section 4.2](https://tools.ietf.org/html/rfc7240#section-4.2).
+
+      The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored.
+
+      If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`.
+
+      ## Prefer minimal, identifier or full representation response
+
+      Clients MAY use the following preferences to control the verbosity of successful responses:
+
+      * `Prefer: return=minimal`  
+        Indicates the client prefers a minimal response. 
+        The response SHOULD include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created`. If no response body is returned, the service SHOULD use `204 No Content`.
+
+      * `Prefer: return=identifier`  
+        Indicates the client prefers a minimal response that includes only the identifier (e.g., the `uid`) of the affected resource. 
+        The response MAY include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created` or `200 OK` and the response body SHOULD contain only the identifier of the affected resource.
+
+      * `Prefer: return=representation`  
+        Indicates the client prefers a full resource representation in the response.  
+        The response MAY include a `Location` header, and the response body SHOULD contain the full representation of the resource. The HTTP status is typically `201 Created` or `200 OK`.
+
+
+      ## Prefer only identifier 
+
+      Clients MAY request a minimal response that includes only the identifier (e.g., the `uid`) of the affected resource by specifying:
+
+      ```http
+      PUT https://openEHRSys.example.com/v1/ehr/7d44b88c-4199-4bad-97dc-d78268e01398/composition/8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2
+      Prefer: return=identifier
+      Accept: application/json
+      ```
+
+      This is a variant of preference that implies minimal response semantics, but with a non-empty response body (i.e., the status will be `201 Created` or `200 OK`, never `204 No Content`).
+      The response body SHOULD contain only the identifier of the affected resource formatted according to the `Accept` request header.
+      For example, when `application/json` is requested as above, the response body will be a single JSON object with a single `uid` attribute.
+
+      ```http
+      HTTP/1.1 200 OK
+      Preference-Applied: return=identifier
+      Content-Type: application/json
+      { 
+        "uid": "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::3"
+      }
+      ```
+
+      > **Notice:** Although the current default behavior is `return=minimal`, some server implementations MAY provide a configurable flag to switch the default response preference to `return=identifier`. To ensure forward compatibility, clients are encouraged to always include the `Prefer` request header explicitly. Stating the preference explicitly prevents unexpected behavior changes as the default behavior evolves.
+
+      ## Prefer resolving Object references
+
+      Clients MAY request that object references (e.g., OBJECT_REF) be resolved into full or partial representations by specifying:
+
+      ```http
+      Prefer: return=representation, resolve_refs
+      ```
+
+      This is particularly useful when retrieving lists of COMPOSITION resources within an EHR, where the default behavior is to return only reference links.
+  - name: Resources
+    description: |
+      [comment]: # (title: Resources)
+
+      For the openEHR API, a **resource** is an instance object of a specific openEHR class (type) that can be identified, addressed, handled or managed by the service.
+      Examples of openEHR resources include:
+
+      - top-level content structure: COMPOSITION, EHR_STATUS, FOLDER, PARTY, etc.
+      - versioned entities: VERSIONED_COMPOSITION, VERSIONED_EHR_STATUS, etc. or their contained VERSION instances.
+      - non-versioned resources: EHR, CONTRIBUTION, RESULT_SET, etc.
+      - definitions: TEMPLATE, ARCHETYPE, QUERY.
+
+      In this specification, types defined by openEHR are always capitalized. 
+      For a complete list of available types, refer to the [class index](https://specifications.openehr.org/classes).
+
+      # Resource identification
+
+      A key aspect of a RESTful service is the ability to address resources via URIs/URLs using HTTP methods.
+      Each resource has a unique identifier within the system for its type, typically including a globally unique identifier and, in some cases, a version identifier.
+      Once assigned, a resource identifier remains unchanged throughout its lifetime.
+
+      ## Identifier types
+
+      Depending on the resource type and use case, different identifiers (and formats) are used:
+
+      - a `versioned_object_uid` for identifying a VERSIONED_OBJECT (i.e. a version container), stored under VERSIONED_OBJECT.uid.value, in a form of a HIER_OBJECT_ID,
+      - a `version_uid` for identifying a VERSION from the version container, stored under VERSION.uid.value, in a form of an OBJECT_VERSION_ID,
+      - an `ehr_id` to identify an EHR,
+      - a `template_id` to identify a Template definition.
+      - a `qualified_query_name` to identify Query definition.
+
+      The `version_uid` uniquely identifies a VERSION, in the lexical form of `object_id :: creating_system_id :: version_tree_id`. Here, the `object_id` matches the VERSIONED_OBJECT identifier, taken from VERSIONED_OBJECT.uid.value (i.e. the `versioned_object_uid`).
+
+      Consider the following request:
+
+      ```http
+      GET https://openEHRSys.example.com/v1/ehr/7d44b88c-4199-4bad-97dc-d78268e01398/composition/8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+      ```
+
+      - the EHR identifier is `7d44b88c-4199-4bad-97dc-d78268e01398`, taken from EHR.ehr_id.value,
+      - the COMPOSITION identifier `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`, taken from COMPOSITION.uid.value, which also implies that the VERSIONED_OBJECT identifier is `8849182c-82ad-4088-a07f-48ead4180515` and the latest version is `1`,
+      - the request is made to an openEHR API (of version `v1`), located at `https://openEHRSys.example.com`.
+
+      > NOTE: Since [RM Release 1.0.4](https://specifications.openehr.org/releases/RM/Release-1.0.4) it is strongly recommended that the inherited `uid` attribute in COMPOSITION objects be populated using the `uid` copied from the enclosing VERSION object.
+        For example, if an ORIGINAL_VERSION.uid is `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, then this value should be copied to the COMPOSITION.uid attribute.
+        See [Levels of identification](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html#\_levels_of_identification) section of Architecture Overview for more details.
+
+      ## Multiple identifiers for the same resource
+
+      There are circumstances when openEHR resources can be uniquely identified by two different identifiers. 
+      For example, if a VERSIONED_COMPOSITION container has the _versioned_object_uid_ identifier `8849182c-82ad-4088-a07f-48ead4180515`, and the latest version is `5` (taken from _version_tree_id_), then the COMPOSITION can be accessed using either:
+
+      ```http
+      GET https://openEHRSys.example.com/v1/ehr/7d44b88c-4199-4bad-97dc-d78268e01398/composition/8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com:5
+      ```
+
+      as **explicit version reference**, using the _version_uid_ identifier,
+
+      ```http
+      GET https://openEHRSys.example.com/v1/ehr/7d44b88c-4199-4bad-97dc-d78268e01398/composition/8849182c-82ad-4088-a07f-48ead4180515
+      ```
+      as **implicit latest version reference**.
+
+      However, the implicit URI will only resolve to the same resource as the explicit versioned URI as long as no new versions are created (i.e. the latest version remains `5`).
+
+
+      # Data representation
+
+      Services MUST support at least one of the openEHR **XML** or **JSON** canonical formats for resource representation.
+      Additionally, the **Simplified Formats** format SHOULD be supported, while other alternative formats MAY be supported as well, depending on the use case.
+      These formats and their negotiation protocols are described below.
+
+      > NOTE: Examples of data instances, serialized in the preferred format, can be retrieved from the server using the dedicated resource endpoint described in the [Get example data by template](definition.html#tag/ADL1.4/operation/definition_template_adl1.4_example_get) section of the Definition API.
+
+      ## XML Format
+
+      When resources are serialized in **canonical XML** format, both request payloads and responses MUST conform to the [published XSDs](https://specifications.openehr.org/releases/ITS-XML/latest).
+
+      A client MAY use the header `Content-Type: application/xml` in the requests to specify the XML payload format.
+      If the service cannot process the request payload as XML format, it MUST respond with HTTP status code `415 Unsupported Media Type`.
+
+      The client SHOULD use the `Accept: application/xml` request header to specify the expected XML response format.
+      If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code `406 Not Acceptable`.
+      Proper header `Content-Type: application/xml` MUST be present in the response of the service
+      unless the response has no content body (HTTP status code `204`).
+
+      ## JSON Format
+
+      When resources are serialized as **canonical JSON**, the request payload as well as the result SHOULD be valid against [published JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest).
+
+      > NOTE: The JSON-Schema project is under development.
+
+      Attribute names must be lowercase _snake_case_ names as specified in the equivalent RM type. For example:
+
+      ```json
+      {
+          "category": {
+              "value": "event",
+              "defining_code": {
+                  "terminology_id": {
+                      "value": "openehr"
+                  },
+                  "code_string": "433"
+              }
+          }
+      }
+      ```
+
+      Metadata attributes (those that are not also RM attributes) will always be prefixed by a `'_'`.
+
+      One example is the `_type` attribute, which should be used to specify the RM type whenever polymorphism is involved, or when the underlying definition in RM type is abstract (dynamic type is different from the static type).
+      This follows the same rule as for XML typing.
+      The value of this attribute MUST be the uppercase class name from the RM specification. For example:
+
+      ```json
+      {
+          "_type": "DV_TEXT",
+          "value": "Hello world!"
+      }
+      ```
+
+      The RM attributes (even required ones) that are `Null` or an empty list (array) SHOULD be absent when serialized as JSON.
+
+      The order of attributes in the resource MAY follow the order of attributes in the RM specification of the type of the resource, but this is not mandatory.
+
+      A client MAY use the header `Content-Type: application/json` in the requests to specify the JSON payload format.
+      If the service cannot process the request payload as JSON format, it MUST respond with HTTP status code `415 Unsupported Media Type`.
+
+      The client SHOULD use the `Accept: application/json` request header to specify the expected JSON response format.
+      If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code `406 Not Acceptable`.
+      Proper header `Content-Type: application/json` MUST be present in the response of the service unless the response has no content body (HTTP status code `204`).
+
+      ## Simplified Formats
+
+      The detailed specifications of these formats can be consulted at [Simplified Formats](simplified_formats.html) page.
+
+      To use these formats, content negotiation SHOULD be done in the same manner as for the canonical XML or JSON format above, but instead of `application/xml` or `application/json`, clients and servers MUST use:
+
+      - `application/openehr.wt.flat+json` for the Simplified Flat JSON format,
+      - `application/openehr.wt.structured+json` for the Simplified Structured JSON format,
+      - `application/openehr.wt+json` for the Operational Template definition as Web Template JSON format.
+
+      > NOTE: The `application/openehr.wt.flat.schema+json` and `application/openehr.wt.structured.schema+json` which were historically available in earlier versions of this specification, are now deprecated and will be removed in a future version of the specification. The equivalent formats `application/openehr.wt.flat+json` and `application/openehr.wt.structured+json` SHOULD be used instead.
+
+      A client MAY use the header `Content-Type` in the requests to specify the simplified payload format.
+      If the service cannot process the request payload as the simplified format is not supported, it MUST respond with HTTP status code `415 Unsupported Media Type`.
+
+      The client SHOULD use the `Accept` request header to specify the expected simplified response format.
+      If the service cannot fulfill this aspect of the request, it MUST respond with HTTP status code `406 Not Acceptable`.
+      Proper header `Content-Type` MUST be present in the response of the service unless the response has no content body (HTTP status code `204`).
+
+      ## Alternative data formats
+
+      Creating data instances according to canonical XML or JSON format is not always straightforward, particularly for developers with minimal exposure to openEHR.
+      Various alternatives have been used in the past to simplify the job of content creation and committal for application developers.
+
+      Legacy or experimental formats: 
+
+      - `application/openehr.nc.flat+json` based on the [ECISFLAT format](https://github.com/ethercis/ethercis/blob/master/doc/flat%20json.md), 
+      - `application/openehr.tds2+xml` for TDS simplification of RM as XML (see [this wiki page](https://openehr.atlassian.net/wiki/spaces/spec/pages/30408770/Template+Data+Schema+TDS+Specification+and+associated+Template+Data+Document+TDD) and the [TDD2canonical](https://github.com/openEHR/openEHR-TDD2canonical) project),
+      - `application/openehr.wt.flat.schema+json` deprecated in favour of `application/openehr.wt.flat+json`,
+      - `application/openehr.wt.structured.schema+json` deprecated in favour of `application/openehr.wt.structured+json`.
+
+      Other alternative formats may be added in the future, depending on innovative impact, simplicity, popular demand, or adoption rate.
+      Some of these formats might not be supported once they become obsolete or superseded by newer formats.
+
+      ## Datetime format
+
+      The format of the date, time and datetime types should comply with the [ISO 8601 Date and Time](https://en.wikipedia.org/wiki/ISO\_8601) format specification.
+      The ISO 8601 semantics assumed by openEHR is defined in the classes of the [base.foundation_types.time package](https://specifications.openehr.org/releases/BASE/latest/foundation_types.html#\_time_types).
+      It is strongly recommended using the _extended_ format for dates, times and datetimes.
+      This greatly aids human readability, and reduces the need for special date/time parsing and formatting.
+
+      HTTP query parameters and path segments that are dates, datetimes, or times, MUST always use the _extended_ ISO 8601 format.
+      The general form of a datetime is `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, e.g. `2016-06-23T13:42:16.117+02:00`.\
+      Timezone SHOULD be only supplied when needed, otherwise the local timezone is assumed.
+
+      Any date, datetime or time value provided as part of the HTTP message body, when creating or updating a resource (e.g. a DV_DATE_TIME value inside the COMPOSITION content), will be preserved as it was sent by the client, and passed to the underlying backend engine as is.
+      Retrieval or querying those resources SHOULD return date, datetime, or time values in the (original) format provided by underlying backend engine, avoiding any format change.
+  - name: Amendment_record
+    x-displayName: Amendment Record
+    description: |
+      [comment]: # (title: Amendment Record)
+
+      <table>
+          <colgroup>
+              <col style="width: 9%;">
+              <col style="width: 55%;">
+              <col style="width: 18%;">
+              <col style="width: 18%;">
+          </colgroup>
+          <thead>
+          <tr>
+              <th>Issue</th>
+              <th>Details</th>
+              <th>Raiser, Implementer</th>
+              <th>Completed</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+              <td>5.9</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-95" target="_blank" rel="noopener">SPECITS-95</a>:
+                  Fix <code>UPDATE_AUDIT.change_type</code> typing - use <code>DV_CODED_TEXT</code> instead of <code>TERMINOLOGY_CODE</code> (same correction applied to <code>UPDATE_VERSION.lifecycle_state</code> in the ehr and demographic APIs); add optional <code>system_id</code>, make the examples consistent with the schema, clarify that <code>UPDATE_AUDIT</code> is <code>AUDIT_DETAILS</code> minus server-assigned attributes including the <code>_type</code> handling, and remove the now-unused <code>TERMINOLOGY_CODE</code> base schema</td>
+              <td>H Heiser, S Iancu</td>
+              <td>11 Jun 2026</td>
+          </tr>
+          <tr>
+              <td>5.8</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECPR-472" target="_blank" rel="noopener">SPECPR-472</a>:
+                  Document support for the <code>system_id</code> attribute on the <code>openehr-audit-details</code> request header</td>
+              <td>P Pazos, S Iancu</td>
+              <td>28 Apr 2026</td>
+          </tr>
+          <tr>
+              <td>5.7</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-92" target="_blank" rel="noopener">SPECITS-92</a>:
+                  Fix alignment issues and sync OpenAPI resource and type schemas with openEHR Reference Model type specifications (mostly RM 1.1.0 related)</td>
+              <td>S Iancu</td>
+              <td>27 Apr 2026</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-84" target="_blank" rel="noopener">SPECITS-84</a>:
+                  Add support for FLAT/SDT to Contribution REST API calls - accept the Simplified Formats MIME types on CONTRIBUTION endpoints; the Simplified Formats serialization applies to <code>versions[].data</code> only, the CONTRIBUTION envelope remains canonical</td>
+              <td>REST WG</td>
+              <td>27 Apr 2026</td>
+          </tr>
+          <tr>
+              <td>5.6</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-88" target="_blank" rel="noopener">SPECITS-88</a>:
+                  Add support for filters in listTemplates operation</td>
+              <td>REST WG</td>
+              <td>11 Feb 2026</td>
+          </tr>
+          <tr>
+              <td>5.5</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-58" target="_blank" rel="noopener">SPECITS-58</a>:
+                  Add support for /example sub-resource under template-definition endpoint</td>
+              <td>REST WG</td>
+              <td>17 Dec 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-34" target="_blank" rel="noopener">SPECITS-34</a>:
+                  Use SM derived models as REST API resources</td>
+              <td>REST WG</td>
+              <td>17 Dec 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-87" target="_blank" rel="noopener">SPECITS-87</a>:
+                  Deprecate ADL2 “Get template at version” and the version query parameter from upload template</td>
+              <td>REST WG</td>
+              <td>17 Dec 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-46" target="_blank" rel="noopener">SPECITS-46</a>:
+                  Fix conflictual query execution endpoint-resolution when query name is 'aql'</td>
+              <td>REST WG</td>
+              <td>17 Dec 2025</td>
+          </tr>
+          <tr>
+              <td>5.4</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-61" target="_blank" rel="noopener">SPECITS-61</a>:
+                  Cleanup and consolidate Simplified Formats specifications; adding Accept and Content-Type headers to support the Simplified Formats by relevant resource endpoints</td>
+              <td>REST WG</td>
+              <td>05 Nov 2025</td>
+          </tr>
+          <tr>
+              <td>5.3</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-74" target="_blank" rel="noopener">SPECITS-74</a>:
+                  Deprecate some of the use of Location response header</td>
+              <td>REST WG</td>
+              <td>25 Sep 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-82" target="_blank" rel="noopener">SPECITS-82</a>:
+                  Add ETag weakness indicator W/ prefix</td>
+              <td>REST WG</td>
+              <td>25 Sep 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-50" target="_blank" rel="noopener">SPECITS-50</a>:
+                  Return very minimal REST responses to avoid 204 No content codes.</td>
+              <td>REST WG</td>
+              <td>25 Sep 2025</td>
+          </tr>
+          <tr>
+              <td>5.2</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-77" target="_blank" rel="noopener">SPECITS-77</a>:
+                  Add support for ITEM_TAGs</td>
+              <td>REST WG</td>
+              <td>14 Mar 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-80" target="_blank" rel="noopener">SPECITS-80</a>:
+                  Add admin support to delete EHR</td>
+              <td>S Iancu</td>
+              <td>14 Mar 2025</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-75" target="_blank" rel="noopener">SPECITS-75</a>:
+                  Fix inconsistent and invalid header names</td>
+              <td>E Astrom, J Grisham, S Iancu</td>
+              <td>14 Mar 2025</td>
+          </tr>
+          <tr>
+              <td>5.1</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-73" target="_blank" rel="noopener">SPECITS-73</a>:
+                  Add Demographic API endpoint</td>
+              <td>P Pazos, S Iancu</td>
+              <td>11 Sep 2024</td>
+          </tr>
+          <tr>
+              <td>5.0</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-75" target="_blank" rel="noopener">SPECITS-75</a>:
+                  Change structure and improve yaml specs</td>
+              <td>S Iancu</td>
+              <td>11 Sep 2024</td>
+          </tr>
+          <tr>
+              <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/latest" target="_blank" rel="noopener">Release-1.0.3</a></th>
+          </tr>
+          <tr>
+              <td>4.1</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-66" target="_blank" rel="noopener">SPECITS-66</a>:
+                  Migrate REST API specs to OpenAPI Specification</td>
+              <td>S Iancu</td>
+              <td>19 Dec 2022</td>
+          </tr>
+          <tr>
+              <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.2" target="_blank" rel="noopener">Release-1.0.2</a></th>
+          </tr>
+          <tr>
+              <td>3.4</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-59" target="_blank" rel="noopener">SPECITS-59</a>:
+                  Specify mimeType used by adl2 template</td>
+              <td>S Iancu</td>
+              <td>26 Mar 2021</td>
+          </tr>
+          <tr>
+              <td>3.3</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-41" target="_blank" rel="noopener">SPECITS-41</a>:
+                  Add double quotes to ETag and If-Match headers</td>
+              <td>S Iancu</td>
+              <td>21 Mar 2021</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-42" target="_blank" rel="noopener">SPECITS-42</a>:
+                  Fix TEMPLATE_ID value format in examples</td>
+              <td>S Iancu</td>
+              <td>21 Mar 2021</td>
+          </tr>
+          <tr>
+              <td>3.2</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-56" target="_blank" rel="noopener">SPECITS-56</a>:
+                  Fixing typos, formatting and minor documentary errors</td>
+              <td>S Iancu</td>
+              <td>15 Mar 2021</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-45" target="_blank" rel="noopener">SPECITS-45</a>:
+                  Describe more clearly the datetime format for REST API</td>
+              <td>P Pazos, S Iancu</td>
+              <td>15 Mar 2021</td>
+          </tr>
+          <tr>
+              <td>3.1</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-57" target="_blank" rel="noopener">SPECITS-57</a>:
+                  Updating info about simplified JSON formats</td>
+              <td>E Sundvall, S Iancu</td>
+              <td>13 Mar 2021</td>
+          </tr>
+          <tr>
+              <td>3.0</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-49" target="_blank" rel="noopener">SPECITS-49</a>:
+                  Describing Resource Identification; add clarification over getting COMPOSITIONs by `version_uid` vs `versioned_object_uid`</td>
+              <td>J Smolka, M Polajnar, S Iancu</td>
+              <td>08 Mar 2021</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-47" target="_blank" rel="noopener">SPECITS-47</a>: 
+                  Fix inconsistency over query_parameter(s)</td>
+              <td>P Pazos, S Iancu</td>
+              <td>06 Mar 2021</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-52" target="_blank" rel="noopener">SPECITS-52</a>:
+                  Fix wrong example on revision history of the VERSIONED_COMPOSITION and VERSIONED_EHR_STATUS</td>
+              <td>J Smolka, S Iancu</td>
+              <td>06 Mar 2021</td>
+          </tr>
+          <tr>
+              <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.1" target="_blank" rel="noopener">Release-1.0.1</a></th>
+          </tr>
+          <tr>
+              <td>2.5</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-37" target="_blank" rel="noopener">SPECITS-37</a>: Fix query definition endpoint and content-type errors</td>
+              <td>P Pazos, J Smolka, S Iancu</td>
+              <td>01 Oct 2019</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-38" target="_blank" rel="noopener">SPECITS-38</a>:
+                  Fix response status code for semantic validation errors (fixes also
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-298" target="_blank" rel="noopener">SPECPR-298</a>)</td>
+              <td>P Pazos, S Iancu</td>
+              <td>01 Oct 2019</td>
+          </tr>
+          <tr>
+              <td>2.4</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-33" target="_blank" rel="noopener">SPECITS-33</a>: Add reference to Simplified Data Template (SDT) format specification</td>
+              <td>I McNicoll, T Beale, S Iancu</td>
+              <td>17 Oct 2019</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-40" target="_blank" rel="noopener">SPECITS-40</a>:
+                  Fix and improve documentation on EHR (fixes also
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-312" target="_blank" rel="noopener">SPECPR-312</a>)</td>
+              <td>P Pazos, S Iancu</td>
+              <td>28 Sep 2019</td>
+          </tr>
+          <tr>
+              <td>2.3</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-32" target="_blank" rel="noopener">SPECITS-32</a>: Fix typos and minor documentary errors (fixes
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-252" target="_blank" rel="noopener">SPECPR-252</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-252" target="_blank" rel="noopener">SPECPR-253</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-255" target="_blank" rel="noopener">SPECPR-255</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-298" target="_blank" rel="noopener">SPECPR-298</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-333" target="_blank" rel="noopener">SPECPR-333</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECPR-337" target="_blank" rel="noopener">SPECPR-337</a>)</td>
+              <td>J Smolka, P Pazos, E Sundvall, T Beale, S Iancu</td>
+              <td>1 Sep 2019</td>
+          </tr>
+          <tr>
+              <td>2.2</td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-24" target="_blank" rel="noopener">SPECITS-24</a>: Added changelog</td>
+              <td>J Smolka, S Iancu</td>
+              <td>12 May 2019</td>
+          </tr>
+          <tr>
+              <td></td>
+              <td><a href="https://specifications.openehr.org/tickets/SPECITS-25" target="_blank" rel="noopener">SPECITS-25</a>,
+                  <a href="https://specifications.openehr.org/tickets/SPECITS-29" target="_blank" rel="noopener">SPECITS-29</a>: Change layout and structure</td>
+              <td>J Smolka, S Iancu</td>
+              <td>12 May 2019</td>
+          </tr>
+          <tr>
+              <td>2.1</td>
+              <td>Update links to new openEHR specifications website</td>
+              <td>S Iancu</td>
+              <td>16 Dec 2018</td>
+          </tr>
+          <tr>
+              <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.0" target="_blank" rel="noopener">Release-1.0.0</a></th>
+          </tr>
+          </tbody>
+      </table>
+paths: {}
+components:
+  schemas: {}
