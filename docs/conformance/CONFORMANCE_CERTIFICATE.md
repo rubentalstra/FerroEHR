@@ -9,11 +9,11 @@
 
 | | |
 |---|---|
-| Solution | ehrbase-rs @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
+| Solution | ehrbase-rs 3.0.0 @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Vendor | ehrbase-rs (self-assessed) |
 | Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-11T06:26:52.947058Z |
+| Date | 2026-07-11T10:45:03.644171Z |
 
 ## Scope of Test
 
