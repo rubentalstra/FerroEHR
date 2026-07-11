@@ -16,8 +16,8 @@ use testcontainers_modules::postgres::Postgres;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{
-    CallStatusType, DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, Page,
-    SmError,
+    CallStatusType, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, Page, SmError,
 };
 
 struct Pg {
@@ -755,5 +755,44 @@ async fn query_store_set_not_implemented() {
             }
         ),
         "got {err:?}"
+    );
+}
+
+/// The REST adapter surface for ADL2 template upload: a duplicate HRID is a
+/// conflict (`409_template_already_exists`, `definition-codegen.openapi.yaml`
+/// `/definition/template/adl2` POST) and invalid source is a 400 — while the
+/// SM-native `upload_artefact` keeps replace semantics (SM master04
+/// `i_definition_adl2.adoc`: "replace it").
+#[tokio::test]
+async fn adl2_template_upload_wire_conflicts_on_duplicate() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2_wire").await);
+
+    let tmpl = adl2_source("template", "openEHR-EHR-COMPOSITION.t_wire.v1.0.0", None);
+    let hrid = svc
+        .template_adl2_upload(tmpl.clone())
+        .await
+        .expect("first upload");
+    assert_eq!(hrid, "openEHR-EHR-COMPOSITION.t_wire.v1.0.0");
+
+    let dup = svc
+        .template_adl2_upload(tmpl.clone())
+        .await
+        .expect_err("duplicate template id conflicts on the wire surface");
+    assert!(dup.message.contains("already exists"), "got {dup:?}");
+
+    // The SM-native upload still replaces.
+    svc.upload_artefact(tmpl).await.expect("native replace");
+
+    // Invalid source → 400-class precondition (STCNT et al.), not 422.
+    let bad = svc
+        .template_adl2_upload(
+            "template (adl_version=2.0.6)\nopenEHR-EHR-COMPOSITION.t_bad.v1\n".to_owned(),
+        )
+        .await
+        .expect_err("invalid source rejected");
+    assert!(
+        matches!(bad.status, CallStatusType::PreconditionViolation),
+        "got {bad:?}"
     );
 }

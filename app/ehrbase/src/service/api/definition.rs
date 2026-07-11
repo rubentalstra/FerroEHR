@@ -67,8 +67,24 @@ impl DefinitionAdapter for EhrbaseService {
     async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
         // ADL2 operational-template source (text/plain). Store it and return the
         // stored ARCHETYPE_HRID; the dispatcher builds `Location` + the `Prefer`
-        // body from it (201_Template_adl2_upload). Invalid source → 422; a
-        // duplicate HRID is handled by replace (SM upload semantics).
+        // body from it (201_Template_adl2_upload). Invalid source → 422.
+        //
+        // Duplicate handling diverges by surface: the REST contract declares
+        // `409_template_already_exists` on this endpoint
+        // (`definition-codegen.openapi.yaml` /definition/template/adl2 POST),
+        // while the SM native `upload_artefact` says "replace it" (SM master04
+        // `i_definition_adl2.adoc`). This is the REST adapter seam, so an
+        // existing HRID is a 409 here; native SM callers keep replace.
+        let meta = crate::service::adl2_validation::validate_adl2_source(&source)
+            .map_err(|v| SmError::precondition(format!("{}: {}", v.code, v.detail)))?;
+        if self.adl2_exists(&meta.hrid).await? {
+            // → ServiceError::Conflict semantics: the wire maps this onto 409
+            // (`409_template_already_exists`).
+            return Err(SmError::new(
+                ehrbase_sm::CallStatusType::CompositionAlreadyExists,
+                format!("an ADL2 template with id '{}' already exists", meta.hrid),
+            ));
+        }
         Ok(self.adl2_upload(&source).await?)
     }
 
