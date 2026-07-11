@@ -50,7 +50,7 @@ before a finding enters `FINDINGS.md`.
 | 5 | rm-data-types-text-quantity | done (58 / 30) | done — 3 fixed + 1 tension noted | orchestrator-reviewed |
 | 6 | rm-data-types-rest | done (45 / 20) | done — 2 fixed | orchestrator-reviewed |
 | 7 | rm-support | done (40 / 17) | done — 4 fixed | orchestrator-reviewed |
-| 8 | rm-demographic | done (42 / 20) | pending | pending |
+| 8 | rm-demographic | done (42 / 20) | done — 3 fixed | orchestrator-reviewed |
 | 9 | rm-ehr-extract | done (50 / 8) | pending | pending |
 | 10 | rm-integration | done (20 / 6) | pending | pending |
 | 11 | base-foundation | done (57 / 30) | pending | pending |
