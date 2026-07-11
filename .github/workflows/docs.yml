@@ -44,7 +44,17 @@ jobs:
       - name: Assemble _site (landing + api + /docs/dev/)
         run: bash scripts/build-site.sh --dev-only       # writes ./_site
       - name: Link-check gate (built HTML + external links)
-        run: lychee --no-progress --root-dir "$PWD/_site" './_site/**/*.html'
+        # The deployed site lives under the /ehrbase-rs/ project base path, so
+        # absolute /ehrbase-rs/... links must resolve against a prefixed check
+        # tree (spec §2b). The site's own public origin is excluded: those URLs
+        # are the very tree being checked locally (circular before first deploy).
+        run: |
+          mkdir -p _check
+          ln -sfn "$PWD/_site" _check/ehrbase-rs
+          lychee --no-progress --max-retries 2 --timeout 20 \
+            --root-dir "$PWD/_check" \
+            --exclude '^https://rubentalstra\.github\.io/ehrbase-rs' \
+            './_site/**/*.html'
       - uses: actions/upload-artifact@v7
         with:
           name: site
