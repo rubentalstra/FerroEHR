@@ -213,8 +213,22 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
         GRANT USAGE ON SCHEMA ext TO ehrbase_app, ehrbase_reader;
-        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA ext TO ehrbase_app, ehrbase_reader;
-        -- Future ext functions reachable without a manual grant (doc 02 §3.2).
+        -- Grant on OUR functions explicitly, never `ALL FUNCTIONS IN SCHEMA ext`:
+        -- the schema also hosts the superuser-installed extensions (uuid-ossp,
+        -- pgcrypto, pg_trgm, btree_gist), whose functions the migrator cannot
+        -- grant on — a blanket grant emits one "no privileges were granted"
+        -- WARNING per extension function (~250 lines of boot noise).
+        GRANT EXECUTE ON FUNCTION
+            ext.openehr_date_days(text),
+            ext.openehr_time_seconds(text),
+            ext.openehr_tz_offset_seconds(text),
+            ext.openehr_date_time_seconds(text),
+            ext.openehr_duration_seconds(text),
+            ext.openehr_magnitude(jsonb)
+            TO ehrbase_app, ehrbase_reader;
+        -- Future ext functions we create are reachable without a manual grant
+        -- (doc 02 §3.2); default privileges apply per grantor, so this covers
+        -- exactly the migrator's own future functions.
         ALTER DEFAULT PRIVILEGES IN SCHEMA ext
             GRANT EXECUTE ON FUNCTIONS TO ehrbase_app, ehrbase_reader;
     ELSE
