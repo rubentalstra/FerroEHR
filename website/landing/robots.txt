@@ -1,0 +1,9 @@
+# EHRbase-rs documentation site — crawl policy (docs/plans/w1-docs-website.md §2d).
+# Canonical documentation is /docs/latest/. Development docs and archived
+# non-latest versions are disallowed so search engines index the latest docs.
+# The deploy job appends a Disallow per archived non-latest version from versions.json.
+User-agent: *
+Allow: /
+Disallow: /ehrbase-rs/docs/dev/
+
+Sitemap: https://rubentalstra.github.io/ehrbase-rs/sitemap.xml
