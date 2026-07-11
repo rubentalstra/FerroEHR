@@ -3,13 +3,13 @@
 The `deploy/helm/ehrbase-rs` chart deploys ehrbase-rs — a pure-Rust,
 openEHR-conformant CDR (ITS-REST 1.0.3 + AQL 1.1) — as a hardened, non-root,
 default-deny-ingress workload that connects to an **external** PostgreSQL 18.
-It encodes the ADR-013 database-role posture and the review-doc-02 operational
-guidance (pgaudit / TLS / PITR). This is a **deployment artifact only** — no
-Rust code participates.
+It encodes the ADR-013 database-role posture and the ADR-013 Appendix
+operational guidance (pgaudit / TLS / PITR). This is a **deployment artifact
+only** — no Rust code participates.
 
-> Governing docs: `docs/ADRs/ADR-013-enterprise-schema-baseline.md` (roles),
-> `docs/design/schema-review/02-pg18-enterprise-practices.md` §3/§5/§6
-> (security, migration hygiene, backup/PITR), `docs/ADRs/ADR-008` (storage).
+> Governing docs: `docs/ADRs/ADR-013-enterprise-schema-baseline.md` (roles +
+> Appendix §3/§5/§6: security, migration hygiene, backup/PITR),
+> `docs/ADRs/ADR-008` (storage).
 
 ## Chart layout
 
@@ -53,7 +53,7 @@ externally-managed, backed-up, PITR-capable PostgreSQL 18 (a managed service or
 an operator-run cluster), never a chart-side sidecar. The chart only carries the
 **connection string** (preferably from an existing Secret).
 
-ADR-013 §3 and review doc 02 §3.1 mandate a **four-role** model — never a
+ADR-013 §3 and Appendix §3.1 mandate a **four-role** model — never a
 superuser at runtime:
 
 | Role | Purpose | Used by |
@@ -65,7 +65,7 @@ superuser at runtime:
 
 The migrations create the roles idempotently, apply per-schema GRANTs +
 `ALTER DEFAULT PRIVILEGES` (so future tables stay reachable), and
-`REVOKE CREATE ON SCHEMA public FROM PUBLIC` (review doc 02 §3.2/§3.6).
+`REVOKE CREATE ON SCHEMA public FROM PUBLIC` (ADR-013 Appendix §3.2/§3.6).
 
 **The runtime pod connects as `ehrbase_app`** — the DSN in `database.existingSecret`
 should authenticate as that role, not the migrator or the owner.
@@ -96,7 +96,7 @@ The binary calls `run_migrations` on boot. You therefore choose one of:
 `migrations.runByMigratorRole` in values is an informational marker surfaced in
 `helm install` NOTES; the chart never runs migrations itself.
 
-## PostgreSQL security posture (review doc 02 §3, §6 — deployment-layer)
+## PostgreSQL security posture (ADR-013 Appendix §3, §6 — deployment-layer)
 
 These are **database-side** and belong to whoever provisions PostgreSQL; the
 chart references them but cannot enforce them:
@@ -164,12 +164,12 @@ the separate `management.port`). The JSON `/management/metrics`, `/info`,
 
 ## Upgrade strategy
 
-- **Append-only migrations (ADR-013 §1, review doc 02 §5.1):** migrations are
+- **Append-only migrations (ADR-013 §1, Appendix §5.1):** migrations are
   never edited once applied; a new schema change is a new `000N` file. A rolling
   Deployment upgrade must be compatible with the *previous* schema for the
   window where both versions run — additive DDL first, destructive changes in a
   later release after all pods are on the new version.
-- **Lock-safe DDL (review doc 02 §5.2/§5.3):** the migration runner wraps DDL in
+- **Lock-safe DDL (ADR-013 Appendix §5.2/§5.3):** the migration runner wraps DDL in
   a `lock_timeout` (≈5s) + bounded `statement_timeout` so a migration cannot
   block live traffic indefinitely on a lock; on a busy table use `CREATE INDEX
   CONCURRENTLY` and `NOT VALID` + later `VALIDATE`. Set these on the migrator
