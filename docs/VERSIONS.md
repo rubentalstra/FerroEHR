@@ -7,6 +7,22 @@ versions specifically, the root `Cargo.toml` `[workspace.dependencies]` table
 is authoritative (see "Rust dependency pins" below); this file records the
 platform, language, database, and openEHR specification pins.
 
+## Product and crate versioning
+
+The **product** version (the workspace `version` in the root `Cargo.toml`,
+inherited by the `ehrbase-*` application crates, the tools, `openehr-flat`,
+and the codegen tooling) follows its own SemVer line, starting at **3.0.0**
+(2026-07-11 — the fork's inherited upstream tags/releases were removed; this
+project releases as the successor of the EHRbase 2.x line). Releases are
+changelog-driven (`CHANGELOG.md`, Keep a Changelog 1.1.0) and published as
+pre-releases until production sign-off.
+
+The `openehr-*` **spec crates** are versioned by the openEHR specification
+they implement (the pins below): `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
+`openehr-am` 2.4.0, `openehr-term` 3.1.0, `openehr-lang` 1.0.0,
+`openehr-query` 1.1.0, `openehr-its` 1.0.3. They bump only on a spec-pin
+bump, never with the product version.
+
 ## Language and runtime
 
 | Item | Pin |

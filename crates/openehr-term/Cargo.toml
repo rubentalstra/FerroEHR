@@ -1,6 +1,6 @@
 [package]
 name = "openehr-term"
-version = "0.1.0"
+version = "3.1.0"                 # = the implemented openEHR spec version: TERM 3.1.0
 description = "openEHR TERM 3.1.0 terminology data model, generated from BMM (ADR-004); vendored terminology XML in assets/"
 edition.workspace = true
 rust-version.workspace = true

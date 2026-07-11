@@ -198,3 +198,37 @@ jobs:
         with:
           tool: cargo-machete
       - run: cargo machete
+
+  # Changelog guard (Keep a Changelog discipline): a PR that changes
+  # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
+  # the same PR. Escape hatch: the `no-changelog` label for genuinely
+  # invisible changes (internal refactors, CI, docs).
+  changelog:
+    name: changelog-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Require a CHANGELOG entry for user-visible changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-changelog') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-changelog label set — guard skipped."; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          if ! echo "$changed" | grep -qE '^(app/|crates/|deploy/|docker/|docker-compose|Cargo\.toml|Cargo\.lock)'; then
+            echo "No user-visible surface touched — guard not required."; exit 0
+          fi
+          if echo "$changed" | grep -qx 'CHANGELOG.md'; then
+            if git diff "$BASE" "$HEAD" -- CHANGELOG.md | grep -q '^+.*[^[:space:]]'; then
+              echo "CHANGELOG.md updated — OK."; exit 0
+            fi
+          fi
+          echo "::error::This PR changes user-visible surfaces (app/, crates/, deploy/, docker/, manifests) but does not add a CHANGELOG.md [Unreleased] entry (Keep a Changelog 1.1.0). Add one, or apply the 'no-changelog' label if truly invisible." >&2
+          exit 1

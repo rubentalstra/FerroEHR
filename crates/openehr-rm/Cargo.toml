@@ -1,6 +1,6 @@
 [package]
 name = "openehr-rm"
-version = "0.1.0"
+version = "1.2.0"                 # = the implemented openEHR spec version: RM 1.2.0
 description = "openEHR RM 1.2.0 Reference Model, generated from BMM (ADR-004)"
 edition.workspace = true
 rust-version.workspace = true

@@ -1,29 +1,68 @@
 # .github/workflows/release.yml
+#
+# Releases are changelog-driven (Keep a Changelog 1.1.0, CHANGELOG.md):
+#   1. A `vX.Y.Z` tag push publishes a GitHub Release whose notes are the
+#      matching `## [X.Y.Z]` section — the job FAILS if CHANGELOG.md has no
+#      such section, so a release can never ship without its changelog.
+#   2. Publishing the release triggers the binary build matrix, which
+#      attaches per-arch server tarballs.
+# (Replaced the never-firing release-please job — it triggered on pushes to
+# a `main` branch that does not exist, and its conventional-commit changelog
+# conflicted with the hand-curated Keep a Changelog discipline.)
 name: Release
 
 on:
   push:
-    branches: [main]
+    tags: ["v*"]
   release:
     types: [published]
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  # Automated versioning + CHANGELOG from conventional commits.
-  # Opens/updates a "release PR"; merging it tags a release.
-  release-please:
+  publish-release:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: actions/checkout@v7
+      - name: Extract the changelog section for this tag
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section for $version — releases are changelog-driven (Keep a Changelog). Add '## [$version] - YYYY-MM-DD' first." >&2
+            exit 1
+          fi
+          # Everything between "## [<version>]" and the next "## [" heading.
+          awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" {found=1; next}
+            found && /^## \[/ {exit}
+            found {print}
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::The [$version] changelog section is empty." >&2
+            exit 1
+          fi
+          echo "Release notes for $version:"; cat release-notes.md
+      - name: Verify the tag matches the workspace version
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          manifest=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          if [ "$manifest" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match workspace version $manifest in Cargo.toml." >&2
+            exit 1
+          fi
+      - name: Publish the GitHub release
+        uses: softprops/action-gh-release@v3
         with:
-          release-type: rust
-          # For per-crate publishing later, switch to a manifest config:
-          #   config-file: release-please-config.json
-          #   manifest-file: .release-please-manifest.json
+          name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          # Every release is a pre-release until the first production
+          # sign-off (owner decision 2026-07-11); flip to
+          # `contains(github.ref_name, '-')` at that point.
+          prerelease: true
 
   # Build the server binary and attach it when a GitHub Release is published.
   # Native runner per arch (no cross toolchain, no QEMU) — same strategy as
