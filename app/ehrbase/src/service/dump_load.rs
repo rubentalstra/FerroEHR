@@ -657,7 +657,7 @@ async fn insert_version(
          branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
          lifecycle_state, contribution_id, audit_id, template_id, signature, creating_system_id) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
-         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16)",
+         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17)",
     )
     .bind(v.vo_id)
     .bind(&v.kind)
