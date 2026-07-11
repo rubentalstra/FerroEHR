@@ -69,17 +69,30 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
         &out_dir.join("CATALOG.md"),
         &render_catalog_md(results, &catalog),
     )?;
-    // The Conformance Statement + Certificate artefacts (R9/R10): both are pure
+    // The Conformance Statement + Certificate artefacts (R9/R10) are
+    // **self-assessment** artifacts of *our* product — emitted only when the SUT
+    // is `ehrbase-rs` (§3a.2, honesty rule 4). We never manufacture a
+    // conformance certificate for someone else's product; an upstream run gets
+    // `results.json` + report + catalogue only. Both artifacts are pure
     // functions of the machine verdicts, so `report --from results.json`
     // regenerates them identically to a live run.
-    write_file(
-        &out_dir.join("CONFORMANCE_STATEMENT.md"),
-        &crate::reporting::statement::render_statement_md(results),
-    )?;
-    write_file(
-        &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
-        &crate::reporting::statement::render_certificate_md(results, &catalog),
-    )?;
+    if results.sut.is_ehrbase_rs() {
+        write_file(
+            &out_dir.join("CONFORMANCE_STATEMENT.md"),
+            &crate::reporting::statement::render_statement_md(results),
+        )?;
+        write_file(
+            &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
+            &crate::reporting::statement::render_certificate_md(results, &catalog),
+        )?;
+    } else {
+        eprintln!(
+            "conformance: SUT product is `{}` (not ehrbase-rs) — suppressing the \
+             Conformance Statement + Certificate (self-assessment artifacts are \
+             never emitted for another product, §3a.2)",
+            results.sut.product.name
+        );
+    }
     write_file(
         &out_dir.join("badge.json"),
         &render_badge(results, &catalog),
@@ -117,6 +130,7 @@ struct AreaTally {
     failed: usize,
     errored: usize,
     skipped: usize,
+    not_applicable: usize,
 }
 
 fn tally_by_area(results: &RunResults, catalog: &Catalog) -> BTreeMap<Area, AreaTally> {
@@ -136,15 +150,21 @@ fn tally_by_area(results: &RunResults, catalog: &Catalog) -> BTreeMap<Area, Area
             CaseStatus::Failed => t.failed += 1,
             CaseStatus::Errored => t.errored += 1,
             CaseStatus::Skipped => t.skipped += 1,
+            CaseStatus::NotApplicable => t.not_applicable += 1,
         }
     }
     by
 }
 
 fn render_header(out: &mut String, results: &RunResults) {
+    let product = &results.sut.product;
+    let _ = write!(out, "- Product: {} {}", product.name, product.version);
+    if let Some(digest) = &product.image_digest {
+        let _ = write!(out, " (`{digest}`)");
+    }
     let _ = write!(
         out,
-        "- SUT: `{}`\n- Spec versions: RM {} · ITS-REST {} · AQL {} · TERM {}\n\
+        "\n- SUT: `{}`\n- Spec versions: RM {} · ITS-REST {} · AQL {} · TERM {}\n\
          - Auth mode: {}\n- Started: {}\n\n",
         results.sut.base_url,
         results.sut.versions.rm,
@@ -163,8 +183,8 @@ fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog)
     let denominators = active_per_area(catalog);
 
     out.push_str("### Per-area matrix\n\n");
-    out.push_str("| Area | Catalogue (active) | Passed | Failed | Errored | Skipped |\n");
-    out.push_str("|---|--:|--:|--:|--:|--:|\n");
+    out.push_str("| Area | Catalogue (active) | Passed | Failed | Errored | Skipped | N/A |\n");
+    out.push_str("|---|--:|--:|--:|--:|--:|--:|\n");
     for area in Area::ALL {
         let denom = denominators.get(&area).copied().unwrap_or(0);
         if denom == 0 && !by.contains_key(&area) {
@@ -173,14 +193,15 @@ fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog)
         let t = by.get(&area).copied().unwrap_or_default();
         let _ = writeln!(
             out,
-            "| {} — {} | {} | {} | {} | {} | {} |",
+            "| {} — {} | {} | {} | {} | {} | {} | {} |",
             area.tag(),
             area.title(),
             denom,
             t.passed,
             t.failed,
             t.errored,
-            t.skipped
+            t.skipped,
+            t.not_applicable
         );
     }
 
@@ -206,6 +227,52 @@ fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog)
                 c.id,
                 c.format,
                 c.message.as_deref().unwrap_or("(no message)")
+            );
+        }
+        out.push('\n');
+    }
+
+    // Extensions / RM-version-sensitive routes adjudicated not-applicable to
+    // this SUT (§3a.3/§3a.4) — excluded from pass/fail, listed with the cited
+    // reason. One line per ECC id (formats collapsed).
+    let mut na_seen: BTreeMap<String, &crate::results::CaseOutcome> = BTreeMap::new();
+    let mut na_order: Vec<String> = Vec::new();
+    for c in results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::NotApplicable)
+    {
+        let key = if c.ecc_id.is_empty() {
+            c.id.clone()
+        } else {
+            c.ecc_id.clone()
+        };
+        na_seen.entry(key.clone()).or_insert_with(|| {
+            na_order.push(key.clone());
+            c
+        });
+    }
+    out.push_str("### Not applicable to this SUT (extensions / RM-version-sensitive)\n\n");
+    if na_order.is_empty() {
+        out.push_str("_None — every catalogued case applies to this SUT._\n\n");
+    } else {
+        out.push_str(
+            "Adjudicated in the committed register, not a conformance finding \
+             (excluded from pass/fail and capability math).\n\n",
+        );
+        for key in &na_order {
+            let c = na_seen[key];
+            let _ = writeln!(
+                out,
+                "- **{}** {} — {} _(cite: {})_",
+                c.ecc_id,
+                c.title,
+                c.message.as_deref().unwrap_or("(no reason)"),
+                if c.citation.is_empty() {
+                    "—"
+                } else {
+                    c.citation.as_str()
+                }
             );
         }
         out.push('\n');
@@ -286,10 +353,11 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
     render_header(&mut out, results);
     let _ = write!(
         out,
-        "**{} case×format executions · {} passed · {} failed.**\n\n",
+        "**{} case×format executions · {} passed · {} failed · {} not applicable.**\n\n",
         results.executed(),
         results.passed(),
         results.failed(),
+        results.not_applicable(),
     );
     render_area_matrix(&mut out, results, catalog);
 
@@ -316,10 +384,12 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
         .count();
     let _ = write!(
         out,
-        "| Catalogue (active cases) | {active} |\n| Executed | {} |\n| Passed | {} |\n| Failed | {} |\n\n",
+        "| Catalogue (active cases) | {active} |\n| Executed | {} |\n| Passed | {} |\n\
+         | Failed | {} |\n| Not applicable | {} |\n\n",
         results.executed(),
         results.passed(),
-        results.failed()
+        results.failed(),
+        results.not_applicable()
     );
 
     out.push_str("## 3. Detailed test report\n\n");
@@ -335,6 +405,7 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
                 CaseStatus::Failed => "**FAIL**",
                 CaseStatus::Errored => "ERROR",
                 CaseStatus::Skipped => "skipped",
+                CaseStatus::NotApplicable => "N/A",
             };
             let _ = writeln!(
                 out,
@@ -363,17 +434,18 @@ fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
             _ => "not claimable",
         };
         let _ = writeln!(out, "### {profile:?} — {outcome}\n");
-        out.push_str("| Capability | Passed | Failed | Errored | Skipped | Verdict |\n");
-        out.push_str("|---|--:|--:|--:|--:|---|\n");
+        out.push_str("| Capability | Passed | Failed | Errored | Skipped | N/A | Verdict |\n");
+        out.push_str("|---|--:|--:|--:|--:|--:|---|\n");
         for c in &v.capabilities {
             let _ = writeln!(
                 out,
-                "| {} | {} | {} | {} | {} | {} |",
+                "| {} | {} | {} | {} | {} | {} | {} |",
                 c.capability,
                 c.passed,
                 c.failed,
                 c.errored,
                 c.skipped,
+                c.not_applicable,
                 c.label()
             );
         }
@@ -488,13 +560,14 @@ fn render_profile_badge(profile: Profile, results: &RunResults) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::results::{CorpusPin, SelectionInfo, SutIdentity};
+    use crate::results::{CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity};
     use crate::version::SpecVersions;
 
     fn zero_state_results() -> RunResults {
         RunResults {
             sut: SutIdentity {
                 base_url: "http://sut".to_owned(),
+                product: ProductIdentity::default(),
                 versions: SpecVersions::latest(),
                 auth_mode: "none".to_owned(),
             },
@@ -540,5 +613,107 @@ mod tests {
         let back = from_results_file(&dir.join("results.json")).expect("read back");
         assert_eq!(back.executed(), 0);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A non-ehrbase-rs SUT gets `results.json` + report + catalogue + badges,
+    /// but **no** Statement/Certificate (§3a.2) — those are self-assessment
+    /// artifacts of our own product only.
+    #[test]
+    fn upstream_sut_suppresses_statement_and_certificate() {
+        let mut r = zero_state_results();
+        r.sut.product = ProductIdentity {
+            name: "ehrbase-java".to_owned(),
+            version: "2.34.0".to_owned(),
+            image_digest: Some("sha256:cafe".to_owned()),
+        };
+        let dir = std::env::temp_dir().join(format!("ecc-upstream-{}", std::process::id()));
+        write_all(&r, &dir).expect("write");
+        // The machine record and the human/badge artifacts are still written.
+        for name in [
+            "results.json",
+            "CONFORMANCE_REPORT.md",
+            "CATALOG.md",
+            "badge.json",
+        ] {
+            assert!(
+                dir.join(name).exists(),
+                "{name} must be written for upstream"
+            );
+        }
+        // The self-assessment artifacts are suppressed.
+        assert!(
+            !dir.join("CONFORMANCE_STATEMENT.md").exists(),
+            "Statement must be suppressed for a non-ehrbase-rs SUT"
+        );
+        assert!(
+            !dir.join("CONFORMANCE_CERTIFICATE.md").exists(),
+            "Certificate must be suppressed for a non-ehrbase-rs SUT"
+        );
+        // The identity is recorded in results.json and survives a round-trip.
+        let back = from_results_file(&dir.join("results.json")).expect("read back");
+        assert_eq!(back.sut.product.name, "ehrbase-java");
+        assert_eq!(back.sut.product.version, "2.34.0");
+        assert_eq!(
+            back.sut.product.image_digest.as_deref(),
+            Some("sha256:cafe")
+        );
+        assert!(!back.sut.is_ehrbase_rs());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Our own product's identity is written into `results.json` and the report
+    /// header shows it (§3a.1).
+    #[test]
+    fn self_sut_identity_is_recorded_and_rendered() {
+        let r = zero_state_results();
+        let catalog = Catalog::default();
+        let report = render_report_md(&r, &catalog);
+        assert!(
+            report.contains(&format!(
+                "Product: ehrbase-rs {}",
+                env!("CARGO_PKG_VERSION")
+            )),
+            "the report header states the product identity"
+        );
+        let json = serde_json::to_string(&r).expect("serialize");
+        assert!(json.contains("\"product\""), "results.json carries product");
+        assert!(json.contains("ehrbase-rs"));
+    }
+
+    /// A `NotApplicable` outcome is excluded from pass/fail and rendered in its own
+    /// section with the cited reason.
+    #[test]
+    fn not_applicable_outcome_is_reported_separately() {
+        let mut r = zero_state_results();
+        r.sut.product = ProductIdentity {
+            name: "ehrbase-java".to_owned(),
+            version: "2.34.0".to_owned(),
+            image_digest: None,
+        };
+        r.cases.push(CaseOutcome {
+            ecc_id: "ECC-DEM-001".to_owned(),
+            id: "dem/create".to_owned(),
+            title: "Create a party".to_owned(),
+            capability: "DemographicApi".to_owned(),
+            profiles: vec!["Options".to_owned()],
+            format: "json".to_owned(),
+            status: CaseStatus::NotApplicable,
+            passed_data_sets: 0,
+            total_data_sets: 0,
+            message: Some("Upstream has no demographic REST API.".to_owned()),
+            citation: "docs/plans/x1-comparison.md §2c".to_owned(),
+            schedule_ref: None,
+            duration_ms: 0,
+        });
+        assert_eq!(r.passed(), 0);
+        assert_eq!(r.failed(), 0);
+        assert_eq!(r.not_applicable(), 1);
+        let catalog = Catalog::default();
+        let report = render_report_md(&r, &catalog);
+        assert!(report.contains("Not applicable to this SUT"));
+        assert!(report.contains("ECC-DEM-001"));
+        assert!(report.contains("no demographic REST API"));
+        assert!(report.contains("x1-comparison.md §2c"));
+        assert!(report.contains("· 1 not applicable"));
     }
 }

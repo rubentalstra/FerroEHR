@@ -440,16 +440,28 @@ filed upstream — not worked around).
 
 ## Tasks
 
-- [ ] **X1.1 ECC upstream-SUT mode + adjudication register.**
-  - [ ] `SutIdentity.product {name, version, image_digest}` + CLI flags;
+- [x] **X1.1 ECC upstream-SUT mode + adjudication register.** *(2026-07-11:
+  `SutIdentity.product{name,version,image_digest}` + `--sut-*` flags (default
+  `ehrbase-rs @ <workspace ver>`); `CaseStatus::NotApplicable` excluded from
+  pass/fail + capability math with its own report section + N/A columns;
+  `AdjudicationRegister` TOML loader (`extension`/`rm-version-sensitive` →
+  N/A, `defect` stays a failure) applied at the `engine/run.rs` executor seam
+  **only for non-ehrbase-rs SUTs**; Statement+Certificate suppressed (log
+  line) for non-self SUTs and their Solution/Vendor de-hard-coded;
+  `--admin-base-url` routes `/admin/*` to a sibling mount via
+  `SutClient::with_admin_base_url` (no case edits); seed register
+  `adjudications/ehrbase-java-2.34.toml` (DEM/SIG extensions, cited) + README.
+  67/67 nextest, conformance clippy-clean, no-register ehrbase-rs run is
+  zero-drift bar the new `product` field.)*
+  - [x] `SutIdentity.product {name, version, image_digest}` + CLI flags;
         threaded through report/statement; Certificate/Statement emitted
-        only for ehrbase-rs SUTs (`statement.rs:138-142` de-hard-coded).
-  - [ ] `CaseStatus::NotApplicable` (excluded from pass/fail + capability
+        only for ehrbase-rs SUTs (`statement.rs` de-hard-coded).
+  - [x] `CaseStatus::NotApplicable` (excluded from pass/fail + capability
         math, own report section).
-  - [ ] `--adjudications <file>` TOML register + loader, hooked in
-        `engine/run.rs:76-120`; dispositions `extension` /
+  - [x] `--adjudications <file>` TOML register + loader, hooked in
+        `engine/run.rs`; dispositions `extension` /
         `rm-version-sensitive` / `defect` per §3a.4, every entry cited.
-  - [ ] `--admin-base-url` for sibling-mounted admin APIs (`suites/admin.rs`
+  - [x] `--admin-base-url` for sibling-mounted admin APIs (`suites/admin.rs`
         + `security.rs:120`).
   - **Acceptance:** nextest + clippy green; a no-register ehrbase-rs run
     reproduces the standing baseline with **zero drift** (only the new

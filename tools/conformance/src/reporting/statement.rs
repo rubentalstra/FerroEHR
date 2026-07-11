@@ -45,6 +45,14 @@ pub fn render_statement_md(results: &RunResults) -> String {
     );
 
     out.push_str("## System under test\n\n| Field | Value |\n|---|---|\n");
+    let _ = writeln!(
+        out,
+        "| Product | {} {} |",
+        results.sut.product.name, results.sut.product.version
+    );
+    if let Some(digest) = &results.sut.product.image_digest {
+        let _ = writeln!(out, "| Image digest | `{digest}` |");
+    }
     let _ = writeln!(out, "| SUT | `{}` |", results.sut.base_url);
     let _ = writeln!(out, "| Auth mode | {} |", results.sut.auth_mode);
     let _ = writeln!(out, "| Run started | {} |", results.started);
@@ -132,13 +140,21 @@ pub fn render_certificate_md(results: &RunResults, catalog: &Catalog) -> String 
     );
 
     // ── System Under Test (SUT) ─────────────────────────────────────────────
+    // Solution/Vendor are driven by the recorded product identity, never
+    // hard-coded (§3a.1/§3a.2): this artifact is only emitted for an
+    // `ehrbase-rs` SUT (`report::write_all`), so the values below are our own,
+    // but they now read from the data rather than a literal.
+    let product = &results.sut.product;
     out.push_str("## System Under Test (SUT)\n\n| | |\n|---|---|\n");
     let _ = writeln!(
         out,
-        "| Solution | ehrbase-rs @ `{}` |",
-        results.sut.base_url
+        "| Solution | {} {} @ `{}` |",
+        product.name, product.version, results.sut.base_url
     );
-    out.push_str("| Vendor | ehrbase-rs (self-assessed) |\n");
+    if let Some(digest) = &product.image_digest {
+        let _ = writeln!(out, "| Image digest | `{digest}` |");
+    }
+    let _ = writeln!(out, "| Vendor | {} (self-assessed) |", product.name);
     out.push_str("| Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |\n");
     let _ = writeln!(
         out,
@@ -321,7 +337,11 @@ fn merge_status(acc: Option<CaseStatus>, next: CaseStatus) -> CaseStatus {
         CaseStatus::Failed => 3,
         CaseStatus::Errored => 2,
         CaseStatus::Passed => 1,
-        CaseStatus::Skipped => 0,
+        // Skipped / NotApplicable are lowest salience: a passing format wins the
+        // merged row. (NotApplicable never reaches the certificate — it is only
+        // emitted for `ehrbase-rs` SUTs, which the register never touches — but
+        // the match stays exhaustive.)
+        CaseStatus::Skipped | CaseStatus::NotApplicable => 0,
     };
     match acc {
         Some(a) if rank(a) >= rank(next) => a,
@@ -336,13 +356,14 @@ fn verdict_word(status: CaseStatus) -> &'static str {
         CaseStatus::Failed => "**FAIL**",
         CaseStatus::Errored => "ERROR",
         CaseStatus::Skipped => "skipped",
+        CaseStatus::NotApplicable => "n/a",
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::results::{CaseOutcome, CorpusPin, SelectionInfo, SutIdentity};
+    use crate::results::{CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity};
     use crate::version::SpecVersions;
 
     fn outcome(ecc_id: &str, capability: &str, format: &str, status: CaseStatus) -> CaseOutcome {
@@ -367,6 +388,7 @@ mod tests {
         RunResults {
             sut: SutIdentity {
                 base_url: "http://sut".to_owned(),
+                product: ProductIdentity::default(),
                 versions: SpecVersions::latest(),
                 auth_mode: "basic".to_owned(),
             },
@@ -415,5 +437,36 @@ mod tests {
         // The two formats collapse to one row; the worse (FAIL) wins.
         assert!(cert.contains("ECC-EHR-001 — A case"));
         assert!(cert.contains("**FAIL**"));
+    }
+
+    #[test]
+    fn certificate_solution_and_vendor_are_data_driven_not_hard_coded() {
+        // The certificate no longer hard-codes `ehrbase-rs` as Solution/Vendor
+        // (§3a.1); it reads the recorded product identity. (In practice the
+        // certificate is only *emitted* for an ehrbase-rs SUT — the suppression
+        // lives in `report::write_all` — but the render must be honest either
+        // way.)
+        let cat = Catalog::default();
+        let mut r = results(vec![outcome(
+            "ECC-EHR-001",
+            "EhrOperations",
+            "json",
+            CaseStatus::Passed,
+        )]);
+        r.sut.product = ProductIdentity {
+            name: "ehrbase-java".to_owned(),
+            version: "2.34.0".to_owned(),
+            image_digest: Some("sha256:deadbeef".to_owned()),
+        };
+        let cert = render_certificate_md(&r, &cat);
+        assert!(
+            cert.contains("ehrbase-java 2.34.0"),
+            "Solution reads the product identity"
+        );
+        assert!(
+            cert.contains("| Vendor | ehrbase-java (self-assessed) |"),
+            "Vendor reads the product name, not a hard-coded ehrbase-rs"
+        );
+        assert!(cert.contains("sha256:deadbeef"), "image digest is shown");
     }
 }

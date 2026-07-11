@@ -173,6 +173,7 @@ thiserror = "2"                    # v2 current
 anyhow = "1"                       # binaries only
 config = "0.15.25"                   # or figment
 figment = { version = "0.10", features = ["toml", "env"] }
+toml = "1"                         # standalone TOML parser (ECC upstream adjudication register, X1)
 dotenvy = "0.15"
 clap = { version = "4", features = ["derive", "env"] }
 parking_lot = "0.12"
