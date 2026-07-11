@@ -51,7 +51,7 @@ before a finding enters `FINDINGS.md`.
 | 6 | rm-data-types-rest | done (45 / 20) | done — 2 fixed | orchestrator-reviewed |
 | 7 | rm-support | done (40 / 17) | done — 4 fixed | orchestrator-reviewed |
 | 8 | rm-demographic | done (42 / 20) | done — 3 fixed | orchestrator-reviewed |
-| 9 | rm-ehr-extract | done (50 / 8) | pending | pending |
+| 9 | rm-ehr-extract | done (50 / 8) | done — 6 fixed | orchestrator-reviewed |
 | 10 | rm-integration | done (20 / 6) | pending | pending |
 | 11 | base-foundation | done (57 / 30) | pending | pending |
 | 12 | base-base-types | done (37 / 11) | pending | pending |
