@@ -111,6 +111,9 @@ pub struct CapabilityVerdict {
     pub errored: usize,
     /// Skipped outcomes (reported; do not pass a capability by themselves).
     pub skipped: usize,
+    /// Not-applicable outcomes (adjudicated extension / RM-version-sensitive —
+    /// reported but excluded from the pass formula entirely, §3a.3).
+    pub not_applicable: usize,
     /// Whether the capability passes: `passed ≥ 1 && failed == 0 && errored == 0`.
     pub pass: bool,
 }
@@ -159,6 +162,7 @@ pub fn verdict(profile: Profile, results: &RunResults) -> ProfileVerdict {
                 failed: 0,
                 errored: 0,
                 skipped: 0,
+                not_applicable: 0,
                 pass: false,
             };
             for case in results.cases.iter().filter(|c| c.capability == label) {
@@ -167,6 +171,10 @@ pub fn verdict(profile: Profile, results: &RunResults) -> ProfileVerdict {
                     CaseStatus::Failed => v.failed += 1,
                     CaseStatus::Errored => v.errored += 1,
                     CaseStatus::Skipped => v.skipped += 1,
+                    // NotApplicable is excluded from capability computation
+                    // entirely (§3a.3): it neither evidences nor breaks a
+                    // capability.
+                    CaseStatus::NotApplicable => v.not_applicable += 1,
                 }
             }
             v.pass = v.passed >= 1 && v.failed == 0 && v.errored == 0;
@@ -189,7 +197,7 @@ pub fn verdict(profile: Profile, results: &RunResults) -> ProfileVerdict {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::results::{CaseOutcome, CorpusPin, SelectionInfo, SutIdentity};
+    use crate::results::{CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity};
     use crate::version::SpecVersions;
 
     fn outcome(capability: &str, status: CaseStatus) -> CaseOutcome {
@@ -214,6 +222,7 @@ mod tests {
         RunResults {
             sut: SutIdentity {
                 base_url: "x".to_owned(),
+                product: ProductIdentity::default(),
                 versions: SpecVersions::latest(),
                 auth_mode: "none".to_owned(),
             },
@@ -285,6 +294,44 @@ mod tests {
             !v.pass,
             "no optional capability passed → OPTIONS not obtained"
         );
+    }
+
+    #[test]
+    fn not_applicable_is_excluded_from_capability_math() {
+        // A capability with one passing case and one NotApplicable case still
+        // passes: NotApplicable neither evidences nor breaks it (§3a.3). It is
+        // tallied separately for reporting only.
+        let r = results(vec![
+            outcome("EhrOperations", CaseStatus::Passed),
+            outcome("EhrOperations", CaseStatus::NotApplicable),
+        ]);
+        let v = verdict(Profile::Core, &r);
+        let ehr = v
+            .capabilities
+            .iter()
+            .find(|c| c.capability == "EhrOperations")
+            .expect("EhrOperations in CORE");
+        assert!(ehr.pass, "one pass + one N/A still passes the capability");
+        assert_eq!(ehr.passed, 1);
+        assert_eq!(ehr.not_applicable, 1);
+        assert_eq!(ehr.failed, 0);
+        assert_eq!(ehr.errored, 0);
+    }
+
+    #[test]
+    fn not_applicable_alone_does_not_evidence_a_capability() {
+        // A capability whose only case is NotApplicable is *not* evidenced (it
+        // has zero passes) — it reads "not evidenced", never "pass".
+        let r = results(vec![outcome("DemographicApi", CaseStatus::NotApplicable)]);
+        let v = verdict(Profile::Options, &r);
+        let dem = v
+            .capabilities
+            .iter()
+            .find(|c| c.capability == "DemographicApi")
+            .expect("DemographicApi in OPTIONS");
+        assert!(!dem.pass);
+        assert_eq!(dem.not_applicable, 1);
+        assert_eq!(dem.label(), "not evidenced");
     }
 
     #[test]

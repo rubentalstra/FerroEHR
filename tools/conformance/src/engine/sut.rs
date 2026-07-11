@@ -51,15 +51,20 @@ impl Sut {
 
     /// An external SUT at `base_url` with the given credential slots.
     ///
+    /// `admin_base_url`, when `Some`, routes `/admin/*` requests to a sibling
+    /// admin mount (e.g. upstream `EHRbase`'s `/ehrbase/rest/admin`, §3a.5); `None`
+    /// nests admin under `base_url` as every existing run does.
+    ///
     /// # Errors
     /// [`SutError::Transport`] if the HTTP client cannot be built.
     pub fn external(
         base_url: impl Into<String>,
         regular: Option<Credential>,
         admin: Option<Credential>,
+        admin_base_url: Option<String>,
     ) -> Result<Self, SutError> {
         Ok(Self {
-            client: SutClient::new(base_url, regular, admin)?,
+            client: SutClient::new(base_url, regular, admin)?.with_admin_base_url(admin_base_url),
         })
     }
 }

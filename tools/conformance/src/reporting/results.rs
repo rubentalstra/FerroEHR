@@ -56,6 +56,17 @@ impl RunResults {
             .count()
     }
 
+    /// Cases reported as not applicable to this SUT (an adjudicated extension /
+    /// RM-version-sensitive route — excluded from pass/fail and capability
+    /// math, §3a.3).
+    #[must_use]
+    pub fn not_applicable(&self) -> usize {
+        self.cases
+            .iter()
+            .filter(|c| c.status == CaseStatus::NotApplicable)
+            .count()
+    }
+
     /// The number of executed case×format outcomes (the run denominator; the
     /// catalogue denominator lives in `CATALOG.md`).
     #[must_use]
@@ -69,11 +80,67 @@ impl RunResults {
 pub struct SutIdentity {
     /// The ITS-REST base URL.
     pub base_url: String,
+    /// The product under test (name, version, image digest) — first-class so a
+    /// run's artifacts unambiguously state *which server* they measured (§3a.1).
+    /// `#[serde(default)]` keeps pre-X1 `results.json` files readable via
+    /// `report --from`.
+    #[serde(default)]
+    pub product: ProductIdentity,
     /// The declared specification versions (a property of the claim).
     #[serde(default)]
     pub versions: SpecVersions,
     /// The declared auth mode (e.g. `"basic (RBAC off)"`).
     pub auth_mode: String,
+}
+
+impl SutIdentity {
+    /// Whether the SUT is this project's own product (`ehrbase-rs`, case-
+    /// insensitive). The Conformance Statement + Certificate are self-assessment
+    /// artifacts emitted only for our own product (§3a.2), and the upstream
+    /// adjudication register is consulted only for non-self SUTs (§3a.4).
+    #[must_use]
+    pub fn is_ehrbase_rs(&self) -> bool {
+        self.product.is_ehrbase_rs()
+    }
+}
+
+/// The product under test: what server, which version, which image.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProductIdentity {
+    /// The product name (e.g. `"ehrbase-rs"`, `"ehrbase-java"`).
+    pub name: String,
+    /// The product version (e.g. the workspace version, or `"2.34.0"`).
+    pub version: String,
+    /// The container image digest (`sha256:…`) when the run targeted a pinned
+    /// image, else absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_digest: Option<String>,
+}
+
+impl ProductIdentity {
+    /// This project's own product name — the identity every existing run
+    /// defaults to, so our baseline stays stable.
+    pub const EHRBASE_RS: &'static str = "ehrbase-rs";
+
+    /// Whether this identity is our own product (`ehrbase-rs`, case-insensitive).
+    #[must_use]
+    pub fn is_ehrbase_rs(&self) -> bool {
+        self.name.eq_ignore_ascii_case(Self::EHRBASE_RS)
+    }
+}
+
+impl Default for ProductIdentity {
+    /// Defaults to `ehrbase-rs @ <this crate's version>` (= the workspace
+    /// version), so a run with no `--sut-*` flags — and any pre-X1
+    /// `results.json` reparsed via `report --from` — identifies as our own
+    /// product exactly as before.
+    fn default() -> Self {
+        Self {
+            name: Self::EHRBASE_RS.to_owned(),
+            version: env!("CARGO_PKG_VERSION").to_owned(),
+            image_digest: None,
+        }
+    }
 }
 
 /// The pinned reference corpus this framework was designed against
@@ -148,6 +215,13 @@ pub enum CaseStatus {
     Errored,
     /// The case was skipped for a stated reason.
     Skipped,
+    /// The case is not applicable to this SUT — an adjudicated extension route
+    /// or an RM-version-sensitive comparison the SUT cannot be expected to
+    /// satisfy (§3a.3/§3a.4). Excluded from pass/fail counts and from
+    /// capability computation; reported in its own section. Distinct from
+    /// `Skipped` (which is an in-run "could not determine" from a case's own
+    /// probe), this is a committed, cited adjudication about the SUT.
+    NotApplicable,
 }
 
 /// The outcome of one executed case in one format.

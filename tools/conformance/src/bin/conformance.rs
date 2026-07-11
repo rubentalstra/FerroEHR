@@ -3,9 +3,16 @@
 //! ```text
 //! conformance run   --base-url URL [--filter S] [--profile core|standard|options]
 //!                   [--format json|xml|both] [--out DIR] [--auth SPEC] [--admin-auth SPEC]
+//!                   [--admin-base-url URL] [--sut-name NAME] [--sut-version VER]
+//!                   [--sut-image-digest DIGEST] [--adjudications FILE]
 //! conformance list  [--filter S]
 //! conformance report --from results.json [--out DIR]
 //! ```
+//!
+//! An upstream (non-`ehrbase-rs`) run adds `--sut-name`/`--sut-version`/
+//! `--sut-image-digest` (recorded in the identity), `--admin-base-url` (the
+//! sibling admin mount), and `--adjudications <file>` (the committed fairness
+//! register). See `tools/conformance/adjudications/README.md`.
 //!
 //! Exit codes: `0` all selected cases pass · `1` failures (report still written)
 //! · `2` runner/SUT error.
@@ -14,11 +21,12 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
 
+use conformance::adjudication::AdjudicationRegister;
 use conformance::case::{Format, Profile};
 use conformance::catalog::{Area, Catalog};
 use conformance::client::Credential;
 use conformance::registry::registry;
-use conformance::results::TerminologyRun;
+use conformance::results::{ProductIdentity, TerminologyRun};
 use conformance::run::RunConfig;
 use conformance::sut::Sut;
 use conformance::ts::{FhirTxFixture, TxServer};
@@ -37,6 +45,10 @@ struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
+// `RunArgs` is the large variant (a full CLI arg set); boxing it fights clap's
+// `Args`/`Subcommand` derive, and a CLI command enum is constructed once, so the
+// size asymmetry is irrelevant here.
+#[allow(clippy::large_enum_variant)]
 enum Command {
     /// Run the selected cases against a SUT and write the report set.
     Run(RunArgs),
@@ -70,6 +82,31 @@ struct RunArgs {
     /// ADMIN-role credential (same forms as `--auth`).
     #[arg(long)]
     admin_auth: Option<String>,
+    /// Sibling admin-API base URL for a SUT that does not nest admin under the
+    /// openEHR base (upstream `EHRbase` serves it at `.../ehrbase/rest/admin`).
+    /// When set, `/admin/*` cases route here; unset nests admin under
+    /// `--base-url` as our own server does.
+    #[arg(long)]
+    admin_base_url: Option<String>,
+    /// The product name recorded in the run identity (default `ehrbase-rs`).
+    /// Set to e.g. `ehrbase-java` for an upstream run — this also gates the
+    /// Statement/Certificate (emitted only for `ehrbase-rs`) and enables the
+    /// adjudication register.
+    #[arg(long)]
+    sut_name: Option<String>,
+    /// The product version recorded in the run identity (default: this
+    /// workspace's version).
+    #[arg(long)]
+    sut_version: Option<String>,
+    /// The container image digest (`sha256:…`) recorded in the run identity.
+    #[arg(long)]
+    sut_image_digest: Option<String>,
+    /// The upstream fairness adjudication register (TOML) applied for a
+    /// non-`ehrbase-rs` SUT: `extension` / `rm-version-sensitive` entries report
+    /// as `NotApplicable`, `defect` entries stay failures. Ignored (with a log
+    /// line) for an `ehrbase-rs` SUT — our baseline is never touched.
+    #[arg(long)]
+    adjudications: Option<PathBuf>,
     /// Real FHIR R4 terminology-server base URL for the `TS` cases, e.g.
     /// `http://localhost:8090/fhir` (a HAPI/Snowstorm/Ontoserver container).
     /// When unset the runner spins up a hermetic `wiremock` FHIR-tx fixture for
@@ -157,7 +194,8 @@ fn build_sut(args: &RunArgs) -> Result<(Sut, String), String> {
         .as_deref()
         .and_then(|s| s.split_once(':').map(|(scheme, _)| scheme.to_owned()))
         .unwrap_or_else(|| "none".to_owned());
-    let sut = Sut::external(base_url, regular, admin).map_err(|e| e.to_string())?;
+    let sut = Sut::external(base_url, regular, admin, args.admin_base_url.clone())
+        .map_err(|e| e.to_string())?;
     Ok((sut, auth_mode))
 }
 
@@ -203,12 +241,49 @@ async fn cmd_run(args: RunArgs) -> i32 {
         }
     };
     let (tx, fixture) = establish_tx(&args).await;
+    let product = ProductIdentity {
+        name: args
+            .sut_name
+            .clone()
+            .unwrap_or_else(|| ProductIdentity::EHRBASE_RS.to_owned()),
+        version: args
+            .sut_version
+            .clone()
+            .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_owned()),
+        image_digest: args.sut_image_digest.clone(),
+    };
+    let adjudications = match &args.adjudications {
+        Some(path) => match AdjudicationRegister::load(path) {
+            Ok(reg) => {
+                if product.is_ehrbase_rs() {
+                    eprintln!(
+                        "conformance: --adjudications given but the SUT product is ehrbase-rs — \
+                         the register is ignored (our baseline is never reclassified, §3a.4)"
+                    );
+                } else {
+                    println!(
+                        "conformance: loaded adjudication register {} ({} rule(s))",
+                        path.display(),
+                        reg.len()
+                    );
+                }
+                Some(reg)
+            }
+            Err(e) => {
+                eprintln!("error loading adjudication register: {e}");
+                return 2;
+            }
+        },
+        None => None,
+    };
     let config = RunConfig {
         filter: args.filter.clone(),
         profile: args.profile.map(Profile::from),
         formats: args.format.formats(),
+        product,
         versions: SpecVersions::latest(),
         auth_mode,
+        adjudications,
         tx: tx.clone(),
     };
     let mut results = match run::run(sut.transport(), &config).await {

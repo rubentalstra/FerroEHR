@@ -44,6 +44,6 @@ pub mod ts;
 // suites, the CLI, and the integration tests); the directories above are the
 // maintenance layout.
 pub use engine::{assert, client, flow, harness, registry, run, sut};
-pub use model::{case, catalog, profile, provenance, version};
+pub use model::{adjudication, case, catalog, profile, provenance, version};
 pub use reporting::{report, results};
 pub use testdata::fixtures;
