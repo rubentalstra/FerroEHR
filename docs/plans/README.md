@@ -21,9 +21,9 @@ What remains is the *live* pointer and the *future* work:
   P-phases (future work). `phase-17`/`phase-18`/`phase-19` are retained for
   their task detail, though their scope was absorbed into the blueprint arc
   (P19 conformance is met; see `docs/PROGRESS.md`).
-- `sm-phase-04-terminology-admin.md` — the last SM phase file. Its header is
-  still marked `in-progress`, but the Terminology + Admin work it describes
-  shipped through the B3/B4 waves; kept until its close is reconciled.
+- The SM phase files are closed: the Terminology + Admin work of `sm-phase-04`
+  shipped through the B1 rebuild + B3/B4 waves (recorded in `docs/PROGRESS.md`);
+  the file was pruned 2026-07-11 with the other completed phases.
 
 ### Phase-file template
 
