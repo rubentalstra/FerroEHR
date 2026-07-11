@@ -18,3 +18,4 @@ pub mod terminology;
 
 // hand-written modules (ADR-003 spec behaviour), auto-declared:
 pub mod bundle;
+pub mod measurement;

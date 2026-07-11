@@ -1178,7 +1178,11 @@ async fn next_version(
     .fetch_one(&mut *tx)
     .await?;
 
-    let (tree, close_ordinal) = if preceding_csid == local_system_id {
+    // Composite identifiers compare case-insensitively (BASE base_types
+    // master05 §"Composite Identifiers and Case") — a creating_system_id
+    // differing only by case is the SAME system, so it continues its own
+    // lineage rather than forking a branch.
+    let (tree, close_ordinal) = if preceding_csid.eq_ignore_ascii_case(local_system_id) {
         // Continue the lineage this system owns; the preceding tip is superseded.
         let tree = match preceding_tree.branch {
             None => TreeId::trunk(preceding_tree.trunk + 1),

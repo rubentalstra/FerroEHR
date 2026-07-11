@@ -219,24 +219,23 @@ impl Validator {
 
 /// The coded slots fixed by the owning RM type.
 fn slots_for(rm_type: Option<&str>) -> &'static [(&'static str, Binding)] {
-    use Binding::{CodeSet as Cs, Group as G};
     match rm_type {
         Some("COMPOSITION") => &[
-            ("category", G(Group::CompositionCategory)),
-            ("language", Cs(CodeSet::Languages)),
-            ("territory", Cs(CodeSet::Countries)),
+            ("category", Binding::Group(Group::CompositionCategory)),
+            ("language", Binding::CodeSet(CodeSet::Languages)),
+            ("territory", Binding::CodeSet(CodeSet::Countries)),
         ],
-        Some("EVENT_CONTEXT") => &[("setting", G(Group::Setting))],
+        Some("EVENT_CONTEXT") => &[("setting", Binding::Group(Group::Setting))],
         Some("ISM_TRANSITION") => &[
-            ("current_state", G(Group::InstructionState)),
-            ("transition", G(Group::InstructionTransition)),
+            ("current_state", Binding::Group(Group::InstructionState)),
+            ("transition", Binding::Group(Group::InstructionTransition)),
         ],
         Some("PARTICIPATION") => &[
-            ("function", G(Group::ParticipationFunction)),
-            ("mode", G(Group::ParticipationMode)),
+            ("function", Binding::Group(Group::ParticipationFunction)),
+            ("mode", Binding::Group(Group::ParticipationMode)),
         ],
         Some("EVENT" | "POINT_EVENT" | "INTERVAL_EVENT") => {
-            &[("math_function", G(Group::EventMathFunction))]
+            &[("math_function", Binding::Group(Group::EventMathFunction))]
         }
         // Every ENTRY subtype (`ENTRY.language`/`.encoding`) and the DV_TEXT
         // family (`DV_TEXT.language`/`.encoding`): `language` (ISO 639-1) +
@@ -245,30 +244,30 @@ fn slots_for(rm_type: Option<&str>) -> &'static [(&'static str, Binding)] {
             "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY"
             | "GENERIC_ENTRY" | "DV_TEXT" | "DV_CODED_TEXT" | "DV_PARAGRAPH",
         ) => &[
-            ("language", Cs(CodeSet::Languages)),
-            ("encoding", Cs(CodeSet::CharacterSets)),
+            ("language", Binding::CodeSet(CodeSet::Languages)),
+            ("encoding", Binding::CodeSet(CodeSet::CharacterSets)),
         ],
-        Some("TERM_MAPPING") => &[("purpose", G(Group::TermMappingPurpose))],
+        Some("TERM_MAPPING") => &[("purpose", Binding::Group(Group::TermMappingPurpose))],
         // DV_ENCAPSULATED (dv_encapsulated.adoc Charset_valid / Language_valid)
         // + the DV_MULTIMEDIA code-set invariants (dv_multimedia.adoc
         // Compression_algorithm_validity / Integrity_check_algorithm_validity).
         Some("DV_MULTIMEDIA") => &[
-            ("media_type", Cs(CodeSet::MediaTypes)),
-            ("charset", Cs(CodeSet::CharacterSets)),
-            ("language", Cs(CodeSet::Languages)),
-            ("compression_algorithm", Cs(CodeSet::CompressionAlgorithms)),
+            ("media_type", Binding::CodeSet(CodeSet::MediaTypes)),
+            ("charset", Binding::CodeSet(CodeSet::CharacterSets)),
+            ("language", Binding::CodeSet(CodeSet::Languages)),
+            ("compression_algorithm", Binding::CodeSet(CodeSet::CompressionAlgorithms)),
             (
                 "integrity_check_algorithm",
-                Cs(CodeSet::IntegrityCheckAlgorithms),
+                Binding::CodeSet(CodeSet::IntegrityCheckAlgorithms),
             ),
         ],
         Some("DV_PARSABLE") => &[
-            ("charset", Cs(CodeSet::CharacterSets)),
-            ("language", Cs(CodeSet::Languages)),
+            ("charset", Binding::CodeSet(CodeSet::CharacterSets)),
+            ("language", Binding::CodeSet(CodeSet::Languages)),
         ],
-        Some("AUDIT_DETAILS") => &[("change_type", G(Group::AuditChangeType))],
-        Some("ATTESTATION") => &[("reason", G(Group::AttestationReason))],
-        Some("PARTY_RELATED") => &[("relationship", G(Group::SubjectRelationship))],
+        Some("AUDIT_DETAILS") => &[("change_type", Binding::Group(Group::AuditChangeType))],
+        Some("ATTESTATION") => &[("reason", Binding::Group(Group::AttestationReason))],
+        Some("PARTY_RELATED") => &[("relationship", Binding::Group(Group::SubjectRelationship))],
         _ => &[],
     }
 }

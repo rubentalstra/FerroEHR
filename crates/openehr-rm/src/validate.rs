@@ -372,7 +372,9 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 /// invariants.
 #[allow(clippy::too_many_lines)] // a flat _type → run::<T> dispatch table
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+    use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;
+    use openehr_base::base_types::identification::terminology_id::TerminologyId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;
     use openehr_base::base_types::identification::object_ref::ObjectRefData;
     use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
@@ -419,7 +421,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::quantity::dv_scale::DvScale;
     use crate::data_types::quantity::reference_range::ReferenceRange;
     use crate::data_types::text::code_phrase::CodePhrase;
-    use crate::data_types::text::dv_text::DvText as DvTextEnum;
+    use crate::data_types::text::dv_text::DvText;
     use crate::data_types::text::term_mapping::TermMapping;
     use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
     use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
@@ -434,7 +436,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         // DV_TEXT + DV_CODED_TEXT share the DvText enum (Valid_value /
         // Formatting_valid, dv_text.adoc; DV_CODED_TEXT adds the structural
         // defining_code 1..1 at deserialize).
-        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvTextEnum>(value, out),
+        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvText>(value, out),
         "DV_URI" => run::<DvUriData>(value, out),
         "DV_EHR_URI" => run::<DvEhrUri>(value, out),
         "DV_IDENTIFIER" => run::<DvIdentifier>(value, out),
@@ -495,6 +497,8 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "VERSION_TREE_ID" => run::<VersionTreeId>(value, out),
         "OBJECT_VERSION_ID" => run::<ObjectVersionId>(value, out),
         "ISO_OID" => run::<IsoOid>(value, out),
+        "ARCHETYPE_ID" => run::<ArchetypeId>(value, out),
+        "TERMINOLOGY_ID" => run::<TerminologyId>(value, out),
         "INTERNET_ID" => run::<InternetId>(value, out),
         _ => {}
     }

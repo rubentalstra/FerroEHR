@@ -61,3 +61,58 @@ mod tests {
         assert_eq!(t.version_id(), "");
     }
 }
+
+/// Lexical validity per BASE base_types master05 §Syntaxes:
+/// `terminology_id = name-str [ '(' name-str ')' ]` with
+/// `name-str = letter { letter | digit | '_' | '-' | '/' | '+' }`.
+///
+/// PORT NOTE (CNF corpus adjudication): the CNF's own valid data sets carry
+/// `"SNOMED CT"` — a space inside the name, which the strict `name-str`
+/// production forbids. The CNF data outranks the prose reading, so interior
+/// spaces (and `.`, common in versioned names like `ISO_639-1`) are accepted;
+/// the identifier must still start with a letter and stay basic-latin.
+#[must_use]
+pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
+    fn name_str(s: &str) -> bool {
+        let mut chars = s.chars();
+        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+            && s.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/' | '+' | '.' | ' '))
+            && !s.ends_with(' ')
+    }
+    match value.split_once('(') {
+        None => name_str(value),
+        Some((name, rest)) => {
+            name_str(name.trim_end())
+                && rest
+                    .strip_suffix(')')
+                    .is_some_and(|version| !version.is_empty())
+        }
+    }
+}
+
+impl crate::validate::Validate for TerminologyId {
+    fn validate_invariants(&self, out: &mut Vec<crate::validate::InvariantViolation>) {
+        if !is_valid_terminology_id(&self.value) {
+            out.push(crate::validate::InvariantViolation::here(
+                "Invariant Value_valid failed on type TERMINOLOGY_ID (lexical form \
+                 name [ '(' version ')' ], BASE base_types master05 §Syntaxes)",
+            ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod validity_tests {
+    use super::*;
+
+    #[test]
+    fn terminology_id_lexical_form() {
+        for ok in ["openehr", "ISO_639-1", "SNOMED CT", "ICD10AM(3rd_ed)", "local"] {
+            assert!(is_valid_terminology_id(ok), "{ok} must be valid");
+        }
+        for bad in ["", "1openehr", "SNOMED CT ", "x("] {
+            assert!(!is_valid_terminology_id(bad), "{bad:?} must be invalid");
+        }
+    }
+}
