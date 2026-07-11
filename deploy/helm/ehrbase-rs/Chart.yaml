@@ -1,0 +1,32 @@
+apiVersion: v2
+name: ehrbase-rs
+description: >-
+  Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.0.3 + AQL
+  1.1). A single static binary deployed with the ADR-013 security posture:
+  runs as a non-root, read-only-rootfs, default-deny-ingress workload that
+  connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
+  are run by a separate migrator role — see docs/enterprise/deployment.md).
+type: application
+
+# Chart versioning is independent of the application version.
+version: 0.1.0
+# The default container image tag (informational; overridable via image.tag).
+appVersion: "0.1.0"
+
+# PDB (policy/v1, GA 1.21), HPA (autoscaling/v2, GA 1.23), and the
+# seccompProfile pod field (GA 1.27) all resolve cleanly at 1.25+.
+kubeVersion: ">=1.25.0-0"
+
+keywords:
+  - openehr
+  - cdr
+  - ehr
+  - fhir
+  - healthcare
+  - rust
+home: https://github.com/rubentalstra/ehrbase-rs
+sources:
+  - https://github.com/rubentalstra/ehrbase-rs
+maintainers:
+  - name: ehrbase-rs maintainers
+    url: https://github.com/rubentalstra/ehrbase-rs

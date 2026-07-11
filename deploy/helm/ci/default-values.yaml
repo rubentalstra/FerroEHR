@@ -1,0 +1,6 @@
+# Minimal realistic production overlay: chart defaults (all optional
+# integrations OFF) plus the one thing every real deployment must supply — the
+# app-role DSN from an existing Secret. Used as the "default" golden render.
+database:
+  existingSecret: ehrbase-db
+  existingSecretKey: EHRBASE_DB_URL

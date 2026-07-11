@@ -1,0 +1,165 @@
+# All-features-on overlay: every optional integration enabled, autoscaling +
+# separate management port + egress network policy + mounted config file. Used
+# as the "all-features" golden render and to exercise every template branch.
+database:
+  existingSecret: ehrbase-db
+  existingSecretKey: EHRBASE_DB_URL
+
+rest:
+  swaggerUi: true
+  adminEnabled: true
+  terminologyEnabled: true
+  eventSubscriptionEnabled: true
+  fhirEnabled: true
+
+tenancy:
+  enabled: true
+  claim: realm_access.tenant
+  header: X-EHRbase-Tenant
+
+auth:
+  enabled: true
+  adminScope: ADMIN
+  oidc:
+    issuer: https://keycloak.example.com/realms/ehrbase
+    audience: ehrbase
+    hmacSecret: dev-hmac-secret
+
+authz:
+  rbac:
+    enabled: true
+    managementAccess: admin_only
+  abac:
+    enabled: true
+
+management:
+  enabled: true
+  port: 9100
+  probesEnabled: true
+  endpoints:
+    health: private
+    info: admin_only
+    metrics: admin_only
+    env: admin_only
+    loggers: admin_only
+
+metrics:
+  enabled: true
+
+telemetry:
+  log:
+    format: json
+    filter: info,ehrbase=debug
+  otel:
+    otlpEndpoint: http://otel-collector:4317
+    serviceName: ehrbase-rs
+    environment: production
+    tracesSampleRatio: "0.1"
+    metricsPush: true
+
+signing:
+  enabled: true
+  mode: pgp
+  verifyOnRead: strict
+  pgp:
+    keyPath: /etc/ehrbase/signing.asc
+    keyPassphrase: dev-passphrase
+
+atna:
+  enabled: true
+  repositoryHost: arr.example.com
+  repositoryPort: "6514"
+  transport: tls
+  sourceId: ehrbase-prod
+  failMode: closed
+  enterpriseSiteId: site-1
+
+events:
+  enabled: true
+  url: amqps://user:pass@rabbitmq:5671/%2f
+  exchange: ehrbase.events
+  tls: true
+
+fhirOutbound:
+  enabled: true
+  url: amqps://user:pass@rabbitmq:5671/%2f
+  exchange: ehrbase.fhir
+  tls: true
+
+multimedia:
+  enabled: true
+  thresholdBytes: "262144"
+  endpoint: https://s3.example.com
+  bucket: openehr-multimedia
+  region: eu-west-1
+  allowHttp: false
+  accessKeyId: AKIAEXAMPLE
+  secretAccessKey: s3-secret
+
+externalTerminology:
+  enabled: true
+  failOnError: false
+
+config:
+  files:
+    signing.asc: |
+      -----BEGIN PGP PRIVATE KEY BLOCK-----
+      (dev placeholder)
+      -----END PGP PRIVATE KEY BLOCK-----
+    rest.toml: |
+      [[auth.basic.users]]
+      username = "clinician"
+      password_hash = "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
+      roles = ["USER"]
+
+extraEnv:
+  - name: EHRBASE_REST_CONFIG
+    value: /etc/ehrbase/rest.toml
+  - name: EHRBASE_SIGNING_KEY_PATH
+    value: /etc/ehrbase/signing.asc
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: ehrbase.example.com
+      paths:
+        - path: /ehrbase
+          pathType: Prefix
+  tls:
+    - secretName: ehrbase-tls
+      hosts:
+        - ehrbase.example.com
+
+networkPolicy:
+  enabled: true
+  ingressFrom:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    enabled: true
+    rules:
+      - to:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: postgres
+        ports:
+          - port: 5432
+            protocol: TCP
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ehrbase-s3
