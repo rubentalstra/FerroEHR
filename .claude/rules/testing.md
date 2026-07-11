@@ -4,8 +4,8 @@ paths: ["crates/**"]
 
 # Testing discipline
 
-Test discipline is non-negotiable (PORT_MASTER_PLAN.md Section 4.5 and
-Section 15). It applies to every crate, generated (ADR-004), hand-written, or ported.
+Test discipline is non-negotiable (a standing hard rule; see `CLAUDE.md`). It
+applies to every crate, generated (ADR-004), hand-written, or ported.
 
 ## The hard rule
 

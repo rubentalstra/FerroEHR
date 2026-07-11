@@ -40,8 +40,8 @@ If a `_type`/serialization behaviour is wrong, fix the **emitter** or the
 
 `openehr-its` (canonical JSON entry points + canonical **XML** + the interop
 fidelity gate) and `openehr-flat` (FLAT/STRUCTURED/Web Template) are
-hand-written from specifications and vendor conventions (PORT_MASTER_PLAN.md
-Sections 7.3, 7.4). The acceptance instrument for JSON is the **real EHRbase
+hand-written from specifications and vendor conventions (the SDT / canonical
+serialization surfaces). The acceptance instrument for JSON is the **real EHRbase
 canonical-JSON corpus** round-trip in `openehr-its/tests/vendor/`
 (deserialize → re-serialize → normalized value-equality + ITS-JSON schema
 validation), not hand-built fixtures; `insta` golden vectors are the instrument

@@ -25,9 +25,9 @@ authentication; we do the same in **Stage 1** (ADR-006). Fine-grained
   EHRbase's status/behaviour at the REST surface (parity-verified). Public
   endpoints (`/rest/status`, health, Swagger) are exempt as EHRbase exempts them.
 - **No RBAC/permission checks in Stage 1** beyond "is authenticated". Row-level
-  / AQL-result filtering by permission is the Stage-2 restoration
-  (`PORT_MASTER_PLAN §11`); leave a `// TODO(port): Stage 2 RBAC` seam, not an
-  implementation.
+  / AQL-result filtering by permission is the Stage-2 restoration (now shipped
+  as the `ehrbase-rest::access` module, ADR-015/E-arc); historically a
+  `// TODO(port): Stage 2 RBAC` seam, not an implementation.
 
 The CNF security suites (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`,
 incl. the Keycloak OAuth2 setup) are the conformance reference for the

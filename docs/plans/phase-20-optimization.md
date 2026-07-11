@@ -7,7 +7,7 @@
 - Status: not-started (Stage-1 app build, step 12 of 13)
 - Consumes: the parity-passing server (P19)
 - Compile required: perf
-- Decisions: `PORT_MASTER_PLAN §3` (PG 18), ADR-006
+- Decisions: `docs/postgres-features.md` (PG 18), ADR-006/008
 
 ## Objectives
 

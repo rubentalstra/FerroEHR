@@ -7,7 +7,7 @@
 
 - Status: not-started (Stage-1 app build, step 13 of 13)
 - Consumes: everything
-- Decisions: `PORT_MASTER_PLAN §16`, ADR-006
+- Decisions: `docs/blueprint/00-THE-BLUEPRINT.md`, ADR-006
 
 ## Objectives
 
@@ -41,5 +41,5 @@ files).
 ## Handoff for next session
 
 Stage 2 begins: RBAC/attribute authz (restore the pre-v2 enterprise capability),
-the plugin system (ADR needed), and multi-tenancy — see
-`PORT_MASTER_PLAN §11` and the (future) `docs/plans/s2-phase-*.md`.
+the plugin system (ADR needed), and multi-tenancy — much of this already landed
+early via the E-arc (see `docs/PROGRESS.md`); the blueprint tracks the rest.
