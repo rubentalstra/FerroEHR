@@ -103,12 +103,21 @@ Spec-grounded enterprise features from the B8 roadmap; each closed with ECC
 | E4 | S3 multimedia — DV_MULTIMEDIA externalization, verified re-inline, GC, blob dump/load (ADR-017) | 2026-07-11 | #47 |
 | E5 | Kubernetes deployment artifacts — hardened Helm chart, ops doc, golden-render validation | 2026-07-11 | #48 |
 
+## Post-arc phases
+
+| Phase | What | Closed | PR(s) |
+|---|---|---|---|
+| — | Release reset: v3.0.0 (product SemVer; spec crates carry spec versions), Keep-a-Changelog + guard, changelog-driven release workflow, inherited fork tags/branches removed | 2026-07-11 | #53, #55 |
+| — | Docs cleanup: 45 historical files pruned, references repointed | 2026-07-11 | #51 |
+| W1 | Public documentation website — mdBook on Pages: landing, versioned book (dev · latest · v3.0.0 via the `docs-dist` archive), offline OpenAPI reference (7 API groups), link + OAS-drift gates (both negative-tested), same-PR docs discipline | 2026-07-11 | #52, #54, #56, #57, #60, #62, #63 |
+
 ## Remaining
 
+- **X1 comparison** — honest EHRbase (Java) vs EHRbase-rs comparison page:
+  ECC run against upstream, benchmark overhaul, measured numbers only
+  (plan drafted, awaiting owner review — `docs/plans/x1-comparison.md`).
 - **P20 optimization** — PG18 AIO tuning, hot-read pipelining, `JSON_TABLE` codegen.
-- **P99 cutover** — final docs pass, tag the first release.
-- **Documentation-website initiative** — the current active effort (see
-  `docs/plans/current-phase.md`).
+- **P99 cutover** — final docs pass; the release machinery is already in place (v3.0.0 shipped as pre-release).
 
 **Stage 2** capabilities (RBAC/attribute authz via the `ehrbase-rest::access`
 module, multi-tenancy, plugin system) largely landed early through the E-arc;
