@@ -41,7 +41,7 @@ persisted the moment they exist; commits after each phase.
         [x] 3 rm-composition · [x] 4 rm-data-structures ·
         [x] 5 rm-data-types-text-quantity · [x] 6 rm-data-types-rest ·
         [x] 7 rm-support · [x] 8 rm-demographic · [x] 9 rm-ehr-extract ·
-        [ ] 10 rm-integration · [ ] 11 base-foundation ·
+        [x] 10 rm-integration · [ ] 11 base-foundation ·
         [ ] 12 base-base-types · [ ] 13 am-aom14-opt ·
         [ ] 14 am-aom2-adl2 · [ ] 15 term · [ ] 16 query-aql ·
         [ ] 17 sm-platform · [ ] 18 sm-tdd · [ ] 19 its-rest-general ·
