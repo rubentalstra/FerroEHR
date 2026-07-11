@@ -26,7 +26,7 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
-[Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Building](#building-from-source) · [Documentation](#documentation)
+[**Documentation website**](https://rubentalstra.github.io/ehrbase-rs/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Building](#building-from-source) · [Documentation](#documentation)
 
 </div>
 
@@ -262,6 +262,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 
 | | |
 |---|---|
+| [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
 | [Deployment guide](docs/enterprise/deployment.md) | Production operations |
