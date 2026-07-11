@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EHRbase-rs — a pure-Rust openEHR Clinical Data Repository</title>
+  <meta name="description" content="EHRbase-rs is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.0.3, AQL 1.1, PostgreSQL 18-native storage, shipped as a single static binary. Spec-compliant and machine-verified.">
+  <link rel="canonical" href="https://rubentalstra.github.io/ehrbase-rs/">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo-mark.svg">
+  <link rel="stylesheet" href="./style.css">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="EHRbase-rs — a pure-Rust openEHR Clinical Data Repository">
+  <meta property="og:description" content="Spec-compliant, measured, built for production. ITS-REST 1.0.3 · AQL 1.1 · PostgreSQL 18.">
+  <meta property="og:url" content="https://rubentalstra.github.io/ehrbase-rs/">
+</head>
+<body>
+
+  <!-- ── Nav ────────────────────────────────────────────────────────────── -->
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="./">
+        <img src="./assets/logo-mark.svg" alt="" aria-hidden="true">
+        <span>EHRbase<span class="tld">-rs</span></span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="./docs/latest/">Docs</a>
+        <a href="./api/">API</a>
+        <a href="#conformance" class="hide-sm">Conformance</a>
+        <a href="https://github.com/rubentalstra/ehrbase-rs" rel="noopener">GitHub ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="wrap">
+        <img class="hero-logo" src="./assets/logo.svg" alt="EHRbase-rs">
+        <h1>A pure-Rust openEHR Clinical Data Repository — spec-compliant, measured, built for production.</h1>
+        <p class="sub">
+          openEHR separates clinical knowledge from software: applications store
+          and query structured health records through a vendor-neutral REST API
+          and the Archetype Query Language. EHRbase-rs implements that standard
+          natively in Rust — headless, API-first, one static binary on PostgreSQL 18.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="./docs/latest/getting-started.html">Get started</a>
+          <a class="btn btn-ghost" href="./api/">View the API</a>
+        </div>
+        <p class="note">No JVM · no runtime dependencies · every compliance claim machine-verified.</p>
+      </div>
+    </section>
+
+    <!-- ── Conformance proof strip ──────────────────────────────────────── -->
+    <section class="proof" id="conformance">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Conformance</span>
+          <h2>Compliance you can verify, not just read.</h2>
+          <p>Every release runs the complete conformance catalogue against the live server, in JSON and XML, and computes the openEHR profile verdicts.</p>
+        </div>
+        <div class="proof-nums">
+          <div class="proof-num"><span class="n">341</span><span class="l">cases executed</span></div>
+          <div class="proof-num"><span class="n">315</span><span class="l">passed</span></div>
+          <div class="proof-num"><span class="n zero">0</span><span class="l">failed</span></div>
+        </div>
+        <div class="proof-pills">
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>CORE · PASS</a>
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>STANDARD · PASS</a>
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>OPTIONS · OBTAINED</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Feature grid ─────────────────────────────────────────────────── -->
+    <section id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Platform</span>
+          <h2>Everything the openEHR standard asks for</h2>
+          <p>Generated from the official machine-readable models — a specification update is a regeneration, not a rewrite.</p>
+        </div>
+        <div class="grid">
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+            <h3>REST API 1.0.3</h3>
+            <p>EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION, query, template and admin resources — canonical JSON and XML on the wire.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+            <h3>AQL 1.1 engine</h3>
+            <p>Typed path analysis over a spec-generated Reference Model, compiled to efficient SQL — including <code>ALL_VERSIONS</code> and stored queries.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5V15a3 3 0 0 0 3 3h6"/></svg></div>
+            <h3>Full versioning</h3>
+            <p>Contribution-atomic commits, indelible version history, logical delete, attestations and per-version digital signatures.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+            <h3>Templates &amp; validation</h3>
+            <p>OPT 1.4 ingestion, WebTemplate generation and deep composition validation against archetype constraints and terminology bindings.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h.01M7 12h.01M7 16h.01M11 8h6M11 12h6M11 16h4"/></svg></div>
+            <h3>One static binary</h3>
+            <p>Predictable memory, fast cold starts, a minimal distroless image — no garbage-collection pauses in the write path.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
+            <h3>PostgreSQL 18-native</h3>
+            <p>Temporal versioning with database-enforced non-overlap, UUIDv7 keys and canonical openEHR JSON stored verbatim.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3>Security</h3>
+            <p>OIDC authentication, RBAC/ABAC authorization, multi-tenancy and IHE ATNA audit — production access control, not an afterthought.</p>
+          </article>
+
+          <article class="card">
+            <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6 8.5v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3M12 13.5v2"/></svg></div>
+            <h3>Integration</h3>
+            <p>FHIR R4 connectors, AMQP change events and S3 multimedia storage — bridge openEHR into the systems around it.</p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick start ──────────────────────────────────────────────────── -->
+    <section class="quickstart" id="quick-start">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Quick start</span>
+          <h2>Running in one command</h2>
+          <p>The full stack — server plus PostgreSQL 18 — with Docker Compose.</p>
+        </div>
+        <div class="code">
+          <div class="code-head">
+            <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span>shell</span>
+          </div>
+          <pre><code><span class="prompt">$</span> docker compose up --build
+
+<span class="cmt"># Probe the status endpoint</span>
+<span class="prompt">$</span> curl http://localhost:8080/ehrbase/rest/status
+
+<span class="cmt"># Create an EHR (development credentials: ehrbase / ehrbase)</span>
+<span class="prompt">$</span> curl -u ehrbase:ehrbase -X POST -i \
+    http://localhost:8080/ehrbase/rest/openehr/v1/ehr
+
+<span class="cmt"># Query it with AQL</span>
+<span class="prompt">$</span> curl -u ehrbase:ehrbase -H 'Content-Type: application/json' \
+    -d '{"q":"SELECT e/ehr_id/value FROM EHR e"}' \
+    http://localhost:8080/ehrbase/rest/openehr/v1/query/aql</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Integration chips ────────────────────────────────────────────── -->
+    <section id="integrations">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow">Ecosystem</span>
+          <h2>Fits your stack</h2>
+        </div>
+        <div class="chips">
+          <span class="chip">PostgreSQL 18</span>
+          <span class="chip">Keycloak / OIDC</span>
+          <span class="chip">RabbitMQ / AMQP</span>
+          <span class="chip">FHIR R4</span>
+          <span class="chip">S3 / SeaweedFS</span>
+          <span class="chip">Kubernetes / Helm</span>
+          <span class="chip">Prometheus / OpenTelemetry</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ───────────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="./">
+            <img src="./assets/logo-mark.svg" alt="" aria-hidden="true">
+            <span>EHRbase<span class="tld">-rs</span></span>
+          </a>
+          <p>A pure-Rust openEHR Clinical Data Repository. Licensed under
+            <a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/LICENSE" rel="noopener">Apache-2.0</a>.</p>
+          <p>A fork of EHRbase, originally by vitasystems and the Peter L. Reichertz
+            Institute (PLRI). openEHR specifications © the openEHR Foundation.</p>
+        </div>
+        <div class="footer-links">
+          <div>
+            <h4>Docs</h4>
+            <ul>
+              <li><a href="./docs/latest/">Documentation</a></li>
+              <li><a href="./api/">API reference</a></li>
+              <li><a href="./docs/latest/getting-started.html">Getting started</a></li>
+              <li><a href="./docs/latest/conformance.html">Conformance</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Project</h4>
+            <ul>
+              <li><a href="https://github.com/rubentalstra/ehrbase-rs" rel="noopener">GitHub</a></li>
+              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/SECURITY.md" rel="noopener">Security policy</a></li>
+              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/CHANGELOG.md" rel="noopener">Changelog</a></li>
+              <li><a href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/CONFORMANCE_CERTIFICATE.md" rel="noopener">Conformance certificate</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-note">
+        <span>© EHRbase-rs contributors.</span>
+        <span>Not affiliated with or endorsed by upstream EHRbase.</span>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
