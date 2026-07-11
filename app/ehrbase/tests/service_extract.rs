@@ -312,11 +312,11 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
     assert_eq!(err.status, ehrbase_sm::CallStatusType::EhrIdDoesNotExist);
 }
 
-/// A1 rm-ehr-extract: EXTRACT_SPEC.extract_type must come from the extract
-/// content type group; include_multimedia = false strips inline DV_MULTIMEDIA
+/// A1 rm-ehr-extract: `EXTRACT_SPEC.extract_type` must come from the extract
+/// content type group; `include_multimedia` = false strips inline `DV_MULTIMEDIA`
 /// data from exported versions (master09 §Creation Semantics); an
-/// EXTRACT_CONTENT_ITEM that is masked yet carries an item violates
-/// Item_validity on import (extract_content_item.adoc).
+/// `EXTRACT_CONTENT_ITEM` that is masked yet carries an item violates
+/// `Item_validity` on import (`extract_content_item.adoc`).
 #[tokio::test]
 async fn extract_spec_flags_are_honoured() {
     let pg = Pg::start().await;

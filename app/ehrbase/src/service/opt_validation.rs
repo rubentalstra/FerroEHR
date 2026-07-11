@@ -569,6 +569,28 @@ fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Violation> {
     Ok(())
 }
 
+/// Duplicate codes in a terminology-code code list are invalid (ADL2
+/// master04.6 STCDC — "constraint code list contains duplicate codes"; the
+/// same defect in an OPT 1.4 `C_CODE_PHRASE` list).
+fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), Violation> {
+    let mut seen = HashSet::new();
+    for code in code_list {
+        // Empty entries are tooling noise, not codes (Ocean exports emit
+        // repeated empty <code_list/> elements — the vendored UK AoMRC corpus
+        // template); only real codes participate in the duplicate check.
+        if code.is_empty() {
+            continue;
+        }
+        if !seen.insert(code) {
+            return Err(Violation::new(
+                "STCDC",
+                format!("node '{node_id}': code '{code}' is duplicated in the code list"),
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> Violation {
     Violation::new(
         "Pattern_validity",
@@ -763,9 +785,11 @@ fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
             }
         }
         CObject::CCodePhrase(c) => {
+            check_code_list(&c.code_list, node_id)?;
             check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
         }
         CObject::CCodeReference(c) => {
+            check_code_list(&c.code_list, node_id)?;
             check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
         }
         CObject::CDvOrdinal(c) => {

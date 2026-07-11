@@ -11,6 +11,7 @@
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
+use ehrbase_sm::ItemTagAdapter;
 use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{CallStatusType, EhrCompositionService, EhrService, SmError};
 use openehr_base::prelude::TerminologyCode;
@@ -228,8 +229,6 @@ async fn tag_targets_must_be_within_the_same_ehr() {
     let vo_a: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let tag = json!([{ "key": "clin-proj-27a" }]);
-
-    use ehrbase_sm::ItemTagAdapter;
     // Tagging A's composition from A: accepted.
     svc.target_tags_replace(
         ehr_a,

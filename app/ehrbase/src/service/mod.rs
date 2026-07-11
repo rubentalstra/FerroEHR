@@ -21,6 +21,7 @@
 //! node inserts use `sqlx::QueryBuilder`. `sea-query` is reserved for the AQL
 //! engine (P16).
 
+mod adl2_validation;
 mod admin;
 mod api;
 mod aql_query;

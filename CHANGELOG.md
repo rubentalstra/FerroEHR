@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- OPT 1.4 template upload enforces the AOM 1.4 constraint-model invariants
+  (attribute existence bounds, single-attribute occurrences, archetype-id
+  well-formedness and root-type match, slot identifier validity,
+  internal-reference target paths, constraint-reference definedness,
+  boolean satisfiability, assumed-value validity, temporal and duration
+  constraint-pattern validity, duplicate code-list codes) — invalid
+  templates are rejected with `400` carrying the AOM rule code.
+- ADL2 artefact upload (`I_DEFINITION_ADL2`) now validates sources against
+  the registration-decidable AOM2 catalogue (mandatory sections, header
+  versions, root type/node-id rules, specialisation depth, terminology
+  language consistency, code definedness, value-set validity, term-binding
+  keys) instead of a header-only probe — invalid sources are rejected with
+  `422` carrying the AOM2 rule code.
+
 ### Added
 
 - **Version-tree branching and merge provenance** (RM common master06

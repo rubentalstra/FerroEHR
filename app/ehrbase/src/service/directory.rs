@@ -281,7 +281,7 @@ mod tests {
 
     use super::validate_folder;
 
-    /// FOLDER trees hold OBJECT_REF items only — never content by value
+    /// FOLDER trees hold `OBJECT_REF` items only — never content by value
     /// (RM ehr master04 §Folders; RM common `folder.adoc`; A1 rm-ehr-R30).
     #[test]
     fn folder_items_must_be_object_refs() {

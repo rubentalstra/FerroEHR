@@ -266,14 +266,47 @@ impl EhrbaseService {
     /// Invalid source → `invalid artefact` (`422`). Returns the stored HRID (the
     /// wire needs it for the `Location` header + identifier body).
     pub(super) async fn adl2_upload(&self, adl2: &str) -> Result<String, ServiceError> {
-        let (kind, hrid) = extract_adl2_header(adl2).ok_or_else(|| {
+        // Registration-side AOM2 validity (adl2_validation.rs): the section-
+        // structural + terminology rules of the AOM2 validation catalogue that
+        // are decidable on an uploaded source (STCNT, VARAV/VARRV, VARDT,
+        // VARCN, VOLT/VOTM/VTLC, VATDF/VACDF, VTVSID/VTVSMD/VTVSUQ, VTTBK —
+        // AOM2 master08 + master07). Violations → 422 invalid_artefact with
+        // the rule code.
+        let meta = super::adl2_validation::validate_adl2_source(adl2).map_err(|v| {
             ServiceError::sm(
                 CallStatusType::InvalidArtefact,
-                "ADL2 source is not a valid artefact (missing an \
-                 archetype/template/operational_template header or a well-formed \
-                 ARCHETYPE_HRID)",
+                format!("{}: {}", v.code, v.detail),
             )
         })?;
+        // Additionally validate the header HRID lexically (VARID analogue).
+        if !valid_adl2_hrid(&meta.hrid) {
+            return Err(ServiceError::sm(
+                CallStatusType::InvalidArtefact,
+                format!("'{}' is not a well-formed ARCHETYPE_HRID", meta.hrid),
+            ));
+        }
+        // VACSD (AOM2 master08 Phase 1): when the parent named by `specialize`
+        // is present in the registry, the child's specialisation depth must be
+        // exactly parent depth + 1. Registration order is unconstrained, so an
+        // absent parent skips the check.
+        if let Some(parent_hrid) = &meta.parent_hrid
+            && let Some(parent_src) =
+                sqlx::query_scalar::<_, String>("SELECT adl FROM adl2_artefact WHERE hrid = $1")
+                    .bind(parent_hrid)
+                    .fetch_optional(&self.pool)
+                    .await?
+            && let Ok(parent) = super::adl2_validation::validate_adl2_source(&parent_src)
+        {
+            super::adl2_validation::check_specialisation_depth(&meta, parent.depth).map_err(
+                |v| {
+                    ServiceError::sm(
+                        CallStatusType::InvalidArtefact,
+                        format!("{}: {}", v.code, v.detail),
+                    )
+                },
+            )?;
+        }
+        let (kind, hrid) = (meta.kind, meta.hrid);
         sqlx::query(
             "INSERT INTO adl2_artefact (hrid, kind, adl) VALUES ($1, $2, $3) \
              ON CONFLICT (hrid) DO UPDATE \
@@ -607,7 +640,8 @@ impl EhrbaseService {
     /// NOTE). Stateless; no DB is consulted.
     #[must_use]
     pub(super) fn valid_adl2_source(adl2: &str) -> bool {
-        extract_adl2_header(adl2).is_some()
+        super::adl2_validation::validate_adl2_source(adl2)
+            .is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
     }
 }
 
@@ -754,37 +788,6 @@ fn extract_archetype_id(adl: &str) -> Option<ArchetypeId> {
     ArchetypeId::from_str(id_line).ok()
 }
 
-/// Extract `(kind, ARCHETYPE_HRID)` from ADL2 source. The source must begin
-/// (after any BOM, blank lines and `--` line comments) with an artefact-kind
-/// keyword line — `archetype`, `template`, or `operational_template`,
-/// optionally followed by `(adl_version=2…; …)` attributes — and carry a
-/// well-formed `ARCHETYPE_HRID` on the next non-blank line
-/// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`;
-/// `master04-definition_package.adoc`). The keyword becomes the stored `kind`.
-///
-/// PORT NOTE: this is a lightweight structural probe, not a cADL parse (no ADL2
-/// source parser exists in the tree yet); it accepts the source shape the ADL2
-/// spec's `operational_template (…)` / `archetype (…)` / `template (…)` headers
-/// use.
-fn extract_adl2_header(adl2: &str) -> Option<(&'static str, String)> {
-    let text = adl2.trim_start_matches('\u{feff}');
-    let mut lines = text
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with("--"));
-    let header = lines.next()?;
-    // The kind keyword is the first token, before any whitespace or `(` attrs.
-    let keyword = header.split(['(', ' ', '\t']).next()?;
-    let kind = match keyword {
-        "archetype" => "archetype",
-        "template" => "template",
-        "operational_template" => "operational_template",
-        _ => return None,
-    };
-    let hrid_line = lines.next()?;
-    valid_adl2_hrid(hrid_line).then(|| (kind, hrid_line.to_owned()))
-}
-
 /// Structural check for an `ARCHETYPE_HRID`: an optional `namespace::` prefix
 /// followed by an openEHR HRID
 /// (`rm_publisher '-' rm_package '-' rm_class '.' concept_id {'-' spec}* '.v' version`,
@@ -849,35 +852,13 @@ mod tests {
     }
 
     #[test]
-    fn adl2_header_extraction() {
-        // operational_template header with attrs → kind + HRID (master04 example).
-        let opt = "operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)\n\
-                   \topenEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0\n\n\
-                   specialize\n\topenEHR-EHR-COMPOSITION.discharge.v1";
-        assert_eq!(
-            extract_adl2_header(opt),
-            Some((
-                "operational_template",
-                "openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0".to_owned()
-            ))
-        );
-        // Bare `archetype` header + a namespace-qualified HRID.
-        let arch = "-- a comment\narchetype\ncom.example::openEHR-EHR-OBSERVATION.bp.v1.0.0\n";
-        assert_eq!(
-            extract_adl2_header(arch),
-            Some((
-                "archetype",
-                "com.example::openEHR-EHR-OBSERVATION.bp.v1.0.0".to_owned()
-            ))
-        );
-        // `template` kind.
-        assert_eq!(
-            extract_adl2_header("template\nopenEHR-EHR-COMPOSITION.t_x.v2.0.0").map(|(k, _)| k),
-            Some("template")
-        );
-        // Unrecognised header keyword → not an artefact.
-        assert!(extract_adl2_header("concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0").is_none());
-        // Recognised header but a malformed HRID → invalid.
-        assert!(extract_adl2_header("archetype\nnot-an-hrid").is_none());
+    fn adl2_source_validation_drives_upload_metadata() {
+        // The header keyword + HRID (incl. a namespace-qualified HRID) are
+        // extracted by the registration validator; malformed keyword/HRID
+        // sources are invalid (SM master04 I_DEFINITION_ADL2 upload_artefact).
+        assert!(!EhrbaseService::valid_adl2_source(
+            "concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0"
+        ));
+        assert!(!EhrbaseService::valid_adl2_source("archetype\nnot-an-hrid"));
     }
 }

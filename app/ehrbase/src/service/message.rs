@@ -1161,7 +1161,7 @@ mod tests {
     }
 
     /// `X_VERSIONED_OBJECT.versions` members must be `ORIGINAL_VERSION` (RM
-    /// ehr_extract master05); a foreign `_type` — e.g. an already-wrapped
+    /// `ehr_extract` master05); a foreign `_type` — e.g. an already-wrapped
     /// `IMPORTED_VERSION` — is rejected, while an explicit or absent
     /// `ORIGINAL_VERSION` tag parses. Regression for A1
     /// rm-common-change-control-R20.

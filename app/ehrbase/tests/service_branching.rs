@@ -164,7 +164,7 @@ fn change_type(code: &str, value: &str) -> Value {
 }
 
 /// A CONTRIBUTION body modifying one composition (`251|modification|`).
-fn modify_contribution(data: Value, preceding: &str) -> Value {
+fn modify_contribution(data: &Value, preceding: &str) -> Value {
     json!({
         "versions": [{
             "data": data,
@@ -189,7 +189,7 @@ fn first_version_uid(contribution: &Value) -> String {
         .to_owned()
 }
 
-/// A whole-EHR, ALL-versions `EXTRACT_SPEC` (RM ehr_extract master04
+/// A whole-EHR, ALL-versions `EXTRACT_SPEC` (RM `ehr_extract` master04
 /// `EXTRACT_VERSION_SPEC.include_all_versions`) — the full-tree copy the
 /// latest-only `export_ehrs` deliberately is not (latest = the latest TRUNK
 /// version, master06).
@@ -286,11 +286,11 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     // fork branch 2.1.1 with the LOCAL creating_system_id (master06: "branching
     // version identifiers [are required] when local modifications are made to
     // versions copied from elsewhere").
-    let foreign_tip = format!("{vo}::{FOREIGN}::2", vo = vo_id);
+    let foreign_tip = format!("{vo_id}::{FOREIGN}::2");
     let contribution = svc
         .create_ehr_contribution(
             target,
-            modify_contribution(composition("local mod"), &foreign_tip),
+            modify_contribution(&composition("local mod"), &foreign_tip),
         )
         .await
         .expect("branch-forking modification");
@@ -332,7 +332,7 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     let contribution2 = svc
         .create_ehr_contribution(
             target,
-            modify_contribution(composition("local mod 2"), &branch_uid),
+            modify_contribution(&composition("local mod 2"), &branch_uid),
         )
         .await
         .expect("branch continuation");
@@ -353,7 +353,7 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
     let contribution3 = svc
         .create_ehr_contribution(
             target,
-            modify_contribution(composition("second fork"), &foreign_tip),
+            modify_contribution(&composition("second fork"), &foreign_tip),
         )
         .await
         .expect("second fork");
@@ -377,7 +377,7 @@ async fn merge_provenance_round_trips_the_wire() {
     // A modification carrying other_input_version_uids (master06 §Version
     // Merging — the merged-in inputs) is stored and served.
     let merged_in = format!("{}::{FOREIGN}::3", Uuid::now_v7());
-    let mut body = modify_contribution(composition("merged"), &v1);
+    let mut body = modify_contribution(&composition("merged"), &v1);
     body["versions"][0]["other_input_version_uids"] = json!([{ "value": merged_in }]);
     let contribution = svc
         .create_ehr_contribution(ehr, body)
@@ -415,7 +415,7 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     let foreign_tip = format!("{vo_id}::{FOREIGN}::2");
     svc.create_ehr_contribution(
         target,
-        modify_contribution(composition("local branch"), &foreign_tip),
+        modify_contribution(&composition("local branch"), &foreign_tip),
     )
     .await
     .expect("fork");
