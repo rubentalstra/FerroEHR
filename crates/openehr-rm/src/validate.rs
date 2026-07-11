@@ -344,8 +344,9 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
     match serde_json::from_value::<T>(value.clone()) {
         Ok(v) => v.validate_invariants(out),
         // A node that does not deserialize into its declared concrete RM type is
-        // NOT "caught by the codec/schema layer" on the commit path: the ADR-008
-        // node codec stores the raw canonical-JSON fragment and the ITS-JSON
+        // NOT "caught by the codec/schema layer" on the commit path: the node
+        // codec stores the raw canonical-JSON fragment verbatim (no openEHR spec
+        // governs the storage mechanics — our own design) and the ITS-JSON
         // schema is not enforced at commit, so a missing mandatory attribute
         // (e.g. `COMPOSITION.composer [1]`) or a wrong nested type (e.g. an
         // `EHR_STATUS.subject` that is not `PARTY_SELF`) reaches here and nowhere

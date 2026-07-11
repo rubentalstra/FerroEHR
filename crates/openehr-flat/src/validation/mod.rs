@@ -91,7 +91,9 @@ pub enum ValidationKind {
     /// An RM class invariant failed.
     Invariant,
     /// An instance node is not admitted by any sibling constraint or open slot
-    /// under a closed (constrained) attribute (ADR-012 closed-archetype).
+    /// under a closed (constrained) attribute (closed-world admission per the
+    /// AOM2 direction — `AM/docs/AOM2/master04.2` §Rm_type_name matching;
+    /// evidenced by ECC-VAL-119).
     Unexpected,
     /// Any other violation.
     Other,
