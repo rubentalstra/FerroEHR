@@ -378,6 +378,20 @@ pub(crate) fn prefers_representation(headers: &HeaderMap) -> bool {
         })
 }
 
+/// Whether the client asked for `OBJECT_REF` resolution on `Prefer`
+/// (`resolve_refs` — ITS-REST `Requests_and_responses` §Representation details
+/// negotiation: "services that implement `OBJECT_REF` resolution SHOULD accept
+/// and honour it").
+pub(crate) fn prefers_resolve_refs(headers: &HeaderMap) -> bool {
+    headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|p| {
+            p.split(',')
+                .any(|t| t.trim().eq_ignore_ascii_case("resolve_refs"))
+        })
+}
+
 /// Build the (path-absolute) `Location` URL for an EHR sub-resource under the
 /// configured base path (`headers/Location_*.yaml`). `segment` is the resource
 /// collection (`composition`/`ehr_status`/`directory`/`contribution`); `None`

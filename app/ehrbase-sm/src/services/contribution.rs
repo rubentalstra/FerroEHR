@@ -23,6 +23,22 @@ pub trait EhrContributionService: Send + Sync {
     /// `has_ehr`. Error `ehr_id_does_not_exist`.
     async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError>;
 
+    /// `get_contribution` with `OBJECT_REF` resolution: the CONTRIBUTION's
+    /// `versions` carry the full `ORIGINAL_VERSION` objects instead of
+    /// `OBJECT_REF`s. Backs the ITS-REST `Prefer: resolve_refs` negotiation
+    /// (`Requests_and_responses` §Representation details negotiation — no SM
+    /// operation defines this; it is the REST adapter's negotiation surface).
+    async fn get_contribution_resolved(
+        &self,
+        _an_ehr_id: Uuid,
+        _a_contrib_id: Uuid,
+    ) -> Result<serde_json::Value, SmError> {
+        Err(SmError::new(
+            crate::CallStatusType::NotImplemented,
+            "not implemented",
+        ))
+    }
+
     /// `get_contribution (an_ehr_id: UUID, a_contrib_id: UUID): CONTRIBUTION` —
     /// pre `has_ehr` + `has_contribution`. Error `contribution_does_not_exist`.
     async fn get_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid)

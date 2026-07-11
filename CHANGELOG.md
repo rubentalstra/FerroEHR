@@ -17,6 +17,9 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- `Prefer: resolve_refs` is honoured on contribution reads: the
+  CONTRIBUTION's `versions` are returned as full `ORIGINAL_VERSION`
+  objects instead of `OBJECT_REF`s (ITS-REST representation negotiation).
 - AQL single-row functions now execute: `LENGTH`, `SUBSTRING`, `POSITION`,
   the string `CONTAINS`, `CONCAT`/`CONCAT_WS`, `ABS`/`MOD`/`CEIL`/`FLOOR`/
   `ROUND`, and `CURRENT_DATE`/`CURRENT_TIME`/`CURRENT_DATE_TIME`/`NOW`/

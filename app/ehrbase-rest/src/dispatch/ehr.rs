@@ -753,8 +753,14 @@ async fn run<S: Platform>(
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let cid = parse_uuid(&p.contribution_uid, "contribution id")?;
-            let body =
-                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?;
+            // `Prefer: resolve_refs` (Requests_and_responses §Representation
+            // details negotiation): versions as full ORIGINAL_VERSIONs.
+            let body = if negotiate::prefers_resolve_refs(h) {
+                EhrContributionService::get_contribution_resolved(state.backend(), ehr_id, cid)
+                    .await?
+            } else {
+                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?
+            };
             Ok(negotiate::respond(h, ok, &body))
         }
         // ── item tags ────────────────────────────────────────────────────────
