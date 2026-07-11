@@ -66,7 +66,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 | ABAC **fully integrated** | ✓ (XACML) | ✅ **Cedar policy engine** (XACML-equivalent, modern policy language) | `access` module; `abac_e2e`, `authz_cedar_engine` tests; docs/enterprise/access-control.md |
 | RBAC | — | ✅ | `rbac_e2e` |
 | ATNA logging (API + integrated) | ✓✓ | ✅ both | `system_log` module: DICOM-over-syslog (TLS), evidenced; docs/enterprise/atna-audit.md |
-| DB-layer hardening | — | ✅ role architecture, pgaudit posture, PITR guidance | ADR-013 + schema-review 02 |
+| DB-layer hardening | — | ✅ role architecture, pgaudit posture, PITR guidance | ADR-013 (+ Appendix §3/§5/§6) |
 
 ### Admin & dev tools (headless posture)
 
