@@ -111,6 +111,8 @@ Spec-grounded enterprise features from the B8 roadmap; each closed with ECC
 | — | Docs cleanup: 45 historical files pruned, references repointed | 2026-07-11 | #51 |
 | W1 | Public documentation website — mdBook on Pages: landing, versioned book (dev · latest · v3.0.0 via the `docs-dist` archive), offline OpenAPI reference (7 API groups), link + OAS-drift gates (both negative-tested), same-PR docs discipline | 2026-07-11 | #52, #54, #56, #57, #60, #62, #63 |
 
+| A1 | Full spec audit — 24-chapter register (1,126 requirements) verified + fixed, zero deferrals: version-tree branching/merge provenance, the AOM 1.4 + ADL2 artefact validators, the AQL single-row function set + TERMINOLOGY boolean/URI forms, RM invariant completion (DV_TEXT family, identifiers, lists, tables), terminology constants + strict subsumption, protocol tail (resolve_refs, body-uid cross-check, supplied contribution uid, ADL2 wire 409); spec-only citation rule enforced on every touched file | 2026-07-12 | (this PR) |
+
 ## Remaining
 
 - **X1 comparison** — honest EHRbase (Java) vs EHRbase-rs comparison page:

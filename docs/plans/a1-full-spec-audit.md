@@ -26,7 +26,7 @@ persisted the moment they exist; commits after each phase.
 - [x] Phase 1 — Extract: 24 chapters × requirements.md (numbered normative
       requirements + citations; rejection duties prioritized) — done
       2026-07-11: 1,126 requirements, 418 high-risk, committed per batch
-- [ ] Verify+fix, per chapter (owner ruling 2026-07-11, supersedes the
+- [x] Verify+fix, per chapter (owner ruling 2026-07-11, supersedes the
       brief's separate verify/skeptic/fix phases): **ONE active agent at a
       time**, working through the chapters in order. Per chapter: verify
       EVERY requirement in requirements.md (all of them, not only
@@ -48,10 +48,11 @@ persisted the moment they exist; commits after each phase.
         [x] 20 its-rest-ehr-composition ·
         [x] 21 its-rest-query-definition-admin · [x] 22 its-json ·
         [x] 23 its-xml · [x] 24 cnf-cross-check
-- [ ] FINDINGS.md — consolidated register maintained as chapters close
-      (confirmed defects + fix status + uncertain findings with probes)
-- [ ] Uncertain findings: write + run the named runtime probes
-      (testcontainers PG18), reclassify
+- [x] FINDINGS.md — consolidated register written at close (2026-07-12):
+      per-chapter fixes + cross-cutting corrections + the H1 follow-up
+      (legacy ADR-citation sweep)
+- [x] Uncertain findings: none remain — every chapter's verification.md
+      closes with zero uncertain rows (probes were run inline per chapter)
 - [ ] Gates: `cargo nextest run --workspace` green; clippy clean; full ECC
       (`scripts/conformance.sh`) — pass/fail must only IMPROVE from 341/315/0
 - [ ] PRs per logical chunk to develop, merged; `docs/PROGRESS.md` +
