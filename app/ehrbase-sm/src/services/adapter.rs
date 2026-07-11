@@ -242,6 +242,87 @@ pub trait TenantAdapter: Send + Sync {
     async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError>;
 }
 
+/// **FHIR-connector** extension — mapping-store CRUD plus the inbound
+/// `POST /fhir/r4/{resourceType}` ingest (ADR-016).
+///
+/// PORT NOTE (ADR-016): not an SM interface call. FHIR↔openEHR mapping is
+/// spec-silent (ADR-016 is the design record), so — like
+/// [`EventSubscriptionAdapter`] / [`TenantAdapter`] — there is no `I_*`
+/// interface to transcribe; the surface is a config-gated `/fhir/r4/*` +
+/// `/admin/fhir_mapping` extension in `ehrbase-rest` (off by default). Mapping
+/// bodies are `serde_json::Value` (a mapping is a small deployable data record,
+/// ADR-016 §Decision 2). [`Self::fhir_ingest`] resolves a mapping by resource
+/// type + profile, builds a COMPOSITION, and commits it through the platform's
+/// NORMAL validated create path (never a bypass, ADR-016 §Decision 3) with
+/// `FEEDER_AUDIT` provenance; it returns the committed [`ServiceResponse`]
+/// (the composition body + its resource metadata for the wire's `Location`/
+/// `ETag`). No default bodies — the platform component implements every method
+/// (ADR-011).
+#[async_trait]
+pub trait FhirConnectorAdapter: Send + Sync {
+    /// `GET …/admin/fhir_mapping` — every stored mapping as a JSON record
+    /// (`{id, name, resource_type, profile_url, template_id, definition,
+    /// enabled, created_at}`).
+    async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError>;
+
+    /// `POST …/admin/fhir_mapping` — create a mapping from the JSON body
+    /// (`name`, `resource_type`, `template_id`, `definition` required; the
+    /// `definition` is validated against the connector's schema on upload).
+    /// Returns the stored record (with its generated `id`) for the `201` body.
+    /// A malformed body is a `precondition_violation` (`400`); a duplicate name
+    /// is a `409`; an unknown `template_id` is a `precondition_violation`.
+    async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError>;
+
+    /// `GET …/admin/fhir_mapping/{id}` — the stored mapping;
+    /// `versioned_object_does_not_exist` (`404`) if unknown.
+    async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError>;
+
+    /// `PUT …/admin/fhir_mapping/{id}` — replace the mapping's fields from the
+    /// JSON body, returning the updated record; `404` if unknown.
+    async fn fhir_mapping_update(
+        &self,
+        a_mapping_id: Uuid,
+        a_mapping: Value,
+    ) -> Result<Value, SmError>;
+
+    /// `DELETE …/admin/fhir_mapping/{id}` — remove the mapping; `404` if
+    /// unknown.
+    async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError>;
+
+    /// `POST …/fhir/r4/{resource_type}` — ingest a FHIR R4 resource: resolve
+    /// the mapping by `resource_type` (+ optional `profile` from the resource's
+    /// `meta.profile`), build a COMPOSITION from the mapping definition, and
+    /// commit it through the NORMAL validated create path with `FEEDER_AUDIT`
+    /// provenance (ADR-016 §Decision 3). Returns the committed composition +
+    /// its resource metadata. No enabled mapping for the type/profile →
+    /// `versioned_object_does_not_exist` (`404`); a resource that maps to an
+    /// invalid COMPOSITION is rejected by the validator (`content_invalid` →
+    /// `422`), never partially stored (ADR-016 §Decision 6).
+    async fn fhir_ingest(
+        &self,
+        resource_type: String,
+        profile: Option<String>,
+        a_resource: Value,
+    ) -> Result<ServiceResponse, SmError>;
+
+    /// `GET …/fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` —
+    /// the **read façade** (ADR-016 §Decision 4b): resolve every enabled mapping
+    /// for the type, run the mapped template's COMPOSITION query (scoped to the
+    /// `patient`'s EHR) through the platform's query seam, reverse-map each hit
+    /// to a FHIR resource, and return a FHIR `searchset` **Bundle** (`total`,
+    /// `entry[].fullUrl`, `entry[].resource`). Read-only and stateless — no FHIR
+    /// persistence, no generic FHIR Search (only this explicit `patient` scope,
+    /// ADR-016 §Decision 5). `patient` is mandatory (the protocol edge rejects a
+    /// missing one `400`); a type with no enabled mapping yields an empty
+    /// (`total: 0`) Bundle, not an error.
+    async fn fhir_search(
+        &self,
+        resource_type: String,
+        patient: String,
+        count: Option<i64>,
+    ) -> Result<Value, SmError>;
+}
+
 /// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire
 /// EHR-scoped CONTRIBUTION commit.
 ///

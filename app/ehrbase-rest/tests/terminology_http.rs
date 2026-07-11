@@ -157,6 +157,7 @@ fn config(terminology_enabled: bool) -> RestConfig {
         },
         event_subscription: EventSubscriptionConfig::default(),
         tenancy: ehrbase_rest::TenancyConfig::default(),
+        fhir: ehrbase_rest::FhirConfig::default(),
     }
 }
 

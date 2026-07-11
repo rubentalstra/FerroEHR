@@ -37,8 +37,9 @@ use ehrbase_sm::services::{
     AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
     DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
     EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
-    EventSubscriptionAdapter, ItemTagAdapter, PartyRelationshipService, QueryService, SystemLog,
-    TenantAdapter, TerminologyService, VersionMetaAdapter, WebTemplateService,
+    EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter, PartyRelationshipService,
+    QueryService, SystemLog, TenantAdapter, TerminologyService, VersionMetaAdapter,
+    WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
@@ -126,6 +127,16 @@ type EventSubGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type EventSubUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
 type EventSubDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
 
+// FHIR connector (ADR-016; FhirConnectorAdapter).
+type FhirMappingList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
+type FhirMappingCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
+type FhirMappingGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
+type FhirMappingUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
+type FhirMappingDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
+type FhirIngest =
+    Arc<dyn Fn(String, Option<String>, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
+type FhirSearch = Arc<dyn Fn(String, String, Option<i64>) -> Result<Value, SmError> + Send + Sync>;
+
 // Tenant admin extension (ADR-015 §5; TenantAdapter).
 type TenantList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
 type TenantCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
@@ -198,6 +209,14 @@ pub struct Hooks {
     pub event_subscription_get: Option<EventSubGet>,
     pub event_subscription_update: Option<EventSubUpdate>,
     pub event_subscription_delete: Option<EventSubDelete>,
+    // FHIR connector (ADR-016).
+    pub fhir_mapping_list: Option<FhirMappingList>,
+    pub fhir_mapping_create: Option<FhirMappingCreate>,
+    pub fhir_mapping_get: Option<FhirMappingGet>,
+    pub fhir_mapping_update: Option<FhirMappingUpdate>,
+    pub fhir_mapping_delete: Option<FhirMappingDelete>,
+    pub fhir_ingest: Option<FhirIngest>,
+    pub fhir_search: Option<FhirSearch>,
     // Tenant admin extension (ADR-015 §5).
     pub tenant_list: Option<TenantList>,
     pub tenant_create: Option<TenantCreate>,
@@ -648,6 +667,66 @@ impl EventSubscriptionAdapter for Mock {
     async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
         match &self.h.event_subscription_delete {
             Some(f) => f(a_subscription_id),
+            None => Err(not_impl()),
+        }
+    }
+}
+
+#[async_trait]
+impl FhirConnectorAdapter for Mock {
+    async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
+        match &self.h.fhir_mapping_list {
+            Some(f) => f(),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
+        match &self.h.fhir_mapping_create {
+            Some(f) => f(a_mapping),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
+        match &self.h.fhir_mapping_get {
+            Some(f) => f(a_mapping_id),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_mapping_update(
+        &self,
+        a_mapping_id: Uuid,
+        a_mapping: Value,
+    ) -> Result<Value, SmError> {
+        match &self.h.fhir_mapping_update {
+            Some(f) => f(a_mapping_id, a_mapping),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
+        match &self.h.fhir_mapping_delete {
+            Some(f) => f(a_mapping_id),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_ingest(
+        &self,
+        resource_type: String,
+        profile: Option<String>,
+        a_resource: Value,
+    ) -> Result<ServiceResponse, SmError> {
+        match &self.h.fhir_ingest {
+            Some(f) => f(resource_type, profile, a_resource),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_search(
+        &self,
+        resource_type: String,
+        patient: String,
+        count: Option<i64>,
+    ) -> Result<Value, SmError> {
+        match &self.h.fhir_search {
+            Some(f) => f(resource_type, patient, count),
             None => Err(not_impl()),
         }
     }
