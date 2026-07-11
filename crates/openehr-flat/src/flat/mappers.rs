@@ -234,14 +234,17 @@ fn build_for(base: &str, view: &FlatView) -> Option<Value> {
     match base {
         "DV_TEXT" | "DV_PARAGRAPH" => text_from_flat(view, base),
         "DV_CODED_TEXT" | "DV_STATE" => {
-            // Coded-text-with-`other`: `|other` (or a bare value with no `|code`)
-            // ⇒ the value was plain DV_TEXT.
+            // Coded-text-with-`other`: `|other` ⇒ the value was plain DV_TEXT.
+            // A bare value first tries the SDT path+terse coded form
+            // (`terminology::code|text|` — SIM-B master04 §S_DV_CODED_TEXT);
+            // a bare string that is not terse-coded is the free-text
+            // alternative of a coded-text-with-other slot.
             if let Some(other) = view.suffix("other") {
                 text_value(Some(other.clone()), None)
-            } else if view.suffix("code").is_none() && view.bare().is_some() {
-                text_value(view.bare().cloned(), view.suffix("formatting").cloned())
             } else {
-                coded_text_from_flat(view, base)
+                coded_text_from_flat(view, base).or_else(|| {
+                    text_value(view.bare().cloned(), view.suffix("formatting").cloned())
+                })
             }
         }
         "CODE_PHRASE" => code_phrase_from_flat(view),
@@ -293,16 +296,15 @@ fn text_from_flat(view: &FlatView, ty: &str) -> Option<Value> {
 }
 
 fn coded_text_from_flat(view: &FlatView, ty: &str) -> Option<Value> {
-    let code = view.suffix("code")?.clone();
-    let terminology = view
-        .suffix("terminology")
-        .and_then(Value::as_str)
-        .unwrap_or("local")
-        .to_owned();
+    let (code, terminology, terse_value) = coded_parts(view)?;
     let mut o = serde_json::Map::new();
     o.insert("_type".into(), json!(ty));
-    if let Some(v) = view.suffix("value") {
-        o.insert("value".into(), v.clone());
+    if let Some(v) = view
+        .suffix("value")
+        .cloned()
+        .or(terse_value.map(Value::String))
+    {
+        o.insert("value".into(), v);
     }
     o.insert(
         "defining_code".into(),
@@ -315,17 +317,52 @@ fn coded_text_from_flat(view: &FlatView, ty: &str) -> Option<Value> {
 }
 
 fn code_phrase_from_flat(view: &FlatView) -> Option<Value> {
-    let code = view.suffix("code")?.clone();
-    let terminology = view
-        .suffix("terminology")
-        .and_then(Value::as_str)
-        .unwrap_or("local")
-        .to_owned();
+    let (code, terminology, _) = coded_parts(view)?;
     Some(code_phrase_obj(
         code,
         &terminology,
         view.suffix("preferred_term").cloned(),
     ))
+}
+
+/// The coded parts of a coded leaf: the regular suffixed form
+/// (`|code`/`|terminology`), or the SDT path+terse string
+/// `"terminology::code|value|"` / `"terminology::code"` (SIM-B master04
+/// `S_DV_CODED_TEXT` section — the same shape the Better FLAT dialect accepts).
+fn coded_parts(view: &FlatView) -> Option<(Value, String, Option<String>)> {
+    if let Some(code) = view.suffix("code") {
+        let terminology = view
+            .suffix("terminology")
+            .and_then(Value::as_str)
+            .unwrap_or("local")
+            .to_owned();
+        return Some((code.clone(), terminology, None));
+    }
+    let (terminology, code, value) = parse_terse_coded(view.bare()?.as_str()?)?;
+    Some((Value::String(code), terminology, value))
+}
+
+/// Parse the SDT terse coded form: `terminology::code|value|` (trailing pipe
+/// optional) or the value-less `terminology::code`.
+fn parse_terse_coded(s: &str) -> Option<(String, String, Option<String>)> {
+    let (terminology, rest) = s.split_once("::")?;
+    if terminology.is_empty() || rest.is_empty() {
+        return None;
+    }
+    match rest.split_once('|') {
+        Some((code, tail)) => {
+            if code.is_empty() {
+                return None;
+            }
+            let value = tail.strip_suffix('|').unwrap_or(tail);
+            Some((
+                terminology.to_owned(),
+                code.to_owned(),
+                Some(value.to_owned()),
+            ))
+        }
+        None => Some((terminology.to_owned(), rest.to_owned(), None)),
+    }
 }
 
 fn code_phrase_obj(code: Value, terminology: &str, preferred_term: Option<Value>) -> Value {

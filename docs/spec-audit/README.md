@@ -60,7 +60,7 @@ before a finding enters `FINDINGS.md`.
 | 15 | term | done (53 / 21) | done — identifier constants + property check | orchestrator-reviewed |
 | 16 | query-aql | done (50 / 12) | done — 8 defect families fixed | orchestrator-reviewed |
 | 17 | sm-platform | done (56 / 24) | done — 2 fixed | orchestrator-reviewed |
-| 18 | sm-tdd | done (47 / 7) | pending | pending |
+| 18 | sm-tdd | done (47 / 7) | done — terse coded form fixed | orchestrator-reviewed |
 | 19 | its-rest-general | done (40 / 10) | pending | pending |
 | 20 | its-rest-ehr-composition | done (53 / 25) | pending | pending |
 | 21 | its-rest-query-definition-admin | done (45 / 11) | pending | pending |
