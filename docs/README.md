@@ -22,8 +22,12 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
   **ADR-008** (greenfield PG18 storage + AQL; openEHR CNF conformance is the
   acceptance target — *read first for internals*), **ADR-010** (SM-aligned
   service architecture), **ADR-011** (app-crate redesign — the current
-  three-crate app layout + protocol-free SM native API). ADR-001/002/003/007/009
-  are superseded-in-part or narrow; each says so in its header.
+  three-crate app layout + protocol-free SM native API). Later records:
+  **ADR-012** (closed archetype validation), **ADR-013** (enterprise schema
+  baseline + PG18 operational-practices appendix), **ADR-014** (contribution-outbox
+  eventing), **ADR-015** (multi-tenancy), **ADR-016** (FHIR connectors),
+  **ADR-017** (multimedia externalization). ADR-001/002/003/007/009 are
+  superseded-in-part or narrow; each says so in its header.
 
 ## The specs (the oracle — do not edit)
 
@@ -34,25 +38,26 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 
 ## Plans
 
-- `plans/` — `current-phase.md` (live pointer) + the active/future phase files:
-  `phase-17..20`, `phase-99` (remaining Stage-1 P-phases) and
-  `sm-phase-04-terminology-admin.md` (active SM phase, carrying the ADR-011
-  rebuild). Completed phase files were pruned 2026-07-09 (in git history +
-  `PROGRESS.md`). See `plans/README.md`.
+- `plans/` — `current-phase.md` (live pointer) + the future phase files:
+  `phase-20-optimization.md`, `phase-99-cutover.md`, the retained
+  `phase-17..19` (task detail; scope absorbed into the blueprint arc), and
+  `sm-phase-04-terminology-admin.md` (last SM phase file, header still
+  `in-progress` though its work shipped via B3/B4). Completed phase files were
+  pruned (2026-07-09 for 00–16/SM/S2; 2026-07-11 for B1–B8/E1–E5) — all in git
+  history + `PROGRESS.md`. See `plans/README.md`.
 
 ## Design
 
-- `design/sm-platform/` — the SM Platform Service Model design set (spec
-  digests 01–06 + gap analysis 07 + target architecture 08 + roadmap 09 +
-  message integration 10). Load-bearing spec extractions; packaging reconciled
-  to ADR-011 in its `README.md` banner.
+The SM Platform Service Model design set was retired 2026-07-11 (SM-1..SM-6
+shipped); the SM component map now lives in `architecture.md` and the vendored
+SM spec at `specs/openehr/SM/`. The remaining design docs:
+
 - `design/aql-engine.md` — the AQL engine feature envelope + IR→SQL design.
 - `design/observability.md` — telemetry/metrics/health stack.
 - `design/version-signing.md` — VERSION.signature (`ehrbase::signing` module).
 - `design/container-images.md` — the GHCR images + compose quickstart.
 - `design/benchmarking.md` — the benchmark harness (`tools/benchmark`).
-- `design/conformance-framework.md` + `design/ecc-coverage-review.md` — the ECC
-  (own conformance framework) design + coverage review.
+- `design/conformance-framework.md` — the ECC (own conformance framework) design.
 - `design/terminology-server-integration.md` — which self-hostable terminology
   server to run in Docker (Snowstorm / HAPI FHIR) and how to point the CDR + the
   conformance runner at it by URL. Built at B4.
@@ -62,14 +67,17 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 - `enterprise/atna-audit.md` — the IHE ATNA audit trail (`ehrbase::system_log`
   module; op-id classification + middleware in `ehrbase-rest`).
 - `enterprise/access-control.md` — RBAC/ABAC (`ehrbase-rest::access` module).
-- `enterprise/v1-vs-v2-delta.md` — the EHRbase v1→v2 archaeology (Stage-2 input).
+- `enterprise/deployment.md` — the Kubernetes Helm chart + operational posture
+  (ADR-013 roles + Appendix §3/§5/§6). Built at E5.
+- `enterprise/product-roadmap.md` — the market scorecard + enterprise-capability
+  roadmap (B8).
 
 ## Spec compliance detail
 
-- `spec-audit/SPEC_AUDIT.md` + `spec-audit/findings/*.md` — the 2026-07-06
-  whole-codebase audit; the **per-finding** detail record (82 open / 109 fixed),
-  each with spec citations + checkboxes. The consolidated view is the
-  blueprint §2.
+- The whole-codebase spec-gap surface is the **blueprint §2**
+  (`blueprint/00-THE-BLUEPRINT.md`) — the consolidated view that superseded the
+  standalone per-finding spec-audit ledger (retired 2026-07-11); the
+  per-component compliance detail is `blueprint/01-rm.md … 07-cnf.md`.
 - `terminology-validation.md` — the external FHIR-R4 terminology-*client* design
   (how the CDR validates coded values against a terminology server); pairs with
   `design/terminology-server-integration.md` (which server to run). Built at B4.
@@ -82,6 +90,6 @@ decision wins** (ADR-011 > ADR-010 > … ; the blueprint > the historical plan).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits, mapped
   to phases.
 - `conformance/` — ECC run artifacts: `CONFORMANCE_REPORT.md`, `CATALOG.md`,
-  `COVERAGE_GAPS.md`, `results.json`, badges (ECC is suspended during the
-  ADR-011 rebuild and re-converges at P19).
+  `COVERAGE_GAPS.md`, `results.json`, badges. Current: **341 executed · 315
+  passed · 0 failed — CORE PASS / STANDARD PASS** (held zero-drift since B6).
 - `benchmarks/` — `REPORT.md` + `results.json` from the benchmark harness.
