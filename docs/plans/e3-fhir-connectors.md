@@ -18,9 +18,9 @@
       /fhir/r4/{Patient,Observation,...} GETs over AQL), scope = the
       starter resource set (Patient, Observation, Condition,
       DocumentReference), everything else typed 501 with PORT NOTEs.
-- [ ] 2. Mapping engine + artefact store (migration; baseline discipline):
+- [x] 2. Mapping engine + artefact store (migration; baseline discipline):
       mapping definitions (JSON) validated on upload; template-bound.
-- [ ] 3. Inbound connector: POST /fhir/r4/{resource} (config-gated) →
+- [x] 3. Inbound connector: POST /fhir/r4/{resource} (config-gated) →
       mapping → COMPOSITION → validated commit path; provenance via
       FEEDER_AUDIT (spec-correct import trail).
 - [ ] 4. Outbound: subscription-driven emission (E1 outbox consumer) +

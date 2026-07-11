@@ -33,8 +33,8 @@ pub mod validity;
 pub mod web_template;
 
 pub use adapter::{
-    ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, ItemTagAdapter,
-    TenantAdapter, VersionMetaAdapter,
+    ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, FhirConnectorAdapter,
+    ItemTagAdapter, TenantAdapter, VersionMetaAdapter,
 };
 pub use admin::{
     AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,

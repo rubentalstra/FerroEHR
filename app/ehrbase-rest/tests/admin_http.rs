@@ -73,6 +73,7 @@ fn config(admin_enabled: bool) -> RestConfig {
         terminology: ehrbase_rest::TerminologyConfig::default(),
         event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
         tenancy: ehrbase_rest::TenancyConfig::default(),
+        fhir: ehrbase_rest::FhirConfig::default(),
     }
 }
 

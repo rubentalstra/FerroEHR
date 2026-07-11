@@ -20,6 +20,7 @@ mod definition;
 mod demographic;
 mod ehr;
 mod event_subscription;
+mod fhir;
 mod flat;
 mod query;
 mod tenant;
@@ -106,6 +107,9 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
         // Our-own-design tenant admin extension routes (no ITS-REST contract;
         // ADR-015 §5 multi-tenancy), config-gated.
         .merge(mount(tenant::TENANT_ROUTES, tenant::dispatch::<S>))
+        // Our-own-design FHIR R4 connector routes (no ITS-REST contract;
+        // ADR-016 §Decision 3/5 — inbound ingest + mapping CRUD), config-gated.
+        .merge(mount(fhir::FHIR_ROUTES, fhir::dispatch::<S>))
 }
 
 /// Mount one API group's routes onto a router, grouping methods that share a

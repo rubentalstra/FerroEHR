@@ -44,6 +44,11 @@ pub struct RestConfig {
     /// single-tenant.
     #[serde(default)]
     pub tenancy: TenancyConfig,
+    /// FHIR R4 connector (ADR-016). Disabled by default — the `/fhir/r4/*`
+    /// inbound routes and the `/admin/fhir_mapping` CRUD answer `404` unless
+    /// enabled.
+    #[serde(default)]
+    pub fhir: FhirConfig,
 }
 
 /// Multi-tenancy configuration (ADR-015 §3/§4).
@@ -126,6 +131,22 @@ pub struct EventSubscriptionConfig {
     pub enabled: bool,
 }
 
+/// Configuration of the FHIR R4 connector (ADR-016 — connectors + read façade,
+/// NOT a full FHIR server).
+///
+/// PORT NOTE: like the ADMIN + terminology + event-subscription groups, the FHIR
+/// surface is opt-in — when inactive every `/fhir/r4/*` + `/admin/fhir_mapping`
+/// route answers `404` (as if unmounted), never a `403`. Off by default so a
+/// stock server exposes only the standardised ITS-REST surface (ADR-016
+/// §Consequences: feature/config-gated, off by default).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct FhirConfig {
+    /// Whether the FHIR connector is active. When `false`, every FHIR route
+    /// answers `404` without touching the backend.
+    #[serde(default)]
+    pub enabled: bool,
+}
+
 impl Default for RestConfig {
     fn default() -> Self {
         Self {
@@ -138,6 +159,7 @@ impl Default for RestConfig {
             terminology: TerminologyConfig::default(),
             event_subscription: EventSubscriptionConfig::default(),
             tenancy: TenancyConfig::default(),
+            fhir: FhirConfig::default(),
         }
     }
 }
@@ -211,6 +233,8 @@ mod tests {
         assert!(!c.terminology.enabled);
         // The event-subscription extension API is opt-in too.
         assert!(!c.event_subscription.enabled);
+        // The FHIR connector is opt-in too (ADR-016).
+        assert!(!c.fhir.enabled);
         // Multi-tenancy is off by default (ADR-015 §3); the claim defaults to `tenant`.
         assert!(!c.tenancy.enabled);
         assert_eq!(c.tenancy.claim, "tenant");
@@ -248,6 +272,17 @@ mod tests {
             jail.set_env("EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED", "true");
             let c = RestConfig::load().expect("load");
             assert!(c.event_subscription.enabled);
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn fhir_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_FHIR__ENABLED", "true");
+            let c = RestConfig::load().expect("load");
+            assert!(c.fhir.enabled);
             Ok(())
         });
     }

@@ -34,6 +34,7 @@ mod dump_load;
 mod ehr;
 mod ehr_index;
 mod event_subscription;
+mod fhir;
 mod item_tag;
 mod message;
 mod opt_validation;
