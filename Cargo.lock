@@ -623,7 +623,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "benchmark"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "clap",
  "conformance",
@@ -1252,7 +1252,7 @@ dependencies = [
 
 [[package]]
 name = "conformance"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -1937,7 +1937,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1999,7 +1999,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-rest"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "arc-swap",
  "argon2",
@@ -2041,7 +2041,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-sm"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "async-trait",
  "jiff",
@@ -4178,7 +4178,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-am"
-version = "0.1.0"
+version = "2.4.0"
 dependencies = [
  "openehr-base",
  "openehr-derive",
@@ -4189,7 +4189,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.1.0"
+version = "1.3.0"
 dependencies = [
  "openehr-derive",
  "serde",
@@ -4200,7 +4200,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-codegen"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "roxmltree",
  "serde_json",
@@ -4209,7 +4209,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-derive"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4220,7 +4220,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-flat"
-version = "0.1.0"
+version = "3.0.0"
 dependencies = [
  "fancy-regex",
  "indexmap 2.14.0",
@@ -4240,7 +4240,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.1.0"
+version = "1.0.3"
 dependencies = [
  "async-trait",
  "axum",
@@ -4259,7 +4259,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "openehr-base",
  "openehr-derive",
@@ -4269,7 +4269,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.1.0"
+version = "1.1.0"
 dependencies = [
  "chumsky",
  "logos",
@@ -4278,7 +4278,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.1.0"
+version = "1.2.0"
 dependencies = [
  "insta",
  "jsonschema",
@@ -4292,7 +4292,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.1.0"
+version = "3.1.0"
 dependencies = [
  "openehr-base",
  "openehr-derive",

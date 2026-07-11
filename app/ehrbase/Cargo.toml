@@ -1,6 +1,6 @@
 [package]
 name = "ehrbase"
-version = "0.1.0"
+version.workspace = true
 description = "EHRbase server binary: persistence, AQL execution engine (ASL), versioning, contributions"
 edition.workspace = true
 rust-version.workspace = true

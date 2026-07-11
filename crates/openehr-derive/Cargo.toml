@@ -1,6 +1,6 @@
 [package]
 name = "openehr-derive"
-version = "0.1.0"
+version.workspace = true
 description = "Proc-macros for the generated openEHR spec crates: #[derive(OpenEhrType)] canonical _type (de)serialization (ADR-004)"
 edition.workspace = true
 rust-version.workspace = true

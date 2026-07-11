@@ -1,7 +1,7 @@
 [package]
 name = "ehrbase-sm"
 description = "The openEHR SM Platform Service Model native API: one trait per SM interface, the shared service types, and the call-status error model (ADR-010)"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
