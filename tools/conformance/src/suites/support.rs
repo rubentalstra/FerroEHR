@@ -55,7 +55,12 @@ pub async fn ensure_opt(ctx: &RunContext<'_>, opt_rel: &str) -> Result<(), CaseE
         .send(
             HttpRequest::post("/definition/template/adl1.4")
                 .text_body(xml, "application/xml")
-                .header("accept", "application/json"),
+                // ITS-REST `definition_template_adl1.4_upload` declares NO `Accept`
+                // parameter and produces `application/xml` only (the 201 body is an
+                // `OperationalTemplate`); requesting `application/json` is a strict
+                // 406 (see `operations/definition_template_adl1.4_upload.yaml` +
+                // `responses/201_Template_adl1_4_upload.yaml`).
+                .header("accept", "application/xml"),
         )
         .await?;
     if (200..300).contains(&resp.status) || resp.status == 409 {
@@ -87,7 +92,8 @@ pub async fn ensure_opt_xml(ctx: &RunContext<'_>, xml: &str) -> Result<(), CaseE
         .send(
             HttpRequest::post("/definition/template/adl1.4")
                 .text_body(xml.to_owned(), "application/xml")
-                .header("accept", "application/json"),
+                // XML-only upload endpoint (no `Accept` param) — see `ensure_opt`.
+                .header("accept", "application/xml"),
         )
         .await?;
     if (200..300).contains(&resp.status) || resp.status == 409 {

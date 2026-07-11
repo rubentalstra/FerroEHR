@@ -703,7 +703,7 @@ fn cardinality_one_plus_empty_rejected() {
 }
 
 /// A bare mandatory attribute (existence `1..1`, no value constraint) must be
-/// present (master15 context_mand; AOM 1.4 §existence).
+/// present (master15 `context_mand`; AOM 1.4 §existence).
 #[test]
 fn bare_mandatory_attribute_absent_rejected() {
     let mut root = node("COMPOSITION", "");
@@ -722,7 +722,7 @@ fn bare_mandatory_attribute_absent_rejected() {
 
 /// A hoisted-wrapper slot narrowed to a concrete subtype rejects a sibling
 /// subtype and accepts the narrowed one; an abstract slot accepts any subtype
-/// (master16 §ITEM_STRUCTURE/§EVENT "Class not allowed").
+/// (master16 §`ITEM_STRUCTURE/§EVENT` "Class not allowed").
 #[test]
 fn slot_narrowing() {
     let mut eval = node("EVALUATION", "/content[at0001]");
@@ -754,7 +754,7 @@ fn slot_narrowing() {
     );
 }
 
-/// `C_INTEGER.list` on DV_COUNT.magnitude (master17.3 CONT-DV_COUNT-validate_list).
+/// `C_INTEGER.list` on `DV_COUNT.magnitude` (master17.3 CONT-DV_COUNT-validate_list).
 #[test]
 fn numeric_list_membership() {
     let mut count = node("DV_COUNT", "/value");
@@ -770,7 +770,7 @@ fn numeric_list_membership() {
     assert!(walk_only(&good, &count).is_empty());
 }
 
-/// DV_PROPORTION `type` kind membership (master17.3 CONT-DV_PROPORTION-*).
+/// `DV_PROPORTION` `type` kind membership (master17.3 CONT-DV_PROPORTION-*).
 #[test]
 fn proportion_kind_membership() {
     let mut prop = node("DV_PROPORTION", "/value");
@@ -790,7 +790,7 @@ fn proportion_kind_membership() {
     assert!(walk_only(&good, &prop).is_empty());
 }
 
-/// C_DATE pattern + range (master17.4 CONT-DV_DATE-validate_constraint/-range).
+/// `C_DATE` pattern + range (master17.4 CONT-DV_DATE-validate_constraint/-range).
 #[test]
 fn temporal_pattern_and_range() {
     let mut date = node("DV_DATE", "/value");
@@ -821,7 +821,7 @@ fn temporal_pattern_and_range() {
     assert!(walk_only(&ok, &date).is_empty());
 }
 
-/// C_TIME pattern: a partial time violates HH:MM:SS (master17.4 CONT-DV_TIME).
+/// `C_TIME` pattern: a partial time violates HH:MM:SS (master17.4 CONT-DV_TIME).
 #[test]
 fn time_pattern_partial_rejected() {
     let mut time = node("DV_TIME", "/value");
@@ -842,7 +842,7 @@ fn time_pattern_partial_rejected() {
     assert!(walk_only(&json!({"_type": "DV_TIME", "value": "22:18:16"}), &time).is_empty());
 }
 
-/// C_DURATION allowed fields + range (master17.4 CONT-DV_DURATION-*).
+/// `C_DURATION` allowed fields + range (master17.4 CONT-DV_DURATION-*).
 #[test]
 fn duration_fields_and_range() {
     let mut dur = node("DV_DURATION", "/value");
@@ -875,8 +875,8 @@ fn duration_fields_and_range() {
     assert!(walk_only(&json!({"_type": "DV_DURATION", "value": "PT30M"}), &dur).is_empty());
 }
 
-/// An enumerated **external** C_CODE_PHRASE list constrains membership
-/// (master17.2 CONT-DV_CODED_TEXT-validate_ext_term; AOM 1.4 §C_CODE_PHRASE).
+/// An enumerated **external** `C_CODE_PHRASE` list constrains membership
+/// (master17.2 CONT-DV_CODED_TEXT-validate_ext_term; AOM 1.4 §`C_CODE_PHRASE`).
 #[test]
 fn external_code_list_membership() {
     let mut coded = node("DV_CODED_TEXT", "/value");
@@ -900,8 +900,8 @@ fn external_code_list_membership() {
     assert!(walk_only(&other, &coded).is_empty());
 }
 
-/// C_CODE_PHRASE on a coded attribute outside `defining_code`
-/// (DV_MULTIMEDIA.media_type — master17.6 CONT-DV_MULTIMEDIA-validate_media_type).
+/// `C_CODE_PHRASE` on a coded attribute outside `defining_code`
+/// (`DV_MULTIMEDIA.media_type` — master17.6 CONT-DV_MULTIMEDIA-validate_media_type).
 #[test]
 fn media_type_code_list() {
     let mut mm = node("DV_MULTIMEDIA", "/value");
@@ -973,7 +973,7 @@ fn closed_world_rejects_foreign_content() {
 }
 
 /// A metadata value (no `archetype_node_id`, i.e. non-LOCATABLE) under a closed
-/// attribute is never flagged (ADR-012 rule 2 — the archetype_node_id
+/// attribute is never flagged (ADR-012 rule 2 — the `archetype_node_id`
 /// discriminator).
 #[test]
 fn closed_world_ignores_metadata_values() {

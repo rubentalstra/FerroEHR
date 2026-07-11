@@ -11,7 +11,7 @@
 //! `_type`-less value to the base concrete type.
 
 use openehr_base::prelude::Uid;
-use openehr_rm::prelude::{DataValue, DvText};
+use openehr_rm::prelude::{DataValue, DvText, PartySelf};
 
 // ── F-04-01: a `_type`-less *abstract* slot value is rejected, not mis-typed ──
 
@@ -135,6 +135,39 @@ fn concrete_poly_slot_unknown_type_is_rejected() {
     assert!(
         msg.contains("DV_TEXT") && msg.contains("DV_QUANTITY"),
         "error should name the slot and the offending _type, got: {msg}"
+    );
+}
+
+// ── Monomorphic struct slot: a foreign `_type` is rejected (EHR_STATUS.subject) ─
+
+// `EHR_STATUS.subject : PARTY_SELF` is a *monomorphic* slot — `PARTY_SELF` has no
+// subtypes — so the generated `PartySelf` struct's `#[derive(OpenEhrType)]`
+// `Deserialize` must reject any non-`PARTY_SELF` `_type` (a `PARTY_IDENTIFIED`
+// payload in that slot is invalid canonical JSON), while tolerating an absent
+// `_type` (defaults to the declared type). RM ehr master04 §EHR Status.
+
+#[test]
+fn monomorphic_struct_slot_rejects_foreign_type() {
+    let err = serde_json::from_str::<PartySelf>(
+        r#"{"_type":"PARTY_IDENTIFIED","name":"Bob","identifiers":[]}"#,
+    )
+    .expect_err("a PARTY_IDENTIFIED payload must not deserialize as PARTY_SELF");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("PARTY_SELF") && msg.contains("PARTY_IDENTIFIED"),
+        "error should name the expected and offending types, got: {msg}"
+    );
+}
+
+#[test]
+fn monomorphic_struct_slot_accepts_matching_and_absent_type() {
+    // Explicit matching _type.
+    serde_json::from_str::<PartySelf>(r#"{"_type":"PARTY_SELF"}"#).expect("explicit PARTY_SELF");
+    // Absent _type defaults to the declared type (an anonymous PARTY_SELF).
+    let anon: PartySelf = serde_json::from_str(r"{}").expect("empty anonymous PARTY_SELF");
+    assert!(
+        anon.external_ref.is_none(),
+        "an empty PARTY_SELF is an anonymous subject with no external_ref"
     );
 }
 

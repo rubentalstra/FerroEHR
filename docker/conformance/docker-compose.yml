@@ -64,7 +64,7 @@ services:
     profiles: ["java"]
 
   ehrbase-java:
-    image: ${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.33.0}
+    image: ${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}
     depends_on:
       ehrbase-java-db:
         condition: service_healthy
