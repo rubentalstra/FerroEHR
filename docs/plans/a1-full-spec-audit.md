@@ -43,7 +43,7 @@ persisted the moment they exist; commits after each phase.
         [x] 7 rm-support · [x] 8 rm-demographic · [x] 9 rm-ehr-extract ·
         [x] 10 rm-integration · [x] 11 base-foundation ·
         [x] 12 base-base-types · [x] 13 am-aom14-opt ·
-        [x] 14 am-aom2-adl2 · [ ] 15 term · [ ] 16 query-aql ·
+        [x] 14 am-aom2-adl2 · [x] 15 term · [ ] 16 query-aql ·
         [ ] 17 sm-platform · [ ] 18 sm-tdd · [ ] 19 its-rest-general ·
         [ ] 20 its-rest-ehr-composition ·
         [ ] 21 its-rest-query-definition-admin · [ ] 22 its-json ·
