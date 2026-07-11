@@ -1,6 +1,6 @@
 # Phase W1 — Public documentation website (mdBook on GitHub Pages)
 
-- Status: in-progress
+- Status: done (2026-07-11)
 - Started: 2026-07-11   Owner: Ruben
 - Consumes: this specification (every version + capability below **live-verified
   2026-07-11** from crates.io / `gh release list` / official docs — see §7
@@ -633,12 +633,12 @@ trigger for release, containers, and docs alike.
 
 ## Exit criteria
 
-- [ ] Site live: landing + `/docs/dev/` + `/api/` endpoint reference, all under `/ehrbase-rs/`, dark/light correct.
-- [ ] CI gates green in steady state and **red on injected breakage** (link check + OAS drift), negative-tested once then reverted (W1.7).
-- [ ] Version cut proven by the dry run (W1.4); `latest` deep-linkable; frozen versions persist without rebuild.
-- [ ] `/api/` fully offline — zero runtime CDN/network requests (verified in the browser Network panel).
-- [ ] Docs discipline installed: CLAUDE.md rule + `.claude/rules/docs-website.md` + `/phase-done` item.
-- [ ] README points at the site; CHANGELOG `[Unreleased]` notes the docs site.
+- [x] Site live: landing + `/docs/dev/` + `/api/` endpoint reference, all under `/ehrbase-rs/`, dark/light correct. *(all URLs probed 200, 2026-07-11)*
+- [x] CI gates green in steady state and **red on injected breakage** (link check + OAS drift), negative-tested once then reverted (W1.7). *(link gate bit in production on the first deploy; OAS gate bit on a committed hand-edit)*
+- [x] Version cut proven (W1.4 — with the real v3.0.0, not a dry-run tag); `latest` deep-linkable (`/docs/latest/querying-aql.html` 200); frozen `/docs/v3.0.0/` materialized from docs-dist without rebuild.
+- [x] `/api/` fully offline — zero runtime CDN/network requests. *(verified by static audit of the built HTML — zero external script/css/img/font refs; the only externals are the canonical meta and a GitHub `<a>` nav link — plus local-server curl of every referenced asset; browser Network panel unavailable in this environment)*
+- [x] Docs discipline installed: CLAUDE.md rule + `.claude/rules/docs-website.md` + `/phase-done` step 3b.
+- [x] README points at the site; CHANGELOG `[Unreleased]` notes the docs site.
 
 ## Decisions made this phase
 
@@ -669,11 +669,13 @@ trigger for release, containers, and docs alike.
 
 ## Handoff for next session
 
-Spec fully worked out and live-verified (2026-07-11). Nothing FAILED verification;
-the two "would-be" plugins (admonish, alerts) are cleanly superseded by mdBook
-0.5's native admonitions, which is a *better* outcome than a plugin. Next action:
-**W1.1** — scaffold `website/` and the `docs.yml` build+deploy job. Toolchain pins
-live in `docs.yml` env (§2f); do not drift them from §1 without re-verifying.
+Closed 2026-07-11. The site is live at https://rubentalstra.github.io/ehrbase-rs/
+— landing, versioned book (dev · latest · v3.0.0), and the offline OpenAPI
+reference — with the drift discipline installed (same-PR docs rule, OAS byte-copy
+gate, lychee link gate, both negative-tested). Frozen versions live on the
+`docs-dist` orphan branch; every future `v*` tag cuts one automatically. Next:
+the X1 comparison phase (plan drafted, awaiting owner review) and the blueprint
+tail (P20 optimization, P99 cutover).
 
 ---
 
