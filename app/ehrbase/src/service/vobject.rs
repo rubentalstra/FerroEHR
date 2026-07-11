@@ -12,6 +12,7 @@ use crate::storage::{NodeRow, decompose, reassemble};
 
 use super::ServiceError;
 use super::codes::lifecycle;
+use super::version_id::TreeId;
 use super::versioned::build_original_version;
 
 /// The signing context threaded into the shared commit path so every
@@ -110,10 +111,13 @@ impl Kind {
 
 /// The kind of the current version of an object, or `None` if it does not exist.
 pub(super) async fn object_kind(pool: &PgPool, vo_id: Uuid) -> Result<Option<Kind>, ServiceError> {
-    let row = sqlx::query("SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period)")
-        .bind(vo_id)
-        .fetch_optional(pool)
-        .await?;
+    let row = sqlx::query(
+        "SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) \
+         AND branch_number = 0",
+    )
+    .bind(vo_id)
+    .fetch_optional(pool)
+    .await?;
     Ok(match row {
         Some(r) => Kind::from_type(&r.try_get::<String, _>("kind")?),
         None => None,
@@ -132,12 +136,19 @@ pub(super) struct AuditInput {
     pub(super) committer: serde_json::Value,
 }
 
-/// The outcome of a versioned-object write: the object id, the new version
-/// number, and the CONTRIBUTION that produced it.
+/// The outcome of a versioned-object write: the object id, the new version's
+/// tree id, and the CONTRIBUTION that produced it.
 #[derive(Debug, Clone)]
 pub(super) struct Committed {
     pub(super) vo_id: Uuid,
+    /// The per-vo storage commit ordinal of the written row (the node /
+    /// attestation key) — NOT the wire version number.
     pub(super) sys_version: i32,
+    /// The new version's `VERSION_TREE_ID` (the wire version identity).
+    pub(super) tree: TreeId,
+    /// The `creating_system_id` recorded for the new version (the local system
+    /// for every non-import write) — the `OBJECT_VERSION_ID` middle part.
+    pub(super) creating_system_id: String,
     /// The CONTRIBUTION this write created. Read by `commit_contribution` (to
     /// group versions) and the create-response `Location`; retained as part of
     /// the write result.
@@ -176,7 +187,14 @@ pub(super) struct VersionRead {
     /// The owning EHR, or `None` for a demographic party (no EHR scope —
     /// ADR-008). EHR-scoped callers compare against `Some(ehr_id)`.
     pub(super) ehr_id: Option<Uuid>,
-    pub(super) sys_version: i32,
+    /// The version's `VERSION_TREE_ID` (the wire version identity).
+    pub(super) tree: TreeId,
+    /// The stored `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first
+    /// version).
+    pub(super) preceding_version_uid: Option<String>,
+    /// The stored `ORIGINAL_VERSION.other_input_version_uids` (merge
+    /// provenance; empty when not a merge — `Is_merged_validity`).
+    pub(super) other_input_version_uids: Vec<String>,
     /// The version's lifecycle-state numeric code (`version_lifecycle_state`
     /// group: `532` complete, `523` deleted, …).
     pub(super) lifecycle_state: String,
@@ -228,6 +246,15 @@ async fn version_read(
     row: &PgRow,
 ) -> Result<VersionRead, ServiceError> {
     let sys_version: i32 = row.try_get("sys_version")?;
+    let tree = TreeId::from_columns(
+        row.try_get("trunk_version")?,
+        row.try_get("branch_number")?,
+        row.try_get("branch_version")?,
+    );
+    let other_input_version_uids: Vec<String> = row
+        .try_get::<Option<serde_json::Value>, _>("other_input_version_uids")?
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
     let lifecycle_state: String = row.try_get("lifecycle_state")?;
     let canonical = if lifecycle_state == lifecycle::DELETED {
         serde_json::Value::Null
@@ -238,7 +265,9 @@ async fn version_read(
     Ok(VersionRead {
         vo_id,
         ehr_id: row.try_get("ehr_id")?,
-        sys_version,
+        tree,
+        preceding_version_uid: row.try_get("preceding_version_uid")?,
+        other_input_version_uids,
         lifecycle_state,
         creating_system_id: row.try_get("creating_system_id")?,
         contribution_id: row.try_get("contribution_id")?,
@@ -419,15 +448,14 @@ async fn insert_nodes(
 /// committing `532` exactly as before. The value is validated against the
 /// terminology group in [`apply_change`] (invalid → 422).
 ///
-// PORT NOTE (m3, RM common master06 §"Version Merging"/§"Disjoint Merging"):
-// `ORIGINAL_VERSION.other_input_version_uids` / `is_merged` and
-// `VERSIONED_OBJECT.commit_original_merged_version` are out of scope. This is a
-// non-distributed CDR: no ORIGINAL_VERSION is ever the result of merging
-// versions from another system, so `other_input_version_uids` is always empty
-// and `VERSION.Is_merged_validity` (`is_merged = not other_input_version_uids.
-// is_empty`) holds vacuously (is_merged = false). Distributed copy/merge
-// (`IMPORTED_VERSION`, disjoint merging) would be added with an EHR-Extract
-// import surface, which we do not expose.
+/// Merging: `ORIGINAL_VERSION.other_input_version_uids` (with `is_merged`
+/// derived per `VERSION.Is_merged_validity`) is accepted on the CONTRIBUTION
+/// wire and on import, stored, and served (RM common master06 §"Version
+/// Merging"/§"Disjoint Merging"). Branch commits arise per master06
+/// §"Distributed Versioning": modifying a version created by another system
+/// forks a branch (`Change` carries no explicit branch request — branching is
+/// the mandated consequence of the preceding version's provenance, and of a
+/// branch-id `expected`/`preceding_version_uid`).
 pub(super) enum Change {
     /// Create a new versioned object.
     Create {
@@ -449,7 +477,7 @@ pub(super) enum Change {
         vo_id: Uuid,
         kind: Kind,
         canonical: serde_json::Value,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
         template_id: Option<String>,
         signature: Option<String>,
         /// Client-supplied `version_lifecycle_state` code (see the enum doc);
@@ -457,12 +485,16 @@ pub(super) enum Change {
         lifecycle_state: Option<String>,
         /// See [`Change::Create::attestations`].
         attestations: Vec<serde_json::Value>,
+        /// Wire `ORIGINAL_VERSION.other_input_version_uids` — the merged-in
+        /// version ids for a merge commit (master06 §Version Merging); empty
+        /// for a plain modification.
+        other_input_version_uids: Vec<String>,
     },
     /// Logically delete an object (a content-less `deleted` version).
     Delete {
         vo_id: Uuid,
         kind: Kind,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
         signature: Option<String>,
     },
 }
@@ -502,8 +534,9 @@ fn resolve_lifecycle(state: Option<String>) -> Result<String, ServiceError> {
 pub(super) struct PendingAttest {
     pub(super) vo_id: Uuid,
     pub(super) kind: Kind,
-    /// The target trunk version to attest (from `preceding_version_uid`).
-    pub(super) expected: i32,
+    /// The target version to attest (from `preceding_version_uid` — trunk or
+    /// branch).
+    pub(super) expected: TreeId,
     /// The wire `UPDATE_ATTESTATION` partial (the version item's commit audit),
     /// completed into a full RM `ATTESTATION` at commit time.
     pub(super) partial: serde_json::Value,
@@ -525,7 +558,8 @@ fn sign_version(
     audit: &AuditInput,
     time_committed: jiff::Timestamp,
     vo_id: Uuid,
-    sys_version: i32,
+    tree: TreeId,
+    preceding_uid: Option<&str>,
     contribution_id: Uuid,
     lifecycle_state: &str,
     data: &serde_json::Value,
@@ -540,7 +574,9 @@ fn sign_version(
     let ov = build_original_version(
         &ctx.system_id,
         vo_id,
-        sys_version,
+        tree,
+        preceding_uid,
+        &[],
         contribution_id,
         audit,
         &time_committed,
@@ -605,7 +641,8 @@ async fn apply_change(
                 audit,
                 time_committed,
                 vo_id,
-                1,
+                TreeId::trunk(1),
+                None,
                 contribution_id,
                 &lifecycle,
                 &served,
@@ -613,16 +650,21 @@ async fn apply_change(
             )?;
             insert_vo_version(
                 tx,
-                vo_id,
-                kind,
-                ehr_id,
-                1,
-                &lifecycle,
-                &ctx.system_id,
-                contribution_id,
-                audit_id,
-                template_id.as_deref(),
-                signature.as_deref(),
+                NewVersionRow {
+                    vo_id,
+                    kind,
+                    ehr_id,
+                    ordinal: 1,
+                    tree: TreeId::trunk(1),
+                    lifecycle_state: &lifecycle,
+                    creating_system_id: &ctx.system_id,
+                    preceding_version_uid: None,
+                    other_input_version_uids: &[],
+                    contribution_id,
+                    audit_id,
+                    template_id: template_id.as_deref(),
+                    signature: signature.as_deref(),
+                },
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
@@ -641,6 +683,8 @@ async fn apply_change(
             Ok(Committed {
                 vo_id,
                 sys_version: 1,
+                tree: TreeId::trunk(1),
+                creating_system_id: ctx.system_id.clone(),
                 contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
@@ -656,6 +700,7 @@ async fn apply_change(
             signature,
             lifecycle_state,
             attestations,
+            other_input_version_uids,
         } => {
             if kind == Kind::EhrStatus
                 && let Some(ehr_id) = ehr_id
@@ -671,15 +716,19 @@ async fn apply_change(
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
-            let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
-            close_current(&mut *tx, vo_id).await?;
+            let next =
+                next_version(&mut *tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
+            if let Some(close_ordinal) = next.close_ordinal {
+                close_ordinal_at_now(&mut *tx, vo_id, close_ordinal).await?;
+            }
             let served = reassemble(&rows)?;
             let signature = sign_version(
                 ctx,
                 audit,
                 time_committed,
                 vo_id,
-                next,
+                next.tree,
+                Some(&next.preceding_uid),
                 contribution_id,
                 &lifecycle,
                 &served,
@@ -687,23 +736,28 @@ async fn apply_change(
             )?;
             insert_vo_version(
                 tx,
-                vo_id,
-                kind,
-                ehr_id,
-                next,
-                &lifecycle,
-                &ctx.system_id,
-                contribution_id,
-                audit_id,
-                template_id.as_deref(),
-                signature.as_deref(),
+                NewVersionRow {
+                    vo_id,
+                    kind,
+                    ehr_id,
+                    ordinal: next.ordinal,
+                    tree: next.tree,
+                    lifecycle_state: &lifecycle,
+                    creating_system_id: &ctx.system_id,
+                    preceding_version_uid: Some(&next.preceding_uid),
+                    other_input_version_uids: &other_input_version_uids,
+                    contribution_id,
+                    audit_id,
+                    template_id: template_id.as_deref(),
+                    signature: signature.as_deref(),
+                },
             )
             .await?;
-            insert_nodes(tx, vo_id, next, ehr_id, &rows).await?;
+            insert_nodes(tx, vo_id, next.ordinal, ehr_id, &rows).await?;
             insert_accompanying_attestations(
                 tx,
                 vo_id,
-                next,
+                next.ordinal,
                 contribution_id,
                 &ctx.system_id,
                 committer_fallback,
@@ -714,7 +768,9 @@ async fn apply_change(
             record_composition_commit(kind, "modification");
             Ok(Committed {
                 vo_id,
-                sys_version: next,
+                sys_version: next.ordinal,
+                tree: next.tree,
+                creating_system_id: ctx.system_id.clone(),
                 contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
@@ -727,8 +783,11 @@ async fn apply_change(
             expected,
             signature,
         } => {
-            let next = next_version(&mut *tx, ehr_id, vo_id, kind, expected).await?;
-            close_current(&mut *tx, vo_id).await?;
+            let next =
+                next_version(&mut *tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
+            if let Some(close_ordinal) = next.close_ordinal {
+                close_ordinal_at_now(&mut *tx, vo_id, close_ordinal).await?;
+            }
             // A deleted version carries no data — its `ORIGINAL_VERSION.data` is
             // Void (RM change_control §"Logical Deletion"); the signature is
             // over the data-less version wrapper.
@@ -737,7 +796,8 @@ async fn apply_change(
                 audit,
                 time_committed,
                 vo_id,
-                next,
+                next.tree,
+                Some(&next.preceding_uid),
                 contribution_id,
                 lifecycle::DELETED,
                 &serde_json::Value::Null,
@@ -745,22 +805,29 @@ async fn apply_change(
             )?;
             insert_vo_version(
                 tx,
-                vo_id,
-                kind,
-                ehr_id,
-                next,
-                lifecycle::DELETED,
-                &ctx.system_id,
-                contribution_id,
-                audit_id,
-                None,
-                signature.as_deref(),
+                NewVersionRow {
+                    vo_id,
+                    kind,
+                    ehr_id,
+                    ordinal: next.ordinal,
+                    tree: next.tree,
+                    lifecycle_state: lifecycle::DELETED,
+                    creating_system_id: &ctx.system_id,
+                    preceding_version_uid: Some(&next.preceding_uid),
+                    other_input_version_uids: &[],
+                    contribution_id,
+                    audit_id,
+                    template_id: None,
+                    signature: signature.as_deref(),
+                },
             )
             .await?;
             record_composition_commit(kind, "deletion");
             Ok(Committed {
                 vo_id,
-                sys_version: next,
+                sys_version: next.ordinal,
+                tree: next.tree,
+                creating_system_id: ctx.system_id.clone(),
                 contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
@@ -834,37 +901,42 @@ async fn attest(
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
-    expected_version: i32,
+    expected: TreeId,
     attestation: &serde_json::Value,
     contribution_id: Uuid,
 ) -> Result<Committed, ServiceError> {
+    let (t, b, v) = expected.columns();
     let row = sqlx::query(
-        "SELECT ehr_id FROM vo_version WHERE vo_id = $1 AND sys_version = $2 AND kind = $3",
+        "SELECT ehr_id, sys_version, creating_system_id FROM vo_version \
+         WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = $3 \
+         AND branch_version = $4 AND kind = $5",
     )
     .bind(vo_id)
-    .bind(expected_version)
+    .bind(t)
+    .bind(b)
+    .bind(v)
     .bind(kind.as_str())
     .fetch_optional(&mut *tx)
     .await?;
-    let owner: Option<Uuid> = match row {
-        Some(r) => r.try_get("ehr_id")?,
-        None => {
-            return Err(ServiceError::NotFound(format!(
-                "{} version {vo_id}::{expected_version}",
-                kind.as_str()
-            )));
-        }
-    };
-    if owner != ehr_id {
+    let Some(row) = row else {
         return Err(ServiceError::NotFound(format!(
-            "{} version {vo_id}::{expected_version} in EHR {ehr_id:?}",
+            "{} version {vo_id}::{expected}",
+            kind.as_str()
+        )));
+    };
+    if row.try_get::<Option<Uuid>, _>("ehr_id")? != ehr_id {
+        return Err(ServiceError::NotFound(format!(
+            "{} version {vo_id}::{expected} in EHR {ehr_id:?}",
             kind.as_str()
         )));
     }
-    insert_attestation(tx, vo_id, expected_version, contribution_id, attestation).await?;
+    let ordinal: i32 = row.try_get("sys_version")?;
+    insert_attestation(tx, vo_id, ordinal, contribution_id, attestation).await?;
     Ok(Committed {
         vo_id,
-        sys_version: expected_version,
+        sys_version: ordinal,
+        tree: expected,
+        creating_system_id: row.try_get("creating_system_id")?,
         contribution_id,
         kind,
         // A 666 attestation adds no new version; it is announced in the
@@ -934,64 +1006,200 @@ async fn sync_ehr_subject(
     Ok(())
 }
 
+/// The resolved placement of a new version in the version tree: its storage
+/// ordinal, its `VERSION_TREE_ID`, the lineage tip it supersedes (closed on
+/// insert; `None` when the commit FORKS a new branch and the preceding version
+/// stays valid), and the actual `preceding_version_uid` to store.
+struct NextVersion {
+    ordinal: i32,
+    tree: TreeId,
+    close_ordinal: Option<i32>,
+    preceding_uid: String,
+}
+
 /// Validate an update/delete target (belongs to `ehr_id`, `If-Match` matches)
-/// and return the next version number. Locks the current row `FOR UPDATE`.
+/// and resolve where the new version sits in the version tree (RM common
+/// master06 §Version tree / §Distributed versioning):
+///
+/// - the preceding version is the current TRUNK tip when `expected` is absent,
+///   or exactly the version `expected` names (trunk or branch) — which must be
+///   an open lineage tip, else `VersionConflict`;
+/// - a preceding version created by THIS system is continued on its lineage
+///   (trunk `N` → `N+1`; branch `t.b.v` → `t.b.v+1`), superseding it;
+/// - a preceding version created by ANOTHER system (an imported copy) FORKS a
+///   new branch `t.(max_branch+1).1` — master06: "branching version
+///   identifiers [are required] when local modifications are made to versions
+///   copied from elsewhere" — and the preceding version stays valid.
+///
+/// Serializes concurrent writers of the same object with a per-vo transaction
+/// advisory lock (branch writers no longer all contend on one current row).
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
-    expected: Option<i32>,
-) -> Result<i32, ServiceError> {
-    let (owner, current) = current_version(&mut *tx, vo_id, kind).await?;
+    expected: Option<TreeId>,
+    local_system_id: &str,
+) -> Result<NextVersion, ServiceError> {
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))")
+        .bind(vo_id)
+        .execute(&mut *tx)
+        .await?;
+    // The preceding version: the addressed tip, or the current trunk tip.
+    let row =
+        match expected {
+            None => sqlx::query(
+                "SELECT ehr_id, kind, sys_version, trunk_version, branch_number, branch_version, \
+             creating_system_id, upper_inf(sys_period) AS open \
+             FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) AND branch_number = 0",
+            )
+            .bind(vo_id)
+            .fetch_optional(&mut *tx)
+            .await?,
+            Some(tree) => {
+                let (t, b, v) = tree.columns();
+                sqlx::query(
+                "SELECT ehr_id, kind, sys_version, trunk_version, branch_number, branch_version, \
+                 creating_system_id, upper_inf(sys_period) AS open \
+                 FROM vo_version WHERE vo_id = $1 \
+                 AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
+            )
+            .bind(vo_id)
+            .bind(t)
+            .bind(b)
+            .bind(v)
+            .fetch_optional(&mut *tx)
+            .await?
+            }
+        };
+    let Some(row) = row else {
+        // The object may exist with the expectation naming no stored version —
+        // distinguish "no such object" (404) from "wrong version" (409).
+        let current = current_version(&mut *tx, vo_id, kind).await;
+        return match (expected, current) {
+            (Some(tree), Ok((_, current))) => Err(ServiceError::VersionConflict(format!(
+                "expected version {tree}, which does not exist (current is {current})"
+            ))),
+            _ => Err(ServiceError::NotFound(format!(
+                "{} {vo_id} in EHR {ehr_id:?}",
+                kind.as_str()
+            ))),
+        };
+    };
     // For an EHR-scoped object, the stored owner must match; for a demographic
     // party both stored and expected owner are `None`, which compares equal.
-    if owner != ehr_id {
+    if row.try_get::<Option<Uuid>, _>("ehr_id")? != ehr_id
+        || Kind::from_type(&row.try_get::<String, _>("kind")?) != Some(kind)
+    {
         return Err(ServiceError::NotFound(format!(
             "{} {vo_id} in EHR {ehr_id:?}",
             kind.as_str()
         )));
     }
-    if let Some(expected) = expected
-        && expected != current
-    {
+    let preceding_tree = TreeId::from_columns(
+        row.try_get("trunk_version")?,
+        row.try_get("branch_number")?,
+        row.try_get("branch_version")?,
+    );
+    if !row.try_get::<bool, _>("open")? {
         return Err(ServiceError::VersionConflict(format!(
-            "expected version {expected}, current is {current}"
+            "expected version {preceding_tree} has been superseded"
         )));
     }
-    Ok(current + 1)
+    let preceding_ordinal: i32 = row.try_get("sys_version")?;
+    let preceding_csid: String = row.try_get("creating_system_id")?;
+    let preceding_uid = format!("{vo_id}::{preceding_csid}::{preceding_tree}");
+
+    let ordinal: i32 = sqlx::query_scalar(
+        "SELECT COALESCE(MAX(sys_version), 0) + 1 FROM vo_version WHERE vo_id = $1",
+    )
+    .bind(vo_id)
+    .fetch_one(&mut *tx)
+    .await?;
+
+    let (tree, close_ordinal) = if preceding_csid == local_system_id {
+        // Continue the lineage this system owns; the preceding tip is superseded.
+        let tree = match preceding_tree.branch {
+            None => TreeId::trunk(preceding_tree.trunk + 1),
+            Some((b, v)) => TreeId::branch(preceding_tree.trunk, b, v + 1),
+        };
+        (tree, Some(preceding_ordinal))
+    } else {
+        // Local modification of a version copied from elsewhere: fork a branch
+        // at the preceding version's trunk fork point (master06 §Distributed
+        // versioning); the copied version itself stays valid.
+        let next_branch: i32 = sqlx::query_scalar(
+            "SELECT COALESCE(MAX(branch_number), 0) + 1 FROM vo_version \
+             WHERE vo_id = $1 AND trunk_version = $2",
+        )
+        .bind(vo_id)
+        .bind(preceding_tree.trunk)
+        .fetch_one(&mut *tx)
+        .await?;
+        (TreeId::branch(preceding_tree.trunk, next_branch, 1), None)
+    };
+    Ok(NextVersion {
+        ordinal,
+        tree,
+        close_ordinal,
+        preceding_uid,
+    })
 }
 
-/// Insert one `vo_version` row (validity `[now, ∞)`).
-#[allow(clippy::too_many_arguments)] // one row's columns; a struct would not read clearer
-async fn insert_vo_version(
-    tx: &mut PgConnection,
+/// One `vo_version` row to insert (validity `[now, ∞)`).
+struct NewVersionRow<'a> {
     vo_id: Uuid,
     kind: Kind,
     ehr_id: Option<Uuid>,
-    sys_version: i32,
-    lifecycle_state: &str,
-    creating_system_id: &str,
+    ordinal: i32,
+    tree: TreeId,
+    lifecycle_state: &'a str,
+    creating_system_id: &'a str,
+    /// The stored `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first
+    /// version).
+    preceding_version_uid: Option<&'a str>,
+    /// `ORIGINAL_VERSION.other_input_version_uids` (merge provenance; empty →
+    /// stored NULL, `Is_merged_validity`).
+    other_input_version_uids: &'a [String],
     contribution_id: Uuid,
     audit_id: Uuid,
-    template_id: Option<&str>,
-    signature: Option<&str>,
+    template_id: Option<&'a str>,
+    signature: Option<&'a str>,
+}
+
+/// Insert one `vo_version` row (validity `[now, ∞)`).
+async fn insert_vo_version(
+    tx: &mut PgConnection,
+    row: NewVersionRow<'_>,
 ) -> Result<(), ServiceError> {
+    let (trunk_version, branch_number, branch_version) = row.tree.columns();
+    let other_input = if row.other_input_version_uids.is_empty() {
+        None
+    } else {
+        Some(serde_json::json!(row.other_input_version_uids))
+    };
     sqlx::query(
         "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, creating_system_id, contribution_id, audit_id, template_id, signature) \
-         VALUES ($1, $2, $3, $4, tstzrange(now(), NULL, '[)'), $5, $6, $7, $8, $9, $10)",
+         (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+          sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+          other_input_version_uids, contribution_id, audit_id, template_id, signature) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, tstzrange(now(), NULL, '[)'), $8, $9, $10, $11, $12, $13, $14, $15)",
     )
-    .bind(vo_id)
-    .bind(kind.as_str())
-    .bind(ehr_id)
-    .bind(sys_version)
-    .bind(lifecycle_state)
-    .bind(creating_system_id)
-    .bind(contribution_id)
-    .bind(audit_id)
-    .bind(template_id)
-    .bind(signature)
+    .bind(row.vo_id)
+    .bind(row.kind.as_str())
+    .bind(row.ehr_id)
+    .bind(row.ordinal)
+    .bind(trunk_version)
+    .bind(branch_number)
+    .bind(branch_version)
+    .bind(row.lifecycle_state)
+    .bind(row.creating_system_id)
+    .bind(row.preceding_version_uid)
+    .bind(other_input)
+    .bind(row.contribution_id)
+    .bind(row.audit_id)
+    .bind(row.template_id)
+    .bind(row.signature)
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -1049,7 +1257,7 @@ pub(super) async fn update(
     vo_id: Uuid,
     kind: Kind,
     canonical: serde_json::Value,
-    expected: Option<i32>,
+    expected: Option<TreeId>,
     template_id: Option<&str>,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
@@ -1075,6 +1283,7 @@ pub(super) async fn update(
             // defaults to `532|complete|` (unchanged wire behaviour).
             lifecycle_state: None,
             attestations: Vec::new(),
+            other_input_version_uids: Vec::new(),
         },
     )
     .await?;
@@ -1095,7 +1304,7 @@ pub(super) async fn delete(
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
-    expected: Option<i32>,
+    expected: Option<TreeId>,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
@@ -1205,10 +1414,22 @@ pub(super) async fn commit_contribution(
 /// `version_tree_id` → `sys_version`), its `commit_audit`, `lifecycle_state`,
 /// data, `signature` and `attestations` — is preserved verbatim ("the
 /// `ORIGINAL_VERSION` instance is never modified", master06 §Copying).
+#[derive(Debug)]
 pub(super) struct ImportVersion {
-    /// The trunk `version_tree_id` of the wrapped original (branch ids are
-    /// rejected upstream — trunk-only, PORT NOTE F-06-09).
-    pub(super) sys_version: i32,
+    /// The `version_tree_id` of the wrapped original (trunk or branch — RM
+    /// common master06 §Version tree; branch import is first-class).
+    pub(super) tree: TreeId,
+    /// The wrapped original's `creating_system_id` — per VERSION, not per
+    /// container: a copied version tree legitimately mixes systems (source
+    /// trunk versions + branch modifications made elsewhere; master06
+    /// §"Distributed Versioning").
+    pub(super) creating_system_id: String,
+    /// The wrapped original's `preceding_version_uid`, preserved verbatim
+    /// (`None` for a first version).
+    pub(super) preceding_version_uid: Option<String>,
+    /// The wrapped original's `other_input_version_uids` (merge provenance,
+    /// master06 §Version Merging), preserved verbatim.
+    pub(super) other_input_version_uids: Vec<String>,
     /// The wrapped original's resolved `version_lifecycle_state` code.
     pub(super) lifecycle_state: String,
     /// The wrapped original's `commit_audit`, preserved verbatim.
@@ -1223,17 +1444,25 @@ pub(super) struct ImportVersion {
     pub(super) attestations: Vec<serde_json::Value>,
 }
 
+impl ImportVersion {
+    /// The lineage this version sits on: the trunk (`branch_number` 0), or one
+    /// specific branch of one system. Versions on the same lineage supersede
+    /// each other; distinct lineages coexist.
+    fn lineage(&self) -> (String, i32, i32) {
+        match self.tree.branch {
+            None => (String::new(), 0, 0),
+            Some((b, _)) => (self.creating_system_id.clone(), self.tree.trunk, b),
+        }
+    }
+}
+
 /// One versioned object (a source `VERSIONED_OBJECT`) to import: its cloned
-/// `vo_id` (the received `uid.object_id()`), the originating `creating_system_id`,
-/// its kind, and its versions in trunk order.
+/// `vo_id` (the received `uid.object_id()`), its kind, and its versions.
 pub(super) struct ImportContainer {
     /// The received `object_id` — the local `VERSIONED_OBJECT` is a clone with
     /// this uid (master06 §Copying: "a new `VERSIONED_OBJECT` is created, with
     /// its uid set to the same value as the received `VERSION._uid.object_id()`").
     pub(super) vo_id: Uuid,
-    /// The originating system of the version tree (same for all its versions —
-    /// trunk-only import; RM common master06 §"Distributed Versioning").
-    pub(super) creating_system_id: String,
     pub(super) kind: Kind,
     pub(super) versions: Vec<ImportVersion>,
 }
@@ -1268,76 +1497,108 @@ async fn insert_audit_at(
 /// imported version history lands as one contiguous, non-overlapping tree
 /// (temporal `WITHOUT OVERLAPS` PK; ADR-008).
 #[allow(clippy::too_many_arguments)] // one row's columns; a struct would not read clearer
+#[allow(clippy::too_many_arguments)] // one row's columns beyond the shared struct
 async fn insert_imported_vo_version(
     tx: &mut PgConnection,
+    ehr_id: Uuid,
     vo_id: Uuid,
     kind: Kind,
-    ehr_id: Uuid,
-    sys_version: i32,
+    version: &ImportVersion,
+    ordinal: i32,
     lower: jiff::Timestamp,
     upper: Option<jiff::Timestamp>,
-    lifecycle_state: &str,
-    creating_system_id: &str,
     contribution_id: Uuid,
     audit_id: Uuid,
-    signature: Option<&str>,
 ) -> Result<(), ServiceError> {
+    let (trunk_version, branch_number, branch_version) = version.tree.columns();
+    let other_input = if version.other_input_version_uids.is_empty() {
+        None
+    } else {
+        Some(serde_json::json!(version.other_input_version_uids))
+    };
     sqlx::query(
         "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, creating_system_id, \
-          contribution_id, audit_id, template_id, signature) \
-         VALUES ($1, $2, $3, $4, tstzrange($5::timestamptz, $6::timestamptz, '[)'), $7, $8, $9, \
-                 $10, NULL, $11)",
+         (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+          sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+          other_input_version_uids, contribution_id, audit_id, template_id, signature) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, \
+                 tstzrange($8::timestamptz, $9::timestamptz, '[)'), $10, $11, $12, $13, $14, \
+                 $15, NULL, $16)",
     )
     .bind(vo_id)
     .bind(kind.as_str())
     .bind(ehr_id)
-    .bind(sys_version)
+    .bind(ordinal)
+    .bind(trunk_version)
+    .bind(branch_number)
+    .bind(branch_version)
     .bind(lower.to_string())
     .bind(upper.map(|t| t.to_string()))
-    .bind(lifecycle_state)
-    .bind(creating_system_id)
+    .bind(&version.lifecycle_state)
+    .bind(&version.creating_system_id)
+    .bind(&version.preceding_version_uid)
+    .bind(other_input)
     .bind(contribution_id)
     .bind(audit_id)
-    .bind(signature)
+    .bind(version.signature.as_deref())
     .execute(&mut *tx)
     .await?;
     Ok(())
 }
 
-/// Close the currently-open (`upper_inf`) version of `vo_id` at an explicit
-/// instant (the import base time) — the explicit-time analogue of
-/// [`close_current`]. Used when importing further versions into an existing
-/// container (master06 §Copying "previous copies have been made for the item"),
-/// so the new imported chain opens cleanly after the closed one.
-async fn close_current_at(
+/// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an
+/// explicit instant (the import base time). The trunk lineage is
+/// `branch_number = 0`; a branch lineage is one `(creating_system_id,
+/// trunk_version, branch_number)`. Used when importing further versions into
+/// an existing container (master06 §Copying "previous copies have been made
+/// for the item"), so the new imported chain opens cleanly after the closed one.
+async fn close_lineage_at(
     tx: &mut PgConnection,
     vo_id: Uuid,
+    lineage: &(String, i32, i32),
     at: jiff::Timestamp,
 ) -> Result<(), ServiceError> {
-    sqlx::query(
-        "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
-         WHERE vo_id = $1 AND upper_inf(sys_period)",
-    )
-    .bind(vo_id)
-    .bind(at.to_string())
-    .execute(&mut *tx)
-    .await?;
+    let (csid, trunk, branch) = lineage;
+    if *branch == 0 {
+        sqlx::query(
+            "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
+             WHERE vo_id = $1 AND upper_inf(sys_period) AND branch_number = 0",
+        )
+        .bind(vo_id)
+        .bind(at.to_string())
+        .execute(&mut *tx)
+        .await?;
+    } else {
+        sqlx::query(
+            "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), $2::timestamptz, '[)') \
+             WHERE vo_id = $1 AND upper_inf(sys_period) \
+             AND creating_system_id = $3 AND trunk_version = $4 AND branch_number = $5",
+        )
+        .bind(vo_id)
+        .bind(at.to_string())
+        .bind(csid)
+        .bind(trunk)
+        .bind(branch)
+        .execute(&mut *tx)
+        .await?;
+    }
     Ok(())
 }
 
 /// The current state of a to-be-imported container in the target EHR: the
-/// stored kind (if the `vo_id` already exists), the highest trunk version, and
-/// whether a still-open current version exists. `(None, 0, false)` when the
-/// container is not present (first receipt of this item — master06 §Copying
-/// Case 2). A `vo_id` owned by a *different* EHR is an error at the caller.
+/// stored kind (if the `vo_id` already exists), the highest trunk version, the
+/// highest storage ordinal, and whether a still-open current TRUNK version
+/// exists. `(None, None, 0, 0, false)` when the container is not present
+/// (first receipt of this item — master06 §Copying Case 2). A `vo_id` owned by
+/// a *different* EHR is an error at the caller.
 async fn imported_container_state(
     tx: &mut PgConnection,
     vo_id: Uuid,
-) -> Result<(Option<Kind>, Option<Uuid>, i32, bool), ServiceError> {
+) -> Result<(Option<Kind>, Option<Uuid>, i32, i32, bool), ServiceError> {
     let row = sqlx::query(
-        "SELECT max(sys_version) AS max_v, \
-                bool_or(upper_inf(sys_period)) AS has_open, \
+        "SELECT max(trunk_version) FILTER (WHERE branch_number = 0) AS max_trunk, \
+                max(sys_version) AS max_ordinal, \
+                bool_or(upper_inf(sys_period) AND branch_number = 0) AS trunk_open, \
                 (array_agg(kind))[1] AS kind, \
                 (array_agg(ehr_id))[1] AS owner \
          FROM vo_version WHERE vo_id = $1",
@@ -1345,18 +1606,22 @@ async fn imported_container_state(
     .bind(vo_id)
     .fetch_one(&mut *tx)
     .await?;
-    let max_v: Option<i32> = row.try_get("max_v")?;
-    let Some(max_v) = max_v else {
-        return Ok((None, None, 0, false));
+    let max_ordinal: Option<i32> = row.try_get("max_ordinal")?;
+    let Some(max_ordinal) = max_ordinal else {
+        return Ok((None, None, 0, 0, false));
     };
-    let has_open: bool = row.try_get::<Option<bool>, _>("has_open")?.unwrap_or(false);
+    let max_trunk: i32 = row.try_get::<Option<i32>, _>("max_trunk")?.unwrap_or(0);
+    let trunk_open: bool = row
+        .try_get::<Option<bool>, _>("trunk_open")?
+        .unwrap_or(false);
     let kind: Option<String> = row.try_get("kind")?;
     let owner: Option<Uuid> = row.try_get("owner")?;
     Ok((
         kind.as_deref().and_then(Kind::from_type),
         owner,
-        max_v,
-        has_open,
+        max_trunk,
+        max_ordinal,
+        trunk_open,
     ))
 }
 
@@ -1385,8 +1650,8 @@ async fn imported_container_state(
 /// PORT NOTE (local temporal periods, master06 §Copying): all versions of an
 /// imported container are committed in the single local import act, so they get
 /// a synthetic strictly-increasing local `sys_period` chain (base = import time,
-/// 1 µs steps) with only the highest version open — time-travel within the
-/// target therefore orders them by trunk version. The true source chronology is
+/// 1 µs steps) **per lineage** (trunk / each branch — lineages coexist in time)
+/// with only each lineage's highest version open. The true source chronology is
 /// preserved in each version's `commit_audit.time_committed`.
 #[allow(clippy::too_many_lines)] // the import replay + its per-version outbox entry
 pub(super) async fn commit_import(
@@ -1406,23 +1671,32 @@ pub(super) async fn commit_import(
         if container.versions.is_empty() {
             continue;
         }
-        // Trunk order; reject a duplicated trunk version within one import.
-        container.versions.sort_by_key(|v| v.sys_version);
+        // Version-tree order (trunk versions first within a lineage grouping);
+        // reject a duplicated version identity within one import (the identity
+        // tuple is {object_id, creating_system_id, version_tree_id} — master06
+        // §Distributed versioning).
+        container
+            .versions
+            .sort_by_key(|v| (v.lineage(), v.tree.columns()));
         for pair in container.versions.windows(2) {
-            if pair[0].sys_version == pair[1].sys_version {
+            if pair[0].creating_system_id == pair[1].creating_system_id
+                && pair[0].tree == pair[1].tree
+            {
                 return Err(ServiceError::Conflict(format!(
-                    "version {}::{} appears more than once in the import",
-                    container.vo_id, pair[0].sys_version
+                    "version {}::{}::{} appears more than once in the import",
+                    container.vo_id, pair[0].creating_system_id, pair[0].tree
                 )));
             }
         }
 
-        let (existing_kind, owner, max_v, has_open) =
+        let (existing_kind, owner, max_trunk, max_ordinal, trunk_open) =
             imported_container_state(tx, container.vo_id).await?;
         if let Some(existing_kind) = existing_kind {
             // First receipt of *this item* has already happened (master06 §Copying
             // Case 3): append to the existing clone — the kind must match, the EHR
-            // must own it, and every imported version must be strictly newer.
+            // must own it, and every imported trunk version must be strictly newer
+            // (branch versions land on their own lineages; the uq_vo_version_tree
+            // constraint rejects a duplicate identity).
             if owner != Some(ehr_id) {
                 return Err(ServiceError::Conflict(format!(
                     "versioned object {} already exists in another EHR",
@@ -1437,73 +1711,74 @@ pub(super) async fn commit_import(
                     container.kind.as_str()
                 )));
             }
-            if container.versions[0].sys_version <= max_v {
+            if let Some(first_trunk) = container
+                .versions
+                .iter()
+                .filter(|v| v.tree.is_trunk())
+                .map(|v| v.tree.trunk)
+                .min()
+                && first_trunk <= max_trunk
+            {
                 return Err(ServiceError::Conflict(format!(
-                    "versioned object {} already has version {} — cannot re-import \
-                     version {} (trunk-only)",
-                    container.vo_id, max_v, container.versions[0].sys_version
+                    "versioned object {} already has trunk version {max_trunk} — cannot \
+                     re-import trunk version {first_trunk}",
+                    container.vo_id
                 )));
             }
-            if has_open {
-                close_current_at(tx, container.vo_id, base).await?;
+            if trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
+                close_lineage_at(tx, container.vo_id, &(String::new(), 0, 0), base).await?;
             }
         }
 
-        let n = container.versions.len();
-        for (i, version) in container.versions.into_iter().enumerate() {
+        // Per-lineage period chains: within a lineage each version closes its
+        // predecessor; each lineage's last version stays open. Lineages coexist.
+        let mut ordinal = max_ordinal;
+        let versions = container.versions;
+        for (i, version) in versions.iter().enumerate() {
+            ordinal += 1;
             // PHI-free outbox entry for this imported version (ADR-014 §2):
             // identity + provenance only; imports carry no template_id.
             outbox_versions.push(serde_json::json!({
                 "vo_id": container.vo_id,
                 "kind": container.kind.as_str(),
-                "sys_version": version.sys_version,
+                "sys_version": ordinal,
+                "version_tree_id": version.tree.to_string(),
                 "change_type": version.commit_audit.change_type,
                 "template_id": serde_json::Value::Null,
             }));
-            // Synthetic strictly-increasing local period; only the last is open.
+            // Synthetic strictly-increasing local period; the next version ON
+            // THE SAME LINEAGE (if any) closes this one.
             let lower = base + jiff::SignedDuration::from_micros(i64::try_from(i).unwrap_or(0));
-            let upper = if i + 1 < n {
-                Some(base + jiff::SignedDuration::from_micros(i64::try_from(i + 1).unwrap_or(0)))
-            } else {
-                None
-            };
+            let upper = versions[i + 1..]
+                .iter()
+                .position(|later| later.lineage() == version.lineage())
+                .map(|offset| {
+                    base + jiff::SignedDuration::from_micros(
+                        i64::try_from(i + 1 + offset).unwrap_or(0),
+                    )
+                });
             let audit_id = insert_audit_at(tx, &version.commit_audit, version.commit_time).await?;
             insert_imported_vo_version(
                 tx,
+                ehr_id,
                 container.vo_id,
                 container.kind,
-                ehr_id,
-                version.sys_version,
+                version,
+                ordinal,
                 lower,
                 upper,
-                &version.lifecycle_state,
-                &container.creating_system_id,
                 contribution_id,
                 audit_id,
-                version.signature.as_deref(),
             )
             .await?;
             // A `523|deleted|` version stores no node rows (data is Void).
             if !version.data.is_null() {
-                let rows = decompose(version.data)?;
-                insert_nodes(
-                    tx,
-                    container.vo_id,
-                    version.sys_version,
-                    Some(ehr_id),
-                    &rows,
-                )
-                .await?;
+                let rows = decompose(version.data.clone())?;
+                insert_nodes(tx, container.vo_id, ordinal, Some(ehr_id), &rows).await?;
             }
             for attestation in &version.attestations {
-                insert_attestation(
-                    tx,
-                    container.vo_id,
-                    version.sys_version,
-                    contribution_id,
-                    attestation,
-                )
-                .await?;
+                insert_attestation(tx, container.vo_id, ordinal, contribution_id, attestation)
+                    .await?;
             }
         }
     }
@@ -1522,7 +1797,8 @@ pub(super) async fn commit_import(
     Ok(contribution_id)
 }
 
-/// The current (`upper_inf`) version number of an object, plus its `ehr_id`.
+/// The current trunk version number of an object (`upper_inf` on the trunk
+/// lineage — RM common master06 `latest_trunk_version`), plus its `ehr_id`.
 /// Locks the row `FOR UPDATE` so concurrent updates serialize.
 async fn current_version(
     tx: &mut PgConnection,
@@ -1530,23 +1806,32 @@ async fn current_version(
     kind: Kind,
 ) -> Result<(Option<Uuid>, i32), ServiceError> {
     let row = sqlx::query(
-        "SELECT ehr_id, sys_version FROM vo_version \
-         WHERE vo_id = $1 AND kind = $2 AND upper_inf(sys_period) FOR UPDATE",
+        "SELECT ehr_id, trunk_version FROM vo_version \
+         WHERE vo_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0 \
+         FOR UPDATE",
     )
     .bind(vo_id)
     .bind(kind.as_str())
     .fetch_optional(&mut *tx)
     .await?
     .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.as_str())))?;
-    Ok((row.try_get("ehr_id")?, row.try_get("sys_version")?))
+    Ok((row.try_get("ehr_id")?, row.try_get("trunk_version")?))
 }
 
-async fn close_current(tx: &mut PgConnection, vo_id: Uuid) -> Result<(), ServiceError> {
+/// Close (supersede) one specific version row — the lineage tip a new version
+/// replaces — at `now()`. Lineage-precise: a branch commit closes its branch
+/// tip, a trunk commit the trunk tip; a FORK closes nothing.
+async fn close_ordinal_at_now(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    ordinal: i32,
+) -> Result<(), ServiceError> {
     sqlx::query(
         "UPDATE vo_version SET sys_period = tstzrange(lower(sys_period), now(), '[)') \
-         WHERE vo_id = $1 AND upper_inf(sys_period)",
+         WHERE vo_id = $1 AND sys_version = $2 AND upper_inf(sys_period)",
     )
     .bind(vo_id)
+    .bind(ordinal)
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -1561,10 +1846,10 @@ pub(super) async fn read_current(
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 AND upper_inf(v.sys_period)",
+         WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0",
     )
     .bind(vo_id)
     .fetch_optional(pool)
@@ -1575,20 +1860,50 @@ pub(super) async fn read_current(
     Ok(Some(version_read(pool, vo_id, &row).await?))
 }
 
-/// Read a specific `sys_version` of an object (for `.../version/{version_uid}`).
-pub(super) async fn read_version(
+/// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
+/// — for internal callers that key rows by ordinal (the FHIR mapping table,
+/// extract export iteration), never for wire version ids (those are
+/// `VERSION_TREE_ID`s — use [`read_version`]).
+pub(super) async fn read_version_by_ordinal(
     pool: &PgPool,
     vo_id: Uuid,
-    sys_version: i32,
+    ordinal: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
          WHERE v.vo_id = $1 AND v.sys_version = $2",
     )
     .bind(vo_id)
-    .bind(sys_version)
+    .bind(ordinal)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(version_read(pool, vo_id, &row).await?))
+}
+
+/// Read a specific version of an object by its `VERSION_TREE_ID` (for
+/// `.../version/{version_uid}` — trunk or branch).
+pub(super) async fn read_version(
+    pool: &PgPool,
+    vo_id: Uuid,
+    tree: TreeId,
+) -> Result<Option<VersionRead>, ServiceError> {
+    let (t, b, v) = tree.columns();
+    let Some(row) = sqlx::query(
+        "SELECT v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, \
+         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND v.trunk_version = $2 AND v.branch_number = $3 \
+         AND v.branch_version = $4",
+    )
+    .bind(vo_id)
+    .bind(t)
+    .bind(b)
+    .bind(v)
     .fetch_optional(pool)
     .await?
     else {
@@ -1606,10 +1921,10 @@ pub(super) async fn version_at(
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.sys_version, v.lifecycle_state, v.creating_system_id, v.contribution_id, v.template_id, v.signature, \
+        "SELECT v.ehr_id, v.sys_version, v.trunk_version, v.branch_number, v.branch_version, v.lifecycle_state, v.creating_system_id, v.preceding_version_uid, v.other_input_version_uids, v.contribution_id, v.template_id, v.signature, \
          a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz",
+         WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz AND v.branch_number = 0",
     )
     .bind(vo_id)
     .bind(at.to_string())

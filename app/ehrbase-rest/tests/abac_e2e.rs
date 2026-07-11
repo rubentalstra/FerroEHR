@@ -117,7 +117,7 @@ fn resolvers() -> AuthzResolvers {
                 Ok::<_, ResolveError>(subject)
             })
         }),
-        template_of_version: Arc::new(|_vo: String, _v: Option<i32>| {
+        template_of_version: Arc::new(|_vo: String, _v: Option<String>| {
             Box::pin(async move { Ok::<_, ResolveError>(Some("org.openehr::t.v1".to_owned())) })
         }),
     }

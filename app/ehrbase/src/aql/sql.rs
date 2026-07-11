@@ -513,7 +513,10 @@ impl<'a> Builder<'a> {
         sub.and_where(col(&sn, "sys_version").eq(col(&sv, "sys_version")));
         sub.and_where(col(&sn, "num").eq(Expr::val(0)));
         sub.and_where(col(&sv, "kind").eq(Expr::val("EHR_STATUS")));
+        // Current = the latest TRUNK version (branches coexist with the trunk;
+        // RM common master06 latest_trunk_version).
         sub.and_where(call("upper_inf", vec![col(&sv, "sys_period")]));
+        sub.and_where(col(&sv, "branch_number").eq(Expr::val(0)));
         sub.and_where(
             col(&sn, "data")
                 .binary(BinOper::Custom("->>"), Expr::val("is_queryable"))
@@ -549,6 +552,8 @@ impl<'a> Builder<'a> {
             .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
         self.q
             .and_where(call("upper_inf", vec![col(&vo, "sys_period")]));
+        // Current = latest trunk (master06 latest_trunk_version).
+        self.q.and_where(col(&vo, "branch_number").eq(Expr::val(0)));
         self.q.and_where(col(&node, "vo_id").eq(col(&vo, "vo_id")));
         self.q
             .and_where(col(&node, "sys_version").eq(col(&vo, "sys_version")));
@@ -577,17 +582,23 @@ impl<'a> Builder<'a> {
     fn push_scope(&mut self, voa: &str, scope: &VersionScope) -> Result<(), AqlError> {
         match scope {
             VersionScope::Latest => {
+                // LATEST_VERSION = the latest TRUNK version (RM common master06
+                // latest_trunk_version; open branch tips coexist and are not
+                // "the latest version" of the container).
                 self.q
                     .and_where(call("upper_inf", vec![col(voa, "sys_period")]));
+                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
             }
             VersionScope::All => {}
             VersionScope::Predicate(p) if p.field == VersionField::TimeCommitted => {
-                // Version-at-time: the version whose validity contains the instant
-                // (`sys_period @> $t` — the typed `PgExpr::contains` operator).
+                // Version-at-time: the TRUNK version whose validity contains the
+                // instant (`sys_period @> $t`); a branch open at that instant
+                // coexists by design and must not duplicate the row.
                 let value = self.bind_value(&p.value)?;
                 self.q.and_where(
                     col(voa, "sys_period").contains(cast(Expr::val(value), "timestamptz")),
                 );
+                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
             }
             VersionScope::Predicate(p) => {
                 let aud = self.ensure_audit(voa);
@@ -1136,9 +1147,13 @@ fn aggregate_expr(func: AggFunc, inner: Option<Expr>, distinct: bool) -> Expr {
 }
 
 /// The typed SQL for a VERSION metadata field, off the `vo_version`/`audit`
-/// aliases (the `uid` is synthesized as `vo_id::system_id::sys_version` via the
-/// typed `PgExpr::concatenate` `||` operator).
-fn version_field_expr(voa: &str, aud: &str, field: VersionField, system_id: &str) -> Expr {
+/// aliases. The `uid` is synthesized as
+/// `vo_id::creating_system_id::version_tree_id` from the STORED per-version
+/// identity columns (never the live config `system_id` — the creating system
+/// is immutable per version, RM common master06 §Distributed versioning) via
+/// the typed `PgExpr::concatenate` `||` operator; the tree id renders
+/// `trunk[.branch.version]`.
+fn version_field_expr(voa: &str, aud: &str, field: VersionField, _system_id: &str) -> Expr {
     let concat = |parts: Vec<Expr>| -> Expr {
         parts
             .into_iter()
@@ -1149,9 +1164,17 @@ fn version_field_expr(voa: &str, aud: &str, field: VersionField, system_id: &str
         VersionField::Uid => concat(vec![
             cast(col(voa, "vo_id"), "text"),
             Expr::val("::"),
-            Expr::val(system_id.to_owned()),
+            col(voa, "creating_system_id").into(),
             Expr::val("::"),
-            cast(col(voa, "sys_version"), "text"),
+            cast(col(voa, "trunk_version"), "text"),
+            Expr::cust_with_exprs(
+                "CASE WHEN $1 > 0 THEN '.' || $2 || '.' || $3 ELSE '' END",
+                [
+                    col(voa, "branch_number").into(),
+                    cast(col(voa, "branch_number"), "text"),
+                    cast(col(voa, "branch_version"), "text"),
+                ],
+            ),
         ]),
         VersionField::TimeCommitted => col(aud, "time_committed"),
         VersionField::SystemId => col(aud, "system_id"),

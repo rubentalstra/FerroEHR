@@ -168,26 +168,18 @@ fn mk_update_version(
     uv
 }
 
-/// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid, trunk
-/// version)` pair the SM `*_at_version` reads take.
-fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, i32), ApiError> {
+/// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
+/// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
+/// are first-class (RM common master06 §Version tree; the former trunk-only
+/// rejection F-06-09 is retired).
+fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String), ApiError> {
     let vo = object_id_uuid(ovid).ok_or_else(|| {
         ApiError::BadRequest(format!(
             "OBJECT_VERSION_ID object_id is not a UUID: {}",
             ovid.value
         ))
     })?;
-    let tree = ovid.version_tree_id();
-    if tree.is_branch() {
-        return Err(ApiError::BadRequest(format!(
-            "branch version ids are not supported (trunk-only): {}",
-            ovid.value
-        )));
-    }
-    let version = tree.trunk_version().parse::<i32>().map_err(|_| {
-        ApiError::BadRequest(format!("version_tree_id out of range: {}", ovid.value))
-    })?;
-    Ok((vo, version))
+    Ok((vo, ovid.version_tree_id().value.clone()))
 }
 
 #[allow(clippy::too_many_lines)] // one arm per operation; a flat match is clearest
@@ -243,7 +235,7 @@ async fn run<S: Platform>(
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
-                .get_ehr_status_at_version(ehr_id, vo_id, version)
+                .get_ehr_status_at_version(ehr_id, vo_id, &version)
                 .await?;
             let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
             Ok(negotiate::read_rm::<EhrStatus>(
@@ -367,7 +359,7 @@ async fn run<S: Platform>(
             let (vo_id, version) = version_components(&parse_version_uid(&p.version_uid)?)?;
             let body = state
                 .backend()
-                .ehr_status_original_version(ehr_id, vo_id, version)
+                .ehr_status_original_version(ehr_id, vo_id, &version)
                 .await?;
             Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
                 h,

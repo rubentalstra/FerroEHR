@@ -233,6 +233,7 @@ impl Validator {
                 self.push(p, iv.message, ValidationKind::Invariant);
             }
         }
+        self.check_archetyped_valid(obj, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -248,6 +249,42 @@ impl Validator {
                 Value::Object(_) => self.rm_invariant_pass(val, &format!("{path}/{k}")),
                 _ => {}
             }
+        }
+    }
+
+    /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
+    /// Void` (`RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc` L60).
+    /// The enforceable arm on an instance is: a **non-root** node — one whose
+    /// `archetype_node_id` is an `at`/`id` term code, which per the node-id
+    /// format can never be the root of an archetyped structure — must NOT carry
+    /// `archetype_details`.
+    ///
+    /// PORT NOTE (A1 rm-common-change-control-R46): the converse arm ("an
+    /// archetype-HRID node must carry `archetype_details`") is NOT enforced —
+    /// the reference object model derives `is_archetype_root` from
+    /// `archetype_details` presence (making that reading tautological), and the
+    /// CNF's own valid data sets + the canonical-JSON corpus systematically omit
+    /// `archetype_details` on nested archetype roots (182 occurrences measured
+    /// 2026-07-11); the CNF fixtures win over a prose reading that would reject
+    /// them (`.claude/rules/spec-adherence.md`). The COMPOSITION root arm stays
+    /// separately enforced (`composition_impl.rs` `Is_archetype_root`).
+    fn check_archetyped_valid(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        let Some(node_id) = obj.get("archetype_node_id").and_then(Value::as_str) else {
+            return;
+        };
+        let is_term_code = node_id
+            .strip_prefix("at")
+            .or_else(|| node_id.strip_prefix("id"))
+            .is_some_and(|rest| rest.chars().next().is_some_and(|c| c.is_ascii_digit()));
+        if is_term_code && obj.get("archetype_details").is_some_and(|d| !d.is_null()) {
+            self.push(
+                norm_path(path),
+                format!(
+                    "node {node_id:?} is not an archetype root (at/id term code) and must \
+                     not carry archetype_details (LOCATABLE.Archetyped_valid)"
+                ),
+                ValidationKind::Invariant,
+            );
         }
     }
 

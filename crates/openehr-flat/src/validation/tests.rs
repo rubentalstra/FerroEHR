@@ -1204,3 +1204,53 @@ fn timezone_validity_mandatory_and_disallowed() {
     );
     assert!(walk_only(&json!({"_type": "DV_TIME", "value": "10:30:00"}), &n).is_empty());
 }
+
+// ── LOCATABLE.Archetyped_valid (A1 rm-common-change-control-R46) ─────────────────
+
+/// A non-root node — `archetype_node_id` an `at`/`id` term code — must not
+/// carry `archetype_details` (`locatable.adoc` §Archetyped_valid); an
+/// archetype-HRID node carrying them, and a nested archetype root *without*
+/// them (the CNF-corpus-sanctioned shape), both stay valid.
+#[test]
+fn non_root_node_with_archetype_details_rejected() {
+    let details = json!({"_type": "ARCHETYPED",
+        "archetype_id": {"_type": "ARCHETYPE_ID", "value": "openEHR-EHR-CLUSTER.x.v1"},
+        "rm_version": "1.0.2"});
+    for bad_id in ["at0001", "id42", "at0001.1"] {
+        let inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": bad_id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "archetype_details": details,
+            "items": []
+        });
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            msgs.iter()
+                .any(|m| m.kind == ValidationKind::Invariant
+                    && m.message.contains("Archetyped_valid")),
+            "expected an Archetyped_valid violation for {bad_id}, got {msgs:?}"
+        );
+    }
+    // Root shapes stay valid: HRID with details, and HRID without details
+    // (nested archetype root as the CNF corpus ships it).
+    for (id, with_details) in [
+        ("openEHR-EHR-CLUSTER.x.v1", true),
+        ("openEHR-EHR-CLUSTER.x.v1", false),
+    ] {
+        let mut inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "items": []
+        });
+        if with_details {
+            inst.as_object_mut()
+                .unwrap()
+                .insert("archetype_details".into(), details.clone());
+        }
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            !msgs.iter().any(|m| m.message.contains("Archetyped_valid")),
+            "root shape (details={with_details}) must not violate Archetyped_valid: {msgs:?}"
+        );
+    }
+}

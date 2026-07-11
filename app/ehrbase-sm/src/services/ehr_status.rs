@@ -44,11 +44,16 @@ pub trait EhrStatusService: Send + Sync {
     /// `get_ehr_status_at_version (an_ehr_id: UUID, a_version_uid: UUID):
     /// EHR_STATUS` — the **bare** `EHR_STATUS` at a version (not the
     /// `ORIGINAL_VERSION` wrapper; F-01-03). Pre `has_ehr`.
+    ///
+    /// `a_version` is the `VERSION_TREE_ID` lexical form
+    /// (`trunk_version [ '.' branch_number '.' branch_version ]`, BASE
+    /// identification) — branch versions are addressable (RM common master06
+    /// §Version tree).
     async fn get_ehr_status_at_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
-        a_version: i32,
+        a_version: &str,
     ) -> Result<Value, SmError>;
 
     /// `get_versioned_ehr_status (an_ehr_id: UUID): VERSIONED_EHR_STATUS` —
@@ -86,11 +91,12 @@ pub trait EhrStatusService: Send + Sync {
     ) -> Result<Value, SmError>;
 
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}` — the
-    /// `ORIGINAL_VERSION` at a specific version.
+    /// `ORIGINAL_VERSION` at a specific version (`a_version` = the
+    /// `VERSION_TREE_ID` lexical form; trunk or branch).
     async fn ehr_status_original_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
-        a_version: i32,
+        a_version: &str,
     ) -> Result<Value, SmError>;
 }

@@ -447,8 +447,19 @@ fn vo_id_of(uid: &str) -> Option<String> {
 }
 
 /// The trailing version number of an `OBJECT_VERSION_ID`, if present.
-fn version_of(uid: &str) -> Option<i32> {
-    uid.rsplit("::").next().and_then(|v| v.parse::<i32>().ok())
+fn version_of(uid: &str) -> Option<String> {
+    // The VERSION_TREE_ID lexical form: `N` or `N.B.V` (trunk or branch —
+    // RM common master06 §Version tree). Anything else carries no version.
+    let tail = uid.rsplit("::").next()?;
+    let mut parts = tail.split('.');
+    let is_number = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    match (parts.next(), parts.next(), parts.next(), parts.next()) {
+        (Some(t), None, None, None) if is_number(t) => Some(tail.to_owned()),
+        (Some(t), Some(b), Some(v), None) if is_number(t) && is_number(b) && is_number(v) => {
+            Some(tail.to_owned())
+        }
+        _ => None,
+    }
 }
 
 /// A 403 carrying the principal (audited by the ATNA layer).
@@ -515,7 +526,7 @@ mod tests {
                     let subject = subject.clone();
                     Box::pin(async move { Ok::<_, ResolveError>(subject) })
                 }),
-                template_of_version: Arc::new(|_vo: String, _v: Option<i32>| {
+                template_of_version: Arc::new(|_vo: String, _v: Option<String>| {
                     Box::pin(async move { Ok::<_, ResolveError>(None) })
                 }),
             },
@@ -620,7 +631,13 @@ mod tests {
             vo_id_of(uid).as_deref(),
             Some("0197f1c2-3aa0-7000-8000-000000000001")
         );
-        assert_eq!(version_of(uid), Some(2));
+        assert_eq!(version_of(uid), Some("2".to_owned()));
+        // A branch VERSION_TREE_ID is carried whole (RM common master06
+        // §Version tree).
+        assert_eq!(
+            version_of("0197f1c2-3aa0-7000-8000-000000000001::sys::2.1.3"),
+            Some("2.1.3".to_owned())
+        );
         // A bare uid (no version) → itself, no version.
         assert_eq!(vo_id_of("abc").as_deref(), Some("abc"));
         assert_eq!(version_of("abc"), None);

@@ -24,6 +24,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use super::codes::change_type;
+use super::version_id::TreeId;
 use super::vobject::{self, Kind, VersionRead};
 use super::{EhrbaseService, ServiceError};
 
@@ -129,7 +130,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_party(kind, committed.vo_id, Some(committed.sys_version), None)
+        self.read_party(kind, committed.vo_id, Some(committed.tree), None)
             .await
     }
 
@@ -142,7 +143,7 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         vo_id: Uuid,
-        version: Option<i32>,
+        version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = self.load_party_version(kind, vo_id, version, at).await?;
@@ -159,7 +160,7 @@ impl EhrbaseService {
         kind: PartyKind,
         vo_id: Uuid,
         body: Value,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_party(kind, vo_id).await?;
         Self::validate_party_body(kind, &body)?;
@@ -182,7 +183,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_party(kind, vo_id, Some(committed.sys_version), None)
+        self.read_party(kind, vo_id, Some(committed.tree), None)
             .await
     }
 
@@ -196,7 +197,7 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         vo_id: Uuid,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = self.load_party_version(kind, vo_id, None, None).await?;
         if read.deleted() {
@@ -206,11 +207,11 @@ impl EhrbaseService {
             )));
         }
         if let Some(expected) = expected
-            && read.sys_version != expected
+            && read.tree != expected
         {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
-                read.sys_version
+                read.tree
             )));
         }
 
@@ -221,7 +222,7 @@ impl EhrbaseService {
             None,
             vo_id,
             kind_of(kind),
-            Some(read.sys_version),
+            Some(read.tree),
             &audit,
             &self.signing_ctx(),
         )
@@ -233,7 +234,7 @@ impl EhrbaseService {
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             String::new(),
             // Just-created locally → creating_system_id is the service system id.
-            self.object_version_id(vo_id, "", committed.sys_version),
+            self.object_version_id(vo_id, &committed.creating_system_id, committed.tree),
         )))
     }
 
@@ -247,7 +248,7 @@ impl EhrbaseService {
         match self.load_party_version(kind, vo_id, None, None).await {
             Ok(read) => Ok(Some(ResourceMeta::new(
                 String::new(),
-                self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
+                self.object_version_id(vo_id, &read.creating_system_id, read.tree),
             ))),
             Err(ServiceError::NotFound(_)) => Ok(None),
             Err(e) => Err(e),
@@ -292,7 +293,8 @@ impl EhrbaseService {
     pub(super) async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         let rows = sqlx::query(
-            "SELECT v.sys_version, v.creating_system_id, a.system_id, a.change_type, \
+            "SELECT v.trunk_version, v.branch_number, v.branch_version, \
+             v.creating_system_id, a.system_id, a.change_type, \
              a.description, a.committer, a.time_committed \
              FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.vo_id = $1 ORDER BY v.sys_version",
@@ -303,7 +305,11 @@ impl EhrbaseService {
 
         let mut items = Vec::with_capacity(rows.len());
         for row in &rows {
-            let sys_version: i32 = row.try_get("sys_version")?;
+            let tree = TreeId::from_columns(
+                row.try_get("trunk_version")?,
+                row.try_get("branch_number")?,
+                row.try_get("branch_version")?,
+            );
             let creating_system_id: String = row.try_get("creating_system_id")?;
             let system_id: String = row.try_get("system_id")?;
             let change_type: String = row.try_get("change_type")?;
@@ -316,7 +322,7 @@ impl EhrbaseService {
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
+                    "value": self.object_version_id(vo_id, &creating_system_id, tree)
                 },
                 "audits": [Self::audit_details(
                     &system_id, &change_type, description.as_deref(), &committer, &time_committed,
@@ -331,7 +337,7 @@ impl EhrbaseService {
     pub(super) async fn party_version(
         &self,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         let read = vobject::read_version(&self.pool, vo_id, version)
@@ -357,7 +363,7 @@ impl EhrbaseService {
         .ok_or_else(|| ServiceError::NotFound(format!("party {vo_id} version at time")))?;
         let meta = ResourceMeta::new(
             String::new(),
-            self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
+            self.object_version_id(vo_id, &read.creating_system_id, read.tree),
         )
         .with_last_modified(read.time_committed);
         let ov = self.original_version(&read)?;
@@ -418,7 +424,11 @@ impl EhrbaseService {
             .iter()
             .map(|row| -> Result<Value, ServiceError> {
                 let vo_id: Uuid = row.try_get("vo_id")?;
-                let sys_version: i32 = row.try_get("sys_version")?;
+                let tree = TreeId::from_columns(
+                    row.try_get("trunk_version")?,
+                    row.try_get("branch_number")?,
+                    row.try_get("branch_version")?,
+                );
                 let creating_system_id: String = row.try_get("creating_system_id")?;
                 let kind: String = row.try_get("kind")?;
                 Ok(json!({
@@ -427,7 +437,7 @@ impl EhrbaseService {
                     "type": kind,
                     "id": {
                         "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
+                        "value": self.object_version_id(vo_id, &creating_system_id, tree)
                     }
                 }))
             })
@@ -568,7 +578,7 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         vo_id: Uuid,
-        version: Option<i32>,
+        version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<VersionRead, ServiceError> {
         // The stored kind (constant per versioned object) must match the route.
@@ -617,16 +627,11 @@ impl EhrbaseService {
     fn party_version_response(&self, vo_id: Uuid, read: VersionRead) -> ServiceResponse {
         let meta = ResourceMeta::new(
             String::new(),
-            self.object_version_id(vo_id, &read.creating_system_id, read.sys_version),
+            self.object_version_id(vo_id, &read.creating_system_id, read.tree),
         )
         .with_last_modified(read.time_committed);
         ServiceResponse::new(
-            self.with_uid(
-                read.canonical,
-                vo_id,
-                &read.creating_system_id,
-                read.sys_version,
-            ),
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
             meta,
         )
     }

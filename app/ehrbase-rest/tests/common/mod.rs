@@ -62,7 +62,7 @@ type EhrObject = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type EhrObjectForSubject = Arc<dyn Fn(String, String) -> Result<Value, SmError> + Send + Sync>;
 type StatusRead = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type StatusAtTime = Arc<dyn Fn(Uuid, Option<String>) -> Result<Value, SmError> + Send + Sync>;
-type StatusAtVersion = Arc<dyn Fn(Uuid, Uuid, i32) -> Result<Value, SmError> + Send + Sync>;
+type StatusAtVersion = Arc<dyn Fn(Uuid, Uuid, &str) -> Result<Value, SmError> + Send + Sync>;
 type ReplaceStatus = Arc<dyn Fn(Uuid, UpdateVersion) -> Result<String, SmError> + Send + Sync>;
 type CompLatest = Arc<dyn Fn(Uuid, Uuid) -> Result<Value, SmError> + Send + Sync>;
 type CompAtTime = Arc<dyn Fn(Uuid, Uuid, Option<String>) -> Result<Value, SmError> + Send + Sync>;
@@ -410,7 +410,7 @@ impl EhrStatusService for Mock {
         &self,
         ehr_id: Uuid,
         v: Uuid,
-        ver: i32,
+        ver: &str,
     ) -> Result<Value, SmError> {
         match &self.h.get_ehr_status_at_version {
             Some(f) => f(ehr_id, v, ver),
@@ -447,7 +447,7 @@ impl EhrStatusService for Mock {
         &self,
         _ehr_id: Uuid,
         _v: Uuid,
-        _ver: i32,
+        _ver: &str,
     ) -> Result<Value, SmError> {
         Err(not_impl())
     }

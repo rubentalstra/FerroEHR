@@ -39,3 +39,11 @@ Non-negotiables (violations are rejected at review):
 
 Your final message reports: what changed (files), test/clippy evidence, any
 `// PORT NOTE:`s added, and anything you were forced to leave open.
+
+## Citation discipline (owner hard rule)
+
+Cite ONLY the openEHR specs (file + section) in code/schema/doc comments and
+findings — never an ADR (`ADR-NNN`). ADRs get superseded and leave stale
+claims; spec citations stay findable. Where the specs are silent, write the
+explicit flag "no openEHR spec governs this — our own design/extension".
+Treat any ADR citation you encounter as a defect to scrub in files you touch.
