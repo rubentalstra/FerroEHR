@@ -793,7 +793,7 @@ pub(super) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
 }
 
 /// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
-/// CONTRIBUTION — there is no direct ITS-REST EHR_ACCESS write). RM ehr
+/// CONTRIBUTION — there is no direct ITS-REST `EHR_ACCESS` write). RM ehr
 /// `org.openehr.rm.ehr.ehr_access.adoc`:
 ///
 /// - a LOCATABLE: `name` (1..1) and a non-empty `archetype_node_id`
@@ -817,15 +817,15 @@ pub(super) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
             )));
         }
     }
-    if obj.get("name").filter(|v| !v.is_null()).is_none() {
+    if obj.get("name").is_none_or(Value::is_null) {
         return Err(unproc(
             "EHR_ACCESS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
         ));
     }
-    if !obj
+    if obj
         .get("archetype_node_id")
         .and_then(Value::as_str)
-        .is_some_and(|s| !s.is_empty())
+        .is_none_or(str::is_empty)
     {
         return Err(unproc(
             "EHR_ACCESS.archetype_node_id is mandatory and non-empty \
@@ -834,10 +834,10 @@ pub(super) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
         ));
     }
     if let Some(settings) = obj.get("settings").filter(|v| !v.is_null())
-        && !settings
+        && settings
             .get("_type")
             .and_then(Value::as_str)
-            .is_some_and(|t| !t.is_empty())
+            .is_none_or(str::is_empty)
     {
         return Err(unproc(
             "EHR_ACCESS.settings must be a concrete ACCESS_CONTROL_SETTINGS subtype \

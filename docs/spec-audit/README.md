@@ -55,7 +55,7 @@ before a finding enters `FINDINGS.md`.
 | 10 | rm-integration | done (20 / 6) | done — 1 fixed | orchestrator-reviewed |
 | 11 | base-foundation | done (57 / 30) | done — 1 fixed | orchestrator-reviewed |
 | 12 | base-base-types | done (37 / 11) | done — 1 fixed | orchestrator-reviewed |
-| 13 | am-aom14-opt | done (56 / 28) | pending | pending |
+| 13 | am-aom14-opt | done (56 / 28) | done — 12 check families added | orchestrator-reviewed |
 | 14 | am-aom2-adl2 | done (70 / 18) | pending | pending |
 | 15 | term | done (53 / 21) | pending | pending |
 | 16 | query-aql | done (50 / 12) | pending | pending |
