@@ -136,6 +136,16 @@ impl EhrbaseService {
              currency, ask_user, is_manual, frame_id, frame_path) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \
              ON CONFLICT (subject_id, canonical_name) DO NOTHING";
+        // Subject-variable naming validity (SM master10 §Subject Variable
+        // Naming): no whitespace / unprintable characters in the canonical
+        // name (namespace + name); reject before storing.
+        if !var.name_valid() {
+            return Err(SmError::precondition(format!(
+                "subject variable name {:?} (namespace {:?}) is not a valid canonical name \
+                 (no whitespace or unprintable characters; SM master10 §Subject Variable Naming)",
+                var.name, var.namespace
+            )));
+        }
         let sql = if replace { REPLACE_SQL } else { INSERT_SQL };
         sqlx::query(sql)
             .bind(subject_id)
