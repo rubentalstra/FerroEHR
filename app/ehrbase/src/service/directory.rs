@@ -18,6 +18,7 @@ impl EhrbaseService {
         folder: Value,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
+        validate_folder(&folder)?;
         // EHR_STATUS.is_modifiable = False forbids content writes; the directory
         // (hierarchical Folders) is EHR content (ehr/master04 §"EHR Active Status").
         self.ensure_content_writable(ehr_id).await?;
@@ -105,6 +106,7 @@ impl EhrbaseService {
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        validate_folder(&folder)?;
         // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
         // §"EHR Active Status").
         self.ensure_content_writable(ehr_id).await?;
@@ -184,6 +186,77 @@ impl EhrbaseService {
     }
 }
 
+/// Validate a client-supplied FOLDER tree before it is committed (directory
+/// create/update and the CONTRIBUTION FOLDER path). RM common
+/// `org.openehr.rm.common.folder.adoc` + RM ehr master04 §Folders:
+///
+/// - each node is a `FOLDER` (foreign `_type` rejected) with `name` (1..1,
+///   LOCATABLE) and a non-empty `archetype_node_id`
+///   (`Archetype_node_id_valid`);
+/// - `items` members are `OBJECT_REF`s — "Folder structures do not contain
+///   Compositions, only references to them" (master04 §Folders): a member
+///   must carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload
+///   (e.g. an inline COMPOSITION) is rejected;
+/// - `folders` members recurse.
+pub(super) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
+    fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
+        let unproc = |m: String| ServiceError::Unprocessable(m);
+        let obj = node
+            .as_object()
+            .ok_or_else(|| unproc(format!("{path}: FOLDER must be a JSON object")))?;
+        match obj.get("_type").and_then(Value::as_str) {
+            None | Some("FOLDER") => {}
+            Some(other) => {
+                return Err(unproc(format!(
+                    "{path}: expected a FOLDER, got _type {other:?}"
+                )));
+            }
+        }
+        if obj.get("name").filter(|v| !v.is_null()).is_none() {
+            return Err(unproc(format!(
+                "{path}: FOLDER.name is mandatory (LOCATABLE.name 1..1)"
+            )));
+        }
+        if !obj
+            .get("archetype_node_id")
+            .and_then(Value::as_str)
+            .is_some_and(|s| !s.is_empty())
+        {
+            return Err(unproc(format!(
+                "{path}: FOLDER.archetype_node_id is mandatory and non-empty                  (LOCATABLE.Archetype_node_id_valid)"
+            )));
+        }
+        if let Some(items) = obj.get("items").and_then(Value::as_array) {
+            for (i, item) in items.iter().enumerate() {
+                let ok = item.get("id").is_some_and(Value::is_object)
+                    && item
+                        .get("namespace")
+                        .and_then(Value::as_str)
+                        .is_some_and(|s| !s.is_empty())
+                    && item
+                        .get("type")
+                        .and_then(Value::as_str)
+                        .is_some_and(|s| !s.is_empty())
+                    // A LOCATABLE by value carries archetype_node_id — an
+                    // OBJECT_REF never does.
+                    && item.get("archetype_node_id").is_none();
+                if !ok {
+                    return Err(unproc(format!(
+                        "{path}/items[{i}]: FOLDER.items members must be OBJECT_REFs                          (id + namespace + type) — Folder structures do not contain                          Compositions by value, only references to them                          (RM ehr master04 §Folders)"
+                    )));
+                }
+            }
+        }
+        if let Some(folders) = obj.get("folders").and_then(Value::as_array) {
+            for (i, sub) in folders.iter().enumerate() {
+                walk(sub, &format!("{path}/folders[{i}]"))?;
+            }
+        }
+        Ok(())
+    }
+    walk(folder, "")
+}
+
 /// Navigate a FOLDER tree to a sub-folder by name path (`a/b/c`), matching each
 /// segment against child `folders[].name.value`. Returns the sub-folder JSON.
 fn select_subfolder(folder: &Value, path: &str) -> Option<Value> {
@@ -198,4 +271,50 @@ fn select_subfolder(folder: &Value, path: &str) -> Option<Value> {
         })?;
     }
     Some(current.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use serde_json::json;
+
+    use super::validate_folder;
+
+    /// FOLDER trees hold OBJECT_REF items only — never content by value
+    /// (RM ehr master04 §Folders; RM common `folder.adoc`; A1 rm-ehr-R30).
+    #[test]
+    fn folder_items_must_be_object_refs() {
+        let good = json!({
+            "_type": "FOLDER",
+            "name": { "_type": "DV_TEXT", "value": "root" },
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+            "items": [{
+                "_type": "OBJECT_REF", "namespace": "local", "type": "VERSIONED_COMPOSITION",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+            }],
+            "folders": [{
+                "_type": "FOLDER",
+                "name": { "_type": "DV_TEXT", "value": "sub" },
+                "archetype_node_id": "at0001"
+            }]
+        });
+        validate_folder(&good).expect("a ref-holding folder tree is valid");
+
+        // A COMPOSITION by value inside items is rejected.
+        let mut bad = good.clone();
+        bad["items"][0] = json!({
+            "_type": "COMPOSITION",
+            "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+            "name": { "_type": "DV_TEXT", "value": "inline!" }
+        });
+        let err = validate_folder(&bad).expect_err("content by value must be rejected");
+        assert!(err.to_string().contains("OBJECT_REF"), "got {err}");
+
+        // A sub-folder without a name violates LOCATABLE.name 1..1.
+        let mut bad = good;
+        bad["folders"][0].as_object_mut().unwrap().remove("name");
+        let err = validate_folder(&bad).expect_err("nameless sub-folder rejected");
+        assert!(err.to_string().contains("name"), "got {err}");
+    }
 }

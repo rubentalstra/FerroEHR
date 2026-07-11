@@ -36,7 +36,8 @@ persisted the moment they exist; commits after each phase.
       The orchestrator reviews the diff, commits, ticks the chapter row,
       then launches the next chapter's agent. Architectural/ADR-needing
       fixes are recorded as deferred-with-reason, not improvised.
-      - [ ] 1 rm-common-change-control · [ ] 2 rm-ehr ·
+      - [x] 1 rm-common-change-control (54ae8384a — branching+merge,
+        all deferrals closed, verification.md final) · [ ] 2 rm-ehr ·
         [ ] 3 rm-composition · [ ] 4 rm-data-structures ·
         [ ] 5 rm-data-types-text-quantity · [ ] 6 rm-data-types-rest ·
         [ ] 7 rm-support · [ ] 8 rm-demographic · [ ] 9 rm-ehr-extract ·
