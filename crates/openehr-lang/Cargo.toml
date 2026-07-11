@@ -1,6 +1,6 @@
 [package]
 name = "openehr-lang"
-version = "0.1.0"
+version = "1.0.0"                 # = the implemented openEHR spec version: LANG 1.0.0
 description = "openEHR LANG 1.1.0: BMM/P_BMM object model, generated from BMM (ADR-004). ODIN + EL parsers are future hand-written runtime work (P8/P9)."
 edition.workspace = true
 rust-version.workspace = true

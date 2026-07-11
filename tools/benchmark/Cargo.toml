@@ -1,6 +1,6 @@
 [package]
 name = "benchmark"
-version = "0.1.0"
+version.workspace = true
 description = "Honest benchmark harness: ehrbase-rs vs EHRbase (Java) at the openEHR REST surface (docs/design/benchmarking.md)"
 edition.workspace = true
 rust-version.workspace = true

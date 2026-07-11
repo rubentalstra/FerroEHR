@@ -1,6 +1,6 @@
 [package]
 name = "ehrbase-rest"
-version = "0.1.0"
+version.workspace = true
 description = "openEHR ITS-REST 1.0.3 server surface (axum) + authentication"
 edition.workspace = true
 rust-version.workspace = true
