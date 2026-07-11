@@ -33,7 +33,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 | Server Admin API | ✓ | ✅ + dump/load + archive | SM I_ADMIN + I_ADMIN_DUMP_LOAD implemented |
 | FHIR Server R4 + Search | ✓ | ✅ **connectors + read façade** (E3, ADR-016): mapping-as-data, inbound validated commits w/ FEEDER_AUDIT, searchset façade over AQL, PHI-gated outbound exchange | not a second server, by design |
 | Event Trigger | ✓ | ✅ **contribution outbox + filter subscriptions** (E1, ADR-014) | migration 0002/0003, per-version topic routing, admin CRUD |
-| Binary Storage (S3) | ✓ | 🔷 **DV_MULTIMEDIA externalization** | §2.4 |
+| Binary Storage (S3) | ✓ | ✅ **DV_MULTIMEDIA externalization** (E4, ADR-017): content-addressed sha-256 blobs, RM invariants honoured, verified re-inline, GC, blob dump/load; SeaweedFS dev/test | object_store 0.14, any S3 endpoint in prod |
 
 ### Integration
 
