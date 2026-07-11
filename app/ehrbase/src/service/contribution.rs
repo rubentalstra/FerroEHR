@@ -686,6 +686,29 @@ impl EhrbaseService {
         ehr_id: Uuid,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {
+        self.get_contribution_inner(ehr_id, contribution_id, false)
+            .await
+    }
+
+    /// `get_contribution` with `Prefer: resolve_refs` honoured: the
+    /// `versions` list carries the resolved `ORIGINAL_VERSION` objects instead
+    /// of `OBJECT_REF`s (ITS-REST `Requests_and_responses` §Representation
+    /// details negotiation).
+    pub(super) async fn get_contribution_resolved(
+        &self,
+        ehr_id: Uuid,
+        contribution_id: Uuid,
+    ) -> Result<Value, ServiceError> {
+        self.get_contribution_inner(ehr_id, contribution_id, true)
+            .await
+    }
+
+    async fn get_contribution_inner(
+        &self,
+        ehr_id: Uuid,
+        contribution_id: Uuid,
+        resolve_refs: bool,
+    ) -> Result<Value, ServiceError> {
         let meta = sqlx::query(
             "SELECT a.system_id, a.change_type, a.description, a.committer, a.time_committed \
              FROM contribution c JOIN audit a ON a.id = c.audit_id \
@@ -726,28 +749,48 @@ impl EhrbaseService {
         .fetch_all(&self.pool)
         .await?;
 
-        let versions: Vec<Value> = version_rows
+        let referenced: Vec<(Uuid, super::version_id::TreeId, Value)> = version_rows
             .iter()
-            .map(|row| -> Result<Value, ServiceError> {
-                let vo_id: Uuid = row.try_get("vo_id")?;
-                let tree = super::version_id::TreeId::from_columns(
-                    row.try_get("trunk_version")?,
-                    row.try_get("branch_number")?,
-                    row.try_get("branch_version")?,
-                );
-                let creating_system_id: String = row.try_get("creating_system_id")?;
-                let kind: String = row.try_get("kind")?;
-                Ok(json!({
-                    "_type": "OBJECT_REF",
-                    "namespace": "local",
-                    "type": kind,
-                    "id": {
-                        "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(vo_id, &creating_system_id, tree)
-                    }
-                }))
-            })
-            .collect::<Result<_, _>>()?;
+            .map(
+                |row| -> Result<(Uuid, super::version_id::TreeId, Value), ServiceError> {
+                    let vo_id: Uuid = row.try_get("vo_id")?;
+                    let tree = super::version_id::TreeId::from_columns(
+                        row.try_get("trunk_version")?,
+                        row.try_get("branch_number")?,
+                        row.try_get("branch_version")?,
+                    );
+                    let creating_system_id: String = row.try_get("creating_system_id")?;
+                    let kind: String = row.try_get("kind")?;
+                    Ok((
+                        vo_id,
+                        tree,
+                        json!({
+                            "_type": "OBJECT_REF",
+                            "namespace": "local",
+                            "type": kind,
+                            "id": {
+                                "_type": "OBJECT_VERSION_ID",
+                                "value": self.object_version_id(vo_id, &creating_system_id, tree)
+                            }
+                        }),
+                    ))
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let mut versions = Vec::with_capacity(referenced.len());
+        for (vo_id, tree, obj_ref) in referenced {
+            if resolve_refs {
+                // Resolve the ref to the full ORIGINAL_VERSION (Prefer:
+                // resolve_refs).
+                let read = super::vobject::read_version(&self.pool, vo_id, tree)
+                    .await?
+                    .ok_or_else(|| ServiceError::NotFound(format!("VERSION {vo_id}::{tree}")))?;
+                versions.push(self.original_version(&read)?);
+            } else {
+                versions.push(obj_ref);
+            }
+        }
 
         Ok(json!({
             "_type": "CONTRIBUTION",

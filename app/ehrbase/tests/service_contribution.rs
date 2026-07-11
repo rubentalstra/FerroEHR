@@ -815,3 +815,54 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
         "version B must keep its own committer/system_id, got {seen:?}"
     );
 }
+
+/// `get_contribution_resolved` (ITS-REST `Prefer: resolve_refs`): the
+/// CONTRIBUTION's `versions` carry the full `ORIGINAL_VERSION` objects instead
+/// of `OBJECT_REF`s; the unresolved form is unchanged.
+#[tokio::test]
+async fn contribution_resolve_refs() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribution_resolve").await);
+
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let comp_uid = svc
+        .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("composition_create");
+
+    let all = svc
+        .list_contributions(ehr_uuid, None, Page::all())
+        .await
+        .expect("list");
+    let cid = all
+        .last()
+        .expect("a contribution")
+        .parse::<uuid::Uuid>()
+        .expect("contribution uuid");
+
+    let plain = svc.get_contribution(ehr_uuid, cid).await.expect("plain");
+    assert_eq!(
+        plain["versions"][0]["_type"], "OBJECT_REF",
+        "unresolved versions are OBJECT_REFs: {plain}"
+    );
+
+    let resolved = svc
+        .get_contribution_resolved(ehr_uuid, cid)
+        .await
+        .expect("resolved");
+    let v = &resolved["versions"][0];
+    assert_eq!(
+        v["_type"], "ORIGINAL_VERSION",
+        "resolve_refs returns the full VERSION: {resolved}"
+    );
+    assert_eq!(
+        v["uid"]["value"].as_str().expect("version uid"),
+        comp_uid,
+        "the resolved version is the committed composition version"
+    );
+    assert!(
+        v["data"]["_type"] == "COMPOSITION",
+        "resolved version carries its data"
+    );
+}

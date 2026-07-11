@@ -61,7 +61,7 @@ before a finding enters `FINDINGS.md`.
 | 16 | query-aql | done (50 / 12) | done — 8 defect families fixed | orchestrator-reviewed |
 | 17 | sm-platform | done (56 / 24) | done — 2 fixed | orchestrator-reviewed |
 | 18 | sm-tdd | done (47 / 7) | done — terse coded form fixed | orchestrator-reviewed |
-| 19 | its-rest-general | done (40 / 10) | pending | pending |
+| 19 | its-rest-general | done (40 / 10) | done — resolve_refs implemented | orchestrator-reviewed |
 | 20 | its-rest-ehr-composition | done (53 / 25) | pending | pending |
 | 21 | its-rest-query-definition-admin | done (45 / 11) | pending | pending |
 | 22 | its-json | done (42 / 12) | pending | pending |

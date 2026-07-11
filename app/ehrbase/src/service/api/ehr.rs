@@ -562,6 +562,16 @@ impl EhrContributionService for EhrbaseService {
         Ok(self.get_contribution(an_ehr_id, a_contrib_id).await?)
     }
 
+    async fn get_contribution_resolved(
+        &self,
+        an_ehr_id: Uuid,
+        a_contrib_id: Uuid,
+    ) -> Result<Value, SmError> {
+        Ok(self
+            .get_contribution_resolved(an_ehr_id, a_contrib_id)
+            .await?)
+    }
+
     async fn commit_contribution(
         &self,
         an_ehr_id: Uuid,
