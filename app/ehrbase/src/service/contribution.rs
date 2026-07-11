@@ -338,6 +338,22 @@ impl EhrbaseService {
                 ServiceError::Unprocessable("contribution must contain versions".to_owned())
             })?;
 
+        // A client-supplied CONTRIBUTION uid is honoured when unused and
+        // rejected when malformed or already in use (ITS-REST
+        // `contribution_create`; RM common master06 §CONTRIBUTION `uid`).
+        let supplied_uid = match body
+            .get("uid")
+            .and_then(|u| u.get("value"))
+            .and_then(Value::as_str)
+        {
+            None => None,
+            Some(raw) => Some(raw.parse::<Uuid>().map_err(|_| {
+                ServiceError::Unprocessable(format!(
+                    "CONTRIBUTION uid {raw:?} is not a valid HIER_OBJECT_ID UUID"
+                ))
+            })?),
+        };
+
         // master06 §Committal (m4): "these three attributes (system_id, committer,
         // time_committed of AUDIT_DETAILS) should be copied into the corresponding
         // attributes of the commit_audit of each VERSION included in the
@@ -575,6 +591,7 @@ impl EhrbaseService {
         let (contribution_id, _) = vobject::commit_contribution(
             &mut tx,
             ehr_id,
+            supplied_uid,
             &contribution_audit,
             changes,
             attests,

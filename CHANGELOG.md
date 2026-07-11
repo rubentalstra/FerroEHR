@@ -17,6 +17,8 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Client-supplied CONTRIBUTION `uid`s are honoured on commit when unused
+  (`409 Conflict` when already in use; previously silently ignored).
 - `Prefer: resolve_refs` is honoured on contribution reads: the
   CONTRIBUTION's `versions` are returned as full `ORIGINAL_VERSION`
   objects instead of `OBJECT_REF`s (ITS-REST representation negotiation).
@@ -31,6 +33,9 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- `PUT …/composition/{uid_based_id}` rejects a body whose
+  `COMPOSITION.uid` does not identify the versioned object addressed by
+  the path (`400`).
 - AQL semantic analysis is stricter per QUERY master03: duplicate FROM
   variable names reject, variable references are case-insensitive,
   `LIMIT 0`/negative `OFFSET` reject, `SUM`/`AVG` over non-numeric paths

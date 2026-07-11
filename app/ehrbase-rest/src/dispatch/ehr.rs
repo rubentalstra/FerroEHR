@@ -447,6 +447,26 @@ async fn run<S: Platform>(
             } else {
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
+            // A body-supplied COMPOSITION.uid must identify the same
+            // versioned object as the path `uid_based_id` (ITS-REST
+            // `composition_update`: "the uid, if present, must match") —
+            // a mismatched body uid is a 400, never a silent write to the
+            // path's object.
+            if let Some(body_uid) = body
+                .get("uid")
+                .and_then(|u| u.get("value"))
+                .and_then(Value::as_str)
+            {
+                let body_vo = body_uid.split("::").next().unwrap_or(body_uid);
+                if body_vo.parse::<uuid::Uuid>() != Ok(uid.vo_id) {
+                    return Err(ApiError::BadRequest(format!(
+                        "the body COMPOSITION.uid {body_uid:?} does not identify the \
+                         versioned object addressed by the request path ({})",
+                        uid.vo_id
+                    ))
+                    .into());
+                }
+            }
             let uv = mk_update_version(
                 h,
                 body,

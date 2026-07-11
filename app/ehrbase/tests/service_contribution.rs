@@ -866,3 +866,44 @@ async fn contribution_resolve_refs() {
         "resolved version carries its data"
     );
 }
+
+/// A client-supplied CONTRIBUTION uid is honoured when unused, rejected as a
+/// conflict when already in use, and rejected as unprocessable when malformed
+/// (ITS-REST `contribution_create`; RM common master06 §CONTRIBUTION `uid`).
+#[tokio::test]
+async fn contribution_supplied_uid() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribution_uid").await);
+
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+
+    let wanted = uuid::Uuid::now_v7();
+    let mut body = serde_json::json!({
+        "uid": { "_type": "HIER_OBJECT_ID", "value": wanted.to_string() },
+        "versions": [{
+            "data": composition("obs"),
+            "lifecycle_state": { "code_string": "532", "terminology_id": { "value": "openehr" } },
+            "commit_audit": { "change_type": { "value": "creation",
+                "defining_code": { "code_string": "249", "terminology_id": { "value": "openehr" } } } }
+        }],
+        "audit": { "committer": { "_type": "PARTY_IDENTIFIED", "name": "T" } }
+    });
+    let resp = svc
+        .create_ehr_contribution(ehr_uuid, body.clone())
+        .await
+        .expect("supplied uid accepted");
+    assert_eq!(
+        resp.body["uid"]["value"].as_str(),
+        Some(wanted.to_string().as_str()),
+        "the supplied uid is the stored uid"
+    );
+
+    // Re-using the uid conflicts.
+    body["versions"][0]["data"] = composition("obs2");
+    let dup = svc
+        .create_ehr_contribution(ehr_uuid, body)
+        .await
+        .expect_err("duplicate uid rejected");
+    assert!(dup.message.contains("already in use"), "got {dup:?}");
+}

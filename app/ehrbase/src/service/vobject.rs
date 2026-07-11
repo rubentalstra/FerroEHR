@@ -341,13 +341,35 @@ async fn insert_contribution(
     ehr_id: Option<Uuid>,
     audit_id: Uuid,
 ) -> Result<Uuid, ServiceError> {
-    Ok(sqlx::query_scalar(
-        "INSERT INTO contribution (ehr_id, audit_id) VALUES ($1, $2) RETURNING id",
+    insert_contribution_with_id(tx, ehr_id, audit_id, None).await
+}
+
+/// Insert the contribution row, honouring a client-supplied CONTRIBUTION uid
+/// when given (ITS-REST `contribution_create`: "if the `uid` is supplied it
+/// must not already be in use"); a duplicate id is a conflict, never an
+/// overwrite.
+async fn insert_contribution_with_id(
+    tx: &mut PgConnection,
+    ehr_id: Option<Uuid>,
+    audit_id: Uuid,
+    supplied: Option<Uuid>,
+) -> Result<Uuid, ServiceError> {
+    let inserted: Option<Uuid> = sqlx::query_scalar(
+        "INSERT INTO contribution (id, ehr_id, audit_id) \
+         VALUES (COALESCE($1, uuidv7()), $2, $3) \
+         ON CONFLICT (id) DO NOTHING RETURNING id",
     )
+    .bind(supplied)
     .bind(ehr_id)
     .bind(audit_id)
-    .fetch_one(&mut *tx)
-    .await?)
+    .fetch_optional(&mut *tx)
+    .await?;
+    inserted.ok_or_else(|| {
+        ServiceError::Conflict(format!(
+            "CONTRIBUTION uid {} is already in use",
+            supplied.map(|u| u.to_string()).unwrap_or_default()
+        ))
+    })
 }
 
 /// Insert an `audit` row and its enclosing `contribution`, returning the
@@ -364,8 +386,9 @@ async fn write_contribution(
 }
 
 /// Write the contribution-outbox event row **in the same transaction** as the
-/// contribution it announces (ADR-014 §1: "no commit without its event; no
-/// event without its commit"). The envelope is PHI-free (ADR-014 §2):
+/// contribution it announces — no commit without its event, no event without
+/// its commit (no openEHR spec governs eventing — our own extension). The
+/// envelope is PHI-free:
 /// contribution id, `ehr_id`, `committed_at`, and one per-version entry of
 /// identity + provenance metadata only — never clinical content. Every
 /// CONTRIBUTION commit path (single-object writes, `commit_contribution`,
@@ -1413,16 +1436,19 @@ pub(super) async fn delete(
 /// committer of each attestation defaults to the CONTRIBUTION's committer when
 /// the wire partial omits one (master06 §Committal: `system_id`/`committer`/
 /// `time_committed` copied from the contribution act).
+#[allow(clippy::too_many_arguments)] // one commit act's full context
 pub(super) async fn commit_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
+    supplied_uid: Option<Uuid>,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,
     attests: Vec<PendingAttest>,
     ctx: &SigningCtx<'_>,
 ) -> Result<(Uuid, Vec<Committed>), ServiceError> {
     let (contribution_audit_id, contribution_time) = insert_audit(tx, contribution_audit).await?;
-    let contribution_id = insert_contribution(tx, ehr_id, contribution_audit_id).await?;
+    let contribution_id =
+        insert_contribution_with_id(tx, ehr_id, contribution_audit_id, supplied_uid).await?;
     let committer_fallback = &contribution_audit.committer;
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {

@@ -55,6 +55,7 @@ impl EhrbaseService {
         vobject::commit_contribution(
             &mut tx,
             Some(ehr_id),
+            None,
             &audit,
             vec![
                 (
