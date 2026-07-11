@@ -27,7 +27,8 @@ use uuid::Uuid;
 use ehrbase_sm::SmError;
 use ehrbase_sm::services::{
     ContributionAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrService, EhrStatusService, ItemTagAdapter, TimeRange as SmTimeRange, VersionMetaAdapter,
+    EhrService, EhrStatusService, ItemTagAdapter, MultimediaAdapter, TimeRange as SmTimeRange,
+    VersionMetaAdapter,
 };
 use ehrbase_sm::types::{EhrSummary, Page, ResourceMeta, SubjectRef, UpdateAudit, UpdateVersion};
 use openehr_base::prelude::ObjectVersionId;
@@ -623,6 +624,22 @@ impl ContributionAdapter for EhrbaseService {
     ) -> Result<ehrbase_sm::types::ServiceResponse, SmError> {
         self.create_ehr_contribution(an_ehr_id, a_contribution)
             .await
+    }
+}
+
+#[async_trait]
+impl MultimediaAdapter for EhrbaseService {
+    async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
+        // Off by default: no engine ⇒ serve the stored form unchanged.
+        let Some(engine) = &self.multimedia else {
+            return Ok(body);
+        };
+        let mut body = body;
+        engine
+            .expand(&mut body)
+            .await
+            .map_err(|e| SmError::exception(e.to_string()))?;
+        Ok(body)
     }
 }
 

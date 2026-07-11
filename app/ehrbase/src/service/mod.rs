@@ -94,6 +94,12 @@ pub struct EhrbaseService {
     /// bundle only. Read through the [`TerminologyExpander`](crate::aql::TerminologyExpander)
     /// impl in `service::api::terminology`.
     pub(crate) external_terminology: Option<Arc<crate::terminology::FhirTerminologyProvider>>,
+    /// The optional `DV_MULTIMEDIA` externalization engine (ADR-017). `None`
+    /// (default) = inline behaviour byte-identical to today (the zero-drift
+    /// gate); when a deployment opts in ([`crate::multimedia::MultimediaConfig`]
+    /// `enabled = true`) the commit path offloads large media to object storage
+    /// and the read path can re-inline it on demand.
+    pub(crate) multimedia: Option<Arc<crate::multimedia::MultimediaEngine>>,
     /// Multi-tenancy tenant registry cache (ADR-015 §4). Only ever populated
     /// when tenancy is on (the middleware resolves through it); in single-tenant
     /// mode it stays empty and is never consulted.
@@ -112,6 +118,7 @@ impl EhrbaseService {
             signer: Arc::new(Signer::digest_default()),
             audit: None,
             external_terminology: None,
+            multimedia: None,
             tenant_cache: TenantCache::default(),
         }
     }
@@ -163,12 +170,24 @@ impl EhrbaseService {
         self
     }
 
-    /// The signing context (system id + signer) handed to the `vobject` commit
-    /// path so every versioned-object write signs its `ORIGINAL_VERSION`.
+    /// Install the `DV_MULTIMEDIA` externalization engine (ADR-017), opt-in via
+    /// [`crate::multimedia::MultimediaConfig`]. Without it, inline media is
+    /// stored verbatim (byte-identical to today's behaviour).
+    #[must_use]
+    pub fn with_multimedia(mut self, engine: Arc<crate::multimedia::MultimediaEngine>) -> Self {
+        self.multimedia = Some(engine);
+        self
+    }
+
+    /// The signing context (system id + signer + optional multimedia offloader)
+    /// handed to the `vobject` commit path so every versioned-object write signs
+    /// its `ORIGINAL_VERSION` and, when externalization is on, offloads large
+    /// inline `DV_MULTIMEDIA.data` before decomposition (ADR-017).
     pub(in crate::service) fn signing_ctx(&self) -> vobject::SigningCtx<'_> {
         vobject::SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
+            multimedia: self.multimedia.as_deref(),
         }
     }
 

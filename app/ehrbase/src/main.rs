@@ -189,6 +189,22 @@ async fn serve() -> anyhow::Result<()> {
         None => {}
     }
 
+    // Opt-in DV_MULTIMEDIA externalization (ADR-017): off by default (inline
+    // behaviour byte-identical). When enabled, large inline media is offloaded
+    // to S3-compatible object storage on commit and re-inlined on demand.
+    let multimedia_config = ehrbase::multimedia::MultimediaConfig::load()
+        .context("loading multimedia configuration")?;
+    if let Some(engine) = ehrbase::multimedia::MultimediaEngine::from_config(&multimedia_config)
+        .context("initialising the multimedia object store")?
+    {
+        tracing::info!(
+            bucket = %multimedia_config.bucket,
+            threshold_bytes = multimedia_config.threshold_bytes,
+            "DV_MULTIMEDIA externalization enabled (S3-compatible object storage)"
+        );
+        service = service.with_multimedia(Arc::new(engine));
+    }
+
     // The service is now fully built; share it (the FHIR outbound emitter and the
     // REST server both hold it).
     let service = Arc::new(service);

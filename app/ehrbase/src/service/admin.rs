@@ -61,6 +61,11 @@ impl EhrbaseService {
     /// dev-branch only). We map it to `NotFound` → HTTP `404`, the natural REST
     /// reading of an operation on a non-existent resource.
     pub(super) async fn physical_ehr_delete(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+        // ADR-017: when DV_MULTIMEDIA externalization is on, collect the blob
+        // keys this EHR's nodes reference *before* deletion, so we can GC the
+        // ones no other node still references once the delete commits.
+        let candidate_blobs = self.collect_ehr_blob_keys(ehr_id).await?;
+
         let mut tx = self.pool.begin().await?;
 
         // Capture the audit ids the EHR's versions and contributions reference,
@@ -98,7 +103,67 @@ impl EhrbaseService {
         }
 
         tx.commit().await?;
+
+        // The EHR and its nodes are gone; GC any blob this EHR referenced that
+        // no *surviving* node still references (content-addressed dedup means a
+        // blob shared with another EHR/version must be kept).
+        self.gc_unreferenced_blobs(candidate_blobs).await;
         Ok(())
+    }
+
+    /// Collect the distinct externalized-blob keys referenced by an EHR's stored
+    /// nodes (empty when externalization is disabled). Read-only, on the pool.
+    async fn collect_ehr_blob_keys(&self, ehr_id: Uuid) -> Result<Vec<String>, ServiceError> {
+        let Some(engine) = &self.multimedia else {
+            return Ok(Vec::new());
+        };
+        let datas: Vec<serde_json::Value> =
+            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = $1")
+                .bind(ehr_id)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut keys: Vec<String> = datas
+            .iter()
+            .flat_map(|d| engine.referenced_keys(d))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        Ok(keys)
+    }
+
+    /// Delete each candidate blob no longer referenced by any surviving `node`.
+    ///
+    /// PORT NOTE (ADR-017 §5): this is a conservative scan-based GC — for each
+    /// candidate we check whether its `s3://…` URI still appears in any node's
+    /// `data`, deleting only the orphans. A `blob_ref` count table (O(1)
+    /// bookkeeping) is deliberately deferred to P20 scale. A blob-store failure
+    /// is logged, not fatal: the delete has already committed, and an orphaned
+    /// blob is harmless (re-collected next time) — never fail the delete over a
+    /// GC hiccup.
+    async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
+        let Some(engine) = &self.multimedia else {
+            return;
+        };
+        for hex in candidates {
+            let uri = engine.store().uri_for(&hex);
+            let still_referenced: Result<bool, _> = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM node WHERE position($1 in data::text) > 0)",
+            )
+            .bind(&uri)
+            .fetch_one(&self.pool)
+            .await;
+            match still_referenced {
+                Ok(true) => {}
+                Ok(false) => {
+                    if let Err(e) = engine.store().delete(&hex).await {
+                        tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(blob = %hex, error = %e, "multimedia blob GC reference scan failed");
+                }
+            }
+        }
     }
 
     /// Physically delete a set of EHRs, each with the full cascade of
