@@ -312,7 +312,7 @@ impl Validator {
     /// rule 2). A rejected node is not descended into (the walk already skips it).
     ///
     /// PORT NOTE (ADR-012): AOM 1.4 `valid_value`
-    /// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Valid_value
+    /// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
     /// and lands only behind the ECC zero-drift gate.

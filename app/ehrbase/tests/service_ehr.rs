@@ -588,6 +588,86 @@ async fn unknown_ehr_is_not_found() {
     assert!(svc.ehr_object(missing).await.is_err());
 }
 
+#[tokio::test]
+async fn ehr_status_subject_type_is_enforced_end_to_end() {
+    // RM ehr master04 §EHR Status: EHR_STATUS.subject is a (monomorphic)
+    // PARTY_SELF. Through the real service seam (the same path the REST layer
+    // calls), a foreign concrete _type (PARTY_IDENTIFIED) in that slot is a
+    // 422 (SM ContentInvalid) naming the mismatch — on both EHR create and
+    // EHR_STATUS PUT — while an anonymous empty PARTY_SELF is accepted.
+    // Regression for the upstream diff findings B1/B2
+    // (docs/conformance/upstream-ehrbase/TRIAGE.md).
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("subjecttype").await);
+
+    let wrong_subject = json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": {
+            "_type": "PARTY_IDENTIFIED",
+            "external_ref": {
+                "_type": "PARTY_REF",
+                "namespace": "patients",
+                "type": "PERSON",
+                "id": { "_type": "HIER_OBJECT_ID", "value": "patient-xyz" }
+            }
+        },
+        "is_queryable": true,
+        "is_modifiable": true
+    });
+
+    // (1) EHR create with a PARTY_IDENTIFIED subject → 422 naming the mismatch.
+    let created = svc.create_ehr(Some(wrong_subject.clone())).await;
+    match created {
+        Err(SmError {
+            status: CallStatusType::ContentInvalid,
+            message,
+        }) => assert!(
+            message.contains("PARTY_SELF") && message.contains("PARTY_IDENTIFIED"),
+            "rejection should name the type mismatch, got: {message}"
+        ),
+        other => panic!("PARTY_IDENTIFIED subject on create must be 422, got {other:?}"),
+    }
+
+    // (2) EHR_STATUS PUT with a PARTY_IDENTIFIED subject → 422 naming the mismatch.
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+    let status_v1 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status v1");
+    let ovid_v1 = uid(&status_v1).to_owned();
+    let mut put_body = wrong_subject;
+    put_body.as_object_mut().unwrap().remove("uid");
+    let put = svc
+        .replace_ehr_status(ehr_uuid, uv(put_body, "251", Some(&ovid_v1)))
+        .await;
+    match put {
+        Err(SmError {
+            status: CallStatusType::ContentInvalid,
+            message,
+        }) => assert!(
+            message.contains("PARTY_SELF") && message.contains("PARTY_IDENTIFIED"),
+            "PUT rejection should name the type mismatch, got: {message}"
+        ),
+        other => panic!("PARTY_IDENTIFIED subject on PUT must be 422, got {other:?}"),
+    }
+
+    // (3) An anonymous empty PARTY_SELF subject is accepted on create
+    // ("PARTY_SELF … enabling it to be made completely anonymous", master04).
+    let anonymous = json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": {},
+        "is_queryable": true,
+        "is_modifiable": true
+    });
+    svc.create_ehr(Some(anonymous))
+        .await
+        .expect("an anonymous PARTY_SELF EHR_STATUS is accepted");
+}
+
 /// A `DV_CODED_TEXT` audit change_type (openEHR audit change-type group).
 fn change_type(code: &str, value: &str) -> Value {
     json!({
@@ -861,8 +941,10 @@ async fn ehr_get_by_subject_finds_the_ehr() {
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        // EHR_STATUS.subject is PARTY_SELF (RM ehr master04); the subject is
+        // identified via its external_ref, not a PARTY_IDENTIFIED type.
         "subject": {
-            "_type": "PARTY_IDENTIFIED",
+            "_type": "PARTY_SELF",
             "external_ref": {
                 "_type": "PARTY_REF",
                 "namespace": "patients",
@@ -1222,8 +1304,10 @@ async fn duplicate_subject_ehr_creation_conflicts() {
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+            // EHR_STATUS.subject is PARTY_SELF (RM ehr master04); identified by
+            // its external_ref.
             "subject": {
-                "_type": "PARTY_IDENTIFIED",
+                "_type": "PARTY_SELF",
                 "external_ref": {
                     "_type": "PARTY_REF",
                     "namespace": "patients",

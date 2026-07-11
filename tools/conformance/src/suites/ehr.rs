@@ -437,8 +437,12 @@ fn ehr_status_row(row: (bool, bool, bool, bool), subject_id: &str) -> Value {
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        // EHR_STATUS.subject is a PARTY_SELF (RM ehr master04 §EHR Status), carrying
+        // an external_ref to identify the subject. A foreign concrete _type
+        // (PARTY_IDENTIFIED) in this monomorphic slot is invalid and the server
+        // now rejects it — this fixture must post the spec-correct PARTY_SELF.
         "subject": {
-            "_type": "PARTY_IDENTIFIED",
+            "_type": "PARTY_SELF",
             "external_ref": {
                 "_type": "PARTY_REF",
                 "namespace": "conformance",
@@ -678,10 +682,18 @@ fn run_clear_ehr_modifiable_bad<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let invalid = fixtures::ehr_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
+        // Corpus-vs-spec adjudication: `001_ehr_status_subject_empty.json`
+        // (`subject: {}`) is labelled "invalid" by the CNF corpus but is
+        // spec-valid — RM ehr master04 §EHR Status makes an empty PARTY_SELF a
+        // completely anonymous subject. Per the vendored spec oracle (ADR-008)
+        // this fixture must be *accepted*, not rejected; the other ten stay
+        // negative. See `docs/conformance/upstream-ehrbase/TRIAGE.md` §B2.
+        const SPEC_VALID_ANONYMOUS: &str = "001_ehr_status_subject_empty.json";
         let mut passed = 0u32;
         let mut total = 0u32;
         for fixture in invalid {
             total += 1;
+            let expect_accept = fixture.name == SPEC_VALID_ANONYMOUS;
             let body = fixture
                 .json()
                 .map_err(|e| CaseError::Codec(e.to_string()))?;
@@ -693,9 +705,15 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
                         .header("prefer", "return=minimal"),
                 )
                 .await?;
-            // An invalid EHR_STATUS must be rejected (4xx): 400 (malformed) or
-            // 422 (RM/terminology validation).
-            if (400..500).contains(&resp.status) {
+            let ok = if expect_accept {
+                // Anonymous PARTY_SELF → EHR created (2xx).
+                (200..300).contains(&resp.status)
+            } else {
+                // An invalid EHR_STATUS must be rejected (4xx): 400 (malformed) or
+                // 422 (RM/terminology validation).
+                (400..500).contains(&resp.status)
+            };
+            if ok {
                 passed += 1;
             }
         }
@@ -703,7 +721,8 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
             Ok(DataSetReport { passed, total })
         } else {
             Err(CaseError::Assertion(format!(
-                "{passed}/{total} invalid EHR_STATUS data sets were rejected (the rest were accepted)"
+                "{passed}/{total} EHR_STATUS data sets got the expected outcome \
+                 (10 invalid → 4xx, 1 spec-valid anonymous → 2xx)"
             )))
         }
     })

@@ -404,7 +404,10 @@ async fn upload_opt(ctx: &RunContext<'_>, xml: String) -> Result<u16, CaseError>
         .send(
             HttpRequest::post("/definition/template/adl1.4")
                 .text_body(xml, "application/xml")
-                .header("accept", "application/json"),
+                // ITS-REST `definition_template_adl1.4_upload` produces
+                // `application/xml` only and declares no `Accept` parameter;
+                // `application/json` is a strict 406.
+                .header("accept", "application/xml"),
         )
         .await?;
     Ok(resp.status)
