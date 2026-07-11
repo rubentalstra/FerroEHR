@@ -135,12 +135,12 @@ fn check_code_phrase(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) 
 /// Integer}` (Real for `DV_SCALE`) entries, and validity requires the instance's
 /// **(symbol, value) PAIR** to match one entry — not the symbol alone nor the
 /// value alone (AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.ordinal.adoc`
-/// §ORDINAL / §C_ORDINAL; the pairing is normative per
+/// §ORDINAL / §`C_ORDINAL`; the pairing is normative per
 /// `AOM2/master04.3-constraint_model-second_order.adoc` §Tuple Constraints L19-21
 /// — "as pairs not just as allowable alternatives … which would incorrectly
 /// allow any mixing of the Integer and code values"; CNF
 /// `master17.3-content_tc_data_types-quantity.adoc` CONT-DV_ORDINAL/DV_SCALE-
-/// validate_constraint: a right symbol with a wrong value, or a right value with
+/// `validate_constraint`: a right symbol with a wrong value, or a right value with
 /// a wrong symbol, both reject). The `WebTemplate` `ordinal_input` carries each
 /// entry as a coded value whose `value` is the symbol code and whose `ordinal`
 /// (or `scale`) is the paired numeric value.
@@ -746,7 +746,7 @@ fn check_string_constraints(
 /// with `/`…`/`; the match is full-string (anchored).
 ///
 /// AOM 1.4 `C_STRING.valid_value` (`AM/docs/UML/classes/org.openehr.am.aom14.c_string.adoc`
-/// §valid_value; `master04-constraint_model_package.adoc` §Valid_value L60-62) is
+/// §`valid_value`; `master04-constraint_model_package.adoc` §`Valid_value` L60-62) is
 /// affirmative — a value is valid **iff** it matches the pattern, so a non-match
 /// must be reported (F-07-11: the former code returned `true` on a *compile*
 /// failure, silently accepting a value against a pattern it never evaluated).

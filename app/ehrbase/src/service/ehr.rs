@@ -438,7 +438,7 @@ impl EhrbaseService {
     /// `master06-func_tc_ehr.adoc` §set/clear-modifiable tests the flag flip, not
     /// the write-block outcome), so the wire code is underdetermined. We return
     /// `409 Conflict` — the write conflicts with the current state of the target
-    /// resource (RFC 9110 §15.5.10), the closest HTTP semantics and EHRbase's
+    /// resource (RFC 9110 §15.5.10), the closest HTTP semantics and `EHRbase`'s
     /// prior-art behaviour — via [`ServiceError::Conflict`].
     pub(super) async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
         if self.ehr_is_modifiable(ehr_id).await? {
@@ -630,9 +630,14 @@ pub(super) fn committer() -> Value {
 /// - `name` present (`LOCATABLE.name 1..1`);
 /// - `archetype_node_id` present and non-empty (`Archetype_node_id_valid`);
 /// - `is_queryable` / `is_modifiable` present booleans (both `1..1`);
-/// - `subject` present (`EHR_STATUS.subject 1..1 PARTY_SELF`) and identifiable —
-///   it must carry a `_type` (its concrete `PARTY_PROXY` subtype) **or** an
-///   `external_ref` (an empty `{}` subject is neither);
+/// - `subject` present and typed `PARTY_SELF` (`EHR_STATUS.subject 1..1
+///   PARTY_SELF`). `PARTY_SELF` is monomorphic (no subtypes), so a foreign
+///   concrete `_type` in this slot (e.g. `PARTY_IDENTIFIED`) is invalid; the
+///   slot is enforced through the generated `PartySelf` type's own
+///   `#[derive(OpenEhrType)]` `_type` check rather than a hand-rolled string
+///   compare. An empty `{}` subject is a **valid anonymous** subject — RM ehr
+///   `master04 §EHR Status`: "the subject is represented by a `PARTY_SELF`
+///   object, enabling it to be made completely anonymous" — so it is accepted;
 /// - when `subject.external_ref` is present it is a valid `PARTY_REF`
 ///   (`OBJECT_REF`): a non-empty `id.value` (`Id_exists`) and a non-empty
 ///   `namespace` (`Namespace_valid`). A `NULL` `external_ref` is permitted (CNF
@@ -685,17 +690,34 @@ pub(super) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
 
     let subject = obj
         .get("subject")
-        .and_then(Value::as_object)
+        .filter(|v| v.is_object())
         .ok_or_else(|| unproc("EHR_STATUS.subject is mandatory (1..1 PARTY_SELF)".to_owned()))?;
-    let has_type = subject.get("_type").and_then(Value::as_str).is_some();
-    let external_ref = subject.get("external_ref").filter(|v| !v.is_null());
-    if !has_type && external_ref.is_none() {
-        return Err(unproc(
-            "EHR_STATUS.subject must be an identifiable PARTY_PROXY (carry a _type or \
-             an external_ref)"
-                .to_owned(),
-        ));
-    }
+
+    // `EHR_STATUS.subject` is typed `PARTY_SELF` (RM ehr master04 §EHR Status:
+    // "the subject is represented by a PARTY_SELF object"). `PARTY_SELF` is
+    // monomorphic — it has no subtypes — so a foreign concrete `_type` in this
+    // slot (e.g. `PARTY_IDENTIFIED`) is invalid. Enforce this through the
+    // generated type itself: `PartySelf`'s `#[derive(OpenEhrType)]` `Deserialize`
+    // rejects a mismatched `_type` (openehr-derive). An absent `_type` defaults
+    // to `PARTY_SELF` and an empty `{}` deserialises to an anonymous `PARTY_SELF`
+    // (`external_ref: None`) — the spec's "completely anonymous" subject — both
+    // of which this accepts.
+    //
+    // PORT NOTE (Fix 2/B1): scoped to `EHR_STATUS.subject` rather than a
+    // whole-`EhrStatus` typed deserialize — this keeps the RM-1.2.0-vs-corpus
+    // version skew off the commit-path guard (the surrounding structural and
+    // `PARTY_REF` invariant checks cover the other attributes), matching the
+    // demographic `typed_check` pattern (`service::demographic`).
+    serde_json::from_value::<openehr_rm::prelude::PartySelf>(subject.clone()).map_err(|e| {
+        unproc(format!(
+            "EHR_STATUS.subject must be a PARTY_SELF (RM ehr master04 §EHR Status): {e}"
+        ))
+    })?;
+
+    let external_ref = subject
+        .as_object()
+        .and_then(|s| s.get("external_ref"))
+        .filter(|v| !v.is_null());
     if let Some(external_ref) = external_ref {
         let ext = external_ref.as_object().ok_or_else(|| {
             unproc("EHR_STATUS.subject.external_ref must be a PARTY_REF object".to_owned())
@@ -744,7 +766,35 @@ mod tests {
     fn default_and_typical_ehr_status_are_accepted() {
         // The server's own default and a fully-identified subject both validate.
         validate_ehr_status(&default_ehr_status()).expect("default EHR_STATUS");
+        // A subject identified via `external_ref` is still a `PARTY_SELF`
+        // (RM ehr master04 §EHR Status: "the subject is represented by a
+        // PARTY_SELF object … or alternatively to include a patient identifier").
         let identified = json!({
+            "_type": "EHR_STATUS",
+            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+            "subject": {
+                "_type": "PARTY_SELF",
+                "external_ref": {
+                    "_type": "PARTY_REF",
+                    "namespace": "conformance",
+                    "type": "PERSON",
+                    "id": { "_type": "GENERIC_ID", "value": "subj-1", "scheme": "id_scheme" }
+                }
+            },
+            "is_queryable": true,
+            "is_modifiable": false
+        });
+        validate_ehr_status(&identified).expect("identified PARTY_SELF EHR_STATUS");
+    }
+
+    /// A subject typed with a foreign concrete `PARTY_PROXY` subtype
+    /// (`PARTY_IDENTIFIED`) is rejected — `EHR_STATUS.subject` is monomorphic
+    /// `PARTY_SELF` (RM ehr master04 §EHR Status). Regression for the upstream
+    /// diff finding B1 (`docs/conformance/upstream-ehrbase/TRIAGE.md`).
+    #[test]
+    fn ehr_status_subject_wrong_type_is_rejected() {
+        let bad = json!({
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
@@ -758,16 +808,51 @@ mod tests {
                 }
             },
             "is_queryable": true,
-            "is_modifiable": false
+            "is_modifiable": true
         });
-        validate_ehr_status(&identified).expect("identified EHR_STATUS");
+        let err = validate_ehr_status(&bad).expect_err("PARTY_IDENTIFIED subject must be rejected");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("PARTY_SELF") && msg.contains("PARTY_IDENTIFIED"),
+            "rejection should name the type mismatch, got: {msg}"
+        );
     }
 
-    /// Every vendored invalid `EHR_STATUS` data set (CNF master06 §Test Data Sets,
-    /// INVALID class 2) must be rejected. Posted verbatim (unadapted), exactly as
-    /// the conformance runner drives them.
+    /// An anonymous subject — empty `PARTY_SELF` (`{}`) or an explicit
+    /// `{"_type":"PARTY_SELF"}` with no `external_ref` — is accepted. RM ehr
+    /// master04 §EHR Status: `PARTY_SELF` "enabling it to be made completely
+    /// anonymous". Regression for the upstream diff finding B2.
+    #[test]
+    fn anonymous_ehr_status_subject_is_accepted() {
+        for subject in [json!({}), json!({ "_type": "PARTY_SELF" })] {
+            let status = json!({
+                "_type": "EHR_STATUS",
+                "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                "subject": subject,
+                "is_queryable": true,
+                "is_modifiable": true
+            });
+            validate_ehr_status(&status).expect("anonymous PARTY_SELF EHR_STATUS");
+        }
+    }
+
+    /// Every vendored `EHR_STATUS` data set the CNF corpus labels invalid
+    /// (`master06 §Test Data Sets`, INVALID class 2) must be rejected — with one
+    /// spec-cited exception.
+    ///
+    /// `001_ehr_status_subject_empty.json` (`subject: {}`) is labelled "invalid"
+    /// by the corpus but is **spec-valid**: RM ehr master04 §EHR Status makes an
+    /// empty `PARTY_SELF` a *completely anonymous* subject. Per the vendored spec
+    /// oracle (the authority, ADR-008) this is a corpus mislabelling, handled here
+    /// as a documented adjudication (the fixture is asserted *accepted*, not
+    /// silently skipped). See `docs/conformance/upstream-ehrbase/TRIAGE.md` §B2.
+    /// The other ten fixtures stay asserted-rejected.
     #[test]
     fn every_invalid_ehr_status_fixture_is_rejected() {
+        // Corpus-vs-spec adjudication: an empty PARTY_SELF is a valid anonymous
+        // subject (master04), so this "invalid"-labelled fixture is spec-valid.
+        const SPEC_VALID_ANONYMOUS: &str = "001_ehr_status_subject_empty.json";
         let dir = concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/ehr/invalid"
@@ -780,11 +865,20 @@ mod tests {
             }
             let text = std::fs::read_to_string(&path).expect("read fixture");
             let status: Value = serde_json::from_str(&text).expect("parse fixture");
-            assert!(
-                validate_ehr_status(&status).is_err(),
-                "invalid EHR_STATUS fixture was accepted: {}",
-                path.display()
-            );
+            let is_anon = path.file_name().and_then(|n| n.to_str()) == Some(SPEC_VALID_ANONYMOUS);
+            if is_anon {
+                validate_ehr_status(&status).unwrap_or_else(|e| {
+                    panic!(
+                        "spec-valid anonymous EHR_STATUS ({SPEC_VALID_ANONYMOUS}) was rejected: {e}"
+                    )
+                });
+            } else {
+                assert!(
+                    validate_ehr_status(&status).is_err(),
+                    "invalid EHR_STATUS fixture was accepted: {}",
+                    path.display()
+                );
+            }
             checked += 1;
         }
         assert_eq!(checked, 11, "expected 11 invalid EHR_STATUS fixtures");

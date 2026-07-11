@@ -137,7 +137,7 @@ fn in_range(s: &str, lo: u32, hi: u32) -> bool {
 /// divisible by 400 (BASE `Time_definitions`; the calendar `days_in_month`
 /// depends on it).
 fn is_leap_year(year: u32) -> bool {
-    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
 /// Calendar days in a given month of a given year — the `days_in_month (m, y)`

@@ -876,9 +876,9 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
 /// alternative is lost.
 ///
 /// An attribute whose constraint children carry **no** `node_id` and has no slot
-/// is left OPEN — AOM 1.4 (`master04-constraint_model_package.adoc` §node_id
+/// is left OPEN — AOM 1.4 (`master04-constraint_model_package.adoc` §`node_id`
 /// L44: a near-leaf with no same-attribute siblings "can safely have no
-/// node_id") — matching the RM-metadata / plain-attribute carve-out (ADR-012
+/// `node_id`") — matching the RM-metadata / plain-attribute carve-out (ADR-012
 /// rule 2): `name`/`value`/`category`/`context` etc. hold non-LOCATABLE values
 /// that carry no `archetype_node_id` and so are never subject to sibling closure.
 fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttribute> {
