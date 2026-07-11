@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir -p _check
           ln -sfn "$PWD/_site" _check/ehrbase-rs
-          lychee --no-progress --max-retries 2 --timeout 20 \
+          lychee --no-progress --max-retries 2 --timeout 20 --exclude-loopback \
             --root-dir "$PWD/_check" \
             --exclude '^https://rubentalstra\.github\.io/ehrbase-rs' \
             './_site/**/*.html'
