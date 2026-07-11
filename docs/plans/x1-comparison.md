@@ -563,6 +563,17 @@ filed upstream — not worked around).
 3. **Page tone ruling** on the feature matrix rows for upstream-only
    features (e.g. plugin system): confirm "not supported" plain-cell style.
 
+### Owner rulings (2026-07-11)
+
+1. **Benchmark environment:** publish the first numbers from the dev machine,
+   fully env-stamped (hardware, OS, versions, digests) with a visible caveat;
+   re-measure on dedicated hardware later.
+2. **Upstream defects:** publish with spec citations only — do **not** file
+   upstream GitHub issues.
+3. **Feature matrix:** plain "not supported" in both directions — identical
+   wording for our gaps and theirs; partial support gets ⚠ with a note; no
+   roadmap speculation in any cell.
+
 ## Handoff for next session
 
 Plan drafted and committed on `claude/x1-comparison-plan`; nothing
