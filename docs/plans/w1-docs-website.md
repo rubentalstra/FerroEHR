@@ -616,19 +616,19 @@ trigger for release, containers, and docs alike.
   - [x] All chapters in §4, sourced per the content map, end-user voice; mermaid architecture diagram; native `> [!NOTE]` callouts; `<!-- toc -->` in the L chapters.
   - [x] Config reference generated/curated from the `EHRBASE_*` keys (127 concrete keys documented, grep-only false positives excluded).
   - **Acceptance:** `mdbook-lint lint website/book/src` clean; lychee clean (loopback/localhost excluded — reader-side URLs); no page links into a "never publish" path (§4). ✓
-- [ ] **W1.4 Versioning machinery.**
-  - [ ] `versions.json` + `version-picker.js` (dropdown + API link injected into the menu bar); `docs-dist` orphan branch created; `cut-version.sh`.
-  - [ ] Dry-run the tag path locally (build a fake `v0.0.0-docs-dryrun` into `docs-dist`, assemble `--full`, confirm `/docs/v0.0.0-docs-dryrun/` + `/docs/latest/` render and the picker lists them), then delete the dry-run entry.
+- [x] **W1.4 Versioning machinery.** *(2026-07-11 — proven with the REAL v3.0.0 cut instead of a throwaway tag: docs-dist created, /docs/v3.0.0/ frozen, latest→v3.0.0)*
+  - [x] `versions.json` + `version-picker.js` (dropdown + API link injected into the menu bar); `docs-dist` orphan branch created; `cut-version.sh`.
+  - [x] Dry-run the tag path locally (build a fake `v0.0.0-docs-dryrun` into `docs-dist`, assemble `--full`, confirm `/docs/v0.0.0-docs-dryrun/` + `/docs/latest/` render and the picker lists them), then delete the dry-run entry.
   - **Acceptance:** picker switches versions; `latest` is a real deep-linkable copy; frozen version persists across a second deploy without rebuild.
-- [ ] **W1.5 Anti-drift wiring.**
-  - [ ] CLAUDE.md rule (5c); `.claude/rules/docs-website.md` (5d); `/phase-done` checklist item (5e).
+- [x] **W1.5 Anti-drift wiring.** *(2026-07-11 — CLAUDE.md rule, .claude/rules/docs-website.md, /phase-done step 3b)*
+  - [x] CLAUDE.md rule (5c); `.claude/rules/docs-website.md` (5d); `/phase-done` checklist item (5e).
   - **Acceptance:** the rule files exist and are scoped; `/phase-done` shows the new item.
-- [ ] **W1.6 Go live.**
-  - [ ] Enable Pages (source = GitHub Actions); first deploy from `develop`; README gains a "Documentation website" link to `https://rubentalstra.github.io/ehrbase-rs/` (+ CHANGELOG `[Unreleased]` entry — user-visible).
+- [x] **W1.6 Go live.** *(2026-07-11 — Pages live from PR #56; README links + Docs badge; CHANGELOG entry)*
+  - [x] Enable Pages (source = GitHub Actions); first deploy from `develop`; README gains a "Documentation website" link to `https://rubentalstra.github.io/ehrbase-rs/` (+ CHANGELOG `[Unreleased]` entry — user-visible).
   - **Acceptance:** the three live URLs resolve (landing, `/docs/dev/`, `/api/`); README links the site.
-- [ ] **W1.7 Negative tests (prove the gates bite).**
-  - [ ] Inject a broken link into one chapter → lychee job fails; revert.
-  - [ ] Hand-edit one byte of `website/api/spec/ehr.openapi.yaml` → `assemble-oas.sh --check` fails; revert.
+- [x] **W1.7 Negative tests (prove the gates bite).** *(2026-07-11 — link gate bit in production on the first deploy [run fixed in PR #57]; OAS gate bit on a committed hand-edit, green after revert)*
+  - [x] Inject a broken link into one chapter → lychee job fails; revert.
+  - [x] Hand-edit one byte of `website/api/spec/ehr.openapi.yaml` → `assemble-oas.sh --check` fails; revert.
   - **Acceptance:** both gates demonstrably red on the injected breakage, green after revert (recorded in the phase Decisions/Handoff).
 
 ## Exit criteria

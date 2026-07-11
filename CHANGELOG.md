@@ -15,6 +15,14 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Public documentation website at <https://rubentalstra.github.io/ehrbase-rs/>:
+  a product landing page, a versioned user guide (frozen per release, `dev`
+  tracking `develop`), and an offline OpenAPI endpoint reference covering all
+  seven openEHR API groups. Built from `website/` and deployed by CI, with
+  link-check and OpenAPI-drift gates.
+
 ## [3.0.0] - 2026-07-11
 
 First public release of **EHRbase-rs** — a pure-Rust openEHR Clinical Data
