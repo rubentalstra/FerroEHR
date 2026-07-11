@@ -1,0 +1,105 @@
+# .github/workflows/docs.yml — build + deploy the documentation website.
+# Design: docs/plans/w1-docs-website.md §2f. Rust-only toolchain, vendored
+# static assets, no Node/Python build step for the site render.
+name: Docs
+
+on:
+  push:
+    branches: [develop]     # redeploy dev docs + landing/api
+    tags: ["v*"]            # cut a frozen version, then redeploy
+  pull_request:             # PR: build + lint + link-check ONLY (no deploy)
+  workflow_dispatch:
+
+# Pinned toolchain — the single source of truth for the docs build.
+env:
+  MDBOOK_VERSION: "0.5.4"
+  MDBOOK_MERMAID_VERSION: "0.17.0"
+  MDBOOK_TOC_VERSION: "0.15.4"
+  MDBOOK_LINT_VERSION: "0.14.4"
+  LYCHEE_VERSION: "0.24.2"
+  SWAGGER_UI_VERSION: "5.32.8"
+  SITE_BASE: "/ehrbase-rs"
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Build + verify (always; no deploy) ──────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
+      - name: OAS drift gate (docs copy == vendored ITS-REST)
+        run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
+      - name: Markdown lint gate
+        run: mdbook-lint lint website/book/src
+      - name: Assemble _site (landing + api + /docs/dev/)
+        run: bash scripts/build-site.sh --dev-only       # writes ./_site
+      - name: Link-check gate (built HTML + external links)
+        run: lychee --no-progress --root-dir "$PWD/_site" './_site/**/*.html'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site
+          path: _site
+
+  # ── Cut a frozen version on a v* tag (push to docs-dist; never rebuilt) ─────
+  version-cut:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # push to docs-dist
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }}
+      - name: Build frozen vX.Y.Z + push to docs-dist
+        run: bash scripts/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
+
+  # ── Deploy the full site (develop push, tag, or manual) ─────────────────────
+  deploy:
+    needs: [build, version-cut]
+    # Deploy on any non-PR event. version-cut only runs on tags, so accept it
+    # either succeeding (tag) or being skipped (develop / manual dispatch).
+    if: >-
+      ${{ !cancelled()
+        && needs.build.result == 'success'
+        && (needs.version-cut.result == 'success' || needs.version-cut.result == 'skipped')
+        && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch docs-dist (frozen versions)
+        run: git fetch origin docs-dist && git worktree add docs-dist origin/docs-dist || true
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }}
+      - uses: actions/configure-pages@v6
+      - name: Assemble full _site (landing + api + dev + frozen versions + latest + sitemap)
+        run: bash scripts/build-site.sh --full
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: pages
+        uses: actions/deploy-pages@v5

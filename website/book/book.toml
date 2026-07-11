@@ -1,0 +1,25 @@
+[book]
+title = "EHRbase-rs Documentation"
+authors = ["EHRbase-rs contributors"]
+description = "User documentation for EHRbase-rs, a pure-Rust openEHR Clinical Data Repository."
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "rust"
+preferred-dark-theme = "coal"
+additional-css = ["theme/custom.css"]
+additional-js = ["theme/mermaid.min.js", "theme/mermaid-init.js", "theme/version-picker.js"]
+git-repository-url = "https://github.com/rubentalstra/ehrbase-rs"
+edit-url-template = "https://github.com/rubentalstra/ehrbase-rs/edit/develop/website/book/{path}"
+smart-punctuation = true
+
+[output.html.search]
+enable = true
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
+
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]

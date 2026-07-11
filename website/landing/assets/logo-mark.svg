@@ -1,0 +1,18 @@
+<svg width="88" height="88" viewBox="0 0 88 88" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>EHRbase-rs mark</title>
+<g transform="translate(44,44)">
+  <g fill="#B7410E">
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(0)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(45)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(90)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(135)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(180)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(225)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(270)"/>
+    <path d="M0,-40 L7,-40 L9,-30 L-9,-30 L-7,-40 Z" transform="rotate(315)"/>
+  </g>
+  <circle cx="0" cy="0" r="34" fill="#B7410E"/>
+  <circle cx="0" cy="0" r="21" fill="#FFFFFF"/>
+  <text x="0" y="11" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="700" fill="#B7410E">R</text>
+</g>
+</svg>
