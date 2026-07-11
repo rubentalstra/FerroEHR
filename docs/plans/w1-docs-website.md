@@ -517,7 +517,7 @@ copied.
 ### 5a. OAS drift gate — `scripts/assemble-oas.sh`
 
 Mirrors `scripts/check-codegen-drift.sh` (regenerate → `git diff --exit-code`).
-The served specs are a **byte copy** of the vendored `-html` bundles (which the
+The served specs are a **deterministic copy** of the vendored `-html` bundles (with the pinned ITS-REST release stamped over upstream's `info.version: latest` so Swagger UI shows a real version; Admin keeps its honest `development`) (which the
 codegen-drift gate already ties to upstream), so drift is caught at two hops:
 upstream → vendor (existing gate) → `website/api/spec/` (this gate).
 
@@ -655,7 +655,7 @@ trigger for release, containers, and docs alike.
 - **Endpoint viewer:** **Swagger UI** 5.32.8 (chosen) over Redoc 2.5.3 (single-spec)
   and Scalar (no clean pin / Node dist) — native multi-spec `urls` dropdown, fully
   offline, cleanly pinnable, matches the in-app `/ehrbase/swagger-ui`.
-- **Served OAS:** the 7 `-html` documentation bundles, byte-copied + drift-gated.
+- **Served OAS:** the 7 `-html` documentation bundles, copied + ITS-REST-version-stamped + drift-gated.
 - **SEO:** sitemap/robots emitted in assembly (mdbook-sitemap skipped — cross-section
   scope); canonical = `/docs/latest/`; `dev`/old versions disallowed.
 - **Version picker:** `additional-js` (not an `index.hbs` fork) — survives mdBook
