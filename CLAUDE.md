@@ -84,7 +84,7 @@ Serialization & formats: `serde` 1, `serde_json` 1 (`preserve_order`), `serde_wi
 
 Parsers (native ADL/cADL/ODIN/AQL): `logos` 0.16 (lexer), `chumsky` 0.13 (stable; 1.0 still alpha, repo now on Codeberg) or `winnow` 0.7, `regex` 1, `fancy-regex` 0.18 *(verify)* for cADL backreferences; diagnostics via `miette` 7 and/or `ariadne` 0.6 *(verify)*.
 
-IDs / time / validation: `uuid` 1 (v4+v7, serde, fast-rng), `jiff` 0.2 (1.0 not yet released as of 2026-07), `garde` 0.23 *(verify)* + a custom RM-invariant framework, `url` 2.
+IDs / time / validation: `uuid` 1 (v4+v7, serde, fast-rng), `jiff` 0.2 (1.0 not yet released as of 2026-07), `garde` 0.23 *(verify)* + a custom RM-invariant framework, `url` 2, `urlencoding` 2.1.3 (ALL URL/percent encoding+decoding — never hand-roll a percent codec; owner rule 2026-07-11).
 
 Observability (opentelemetry set is lockstep — keep equal): `tracing` 0.1, `tracing-subscriber` 0.3, `tracing-opentelemetry` 0.33, `opentelemetry` 0.31, `opentelemetry_sdk` 0.31, `opentelemetry-otlp` 0.31, `opentelemetry-semantic-conventions` 0.31, `metrics` 0.24, `metrics-exporter-prometheus` 0.18 *(verify)*, `axum-prometheus` 0.10 *(verify)*.
 

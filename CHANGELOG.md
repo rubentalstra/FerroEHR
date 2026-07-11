@@ -15,8 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- AQL single-row functions now execute: `LENGTH`, `SUBSTRING`, `POSITION`,
+  the string `CONTAINS`, `CONCAT`/`CONCAT_WS`, `ABS`/`MOD`/`CEIL`/`FLOOR`/
+  `ROUND`, and `CURRENT_DATE`/`CURRENT_TIME`/`CURRENT_DATE_TIME`/`NOW`/
+  `CURRENT_TIMEZONE` (QUERY master03 §Functions).
+- AQL `TERMINOLOGY()` Boolean value expressions
+  (`TERMINOLOGY('validate'|'subsumes', …) = true`) and terminology-URI
+  `matches` operands (`matches { terminology://… }`) are now evaluated
+  through the terminology service (previously typed rejects).
+
 ### Changed
 
+- AQL semantic analysis is stricter per QUERY master03: duplicate FROM
+  variable names reject, variable references are case-insensitive,
+  `LIMIT 0`/negative `OFFSET` reject, `SUM`/`AVG` over non-numeric paths
+  reject, scalar-function arity is validated, and `LIKE` `\*`/`\?`
+  escapes now match the literal characters.
 - OPT 1.4 template upload enforces the AOM 1.4 constraint-model invariants
   (attribute existence bounds, single-attribute occurrences, archetype-id
   well-formedness and root-type match, slot identifier validity,

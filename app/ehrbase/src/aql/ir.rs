@@ -425,6 +425,9 @@ pub enum Expr {
     },
     /// `EXISTS <path>`.
     Exists(PathTarget),
+    /// A constant boolean (a `TERMINOLOGY()` Boolean value expression resolved
+    /// at semantic analysis — QUERY master03 §TERMINOLOGY).
+    Const(bool),
     /// `<path> LIKE <pattern>` (AQL wildcard semantics recorded on the pattern).
     Like {
         /// The addressed path.
@@ -616,6 +619,9 @@ pub enum ScalarFn {
     Concat,
     /// `concat_ws`.
     ConcatWs,
+    /// The string function `contains` (distinct from the containment
+    /// operator; QUERY master03 §Functions/String functions/CONTAINS).
+    StrContains,
     // Numeric functions.
     /// `abs`.
     Abs,
@@ -636,6 +642,8 @@ pub enum ScalarFn {
     CurrentDateTime,
     /// `now`.
     Now,
+    /// `current_timezone`.
+    CurrentTimezone,
 }
 
 impl ScalarFn {
@@ -648,6 +656,7 @@ impl ScalarFn {
                 | ScalarFn::CurrentTime
                 | ScalarFn::CurrentDateTime
                 | ScalarFn::Now
+                | ScalarFn::CurrentTimezone
         )
     }
 }

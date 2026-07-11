@@ -376,7 +376,12 @@ fn function_parsers<'a>(
     impl Parser<'a, &'a [Token], AggregateCall, Err<'a>> + Clone,
 ) {
     // functionCall : terminologyFunction | name '(' (terminal (',' terminal)*)? ')'
+    // The STRING function `CONTAINS(expr, substring)` shares its name with the
+    // containment keyword (QUERY master03 §Functions/String functions) — in
+    // function position (followed by `(`) the keyword token is the function
+    // name.
     let named = ident()
+        .or(just(Token::Contains).to("contains".to_owned()))
         .then(
             terminal
                 .separated_by(just(Token::Comma))

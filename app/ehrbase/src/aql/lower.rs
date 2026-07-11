@@ -141,13 +141,7 @@ impl Planner {
                         predicates,
                     }));
                     if let Some(v) = variable {
-                        self.bindings.insert(
-                            v.clone(),
-                            Binding {
-                                source: id,
-                                kind: BindingKind::Ehr,
-                            },
-                        );
+                        self.bind(v, id, BindingKind::Ehr)?;
                     }
                     return Ok((id, inherited.cloned()));
                 }
@@ -178,13 +172,7 @@ impl Planner {
                     scope,
                 }));
                 if let Some(v) = variable {
-                    self.bindings.insert(
-                        v.clone(),
-                        Binding {
-                            source: id,
-                            kind: BindingKind::Rm(concrete),
-                        },
-                    );
+                    self.bind(v, id, BindingKind::Rm(concrete))?;
                 }
                 Ok((id, inherited.cloned()))
             }
@@ -206,13 +194,7 @@ impl Planner {
                     scope: scope.clone(),
                 }));
                 if let Some(v) = variable {
-                    self.bindings.insert(
-                        v.clone(),
-                        Binding {
-                            source: id,
-                            kind: BindingKind::Version,
-                        },
-                    );
+                    self.bind(v, id, BindingKind::Version)?;
                 }
                 Ok((id, Some(scope)))
             }
@@ -250,6 +232,18 @@ impl Planner {
             )
             .into()),
         }
+    }
+
+    /// Bind a FROM variable, rejecting a name already declared by another
+    /// class expression (variable names must be unique within an AQL
+    /// statement — QUERY master03 §Variables/Syntax; names are
+    /// case-insensitive, so the uniqueness check folds case).
+    fn bind(&mut self, name: &str, source: SourceId, kind: BindingKind) -> Result<(), AqlError> {
+        if self.bindings.contains(name) {
+            return Err(AnalysisError::DuplicateVariable(name.to_owned()).into());
+        }
+        self.bindings.insert(name, Binding { source, kind });
+        Ok(())
     }
 
     // ── SELECT ────────────────────────────────────────────────────────────────
@@ -290,16 +284,35 @@ impl Planner {
                     .transpose()?,
                 distinct: *distinct,
             }),
-            AggregateCall::Stat { func, path } => Ok(SelectValue::Aggregate {
-                func: match func {
-                    StatFunc::Min => AggFunc::Min,
-                    StatFunc::Max => AggFunc::Max,
-                    StatFunc::Sum => AggFunc::Sum,
-                    StatFunc::Avg => AggFunc::Avg,
-                },
-                arg: Some(analyze_path(path, &self.bindings)?),
-                distinct: false,
-            }),
+            AggregateCall::Stat { func, path } => {
+                let target = analyze_path(path, &self.bindings)?;
+                // SUM/AVG accept Integer/Real input only (QUERY master03
+                // §Functions/SUM, AVG) — a textual/temporal/boolean leaf is a
+                // typed reject, never a silent NULL coercion.
+                if matches!(func, StatFunc::Sum | StatFunc::Avg)
+                    && let Some(got) = non_numeric_leaf(&target)
+                {
+                    return Err(AnalysisError::AggregateInputType {
+                        func: if matches!(func, StatFunc::Sum) {
+                            "SUM"
+                        } else {
+                            "AVG"
+                        },
+                        got,
+                    }
+                    .into());
+                }
+                Ok(SelectValue::Aggregate {
+                    func: match func {
+                        StatFunc::Min => AggFunc::Min,
+                        StatFunc::Max => AggFunc::Max,
+                        StatFunc::Sum => AggFunc::Sum,
+                        StatFunc::Avg => AggFunc::Avg,
+                    },
+                    arg: Some(target),
+                    distinct: false,
+                })
+            }
         }
     }
 
@@ -322,6 +335,7 @@ impl Planner {
 
     fn lower_identified(&self, ie: &IdentifiedExpr) -> Result<Expr, AqlError> {
         match ie {
+            IdentifiedExpr::Resolved(b) => Ok(Expr::Const(*b)),
             IdentifiedExpr::Exists(path) => Ok(Expr::Exists(analyze_path(path, &self.bindings)?)),
             IdentifiedExpr::Compare { lhs, op, rhs } => {
                 let lhs = self.lower_compare_operand(lhs)?;
@@ -396,6 +410,7 @@ impl Planner {
             FunctionCall::Named { name, args } => {
                 let func = scalar_fn(name)
                     .ok_or_else(|| AqlFeatureError::UnsupportedFunction(name.clone()))?;
+                check_function_arity(func, args.len())?;
                 let args = args
                     .iter()
                     .map(|a| self.lower_terminal(a))
@@ -418,11 +433,82 @@ impl Planner {
 /// LIMIT / TOP resolution: `TOP n` maps to `LIMIT n`; combining the two is
 /// rejected (QUERY §Query structure/LIMIT).
 fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>), AqlError> {
-    match (&query.select.top, &query.limit) {
-        (Some(_), Some(_)) => Err(AqlFeatureError::TopWithLimit.into()),
-        (Some(top), None) => Ok((Some(top.count), None)),
-        (None, Some(limit)) => Ok((Some(limit.limit), limit.offset)),
-        (None, None) => Ok((None, None)),
+    let (limit, offset) = match (&query.select.top, &query.limit) {
+        (Some(_), Some(_)) => return Err(AqlFeatureError::TopWithLimit.into()),
+        (Some(top), None) => (Some(top.count), None),
+        (None, Some(limit)) => (Some(limit.limit), limit.offset),
+        (None, None) => (None, None),
+    };
+    // `row_count` minimum is 1; `offset` minimum is 0 (QUERY master03
+    // §LIMIT/Syntax).
+    if let Some(l) = limit
+        && l < 1
+    {
+        return Err(AnalysisError::PagingBounds {
+            clause: "LIMIT",
+            value: l,
+            minimum: 1,
+        }
+        .into());
+    }
+    if let Some(o) = offset
+        && o < 0
+    {
+        return Err(AnalysisError::PagingBounds {
+            clause: "OFFSET",
+            value: o,
+            minimum: 0,
+        }
+        .into());
+    }
+    Ok((limit, offset))
+}
+
+/// The human label of a leaf type SUM/AVG cannot aggregate, or `None` when
+/// the target is numerically aggregable.
+fn non_numeric_leaf(target: &PathTarget) -> Option<&'static str> {
+    let coercion = match target {
+        PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => leaf.coercion,
+        PathTarget::Version { .. } | PathTarget::Ehr { .. } => return Some("version/EHR metadata"),
+    };
+    match coercion {
+        Coercion::Magnitude | Coercion::Raw => None,
+        Coercion::Text => Some("a textual value"),
+        Coercion::Temporal => Some("a temporal value"),
+        Coercion::Boolean => Some("a boolean value"),
+    }
+}
+
+/// Scalar-function arity (QUERY master03 §Functions): reject a call whose
+/// argument count is outside the declared signature.
+fn check_function_arity(func: ScalarFn, got: usize) -> Result<(), AqlError> {
+    let (name, expected, ok): (&'static str, &'static str, bool) = match func {
+        ScalarFn::Length => ("LENGTH", "1", got == 1),
+        ScalarFn::Substring => ("SUBSTRING", "2 or 3", got == 2 || got == 3),
+        ScalarFn::Position => ("POSITION", "2", got == 2),
+        ScalarFn::StrContains => ("CONTAINS", "2", got == 2),
+        ScalarFn::Concat => ("CONCAT", "at least 1", got >= 1),
+        ScalarFn::ConcatWs => ("CONCAT_WS", "at least 2", got >= 2),
+        ScalarFn::Abs => ("ABS", "1", got == 1),
+        ScalarFn::Ceil => ("CEIL", "1", got == 1),
+        ScalarFn::Floor => ("FLOOR", "1", got == 1),
+        ScalarFn::Round => ("ROUND", "1 or 2", got == 1 || got == 2),
+        ScalarFn::Mod => ("MOD", "2", got == 2),
+        ScalarFn::CurrentDate => ("CURRENT_DATE", "0", got == 0),
+        ScalarFn::CurrentTime => ("CURRENT_TIME", "0", got == 0),
+        ScalarFn::CurrentDateTime => ("CURRENT_DATE_TIME", "0", got == 0),
+        ScalarFn::Now => ("NOW", "0", got == 0),
+        ScalarFn::CurrentTimezone => ("CURRENT_TIMEZONE", "0", got == 0),
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(AnalysisError::FunctionArity {
+            func: name,
+            expected,
+            got,
+        }
+        .into())
     }
 }
 
@@ -442,6 +528,8 @@ fn scalar_fn(name: &str) -> Option<ScalarFn> {
         "current_time" => Some(ScalarFn::CurrentTime),
         "current_date_time" => Some(ScalarFn::CurrentDateTime),
         "now" => Some(ScalarFn::Now),
+        "current_timezone" => Some(ScalarFn::CurrentTimezone),
+        "contains" => Some(ScalarFn::StrContains),
         _ => None,
     }
 }

@@ -51,7 +51,7 @@ use super::error::{AqlError, SqlError};
 use super::ir::{
     AggFunc, ArchetypeConstraint, Bind, Coercion, Contained, ContainsTree, EhrField, EhrPredicate,
     Expr as IrExpr, LeafPath, LikePattern, Link, NameConstraint, NodeConstraint, Operand, OrderKey,
-    ParamValue, Params, PathTarget, QueryIr, RmSource, SelectColumn, SelectValue, Source,
+    ParamValue, Params, PathTarget, QueryIr, RmSource, ScalarFn, SelectColumn, SelectValue, Source,
     StdPredicate, TypeSet, TypedLit, VersionField, VersionScope,
 };
 use openehr_query::lexer::CompOp;
@@ -760,8 +760,16 @@ impl<'a> Builder<'a> {
                     sql_cols: vec![sql_col],
                 })
             }
-            SelectValue::Function { .. } => {
-                Err(SqlError::Unsupported("scalar function in SELECT".to_owned()).into())
+            SelectValue::Function { func, args } => {
+                let expr = self.scalar_fn_expr(*func, args)?;
+                let sql_col = format!("col{i}");
+                self.q.expr_as(to_jsonb(expr), Alias::new(sql_col.as_str()));
+                Ok(ColumnSpec {
+                    name,
+                    path: None,
+                    kind: CellKind::Scalar,
+                    sql_cols: vec![sql_col],
+                })
             }
         }
     }
@@ -858,6 +866,7 @@ impl<'a> Builder<'a> {
                 };
                 Ok(lhs.like(pat))
             }
+            IrExpr::Const(b) => Ok(Expr::val(*b)),
             IrExpr::Matches {
                 path,
                 values,
@@ -873,14 +882,83 @@ impl<'a> Builder<'a> {
         }
     }
 
+    /// Render a whitelisted scalar function call (QUERY master03 §Functions)
+    /// to `PostgreSQL`. Arity was validated at lowering; argument typing follows
+    /// each function's declared signature (string args extract as text,
+    /// numeric args through the magnitude coercion).
+    fn scalar_fn_expr(&mut self, func: ScalarFn, args: &[Operand]) -> Result<Expr, AqlError> {
+        let text = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Text);
+        let num = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Magnitude);
+        Ok(match func {
+            ScalarFn::Length => Expr::cust_with_exprs("length($1)", [text(self, 0)?]),
+            // SUBSTRING(expression, position[, length]) — 1-based positions,
+            // omitted length extracts to end-of-string (PG substr matches).
+            ScalarFn::Substring => match args.len() {
+                2 => {
+                    Expr::cust_with_exprs("substr($1, ($2)::int4)", [text(self, 0)?, num(self, 1)?])
+                }
+                _ => Expr::cust_with_exprs(
+                    "substr($1, ($2)::int4, ($3)::int4)",
+                    [text(self, 0)?, num(self, 1)?, num(self, 2)?],
+                ),
+            },
+            // POSITION(substring, expression): 1-based index of the first
+            // occurrence, 0 when absent — exactly PG strpos(expression, sub).
+            ScalarFn::Position => {
+                Expr::cust_with_exprs("strpos($2, $1)", [text(self, 0)?, text(self, 1)?])
+            }
+            // The string function CONTAINS(expression, substring) → Boolean.
+            ScalarFn::StrContains => {
+                Expr::cust_with_exprs("(strpos($1, $2) > 0)", [text(self, 0)?, text(self, 1)?])
+            }
+            ScalarFn::Concat | ScalarFn::ConcatWs => {
+                let name = if func == ScalarFn::Concat {
+                    "concat"
+                } else {
+                    "concat_ws"
+                };
+                let rendered = (0..args.len())
+                    .map(|i| text(self, i))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let placeholders = (1..=rendered.len())
+                    .map(|n| format!("${n}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Expr::cust_with_exprs(format!("{name}({placeholders})"), rendered)
+            }
+            ScalarFn::Abs => Expr::cust_with_exprs("abs($1)", [num(self, 0)?]),
+            ScalarFn::Mod => Expr::cust_with_exprs(
+                "mod(($1)::numeric, ($2)::numeric)",
+                [num(self, 0)?, num(self, 1)?],
+            ),
+            // CEIL/FLOOR return Integer (QUERY master03 §Numeric functions).
+            ScalarFn::Ceil => Expr::cust_with_exprs("(ceil($1))::int8", [num(self, 0)?]),
+            ScalarFn::Floor => Expr::cust_with_exprs("(floor($1))::int8", [num(self, 0)?]),
+            // ROUND(expression[, decimal]) — decimal defaults to 0.
+            ScalarFn::Round => match args.len() {
+                1 => Expr::cust_with_exprs("round(($1)::numeric, 0)", [num(self, 0)?]),
+                _ => Expr::cust_with_exprs(
+                    "round(($1)::numeric, ($2)::int4)",
+                    [num(self, 0)?, num(self, 1)?],
+                ),
+            },
+            // Date/time functions: the exact string formats of QUERY master03
+            // §Date and time functions.
+            ScalarFn::CurrentDate => Expr::cust("to_char(now(), 'YYYY-MM-DD')"),
+            ScalarFn::CurrentTime => Expr::cust("to_char(now(), 'HH24:MI:SS')"),
+            ScalarFn::CurrentDateTime | ScalarFn::Now => {
+                Expr::cust("to_char(now(), 'YYYY-MM-DD\"T\"HH24:MI:SS.MSTZH:TZM')")
+            }
+            ScalarFn::CurrentTimezone => Expr::cust("to_char(now(), 'TZH:TZM')"),
+        })
+    }
+
     fn operand_value(&mut self, op: &Operand, coercion: Coercion) -> Result<Expr, AqlError> {
         match op {
             Operand::Path(t) => self.value_expr(t, ValueMode::Value(coercion)),
             Operand::Literal(lit) => Ok(coerce_rhs(literal_value(lit), coercion)),
             Operand::Param(p) => Ok(coerce_rhs(self.param_value(p)?, coercion)),
-            Operand::Function { .. } => {
-                Err(SqlError::Unsupported("scalar function operand".to_owned()).into())
-            }
+            Operand::Function { func, args } => self.scalar_fn_expr(*func, args),
         }
     }
 
@@ -1232,15 +1310,34 @@ fn jsonpath(parts: &[String]) -> String {
 
 /// Translate an AQL `LIKE` pattern (`*` any, `?` one) to a SQL `LIKE` pattern,
 /// escaping literal `%`/`_`/`\`. QUERY §Operators/LIKE.
+#[cfg(test)]
+pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
+    aql_like_to_sql(pattern)
+}
+
 fn aql_like_to_sql(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len());
-    for ch in pattern.chars() {
+    let mut chars = pattern.chars().peekable();
+    while let Some(ch) = chars.next() {
         match ch {
             '*' => out.push('%'),
             '?' => out.push('_'),
             '%' => out.push_str("\\%"),
             '_' => out.push_str("\\_"),
-            '\\' => out.push_str("\\\\"),
+            // AQL escapes: `\*` / `\?` are the LITERAL characters (QUERY
+            // master03 §Operators/LIKE) — plain text in SQL LIKE; `\\` is a
+            // literal backslash (SQL-escaped).
+            '\\' => match chars.next() {
+                Some('*') => out.push('*'),
+                Some('?') => out.push('?'),
+                Some(other) => {
+                    out.push_str("\\\\");
+                    if other != '\\' {
+                        out.push(other);
+                    }
+                }
+                None => out.push_str("\\\\"),
+            },
             other => out.push(other),
         }
     }

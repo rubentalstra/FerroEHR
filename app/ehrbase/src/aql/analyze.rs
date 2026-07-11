@@ -67,12 +67,18 @@ pub(crate) enum BindingKind {
 }
 
 impl Bindings {
-    pub(crate) fn insert(&mut self, var: String, binding: Binding) {
-        self.vars.insert(var, binding);
+    /// Variable names are not case-sensitive (QUERY master03
+    /// §Variables/Syntax) — bindings key on the case-folded name.
+    pub(crate) fn insert(&mut self, var: &str, binding: Binding) {
+        self.vars.insert(var.to_ascii_lowercase(), binding);
+    }
+
+    pub(crate) fn contains(&self, var: &str) -> bool {
+        self.vars.contains_key(&var.to_ascii_lowercase())
     }
 
     fn get(&self, var: &str) -> Option<&Binding> {
-        self.vars.get(var)
+        self.vars.get(&var.to_ascii_lowercase())
     }
 }
 
