@@ -134,8 +134,21 @@ mod tests {
     #[test]
     fn ucum_syntax() {
         for ok in [
-            "kg", "mm[Hg]", "kg/m2", "ms-1", "km/h", "1", "1/d", "/min",
-            "10*3/ul", "cm2", "mol/l", "%", "Cel", "m.s-2", "{beats}/min",
+            "kg",
+            "mm[Hg]",
+            "kg/m2",
+            "ms-1",
+            "km/h",
+            "1",
+            "1/d",
+            "/min",
+            "10*3/ul",
+            "cm2",
+            "mol/l",
+            "%",
+            "Cel",
+            "m.s-2",
+            "{beats}/min",
             "mg{total}",
         ] {
             assert!(is_valid_units_string(ok), "{ok} must be valid UCUM syntax");

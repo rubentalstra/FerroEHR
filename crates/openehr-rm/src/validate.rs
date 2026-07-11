@@ -374,11 +374,11 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;
-    use openehr_base::base_types::identification::terminology_id::TerminologyId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;
     use openehr_base::base_types::identification::object_ref::ObjectRefData;
     use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
     use openehr_base::base_types::identification::party_ref::PartyRef;
+    use openehr_base::base_types::identification::terminology_id::TerminologyId;
     use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
 
     use crate::common::archetyped::archetyped::Archetyped;
