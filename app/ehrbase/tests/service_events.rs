@@ -202,9 +202,18 @@ fn assert_phi_free(envelope: &Value) {
             .map(String::as_str)
             .collect();
         keys.sort_unstable();
+        // `version_tree_id` joined the envelope with version-tree branching
+        // (RM common master06 §Version tree) — identity metadata, PHI-free.
         assert_eq!(
             keys,
-            ["change_type", "kind", "sys_version", "template_id", "vo_id"],
+            [
+                "change_type",
+                "kind",
+                "sys_version",
+                "template_id",
+                "version_tree_id",
+                "vo_id"
+            ],
             "version entry must carry only PHI-free keys"
         );
     }

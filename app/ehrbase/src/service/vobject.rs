@@ -167,13 +167,15 @@ pub(super) struct Committed {
 }
 
 impl Committed {
-    /// The per-version entry for the PHI-free event-outbox envelope
-    /// (ADR-014 §2): identity + provenance metadata only, never clinical content.
+    /// The per-version entry for the PHI-free event-outbox envelope:
+    /// identity + provenance metadata only, never clinical content (no
+    /// openEHR spec governs eventing — our own extension).
     fn envelope_entry(&self) -> serde_json::Value {
         serde_json::json!({
             "vo_id": self.vo_id,
             "kind": self.kind.as_str(),
             "sys_version": self.sys_version,
+            "version_tree_id": self.tree.to_string(),
             "change_type": self.change_type,
             "template_id": self.template_id,
         })
@@ -1870,8 +1872,8 @@ async fn commit_import_scoped(
         let versions = container.versions;
         for (i, version) in versions.iter().enumerate() {
             ordinal += 1;
-            // PHI-free outbox entry for this imported version (ADR-014 §2):
-            // identity + provenance only; imports carry no template_id.
+            // PHI-free outbox entry for this imported version: identity +
+            // provenance only; imports carry no template_id.
             outbox_versions.push(serde_json::json!({
                 "vo_id": container.vo_id,
                 "kind": container.kind.as_str(),
