@@ -4,7 +4,7 @@
 # Claude Code PreToolUse hook (matcher: Bash). Blocks destructive commands:
 #   - rm -rf / rm -fr (delete specific files, use git rm, or work under /tmp)
 #   - force-pushes touching main/master/develop, and bare force-pushes
-#   - deletion of files under docs/plans/ (durable phase state, never deleted)
+#   - deletion of docs/plans/current-phase.md or README.md (the live pointer + guide)
 #   - deletion of the read-only reference/v1 ref (Stage 2 archaeology source)
 #
 # Reads the tool-call JSON on stdin. Exit 2 blocks; exit 0 allows.
@@ -41,9 +41,10 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--f
   fi
 fi
 
-# Never delete phase plans.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])(git[[:space:]]+rm|rm)[^;|&]*docs/plans/'; then
-  echo "BLOCKED: files under docs/plans/ are the durable phase state and must never be deleted (CLAUDE.md hard rule)." >&2
+# Never delete the live phase pointer or the plans guide. Completed phase files
+# may be pruned once their close is recorded in docs/PROGRESS.md.
+if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])(git[[:space:]]+rm|rm)[^;|&]*docs/plans/(current-phase\.md|README\.md)'; then
+  echo "BLOCKED: docs/plans/current-phase.md and docs/plans/README.md are the live pointer + guide and must not be deleted. Completed phase files may be pruned once recorded in docs/PROGRESS.md." >&2
   exit 2
 fi
 

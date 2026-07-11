@@ -6,9 +6,10 @@ session-scoped only. If it isn't ticked here, it isn't done.
 
 ## What lives here now
 
-The historical phase files (00–16, s2-01..05, sm-01..03) were **pruned
-2026-07-09** — their content lives in git history + `docs/PROGRESS.md`. What
-remains is the *active* and *future* work:
+The historical phase files (00–16, s2-01..05, sm-01..03) were pruned
+2026-07-09, and the completed blueprint/enterprise phase files (B1–B8, E1–E5)
+were pruned 2026-07-11 — their content lives in git history + `docs/PROGRESS.md`.
+What remains is the *live* pointer and the *future* work:
 
 - **`../blueprint/00-THE-BLUEPRINT.md` is the roadmap.** The blueprint (in
   `docs/blueprint/`) is the single source of truth for where the project is
@@ -16,16 +17,49 @@ remains is the *active* and *future* work:
   it. Read the blueprint first.
 - `current-phase.md` — the live pointer: which work is active, the session
   goal, and the next action. Update whenever the active work changes.
-- `phase-17-flat-structured-ehrscape.md`, `phase-18-workspace-integration.md`,
-  `phase-19-conformance-parity.md`, `phase-20-optimization.md`,
-  `phase-99-cutover.md` — the remaining Stage-1 P-phases (future work).
-- `sm-phase-04-terminology-admin.md` — the active SM phase (Terminology +
-  Admin completion; carries the ADR-011 app-crate rebuild in its closing
-  waves).
+- `phase-20-optimization.md`, `phase-99-cutover.md` — the remaining Stage-1
+  P-phases (future work). `phase-17`/`phase-18`/`phase-19` are retained for
+  their task detail, though their scope was absorbed into the blueprint arc
+  (P19 conformance is met; see `docs/PROGRESS.md`).
+- `sm-phase-04-terminology-admin.md` — the last SM phase file. Its header is
+  still marked `in-progress`, but the Terminology + Admin work it describes
+  shipped through the B3/B4 waves; kept until its close is reconciled.
 
-Each file follows the template in `PORT_MASTER_PLAN.md` §13.1
-(Status / Consumes / Objectives / Preconditions / Scope / Tasks / Exit
-criteria).
+### Phase-file template
+
+New phase files follow this skeleton:
+
+```markdown
+# Phase NN — <title>
+
+- Status: not-started | in-progress | blocked | done
+- Started: <date>   Owner: <name>
+- Consumes: <spec/layer or prior phase(s) + governing docs/specs paths>
+- Compile required: yes (application phases build as compiling, tested increments)
+
+## Objectives
+<what this phase delivers>
+
+## Preconditions
+- [ ] <prior phase(s) complete>
+
+## Scope
+In: <...>
+Out: <...>
+
+## Tasks
+- [ ] <task 1>
+- [ ] <task 2>
+
+## Exit criteria
+- [ ] <verifiable condition (e.g. suites green + ECC zero drift)>
+
+## Decisions made this phase
+- <ADR links, structural choices>
+
+## Handoff for next session
+<one paragraph: where things stand, what to do next>
+```
 
 ## The loop
 
