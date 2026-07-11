@@ -1,0 +1,6 @@
+{
+  "latest": "dev",
+  "versions": [
+    { "id": "dev", "label": "dev (develop)", "path": "/ehrbase-rs/docs/dev/", "released": null, "prerelease": true }
+  ]
+}
