@@ -365,15 +365,30 @@ async fn opt_errors() {
 
 // ── ADL2 artefacts (I_DEFINITION_ADL2; on adl2_artefact, HRID-keyed) ──────────
 
-const ADL2_OPT: &str = "operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)\n\
-    openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n\nspecialize\n\
-    \topenEHR-EHR-COMPOSITION.discharge.v1\n";
+/// Build a minimal spec-valid ADL2 source: header, HRID, optional
+/// `specialize`, `language`, `definition` (root node `id1`, or `id1.1` when
+/// specialised — AOM2 master08 VARCN), `terminology` (ADL2 master02
+/// §Structure — the registration validator enforces STCNT + the
+/// terminology-side AOM2 rules).
+fn adl2_source(keyword: &str, hrid: &str, specialize: Option<&str>) -> String {
+    let rm_type = hrid
+        .split('.')
+        .next()
+        .and_then(|q| q.rsplit_once('-').map(|(_, e)| e))
+        .expect("HRID carries an RM entity");
+    let root = if specialize.is_some() { "id1.1" } else { "id1" };
+    let spec = specialize.map_or(String::new(), |p| format!("\nspecialize\n    {p}\n"));
+    format!(
+        "{keyword} (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n{spec}\n\
+         language\n    original_language = <[ISO_639-1::en]>\n\n\
+         definition\n    {rm_type}[{root}] matches {{ *}}\n\n\
+         terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
+         [\"{root}\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
+    )
+}
+
 const ADL2_OPT_HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
-const ADL2_ARCH: &str = "archetype (adl_version=2.0.6)\n\
-    openEHR-EHR-OBSERVATION.bp.v1.0.0\n";
 const ADL2_ARCH_HRID: &str = "openEHR-EHR-OBSERVATION.bp.v1.0.0";
-const ADL2_TMPL: &str = "template (adl_version=2.0.6)\n\
-    openEHR-EHR-COMPOSITION.t_vitals.v2.0.0\n";
 const ADL2_TMPL_HRID: &str = "openEHR-EHR-COMPOSITION.t_vitals.v2.0.0";
 
 #[tokio::test]
@@ -384,7 +399,14 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
 
     // Preconditions: empty, and valid_artefact on good vs bad source.
     assert_eq!(svc.artefacts_count().await.unwrap(), 0);
-    assert!(svc.valid_artefact(ADL2_OPT.to_owned()).await.unwrap());
+    let adl2_opt = adl2_source(
+        "operational_template",
+        ADL2_OPT_HRID,
+        Some("openEHR-EHR-COMPOSITION.discharge.v1"),
+    );
+    let adl2_arch = adl2_source("archetype", ADL2_ARCH_HRID, None);
+    let adl2_tmpl = adl2_source("template", ADL2_TMPL_HRID, None);
+    assert!(svc.valid_artefact(adl2_opt.clone()).await.unwrap());
     assert!(
         !svc.valid_artefact("this is not adl2".to_owned())
             .await
@@ -393,7 +415,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
 
     // upload_artefact (OPT) → Post_has_artefact (keyed by ARCHETYPE_HRID).
     assert!(!svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
-    svc.upload_artefact(ADL2_OPT.to_owned())
+    svc.upload_artefact(adl2_opt.clone())
         .await
         .expect("upload opt");
     assert!(svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
@@ -401,15 +423,15 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     // get_artefact returns the source verbatim.
     assert_eq!(
         svc.get_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap(),
-        ADL2_OPT,
+        adl2_opt,
         "stored ADL2 source is byte-identical"
     );
 
     // Upload one artefact of each other kind.
-    svc.upload_artefact(ADL2_ARCH.to_owned())
+    svc.upload_artefact(adl2_arch.clone())
         .await
         .expect("upload archetype");
-    svc.upload_artefact(ADL2_TMPL.to_owned())
+    svc.upload_artefact(adl2_tmpl.clone())
         .await
         .expect("upload template");
 
@@ -453,7 +475,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     assert_eq!(obs, vec![ADL2_ARCH_HRID.to_owned()]);
 
     // upload_artefact replaces if the HRID already exists (spec: "replace it").
-    let replacement = format!("{ADL2_OPT}-- replaced\n");
+    let replacement = format!("{adl2_opt}-- replaced\n");
     svc.upload_artefact(replacement.clone())
         .await
         .expect("replace");

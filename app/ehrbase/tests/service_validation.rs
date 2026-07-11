@@ -294,7 +294,7 @@ fn change_type_coded(code: &str, value: &str) -> Value {
 }
 
 /// A `553|incomplete|` CONTRIBUTION carrying a single `creation` version.
-fn incomplete_creation_contribution(data: Value) -> Value {
+fn incomplete_creation_contribution(data: &Value) -> Value {
     json!({
         "versions": [{
             "data": data,
@@ -355,7 +355,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 
     // The identical body committed as `553|incomplete|` is accepted: the lower
     // limits are treated as zero.
-    svc.create_ehr_contribution(ehr_uuid, incomplete_creation_contribution(missing))
+    svc.create_ehr_contribution(ehr_uuid, incomplete_creation_contribution(&missing))
         .await
         .expect("an incomplete commit tolerates the missing mandatory sections");
     assert_eq!(
@@ -370,7 +370,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
     let wrong = svc
         .create_ehr_contribution(
             ehr_uuid,
-            incomplete_creation_contribution(composition("ips_invalid.json")),
+            incomplete_creation_contribution(&composition("ips_invalid.json")),
         )
         .await;
     assert!(

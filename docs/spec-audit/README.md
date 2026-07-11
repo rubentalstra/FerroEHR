@@ -56,7 +56,7 @@ before a finding enters `FINDINGS.md`.
 | 11 | base-foundation | done (57 / 30) | done — 1 fixed | orchestrator-reviewed |
 | 12 | base-base-types | done (37 / 11) | done — 1 fixed | orchestrator-reviewed |
 | 13 | am-aom14-opt | done (56 / 28) | done — 12 check families added | orchestrator-reviewed |
-| 14 | am-aom2-adl2 | done (70 / 18) | pending | pending |
+| 14 | am-aom2-adl2 | done (70 / 18) | done — ADL2 registration validator built | orchestrator-reviewed |
 | 15 | term | done (53 / 21) | pending | pending |
 | 16 | query-aql | done (50 / 12) | pending | pending |
 | 17 | sm-platform | done (56 / 24) | pending | pending |

@@ -107,10 +107,9 @@ fn corpus_all_valid_opts_pass() {
     let mut failures = Vec::new();
     for path in &files {
         let xml = std::fs::read_to_string(path).expect("read opt");
-        let opt = match opt14::from_xml(&xml) {
-            Ok(opt) => opt,
-            // Parseability is the `opt14_corpus` gate's job, not ours.
-            Err(_) => continue,
+        // Parseability is the `opt14_corpus` gate's job, not ours.
+        let Ok(opt) = opt14::from_xml(&xml) else {
+            continue;
         };
         if let Err(e) = validate_opt_artefact(&opt) {
             failures.push(format!("{}: {e}", path.display()));
@@ -455,11 +454,23 @@ fn temporal_pattern_validity_forms() {
 }
 
 #[test]
+fn stcdc_duplicate_code_in_code_list() {
+    // Duplicate a code in the first C_CODE_PHRASE code_list.
+    let xml = mutate_after(
+        &minimal_xml(),
+        "C_CODE_PHRASE",
+        "</code_list>",
+        "</code_list><code_list>433</code_list><code_list>433</code_list>",
+    );
+    expect_code(&parse(&xml), "STCDC");
+}
+
+#[test]
 fn vtlc_language_code_set_mismatch() {
     let mut opt = parse(&minimal_xml());
     let term = |code: &str| ArchetypeTerm {
         code: code.to_owned(),
-        items: Default::default(),
+        items: indexmap::IndexMap::default(),
     };
     opt.ontology = Some(FlatArchetypeOntology {
         archetype_id: "openEHR-EHR-COMPOSITION.minimal.v1".to_owned(),
