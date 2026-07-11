@@ -1,0 +1,70 @@
+ehrbase-rs {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+A pure-Rust openEHR CDR (ITS-REST 1.0.3 + AQL 1.1). See docs/enterprise/deployment.md.
+
+API base path: {{ .Values.rest.basePath }}
+Service:       {{ include "ehrbase-rs.fullname" . }}:{{ .Values.service.port }} ({{ .Values.service.type }})
+
+Reach it locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "ehrbase-rs.fullname" . }} 8080:{{ .Values.service.port }}
+  curl -i http://127.0.0.1:8080{{ .Values.rest.basePath | trimSuffix "/openehr/v1" }}/status
+
+{{ if .Values.management.enabled -}}
+Health probes (public):  {{ .Values.management.basePath }}/health/liveness | /health/readiness
+{{ if .Values.metrics.enabled -}}
+Prometheus (public):     {{ .Values.management.basePath }}/prometheus  (scrape annotations added)
+{{ end -}}
+{{ else -}}
+NOTE: management.enabled=false — HTTP probes are unavailable; probes.exec must be on.
+{{ end }}
+────────────────────────────────────────────────────────────────────────────
+DATABASE / MIGRATIONS (ADR-013)
+────────────────────────────────────────────────────────────────────────────
+This chart NEVER ships a PostgreSQL. It connects to an EXTERNAL PostgreSQL 18
+as the unprivileged app role.
+{{ if .Values.database.existingSecret -}}
+  DSN source: existing Secret "{{ .Values.database.existingSecret }}" key "{{ .Values.database.existingSecretKey }}"  [OK]
+{{ else if .Values.database.url -}}
+  ⚠  DSN source: INLINE database.url (dev/test). For production set
+     database.existingSecret and remove database.url from values.
+{{ else -}}
+  ✗  No database DSN configured. Set database.existingSecret (preferred) or
+     database.url. The pod will crash-loop until a DSN is provided.
+{{ end }}
+Migrations are append-only and MUST be applied by the `ehrbase_migrator` role,
+NOT the runtime app role. Either grant the runtime DSN the migrator role, or
+run migrations out-of-band with a migrator DSN (recommended). See the
+"Upgrade strategy" section of docs/enterprise/deployment.md (lock_timeout
+wrapper + image pinning).
+
+────────────────────────────────────────────────────────────────────────────
+SECURITY POSTURE
+────────────────────────────────────────────────────────────────────────────
+  runAsNonRoot:            {{ .Values.podSecurityContext.runAsNonRoot }} (uid {{ .Values.podSecurityContext.runAsUser }})
+  readOnlyRootFilesystem:  {{ .Values.securityContext.readOnlyRootFilesystem }}
+  seccompProfile:          {{ .Values.securityContext.seccompProfile.type }}
+  NetworkPolicy:           {{ if .Values.networkPolicy.enabled }}default-deny-ingress (API port only){{ else }}DISABLED — enable networkPolicy for PHI workloads{{ end }}
+{{ if not .Values.auth.enabled }}
+  ⚠  auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
+{{ end -}}
+{{ if not (or .Values.auth.oidc.issuer .Values.config.files) }}
+  ⚠  auth.enabled={{ .Values.auth.enabled }} but no OIDC issuer and no mounted
+     config.files (Basic user store). With no mechanism, every request 401s —
+     configure auth.oidc.issuer or supply a Basic-auth store via config.files.
+{{ end -}}
+{{ if .Values.fhirOutbound.enabled }}
+  ⚠  fhirOutbound.enabled=true — this AMQP stream carries PHI (mapped FHIR
+     resources). Ensure the broker + exchange "{{ .Values.fhirOutbound.exchange }}" are access-controlled and TLS.
+{{ end -}}
+{{ if and .Values.multimedia.enabled .Values.multimedia.allowHttp }}
+  ⚠  multimedia.allowHttp=true — plain-HTTP object store. Dev only; prod S3 is HTTPS.
+{{ end }}
+Optional integrations currently ON:
+  admin API:        {{ .Values.rest.adminEnabled }}
+  multi-tenancy:    {{ .Values.tenancy.enabled }}
+  eventing (AMQP):  {{ .Values.events.enabled }}
+  FHIR inbound:     {{ .Values.rest.fhirEnabled }}
+  FHIR outbound:    {{ .Values.fhirOutbound.enabled }} (PHI)
+  S3 multimedia:    {{ .Values.multimedia.enabled }}
+  ATNA audit:       {{ .Values.atna.enabled }}
+  ext terminology:  {{ .Values.externalTerminology.enabled }}
