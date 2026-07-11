@@ -601,17 +601,17 @@ trigger for release, containers, and docs alike.
 
 ## 6. Tasks
 
-- [ ] **W1.1 Scaffold `website/` + `docs.yml` (deploy dev).**
-  - [ ] `website/book/{book.toml, src/SUMMARY.md + chapter stubs, theme/custom.css, theme/version-picker.js}`; run `mdbook-mermaid install website/book` to vendor mermaid assets.
-  - [ ] `website/landing/{index.html, style.css, 404.html, robots.txt, assets/}` with the §3 tokens.
-  - [ ] `scripts/build-site.sh` (`--dev-only` / `--full`) + `scripts/cut-version.sh`.
-  - [ ] `.github/workflows/docs.yml` per §2f (build + deploy `develop`).
-  - **Acceptance:** `bash scripts/build-site.sh --dev-only` produces `_site/` with landing + `/docs/dev/` + `/api/` locally; `mdbook build website/book` is clean; workflow YAML lints.
-- [ ] **W1.2 OpenAPI pipeline + drift gate.**
-  - [ ] Vendor Swagger UI **5.32.8** `dist/` into `website/api/vendor/swagger-ui/`; hand-write `api/index.html` with the 7-spec `urls` dropdown.
-  - [ ] `scripts/assemble-oas.sh` (+ `--check`); commit `website/api/spec/*.openapi.yaml`.
-  - [ ] Wire the `--check` gate into `docs.yml`.
-  - **Acceptance:** `/api/` renders all 7 groups offline (browser Network tab shows zero external requests); `scripts/assemble-oas.sh --check` passes on a clean tree.
+- [x] **W1.1 Scaffold `website/` + `docs.yml` (deploy dev).** _Tree scaffolded; dev-only build produces `_site/` with landing + `/docs/dev/` + `/api/`; mdBook 0.5.4 build clean; docs.yml YAML lints._
+  - [x] `website/book/{book.toml, src/SUMMARY.md + chapter stubs, theme/custom.css, theme/version-picker.js}`; run `mdbook-mermaid install website/book` to vendor mermaid assets. _26 chapter stubs; mermaid assets vendored into theme/ (no CDN); book.toml uses only 0.5-valid keys._
+  - [x] `website/landing/{index.html, style.css, 404.html, robots.txt, assets/}` with the §3 tokens. _Full landing (nav, hero, conformance proof strip 341/315/0 + CORE/STANDARD/OPTIONS pills, 8-card grid, quick-start, chips, footer); relative URLs only; light+dark._
+  - [x] `scripts/build-site.sh` (`--dev-only` / `--full`) + `scripts/cut-version.sh`. _Both written + executable; --dev-only verified locally._
+  - [x] `.github/workflows/docs.yml` per §2f (build + deploy `develop`). _deploy hardened to `needs: [build, version-cut]` with a `!cancelled()`/skipped-version-cut guard per task note._
+  - **Acceptance:** `bash scripts/build-site.sh --dev-only` produces `_site/` with landing + `/docs/dev/` + `/api/` locally; `mdbook build website/book` is clean; workflow YAML lints. _All pass._
+- [x] **W1.2 OpenAPI pipeline + drift gate.** _Swagger UI 5.32.8 vendored; api/index.html serves all 7 groups fully offline; assemble-oas.sh --check green on clean tree._
+  - [x] Vendor Swagger UI **5.32.8** `dist/` into `website/api/vendor/swagger-ui/`; hand-write `api/index.html` with the 7-spec `urls` dropdown. _4 dist files copied from the v5.32.8 tarball; brand header bar + light-only note; relative asset refs only._
+  - [x] `scripts/assemble-oas.sh` (+ `--check`); commit `website/api/spec/*.openapi.yaml`. _Written per §5a (identity-map rewritten as a portable word-list loop, behaviour identical); 7 `-html` bundles copied + committed._
+  - [x] Wire the `--check` gate into `docs.yml`. _First step of the build job._
+  - **Acceptance:** `/api/` renders all 7 groups offline (browser Network tab shows zero external requests); `scripts/assemble-oas.sh --check` passes on a clean tree. _Assets verified 100% local (curl); --check green._
 - [ ] **W1.3 Write the book.**
   - [ ] All chapters in §4, sourced per the content map, end-user voice; mermaid architecture diagram; native `> [!NOTE]` callouts; `<!-- toc -->` in the L chapters.
   - [ ] Config reference generated/curated from the 119 `EHRBASE_*` keys.
