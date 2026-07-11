@@ -15,8 +15,13 @@ SRC="crates/openehr-its/vendor/rest-oas"
 DST="website/api/spec"
 OAS_GROUPS="ehr definition query demographic admin system overview"
 mkdir -p "$DST"
+# The upstream bundles carry `info.version: latest`; the served copy stamps the
+# pinned ITS-REST release (docs/VERSIONS.md) so Swagger UI shows a real version.
+# The Admin API is dev-branch-only upstream — its honest `development` stays.
+ITS_REST_VERSION="1.0.3"
 for group in $OAS_GROUPS; do
-  cp "$SRC/${group}-html.openapi.yaml" "$DST/${group}.openapi.yaml"
+  sed -e "1,10s/^  version: latest\$/  version: ${ITS_REST_VERSION}/" \
+    "$SRC/${group}-html.openapi.yaml" > "$DST/${group}.openapi.yaml"
 done
 if [[ "${1:-}" == "--check" ]]; then
   if ! git diff --quiet -- "$DST"; then
