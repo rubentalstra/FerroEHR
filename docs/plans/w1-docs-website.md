@@ -612,10 +612,10 @@ trigger for release, containers, and docs alike.
   - [x] `scripts/assemble-oas.sh` (+ `--check`); commit `website/api/spec/*.openapi.yaml`. _Written per §5a (identity-map rewritten as a portable word-list loop, behaviour identical); 7 `-html` bundles copied + committed._
   - [x] Wire the `--check` gate into `docs.yml`. _First step of the build job._
   - **Acceptance:** `/api/` renders all 7 groups offline (browser Network tab shows zero external requests); `scripts/assemble-oas.sh --check` passes on a clean tree. _Assets verified 100% local (curl); --check green._
-- [ ] **W1.3 Write the book.**
-  - [ ] All chapters in §4, sourced per the content map, end-user voice; mermaid architecture diagram; native `> [!NOTE]` callouts; `<!-- toc -->` in the L chapters.
-  - [ ] Config reference generated/curated from the 119 `EHRBASE_*` keys.
-  - **Acceptance:** `mdbook-lint lint website/book/src` clean; lychee clean; no page links into a "never publish" path (§4).
+- [x] **W1.3 Write the book.** *(2026-07-11 — 26 chapters, ~20,800 words, two parallel writers; every endpoint/env key code-verified)*
+  - [x] All chapters in §4, sourced per the content map, end-user voice; mermaid architecture diagram; native `> [!NOTE]` callouts; `<!-- toc -->` in the L chapters.
+  - [x] Config reference generated/curated from the `EHRBASE_*` keys (127 concrete keys documented, grep-only false positives excluded).
+  - **Acceptance:** `mdbook-lint lint website/book/src` clean; lychee clean (loopback/localhost excluded — reader-side URLs); no page links into a "never publish" path (§4). ✓
 - [ ] **W1.4 Versioning machinery.**
   - [ ] `versions.json` + `version-picker.js` (dropdown + API link injected into the menu bar); `docs-dist` orphan branch created; `cut-version.sh`.
   - [ ] Dry-run the tag path locally (build a fake `v0.0.0-docs-dryrun` into `docs-dist`, assemble `--full`, confirm `/docs/v0.0.0-docs-dryrun/` + `/docs/latest/` render and the picker lists them), then delete the dry-run entry.
