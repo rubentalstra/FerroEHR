@@ -349,3 +349,22 @@ pub trait ContributionAdapter: Send + Sync {
         a_contribution: Value,
     ) -> Result<ServiceResponse, SmError>;
 }
+
+/// ITS-REST **multimedia expansion** adapter-support extension (ADR-017).
+///
+/// PORT NOTE: not an SM interface call. When `DV_MULTIMEDIA` externalization is
+/// enabled (ADR-017), a stored COMPOSITION serves its large media by reference
+/// (`uri` + integrity fields) by default; the `?expand_multimedia=true` query
+/// parameter on a composition GET asks the server to re-inline the bytes,
+/// verifying each blob's SHA-256 before serving (a mismatch is a `500`, never
+/// silent corruption). The default implementation is a no-op passthrough — a
+/// platform without externalization returns the body unchanged.
+#[async_trait]
+pub trait MultimediaAdapter: Send + Sync {
+    /// Re-inline externalized `DV_MULTIMEDIA` blobs in a canonical composition
+    /// `body`, verifying integrity. A no-op when externalization is disabled or
+    /// the body carries no externalized media.
+    async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
+        Ok(body)
+    }
+}

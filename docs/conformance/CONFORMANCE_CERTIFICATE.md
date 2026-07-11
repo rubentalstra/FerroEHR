@@ -13,7 +13,7 @@
 | Vendor | ehrbase-rs (self-assessed) |
 | Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-11T01:21:41.971878Z |
+| Date | 2026-07-11T06:26:52.947058Z |
 
 ## Scope of Test
 
