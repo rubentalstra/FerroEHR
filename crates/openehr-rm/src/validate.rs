@@ -426,6 +426,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
     use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
     use crate::data_types::uri::dv_uri::DvUriData;
+    use crate::integration::generic_entry::GenericEntry;
 
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
@@ -488,6 +489,9 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "ACTION" => run::<Action>(value, out),
         "EVALUATION" => run::<Evaluation>(value, out),
         "ADMIN_ENTRY" => run::<AdminEntry>(value, out),
+        // Integration package (RM integration master02): GENERIC_ENTRY carries
+        // only `data: ITEM` (1..1) — the typed deserialize enforces it.
+        "GENERIC_ENTRY" => run::<GenericEntry>(value, out),
         "SECTION" => run::<Section>(value, out),
         "FOLDER" => run::<Folder>(value, out),
         "ITEM_TAG" => run::<ItemTag>(value, out),
