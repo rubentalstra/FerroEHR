@@ -482,7 +482,7 @@ impl EhrbaseService {
     /// §"Incomplete Content") relaxes the archetype/template existence &
     /// cardinality **lower** limits to zero for COMPOSITIONs; RM invariants and
     /// terminology stay at full strictness ("data may be missing, but it may not
-    /// be wrong"). The direct endpoints have no lifecycle_state and always pass
+    /// be wrong"). The direct endpoints have no `lifecycle_state` and always pass
     /// `false`.
     pub(super) async fn validate_for_commit(
         &self,

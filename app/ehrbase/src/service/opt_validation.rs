@@ -66,10 +66,10 @@ const LOCATABLE_META_ATTRS: &[&str] = &[
 
 /// Legacy `(class, attribute)` pairs tolerated for prior-art OPT compatibility
 /// (PORT NOTE): `ELEMENT.null_flavor` is the archetype-tooling (US) spelling of
-/// RM `null_flavour` (org.openehr.rm.data_structures ELEMENT), and
+/// RM `null_flavour` (`org.openehr.rm.data_structures` ELEMENT), and
 /// `ITEM_TABLE.rotated` is an RM 1.0.x attribute removed from later RM
 /// releases — both appear in widely-deployed OPT 1.4 artifacts (the vendored
-/// RIPPLE / clinical_content corpus templates).
+/// RIPPLE / `clinical_content` corpus templates).
 const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
     ("ELEMENT", "null_flavor"),
     ("ITEM_TABLE", "rotated"),
@@ -343,11 +343,11 @@ fn check_cardinality_occurrences(
 
 /// VATID: `check that all codes mentioned in `definition` are defined in
 /// terminology` (`AOM2/master08-validation.adoc` line 56). Applied to at-code
-/// `node_id`s (the addressable, sibling-identifying codes, AOM14/04 §Node_id).
-/// Empty node_ids (non-addressable leaves) and non-`at`/`id` codes are exempt.
+/// `node_id`s (the addressable, sibling-identifying codes, AOM14/04 §`Node_id`).
+/// Empty `node_ids` (non-addressable leaves) and non-`at`/`id` codes are exempt.
 /// The defined-code set is collected globally across the flattened OPT (the
 /// definition roots + every `component_ontologies` set), which is deliberately
-/// lenient about per-archetype scoping — it still catches a node_id that is
+/// lenient about per-archetype scoping — it still catches a `node_id` that is
 /// defined nowhere while never mis-rejecting a correctly-scoped code.
 fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
     if !is_at_code(node_id) {
@@ -363,7 +363,7 @@ fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Viol
 }
 
 /// An addressable archetype term code: `at0000`, `at0001.1`, or the ADL2 `id`
-/// form. A bare, empty, or free-text node_id is not an at-code.
+/// form. A bare, empty, or free-text `node_id` is not an at-code.
 fn is_at_code(code: &str) -> bool {
     let rest = code
         .strip_prefix("at")

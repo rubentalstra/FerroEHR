@@ -102,9 +102,9 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 /// flags; those are excluded here, not silently tolerated.)
 ///
 /// The vendored corpus mixes openEHR reference data with **EHRbase-SDK** data,
-/// and EHRbase is *lenient*: some SDK fixtures omit RM-mandatory attributes that
+/// and `EHRbase` is *lenient*: some SDK fixtures omit RM-mandatory attributes that
 /// a strict validator rightly rejects. Per ADR-008 (openEHR spec conformance,
-/// not EHRbase parity) we do **not** tolerate that leniency, so such fixtures are
+/// not `EHRbase` parity) we do **not** tolerate that leniency, so such fixtures are
 /// excluded here with the exact spec violation named — they are not a valid
 /// oracle for "validates clean". Excluded on those grounds:
 /// - `rawdb_composition.json` — its `composer.external_ref` is a `PARTY_REF`

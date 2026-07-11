@@ -15,14 +15,14 @@ set -euo pipefail
 EDITION="${1:-}"
 case "$EDITION" in
   rs)   PORT=8090; PROFILE=rs;   ADMIN_USER=ehrbase ;;
-  java) PORT=8091; PROFILE=java; ADMIN_USER=ehrbase-admin ;;
+  java) PORT=8091; PROFILE=java; ADMIN_USER=ehrbase-admin; OUT_OVERRIDE=docs/conformance/upstream-ehrbase ;;
   *) echo "usage: $0 <rs|java>" >&2; exit 2 ;;
 esac
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BASE="http://localhost:${PORT}/ehrbase/rest/openehr/v1"
-OUT="docs/conformance/${EDITION}"
+OUT="${OUT_OVERRIDE:-docs/conformance/${EDITION}}"
 
 cd "$HERE"
 echo ">> [$EDITION] starting stack (docker compose --profile $PROFILE up -d)…"
@@ -44,10 +44,29 @@ fi
 
 echo ">> [$EDITION] running the CNF suite → $OUT …"
 cd "$ROOT"
+EXTRA_ARGS=()
+if [ "$EDITION" = "java" ]; then
+  # Upstream SUT identity + sibling-mounted admin (X1, docs/plans/x1-comparison.md).
+  #
+  # NOTE (owner ruling 2026-07-11): the fairness-adjudication register is
+  # DISABLED for now — the current objective is a RAW Java-vs-Rust-vs-spec diff
+  # to find compliance bugs in both servers (see docs/conformance/upstream-ehrbase/TRIAGE.md),
+  # so nothing is exempted. Re-enable by restoring the --adjudications line below
+  # when the public fairness comparison (X1.5) is built.
+  JAVA_DIGEST="$(docker inspect "${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}" --format '{{index .RepoDigests 0}}' 2>/dev/null | cut -d@ -f2 || true)"
+  EXTRA_ARGS+=(
+    --sut-name ehrbase-java
+    --sut-version 2.34.0
+    --admin-base-url "http://localhost:${PORT}/ehrbase/rest/admin"
+    # --adjudications tools/conformance/adjudications/ehrbase-java-2.34.toml  # disabled — raw diff (owner 2026-07-11)
+  )
+  [ -n "$JAVA_DIGEST" ] && EXTRA_ARGS+=(--sut-image-digest "$JAVA_DIGEST")
+fi
 cargo run -p conformance --bin conformance -- \
   run --base-url "$BASE" \
   --auth "basic:ehrbase:ehrbase" \
   --admin-auth "basic:${ADMIN_USER}:ehrbase" \
+  ${EXTRA_ARGS+"${EXTRA_ARGS[@]}"} \
   --out "$OUT" || true   # exit 1 = there are findings; the report is still written
 
 echo ">> [$EDITION] tearing down…"
