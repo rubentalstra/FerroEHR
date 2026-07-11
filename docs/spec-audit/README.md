@@ -58,7 +58,7 @@ before a finding enters `FINDINGS.md`.
 | 13 | am-aom14-opt | done (56 / 28) | done — 12 check families added | orchestrator-reviewed |
 | 14 | am-aom2-adl2 | done (70 / 18) | done — ADL2 registration validator built | orchestrator-reviewed |
 | 15 | term | done (53 / 21) | done — identifier constants + property check | orchestrator-reviewed |
-| 16 | query-aql | done (50 / 12) | pending | pending |
+| 16 | query-aql | done (50 / 12) | done — 8 defect families fixed | orchestrator-reviewed |
 | 17 | sm-platform | done (56 / 24) | pending | pending |
 | 18 | sm-tdd | done (47 / 7) | pending | pending |
 | 19 | its-rest-general | done (40 / 10) | pending | pending |

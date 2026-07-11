@@ -114,6 +114,7 @@ fn collect_expr(expr: &Expr, out: &mut BTreeSet<String>) {
             collect_operand(rhs, out);
         }
         Expr::Exists(t) => collect_path_target(t, out),
+        Expr::Const(_) => {}
         Expr::Like { path, pattern } => {
             collect_path_target(path, out);
             if let ir::LikePattern::Param(p) = pattern {
