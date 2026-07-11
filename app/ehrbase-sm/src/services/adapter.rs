@@ -304,6 +304,23 @@ pub trait FhirConnectorAdapter: Send + Sync {
         profile: Option<String>,
         a_resource: Value,
     ) -> Result<ServiceResponse, SmError>;
+
+    /// `GET …/fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` —
+    /// the **read façade** (ADR-016 §Decision 4b): resolve every enabled mapping
+    /// for the type, run the mapped template's COMPOSITION query (scoped to the
+    /// `patient`'s EHR) through the platform's query seam, reverse-map each hit
+    /// to a FHIR resource, and return a FHIR `searchset` **Bundle** (`total`,
+    /// `entry[].fullUrl`, `entry[].resource`). Read-only and stateless — no FHIR
+    /// persistence, no generic FHIR Search (only this explicit `patient` scope,
+    /// ADR-016 §Decision 5). `patient` is mandatory (the protocol edge rejects a
+    /// missing one `400`); a type with no enabled mapping yields an empty
+    /// (`total: 0`) Bundle, not an error.
+    async fn fhir_search(
+        &self,
+        resource_type: String,
+        patient: String,
+        count: Option<i64>,
+    ) -> Result<Value, SmError>;
 }
 
 /// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire

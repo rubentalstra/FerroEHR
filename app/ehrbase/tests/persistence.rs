@@ -102,8 +102,9 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // subscription store, E1 task 4) + 0004_multitenancy (the ADR-015 `tenant`
     // registry + tenant_id scoping + RLS FORCE, appended for E2 task 2) +
     // 0005_fhir_mapping (the ADR-016 FHIR-connector mapping store, appended for
-    // E3 task 2).
-    assert_eq!((applied_ext, applied_ehr), (2, 5));
+    // E3 task 2) + 0006_fhir_outbound_cursor (the ADR-016 §4a outbound-emitter
+    // delivery cursor, appended for E3 tasks 4/5).
+    assert_eq!((applied_ext, applied_ehr), (2, 6));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -124,6 +125,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "event_outbox",
             "event_subscription",
             "fhir_mapping",
+            "fhir_outbound_cursor",
             "item_tag",
             "node",
             "sp_binding",

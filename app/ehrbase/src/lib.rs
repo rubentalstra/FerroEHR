@@ -9,6 +9,7 @@
 pub mod aql;
 pub mod db;
 pub mod events;
+pub mod fhir_outbound;
 pub mod service;
 pub mod signing;
 pub mod storage;

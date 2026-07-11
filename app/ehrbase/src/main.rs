@@ -168,7 +168,7 @@ async fn serve() -> anyhow::Result<()> {
     // it realizes the SM `SystemLog` component the REST audit layer emits
     // through (ADR-011, ehrbase-audit dissolved into the platform crate).
     let audit_enabled = audit_sender.is_some();
-    let mut service = EhrbaseService::new(pool).with_signer(signer);
+    let mut service = EhrbaseService::new(pool.clone()).with_signer(signer);
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
     }
@@ -189,6 +189,30 @@ async fn serve() -> anyhow::Result<()> {
         None => {}
     }
 
+    // The service is now fully built; share it (the FHIR outbound emitter and the
+    // REST server both hold it).
+    let service = Arc::new(service);
+
+    // FHIR outbound emitter (ADR-016 §Decision 4a): off by default. When enabled,
+    // it walks committed outbox rows, reverse-maps matching COMPOSITIONs, and
+    // publishes the FHIR resources to the broker — carrying PHI by design, hence
+    // its own explicit gate (a separate switch from the REST FHIR connector).
+    let fhir_outbound_config = ehrbase::fhir_outbound::FhirOutboundConfig::load()
+        .context("loading FHIR outbound configuration")?;
+    let fhir_outbound_handle = if fhir_outbound_config.enabled {
+        tracing::info!(
+            exchange = %fhir_outbound_config.exchange,
+            "FHIR outbound emitter enabled (publishes clinical FHIR resources)"
+        );
+        Some(ehrbase::fhir_outbound::start(
+            fhir_outbound_config,
+            pool.clone(),
+            service.clone(),
+        ))
+    } else {
+        None
+    };
+
     // Build the RBAC gate. Only wired when authentication is enabled (the gate
     // runs after authentication); `from_config` yields `None` when RBAC is
     // disabled, restoring authentication-only behaviour.
@@ -206,7 +230,7 @@ async fn serve() -> anyhow::Result<()> {
         management = observability.management.enabled,
         "starting ehrbase"
     );
-    ehrbase_rest::serve_full(rest_config, Arc::new(service), authz, observability)
+    ehrbase_rest::serve_full(rest_config, service, authz, observability)
         .await
         .context("serving ehrbase-rest")?;
 
@@ -217,6 +241,11 @@ async fn serve() -> anyhow::Result<()> {
     // Stop the eventing publisher (a final best-effort drain; unpublished rows
     // stay pending in the outbox and drain on next start — at-least-once).
     if let Some(handle) = events_handle {
+        handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
+    }
+    // Stop the FHIR outbound emitter (rows past its cursor emit on next start —
+    // at-least-once).
+    if let Some(handle) = fhir_outbound_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
     // Flush OTel exporters + stop samplers on the same shutdown path.

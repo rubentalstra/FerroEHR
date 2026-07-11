@@ -247,6 +247,105 @@ async fn valid_resource_commits_and_is_readable_with_feeder_audit() {
 }
 
 #[tokio::test]
+async fn facade_returns_committed_resource_as_searchset_bundle() {
+    let pg = Pg::start().await;
+    let (_svc, router) = app_with_template(&pg, "fhir_facade", true).await;
+
+    // Map + commit a FHIR Observation (subject Patient/p-42 → EHR subject p-42).
+    let (status, _, _) = send(
+        &router,
+        req("POST", MAPPINGS, Some(mapping_body("bp", PROFILE_OK, "US"))),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let (status, _, oo) = send(
+        &router,
+        req(
+            "POST",
+            &format!("{BASE}/fhir/r4/Observation"),
+            Some(bp_observation(PROFILE_OK)),
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "ingest committed: {oo}");
+
+    // Read it back through the FHIR read façade, scoped by the patient subject.
+    let (status, _, bundle) = send(
+        &router,
+        req(
+            "GET",
+            &format!("{BASE}/fhir/r4/Observation?patient=p-42&_count=10"),
+            None,
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "façade query: {bundle}");
+    assert_eq!(bundle["resourceType"], "Bundle");
+    assert_eq!(bundle["type"], "searchset");
+    assert_eq!(bundle["total"], 1, "one committed Observation: {bundle}");
+    let resource = &bundle["entry"][0]["resource"];
+    assert_eq!(resource["resourceType"], "Observation");
+    // The mapped value survived commit → reverse-map (magnitude 118).
+    assert_eq!(
+        resource["valueQuantity"]["value"].as_f64(),
+        Some(118.0),
+        "mapped magnitude reverse-mapped: {resource}"
+    );
+    assert_eq!(
+        resource["valueQuantity"]["unit"], "kg",
+        "unit reverse-mapped"
+    );
+    // The subject reference is reconstructed with strip_prefix re-applied.
+    assert_eq!(resource["subject"]["reference"], "Patient/p-42");
+    // The entry fullUrl is the composition's versioned-object uuid.
+    assert!(
+        bundle["entry"][0]["fullUrl"]
+            .as_str()
+            .unwrap()
+            .starts_with("urn:uuid:"),
+        "fullUrl urn: {bundle}"
+    );
+}
+
+#[tokio::test]
+async fn facade_empty_when_no_data_for_patient() {
+    let pg = Pg::start().await;
+    let (_svc, router) = app_with_template(&pg, "fhir_facade_empty", true).await;
+    // A mapping exists but nothing committed for this patient → empty searchset.
+    let (status, _, _) = send(
+        &router,
+        req("POST", MAPPINGS, Some(mapping_body("bp", PROFILE_OK, "US"))),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let (status, _, bundle) = send(
+        &router,
+        req(
+            "GET",
+            &format!("{BASE}/fhir/r4/Observation?patient=nobody"),
+            None,
+        ),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(bundle["type"], "searchset");
+    assert_eq!(bundle["total"], 0, "no data → empty bundle: {bundle}");
+}
+
+#[tokio::test]
+async fn facade_missing_patient_is_400() {
+    let pg = Pg::start().await;
+    let (_svc, router) = app_with_template(&pg, "fhir_facade_400", true).await;
+    let (status, _, oo) = send(
+        &router,
+        req("GET", &format!("{BASE}/fhir/r4/Observation"), None),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "no patient → 400: {oo}");
+    assert_eq!(oo["issue"][0]["code"], "required");
+}
+
+#[tokio::test]
 async fn invalid_mapped_content_is_422_with_validator_message() {
     let pg = Pg::start().await;
     let (_svc, router) = app_with_template(&pg, "fhir_invalid", true).await;

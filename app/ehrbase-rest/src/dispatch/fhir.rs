@@ -12,6 +12,13 @@
 //!   `FEEDER_AUDIT` provenance (ADR-016 §Decision 3). Only the starter resource
 //!   set ([`STARTER_RESOURCES`]) is supported; anything else is a typed
 //!   `501 OperationOutcome` (ADR-016 §Decision 5).
+//! * `GET /fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` — the
+//!   read façade (ADR-016 §Decision 4b). Resolves the enabled mappings for the
+//!   type, runs the template-bound COMPOSITION query scoped to the patient, and
+//!   returns a FHIR `searchset` Bundle of reverse-mapped resources. The
+//!   `patient` scope is mandatory — a missing one is a typed `400` (explicit
+//!   params only; never generic FHIR Search, ADR-016 §Decision 5). An
+//!   out-of-scope type is the same typed `501` as inbound.
 //! * `/admin/fhir_mapping[/{id}]` — CRUD over the deployable mapping artefacts
 //!   ("mapping-as-data", ADR-016 §Decision 2). Mounted under `/admin/` like the
 //!   event-subscription/tenant extensions (the coarse RBAC gate classes it
@@ -56,6 +63,8 @@ pub(crate) const STARTER_RESOURCES: &[&str] =
 pub(crate) const FHIR_ROUTES: &[(&str, &str, &str)] = &[
     // Inbound: accept a FHIR R4 resource of {resource_type} and commit it.
     ("POST", "/fhir/r4/{resource_type}", "fhir_ingest"),
+    // Read façade: patient-scoped searchset Bundle of reverse-mapped resources.
+    ("GET", "/fhir/r4/{resource_type}", "fhir_search"),
     // Mapping-store CRUD (mapping-as-data).
     ("GET", "/admin/fhir_mapping", "fhir_mapping_list"),
     ("POST", "/admin/fhir_mapping", "fhir_mapping_create"),
@@ -97,41 +106,8 @@ async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestPa
 
     let h = &parts.headers;
     match op {
-        "fhir_ingest" => {
-            let Some(resource_type) = parts.path.get("resource_type").cloned() else {
-                return operation_outcome(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "exception",
-                    "missing path parameter `resource_type`",
-                );
-            };
-            // Scope policy lives at the protocol edge: an out-of-scope resource
-            // type is a typed 501 before the backend is touched (ADR-016 §5).
-            if !STARTER_RESOURCES.contains(&resource_type.as_str()) {
-                return operation_outcome(
-                    StatusCode::NOT_IMPLEMENTED,
-                    "not-supported",
-                    &format!(
-                        "FHIR resource type '{resource_type}' is not supported by the connector \
-                         (starter set: {})",
-                        STARTER_RESOURCES.join(", ")
-                    ),
-                );
-            }
-            let body = match negotiate::json_value(h, &parts.body) {
-                Ok(b) => b,
-                Err(e) => return api_error_outcome(&e),
-            };
-            let profile = first_profile(&body);
-            match state
-                .backend()
-                .fhir_ingest(resource_type, profile, body)
-                .await
-            {
-                Ok(resp) => ingest_created(&state, &resp),
-                Err(e) => sm_error_outcome(e),
-            }
-        }
+        "fhir_ingest" => ingest(&state, &parts).await,
+        "fhir_search" => search(&state, &parts).await,
         "fhir_mapping_list" => match state.backend().fhir_mapping_list().await {
             Ok(items) => negotiate::respond(h, StatusCode::OK, &items),
             Err(e) => sm_error_outcome(e),
@@ -181,6 +157,81 @@ async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestPa
     }
 }
 
+/// Resolve the `{resource_type}` path param + enforce the starter-scope gate
+/// (ADR-016 §5): a missing param is a routing bug (`500`), an out-of-scope type
+/// is a typed `501` before the backend is touched. Shared by inbound + façade.
+#[allow(clippy::result_large_err)] // the Err is a ready axum Response (large by nature)
+fn scoped_resource_type(parts: &RequestParts) -> Result<String, Response> {
+    let Some(resource_type) = parts.path.get("resource_type").cloned() else {
+        return Err(operation_outcome(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "exception",
+            "missing path parameter `resource_type`",
+        ));
+    };
+    if !STARTER_RESOURCES.contains(&resource_type.as_str()) {
+        return Err(operation_outcome(
+            StatusCode::NOT_IMPLEMENTED,
+            "not-supported",
+            &format!(
+                "FHIR resource type '{resource_type}' is not supported by the connector \
+                 (starter set: {})",
+                STARTER_RESOURCES.join(", ")
+            ),
+        ));
+    }
+    Ok(resource_type)
+}
+
+/// `POST /fhir/r4/{resource_type}` — the inbound connector.
+async fn ingest<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Response {
+    let resource_type = match scoped_resource_type(parts) {
+        Ok(rt) => rt,
+        Err(resp) => return resp,
+    };
+    let body = match negotiate::json_value(&parts.headers, &parts.body) {
+        Ok(b) => b,
+        Err(e) => return api_error_outcome(&e),
+    };
+    let profile = first_profile(&body);
+    match state
+        .backend()
+        .fhir_ingest(resource_type, profile, body)
+        .await
+    {
+        Ok(resp) => ingest_created(state, &resp),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// `GET /fhir/r4/{resource_type}?patient=…[&_count=N]` — the read façade.
+async fn search<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Response {
+    let resource_type = match scoped_resource_type(parts) {
+        Ok(rt) => rt,
+        Err(resp) => return resp,
+    };
+    let q = parts.query.as_deref();
+    // `patient` is mandatory: the façade serves only this explicit scope,
+    // never generic FHIR Search (ADR-016 §5).
+    let Some(patient) = crate::params::query_param(q, "patient").filter(|p| !p.is_empty()) else {
+        return operation_outcome(
+            StatusCode::BAD_REQUEST,
+            "required",
+            "the `patient` query parameter is required (the FHIR read façade serves only \
+             the explicit patient scope, not generic Search)",
+        );
+    };
+    let count = crate::params::query_param(q, "_count").and_then(|c| c.parse::<i64>().ok());
+    match state
+        .backend()
+        .fhir_search(resource_type, patient, count)
+        .await
+    {
+        Ok(bundle) => fhir_json(StatusCode::OK, &bundle),
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
 /// The first `meta.profile` canonical URL on the resource, if any.
 fn first_profile(resource: &Value) -> Option<String> {
     resource
@@ -224,6 +275,14 @@ fn mapping_id(parts: &RequestParts) -> Result<Uuid, RestError> {
             "invalid FHIR mapping id `{raw}`"
         )))
     })
+}
+
+/// Render a FHIR resource (the read-façade Bundle) as `application/fhir+json`.
+fn fhir_json(status: StatusCode, body: &Value) -> Response {
+    let mut resp = (status, Json(body.clone())).into_response();
+    resp.headers_mut()
+        .insert(CONTENT_TYPE, HeaderValue::from_static(FHIR_JSON));
+    resp
 }
 
 /// Build a FHIR `OperationOutcome` response (`severity`/`code`/`diagnostics`)
