@@ -1,0 +1,43 @@
+# ECC upstream fairness adjudication register — EHRbase (Java) 2.34.0.
+#
+# Applied only for a non-ehrbase-rs SUT (`--sut-name ehrbase-java`); only
+# reclassifies cases, never edits one. See ./README.md for the format and the
+# X1.2 triage process.
+#
+# STATUS (X1.1): this file is SEEDED with the extension-by-construction area
+# rules that are knowable WITHOUT a run — live-verified structural facts about
+# upstream (§2c). The `rm-version-sensitive` and `defect` entries require the
+# X1.2 triage run against the live upstream server and are appended there;
+# until then the register is deliberately conservative (it never pre-emptively
+# excuses a failure it has not observed).
+
+[meta]
+sut = "ehrbase-java"
+version = "2.34.0"
+description = "Upstream fairness adjudication register for EHRbase (Java) 2.34.0 (seed: extensions only)."
+
+# ── Extensions (by construction — no run required) ───────────────────────────
+
+# Upstream EHRbase implements no demographic REST API; every DEM case (our own
+# wire design for I_DEMOGRAPHIC_SERVICE) would 404 against it. Not a failure —
+# a route upstream does not offer.
+[[area]]
+area = "DEM"
+disposition = "extension"
+reason = "Upstream EHRbase exposes no demographic REST API; the DEM cases exercise ehrbase-rs's own demographic wire."
+citation = "docs/plans/x1-comparison.md §2a/§2c (upstream has no demographic API); docs/architecture.md (RM demographic — own wire design)"
+
+# Version signing (VERSION.signature; sha256 over the canonical form) is an
+# ehrbase-rs feature, not an ITS-REST 1.0.x contract element. Upstream does not
+# sign versions, so the SIG cases do not apply.
+[[area]]
+area = "SIG"
+disposition = "extension"
+reason = "Version signing is an ehrbase-rs extension (VERSION.signature); it is not part of the ITS-REST contract upstream implements."
+citation = "docs/plans/x1-comparison.md §2a (Sig — version signing is ours); docs/design/version-signing.md"
+
+# NOTE (X1.2): TS openEHR-bundle cases assume our TERMINOLOGY('expand','openehr',…)
+# AQL feature and are candidate `extension` entries, but the TS area also holds
+# generic FHIR-tx cases — so TS is triaged per-case in X1.2, not blanket-ruled
+# here. `rm-version-sensitive` (archie 3.13.0 / ITS-REST 1.0.2 wire skew) and
+# `defect` entries (e.g. ALL_VERSIONS rejection) are added from the triage run.
