@@ -35,8 +35,8 @@ decide the phase is done on your behalf.
    any placeholder text that is there.
 6. **Set the phase file's `Status` header to `done`.**
 7. **Advance `docs/plans/current-phase.md`** to point at the next phase file
-   in sequence (per the table in `PORT_MASTER_PLAN.md` Section 10), with a
-   fresh session goal and next action for that phase's first task.
+   in sequence (per the build order in `docs/blueprint/00-THE-BLUEPRINT.md` §3),
+   with a fresh session goal and next action for that phase's first task.
 8. **Remind the user to commit** as `phase-NN: phase complete` on the
    current `claude/phase-NN-*` branch — this skill edits files but does not
    run git commands itself.

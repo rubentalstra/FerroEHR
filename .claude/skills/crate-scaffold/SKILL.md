@@ -10,12 +10,12 @@ argument-hint: "<crate-name, e.g. ehrbase-rest>"
 ---
 
 > **⚠️ ADR-004 / naming:** crate names split `openehr-*` (spec) / `ehrbase-*`
-> (application); the binary is `ehrbase`. Read the amendment banner at the top
-> of `PORT_MASTER_PLAN.md` for the current names (e.g. `openehr-term`,
-> `openehr-lang`, `openehr-am`, `openehr-query`, `ehrbase-rest`, `ehrbase`). Do
-> not scaffold `openehr-foundation` (folded into `openehr-base`) or the retired
-> old names. Generated spec crates get their `lib.rs`/`src` from
-> `openehr-codegen`, not this skill.
+> (application); the binary is `ehrbase`. See `docs/architecture.md` (the crate
+> map) for the current names (e.g. `openehr-term`, `openehr-lang`, `openehr-am`,
+> `openehr-query`, `ehrbase-rest`, `ehrbase`). Do not scaffold
+> `openehr-foundation` (folded into `openehr-base`) or the retired old names.
+> Generated spec crates get their `lib.rs`/`src` from `openehr-codegen`, not
+> this skill.
 
 # /crate-scaffold
 
@@ -25,8 +25,8 @@ that needs a new crate uses this too.
 
 ## Steps
 
-1. **Look up the crate in `PORT_MASTER_PLAN.md` Section 9** (Cargo workspace
-   layout) to get its correct dependency arrows (which other workspace
+1. **Look up the crate in `docs/architecture.md`** (the workspace layout +
+   crate map) to get its correct dependency arrows (which other workspace
    crates it depends on) and its one-line purpose comment.
 2. **Create `crates/<name>/Cargo.toml`**:
    - `[package]` with `name = "<name>"`, and `version`, `edition`,

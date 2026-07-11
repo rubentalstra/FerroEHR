@@ -18,7 +18,7 @@ echo "=== spec oracle ==="
 echo "Vendored openEHR spec text + CNF test schedule: docs/specs/openehr/ (index: its README.md; use /spec-lookup). Implement and review all spec-facing behaviour against that text — never from memory or EHRbase behaviour alone (.claude/rules/spec-adherence.md)."
 echo
 echo "=== current phase (docs/plans/current-phase.md) ==="
-cat docs/plans/current-phase.md 2>/dev/null || echo "(docs/plans/current-phase.md missing — read PORT_MASTER_PLAN.md)"
+cat docs/plans/current-phase.md 2>/dev/null || echo "(docs/plans/current-phase.md missing — read docs/blueprint/00-THE-BLUEPRINT.md)"
 echo
 echo "=== git status ==="
 git status --short --branch 2>/dev/null | head -40

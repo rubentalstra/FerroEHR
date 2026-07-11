@@ -12,7 +12,7 @@
 
 - **Status:** implemented (RBAC+ABAC) (2026-07-07)
 - **Stage:** Stage 2 capability, owner-prioritized into Stage 1 (same route as the
-  ATNA audit trail — see `PORT_MASTER_PLAN.md` §11.2, `docs/enterprise/v1-vs-v2-delta.md` §1)
+  ATNA audit trail — an enterprise capability pulled forward)
 - **Owner:** —
 - **Prior art (not a port target):** EHRbase v1 (`reference/v1` = v0.32.0) ABAC
   (`application/.../abac/*`) + the v1/v2 Spring Security RBAC config. The exact
@@ -22,7 +22,8 @@
   prior art, not an oracle).
 - **Related docs:** `docs/enterprise/atna-audit.md` (the integration pattern this
   design copies: leaf crate + tower/dispatch hook + data-driven table +
-  total-coverage guard), `docs/enterprise/v1-vs-v2-delta.md` (archaeology).
+  total-coverage guard); the pre-v2 enterprise archaeology lives in the
+  read-only `reference/v1` git ref (v0.32.0).
 - **Out of scope here:** multi-tenancy (its own Stage 2 design; the tenant
   attribute slot in §5.3 is reserved for it), openEHR `EHR_ACCESS`-driven
   policies (v1 never enforced them either; see §10), demographic-API policies
@@ -627,9 +628,8 @@ Branch `claude/s2-access-control`. Hard rules apply (no test weakening, no
 8. **ABAC PEP — query** (§6.4): `SqlCtx.subject_scope` + executor attribute
    collection + post-check; the projection-independence regression test.
 9. **Docs + close-out:** config reference into the deploy docs; `/write-adr`
-   for the Cedar decision (§1.1); update `docs/enterprise/v1-vs-v2-delta.md`
-   §1 status; workspace gate (`cargo nextest run --workspace`, clippy, fmt,
-   deny/audit/machete green).
+   for the Cedar decision (§1.1); workspace gate (`cargo nextest run
+   --workspace`, clippy, fmt, deny/audit/machete green).
 
 Estimated shape: steps 1–3 are one bounded PR (RBAC); steps 4–8 the ABAC PR
 (or two: engines, then PEP). Everything is behind config defaults that

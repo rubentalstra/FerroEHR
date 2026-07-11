@@ -4,7 +4,8 @@ ADRs are immutable records — supersession is recorded in Status lines and
 amendment banners, never by rewriting history. Precedence: the higher number
 wins where two overlap (ADR-011 > ADR-010, ADR-008 > ADR-006 §3/§4, ADR-004 >
 ADR-001/002); the blueprint (`docs/blueprint/00-THE-BLUEPRINT.md`) supersedes
-the historical `PORT_MASTER_PLAN.md` everywhere they differ.
+the historical bootstrap plan (`PORT_MASTER_PLAN.md`, removed 2026-07-11 —
+git history) everywhere they differ.
 
 | ADR | Title | Status | What still stands |
 |---|---|---|---|
