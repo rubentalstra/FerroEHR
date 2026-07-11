@@ -48,7 +48,11 @@ fi
 cp "$VERSIONS_SRC" "$OUT/versions.json"
 
 if [[ "$MODE" != "--full" ]]; then
-  log "dev-only site assembled at $OUT"
+  # The landing page links to /docs/latest/; alias it to the dev book so the
+  # dev-only tree is self-consistent and the link gate stays meaningful.
+  mkdir -p "$OUT/docs/latest"
+  cp -R "$OUT/docs/dev/." "$OUT/docs/latest/"
+  log "dev-only site assembled at $OUT (latest aliased to dev)"
   exit 0
 fi
 
