@@ -362,15 +362,15 @@ impl Validator {
 
     /// JSON-level data-structure shape duties the typed model cannot express:
     ///
-    /// - `CLUSTER.items` is 1..1 (RM data_structures `cluster.adoc`; the
+    /// - `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the
     ///   ITS-JSON CLUSTER schema lists `items` as required) — after
     ///   deserialize an absent list collapses into an empty `Vec`, so
     ///   presence is only checkable here;
     /// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
-    ///   in `data` — "A History of type HISTORY<ITEM_LIST> … constrains the
-    ///   type of the data at each Event to be of type ITEM_LIST and nothing
-    ///   else" (RM data_structures master06; `history.adoc` generic
-    ///   parameter) — the monomorphized runtime type cannot see T.
+    ///   in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
+    ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
+    ///   else" (RM `data_structures` master06; `history.adoc` generic
+    ///   parameter) — the monomorphized runtime type cannot see `T`.
     fn check_data_structure_shapes(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
         let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
             return;
