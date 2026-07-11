@@ -12,7 +12,7 @@
 
 ## Tasks
 
-- [ ] 1. ADR-017 — externalization design record: threshold-based offload
+- [x] 1. ADR-017 — externalization design record: threshold-based offload
       (default off / inline-preserving), content-addressing (sha-256 →
       integrity_check + coded algorithm), uri scheme + fetch behaviour,
       object_store crate abstraction, blob GC tied to admin physical
