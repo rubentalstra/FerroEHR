@@ -338,6 +338,30 @@ impl Validator {
             ),
             ("INSTRUCTION", "activities", "Activities_valid"),
         ];
+        // Attribute-keyed rules that apply on ANY node carrying the attribute
+        // (like the terminology pass's null_flavour handling):
+        // `DV_TEXT.Mappings_valid` and `DV_ORDERED.Other_reference_ranges_validity`
+        // (`dv_text.adoc` / `dv_ordered.adoc`) — no other RM attribute shares
+        // these names.
+        for (attr, invariant) in [
+            ("mappings", "Mappings_valid"),
+            ("other_reference_ranges", "Other_reference_ranges_validity"),
+        ] {
+            if obj
+                .get(attr)
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+            {
+                self.push(
+                    norm_path(path),
+                    format!(
+                        "{attr} is present but empty — a present list must be \
+                         non-empty ({invariant})"
+                    ),
+                    ValidationKind::Invariant,
+                );
+            }
+        }
         let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
             return;
         };

@@ -47,7 +47,7 @@ before a finding enters `FINDINGS.md`.
 | 2 | rm-ehr | done (41 / 13) | done — 8 fixed | orchestrator-reviewed |
 | 3 | rm-composition | done (48 / 28) | done — 5 fixed (1 systemic) | orchestrator-reviewed |
 | 4 | rm-data-structures | done (37 / 14) | done — 3 fixed | orchestrator-reviewed |
-| 5 | rm-data-types-text-quantity | done (58 / 30) | pending | pending |
+| 5 | rm-data-types-text-quantity | done (58 / 30) | done — 3 fixed + 1 tension noted | orchestrator-reviewed |
 | 6 | rm-data-types-rest | done (45 / 20) | pending | pending |
 | 7 | rm-support | done (40 / 17) | pending | pending |
 | 8 | rm-demographic | done (42 / 20) | pending | pending |

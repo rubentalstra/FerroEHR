@@ -419,6 +419,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::quantity::dv_scale::DvScale;
     use crate::data_types::quantity::reference_range::ReferenceRange;
     use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_text::DvText as DvTextEnum;
     use crate::data_types::text::term_mapping::TermMapping;
     use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
     use crate::data_types::uri::dv_uri::DvUriData;
@@ -429,6 +430,10 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     match ty {
         // data_types
         "CODE_PHRASE" => run::<CodePhrase>(value, out),
+        // DV_TEXT + DV_CODED_TEXT share the DvText enum (Valid_value /
+        // Formatting_valid, dv_text.adoc; DV_CODED_TEXT adds the structural
+        // defining_code 1..1 at deserialize).
+        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvTextEnum>(value, out),
         "DV_URI" => run::<DvUriData>(value, out),
         "DV_EHR_URI" => run::<DvEhrUri>(value, out),
         "DV_IDENTIFIER" => run::<DvIdentifier>(value, out),
