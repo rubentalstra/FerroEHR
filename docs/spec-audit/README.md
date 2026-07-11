@@ -66,4 +66,4 @@ before a finding enters `FINDINGS.md`.
 | 21 | its-rest-query-definition-admin | done (45 / 11) | done — ADL2 wire 409 | orchestrator-reviewed |
 | 22 | its-json | done (42 / 12) | done — verified via gates | orchestrator-reviewed |
 | 23 | its-xml | done (60 / 29) | done — verified by construction + gates | orchestrator-reviewed |
-| 24 | cnf-cross-check | done (23 / 11) | pending | pending |
+| 24 | cnf-cross-check | done (23 / 11) | done — evidence verified | orchestrator-reviewed |
