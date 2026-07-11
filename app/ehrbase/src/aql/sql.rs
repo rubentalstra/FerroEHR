@@ -634,7 +634,12 @@ impl<'a> Builder<'a> {
             ArchetypeConstraint::NodeCode(c) | ArchetypeConstraint::Archetype(c) => c.clone(),
             ArchetypeConstraint::Param(p) => self.param_str(p)?,
         };
-        Ok(col(node, "archetype").eq(Expr::val(value)))
+        // Composite identifiers compare case-insensitively (BASE base_types
+        // master05 §"Composite Identifiers and Case") — an archetype id
+        // differing only by case identifies the same archetype. Storage stays
+        // case-preserving; only the comparison folds (served by the
+        // idx_node_archetype_lower functional index).
+        Ok(Expr::expr(Func::lower(col(node, "archetype"))).eq(Func::lower(Expr::val(value))))
     }
 
     fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {

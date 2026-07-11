@@ -54,7 +54,7 @@ before a finding enters `FINDINGS.md`.
 | 9 | rm-ehr-extract | done (50 / 8) | done — 6 fixed | orchestrator-reviewed |
 | 10 | rm-integration | done (20 / 6) | done — 1 fixed | orchestrator-reviewed |
 | 11 | base-foundation | done (57 / 30) | done — 1 fixed | orchestrator-reviewed |
-| 12 | base-base-types | done (37 / 11) | pending | pending |
+| 12 | base-base-types | done (37 / 11) | done — 1 fixed | orchestrator-reviewed |
 | 13 | am-aom14-opt | done (56 / 28) | pending | pending |
 | 14 | am-aom2-adl2 | done (70 / 18) | pending | pending |
 | 15 | term | done (53 / 21) | pending | pending |

@@ -335,6 +335,11 @@ CREATE TABLE node (
         DEFERRABLE INITIALLY IMMEDIATE
 );
 CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
+-- Composite identifiers compare case-insensitively (BASE base_types master05
+-- §"Composite Identifiers and Case"): AQL archetype predicates fold case, so
+-- the comparison is served by this functional index (storage stays
+-- case-preserving).
+CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
 CREATE INDEX idx_node_ehr ON node (ehr_id);
 -- jsonb_ops (NOT jsonb_path_ops): $.** equality anchors need it (AQL engine
 -- pre-filters — no spec governs indexing).
