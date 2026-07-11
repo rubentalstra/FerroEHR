@@ -135,6 +135,7 @@ type FhirMappingUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Sen
 type FhirMappingDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
 type FhirIngest =
     Arc<dyn Fn(String, Option<String>, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
+type FhirSearch = Arc<dyn Fn(String, String, Option<i64>) -> Result<Value, SmError> + Send + Sync>;
 
 // Tenant admin extension (ADR-015 §5; TenantAdapter).
 type TenantList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
@@ -215,6 +216,7 @@ pub struct Hooks {
     pub fhir_mapping_update: Option<FhirMappingUpdate>,
     pub fhir_mapping_delete: Option<FhirMappingDelete>,
     pub fhir_ingest: Option<FhirIngest>,
+    pub fhir_search: Option<FhirSearch>,
     // Tenant admin extension (ADR-015 §5).
     pub tenant_list: Option<TenantList>,
     pub tenant_create: Option<TenantCreate>,
@@ -714,6 +716,17 @@ impl FhirConnectorAdapter for Mock {
     ) -> Result<ServiceResponse, SmError> {
         match &self.h.fhir_ingest {
             Some(f) => f(resource_type, profile, a_resource),
+            None => Err(not_impl()),
+        }
+    }
+    async fn fhir_search(
+        &self,
+        resource_type: String,
+        patient: String,
+        count: Option<i64>,
+    ) -> Result<Value, SmError> {
+        match &self.h.fhir_search {
+            Some(f) => f(resource_type, patient, count),
             None => Err(not_impl()),
         }
     }

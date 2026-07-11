@@ -31,7 +31,7 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 | openEHR RM | 1.1 | ✅ **1.2.0** (BASE 1.3, TERM 3.1, AM 1.4+2.4) | generated from BMM, fidelity gates |
 | `ALL_VERSIONS` AQL | — (EHRbase rejects) | ✅ | temporal `vo_version` (ADR-008) |
 | Server Admin API | ✓ | ✅ + dump/load + archive | SM I_ADMIN + I_ADMIN_DUMP_LOAD implemented |
-| FHIR Server R4 + Search | ✓ | 🔷 **connectors + read façade** (not a second server) | §2.1 |
+| FHIR Server R4 + Search | ✓ | ✅ **connectors + read façade** (E3, ADR-016): mapping-as-data, inbound validated commits w/ FEEDER_AUDIT, searchset façade over AQL, PHI-gated outbound exchange | not a second server, by design |
 | Event Trigger | ✓ | ✅ **contribution outbox + filter subscriptions** (E1, ADR-014) | migration 0002/0003, per-version topic routing, admin CRUD |
 | Binary Storage (S3) | ✓ | 🔷 **DV_MULTIMEDIA externalization** | §2.4 |
 
@@ -39,8 +39,8 @@ Legend: ✅ have (evidence) · 🔷 planned (spec-grounded design below) ·
 
 | Capability | HIP | ehrbase-rs | Evidence / plan |
 |---|---|---|---|
-| Integration engine / custom mappings | ✓ | 🔷 connector framework on the SM seams | §2.1 — Subject-Proxy `DATA_FRAME` + EHR Extract are the spec's own slots |
-| FHIR connector in/out | ✓ | 🔷 | §2.1; terminology client already speaks FHIR TS (B4) |
+| Integration engine / custom mappings | ✓ | ✅ mapping-as-data artefacts (versioned, uploadable, template↔profile) (E3) | /admin/fhir_mapping CRUD |
+| FHIR connector in/out | ✓ | ✅ both directions (E3) | wiremock+testcontainers e2e incl. RabbitMQ outbound |
 | HL7v2 connector in/out | ✓ | 🔷 (behind the same frame seam; second priority) | `HL7v2_SAMPLE` is a named SM frame type |
 | EHR Extract / TDD import | — (not surfaced) | ✅ | SM-5: export+import incl. IMPORTED_VERSION; TDD→COMPOSITION converter |
 | Subject Proxy service | — | ✅ (openEHR frame live; FHIR/HL7v2 frames = the connector seam) | SM-6 |

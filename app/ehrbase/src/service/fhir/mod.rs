@@ -26,11 +26,11 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use ehrbase_sm::error::CallStatusType;
-use ehrbase_sm::types::{ServiceResponse, SubjectRef};
+use ehrbase_sm::types::{AqlQueryRequest, ServiceResponse, SubjectRef};
 use ehrbase_sm::{EhrService, FhirConnectorAdapter, SmError};
 
 use self::mapping::FhirMappingDefinition;
-use super::{EhrbaseService, ServiceError};
+use super::{EhrbaseService, ServiceError, vobject};
 
 impl EhrbaseService {
     /// Map a `fhir_mapping` row to its JSON record.
@@ -184,7 +184,259 @@ impl EhrbaseService {
         }
         EhrService::create_ehr_for_subject(self, subject, None).await
     }
+
+    /// Every enabled mapping definition for a resource type, across all
+    /// profiles (the read façade queries each). Ordered default-last so a
+    /// profiled mapping's rows precede the type default's.
+    async fn enabled_definitions_for_type(
+        &self,
+        resource_type: &str,
+    ) -> Result<Vec<Value>, ServiceError> {
+        let rows = sqlx::query(
+            "SELECT definition FROM fhir_mapping WHERE resource_type = $1 AND enabled \
+             ORDER BY (profile_url IS NULL), profile_url, id",
+        )
+        .bind(resource_type)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|r| r.try_get::<Value, _>("definition").map_err(Into::into))
+            .collect()
+    }
+
+    /// Resolve the façade `patient` parameter to a query scope + the subject id
+    /// used to reconstruct each resource's `subject.reference`. A UUID is an EHR
+    /// id (its stored subject is looked up); anything else is a subject external
+    /// id (matched by the engine's subject scope).
+    async fn resolve_patient_scope(&self, patient: &str) -> Result<PatientScope, ServiceError> {
+        if let Ok(ehr_id) = Uuid::parse_str(patient) {
+            let subject_id =
+                sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
+                    .bind(ehr_id)
+                    .fetch_optional(&self.pool)
+                    .await?
+                    .flatten();
+            Ok(PatientScope {
+                ehr_id: Some(ehr_id),
+                subject_scope: None,
+                subject_id,
+            })
+        } else {
+            Ok(PatientScope {
+                ehr_id: None,
+                subject_scope: Some(patient.to_owned()),
+                subject_id: Some(patient.to_owned()),
+            })
+        }
+    }
+
+    /// Assemble the FHIR `searchset` Bundle for the read façade (ADR-016
+    /// §Decision 4b): for each enabled mapping of `resource_type`, run its
+    /// template-bound COMPOSITION query scoped to `patient`, reverse-map each
+    /// hit, and collect the entries. A type with no enabled mapping yields an
+    /// empty Bundle (not an error). `count` caps rows per mapping (`_count`).
+    async fn fhir_search_bundle(
+        &self,
+        resource_type: &str,
+        patient: &str,
+        count: Option<i64>,
+    ) -> Result<Value, SmError> {
+        let scope = self.resolve_patient_scope(patient).await?;
+        let mut entries: Vec<Value> = Vec::new();
+        for raw in self.enabled_definitions_for_type(resource_type).await? {
+            let def: FhirMappingDefinition = serde_json::from_value(raw).map_err(|e| {
+                SmError::new(
+                    CallStatusType::Exception,
+                    format!("stored FHIR mapping definition is invalid: {e}"),
+                )
+            })?;
+            let wt = self.web_template_for(&def.template_id).await?;
+            let request = AqlQueryRequest {
+                ehr_id: scope.ehr_id.map(|u| u.to_string()),
+                subject_scope: scope.subject_scope.clone(),
+                fetch: count,
+                parameters: std::iter::once((
+                    "templateId".to_owned(),
+                    Value::String(def.template_id.clone()),
+                ))
+                .collect(),
+                ..AqlQueryRequest::default()
+            };
+            let outcome = self.execute_aql(FHIR_SEARCH_AQL, None, &request).await?;
+            let rows = outcome
+                .result_set
+                .get("rows")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            for row in &rows {
+                // Row shape: [ <uid string> ] (SELECT c/uid/value). The synthesized
+                // uid is `<vo_id>::<system>::<ver>`; the COMPOSITION body carries no
+                // uid on the AQL read path, so the body is loaded through the
+                // versioned read seam by uid (see the FHIR_SEARCH_AQL PORT NOTE).
+                let Some(uid) = row.get(0).and_then(Value::as_str) else {
+                    continue;
+                };
+                let mut parts = uid.split("::");
+                let (Some(vo_id), _system, Some(sys_version)) = (
+                    parts.next().and_then(|s| Uuid::parse_str(s).ok()),
+                    parts.next(),
+                    parts.next().and_then(|v| v.parse::<i32>().ok()),
+                ) else {
+                    continue;
+                };
+                let Some(read) = vobject::read_version(&self.pool, vo_id, sys_version).await?
+                else {
+                    continue;
+                };
+                if read.deleted() || !read.canonical.is_object() {
+                    continue;
+                }
+                let mut fhir = mapping::to_fhir(
+                    resource_type,
+                    &read.canonical,
+                    &wt,
+                    &def,
+                    scope.subject_id.as_deref(),
+                )
+                .map_err(|e| SmError::new(CallStatusType::Exception, e.to_string()))?;
+                // The versioned-object id (a UUID) is the FHIR logical id + the
+                // `urn:uuid:` fullUrl.
+                if let Value::Object(m) = &mut fhir {
+                    m.insert("id".to_owned(), Value::String(vo_id.to_string()));
+                }
+                entries.push(json!({
+                    "fullUrl": format!("urn:uuid:{vo_id}"),
+                    "resource": fhir,
+                }));
+            }
+        }
+        // PORT NOTE (ADR-016 §Decision 4b): `total` is the number of entries in
+        // this Bundle, not a separate full-match count — the façade is a
+        // stateless connector (ADR-016 §1), not a FHIR Search engine, so with
+        // `_count` it reports the returned page size. No `Bundle.link`
+        // paging is emitted (explicit params only, ADR-016 §5).
+        Ok(json!({
+            "resourceType": "Bundle",
+            "type": "searchset",
+            "total": entries.len(),
+            "entry": entries,
+        }))
+    }
 }
+
+impl EhrbaseService {
+    /// Reverse-map a committed COMPOSITION version for the **outbound emitter**
+    /// (ADR-016 §Decision 4a): load the version at `(vo_id, sys_version)`, read
+    /// its bound template from the canonical `archetype_details/template_id`, and
+    /// for every enabled `fhir_mapping` on that template reverse-map it,
+    /// returning `(resource_type, template_id, resource)` per mapping.
+    ///
+    /// Returns an empty vec (nothing to emit) when the version is absent, a
+    /// logical delete (a deleted COMPOSITION has no content to map — a FHIR
+    /// delete notification is out of the starter scope), carries no template, or
+    /// its template has no enabled mapping. Reuses the versioned read seam
+    /// ([`vobject::read_version`]) and the reverse transform.
+    ///
+    /// PORT NOTE (ADR-016): the template is read from the COMPOSITION itself (as
+    /// the read façade's AQL also does), NOT from `vo_version.template_id` — that
+    /// column is currently left NULL on the commit path (`composition::create`),
+    /// so relying on it would emit nothing. Deriving it from the canonical body
+    /// avoids touching the versioning path.
+    pub(crate) async fn fhir_outbound_messages(
+        &self,
+        ehr_id: Option<Uuid>,
+        vo_id: Uuid,
+        sys_version: i32,
+    ) -> Result<Vec<(String, String, Value)>, ServiceError> {
+        // Load the exact committed version; skip absent / logically-deleted ones.
+        let Some(read) = vobject::read_version(&self.pool, vo_id, sys_version).await? else {
+            return Ok(Vec::new());
+        };
+        if read.deleted() || !read.canonical.is_object() {
+            return Ok(Vec::new());
+        }
+        // The template the COMPOSITION was built against (its own self-description).
+        let Some(template_id) = read
+            .canonical
+            .pointer("/archetype_details/template_id/value")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned)
+        else {
+            return Ok(Vec::new());
+        };
+        let rows = sqlx::query(
+            "SELECT resource_type, definition FROM fhir_mapping \
+             WHERE template_id = $1 AND enabled ORDER BY id",
+        )
+        .bind(&template_id)
+        .fetch_all(&self.pool)
+        .await?;
+        if rows.is_empty() {
+            return Ok(Vec::new());
+        }
+        // The owning EHR's subject id reconstructs each resource's reference.
+        let subject_id = match ehr_id {
+            Some(id) => {
+                sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
+                    .bind(id)
+                    .fetch_optional(&self.pool)
+                    .await?
+                    .flatten()
+            }
+            None => None,
+        };
+        let wt = self.web_template_for(&template_id).await?;
+        let mut out = Vec::with_capacity(rows.len());
+        for row in &rows {
+            let resource_type: String = row.try_get("resource_type")?;
+            let definition: Value = row.try_get("definition")?;
+            let def: FhirMappingDefinition = serde_json::from_value(definition).map_err(|e| {
+                ServiceError::Unprocessable(format!(
+                    "stored FHIR mapping definition is invalid: {e}"
+                ))
+            })?;
+            let resource = mapping::to_fhir(
+                &resource_type,
+                &read.canonical,
+                &wt,
+                &def,
+                subject_id.as_deref(),
+            )
+            .map_err(|e| ServiceError::Unprocessable(e.to_string()))?;
+            out.push((resource_type, template_id.clone(), resource));
+        }
+        Ok(out)
+    }
+}
+
+/// The read-façade query scope resolved from the `patient` parameter.
+struct PatientScope {
+    /// The EHR id to scope to when `patient` is a UUID.
+    ehr_id: Option<Uuid>,
+    /// The subject external id to scope to when `patient` is not a UUID.
+    subject_scope: Option<String>,
+    /// The subject external id to reconstruct each resource's
+    /// `subject.reference` from (the looked-up EHR subject, or the param).
+    subject_id: Option<String>,
+}
+
+/// The read-façade AQL: the version uid of every COMPOSITION of the mapped
+/// template in scope. The template id binds as a parameter (no string
+/// interpolation → no AQL injection).
+///
+/// PORT NOTE (ADR-016 §Decision 4b): the query selects the synthesized VERSION
+/// uid `v/uid/value` (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v
+/// CONTAINS COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is
+/// a (null) RM leaf on the AQL read path (the reassembled body carries no uid),
+/// whereas the VERSION variable's uid is the engine-synthesized object-version
+/// id. The COMPOSITION body is then loaded through the versioned read seam
+/// ([`vobject::read_version`]) by that uid, keeping the façade on the query seam
+/// (ADR-016 §Decision 4b) and reusing the same read seam the outbound emitter uses.
+const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
+     CONTAINS VERSION v CONTAINS COMPOSITION c \
+     WHERE c/archetype_details/template_id/value = $templateId";
 
 /// Read + validate `name`: non-empty, `[A-Za-z0-9_.-]` (a clean, addressable
 /// deployable identity).
@@ -322,5 +574,15 @@ impl FhirConnectorAdapter for EhrbaseService {
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored (ADR-016 §Decision 6).
         Ok(self.create_composition(ehr_id, composition).await?)
+    }
+
+    async fn fhir_search(
+        &self,
+        resource_type: String,
+        patient: String,
+        count: Option<i64>,
+    ) -> Result<Value, SmError> {
+        self.fhir_search_bundle(&resource_type, &patient, count)
+            .await
     }
 }

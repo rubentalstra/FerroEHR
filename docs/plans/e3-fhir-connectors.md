@@ -1,6 +1,6 @@
 # E3 — FHIR connectors + read façade
 
-- Status: in-progress
+- Status: done (2026-07-11)
 - Started: 2026-07-11   Owner: Ruben
 - Governing design: docs/enterprise/product-roadmap.md §2.1 (owner-confirmed:
   connectors + façade, NOT a full FHIR server) → ADR-016; spec basis SM
@@ -23,12 +23,20 @@
 - [x] 3. Inbound connector: POST /fhir/r4/{resource} (config-gated) →
       mapping → COMPOSITION → validated commit path; provenance via
       FEEDER_AUDIT (spec-correct import trail).
-- [ ] 4. Outbound: subscription-driven emission (E1 outbox consumer) +
-      read façade GETs mapping AQL result sets to FHIR bundles.
-- [ ] 5. Tests: mapping round-trip fixtures; inbound commit + validation
-      rejection; façade reads against committed data; wiremock outbound.
+- [x] 4. Outbound: subscription-driven emission (E1 outbox consumer) +
+      read façade GETs mapping AQL result sets to FHIR bundles. Reverse
+      mapping (`service::fhir::mapping::to_fhir`) inverts `build_flat` via
+      `openehr-flat::to_flat`; read façade `GET /fhir/r4/{type}?patient&_count`
+      queries `v/uid/value` through the QueryService seam then loads via the
+      versioned read seam; outbound emitter (`ehrbase::fhir_outbound`) drains
+      the outbox on its own cursor (migration 0006) → separate PHI exchange.
+- [x] 5. Tests: mapping round-trip units; façade HTTP (Mock) + testcontainers
+      integration (commit → GET Bundle); outbound testcontainers RabbitMQ
+      (commit → consume FHIR resource). All green.
 
 ## Exit criteria
 
-- [ ] ADR-016 accepted; starter resource set works end-to-end both
-      directions; ECC zero drift; scorecard rows flipped.
+- [x] ADR-016 accepted; end-to-end both directions (inbound validated
+      commits + FEEDER_AUDIT; reverse mapping; AQL-backed searchset façade;
+      PHI-gated outbound on its own ehrbase.fhir exchange); ECC gate at
+      close; scorecard flipped.

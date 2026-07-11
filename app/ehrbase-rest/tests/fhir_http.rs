@@ -62,6 +62,7 @@ fn not_found(id: Uuid) -> SmError {
 /// hook that emulates the backend's behaviour (a mapping named `reject` maps to
 /// an invalid COMPOSITION → 422; an absent mapping → 404; otherwise a committed
 /// `ServiceResponse` → 201).
+#[allow(clippy::too_many_lines)] // linear hook wiring; splitting obscures it
 fn hooks(store: Store) -> Hooks {
     let (s_list, s_create, s_get, s_update, s_delete) = (
         store.clone(),
@@ -118,6 +119,31 @@ fn hooks(store: Store) -> Hooks {
                 Err(not_found(id))
             }
         })),
+        fhir_search: Some(Arc::new(
+            |resource_type: String, patient: String, _count: Option<i64>| {
+                // Emulate the façade: Observation returns a one-entry searchset;
+                // any other (in-scope) type has no mapping → an empty Bundle.
+                let entries = if resource_type == "Observation" {
+                    vec![json!({
+                        "fullUrl": "urn:uuid:7f4c8e1a-0000-4000-8000-000000000001",
+                        "resource": {
+                            "resourceType": "Observation",
+                            "id": "7f4c8e1a-0000-4000-8000-000000000001",
+                            "subject": { "reference": format!("Patient/{patient}") },
+                            "component": [ { "valueQuantity": { "value": 118, "unit": "mm[Hg]" } } ]
+                        }
+                    })]
+                } else {
+                    vec![]
+                };
+                Ok(json!({
+                    "resourceType": "Bundle",
+                    "type": "searchset",
+                    "total": entries.len(),
+                    "entry": entries,
+                }))
+            },
+        )),
         fhir_ingest: Some(Arc::new(
             |resource_type: String, _profile: Option<String>, resource: Value| {
                 // No mapping for a "Condition" (emulates the resolver miss → 404).
@@ -246,6 +272,76 @@ async fn unknown_resource_type_is_501_before_backend() {
     let (status, _, oo) = send(app(true), req("POST", &uri, Some(body))).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
     assert_operation_outcome(&oo, "not-supported");
+}
+
+// ── read façade ───────────────────────────────────────────────────────────────
+#[tokio::test]
+async fn search_returns_searchset_bundle() {
+    let uri = format!("{INGEST_OBS}?patient=p-1&_count=10");
+    let resp = app(true)
+        .oneshot(req("GET", &uri, None))
+        .await
+        .expect("response");
+    assert_eq!(resp.status(), StatusCode::OK);
+    // The façade renders as FHIR JSON.
+    assert_eq!(
+        resp.headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok()),
+        Some("application/fhir+json"),
+    );
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    let bundle: Value = serde_json::from_slice(&bytes).expect("json");
+    assert_eq!(bundle["resourceType"], "Bundle");
+    assert_eq!(bundle["type"], "searchset");
+    assert_eq!(bundle["total"], 1);
+    assert_eq!(
+        bundle["entry"][0]["resource"]["resourceType"],
+        "Observation"
+    );
+    assert!(
+        bundle["entry"][0]["fullUrl"]
+            .as_str()
+            .unwrap()
+            .starts_with("urn:uuid:"),
+        "fullUrl is a urn:uuid"
+    );
+    // The subject scope round-trips into the reconstructed reference.
+    assert_eq!(
+        bundle["entry"][0]["resource"]["subject"]["reference"],
+        "Patient/p-1"
+    );
+}
+
+#[tokio::test]
+async fn search_missing_patient_is_400() {
+    // No patient param → 400 (explicit scope only; never generic Search).
+    let (status, _, oo) = send(app(true), req("GET", INGEST_OBS, None)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_operation_outcome(&oo, "required");
+}
+
+#[tokio::test]
+async fn search_unknown_type_is_501() {
+    let uri = format!("{BASE}/fhir/r4/MedicationRequest?patient=p-1");
+    let (status, _, oo) = send(app(true), req("GET", &uri, None)).await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert_operation_outcome(&oo, "not-supported");
+}
+
+#[tokio::test]
+async fn search_disabled_is_404() {
+    let uri = format!("{INGEST_OBS}?patient=p-1");
+    let (status, _, oo) = send(app(false), req("GET", &uri, None)).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_operation_outcome(&oo, "not-supported");
+}
+
+#[tokio::test]
+async fn search_unhooked_is_501() {
+    let uri = format!("{INGEST_OBS}?patient=p-1");
+    let (status, _, _) = send(app_unhooked(), req("GET", &uri, None)).await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
 }
 
 // ── inbound ingest outcomes ───────────────────────────────────────────────────
