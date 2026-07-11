@@ -26,6 +26,12 @@ decide the phase is done on your behalf.
    confirm a conformance pass happened (`/spec-audit` findings addressed or
    filed as tasks; CNF-covered behaviour verified). If it never happened,
    stop and say so — that is an unmet exit criterion in spirit.
+3b. **User docs updated?** If this phase changed a user-visible surface (REST,
+   configuration, CLI, deployment artifacts), confirm the matching
+   `website/book/src` page was updated in-branch, and — if the REST contract
+   changed — that `scripts/assemble-oas.sh` was re-run
+   (`.claude/rules/docs-website.md`). If not, stop: that page is part of the
+   phase's deliverable.
 4. **Update `docs/PROGRESS.md`** with one line for this phase: phase number,
    title, completion date, and a short note (mirroring the phase file's
    `## Decisions made this phase`, if any). Append; never rewrite prior
