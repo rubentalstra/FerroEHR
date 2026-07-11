@@ -6,19 +6,22 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — W1: public documentation website
+## Active work — X1 comparison (plan review) → P20/P99
 
-**Phase file: `docs/plans/w1-docs-website.md`** (branch `claude/w1-docs-website`).
-mdBook (Rust-only toolchain, owner ruling 2026-07-11) on GitHub Pages: landing
-page + release-versioned book + static OpenAPI endpoint reference generated
-from the vendored ITS-REST contract, with drift gated in CI.
+**W1 (public documentation website) closed 2026-07-11** — the site is live at
+<https://rubentalstra.github.io/ehrbase-rs/> (landing + versioned book
+dev · latest · v3.0.0 + offline OpenAPI reference), drift-gated in CI
+(`docs/plans/w1-docs-website.md` for the full record).
 
-Context: the blueprint build arc (B1–B8) and the enterprise capabilities
-(E1–E5) are **closed** (E5 2026-07-11, PR #48). Full conformance holds:
-**ECC 341 executed · 315 passed · 0 failed — CORE PASS / STANDARD PASS**. The
-docs cleanup landed 2026-07-11 (PR #51 — 45 historical files pruned; everything
-flows through the blueprint + ADRs + `docs/architecture.md`). Per-phase record:
-`docs/PROGRESS.md`.
+Next up, in order:
+
+1. **X1 — the honest EHRbase vs EHRbase-rs comparison**
+   (`docs/plans/x1-comparison.md`, plan awaiting owner review): run upstream
+   EHRbase through the ECC suite (with a fairness adjudication register),
+   overhaul `tools/benchmark` (multi-SUT, percentiles, resource footprint),
+   publish a measured comparison page on the docs site. Owner rule: **no
+   false claims — measured numbers only.**
+2. **P20 — optimization**, **P99 — cutover** per the blueprint tail.
 
 ## Priority order (from the blueprint build order, §3)
 
