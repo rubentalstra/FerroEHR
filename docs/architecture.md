@@ -21,9 +21,8 @@ under it.
 Decisions: `docs/ADRs/ADR-004` (spec codegen), `ADR-005` (ITS codegen),
 `ADR-006` (application philosophy), **`ADR-008` (greenfield storage + AQL +
 conformance target — read first)**, `ADR-010` (SM-aligned service
-architecture; design set at `docs/design/sm-platform/`), **`ADR-011`
-(app-crate redesign — the current three-crate app layout + protocol-free SM
-native API)**.
+architecture), **`ADR-011` (app-crate redesign — the current three-crate app
+layout + protocol-free SM native API)**.
 
 ## The generated openEHR foundation (done)
 
@@ -124,28 +123,28 @@ tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
 (`ehrbase::system_log`, `ehrbase::signing`, `ehrbase-rest::access`) per ADR-011.
 Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The service seam is the SM-aligned native API
 (`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
-with `ehrbase-rest` as the ITS-REST protocol adapter — see
-`docs/design/sm-platform/08-target-architecture.md`.
+with `ehrbase-rest` as the ITS-REST protocol adapter — see ADR-010/ADR-011 and
+the component map below.
 
 ### SM platform component map
 
 The service layer realizes the openEHR **SM Platform Service Model**
-(ADR-010; spec `docs/specs/openehr/SM/docs/openehr_platform/`; design set
-`docs/design/sm-platform/`). One trait per SM interface in `ehrbase-sm`:
+(ADR-010/011; vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`).
+One trait per SM interface in `ehrbase-sm`:
 
 | SM component | SM interface(s) | Native trait(s) (`ehrbase-sm`) | Status |
 |---|---|---|---|
 | EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `EhrService`, `EhrStatusService`, `EhrCompositionService`, `EhrDirectoryService`, `EhrContributionService` | implemented (SM-1) |
 | Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | `DefinitionAdl14Service`, `DefinitionAdl2Service`, `DefinitionQueryService` + wire-shaped `DefinitionAdapter` (ITS-REST `DefinitionApi` excised from `Platform`, ADR-011) | implemented (SM-2) |
-| Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY` (+`I_PARTY_RELATIONSHIP` at SM-3) | `DemographicService` | partial |
+| Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`, `I_PARTY_RELATIONSHIP` | `DemographicService` | implemented (SM-3) |
 | Query | `I_QUERY_SERVICE` | `QueryService` | implemented |
 | Validity checking | `I_VALIDITY_CHECKER` | `ValidityChecker` | implemented (SM-1) |
 | System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `SystemLog` trait (event model + emit; designed contract) → impl `ehrbase::system_log` | implemented |
-| Admin | `I_ADMIN_SERVICE` (+archive/dump-load at SM-4) | `AdminService` | partial |
-| EHR Index | `I_EHR_INDEX` | SM-3 | planned |
-| Terminology | `I_TERMINOLOGY_SERVICE` | SM-4 | planned |
-| Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | SM-5 | planned |
-| Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | SM-6 | planned |
+| Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `AdminService` | implemented (SM-4 / B3) |
+| EHR Index | `I_EHR_INDEX` | `EhrIndexService` | implemented (SM-3) |
+| Terminology | `I_TERMINOLOGY_SERVICE` | `TerminologyService` | implemented (SM-4 / B4) |
+| Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | `MessageService` | implemented (SM-5 / B3) |
+| Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | `SubjectProxyService` | implemented (SM-6 / B3) |
 
 | Crate | Role | Kind |
 |---|---|---|

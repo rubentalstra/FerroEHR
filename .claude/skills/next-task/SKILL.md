@@ -24,10 +24,9 @@ is a separate step the caller takes after seeing the plan.
 3. **Turn the task into a plan**, stating:
    - **What** the task requires, in one or two sentences.
    - **Which files** are involved — search for them (Grep/Glob under
-     `crates/`) rather than guessing paths; if the task names a Java module
-     or a spec component, resolve it against
-     `PORT_MASTER_PLAN.md` Section 9.1 (Maven→crate mapping) or Section 7.1
-     (RM class inventory).
+     `crates/` and `app/`) rather than guessing paths; if the task names a
+     spec component, resolve it against `docs/architecture.md` (the crate map)
+     and `docs/specs/openehr/README.md`.
    - **Which mechanism** applies (all done **in-session**, no subagents/worktrees):
      **openEHR spec/ITS layer** (`openehr-base`/`openehr-rm`/`openehr-am`/
      `openehr-its`) → **the code generator** — change `openehr-codegen`'s emitter

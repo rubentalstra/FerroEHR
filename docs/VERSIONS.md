@@ -74,39 +74,36 @@ Stage-1 consideration — the fidelity gate (canonical-JSON corpus round-trip) i
 where it surfaces. (Per **ADR-008** the acceptance instrument is the openEHR CNF
 conformance schedule, **not** an EHRbase parity harness; EHRbase is prior art.)
 
-See `docs/ADRs/ADR-004-spec-driven-codegen.md` for how generation works and
-`PORT_MASTER_PLAN.md` Section 7 for the component scope.
+See `docs/ADRs/ADR-004-spec-driven-codegen.md` for how generation works and the
+component scope.
 
 ## EHRbase reference point
 
-This is a fork, and the fork's import point differs from the point the master
-plan was authored against. Both are recorded so provenance is unambiguous:
+This is a fork; its import point is recorded so provenance is unambiguous:
 
 | Item | Value |
 |---|---|
-| Plan authored against | EHRbase v2.31.0 |
+| Original reasoning authored against | EHRbase v2.31.0 |
 | Tree actually imported at (Phase 0) | EHRbase v2.33.0 |
 | `reference/v1` git ref | v0.32.0 (last pre-v2 tag) |
 
-`PORT_MASTER_PLAN.md` Section 3 was written against v2.31.0. By the time this
+The original design reasoning was authored against v2.31.0. By the time this
 fork's Phase 0 reorganization ran, upstream had advanced to v2.33.0, and that
-is the tree actually `git mv`'d into the Cargo workspace. (Per **ADR-008** the
+is the tree actually imported into the Cargo workspace. (Per **ADR-008** the
 in-tree EHRbase Java was later removed and behaviour-parity was retired for
 openEHR CNF conformance; EHRbase v2.33.0 remains the *prior-art* reference, not
-a parity oracle.) The plan's narrative references to v2.31.0 describe the
-reasoning at authoring time, not a different import.
+a parity oracle.)
 
 `reference/v1` is a read-only git reference pinned at v0.32.0, the last tag
 before the v1→v2 architectural break. It is consulted only during the Stage 2
-enterprise-feature archaeology and restoration work (see `PORT_MASTER_PLAN.md`
-Section 11) and is never merged into the working tree during Stage 1.
+enterprise-feature archaeology and restoration work and is never merged into the
+working tree during Stage 1.
 
 ## Rust dependency pins
 
 The authoritative, fully-pinned third-party Rust dependency set lives in the
 root `Cargo.toml` under `[workspace.dependencies]`. `CLAUDE.md` carries a
-categorized narrative summary for orientation, and `PORT_MASTER_PLAN.md`
-Section 8 carries the original design-time table. On any discrepancy between
-this file, `CLAUDE.md`, the master plan, and the manifest, **the manifest
-wins**. Add a dependency to a crate with `dep.workspace = true`; do not
-hand-pin a version at the crate level.
+categorized narrative summary for orientation. On any discrepancy between this
+file, `CLAUDE.md`, and the manifest, **the manifest wins**. Add a dependency to
+a crate with `dep.workspace = true`; do not hand-pin a version at the crate
+level.

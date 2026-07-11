@@ -12,10 +12,9 @@ argument-hint: "<decision title>"
 # /write-adr
 
 Records a structural decision so it survives beyond the session that made
-it. `PORT_MASTER_PLAN.md` calls for this at several deliberately open
-points: e.g. the plugin-system replacement (Section 11.2), RBAC/ABAC choice
-(Section 8), and any Phase 1 generics/MI/covariance resolution that sets
-precedent for later transcription work.
+it. The blueprint (`docs/blueprint/00-THE-BLUEPRINT.md`) flags the deliberately
+open decision points; write an ADR whenever a structural choice sets precedent
+(storage/schema, service seams, plugin/authz posture, spec-silence resolutions).
 
 ## Steps
 
@@ -34,7 +33,7 @@ an ADR is needed).
 3. **Fill in the template sections** from the decision summary given as
    `$ARGUMENTS` and whatever context is available in the conversation:
    - **Context** — what problem forced the decision, and what constraint
-     from `PORT_MASTER_PLAN.md` bears on it (cite the section).
+     from the blueprint or a prior ADR bears on it (cite it).
    - **Decision** — the actual choice, stated as a single clear sentence
      first, then supporting detail.
    - **Consequences** — what this makes easier, what it makes harder, and

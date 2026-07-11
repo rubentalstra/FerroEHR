@@ -38,9 +38,11 @@ Systematic conformance audit: our code vs the normative text. The output is a
    behaviour > internal), each with the spec citation
    (`docs/specs/openehr/<file>` + heading, or CNF test-case id) and the code
    location. State coverage honestly — list the spec chapters *not* audited.
-5. **Record**: for real divergences, offer to file them as unchecked tasks in
-   the owning phase file (never silently fix-and-forget); for spec-silent
-   findings, suggest the `// PORT NOTE:`/ADR text.
+5. **Record**: for real divergences, offer to append them to the consolidated
+   gap surface in `docs/blueprint/00-THE-BLUEPRINT.md` §2 (and, if a phase owns
+   the fix, as an unchecked task in that phase file) — never silently
+   fix-and-forget; for spec-silent findings, suggest the `// PORT NOTE:`/ADR
+   text.
 
 ## Rules
 
