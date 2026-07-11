@@ -502,7 +502,10 @@ impl EhrbaseService {
             // one supplied on EHR create (CNF master08
             // `commit_contribution-invalid_ehr_status`).
             Kind::EhrStatus => super::ehr::validate_ehr_status(data),
-            Kind::EhrAccess | Kind::Folder => Ok(()),
+            // EHR_ACCESS / FOLDER content committed via a CONTRIBUTION gets the
+            // same structural RM validation as the direct write surfaces.
+            Kind::EhrAccess => super::ehr::validate_ehr_access(data),
+            Kind::Folder => super::directory::validate_folder(data),
             // Demographic party roots validate structurally (typed deserialize +
             // PARTY invariants) via the demographic module.
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {

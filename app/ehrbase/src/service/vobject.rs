@@ -707,6 +707,9 @@ async fn apply_change(
             {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
+            if kind == Kind::Composition {
+                check_versioned_composition_invariants(&mut *tx, vo_id, &canonical).await?;
+            }
             // Externalize large inline DV_MULTIMEDIA before decompose/sign (ADR-017).
             if let Some(engine) = ctx.multimedia {
                 engine
@@ -944,6 +947,64 @@ async fn attest(
         change_type: super::codes::change_type::ATTESTATION.to_owned(),
         template_id: None,
     })
+}
+
+/// `VERSIONED_COMPOSITION` cross-version invariants, enforced against the
+/// FIRST stored version's root (RM ehr
+/// `org.openehr.rm.ehr.versioned_composition.adoc`):
+///
+/// - `Archetype_node_id_valid`: "all_versions … data.archetype_node_id
+///   is_equal (first_version.data.archetype_node_id)" — a versioned
+///   composition cannot switch archetype across versions;
+/// - `Persistent_validity`: every version's `is_persistent` equals the first
+///   version's — the persistence category (`category` `431|persistent|`,
+///   openEHR `composition category` group) is fixed for the container's life.
+///
+/// A violating modification is a 422 naming the invariant.
+async fn check_versioned_composition_invariants(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    canonical: &serde_json::Value,
+) -> Result<(), ServiceError> {
+    let Some(first) = sqlx::query(
+        "SELECT data->>'archetype_node_id' AS ani, \
+                data#>>'{category,defining_code,code_string}' AS category \
+         FROM node WHERE vo_id = $1 AND num = 0 ORDER BY sys_version LIMIT 1",
+    )
+    .bind(vo_id)
+    .fetch_optional(&mut *tx)
+    .await?
+    else {
+        // No stored content version (e.g. every prior version deleted) — no
+        // first-version root to compare against.
+        return Ok(());
+    };
+    let first_ani: Option<String> = first.try_get("ani")?;
+    let first_category: Option<String> = first.try_get("category")?;
+    let incoming_ani = canonical.get("archetype_node_id").and_then(|v| v.as_str());
+    if let (Some(stored), Some(incoming)) = (first_ani.as_deref(), incoming_ani)
+        && stored != incoming
+    {
+        return Err(ServiceError::Unprocessable(format!(
+            "COMPOSITION archetype_node_id {incoming:?} differs from the versioned \
+             object's first version {stored:?} \
+             (VERSIONED_COMPOSITION.Archetype_node_id_valid)"
+        )));
+    }
+    const PERSISTENT: &str = "431";
+    let incoming_category = canonical
+        .pointer("/category/defining_code/code_string")
+        .and_then(|v| v.as_str());
+    if let (Some(stored), Some(incoming)) = (first_category.as_deref(), incoming_category)
+        && (stored == PERSISTENT) != (incoming == PERSISTENT)
+    {
+        return Err(ServiceError::Unprocessable(format!(
+            "COMPOSITION category {incoming} changes the persistence of the versioned \
+             object (first version: {stored}) — is_persistent is fixed across versions \
+             (VERSIONED_COMPOSITION.Persistent_validity)"
+        )));
+    }
+    Ok(())
 }
 
 /// Record a committed COMPOSITION for the `compositions_committed_total`
