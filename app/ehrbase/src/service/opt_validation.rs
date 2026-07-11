@@ -811,6 +811,33 @@ fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
             }
         }
         CObject::CDvQuantity(c) => {
+            // The measurement property must be a member of the openEHR
+            // `property` terminology group (RM support master05 §"Terms and
+            // Codes in the openEHR Reference Model", `Group_id_property`) —
+            // checked when the constraint codes it from the openEHR
+            // terminology.
+            if let Some(property) = &c.property
+                && property
+                    .terminology_id
+                    .value
+                    .eq_ignore_ascii_case("openehr")
+                // PORT NOTE (prior-art OPT tolerance): Ocean Template Designer
+                // emits the placeholder property code "0" for an unconstrained
+                // property (the vendored `action test` corpus template) — a
+                // placeholder is "no constraint", not a foreign code.
+                && !property.code_string.is_empty()
+                && property.code_string != "0"
+                && !openehr_term::bundle::openehr().is_valid_property(&property.code_string)
+            {
+                return Err(Violation::new(
+                    "Property_valid",
+                    format!(
+                        "node '{node_id}': DV_QUANTITY property code '{}' is not in the openEHR \
+                         'property' terminology group",
+                        property.code_string
+                    ),
+                ));
+            }
             // Assumed_value_valid: the assumed quantity's units must be one of
             // the constrained unit items, and its magnitude inside that item's
             // magnitude range.
