@@ -133,7 +133,8 @@ impl EhrbaseService {
     ) -> Result<Vec<(Uuid, String)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT vo_id, kind FROM vo_version \
-             WHERE ehr_id = $1 AND upper_inf(sys_period) ORDER BY vo_id",
+             WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
+             ORDER BY vo_id",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -150,7 +151,8 @@ impl EhrbaseService {
     async fn ehr_vo_kind(&self, ehr_id: Uuid, vo_id: Uuid) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
             "SELECT kind FROM vo_version \
-             WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period)",
+             WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
+             AND branch_number = 0",
         )
         .bind(vo_id)
         .bind(ehr_id)
@@ -162,8 +164,8 @@ impl EhrbaseService {
     /// whether it is the current (`upper_inf`) version.
     async fn vo_version_numbers(&self, vo_id: Uuid) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT sys_version, upper_inf(sys_period) AS is_current FROM vo_version \
-             WHERE vo_id = $1 ORDER BY sys_version",
+            "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
+             FROM vo_version WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)
         .fetch_all(&self.pool)
@@ -204,7 +206,7 @@ impl EhrbaseService {
 
         let mut versions = Vec::with_capacity(selected.len());
         for sv in &selected {
-            let read = super::vobject::read_version(&self.pool, vo_id, *sv)
+            let read = super::vobject::read_version_by_ordinal(&self.pool, vo_id, *sv)
                 .await?
                 .ok_or_else(|| {
                     ServiceError::NotFound(format!("version {vo_id}::{sv} for extract"))
@@ -651,7 +653,10 @@ fn parse_import_containers(extract: &Extract) -> Result<Vec<ImportContainer>, Sm
                 .and_then(Value::as_array)
                 .unwrap_or(&empty)
             {
-                let (vo_id, csid, version) = parse_imported_version(ov)?;
+                // creating_system_id is per VERSION (a copied tree legitimately
+                // mixes source-trunk versions with branch modifications made by
+                // other systems — RM common master06 §Distributed versioning).
+                let (vo_id, version) = parse_imported_version(ov)?;
                 match by_container.get_mut(&vo_id) {
                     Some(existing) => {
                         if existing.kind != kind {
@@ -661,14 +666,6 @@ fn parse_import_containers(extract: &Extract) -> Result<Vec<ImportContainer>, Sm
                                 kind.as_str()
                             )));
                         }
-                        if existing.creating_system_id != csid {
-                            return Err(SmError::precondition(format!(
-                                "versioned object {vo_id} has versions from more than one \
-                                 originating system ({:?} vs {csid:?}); multi-system / branch \
-                                 import is not supported (trunk-only)",
-                                existing.creating_system_id
-                            )));
-                        }
                         existing.versions.push(version);
                     }
                     None => {
@@ -676,7 +673,6 @@ fn parse_import_containers(extract: &Extract) -> Result<Vec<ImportContainer>, Sm
                             vo_id,
                             ImportContainer {
                                 vo_id,
-                                creating_system_id: csid,
                                 kind,
                                 versions: vec![version],
                             },
@@ -689,17 +685,51 @@ fn parse_import_containers(extract: &Extract) -> Result<Vec<ImportContainer>, Sm
     Ok(by_container.into_values().collect())
 }
 
-/// Parse one received `ORIGINAL_VERSION` into its cloned `vo_id`, originating
-/// `creating_system_id`, and the [`ImportVersion`] to replay — preserving the
-/// wrapped original's identity, `commit_audit`, lifecycle, data, signature and
+/// Parse one received `ORIGINAL_VERSION` into its cloned `vo_id` and the
+/// [`ImportVersion`] to replay — preserving the wrapped original's full 3-part
+/// identity (incl. branch `version_tree_id`s), `preceding_version_uid`,
+/// `other_input_version_uids`, `commit_audit`, lifecycle, data, signature and
 /// attestations verbatim (RM common master06 §Copying: "the `ORIGINAL_VERSION`
 /// instance is never modified").
-fn parse_imported_version(ov: &Value) -> Result<(Uuid, String, ImportVersion), SmError> {
+fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> {
+    // `X_VERSIONED_OBJECT.versions` carries ORIGINAL_VERSIONs — the received
+    // instance "is never modified" and is re-wrapped as IMPORTED_VERSION *by the
+    // importer* (RM common master06 §Copying; ehr_extract master05
+    // `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`). A member typed
+    // anything else (e.g. an already-wrapped IMPORTED_VERSION) is invalid.
+    match ov.get("_type").and_then(Value::as_str) {
+        None | Some("ORIGINAL_VERSION") => {}
+        Some(other) => {
+            return Err(SmError::precondition(format!(
+                "X_VERSIONED_OBJECT.versions members must be ORIGINAL_VERSION \
+                 (RM ehr_extract master05), got _type {other:?}"
+            )));
+        }
+    }
     let uid = ov
         .pointer("/uid/value")
         .and_then(Value::as_str)
         .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no uid.value"))?;
-    let (vo_id, creating_system_id, sys_version) = version_id::parse_object_version_id(uid)?;
+    let (vo_id, creating_system_id, tree) = version_id::parse_object_version_id(uid)?;
+    // preceding_version_uid + other_input_version_uids preserved verbatim
+    // (master06 §Copying / §Version Merging).
+    let preceding_version_uid = ov
+        .pointer("/preceding_version_uid/value")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let other_input_version_uids: Vec<String> = ov
+        .get("other_input_version_uids")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|u| {
+                    u.as_str()
+                        .or_else(|| u.pointer("/value").and_then(Value::as_str))
+                        .map(str::to_owned)
+                })
+                .collect()
+        })
+        .unwrap_or_default();
 
     // commit_audit (VERSION.commit_audit 1..1) preserved verbatim.
     let audit = ov
@@ -783,9 +813,11 @@ fn parse_imported_version(ov: &Value) -> Result<(Uuid, String, ImportVersion), S
 
     Ok((
         vo_id,
-        creating_system_id,
         ImportVersion {
-            sys_version,
+            tree,
+            creating_system_id,
+            preceding_version_uid,
+            other_input_version_uids,
             lifecycle_state,
             commit_audit: AuditInput {
                 system_id,
@@ -799,4 +831,61 @@ fn parse_imported_version(ov: &Value) -> Result<(Uuid, String, ImportVersion), S
             attestations,
         },
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use serde_json::json;
+
+    use super::*;
+
+    /// A minimal spec-shaped `ORIGINAL_VERSION` wire value for the import parser.
+    fn original_version(type_field: Option<&str>) -> Value {
+        let mut ov = json!({
+            "uid": { "_type": "OBJECT_VERSION_ID",
+                     "value": "018f4a5e-9df1-7d1e-8b6f-2b8c00000001::sysA.example.org::1" },
+            "commit_audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "sysA.example.org",
+                "time_committed": { "_type": "DV_DATE_TIME", "value": "2026-07-11T10:00:00Z" },
+                "change_type": { "_type": "DV_CODED_TEXT", "value": "creation",
+                                 "defining_code": { "_type": "CODE_PHRASE", "code_string": "249",
+                                                    "terminology_id": { "_type": "TERMINOLOGY_ID",
+                                                                        "value": "openehr" } } },
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "Dr A" }
+            },
+            "lifecycle_state": { "_type": "DV_CODED_TEXT", "value": "complete",
+                                 "defining_code": { "_type": "CODE_PHRASE", "code_string": "532",
+                                                    "terminology_id": { "_type": "TERMINOLOGY_ID",
+                                                                        "value": "openehr" } } },
+            "data": { "_type": "EHR_STATUS" }
+        });
+        if let Some(t) = type_field {
+            ov.as_object_mut().unwrap().insert("_type".into(), json!(t));
+        }
+        ov
+    }
+
+    /// `X_VERSIONED_OBJECT.versions` members must be `ORIGINAL_VERSION` (RM
+    /// ehr_extract master05); a foreign `_type` — e.g. an already-wrapped
+    /// `IMPORTED_VERSION` — is rejected, while an explicit or absent
+    /// `ORIGINAL_VERSION` tag parses. Regression for A1
+    /// rm-common-change-control-R20.
+    #[test]
+    fn imported_versions_member_type_is_enforced() {
+        parse_imported_version(&original_version(None)).expect("absent _type defaults");
+        parse_imported_version(&original_version(Some("ORIGINAL_VERSION")))
+            .expect("explicit ORIGINAL_VERSION");
+        for foreign in ["IMPORTED_VERSION", "VERSION", "ORIGINAL_VERSION2"] {
+            let err = parse_imported_version(&original_version(Some(foreign)))
+                .expect_err("foreign _type in versions[] must be rejected");
+            assert!(
+                err.message.contains("ORIGINAL_VERSION") && err.message.contains(foreign),
+                "error should name the expected and offending types, got: {}",
+                err.message
+            );
+        }
+    }
 }

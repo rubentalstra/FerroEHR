@@ -20,7 +20,8 @@ impl EhrbaseService {
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
         let rows = sqlx::query(
-            "SELECT v.sys_version, v.ehr_id, v.creating_system_id, a.system_id, a.change_type, \
+            "SELECT v.sys_version, v.trunk_version, v.branch_number, v.branch_version, \
+             v.ehr_id, v.creating_system_id, a.system_id, a.change_type, \
              a.description, a.committer, a.time_committed \
              FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.vo_id = $1 ORDER BY v.sys_version",
@@ -61,6 +62,11 @@ impl EhrbaseService {
         let mut items = Vec::with_capacity(rows.len());
         for row in &rows {
             let sys_version: i32 = row.try_get("sys_version")?;
+            let tree = super::version_id::TreeId::from_columns(
+                row.try_get("trunk_version")?,
+                row.try_get("branch_number")?,
+                row.try_get("branch_version")?,
+            );
             let creating_system_id: String = row.try_get("creating_system_id")?;
             let system_id: String = row.try_get("system_id")?;
             let change_type: String = row.try_get("change_type")?;
@@ -83,7 +89,7 @@ impl EhrbaseService {
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
+                    "value": self.object_version_id(vo_id, &creating_system_id, tree)
                 },
                 "audits": audits
             }));
@@ -149,7 +155,9 @@ impl EhrbaseService {
         let mut ov = build_original_version(
             &read.creating_system_id,
             read.vo_id,
-            read.sys_version,
+            read.tree,
+            read.preceding_version_uid.as_deref(),
+            &read.other_input_version_uids,
             read.contribution_id,
             &read.audit,
             &read.time_committed,
@@ -215,9 +223,11 @@ impl EhrbaseService {
 /// `Value::Null` for a deleted version (no `data`); `signature` is set iff known.
 #[allow(clippy::too_many_arguments)] // the ORIGINAL_VERSION's attributes; a struct would not read clearer
 pub(super) fn build_original_version(
-    system_id: &str,
+    creating_system_id: &str,
     vo_id: Uuid,
-    sys_version: i32,
+    tree: super::version_id::TreeId,
+    preceding_version_uid: Option<&str>,
+    other_input_version_uids: &[String],
     contribution_id: Uuid,
     audit: &super::vobject::AuditInput,
     time_committed: &jiff::Timestamp,
@@ -229,7 +239,7 @@ pub(super) fn build_original_version(
         "_type": "ORIGINAL_VERSION",
         "uid": {
             "_type": "OBJECT_VERSION_ID",
-            "value": format!("{vo_id}::{system_id}::{sys_version}")
+            "value": format!("{vo_id}::{creating_system_id}::{tree}")
         },
         "contribution": {
             "_type": "OBJECT_REF",
@@ -255,15 +265,28 @@ pub(super) fn build_original_version(
         }
     });
     if let Value::Object(map) = &mut ov {
-        // preceding_version_uid: the prior version's OBJECT_VERSION_ID —
-        // present for every non-first version, absent for the first.
-        if sys_version > 1 {
+        // preceding_version_uid: the STORED prior OBJECT_VERSION_ID (absent for
+        // a first version). Stored — not synthesized — because under branching
+        // and import the preceding version may carry a different
+        // creating_system_id (RM common master06 §Distributed versioning).
+        if let Some(preceding) = preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),
-                json!({
-                    "_type": "OBJECT_VERSION_ID",
-                    "value": format!("{vo_id}::{system_id}::{}", sys_version - 1)
-                }),
+                json!({ "_type": "OBJECT_VERSION_ID", "value": preceding }),
+            );
+        }
+        // other_input_version_uids: merge provenance (master06 §Version
+        // Merging); `is_merged` is its derived boolean
+        // (`VERSION.Is_merged_validity`: is_merged = not …is_empty).
+        if !other_input_version_uids.is_empty() {
+            map.insert(
+                "other_input_version_uids".to_owned(),
+                json!(
+                    other_input_version_uids
+                        .iter()
+                        .map(|uid| json!({ "_type": "OBJECT_VERSION_ID", "value": uid }))
+                        .collect::<Vec<_>>()
+                ),
             );
         }
         // A deleted version carries no data (canonical is Null).

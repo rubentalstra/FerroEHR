@@ -372,7 +372,7 @@ async fn template_id_is_read_back_from_vo_version() {
     // Explicit version 1.
     assert_eq!(
         service
-            .template_of_version(vo, Some(1))
+            .template_of_version(vo, Some("1"))
             .await
             .expect("read template v1")
             .as_deref(),

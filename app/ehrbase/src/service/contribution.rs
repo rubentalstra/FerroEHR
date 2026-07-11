@@ -167,6 +167,114 @@ fn classify(
     }
 }
 
+/// Validate a client-supplied commit `AUDIT_DETAILS`' non-terminology RM
+/// invariants before it is persisted (a CONTRIBUTION audit or a version
+/// `commit_audit`). Two invariants are enforced here as a service-layer `422`:
+///
+/// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty`
+///   (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
+///   invariant `System_id_valid`). Without this guard an empty client-supplied
+///   `system_id` reaches the `ck_audit_system_id_nonempty` DB CHECK and surfaces
+///   as a `500` (a validation failure must be `422`, not an internal error).
+/// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
+///   invariants `Basic_validity` + `Name_valid`
+///   (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_identified.adoc`).
+///   A PARTY that appears as *content* is validated by the RM-invariant pass,
+///   but the audit committer is stored verbatim, so it is checked here.
+///
+/// `change_type` is validated separately ([`classify`] / [`codes::change_type_code`]).
+fn validate_commit_audit(audit: &vobject::AuditInput) -> Result<(), ServiceError> {
+    if audit.system_id.is_empty() {
+        return Err(ServiceError::Unprocessable(
+            "AUDIT_DETAILS.system_id is mandatory and non-void \
+             (AUDIT_DETAILS.System_id_valid)"
+                .to_owned(),
+        ));
+    }
+    validate_committer(&audit.committer)
+}
+
+/// Enforce the committer `PARTY_PROXY`'s `Basic_validity` + `Name_valid`
+/// (`party_identified.adoc`): a `PARTY_IDENTIFIED`/`PARTY_RELATED` committer must
+/// carry at least one of `name` / `identifiers` / `external_ref`, and a present
+/// `name` must be non-empty. A `PARTY_RELATED` committer additionally requires
+/// its `relationship` (1..1) with `Relationship_valid`:
+/// `terminology(openehr).has_code_for_group_id(subject_relationship, …)`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_related.adoc`).
+/// `PARTY_SELF` (the subject-of-record proxy) has no such invariant and is
+/// accepted unconditionally.
+fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
+    let party_type = committer.get("_type").and_then(Value::as_str);
+    if !matches!(party_type, Some("PARTY_IDENTIFIED" | "PARTY_RELATED")) {
+        return Ok(());
+    }
+    let name = committer.get("name").filter(|v| !v.is_null());
+    let has_identifiers = committer
+        .get("identifiers")
+        .and_then(Value::as_array)
+        .is_some_and(|a| !a.is_empty());
+    let has_external_ref = committer.get("external_ref").is_some_and(|v| !v.is_null());
+    // Basic_validity: at least one of name / identifiers / external_ref.
+    if name.is_none() && !has_identifiers && !has_external_ref {
+        return Err(ServiceError::Unprocessable(
+            "AUDIT_DETAILS.committer (PARTY_IDENTIFIED) requires at least one of \
+             name, identifiers, external_ref (PARTY_IDENTIFIED.Basic_validity)"
+                .to_owned(),
+        ));
+    }
+    // Name_valid: a present name must be non-empty.
+    if name.and_then(Value::as_str) == Some("") {
+        return Err(ServiceError::Unprocessable(
+            "AUDIT_DETAILS.committer name must be non-empty when present \
+             (PARTY_IDENTIFIED.Name_valid)"
+                .to_owned(),
+        ));
+    }
+    if party_type == Some("PARTY_RELATED") {
+        validate_party_related_relationship(committer)?;
+    }
+    Ok(())
+}
+
+/// `PARTY_RELATED.relationship` (1..1 `DV_CODED_TEXT`) + `Relationship_valid`
+/// for an audit committer. The invariant is
+/// `terminology(openehr).has_code_for_group_id(subject_relationship,
+/// relationship.defining_code)` (`party_related.adoc`) — the code must BE an
+/// openEHR `subject_relationship` group member, so a defining_code from any
+/// other terminology fails the invariant too (the spec formula has no
+/// terminology escape hatch; openEHR specs are leading). A PARTY that appears
+/// as *content* gets the group check from the validation walker's terminology
+/// pass (`openehr-flat` `terminology.rs`, F-11-05).
+fn validate_party_related_relationship(committer: &Value) -> Result<(), ServiceError> {
+    let Some(relationship) = committer.get("relationship").filter(|v| !v.is_null()) else {
+        return Err(ServiceError::Unprocessable(
+            "PARTY_RELATED.relationship is mandatory (1..1 DV_CODED_TEXT)".to_owned(),
+        ));
+    };
+    let code = relationship
+        .pointer("/defining_code/code_string")
+        .and_then(Value::as_str)
+        .ok_or_else(|| {
+            ServiceError::Unprocessable(
+                "PARTY_RELATED.relationship must be a DV_CODED_TEXT with a defining_code"
+                    .to_owned(),
+            )
+        })?;
+    let terminology = relationship
+        .pointer("/defining_code/terminology_id/value")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if terminology != "openehr"
+        || !openehr_term::bundle::openehr().is_valid_subject_relationship(code)
+    {
+        return Err(ServiceError::Unprocessable(format!(
+            "PARTY_RELATED.relationship code {code:?} (terminology {terminology:?}) is not \
+             in the openEHR subject relationship group (Relationship_valid)"
+        )));
+    }
+    Ok(())
+}
+
 impl EhrbaseService {
     /// Commit a raw-wire EHR CONTRIBUTION body atomically, returning the stored
     /// `CONTRIBUTION` with its resource metadata (the `contribution_uid` for the
@@ -314,6 +422,11 @@ impl EhrbaseService {
                 &contrib_committer,
                 &contrib_system_id,
             );
+            // AUDIT_DETAILS.System_id_valid + committer PARTY invariants
+            // (audit_details.adoc / party_identified.adoc) — a client-supplied
+            // version commit_audit must be a valid RM instance (422, not the
+            // DB-CHECK 500).
+            validate_commit_audit(&version_audit)?;
             // UPDATE_VERSION.lifecycle_state (RM common master06 §Version
             // Lifecycle) — a TerminologyCode {terminology_id, code_string};
             // absent → 532|complete| (default). Validated + resolved in the
@@ -375,6 +488,22 @@ impl EhrbaseService {
                     let kind = self.require_kind(vo_id).await?;
                     check_kind_scope(kind, party_only)?;
                     self.validate_for_commit(kind, &data, incomplete).await?;
+                    // ORIGINAL_VERSION.other_input_version_uids: merge provenance
+                    // accepted on the wire (RM common master06 §Version Merging) —
+                    // OBJECT_VERSION_ID values (string or {value}) preserved.
+                    let other_input_version_uids = version
+                        .get("other_input_version_uids")
+                        .and_then(Value::as_array)
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|u| {
+                                    u.as_str()
+                                        .or_else(|| u.get("value").and_then(Value::as_str))
+                                        .map(str::to_owned)
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
                     Change::Modify {
                         vo_id,
                         kind,
@@ -384,6 +513,7 @@ impl EhrbaseService {
                         signature,
                         lifecycle_state,
                         attestations: accompanying,
+                        other_input_version_uids,
                     }
                 }
                 Action::Delete => {
@@ -437,6 +567,9 @@ impl EhrbaseService {
             None => aggregate_change_type(&version_codes),
         };
         let contribution_audit = self.parse_audit(body.get("audit"), contribution_code);
+        // The CONTRIBUTION's own AUDIT_DETAILS must likewise be a valid RM
+        // instance (System_id_valid + committer PARTY invariants).
+        validate_commit_audit(&contribution_audit)?;
 
         let mut tx = self.pool.begin().await?;
         let (contribution_id, _) = vobject::commit_contribution(
@@ -579,10 +712,12 @@ impl EhrbaseService {
         // duplicate OBJECT_REF for a version that was both written and attested
         // in the same contribution).
         let version_rows = sqlx::query(
-            "SELECT vo_id, sys_version, creating_system_id, kind FROM vo_version \
+            "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, \
+             kind FROM vo_version \
              WHERE contribution_id = $1 \
              UNION \
-             SELECT v.vo_id, v.sys_version, v.creating_system_id, v.kind FROM vo_version v \
+             SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+             v.creating_system_id, v.kind FROM vo_version v \
              JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
              WHERE att.contribution_id = $1 \
              ORDER BY vo_id",
@@ -595,7 +730,11 @@ impl EhrbaseService {
             .iter()
             .map(|row| -> Result<Value, ServiceError> {
                 let vo_id: Uuid = row.try_get("vo_id")?;
-                let sys_version: i32 = row.try_get("sys_version")?;
+                let tree = super::version_id::TreeId::from_columns(
+                    row.try_get("trunk_version")?,
+                    row.try_get("branch_number")?,
+                    row.try_get("branch_version")?,
+                );
                 let creating_system_id: String = row.try_get("creating_system_id")?;
                 let kind: String = row.try_get("kind")?;
                 Ok(json!({
@@ -604,7 +743,7 @@ impl EhrbaseService {
                     "type": kind,
                     "id": {
                         "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(vo_id, &creating_system_id, sys_version)
+                        "value": self.object_version_id(vo_id, &creating_system_id, tree)
                     }
                 }))
             })
@@ -805,7 +944,7 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 /// Parse a VERSION's `preceding_version_uid` (`OBJECT_VERSION_ID`, as a string or
 /// `{value}`) into the object id and the version it must currently be at —
 /// through the strict BASE three-part parse (`version_id`; F-13-01).
-fn parse_preceding(version: &Value) -> Result<(Uuid, i32), ServiceError> {
+fn parse_preceding(version: &Value) -> Result<(Uuid, version_id::TreeId), ServiceError> {
     let raw = version
         .get("preceding_version_uid")
         // PORT NOTE: treat a JSON `null` as absent (the SM glue serializes a
@@ -1003,6 +1142,132 @@ mod tests {
         assert_eq!((action, code.as_str()), (Action::Create, "249"));
         let (action, code) = classify(None, true, true).unwrap();
         assert_eq!((action, code.as_str()), (Action::Modify, "251"));
+    }
+
+    fn audit_input(system_id: &str, committer: Value) -> vobject::AuditInput {
+        vobject::AuditInput {
+            system_id: system_id.to_owned(),
+            change_type: change_type::CREATION.to_owned(),
+            description: None,
+            committer,
+        }
+    }
+
+    #[test]
+    fn commit_audit_rejects_empty_system_id() {
+        // AUDIT_DETAILS.System_id_valid: `not system_id.is_empty` — a client
+        // CONTRIBUTION audit with system_id "" must be a 422, not the DB-CHECK 500.
+        let audit = audit_input(
+            "",
+            json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
+        );
+        match validate_commit_audit(&audit) {
+            Err(ServiceError::Unprocessable(msg)) => assert!(
+                msg.contains("System_id_valid"),
+                "should cite System_id_valid, got {msg}"
+            ),
+            other => panic!("expected Unprocessable(System_id_valid), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn commit_audit_rejects_committer_without_identity() {
+        // PARTY_IDENTIFIED.Basic_validity: a committer with none of
+        // name/identifiers/external_ref is invalid.
+        let audit = audit_input("ehrbase-rs.local", json!({ "_type": "PARTY_IDENTIFIED" }));
+        match validate_commit_audit(&audit) {
+            Err(ServiceError::Unprocessable(msg)) => assert!(
+                msg.contains("Basic_validity"),
+                "should cite Basic_validity, got {msg}"
+            ),
+            other => panic!("expected Unprocessable(Basic_validity), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn commit_audit_rejects_empty_committer_name() {
+        // PARTY_IDENTIFIED.Name_valid: a present name must be non-empty.
+        let audit = audit_input(
+            "ehrbase-rs.local",
+            json!({ "_type": "PARTY_IDENTIFIED", "name": "" }),
+        );
+        match validate_commit_audit(&audit) {
+            Err(ServiceError::Unprocessable(msg)) => assert!(
+                msg.contains("Name_valid"),
+                "should cite Name_valid, got {msg}"
+            ),
+            other => panic!("expected Unprocessable(Name_valid), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn commit_audit_party_related_relationship_is_enforced() {
+        // PARTY_RELATED.relationship: mandatory (1..1), coded, and in the
+        // openEHR `subject_relationship` group (Relationship_valid,
+        // party_related.adoc). Group member 10 = "mother".
+        let related = |relationship: Value| {
+            let mut c = json!({ "_type": "PARTY_RELATED", "name": "Mum" });
+            if !relationship.is_null() {
+                c.as_object_mut()
+                    .unwrap()
+                    .insert("relationship".into(), relationship);
+            }
+            audit_input("sys", c)
+        };
+        // Missing relationship → 422 naming the invariant.
+        match validate_commit_audit(&related(Value::Null)) {
+            Err(ServiceError::Unprocessable(msg)) => {
+                assert!(msg.contains("relationship"), "got {msg}");
+            }
+            other => panic!("missing relationship must be Unprocessable, got {other:?}"),
+        }
+        // Uncoded relationship → 422.
+        assert!(
+            validate_commit_audit(&related(json!({ "_type": "DV_TEXT", "value": "mother" })))
+                .is_err(),
+            "an uncoded relationship must be rejected (1..1 DV_CODED_TEXT)"
+        );
+        // A non-member openehr code → 422 citing Relationship_valid.
+        let bad = related(json!({
+            "_type": "DV_CODED_TEXT", "value": "colleague",
+            "defining_code": { "_type": "CODE_PHRASE", "code_string": "99999",
+                               "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } }
+        }));
+        match validate_commit_audit(&bad) {
+            Err(ServiceError::Unprocessable(msg)) => assert!(
+                msg.contains("Relationship_valid") && msg.contains("99999"),
+                "got {msg}"
+            ),
+            other => panic!("non-member relationship code must be 422, got {other:?}"),
+        }
+        // A group member (10 = mother) is accepted.
+        validate_commit_audit(&related(json!({
+            "_type": "DV_CODED_TEXT", "value": "mother",
+            "defining_code": { "_type": "CODE_PHRASE", "code_string": "10",
+                               "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } }
+        })))
+        .expect("subject_relationship group member accepted");
+    }
+
+    #[test]
+    fn commit_audit_accepts_valid_committers() {
+        // A named PARTY_IDENTIFIED, an identifier-only PARTY_IDENTIFIED, and a
+        // PARTY_SELF committer are all valid (Basic_validity satisfied / no
+        // invariant on PARTY_SELF).
+        validate_commit_audit(&audit_input(
+            "sys",
+            json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
+        ))
+        .expect("named committer");
+        validate_commit_audit(&audit_input(
+            "sys",
+            json!({ "_type": "PARTY_IDENTIFIED", "identifiers": [
+                { "_type": "DV_IDENTIFIER", "id": "42", "issuer": "x", "type": "id" }
+            ] }),
+        ))
+        .expect("identifier-only committer");
+        validate_commit_audit(&audit_input("sys", json!({ "_type": "PARTY_SELF" })))
+            .expect("PARTY_SELF committer");
     }
 
     #[test]

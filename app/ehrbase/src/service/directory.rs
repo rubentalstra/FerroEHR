@@ -6,6 +6,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::codes::change_type;
+use super::version_id::TreeId;
 use super::vobject::{self, Kind};
 use super::{EhrbaseService, ServiceError};
 
@@ -66,15 +67,10 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
-        let folder = self.with_uid(
-            read.canonical,
-            vo_id,
-            &read.creating_system_id,
-            read.sys_version,
-        );
+        let folder = self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree);
         match path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
             None => Ok(ServiceResponse::new(folder, meta)),
             Some(path) => select_subfolder(&folder, path)
@@ -88,7 +84,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -106,7 +102,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         folder: Value,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
         // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
@@ -137,7 +133,7 @@ impl EhrbaseService {
     pub(super) async fn delete_directory(
         &self,
         ehr_id: Uuid,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self.directory_vo(ehr_id).await?;
         // EHR_STATUS.is_modifiable = False forbids content writes, incl. logical
@@ -161,7 +157,7 @@ impl EhrbaseService {
     }
 
     /// The EHR's directory versioned-object id, or `NotFound`.
-    async fn directory_vo(&self, ehr_id: Uuid) -> Result<(Uuid, i32), ServiceError> {
+    async fn directory_vo(&self, ehr_id: Uuid) -> Result<(Uuid, TreeId), ServiceError> {
         self.current_vo(ehr_id, Kind::Folder)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))

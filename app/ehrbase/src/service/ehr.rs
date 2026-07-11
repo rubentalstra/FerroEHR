@@ -8,6 +8,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use super::codes::change_type;
+use super::version_id::TreeId;
 use super::vobject::{self, AuditInput, Change, Kind};
 use super::{EhrbaseService, ServiceError};
 
@@ -129,11 +130,15 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         // The uid uses the stored per-version creating_system_id (M2), not the
         // live config, so it is stable across a `with_system_id` change.
+        let (t, b, v) = status_version.columns();
         let status_csid: String = sqlx::query_scalar(
-            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 AND sys_version = $2",
+            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 \
+             AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
         )
         .bind(status_vo)
-        .bind(status_version)
+        .bind(t)
+        .bind(b)
+        .bind(v)
         .fetch_one(&self.pool)
         .await?;
         let status_ovid = self.object_version_id(status_vo, &status_csid, status_version);
@@ -245,7 +250,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -321,7 +326,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -355,7 +360,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
         let ov = self.original_version(&read)?;
@@ -385,17 +390,24 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         kind: Kind,
-    ) -> Result<Option<(Uuid, i32)>, ServiceError> {
+    ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
         let row = sqlx::query(
-            "SELECT vo_id, sys_version FROM vo_version \
-             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period)",
+            "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
         )
         .bind(ehr_id)
         .bind(kind.as_str())
         .fetch_optional(&self.pool)
         .await?;
         match row {
-            Some(r) => Ok(Some((r.try_get("vo_id")?, r.try_get("sys_version")?))),
+            Some(r) => Ok(Some((
+                r.try_get("vo_id")?,
+                TreeId::from_columns(
+                    r.try_get("trunk_version")?,
+                    r.try_get("branch_number")?,
+                    r.try_get("branch_version")?,
+                ),
+            ))),
             None => Ok(None),
         }
     }
@@ -413,7 +425,8 @@ impl EhrbaseService {
             "SELECT (n.data->>'is_modifiable') = 'true' \
              FROM vo_version v \
              JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period)",
+             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
+             AND v.branch_number = 0",
         )
         .bind(ehr_id)
         .fetch_optional(&self.pool)
@@ -467,7 +480,7 @@ impl EhrbaseService {
         &self,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
     ) -> String {
         format!("{vo_id}::{creating_system_id}::{sys_version}")
     }
@@ -480,7 +493,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
         at: jiff::Timestamp,
     ) -> ResourceMeta {
         ResourceMeta::new(
@@ -502,16 +515,11 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
         ServiceResponse::new(
-            self.with_uid(
-                read.canonical,
-                vo_id,
-                &read.creating_system_id,
-                read.sys_version,
-            ),
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
             meta,
         )
     }
@@ -533,7 +541,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         )))
     }
@@ -544,7 +552,7 @@ impl EhrbaseService {
         mut canonical: Value,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
     ) -> Value {
         if let Value::Object(map) = &mut canonical {
             map.insert(

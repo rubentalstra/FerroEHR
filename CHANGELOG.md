@@ -17,6 +17,37 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Version-tree branching and merge provenance** (RM common master06
+  §Version tree / §Distributed versioning / §Version Merging). Branch
+  version ids (`trunk.branch.version`) are now first-class on every
+  surface: modifying a version that was imported from another system forks
+  a branch with the local `creating_system_id` (the spec's mandated rule
+  for local modifications of copied versions) while the imported trunk
+  version stays the container current; branch tips are continued,
+  superseded, read, exported, and re-imported like any version; the
+  container current / `LATEST_VERSION` (including in AQL) is the latest
+  *trunk* version. `ORIGINAL_VERSION.preceding_version_uid` is now stored
+  at commit (previously synthesized) and `other_input_version_uids` (merge
+  provenance) is accepted on the CONTRIBUTION wire, preserved on import,
+  and served on read. The `vo_version` storage carries the version tree in
+  explicit columns with per-lineage temporal non-overlap constraints and
+  the spec's global version-identity uniqueness tuple.
+
+### Changed
+
+- **Stricter spec-mandated validation** on the commit path: a client
+  `AUDIT_DETAILS` with an empty `system_id`, a committer
+  `PARTY_IDENTIFIED`/`PARTY_RELATED` with no identity, an empty committer
+  name, or a `PARTY_RELATED.relationship` outside the openEHR
+  `subject_relationship` group is now rejected with 422 (previously
+  accepted, or surfaced as a 500 DB error); a non-root RM node carrying
+  `archetype_details` violates `LOCATABLE.Archetyped_valid` and is
+  rejected; EHR-Extract `versions[]` members with a `_type` other than
+  `ORIGINAL_VERSION` are rejected on import.
+- AQL `VERSION` `uid` values are now built from each version's stored
+  `creating_system_id` and version-tree id, not the server's live
+  `system_id` configuration.
+
 - The `ehrbase-rs-postgres` image now pre-creates the layered group roles
   (`ehrbase_migrator`, `ehrbase_app`, `ehrbase_reader`), so Compose/dev
   deployments get the same least-privilege grant topology as hardened

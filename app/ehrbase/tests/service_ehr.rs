@@ -239,11 +239,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // an ORIGINAL_VERSION wrapper.
     let sp: Vec<&str> = status_ovid_v1.split("::").collect();
     let status_by_v = svc
-        .get_ehr_status_at_version(
-            ehr_uuid,
-            sp[0].parse().expect("status vo uuid"),
-            sp[2].parse().expect("status version"),
-        )
+        .get_ehr_status_at_version(ehr_uuid, sp[0].parse().expect("status vo uuid"), sp[2])
         .await
         .expect("status by version");
     assert_eq!(status_by_v["_type"], "EHR_STATUS");
