@@ -26,6 +26,11 @@ reqwest = { workspace = true }
 # dev/verification crate (publish = false), not part of the shipped app.
 wiremock = { workspace = true }
 clap = { workspace = true }
+# The upstream fairness adjudication register (X1) is a committed TOML file
+# loaded at run time for non-ehrbase-rs SUTs; it only reclassifies cases
+# (extension / rm-version-sensitive → NotApplicable, defect → stays a failure),
+# never edits one.
+toml = { workspace = true }
 jiff = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
