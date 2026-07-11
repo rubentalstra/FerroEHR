@@ -48,6 +48,7 @@ const SCOPED_TABLES: &[&str] = &[
     "sp_data_set",
     "event_outbox",
     "event_subscription",
+    "fhir_mapping",
 ];
 
 struct Pg {

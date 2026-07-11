@@ -29,6 +29,9 @@ opentelemetry-otlp.workspace = true
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 jiff-sqlx.workspace = true
+# FHIR reverse-mapping (ADR-016 §Decision 4): `openehr-flat::to_flat` returns an
+# `IndexMap` FLAT map the reverse transform reads leaf-by-leaf.
+indexmap.workspace = true
 # `events` module (contribution-outbox eventing, ADR-014): AMQP 0.9.1 publisher
 # (RabbitMQ) draining the transactional outbox at-least-once, with `backon`
 # retry/backoff.

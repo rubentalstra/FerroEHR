@@ -141,6 +141,7 @@ fn config(enabled: bool) -> RestConfig {
         terminology: TerminologyConfig::default(),
         event_subscription: EventSubscriptionConfig { enabled },
         tenancy: ehrbase_rest::TenancyConfig::default(),
+        fhir: ehrbase_rest::FhirConfig::default(),
     }
 }
 

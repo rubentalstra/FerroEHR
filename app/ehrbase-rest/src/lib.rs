@@ -35,7 +35,7 @@ pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine}
 // The native API lives in `ehrbase-sm` (ADR-011); re-exported here for the
 // server's public surface (test mocks, the binary) — no local shim module.
 pub use config::{
-    AdminConfig, EventSubscriptionConfig, RestConfig, TenancyConfig, TerminologyConfig,
+    AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TenancyConfig, TerminologyConfig,
 };
 pub use ehrbase_sm::Platform;
 pub use ehrbase_sm::services::{
