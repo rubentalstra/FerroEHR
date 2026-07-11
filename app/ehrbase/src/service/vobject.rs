@@ -1565,7 +1565,7 @@ async fn insert_audit_at(
 #[allow(clippy::too_many_arguments)] // one row's columns beyond the shared struct
 async fn insert_imported_vo_version(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
     vo_id: Uuid,
     kind: Kind,
     version: &ImportVersion,
@@ -1725,10 +1725,48 @@ pub(super) async fn commit_import(
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
 ) -> Result<Uuid, ServiceError> {
+    commit_import_scoped(tx, Some(ehr_id), import_audit, containers, false).await
+}
+
+/// Land demographics-chapter parties (`X_VERSIONED_PARTY`) into the
+/// demographic repository under their own (ehr-less) import CONTRIBUTION
+/// (master09 §Creation Semantics demographics chapter; RM demographic content
+/// is not EHR-owned). A party whose version container already exists locally
+/// is SKIPPED — parties are shared continuants across extracts, and the copy
+/// already held is authoritative here.
+pub(super) async fn commit_demographic_import(
+    tx: &mut PgConnection,
+    import_audit: &AuditInput,
+    containers: Vec<ImportContainer>,
+) -> Result<(), ServiceError> {
+    if containers.is_empty() {
+        return Ok(());
+    }
+    let mut fresh = Vec::with_capacity(containers.len());
+    for container in containers {
+        let (existing_kind, _, _, _, _) = imported_container_state(tx, container.vo_id).await?;
+        if existing_kind.is_none() {
+            fresh.push(container);
+        }
+    }
+    if fresh.is_empty() {
+        return Ok(());
+    }
+    commit_import_scoped(tx, None, import_audit, fresh, true).await?;
+    Ok(())
+}
+
+async fn commit_import_scoped(
+    tx: &mut PgConnection,
+    ehr_id: Option<Uuid>,
+    import_audit: &AuditInput,
+    containers: Vec<ImportContainer>,
+    skip_existing: bool,
+) -> Result<Uuid, ServiceError> {
     // One local instant anchors the whole import's temporal chain.
     let base = jiff::Timestamp::now();
     let (contribution_id, _audit_id, import_time) =
-        write_contribution(tx, Some(ehr_id), import_audit).await?;
+        write_contribution(tx, ehr_id, import_audit).await?;
     // Per-version entries for the single import-contribution outbox event.
     let mut outbox_versions: Vec<serde_json::Value> = Vec::new();
 
@@ -1756,13 +1794,16 @@ pub(super) async fn commit_import(
 
         let (existing_kind, owner, max_trunk, max_ordinal, trunk_open) =
             imported_container_state(tx, container.vo_id).await?;
+        if skip_existing && existing_kind.is_some() {
+            continue;
+        }
         if let Some(existing_kind) = existing_kind {
             // First receipt of *this item* has already happened (master06 §Copying
             // Case 3): append to the existing clone — the kind must match, the EHR
             // must own it, and every imported trunk version must be strictly newer
             // (branch versions land on their own lineages; the uq_vo_version_tree
             // constraint rejects a duplicate identity).
-            if owner != Some(ehr_id) {
+            if owner != ehr_id {
                 return Err(ServiceError::Conflict(format!(
                     "versioned object {} already exists in another EHR",
                     container.vo_id
@@ -1839,7 +1880,7 @@ pub(super) async fn commit_import(
             // A `523|deleted|` version stores no node rows (data is Void).
             if !version.data.is_null() {
                 let rows = decompose(version.data.clone())?;
-                insert_nodes(tx, container.vo_id, ordinal, Some(ehr_id), &rows).await?;
+                insert_nodes(tx, container.vo_id, ordinal, ehr_id, &rows).await?;
             }
             for attestation in &version.attestations {
                 insert_attestation(tx, container.vo_id, ordinal, contribution_id, attestation)
@@ -1850,14 +1891,7 @@ pub(super) async fn commit_import(
     // One PHI-free outbox event for the whole import CONTRIBUTION, same
     // transaction (ADR-014 §1/§2). An empty import (no versions) writes none.
     if !outbox_versions.is_empty() {
-        write_outbox(
-            tx,
-            contribution_id,
-            Some(ehr_id),
-            import_time,
-            outbox_versions,
-        )
-        .await?;
+        write_outbox(tx, contribution_id, ehr_id, import_time, outbox_versions).await?;
     }
     Ok(contribution_id)
 }

@@ -311,3 +311,66 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
         .expect_err("unknown EHR must fail");
     assert_eq!(err.status, ehrbase_sm::CallStatusType::EhrIdDoesNotExist);
 }
+
+/// A1 rm-ehr-extract: EXTRACT_SPEC.extract_type must come from the extract
+/// content type group; include_multimedia = false strips inline DV_MULTIMEDIA
+/// data from exported versions (master09 §Creation Semantics); an
+/// EXTRACT_CONTENT_ITEM that is masked yet carries an item violates
+/// Item_validity on import (extract_content_item.adoc).
+#[tokio::test]
+async fn extract_spec_flags_are_honoured() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("extract_flags").await);
+    let (ehr, _status_vo) = seed_ehr(&svc).await;
+
+    // Bad extract_type → precondition.
+    let mut spec = json!({
+        "_type": "EXTRACT_SPEC",
+        "version_spec": { "_type": "EXTRACT_VERSION_SPEC",
+            "include_all_versions": false, "include_revision_history": false,
+            "include_data": true },
+        "manifest": { "_type": "EXTRACT_MANIFEST", "entities": [ {
+            "_type": "EXTRACT_ENTITY_MANIFEST",
+            "extract_id_key": ehr.to_string(), "ehr_id": ehr.to_string(),
+            "other_ids": [], "item_list": [] } ] },
+        "extract_type": { "_type": "DV_CODED_TEXT", "value": "bogus",
+            "defining_code": { "_type": "CODE_PHRASE", "code_string": "bogus",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" } } },
+        "include_multimedia": true, "priority": 0, "link_depth": 0, "criteria": []
+    });
+    let err = svc
+        .export_ehr_extracts(serde_json::from_value(spec.clone()).expect("spec"))
+        .await
+        .expect_err("an extract_type outside the group must be rejected");
+    assert!(
+        err.message.contains("extract content type"),
+        "{}",
+        err.message
+    );
+
+    // Valid type + include_multimedia = false → exported bodies carry no
+    // inline DV_MULTIMEDIA data.
+    spec["extract_type"]["defining_code"]["code_string"] = json!("openehr-ehr");
+    spec["include_multimedia"] = json!(false);
+    let extracts = svc
+        .export_ehr_extracts(serde_json::from_value(spec).expect("spec"))
+        .await
+        .expect("export");
+    let wire = serde_json::to_string(&extracts[0]).unwrap();
+    assert!(
+        !wire.contains("\"data\":\"") || !wire.contains("DV_MULTIMEDIA"),
+        "no inline multimedia data may remain when include_multimedia = false"
+    );
+
+    // Masked-with-item violates Item_validity on import.
+    let mut extract = extracts.into_iter().next().unwrap();
+    extract["chapters"][0]["items"][0]["is_masked"] = json!(true);
+    let err = svc
+        .import_ehr(
+            Some(uuid::Uuid::now_v7()),
+            serde_json::from_value(extract).expect("extract"),
+        )
+        .await
+        .expect_err("masked item carrying content must be rejected");
+    assert!(err.message.contains("Item_validity"), "{}", err.message);
+}
