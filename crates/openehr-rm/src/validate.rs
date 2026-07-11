@@ -421,6 +421,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::text::code_phrase::CodePhrase;
     use crate::data_types::text::dv_text::DvText as DvTextEnum;
     use crate::data_types::text::term_mapping::TermMapping;
+    use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
     use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
     use crate::data_types::uri::dv_uri::DvUriData;
 
@@ -449,6 +450,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "DV_ORDINAL" => run::<DvOrdinal>(value, out),
         "DV_SCALE" => run::<DvScale>(value, out),
         "DV_PARSABLE" => run::<DvParsable>(value, out),
+        "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(value, out),
         "REFERENCE_RANGE" => run::<ReferenceRange>(value, out),
         // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
         // Limits_consistent ordering invariant runs (F-12-04); fall back to

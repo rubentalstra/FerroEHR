@@ -100,6 +100,8 @@ enum CodeSet {
     CharacterSets,
     MediaTypes,
     NormalStatuses,
+    CompressionAlgorithms,
+    IntegrityCheckAlgorithms,
 }
 
 impl CodeSet {
@@ -110,6 +112,12 @@ impl CodeSet {
             CodeSet::CharacterSets => t.is_valid_character_set(code),
             CodeSet::MediaTypes => t.is_valid_media_type(code),
             CodeSet::NormalStatuses => t.is_valid_normal_status(code),
+            CodeSet::CompressionAlgorithms => t
+                .code_set("compression_algorithms")
+                .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code)),
+            CodeSet::IntegrityCheckAlgorithms => t
+                .code_set("integrity_check_algorithms")
+                .is_some_and(|cs| cs.codes.iter().any(|c| c.value == code)),
         }
     }
 
@@ -120,6 +128,8 @@ impl CodeSet {
             CodeSet::CharacterSets => "character set (IANA)",
             CodeSet::MediaTypes => "media type (IANA)",
             CodeSet::NormalStatuses => "normal status",
+            CodeSet::CompressionAlgorithms => "compression algorithm",
+            CodeSet::IntegrityCheckAlgorithms => "integrity check algorithm",
         }
     }
 }
@@ -239,7 +249,23 @@ fn slots_for(rm_type: Option<&str>) -> &'static [(&'static str, Binding)] {
             ("encoding", Cs(CodeSet::CharacterSets)),
         ],
         Some("TERM_MAPPING") => &[("purpose", G(Group::TermMappingPurpose))],
-        Some("DV_MULTIMEDIA") => &[("media_type", Cs(CodeSet::MediaTypes))],
+        // DV_ENCAPSULATED (dv_encapsulated.adoc Charset_valid / Language_valid)
+        // + the DV_MULTIMEDIA code-set invariants (dv_multimedia.adoc
+        // Compression_algorithm_validity / Integrity_check_algorithm_validity).
+        Some("DV_MULTIMEDIA") => &[
+            ("media_type", Cs(CodeSet::MediaTypes)),
+            ("charset", Cs(CodeSet::CharacterSets)),
+            ("language", Cs(CodeSet::Languages)),
+            ("compression_algorithm", Cs(CodeSet::CompressionAlgorithms)),
+            (
+                "integrity_check_algorithm",
+                Cs(CodeSet::IntegrityCheckAlgorithms),
+            ),
+        ],
+        Some("DV_PARSABLE") => &[
+            ("charset", Cs(CodeSet::CharacterSets)),
+            ("language", Cs(CodeSet::Languages)),
+        ],
         Some("AUDIT_DETAILS") => &[("change_type", G(Group::AuditChangeType))],
         Some("ATTESTATION") => &[("reason", G(Group::AttestationReason))],
         Some("PARTY_RELATED") => &[("relationship", G(Group::SubjectRelationship))],
