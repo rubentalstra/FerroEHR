@@ -208,13 +208,23 @@ fn is_valid_tz(tz: &str) -> bool {
     let Some(rest) = tz.strip_prefix(['+', '-']) else {
         return false;
     };
+    // BASE `Iso8601_timezone` bounds are ASYMMETRIC (`iso8601_timezone.adoc`
+    // Max_hour_valid / Min_hour_valid; `time_definitions.adoc`
+    // Max_timezone_hour = 14, Min_timezone_hour = 12): `+` offsets go to
+    // +14:00, `-` offsets only to -12:00 (reject `-13:00`).
+    //
+    // PORT NOTE (corpus adjudication): the invariants literally require
+    // `hour > 0` when signed, but the canonical corpus + CNF data sets carry
+    // `+00:00`/`-00:00` UTC forms in 42 files — the corpus outranks the prose
+    // reading, so hour 0 is accepted with either sign (≡ `Z`).
+    let max_hour = if tz.starts_with('+') { 14 } else { 12 };
     if rest.contains(':') {
         matches!(rest.split(':').collect::<Vec<_>>().as_slice(),
-            [h, m] if in_range(h, 0, 14) && in_range(m, 0, 59))
+            [h, m] if in_range(h, 0, max_hour) && in_range(m, 0, 59))
     } else {
         match rest.len() {
-            2 => in_range(rest, 0, 14),
-            4 => in_range(&rest[0..2], 0, 14) && in_range(&rest[2..4], 0, 59),
+            2 => in_range(rest, 0, max_hour),
+            4 => in_range(&rest[0..2], 0, max_hour) && in_range(&rest[2..4], 0, 59),
             _ => false,
         }
     }
@@ -642,6 +652,24 @@ mod tests {
             out.iter()
                 .any(|v| v.message == "Invariant Percent_validity failed on type DV_PROPORTION"),
             "got {out:?}"
+        );
+    }
+
+    /// BASE `Iso8601_timezone`: `+` offsets reach +14:00, `-` offsets stop at
+    /// -12:00; ±00:00 accepted per the corpus (see `is_valid_tz`).
+    #[test]
+    fn timezone_bounds_are_asymmetric() {
+        assert!(is_valid_iso_time("10:00:00+14:00"));
+        assert!(is_valid_iso_time("10:00:00-12:00"));
+        assert!(is_valid_iso_time("10:00:00+00:00"));
+        assert!(is_valid_iso_time("10:00:00-00:00"));
+        assert!(
+            !is_valid_iso_time("10:00:00+15:00"),
+            "+15 exceeds Max_timezone_hour"
+        );
+        assert!(
+            !is_valid_iso_time("10:00:00-13:00"),
+            "-13 exceeds Min_timezone_hour"
         );
     }
 }
