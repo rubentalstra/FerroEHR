@@ -76,8 +76,9 @@ pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
     fn name_str(s: &str) -> bool {
         let mut chars = s.chars();
         chars.next().is_some_and(|c| c.is_ascii_alphabetic())
-            && s.chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/' | '+' | '.' | ' '))
+            && s.chars().all(|c| {
+                c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/' | '+' | '.' | ' ')
+            })
             && !s.ends_with(' ')
     }
     match value.split_once('(') {
@@ -108,7 +109,13 @@ mod validity_tests {
 
     #[test]
     fn terminology_id_lexical_form() {
-        for ok in ["openehr", "ISO_639-1", "SNOMED CT", "ICD10AM(3rd_ed)", "local"] {
+        for ok in [
+            "openehr",
+            "ISO_639-1",
+            "SNOMED CT",
+            "ICD10AM(3rd_ed)",
+            "local",
+        ] {
             assert!(is_valid_terminology_id(ok), "{ok} must be valid");
         }
         for bad in ["", "1openehr", "SNOMED CT ", "x("] {

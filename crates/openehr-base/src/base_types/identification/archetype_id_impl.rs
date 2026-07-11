@@ -193,9 +193,9 @@ pub(crate) fn is_valid_archetype_id(value: &str) -> bool {
         parts.len() == 3 && parts.iter().all(|p| alphanum_str(p))
     };
     let concept_ok = concept.split('-').all(alphanum_str);
-    let version_ok = version
-        .strip_prefix('v')
-        .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && (n == "0" || !n.starts_with('0')));
+    let version_ok = version.strip_prefix('v').is_some_and(|n| {
+        !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && (n == "0" || !n.starts_with('0'))
+    });
     entity_ok && concept_ok && version_ok
 }
 

@@ -255,7 +255,10 @@ fn slots_for(rm_type: Option<&str>) -> &'static [(&'static str, Binding)] {
             ("media_type", Binding::CodeSet(CodeSet::MediaTypes)),
             ("charset", Binding::CodeSet(CodeSet::CharacterSets)),
             ("language", Binding::CodeSet(CodeSet::Languages)),
-            ("compression_algorithm", Binding::CodeSet(CodeSet::CompressionAlgorithms)),
+            (
+                "compression_algorithm",
+                Binding::CodeSet(CodeSet::CompressionAlgorithms),
+            ),
             (
                 "integrity_check_algorithm",
                 Binding::CodeSet(CodeSet::IntegrityCheckAlgorithms),
