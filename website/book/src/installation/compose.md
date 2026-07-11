@@ -1,3 +1,103 @@
 # Docker Compose
 
-_This chapter is coming soon. Content is written in phase W1.3._
+Docker Compose is the quickest way to run EHRbase-rs together with a
+preconfigured PostgreSQL 18, for local development and evaluation. This chapter
+describes the two published images, the Compose services, the environment
+variables that tune them, and the optional observability overlay. For a
+step-by-step first run, see [Getting started](../getting-started.md).
+
+## The two images
+
+EHRbase-rs publishes two container images to GHCR:
+
+| Image | Contents |
+|---|---|
+| `ghcr.io/rubentalstra/ehrbase-rs` | The `ehrbase` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured entirely via `EHRBASE_*` environment variables. |
+| `ghcr.io/rubentalstra/ehrbase-rs-postgres` | `postgres:18.4` with the application role, database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
+
+The PostgreSQL image is **init-scripts only** — it creates roles, schemas, and
+extensions, but does not bake in migration state. The server owns the schema
+content and applies its migrations idempotently at every boot, so a fresh
+database self-provisions and a restart is a no-op.
+
+## Bringing up the stack
+
+```shell
+docker compose up --build
+```
+
+This starts two core services:
+
+- **`ehrbase-postgres`** — the database image, with a named data volume and a
+  `pg_isready` healthcheck.
+- **`ehrbase`** — the server, which waits for the database to report healthy
+  (`depends_on: condition: service_healthy`), then boots, migrates, and serves
+  on port 8080. Its healthcheck is the binary's own `healthcheck` subcommand
+  (there is no shell in the image).
+
+The server's development configuration is mounted read-only from
+`docker/ehrbase.dev.toml` and pointed at by `EHRBASE_REST_CONFIG`. That file
+enables Basic auth with the throwaway users `ehrbase` / `ehrbase` and
+`ehrbase-admin` / `ehrbase`, and turns on permissive CORS — development only.
+
+> [!WARNING]
+> PostgreSQL 18's official image stores data in a major-version subdirectory,
+> so the data volume mounts at `/var/lib/postgresql` (the parent), **not** the
+> pre-18 `/var/lib/postgresql/data`. The bundled Compose file already does this
+> correctly; keep the convention if you adapt it.
+
+## Environment variables
+
+The Compose file reads these host environment variables (with the defaults
+shown), so you can retune without editing it:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `EHRBASE_IMAGE` | `ghcr.io/rubentalstra/ehrbase-rs:local` | Server image to run (set to a published tag to skip the build). |
+| `EHRBASE_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ehrbase-rs-postgres:local` | Database image to run. |
+| `EHRBASE_PORT` | `8080` | Host port mapped to the server. |
+| `EHRBASE_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
+| `EHRBASE_DB_USER` / `EHRBASE_DB_PASSWORD` / `EHRBASE_DB_NAME` | `ehrbase` | App role, password, and database created by the DB image's init script. |
+| `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
+| `EHRBASE_LOG_FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+
+The server container itself is passed `EHRBASE_DB_URL` (assembled from the
+DB variables) and `EHRBASE_REST_CONFIG`. Any other `EHRBASE_*` setting from the
+[configuration reference](configuration.md) can be added under the `ehrbase`
+service's `environment:` block.
+
+## Optional services
+
+The Compose file also defines two services the quickstart does **not** depend
+on — the server defaults to Basic auth and inline multimedia, so neither is
+required:
+
+- **`seaweedfs`** — an S3 gateway for large `DV_MULTIMEDIA` externalization
+  (development/test only). To try it, set `EHRBASE_MULTIMEDIA_ENABLED=true`,
+  `EHRBASE_MULTIMEDIA_ENDPOINT=http://seaweedfs:8333`,
+  `EHRBASE_MULTIMEDIA_BUCKET=openehr-multimedia`, and (dev only)
+  `EHRBASE_MULTIMEDIA_ALLOW_HTTP=true`. In production, point the multimedia
+  settings at a real, credentialed, HTTPS S3 endpoint instead.
+- **`keycloak`** — an OIDC provider with a preloaded `ehrbase` realm, on port
+  8081. To use bearer auth instead of Basic, point the auth OIDC settings at
+  `http://localhost:8081/auth/realms/ehrbase`.
+
+## Observability overlay
+
+A second Compose file adds a full local telemetry stack — an OTLP collector,
+Prometheus, Tempo, Loki, and Grafana with a provisioned service-overview
+dashboard:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+# Grafana → http://localhost:3000
+```
+
+This is the easiest way to see the server's metrics and traces without wiring
+up a collector by hand. See [Operations](../operations.md) for what the server
+exports and how to consume it in production.
+
+## Next
+
+- [Configuration reference](configuration.md) — every setting you can pass.
+- [Kubernetes & Helm](kubernetes.md) — the production deployment.
