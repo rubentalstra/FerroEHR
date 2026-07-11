@@ -12,7 +12,7 @@
     /* Brand chrome (design tokens per docs/plans/w1-docs-website.md §3a).
        Only the header bar is theme-aware; Swagger UI itself is light-only, so
        its container is pinned to a light surface and stays readable in dark OS
-       themes (noted in the sub-bar). */
+       themes. */
     :root {
       --rs-rust: #b7410e; --rs-rust-600: #9a360b; --rs-umber: #5a2408;
       --rs-bg: #ffffff; --rs-text: #1b1613; --rs-muted: #6b605a; --rs-border: #e7ddd6;
@@ -37,16 +37,11 @@
     .rs-header nav { margin-left: auto; display: flex; gap: 1.25rem; font-weight: 600; font-size: 0.95rem; }
     .rs-header nav a { color: var(--rs-muted); text-decoration: none; }
     .rs-header nav a:hover { color: var(--rs-rust); }
-    .rs-subbar {
-      padding: 0.5rem 1.25rem; font-size: 0.85rem; color: var(--rs-muted);
-      background: var(--rs-bg); border-bottom: 1px solid var(--rs-border);
-    }
     /* Keep Swagger UI on a light surface regardless of OS theme (it is light-only). */
     #swagger-ui { background: #ffffff; color-scheme: light; }
     /* Fold Swagger's own top bar branding into our palette. */
     .swagger-ui .topbar { background: #1e1815; }
     .swagger-ui .topbar .download-url-wrapper .select-label span { color: #f3ece8; }
-    .swagger-ui .info .title small.version-stamp { display: none; }
   </style>
 </head>
 <body>
@@ -62,11 +57,6 @@
       <a href="https://github.com/rubentalstra/ehrbase-rs" rel="noopener">GitHub ↗</a>
     </nav>
   </header>
-
-  <div class="rs-subbar">
-    openEHR ITS-REST 1.0.3 API, grouped by resource — pick a group from the
-    selector on the right. Rendered offline; Swagger UI uses a light theme.
-  </div>
 
   <div id="swagger-ui"></div>
 
