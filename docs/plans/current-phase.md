@@ -6,18 +6,19 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — documentation website + docs cleanup
+## Active work — W1: public documentation website
 
-The blueprint build arc (B1–B8) and the enterprise capabilities (E1–E5) are
-**closed**. **E5 (Kubernetes deployment artifacts) closed 2026-07-11
-(PR #48).** Full conformance holds: **ECC 341 executed · 315 passed · 0 failed —
-CORE PASS / STANDARD PASS** (reached at B6, held zero-drift through B7/B8 and
-every E-phase). See `docs/PROGRESS.md` for the per-phase record.
+**Phase file: `docs/plans/w1-docs-website.md`** (branch `claude/w1-docs-website`).
+mdBook (Rust-only toolchain, owner ruling 2026-07-11) on GitHub Pages: landing
+page + release-versioned book + static OpenAPI endpoint reference generated
+from the vendored ITS-REST contract, with drift gated in CI.
 
-Current effort: a **documentation website** and this **documentation cleanup**
-(retiring superseded design dossiers, the spec-audit ledger, completed phase
-files, and the historical bootstrap plan — everything now flows through the
-blueprint + the ADRs + `docs/architecture.md`).
+Context: the blueprint build arc (B1–B8) and the enterprise capabilities
+(E1–E5) are **closed** (E5 2026-07-11, PR #48). Full conformance holds:
+**ECC 341 executed · 315 passed · 0 failed — CORE PASS / STANDARD PASS**. The
+docs cleanup landed 2026-07-11 (PR #51 — 45 historical files pruned; everything
+flows through the blueprint + ADRs + `docs/architecture.md`). Per-phase record:
+`docs/PROGRESS.md`.
 
 ## Priority order (from the blueprint build order, §3)
 
