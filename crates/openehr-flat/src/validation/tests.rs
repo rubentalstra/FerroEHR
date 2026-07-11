@@ -1282,8 +1282,8 @@ fn present_empty_lists_are_rejected() {
         .insert("content".into(), json!([]));
     let msgs = validate_rm_and_terminology(&empty);
     assert!(
-        msgs.iter().any(|m| m.kind == ValidationKind::Invariant
-            && m.message.contains("Content_valid")),
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Content_valid")),
         "present-empty content must violate Content_valid, got {msgs:?}"
     );
     // A nested SECTION with empty items: Items_valid violation at its path.
@@ -1301,5 +1301,50 @@ fn present_empty_lists_are_rejected() {
         msgs.iter()
             .any(|m| m.message.contains("Items_valid") && m.path.contains("content")),
         "present-empty SECTION.items must violate Items_valid, got {msgs:?}"
+    );
+}
+
+// ── data-structure shape duties (A1 rm-data-structures) ─────────────────────────
+
+/// `CLUSTER.items` is 1..1 (`cluster.adoc`; the ITS-JSON CLUSTER schema
+/// requires it) and one HISTORY's events must all carry the same
+/// `ITEM_STRUCTURE` subtype in `data` (RM data_structures master06 §History).
+#[test]
+fn data_structure_shapes_are_enforced() {
+    // CLUSTER without items → violation.
+    let cluster = json!({
+        "_type": "CLUSTER", "archetype_node_id": "at0001",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    let msgs = validate_rm_and_terminology(&cluster);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("CLUSTER.items is mandatory")),
+        "items-less CLUSTER must be rejected, got {msgs:?}"
+    );
+
+    // HISTORY mixing ITEM_TREE and ITEM_LIST event data → violation.
+    let history = json!({
+        "_type": "HISTORY", "archetype_node_id": "at0002",
+        "name": {"_type": "DV_TEXT", "value": "h"},
+        "origin": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+        "events": [
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e1"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+              "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} },
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e2"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T01:00:00Z"},
+              "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} }
+        ]
+    });
+    let msgs = validate_rm_and_terminology(&history);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("same ITEM_STRUCTURE") && m.path.contains("events[1]")),
+        "a HISTORY mixing event data types must be rejected, got {msgs:?}"
     );
 }

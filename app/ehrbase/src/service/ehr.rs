@@ -859,14 +859,19 @@ mod tests {
     fn ehr_status_other_details_type_is_enforced() {
         let with_other = |other: Value| {
             let mut st = default_ehr_status();
-            st.as_object_mut().unwrap().insert("other_details".into(), other);
+            st.as_object_mut()
+                .unwrap()
+                .insert("other_details".into(), other);
             st
         };
         for ty in ["ITEM_TREE", "ITEM_LIST", "ITEM_SINGLE", "ITEM_TABLE"] {
             validate_ehr_status(&with_other(json!({ "_type": ty, "name": { "_type": "DV_TEXT", "value": "d" }, "archetype_node_id": "at0001" })))
                 .unwrap_or_else(|e| panic!("{ty} other_details must be accepted: {e}"));
         }
-        for bad in [json!({ "_type": "DV_TEXT", "value": "x" }), json!({ "value": "x" })] {
+        for bad in [
+            json!({ "_type": "DV_TEXT", "value": "x" }),
+            json!({ "value": "x" }),
+        ] {
             let err = validate_ehr_status(&with_other(bad))
                 .expect_err("non-ITEM_STRUCTURE other_details must be rejected");
             assert!(err.to_string().contains("ITEM_STRUCTURE"), "got {err}");

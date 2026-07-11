@@ -40,3 +40,4 @@ lcov.info
 /docs-dist
 /.latest-src
 _check/
+/target-cli/
