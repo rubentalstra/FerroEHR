@@ -73,18 +73,23 @@ mod tests {
 /// the identifier must still start with a letter and stay basic-latin.
 #[must_use]
 pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
-    fn name_str(s: &str) -> bool {
-        let mut chars = s.chars();
-        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
-            && s.chars().all(|c| {
-                c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/' | '+' | '.' | ' ')
-            })
-            && !s.ends_with(' ')
+    // BASE base_types master05 gives the `name ['(' version ')']` syntax, but
+    // its §"Terminology Identifiers" section explicitly OPENS the value space:
+    // valid identifiers "include, but are not limited to" the openEHR/UMLS
+    // names — and real integrations (FHIR terminology systems) identify
+    // terminologies by URI (`http://snomed.info/sct`). The enforceable core is
+    // therefore well-formedness, not a closed grammar: non-empty, printable
+    // (no control characters), and not ending in whitespace; the optional
+    // `(version)` suffix, when present in name-form ids, must be non-empty.
+    fn name_ok(s: &str) -> bool {
+        !s.is_empty() && !s.ends_with(' ') && s.chars().all(|c| !c.is_control())
     }
-    match value.split_once('(') {
-        None => name_str(value),
-        Some((name, rest)) => {
-            name_str(name.trim_end())
+    match (value.split_once('('), value.contains("://")) {
+        // URI-form ids are taken whole (any parentheses belong to the URI).
+        (_, true) => name_ok(value),
+        (None, false) => name_ok(value),
+        (Some((name, rest)), false) => {
+            name_ok(name.trim_end())
                 && rest
                     .strip_suffix(')')
                     .is_some_and(|version| !version.is_empty())
@@ -96,8 +101,9 @@ impl crate::validate::Validate for TerminologyId {
     fn validate_invariants(&self, out: &mut Vec<crate::validate::InvariantViolation>) {
         if !is_valid_terminology_id(&self.value) {
             out.push(crate::validate::InvariantViolation::here(
-                "Invariant Value_valid failed on type TERMINOLOGY_ID (lexical form \
-                 name [ '(' version ')' ], BASE base_types master05 §Syntaxes)",
+                "Invariant Value_valid failed on type TERMINOLOGY_ID (a non-empty \
+                 printable name, optionally with a non-empty '(version)' suffix — \
+                 BASE base_types master05 §Syntaxes + §Terminology Identifiers)",
             ));
         }
     }
@@ -115,10 +121,14 @@ mod validity_tests {
             "SNOMED CT",
             "ICD10AM(3rd_ed)",
             "local",
+            // §Terminology Identifiers opens the space ("not limited to");
+            // FHIR system URIs are the integration reality.
+            "http://snomed.info/sct",
+            "https://vsac.nlm.nih.gov/valueset/2.16.840.1.113762.1.4.1010.2",
         ] {
             assert!(is_valid_terminology_id(ok), "{ok} must be valid");
         }
-        for bad in ["", "1openehr", "SNOMED CT ", "x("] {
+        for bad in ["", "SNOMED CT ", "x(", "bad\u{7}id"] {
             assert!(!is_valid_terminology_id(bad), "{bad:?} must be invalid");
         }
     }
