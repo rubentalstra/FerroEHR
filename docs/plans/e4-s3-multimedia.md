@@ -17,16 +17,16 @@
       integrity_check + coded algorithm), uri scheme + fetch behaviour,
       object_store crate abstraction, blob GC tied to admin physical
       delete, wire transparency (serve inline on demand).
-- [ ] 2. Storage: `object_store` integration (verify live version), config
+- [x] 2. Storage: `object_store` integration (verify live version), config
       (off by default; endpoint/bucket/creds), commit-path interception
       (DV_MULTIMEDIA.data above threshold → put object, store uri +
       integrity fields + size, honour the RM invariant both directions),
       read-path transparent expansion option.
-- [ ] 3. SeaweedFS: docker-compose service + testcontainers fixture (S3
+- [x] 3. SeaweedFS: docker-compose service + testcontainers fixture (S3
       gateway) for integration tests; document production S3 pointing.
-- [ ] 4. Blob lifecycle: content-addressed dedup; admin physical EHR delete
+- [x] 4. Blob lifecycle: content-addressed dedup; admin physical EHR delete
       cascades to unreferenced blobs; dump/load carries external blobs.
-- [ ] 5. Tests: round-trip (commit large multimedia → offloaded, wire
+- [x] 5. Tests: round-trip (commit large multimedia → offloaded, wire
       read returns inline-on-demand and uri forms, integrity verified);
       threshold-off default = byte-identical inline behaviour (suites
       unchanged); GC test; dump/load with blobs.
