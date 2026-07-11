@@ -48,37 +48,68 @@ partially superseded. Phase files 10/16/19 re-scoped.
 | 6 | 14 | WebTemplate + FLAT/STRUCTURED (SDT surface) | **done (2026-07-05, PR #18)** | `openehr-flat`: WebTemplate builder + FLAT + STRUCTURED (Better parity), `moka`-cached; SDT endpoints |
 | 7 | 15 | Composition validation | **done (2026-07-06, PR #19)** | RM invariants + terminology + WebTemplate walk → ITS-REST 422 |
 | 8 | 16 | AQL engine (typed IR → SQL, ADR-008) | **done (2026-07-07)** | `emit-rm-model` BMM attribute model; typed IR (`ehrbase::aql::plan`); typed sea-query SQL (nested-set CONTAINS, magnitude, LATEST+**ALL_VERSIONS**); RESULT_SET 1.0.3; `/query/*` live; corpus e2e PG18. Same branch: ATNA audit trail, GHCR images+CI, full observability stack |
-| 9 | 17 | FLAT/STRUCTURED + EhrScape | not-started — **current phase** | `openehr-flat`, `ehrbase-compat`, P14 |
-| 10 | 18 | Workspace integration | not-started | binary wiring; delete ported-out Java |
-| 11 | 19 | openEHR conformance (CNF schedule, ADR-008) | not-started | `specifications-CNF` runners, corpus suites |
-| 12 | 20 | Optimization | not-started | PG18 AIO, pipelining, `JSON_TABLE` |
-| 13 | 99 | Cutover | not-started | delete residual Java/Maven; tag release |
+| 9 | 17 | FLAT/STRUCTURED + EhrScape | absorbed into the B-arc — final review | `openehr-flat`, EhrScape adapter in `ehrbase-rest` |
+| 10 | 18 | Workspace integration | absorbed into the B-arc — final review | binary wiring; no residual Java remains (ADR-008) |
+| 11 | 19 | openEHR conformance (CNF schedule, ADR-008) | **met** | ECC 341 executed · 315 passed · 0 failed — CORE PASS / STANDARD PASS (see the B-arc below) |
+| 12 | 20 | Optimization | remaining | PG18 AIO, pipelining, `JSON_TABLE` |
+| 13 | 99 | Cutover | remaining | final docs; tag first release |
 
-## SM track (ADR-010, interleaved with P17–P20)
+The linear P17–P20 roadmap was overtaken by the blueprint build order (B1–B8)
+below, which drove the ECC conformance instrument to full green. P17/P18 work
+landed inside that arc; **P19 conformance is met**; P20 optimization and P99
+cutover remain, alongside the documentation-website initiative.
+
+## SM track (ADR-010/011) — DONE
+
+One native trait per SM Platform Service Model interface in `ehrbase-sm`; the
+SM component map now lives in `docs/architecture.md`. SM-1..SM-4 landed in the
+pre-blueprint sequence and SM-5/SM-6 shipped inside the B3 wave.
 
 | Phase | Title | Status |
 |---|---|---|
-| SM-1 | `app/*`+`tools/*` layout, `ehrbase-sm` native API (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION support, `is_queryable` population gate (conformance gap fixed), contribution list/count, EHR_SUMMARY | **done (2026-07-09, PR #31)** — ECC exit gate 211/318 zero-drift |
-| SM-2 | Definitions completion: ADL 1.4 archetype store + OPT completion, `DefinitionAdl2Service` + `adl2_artefact` store + wire adl2 upload/list/get (retires the P13 `adl2 = 501`), stored-query calls (valid/delete/count, QUERY_DESCRIPTOR) | **done (2026-07-09)** — 842/842 tests; ECC 211/318 zero-drift |
-| SM-3 | PARTY_RELATIONSHIP (full versioning + wire) + EHR Index service + **storage-semantics audit wave** (persistence verified 1:1 vs RM master06 — no blockers; all 7 findings fixed: five-state lifecycle honored, creating_system_id persisted, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) | **done (2026-07-09)** — 856/856 tests; ECC 211/318 zero-drift |
-| SM-4 | Terminology surface + Admin completion; **carries the ADR-011 app-crate redesign** (compile-time-complete services, no stub backend, protocol-free `ehrbase-sm` literal SM catalog, `Platform`-generic adapter, `ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz` dissolved into modules) in its closing waves | **in flight** (`docs/plans/sm-phase-04-terminology-admin.md`) — mid-rewrite, workspace red by design; gate = green + ECC zero-drift (211/318) |
-| SM-5 / SM-6 | Message (EXTRACT + TDD) / Subject Proxy | designed, not started (`docs/design/sm-platform/09-roadmap.md` + `10-message-integration.md`) |
+| SM-1 | `app/*`+`tools/*` layout, `ehrbase-sm` native API (trait per SM interface, call-status table, UPDATE_VERSION envelope), ATTESTATION, `is_queryable` gate, contribution list/count, EHR_SUMMARY | **done (2026-07-09, PR #31)** |
+| SM-2 | Definitions completion: ADL 1.4 archetype store + OPT completion, `DefinitionAdl2Service` + `adl2_artefact` store + wire adl2 upload/list/get, stored-query calls | **done (2026-07-09, PR #32)** |
+| SM-3 | PARTY_RELATIONSHIP (versioning + wire) + EHR Index service + storage-semantics audit wave (all 7 findings fixed) | **done (2026-07-09, PR #33)** |
+| SM-4 | Terminology surface + Admin completion; carries the ADR-011 app-crate redesign (protocol-free `ehrbase-sm` literal SM catalog, `Platform` generics, leaf crates dissolved into modules) | **done (2026-07-09, PR #34)** |
+| SM-5 / SM-6 | Message (EHR Extract + TDD) / Subject Proxy | **done** — shipped in the B3 SM-services wave (PR #38) |
 
-## Checkpoints (ADR-011 rebuild era)
+## Blueprint build arc (B1–B8) — DONE
 
-| Ref | What |
-|---|---|
-| PR #33 (2026-07-09) | Storage change-control audit wave: persistence verified 1:1 vs RM common master06; all 7 findings fixed (five-state lifecycle, `creating_system_id`, audit copy rule, full-corpus jsonb round-trip, invariant CHECKs, scope PORT NOTEs) |
-| ADR-011 (2026-07-09) | App-crate redesign accepted: three app crates, protocol-free SM native API, `Platform` generics, no `dyn Backend`/stub |
-| PR #34 (2026-07-09) | ADR-011 rebuild in progress — SM-4 closing waves executing the structural + purity refactor; ECC suspended, re-converges at P19. Roadmap + consolidated gap surface now in `docs/blueprint/` (00-THE-BLUEPRINT §2) |
+The roadmap moved to `docs/blueprint/00-THE-BLUEPRINT.md` (§2 = the consolidated
+spec-gap surface; it superseded the standalone spec-audit ledger). Every phase
+below closed with an ECC run at zero drift; the baseline ratcheted only upward.
 
-**Stage 2** (after P19 conformance holds): RBAC/attribute authz (the
-`ehrbase-rest::access` module, already implemented ahead of schedule), plugin
-system, multi-tenancy — see `PORT_MASTER_PLAN §11`.
+| Phase | Title | Close | PR |
+|---|---|---|---|
+| B1 | ADR-011 rebuild convergence; ECC re-baselined 211/318, zero drift | 2026-07-09 | #36 |
+| B2 | ArchetypeValidation depth (81→0 failing cases); ECC 293/319 | 2026-07-10 | #37 |
+| B3 | SM services wave 3 — Admin dump/load → SM-5 (Message/EHR Extract/TDD) → SM-6 (Subject Proxy) | 2026-07-10 | #38 |
+| B4 | Terminology-server integration + TS conformance harness; ECC 298/338 | 2026-07-10 | #39 |
+| B5 | Conformance-instrument corrections (ch 7 D1–D5); instrument made honest | 2026-07-10 | #40 |
+| B6 | Full conformance — **ECC 341 executed · 315 passed · 0 failed; CORE PASS / STANDARD PASS** | 2026-07-10 | #41 |
+| B7 | Enterprise-grade schema baseline (ADR-013: squashed baseline, four-role model, spec fixes) | 2026-07-10 | #42 |
+| B8 | Product-completeness roadmap — market scorecard + four spec-grounded enterprise capabilities | 2026-07-10 | #43 |
 
-## Spec audit (2026-07-06)
+## Enterprise capabilities (E1–E5) — DONE
 
-Full-codebase audit against the vendored openEHR specs: **14 areas, ~197
-findings** tracked in `docs/spec-audit/SPEC_AUDIT.md` (per-finding checkboxes in
-`docs/spec-audit/findings/`). Fixes land in waves on `claude/spec-audit-full`;
-Wave 1 (critical wire/CNF divergences) underway.
+Spec-grounded enterprise features from the B8 roadmap; each closed with ECC
+341/315/0 zero drift.
+
+| Phase | Title | Close | PR |
+|---|---|---|---|
+| E1 | Eventing — contribution outbox + AMQP publisher + event subscriptions (ADR-014) | 2026-07-11 | #44 |
+| E2 | Multi-tenancy — RLS `FORCE` isolation, tenant-scoped requests, admin CRUD (ADR-015) | 2026-07-11 | #45 |
+| E3 | FHIR connectors — inbound mapping + outbound emitter + read façade (ADR-016) | 2026-07-11 | #46 |
+| E4 | S3 multimedia — DV_MULTIMEDIA externalization, verified re-inline, GC, blob dump/load (ADR-017) | 2026-07-11 | #47 |
+| E5 | Kubernetes deployment artifacts — hardened Helm chart, ops doc, golden-render validation | 2026-07-11 | #48 |
+
+## Remaining
+
+- **P20 optimization** — PG18 AIO tuning, hot-read pipelining, `JSON_TABLE` codegen.
+- **P99 cutover** — final docs pass, tag the first release.
+- **Documentation-website initiative** — the current active effort (see
+  `docs/plans/current-phase.md`).
+
+**Stage 2** capabilities (RBAC/attribute authz via the `ehrbase-rest::access`
+module, multi-tenancy, plugin system) largely landed early through the E-arc;
+remaining enterprise archaeology is tracked in the blueprint.
