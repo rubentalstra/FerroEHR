@@ -24,7 +24,11 @@ psql_app() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$APP_
 
 echo "ehrbase-rs init: creating role '${APP_USER}' and database '${APP_DB}'"
 
-# 1) Login role (idempotent) — non-superuser by design.
+# 1) Login role (idempotent) — non-superuser by design — plus the three
+#    NOLOGIN group roles of the layered role architecture (ADR-013). The app
+#    role has no CREATEROLE, so the baseline migration can only grant to these
+#    roles if they already exist; creating them here gives dev/compose the
+#    same grant topology as a hardened deployment (no "roles absent" NOTICEs).
 psql_super <<SQL
 DO \$do\$
 BEGIN
@@ -33,6 +37,18 @@ BEGIN
   ELSE
     ALTER ROLE "${APP_USER}" LOGIN PASSWORD '${APP_PASSWORD}';
   END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_migrator') THEN
+    CREATE ROLE ehrbase_migrator NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_app') THEN
+    CREATE ROLE ehrbase_app NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ehrbase_reader') THEN
+    CREATE ROLE ehrbase_reader NOLOGIN;
+  END IF;
+  -- In dev the single app user plays both migrator and writer.
+  GRANT ehrbase_migrator TO "${APP_USER}";
+  GRANT ehrbase_app TO "${APP_USER}";
 END
 \$do\$;
 SQL

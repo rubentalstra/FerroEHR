@@ -13,12 +13,21 @@ EHRbase-rs publishes two container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ehrbase-rs` | The `ehrbase` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured entirely via `EHRBASE_*` environment variables. |
-| `ghcr.io/rubentalstra/ehrbase-rs-postgres` | `postgres:18.4` with the application role, database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ehrbase-rs-postgres` | `postgres:18.4` with the application role, the layered group roles (`ehrbase_migrator`, `ehrbase_app`, `ehrbase_reader`), database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
 
 The PostgreSQL image is **init-scripts only** — it creates roles, schemas, and
 extensions, but does not bake in migration state. The server owns the schema
 content and applies its migrations idempotently at every boot, so a fresh
 database self-provisions and a restart is a no-op.
+
+> [!NOTE]
+> PostgreSQL init scripts run **only when the data volume is empty**. If you
+> see startup notices like `skipping role creation (no CREATEROLE privilege)`
+> or `roles absent`, your volume predates the image's role setup (or you are
+> running a plain `postgres` image): either recreate the volume
+> (`docker compose down -v` — **destroys data**) or create the three group
+> roles once by hand as a superuser. The server runs fine either way — the
+> grants are a defense-in-depth layer, not a functional requirement.
 
 ## Bringing up the stack
 
