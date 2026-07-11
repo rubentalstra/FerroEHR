@@ -418,6 +418,16 @@ async fn run<S: Platform>(
             if body.is_null() {
                 return Ok(negotiate::empty(no_content));
             }
+            // `?expand_multimedia=true` (ADR-017): transparently re-inline any
+            // externalized DV_MULTIMEDIA blobs, verifying integrity. A no-op
+            // when externalization is off or the body has no external media.
+            // Not an openEHR spec parameter, so read off the raw query string
+            // (the `template_id` precedent), never a generated params struct.
+            let body = if params::query_param(q, "expand_multimedia").as_deref() == Some("true") {
+                state.backend().expand_multimedia(body).await?
+            } else {
+                body
+            };
             if negotiate::wants_flat(h) {
                 return super::flat::composition_flat_response(&state, ok, &body).await;
             }

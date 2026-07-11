@@ -1,0 +1,198 @@
+//! Content-addressed blob store over `object_store` (ADR-017 §2/§4).
+//!
+//! Blobs are keyed by the lowercase hex SHA-256 of their (unencoded) bytes, so
+//! identical media dedups naturally and a key is immutable — matching openEHR
+//! version indelibility. The backend is any S3-compatible endpoint (SeaweedFS
+//! in dev/test via its S3 gateway; AWS/MinIO/etc. in production).
+
+// Product identifiers (SeaweedFS, object_store, …) read as prose in docs.
+#![allow(clippy::doc_markdown)]
+
+use std::sync::Arc;
+
+use bytes::Bytes;
+use object_store::{ObjectStore, ObjectStoreExt, aws::AmazonS3Builder, path::Path};
+
+use super::MultimediaError;
+use super::config::MultimediaConfig;
+
+/// The URI scheme our externalized `DV_MULTIMEDIA.uri` values use.
+pub const URI_SCHEME: &str = "s3";
+
+/// A content-addressed blob store: `put`/`get`/`delete`/`exists` keyed by the
+/// hex SHA-256 of the blob's unencoded bytes.
+#[derive(Clone)]
+pub struct BlobStore {
+    inner: Arc<dyn ObjectStore>,
+    bucket: String,
+}
+
+impl std::fmt::Debug for BlobStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlobStore")
+            .field("bucket", &self.bucket)
+            .finish_non_exhaustive()
+    }
+}
+
+impl BlobStore {
+    /// Build an S3-backed blob store from configuration.
+    ///
+    /// A keyless config (`is_anonymous`) runs the client unsigned — the mode a
+    /// dev SeaweedFS accepts with no credentials configured.
+    ///
+    /// # Errors
+    /// Returns [`MultimediaError::Config`] if the object_store builder rejects
+    /// the settings.
+    pub fn from_config(cfg: &MultimediaConfig) -> Result<Self, MultimediaError> {
+        let mut builder = AmazonS3Builder::new()
+            .with_bucket_name(&cfg.bucket)
+            .with_region(&cfg.region)
+            .with_allow_http(cfg.allow_http);
+        if let Some(endpoint) = &cfg.endpoint {
+            builder = builder.with_endpoint(endpoint);
+        }
+        match (&cfg.access_key_id, &cfg.secret_access_key) {
+            (Some(id), Some(secret)) => {
+                builder = builder
+                    .with_access_key_id(id)
+                    .with_secret_access_key(secret);
+            }
+            // No credentials → run unsigned/anonymous (dev SeaweedFS).
+            _ => builder = builder.with_skip_signature(true),
+        }
+        let store = builder
+            .build()
+            .map_err(|e| MultimediaError::Config(e.to_string()))?;
+        Ok(Self {
+            inner: Arc::new(store),
+            bucket: cfg.bucket.clone(),
+        })
+    }
+
+    /// Construct directly from an object store (test seam / non-S3 backends).
+    #[must_use]
+    pub fn from_parts(inner: Arc<dyn ObjectStore>, bucket: String) -> Self {
+        Self { inner, bucket }
+    }
+
+    /// The configured bucket name.
+    #[must_use]
+    pub fn bucket(&self) -> &str {
+        &self.bucket
+    }
+
+    /// The canonical externalized URI for a blob key: `s3://<bucket>/<hex>`.
+    #[must_use]
+    pub fn uri_for(&self, hex: &str) -> String {
+        format!("{URI_SCHEME}://{}/{hex}", self.bucket)
+    }
+
+    /// If `uri` is one of *our* externalized URIs (`s3://<our-bucket>/<hex>`),
+    /// return the blob key `<hex>`; otherwise `None` (a foreign/client-managed
+    /// external reference we never fetch).
+    #[must_use]
+    pub fn key_from_uri<'a>(&self, uri: &'a str) -> Option<&'a str> {
+        let prefix = format!("{URI_SCHEME}://{}/", self.bucket);
+        uri.strip_prefix(&prefix)
+            .filter(|k| !k.is_empty() && !k.contains('/'))
+    }
+
+    /// Store `bytes` under `hex` unless already present (content-addressed:
+    /// identical bytes ⇒ identical key ⇒ the upload is a no-op).
+    ///
+    /// # Errors
+    /// Returns [`MultimediaError::Store`] on a backend failure.
+    pub async fn put_if_absent(&self, hex: &str, bytes: Vec<u8>) -> Result<(), MultimediaError> {
+        if self.exists(hex).await? {
+            return Ok(());
+        }
+        self.inner
+            .put(&Path::from(hex.to_owned()), bytes.into())
+            .await
+            .map_err(MultimediaError::Store)?;
+        Ok(())
+    }
+
+    /// Fetch the blob stored under `hex`.
+    ///
+    /// # Errors
+    /// Returns [`MultimediaError::Store`] if the object is missing or the
+    /// backend fails.
+    pub async fn get(&self, hex: &str) -> Result<Bytes, MultimediaError> {
+        let res = self
+            .inner
+            .get(&Path::from(hex.to_owned()))
+            .await
+            .map_err(MultimediaError::Store)?;
+        res.bytes().await.map_err(MultimediaError::Store)
+    }
+
+    /// Delete the blob stored under `hex` (idempotent: deleting an absent key
+    /// is not an error).
+    ///
+    /// # Errors
+    /// Returns [`MultimediaError::Store`] on a backend failure other than
+    /// not-found.
+    pub async fn delete(&self, hex: &str) -> Result<(), MultimediaError> {
+        match self.inner.delete(&Path::from(hex.to_owned())).await {
+            Ok(()) | Err(object_store::Error::NotFound { .. }) => Ok(()),
+            Err(e) => Err(MultimediaError::Store(e)),
+        }
+    }
+
+    /// Whether a blob exists under `hex`.
+    ///
+    /// # Errors
+    /// Returns [`MultimediaError::Store`] on a backend failure other than
+    /// not-found.
+    pub async fn exists(&self, hex: &str) -> Result<bool, MultimediaError> {
+        match self.inner.head(&Path::from(hex.to_owned())).await {
+            Ok(_) => Ok(true),
+            Err(object_store::Error::NotFound { .. }) => Ok(false),
+            Err(e) => Err(MultimediaError::Store(e)),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use object_store::memory::InMemory;
+
+    fn mem_store() -> BlobStore {
+        BlobStore::from_parts(Arc::new(InMemory::new()), "test-bucket".to_owned())
+    }
+
+    #[test]
+    fn uri_round_trips_to_key() {
+        let s = mem_store();
+        let hex = "abc123";
+        let uri = s.uri_for(hex);
+        assert_eq!(uri, "s3://test-bucket/abc123");
+        assert_eq!(s.key_from_uri(&uri), Some("abc123"));
+    }
+
+    #[test]
+    fn foreign_uri_is_not_our_key() {
+        let s = mem_store();
+        assert_eq!(s.key_from_uri("s3://other-bucket/abc"), None);
+        assert_eq!(s.key_from_uri("https://example.org/img.png"), None);
+        assert_eq!(s.key_from_uri("s3://test-bucket/nested/path"), None);
+    }
+
+    #[tokio::test]
+    async fn put_get_exists_delete_round_trip() {
+        let s = mem_store();
+        assert!(!s.exists("k").await.unwrap());
+        s.put_if_absent("k", b"hello".to_vec()).await.unwrap();
+        assert!(s.exists("k").await.unwrap());
+        assert_eq!(&s.get("k").await.unwrap()[..], b"hello");
+        // put_if_absent on an existing key is a no-op (no error).
+        s.put_if_absent("k", b"hello".to_vec()).await.unwrap();
+        s.delete("k").await.unwrap();
+        assert!(!s.exists("k").await.unwrap());
+        // delete of an absent key is idempotent.
+        s.delete("k").await.unwrap();
+    }
+}

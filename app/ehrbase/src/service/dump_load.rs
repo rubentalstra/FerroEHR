@@ -64,6 +64,11 @@ struct Manifest {
     ehr_count: usize,
     /// Segment file names, in order.
     segments: Vec<String>,
+    /// Externalized `DV_MULTIMEDIA` blob keys carried in the `blobs/` subdir
+    /// (ADR-017). Empty (and defaulted for pre-blob archives) when
+    /// externalization is off or no version references external media.
+    #[serde(default)]
+    blobs: Vec<String>,
 }
 
 /// One EHR's full exported content bundle.
@@ -226,12 +231,19 @@ impl EhrbaseService {
             segment_names.push(name);
         }
 
+        // ADR-017: carry every externalized DV_MULTIMEDIA blob the exported
+        // versions reference into a `blobs/<hex>` subdir, so a load into an
+        // empty target re-populates the object store.
+        let blob_keys = self.export_referenced_blobs(dir, &records).await?;
+        let archive_version = if blob_keys.is_empty() { 1 } else { 2 };
+
         let manifest = Manifest {
             format: ExportFormat::OpenehrCanonicalJson.sm_name().to_owned(),
-            archive_version: 1,
+            archive_version,
             segment_split_size_kb: spec.segment_split_size,
             ehr_count: records.len(),
             segments: segment_names,
+            blobs: blob_keys,
         };
         let manifest_path = dir.join("manifest.json");
         let manifest_bytes = serde_json::to_vec_pretty(&manifest).map_err(ServiceError::from)?;
@@ -254,6 +266,10 @@ impl EhrbaseService {
             std::fs::read(&manifest_path).map_err(|e| file_not_writable(&manifest_path, &e))?;
         let manifest: Manifest =
             serde_json::from_slice(&manifest_bytes).map_err(ServiceError::from)?;
+
+        // ADR-017: re-populate the object store from the archive's `blobs/`
+        // subdir before loading versions that reference them.
+        self.import_blobs(dir, &manifest.blobs).await?;
 
         let mut reports = Vec::new();
         for segment in &manifest.segments {
@@ -278,6 +294,68 @@ impl EhrbaseService {
             }
         }
         Ok(reports)
+    }
+
+    /// Fetch every externalized `DV_MULTIMEDIA` blob referenced by the exported
+    /// records into a `blobs/<hex>` subdir, returning the blob keys written
+    /// (empty when externalization is off). ADR-017.
+    async fn export_referenced_blobs(
+        &self,
+        dir: &Path,
+        records: &[EhrRecord],
+    ) -> Result<Vec<String>, SmError> {
+        let Some(engine) = &self.multimedia else {
+            return Ok(Vec::new());
+        };
+        let mut keys: Vec<String> = records
+            .iter()
+            .flat_map(|r| r.versions.iter())
+            .flat_map(|v| engine.referenced_keys(&v.body))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        if keys.is_empty() {
+            return Ok(keys);
+        }
+        let blob_dir = dir.join("blobs");
+        std::fs::create_dir_all(&blob_dir).map_err(|e| file_not_writable(&blob_dir, &e))?;
+        for hex in &keys {
+            let bytes = engine
+                .store()
+                .get(hex)
+                .await
+                .map_err(|e| SmError::exception(format!("exporting blob {hex}: {e}")))?;
+            let path = blob_dir.join(hex);
+            std::fs::write(&path, &bytes).map_err(|e| file_not_writable(&path, &e))?;
+        }
+        Ok(keys)
+    }
+
+    /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
+    /// (idempotent, content-addressed). A no-op when externalization is off or
+    /// the archive carries no blobs. ADR-017.
+    async fn import_blobs(&self, dir: &Path, blobs: &[String]) -> Result<(), SmError> {
+        if blobs.is_empty() {
+            return Ok(());
+        }
+        let Some(engine) = &self.multimedia else {
+            // The archive carries blobs but this target has no store configured.
+            return Err(SmError::precondition(
+                "archive carries externalized multimedia blobs but multimedia \
+                 externalization is not enabled on this server",
+            ));
+        };
+        let blob_dir = dir.join("blobs");
+        for hex in blobs {
+            let path = blob_dir.join(hex);
+            let bytes = std::fs::read(&path).map_err(|e| file_not_writable(&path, &e))?;
+            engine
+                .store()
+                .put_if_absent(hex, bytes)
+                .await
+                .map_err(|e| SmError::exception(format!("importing blob {hex}: {e}")))?;
+        }
+        Ok(())
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.

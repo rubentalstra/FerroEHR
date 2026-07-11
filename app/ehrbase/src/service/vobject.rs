@@ -24,6 +24,12 @@ pub(super) struct SigningCtx<'a> {
     /// because it may come from the per-request tenant context, not `&self`.
     pub(super) system_id: String,
     pub(super) signer: &'a Signer,
+    /// The optional `DV_MULTIMEDIA` externalization engine (ADR-017). When set,
+    /// [`apply_change`] offloads large inline `DV_MULTIMEDIA.data` to object
+    /// storage before the canonical body is decomposed (and signed), so the
+    /// stored/served/signed form is the externalized one. `None` = inline
+    /// behaviour unchanged.
+    pub(super) multimedia: Option<&'a crate::multimedia::MultimediaEngine>,
 }
 
 /// The kind of versioned object (discriminates `vo_version.kind`).
@@ -569,7 +575,7 @@ async fn apply_change(
     match change {
         Change::Create {
             kind,
-            canonical,
+            mut canonical,
             template_id,
             signature,
             lifecycle_state,
@@ -579,6 +585,14 @@ async fn apply_change(
                 && let Some(ehr_id) = ehr_id
             {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
+            }
+            // Externalize large inline DV_MULTIMEDIA before decompose/sign, so
+            // the stored, served and signed form is the offloaded one (ADR-017).
+            if let Some(engine) = ctx.multimedia {
+                engine
+                    .offload(&mut canonical)
+                    .await
+                    .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
@@ -636,7 +650,7 @@ async fn apply_change(
         Change::Modify {
             vo_id,
             kind,
-            canonical,
+            mut canonical,
             expected,
             template_id,
             signature,
@@ -647,6 +661,13 @@ async fn apply_change(
                 && let Some(ehr_id) = ehr_id
             {
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
+            }
+            // Externalize large inline DV_MULTIMEDIA before decompose/sign (ADR-017).
+            if let Some(engine) = ctx.multimedia {
+                engine
+                    .offload(&mut canonical)
+                    .await
+                    .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
