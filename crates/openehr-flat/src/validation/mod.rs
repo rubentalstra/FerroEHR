@@ -235,6 +235,7 @@ impl Validator {
         }
         self.check_archetyped_valid(obj, path);
         self.check_nonempty_lists(obj, path);
+        self.check_data_structure_shapes(obj, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -355,6 +356,56 @@ impl Validator {
                     ),
                     ValidationKind::Invariant,
                 );
+            }
+        }
+    }
+
+    /// JSON-level data-structure shape duties the typed model cannot express:
+    ///
+    /// - `CLUSTER.items` is 1..1 (RM data_structures `cluster.adoc`; the
+    ///   ITS-JSON CLUSTER schema lists `items` as required) — after
+    ///   deserialize an absent list collapses into an empty `Vec`, so
+    ///   presence is only checkable here;
+    /// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
+    ///   in `data` — "A History of type HISTORY<ITEM_LIST> … constrains the
+    ///   type of the data at each Event to be of type ITEM_LIST and nothing
+    ///   else" (RM data_structures master06; `history.adoc` generic
+    ///   parameter) — the monomorphized runtime type cannot see T.
+    fn check_data_structure_shapes(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+            return;
+        };
+        if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
+            self.push(
+                norm_path(path),
+                "CLUSTER.items is mandatory (1..1 List<ITEM>, cluster.adoc)".to_owned(),
+                ValidationKind::Invariant,
+            );
+        }
+        if ty == "HISTORY"
+            && let Some(events) = obj.get("events").and_then(Value::as_array)
+        {
+            let mut first: Option<&str> = None;
+            for (i, event) in events.iter().enumerate() {
+                let Some(data_ty) = event.pointer("/data/_type").and_then(Value::as_str) else {
+                    continue;
+                };
+                match first {
+                    None => first = Some(data_ty),
+                    Some(locked) if locked != data_ty => {
+                        self.push(
+                            norm_path(&format!("{path}/events[{i}]")),
+                            format!(
+                                "HISTORY events must all carry the same ITEM_STRUCTURE \
+                                 subtype in data — the history is HISTORY<{locked}> but \
+                                 this event carries {data_ty} (RM data_structures \
+                                 master06 §History)"
+                            ),
+                            ValidationKind::Invariant,
+                        );
+                    }
+                    Some(_) => {}
+                }
             }
         }
     }
