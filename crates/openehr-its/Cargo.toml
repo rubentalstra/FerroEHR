@@ -1,6 +1,6 @@
 [package]
 name = "openehr-its"
-version = "0.1.0"
+version = "1.0.3"                 # = the implemented openEHR spec version: ITS-REST 1.0.3 (ITS-XML 1.0.2 + ITS-JSON dev vendored alongside)
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + XML serialization, ITS-REST OpenAPI contract, ITS-BMM. Mirrors the specifications-ITS-{JSON,XML,REST,BMM} repos."
 edition.workspace = true
 rust-version.workspace = true

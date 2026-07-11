@@ -1,6 +1,6 @@
 [package]
 name = "openehr-flat"
-version = "0.1.0"
+version.workspace = true
 description = "FLAT / STRUCTURED / Web Template formats (Better semantics, EHRbase quirks)"
 edition.workspace = true
 rust-version.workspace = true

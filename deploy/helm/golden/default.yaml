@@ -9,10 +9,10 @@ kind: NetworkPolicy
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -33,10 +33,10 @@ kind: PodDisruptionBudget
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -52,10 +52,10 @@ kind: ServiceAccount
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 automountServiceAccountToken: false
@@ -66,10 +66,10 @@ kind: ConfigMap
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 data:
@@ -145,10 +145,10 @@ kind: Service
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -168,10 +168,10 @@ kind: Deployment
 metadata:
   name: ehrbase-rs
   labels:
-    helm.sh/chart: ehrbase-rs-0.1.0
+    helm.sh/chart: ehrbase-rs-3.0.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/version: "3.0.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -184,7 +184,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the non-secret config changes.
-        checksum/config: 4c64ec93ba2343c74b44fd6f751cfd0cffbc71c6f11db93c9ca9232dcfe98cd9
+        checksum/config: e7d00eb3e544bee9d28e4eb05df35adc853af896798004d28f036ee4ec850d37
       labels:
         app.kubernetes.io/name: ehrbase-rs
         app.kubernetes.io/instance: ehrbase-rs
@@ -202,7 +202,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ehrbase
-          image: "ghcr.io/rubentalstra/ehrbase-rs:0.1.0"
+          image: "ghcr.io/rubentalstra/ehrbase-rs:3.0.0"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
