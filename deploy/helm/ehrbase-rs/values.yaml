@@ -1,0 +1,492 @@
+# Default values for ehrbase-rs.
+#
+# Every feature flag below defaults to the SAME state as the binary itself
+# (all optional integrations OFF), with two deliberate deployment exceptions
+# documented inline: the management surface + its liveness/readiness probes are
+# ON, because Kubernetes needs HTTP probes to schedule the workload (the probe
+# routes are public/unauthenticated by design and carry no PHI).
+#
+# See docs/enterprise/deployment.md for the role architecture, the pgaudit/TLS/
+# PITR posture, and the optional-integrations security notes.
+
+# -- Number of replicas (ignored when autoscaling.enabled is true).
+replicaCount: 2
+
+image:
+  # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base).
+  repository: ghcr.io/rubentalstra/ehrbase-rs
+  # -- Pull policy. IfNotPresent + an immutable pinned tag/digest in production.
+  pullPolicy: IfNotPresent
+  # -- Image tag. Empty string falls back to .Chart.appVersion. PIN a version
+  # or, better, a @sha256 digest in production (never `latest`).
+  tag: ""
+
+# -- imagePullSecrets for private registries.
+imagePullSecrets: []
+# -- Override the chart name portion of resource names.
+nameOverride: ""
+# -- Override the full resource name.
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Create a dedicated ServiceAccount.
+  create: true
+  # -- Extra annotations (e.g. IRSA/Workload-Identity role bindings for S3).
+  annotations: {}
+  # -- Name to use; generated when empty.
+  name: ""
+  # -- The workload never calls the K8s API, so no token is mounted.
+  automountServiceAccountToken: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Database (external PostgreSQL 18 — ADR-008/ADR-013).
+#
+# There is NO in-chart PostgreSQL. A clinical data repository stores PHI; its
+# database MUST be an externally-managed, backed-up, PITR-capable PostgreSQL 18
+# (managed service or an operator-run cluster) — never a chart-side sidecar.
+#
+# The application connects as the UNPRIVILEGED `ehrbase_app` writer role
+# (ADR-013 §3). Schema migrations are run separately as the `ehrbase_migrator`
+# role — see .Values.migrations and docs/enterprise/deployment.md.
+# ─────────────────────────────────────────────────────────────────────────────
+database:
+  # -- Reference an existing Secret holding the app-role DSN (STRONGLY preferred
+  # for production — keeps the credential out of chart values and git). The
+  # secret's value must be a full `postgres://ehrbase_app:...@host:5432/ehrbase`
+  # (optionally `?sslmode=verify-full`).
+  existingSecret: ""
+  # -- Key within existingSecret holding the DSN.
+  existingSecretKey: EHRBASE_DB_URL
+  # -- Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty
+  # and use existingSecret in production. Ignored when existingSecret is set.
+  url: ""
+  # -- Pool bounds (EHRBASE_DB_MAX_CONNECTIONS / _MIN_CONNECTIONS / _ACQUIRE_TIMEOUT_SECS).
+  maxConnections: 10
+  minConnections: 0
+  acquireTimeoutSecs: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Migrations (ADR-013 §3): who runs the schema.
+#
+# Migrations are append-only and are applied by the `ehrbase_migrator` role, NOT
+# by the runtime app role. The app binary DOES call run_migrations on boot, so
+# for that to be safe you EITHER:
+#   (a) grant the runtime DSN the migrator role (simplest; single-tenant), OR
+#   (b) disable in-app migration and run them out-of-band as a Job/CI step with
+#       a migrator DSN (recommended for least-privilege prod).
+# This chart does not ship a migration Job; see docs/enterprise/deployment.md
+# for the recommended out-of-band flow and the lock_timeout wrapper.
+# ─────────────────────────────────────────────────────────────────────────────
+migrations:
+  # -- Purely informational marker rendered into NOTES for the operator; the
+  # chart never runs migrations itself.
+  runByMigratorRole: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REST surface (EHRBASE_REST_*). All extension groups OFF by default, matching
+# the binary (config.rs).
+# ─────────────────────────────────────────────────────────────────────────────
+rest:
+  # -- Bind address inside the container (EHRBASE_REST_BIND).
+  bind: "0.0.0.0:8080"
+  # -- ITS-REST base path (EHRBASE_REST_BASE_PATH).
+  basePath: /ehrbase/rest/openehr/v1
+  # -- Serve Swagger UI (EHRBASE_REST_SWAGGER_UI). Consider OFF in production.
+  swaggerUi: true
+  # -- Permissive CORS (EHRBASE_REST_CORS_PERMISSIVE) — DEV ONLY.
+  corsPermissive: false
+  # -- ADMIN API group (EHRBASE_REST_ADMIN__ENABLED): physical/irreversible
+  # delete. OFF by default; when off the routes are absent (404), not 403.
+  adminEnabled: false
+  # -- Terminology extension group (EHRBASE_REST_TERMINOLOGY__ENABLED).
+  terminologyEnabled: false
+  # -- Event-subscription admin group (EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED).
+  eventSubscriptionEnabled: false
+  # -- FHIR R4 inbound/façade connector (EHRBASE_REST_FHIR__ENABLED, ADR-016).
+  # Independent of the fhirOutbound emitter below.
+  fhirEnabled: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Multi-tenancy (EHRBASE_REST_TENANCY__*, ADR-015). OFF by default.
+# ─────────────────────────────────────────────────────────────────────────────
+tenancy:
+  # -- Master switch (EHRBASE_REST_TENANCY__ENABLED).
+  enabled: false
+  # -- JWT-claim path carrying the tenant key (EHRBASE_REST_TENANCY__CLAIM).
+  claim: tenant
+  # -- Dev-only request-header override (EHRBASE_REST_TENANCY__HEADER). Leave
+  # empty in production — a client-supplied header must not select a tenant.
+  header: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Authentication (EHRBASE_REST_AUTH__*, Stage 1: Basic + OAuth2/OIDC bearer).
+# Enabled by default (matching the binary). A server with auth.enabled=true but
+# no mechanism 401s every request — configure OIDC below, or supply a Basic user
+# store / full OIDC block via config.files (mounted TOML).
+# ─────────────────────────────────────────────────────────────────────────────
+auth:
+  # -- Master switch (EHRBASE_REST_AUTH__ENABLED). false = all requests pass
+  # unauthenticated — DEV ONLY.
+  enabled: true
+  # -- Deprecated back-compat admin scope (EHRBASE_REST_AUTH__ADMIN_SCOPE);
+  # still consulted by the management AdminOnly access level. Empty = unset.
+  adminScope: ""
+  oidc:
+    # -- Configure the OAuth2/OIDC resource-server validation. When issuer is
+    # set the [auth.oidc] block is emitted via env (issuer/audiences/algorithms).
+    issuer: ""
+    # -- Accepted audiences (EHRBASE_REST_AUTH__OIDC__AUDIENCES). List/array
+    # values are best supplied via a mounted TOML (config.files); a single
+    # audience can be given here.
+    audience: ""
+    # -- Symmetric HS256 secret (dev/test). Lands in the chart Secret. Prefer
+    # JWKS/discovery (leave empty) in production.
+    hmacSecret: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Authorization / RBAC + ABAC (EHRBASE_AUTHZ_*). Coarse RBAC on by default when
+# auth is on (matching the binary); ABAC off by default.
+# ─────────────────────────────────────────────────────────────────────────────
+authz:
+  rbac:
+    # -- Coarse role gate (EHRBASE_AUTHZ_RBAC__ENABLED).
+    enabled: true
+    # -- Role required for Admin-class ops (EHRBASE_AUTHZ_RBAC__ADMIN_ROLE).
+    adminRole: ADMIN
+    # -- Baseline clinical role (EHRBASE_AUTHZ_RBAC__USER_ROLE).
+    userRole: USER
+    # -- Management-surface access (EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS):
+    # admin_only | private | public.
+    managementAccess: admin_only
+  abac:
+    # -- Attribute-based access control (EHRBASE_AUTHZ_ABAC__ENABLED). Cedar/
+    # remote engines + policies are supplied via a mounted TOML (config.files).
+    enabled: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Management / observability surface (EHRBASE_MANAGEMENT_*).
+#
+# Deployment default deviates from the bare binary (which ships this OFF): the
+# surface + the K8s liveness/readiness probes are ON here because the cluster
+# needs HTTP probes. The probe routes are Public (unauthenticated) and carry no
+# PHI. All DATA endpoints (info/metrics/env/loggers) stay OFF; prometheus is
+# opt-in via metrics.enabled.
+# ─────────────────────────────────────────────────────────────────────────────
+management:
+  # -- Mount the management router (EHRBASE_MANAGEMENT_ENABLED).
+  enabled: true
+  # -- Base path (EHRBASE_MANAGEMENT_BASE_PATH).
+  basePath: /management
+  # -- Serve the management surface on its OWN internal port
+  # (EHRBASE_MANAGEMENT_PORT) instead of the public API listener. Recommended in
+  # production so /management is never reachable on the clinical listener. Empty
+  # = share the main 8080 listener.
+  port: ""
+  # -- Default access level (EHRBASE_MANAGEMENT_ACCESS_DEFAULT).
+  accessDefault: admin_only
+  # -- Mount public /health/liveness + /health/readiness
+  # (EHRBASE_MANAGEMENT_PROBES_ENABLED). Required for the httpGet probes below.
+  probesEnabled: true
+  endpoints:
+    # -- Per-endpoint access levels (off | public | private | admin_only).
+    # EHRBASE_MANAGEMENT_ENDPOINTS_<EP>. All off by default.
+    health: "off"
+    info: "off"
+    metrics: "off"
+    prometheus: "off"
+    env: "off"
+    loggers: "off"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Prometheus scraping. When enabled: sets the prometheus endpoint access to
+# `public`, mounts it (probesEnabled/management.enabled required), and adds the
+# scrape pod annotations.
+# ─────────────────────────────────────────────────────────────────────────────
+metrics:
+  # -- Expose /management/prometheus and add prometheus.io scrape annotations.
+  enabled: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Telemetry / logging (EHRBASE_LOG_* / EHRBASE_OTEL_*).
+# ─────────────────────────────────────────────────────────────────────────────
+telemetry:
+  log:
+    # -- Log rendering profile (EHRBASE_LOG_FORMAT): auto | json | pretty.
+    # `json` is correct for cluster log collectors.
+    format: json
+    # -- EnvFilter directives (EHRBASE_LOG_FILTER). Empty = binary default.
+    filter: ""
+  otel:
+    # -- OTLP/gRPC collector endpoint (EHRBASE_OTEL_OTLP_ENDPOINT). Empty = the
+    # OTel layer is not installed (zero overhead).
+    otlpEndpoint: ""
+    # -- service.name resource attribute (EHRBASE_OTEL_SERVICE_NAME).
+    serviceName: ""
+    # -- deployment.environment resource attribute (EHRBASE_OTEL_ENVIRONMENT).
+    environment: ""
+    # -- Head-sampling ratio (EHRBASE_OTEL_TRACES_SAMPLE_RATIO). Empty = default.
+    tracesSampleRatio: ""
+    # -- Also push metrics over OTLP (EHRBASE_OTEL_METRICS_PUSH).
+    metricsPush: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Version signing (EHRBASE_SIGNING_*). Enabled by default in DIGEST mode
+# (matching the binary — the STANDARD "Signing" capability). PGP mode requires a
+# key + passphrase and FAILS CLOSED at boot if the key is unusable.
+# ─────────────────────────────────────────────────────────────────────────────
+signing:
+  # -- Server-side signing of committed versions (EHRBASE_SIGNING_ENABLED).
+  enabled: true
+  # -- Mode (EHRBASE_SIGNING_MODE): digest | pgp.
+  mode: digest
+  # -- Read-time verification (EHRBASE_SIGNING_VERIFY_ON_READ): off | warn | strict.
+  verifyOnRead: "off"
+  pgp:
+    # -- Path to the armored RFC 4880 secret key (EHRBASE_SIGNING_KEY_PATH),
+    # mounted from config.files or an external secret volume. Required for pgp.
+    keyPath: ""
+    # -- Key passphrase (EHRBASE_SIGNING_KEY_PASSPHRASE). Lands in the chart
+    # Secret (redacted from /management/env by the binary).
+    keyPassphrase: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ATNA system log (EHRBASE_ATNA_*, IHE audit). OFF by default. See the PHI/audit
+# notes in docs/enterprise/deployment.md.
+# ─────────────────────────────────────────────────────────────────────────────
+atna:
+  # -- Master switch (EHRBASE_ATNA_ENABLED).
+  enabled: false
+  # -- Audit Record Repository host (EHRBASE_ATNA_REPOSITORY_HOST).
+  repositoryHost: ""
+  # -- ARR port (EHRBASE_ATNA_REPOSITORY_PORT). 514 udp / 6514 tls typical.
+  repositoryPort: ""
+  # -- Transport (EHRBASE_ATNA_TRANSPORT): udp | tls. tls for PHI.
+  transport: udp
+  # -- Source id (EHRBASE_ATNA_SOURCE_ID).
+  sourceId: ""
+  # -- Failure mode (EHRBASE_ATNA_FAIL_MODE): open | closed.
+  failMode: open
+  # -- Enterprise/site id (EHRBASE_ATNA_ENTERPRISE_SITE_ID).
+  enterpriseSiteId: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Contribution-outbox eventing → AMQP (EHRBASE_EVENTS_*, ADR-014). OFF by
+# default. Envelopes are PHI-FREE by design (ADR-014 §2).
+# ─────────────────────────────────────────────────────────────────────────────
+events:
+  # -- Master switch (EHRBASE_EVENTS_ENABLED).
+  enabled: false
+  # -- Broker URL (EHRBASE_EVENTS_URL). Carries credentials → lands in the chart
+  # Secret. Use amqps:// or set tls=true in production.
+  url: ""
+  # -- Topic exchange (EHRBASE_EVENTS_EXCHANGE).
+  exchange: ehrbase.events
+  # -- Upgrade amqp:// to amqps:// (EHRBASE_EVENTS_TLS).
+  tls: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FHIR OUTBOUND emitter → AMQP (EHRBASE_FHIR_OUTBOUND_*, ADR-016 §4a). OFF by
+# default. WARNING: this stream carries PHI (the mapped FHIR resource) — see the
+# PHI-exchange note in docs/enterprise/deployment.md. Separate switch + separate
+# exchange from the PHI-free `events` stream.
+# ─────────────────────────────────────────────────────────────────────────────
+fhirOutbound:
+  # -- Master switch (EHRBASE_FHIR_OUTBOUND_ENABLED).
+  enabled: false
+  # -- Broker URL (EHRBASE_FHIR_OUTBOUND_URL). Carries credentials → chart Secret.
+  url: ""
+  # -- Topic exchange (EHRBASE_FHIR_OUTBOUND_EXCHANGE) — distinct for PHI isolation.
+  exchange: ehrbase.fhir
+  # -- Upgrade amqp:// to amqps:// (EHRBASE_FHIR_OUTBOUND_TLS).
+  tls: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DV_MULTIMEDIA externalization → S3-compatible object store (EHRBASE_MULTIMEDIA_*,
+# ADR-017). OFF by default (inline behaviour byte-identical). WARNING: offloaded
+# blobs are PHI — the bucket must be private, encrypted, HTTPS.
+# ─────────────────────────────────────────────────────────────────────────────
+multimedia:
+  # -- Master switch (EHRBASE_MULTIMEDIA_ENABLED).
+  enabled: false
+  # -- Offload threshold in bytes (EHRBASE_MULTIMEDIA_THRESHOLD_BYTES). Empty = 256 KiB.
+  thresholdBytes: ""
+  # -- S3-compatible endpoint (EHRBASE_MULTIMEDIA_ENDPOINT). Empty = AWS default.
+  endpoint: ""
+  # -- Bucket (EHRBASE_MULTIMEDIA_BUCKET).
+  bucket: openehr-multimedia
+  # -- Region (EHRBASE_MULTIMEDIA_REGION).
+  region: us-east-1
+  # -- Allow plain HTTP (EHRBASE_MULTIMEDIA_ALLOW_HTTP) — DEV ONLY; prod S3 is HTTPS.
+  allowHttp: false
+  # -- Access key id (EHRBASE_MULTIMEDIA_ACCESS_KEY_ID). Lands in the chart
+  # Secret. Prefer IRSA/Workload-Identity (leave empty) on cloud.
+  accessKeyId: ""
+  # -- Secret access key (EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY). Chart Secret.
+  secretAccessKey: ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# External terminology validation (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_*).
+# OFF by default. The FHIR provider map is supplied via a mounted TOML
+# (config.files + EHRBASE_VALIDATION_CONFIG in extraEnv).
+# ─────────────────────────────────────────────────────────────────────────────
+externalTerminology:
+  # -- Master switch (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED).
+  enabled: false
+  # -- Reject on TS error (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR).
+  failOnError: false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mounted config files. Each key becomes /etc/ehrbase/<key> from a chart Secret
+# (opaque, read-only). Use for the values env can't carry cleanly: the Basic-auth
+# user store, full OIDC blocks, RBAC role-claim lists, Cedar/ABAC policies, the
+# terminology provider map, the ATNA TLS PEMs, the PGP key. Point the matching
+# EHRBASE_*_CONFIG / *_PATH env at the file via extraEnv.
+# ─────────────────────────────────────────────────────────────────────────────
+config:
+  files: {}
+  # rest.toml: |
+  #   [[auth.basic.users]]
+  #   username = "clinician"
+  #   password_hash = "$argon2id$v=19$..."
+  #   roles = ["USER"]
+
+# -- Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch
+# for anything not surfaced above (e.g. EHRBASE_REST_CONFIG, array-valued keys).
+extraEnv: []
+# -- Extra envFrom sources (configMapRef/secretRef).
+extraEnvFrom: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Networking.
+# ─────────────────────────────────────────────────────────────────────────────
+service:
+  # -- Service type. ClusterIP + an Ingress/gateway in front is the norm.
+  type: ClusterIP
+  # -- Public API port.
+  port: 8080
+  # -- Extra annotations.
+  annotations: {}
+
+ingress:
+  # -- Create an Ingress. TLS termination belongs here (or at a gateway).
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: ehrbase.example.com
+      paths:
+        - path: /ehrbase
+          pathType: Prefix
+  tls: []
+
+networkPolicy:
+  # -- Install a default-deny-ingress NetworkPolicy that only admits traffic to
+  # the API (and management) port. Strongly recommended for a PHI workload.
+  enabled: true
+  # -- Additional ingress `from` selectors admitted to the API port. Empty =
+  # admit from any pod in the namespace to the API port only (still default-deny
+  # for every other port). Tighten to your ingress-controller namespace/pods.
+  ingressFrom: []
+  # -- Restrict egress too (default-deny egress except DNS + the DB/broker/TS).
+  # Off by default because egress targets are deployment-specific; see the doc.
+  egress:
+    enabled: false
+    # Extra egress `to`/`ports` rules (raw NetworkPolicyEgressRule entries).
+    rules: []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pod / container security (ADR-013 posture: non-root, read-only rootfs,
+# seccomp RuntimeDefault, all caps dropped).
+# ─────────────────────────────────────────────────────────────────────────────
+podSecurityContext:
+  runAsNonRoot: true
+  # 65532 = the distroless `nonroot` uid/gid.
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  allowPrivilegeEscalation: false
+  privileged: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Resource requests/limits. Sized for a modest API replica; tune for load.
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "2"
+    memory: 1Gi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Probes. httpGet against the public management probe routes (management.enabled
+# + management.probesEnabled required). Set exec.enabled to use the binary's
+# `healthcheck` subcommand instead (works even with management off).
+# ─────────────────────────────────────────────────────────────────────────────
+probes:
+  # -- Use `ehrbase healthcheck` exec probes instead of httpGet.
+  exec:
+    enabled: false
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  startup:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Autoscaling.
+# ─────────────────────────────────────────────────────────────────────────────
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 0
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PodDisruptionBudget.
+# ─────────────────────────────────────────────────────────────────────────────
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  # maxUnavailable: ""   # set one of minAvailable / maxUnavailable
+
+# -- Extra pod labels / annotations.
+podLabels: {}
+podAnnotations: {}
+
+# -- Scheduling.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# -- Spread replicas across nodes/zones. Empty = none.
+topologySpreadConstraints: []
+
+# -- Termination grace period (audit/outbox drain has a 5s window in-binary).
+terminationGracePeriodSeconds: 30
+
+# -- Extra volumes / volumeMounts (e.g. an external secret store for the PGP key).
+extraVolumes: []
+extraVolumeMounts: []

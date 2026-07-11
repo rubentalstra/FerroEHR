@@ -1,0 +1,482 @@
+---
+# Source: ehrbase-rs/templates/networkpolicy.yaml
+# Default-deny ingress for the ehrbase-rs pods, admitting traffic ONLY to the
+# API port (and the management port when it runs on its own listener). Every
+# other inbound port is denied. A PHI workload should never be reachable on
+# anything but its serving port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ehrbase-rs
+      app.kubernetes.io/instance: ehrbase-rs
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - port: http
+          protocol: TCP
+        - port: management
+          protocol: TCP
+      from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+  egress:
+    # DNS is always required.
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - ports:
+      - port: 5432
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: postgres
+---
+# Source: ehrbase-rs/templates/poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ehrbase-rs
+      app.kubernetes.io/instance: ehrbase-rs
+---
+# Source: ehrbase-rs/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ehrbase-s3
+automountServiceAccountToken: false
+---
+# Source: ehrbase-rs/templates/secret.yaml
+# Chart-managed Secret for env-borne secret values. In production prefer
+# database.existingSecret (and an external secret store / IRSA for the rest);
+# anything set here is rendered from values, so keep it out of committed values.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ehrbase-rs-env
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+type: Opaque
+stringData:
+  EHRBASE_REST_AUTH__OIDC__HMAC_SECRET: "dev-hmac-secret"
+  EHRBASE_SIGNING_KEY_PASSPHRASE: "dev-passphrase"
+  EHRBASE_EVENTS_URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE_FHIR_OUTBOUND_URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE_MULTIMEDIA_ACCESS_KEY_ID: "AKIAEXAMPLE"
+  EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY: "s3-secret"
+---
+# Source: ehrbase-rs/templates/secret.yaml
+# Mounted config files (TOML/PEM) at /etc/ehrbase — the Basic-auth user store,
+# full OIDC/ABAC/terminology blocks, ATNA PEMs, the PGP key, etc.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ehrbase-rs-config
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+type: Opaque
+stringData:
+  rest.toml: |
+    [[auth.basic.users]]
+    username = "clinician"
+    password_hash = "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
+    roles = ["USER"]
+    
+  signing.asc: |
+    -----BEGIN PGP PRIVATE KEY BLOCK-----
+    (dev placeholder)
+    -----END PGP PRIVATE KEY BLOCK-----
+---
+# Source: ehrbase-rs/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+data:
+  # ── Database pool (non-secret; the DSN itself is in the Secret) ──────────────
+  EHRBASE_DB_MAX_CONNECTIONS: "10"
+  EHRBASE_DB_MIN_CONNECTIONS: "0"
+  EHRBASE_DB_ACQUIRE_TIMEOUT_SECS: "30"
+
+  # ── REST surface (extension groups OFF by default) ──────────────────────────
+  EHRBASE_REST_BIND: "0.0.0.0:8080"
+  EHRBASE_REST_BASE_PATH: "/ehrbase/rest/openehr/v1"
+  EHRBASE_REST_SWAGGER_UI: "true"
+  EHRBASE_REST_CORS_PERMISSIVE: "false"
+  EHRBASE_REST_ADMIN__ENABLED: "true"
+  EHRBASE_REST_TERMINOLOGY__ENABLED: "true"
+  EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED: "true"
+  EHRBASE_REST_FHIR__ENABLED: "true"
+
+  # ── Multi-tenancy (OFF by default) ──────────────────────────────────────────
+  EHRBASE_REST_TENANCY__ENABLED: "true"
+  EHRBASE_REST_TENANCY__CLAIM: "realm_access.tenant"
+  EHRBASE_REST_TENANCY__HEADER: "X-EHRbase-Tenant"
+
+  # ── Authentication (Basic + OAuth2/OIDC; enabled by default) ────────────────
+  EHRBASE_REST_AUTH__ENABLED: "true"
+  EHRBASE_REST_AUTH__ADMIN_SCOPE: "ADMIN"
+  EHRBASE_REST_AUTH__OIDC__ISSUER: "https://keycloak.example.com/realms/ehrbase"
+  EHRBASE_REST_AUTH__OIDC__AUDIENCES: "ehrbase"
+
+  # ── Authorization: coarse RBAC (on by default) + ABAC (off) ─────────────────
+  EHRBASE_AUTHZ_RBAC__ENABLED: "true"
+  EHRBASE_AUTHZ_RBAC__ADMIN_ROLE: "ADMIN"
+  EHRBASE_AUTHZ_RBAC__USER_ROLE: "USER"
+  EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS: "admin_only"
+  EHRBASE_AUTHZ_ABAC__ENABLED: "true"
+
+  # ── Management / observability surface ──────────────────────────────────────
+  EHRBASE_MANAGEMENT_ENABLED: "true"
+  EHRBASE_MANAGEMENT_BASE_PATH: "/management"
+  EHRBASE_MANAGEMENT_PORT: "9100"
+  EHRBASE_MANAGEMENT_ACCESS_DEFAULT: "admin_only"
+  EHRBASE_MANAGEMENT_PROBES_ENABLED: "true"
+  EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH: "private"
+  EHRBASE_MANAGEMENT_ENDPOINTS_INFO: "admin_only"
+  EHRBASE_MANAGEMENT_ENDPOINTS_METRICS: "admin_only"
+  EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS: "public"
+  EHRBASE_MANAGEMENT_ENDPOINTS_ENV: "admin_only"
+  EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS: "admin_only"
+
+  # ── Telemetry / logging ─────────────────────────────────────────────────────
+  EHRBASE_LOG_FORMAT: "json"
+  EHRBASE_LOG_FILTER: "info,ehrbase=debug"
+  EHRBASE_OTEL_OTLP_ENDPOINT: "http://otel-collector:4317"
+  EHRBASE_OTEL_SERVICE_NAME: "ehrbase-rs"
+  EHRBASE_OTEL_ENVIRONMENT: "production"
+  EHRBASE_OTEL_TRACES_SAMPLE_RATIO: "0.1"
+  EHRBASE_OTEL_METRICS_PUSH: "true"
+
+  # ── Version signing (enabled/digest by default) ─────────────────────────────
+  EHRBASE_SIGNING_ENABLED: "true"
+  EHRBASE_SIGNING_MODE: "pgp"
+  EHRBASE_SIGNING_VERIFY_ON_READ: "strict"
+  EHRBASE_SIGNING_KEY_PATH: "/etc/ehrbase/signing.asc"
+
+  # ── ATNA system log (OFF by default) ────────────────────────────────────────
+  EHRBASE_ATNA_ENABLED: "true"
+  EHRBASE_ATNA_TRANSPORT: "tls"
+  EHRBASE_ATNA_FAIL_MODE: "closed"
+  EHRBASE_ATNA_REPOSITORY_HOST: "arr.example.com"
+  EHRBASE_ATNA_REPOSITORY_PORT: "6514"
+  EHRBASE_ATNA_SOURCE_ID: "ehrbase-prod"
+  EHRBASE_ATNA_ENTERPRISE_SITE_ID: "site-1"
+
+  # ── Contribution-outbox eventing → AMQP (OFF; PHI-free envelopes) ───────────
+  EHRBASE_EVENTS_ENABLED: "true"
+  EHRBASE_EVENTS_EXCHANGE: "ehrbase.events"
+  EHRBASE_EVENTS_TLS: "true"
+
+  # ── FHIR OUTBOUND emitter → AMQP (OFF; PHI-bearing stream) ──────────────────
+  EHRBASE_FHIR_OUTBOUND_ENABLED: "true"
+  EHRBASE_FHIR_OUTBOUND_EXCHANGE: "ehrbase.fhir"
+  EHRBASE_FHIR_OUTBOUND_TLS: "true"
+
+  # ── DV_MULTIMEDIA externalization → S3 (OFF; PHI blobs) ─────────────────────
+  EHRBASE_MULTIMEDIA_ENABLED: "true"
+  EHRBASE_MULTIMEDIA_BUCKET: "openehr-multimedia"
+  EHRBASE_MULTIMEDIA_REGION: "eu-west-1"
+  EHRBASE_MULTIMEDIA_ALLOW_HTTP: "false"
+  EHRBASE_MULTIMEDIA_THRESHOLD_BYTES: "262144"
+  EHRBASE_MULTIMEDIA_ENDPOINT: "https://s3.example.com"
+
+  # ── External terminology validation (OFF by default) ────────────────────────
+  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED: "true"
+  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR: "false"
+---
+# Source: ehrbase-rs/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+    - name: management
+      port: 9100
+      targetPort: management
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+---
+# Source: ehrbase-rs/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ehrbase-rs
+      app.kubernetes.io/instance: ehrbase-rs
+  template:
+    metadata:
+      annotations:
+        # Roll pods when the non-secret config changes.
+        checksum/config: 60d0cf591b89ca76e09f3b1d7085944ad295806563028ea3a56f070d45257dd8
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+        prometheus.io/path: "/management/prometheus"
+      labels:
+        app.kubernetes.io/name: ehrbase-rs
+        app.kubernetes.io/instance: ehrbase-rs
+    spec:
+      serviceAccountName: ehrbase-rs
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ehrbase
+          image: "ghcr.io/rubentalstra/ehrbase-rs:0.1.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: management
+              containerPort: 9100
+              protocol: TCP
+          # The DSN comes from an existing Secret (preferred) or the chart Secret.
+          env:
+            - name: EHRBASE_DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-db
+                  key: EHRBASE_DB_URL
+            - name: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
+            - name: EHRBASE_SIGNING_KEY_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_SIGNING_KEY_PASSPHRASE
+            - name: EHRBASE_EVENTS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_EVENTS_URL
+            - name: EHRBASE_FHIR_OUTBOUND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_FHIR_OUTBOUND_URL
+            - name: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
+            - name: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ehrbase-rs-env
+                  key: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
+            - name: EHRBASE_REST_CONFIG
+              value: /etc/ehrbase/rest.toml
+            - name: EHRBASE_SIGNING_KEY_PATH
+              value: /etc/ehrbase/signing.asc
+          envFrom:
+            - configMapRef:
+                name: ehrbase-rs
+          livenessProbe:
+            httpGet:
+              path: /management/health/liveness
+              port: management
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /management/health/readiness
+              port: management
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /management/health/liveness
+              port: management
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          resources:
+            limits:
+              cpu: "2"
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            # readOnlyRootFilesystem=true → give the process a writable scratch dir.
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /etc/ehrbase
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          secret:
+            secretName: ehrbase-rs-config
+---
+# Source: ehrbase-rs/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ehrbase-rs
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+---
+# Source: ehrbase-rs/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ehrbase-rs
+  labels:
+    helm.sh/chart: ehrbase-rs-0.1.0
+    app.kubernetes.io/name: ehrbase-rs
+    app.kubernetes.io/instance: ehrbase-rs
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ehrbase-rs
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - ehrbase.example.com
+      secretName: ehrbase-tls
+  rules:
+    - host: "ehrbase.example.com"
+      http:
+        paths:
+          - path: /ehrbase
+            pathType: Prefix
+            backend:
+              service:
+                name: ehrbase-rs
+                port:
+                  number: 8080
