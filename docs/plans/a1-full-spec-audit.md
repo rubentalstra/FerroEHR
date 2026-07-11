@@ -23,21 +23,32 @@ persisted the moment they exist; commits after each phase.
       `docs/spec-audit/` skeleton, PARTY_SELF background read
       (`docs/conformance/upstream-ehrbase/TRIAGE.md` — B1/B2/R1/R2 already
       fixed + merged, do not duplicate)
-- [ ] Phase 1 — Extract: 24 chapters × requirements.md (numbered normative
-      requirements + citations; rejection duties prioritized)
-- [ ] Phase 2 — Verify: per-requirement verdict table (verification.md:
-      classification, file:line evidence, severity, negative-test-exists,
-      fix sketch)
-- [ ] Commit after phases 1+2 (pipelined per chapter)
-- [ ] Phase 3 — Skeptic: adversarial refute pass per chapter-with-findings
-      (skeptic.md: confirmed / refuted / uncertain + exact runtime probe)
-- [ ] Commit after phase 3
-- [ ] FINDINGS.md — consolidated register (confirmed defects by severity +
-      uncertain findings with probes) + README.md status table
-- [ ] **PAUSE for owner review** (per brief: after FINDINGS.md, before fixes)
-- [ ] Fix wave: confirmed defects in severity order (implementer agents,
-      spec citations in every prompt, regression/negative test per fix;
-      derive/emitter fixes get full workspace suite + fidelity gates)
+- [x] Phase 1 — Extract: 24 chapters × requirements.md (numbered normative
+      requirements + citations; rejection duties prioritized) — done
+      2026-07-11: 1,126 requirements, 418 high-risk, committed per batch
+- [ ] Verify+fix, per chapter (owner ruling 2026-07-11, supersedes the
+      brief's separate verify/skeptic/fix phases): **ONE active agent at a
+      time**, working through the chapters in order. Per chapter: verify
+      EVERY requirement in requirements.md (all of them, not only
+      high-risk), fix every confirmed defect/missing/partial in the same
+      pass (idiomatic Rust, spec citation + regression/negative test per
+      fix), write verification.md (verdict + fix status per requirement).
+      The orchestrator reviews the diff, commits, ticks the chapter row,
+      then launches the next chapter's agent. Architectural/ADR-needing
+      fixes are recorded as deferred-with-reason, not improvised.
+      - [ ] 1 rm-common-change-control · [ ] 2 rm-ehr ·
+        [ ] 3 rm-composition · [ ] 4 rm-data-structures ·
+        [ ] 5 rm-data-types-text-quantity · [ ] 6 rm-data-types-rest ·
+        [ ] 7 rm-support · [ ] 8 rm-demographic · [ ] 9 rm-ehr-extract ·
+        [ ] 10 rm-integration · [ ] 11 base-foundation ·
+        [ ] 12 base-base-types · [ ] 13 am-aom14-opt ·
+        [ ] 14 am-aom2-adl2 · [ ] 15 term · [ ] 16 query-aql ·
+        [ ] 17 sm-platform · [ ] 18 sm-tdd · [ ] 19 its-rest-general ·
+        [ ] 20 its-rest-ehr-composition ·
+        [ ] 21 its-rest-query-definition-admin · [ ] 22 its-json ·
+        [ ] 23 its-xml · [ ] 24 cnf-cross-check
+- [ ] FINDINGS.md — consolidated register maintained as chapters close
+      (confirmed defects + fix status + uncertain findings with probes)
 - [ ] Uncertain findings: write + run the named runtime probes
       (testcontainers PG18), reclassify
 - [ ] Gates: `cargo nextest run --workspace` green; clippy clean; full ECC
