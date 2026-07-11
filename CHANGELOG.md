@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The `ehrbase-rs-postgres` image now pre-creates the layered group roles
+  (`ehrbase_migrator`, `ehrbase_app`, `ehrbase_reader`), so Compose/dev
+  deployments get the same least-privilege grant topology as hardened
+  deployments instead of `roles absent` startup notices. Existing data
+  volumes keep working; recreate the volume (or create the roles once by
+  hand) to pick the grants up.
 - Public documentation website at <https://rubentalstra.github.io/ehrbase-rs/>:
   a product landing page, a versioned user guide (frozen per release, `dev`
   tracking `develop`), and an offline OpenAPI endpoint reference covering all
