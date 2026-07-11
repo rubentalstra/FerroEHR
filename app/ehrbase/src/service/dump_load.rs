@@ -223,7 +223,9 @@ impl EhrbaseService {
             blobs.push(serde_json::to_vec(record).map_err(ServiceError::from)?);
         }
         let sizes: Vec<usize> = blobs.iter().map(Vec::len).collect();
-        let limit = (spec.segment_split_size as usize).saturating_mul(1024);
+        let limit = usize::try_from(spec.segment_split_size.max(0))
+            .unwrap_or(0)
+            .saturating_mul(1024);
         let ranges = plan_segments(&sizes, limit);
 
         std::fs::create_dir_all(dir).map_err(|e| file_not_writable(dir, &e))?;
@@ -390,6 +392,7 @@ impl EhrbaseService {
     }
 
     /// Read one EHR's `ehr`/audit/contribution/version/tag/archive content.
+    #[allow(clippy::too_many_lines)] // one linear per-EHR collection pass
     async fn collect_one_ehr(&self, ehr_id: Uuid) -> Result<EhrRecord, ServiceError> {
         let row = sqlx::query(
             "SELECT system_id, time_created::text, subject_id, subject_namespace \

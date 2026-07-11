@@ -240,7 +240,7 @@ fn validate_committer(committer: &Value) -> Result<(), ServiceError> {
 /// for an audit committer. The invariant is
 /// `terminology(openehr).has_code_for_group_id(subject_relationship,
 /// relationship.defining_code)` (`party_related.adoc`) — the code must BE an
-/// openEHR `subject_relationship` group member, so a defining_code from any
+/// openEHR `subject_relationship` group member, so a `defining_code` from any
 /// other terminology fails the invariant too (the spec formula has no
 /// terminology escape hatch; openEHR specs are leading). A PARTY that appears
 /// as *content* gets the group check from the validation walker's terminology

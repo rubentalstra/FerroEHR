@@ -85,7 +85,7 @@ fn typed_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         if data
             .get(attr)
             .and_then(Value::as_array)
-            .is_some_and(|a| a.is_empty())
+            .is_some_and(Vec::is_empty)
         {
             return Err(ServiceError::Unprocessable(format!(
                 "{rm_type}.{attr} is present but empty — a present list must be \

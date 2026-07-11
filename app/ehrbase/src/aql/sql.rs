@@ -1169,13 +1169,13 @@ fn version_field_expr(voa: &str, aud: &str, field: VersionField, _system_id: &st
         VersionField::Uid => concat(vec![
             cast(col(voa, "vo_id"), "text"),
             Expr::val("::"),
-            col(voa, "creating_system_id").into(),
+            col(voa, "creating_system_id"),
             Expr::val("::"),
             cast(col(voa, "trunk_version"), "text"),
             Expr::cust_with_exprs(
                 "CASE WHEN $1 > 0 THEN '.' || $2 || '.' || $3 ELSE '' END",
                 [
-                    col(voa, "branch_number").into(),
+                    col(voa, "branch_number"),
                     cast(col(voa, "branch_number"), "text"),
                     cast(col(voa, "branch_version"), "text"),
                 ],

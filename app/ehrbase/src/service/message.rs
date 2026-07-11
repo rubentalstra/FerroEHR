@@ -74,10 +74,11 @@ use crate::service::{EhrbaseService, ServiceError};
 /// `EXTRACT_VERSION_SPEC` (`extract_version_spec.adoc`). The default (no spec)
 /// is latest-only with data and no revision history.
 #[derive(Debug, Clone, Copy)]
+#[allow(clippy::struct_excessive_bools)] // mirrors the four EXTRACT_VERSION_SPEC boolean flags 1:1
 struct VersionSelection {
     /// `EXTRACT_SPEC.include_multimedia` — when false, inline `DV_MULTIMEDIA`
     /// content (`data`) is stripped from exported version bodies (RM
-    /// ehr_extract master09 §Creation Semantics; the metadata + `uri` remain).
+    /// `ehr_extract` master09 §Creation Semantics; the metadata + `uri` remain).
     include_multimedia: bool,
     /// `include_all_versions` — include every version, not just the latest.
     include_all: bool,
@@ -340,7 +341,7 @@ impl EhrbaseService {
     fn assemble_extract(
         &self,
         content_items: Vec<Value>,
-        demographic_items: Vec<Value>,
+        demographic_items: &[Value],
         specification: Value,
         sequence_nr: i32,
     ) -> Value {
@@ -437,7 +438,7 @@ impl EhrbaseService {
         let demographics = self.demographic_chapter_items(&items, sel).await?;
         Ok(self.assemble_extract(
             items,
-            demographics,
+            &demographics,
             Self::whole_ehr_spec(ehr_id),
             sequence_nr,
         ))
@@ -685,7 +686,7 @@ impl EhrExtractService for EhrbaseService {
             }
             let demographics = self.demographic_chapter_items(&items, sel).await?;
             let seq = i32::try_from(idx + 1).unwrap_or(i32::MAX);
-            out.push(self.assemble_extract(items, demographics, spec_value.clone(), seq));
+            out.push(self.assemble_extract(items, &demographics, spec_value.clone(), seq));
         }
         Ok(out)
     }
@@ -836,6 +837,7 @@ fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Resu
 /// `X_VERSIONED_*` wrapper contributes its `ORIGINAL_VERSION`s to one
 /// [`ImportContainer`]; branch / multi-system version trees are first-class
 /// (RM common master06 §Distributed versioning).
+#[allow(clippy::too_many_lines)] // the X_VERSIONED_* chapter walk in one pass
 fn parse_import_containers(
     extract: &Extract,
 ) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
@@ -980,6 +982,7 @@ fn parse_import_containers(
 /// `other_input_version_uids`, `commit_audit`, lifecycle, data, signature and
 /// attestations verbatim (RM common master06 §Copying: "the `ORIGINAL_VERSION`
 /// instance is never modified").
+#[allow(clippy::too_many_lines)] // the ORIGINAL_VERSION field-by-field parse
 fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> {
     // `X_VERSIONED_OBJECT.versions` carries ORIGINAL_VERSIONs — the received
     // instance "is never modified" and is re-wrapped as IMPORTED_VERSION *by the

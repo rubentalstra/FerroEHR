@@ -315,7 +315,15 @@ fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarge
         )
         .into());
     }
-    let op = path.path.as_ref().expect("ehr_status head implies a path");
+    let Some(op) = path.path.as_ref() else {
+        // Unreachable in practice: this branch is entered only for
+        // `e/ehr_status…` heads, which always carry a path; reject typed
+        // rather than panic.
+        return Err(AqlFeatureError::UnsupportedEhrStatusPath(
+            "missing ehr_status path".to_owned(),
+        )
+        .into());
+    };
     if op.parts[0].predicate.is_some() {
         return Err(AqlFeatureError::UnsupportedEhrStatusPath(
             "predicate on ehr_status".to_owned(),

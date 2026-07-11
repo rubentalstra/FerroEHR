@@ -953,8 +953,8 @@ async fn attest(
 /// FIRST stored version's root (RM ehr
 /// `org.openehr.rm.ehr.versioned_composition.adoc`):
 ///
-/// - `Archetype_node_id_valid`: "all_versions … data.archetype_node_id
-///   is_equal (first_version.data.archetype_node_id)" — a versioned
+/// - `Archetype_node_id_valid`: "`all_versions` … `data.archetype_node_id`
+///   `is_equal` (`first_version.data.archetype_node_id`)" — a versioned
 ///   composition cannot switch archetype across versions;
 /// - `Persistent_validity`: every version's `is_persistent` equals the first
 ///   version's — the persistence category (`category` `431|persistent|`,
@@ -966,6 +966,7 @@ async fn check_versioned_composition_invariants(
     vo_id: Uuid,
     canonical: &serde_json::Value,
 ) -> Result<(), ServiceError> {
+    const PERSISTENT: &str = "431";
     let Some(first) = sqlx::query(
         "SELECT data->>'archetype_node_id' AS ani, \
                 data#>>'{category,defining_code,code_string}' AS category \
@@ -991,7 +992,6 @@ async fn check_versioned_composition_invariants(
              (VERSIONED_COMPOSITION.Archetype_node_id_valid)"
         )));
     }
-    const PERSISTENT: &str = "431";
     let incoming_category = canonical
         .pointer("/category/defining_code/code_string")
         .and_then(|v| v.as_str());
@@ -1560,9 +1560,10 @@ async fn insert_audit_at(
 /// analogue of [`insert_vo_version`], which always opens at `now()`. The import
 /// path builds a synthetic strictly-increasing local period chain so a whole
 /// imported version history lands as one contiguous, non-overlapping tree
-/// (temporal `WITHOUT OVERLAPS` PK; ADR-008).
+/// (per-lineage non-overlap, RM common master06 §Version tree — realized by
+/// the temporal EXCLUDE constraints; no openEHR spec governs the storage
+/// mechanism itself).
 #[allow(clippy::too_many_arguments)] // one row's columns; a struct would not read clearer
-#[allow(clippy::too_many_arguments)] // one row's columns beyond the shared struct
 async fn insert_imported_vo_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -1756,6 +1757,7 @@ pub(super) async fn commit_demographic_import(
     Ok(())
 }
 
+#[allow(clippy::too_many_lines)] // one linear import transaction; splitting would obscure the replay order
 async fn commit_import_scoped(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,

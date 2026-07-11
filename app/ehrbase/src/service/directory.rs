@@ -212,15 +212,15 @@ pub(super) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
                 )));
             }
         }
-        if obj.get("name").filter(|v| !v.is_null()).is_none() {
+        if obj.get("name").is_none_or(Value::is_null) {
             return Err(unproc(format!(
                 "{path}: FOLDER.name is mandatory (LOCATABLE.name 1..1)"
             )));
         }
-        if !obj
+        if obj
             .get("archetype_node_id")
             .and_then(Value::as_str)
-            .is_some_and(|s| !s.is_empty())
+            .is_none_or(str::is_empty)
         {
             return Err(unproc(format!(
                 "{path}: FOLDER.archetype_node_id is mandatory and non-empty                  (LOCATABLE.Archetype_node_id_valid)"
