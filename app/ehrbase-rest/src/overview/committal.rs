@@ -110,7 +110,7 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
     {
         uv.audit.change_type = openehr_code(&code);
     }
-    if let Some(desc) = attrs.get(T_DESCRIPTION).and_then(scalar) {
+    if let Some(desc) = attrs.get(T_DESCRIPTION).and_then(|p| scalar(p)) {
         uv.audit.description = Some(desc);
     }
     if let Some(pairs) = attrs.get(T_COMMITTER)
@@ -118,7 +118,7 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
     {
         uv.audit.committer = committer;
     }
-    if let Some(system_id) = attrs.get(T_SYSTEM_ID).and_then(scalar) {
+    if let Some(system_id) = attrs.get(T_SYSTEM_ID).and_then(|p| scalar(p)) {
         uv.audit.system_id = Some(system_id);
     }
 }

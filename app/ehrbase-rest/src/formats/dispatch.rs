@@ -59,7 +59,7 @@ pub(super) fn request_template_id(query: Option<&str>, headers: &HeaderMap) -> O
 }
 
 /// Parse a FLAT request body into a canonical-JSON `COMPOSITION`.
-pub(super) async fn composition_from_flat<S: Platform>(
+pub(crate) async fn composition_from_flat<S: Platform>(
     state: &AppState<S>,
     query: Option<&str>,
     headers: &HeaderMap,
@@ -115,7 +115,7 @@ pub(crate) async fn composition_flat_response<S: Platform>(
 /// Parse a STRUCTURED (structSDT) request body into a canonical-JSON
 /// `COMPOSITION` via `openehr_flat::from_structured` (template id resolved as
 /// for FLAT: query param or `openEHR-TEMPLATE_ID` header).
-pub(super) async fn composition_from_structured<S: Platform>(
+pub(crate) async fn composition_from_structured<S: Platform>(
     state: &AppState<S>,
     query: Option<&str>,
     headers: &HeaderMap,

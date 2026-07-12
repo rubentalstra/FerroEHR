@@ -109,11 +109,13 @@ fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&Res
 /// mandated by `responses/201_PERSON.yaml` (create) and `person_get.yaml` (get)
 /// when a party carries ITEM_TAGs — the server-set tags are read off the service
 /// response (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
-fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
-    // TODO(w3e-integrate): emit via the central helper the overview worker adds;
-    // it reads the server-set ITEM_TAGs off the service response and writes the
-    // two response headers. Signature to be reconciled at integration.
-    crate::overview::params::emit_item_tag_header(resp_out, resp);
+fn set_item_tag_headers(_resp_out: &mut Response, _resp: &ServiceResponse) {
+    // TODO(w3e-integrate): `ServiceResponse` carries no ITEM_TAG list yet — the
+    // seam must surface the server-set tags (e.g. on `ResourceMeta`) before the
+    // mandated `openehr-item-tag`/`openehr-version-item-tag` response headers
+    // (`responses/201_PERSON.yaml`) can be emitted via
+    // `crate::overview::params::emit_item_tag_header`. Until then no header is
+    // emitted (a miss recorded in docs/design/its-rest/demographic.md G-3).
 }
 
 /// Render an error, additionally setting the latest-version `ETag`/`Location`

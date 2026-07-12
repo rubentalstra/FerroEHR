@@ -69,7 +69,8 @@ const DEFAULT_CONFORMANCE_PROFILE: &str = "STANDARD";
 /// committed conformance run's machine verdict — a `build.rs` constant read
 /// from `docs/conformance/results.json` (like `git_sha`), so the manifest
 /// states a *measured* profile — rather than the compile-time default here.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct SystemOptionsConfig {
     /// `Options.solution` — the product name.
     pub solution: String,
