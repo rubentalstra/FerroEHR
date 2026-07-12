@@ -27,7 +27,7 @@ use super::composition_validate::{
 impl EhrbaseService {
     /// Create a COMPOSITION in an EHR, returning it with its `uid` set and the
     /// version metadata (the `ETag`/`Location` for `201_COMPOSITION`).
-    pub(in crate::service) async fn create_composition(
+    pub(crate) async fn create_composition(
         &self,
         ehr_id: Uuid,
         composition: Value,

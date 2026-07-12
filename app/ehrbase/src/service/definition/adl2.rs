@@ -39,10 +39,7 @@ impl EhrbaseService {
     /// (`422`). Returns the stored HRID (the wire needs it for `Location` + the
     /// identifier body).
     pub(super) async fn adl2_upload(&self, adl2: &str) -> Result<String, ServiceError> {
-        // TODO(w3f-integrate): validation seam (register 09/10) —
-        // `validate_adl2_source` / `check_specialisation_depth` move out of
-        // `crate::service::adl2_validation`.
-        let meta = crate::service::adl2_validation::validate_adl2_source(adl2).map_err(|v| {
+        let meta = crate::validation::validate_adl2_source(adl2).map_err(|v| {
             ServiceError::sm(
                 CallStatusType::InvalidArtefact,
                 format!("{}: {}", v.code, v.detail),
@@ -67,9 +64,9 @@ impl EhrbaseService {
             .bind(parent_hrid)
             .fetch_optional(&self.pool)
             .await?
-            && let Ok(parent) = crate::service::adl2_validation::validate_adl2_source(&parent_src)
+            && let Ok(parent) = crate::validation::validate_adl2_source(&parent_src)
         {
-            crate::service::adl2_validation::check_specialisation_depth(&meta, parent.depth)
+            crate::validation::check_specialisation_depth(&meta, parent.depth)
                 .map_err(|v| {
                     ServiceError::sm(
                         CallStatusType::InvalidArtefact,
@@ -235,8 +232,7 @@ impl EhrbaseService {
     /// plus a well-formed HRID (module PORT NOTE G-05-02). Stateless.
     #[must_use]
     pub(super) fn valid_adl2_source(adl2: &str) -> bool {
-        // TODO(w3f-integrate): validation seam (register 09/10).
-        crate::service::adl2_validation::validate_adl2_source(adl2)
+        crate::validation::validate_adl2_source(adl2)
             .is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
     }
 }

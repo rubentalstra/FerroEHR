@@ -20,35 +20,6 @@ use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::signature::Signer;
 use crate::versioning::{Kind, integrity};
 
-/// A stored version's row (the `vo_version` ⋈ `audit` join), returned by the
-/// storage `version_repo`. The value contract at the read seam: versioning
-/// composes a [`VersionRead`] from this plus the canonical body and the
-/// attestations.
-///
-/// TODO(w3f-integrate): `crate::storage::version_repo` produces this value
-/// (register 02 owns the SQL + `PgRow` → `StoredVersion` mapping).
-#[derive(Debug, Clone)]
-pub(crate) struct StoredVersion {
-    pub(crate) vo_id: Uuid,
-    /// The owning EHR, or `None` for a demographic party (no EHR scope).
-    pub(crate) ehr_id: Option<Uuid>,
-    /// The per-vo storage commit ordinal (the node / attestation key), NOT the
-    /// wire version number.
-    pub(crate) sys_version: i32,
-    /// The version's `VERSION_TREE_ID` (the wire version identity).
-    pub(crate) tree: TreeId,
-    pub(crate) preceding_version_uid: Option<String>,
-    pub(crate) other_input_version_uids: Vec<String>,
-    pub(crate) lifecycle_state: String,
-    pub(crate) creating_system_id: String,
-    pub(crate) contribution_id: Uuid,
-    pub(crate) audit: AuditInput,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) template_id: Option<String>,
-    pub(crate) signature: Option<String>,
-    pub(crate) kind: Kind,
-}
-
 /// A loaded version: its full provenance metadata and reassembled canonical
 /// JSON (with attestations attached).
 #[derive(Debug, Clone)]
@@ -88,41 +59,39 @@ impl VersionRead {
     }
 }
 
-/// Compose a [`VersionRead`] from a stored row, resolving the canonical body: a
-/// deleted version (lifecycle `523`) carries no node rows, so its body is
-/// `Value::Null` and reassembly is skipped entirely (this is what stops a
-/// deleted read from erroring on an empty node set).
-async fn version_read(
-    pool: &sqlx::PgPool,
-    stored: StoredVersion,
-) -> Result<VersionRead, ServiceError> {
-    let canonical = if stored.lifecycle_state == lifecycle::state::DELETED {
-        Value::Null
-    } else {
-        // TODO(w3f-integrate): storage node reassembly seam.
-        crate::storage::node_repo::read_version_canonical(pool, stored.vo_id, stored.sys_version)
-            .await?
-    };
-    // TODO(w3f-integrate): version_repo::read_attestations.
-    let attestations =
-        crate::storage::version_repo::read_attestations(pool, stored.vo_id, stored.sys_version)
-            .await?;
-    Ok(VersionRead {
+/// Compose a [`VersionRead`] from the storage read shape
+/// ([`crate::storage::version_repo::StoredVersion`]): the tree id is rebuilt
+/// from its column ints and the flattened audit becomes the `commit_audit`.
+/// A deleted version (lifecycle `523`) stores no node rows, so storage already
+/// yields `canonical = Value::Null` (master06 §Logical Deletion).
+fn version_read(
+    stored: crate::storage::version_repo::StoredVersion,
+) -> VersionRead {
+    VersionRead {
         vo_id: stored.vo_id,
         ehr_id: stored.ehr_id,
-        tree: stored.tree,
+        tree: TreeId::from_columns(
+            stored.trunk_version,
+            stored.branch_number,
+            stored.branch_version,
+        ),
         preceding_version_uid: stored.preceding_version_uid,
         other_input_version_uids: stored.other_input_version_uids,
         lifecycle_state: stored.lifecycle_state,
         creating_system_id: stored.creating_system_id,
         contribution_id: stored.contribution_id,
-        audit: stored.audit,
+        audit: AuditInput {
+            system_id: stored.audit_system_id,
+            change_type: stored.audit_change_type,
+            description: stored.audit_description,
+            committer: stored.audit_committer,
+        },
         time_committed: stored.time_committed,
         template_id: stored.template_id,
         signature: stored.signature,
-        canonical,
-        attestations,
-    })
+        canonical: stored.canonical,
+        attestations: stored.attestations,
+    }
 }
 
 /// Read the current version of an object by id (any kind). `None` if it never
@@ -133,11 +102,9 @@ pub(crate) async fn read_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    // TODO(w3f-integrate): version_repo::read_current.
-    match crate::storage::version_repo::read_current(pool, vo_id).await? {
-        Some(stored) => Ok(Some(version_read(pool, stored).await?)),
-        None => Ok(None),
-    }
+    Ok(crate::storage::version_repo::read_current(pool, vo_id)
+        .await?
+        .map(version_read))
 }
 
 /// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
@@ -148,11 +115,11 @@ pub(crate) async fn read_version_by_ordinal(
     vo_id: Uuid,
     ordinal: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    // TODO(w3f-integrate): version_repo::read_version_by_ordinal.
-    match crate::storage::version_repo::read_version_by_ordinal(pool, vo_id, ordinal).await? {
-        Some(stored) => Ok(Some(version_read(pool, stored).await?)),
-        None => Ok(None),
-    }
+    Ok(
+        crate::storage::version_repo::read_version_by_ordinal(pool, vo_id, ordinal)
+            .await?
+            .map(version_read),
+    )
 }
 
 /// Read a specific version of an object by its `VERSION_TREE_ID`
@@ -162,11 +129,10 @@ pub(crate) async fn read_version(
     vo_id: Uuid,
     tree: TreeId,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    // TODO(w3f-integrate): version_repo::read_version.
-    match crate::storage::version_repo::read_version(pool, vo_id, tree).await? {
-        Some(stored) => Ok(Some(version_read(pool, stored).await?)),
-        None => Ok(None),
-    }
+    let (t, b, v) = tree.columns();
+    Ok(crate::storage::version_repo::read_version(pool, vo_id, t, b, v)
+        .await?
+        .map(version_read))
 }
 
 /// Read the version of an object that was current at a given instant
@@ -177,11 +143,9 @@ pub(crate) async fn version_at(
     vo_id: Uuid,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    // TODO(w3f-integrate): version_repo::read_version_at.
-    match crate::storage::version_repo::read_version_at(pool, vo_id, at).await? {
-        Some(stored) => Ok(Some(version_read(pool, stored).await?)),
-        None => Ok(None),
-    }
+    Ok(crate::storage::version_repo::version_at(pool, vo_id, at)
+        .await?
+        .map(version_read))
 }
 
 /// The kind of the current version of an object, or `None` if it does not
@@ -190,8 +154,9 @@ pub(crate) async fn object_kind(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<Kind>, ServiceError> {
-    // TODO(w3f-integrate): version_repo::object_kind.
-    crate::storage::version_repo::object_kind(pool, vo_id).await
+    Ok(crate::storage::version_repo::object_kind(pool, vo_id)
+        .await?
+        .and_then(|kind| Kind::from_type(&kind)))
 }
 
 /// The `REVISION_HISTORY` of a versioned object: one item per version, each with
@@ -209,8 +174,7 @@ pub(crate) async fn revision_history(
     ehr_id: Uuid,
     vo_id: Uuid,
 ) -> Result<Value, ServiceError> {
-    // TODO(w3f-integrate): version_repo::all_versions (ordered by sys_version).
-    let rows = crate::storage::version_repo::all_versions(pool, vo_id).await?;
+    let rows = crate::storage::version_repo::all_version_meta(pool, vo_id).await?;
     let first = rows
         .first()
         .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
@@ -221,7 +185,6 @@ pub(crate) async fn revision_history(
     }
 
     // Attestations for the object, keyed by version, in commit order.
-    // TODO(w3f-integrate): version_repo::read_attestations_all.
     let att_rows = crate::storage::version_repo::read_attestations_all(pool, vo_id).await?;
     let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
         std::collections::HashMap::new();
@@ -232,10 +195,10 @@ pub(crate) async fn revision_history(
     let mut items = Vec::with_capacity(rows.len());
     for row in &rows {
         let mut audits = vec![audit_details(
-            &row.audit.system_id,
-            &row.audit.change_type,
-            row.audit.description.as_deref(),
-            &row.audit.committer,
+            &row.audit_system_id,
+            &row.audit_change_type,
+            row.audit_description.as_deref(),
+            &row.audit_committer,
             &row.time_committed,
         )];
         if let Some(atts) = attestations.remove(&row.sys_version) {
@@ -245,7 +208,11 @@ pub(crate) async fn revision_history(
             "_type": "REVISION_HISTORY_ITEM",
             "version_id": {
                 "_type": "OBJECT_VERSION_ID",
-                "value": object_version_id(vo_id, &row.creating_system_id, row.tree)
+                "value": object_version_id(
+                    vo_id,
+                    &row.creating_system_id,
+                    TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version)
+                )
             },
             "audits": audits
         }));
@@ -267,7 +234,6 @@ pub(crate) async fn versioned_object(
     vo_id: Uuid,
     ehr_id: Uuid,
 ) -> Result<Value, ServiceError> {
-    // TODO(w3f-integrate): version_repo::time_created (earliest held version).
     let time_created = crate::storage::version_repo::time_created(pool, vo_id)
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;

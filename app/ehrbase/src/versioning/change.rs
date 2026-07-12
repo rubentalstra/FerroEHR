@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::service::ServiceError;
 use crate::storage::{decompose, reassemble};
 use crate::versioning::attestation::{self, PendingAttest};
-use crate::versioning::audit::{AuditInput, change_type};
+use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
 use crate::versioning::object_version_id::{TreeId, eq_composite_id, object_version_id};
 use crate::versioning::{Kind, SigningCtx, integrity};
@@ -126,10 +126,61 @@ pub(crate) struct NewVersionRow<'a> {
     pub(crate) signature: Option<&'a str>,
 }
 
-/// The preceding lineage tip read for a tree-placement decision — the value
-/// contract from `crate::storage::version_repo::lineage_tip`.
-///
-/// TODO(w3f-integrate): storage produces this (the `vo_version` lineage read).
+impl NewVersionRow<'_> {
+    /// The plain storage row ([`crate::storage::version_repo::VersionRow`]) —
+    /// kind and tree rendered to their column values.
+    fn row(&self) -> crate::storage::version_repo::VersionRow<'_> {
+        let (trunk_version, branch_number, branch_version) = self.tree.columns();
+        crate::storage::version_repo::VersionRow {
+            vo_id: self.vo_id,
+            kind: self.kind.as_str(),
+            ehr_id: self.ehr_id,
+            sys_version: self.ordinal,
+            trunk_version,
+            branch_number,
+            branch_version,
+            lifecycle_state: self.lifecycle_state,
+            creating_system_id: self.creating_system_id,
+            preceding_version_uid: self.preceding_version_uid,
+            other_input_version_uids: self.other_input_version_uids,
+            contribution_id: self.contribution_id,
+            audit_id: self.audit_id,
+            template_id: self.template_id,
+            signature: self.signature,
+        }
+    }
+
+    /// The imported-row analogue with an explicit `sys_period` `[lower, upper)`
+    /// (master06 §Copying — the synthetic local period chain).
+    pub(crate) fn imported_row(
+        &self,
+        lower: jiff::Timestamp,
+        upper: Option<jiff::Timestamp>,
+    ) -> crate::storage::version_repo::ImportedVersionRow<'_> {
+        let (trunk_version, branch_number, branch_version) = self.tree.columns();
+        crate::storage::version_repo::ImportedVersionRow {
+            vo_id: self.vo_id,
+            kind: self.kind.as_str(),
+            ehr_id: self.ehr_id,
+            sys_version: self.ordinal,
+            trunk_version,
+            branch_number,
+            branch_version,
+            lifecycle_state: self.lifecycle_state,
+            creating_system_id: self.creating_system_id,
+            preceding_version_uid: self.preceding_version_uid,
+            other_input_version_uids: self.other_input_version_uids,
+            contribution_id: self.contribution_id,
+            audit_id: self.audit_id,
+            signature: self.signature,
+            lower,
+            upper,
+        }
+    }
+}
+
+/// The preceding lineage tip read for a tree-placement decision — mapped from
+/// the storage row (`crate::storage::version_repo::lineage_tip`).
 #[derive(Debug, Clone)]
 pub(crate) struct PrecedingTip {
     pub(crate) ehr_id: Option<Uuid>,
@@ -173,6 +224,32 @@ struct NextVersion {
 /// Same-system detection is case-insensitive on `creating_system_id`
 /// (composite-identifier equality, G-09; BASE master05 §Composite Identifiers
 /// and Case).
+/// Read the preceding lineage tip through the storage row I/O, mapped onto the
+/// versioning value contract ([`PrecedingTip`]).
+async fn lineage_tip(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    expected: Option<TreeId>,
+) -> Result<Option<PrecedingTip>, ServiceError> {
+    let row =
+        crate::storage::version_repo::lineage_tip(tx, vo_id, expected.map(TreeId::columns)).await?;
+    row.map(|row| {
+        let kind = Kind::from_type(&row.kind).ok_or_else(|| {
+            ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
+        })?;
+        Ok(PrecedingTip {
+            ehr_id: row.ehr_id,
+            kind,
+            ordinal: row.sys_version,
+            tree: TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
+            creating_system_id: row.creating_system_id,
+            lifecycle_state: row.lifecycle_state,
+            open: row.open,
+        })
+    })
+    .transpose()
+}
+
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -182,20 +259,18 @@ async fn next_version(
     local_system_id: &str,
 ) -> Result<NextVersion, ServiceError> {
     // Serialize concurrent writers of the same object.
-    // TODO(w3f-integrate): version_repo::advisory_lock.
     crate::storage::version_repo::advisory_lock(tx, vo_id).await?;
 
-    // TODO(w3f-integrate): version_repo::lineage_tip (addressed tip or current
-    // trunk tip).
-    let tip = crate::storage::version_repo::lineage_tip(tx, vo_id, expected).await?;
+    let tip = lineage_tip(tx, vo_id, expected).await?;
     let Some(tip) = tip else {
         // The object may exist with the expectation naming no stored version —
-        // distinguish "no such object" (404) from "wrong version" (409).
-        // TODO(w3f-integrate): version_repo::current_trunk.
-        let current = crate::storage::version_repo::current_trunk(tx, vo_id, kind).await?;
+        // distinguish "no such object" (404) from "wrong version" (409): the
+        // current trunk tip is the lineage tip with no expectation.
+        let current = lineage_tip(tx, vo_id, None).await?;
         return match (expected, current) {
-            (Some(tree), Some((_, current))) => Err(ServiceError::VersionConflict(format!(
-                "expected version {tree}, which does not exist (current is {current})"
+            (Some(tree), Some(current)) => Err(ServiceError::VersionConflict(format!(
+                "expected version {tree}, which does not exist (current is {})",
+                current.tree
             ))),
             _ => Err(ServiceError::NotFound(format!(
                 "{} {vo_id} in EHR {ehr_id:?}",
@@ -218,7 +293,6 @@ async fn next_version(
         )));
     }
     let preceding_uid = object_version_id(vo_id, &tip.creating_system_id, tip.tree);
-    // TODO(w3f-integrate): version_repo::next_ordinal (MAX(sys_version)+1).
     let ordinal = crate::storage::version_repo::next_ordinal(tx, vo_id).await?;
 
     let (tree, close_ordinal) = if eq_composite_id(&tip.creating_system_id, local_system_id) {
@@ -232,7 +306,6 @@ async fn next_version(
         // Local modification of a version copied from elsewhere: fork a branch
         // at the preceding version's trunk fork point (master06 §Distributed
         // Versioning); the copied version itself stays valid.
-        // TODO(w3f-integrate): version_repo::next_branch_number.
         let next_branch =
             crate::storage::version_repo::next_branch_number(tx, vo_id, tip.tree.trunk).await?;
         (TreeId::branch(tip.tree.trunk, next_branch, 1), None)
@@ -307,7 +380,6 @@ async fn apply_change(
                 &served,
                 signature,
             )?;
-            // TODO(w3f-integrate): version_repo::insert_vo_version.
             crate::storage::version_repo::insert_vo_version(
                 tx,
                 &NewVersionRow {
@@ -324,18 +396,16 @@ async fn apply_change(
                     audit_id,
                     template_id: template_id.as_deref(),
                     signature: signature.as_deref(),
-                },
+                }
+                .row(),
             )
             .await?;
-            // TODO(w3f-integrate): node_repo::write_nodes.
             crate::storage::node_repo::write_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
             // A newly created FOLDER hierarchy joins `EHR.folders` as a new
             // member (RM ehr master04 §Folders). Recorded only on CREATION.
             if kind == Kind::Folder
                 && let Some(ehr_id) = ehr_id
             {
-                // TODO(w3f-integrate): version_repo::insert_ehr_folder_rank
-                // (ehr_folder is storage; membership semantics are RM ehr).
                 crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, vo_id).await?;
             }
             attestation::insert_accompanying_attestations(
@@ -383,7 +453,6 @@ async fn apply_change(
             // legal (master06 §Version Lifecycle state machine).
             validate_transition(Some(&next.preceding_lifecycle), &lifecycle)?;
             if let Some(close_ordinal) = next.close_ordinal {
-                // TODO(w3f-integrate): version_repo::close_ordinal_at_now.
                 crate::storage::version_repo::close_ordinal_at_now(tx, vo_id, close_ordinal)
                     .await?;
             }
@@ -416,7 +485,8 @@ async fn apply_change(
                     audit_id,
                     template_id: template_id.as_deref(),
                     signature: signature.as_deref(),
-                },
+                }
+                .row(),
             )
             .await?;
             crate::storage::node_repo::write_nodes(tx, vo_id, next.ordinal, ehr_id, &rows).await?;
@@ -484,7 +554,8 @@ async fn apply_change(
                     audit_id,
                     template_id: None,
                     signature: signature.as_deref(),
-                },
+                }
+                .row(),
             )
             .await?;
             Ok(Committed {
@@ -509,10 +580,10 @@ async fn write_contribution(
     ehr_id: Option<Uuid>,
     audit: &AuditInput,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), ServiceError> {
-    // TODO(w3f-integrate): version_repo::insert_audit / insert_contribution.
-    let (audit_id, time_committed) = crate::storage::version_repo::insert_audit(tx, audit).await?;
+    let (audit_id, time_committed) =
+        crate::storage::version_repo::insert_audit(tx, &audit.row()).await?;
     let contribution_id =
-        crate::storage::version_repo::insert_contribution(tx, ehr_id, audit_id, None).await?;
+        crate::storage::version_repo::insert_contribution(tx, ehr_id, audit_id).await?;
     Ok((contribution_id, audit_id, time_committed))
 }
 
@@ -547,8 +618,6 @@ pub(crate) async fn create(
         },
     )
     .await?;
-    // TODO(w3f-integrate): version_repo::write_outbox (PHI-free envelope; the
-    // row rides inside this transaction — storage executes it).
     crate::storage::version_repo::write_outbox(
         tx,
         contribution_id,
@@ -667,11 +736,9 @@ pub(crate) async fn commit_contribution(
     attests: Vec<PendingAttest>,
     ctx: &SigningCtx<'_>,
 ) -> Result<(Uuid, Vec<Committed>), ServiceError> {
-    // TODO(w3f-integrate): version_repo::insert_audit / insert_contribution
-    // (honouring a client-supplied CONTRIBUTION uid).
     let (contribution_audit_id, contribution_time) =
-        crate::storage::version_repo::insert_audit(tx, contribution_audit).await?;
-    let contribution_id = crate::storage::version_repo::insert_contribution(
+        crate::storage::version_repo::insert_audit(tx, &contribution_audit.row()).await?;
+    let contribution_id = crate::storage::version_repo::insert_contribution_with_id(
         tx,
         ehr_id,
         contribution_audit_id,
@@ -682,7 +749,7 @@ pub(crate) async fn commit_contribution(
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
         let (audit_id, time_committed) =
-            crate::storage::version_repo::insert_audit(tx, &version_audit).await?;
+            crate::storage::version_repo::insert_audit(tx, &version_audit.row()).await?;
         committed.push(
             apply_change(
                 tx,

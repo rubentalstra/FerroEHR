@@ -72,9 +72,7 @@ impl DefinitionAdapter for EhrbaseService {
         // while the SM native `upload_artefact` says "replace it"
         // (`i_definition_adl2.adoc`). This is the REST adapter seam, so an
         // existing HRID is a 409 here; native SM callers keep replace.
-        // TODO(w3f-integrate): validation seam (register 09/10) —
-        // `validate_adl2_source`.
-        let meta = crate::service::adl2_validation::validate_adl2_source(&source)
+        let meta = crate::validation::validate_adl2_source(&source)
             .map_err(|v| SmError::precondition(format!("{}: {}", v.code, v.detail)))?;
         if self.adl2_exists(&meta.hrid).await? {
             return Err(SmError::new(

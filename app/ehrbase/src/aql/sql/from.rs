@@ -267,7 +267,7 @@ impl Builder<'_> {
                     match c.link {
                         Link::Contains => sub.and_where(inner),
                         Link::NotContains => sub.and_where(inner.not()),
-                    }
+                    };
                 }
                 Ok(Expr::exists(sub))
             }

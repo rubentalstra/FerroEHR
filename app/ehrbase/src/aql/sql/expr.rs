@@ -14,7 +14,7 @@
 
 use std::fmt::Write as _;
 
-use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Func, PostgresQueryBuilder, Query, Value};
+use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Func, Value};
 
 use openehr_base::prelude::ArchetypeId;
 use openehr_query::lexer::CompOp;

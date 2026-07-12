@@ -71,7 +71,7 @@ impl EhrbaseService {
     ///
     /// Emits the AQL metrics: `aql_query_duration_seconds{phase}` for `plan` and
     /// `execute`, and `aql_queries_total{outcome}` exactly once per call.
-    pub(super) async fn execute_aql(
+    pub(crate) async fn execute_aql(
         &self,
         aql: &str,
         name: Option<&str>,

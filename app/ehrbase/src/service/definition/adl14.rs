@@ -269,10 +269,8 @@ impl EhrbaseService {
     /// seam's structural check.
     #[must_use]
     pub(super) fn valid_opt_xml(opt_xml: &str) -> bool {
-        // TODO(w3f-integrate): templates seam (register 10) —
-        // `validate_opt_structure` moves to `crate::templates`.
         openehr_its::opt14::from_xml(opt_xml).is_ok()
-            && crate::service::template::validate_opt_structure(opt_xml).is_ok()
+            && crate::validation::validate_opt_structure(opt_xml).is_ok()
     }
 }
 

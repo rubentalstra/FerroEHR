@@ -9,7 +9,7 @@
 
 use sea_query::{Expr, ExprTrait as _};
 
-use crate::aql::error::{AqlError, SqlError};
+use crate::aql::error::{AqlError};
 use crate::aql::ir::{
     ArchetypeConstraint, Bind, Coercion, Expr as IrExpr, LikePattern, NameConstraint,
     NodeConstraint, Operand, ScalarFn, StdPredicate, TypedLit,

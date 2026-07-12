@@ -150,13 +150,11 @@ impl EhrbaseService {
             Kind::EhrStatus => super::validate_ehr_status(data),
             Kind::EhrAccess => super::validate_ehr_access(data),
             Kind::Folder => super::validate_folder(data),
-            // TODO(w3f-integrate): validation dispatch for the demographic kinds
-            // (owned by service/demographic/, rewritten by the demographic worker).
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
-                Self::validate_party_kind_for_commit(kind, data)
+                crate::service::demographic::validate_party_kind_for_commit(kind, data)
             }
             Kind::PartyRelationship => {
-                crate::service::relationship::validate_relationship_for_commit(data)
+                crate::service::demographic::validate_relationship_for_commit(data)
             }
         }
     }

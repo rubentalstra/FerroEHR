@@ -20,7 +20,7 @@ use crate::versioning::audit::{
 };
 use crate::versioning::change::Change;
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
-use crate::versioning::object_version_id::{self, TreeId, object_version_id};
+use crate::versioning::object_version_id::{self, TreeId};
 use crate::versioning::revision_history::original_version;
 use crate::versioning::signature::Signer;
 use crate::versioning::{CommitEnv, Kind, PendingAttest, change, revision_history};
@@ -614,23 +614,21 @@ pub(crate) async fn get_contribution(
     contribution_id: Uuid,
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
-    // TODO(w3f-integrate): version_repo::contribution_audit (the c ⋈ audit row).
-    let (audit, time_committed) =
-        crate::storage::version_repo::contribution_audit(pool, contribution_id, ehr_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
+    let audit = crate::storage::version_repo::contribution_audit(pool, contribution_id, ehr_id)
+        .await?
+        .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
+    let time_committed = audit.time_committed;
 
     // CONTRIBUTION.versions lists the affected VERSION objects (master06
     // §Contributions); a 666 attestation commits no new version but still
     // affects an existing one, so the storage query unions the versions
     // referenced by this contribution's `vo_attestation` rows (dedup).
-    // TODO(w3f-integrate): version_repo::contribution_version_refs
-    // -> Vec<(vo_id, TreeId, creating_system_id, Kind)>.
     let referenced =
         crate::storage::version_repo::contribution_version_refs(pool, contribution_id).await?;
 
     let mut versions = Vec::with_capacity(referenced.len());
-    for (vo_id, tree, creating_system_id, kind) in referenced {
+    for (vo_id, (t, b, v), creating_system_id, kind) in referenced {
+        let tree = object_version_id::TreeId::from_columns(t, b, v);
         if resolve_refs {
             let read = revision_history::read_version(pool, vo_id, tree)
                 .await?
@@ -640,10 +638,10 @@ pub(crate) async fn get_contribution(
             versions.push(json!({
                 "_type": "OBJECT_REF",
                 "namespace": "local",
-                "type": kind.as_str(),
+                "type": kind,
                 "id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id(vo_id, &creating_system_id, tree)
+                    "value": object_version_id::object_version_id(vo_id, &creating_system_id, tree)
                 }
             }));
         }
@@ -676,9 +674,10 @@ pub(crate) async fn list_contributions(
     let (lower, upper) = time_range.unwrap_or((None, None));
     let offset = i64::try_from(page.offset()).unwrap_or(i64::MAX);
     let limit = page.limit().map(|l| i64::try_from(l).unwrap_or(i64::MAX));
-    // TODO(w3f-integrate): version_repo::list_contributions.
-    crate::storage::version_repo::list_contributions(pool, ehr_id, lower, upper, offset, limit)
-        .await
+    Ok(
+        crate::storage::version_repo::list_contributions(pool, ehr_id, lower, upper, offset, limit)
+            .await?,
+    )
 }
 
 /// SM `I_EHR_CONTRIBUTION.contribution_count` — the number of CONTRIBUTIONs in
@@ -690,15 +689,14 @@ pub(crate) async fn count_contributions(
 ) -> Result<i64, ServiceError> {
     ensure_ehr_exists(pool, ehr_id).await?;
     let (lower, upper) = time_range.unwrap_or((None, None));
-    // TODO(w3f-integrate): version_repo::count_contributions.
-    crate::storage::version_repo::count_contributions(pool, ehr_id, lower, upper).await
+    Ok(crate::storage::version_repo::count_contributions(pool, ehr_id, lower, upper).await?)
 }
 
 /// The EHR-existence precheck for the read paths above (SM `ehr_does_not_exist`
 /// → `NotFound`).
 ///
-/// TODO(w3f-integrate): the EHR register owns `ehr_exists`; storage exposes the
-/// read (`version_repo::ehr_exists`) so versioning stays self-contained.
+/// Storage exposes the read (`version_repo::ehr_exists`) so versioning stays
+/// self-contained.
 async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: Uuid) -> Result<(), ServiceError> {
     if crate::storage::version_repo::ehr_exists(pool, ehr_id).await? {
         Ok(())

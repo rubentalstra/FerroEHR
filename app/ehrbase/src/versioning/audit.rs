@@ -84,6 +84,19 @@ pub(crate) struct AuditInput {
     pub(crate) committer: Value,
 }
 
+impl AuditInput {
+    /// The borrowed storage row shape ([`crate::storage::version_repo::AuditRow`])
+    /// this audit persists as.
+    pub(crate) fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {
+        crate::storage::version_repo::AuditRow {
+            system_id: &self.system_id,
+            change_type: &self.change_type,
+            description: self.description.as_deref(),
+            committer: &self.committer,
+        }
+    }
+}
+
 /// Build an `AUDIT_DETAILS` from stored audit columns. `change_type` is the
 /// numeric `audit_change_type` group code stored in the `audit` row; the
 /// emitted `DV_CODED_TEXT` carries the code as `defining_code.code_string`

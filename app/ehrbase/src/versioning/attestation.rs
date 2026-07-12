@@ -37,7 +37,7 @@ pub(crate) struct PendingAttest {
 /// The located attestation target — the value contract from
 /// `crate::storage::version_repo::attestation_target`.
 ///
-/// TODO(w3f-integrate): storage produces this (the `vo_version` lookup).
+/// Mapped from the storage lookup (`version_repo::attestation_target`).
 #[derive(Debug, Clone)]
 pub(crate) struct AttestTarget {
     /// The owning EHR of the target version (compared against the caller's).
@@ -64,16 +64,24 @@ pub(crate) async fn attest(
     attestation: &Value,
     contribution_id: Uuid,
 ) -> Result<Committed, ServiceError> {
-    // TODO(w3f-integrate): version_repo::attestation_target.
-    let target =
-        crate::storage::version_repo::attestation_target(tx, vo_id, expected, kind).await?;
+    let target = crate::storage::version_repo::attestation_target(
+        tx,
+        vo_id,
+        expected.columns(),
+        kind.as_str(),
+    )
+    .await?
+    .map(|row| AttestTarget {
+        ehr_id: row.ehr_id,
+        ordinal: row.sys_version,
+        creating_system_id: row.creating_system_id,
+    });
     let Some(target) = target.filter(|t| t.ehr_id == ehr_id) else {
         return Err(ServiceError::NotFound(format!(
             "{} version {vo_id}::{expected}",
             kind.as_str()
         )));
     };
-    // TODO(w3f-integrate): version_repo::insert_attestation.
     crate::storage::version_repo::insert_attestation(
         tx,
         vo_id,
@@ -122,16 +130,6 @@ pub(crate) async fn insert_accompanying_attestations(
         .await?;
     }
     Ok(())
-}
-
-/// The raw wire `UPDATE_VERSION.attestations` array of a version item (partial
-/// `UPDATE_ATTESTATION`s), empty when absent.
-pub(crate) fn attestations_of(version: &Value) -> Vec<Value> {
-    version
-        .get("attestations")
-        .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default()
 }
 
 /// Complete a wire `UPDATE_ATTESTATION` partial into a full canonical RM
