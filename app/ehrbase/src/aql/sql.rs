@@ -45,6 +45,8 @@ use sea_query::{
 use sea_query_sqlx::{SqlxBinder, SqlxValues};
 use uuid::Uuid;
 
+use openehr_base::prelude::ArchetypeId;
+
 use crate::db::iden::{Audit, Ehr, Node, VoVersion};
 
 use super::error::{AqlError, SqlError};
@@ -634,12 +636,7 @@ impl<'a> Builder<'a> {
             ArchetypeConstraint::NodeCode(c) | ArchetypeConstraint::Archetype(c) => c.clone(),
             ArchetypeConstraint::Param(p) => self.param_str(p)?,
         };
-        // Composite identifiers compare case-insensitively (BASE base_types
-        // master05 §"Composite Identifiers and Case") — an archetype id
-        // differing only by case identifies the same archetype. Storage stays
-        // case-preserving; only the comparison folds (served by the
-        // idx_node_archetype_lower functional index).
-        Ok(Expr::expr(Func::lower(col(node, "archetype"))).eq(Func::lower(Expr::val(value))))
+        Ok(archetype_predicate(node, &value))
     }
 
     fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
@@ -1277,6 +1274,80 @@ fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
     }
 }
 
+/// Build the `archetype_node_id` predicate condition for a node alias.
+///
+/// When `value` parses as a full archetype id (BASE `base_types` master05
+/// §Archetype Identifiers, form `qualified_rm_entity.domain_concept.vN`), the
+/// predicate implements **query subsumption**: BASE `architecture_overview`
+/// master10 §Design-time Relationships — "the data created with any specialised
+/// archetype will always be matched by queries based on the parent archetype" —
+/// and AM master07 §Querying / §Supporting Archetype-based Querying, where the
+/// matching set for a query naming X is X, its older minor/patch variants, its
+/// specialisation parents and their older variants, bounded to one major version
+/// (the interface-reference major boundary is hard). A specialisation child is
+/// identified by extending the parent's `domain_concept` with a `-`-separated
+/// segment (master10 §Design-time Relationships), so a query naming a parent
+/// matches its own node plus every child whose `arch_concept` begins with
+/// `concept-`, scoped to the same `qualified_rm_entity` + major. All parts
+/// compare lowercased (master05 §"Composite Identifiers and Case"), served by
+/// `idx_node_arch_subsume`.
+///
+/// Otherwise (at/id-codes, arbitrary strings, params resolving to non-HRIDs) the
+/// predicate is the case-folded equality on `archetype`, served by the
+/// `idx_node_archetype_lower` functional index — unchanged.
+//
+// PORT NOTE: QUERY master03 §Archetype predicate literally equates the predicate
+// to `archetype_node_id = '<literal>'` string equality; we implement the BASE/AM
+// subsumption + interface-reference semantics instead, because a query naming a
+// parent archetype MUST retrieve data created with its specialisation children
+// (master10 §Design-time Relationships) — plain string equality never would.
+// AOM2-era identifiers carry no lineage semantics in the `-` separator (AM
+// master03 §"Legacy ADL 1.4 Semantics"), so full template-derived lineage
+// matching (specialisation parents obtainable only from the operational template
+// per master07 §Supporting Archetype-based Querying) is deferred to the ADL2
+// phase; the `-`-prefix rule here is exact for the ADL 1.4-form ids this store
+// holds (major-only `.vN`, lineage encoded directly in the concept).
+fn archetype_predicate(node: &str, value: &str) -> Expr {
+    if let Ok(id) = value.parse::<ArchetypeId>()
+        && let Ok(major) = id.major_version().parse::<i32>()
+    {
+        let entity = id.qualified_rm_entity().to_ascii_lowercase();
+        let concept = id.domain_concept().to_ascii_lowercase();
+        let child_prefix = format!("{}-%", like_escape(&concept));
+        let concept_match =
+            col(node, "arch_concept")
+                .eq(Expr::val(concept))
+                .or(col(node, "arch_concept").like(child_prefix));
+        col(node, "arch_entity")
+            .eq(Expr::val(entity))
+            .and(col(node, "arch_major").eq(Expr::val(major)))
+            .and(concept_match)
+    } else {
+        archetype_equality(node, value)
+    }
+}
+
+/// Case-folded equality on the verbatim `archetype` column (the non-HRID
+/// fallback: at/id-codes and arbitrary strings). BASE `base_types` master05
+/// §"Composite Identifiers and Case".
+fn archetype_equality(node: &str, value: &str) -> Expr {
+    Expr::expr(Func::lower(col(node, "archetype"))).eq(Func::lower(Expr::val(value.to_owned())))
+}
+
+/// Escape the SQL `LIKE` metacharacters (`%`, `_`, `\`) in a literal prefix.
+/// `domain_concept` segments are alphanumeric + `-` per the master05 grammar, so
+/// this is defensive; the default `PostgreSQL` `LIKE` escape character `\` matches.
+fn like_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        if matches!(ch, '%' | '_' | '\\') {
+            out.push('\\');
+        }
+        out.push(ch);
+    }
+    out
+}
+
 /// A typed `rm_type IN (...)` condition, or `None` for an unresolved type set.
 fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
     if types.is_empty() {
@@ -1313,6 +1384,17 @@ fn jsonpath(parts: &[String]) -> String {
 #[cfg(test)]
 pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
     aql_like_to_sql(pattern)
+}
+
+/// Render the `archetype_node_id` predicate for `value` against node alias `n`
+/// to inline `PostgreSQL` text (values folded in, not parameterized) so tests can
+/// assert the emitted condition.
+#[cfg(test)]
+pub(super) fn archetype_predicate_sql_for_tests(value: &str) -> String {
+    let cond = archetype_predicate("n", value);
+    let mut q = Query::select();
+    q.expr(Expr::val(1)).and_where(cond);
+    q.to_string(PostgresQueryBuilder)
 }
 
 fn aql_like_to_sql(pattern: &str) -> String {

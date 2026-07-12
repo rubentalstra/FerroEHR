@@ -181,6 +181,32 @@ async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: 
     .unwrap_or_else(|e| panic!("create_composition ({name}, {magnitude}): {e:?}"))
 }
 
+/// Commit a COMPOSITION whose content OBSERVATION carries `archetype` as its
+/// `archetype_node_id` (and matching `archetype_details.archetype_id`), returning
+/// the new `OBJECT_VERSION_ID`. Used to seed parent/specialised archetypes for
+/// the subsumption test.
+async fn create_comp_arch(
+    svc: &EhrbaseService,
+    ehr_id: &str,
+    name: &str,
+    magnitude: f64,
+    archetype: &str,
+) -> String {
+    let mut c = composition(name, magnitude);
+    c["content"][0]["archetype_node_id"] = json!(archetype);
+    c["content"][0]["archetype_details"]["archetype_id"]["value"] = json!(archetype);
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(c, "249", None))
+        .await
+        .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+}
+
+/// Count the OBSERVATIONs in `ehr_id` matched by an archetype predicate.
+async fn count_obs(svc: &EhrbaseService, ehr_id: &str, archetype: &str) -> i64 {
+    let aql = format!("SELECT COUNT(*) FROM EHR e CONTAINS OBSERVATION o[{archetype}]");
+    let r = run_aql(svc, &aql, ehr_scope(ehr_id)).await;
+    rows(&r)[0][0].as_i64().expect("count is an integer")
+}
+
 async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> Value {
     svc.query_execute_adhoc(aql.to_owned(), request)
         .await
@@ -433,6 +459,86 @@ async fn aql_acceptance_set() {
     assert_eq!(
         queried, &expected,
         "whole-object reassembly equals composition_get"
+    );
+}
+
+/// Archetype-specialisation subsumption (W-3b T2): a query naming a **parent**
+/// archetype matches data created with any **specialisation child**, bounded to
+/// the same qualified RM entity and major version.
+///
+/// Spec: BASE architecture_overview master10 §Design-time Relationships — "the
+/// data created with any specialised archetype will always be matched by queries
+/// based on the parent archetype - in other words, a query for 'laboratory'
+/// Observations will correctly retrieve 'glucose' Observations as well"; AM
+/// master07 §Querying / §Supporting Archetype-based Querying (the matching set,
+/// and the hard interface-reference major boundary — a differing major denotes a
+/// different logical archetype).
+#[tokio::test]
+async fn archetype_specialisation_subsumption() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_arch_subsume").await;
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+    // One composition with the PARENT archetype, one with a SPECIALISATION child
+    // (the master10 worked example: laboratory → laboratory-glucose).
+    create_comp_arch(
+        &svc,
+        &ehr_id,
+        "parent",
+        80.0,
+        "openEHR-EHR-OBSERVATION.laboratory.v1",
+    )
+    .await;
+    create_comp_arch(
+        &svc,
+        &ehr_id,
+        "child",
+        90.0,
+        "openEHR-EHR-OBSERVATION.laboratory-glucose.v1",
+    )
+    .await;
+
+    // (a) the parent archetype matches BOTH the parent and the specialised child.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.laboratory.v1").await,
+        2,
+        "a query for the parent 'laboratory' retrieves both laboratory and \
+         laboratory-glucose data (master10 §Design-time Relationships)"
+    );
+
+    // (b) the specialised predicate matches only the specialised one.
+    assert_eq!(
+        count_obs(
+            &svc,
+            &ehr_id,
+            "openEHR-EHR-OBSERVATION.laboratory-glucose.v1"
+        )
+        .await,
+        1,
+        "the specialisation-child predicate matches only the child composition"
+    );
+
+    // (c) a sibling concept does NOT match — the `-` segment boundary is
+    // significant, so neither `laboratory2` (a different concept) nor `labora`
+    // (a bare prefix, not a `-`-delimited parent) subsumes the seeded data.
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.laboratory2.v1").await,
+        0,
+        "'laboratory2' is a distinct concept, not a specialisation of 'laboratory'"
+    );
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.labora.v1").await,
+        0,
+        "'labora' is a bare prefix, not a '-'-delimited specialisation parent"
+    );
+
+    // (d) a different major does NOT match — the interface-reference major
+    // boundary is hard (AM master07 §Referencing/§Querying).
+    assert_eq!(
+        count_obs(&svc, &ehr_id, "openEHR-EHR-OBSERVATION.laboratory.v2").await,
+        0,
+        "major v2 does not match v1 data (interface-reference major boundary)"
     );
 }
 

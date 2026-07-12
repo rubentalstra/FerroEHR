@@ -465,7 +465,11 @@ impl EhrCompositionService for EhrbaseService {
 #[async_trait]
 impl EhrDirectoryService for EhrbaseService {
     async fn has_directory(&self, an_ehr_id: Uuid) -> Result<bool, SmError> {
-        Ok(self.current_vo(an_ehr_id, Kind::Folder).await?.is_some())
+        // `EHR.directory` (= `folders[1]`) — the lowest-rank folder hierarchy
+        // (RM ehr §EHR Class `Directory_in_folders`); an EHR may index several
+        // hierarchies (RM ehr master04 §Folders), so resolve the directory slot
+        // rather than assuming a single FOLDER versioned object.
+        Ok(self.directory_vo_opt(an_ehr_id).await?.is_some())
     }
 
     async fn has_path(&self, an_ehr_id: Uuid, a_path: String) -> Result<bool, SmError> {

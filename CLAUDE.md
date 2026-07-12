@@ -9,7 +9,7 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 - `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) + `openehr-derive` (proc-macro) are the hand-written tooling.
 - `app/*` — the application, **three crates** (ADR-010, packaging redesigned by **ADR-011**): `ehrbase` (the binary + `Platform` impl: storage, service layer, AQL engine, versioning; the `signing` [VERSION.signature, was `ehrbase-signing`] + `system_log` [ATNA, was `ehrbase-audit`] modules), `ehrbase-rest` (ITS-REST protocol adapter + auth + the `access` authz module [was `ehrbase-authz`] + EhrScape), and `ehrbase-sm` (the protocol-free SM native-API catalog). `tools/*` — dev/verification tooling, **not part of the app**: `conformance` (the ECC runner) and `benchmark`. Workspace `members = ["crates/*", "app/*", "tools/*"]`. The service layer follows the openEHR **SM Platform Service Model** (ADR-010/011; SM component map in `docs/architecture.md`, vendored SM spec at `docs/specs/openehr/SM/`).
 - `docs/` — **`docs/blueprint/` (the roadmap + consolidated spec-gap surface in `00-THE-BLUEPRINT.md` §2 — start here)**, plans (active + future phases), ADRs, VERSIONS, architecture, postgres-features, design, enterprise, conformance (generated reports), benchmarks. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
-- `.claude/` — rules, skills, hooks, agents. Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
+- `.claude/` — rules, skills, hooks, agents, **`memory/`** (the persistent agent memory, moved in-repo 2026-07-12 so it is visible and versioned; the harness memory dir under `~/.claude/projects/` is a symlink to it — never break that link). Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
 
 ## Code generation (ADR-004) — READ THIS FIRST
 
@@ -111,6 +111,35 @@ cargo audit && cargo deny check
 # conformance runner (the ADR-008 acceptance instrument) — present and green:
 bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
 ```
+
+### Target-dir & warm-build discipline (owner rules 2026-07-12)
+
+The workspace is huge; a cold build is expensive and `target/` bloat once hit
+~90 GB. These rules keep builds warm and disk bounded:
+
+- **One shared `./target` for all CLI cargo** in a session (build, clippy,
+  nextest). Concurrent subagents that must build in parallel use **fixed lanes**
+  `CARGO_TARGET_DIR=$PWD/target/agent-t1` … `agent-t4` (stable names, reused
+  across sessions = warm) — never a fresh per-task name, never a `/tmp` or
+  scratchpad target dir, and never more than four lanes.
+- **`target-cli` is retired (deleted 2026-07-12) — do not recreate it.** The
+  IDE-vs-CLI contention fix is inverted: RustRover gets its own small dir
+  (Cargo settings → env `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
+  — MUST be absolute: a relative value resolves against cargo's cwd and
+  sprouts a nested `target/` inside every crate the IDE checks), the CLI
+  keeps `./target`. Never `pkill -9 rustc` to "fix" slowness — it corrupts
+  incremental caches.
+- **Iterate scoped, gate wide.** While working: `cargo clippy -p <crate>
+  --all-targets` and `cargo nextest run -p <crate>`. The full `--workspace`
+  gates run once, before commit. `clippy` shares the check cache — running it
+  repeatedly is cheap *if the flag set stays identical*.
+- **Never vary `RUSTFLAGS`, features, or profile between runs** — any change
+  rebuilds the world. Use the exact commands above, no ad-hoc flags.
+- **Disk hygiene:** cargo never garbage-collects `target/debug/deps` (stale
+  `.rlib`s accumulate on every dep bump). When `du -sh target` exceeds ~30 GB,
+  run `cargo clean` once (one cold rebuild, then warm again) and delete stale
+  agent lanes. Check no other session/IDE is mid-build first
+  (`pgrep -fl 'cargo|rustc'`) — parallel sessions share this tree.
 
 Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
 foundation is generated and **compiling**, and the **application phases build as

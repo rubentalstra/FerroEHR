@@ -1959,6 +1959,7 @@ dependencies = [
  "lapin",
  "metrics",
  "metrics-exporter-prometheus",
+ "moka",
  "object_store",
  "openehr-am",
  "openehr-base",
@@ -2006,6 +2007,7 @@ dependencies = [
  "argon2",
  "async-trait",
  "axum",
+ "base64 0.22.1",
  "bytes",
  "cedar-policy",
  "ehrbase-sm",
@@ -4290,6 +4292,7 @@ dependencies = [
  "serde_jcs",
  "serde_json",
  "thiserror 2.0.18",
+ "uuid",
 ]
 
 [[package]]

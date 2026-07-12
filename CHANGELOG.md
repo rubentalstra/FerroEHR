@@ -17,6 +17,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Multiple folder hierarchies per EHR (`EHR.folders`): beyond the
+  `/directory` hierarchy, additional root `FOLDER`s can be committed through
+  the CONTRIBUTION endpoint, each versioned independently. The EHR resource
+  now carries the `folders` reference list (creation order) and `directory`
+  (always its first member); EHR extract import and admin dump/load carry
+  the hierarchies too. The `/directory` endpoints behave exactly as before.
+- `ehr:` URI support: `DV_EHR_URI` values are parsed against the full
+  openEHR `ehr:` grammar (EHR / top-level structure by uid or exact version
+  id / interior item paths, absolute and relative forms), and the server can
+  resolve local `ehr:` references internally (e.g. LINK targets). openEHR
+  path processing now also supports `//` path patterns and 1-based
+  positional predicates in stored-structure navigation (AQL is unchanged —
+  its grammar defines neither).
+
+- `EHR_ACCESS` access-control is now enforced. The spec-mandated,
+  change-controlled `EHR_ACCESS` object of an EHR (RM ehr §EHR_ACCESS Class)
+  is the foundational access-decision layer, evaluated after authentication
+  and before dispatch on every EHR-scoped route; the enterprise RBAC/ABAC
+  layers compose on top of it. Its `settings` use the
+  `ehrbase.access_control.v1` scheme (`docs/design/ehr-access-scheme.md`):
+  a `default_access` (`open`/`restricted`) with a `user:`/`role:` access
+  list gating the EHR, per-Composition privacy-level ceilings on Composition
+  reads, and a gate-keeper that guards changes to the settings themselves
+  (`403 Forbidden` on a denial). Every existing EHR keeps working — the
+  default (no settings) is open.
 - Client-supplied CONTRIBUTION `uid`s are honoured on commit when unused
   (`409 Conflict` when already in use; previously silently ignored).
 - `Prefer: resolve_refs` is honoured on contribution reads: the
@@ -30,6 +55,13 @@ workflow refuses a tag that has no matching section here.
   (`TERMINOLOGY('validate'|'subsumes', …) = true`) and terminology-URI
   `matches` operands (`matches { terminology://… }`) are now evaluated
   through the terminology service (previously typed rejects).
+- AQL archetype predicates now honour archetype-specialisation subsumption:
+  a query naming a parent archetype (e.g.
+  `[openEHR-EHR-OBSERVATION.laboratory.v1]`) also matches data created with
+  any specialisation child (e.g. `…laboratory-glucose.v1`), scoped to the
+  same RM entity and major version (BASE architecture_overview master10
+  §Design-time Relationships; AM master07 §Querying). Non-HRID predicates
+  (at/id-codes) keep exact case-folded matching.
 
 ### Changed
 

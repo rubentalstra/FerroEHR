@@ -436,7 +436,7 @@ async fn insert_nodes(
     }
     let mut qb = QueryBuilder::new(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
-         rm_type, archetype, name, path, data) ",
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data) ",
     );
     qb.push_values(rows, |mut b, row| {
         b.push_bind(vo_id)
@@ -448,11 +448,37 @@ async fn insert_nodes(
             .push_bind(ehr_id)
             .push_bind(&row.rm_type)
             .push_bind(&row.archetype)
+            .push_bind(&row.arch_entity)
+            .push_bind(&row.arch_concept)
+            .push_bind(row.arch_major)
             .push_bind(&row.name)
             .push_bind(&row.path)
             .push_bind(&row.data);
     });
     qb.build().execute(&mut *tx).await?;
+    Ok(())
+}
+
+/// Append a new folder-hierarchy membership row for an EHR (RM ehr master04
+/// §Folders; RM ehr §EHR Class `Directory_in_folders`). `rank` is 1-based,
+/// append-only and never reused: the next rank is `max(rank)+1` for this EHR.
+/// Called once per FOLDER *creation* — the create path (`POST /directory`) and
+/// the CONTRIBUTION creation path both funnel through [`apply_change`]'s
+/// `Change::Create`, so this is the single insertion point. No openEHR spec
+/// governs the `ehr_folder` storage mechanism itself (our own design).
+async fn insert_ehr_folder_rank(
+    tx: &mut PgConnection,
+    ehr_id: Uuid,
+    vo_id: Uuid,
+) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO ehr_folder (ehr_id, rank, vo_id) VALUES \
+         ($1, (SELECT COALESCE(MAX(rank), 0) + 1 FROM ehr_folder WHERE ehr_id = $1), $2)",
+    )
+    .bind(ehr_id)
+    .bind(vo_id)
+    .execute(&mut *tx)
+    .await?;
     Ok(())
 }
 
@@ -693,6 +719,16 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
+            // A newly created FOLDER hierarchy joins `EHR.folders` as a new
+            // member (RM ehr master04 §Folders: "an entirely new Folder hierarchy
+            // may be added, which will be referenced by a new member of the
+            // `EHR._folders_` attribute"). Recorded only on CREATION — updates and
+            // deletes never touch the rank rows.
+            if kind == Kind::Folder
+                && let Some(ehr_id) = ehr_id
+            {
+                insert_ehr_folder_rank(tx, ehr_id, vo_id).await?;
+            }
             insert_accompanying_attestations(
                 tx,
                 vo_id,
@@ -1864,6 +1900,15 @@ async fn commit_import_scoped(
             if trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
                 close_lineage_at(tx, container.vo_id, &(String::new(), 0, 0), base).await?;
             }
+        } else if container.kind == Kind::Folder
+            && let Some(ehr_id) = ehr_id
+        {
+            // A first-received FOLDER container is a new folder hierarchy of the
+            // EHR — it joins `EHR.folders` exactly like a locally created one
+            // (RM ehr master04 §Folders; master06 §Copying Case 2). Appends to
+            // an existing clone (Case 3, the branch above) already have their
+            // membership row.
+            insert_ehr_folder_rank(tx, ehr_id, container.vo_id).await?;
         }
 
         // Per-lineage period chains: within a lineage each version closes its
@@ -2089,6 +2134,11 @@ async fn read_nodes(
             citem_num: row.try_get("citem_num")?,
             rm_type: row.try_get("rm_type")?,
             archetype: row.try_get("archetype")?,
+            // arch_* are query-only promoted columns, unused by `reassemble`
+            // (archetype_node_id is already inside the `data` fragment).
+            arch_entity: None,
+            arch_concept: None,
+            arch_major: None,
             name: row.try_get("name")?,
             path: row.try_get("path")?,
             data: row.try_get("data")?,

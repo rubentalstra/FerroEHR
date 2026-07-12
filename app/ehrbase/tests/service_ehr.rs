@@ -160,6 +160,17 @@ fn composition_with_bad_category() -> Value {
     c
 }
 
+/// A minimal *valid* root FOLDER (a folder-hierarchy root). `validate_folder`
+/// requires `name` and forbids inline content-by-value, which a bare root
+/// satisfies (RM ehr, DIRECTORY package).
+fn folder(name: &str) -> Value {
+    json!({
+        "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": name }
+    })
+}
+
 #[tokio::test]
 async fn ehr_composition_lifecycle_end_to_end() {
     let pg = Pg::start().await;
@@ -1425,4 +1436,310 @@ async fn version_get_at_time_returns_the_original_version() {
         uid(&comp_version).ends_with("::2"),
         "latest composition version is v2"
     );
+}
+
+/// T1 — `EHR.folders` indexes MULTIPLE folder hierarchies (RM ehr master04
+/// §Folders: "at any time, an entirely new Folder hierarchy may be added, which
+/// will be referenced by a new member of the `EHR._folders_` attribute"). A
+/// CONTRIBUTION may commit a *second* FOLDER hierarchy; it joins `EHR.folders`
+/// as a new member. `EHR.directory` is `folders.item(1)` (RM ehr §EHR Class
+/// `Directory_in_folders`) — the lowest-rank LIVE hierarchy. The `/directory`
+/// endpoint binds only that slot; extra hierarchies come via CONTRIBUTION only.
+#[tokio::test]
+async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("multifolder").await);
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+
+    // Before any folder: `EHR.folders`/`EHR.directory` (both 0..1) are absent.
+    let ehr0 = svc.ehr_object(ehr_uuid).await.expect("ehr0");
+    assert!(
+        ehr0.get("folders").is_none(),
+        "no folders before any hierarchy, got {ehr0}"
+    );
+    assert!(
+        ehr0.get("directory").is_none(),
+        "no directory before any hierarchy, got {ehr0}"
+    );
+
+    // Hierarchy 1 (rank 1) via the directory endpoint.
+    let dir1_ovid = svc
+        .create_directory(ehr_uuid, uv(folder("primary"), "249", None))
+        .await
+        .expect("directory_create (hierarchy 1)");
+    let vo1 = dir1_ovid.split("::").next().unwrap().to_owned();
+
+    // Hierarchy 2 (rank 2) via a CONTRIBUTION — a *second* FOLDER creation is now
+    // allowed and appends a new member of `EHR.folders` (RM ehr master04 §Folders).
+    let mut secondary = folder("secondary");
+    secondary["archetype_node_id"] = json!("openEHR-EHR-FOLDER.episodes.v1");
+    let contrib2 = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "data": secondary,
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await
+        .expect("second folder hierarchy via contribution");
+    let f2_ovid_v1 = contrib2.body["versions"][0]["id"]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let vo2 = f2_ovid_v1.split("::").next().unwrap().to_owned();
+    assert!(
+        f2_ovid_v1.ends_with("::1"),
+        "the second hierarchy is a fresh versioned object at v1, got {f2_ovid_v1}"
+    );
+    assert_ne!(
+        vo1, vo2,
+        "the two hierarchies are distinct versioned objects"
+    );
+
+    // EHR read: `folders` lists BOTH refs in rank order; each is an OBJECT_REF to
+    // a VERSIONED_FOLDER, namespace local (RM ehr §EHR Class `Folders_valid`).
+    let ehr = svc.ehr_object(ehr_uuid).await.expect("ehr with folders");
+    let folders = ehr["folders"].as_array().expect("folders array");
+    assert_eq!(folders.len(), 2, "both hierarchies indexed, got {ehr}");
+    for (member, vo) in folders.iter().zip([&vo1, &vo2]) {
+        assert_eq!(member["_type"], "OBJECT_REF");
+        assert_eq!(member["namespace"], "local");
+        assert_eq!(member["type"], "VERSIONED_FOLDER");
+        assert_eq!(member["id"]["_type"], "HIER_OBJECT_ID");
+        assert_eq!(member["id"]["value"], *vo);
+    }
+    // `Directory_in_folders`: `folders /= Void implies folders.item(1) = directory`.
+    assert_eq!(ehr["directory"], folders[0]);
+
+    // The two hierarchies version independently: bump hierarchy 2 → v2 via a
+    // CONTRIBUTION; hierarchy 1 (the directory slot) stays at v1.
+    let mut secondary_v2 = folder("secondary v2");
+    secondary_v2["archetype_node_id"] = json!("openEHR-EHR-FOLDER.episodes.v1");
+    let contrib2b = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "data": secondary_v2,
+                    "preceding_version_uid": f2_ovid_v1,
+                    "commit_audit": { "change_type": change_type("251", "modification") }
+                }]
+            }),
+        )
+        .await
+        .expect("update second hierarchy");
+    assert!(
+        contrib2b.body["versions"][0]["id"]["value"]
+            .as_str()
+            .unwrap()
+            .ends_with("::2"),
+        "hierarchy 2 is now v2"
+    );
+    let dir = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("directory");
+    assert_eq!(dir["name"]["value"], "primary");
+    assert!(
+        uid(&dir).ends_with("::1"),
+        "the directory (hierarchy 1) is still v1, got {}",
+        uid(&dir)
+    );
+
+    // Delete the directory (rank 1) → the directory slot resolves to the next
+    // LIVE hierarchy (rank 2); `/directory` now serves hierarchy 2.
+    svc.delete_directory(ehr_uuid, Some(dir1_ovid.parse().expect("ovid")))
+        .await
+        .expect("delete directory (hierarchy 1)");
+    let dir_after = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("directory after delete");
+    assert_eq!(
+        dir_after["name"]["value"], "secondary v2",
+        "the directory falls through to hierarchy 2"
+    );
+    // EHR read: `folders` now lists only the live hierarchy 2; directory == it.
+    let ehr_after = svc.ehr_object(ehr_uuid).await.expect("ehr after delete");
+    let folders_after = ehr_after["folders"].as_array().expect("folders after");
+    assert_eq!(
+        folders_after.len(),
+        1,
+        "the deleted hierarchy drops out of folders, got {ehr_after}"
+    );
+    assert_eq!(folders_after[0]["id"]["value"], vo2);
+    assert_eq!(ehr_after["directory"], folders_after[0]);
+}
+
+/// T1 — logically deleting a SECONDARY folder hierarchy removes it from
+/// `EHR.folders` (only LIVE hierarchies are members — RM ehr master04 §Folders)
+/// while leaving the directory (rank 1) intact.
+#[tokio::test]
+async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("folderdelete").await);
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+
+    // Two hierarchies, both via CONTRIBUTION.
+    let f1 = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "data": folder("primary"),
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await
+        .expect("hierarchy 1");
+    let vo1 = f1.body["versions"][0]["id"]["value"]
+        .as_str()
+        .unwrap()
+        .split("::")
+        .next()
+        .unwrap()
+        .to_owned();
+    let f2 = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            json!({
+                "versions": [{
+                    "data": folder("secondary"),
+                    "commit_audit": { "change_type": change_type("249", "creation") }
+                }]
+            }),
+        )
+        .await
+        .expect("hierarchy 2");
+    let f2_ovid = f2.body["versions"][0]["id"]["value"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    let ehr = svc
+        .ehr_object(ehr_uuid)
+        .await
+        .expect("ehr with two folders");
+    assert_eq!(ehr["folders"].as_array().unwrap().len(), 2);
+
+    // Logically delete the SECONDARY (rank 2) via CONTRIBUTION (523|deleted|; a
+    // delete member carries no data — RM common master06 §"Logical Deletion").
+    svc.create_ehr_contribution(
+        ehr_uuid,
+        json!({
+            "versions": [{
+                "preceding_version_uid": f2_ovid,
+                "commit_audit": { "change_type": change_type("523", "deleted") }
+            }]
+        }),
+    )
+    .await
+    .expect("delete secondary hierarchy");
+
+    // `folders` now lists only the live hierarchy 1; directory == it (rank 1).
+    let ehr2 = svc.ehr_object(ehr_uuid).await.expect("ehr after delete");
+    let folders = ehr2["folders"].as_array().expect("folders");
+    assert_eq!(
+        folders.len(),
+        1,
+        "the deleted secondary drops out of folders, got {ehr2}"
+    );
+    assert_eq!(folders[0]["id"]["value"], vo1);
+    assert_eq!(ehr2["directory"]["id"]["value"], vo1);
+}
+
+/// T1 — single-hierarchy behaviour is unchanged: `POST /directory` manages the
+/// single directory slot (`folders[1]`, RM ehr §EHR Class `Directory_in_folders`)
+/// and 409s on a second create. Additional hierarchies are added via CONTRIBUTION
+/// only (ITS-REST/SM bind only the directory).
+#[tokio::test]
+async fn directory_endpoint_rejects_a_second_directory_create() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("dirconflict").await);
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+
+    svc.create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await
+        .expect("first directory");
+
+    let second = svc
+        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await;
+    assert!(
+        matches!(
+            second,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
+        "a second directory create must 409, got {second:?}"
+    );
+}
+
+#[tokio::test]
+async fn ehr_uri_resolves_local_structures_and_item_paths() {
+    // `ehr:` URI local resolution (our own extension — no openEHR spec obliges
+    // a server to resolve a DV_EHR_URI; BASE architecture_overview master11
+    // §"EHR URIs"): a top-level structure resolves by versioned-object uid
+    // (latest trunk assumed) or exact OBJECT_VERSION_ID, and an item path
+    // selects interior nodes (master11 §"Item URIs").
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("ehruri").await);
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
+    let comp_ovid = svc
+        .create_composition(ehr_uuid, uv(composition("Uri target"), "249", None))
+        .await
+        .expect("composition_create");
+    let comp_vo = comp_ovid.split("::").next().unwrap();
+
+    // Latest-trunk form: ehr:/{ehr_id}/compositions/{vo_id}.
+    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_vo}")
+        .parse()
+        .expect("latest-form uri");
+    let comp = svc.resolve_ehr_uri(&uri).await.expect("resolve latest");
+    assert_eq!(comp["_type"], "COMPOSITION");
+    assert_eq!(uid(&comp), comp_ovid);
+
+    // Exact-version form: ehr:/{ehr_id}/compositions/{OBJECT_VERSION_ID}.
+    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_ovid}")
+        .parse()
+        .expect("exact-version uri");
+    let same = svc.resolve_ehr_uri(&uri).await.expect("resolve exact");
+    assert_eq!(uid(&same), comp_ovid);
+
+    // Item path into the structure: /name/value is a unique leaf.
+    let uri: openehr_rm::paths::EhrUri =
+        format!("ehr:/{ehr_uuid}/compositions/{comp_vo}/name/value")
+            .parse()
+            .expect("item-path uri");
+    let name = svc.resolve_ehr_uri(&uri).await.expect("resolve item path");
+    assert_eq!(name, json!("Uri target"));
+
+    // The attribute-only `directory` locator resolves EHR.directory once a
+    // hierarchy exists (= folders.item(1), RM ehr §EHR Class
+    // Directory_in_folders).
+    svc.create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await
+        .expect("directory create");
+    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/directory")
+        .parse()
+        .expect("directory uri");
+    let dir = svc.resolve_ehr_uri(&uri).await.expect("resolve directory");
+    assert_eq!(dir["_type"], "FOLDER");
+
+    // A foreign system id is not locally resolvable (master11 §"EHR URIs":
+    // cross-system name resolution is unspecified) → NotFound.
+    let uri: openehr_rm::paths::EhrUri =
+        format!("ehr://foreign.example.org/{ehr_uuid}/compositions/{comp_vo}")
+            .parse()
+            .expect("foreign uri");
+    let err = svc.resolve_ehr_uri(&uri).await.expect_err("foreign system");
+    assert!(err.to_string().contains("foreign system"), "got {err}");
 }

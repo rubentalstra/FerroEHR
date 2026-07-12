@@ -1,5 +1,8 @@
 # Rust
 /target
+# defensive: a *relative* CARGO_TARGET_DIR (e.g. an IDE env misconfig) creates
+# per-crate nested target dirs — never let them pollute the tree
+**/target/
 **/*.rs.bk
 *.pdb
 
@@ -40,4 +43,3 @@ lcov.info
 /docs-dist
 /.latest-src
 _check/
-/target-cli/
