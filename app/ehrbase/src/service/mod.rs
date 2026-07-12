@@ -33,6 +33,7 @@ mod demographic;
 mod directory;
 mod dump_load;
 mod ehr;
+mod ehr_access_cache;
 mod ehr_index;
 mod ehr_uri;
 mod event_subscription;
@@ -105,6 +106,12 @@ pub struct EhrbaseService {
     /// when tenancy is on (the middleware resolves through it); in single-tenant
     /// mode it stays empty and is never consulted.
     tenant_cache: TenantCache,
+    /// Per-EHR cache of the current `EHR_ACCESS` scheme settings, consulted on
+    /// every EHR-scoped request by the access gate ("All access decisions to
+    /// data in the EHR must be made in accordance with the policies and rules in
+    /// this object" — RM `org.openehr.rm.ehr.ehr_access.adoc`). Invalidated on
+    /// every `EHR_ACCESS` commit; see [`EhrAccessAdapter`](ehrbase_sm::EhrAccessAdapter).
+    ehr_access: ehr_access_cache::EhrAccessCache,
 }
 
 impl EhrbaseService {
@@ -121,6 +128,7 @@ impl EhrbaseService {
             external_terminology: None,
             multimedia: None,
             tenant_cache: TenantCache::default(),
+            ehr_access: ehr_access_cache::EhrAccessCache::default(),
         }
     }
 

@@ -338,6 +338,24 @@ CREATE TABLE node (
     ehr_id      uuid,
     rm_type     text NOT NULL,
     archetype   text,
+    -- Archetype-subsumption columns, parsed from a full archetype HRID and
+    -- comparison-normalized (lowercased); NULL on at-code/id-code nodes. Parts
+    -- per BASE base_types master05 §Archetype Identifiers:
+    --   archetype_id   = qualified_rm_entity '.' domain_concept '.v' version_id,
+    --   domain_concept = concept_name { '-' specialisation }.
+    -- arch_entity = qualified_rm_entity (e.g. openehr-ehr-observation),
+    -- arch_concept = the full domain_concept incl. specialisation segments
+    -- (e.g. laboratory-glucose), arch_major = the .v major version.
+    -- These drive query subsumption (BASE architecture_overview master10
+    -- §Design-time Relationships: "data created with any specialised archetype
+    -- will always be matched by queries based on the parent archetype"): a query
+    -- naming a parent matches a specialisation child via a `concept-%` prefix
+    -- scan within the same entity + major, the major boundary being hard (AM
+    -- master07 §Querying). Stored lowercased for case-insensitive comparison
+    -- (master05 §"Composite Identifiers and Case"); archetype/data stay canonical.
+    arch_entity  text,
+    arch_concept text,
+    arch_major   integer,
     name        text,
     -- Materialized path from the root; byte-order under COLLATE "C" equals tree
     -- order (used only for reassembly, not as an AQL predicate).
@@ -367,6 +385,14 @@ CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
 -- the comparison is served by this functional index (storage stays
 -- case-preserving).
 CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
+-- Archetype-subsumption scan (BASE architecture_overview master10 §Design-time
+-- Relationships; AM master07 §Querying): a parent-archetype predicate resolves
+-- to arch_entity = $entity AND arch_major = $major AND (arch_concept = $concept
+-- OR arch_concept LIKE $concept || '-%'). text_pattern_ops on arch_concept makes
+-- the specialisation-child prefix scan (`LIKE 'concept-%'`) index-usable under
+-- the pool's non-C collation.
+CREATE INDEX idx_node_arch_subsume ON node (arch_entity, arch_concept text_pattern_ops, arch_major)
+    WHERE arch_entity IS NOT NULL;
 CREATE INDEX idx_node_ehr ON node (ehr_id);
 -- jsonb_ops (NOT jsonb_path_ops): $.** equality anchors need it (AQL engine
 -- pre-filters — no spec governs indexing).
@@ -394,6 +420,9 @@ COMMENT ON COLUMN node.num IS 'Pre-order number within the versioned object (roo
 COMMENT ON COLUMN node.num_cap IS 'Max num in this node''s subtree: the subtree is num..=num_cap (AQL CONTAINS).';
 COMMENT ON COLUMN node.parent_num IS 'num of the parent structure node (root points at itself/0).';
 COMMENT ON COLUMN node.citem_num IS 'num of the nearest ancestor carrying an archetype id.';
+COMMENT ON COLUMN node.arch_entity IS 'qualified_rm_entity of a full archetype HRID, lowercased for comparison (BASE base_types master05 §Archetype Identifiers); NULL on at/id-code nodes. Drives archetype-subsumption querying (master10 §Design-time Relationships).';
+COMMENT ON COLUMN node.arch_concept IS 'Full domain_concept (incl. specialisation segments, e.g. laboratory-glucose) of a full archetype HRID, lowercased (BASE base_types master05); a parent query matches a child via a `concept-%` prefix (master10 §Design-time Relationships).';
+COMMENT ON COLUMN node.arch_major IS 'Major version (.v major) of a full archetype HRID; the interface-reference major boundary is hard (AM master07 §Querying). NULL on at/id-code nodes.';
 COMMENT ON COLUMN node.path IS 'Materialized path from the root; byte-order under COLLATE "C" equals tree order. Reassembly only — never an AQL predicate.';
 COMMENT ON COLUMN node.data IS 'The node''s canonical openEHR JSON fragment verbatim (ITS-JSON encoding), structure children pruned — storage == API, no synthetic fields.';
 

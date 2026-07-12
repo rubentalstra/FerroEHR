@@ -205,6 +205,10 @@ async fn reassemble_subtree(
             citem_num: None,
             rm_type: r.try_get("rm_type").map_err(ExecError::from)?,
             archetype: r.try_get("archetype").map_err(ExecError::from)?,
+            // arch_* are query-only promoted columns, unused by `reassemble`.
+            arch_entity: None,
+            arch_concept: None,
+            arch_major: None,
             name: r.try_get("name").map_err(ExecError::from)?,
             path: rebased,
             data: r.try_get("data").map_err(ExecError::from)?,

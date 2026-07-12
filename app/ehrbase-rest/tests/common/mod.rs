@@ -33,13 +33,14 @@ use uuid::Uuid;
 use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
 
+use ehrbase_sm::EhrAccessSettings;
 use ehrbase_sm::services::{
     AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
-    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrCompositionService,
-    EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService,
-    EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter, MultimediaAdapter,
-    PartyRelationshipService, QueryService, SystemLog, TenantAdapter, TerminologyService,
-    VersionMetaAdapter, WebTemplateService,
+    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrAccessAdapter,
+    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrIndexService,
+    EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter,
+    MultimediaAdapter, PartyRelationshipService, QueryService, SystemLog, TenantAdapter,
+    TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
 use ehrbase_sm::types::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
@@ -144,6 +145,9 @@ type TenantGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type TenantUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
 type TenantDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
 type TenantResolve = Arc<dyn Fn(String) -> Result<Option<TenantContext>, SmError> + Send + Sync>;
+// EHR_ACCESS scheme settings (the spec-grounded access gate).
+type EhrAccessSettingsHook =
+    Arc<dyn Fn(Uuid) -> Result<Option<EhrAccessSettings>, SmError> + Send + Sync>;
 
 /// The per-test override closures. Every field defaults to `None` (→ the
 /// `501`/trait-default behaviour); a test populates only what it exercises.
@@ -217,6 +221,9 @@ pub struct Hooks {
     pub fhir_mapping_delete: Option<FhirMappingDelete>,
     pub fhir_ingest: Option<FhirIngest>,
     pub fhir_search: Option<FhirSearch>,
+    // EHR_ACCESS scheme settings (the spec-grounded access gate). Default `None`
+    // → `Ok(None)` = default-open (existing tests unaffected).
+    pub ehr_access_settings: Option<EhrAccessSettingsHook>,
     // Tenant admin extension.
     pub tenant_list: Option<TenantList>,
     pub tenant_create: Option<TenantCreate>,
@@ -795,6 +802,20 @@ impl VersionMetaAdapter for Mock {
     }
     async fn directory_latest_meta(&self, _e: Uuid) -> Result<Option<ResourceMeta>, SmError> {
         Ok(None)
+    }
+}
+
+#[async_trait]
+impl EhrAccessAdapter for Mock {
+    async fn current_ehr_access_settings(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<EhrAccessSettings>, SmError> {
+        match &self.h.ehr_access_settings {
+            Some(f) => f(ehr_id),
+            // No hook → default-open (the spec's "sensible defaults").
+            None => Ok(None),
+        }
     }
 }
 

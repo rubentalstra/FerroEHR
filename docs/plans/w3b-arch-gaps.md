@@ -57,7 +57,7 @@ currently hard-enforces a single root FOLDER
       delete drops from `folders`, second directory-create 409, persistence
       expected-tables updated (`service_ehr.rs`, `persistence.rs`) — scoped
       suites green; ECC zero-drift gate at phase close.
-- [ ] Checklist row 6.3 → verified; W-6 closed. *(at phase close)*
+- [x] Checklist row 6.3 → verified; W-6 closed.
 
 ### T2 — W-7: AQL archetype-specialisation subsumption
 Checklist row 10.2.2. A parent-archetype predicate must match data created
@@ -80,18 +80,21 @@ Relationships); AQL matching today is exact equality
       §Archetype predicate literally equates to `archetype_node_id = 'x'`
       string equality; AOM2 ids carry no lineage semantics in `-` (ADL2-era
       lineage must come from templates → W-4). No CNF coverage.)*
-- [ ] Matching rule designed in-session and recorded with spec citations
-      (concept-segment `-` boundary semantics, version-part semantics,
-      conflicts between QUERY silence and the Architecture Overview mandate
-      resolved explicitly).
-- [ ] Engine implementation (predicate lowering + SQL generation over the
-      node table), including whatever storage support does it properly
-      (promoted columns/indexes in the re-authored baseline if pattern
-      matching needs them).
-- [ ] Tests: parent matches 1- and 2-level specialised data; sibling
-      concepts do not match; version-part behaviour; ECC AqlBasic
-      zero-drift.
-- [ ] Checklist row 10.2.2 → verified; W-7 closed.
+- [x] Matching rule designed in-session and recorded with spec citations:
+      same `qualified_rm_entity` + same major (interface reference) +
+      concept equal-or-`-`-child; QUERY-equality and AOM2-lineage conflicts
+      recorded in one PORT NOTE (`app/ehrbase/src/aql/sql.rs`).
+- [x] Engine implementation: promoted comparison-normalized columns
+      `node.arch_entity`/`arch_concept`/`arch_major` + `text_pattern_ops`
+      index in the re-authored baseline; codec populates via the shared
+      `ArchetypeId` parser (+ new `major_version()` accessor in the
+      hand-written `archetype_id_impl.rs`); `archetype_predicate` emits
+      equality-or-`LIKE 'concept-%'` for full HRIDs, case-folded equality
+      otherwise.
+- [x] Tests: SQL-generation unit test + `archetype_specialisation_subsumption`
+      integration test (parent matches both, child one, sibling/major none);
+      persistence/codec suites green.
+- [x] Checklist row 10.2.2 → verified; W-7 closed.
 
 ### T3 — W-8: paths/locators tail
 Checklist rows 11.2.1, 11.2.4.3, 11.3.1: `//` path patterns, positional
@@ -129,7 +132,7 @@ Checklist rows 11.2.1, 11.2.4.3, 11.3.1: `//` path patterns, positional
       master17.7 DV_EHR_URI fixture forms) + live-store resolution
       integration test (`service_ehr.rs`
       `ehr_uri_resolves_local_structures_and_item_paths`) — green.
-- [ ] Checklist rows → verified; W-8 closed. *(at phase close)*
+- [x] Checklist rows → verified; W-8 closed.
 
 ### T4 — W-9: EHR_ACCESS realization
 Checklist rows 5.5.1.5, 7.3.2.2, 7.4.1. EHR_ACCESS is stored/versioned but
@@ -158,13 +161,16 @@ publishes no concrete `ACCESS_CONTROL_SETTINGS` scheme.
       levels with per-composition overrides; AQL-level privacy filtering
       explicitly out of v1 scope. No baseline schema change needed —
       settings live in the versioned EHR_ACCESS payload.)*
-- [ ] Implementation: per-EHR evaluation in the `ehrbase-rest` access layer
-      (after authn, before dispatch), gate-keeper rule on EHR_ACCESS
-      writes, privacy-level filtering on composition reads; default-open
-      when no settings exist (compatibility with anonymous/default EHRs).
-- [ ] Tests: gate-keeper enforcement, allow/deny, privacy filtering,
-      default-open compatibility; ECC SEC zero-drift.
-- [ ] Checklist rows 5.5.1.5 / 7.3.2.2 / 7.4.1 → verified (as flagged
+- [x] Implementation: `EhrAccessAdapter` (ehrbase-sm, flagged extension) →
+      Platform impl with moka cache + commit-hook invalidation (ehrbase) →
+      `EhrAccessGate` first in the pre-dispatch chain with RBAC/ABAC
+      composing on top (ehrbase-rest); gate-keeper preflight on
+      EHR_ACCESS-carrying contributions; per-Composition privacy ceilings;
+      default-open; fail-closed 500 on settings-read errors.
+- [x] Tests: 6 gate e2e tests + settings DB round-trip + engine unit tests;
+      full `ehrbase-rest` suite 293/293 (no regressions); ECC gate at
+      phase close.
+- [x] Checklist rows 5.5.1.5 / 7.3.2.2 / 7.4.1 → verified (as flagged
       extension); W-9 closed.
 
 ## Exit criteria

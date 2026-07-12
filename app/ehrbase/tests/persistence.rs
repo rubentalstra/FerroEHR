@@ -297,6 +297,10 @@ async fn node_codec_round_trips_through_the_database() {
             citem_num: r.get("citem_num"),
             rm_type: r.get("rm_type"),
             archetype: r.get("archetype"),
+            // arch_* are query-only promoted columns, unused by `reassemble`.
+            arch_entity: None,
+            arch_concept: None,
+            arch_major: None,
             name: r.get("name"),
             path: r.get("path"),
             data: r.get("data"),
