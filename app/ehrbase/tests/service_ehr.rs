@@ -22,7 +22,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, DefinitionAdapter, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, SmError,

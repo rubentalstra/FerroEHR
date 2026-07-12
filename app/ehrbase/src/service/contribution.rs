@@ -14,7 +14,7 @@
 
 use ehrbase_rest::Page;
 use ehrbase_sm::SmError;
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;

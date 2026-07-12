@@ -14,7 +14,7 @@
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrService, EhrStatusService,
     Page, SmError,

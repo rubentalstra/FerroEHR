@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use ehrbase_sm::SmError;
 use ehrbase_sm::services::EhrIndexService;
-use ehrbase_sm::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
+use ehrbase_sm::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 
 use crate::service::EhrbaseService;
 

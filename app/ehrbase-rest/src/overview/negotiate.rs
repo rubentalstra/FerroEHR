@@ -31,7 +31,7 @@ use serde::de::DeserializeOwned;
 use openehr_its::rest::runtime::ApiError;
 use openehr_its::xml::{FromXml, ToXml};
 
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 
 /// A negotiated wire format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -198,7 +198,7 @@ impl EhrbaseService {
 }
 
 /// The `OBJECT_VERSION_ID` of a committed COMPOSITION response.
-fn version_uid(resp: &ehrbase_sm::types::ServiceResponse) -> Result<String, SmError> {
+fn version_uid(resp: &ehrbase_sm::ServiceResponse) -> Result<String, SmError> {
     resp.meta
         .as_ref()
         .map(|m| m.uid.clone())

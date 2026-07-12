@@ -21,7 +21,7 @@ use openehr_its::rest::runtime::ApiError;
 use super::{BoxResponse, RequestParts};
 use crate::error::RestError;
 use ehrbase_sm::Platform;
-use ehrbase_sm::types::AqlQueryRequest;
+use ehrbase_sm::AqlQueryRequest;
 
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -63,30 +63,30 @@ async fn run<S: Platform>(
         "query_execute_adhoc_query" => {
             let p = params::build::<QueryExecuteAdhocQueryParams>(&parts.path, q, h)?;
             let request = scope(AqlQueryRequest {
-                ehr_id: p.ehr_id,
+                ehr_ids: p.ehr_id.into_iter().collect(),
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
                 ..Default::default()
             });
-            state.backend().query_execute_adhoc(p.q, request).await?
+            state.backend().execute_ad_hoc_query(p.q, request).await?
         }
         "query_execute_adhoc_query_body" => {
             let body: AdhocQueryExecute = decode_body(h, &parts.body)?;
             let request = scope(AqlQueryRequest {
-                ehr_id: ehr_id_from_request(q, h),
+                ehr_ids: ehr_id_from_request(q, h).into_iter().collect(),
                 offset: body.offset,
                 fetch: body.fetch,
                 parameters: body.query_parameters.unwrap_or_default(),
                 ..Default::default()
             });
-            state.backend().query_execute_adhoc(body.q, request).await?
+            state.backend().execute_ad_hoc_query(body.q, request).await?
         }
         // ── stored (latest) ─────────────────────────────────────────────────────
         "query_execute_stored_query" => {
             let p = params::build::<QueryExecuteStoredQueryParams>(&parts.path, q, h)?;
             let request = scope(AqlQueryRequest {
-                ehr_id: p.ehr_id,
+                ehr_ids: p.ehr_id.into_iter().collect(),
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
@@ -94,7 +94,7 @@ async fn run<S: Platform>(
             });
             state
                 .backend()
-                .query_execute_stored(p.qualified_query_name, None, request)
+                .execute_stored_query(p.qualified_query_name, None, request)
                 .await?
         }
         "query_execute_stored_query_body" => {
@@ -102,14 +102,14 @@ async fn run<S: Platform>(
             let request = scope(stored_body_request(q, h, &parts.body)?);
             state
                 .backend()
-                .query_execute_stored(name, None, request)
+                .execute_stored_query(name, None, request)
                 .await?
         }
         // ── stored (explicit version) ─────────────────────────────────────────
         "query_execute_stored_query_version" => {
             let p = params::build::<QueryExecuteStoredQueryVersionParams>(&parts.path, q, h)?;
             let request = scope(AqlQueryRequest {
-                ehr_id: p.ehr_id,
+                ehr_ids: p.ehr_id.into_iter().collect(),
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters: p.query_parameters.unwrap_or_default(),
@@ -117,7 +117,7 @@ async fn run<S: Platform>(
             });
             state
                 .backend()
-                .query_execute_stored(p.qualified_query_name, Some(p.version), request)
+                .execute_stored_query(p.qualified_query_name, Some(p.version), request)
                 .await?
         }
         "query_execute_stored_query_version_body" => {
@@ -126,7 +126,7 @@ async fn run<S: Platform>(
             let request = scope(stored_body_request(q, h, &parts.body)?);
             state
                 .backend()
-                .query_execute_stored(name, Some(version), request)
+                .execute_stored_query(name, Some(version), request)
                 .await?
         }
         other => {
@@ -153,7 +153,7 @@ fn stored_body_request(
 ) -> Result<AqlQueryRequest, RestError> {
     let parsed: StoredQueryBody = decode_body(h, body)?;
     Ok(AqlQueryRequest {
-        ehr_id: ehr_id_from_request(q, h),
+        ehr_ids: ehr_id_from_request(q, h).into_iter().collect(),
         offset: Some(parsed.offset),
         fetch: Some(parsed.fetch),
         parameters: parsed.query_parameters,

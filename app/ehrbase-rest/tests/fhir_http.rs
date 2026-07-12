@@ -26,7 +26,7 @@ use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{
     AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TerminologyConfig,
 };
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 use ehrbase_sm::{CallStatusType, SmError};
 
 mod common;

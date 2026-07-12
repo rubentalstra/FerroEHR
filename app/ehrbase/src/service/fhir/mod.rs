@@ -25,8 +25,8 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::error::CallStatusType;
-use ehrbase_sm::types::{AqlQueryRequest, ServiceResponse, SubjectRef};
+use ehrbase_sm::CallStatusType;
+use ehrbase_sm::{AqlQueryRequest, ServiceResponse, SubjectRef};
 use ehrbase_sm::{EhrService, FhirConnectorAdapter, SmError};
 
 use self::mapping::FhirMappingDefinition;

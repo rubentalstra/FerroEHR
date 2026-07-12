@@ -379,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn query_execute_adhoc() {
+    fn execute_ad_hoc_query() {
         // Ad-hoc query: search criteria = UNKNOWN.
         let e = event(
             EventActionCode::Execute,

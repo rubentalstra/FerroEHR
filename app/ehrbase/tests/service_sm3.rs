@@ -21,7 +21,7 @@ use uuid::Uuid;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::services::{DemographicService, EhrIndexService, PartyRelationshipService};
-use ehrbase_sm::types::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
+use ehrbase_sm::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
 use ehrbase_sm::{CallStatusType, SmError};
 
 struct Pg {

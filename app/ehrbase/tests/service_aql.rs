@@ -39,7 +39,7 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, EhrStatusService,
     QueryService, SmError,
@@ -208,7 +208,7 @@ async fn count_obs(svc: &EhrbaseService, ehr_id: &str, archetype: &str) -> i64 {
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> Value {
-    svc.query_execute_adhoc(aql.to_owned(), request)
+    svc.execute_ad_hoc_query(aql.to_owned(), request)
         .await
         .unwrap_or_else(|e| panic!("query {aql:?}: {e:?}"))
         .result_set
@@ -384,7 +384,7 @@ async fn aql_acceptance_set() {
     let mut req = ehr_scope(&ehr_id);
     req.fetch = Some(2);
     let err = svc
-        .query_execute_adhoc(aql, req)
+        .execute_ad_hoc_query(aql, req)
         .await
         .expect_err("fetch + AQL LIMIT must conflict");
     // PORT NOTE: the paging conflict is now the SM

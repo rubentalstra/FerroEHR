@@ -29,8 +29,8 @@ use openehr_rm::prelude::{Agent, Group, Organisation, PartyRelationship, Person,
 
 use super::{BoxResponse, RequestParts};
 use crate::error::{RestError, sm_api_error};
-use ehrbase_sm::types::PartyKind;
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::PartyKind;
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 use ehrbase_sm::{CallStatusType, Platform, SmError};
 
 use crate::state::AppState;

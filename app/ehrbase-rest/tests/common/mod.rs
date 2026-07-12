@@ -42,7 +42,7 @@ use ehrbase_sm::services::{
     MultimediaAdapter, PartyRelationshipService, QueryService, SystemLog, TenantAdapter,
     TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
-use ehrbase_sm::types::{
+use ehrbase_sm::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
 use ehrbase_sm::{
@@ -612,7 +612,7 @@ impl EhrContributionService for Mock {
         &self,
         _e: Uuid,
         _tr: ehrbase_sm::TimeRange,
-        _page: ehrbase_sm::types::Page,
+        _page: ehrbase_sm::Page,
     ) -> Result<Vec<String>, SmError> {
         Err(not_impl())
     }
