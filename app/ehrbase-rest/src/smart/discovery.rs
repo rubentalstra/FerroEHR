@@ -1,0 +1,398 @@
+//! The SMART service-discovery document
+//! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`).
+//!
+//! Serves `GET /.well-known/smart-configuration` (relative to the SMART
+//! *Platform* base URL, master04 §Service Discovery ¶3-4), advertising the
+//! external Authorization-Server endpoints, the `services` map (with the
+//! required `org.openehr.rest`), the SMART `capabilities`, and the enforced
+//! scope set. The document is **assembled from [`super::config::SmartConfig`]**
+//! — the CDR advertises only what it (or its configured AS) actually offers; it
+//! implements none of the OAuth2 endpoints (`smart.md` §1/§6 PORT NOTEs).
+//!
+//! The response is `application/json` (master04 §Service Discovery, R-02) and is
+//! served **pre-auth**, on the same seam as the status router
+//! (`crate::router` merges `overview::status::router` outside the auth layer;
+//! `crate::overview::status`).
+
+use std::collections::BTreeMap;
+
+use axum::Router;
+use axum::response::Json;
+use axum::routing::get;
+use serde::Serialize;
+
+use crate::state::AppState;
+use ehrbase_sm::Platform;
+
+use super::config::SmartConfig;
+
+/// The `/.well-known/smart-configuration` document (master04 §Authentication
+/// Endpoints + §Services + §Capabilities). Unset optional endpoints are omitted.
+#[derive(Debug, Clone, Serialize)]
+pub struct SmartConfiguration {
+    /// The token/OIDC issuer (master04 §Authentication Endpoints).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issuer: Option<String>,
+    /// The JWKS document URL.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jwks_uri: Option<String>,
+    /// The OAuth2 authorization endpoint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authorization_endpoint: Option<String>,
+    /// The OAuth2 token endpoint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token_endpoint: Option<String>,
+    /// Supported token-endpoint client-authentication methods.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub token_endpoint_auth_methods_supported: Vec<String>,
+    /// Supported OAuth2 grant types (master06 §Deprecated Flows: never
+    /// `implicit`/password — `SmartConfig::validate` guards this).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub grant_types_supported: Vec<String>,
+    /// The dynamic-client registration endpoint (master03: out-of-band by
+    /// recommendation; advertised only when the AS offers it).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub registration_endpoint: Option<String>,
+    /// The scopes the Platform advertises as supported.
+    pub scopes_supported: Vec<String>,
+    /// Supported OAuth2 response types.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub response_types_supported: Vec<String>,
+    /// The user management endpoint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub management_endpoint: Option<String>,
+    /// The token introspection endpoint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub introspection_endpoint: Option<String>,
+    /// The token revocation endpoint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub revocation_endpoint: Option<String>,
+    /// PKCE code-challenge methods.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub code_challenge_methods_supported: Vec<String>,
+    /// The advertised SMART capabilities (master04 §Capabilities).
+    pub capabilities: Vec<String>,
+    /// The available service interfaces (master04 §Services). `org.openehr.rest`
+    /// is always present (required); `org.fhir.rest` only when a FHIR base URL is
+    /// configured (recommended, not required).
+    pub services: BTreeMap<String, Service>,
+}
+
+/// One `services` entry (master04 §Services).
+#[derive(Debug, Clone, Serialize)]
+pub struct Service {
+    /// Absolute URL to the root of the API (required).
+    #[serde(rename = "baseUrl")]
+    pub base_url: String,
+    /// Human-readable description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Service API version.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    /// Link to service documentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub documentation: Option<String>,
+    /// Link to the OpenAPI definition.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub openapi: Option<String>,
+}
+
+/// Build the discovery document from configuration.
+///
+/// - `openehr_base_url` is the CDR's openEHR REST base (the one value the CDR
+///   authoritatively owns — `services.org.openehr.rest.baseUrl`, R-04).
+/// - `fhir_base_url` populates `org.fhir.rest` when present (recommended).
+/// - `issuer_fallback` is used for `issuer` when `endpoints.issuer` is unset
+///   (the configured OIDC bearer issuer, `auth.oidc.issuer`).
+#[must_use]
+pub fn build_document(
+    cfg: &SmartConfig,
+    openehr_base_url: &str,
+    fhir_base_url: Option<&str>,
+    issuer_fallback: Option<&str>,
+) -> SmartConfiguration {
+    let e = &cfg.endpoints;
+
+    let mut services = BTreeMap::new();
+    // R-04: `org.openehr.rest` is required.
+    services.insert(
+        "org.openehr.rest".to_owned(),
+        Service {
+            base_url: openehr_base_url.to_owned(),
+            description: Some("The openEHR REST API baseUrl".to_owned()),
+            version: None,
+            documentation: None,
+            openapi: None,
+        },
+    );
+    // R-04: `org.fhir.rest` is recommended — advertise only when FHIR is enabled.
+    if let Some(fhir) = fhir_base_url {
+        services.insert(
+            "org.fhir.rest".to_owned(),
+            Service {
+                base_url: fhir.to_owned(),
+                description: Some("The FHIR APIs baseUrl".to_owned()),
+                version: None,
+                documentation: None,
+                openapi: None,
+            },
+        );
+    }
+
+    SmartConfiguration {
+        issuer: e
+            .issuer
+            .clone()
+            .or_else(|| issuer_fallback.map(str::to_owned)),
+        jwks_uri: e.jwks_uri.clone(),
+        authorization_endpoint: e.authorization_endpoint.clone(),
+        token_endpoint: e.token_endpoint.clone(),
+        token_endpoint_auth_methods_supported: e.token_endpoint_auth_methods_supported.clone(),
+        grant_types_supported: e.grant_types_supported.clone(),
+        registration_endpoint: e.registration_endpoint.clone(),
+        scopes_supported: scopes_supported(cfg),
+        response_types_supported: e.response_types_supported.clone(),
+        management_endpoint: e.management_endpoint.clone(),
+        introspection_endpoint: e.introspection_endpoint.clone(),
+        revocation_endpoint: e.revocation_endpoint.clone(),
+        code_challenge_methods_supported: e.code_challenge_methods_supported.clone(),
+        capabilities: capabilities(cfg),
+        services,
+    }
+}
+
+/// The advertised capabilities — **only** those the CDR actually enforces
+/// (master04 §Capabilities, R-05). `context-openehr-ehr` + `openehr-permission-v1`
+/// are always present (the CDR binds the `ehrId` launch context and enforces the
+/// fine-grained resource scopes); the two experimental capabilities are gated on
+/// their sub-flags.
+fn capabilities(cfg: &SmartConfig) -> Vec<String> {
+    let mut caps = vec![
+        "context-openehr-ehr".to_owned(),
+        "openehr-permission-v1".to_owned(),
+    ];
+    if cfg.episode.enabled {
+        caps.push("context-openehr-episode".to_owned());
+    }
+    if cfg.launch_base64_json {
+        caps.push("launch-base64-json".to_owned());
+    }
+    caps
+}
+
+/// The advertised `scopes_supported` — the operator override when set, else a
+/// default reflecting the scopes the CDR enforces (master08 grammar + the
+/// launch/identity scopes).
+fn scopes_supported(cfg: &SmartConfig) -> Vec<String> {
+    if !cfg.endpoints.scopes_supported.is_empty() {
+        return cfg.endpoints.scopes_supported.clone();
+    }
+    let mut scopes = vec![
+        "openid".to_owned(),
+        "profile".to_owned(),
+        "offline_access".to_owned(),
+        "launch".to_owned(),
+        "launch/patient".to_owned(),
+        "patient/composition-*.cruds".to_owned(),
+        "patient/aql-*.rs".to_owned(),
+        "user/composition-*.cruds".to_owned(),
+        "user/template-*.cruds".to_owned(),
+        "user/aql-*.cruds".to_owned(),
+        "system/composition-*.cruds".to_owned(),
+        "system/aql-*.cruds".to_owned(),
+    ];
+    if cfg.episode.enabled {
+        scopes.push("launch/episode".to_owned());
+    }
+    scopes
+}
+
+/// The `.well-known/smart-configuration` path, relative to the SMART Platform
+/// base (master04 §Service Discovery ¶3-4). `platform_base_url` overrides the
+/// default (`rest_root`, e.g. `/ehrbase/rest`); a base with a path segment is
+/// honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`).
+#[must_use]
+pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
+    let base = cfg
+        .platform_base_url
+        .as_deref()
+        .unwrap_or(rest_root)
+        .trim_end_matches('/');
+    format!("{base}/.well-known/smart-configuration")
+}
+
+/// Build the pre-auth discovery router. Returns an **empty** router when SMART is
+/// disabled, so a merge is a no-op and the path is absent (a `404`) — matching
+/// the extension-group `404`-when-off convention (`crate::config`). When enabled,
+/// serves the prebuilt document (`application/json`, R-02) at
+/// [`discovery_path`].
+///
+/// Mount it in `crate::router` beside `overview::status::router` — **outside**
+/// the auth layer (the document is unauthenticated, master04).
+#[must_use]
+pub fn router<S: Platform>(
+    cfg: &SmartConfig,
+    openehr_base_url: &str,
+    fhir_base_url: Option<&str>,
+    issuer_fallback: Option<&str>,
+    rest_root: &str,
+) -> Router<AppState<S>> {
+    // TODO(w3e-integrate): call this from `crate::router` (near router.rs:83-85,
+    // `.merge(status::router(&rest_root))`), passing:
+    //   - `openehr_base_url = &cfg.base_path` (the CDR's openEHR REST base),
+    //   - `fhir_base_url = cfg.fhir.enabled.then(|| <fhir base>)`,
+    //   - `issuer_fallback = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str())`,
+    //   - `rest_root = &rest_root` (the `/ehrbase/rest` root already computed there).
+    // Merge OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document).
+    if !cfg.enabled {
+        return Router::new();
+    }
+    let doc = build_document(cfg, openehr_base_url, fhir_base_url, issuer_fallback);
+    let path = discovery_path(cfg, rest_root);
+    // `axum::Json` sets `Content-Type: application/json` (R-02). The document is
+    // static per config, so it is built once and cloned per request (the handler
+    // must stay `Fn` — clone into the future, do not move the captured value out).
+    Router::new().route(
+        &path,
+        get(move || {
+            let doc = doc.clone();
+            async move { Json(doc) }
+        }),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn enabled_cfg() -> SmartConfig {
+        let mut c = SmartConfig::default();
+        c.enabled = true;
+        c.endpoints.authorization_endpoint = Some("https://as.example/authorize".to_owned());
+        c.endpoints.token_endpoint = Some("https://as.example/token".to_owned());
+        c.endpoints.grant_types_supported = vec![
+            "authorization_code".to_owned(),
+            "client_credentials".to_owned(),
+        ];
+        c.endpoints.code_challenge_methods_supported = vec!["S256".to_owned()];
+        c
+    }
+
+    #[test]
+    fn document_has_required_keys_and_openehr_service() {
+        let doc = build_document(
+            &enabled_cfg(),
+            "/ehrbase/rest/openehr/v1",
+            None,
+            Some("https://as.example"),
+        );
+        // R-04: org.openehr.rest is required and carries the CDR base.
+        let openehr = doc
+            .services
+            .get("org.openehr.rest")
+            .expect("openehr service");
+        assert_eq!(openehr.base_url, "/ehrbase/rest/openehr/v1");
+        // fhir.rest omitted when no FHIR base configured.
+        assert!(!doc.services.contains_key("org.fhir.rest"));
+        // issuer falls back to the OIDC issuer.
+        assert_eq!(doc.issuer.as_deref(), Some("https://as.example"));
+        // R-05 baseline capabilities.
+        assert!(doc.capabilities.contains(&"context-openehr-ehr".to_owned()));
+        assert!(
+            doc.capabilities
+                .contains(&"openehr-permission-v1".to_owned())
+        );
+        // experimental caps are off by default.
+        assert!(
+            !doc.capabilities
+                .contains(&"context-openehr-episode".to_owned())
+        );
+        assert!(!doc.capabilities.contains(&"launch-base64-json".to_owned()));
+        assert!(!doc.scopes_supported.is_empty());
+    }
+
+    #[test]
+    fn fhir_service_advertised_when_configured() {
+        let doc = build_document(
+            &enabled_cfg(),
+            "/ehrbase/rest/openehr/v1",
+            Some("/fhir/r4"),
+            None,
+        );
+        let fhir = doc.services.get("org.fhir.rest").expect("fhir service");
+        assert_eq!(fhir.base_url, "/fhir/r4");
+    }
+
+    #[test]
+    fn experimental_capabilities_gated_on_flags() {
+        let mut c = enabled_cfg();
+        c.episode.enabled = true;
+        c.launch_base64_json = true;
+        let doc = build_document(&c, "/openehr", None, None);
+        assert!(
+            doc.capabilities
+                .contains(&"context-openehr-episode".to_owned())
+        );
+        assert!(doc.capabilities.contains(&"launch-base64-json".to_owned()));
+        // The episode launch scope is advertised too.
+        assert!(doc.scopes_supported.contains(&"launch/episode".to_owned()));
+    }
+
+    #[test]
+    fn issuer_override_wins_over_fallback() {
+        let mut c = enabled_cfg();
+        c.endpoints.issuer = Some("https://issuer.override".to_owned());
+        let doc = build_document(&c, "/openehr", None, Some("https://fallback"));
+        assert_eq!(doc.issuer.as_deref(), Some("https://issuer.override"));
+    }
+
+    #[test]
+    fn operator_scope_override_used_verbatim() {
+        let mut c = enabled_cfg();
+        c.endpoints.scopes_supported = vec!["openid".to_owned(), "patient/*.rs".to_owned()];
+        let doc = build_document(&c, "/openehr", None, None);
+        assert_eq!(doc.scopes_supported, vec!["openid", "patient/*.rs"]);
+    }
+
+    #[test]
+    fn discovery_path_defaults_to_rest_root() {
+        let c = SmartConfig::default();
+        assert_eq!(
+            discovery_path(&c, "/ehrbase/rest"),
+            "/ehrbase/rest/.well-known/smart-configuration"
+        );
+    }
+
+    #[test]
+    fn discovery_path_honours_platform_base() {
+        let mut c = SmartConfig::default();
+        c.platform_base_url = Some("/gateway/v1".to_owned());
+        assert_eq!(
+            discovery_path(&c, "/ehrbase/rest"),
+            "/gateway/v1/.well-known/smart-configuration"
+        );
+        // Trailing slash normalised.
+        c.platform_base_url = Some("/gateway/v1/".to_owned());
+        assert_eq!(
+            discovery_path(&c, "/ehrbase/rest"),
+            "/gateway/v1/.well-known/smart-configuration"
+        );
+    }
+
+    #[test]
+    fn document_serialises_with_baseurl_key() {
+        let doc = build_document(&enabled_cfg(), "/openehr", None, None);
+        let json = serde_json::to_value(&doc).expect("serialise");
+        // master04 uses the camelCase `baseUrl` key.
+        assert_eq!(
+            json["services"]["org.openehr.rest"]["baseUrl"],
+            serde_json::json!("/openehr")
+        );
+        // deprecated grant flows never appear (they're rejected at validate()).
+        assert_eq!(
+            json["grant_types_supported"],
+            serde_json::json!(["authorization_code", "client_credentials"])
+        );
+    }
+}

@@ -28,6 +28,7 @@ pub use structured::{flat_to_structured, from_structured, structured_to_flat, to
 pub use tdd::from_tdd;
 pub use validation::{
     ValidationKind, ValidationMessage, validate_archetype_conformance,
-    validate_archetype_conformance_incomplete, validate_composition, validate_rm_and_terminology,
+    validate_archetype_conformance_incomplete, validate_composition, validate_flat_other,
+    validate_rm_and_terminology,
 };
 pub use webtemplate::{WebTemplate, build_web_template};

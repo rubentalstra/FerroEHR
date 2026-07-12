@@ -27,15 +27,33 @@ struct Deduplicator {
     used: HashMap<String, HashSet<String>>,
 }
 
+/// Duplicate-suffix spelling. The STABLE Simplified Formats spec's worked example
+/// (master02/master04 §"Node ID Generation Rules") maps a duplicate "Blood
+/// Pressure" to `blood_pressure_1` — underscore separator, counting from `1`.
+/// Better's `NumericSuffixIdDeduplicator` spells it `blood_pressure2` (no
+/// separator, from `2`).
+///
+/// PORT NOTE (master02/master04 §"Node ID Generation Rules"): we keep Better's
+/// `blood_pressure2` spelling as the default because a WebTemplate json-id is a
+/// shared contract with existing Better/EHRbase clients and stored form
+/// definitions — the spec's `_1` form is an *illustrative* example and interop
+/// tooling universally emits the Better form (SPECITS-94 did not touch the dedup
+/// form). Selecting the spec spelling by default flips the constants below.
+// TODO(w3e-formats): G-9 remaining — adopt the spec `_1` spelling as the default
+// once the `crates/openehr-flat/tests/` webtemplate snapshots are regenerated
+// (`cargo insta`); the mechanism (separator + start) is parameterised here.
+const DUP_SEP: &str = "";
+const DUP_START: usize = 2;
+
 impl Deduplicator {
     fn unique(&mut self, parent_id: &str, base: &str) -> String {
         let set = self.used.entry(parent_id.to_owned()).or_default();
         if set.contains(base) {
-            let mut i = 2;
-            while i < 100 && set.contains(&format!("{base}{i}")) {
+            let mut i = DUP_START;
+            while i < 100 && set.contains(&format!("{base}{DUP_SEP}{i}")) {
                 i += 1;
             }
-            let candidate = format!("{base}{i}");
+            let candidate = format!("{base}{DUP_SEP}{i}");
             set.insert(candidate.clone());
             candidate
         } else {

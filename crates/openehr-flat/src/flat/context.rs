@@ -35,6 +35,15 @@ fn non_empty_str(v: Option<&Value>) -> Option<&str> {
 
 // ── RM → flat ───────────────────────────────────────────────────────────────
 
+// TODO(w3e-formats): G-8 remaining — extend `emit_ctx` to the master06 keys that
+// have an unambiguous output home (`id_scheme`, `participation_identifiers`,
+// `ctx/link:i`, and a `PARTY_RELATED` participation `relationship`), so the
+// `ctx/` surface is symmetric. Deferred here because adding keys to RM→FLAT
+// output would change the `crates/openehr-flat/tests/` snapshots (not owned by
+// this change); the per-entry input-only defaults (`provider`, `work_flow_id`,
+// `history_origin`, `activity_timing`, `instruction_narrative`,
+// `action_ism_transition_current_state`) stay input-only by design (master06
+// frames them as input shortcuts).
 /// Emit the `ctx/…` keys for a composition's context.
 pub(crate) fn emit_ctx(comp: &Value, out: &mut FlatMap) {
     if let Some(code) = comp.pointer("/language/code_string") {

@@ -104,8 +104,14 @@ pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
 /// syntactically invalid `If-Match`. We map an unparseable required `If-Match`
 /// to `400 Bad Request` (the general "malformed request syntax" rule), never to
 /// a silent bypass of the optimistic-concurrency guard.
+///
+/// Both the weak (`W/"…"`) and the bare quoted (`"…"`) forms are accepted:
+/// the overview §"ETag and Last-Modified" now emits the weak form, but a client
+/// that echoes the deprecated bare form "MAY still" be supported
+/// (§"Deprecated headers") — [`strip_etag`] normalizes either into the inner
+/// `OBJECT_VERSION_ID`.
 pub(crate) fn require_if_match(if_match: &str) -> Result<ObjectVersionId, ApiError> {
-    let token = if_match.trim().trim_matches('"');
+    let token = strip_etag(if_match);
     if token.is_empty() {
         return Err(ApiError::BadRequest(
             "If-Match is required for this operation but was empty".to_owned(),
@@ -116,4 +122,54 @@ pub(crate) fn require_if_match(if_match: &str) -> Result<ObjectVersionId, ApiErr
             "If-Match must be a quoted OBJECT_VERSION_ID; {token:?} is malformed: {e}"
         ))
     })
+}
+
+/// Strip an `ETag`/`If-Match` wrapper down to its opaque value: an optional
+/// leading weakness indicator `W/` (case-insensitive) then the surrounding
+/// double quotes. Accepts the weak form the server now emits and the deprecated
+/// bare quoted form alike (overview §"ETag and Last-Modified").
+pub(crate) fn strip_etag(raw: &str) -> &str {
+    let trimmed = raw.trim();
+    let unweak = trimmed
+        .strip_prefix("W/")
+        .or_else(|| trimmed.strip_prefix("w/"))
+        .unwrap_or(trimmed);
+    unweak.trim().trim_matches('"')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const UID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2";
+
+    #[test]
+    fn strip_etag_handles_weak_and_bare() {
+        assert_eq!(strip_etag(&format!("W/\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("  w/\"{UID}\"  ")), UID);
+        assert_eq!(strip_etag(UID), UID);
+    }
+
+    #[test]
+    fn require_if_match_accepts_weak_and_bare() {
+        // The server now emits the weak form; a client echoing either shape
+        // must parse to the same OBJECT_VERSION_ID.
+        let weak = require_if_match(&format!("W/\"{UID}\"")).expect("weak");
+        let bare = require_if_match(&format!("\"{UID}\"")).expect("bare");
+        assert_eq!(weak.to_string(), UID);
+        assert_eq!(bare.to_string(), UID);
+    }
+
+    #[test]
+    fn require_if_match_empty_is_bad_request() {
+        let err = require_if_match("\"\"").expect_err("empty");
+        assert!(matches!(err, ApiError::BadRequest(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn require_if_match_malformed_is_bad_request() {
+        let err = require_if_match("W/\"not-a-version-id\"").expect_err("malformed");
+        assert!(matches!(err, ApiError::BadRequest(_)), "got {err:?}");
+    }
 }

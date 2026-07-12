@@ -16,6 +16,13 @@ pub(crate) const RM_VERSION: &str = "1.2.0";
 
 /// Default time for the RM-mandatory temporal fields FLAT never carries
 /// (`EVENT_CONTEXT.start_time`, `HISTORY.origin`, `EVENT.time`).
+///
+// TODO(w3e-formats): G-11 remaining — master06 §time / master04 §Context: an
+// unset `ctx/time` MUST default to `now()`, not the epoch. Implementing it
+// requires threading a `now` instant through `from_flat`/`apply_ctx` (a signature
+// change reaching the `ehrbase-rest` caller) and regenerating the
+// `crates/openehr-flat/tests/` round-trip snapshots — deferred to keep the
+// non-owned test snapshots green and the conversion deterministic under test.
 pub(crate) const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 /// Default `EVENT_CONTEXT.setting` (openEHR terminology group "setting",
