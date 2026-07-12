@@ -56,6 +56,15 @@ pub fn set_array_count(object: &mut Value, array_field: &str, count: usize) {
             }
         }
     }
+    // A zero-count list is encoded as an ABSENT attribute, never `[]`: the RM
+    // "present ⇒ non-empty" list invariants (e.g. COMPOSITION `Content_valid`:
+    // `content /= Void implies not content.is_empty`) make a present-empty
+    // list invalid — absence is the spec encoding of "none".
+    if count == 0
+        && let Value::Object(map) = object
+    {
+        map.remove(array_field);
+    }
 }
 
 /// Set `COMPOSITION.category` to a coded value (openEHR terminology group 13):
@@ -233,6 +242,12 @@ mod tests {
         let mut v = json!({ "content": [{ "n": 1 }] });
         set_array_count(&mut v, "content", 3);
         assert_eq!(v["content"].as_array().unwrap().len(), 3);
+        set_array_count(&mut v, "content", 0);
+        assert!(
+            v.get("content").is_none(),
+            "zero count removes the attribute (present-empty lists are RM-invalid)"
+        );
+        let mut v = json!({ "content": [{ "n": 1 }, { "n": 2 }] });
         set_array_count(&mut v, "content", 1);
         assert_eq!(v["content"].as_array().unwrap().len(), 1);
     }
