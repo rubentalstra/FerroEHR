@@ -752,14 +752,14 @@ impl EhrExtractService for EhrbaseService {
         reject_duplicate_singleton_containers(&containers)?;
 
         // A *new* singleton container cannot be added when the EHR already holds
-        // one of that kind under a different object id (EHR.ehr_status 1..1,
-        // EHR.directory 0..1 — RM ehr, EHR class). A matching object id is an
-        // append (master06 §Copying Case 3), handled in `commit_import`.
+        // one of that kind under a different object id (EHR.ehr_status 1..1 —
+        // RM ehr, EHR class). A matching object id is an append (master06
+        // §Copying Case 3), handled in `commit_import`. FOLDERs are NOT
+        // singletons: each first-received hierarchy joins `EHR.folders` as a
+        // new member (RM ehr master04 §Folders).
         for container in &containers {
-            if matches!(
-                container.kind,
-                Kind::EhrStatus | Kind::EhrAccess | Kind::Folder
-            ) && let Some((existing_vo, _)) = self.current_vo(an_ehr_id, container.kind).await?
+            if matches!(container.kind, Kind::EhrStatus | Kind::EhrAccess)
+                && let Some((existing_vo, _)) = self.current_vo(an_ehr_id, container.kind).await?
                 && existing_vo != container.vo_id
             {
                 return Err(ServiceError::Conflict(format!(
@@ -816,10 +816,12 @@ fn source_ehr_id(extract: &Extract) -> Result<Uuid, SmError> {
 }
 
 /// An EHR holds at most one of each singleton versioned object (`EHR_STATUS`,
-/// `EHR_ACCESS`, directory `FOLDER` — RM ehr, EHR class); an extract that carries
-/// two distinct containers of one such kind cannot be imported.
+/// `EHR_ACCESS` — RM ehr, EHR class `ehr_status`/`ehr_access` 1..1); an extract
+/// that carries two distinct containers of one such kind cannot be imported.
+/// FOLDER hierarchies are unbounded (`EHR.folders`, RM ehr master04 §Folders),
+/// so an extract may carry several.
 fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Result<(), SmError> {
-    for singleton in [Kind::EhrStatus, Kind::EhrAccess, Kind::Folder] {
+    for singleton in [Kind::EhrStatus, Kind::EhrAccess] {
         if containers.iter().filter(|c| c.kind == singleton).count() > 1 {
             return Err(SmError::precondition(format!(
                 "extract carries more than one {} versioned object; an EHR holds at most one",

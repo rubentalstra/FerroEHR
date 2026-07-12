@@ -293,6 +293,33 @@ COMMENT ON COLUMN vo_version.lifecycle_state IS 'version_lifecycle_state code (r
 COMMENT ON COLUMN vo_version.signature IS 'VERSION.signature (0..1), opaque radix-64. Canonicalisation is spec-TBD (review doc 03 S2 — PORT NOTE).';
 COMMENT ON COLUMN vo_version.other_input_version_uids IS 'ORIGINAL_VERSION merge provenance (master06 §Version Merging); NULL when not a merge; is_merged = derived (Is_merged_validity).';
 
+-- ── ehr_folder ───────────────────────────────────────────────────────────────
+-- One row per folder hierarchy of an EHR (RM ehr master04 §Folders: "at any
+-- time, an entirely new Folder hierarchy may be added, which will be referenced
+-- by a new member of the `EHR._folders_` attribute"). `rank` order is the
+-- `EHR.folders` list order (1-based); `EHR.directory` = the first LIVE hierarchy
+-- (RM ehr §EHR Class `Directory_in_folders`: `folders /= Void implies
+-- folders.item(1) = directory`). Ranks are APPEND-ONLY and never reused — a
+-- deleted hierarchy keeps its rank slot. Each referenced hierarchy is its own
+-- versioned object (rows in `vo_version`/`node`); this table only records
+-- membership + order. No openEHR spec governs the storage mechanism itself (our
+-- own storage design). `vo_id` carries no FK (vo_version is keyed per version,
+-- not per object) — a service-wide UNIQUE stands in. The `ehr_id` FK cascades
+-- like every other ehr-scoped table so a `DELETE FROM ehr` (admin purge) removes
+-- the membership rows too.
+CREATE TABLE ehr_folder (
+    ehr_id uuid  NOT NULL REFERENCES ehr (id) ON DELETE CASCADE,
+    rank   int   NOT NULL,
+    vo_id  uuid  NOT NULL,
+    CONSTRAINT pk_ehr_folder PRIMARY KEY (ehr_id, rank),
+    CONSTRAINT uq_ehr_folder_vo UNIQUE (vo_id),
+    CONSTRAINT ck_ehr_folder_rank_positive CHECK (rank >= 1)
+);
+
+COMMENT ON TABLE ehr_folder IS 'One row per folder hierarchy of an EHR (RM ehr master04 §Folders); rank order = EHR.folders order, EHR.directory = the first live hierarchy (RM ehr §EHR Class Directory_in_folders: folders.item(1) = directory). Ranks are append-only, never reused. No openEHR spec governs this table (our own storage design).';
+COMMENT ON COLUMN ehr_folder.rank IS 'EHR.folders position (1-based, append-only). The lowest-rank LIVE hierarchy is EHR.directory (folders.item(1)).';
+COMMENT ON COLUMN ehr_folder.vo_id IS 'The VERSIONED_FOLDER versioned-object id (a member of EHR.folders). FK-less (vo_version is keyed per version); UNIQUE service-wide instead.';
+
 -- ── node ─────────────────────────────────────────────────────────────────────
 -- The decomposed content: one row per RM structure node, per version. The
 -- nested-set interval (num..=num_cap) makes AQL CONTAINS an integer range join
@@ -311,6 +338,24 @@ CREATE TABLE node (
     ehr_id      uuid,
     rm_type     text NOT NULL,
     archetype   text,
+    -- Archetype-subsumption columns, parsed from a full archetype HRID and
+    -- comparison-normalized (lowercased); NULL on at-code/id-code nodes. Parts
+    -- per BASE base_types master05 §Archetype Identifiers:
+    --   archetype_id   = qualified_rm_entity '.' domain_concept '.v' version_id,
+    --   domain_concept = concept_name { '-' specialisation }.
+    -- arch_entity = qualified_rm_entity (e.g. openehr-ehr-observation),
+    -- arch_concept = the full domain_concept incl. specialisation segments
+    -- (e.g. laboratory-glucose), arch_major = the .v major version.
+    -- These drive query subsumption (BASE architecture_overview master10
+    -- §Design-time Relationships: "data created with any specialised archetype
+    -- will always be matched by queries based on the parent archetype"): a query
+    -- naming a parent matches a specialisation child via a `concept-%` prefix
+    -- scan within the same entity + major, the major boundary being hard (AM
+    -- master07 §Querying). Stored lowercased for case-insensitive comparison
+    -- (master05 §"Composite Identifiers and Case"); archetype/data stay canonical.
+    arch_entity  text,
+    arch_concept text,
+    arch_major   integer,
     name        text,
     -- Materialized path from the root; byte-order under COLLATE "C" equals tree
     -- order (used only for reassembly, not as an AQL predicate).
@@ -340,6 +385,14 @@ CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
 -- the comparison is served by this functional index (storage stays
 -- case-preserving).
 CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
+-- Archetype-subsumption scan (BASE architecture_overview master10 §Design-time
+-- Relationships; AM master07 §Querying): a parent-archetype predicate resolves
+-- to arch_entity = $entity AND arch_major = $major AND (arch_concept = $concept
+-- OR arch_concept LIKE $concept || '-%'). text_pattern_ops on arch_concept makes
+-- the specialisation-child prefix scan (`LIKE 'concept-%'`) index-usable under
+-- the pool's non-C collation.
+CREATE INDEX idx_node_arch_subsume ON node (arch_entity, arch_concept text_pattern_ops, arch_major)
+    WHERE arch_entity IS NOT NULL;
 CREATE INDEX idx_node_ehr ON node (ehr_id);
 -- jsonb_ops (NOT jsonb_path_ops): $.** equality anchors need it (AQL engine
 -- pre-filters — no spec governs indexing).
@@ -367,6 +420,9 @@ COMMENT ON COLUMN node.num IS 'Pre-order number within the versioned object (roo
 COMMENT ON COLUMN node.num_cap IS 'Max num in this node''s subtree: the subtree is num..=num_cap (AQL CONTAINS).';
 COMMENT ON COLUMN node.parent_num IS 'num of the parent structure node (root points at itself/0).';
 COMMENT ON COLUMN node.citem_num IS 'num of the nearest ancestor carrying an archetype id.';
+COMMENT ON COLUMN node.arch_entity IS 'qualified_rm_entity of a full archetype HRID, lowercased for comparison (BASE base_types master05 §Archetype Identifiers); NULL on at/id-code nodes. Drives archetype-subsumption querying (master10 §Design-time Relationships).';
+COMMENT ON COLUMN node.arch_concept IS 'Full domain_concept (incl. specialisation segments, e.g. laboratory-glucose) of a full archetype HRID, lowercased (BASE base_types master05); a parent query matches a child via a `concept-%` prefix (master10 §Design-time Relationships).';
+COMMENT ON COLUMN node.arch_major IS 'Major version (.v major) of a full archetype HRID; the interface-reference major boundary is hard (AM master07 §Querying). NULL on at/id-code nodes.';
 COMMENT ON COLUMN node.path IS 'Materialized path from the root; byte-order under COLLATE "C" equals tree order. Reassembly only — never an AQL predicate.';
 COMMENT ON COLUMN node.data IS 'The node''s canonical openEHR JSON fragment verbatim (ITS-JSON encoding), structure children pruned — storage == API, no synthetic fields.';
 

@@ -140,16 +140,27 @@ fn mount<S: Platform>(
                       State(state): State<AppState<S>>,
                       body: Bytes| async move {
                     let parts = RequestParts::new(&raw_path, query, headers, body);
-                    // ABAC (§7): pre-check short-circuits before the backend on a
-                    // deny/engine-failure; the post-check may replace a success
-                    // with 403/500. Both inert unless ABAC is wired.
-                    let mut resp = match abac::pre_check(&state, op, &parts).await {
-                        Ok(()) => {
-                            let resp = dispatch(state.clone(), op, parts).await;
-                            abac::post_check(&state, op, resp).await
-                        }
-                        Err(deny) => deny,
-                    };
+                    // The EHR_ACCESS gate is the spec-grounded access-decision
+                    // authority (RM `org.openehr.rm.ehr.ehr_access.adoc` — "All
+                    // access decisions to data in the EHR must be made in
+                    // accordance with the policies and rules in this object"), so
+                    // it runs FIRST, before the enterprise RBAC/ABAC layers; the
+                    // latter compose on top as additive restrictions. Always-on
+                    // (default-open keeps existing flows working); a deny is 403.
+                    // Then ABAC (§7): pre-check short-circuits before the backend
+                    // on a deny/engine-failure; the post-check may replace a
+                    // success with 403/500. ABAC is inert unless wired.
+                    let mut resp =
+                        match crate::access::ehr_access::enforce(&state, op, &parts).await {
+                            Ok(()) => match abac::pre_check(&state, op, &parts).await {
+                                Ok(()) => {
+                                    let resp = dispatch(state.clone(), op, parts).await;
+                                    abac::post_check(&state, op, resp).await
+                                }
+                                Err(deny) => deny,
+                            },
+                            Err(deny) => deny,
+                        };
                     // The single, generic ATNA hook: tag the response with the
                     // matched operation id for the audit layer (§8.2 step 1).
                     resp.extensions_mut().insert(crate::audit::AuditOpId(op));

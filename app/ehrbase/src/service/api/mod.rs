@@ -19,6 +19,7 @@ mod admin;
 mod definition;
 mod demographic;
 mod ehr;
+mod ehr_access;
 mod ehr_index;
 mod query;
 mod relationship;

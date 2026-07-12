@@ -67,8 +67,60 @@ authenticated request that lacks the required role is refused with `403`.
 
 ## Authorization
 
-Authorization has two composable layers. The coarse layer is always on when
-authentication is enabled; the fine-grained layer is opt-in.
+Authorization has three composable layers. The per-EHR `EHR_ACCESS` gate is
+the openEHR-specified base and is always on; the coarse role layer is active
+when authentication is enabled; the fine-grained attribute layer is opt-in.
+A request must clear every active layer.
+
+### Per-EHR access control (`EHR_ACCESS`)
+
+Every EHR carries a versioned `EHR_ACCESS` object — the openEHR
+access-decision authority for that record. By default it has no settings and
+the EHR is open to any authenticated caller (all existing workflows keep
+working). Committing settings with the `ehrbase.access_control.v1` scheme
+switches that EHR to explicit policy:
+
+```json
+{
+  "_type": "EHR_ACCESS",
+  "name": { "_type": "DV_TEXT", "value": "access" },
+  "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+  "settings": {
+    "_type": "EHRBASE_ACCESS_CONTROL_V1",
+    "gate_keeper": "user:alice",
+    "default_access": "restricted",
+    "access_list": [
+      { "principal": "user:bob",   "access": "full" },
+      { "principal": "role:nurse", "access": "restricted_below", "max_level": 2 }
+    ],
+    "privacy": {
+      "default_level": 0,
+      "composition_overrides": [
+        { "uid": "8849182c-82ad-4088-a07f-48ead4180515", "level": 3 }
+      ]
+    }
+  }
+}
+```
+
+- **Access list** — with `default_access: "restricted"`, only listed
+  principals may touch the EHR: `user:<login or OIDC subject>` or
+  `role:<role>` (matched against the caller's roles). Everyone else gets
+  `403`.
+- **Privacy levels** — integer sensitivity levels with meanings you define
+  for your jurisdiction. A composition's level is its override entry or the
+  default; a caller with `restricted_below` access may only read
+  compositions strictly below their `max_level`, while `full` access has no
+  ceiling.
+- **Gate-keeper** — once set, only that principal may commit a new
+  `EHR_ACCESS` version (via a CONTRIBUTION; there is no dedicated
+  `EHR_ACCESS` endpoint in the openEHR REST API). Changes are versioned and
+  audited like all record content.
+
+The scheme is an EHRbase-rs extension: openEHR mandates the `EHR_ACCESS`
+object and its change control but publishes no concrete access-control
+scheme. Query (AQL) results are not filtered by privacy level in this
+release; the per-EHR gate still applies to EHR-scoped query routes.
 
 ### RBAC (role-based, coarse)
 

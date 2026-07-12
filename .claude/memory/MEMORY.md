@@ -1,0 +1,13 @@
+# Memory index
+
+- [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; rerun ECC after runner/validation merges
+- [Official CLI/tooling first](official-cli-tooling-first.md) — always use the official CLI (sqlx-cli etc.) for tool-managed artifacts; never hand-name/hand-roll
+- [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — commit-msg hook deletes lines containing "Claude Code" etc.; avoid the literal in commit/PR text
+- [Concurrent sessions share this tree](concurrent-sessions-shared-tree.md) — explicit-path commits, scoped gates, worktree-isolate subagents; IDE isolated to target/ide, CLI keeps ./target
+- [ECC: our own conformance framework](ecc-own-conformance-framework.md) — own numbering/taxonomy, generated data sets, latest-versions-only, no Robot/Python/legacy-CNF mapping ever
+- [Verify crate versions from live sources](verify-crate-versions-live.md) — never pin from training data; lapin is 4.x (owner-corrected twice)
+- [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout develop, start next without asking; never branch while finished work sits unmerged
+
+Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
+already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)
+is not repeated here.

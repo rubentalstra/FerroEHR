@@ -366,7 +366,8 @@ A box is ticked only when the verdict is written and evidence-backed.
   generated (`crates/openehr-rm/src/ehr/access_control_settings.rs` — the
   abstract, attribute-less `ACCESS_CONTROL_SETTINGS` extension point, plus
   `ehr_access.rs`/`versioned_ehr_access.rs`); per-EHR access-control
-  *evaluation* is the ch 7 gap → WORKLIST **W-9**.
+  *evaluation* is implemented (W-3b) via the `ehrbase.access_control.v1`
+  scheme — see rows 7.3.2.2 / 7.4.1.
 
 ##### 5.5.1.6 EHR Information Model
 
@@ -542,13 +543,16 @@ A box is ticked only when the verdict is written and evidence-backed.
   version (`0001_baseline.sql:128`, `vo_version.contribution_id NOT NULL`).
 - [x] Additional optional folder hierarchies (`EHR.folders`) beyond
   `directory` can logically organise Compositions
-  (`master06-design_of_the_ehr.adoc` §The EHR). **gap** — the generated RM
-  carries `Ehr.folders: Vec<ObjectRef>`
-  (`crates/openehr-rm/src/ehr/ehr.rs:31`), but the server enforces a single
-  root FOLDER per EHR (`app/ehrbase/src/service/directory.rs:25`;
-  `app/ehrbase/src/service/contribution.rs:481` "at most one directory");
-  no service/wire path manages multiple named hierarchies (ITS-REST defines
-  only `/directory`). → WORKLIST **W-6**.
+  (`master06-design_of_the_ehr.adoc` §The EHR). **verified** (W-3b) — multiple
+  hierarchies are first-class: `ehr_folder` membership table
+  (`app/ehrbase/migrations/ehr/0001_baseline.sql`), CONTRIBUTION-committed
+  hierarchies (`app/ehrbase/src/service/vobject.rs` `insert_ehr_folder_rank`;
+  `contribution.rs` FOLDER creation unbounded), `EHR.folders` +
+  `EHR.directory = folders[1]` served on EHR reads
+  (`app/ehrbase/src/service/ehr.rs` `live_folder_hierarchies`), import and
+  dump/load carry them (`message.rs`, `dump_load.rs`); `/directory` = the
+  first live hierarchy, wire semantics unchanged (spec-silence on a
+  dedicated wire flagged in code).
 - [x] The 21 data types provide for all clinical/administrative data; a
   typical Composition nests Sections → Entries → data structures → data
   types (`master06-design_of_the_ehr.adoc` §The EHR). **verified** —
@@ -722,13 +726,15 @@ A box is ticked only when the verdict is written and evidence-backed.
 - [x] An EHR access-control list (identified individuals and categories) with
   a gate-keeper controlling changes to it, and patient-settable per-
   Composition privacy levels (levels defined by jurisdictions, not
-  hard-wired) (`master07-security.adoc` §Access Control). **gap** — the
-  versioned EHR_ACCESS container exists (row 6.3) but no access-list/
-  gate-keeper/privacy-mark evaluation is implemented (no "privacy" mechanism
-  in `crates/`/`app/`); authorization is server-level RBAC/ABAC
-  (`app/ehrbase-rest/src/access/authz/`). openEHR publishes no concrete
-  `ACCESS_CONTROL_SETTINGS` scheme, so realization requires a scheme
-  decision. → WORKLIST **W-9**.
+  hard-wired) (`master07-security.adoc` §Access Control). **verified (as flagged
+  extension, W-3b)** — implemented by the `ehrbase.access_control.v1`
+  scheme (`docs/design/ehr-access-scheme.md`; openEHR publishes no concrete
+  `ACCESS_CONTROL_SETTINGS` scheme, so the scheme itself is our own design):
+  access list with `user:`/`role:` principals + `default_access`
+  (`app/ehrbase-sm/src/services/ehr_access.rs`), gate-keeper preflight on
+  EHR_ACCESS-carrying contributions and per-Composition integer privacy
+  ceilings (`app/ehrbase-rest/src/access/ehr_access.rs` `EhrAccessGate`),
+  default-open for settings-less EHRs ("sensible defaults").
 - [x] Sensible-default usability posture for access settings
   (`master07-security.adoc` §Access Control). **informative** (design
   guidance for the W-9 scheme).
@@ -790,16 +796,17 @@ A box is ticked only when the verdict is written and evidence-backed.
   which acts as the gateway for all information access; alternative access-
   control models are accommodated as subtypes of `ACCESS_CONTROL_SETTING`,
   the scheme in use always indicated in the EHR Access object
-  (`master07-security.adoc` §Overview). **gap** — EHR_ACCESS is stored,
-  versioned, defaulted at EHR creation and contribution-writable
-  (`app/ehrbase/src/service/ehr.rs:75,607`;
-  `app/ehrbase/src/service/contribution.rs:609`), and the abstract
-  `ACCESS_CONTROL_SETTINGS` type is generated
-  (`crates/openehr-rm/src/ehr/access_control_settings.rs`), but no access
-  decision consults it — authorization runs out-of-band per the SM placement
-  (`app/ehrbase-rest/src/access/mod.rs:18`). The spec itself notes no
-  formal, proven access-control model for shared health records exists.
-  → WORKLIST **W-9** (scheme decision + evaluation or a cited PORT NOTE).
+  (`master07-security.adoc` §Overview). **verified (W-3b)** — EHR_ACCESS
+  now IS the gateway: the `EhrAccessGate` policy engine evaluates the
+  current EHR_ACCESS settings on every EHR-scoped request, first in the
+  pre-dispatch chain, with RBAC/ABAC composing on top as extensions
+  (`app/ehrbase-rest/src/access/ehr_access.rs`; settings flow rest → sm →
+  ehrbase via the `EhrAccessAdapter`, `app/ehrbase-sm/src/services/ehr_access.rs`
+  + `app/ehrbase/src/service/api/ehr_access.rs`, moka-cached and
+  invalidated on EHR_ACCESS commits). The concrete scheme
+  (`ehrbase.access_control.v1`) is our flagged extension — the alternative-
+  scheme extension point (`ACCESS_CONTROL_SETTINGS` subtype + `scheme()`)
+  works exactly as the spec describes.
 
 ## 8 Versioning (`master08-versioning.adoc`)
 
@@ -997,14 +1004,17 @@ A box is ticked only when the verdict is written and evidence-backed.
   matched by queries based on the parent archetype** (subsumption);
   specialised ids derive from the parent id with a '-'-separated sub-element
   (`master10-archetypes.adoc` §Design-time Relationships between
-  Archetypes). **gap (query side)** — specialised ids lex/parse fine
-  (`crates/openehr-query/src/lexer.rs:205,453`) and AOM carries
-  `parent_archetype_id`/`specialisation_depth`
-  (`crates/openehr-am/src/am14/aom14/archetype/archetype.rs:44`), but AQL
-  archetype matching is exact case-folded equality
-  (`app/ehrbase/src/aql/sql.rs:632` `lower(archetype) = lower(value)`) — a
-  parent-archetype query does not match specialised-child data.
-  → WORKLIST **W-7**.
+  Archetypes). **verified** (W-3b) — AQL archetype
+  predicates honour subsumption: parsed HRID columns
+  (`node.arch_entity`/`arch_concept`/`arch_major`,
+  `app/ehrbase/migrations/ehr/0001_baseline.sql`; populated in
+  `app/ehrbase/src/storage/codec.rs` via the shared `ArchetypeId` parser)
+  and the engine condition `entity = E AND major = N AND (concept = C OR
+  concept LIKE C || '-%')` (`app/ehrbase/src/aql/sql.rs`
+  `archetype_predicate`, with the QUERY-equality + AOM2-lineage conflicts in
+  a PORT NOTE); integration-tested
+  (`app/ehrbase/tests/service_aql.rs` `archetype_specialisation_subsumption`).
+  ADL2-era template lineage stays with W-4.
 - [x] Composition via slots: an `allow_archetype` constraint names the
   archetypes usable at a chaining point, simplest form being regular
   expressions on archetype identifiers; templates choose among allowed
@@ -1121,9 +1131,11 @@ A box is ticked only when the verdict is written and evidence-backed.
   (`crates/openehr-query/src/parser.rs:324` `objectPath`); archetype paths
   in the WebTemplate (`crates/openehr-flat/src/webtemplate/builder.rs`).
 - [x] The `//` notation defines a path *pattern* matching any number of
-  segments (`master11-paths.adoc` §Basic Syntax). **gap** — no `//`
-  descendant construct anywhere (the AQL 1.1 grammar has none;
-  `parser.rs:324-331` requires non-empty segments). → WORKLIST **W-8**.
+  segments (`master11-paths.adoc` §Basic Syntax). **verified** (W-3b) — `//` path
+  patterns are implemented in the generic RM path engine
+  (`crates/openehr-rm/src/paths.rs`, descendant-or-self navigation with a
+  dangling-`//` parse error), unit-tested; AQL deliberately unchanged (its
+  grammar defines no `//` — typed reject stays).
 
 #### 11.2.2 Predicate Expressions
 
@@ -1203,10 +1215,11 @@ A box is ticked only when the verdict is written and evidence-backed.
 
 - [x] Xpath positional parameters (`items[1]`) give guaranteed-unique paths
   where container order is preserved (`master11-paths.adoc` §Using
-  Positional Parameters). **gap** — integer-index predicates are not in the
-  AQL 1.1 grammar and not parsed (`crates/openehr-query/src/parser.rs`
-  `PathPredicate` has no positional alternative); container order itself is
-  preserved in storage (`node.num` ordering). → WORKLIST **W-8**.
+  Positional Parameters). **verified** (W-3b) — 1-based
+  positional predicates are implemented in the generic RM path engine
+  (`crates/openehr-rm/src/paths.rs`, position 0 rejected at parse),
+  unit-tested; container order is preserved in storage (`node.num`). AQL
+  unchanged (its grammar has no positional predicate — typed reject stays).
 
 ### 11.3 EHR URIs
 
@@ -1223,12 +1236,14 @@ A box is ticked only when the verdict is written and evidence-backed.
   location (11.3.1.1), top-level structure locators by VERSIONED_OBJECT uid
   (latest trunk assumed) or exact 3-part version id (11.3.1.2), item URIs
   with full paths (11.3.1.3), and relative URIs (11.3.1.4)
-  (`master11-paths.adoc` §EHR Reference URIs). **gap** — beyond the scheme
-  check, no `ehr:` URI grammar parser/resolver exists (no dereferencing of
-  system_id/ehr_id/structure-locator/path). The spec itself notes `ehr:`
-  name resolution infrastructure does not yet exist and ad-hoc means are
-  expected; still, parse/validate + local resolution is implementable.
-  → WORKLIST **W-8**.
+  (`master11-paths.adoc` §EHR Reference URIs). **verified** (W-3b) — the full
+  `ehr:` grammar is parsed by the typed `EhrUri`
+  (`crates/openehr-rm/src/paths.rs`: four absolute forms + relative forms,
+  uid vs exact-OBJECT_VERSION_ID locators) and locally resolved by the
+  service (`app/ehrbase/src/service/ehr_uri.rs`, a flagged extension — no
+  spec obliges resolution; foreign-system URIs are typed NotFound);
+  integration-tested against a live store (`app/ehrbase/tests/service_ehr.rs`
+  `ehr_uri_resolves_local_structures_and_item_paths`).
 - [x] Plain-text URIs with RFC-3986-forbidden characters are allowed for
   readability but must be RFC-3986-encoded before use in REST APIs
   (`master11-paths.adoc` §EHR Reference URIs). **verified** — the REST layer
@@ -1421,10 +1436,10 @@ A box is ticked only when the verdict is written and evidence-backed.
 
 ## Gap → worklist mapping
 
-| Checklist row | Gap | Worklist |
-|---|---|---|
-| 6.3 | `EHR.folders` multiple hierarchies not managed (single root FOLDER enforced) | W-6 |
-| 10.2.2 | AQL archetype matching is exact — parent-archetype queries miss specialised-child data | W-7 |
-| 11.2.1 / 11.2.4.3 / 11.3.1 | `//` path patterns, positional predicates, `ehr:` URI grammar+resolution | W-8 |
-| 5.5.1.5 / 7.3.2.2 / 7.4.1 | No EHR_ACCESS-based access evaluation, access list/gate-keeper, or Composition privacy levels | W-9 |
-| 4.1.1 / 10.2.1 (pre-existing) | ADL2 pipeline (parser, AOM2 semantic validation, flattening, OPT2) | W-4 |
+| Checklist row | Gap | Worklist | Resolution |
+|---|---|---|---|
+| 6.3 | `EHR.folders` multiple hierarchies not managed (single root FOLDER enforced) | W-6 | **closed** (W-3b) — verified at row 6.3 |
+| 10.2.2 | AQL archetype matching is exact — parent-archetype queries miss specialised-child data | W-7 | **closed** (W-3b) — verified at row 10.2.2 |
+| 11.2.1 / 11.2.4.3 / 11.3.1 | `//` path patterns, positional predicates, `ehr:` URI grammar+resolution | W-8 | **closed** (W-3b) — verified at rows 11.x |
+| 5.5.1.5 / 7.3.2.2 / 7.4.1 | No EHR_ACCESS-based access evaluation, access list/gate-keeper, or Composition privacy levels | W-9 | **closed** (W-3b, flagged extension) — verified at rows 5.5.1.5/7.x |
+| 4.1.1 / 10.2.1 (pre-existing) | ADL2 pipeline (parser, AOM2 semantic validation, flattening, OPT2) | W-4 | open — the ADL2 phase |

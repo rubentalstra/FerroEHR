@@ -655,3 +655,62 @@ fn like_escapes_are_literal() {
     assert_eq!(super::sql::aql_like_to_sql_for_tests(r"a\?b"), "a?b");
     assert_eq!(super::sql::aql_like_to_sql_for_tests("100%"), r"100\%");
 }
+
+/// The `archetype_node_id` predicate: a full archetype HRID lowers to the
+/// subsumption condition (parent + specialisation children, same entity +
+/// major); an at-code keeps the case-folded equality. BASE
+/// `architecture_overview` master10 §Design-time Relationships; AM master07
+/// §Querying.
+#[test]
+fn archetype_predicate_subsumption_sql() {
+    // Parent archetype: matches its own concept OR any `laboratory-` child,
+    // scoped to the same qualified RM entity + major.
+    let parent =
+        super::sql::archetype_predicate_sql_for_tests("openEHR-EHR-OBSERVATION.laboratory.v1");
+    assert!(
+        parent.contains(r#""n"."arch_entity" = 'openehr-ehr-observation'"#),
+        "entity match (lowercased): {parent}"
+    );
+    assert!(
+        parent.contains(r#""n"."arch_major" = 1"#),
+        "major bound: {parent}"
+    );
+    assert!(
+        parent.contains(r#""n"."arch_concept" = 'laboratory'"#),
+        "exact concept match: {parent}"
+    );
+    assert!(
+        parent.contains(r#""n"."arch_concept" LIKE 'laboratory-%'"#),
+        "specialisation-child prefix match: {parent}"
+    );
+    assert!(
+        !parent.contains("LOWER"),
+        "the HRID path does not fall back to case-folded equality: {parent}"
+    );
+
+    // A specialisation child carries its full concept, so it prefix-matches its
+    // own further children too.
+    let child = super::sql::archetype_predicate_sql_for_tests(
+        "openEHR-EHR-OBSERVATION.laboratory-glucose.v1",
+    );
+    assert!(
+        child.contains(r#""n"."arch_concept" = 'laboratory-glucose'"#),
+        "exact specialised concept: {child}"
+    );
+    assert!(
+        child.contains(r#""n"."arch_concept" LIKE 'laboratory-glucose-%'"#),
+        "further-specialisation prefix: {child}"
+    );
+
+    // An at-code is not a full HRID → case-folded equality on `archetype`, no
+    // subsumption columns.
+    let at_code = super::sql::archetype_predicate_sql_for_tests("at0001");
+    assert!(
+        at_code.contains("LOWER") && at_code.contains(r#""n"."archetype""#),
+        "at-code keeps case-folded equality: {at_code}"
+    );
+    assert!(
+        !at_code.contains("arch_entity"),
+        "at-code does not use the subsumption columns: {at_code}"
+    );
+}

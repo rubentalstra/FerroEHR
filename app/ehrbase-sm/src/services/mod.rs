@@ -20,6 +20,7 @@ pub mod definition;
 pub mod demographic;
 pub mod directory;
 pub mod ehr;
+pub mod ehr_access;
 pub mod ehr_index;
 pub mod ehr_status;
 pub mod message;
@@ -46,6 +47,10 @@ pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQu
 pub use demographic::DemographicService;
 pub use directory::EhrDirectoryService;
 pub use ehr::EhrService;
+pub use ehr_access::{
+    AccessEntry, AccessLevel, CompositionOverride, DefaultAccess, EHR_ACCESS_CONTROL_V1_SCHEME,
+    EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter, EhrAccessSettings, Privacy, principal_matches,
+};
 pub use ehr_index::EhrIndexService;
 pub use ehr_status::EhrStatusService;
 pub use message::EhrExtractService;
