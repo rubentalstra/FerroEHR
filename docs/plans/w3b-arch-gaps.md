@@ -178,7 +178,9 @@ publishes no concrete `ACCESS_CONTROL_SETTINGS` scheme.
 - [ ] All four gap clusters implemented; checklist rows re-verdicted with
       file evidence; W-6..W-9 closed in `WORKLIST.md`.
 - [ ] `cargo nextest run --workspace` green; clippy clean; fmt clean.
-- [ ] ECC run zero-drift vs the 341/315/0 baseline (only newly-green
-      deltas allowed); report re-baselined.
+- [ ] ECC run zero-drift vs the 341/315/0 baseline — **deferred by owner
+      ruling (2026-07-12: "ignore the ECC for now")**; the run is owed at
+      the start of the next conformance-touching phase and the baseline
+      remains 341/315/0 until then.
 - [ ] Changelog entry + docs-website pages for the user-visible surface
       (folders, AQL matching, `ehr:` URIs, access evaluation).
