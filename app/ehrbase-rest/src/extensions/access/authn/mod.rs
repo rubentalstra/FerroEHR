@@ -1,13 +1,34 @@
-//! Authentication (Stage 1): HTTP Basic + OAuth2/OIDC bearer, plus the coarse
-//! **RBAC** gate (Stage-2 capability, owner-prioritized).
+//! Authentication: HTTP Basic + OAuth2/OIDC bearer, plus the coarse **RBAC**
+//! gate.
+//!
+//! # Spec grounding
+//!
+//! ITS-REST leaves authentication a `SHOULD` and mandates no scheme
+//! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+//! §Authentication and authorization). But **when a framework is present the
+//! service MUST** use `WWW-Authenticate`/`Proxy-Authenticate` and return
+//! `401`/`403`/`407` as applicable — the normative bar this middleware meets:
+//! missing/invalid credentials → `401` with a `WWW-Authenticate` challenge
+//! ([`Authenticator::challenge`]); authenticated-but-refused → `403`, no
+//! challenge. (We serve no proxy, so `407`/`Proxy-Authenticate` do not apply.)
+//! The CNF security suites
+//! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`) are the
+//! conformance reference for the Basic + bearer 401/403 flows.
+//!
+//! # RBAC (spec-silent)
+//!
+//! No openEHR spec governs role-based authorization — the SM places it out of
+//! band. The coarse RBAC gate is our own enterprise extension
+//! (`docs/enterprise/access-control.md` §5.2), kept clearly separate from the
+//! spec-grounded authn above.
 //!
 //! Applied as one axum middleware over the API router (not per handler). A
 //! successful authentication puts a [`Principal`] (with roles + retained JWT
 //! claims) into the request extensions for downstream handlers/the service
-//! layer. When an [`crate::extensions::access::authz::AuthzHandle`] is wired, the middleware then
-//! runs the RBAC gate over the matched operation's class
-//! (`docs/enterprise/access-control.md` §5.2): a deny is a `403` with the
-//! `Principal` attached to the response so the ATNA audit layer records it.
+//! layer. When an [`crate::extensions::access::authz::AuthzHandle`] is wired, the
+//! middleware then runs the RBAC gate over the matched operation's class: a deny
+//! is a `403` with the `Principal` attached to the response so the ATNA audit
+//! layer records it.
 
 mod basic;
 pub mod config;
@@ -113,7 +134,10 @@ impl Authenticator {
     /// # Errors
     /// Returns a message if the OIDC key material/algorithms are invalid.
     pub fn new(config: AuthConfig) -> Result<Arc<Self>, String> {
-        Self::with_role_claims(config, crate::extensions::access::authz::roles::default_role_claims())
+        Self::with_role_claims(
+            config,
+            crate::extensions::access::authz::roles::default_role_claims(),
+        )
     }
 
     /// Build from configuration with explicit RBAC role-claim paths (§5.1 —
@@ -268,6 +292,9 @@ pub(crate) async fn middleware(
                 "status" => if status == StatusCode::FORBIDDEN { "403" } else { "401" },
             )
             .increment(1);
+            // ITS-REST §Authentication and authorization: a `401` MUST carry a
+            // `WWW-Authenticate` challenge; a `403` (authenticated-but-refused)
+            // MUST NOT.
             let needs_challenge = status == StatusCode::UNAUTHORIZED;
             let mut resp = RestError(api).into_response();
             if needs_challenge {

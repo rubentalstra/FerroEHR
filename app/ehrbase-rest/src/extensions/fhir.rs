@@ -1,6 +1,14 @@
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
-//! over the [`FhirConnectorAdapter`](ehrbase_sm::FhirConnectorAdapter) seam
-//! (our own extension — no openEHR spec governs this; E3).
+//! over the [`FhirConnectorAdapter`](ehrbase_sm::FhirConnectorAdapter) seam.
+//!
+//! **No openEHR spec governs this — our own enterprise feature (E3, FHIR
+//! connectors + read façade).** A persistence-boundary connector, distinct from
+//! the SM Subject Proxy Service (master10): SPS *reads* subject variables via
+//! data-binding frames, whereas this connector *commits* inbound FHIR resources
+//! as COMPOSITIONs and *serves* them back — the roadmap's "FHIR/HL7v2 frames =
+//! the connector seam" means SPS reuses this machinery, not that either
+//! subsumes the other. Design record: `docs/enterprise/product-roadmap.md` §2.1
+//! and the classification register `docs/design/its-rest/extensions.md`.
 //!
 //! Two surfaces, both config-gated (`RestConfig::fhir.enabled`, default
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
@@ -40,13 +48,13 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use ehrbase_sm::Platform;
-use ehrbase_sm::SmError;
 use ehrbase_sm::ServiceResponse;
+use ehrbase_sm::SmError;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts};
-use crate::overview::error::RestError;
 use crate::negotiate;
+use crate::overview::error::RestError;
 use crate::state::AppState;
 
 /// FHIR R4 media type for the `OperationOutcome` / connector responses.
@@ -85,7 +93,7 @@ pub(crate) const FHIR_ROUTES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-pub(super) fn dispatch<S: Platform>(
+pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
     op: &'static str,
     parts: RequestParts,
@@ -213,7 +221,9 @@ async fn search<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Respo
     let q = parts.query.as_deref();
     // `patient` is mandatory: the façade serves only this explicit scope,
     // never generic FHIR Search.
-    let Some(patient) = crate::overview::params::query_param(q, "patient").filter(|p| !p.is_empty()) else {
+    let Some(patient) =
+        crate::overview::params::query_param(q, "patient").filter(|p| !p.is_empty())
+    else {
         return operation_outcome(
             StatusCode::BAD_REQUEST,
             "required",
@@ -221,7 +231,8 @@ async fn search<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Respo
              the explicit patient scope, not generic Search)",
         );
     };
-    let count = crate::overview::params::query_param(q, "_count").and_then(|c| c.parse::<i64>().ok());
+    let count =
+        crate::overview::params::query_param(q, "_count").and_then(|c| c.parse::<i64>().ok());
     match state
         .backend()
         .fhir_search(resource_type, patient, count)

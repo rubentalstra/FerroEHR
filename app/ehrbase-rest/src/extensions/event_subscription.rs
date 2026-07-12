@@ -1,11 +1,12 @@
 //! HTTP dispatch for the event-subscription admin extension API group over the
-//! [`EventSubscriptionAdapter`](ehrbase_sm::EventSubscriptionAdapter) seam
-//!.
+//! [`EventSubscriptionAdapter`](ehrbase_sm::EventSubscriptionAdapter) seam.
 //!
-//! Design: event/subscription semantics are spec-silent, so — like the terminology group (`docs/design/sm-platform/
-//! 08-target-architecture.md` §7) — this surface is our own, exposed under the
-//! server's extension namespace and excluded from the ITS-REST drift check. It
-//! is mounted under `/admin/` (a subscription store is an administrative
+//! **No openEHR spec governs this — our own enterprise feature (E1, eventing).**
+//! Event/subscription semantics have no SM or ITS-REST governance, so this
+//! surface is ours: exposed under the server's extension namespace and excluded
+//! from the ITS-REST drift check (design record: `docs/enterprise/product-roadmap.md`
+//! §2.2 and the classification register `docs/design/its-rest/extensions.md`).
+//! It is mounted under `/admin/` (a subscription store is an administrative
 //! resource), so the coarse RBAC gate fail-safe classes it as `Admin` (requires
 //! the admin role when RBAC is on), matching the physical-delete ADMIN group.
 //!
@@ -69,7 +70,7 @@ pub(crate) const EVENT_SUBSCRIPTION_ROUTES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-pub(super) fn dispatch<S: Platform>(
+pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
     op: &'static str,
     parts: RequestParts,

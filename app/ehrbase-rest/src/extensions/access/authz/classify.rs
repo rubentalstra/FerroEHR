@@ -5,7 +5,7 @@
 //! generated operation is **explicitly** classified; a new generated operation
 //! that is not returns `None` from [`class_of`], which the total-coverage guard
 //! test turns into a build failure until it is classified — the same discipline
-//! as `ehrbase-audit/src/table.rs` (§8.3 of the ATNA doc).
+//! as the ATNA op-id table (`ehrbase::system_log`).
 //!
 //! Among the generated routes only the two `admin_*` operations are
 //! [`OperationClass::Admin`]; everything else is [`OperationClass::Clinical`]
@@ -226,7 +226,7 @@ mod tests {
         }
         assert!(
             unclassified.is_empty(),
-            "unclassified ITS-REST operations (add to app/ehrbase-rest/src/access/authz/classify.rs): {unclassified:?}"
+            "unclassified ITS-REST operations (add to app/ehrbase-rest/src/extensions/access/authz/classify.rs): {unclassified:?}"
         );
     }
 

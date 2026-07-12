@@ -1,28 +1,23 @@
-//! `GET /management/info` — build + spec provenance (binding doc §2).
+//! `GET /management/info` — the server's build + spec provenance.
 //!
-//! Extends the P11 `/management/info` (name + version) with the git commit,
-//! build timestamp, `rustc` version, the pinned openEHR specification versions,
-//! and the `PostgreSQL` target. The same [`BuildInfo`] feeds the
-//! `ehrbase_build_info` gauge and the `OTel` resource attributes in the binary,
-//! so version provenance is captured once.
+//! No openEHR spec governs this endpoint — it is our own operational surface
+//! (the register verdict for `management/`: pure ops, spec-silent by design).
+//! It reports the git commit, build timestamp, `rustc` version, the pinned
+//! openEHR specification versions, and the `PostgreSQL` target. The same
+//! [`BuildInfo`] feeds the `ehrbase_build_info` gauge and the `OTel` resource
+//! attributes in the binary, so the build facts are captured once.
+//!
+//! The spec-version fields are **not** local literals: they read the single
+//! [`provenance`](crate::extensions::provenance) source shared with the System
+//! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
+//! quote one fact. In particular `its_rest` is the tested development-edition
+//! identity (`development@e8a093e`), matching the conformance report — not the
+//! retired `1.0.3` label. See that module for the derivation.
 
 use axum::Json;
 use serde::Serialize;
 
-/// The openEHR ITS-REST contract version this server implements.
-pub const OPENEHR_REST_API_VERSION: &str = "1.0.3";
-/// The AQL specification version.
-pub const OPENEHR_AQL_VERSION: &str = "1.1.0";
-/// The pinned openEHR Reference Model version (`docs/VERSIONS.md`).
-pub const RM_VERSION: &str = "1.2.0";
-/// The pinned openEHR BASE version.
-pub const BASE_VERSION: &str = "1.3.0";
-/// The pinned openEHR Archetype Model versions.
-pub const AM_VERSION: &str = "1.4.0 + 2.4.0";
-/// The pinned openEHR Terminology version.
-pub const TERM_VERSION: &str = "3.1.0";
-/// The `PostgreSQL` version this server targets.
-pub const PG_TARGET: &str = "18.4+";
+use crate::extensions::provenance;
 
 /// Build- and spec-provenance, captured once. Cheap to clone.
 #[derive(Debug, Clone, Serialize)]
@@ -71,14 +66,14 @@ impl BuildInfo {
             build_date: build_date(),
             rustc: env!("EHRBASE_RUSTC"),
             spec: SpecVersions {
-                its_rest: OPENEHR_REST_API_VERSION,
-                aql: OPENEHR_AQL_VERSION,
-                rm: RM_VERSION,
-                base: BASE_VERSION,
-                am: AM_VERSION,
-                term: TERM_VERSION,
+                its_rest: provenance::ITS_REST,
+                aql: provenance::AQL,
+                rm: provenance::RM,
+                base: provenance::BASE,
+                am: provenance::AM,
+                term: provenance::TERM,
             },
-            postgres_target: PG_TARGET,
+            postgres_target: provenance::PG_TARGET,
         }
     }
 }
@@ -112,7 +107,10 @@ mod tests {
         let info = BuildInfo::current();
         assert_eq!(info.name, "ehrbase-rest");
         assert_eq!(info.spec.rm, "1.2.0");
-        assert_eq!(info.spec.its_rest, "1.0.3");
+        // The tested development-edition identity (matches the ECC report), not
+        // the retired `1.0.3` label — sourced from the shared provenance.
+        assert_eq!(info.spec.its_rest, "development@e8a093e");
+        assert_eq!(info.spec.its_rest, provenance::ITS_REST);
         assert_eq!(info.postgres_target, "18.4+");
         // build_date parses to a real timestamp (not the "unknown" fallback) in
         // a normal build where build.rs ran.

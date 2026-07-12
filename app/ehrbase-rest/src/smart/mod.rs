@@ -12,7 +12,7 @@
 //!   (`compartment/resource.permission`, `*`/`**`/`ns::*` patterns) parsed
 //!   from the validated token's `scope` claim;
 //! - [`enforce`] — scope enforcement riding the existing ABAC PEP
-//!   ([`crate::extensions::abac`]), AND-composed after RBAC/Cedar, plus the
+//!   ([`crate::extensions::access::pep`]), AND-composed after RBAC/Cedar, plus the
 //!   `ehrId`/`patient` launch-context binding (master07/master09).
 //!
 //! Registration (master03), token issuance/grants/PKCE (master06), and

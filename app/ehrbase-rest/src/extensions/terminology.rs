@@ -1,26 +1,33 @@
 //! HTTP dispatch for the terminology extension API group over the
 //! [`TerminologyService`](ehrbase_sm::services::TerminologyService) seam.
 //!
-//! Spec grounding: SM `I_TERMINOLOGY_SERVICE`
-//! (`docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`,
-//! `master12-terminology_service.adoc`) — the nine calls `get_terminology_ids`,
-//! `has_terminology`, `get_terminology_description`, `has_term`, `get_term`,
-//! `subsumes`, `value_set_validate`, `has_value_set`, `get_value_set` and their
+//! **Operation semantics — SM `I_TERMINOLOGY_SERVICE`**
+//! (`docs/specs/openehr/SM/docs/openehr_platform/master12-terminology_service.adoc`,
+//! which includes `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`):
+//! the nine calls `get_terminology_ids`, `has_terminology`,
+//! `get_terminology_description`, `has_term`, `get_term`, `subsumes`,
+//! `value_set_validate`, `has_value_set`, `get_value_set` and their
 //! `Pre_has_terminology` / `Pre_has_term` / `Pre_has_value_set` preconditions.
+//! Every handler below realizes one of those calls with its precondition
+//! mapping; the meaning of each is the master12 signature, cited inline.
 //!
-//! Wire design (`docs/design/sm-platform/08-target-architecture.md` §7):
-//! ITS-REST 1.0.3 defines **no** terminology contract, so this surface is our
-//! own, exposed under the server's extension namespace (`/terminology`), spec-
-//! first from the SM call semantics and excluded from the ITS-REST drift check.
-//! If/when openEHR publishes a contract, `emit-rest` takes over and
-//! these routes migrate.
+//! **Wire shape — no openEHR spec governs this; our own design/extension.**
+//! Neither the development-edition OAS set nor Release-1.0.3 defines a
+//! terminology REST contract (there is no `terminology` group under
+//! `crates/openehr-its/src/rest/generated/`), so this surface is ours: exposed
+//! under the server's extension namespace (`/terminology`), shaped spec-first
+//! from the master12 call semantics, and excluded from the ITS-REST drift
+//! check. Design record: the classification register
+//! `docs/design/its-rest/extensions.md` and `docs/design/sm-platform/12-terminology.md`.
+//! If/when openEHR publishes a contract, `emit-rest` takes over and these
+//! routes migrate.
 //!
-//! PORT NOTE (mount path, §7): §7 names the namespace `/rest/terminology`; in
-//! this server the extension groups (like the ADMIN group) are mounted inside
-//! the ITS-REST API router, so the full path is
+//! PORT NOTE (mount path): the extension groups (like the ADMIN group) are
+//! mounted inside the ITS-REST API router, so the full path is
 //! `{base_path}/terminology/...` — i.e. `/ehrbase/rest/openehr/v1/terminology`.
 //! Nesting them here keeps the auth / ATNA-audit / ABAC middleware stack
-//! uniform across the whole HTTP surface.
+//! uniform across the whole HTTP surface (our decision; the SM defines only the
+//! abstract interface, not a URL layout).
 //!
 //! PORT NOTE (existence calls): the boolean `has_terminology` / `has_term` /
 //! `has_value_set` calls are surfaced implicitly through the `200`-vs-`404` of
@@ -88,7 +95,7 @@ pub(crate) const TERMINOLOGY_ROUTES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-pub(super) fn dispatch<S: Platform>(
+pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
     op: &'static str,
     parts: RequestParts,

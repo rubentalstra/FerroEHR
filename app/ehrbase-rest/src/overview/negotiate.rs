@@ -506,7 +506,7 @@ pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
     // The single, generic ATNA hook for the participant object: surface the
     // resource ids the envelope already carries for the audit layer (§8.2 step 3).
     resp.extensions_mut()
-        .insert(crate::extensions::audit::AuditObject {
+        .insert(crate::system_log::middleware::AuditObject {
             ehr_id: Some(meta.ehr_id.clone()),
             uid: Some(meta.uid.clone()),
         });

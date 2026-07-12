@@ -1,9 +1,19 @@
-//! `OpenAPI` document + Swagger UI.
+//! `OpenAPI` document + Swagger UI (discoverability).
 //!
-//! The **vendored** ITS-REST `OpenAPI` is the authoritative contract;
-//! `utoipa` here serves a Swagger UI and a served `OpenAPI` document for
-//! discoverability, and is the seam for a future code→OAS drift-check against
-//! the vendored spec. It is not the source of truth.
+//! No openEHR spec governs an OAS-serving endpoint; this is our own surface.
+//! What it exposes, though, is the authoritative contract itself: the
+//! **vendored development-edition** ITS-REST OpenAPI bundles at
+//! `crates/openehr-its/vendor/rest-oas/` — openEHR `specifications-ITS-REST`
+//! `master` @ `e8a093e9…` (the `-codegen` variant `emit-rest` consumes to
+//! generate the served routes). Serving Swagger for that same tree keeps the
+//! documented API and the implemented contract one identity, not two.
+//!
+//! `utoipa` is used only for the Swagger UI shell and as the seam for a future
+//! code→OAS drift-check against the vendored bundles; the vendored OAS is the
+//! source of truth, never this generated document (which carries the API
+//! metadata; handlers are dispatched generically from the generated `ROUTES`
+//! tables rather than annotated per operation, so its live path set is the
+//! generated contract).
 
 use axum::Router;
 use ehrbase_sm::Platform;
@@ -12,16 +22,20 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::state::AppState;
 
-/// The served `OpenAPI` document. Handlers are dispatched generically from the
-/// generated `ROUTES` tables rather than annotated individually, so this doc
-/// carries the API metadata; the full path set is the vendored OAS.
+/// The served `OpenAPI` document metadata. The `version` mirrors the tested
+/// contract identity [`crate::extensions::provenance::ITS_REST`]
+/// (`development@e8a093e`) — the development edition the vendored OAS pins, not
+/// the retired `1.0.3` release label. (`utoipa`'s `info` attribute takes a
+/// string literal, so this cannot reference the const directly; keep the two in
+/// sync on a spec-pin bump.)
 #[derive(OpenApi)]
 #[openapi(info(
     title = "EHRbase-RS — openEHR ITS-REST",
-    version = "1.0.3",
-    description = "openEHR-spec-conformant CDR (ITS-REST 1.0.3). The authoritative \
-                   contract is the vendored OpenAPI; this document is served for \
-                   discoverability."
+    version = "development@e8a093e",
+    description = "openEHR-spec-conformant CDR. The authoritative contract is the \
+                   vendored development-edition ITS-REST OpenAPI (master @ e8a093e9, \
+                   the tree emit-rest generates from); this document is served for \
+                   discoverability only."
 ))]
 pub struct ApiDoc;
 

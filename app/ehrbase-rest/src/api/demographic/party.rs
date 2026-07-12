@@ -40,7 +40,7 @@ pub(super) async fn run<S: Platform>(
             // TODO(w3e-integrate): hand these to the service — `party_create`
             // currently takes no tags; the central parser lands in the overview
             // worker's `crate::overview::committal`.
-            let _tags = crate::overview::committal::parse_item_tag_header(h);
+            let _tags = crate::overview::params::parse_item_tag_header(h);
             let body = decode_party_body(kind, h, &parts.body)?;
             // person_create.yaml declares 201/400/422/404; a service NotFound
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422

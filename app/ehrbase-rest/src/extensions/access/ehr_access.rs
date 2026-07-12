@@ -7,14 +7,15 @@
 //! made in accordance with the policies and rules in this object" (RM
 //! `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class). This gate is
 //! therefore the **foundational, always-on** access-control layer, built
-//! directly on the spec. The crate's RBAC + ABAC ([`crate::extensions::access::authz`],
-//! [`crate::api::abac`]) are our **own enterprise extensions** — no
-//! openEHR spec governs them, and the SM places authorisation out of band (SM
-//! `openehr_platform/master02-overview.adoc` §General Assumptions). They compose
-//! **on top of** this spec base as additive restrictions (AND-composition: a
-//! request must clear the `EHR_ACCESS` gate *and* any RBAC/ABAC policy), never the
-//! other way round. Accordingly the gate runs **first** in the pre-dispatch
-//! chain (see [`crate::dispatch`]), and it is never config-gated: every EHR
+//! directly on the spec. The crate's RBAC + ABAC + SMART gates
+//! ([`crate::extensions::access::authz`], [`crate::extensions::access::pep`]) are
+//! our **own enterprise extensions** (SMART aside, which is spec-grounded) — no
+//! openEHR spec governs RBAC/ABAC, and the SM places authorisation out of band
+//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions). They
+//! compose **on top of** this spec base as additive restrictions
+//! (AND-composition: a request must clear the `EHR_ACCESS` gate *and* any
+//! RBAC/ABAC/SMART policy), never the other way round. Accordingly the gate runs **first** in the pre-dispatch
+//! chain (the dispatch mount, `crate::api`), and it is never config-gated: every EHR
 //! carries an `EHR_ACCESS`, and the default (`open`, no settings) keeps every
 //! existing flow working (BASE `architecture_overview/master07-security.adoc`
 //! §Access Control — "sensible defaults").
@@ -50,8 +51,8 @@ use ehrbase_sm::{AccessLevel, DefaultAccess, EhrAccessSettings, Platform, princi
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
-use crate::extensions::access::authn::{Principal, current_principal};
 use crate::api::RequestParts;
+use crate::extensions::access::authn::{Principal, current_principal};
 use crate::overview::error::RestError;
 use crate::state::AppState;
 
