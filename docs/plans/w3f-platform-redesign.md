@@ -102,9 +102,9 @@ app/ehrbase/src/
 - [x] W6 `templates/` authored fresh (+ resource/ oracle) — {mod,identity,ingest,store,runtime}.rs; G-T04 case-insensitive template_id law landed
 - [x] W7 `system_log/` re-grounded — citations re-anchored to DICOM PS3.15/RFC 3881/5424-5426; ObjectClass::Extract added (additive); telemetry flagged spec-silent
 - [x] W8 `extensions/` quarantine assembled + flagged — events, subscriptions, fhir (mapping split 3-way), multimedia, tenancy; off = byte-identical invariant preserved
-- [ ] W9 `main.rs`/`lib.rs`/`db/` re-grounded; crate map documented
-- [ ] W10 The ONE fix pass — workspace compiles, all `TODO(w3f-integrate)` resolved
-- [ ] W11 Zero-TODO sweep: inventory + eliminate every actionable marker
+- [x] W9 `main.rs`/`lib.rs`/`db/` re-grounded; crate map documented — lib.rs two-layer map, extensions gating preserved
+- [x] W10 The ONE fix pass — workspace + all targets compile clean; versioning↔storage seam reconciled; CommitEnv wired (incl. the CONTRIBUTION-path hook gap legacy had inline)
+- [x] W11 Zero-TODO sweep — 88→0 markers: genuine seams implemented (ehr_repo, tag_repo, subtree/verbatim helpers, Extract audit emission, G-T04 index migration 0007), register-recorded deferrals converted to cited PORT NOTEs, stale notes to prose
 
 ### Stage 3 — deferred checks (in this order, only when ALL code is rewritten)
 
