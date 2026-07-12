@@ -124,8 +124,10 @@ The workspace is huge; a cold build is expensive and `target/` bloat once hit
   scratchpad target dir, and never more than four lanes.
 - **`target-cli` is retired (deleted 2026-07-12) — do not recreate it.** The
   IDE-vs-CLI contention fix is inverted: RustRover gets its own small dir
-  (`CARGO_TARGET_DIR=target/ide` in its Cargo settings), the CLI keeps
-  `./target`. Never `pkill -9 rustc` to "fix" slowness — it corrupts
+  (Cargo settings → env `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
+  — MUST be absolute: a relative value resolves against cargo's cwd and
+  sprouts a nested `target/` inside every crate the IDE checks), the CLI
+  keeps `./target`. Never `pkill -9 rustc` to "fix" slowness — it corrupts
   incremental caches.
 - **Iterate scoped, gate wide.** While working: `cargo clippy -p <crate>
   --all-targets` and `cargo nextest run -p <crate>`. The full `--workspace`

@@ -29,7 +29,10 @@ the IDE's cargo check shared `target/` and invalidated CLI artifacts on every
 save (recompile ping-pong). The first fix — CLI on `target-cli` — doubled the
 disk (35 GB copy) and was retired 2026-07-12: `target-cli` is deleted, do NOT
 recreate it. Current scheme: the CLI keeps `./target`; the IDE is the one
-isolated (RustRover Cargo settings → env `CARGO_TARGET_DIR=target/ide`).
+isolated (RustRover Cargo settings → env `CARGO_TARGET_DIR=<ABSOLUTE
+repo path>/target/ide` — absolute, never relative: a relative value
+resolves against cargo's per-crate cwd and sprouts nested `target/` dirs
+inside crates, observed 2026-07-12).
 Never pkill -9 rustc to "fix" slowness — it corrupts incremental caches and
 makes it worse. Full discipline (fixed agent lanes target/agent-t1..t4,
 clean-at->30GB hygiene) lives in CLAUDE.md §"Target-dir & warm-build
