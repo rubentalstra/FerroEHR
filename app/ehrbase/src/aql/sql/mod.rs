@@ -20,16 +20,17 @@
 //! [`predicate`] (WHERE/functions), [`value`] (the path split + coercions), and
 //! [`expr`] (the typed building blocks + the `LIKE`/archetype translations).
 //!
-//! ## Seams — `TODO(w3f-integrate)`
+//! ## Coupling to the storage schema
 //!
-//! The builder hard-codes the node/vo_version/ehr/audit column vocabulary
-//! (`crate::db::iden`) and the nested-set / `sys_period` / `branch_number`
-//! semantics of the greenfield store, and `analyze::is_structure_root` must stay
-//! in lockstep with `storage::codec::STRUCTURE_TYPES` (the `emit-rm-model`
-//! generator enforces it).
-// TODO(w3f-integrate): storage seam (register 02) — assert this builder's node/
-// vo_version/ehr/audit column set against `0001_baseline.sql` at the seam so a
-// schema change surfaces here rather than at runtime.
+//! The builder references the `node`/`vo_version`/`ehr`/`audit` column
+//! vocabulary directly and encodes the nested-set / `sys_period` /
+//! `branch_number` semantics of the greenfield store;
+//! `analyze::is_structure_root` must stay in lockstep with
+//! `storage::codec::STRUCTURE_TYPES` (the `emit-rm-model` generator enforces
+//! it). The `column_vocab` unit test (below) pins every column name the builder
+//! emits against the `CREATE TABLE` definitions in
+//! `migrations/ehr/0001_baseline.sql`, so a schema rename surfaces as a failing
+//! test rather than a runtime SQL error.
 
 mod expr;
 mod from;
@@ -321,4 +322,118 @@ pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
 #[cfg(test)]
 pub(super) fn archetype_predicate_sql_for_tests(value: &str) -> String {
     expr::archetype_predicate_sql(value)
+}
+
+#[cfg(test)]
+mod column_vocab {
+    //! Pin the builder's storage-column vocabulary to the schema. Every column
+    //! name the IR→SQL lowering emits (collected here, one group per table)
+    //! must be declared for that table in `migrations/ehr/0001_baseline.sql`,
+    //! so a schema rename fails this test instead of failing at query runtime.
+
+    /// The baseline migration — the authoritative schema (no openEHR spec
+    /// governs the SQL; `docs/architecture.md` §Storage).
+    const BASELINE: &str = include_str!("../../../migrations/ehr/0001_baseline.sql");
+
+    /// The columns the builder references, grouped by the table each `sea-query`
+    /// alias resolves to. Keep in sync with the `col(..)` / `Expr::col(..)`
+    /// call sites across `from`/`select`/`predicate`/`value`/`expr`.
+    const VOCAB: &[(&str, &[&str])] = &[
+        (
+            "node",
+            &[
+                "vo_id",
+                "sys_version",
+                "num",
+                "num_cap",
+                "ehr_id",
+                "rm_type",
+                "archetype",
+                "arch_entity",
+                "arch_concept",
+                "arch_major",
+                "name",
+                "data",
+            ],
+        ),
+        (
+            "vo_version",
+            &[
+                "vo_id",
+                "kind",
+                "ehr_id",
+                "sys_version",
+                "trunk_version",
+                "branch_number",
+                "branch_version",
+                "sys_period",
+                "lifecycle_state",
+                "creating_system_id",
+                "contribution_id",
+                "audit_id",
+                "template_id",
+            ],
+        ),
+        ("ehr", &["id", "system_id", "time_created", "subject_id"]),
+        (
+            "audit",
+            &[
+                "id",
+                "time_committed",
+                "system_id",
+                "change_type",
+                "description",
+                "committer",
+            ],
+        ),
+    ];
+
+    /// The `CREATE TABLE {table} ( … )` body from the baseline migration (the
+    /// text between the opening paren and the balanced closing paren).
+    fn create_table_body(table: &str) -> String {
+        let head = format!("CREATE TABLE {table} (");
+        let start = BASELINE
+            .find(&head)
+            .unwrap_or_else(|| panic!("no `{head}` in the baseline migration"))
+            + head.len();
+        let mut depth = 1usize;
+        for (i, ch) in BASELINE[start..].char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return BASELINE[start..start + i].to_owned();
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unterminated CREATE TABLE {table} in the baseline migration");
+    }
+
+    /// Whether `body` declares a column named exactly `col` — a line whose
+    /// trimmed text is `col` followed by a non-identifier char (so `num` does
+    /// not match the `num_cap` declaration).
+    fn declares_column(body: &str, col: &str) -> bool {
+        body.lines().any(|line| {
+            let t = line.trim_start();
+            t.strip_prefix(col)
+                .is_some_and(|rest| rest.starts_with(|c: char| c == ' ' || c == '\t'))
+        })
+    }
+
+    #[test]
+    fn builder_columns_exist_in_baseline_schema() {
+        for (table, columns) in VOCAB {
+            let body = create_table_body(table);
+            for col in *columns {
+                assert!(
+                    declares_column(&body, col),
+                    "AQL SQL builder references column `{table}.{col}`, but it is not \
+                     declared in `CREATE TABLE {table}` in 0001_baseline.sql — schema drift"
+                );
+            }
+        }
+    }
 }

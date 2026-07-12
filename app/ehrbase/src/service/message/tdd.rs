@@ -38,10 +38,9 @@
 //! so a single unconvertible TDD rejects the whole batch with nothing committed.
 //! A flagged extension of the SM interface.
 //!
-//! TODO(w3f-integrate): templates + validation — `web_template_for` /
-//! `get_template_xml` / `create_composition` move to the `templates/` +
-//! `validation/` seams at the fix pass; this module calls them through
-//! `EhrbaseService` today.
+//! This module reaches the templates layer through
+//! [`EhrbaseService::web_template_for`] / [`EhrbaseService::get_template_xml`]
+//! and the validated commit through [`EhrbaseService::create_composition`].
 
 use quick_xml::Reader;
 use quick_xml::events::Event;
@@ -163,7 +162,6 @@ impl EhrbaseService {
         // unknown template_id is `template_does_not_exist` (this rejects the
         // corpus `..__invalid_opt_doesnt_exist` TDD). A stored-but-unbuildable
         // template surfaces through `web_template_for` as content_invalid.
-        // TODO(w3f-integrate): templates — `get_template_xml` / `web_template_for`.
         match self.get_template_xml(&envelope.template_id).await {
             Ok(_) => {}
             Err(ServiceError::NotFound(_)) => {
@@ -195,7 +193,8 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID`.
     pub(super) async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
         let composition = self.prepare_one_tdd(ehr_id, tdd).await?;
-        // TODO(w3f-integrate): validation — the validated `create_composition`.
+        // The validated commit path (WebTemplate + RM-invariant + terminology
+        // validation, contribution/audit).
         let resp = self.create_composition(ehr_id, composition).await?;
         version_uid(&resp)
     }
@@ -214,7 +213,7 @@ impl EhrbaseService {
         }
         let mut ids = Vec::with_capacity(prepared.len());
         for composition in prepared {
-            // TODO(w3f-integrate): validation — the validated `create_composition`.
+            // The validated commit path (as in `import_one_tdd`).
             let resp = self.create_composition(ehr_id, composition).await?;
             ids.push(version_uid(&resp)?);
         }

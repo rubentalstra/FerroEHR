@@ -26,40 +26,12 @@
 //! `vo_attestation` rows is delegated to a storage-owned repository. No openEHR
 //! spec governs the SQL — it is our own design.
 //!
-//! TODO(w3f-integrate): the assumed `crate::storage::version_repo` API this
-//! module codes against (reconciled with register 02-storage at the fix pass):
-//! - `insert_audit(&mut PgConnection, &AuditInput) -> Result<(Uuid, jiff::Timestamp)>`
-//! - `insert_audit_at(&mut PgConnection, &AuditInput, jiff::Timestamp) -> Result<Uuid>`
-//! - `insert_contribution(&mut PgConnection, ehr_id: Option<Uuid>, audit_id: Uuid, supplied: Option<Uuid>) -> Result<Uuid>`
-//! - `insert_vo_version(&mut PgConnection, &NewVersionRow) -> Result<()>`
-//! - `insert_imported_vo_version(&mut PgConnection, &NewVersionRow, lower: jiff::Timestamp, upper: Option<jiff::Timestamp>) -> Result<()>`
-//! - `close_ordinal_at_now(&mut PgConnection, vo_id: Uuid, ordinal: i32) -> Result<()>`
-//! - `close_lineage_at(&mut PgConnection, vo_id: Uuid, &Lineage, at: jiff::Timestamp) -> Result<()>`
-//! - `advisory_lock(&mut PgConnection, vo_id: Uuid) -> Result<()>`
-//! - `lineage_tip(&mut PgConnection, vo_id: Uuid, expected: Option<TreeId>) -> Result<Option<PrecedingTip>>`
-//! - `next_ordinal(&mut PgConnection, vo_id: Uuid) -> Result<i32>`
-//! - `next_branch_number(&mut PgConnection, vo_id: Uuid, trunk: i32) -> Result<i32>`
-//! - `current_trunk(&mut PgConnection, vo_id: Uuid, Kind) -> Result<Option<(Option<Uuid>, i32)>>`
-//! - `object_kind(&PgPool, vo_id: Uuid) -> Result<Option<Kind>>`
-//! - `current_vo(&PgPool, ehr_id: Uuid, Kind) -> Result<Option<(Uuid, i32)>>`
-//! - `imported_container_state(&mut PgConnection, vo_id: Uuid) -> Result<ContainerState>`
-//! - `insert_attestation(&mut PgConnection, vo_id, sys_version, contribution_id, &Value) -> Result<()>`
-//! - `attestation_target(&mut PgConnection, vo_id, TreeId, Kind) -> Result<Option<AttestTarget>>`
-//! - `read_attestations(&PgPool, vo_id, sys_version) -> Result<Vec<Value>>`
-//! - `read_attestations_all(&PgPool, vo_id) -> Result<Vec<(i32, Value)>>`
-//! - `read_current`/`read_version`/`read_version_by_ordinal`/`read_version_at`(&PgPool, …) -> Result<Option<StoredVersion>>`
-//! - `all_versions(&PgPool, vo_id) -> Result<Vec<StoredVersion>>`
-//! - `time_created(&PgPool, vo_id) -> Result<Option<jiff::Timestamp>>`
-//! - `contribution_audit(&PgPool, contribution_id, ehr_id) -> Result<Option<AuditInput+time>>`
-//! - `contribution_version_refs(&PgPool, contribution_id) -> Result<Vec<VersionRef>>`
-//! - `list_contributions`/`count_contributions`(&PgPool, ehr_id, window, page)
-//! - `insert_ehr_folder_rank(&mut PgConnection, ehr_id, vo_id) -> Result<()>`
-//! - `write_outbox(&mut PgConnection, contribution_id, ehr_id, at, Vec<Value>) -> Result<()>`
-//!   (README: the outbox row write rides inside the commit tx; versioning
-//!   builds the PHI-free envelope entries.)
-//! And `crate::storage::node_repo::{write_nodes(&mut PgConnection, vo_id,
-//! sys_version, ehr_id, &[NodeRow]), read_version_canonical(&PgPool, vo_id,
-//! sys_version) -> Value}` plus the public `decompose`/`reassemble` codec.
+//! The concrete row-I/O contract lives in [`crate::storage::version_repo`] (the
+//! `vo_version` / `audit` / `contribution` / `vo_attestation` spine plus the
+//! folder-membership and event-outbox writes) and
+//! [`crate::storage::node_repo`] (the `decompose` / `reassemble` codec + the
+//! `node` writes); the per-function docs there are the authority for each call
+//! this module makes.
 
 use serde_json::Value;
 use sqlx::PgPool;
@@ -194,14 +166,16 @@ pub(crate) struct SigningCtx<'a> {
 /// hook is owned by another register: content validation (validation register),
 /// EHR existence + `is_modifiable` write guard + `current_vo` (EHR register),
 /// EHR_ACCESS cache invalidation (EHR register), committer default (EHR
-/// register).
-///
-/// TODO(w3f-integrate): the service type (`crate::service::EhrbaseService`)
-/// implements this at the fix pass; versioning owns only the change-set
-/// decision logic. `default_committer` is the EHR worker's `committer()`;
-/// `ensure_ehr_exists` closes G-6 (register 03: SM `i_ehr_contribution.adoc`
+/// register). `crate::service::EhrbaseService` implements it; versioning owns
+/// only the change-set decision logic. `default_committer` is the EHR worker's
+/// `committer()`; `ensure_ehr_exists` closes G-6 (SM `i_ehr_contribution.adoc`
 /// §commit_contribution `Pre_has_ehr`); `ensure_content_writable` is the
 /// EHR_STATUS `is_modifiable` guard.
+///
+/// The two in-transaction hooks ([`Self::pre_composition_modify`] and
+/// [`Self::post_status_commit`]) are the cross-version invariant / promoted-
+/// subject-column glue the direct write paths run inline; they are wired here so
+/// the CONTRIBUTION path runs them too, in the same commit transaction.
 #[async_trait::async_trait]
 pub(crate) trait CommitEnv {
     /// The connection pool for the commit transaction.
@@ -232,4 +206,28 @@ pub(crate) trait CommitEnv {
     ) -> Result<Option<(Uuid, i32)>, ServiceError>;
     /// Drop the cached EHR_ACCESS settings after an EHR_ACCESS commit.
     async fn invalidate_ehr_access(&self, ehr_id: Uuid);
+    /// Enforce the `VERSIONED_COMPOSITION` cross-version invariants
+    /// (`Archetype_node_id_valid` / `Persistent_validity`, RM ehr
+    /// `versioned_composition.adoc`) of a COMPOSITION *modify* against the
+    /// stored first version, **before** the new version is written. Runs inside
+    /// the commit transaction (`tx`) so the check and the write are atomic — the
+    /// same hook the direct update path runs inline.
+    async fn pre_composition_modify(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        vo_id: Uuid,
+        canonical: &Value,
+    ) -> Result<(), ServiceError>;
+    /// Keep the EHR's promoted subject columns (`ehr.subject_id` /
+    /// `subject_namespace`, spec-silent index plumbing — our own design) in sync
+    /// with a committed `EHR_STATUS` (`subject.external_ref`, RM ehr master04
+    /// §EHR Status). Runs inside the commit transaction (`tx`) so a subject
+    /// uniqueness conflict rolls the whole CONTRIBUTION back — the same hook the
+    /// direct EHR-create / EHR_STATUS-update paths run inline.
+    async fn post_status_commit(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        ehr_id: Uuid,
+        status: &Value,
+    ) -> Result<(), ServiceError>;
 }

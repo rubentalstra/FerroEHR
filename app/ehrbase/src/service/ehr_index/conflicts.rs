@@ -16,9 +16,10 @@ use super::{IndexError, row_to_entry};
 /// One detected index error state (master07 §Overview) — advisory only.
 ///
 /// `pub`: the SM `I_EHR_INDEX` defines no detection operation (this read fills
-/// that silence — our own design), so it has no trait binding yet; it is
-/// exposed on the public [`EhrbaseService`] surface for the admin/extension
-/// wire. TODO(w3f-integrate): bind to an extension route or admin CLI check.
+/// that silence — our own design), so it has no SM trait binding and no
+/// ITS-REST wire binding. It is exposed on the public [`EhrbaseService`]
+/// surface as a native-API-only diagnostic; a route or admin-CLI binding would
+/// be a spec-silent extension of our own, not a conformance requirement.
 #[derive(Debug, Clone)]
 pub enum IndexConflict {
     /// One subject is associated with more than one EHR (the

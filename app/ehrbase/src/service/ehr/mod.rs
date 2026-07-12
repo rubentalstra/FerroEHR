@@ -31,26 +31,19 @@
 //! method by Rust's method-resolution priority; `self.<name>(…)` inside a trait
 //! impl therefore calls the internal implementation, never recurses.
 //!
-//! # Integration seams — `TODO(w3f-integrate)` (reconciled at the fix pass)
+//! # Integration seams
 //!
-//! - **`impl CommitEnv for EhrbaseService`** (the [`crate::versioning::CommitEnv`]
-//!   hooks the CONTRIBUTION commit engine needs) is wired at the fix pass. Its
-//!   EHR-owned constituents are authored here: `default_committer` =
-//!   [`meta::committer`], `ensure_ehr_exists` =
-//!   [`EhrbaseService::ensure_ehr_exists`], `ensure_content_writable` =
-//!   [`EhrbaseService::ensure_content_writable`], `current_vo` (adapt the
-//!   `(vo_id, TreeId)` of [`EhrbaseService::current_vo`] to the trait's
-//!   `(vo_id, i32)`), `invalidate_ehr_access` =
-//!   [`EhrbaseService::invalidate_ehr_access`], and `validate_for_commit` =
-//!   [`EhrbaseService::validate_for_commit`]. `pool`/`effective_system_id`/
-//!   `signing_ctx` come from `EhrbaseService` (`service/mod.rs`).
-//! - Every `crate::versioning::commit_version_set(self, …)` call below therefore
-//!   requires that impl; each site is marked.
-//! - **`service/mod.rs`**: the orchestrator adds `mod ehr;`; the legacy flat
-//!   `ehr` / `composition` / `directory` / `item_tag` / `ehr_uri` /
-//!   `ehr_access_cache` modules (and the EHR half of `contribution`) are removed,
-//!   and the `EhrbaseService.ehr_access` field's type becomes
-//!   [`access::EhrAccessCache`].
+//! [`crate::versioning::CommitEnv`] (the hooks the CONTRIBUTION commit engine
+//! needs) is implemented for `EhrbaseService` in `service/mod.rs`; its EHR-owned
+//! constituents are authored in this chapter: `default_committer` =
+//! [`meta::committer`], `ensure_ehr_exists` / `ensure_content_writable` /
+//! `current_vo` / `invalidate_ehr_access` are `EhrbaseService` methods here, and
+//! the two in-transaction hooks delegate to
+//! [`check_versioned_composition_invariants`] (COMPOSITION modify) and
+//! [`EhrbaseService::sync_ehr_subject`] (EHR_STATUS commit) — the same fns the
+//! direct create/update paths run inline. SQL row I/O is a storage seam
+//! ([`crate::storage::ehr_repo`] / [`crate::storage::version_repo`]; no openEHR
+//! spec governs the schema — our own design).
 
 mod access;
 mod composition;
@@ -66,10 +59,11 @@ mod uri;
 
 // The EHR-component surface other service modules and adapters consume.
 pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
-#[cfg(test)]
-pub(in crate::service) use service::default_ehr_status;
+pub(in crate::service) use composition_validate::check_versioned_composition_invariants;
 pub(in crate::service) use directory::validate_folder;
 pub(in crate::service) use meta::committer;
+#[cfg(test)]
+pub(in crate::service) use service::default_ehr_status;
 pub(in crate::service) use status_validate::validate_ehr_status;
 
 use ehrbase_sm::{ResourceMeta, SmError, SubjectRef};

@@ -19,9 +19,8 @@ use crate::service::EhrbaseService;
 #[async_trait]
 impl DefinitionAdapter for EhrbaseService {
     async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
-        // The OPT 1.4 canonical XML is parsed + stored; the wire `201` body is
-        // the created template summary.
-        // TODO(w3f-integrate): templates seam (register 10) — `store_template`.
+        // The OPT 1.4 canonical XML is parsed + stored through the templates
+        // layer; the wire `201` body is the created template summary.
         Ok(self.store_template(&opt_xml).await?)
     }
 
@@ -37,8 +36,7 @@ impl DefinitionAdapter for EhrbaseService {
         // The wire decodes `filter_template_id`/`concept`/`filter_version`
         // (glob, `*` wildcard) + `offset`/`fetch`
         // (`operations/definition_template_adl1.4_list.yaml`). Filter + paginate
-        // the stored template descriptors here.
-        // TODO(w3f-integrate): templates seam (register 10) — `list_templates`.
+        // the stored template descriptors (from the templates layer) here.
         Ok(filter_templates(
             self.list_templates().await?,
             &filter,
@@ -57,7 +55,8 @@ impl DefinitionAdapter for EhrbaseService {
         let level =
             DetailLevel::from_query(detail_level.as_deref()).map_err(SmError::precondition)?;
         let kind = ExampleType::from_query(kind.as_deref()).map_err(SmError::precondition)?;
-        // TODO(w3f-integrate): templates seam (register 10) — `template_example`.
+        // The example COMPOSITION is built from the WebTemplate by the templates
+        // layer.
         Ok(self.template_example(&template_id, level, kind).await?)
     }
 

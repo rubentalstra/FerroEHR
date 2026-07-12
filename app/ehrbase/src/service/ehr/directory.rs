@@ -48,7 +48,6 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "DIRECTORY creation");
-        // TODO(w3f-integrate): commit seam (crate::versioning::create) + signing_ctx.
         let committed = create(
             &mut tx,
             Some(ehr_id),
@@ -230,26 +229,14 @@ impl EhrbaseService {
     /// resolves to the deleted version (→ 204) rather than 404. `None` when the
     /// EHR indexes no folder hierarchy.
     ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `ehr_folder` ⋈ `vo_version`
-    /// read; no openEHR spec governs the SQL (our own design).
+    /// The `ehr_folder` ⋈ `vo_version` resolution is a storage seam
+    /// ([`crate::storage::ehr_repo::directory_vo`]; no openEHR spec governs the
+    /// SQL — our own design).
     pub(in crate::service) async fn directory_vo_opt(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<Uuid>, ServiceError> {
-        // Order LIVE hierarchies (lifecycle <> 523) before deleted ones, then by
-        // rank; the first row is EHR.directory.
-        let vo_id: Option<Uuid> = sqlx::query_scalar(
-            "SELECT f.vo_id FROM ehr_folder f \
-             JOIN vo_version v ON v.vo_id = f.vo_id \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
-             WHERE f.ehr_id = $1 \
-             ORDER BY (v.lifecycle_state = '523'), f.rank \
-             LIMIT 1",
-        )
-        .bind(ehr_id)
-        .fetch_optional(&self.pool)
-        .await?;
-        Ok(vo_id)
+        Ok(crate::storage::ehr_repo::directory_vo(&self.pool, ehr_id).await?)
     }
 
     /// The EHR's directory versioned-object id, or `NotFound`.

@@ -69,10 +69,9 @@ pub enum ObjectClass {
     /// Extracts … can be used to guarantee non-repudiation of information
     /// passed between systems" (BASE
     /// `architecture_overview/master07-security.adoc` §Non-repudiation).
-    // TODO(w3f-integrate): message-service emission — the SM-5 EHR-Extract
-    // export/import path (`ehrbase-sm` message service) does not yet build and
-    // `emit` an `AuditEvent { object: Extract, .. }`; this variant makes the
-    // class classifiable/renderable ahead of that emission seam being wired.
+    // The SM-5 EHR-Extract export/import path emits an
+    // `AuditEvent { object: Extract, .. }` on completion (the platform crate's
+    // `EhrbaseService::emit_extract_audit`); this variant is its resource class.
     Extract,
     /// Login / application activity → "Application Activity"; no clinical object.
     ApplicationActivity,

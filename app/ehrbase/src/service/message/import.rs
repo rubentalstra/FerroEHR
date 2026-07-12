@@ -35,16 +35,21 @@
 //! `ehr.subject_id` column is left unset for an imported EHR — a clone shares
 //! the source subject, which the one-EHR-per-subject index cannot represent, so
 //! the subject is preserved inside the `EHR_STATUS` content, not the promoted
-//! column (RM ehr, `EHR.ehr_status`). TODO(w3f-integrate): templates + validation
-//! — decide whether an imported COMPOSITION is re-validated against a
-//! target-provisioned OPT.
+//! column (RM ehr, `EHR.ehr_status`).
+//!
+//! PORT NOTE (re-validation on import; register 06 G-M5): whether an imported
+//! COMPOSITION is re-validated against a target-provisioned OPT is deferred —
+//! doing so needs the source's exact OPT and a re-validation pass keyed on the
+//! target template. Until that decision, imported content is stored verbatim
+//! (matching the admin dump/load path), which master06 §Copying permits: "the
+//! `ORIGINAL_VERSION` instance is never modified".
 
 use std::collections::BTreeMap;
 
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase_sm::{CallStatusType, EventActionCode, SmError};
 use openehr_rm::ehr_extract::common::extract::Extract;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -87,9 +92,12 @@ impl EhrbaseService {
         // `ehr_create_fail_duplicate_id`. The EHR is created locally, so its
         // immutable `system_id` is ours (master06 §Distributed Versioning — the
         // committing system is the local one).
-        // TODO(w3f-integrate): ehr — the clone-target EHR-row creation belongs
-        // with the EHR service's `create_ehr`; kept here as the Case-1 clone
-        // step (no openEHR spec governs the SQL — our own design).
+        // PORT NOTE (clone-target EHR-row creation; no openEHR spec governs the
+        // storage SQL — our own design): the row insert is inlined here as the
+        // master06 §Copying Case-1 clone step rather than routed through the EHR
+        // service's `create_ehr`, because a clone must reuse the source EHR id
+        // (or a caller-fixed id) and skip the fresh-`EHR_STATUS` creation that
+        // `create_ehr` performs — the status arrives inside the extract.
         let inserted =
             sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(ehr_id)
@@ -107,6 +115,9 @@ impl EhrbaseService {
         commit_import(&mut tx, ehr_id, &audit, containers).await?;
         commit_demographic_import(&mut tx, &audit, parties).await?;
         tx.commit().await.map_err(ServiceError::from)?;
+        // A completed import is audited for non-repudiation (an inbound Extract
+        // communication landing new local versions → `EventActionCode::Create`).
+        self.emit_extract_audit(ehr_id, EventActionCode::Create);
         Ok(())
     }
 
@@ -151,6 +162,9 @@ impl EhrbaseService {
         commit_import(&mut tx, an_ehr_id, &audit, containers).await?;
         commit_demographic_import(&mut tx, &audit, parties).await?;
         tx.commit().await.map_err(ServiceError::from)?;
+        // A completed import is audited for non-repudiation (an inbound Extract
+        // communication landing new local versions → `EventActionCode::Create`).
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Create);
         Ok(())
     }
 

@@ -64,9 +64,7 @@ impl VersionRead {
 /// from its column ints and the flattened audit becomes the `commit_audit`.
 /// A deleted version (lifecycle `523`) stores no node rows, so storage already
 /// yields `canonical = Value::Null` (master06 §Logical Deletion).
-fn version_read(
-    stored: crate::storage::version_repo::StoredVersion,
-) -> VersionRead {
+fn version_read(stored: crate::storage::version_repo::StoredVersion) -> VersionRead {
     VersionRead {
         vo_id: stored.vo_id,
         ehr_id: stored.ehr_id,
@@ -130,9 +128,11 @@ pub(crate) async fn read_version(
     tree: TreeId,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let (t, b, v) = tree.columns();
-    Ok(crate::storage::version_repo::read_version(pool, vo_id, t, b, v)
-        .await?
-        .map(version_read))
+    Ok(
+        crate::storage::version_repo::read_version(pool, vo_id, t, b, v)
+            .await?
+            .map(version_read),
+    )
 }
 
 /// Read the version of an object that was current at a given instant

@@ -66,13 +66,12 @@ impl EhrbaseService {
             .await?
             && let Ok(parent) = crate::validation::validate_adl2_source(&parent_src)
         {
-            crate::validation::check_specialisation_depth(&meta, parent.depth)
-                .map_err(|v| {
-                    ServiceError::sm(
-                        CallStatusType::InvalidArtefact,
-                        format!("{}: {}", v.code, v.detail),
-                    )
-                })?;
+            crate::validation::check_specialisation_depth(&meta, parent.depth).map_err(|v| {
+                ServiceError::sm(
+                    CallStatusType::InvalidArtefact,
+                    format!("{}: {}", v.code, v.detail),
+                )
+            })?;
         }
         let hrid = meta.hrid;
         let kind = store_kind(meta.kind);
@@ -232,8 +231,7 @@ impl EhrbaseService {
     /// plus a well-formed HRID (module PORT NOTE G-05-02). Stateless.
     #[must_use]
     pub(super) fn valid_adl2_source(adl2: &str) -> bool {
-        crate::validation::validate_adl2_source(adl2)
-            .is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
+        crate::validation::validate_adl2_source(adl2).is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
     }
 }
 

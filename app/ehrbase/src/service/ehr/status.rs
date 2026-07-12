@@ -33,8 +33,6 @@ impl EhrbaseService {
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        // TODO(w3f-integrate): version read seam (crate::versioning::{version_at,
-        // read_current}).
         let read = match at {
             Some(at) => version_at(&self.pool, vo_id, at).await?,
             None => read_current(&self.pool, vo_id).await?,
@@ -76,7 +74,6 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
-        // TODO(w3f-integrate): commit seam (crate::versioning::update) + signing_ctx.
         update(
             &mut tx,
             Some(ehr_id),
@@ -216,20 +213,16 @@ impl EhrbaseService {
     /// `EHR_STATUS` (should not occur) is treated as modifiable so the guard
     /// never spuriously blocks.
     ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `is_modifiable` root-node
-    /// read; no openEHR spec governs the SQL.
+    /// The `is_modifiable` root-node read is a storage seam
+    /// ([`crate::storage::ehr_repo::ehr_is_modifiable`]; no openEHR spec governs
+    /// the SQL — our own design). `None` (no current `EHR_STATUS`) → modifiable,
+    /// so the guard never spuriously blocks.
     async fn ehr_is_modifiable(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
-        let flag: Option<bool> = sqlx::query_scalar(
-            "SELECT (n.data->>'is_modifiable') = 'true' \
-             FROM vo_version v \
-             JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
-             AND v.branch_number = 0",
+        Ok(
+            crate::storage::ehr_repo::ehr_is_modifiable(&self.pool, ehr_id)
+                .await?
+                .unwrap_or(true),
         )
-        .bind(ehr_id)
-        .fetch_optional(&self.pool)
-        .await?;
-        Ok(flag.unwrap_or(true))
     }
 
     /// Refuse a write to *EHR contents* when the EHR is deactivated
@@ -273,11 +266,13 @@ impl EhrbaseService {
     ///
     /// The EHR-owned commit hook the versioning layer lifted out of its write
     /// path (RM common master06 §Committal). Called inside the commit
-    /// transaction of the EHR-create / EHR_STATUS-update paths.
-    ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `ehr` subject-column update;
-    /// the CONTRIBUTION path (`crate::versioning::commit_version_set`) must invoke
-    /// this as a `CommitEnv` hook for an EHR_STATUS version at the fix pass.
+    /// transaction of the EHR-create / EHR_STATUS-update paths, and — for the
+    /// CONTRIBUTION path — through the
+    /// [`crate::versioning::CommitEnv::post_status_commit`] hook after an
+    /// EHR_STATUS version. The `UPDATE` stays inline here (not a plain
+    /// `ehr_repo` read) because it maps the subject-uniqueness constraint
+    /// violation to a service-level [`ServiceError::Conflict`] (→ 409); the
+    /// `ehr.subject_*` columns are spec-silent index plumbing (our own design).
     pub(in crate::service) async fn sync_ehr_subject(
         &self,
         tx: &mut PgConnection,

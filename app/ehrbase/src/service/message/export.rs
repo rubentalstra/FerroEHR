@@ -32,7 +32,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase_sm::{CallStatusType, EventActionCode, SmError};
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -436,7 +436,11 @@ impl EhrbaseService {
                 "no EHR with id {an_ehr_id}"
             )));
         }
-        Ok(vec![self.export_whole_ehr(an_ehr_id, 1).await?])
+        let extract = self.export_whole_ehr(an_ehr_id, 1).await?;
+        // A completed export is audited for non-repudiation (an outbound
+        // Extract communication → `EventActionCode::Read`).
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Read);
+        Ok(vec![extract])
     }
 
     /// SM `export_ehr_extracts(extract_spec)` — one `EXTRACT` per manifest
@@ -454,17 +458,17 @@ impl EhrbaseService {
         let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
 
         let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
+        let mut exported_ehrs: Vec<Uuid> = Vec::with_capacity(extract_spec.manifest.entities.len());
         for (idx, entity) in extract_spec.manifest.entities.iter().enumerate() {
             let ehr_id =
                 resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
                     .await?;
 
             // The primary set: an explicit item_list, else every VO of the EHR.
-            // PORT NOTE (keep, re-verify — `master04-common_package.adoc`
-            // `EXTRACT_SPEC.criteria`, an AQL primary-set query; G-M3): AQL
-            // criteria selection lands with the `$ehr`-bound AQL export wave.
-            // Until then it is a typed reject, never a silent over-export.
-            // TODO(w3f-integrate): aql — apply `EXTRACT_SPEC.criteria`.
+            // PORT NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
+            // an AQL primary-set query; register 06 G-M3): AQL criteria selection
+            // lands with the `$ehr`-bound AQL export wave. Until then it is a
+            // typed reject, never a silent over-export.
             let vo_kinds: Vec<(Uuid, String)> = if entity.item_list.is_empty() {
                 if criteria_present {
                     return Err(SmError::precondition(
@@ -540,6 +544,14 @@ impl EhrbaseService {
             rewrite_content_refs(&mut demographics);
             let seq = i32::try_from(idx + 1).unwrap_or(i32::MAX);
             out.push(self.assemble_extract(items, &demographics, spec_value.clone(), seq));
+            exported_ehrs.push(ehr_id);
+        }
+        // One completed-export audit event per distinct exported EHR (outbound
+        // Extract communication → `EventActionCode::Read`; non-repudiation).
+        exported_ehrs.sort_unstable();
+        exported_ehrs.dedup();
+        for ehr_id in exported_ehrs {
+            self.emit_extract_audit(ehr_id, EventActionCode::Read);
         }
         Ok(out)
     }
@@ -553,11 +565,10 @@ fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
     let Some(vs) = spec.version_spec.as_ref() else {
         return Ok(VersionSelection::latest_only());
     };
-    // PORT NOTE (keep — `extract_version_spec.adoc`
-    // `EXTRACT_VERSION_SPEC.commit_time_interval`; G-M4): commit-time-window
-    // version selection lands with the AQL export wave (G-M3); a typed reject
-    // until then, never a silent full export.
-    // TODO(w3f-integrate): aql — apply `commit_time_interval`.
+    // PORT NOTE (`extract_version_spec.adoc`
+    // `EXTRACT_VERSION_SPEC.commit_time_interval`; register 06 G-M4):
+    // commit-time-window version selection lands with the AQL export wave
+    // (G-M3); a typed reject until then, never a silent full export.
     if vs.commit_time_interval.is_some() {
         return Err(SmError::precondition(
             "EXTRACT_VERSION_SPEC.commit_time_interval is not supported in this stage",

@@ -324,13 +324,17 @@ async fn next_version(
 /// signing the assembled `ORIGINAL_VERSION` (RM common master06 §Digital
 /// Signature) and rejecting an illegal lifecycle transition (G-01).
 ///
-/// TODO(w3f-integrate): the cross-area pre-commit hooks the legacy path ran
-/// inline here now belong to other registers and run *before* this write:
-/// - `sync_ehr_subject` (EHR_STATUS subject columns) — EHR register pre-commit
-///   hook;
-/// - VERSIONED_COMPOSITION cross-version invariants (`Archetype_node_id_valid`
-///   / `Persistent_validity`) — composition/validation register hook (G-13);
-/// - the `compositions_committed_total` metric — cross-cutting post-commit hook.
+/// The cross-area pre/post-commit hooks the legacy path ran inline here now
+/// belong to other layers and run around this write, driven by the CONTRIBUTION
+/// orchestration ([`crate::versioning::CommitEnv`], called from
+/// [`super::contribution::commit_version_set`]) and by the direct write paths:
+/// - `CommitEnv::pre_composition_modify` — the VERSIONED_COMPOSITION
+///   cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
+///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify (G-13);
+/// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
+///   after an EHR_STATUS version;
+/// - the `compositions_committed_total` metric — a cross-cutting service-layer
+///   concern, not a storage write.
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)] // the three change arms + commit context
 async fn apply_change(
     tx: &mut PgConnection,

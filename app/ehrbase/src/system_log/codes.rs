@@ -206,12 +206,15 @@ impl AtnaObject for ObjectClass {
             // EHR-Extract communication carries patient-identifiable clinical
             // data, audited for non-repudiation (BASE
             // `master07-security.adoc` §Non-repudiation): Patient-Record family
-            // (110110) with `originalText="extract"`.
+            // (110110) with `originalText="extract"`. The SM-5 message service
+            // emits this class on a completed export/import
+            // (`EhrbaseService::emit_extract_audit`), carrying the direction in
+            // the event's `EventActionCode` (`Read` out / `Create` in).
             // PORT NOTE: DICOM PS3.15 §A.5.1 also defines dedicated Export
-            // (110106) / Import (110107) EventIDs; a direction-aware rendering
-            // could adopt them once the SM-5 export/import emission seam
-            // (TODO(w3f-integrate) on `ObjectClass::Extract`) distinguishes
-            // direction.
+            // (110106) / Import (110107) EventIDs; a direction-aware `EventID`
+            // rendering could adopt them, but `ObjectClass` carries no direction
+            // and the action code already records it, so we keep the single
+            // Patient-Record `EventID` for the class.
             ObjectClass::Extract => (EVENT_PATIENT_RECORD_CODE, "extract"),
             ObjectClass::ApplicationActivity => {
                 (EVENT_APPLICATION_ACTIVITY_CODE, "Application Activity")

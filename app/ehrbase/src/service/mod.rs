@@ -241,6 +241,24 @@ impl CommitEnv for EhrbaseService {
     async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
         EhrbaseService::invalidate_ehr_access(self, ehr_id).await;
     }
+
+    async fn pre_composition_modify(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        vo_id: Uuid,
+        canonical: &Value,
+    ) -> Result<(), ServiceError> {
+        ehr::check_versioned_composition_invariants(tx, vo_id, canonical).await
+    }
+
+    async fn post_status_commit(
+        &self,
+        tx: &mut sqlx::PgConnection,
+        ehr_id: Uuid,
+        status: &Value,
+    ) -> Result<(), ServiceError> {
+        self.sync_ehr_subject(tx, ehr_id, status).await
+    }
 }
 
 /// SM `I_DEFINITION` WebTemplate exposure: one resolution serves validation,

@@ -13,11 +13,11 @@
 //! version + nodes + contribution + audit (+ outbox) commit atomically
 //! (master06 §Committal: "similar to nested transactions").
 //
-// TODO(w3f-integrate): the versioning layer owns the value types (`AuditInput`,
-// `Kind`, `TreeId`, `VersionRead`, `Committed`) that map onto the plain inputs
-// and the [`StoredVersion`] output below (e.g. `Kind::as_str` → `kind: &str`,
-// `TreeId::columns()` → the three tree ints); reconciled at the fix pass. Kept
-// decoupled so storage never depends upward on versioning.
+// The versioning layer owns the value types (`AuditInput`, `Kind`, `TreeId`,
+// `VersionRead`, `Committed`) and maps them onto the plain inputs and the
+// [`StoredVersion`] output here (e.g. `Kind::as_str` → `kind: &str`,
+// `TreeId::columns()` → the three tree ints). Storage never depends upward on
+// versioning — this decoupling is deliberate and stays.
 
 use serde_json::Value;
 use sqlx::postgres::PgRow;
@@ -159,10 +159,9 @@ macro_rules! version_select {
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-// TODO(w3f-integrate): the preceding-version reads and next-ordinal/next-branch
-// computation that surround this lock are the version-tree placement DECISION —
-// they stay in the versioning layer (register 01 change.rs), which calls this
-// lock first.
+// The preceding-version reads and the next-ordinal/next-branch computation that
+// surround this lock are the version-tree placement DECISION — they live in the
+// versioning layer (`versioning::change`), which calls this lock first.
 pub async fn advisory_lock(tx: &mut PgConnection, vo_id: Uuid) -> Result<(), StorageError> {
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))")
         .bind(vo_id)
@@ -356,6 +355,75 @@ pub async fn insert_imported_vo_version(
     .bind(row.contribution_id)
     .bind(row.audit_id)
     .bind(row.signature)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
+/// One `vo_version` row to re-persist **verbatim** during an archive load — the
+/// stored columns (`sys_period` bounds as ISO strings, `template_id`,
+/// `creating_system_id`) are preserved exactly as dumped (SM `I_ADMIN_DUMP_LOAD`
+/// round-trip; no openEHR spec governs the archive). Unlike
+/// [`ImportedVersionRow`] it keeps `template_id`, and unlike [`VersionRow`] the
+/// `sys_period` is explicit.
+#[derive(Debug)]
+pub struct VerbatimVersionRow<'a> {
+    pub vo_id: Uuid,
+    pub kind: &'a str,
+    pub ehr_id: Uuid,
+    pub sys_version: i32,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub preceding_version_uid: Option<&'a str>,
+    pub other_input_version_uids: Option<&'a Value>,
+    /// Lower/upper `sys_period` bounds as ISO-8601 strings (`upper = None` ⇒
+    /// still-open); bound with a `::timestamptz` cast.
+    pub sys_period_lower: Option<&'a str>,
+    pub sys_period_upper: Option<&'a str>,
+    pub lifecycle_state: &'a str,
+    pub contribution_id: Uuid,
+    pub audit_id: Uuid,
+    pub template_id: Option<&'a str>,
+    pub signature: Option<&'a str>,
+    pub creating_system_id: &'a str,
+}
+
+/// Insert one `vo_version` row verbatim from an archive record (explicit
+/// `sys_period` + preserved `template_id`) — the load side of the admin
+/// dump/load round-trip. The node rows are re-decomposed and written by the
+/// caller.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver/insert failure.
+pub async fn insert_version_verbatim(
+    tx: &mut PgConnection,
+    row: &VerbatimVersionRow<'_>,
+) -> Result<(), StorageError> {
+    sqlx::query(
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
+         branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
+         lifecycle_state, contribution_id, audit_id, template_id, signature, creating_system_id) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
+         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17)",
+    )
+    .bind(row.vo_id)
+    .bind(row.kind)
+    .bind(row.ehr_id)
+    .bind(row.sys_version)
+    .bind(row.trunk_version)
+    .bind(row.branch_number)
+    .bind(row.branch_version)
+    .bind(row.preceding_version_uid)
+    .bind(row.other_input_version_uids)
+    .bind(row.sys_period_lower)
+    .bind(row.sys_period_upper)
+    .bind(row.lifecycle_state)
+    .bind(row.contribution_id)
+    .bind(row.audit_id)
+    .bind(row.template_id)
+    .bind(row.signature)
+    .bind(row.creating_system_id)
     .execute(&mut *tx)
     .await?;
     Ok(())
@@ -687,10 +755,10 @@ pub async fn read_version_by_ordinal(
     ordinal: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
     let Some(row) = sqlx::query(version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2"))
-    .bind(vo_id)
-    .bind(ordinal)
-    .fetch_optional(pool)
-    .await?
+        .bind(vo_id)
+        .bind(ordinal)
+        .fetch_optional(pool)
+        .await?
     else {
         return Ok(None);
     };
@@ -984,7 +1052,10 @@ pub struct VersionMeta {
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn all_version_meta(pool: &PgPool, vo_id: Uuid) -> Result<Vec<VersionMeta>, StorageError> {
+pub async fn all_version_meta(
+    pool: &PgPool,
+    vo_id: Uuid,
+) -> Result<Vec<VersionMeta>, StorageError> {
     let rows = sqlx::query(
         "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
          v.branch_version, v.creating_system_id, v.lifecycle_state, \
@@ -1193,6 +1264,101 @@ pub async fn vo_owner(pool: &PgPool, vo_id: Uuid) -> Result<Option<Option<Uuid>>
             .fetch_optional(pool)
             .await?,
     )
+}
+
+/// The current version of an EHR-owned object of one kind: its `vo_id` and
+/// `VERSION_TREE_ID` column ints, from the current open trunk row
+/// (`upper_inf(sys_period)`, `branch_number = 0`). `None` when the EHR has no
+/// such object. Mapping the ints to a `TreeId` is the caller's.
+#[derive(Debug, Clone)]
+pub struct CurrentVoRow {
+    pub vo_id: Uuid,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+}
+
+/// Read the current-version `(vo_id, tree)` of an EHR's object of `kind`.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_vo(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    kind: &str,
+) -> Result<Option<CurrentVoRow>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+         WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
+    )
+    .bind(ehr_id)
+    .bind(kind)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CurrentVoRow {
+        vo_id: row.try_get("vo_id")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+    }))
+}
+
+/// The immutable `creating_system_id` of one version identified by its
+/// `VERSION_TREE_ID` column ints (the `OBJECT_VERSION_ID` middle part — master06
+/// §Distributed Versioning). Errors if the version does not exist (an internal
+/// invariant: the caller has already resolved the version).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure or a missing row.
+pub async fn version_creating_system_id(
+    pool: &PgPool,
+    vo_id: Uuid,
+    trunk_version: i32,
+    branch_number: i32,
+    branch_version: i32,
+) -> Result<String, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 \
+         AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
+    )
+    .bind(vo_id)
+    .bind(trunk_version)
+    .bind(branch_number)
+    .bind(branch_version)
+    .fetch_one(pool)
+    .await?)
+}
+
+/// The total number of an EHR's CONTRIBUTIONs (the `EHR_SUMMARY.contribution_count`
+/// — SM `ehr_summary.adoc`), unwindowed.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn ehr_contribution_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+    Ok(
+        sqlx::query_scalar("SELECT count(*) FROM contribution WHERE ehr_id = $1")
+            .bind(ehr_id)
+            .fetch_one(pool)
+            .await?,
+    )
+}
+
+/// The number of distinct (versioned) COMPOSITIONs in an EHR — the
+/// `EHR_SUMMARY.composition_count` (SM `ehr_summary.adoc`: "(versioned)
+/// Compositions", i.e. distinct `vo_id`, not versions).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn composition_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+    )
+    .bind(ehr_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 /// The ids of an EHR's current (open trunk tip) versioned objects of one kind,

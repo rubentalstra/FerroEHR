@@ -25,10 +25,10 @@ use crate::storage::{StorageError, reassemble};
 /// # Errors
 ///
 /// Returns [`StorageError::Database`] on any driver/insert failure.
-// TODO(w3f-integrate): versioning's commit path calls `decompose` +
-// `reassemble` (for the signed served form) itself, then hands the rows here.
-// If the fix pass prefers a single `write_canonical(canonical)` seam, add it as
-// a thin wrapper over decompose + write_nodes.
+// The versioning commit path calls `decompose` + `reassemble` (for the signed
+// served form) itself, then hands the rows here — deliberately, so the signed
+// bytes and the stored rows come from the one transform. This function stays a
+// pure row-writer over pre-decomposed rows.
 pub async fn write_nodes(
     tx: &mut PgConnection,
     vo_id: Uuid,
@@ -117,6 +117,59 @@ pub async fn read_version_canonical(
         return Ok(Value::Null);
     }
     reassemble(&rows)
+}
+
+/// Reassemble one structure object from a node **subtree** `[num, num_cap]` of a
+/// stored version, re-based so the anchor node (`num`) becomes the fragment root
+/// (the codec requires `num == 0` and an empty path at the root). Reads the lean
+/// [`ReadRow`] shape and reassembles through the shared codec — the whole-object
+/// cell reload the AQL engine needs for a CONTAINS-anchored node. An empty
+/// subtree reassembles to [`Value::Null`].
+///
+/// # Errors
+/// Returns [`StorageError`] on a driver/reassembly failure.
+pub async fn read_subtree_canonical(
+    pool: &PgPool,
+    vo_id: Uuid,
+    sys_version: i32,
+    num: i32,
+    num_cap: i32,
+) -> Result<Value, StorageError> {
+    let rows = sqlx::query(
+        "SELECT num, num_cap, parent_num, path, data \
+         FROM node WHERE vo_id = $1 AND sys_version = $2 AND num BETWEEN $3 AND $4 ORDER BY num",
+    )
+    .bind(vo_id)
+    .bind(sys_version)
+    .bind(num)
+    .bind(num_cap)
+    .fetch_all(pool)
+    .await?;
+    if rows.is_empty() {
+        return Ok(Value::Null);
+    }
+
+    // The anchor is the lowest-num row (the queried `num`); its path is the
+    // prefix to strip so descendants re-root at it.
+    let base_path: String = rows
+        .first()
+        .and_then(|r| r.try_get::<String, _>("path").ok())
+        .unwrap_or_default();
+
+    let mut read_rows = Vec::with_capacity(rows.len());
+    for r in &rows {
+        let path: String = r.try_get("path")?;
+        let rebased = path.strip_prefix(&base_path).unwrap_or(&path).to_owned();
+        read_rows.push(ReadRow {
+            num: r.try_get::<i32, _>("num")? - num,
+            num_cap: r.try_get::<i32, _>("num_cap")? - num,
+            // parent_num is not used by `reassemble`; re-root it.
+            parent_num: 0,
+            path: rebased,
+            data: r.try_get("data")?,
+        });
+    }
+    reassemble(&read_rows)
 }
 
 /// The root node fragment (`num = 0`) of the FIRST stored content version of

@@ -11,13 +11,14 @@
 //! ITS-REST, carried in the [`ResourceMeta`] envelope (no openEHR spec governs
 //! that envelope — our own design).
 //!
-//! TODO(w3f-integrate): the demographic worker (`service/demographic/`) consumes
-//! these `pub(in crate::service)` helpers for its versioned party reads; the
-//! `current_vo` / promoted-column SQL is a storage seam (G-10).
+//! The demographic worker (`service/demographic/`) consumes these
+//! `pub(in crate::service)` helpers for its versioned party reads; the
+//! `current_vo` row read is a storage seam
+//! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our own
+//! design).
 
 use ehrbase_sm::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
-use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;
@@ -30,34 +31,25 @@ impl EhrbaseService {
     /// given [`Kind`], if any — the current trunk row (`upper_inf(sys_period)`,
     /// `branch_number = 0`).
     ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `vo_version` current-row
-    /// read; no openEHR spec governs the SQL (our own design). The
-    /// [`crate::versioning::CommitEnv`] `current_vo` hook adapts this to its
-    /// `(Uuid, i32)` (trunk) shape at the fix pass.
+    /// The `vo_version` current-row read is a storage seam
+    /// ([`crate::storage::version_repo::current_vo`]; no openEHR spec governs the
+    /// SQL — our own design). The [`crate::versioning::CommitEnv`] `current_vo`
+    /// hook adapts this `(Uuid, TreeId)` to its `(Uuid, i32)` (trunk) shape.
     pub(in crate::service) async fn current_vo(
         &self,
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
-        let row = sqlx::query(
-            "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
-             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
+        Ok(
+            crate::storage::version_repo::current_vo(&self.pool, ehr_id, kind.as_str())
+                .await?
+                .map(|r| {
+                    (
+                        r.vo_id,
+                        TreeId::from_columns(r.trunk_version, r.branch_number, r.branch_version),
+                    )
+                }),
         )
-        .bind(ehr_id)
-        .bind(kind.as_str())
-        .fetch_optional(&self.pool)
-        .await?;
-        match row {
-            Some(r) => Ok(Some((
-                r.try_get("vo_id")?,
-                TreeId::from_columns(
-                    r.try_get("trunk_version")?,
-                    r.try_get("branch_number")?,
-                    r.try_get("branch_version")?,
-                ),
-            ))),
-            None => Ok(None),
-        }
     }
 
     /// The `OBJECT_VERSION_ID` wire string `{object_id}::{creating_system_id}::
@@ -146,7 +138,6 @@ impl EhrbaseService {
         let Some((vo_id, _)) = self.current_vo(ehr_id, kind).await? else {
             return Ok(None);
         };
-        // TODO(w3f-integrate): read-current seam (crate::versioning::read_current).
         let Some(read) = crate::versioning::read_current(&self.pool, vo_id).await? else {
             return Ok(None);
         };
