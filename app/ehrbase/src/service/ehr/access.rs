@@ -12,12 +12,14 @@
 
 use std::sync::Arc;
 
-use ehrbase_sm::{EhrAccessSettings, SmError};
+use async_trait::async_trait;
+use ehrbase_sm::{EhrAccessAdapter, EhrAccessSettings, SmError};
 use moka::future::Cache;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
+use crate::versioning::{Kind, read_current};
 
 impl EhrbaseService {
     /// Drop the cached `EHR_ACCESS` settings for `ehr_id` — the
@@ -26,6 +28,48 @@ impl EhrbaseService {
     /// version (the settings are change-controlled — RM ehr master04 §EHR Access).
     pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
         self.ehr_access.invalidate(ehr_id).await;
+    }
+
+    /// Read + parse the EHR's current `EHR_ACCESS` scheme settings from storage
+    /// (the cache-miss path). `None` when the EHR has no `EHR_ACCESS`, its
+    /// settings are absent, or they belong to another scheme — all default-open.
+    async fn load_ehr_access_settings(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<EhrAccessSettings>, SmError> {
+        let Some((vo_id, _)) = self.current_vo(ehr_id, Kind::EhrAccess).await? else {
+            return Ok(None);
+        };
+        let Some(read) = read_current(&self.pool, vo_id).await? else {
+            return Ok(None);
+        };
+        Ok(EhrAccessSettings::from_ehr_access(&read.canonical))
+    }
+}
+
+/// The `EhrAccessAdapter` native-API extension: the protocol adapter
+/// (`ehrbase-rest`) — the out-of-band access-decision point (SM
+/// `openehr_platform/master02-overview.adoc`) — reads the EHR's current
+/// `EHR_ACCESS` settings through this seam. The SM defines no `I_EHR_ACCESS`
+/// interface — no openEHR spec governs this adapter, our own extension.
+#[async_trait]
+impl EhrAccessAdapter for EhrbaseService {
+    async fn current_ehr_access_settings(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<EhrAccessSettings>, SmError> {
+        // Clone the (cheap, Arc-backed) service into an owned, `'static` load
+        // future so `moka`'s single-flight `try_get_with` can drive it.
+        let svc = self.clone();
+        let cached = self
+            .ehr_access
+            .get_or_load(
+                ehr_id,
+                async move { svc.load_ehr_access_settings(ehr_id).await },
+            )
+            .await
+            .map_err(|e| (*e).clone())?;
+        Ok((*cached).clone())
     }
 }
 

@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
-use ehrbase::signing::{Signer, SigningConfig};
+use ehrbase::versioning::signature::{Signer, SigningConfig};
 use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
 use ehrbase_rest::access::authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
@@ -113,10 +113,10 @@ async fn serve() -> anyhow::Result<()> {
     // broker that is down is tolerated (the outbox buffers), so we spawn it
     // unconditionally-on-enabled and never fail boot on the broker.
     let events_config =
-        ehrbase::events::EventsConfig::load().context("loading eventing configuration")?;
+        ehrbase::extensions::events::EventsConfig::load().context("loading eventing configuration")?;
     let events_handle = if events_config.enabled {
         tracing::info!(exchange = %events_config.exchange, "contribution-outbox eventing enabled");
-        Some(ehrbase::events::start(events_config, pool.clone()))
+        Some(ehrbase::extensions::events::start(events_config, pool.clone()))
     } else {
         None
     };
@@ -166,7 +166,7 @@ async fn serve() -> anyhow::Result<()> {
 
     // The audit sender (when enabled) is injected into the platform service:
     // it realizes the SM `SystemLog` component the REST audit layer emits
-    // through (ehrbase-audit dissolved into the platform crate).
+    // through (the system_log module).
     let audit_enabled = audit_sender.is_some();
     let mut service = EhrbaseService::new(pool.clone()).with_signer(signer);
     if let Some(sender) = audit_sender {
@@ -177,7 +177,7 @@ async fn serve() -> anyhow::Result<()> {
     // configures one, wire it so AQL `TERMINOLOGY('expand', 'hl7.org/fhir/…',
     // …)` resolves against it; otherwise AQL terminology expansion routes only
     // to the in-process `openehr-term` bundle.
-    match ehrbase::terminology::ExternalTerminologyConfig::load()
+    match ehrbase::service::ExternalTerminologyConfig::load()
         .context("loading external-terminology configuration")?
         .default_provider()
     {
@@ -205,9 +205,9 @@ async fn serve() -> anyhow::Result<()> {
     // Opt-in DV_MULTIMEDIA externalization: off by default (inline
     // behaviour byte-identical). When enabled, large inline media is offloaded
     // to S3-compatible object storage on commit and re-inlined on demand.
-    let multimedia_config = ehrbase::multimedia::MultimediaConfig::load()
+    let multimedia_config = ehrbase::extensions::multimedia::MultimediaConfig::load()
         .context("loading multimedia configuration")?;
-    if let Some(engine) = ehrbase::multimedia::MultimediaEngine::from_config(&multimedia_config)
+    if let Some(engine) = ehrbase::extensions::multimedia::MultimediaEngine::from_config(&multimedia_config)
         .context("initialising the multimedia object store")?
     {
         tracing::info!(
@@ -226,14 +226,14 @@ async fn serve() -> anyhow::Result<()> {
     // it walks committed outbox rows, reverse-maps matching COMPOSITIONs, and
     // publishes the FHIR resources to the broker — carrying PHI by design, hence
     // its own explicit gate (a separate switch from the REST FHIR connector).
-    let fhir_outbound_config = ehrbase::fhir_outbound::FhirOutboundConfig::load()
+    let fhir_outbound_config = ehrbase::extensions::fhir::FhirOutboundConfig::load()
         .context("loading FHIR outbound configuration")?;
     let fhir_outbound_handle = if fhir_outbound_config.enabled {
         tracing::info!(
             exchange = %fhir_outbound_config.exchange,
             "FHIR outbound emitter enabled (publishes clinical FHIR resources)"
         );
-        Some(ehrbase::fhir_outbound::start(
+        Some(ehrbase::extensions::fhir::start(
             fhir_outbound_config,
             pool.clone(),
             service.clone(),
