@@ -48,6 +48,13 @@ can also look one up by subject: `GET /ehr?subject_id=...&subject_namespace=...`
 **EHR_STATUS** holds the record's metadata — the link to the subject, and the
 `is_queryable` / `is_modifiable` flags. It is itself versioned.
 
+Setting `is_modifiable` to `false` **deactivates** the EHR: any attempt to
+create, update, or delete its content — a composition, the directory, or a
+folder — is refused with **409 Conflict**, through *every* write path
+including a CONTRIBUTION commit. The EHR_STATUS itself stays writable (so you
+can set the flag back to `true` to reactivate), and reads and queries are
+unaffected.
+
 ### Read the current status
 
 ```shell
@@ -144,6 +151,16 @@ deleted returns **400**, and a version id that is not the latest returns **409**
 > while `DELETE` takes the **full version id** (the version you are superseding).
 > `GET` accepts either.
 
+> [!NOTE]
+> A version's lifecycle state (set through the `openehr-version:
+> lifecycle_state.code_string` header — see
+> [Content negotiation & errors](content-negotiation.md); the default on a
+> commit is `532|complete|`) must follow the openEHR version-lifecycle state
+> machine. An illegal transition is rejected with **422 Unprocessable
+> Entity** naming the states. In particular, a version left in the
+> `801|abandoned|` state cannot be updated straight to `complete` — you must
+> first retrieve it back to `553|incomplete|`, then complete it.
+
 ### Composition version history
 
 `GET .../versioned_composition/{versioned_object_uid}` and its
@@ -223,9 +240,9 @@ contribution, or **404**.
 | 204 | Success with no body (`return=minimal`), or deleted / deleted-at-time. |
 | 400 | Malformed request, missing required header/parameter, or already-deleted. |
 | 404 | Unknown EHR, object, version, or no version at the requested time. |
-| 409 | Conflict — duplicate subject/id, or a version that is not the latest. |
+| 409 | Conflict — duplicate subject/id, a version that is not the latest, or a content write to a deactivated (`is_modifiable = false`) EHR. |
 | 412 | `If-Match` did not match the latest version (current id returned in `ETag`). |
-| 422 | Composition is well-formed but fails template/semantic validation. |
+| 422 | Composition is well-formed but fails template/semantic validation, or an illegal version-lifecycle transition. |
 
 The [Content negotiation & errors](content-negotiation.md) chapter covers the
 error body shape and the headers referenced above in full.

@@ -17,6 +17,39 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- AQL: `OR`-combined `CONTAINS` expressions now execute (previously rejected
+  as unsupported), including nested `AND`/`OR`/`NOT` containment trees, and
+  `NOT CONTAINS` accepts compound operands.
+- ATNA auditing: EHR-Extract export and import operations now emit audit
+  events (object class `Extract`) when auditing is enabled.
+- Admin: `DELETE /admin/ehr/all` without an `ehr_id` list now targets all
+  EHRs, per the Admin API specification ("deletes all or multiple EHRs");
+  bulk deletes answer `204 No Content` (bodyless), replacing the former
+  `200` + count body and the `400` refusal on a missing list.
+
+### Changed
+
+- Version lifecycle states are now enforced as a state machine (RM common
+  §Version Lifecycle): a commit whose `lifecycle_state` is not a legal
+  transition from the preceding version's state (for example
+  `incomplete` → `inactive` without completing first) is rejected `422`.
+- Template identifiers now compare case-insensitively (case-preserving):
+  lookups accept any casing and uploading a case-variant duplicate is a
+  `409` conflict, backed by a unique index (new migration).
+- AQL `MIN`/`MAX` aggregate over non-numeric leaves (text, dates, times)
+  now compares type-appropriately instead of forcing a numeric cast, and
+  mixed-type leaf comparison dispatches numerically for numbers.
+- Contribution commits now verify the target EHR exists (`404` otherwise)
+  and honour the `EHR_STATUS.is_modifiable = false` write guard and
+  versioned-composition invariants on every path, including
+  CONTRIBUTION-wrapped commits.
+- EHR-index errors now carry the precise SM error names
+  (`ehr_id_does_not_exist`, `subject_id_does_not_exist`) instead of a
+  generic not-found.
+- Contribution retrieval now lists versions affected by `attestation`-only
+  items alongside committed versions for demographic contributions,
+  matching the EHR-scoped behaviour.
+
 - SMART App Launch resource-server support (openEHR SMART App Launch
   framework, development edition), config-gated and off by default
   (`EHRBASE_REST_SMART__*`): the `/.well-known/smart-configuration`

@@ -209,7 +209,10 @@ operation, describing _who_ did _what_ to _which_ resource, with _what
 outcome_, from _where_, and _when_. Records are shipped to an Audit Record
 Repository over syslog (RFC 5424 framing), transported over UDP (RFC 5426) or
 TLS (RFC 5425). Every server operation is audited, and authentication failures
-(`401`/`403`) are always recorded.
+(`401`/`403`) are always recorded. The audited operations include the
+native-API EHR-Extract export and import (recorded with the ATNA `Extract`
+object class), so moving a patient's record between systems leaves an audit
+trail alongside the REST activity.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
