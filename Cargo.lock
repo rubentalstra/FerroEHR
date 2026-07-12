@@ -629,7 +629,6 @@ dependencies = [
  "conformance",
  "hdrhistogram",
  "jiff",
- "reqwest 0.13.4",
  "serde",
  "serde_json",
  "sysinfo",
