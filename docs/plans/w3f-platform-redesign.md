@@ -96,10 +96,10 @@ app/ehrbase/src/
 
 - [x] W1 `versioning/` authored fresh (change control, audits, attestations, signature per §Integrity; signing/ dissolved) — 12 files, G-01/G-02/G-09 fixed; legacy deletion + CommitEnv wiring at W10
 - [x] W2 `storage/` authored fresh (node codec + node model split out of service/vobject.rs) — node_repo + version_repo + lean ReadRow; G-S1..S6 fixed; db/ re-grounded
-- [ ] W3 `service/` re-authored one folder per SM chapter (mirroring ehrbase-sm)
-- [ ] W4 `aql/` re-grounded; `sql.rs` split
-- [ ] W5 `validation/` authored fresh along AM boundaries
-- [ ] W6 `templates/` authored fresh (+ resource/ oracle)
+- [x] W3 `service/` re-authored one folder per SM chapter (mirroring ehrbase-sm) — ehr, demographic, ehr_index, definition, query, message, admin, terminology, validity, subject_proxy (re-ground); api/ impls collapsed into chapters
+- [x] W4 `aql/` re-grounded; `sql.rs` split — sql/{mod,from,expr,value,predicate,select}.rs ≤505 lines; OR-CONTAINS implemented (blueprint claim was false), NOT CONTAINS generalized, MIN/MAX + Raw coercion fixed
+- [x] W5 `validation/` authored fresh along AM boundaries — opt/{invariants,rm_conformance,primitive,terminology,interval} + adl2/; BASE MultiplicityInterval::has consumed; openehr-lang::odin found nonexistent (hand-rolled reader kept, PORT NOTE)
+- [x] W6 `templates/` authored fresh (+ resource/ oracle) — {mod,identity,ingest,store,runtime}.rs; G-T04 case-insensitive template_id law landed
 - [ ] W7 `system_log/` re-grounded
 - [ ] W8 `extensions/` quarantine assembled + flagged
 - [ ] W9 `main.rs`/`lib.rs`/`db/` re-grounded; crate map documented
