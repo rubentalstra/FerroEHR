@@ -62,6 +62,18 @@ app/ehrbase-rest/src/
 └── router.rs         assembly over the openehr-its generated route tables
 ```
 
+## Step 0 — the register first (owner ruling 2026-07-12)
+
+Before any rewrite code: the per-spec compliance register at
+**`docs/design/its-rest/`** — one audited design/gap document per
+specification (overview, system, ehr, query, definition, demographic,
+admin, formats, **smart**), same template as `docs/design/sm-platform/`
+(verified file:line state, cited G-n gap register, target design, PORT-NOTE
+residue). The rewrite then executes the register. **SMART App Launch is an
+implementation target** (greenfield: discovery document, registration,
+launch flows, scope model on the existing OAuth2/OIDC + Cedar seams), not
+merely a record.
+
 ## Method (identical to the SM rewrite)
 
 Per spec document, in order — Overview → EHR → Query → Definition → SDT →
