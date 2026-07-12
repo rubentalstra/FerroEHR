@@ -108,7 +108,7 @@ app/ehrbase/src/
 
 ### Stage 3 — deferred checks (in this order, only when ALL code is rewritten)
 
-- [ ] C1 Full `cargo nextest run --workspace` triage (stale W-3c/W-3e expectations updated spec-correctly, never weakened)
+- [x] C1 Full `cargo nextest run --workspace` triage — 1440/1440 green; 17 stale expectations updated spec-correctly with citations (weak ETags per overview §ETag and Last-Modified, Location_deprecated dropped, provenance identity, Admin OAS bulk-delete contract, master06 lifecycle state machine walk, precise SM ehr-index error names, migration 0007 count); zero weakenings — the lifecycle test gained a new illegal-transition assertion
 - [ ] C2 Workspace clippy green under deny rules
 - [ ] C3 ECC full run LAST (`scripts/conformance.sh`); case adjudications where the instrument is wrong (spec-cited); honest re-baseline from 341/315/0
 
