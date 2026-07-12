@@ -348,9 +348,9 @@ impl DefinitionAdl14Service for EhrbaseService {
     }
 
     async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
-        // TODO(w3f-integrate): templates seam (register 10) — OPT ingestion
-        // (parse + structural validation → 422 `invalid_template`; 409 on
-        // duplicate) moves to `crate::templates`.
+        // OPT ingestion runs in the templates layer: `store_template` parses +
+        // structurally validates the OPT (invalid → 422 `invalid_template`) and
+        // rejects a duplicate id with 409.
         self.store_template(&opt_xml).await?;
         Ok(())
     }

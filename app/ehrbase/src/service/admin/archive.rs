@@ -10,8 +10,13 @@
 //! the "move" as a `vo_archive` marker only: serving reads are unchanged (zero
 //! wire drift), and the physical storage movement to a cold tier is deferred.
 //! All-or-nothing — an unknown id aborts the transaction before any marker is
-//! written. TODO(w3f-integrate): storage — realise the read-path effect / cold
-//! tier for `vo_archive` (register 02 `storage/`).
+//! written.
+//!
+//! PERF(port): the physical movement of `vo_archive`-marked rows to a cold
+//! storage tier (and any read-path effect) is deferred to P20 optimization —
+//! no openEHR spec governs storage mechanics, so the tiering is our own design
+//! and purely a performance concern, not a conformance one (register 02
+//! `storage/`).
 
 use uuid::Uuid;
 

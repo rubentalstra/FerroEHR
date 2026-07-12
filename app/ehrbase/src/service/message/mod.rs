@@ -23,23 +23,26 @@
 //! thin `impl <Interface>Service for EhrbaseService` adapters that delegate to
 //! it (the `service/api/` pattern).
 //!
-//! # Integration seams — `TODO(w3f-integrate)` (reconciled at the fix pass)
+//! # Cross-module wiring
 //!
 //! - **`crate::versioning`** — [`import`] reaches `commit_import` /
 //!   `commit_demographic_import` (IMPORTED_VERSION replay); [`export`] reaches
 //!   `original_version` / `versioned_object` / `revision_history` / the version
 //!   reads. These are the versioning-engine surface, called directly.
 //! - **`crate::templates` + `crate::validation`** — [`tdd`] resolves the OPT and
-//!   commits through the validated COMPOSITION path (currently
-//!   `EhrbaseService::web_template_for` / `get_template_xml` / `create_composition`).
-//! - **`crate::aql`** — deferred `EXTRACT_SPEC.criteria` / `commit_time_interval`
-//!   (G-M3 / G-M4), typed rejects until then.
+//!   commits through the validated COMPOSITION path
+//!   (`EhrbaseService::web_template_for` / `get_template_xml` /
+//!   `create_composition`).
+//! - **ATNA audit** — a completed export/import emits one EHR-Extract audit
+//!   event ([`EhrbaseService::emit_extract_audit`]) for non-repudiation (BASE
+//!   `architecture_overview/master07-security.adoc` §Non-repudiation).
+//! - **`crate::aql`** — `EXTRACT_SPEC.criteria` / `commit_time_interval` remain
+//!   typed rejects pending the `$ehr`-bound AQL export wave (see the PORT NOTEs
+//!   in [`export`]; register 06 G-M3 / G-M4).
 //! - **The extension REST wire (G-M1) lives in `ehrbase-rest`**, not here
 //!   (ITS-REST vends no message endpoints — a message/admin extension route is
 //!   spec-silent transport, our own extension); this crate only needs its trait
 //!   impls reachable.
-//! - **`service/mod.rs`**: the orchestrator adds `mod message;` and removes the
-//!   legacy flat `message` / `tdd` modules.
 
 mod export;
 mod import;
@@ -49,11 +52,43 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_sm::{EhrExtractService, SmError, TddService};
+use ehrbase_sm::{
+    AuditEvent, EhrExtractService, EventActionCode, EventOutcome, ObjectClass, SmError, SystemLog,
+    TddService,
+};
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
 use crate::service::EhrbaseService;
+
+impl EhrbaseService {
+    /// Emit one IHE-ATNA EHR-Extract audit event for a completed export or
+    /// import of `ehr_id` (fire-and-forget, like every other emission — an
+    /// audit-delivery failure never fails the operation).
+    ///
+    /// EHR-Extract communication carries patient-identifiable clinical data
+    /// across systems and is audited for **non-repudiation** — the security
+    /// chapter requires that "logging of communication of Extracts … can be
+    /// used to guarantee non-repudiation of information passed between systems"
+    /// (BASE `architecture_overview/master07-security.adoc` §Non-repudiation).
+    /// The event carries [`ObjectClass::Extract`], which renders the
+    /// Patient-Record `EventID` family (DICOM PS3.15 §A.5.1, code 110110) with
+    /// `originalText="extract"` and an ehr-id-scoped patient participant
+    /// (`crate::system_log::codes`); the export-vs-import direction is carried
+    /// by the [`EventActionCode`] (`Read` out / `Create` in). The native
+    /// service layer has no HTTP principal, so `user_id` stays empty and the
+    /// ATNA renderer supplies `UNKNOWN`.
+    pub(super) fn emit_extract_audit(&self, ehr_id: Uuid, action: EventActionCode) {
+        if !self.audit_enabled() {
+            return;
+        }
+        let mut event = AuditEvent::new(action, ObjectClass::Extract, EventOutcome::Success);
+        let id = ehr_id.to_string();
+        event.ehr_id = Some(id.clone());
+        event.object_id = Some(id);
+        let _ = self.emit(event);
+    }
+}
 
 #[async_trait]
 impl EhrExtractService for EhrbaseService {

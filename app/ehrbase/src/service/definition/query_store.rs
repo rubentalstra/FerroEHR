@@ -134,13 +134,13 @@ impl EhrbaseService {
     /// `artefact_id_pattern` (regex, `None` = match any). Uncompilable pattern →
     /// `invalid_id_pattern` (`400`).
     ///
-    /// PORT NOTE (G-05-05): `artefact_id_pattern` is spec'd against "archetype /
-    /// template identifiers referenced in the query". Until the AQL engine can
-    /// enumerate a query's FROM/CONTAINS artefact ids we approximate by
-    /// regex-scanning the stored source text — a query matches when its source
-    /// contains a substring matching the artefact pattern.
-    /// TODO(w3f-integrate): aql seam (register 08) — replace the raw-text scan
-    /// with the analysed FROM/CONTAINS artefact-id set.
+    /// PORT NOTE (register 05 G-05-05): `artefact_id_pattern` is spec'd against
+    /// "archetype / template identifiers referenced in the query". Until the AQL
+    /// engine exposes a query's analysed FROM/CONTAINS artefact-id set
+    /// (`openehr_query`), we approximate by regex-scanning the stored source
+    /// text — a query matches when its source contains a substring matching the
+    /// artefact pattern. Replacing the raw-text scan with that analysed set is
+    /// the future AQL-surface work.
     pub(super) async fn query_list_matching(
         &self,
         id_pattern: &str,
@@ -228,10 +228,10 @@ impl EhrbaseService {
         version: Option<&str>,
         query_text: String,
     ) -> Result<String, ServiceError> {
-        // Store-time AQL validation: the stored-query table only holds AQL
-        // (`query_type = 'AQL'`), so a non-AQL or syntactically-invalid body is a
-        // `400 Bad Request` (`definition_query_store` lists only `200`/`400`).
-        // TODO(w3f-integrate): aql seam (register 08) — `openehr_query::parser`.
+        // Store-time AQL validation via the `openehr_query` parser: the
+        // stored-query table only holds AQL (`query_type = 'AQL'`), so a non-AQL
+        // or syntactically-invalid body is a `400 Bad Request`
+        // (`definition_query_store` lists only `200`/`400`).
         if let Err(err) = openehr_query::parser::parse_str(&query_text) {
             return Err(ServiceError::BadRequest(format!(
                 "stored query text is not valid AQL: {err}"
@@ -444,7 +444,7 @@ fn descriptor_from_row(row: &PgRow) -> QueryDescriptor {
 /// "any other string value", which we reject typed since the store only holds
 /// AQL). AQL validity is a successful `openehr_query` parse.
 fn valid_query_text(text: &str, a_type: &str) -> bool {
-    // TODO(w3f-integrate): aql seam (register 08) — `openehr_query::parser`.
+    // AQL validity is a successful `openehr_query` parse.
     is_aql_v1(a_type) && openehr_query::parser::parse_str(text).is_ok()
 }
 

@@ -10,13 +10,13 @@
 
 use ehrbase_sm::{EhrService, EhrSummary, ResourceMeta, ServiceResponse, SmError, SubjectRef};
 use serde_json::{Value, json};
-use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
+use crate::storage::{ehr_repo, version_repo};
 use crate::versioning::{Change, Kind, change_type, commit_contribution};
 
-use super::{status_for_subject};
+use super::status_for_subject;
 
 impl EhrbaseService {
     /// Create an EHR (with the given id), its initial `EHR_STATUS`, and its
@@ -41,22 +41,13 @@ impl EhrbaseService {
 
         // EHR.system_id is recorded at creation, immutable thereafter (arch
         // master06 §System Identity — a stored value, not the live config).
-        // TODO(w3f-integrate): storage seam (G-10) — the `ehr` row insert.
-        let inserted =
-            sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-                .bind(ehr_id)
-                .bind(self.effective_system_id())
-                .execute(&mut *tx)
-                .await?;
-        if inserted.rows_affected() == 0 {
+        if !ehr_repo::insert_ehr(&mut tx, ehr_id, &self.effective_system_id()).await? {
             return Err(ServiceError::Conflict(format!(
                 "EHR {ehr_id} already exists"
             )));
         }
 
         let audit = self.audit(change_type::CREATION, "EHR creation");
-        // TODO(w3f-integrate): commit seam (crate::versioning::commit_contribution)
-        // + signing_ctx (becomes crate::versioning::SigningCtx at the fix pass).
         commit_contribution(
             &mut tx,
             Some(ehr_id),
@@ -112,18 +103,11 @@ impl EhrbaseService {
         subject_id: &str,
         namespace: &str,
     ) -> Result<ServiceResponse, ServiceError> {
-        // TODO(w3f-integrate): storage seam (G-10) — the promoted subject-column
-        // lookup.
-        let ehr_id: Uuid = sqlx::query_scalar(
-            "SELECT id FROM ehr WHERE subject_id = $1 AND subject_namespace = $2",
-        )
-        .bind(subject_id)
-        .bind(namespace)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| {
-            ServiceError::NotFound(format!("EHR for subject {subject_id}@{namespace}"))
-        })?;
+        let ehr_id = ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::NotFound(format!("EHR for subject {subject_id}@{namespace}"))
+            })?;
         self.ehr_summary(ehr_id).await
     }
 
@@ -134,18 +118,11 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<ServiceResponse, ServiceError> {
-        // TODO(w3f-integrate): storage seam (G-10) — the `ehr` row read.
-        let row = sqlx::query("SELECT system_id, time_created FROM ehr WHERE id = $1")
-            .bind(ehr_id)
-            .fetch_optional(&self.pool)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
         // EHR.system_id is IMMUTABLE after creation (arch master06 §System
         // Identity) — the stored per-EHR value, never the live config.
-        let stored_system_id: String = row.try_get("system_id")?;
-        let time_created: jiff::Timestamp = row
-            .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
-            .to_jiff();
+        let (stored_system_id, time_created) = ehr_repo::ehr_header(&self.pool, ehr_id)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
 
         let (status_vo, status_version) = self
             .current_vo(ehr_id, Kind::EhrStatus)
@@ -154,17 +131,8 @@ impl EhrbaseService {
         // The uid uses the stored per-version creating_system_id (master06
         // §Distributed Versioning), stable across a `with_system_id` change.
         let (t, b, v) = status_version.columns();
-        // TODO(w3f-integrate): storage seam (G-10) — per-version creating_system_id.
-        let status_csid: String = sqlx::query_scalar(
-            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 \
-             AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
-        )
-        .bind(status_vo)
-        .bind(t)
-        .bind(b)
-        .bind(v)
-        .fetch_one(&self.pool)
-        .await?;
+        let status_csid =
+            version_repo::version_creating_system_id(&self.pool, status_vo, t, b, v).await?;
         let status_ovid = self.object_version_id(status_vo, &status_csid, status_version);
 
         let mut body = json!({
@@ -227,32 +195,15 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<EhrSummary, ServiceError> {
-        // TODO(w3f-integrate): storage seam (G-10) — the `ehr`/`contribution`/
-        // `vo_version` counts below.
-        let row = sqlx::query("SELECT system_id, time_created FROM ehr WHERE id = $1")
-            .bind(ehr_id)
-            .fetch_optional(&self.pool)
+        let (stored_system_id, time_created) = ehr_repo::ehr_header(&self.pool, ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
-        let stored_system_id: String = row.try_get("system_id")?;
-        let time_created: jiff::Timestamp = row
-            .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
-            .to_jiff();
 
         // Copy of EHR.ehr_status: the current EHR_STATUS (bare, with its uid).
         let ehr_status = self.status_at(ehr_id, None).await?.body;
 
-        let contribution_count: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM contribution WHERE ehr_id = $1")
-                .bind(ehr_id)
-                .fetch_one(&self.pool)
-                .await?;
-        let composition_count: i64 = sqlx::query_scalar(
-            "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
-        )
-        .bind(ehr_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let contribution_count = version_repo::ehr_contribution_count(&self.pool, ehr_id).await?;
+        let composition_count = version_repo::composition_count(&self.pool, ehr_id).await?;
 
         Ok(EhrSummary {
             ehr_id: ehr_id.to_string(),
@@ -272,19 +223,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<Vec<Uuid>, ServiceError> {
-        // TODO(w3f-integrate): storage seam (G-10) — the `ehr_folder` ⋈
-        // `vo_version` membership read; no openEHR spec governs the SQL.
-        let rows = sqlx::query(
-            "SELECT f.vo_id FROM ehr_folder f \
-             JOIN vo_version v ON v.vo_id = f.vo_id \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
-             WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \
-             ORDER BY f.rank",
-        )
-        .bind(ehr_id)
-        .fetch_all(&self.pool)
-        .await?;
-        rows.iter().map(|r| Ok(r.try_get("vo_id")?)).collect()
+        Ok(ehr_repo::live_folder_hierarchies(&self.pool, ehr_id).await?)
     }
 }
 

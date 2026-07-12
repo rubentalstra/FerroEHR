@@ -38,10 +38,8 @@ impl EhrbaseService {
     /// inheriting `committer`/`system_id` from the CONTRIBUTION audit (RM common
     /// master06 §Committal m4). This raw-body seam carries the full-fidelity EHR
     /// CONTRIBUTION commit; all RM change_control semantics stay in
-    /// `crate::versioning::commit_version_set`.
-    ///
-    /// TODO(w3f-integrate): `commit_version_set(self, …)` requires
-    /// `impl CommitEnv for EhrbaseService` (wired at the fix pass).
+    /// `crate::versioning::commit_version_set` (over the
+    /// [`crate::versioning::CommitEnv`] impl `EhrbaseService` provides).
     ///
     /// # Errors
     /// [`SmError`] if the CONTRIBUTION fails classification, content validation,
@@ -69,8 +67,6 @@ impl EhrbaseService {
         contribution_id: Uuid,
         resolve_refs: bool,
     ) -> Result<Value, ServiceError> {
-        // TODO(w3f-integrate): retrieval seam (crate::versioning::get_contribution
-        // over storage's contribution_audit/contribution_version_refs).
         get_contribution(
             &self.pool,
             self.signer(),
@@ -128,9 +124,7 @@ impl EhrContributionService for EhrbaseService {
         // `Terminology_code` (`{terminology_id, code_string}`, SM
         // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the PORT NOTEs in
         // `versioning/contribution.rs` `coded_value`/`classify`). A native typed
-        // path skipping the JSON round-trip is a future cleanup — not W-3f.
-        //
-        // TODO(w3f-integrate): requires `impl CommitEnv for EhrbaseService`.
+        // path skipping the JSON round-trip is a future cleanup.
         let versions_json =
             serde_json::to_value(&versions).map_err(|e| SmError::exception(e.to_string()))?;
         let audit_json =
@@ -149,7 +143,6 @@ impl EhrContributionService for EhrbaseService {
         let time_range = parse_time_range(time_range)?;
         // `Pre_has_ehr` (`i_ehr_contribution.adoc` §list_contributions —
         // `ehr_does_not_exist`) is enforced inside the versioning read.
-        // TODO(w3f-integrate): list seam (crate::versioning::list_contributions).
         let ids = list_contributions(&self.pool, an_ehr_id, time_range, page).await?;
         Ok(ids.iter().map(Uuid::to_string).collect())
     }

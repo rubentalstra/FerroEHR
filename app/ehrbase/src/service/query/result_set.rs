@@ -97,11 +97,13 @@ pub(super) fn result_set_json(
         .columns
         .iter()
         .map(|c| match &c.path {
-            // PORT NOTE (G-05-05b): `RESULT_SET_COLUMN.archetype_id [0..1]` is
-            // optional and omitted — it is not yet derivable from the engine's
-            // `ColumnMeta` (name + path only).
-            // TODO(w3f-integrate): aql seam (register 08) — populate
-            // `archetype_id` from path analysis when `ColumnMeta` carries it.
+            // PORT NOTE (G-05-05b; SM `result_set_column.adoc`):
+            // `RESULT_SET_COLUMN.archetype_id [0..1]` is optional and omitted —
+            // the engine's `ColumnMeta` carries name + path only, and the spec
+            // itself flags it "check on whether needed". If a future path pass
+            // derives the referenced archetype id, it can be populated here
+            // additively; the optional cardinality means omitting it is
+            // conformant.
             Some(path) => json!({ "name": c.name, "path": path }),
             None => json!({ "name": c.name }),
         })

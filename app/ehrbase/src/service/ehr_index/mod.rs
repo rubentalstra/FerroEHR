@@ -17,9 +17,10 @@
 //! the full N:M state (G-15: the index and `ehr.subject_id` are intentionally
 //! decoupled — an EHR created via the normal API is not auto-indexed here).
 //!
-//! TODO(w3f-integrate): the `ehr_index` + `ehr`-existence SQL is the ehr_index
-//! domain's own direct-SQL design (register §5); a later pass may move it behind
-//! a storage-owned repository (README cross-register ruling — storage owns SQL).
+//! The `ehr_index` + `ehr`-existence SQL is this domain's own direct-SQL design
+//! — no openEHR spec governs the storage mechanism (master07 governs only the
+//! operation semantics + error names), so the table access lives here rather
+//! than behind a storage-owned repository.
 
 use ehrbase_sm::{
     CallStatusType, EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SmError,

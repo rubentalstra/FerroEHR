@@ -51,13 +51,10 @@ impl EhrbaseService {
         // (foreign / duplicated top-level elements) — S-05.
         crate::validation::validate_opt_structure(xml)?;
 
-        // TODO(w3f-integrate): validation seam — the AOM2/08 standalone-artefact
-        // validity catalogue (VCOC/VACMCO, VATID/VTLC, VTTBK/VTCBK,
-        // VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying the AOM2 rule code, S-06)
-        // is owned by the validation register (`crate::validation`, register 09;
-        // spec `AM/docs/AOM2/master08-validation.adoc`). Re-point at the fix
-        // pass; the expected entry is
-        // `validate_opt_artefact(&OperationalTemplate) -> Result<(), ServiceError>`.
+        // The AOM2/08 standalone-artefact validity catalogue (VCOC/VACMCO,
+        // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying
+        // the AOM2 rule code, S-06) is owned by the validation layer
+        // (`crate::validation`; spec `AM/docs/AOM2/master08-validation.adoc`).
         crate::validation::validate_opt_artefact(&opt)?;
 
         let template_id = opt.template_id.value;
@@ -81,15 +78,11 @@ impl EhrbaseService {
 
         // G-T04 (§Composite Identifiers and Case): a template_id that differs
         // only in case from a stored one is the *same* id, so the insert-only
-        // guard must be case-insensitive. The exact-key `ON CONFLICT` below is
-        // only race-safe for a byte-identical id; a case variant needs an
-        // explicit case-insensitive pre-check.
-        //
-        // TODO(w3f-integrate): storage seam — the definitive race-free guard is a
-        // `UNIQUE (lower(template_id))` functional index on `template_store`
-        // (owned by `crate::storage`, register 02). Until it exists this
-        // pre-check closes the case-variant duplicate; the exact `ON CONFLICT`
-        // remains the concurrency backstop for identical ids.
+        // guard is case-insensitive. This pre-check produces the friendly 409
+        // message in the common (non-concurrent) case; the race-free guard is the
+        // `ux_template_store_template_id_ci` functional unique index over
+        // `lower(template_id)` (migration 0007), which the `ON CONFLICT` below
+        // relies on for concurrency.
         let case_variant_exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM template_store WHERE lower(template_id) = lower($1))",
         )
@@ -102,13 +95,14 @@ impl EhrbaseService {
             )));
         }
 
-        // Insert-only: `DO NOTHING` on the `template_id` unique key makes the
-        // exact-duplicate case race-free (no overwrite, no SQLSTATE parsing) — an
-        // affected-row count of 0 means the template already exists → 409.
+        // Insert-only: `DO NOTHING` on the case-insensitive unique index
+        // (`lower(template_id)`) makes both exact and case-variant duplicates
+        // race-free (no overwrite, no SQLSTATE parsing) — an affected-row count of
+        // 0 means the template already exists → 409.
         let inserted = sqlx::query(
             "INSERT INTO template_store (template_id, concept, root_archetype, content) \
              VALUES ($1, $2, $3, $4) \
-             ON CONFLICT (template_id) DO NOTHING",
+             ON CONFLICT (lower(template_id)) DO NOTHING",
         )
         .bind(&template_id)
         .bind(&concept)

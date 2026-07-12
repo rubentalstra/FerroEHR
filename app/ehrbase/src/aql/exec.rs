@@ -10,8 +10,6 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::{ReadRow, reassemble};
-
 use super::error::{AqlError, ExecError};
 use super::ir::{Params, QueryIr};
 use super::sql::{CellKind, ColumnSpec, SqlCtx};
@@ -23,10 +21,13 @@ use super::sql::{CellKind, ColumnSpec, SqlCtx};
 /// path**", and the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
 /// archetype/node codes inline in `path` (never a separate `archetype_id`), so a
 /// distinct field has no pinned semantics or golden to validate against.
-// TODO(w3f-integrate): query service (register 05) — if a future CNF case pins a
-// standalone `archetype_id`, derive it from the leaf's deepest archetype
-// predicate here (cheaply available on `ir::LeafPath`) and have `result_set.rs`
-// emit it; today the archetype info is inside `path`.
+// PORT NOTE: no `archetype_id` field is emitted (the decision is recorded in
+// the register): SM `result_set_column.adoc` marks it "check on whether needed
+// or inside the path", the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
+// archetype/node codes inline in `path`, and no golden pins a standalone field.
+// Should a future CNF case pin one, derive it from the leaf's deepest archetype
+// predicate (cheaply available on `ir::LeafPath`) and have `result_set.rs` emit
+// it; today the archetype info lives inside `path`.
 #[derive(Debug, Clone)]
 pub struct ColumnMeta {
     /// The column name (`AS` alias or `#{index}`).
@@ -169,58 +170,17 @@ async fn read_cell(
                 .map_err(ExecError::from)?;
             // PERF(port): one follow-up query per whole-object cell (correct
             // first); a single-query jsonb aggregation is a P20 optimization.
-            reassemble_subtree(pool, vo_id, sys_version, num, num_cap).await
+            // The subtree SELECT + path rebasing lives in the storage codec
+            // (register 02); the engine supplies only the four locators.
+            Ok(crate::storage::node_repo::read_subtree_canonical(
+                pool,
+                vo_id,
+                sys_version,
+                num,
+                num_cap,
+            )
+            .await
+            .map_err(ExecError::from)?)
         }
     }
-}
-
-/// Reassemble a whole structure object from its node subtree, re-based so the
-/// anchor node (`num`) becomes the fragment root (the codec requires `num == 0`
-/// and an empty path at the root). Reads the lean [`ReadRow`] shape (only the
-/// five columns [`reassemble`] needs) and reassembles through the shared storage
-/// codec — no query-only promoted columns are fetched.
-// TODO(w3f-integrate): storage seam (register 02) — a `read_subtree_canonical(
-// pool, vo_id, sys_version, num, num_cap)` helper belongs beside
-// `node_repo::read_version_canonical` so this subtree SELECT + path rebasing
-// leaves the AQL engine; the engine would then only supply the four locators.
-async fn reassemble_subtree(
-    pool: &PgPool,
-    vo_id: Uuid,
-    sys_version: i32,
-    num: i32,
-    num_cap: i32,
-) -> Result<Value, AqlError> {
-    let rows = sqlx::query(
-        "SELECT num, num_cap, parent_num, path, data \
-         FROM node WHERE vo_id = $1 AND sys_version = $2 AND num BETWEEN $3 AND $4 ORDER BY num",
-    )
-    .bind(vo_id)
-    .bind(sys_version)
-    .bind(num)
-    .bind(num_cap)
-    .fetch_all(pool)
-    .await
-    .map_err(ExecError::from)?;
-
-    // The anchor is the lowest-num row (the queried `num`); its path is the
-    // prefix to strip so descendants re-root at it.
-    let base_path: String = rows
-        .first()
-        .and_then(|r| r.try_get::<String, _>("path").ok())
-        .unwrap_or_default();
-
-    let mut read_rows = Vec::with_capacity(rows.len());
-    for r in &rows {
-        let path: String = r.try_get("path").map_err(ExecError::from)?;
-        let rebased = path.strip_prefix(&base_path).unwrap_or(&path).to_owned();
-        read_rows.push(ReadRow {
-            num: r.try_get::<i32, _>("num").map_err(ExecError::from)? - num,
-            num_cap: r.try_get::<i32, _>("num_cap").map_err(ExecError::from)? - num,
-            // parent_num is not used by `reassemble`; re-root it.
-            parent_num: 0,
-            path: rebased,
-            data: r.try_get("data").map_err(ExecError::from)?,
-        });
-    }
-    Ok(reassemble(&read_rows).map_err(ExecError::from)?)
 }

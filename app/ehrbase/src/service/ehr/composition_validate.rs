@@ -168,11 +168,12 @@ impl EhrbaseService {
 /// `crate::versioning::change` `apply_change` TODO). The first-version root read
 /// goes through `crate::storage::node_repo`.
 ///
-/// Only the direct create/update path ([`composition`](super::composition))
-/// invokes this today; the CONTRIBUTION path
-/// (`crate::versioning::commit_version_set`) does not yet run it for a
-/// COMPOSITION modify.
-pub(super) async fn check_versioned_composition_invariants(
+/// Both write flows run this: the direct update path
+/// ([`composition`](super::composition)) inline, and the CONTRIBUTION path
+/// (`crate::versioning::commit_version_set`) through the
+/// [`crate::versioning::CommitEnv::pre_composition_modify`] hook — each in its
+/// own commit transaction.
+pub(in crate::service) async fn check_versioned_composition_invariants(
     tx: &mut PgConnection,
     vo_id: Uuid,
     canonical: &Value,

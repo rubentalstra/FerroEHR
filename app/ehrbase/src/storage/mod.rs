@@ -19,6 +19,9 @@
 //! - [`version_repo`] — `vo_version`/`audit`/`contribution`/`vo_attestation`
 //!   row I/O, the folder-membership and event-outbox writes, and the version
 //!   read shape ([`version_repo::StoredVersion`]).
+//! - [`ehr_repo`] — `ehr`-table + `ehr_folder`-membership reads/writes (EHR
+//!   root row, subject lookup, folder-hierarchy resolution, the
+//!   `is_modifiable` guard read).
 //!
 //! The seam with the versioning layer (register 01) is a value contract, not
 //! shared SQL: versioning owns the *semantics* (classify, tree placement,
@@ -30,6 +33,7 @@ mod error;
 mod row;
 mod structure;
 
+pub mod ehr_repo;
 pub mod node_repo;
 pub mod tag_repo;
 pub mod version_repo;

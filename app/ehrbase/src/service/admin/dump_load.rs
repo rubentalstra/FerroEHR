@@ -31,8 +31,10 @@
 //! (a COMPOSITION referencing an absent template fails its FK on load, reported
 //! per EHR). Demographic parties (ehr-less versioned objects) and standalone
 //! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
-//! back-up would need a demographic dump wave (deferred). TODO(w3f-integrate):
-//! storage — `version_repo` may absorb the verbatim version-row load helper.
+//! back-up would need a demographic dump wave (deferred). The verbatim
+//! version-row re-persist is a storage seam
+//! ([`crate::storage::version_repo::insert_version_verbatim`]); this module
+//! keeps the archive format and orchestration.
 
 use std::path::Path;
 
@@ -44,7 +46,7 @@ use uuid::Uuid;
 use ehrbase_sm::{CallStatusType, DumpLoadFailReport, ExportFormat, ExportSpec, SmError};
 
 use crate::service::{EhrbaseService, ServiceError};
-use crate::storage::{decompose, node_repo};
+use crate::storage::{decompose, node_repo, version_repo};
 
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
@@ -661,42 +663,37 @@ impl EhrbaseService {
 }
 
 /// Insert one version row and its re-decomposed node rows (through the storage
-/// codec). The `vo_version` / `node` row I/O is our own design over the
-/// greenfield schema — no openEHR spec governs it.
-///
-/// TODO(w3f-integrate): storage — a `version_repo` verbatim-load helper could
-/// own this raw `vo_version` INSERT (register 02 assigns `vo_version` row I/O to
-/// storage); kept here as the archive's own verbatim re-persist.
+/// codec). The `vo_version` row I/O is delegated to
+/// [`crate::storage::version_repo::insert_version_verbatim`] (our own design
+/// over the greenfield schema — no openEHR spec governs it); the node rows are
+/// re-decomposed here through the shared codec.
 async fn insert_version(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     v: &VersionRecord,
 ) -> Result<(), ServiceError> {
-    sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
-         branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
-         lifecycle_state, contribution_id, audit_id, template_id, signature, creating_system_id) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
-         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17)",
+    version_repo::insert_version_verbatim(
+        tx,
+        &version_repo::VerbatimVersionRow {
+            vo_id: v.vo_id,
+            kind: &v.kind,
+            ehr_id,
+            sys_version: v.sys_version,
+            trunk_version: v.trunk_version,
+            branch_number: v.branch_number,
+            branch_version: v.branch_version,
+            preceding_version_uid: v.preceding_version_uid.as_deref(),
+            other_input_version_uids: v.other_input_version_uids.as_ref(),
+            sys_period_lower: v.sys_period_lower.as_deref(),
+            sys_period_upper: v.sys_period_upper.as_deref(),
+            lifecycle_state: &v.lifecycle_state,
+            contribution_id: v.contribution_id,
+            audit_id: v.audit_id,
+            template_id: v.template_id.as_deref(),
+            signature: v.signature.as_deref(),
+            creating_system_id: &v.creating_system_id,
+        },
     )
-    .bind(v.vo_id)
-    .bind(&v.kind)
-    .bind(ehr_id)
-    .bind(v.sys_version)
-    .bind(v.trunk_version)
-    .bind(v.branch_number)
-    .bind(v.branch_version)
-    .bind(&v.preceding_version_uid)
-    .bind(&v.other_input_version_uids)
-    .bind(&v.sys_period_lower)
-    .bind(&v.sys_period_upper)
-    .bind(&v.lifecycle_state)
-    .bind(v.contribution_id)
-    .bind(v.audit_id)
-    .bind(&v.template_id)
-    .bind(&v.signature)
-    .bind(&v.creating_system_id)
-    .execute(&mut *tx)
     .await?;
 
     // A deleted version (null body) stores no node rows.

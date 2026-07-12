@@ -88,8 +88,7 @@ impl EhrbaseService {
         // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
         // used in a `matches` operand through the terminology-service seam and
         // merge the codes into the value list, before planning
-        // (QUERY master03 lines 756–759).
-        // TODO(w3f-integrate): aql seam (register 08) — `aql::expand_matches`.
+        // (QUERY master03 lines 756–759), via `aql::expand_matches`.
         if let Err(e) = aql::expand_matches(&mut ast, self).await {
             count_query(plan_outcome(&e));
             return Err(map_plan_error(e));
@@ -135,7 +134,6 @@ impl EhrbaseService {
         // set, the DB execution is bounded so an over-long query is reported as
         // `408 Request Timeout` rather than hanging until the global request
         // timeout. Default off → zero drift.
-        // TODO(w3f-integrate): aql seam (register 08) — `aql::execute`.
         let exec = aql::execute(&self.pool, &ir, &params, &ctx);
         let exec_result = match *QUERY_TIMEOUT {
             Some(budget) => match tokio::time::timeout(budget, exec).await {

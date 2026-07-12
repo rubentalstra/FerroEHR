@@ -400,7 +400,43 @@ pub(crate) async fn commit_version_set(
     );
     validate_commit_audit(&contribution_audit)?;
 
+    // Cross-area commit hooks — the single site of truth for the CONTRIBUTION
+    // path (the direct create/update paths run the same fns inline on their own
+    // write flow). Collect the EHR_STATUS bodies before `changes` is moved into
+    // the commit engine, since the subject-sync hook runs after the commit.
+    let status_commits: Vec<Value> = changes
+        .iter()
+        .filter_map(|(_, c)| match c {
+            Change::Create {
+                kind: Kind::EhrStatus,
+                canonical,
+                ..
+            }
+            | Change::Modify {
+                kind: Kind::EhrStatus,
+                canonical,
+                ..
+            } => Some(canonical.clone()),
+            _ => None,
+        })
+        .collect();
+
     let mut tx = cx.pool().begin().await?;
+    // VERSIONED_COMPOSITION cross-version invariants (RM ehr
+    // `versioned_composition.adoc`) run before the write of each COMPOSITION
+    // modify, in the commit tx (G-13).
+    for (_, change) in &changes {
+        if let Change::Modify {
+            vo_id,
+            kind: Kind::Composition,
+            canonical,
+            ..
+        } = change
+        {
+            cx.pre_composition_modify(&mut tx, *vo_id, canonical)
+                .await?;
+        }
+    }
     let (contribution_id, committed) = change::commit_contribution(
         &mut tx,
         ehr_id,
@@ -411,6 +447,13 @@ pub(crate) async fn commit_version_set(
         &cx.signing_ctx(),
     )
     .await?;
+    // Keep the EHR's promoted subject columns in sync after each committed
+    // EHR_STATUS version (one EHR per subject — RM ehr master04 §EHR Status).
+    if let Some(ehr_id) = ehr_id {
+        for status in &status_commits {
+            cx.post_status_commit(&mut tx, ehr_id, status).await?;
+        }
+    }
     tx.commit().await?;
 
     // An EHR_ACCESS version changes the EHR's access-control policy (the
@@ -614,9 +657,10 @@ pub(crate) async fn get_contribution(
     contribution_id: Uuid,
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
-    let audit = crate::storage::version_repo::contribution_audit(pool, contribution_id, Some(ehr_id))
-        .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
+    let audit =
+        crate::storage::version_repo::contribution_audit(pool, contribution_id, Some(ehr_id))
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
     let time_committed = audit.time_committed;
 
     // CONTRIBUTION.versions lists the affected VERSION objects (master06

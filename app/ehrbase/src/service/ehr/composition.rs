@@ -45,7 +45,6 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::CREATION, "COMPOSITION creation");
-        // TODO(w3f-integrate): commit seam (crate::versioning::create) + signing_ctx.
         let committed = create(
             &mut tx,
             Some(ehr_id),
@@ -326,19 +325,15 @@ impl EhrbaseService {
     }
 
     /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also the
-    /// [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6).
-    ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `ehr` existence read; no
-    /// openEHR spec governs the SQL.
+    /// [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6). The
+    /// existence read is a storage seam
+    /// ([`crate::storage::version_repo::ehr_exists`]; no openEHR spec governs the
+    /// SQL — our own design).
     pub(in crate::service) async fn ensure_ehr_exists(
         &self,
         ehr_id: Uuid,
     ) -> Result<(), ServiceError> {
-        let exists: bool = sqlx::query_scalar("SELECT exists(SELECT 1 FROM ehr WHERE id = $1)")
-            .bind(ehr_id)
-            .fetch_one(&self.pool)
-            .await?;
-        if exists {
+        if crate::storage::version_repo::ehr_exists(&self.pool, ehr_id).await? {
             Ok(())
         } else {
             Err(ServiceError::NotFound(format!("EHR {ehr_id}")))

@@ -186,11 +186,10 @@ impl TerminologyService for EhrbaseService {
 
 // ─── the AQL `TERMINOLOGY()` seam ─────────────────────────────────────────────
 //
-// TODO(w3f-integrate): the `TerminologyExpander` trait (`crate::aql::terminology`)
-// is being reworked by the AQL W-3f area (register 08); this impl is authored
-// against the current trait shape and reconciled with the reworked signature at
-// the single fix pass. The service side (below) is stable — the AQL consumer
-// (`aql/terminology.rs::expand_matches`) is the integration point that moves.
+// [`EhrbaseService`] implements the `TerminologyExpander` trait
+// (`crate::aql::terminology`) so the AQL semantic-analysis pass
+// (`aql/terminology.rs::expand_matches`) can resolve `TERMINOLOGY('expand', …)`
+// operands through this service's providers.
 
 #[async_trait]
 impl TerminologyExpander for EhrbaseService {

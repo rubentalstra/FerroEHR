@@ -25,13 +25,14 @@
 //! `Interval<Iso8601_date_time>` with no inclusivity stated; G-A7): a closed
 //! `[lo, hi]` is SM-silent, so this is a documented realization of our own.
 //!
-//! # Integration seams — `TODO(w3f-integrate)` (reconciled at the fix pass)
+//! # Cross-module wiring
 //!
 //! - **`crate::storage`** — [`dump_load`] reassembles/decomposes version bodies
 //!   through the storage codec (`node_repo::read_version_canonical` /
-//!   `decompose` + `write_nodes`); [`archive`] defers the cold-storage movement.
-//! - **`service/mod.rs`**: the orchestrator adds `mod admin;` and removes the
-//!   legacy flat `admin` / `dump_load` modules and `api/admin.rs`.
+//!   `decompose` + `write_nodes`).
+//! - **[`archive`]** marks EHR/party versioned objects archived; the physical
+//!   cold-tier storage movement is a spec-silent PERF(port) item (see the PORT
+//!   NOTE there).
 
 mod archive;
 mod delete;

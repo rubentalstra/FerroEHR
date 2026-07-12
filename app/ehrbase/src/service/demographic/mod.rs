@@ -263,11 +263,9 @@ fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError
 
 /// Validate a party version reached through the CONTRIBUTION path, where the
 /// [`Kind`] was already derived from the payload `_type` (so only the structural
-/// + invariant checks remain). Called from the CONTRIBUTION commit engine's
-/// content-validation hook.
-///
-/// TODO(w3f-integrate): the EHR worker's `impl CommitEnv for EhrbaseService`
-/// (`validate_for_commit`) must dispatch a demographic-party `Kind` here.
+/// + invariant checks remain). The `CommitEnv::validate_for_commit`
+/// implementation on [`EhrbaseService`] (`ehr/composition_validate.rs`)
+/// dispatches a demographic-party `Kind` here.
 pub(crate) fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result<(), ServiceError> {
     typed_check(kind.as_str(), data)
 }
@@ -292,11 +290,9 @@ impl EhrbaseService {
     /// Build the version `commit_audit` for a direct (non-CONTRIBUTION)
     /// demographic write: the effective `system_id`, the numeric
     /// `audit_change_type` group code, and the request's default committer
-    /// (RM common master04 §Audit Details).
-    ///
-    /// TODO(w3f-integrate): `default_committer` is the EHR worker's
-    /// `impl CommitEnv for EhrbaseService` contribution (the authenticated
-    /// principal's `PARTY_PROXY`).
+    /// (RM common master04 §Audit Details). The committer comes from the
+    /// [`CommitEnv::default_committer`] implementation on [`EhrbaseService`]
+    /// (the authenticated principal's `PARTY_PROXY`).
     fn demographic_audit(&self, change_type: &str, description: &str) -> AuditInput {
         AuditInput {
             system_id: self.effective_system_id(),
