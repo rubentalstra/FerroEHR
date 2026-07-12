@@ -10,13 +10,23 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::{NodeRow, reassemble};
+use crate::storage::{ReadRow, reassemble};
 
 use super::error::{AqlError, ExecError};
 use super::ir::{Params, QueryIr};
 use super::sql::{CellKind, ColumnSpec, SqlCtx};
 
 /// One `RESULT_SET` column's metadata (`schemas/query/ResultSetColumn`).
+///
+/// `RESULT_SET_COLUMN.archetype_id [0..1]` is deliberately absent: the SM
+/// `result_set_column.adoc` marks it "check on whether needed or **inside the
+/// path**", and the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
+/// archetype/node codes inline in `path` (never a separate `archetype_id`), so a
+/// distinct field has no pinned semantics or golden to validate against.
+// TODO(w3f-integrate): query service (register 05) — if a future CNF case pins a
+// standalone `archetype_id`, derive it from the leaf's deepest archetype
+// predicate here (cheaply available on `ir::LeafPath`) and have `result_set.rs`
+// emit it; today the archetype info is inside `path`.
 #[derive(Debug, Clone)]
 pub struct ColumnMeta {
     /// The column name (`AS` alias or `#{index}`).
@@ -166,7 +176,13 @@ async fn read_cell(
 
 /// Reassemble a whole structure object from its node subtree, re-based so the
 /// anchor node (`num`) becomes the fragment root (the codec requires `num == 0`
-/// and an empty path at the root).
+/// and an empty path at the root). Reads the lean [`ReadRow`] shape (only the
+/// five columns [`reassemble`] needs) and reassembles through the shared storage
+/// codec — no query-only promoted columns are fetched.
+// TODO(w3f-integrate): storage seam (register 02) — a `read_subtree_canonical(
+// pool, vo_id, sys_version, num, num_cap)` helper belongs beside
+// `node_repo::read_version_canonical` so this subtree SELECT + path rebasing
+// leaves the AQL engine; the engine would then only supply the four locators.
 async fn reassemble_subtree(
     pool: &PgPool,
     vo_id: Uuid,
@@ -175,7 +191,7 @@ async fn reassemble_subtree(
     num_cap: i32,
 ) -> Result<Value, AqlError> {
     let rows = sqlx::query(
-        "SELECT num, num_cap, parent_num, citem_num, rm_type, archetype, name, path, data \
+        "SELECT num, num_cap, parent_num, path, data \
          FROM node WHERE vo_id = $1 AND sys_version = $2 AND num BETWEEN $3 AND $4 ORDER BY num",
     )
     .bind(vo_id)
@@ -193,26 +209,18 @@ async fn reassemble_subtree(
         .and_then(|r| r.try_get::<String, _>("path").ok())
         .unwrap_or_default();
 
-    let mut node_rows = Vec::with_capacity(rows.len());
+    let mut read_rows = Vec::with_capacity(rows.len());
     for r in &rows {
         let path: String = r.try_get("path").map_err(ExecError::from)?;
         let rebased = path.strip_prefix(&base_path).unwrap_or(&path).to_owned();
-        node_rows.push(NodeRow {
+        read_rows.push(ReadRow {
             num: r.try_get::<i32, _>("num").map_err(ExecError::from)? - num,
             num_cap: r.try_get::<i32, _>("num_cap").map_err(ExecError::from)? - num,
-            // parent_num / citem_num are not used by `reassemble`; re-root them.
+            // parent_num is not used by `reassemble`; re-root it.
             parent_num: 0,
-            citem_num: None,
-            rm_type: r.try_get("rm_type").map_err(ExecError::from)?,
-            archetype: r.try_get("archetype").map_err(ExecError::from)?,
-            // arch_* are query-only promoted columns, unused by `reassemble`.
-            arch_entity: None,
-            arch_concept: None,
-            arch_major: None,
-            name: r.try_get("name").map_err(ExecError::from)?,
             path: rebased,
             data: r.try_get("data").map_err(ExecError::from)?,
         });
     }
-    Ok(reassemble(&node_rows).map_err(ExecError::from)?)
+    Ok(reassemble(&read_rows).map_err(ExecError::from)?)
 }
