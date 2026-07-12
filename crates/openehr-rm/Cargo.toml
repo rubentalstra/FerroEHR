@@ -16,6 +16,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_jcs.workspace = true
 thiserror.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

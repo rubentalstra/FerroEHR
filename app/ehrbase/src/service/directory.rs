@@ -22,7 +22,12 @@ impl EhrbaseService {
         // EHR_STATUS.is_modifiable = False forbids content writes; the directory
         // (hierarchical Folders) is EHR content (ehr/master04 §"EHR Active Status").
         self.ensure_content_writable(ehr_id).await?;
-        if self.current_vo(ehr_id, Kind::Folder).await?.is_some() {
+        // `POST /directory` manages the single directory slot = `EHR.directory`
+        // (= `folders[1]`, RM ehr §EHR Class `Directory_in_folders`); it conflicts
+        // when a hierarchy already occupies that slot (i.e. `directory_vo_opt`
+        // resolves). Additional hierarchies are added via CONTRIBUTION only —
+        // ITS-REST/SM bind only the directory (RM ehr master04 §Folders).
+        if self.directory_vo_opt(ehr_id).await?.is_some() {
             return Err(ServiceError::Conflict(format!(
                 "EHR {ehr_id} already has a directory"
             )));
@@ -53,7 +58,7 @@ impl EhrbaseService {
         at: Option<jiff::Timestamp>,
         path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        let vo_id = self.directory_vo(ehr_id).await?;
         let read = match at {
             Some(at) => vobject::version_at(&self.pool, vo_id, at).await?,
             None => vobject::read_current(&self.pool, vo_id).await?,
@@ -105,7 +110,7 @@ impl EhrbaseService {
         folder: Value,
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        let vo_id = self.directory_vo(ehr_id).await?;
         validate_folder(&folder)?;
         // EHR_STATUS.is_modifiable = False forbids content writes (ehr/master04
         // §"EHR Active Status").
@@ -137,7 +142,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let (vo_id, _) = self.directory_vo(ehr_id).await?;
+        let vo_id = self.directory_vo(ehr_id).await?;
         // EHR_STATUS.is_modifiable = False forbids content writes, incl. logical
         // delete (ehr/master04 §"EHR Active Status").
         self.ensure_content_writable(ehr_id).await?;
@@ -158,9 +163,12 @@ impl EhrbaseService {
         Ok(ServiceResponse::plain(Value::Null))
     }
 
-    /// The EHR's directory versioned-object id, or `NotFound`.
-    async fn directory_vo(&self, ehr_id: Uuid) -> Result<(Uuid, TreeId), ServiceError> {
-        self.current_vo(ehr_id, Kind::Folder)
+    /// The EHR's directory versioned-object id (`EHR.directory` =
+    /// `folders.item(1)`, RM ehr §EHR Class `Directory_in_folders`), or
+    /// `NotFound`. The lowest-`rank` live hierarchy — see
+    /// [`directory_vo_opt`](EhrbaseService::directory_vo_opt).
+    async fn directory_vo(&self, ehr_id: Uuid) -> Result<Uuid, ServiceError> {
+        self.directory_vo_opt(ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))
     }

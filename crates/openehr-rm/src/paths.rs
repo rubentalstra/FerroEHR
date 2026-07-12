@@ -7,13 +7,26 @@
 //! (`serde_json::Value`), which is the repo's uniform RM representation (the
 //! node codec, the P15 validator, and the FLAT converters all navigate it).
 //!
+//! Also carries the [`EhrUri`] structural parser for the `ehr:` URI scheme
+//! (BASE `master11-paths` §"EHR URIs"; RM `data_types/master10-uri_package`
+//! §"DV_EHR_URI Syntax"), which composes the path parser above for the
+//! `path_inside_top_level_structure` portion.
+//!
 //! Spec:
 //! - RM 1.2.0 `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`
 //!   (the function signatures + parent semantics).
 //! - BASE `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
-//!   (the path syntax: `/`-separated attribute segments, `[atNNNN]` /
-//!   `[archetype-id]` predicates, the `[atNNNN,'name']` name shortcut, and the
-//!   explicit `[atNNNN and name/value='x']` form).
+//!   the path syntax:
+//!   - §"Basic Syntax": `/`-separated attribute segments, relative vs absolute,
+//!     and the `//` path pattern ("matches any number of path segments").
+//!   - §"Predicate Expressions": the `[atNNNN]` archetype-node-id shortcut for
+//!     `[@archetype_node_id='atNNNN']`, the archetype-id predicate at chaining
+//!     points (`[openEHR-EHR-…]` / `[archetype_id=…]`), the
+//!     `[atNNNN and name/value='x']` form and its `[atNNNN,'name']` shortcut.
+//!   - §"Using a Uid-based Predicate": `[uid='…']` / `[atNNNN and uid='…']`.
+//!   - §"Using Positional Parameters": the XPath positional predicate `[n]`
+//!     (1-based) — "the only guaranteed unique paths are those based on
+//!     positional predicates".
 //!
 //! Design notes (recorded per F-12-02):
 //! - `PATHABLE.parent()` is a back-reference; per the repo convention (no
@@ -24,13 +37,21 @@
 //!   wire gain — every consumer already holds the canonical JSON form.
 //! - Predicates carrying general comparison expressions (e.g.
 //!   `[at0007 and time >= '...']`) are rejected as
-//!   [`PathError::UnsupportedPredicate`] — they belong to AQL (P16), not the
-//!   PATHABLE navigation primitive; the accept-set here is the archetype-id /
-//!   name subset the spec's own top-level-structure examples use.
+//!   [`PathError::UnsupportedPredicate`] — the accept-set here is the
+//!   archetype-id / name / uid / positional subset the spec's own
+//!   top-level-structure and uniqueness examples use.
+//! - PORT NOTE: the `//` pattern and the positional predicate `[n]` are part of
+//!   the master11 *path* grammar (realised here), but are **not** part of the
+//!   AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
+//!   standard/archetype/node predicates) — this module is the RM/URI path
+//!   engine, not the AQL one, and the AQL parser (`openehr-query`) is untouched.
 
 use serde_json::Value;
 use std::fmt;
 use std::str::FromStr;
+
+use openehr_base::prelude::{ObjectVersionId, Uid};
+use uuid::Uuid;
 
 /// Error raised when parsing an openEHR path expression.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -44,38 +65,62 @@ pub enum PathError {
     /// A `[` predicate was not terminated by `]`.
     #[error("unterminated predicate in segment {0}")]
     UnterminatedPredicate(usize),
-    /// A predicate uses a construct outside the supported archetype-id /
-    /// name/value subset (general comparisons belong to AQL, not PATHABLE).
+    /// A predicate uses a construct outside the supported
+    /// archetype-id / name / uid / positional subset (general comparisons like
+    /// `time >= '...'` are not part of this navigation primitive).
     #[error("unsupported predicate expression: {0:?}")]
     UnsupportedPredicate(String),
+    /// A positional predicate `[n]` had a value that is not a positive integer
+    /// (XPath positions are 1-based — BASE `master11-paths` §"Using Positional
+    /// Parameters").
+    #[error("invalid positional predicate {0:?} (positions are 1-based integers)")]
+    InvalidPosition(String),
+    /// A dangling `//` with no following attribute segment.
+    #[error("path pattern ends with '//' (no following attribute)")]
+    DanglingDescendant,
 }
 
-/// The predicate of one path segment: an optional `archetype_node_id` match
-/// (`[at0003]` / `[openEHR-EHR-OBSERVATION.x.v1]`, i.e. the shortcut for
-/// `[@archetype_node_id = '...']`) and an optional `name/value` match
-/// (`[at0003,'name']` / `[at0003 and name/value='name']`).
+/// The predicate of one path segment (a conjunction of the BASE `master11-paths`
+/// §"Predicate Expressions" shortcuts):
+/// - `archetype_node_id` — `[at0003]` / `[openEHR-EHR-OBSERVATION.x.v1]` /
+///   `[archetype_id=…]`, the shortcut for `[@archetype_node_id='…']` (at
+///   archetype chaining points the node id carries the archetype id);
+/// - `name_value` — `[at0003,'name']` / `[at0003 and name/value='name']`;
+/// - `uid` — `[uid='…']` / `[at0003 and uid='…']` (§"Using a Uid-based
+///   Predicate");
+/// - `position` — the 1-based XPath positional predicate `[n]` (§"Using
+///   Positional Parameters"), applied to the *container*, not a node attribute.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Predicate {
-    /// Required `archetype_node_id` (or, at archetype roots, archetype id).
+    /// `archetype_node_id` (or, at archetype roots, archetype id).
     pub archetype_node_id: Option<String>,
-    /// Required `name/value`.
+    /// `name/value`.
     pub name_value: Option<String>,
+    /// `LOCATABLE.uid.value` (a `UID_BASED_ID`).
+    pub uid: Option<String>,
+    /// 1-based positional index into the container attribute.
+    pub position: Option<usize>,
 }
 
 impl Predicate {
     /// Whether this predicate constrains nothing (matches every node).
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.archetype_node_id.is_none() && self.name_value.is_none()
+        self.archetype_node_id.is_none()
+            && self.name_value.is_none()
+            && self.uid.is_none()
+            && self.position.is_none()
     }
 
-    /// Whether a canonical-JSON RM node satisfies this predicate.
+    /// Whether a canonical-JSON RM node satisfies this predicate's
+    /// *attribute-based* conjuncts (`archetype_node_id`, `name/value`, `uid`).
+    /// The positional conjunct is orthogonal — it selects by container index
+    /// and is applied in [`step`], not here.
     ///
-    /// The `archetype_node_id` conjunct matches `LOCATABLE.archetype_node_id`
-    /// (the `[atNNNN]` / `[archetype-id]` shortcut); the `name_value` conjunct
-    /// matches `LOCATABLE.name.value` (a `DV_TEXT`) by exact, case-sensitive
-    /// string comparison — the Xpath `name/value='…'` semantics of BASE
-    /// `master11-paths` §"Name-based Predicate". Both are ANDed.
+    /// `archetype_node_id` matches `LOCATABLE.archetype_node_id`; `name_value`
+    /// matches `LOCATABLE.name.value` (a `DV_TEXT`); `uid` matches
+    /// `LOCATABLE.uid.value` (BASE `master11-paths` §"Name-based Predicate" /
+    /// §"Using a Uid-based Predicate"). All are exact, case-sensitive, and ANDed.
     #[must_use]
     pub fn matches(&self, node: &Value) -> bool {
         if let Some(id) = self.archetype_node_id.as_deref()
@@ -92,7 +137,23 @@ impl Predicate {
         {
             return false;
         }
+        if let Some(uid) = self.uid.as_deref()
+            && node_uid(node) != Some(uid)
+        {
+            return false;
+        }
         true
+    }
+}
+
+/// The `LOCATABLE.uid.value` of a canonical-JSON node, tolerating both the
+/// object form (`{"_type":"HIER_OBJECT_ID","value":"…"}`, the canonical
+/// encoding) and a bare-string `uid`.
+fn node_uid(node: &Value) -> Option<&str> {
+    match node.get("uid") {
+        Some(Value::String(s)) => Some(s.as_str()),
+        Some(u) => u.get("value").and_then(Value::as_str),
+        None => None,
     }
 }
 
@@ -103,6 +164,11 @@ pub struct PathSegment {
     pub attribute: String,
     /// The optional `[...]` predicate.
     pub predicate: Predicate,
+    /// `true` when this segment is reached via a `//` path pattern, i.e. it
+    /// matches at *any depth* below the current context rather than as a direct
+    /// child (BASE `master11-paths` §"Basic Syntax": the `//` pattern "can match
+    /// any number of path segments").
+    pub descendant: bool,
 }
 
 /// A parsed openEHR path: `/`-separated [`PathSegment`]s, absolute (leading
@@ -126,37 +192,67 @@ impl FromStr for RmPath {
         }
         let absolute = s.starts_with('/');
         let body = if absolute { &s[1..] } else { s };
-        let mut segments = Vec::new();
         // Split on top-level '/' only — slashes inside [...] predicates (e.g.
-        // name/value=...) are not separators.
-        let bytes = body.as_bytes();
-        let (mut i, n) = (0, bytes.len());
+        // `name/value=...`) are not separators. An *empty* raw segment marks a
+        // `//` path pattern: the following real segment is a descendant match
+        // (BASE `master11-paths` §"Basic Syntax").
+        let raw = split_top_level(body).map_err(PathError::UnterminatedPredicate)?;
+        let mut segments: Vec<PathSegment> = Vec::new();
+        let mut pending_descendant = false;
         let mut index = 0usize;
-        while i < n {
-            let start = i;
-            let mut depth = 0usize;
-            while i < n {
-                match bytes[i] {
-                    b'[' => depth += 1,
-                    b']' => depth = depth.saturating_sub(1),
-                    b'/' if depth == 0 => break,
-                    _ => {}
-                }
-                i += 1;
-            }
-            if depth > 0 {
-                return Err(PathError::UnterminatedPredicate(index));
-            }
-            let seg = &body[start..i];
+        for seg in raw {
             if seg.is_empty() {
-                return Err(PathError::MissingAttribute(index));
+                // `//` (or a leading `/` already consumed by `absolute`):
+                // the next real segment matches at any depth.
+                pending_descendant = true;
+                continue;
             }
-            segments.push(parse_segment(seg, index)?);
+            let mut parsed = parse_segment(seg, index)?;
+            parsed.descendant = pending_descendant;
+            pending_descendant = false;
+            segments.push(parsed);
             index += 1;
-            i += 1; // skip the '/'
+        }
+        if pending_descendant {
+            return Err(PathError::DanglingDescendant);
+        }
+        if segments.is_empty() && !absolute {
+            return Err(PathError::MissingAttribute(0));
         }
         Ok(Self { absolute, segments })
     }
+}
+
+/// Split a path body on top-level `/` (slashes inside `[...]` predicates are not
+/// separators), returning the raw segment strings — including empty strings for
+/// `//` markers. On an unterminated `[` returns `Err(index)` with the 0-based
+/// index of the offending segment.
+fn split_top_level(body: &str) -> Result<Vec<&str>, usize> {
+    let bytes = body.as_bytes();
+    let (mut i, n) = (0, bytes.len());
+    let mut out = Vec::new();
+    while i <= n {
+        let start = i;
+        let mut depth = 0usize;
+        while i < n {
+            match bytes[i] {
+                b'[' => depth += 1,
+                b']' => depth = depth.saturating_sub(1),
+                b'/' if depth == 0 => break,
+                _ => {}
+            }
+            i += 1;
+        }
+        if depth > 0 {
+            return Err(out.len());
+        }
+        out.push(&body[start..i]);
+        if i == n {
+            break;
+        }
+        i += 1; // skip the '/'
+    }
+    Ok(out)
 }
 
 impl fmt::Display for RmPath {
@@ -165,24 +261,58 @@ impl fmt::Display for RmPath {
             return f.write_str("/");
         }
         for (i, seg) in self.segments.iter().enumerate() {
-            if self.absolute || i > 0 {
+            // A descendant segment is prefixed with `//`; the first segment of
+            // an absolute path with `//` already carries it, so no extra `/`.
+            if seg.descendant {
+                f.write_str("//")?;
+            } else if self.absolute || i > 0 {
                 f.write_str("/")?;
             }
             f.write_str(&seg.attribute)?;
-            if !seg.predicate.is_empty() {
-                f.write_str("[")?;
-                if let Some(id) = &seg.predicate.archetype_node_id {
-                    f.write_str(id)?;
-                    if let Some(name) = &seg.predicate.name_value {
-                        write!(f, ",'{name}'")?;
-                    }
-                } else if let Some(name) = &seg.predicate.name_value {
-                    write!(f, "name/value='{name}'")?;
-                }
-                f.write_str("]")?;
-            }
+            seg.predicate.render(f)?;
         }
         Ok(())
+    }
+}
+
+impl Predicate {
+    /// Render this predicate in its canonical bracketed form (a normalised
+    /// re-emission of the parsed shortcuts — see the module PORT NOTE on
+    /// round-trip stability). Emits nothing when empty.
+    fn render(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            return Ok(());
+        }
+        // A positional predicate is the guaranteed-unique form and stands alone
+        // (BASE `master11-paths` §"Using Positional Parameters").
+        if let Some(pos) = self.position {
+            return write!(f, "[{pos}]");
+        }
+        f.write_str("[")?;
+        let mut wrote = false;
+        if let Some(id) = &self.archetype_node_id {
+            f.write_str(id)?;
+            wrote = true;
+        }
+        if let Some(name) = &self.name_value {
+            // Preferred openEHR shortcut `[id,'name']` when combined with an
+            // archetype id, else the explicit `name/value='name'` form (BASE
+            // `master11-paths` §"Name-based Predicate").
+            if wrote {
+                write!(f, ",'{name}'")?;
+            } else {
+                write!(f, "name/value='{name}'")?;
+            }
+            wrote = true;
+        }
+        if let Some(uid) = &self.uid {
+            if wrote {
+                write!(f, " and uid='{uid}'")?;
+            } else {
+                write!(f, "uid='{uid}'")?;
+            }
+        }
+        f.write_str("]")
     }
 }
 
@@ -192,6 +322,7 @@ fn parse_segment(seg: &str, index: usize) -> Result<PathSegment, PathError> {
         return Ok(PathSegment {
             attribute: seg.to_owned(),
             predicate: Predicate::default(),
+            descendant: false,
         });
     };
     let attribute = seg[..open].to_owned();
@@ -207,6 +338,7 @@ fn parse_segment(seg: &str, index: usize) -> Result<PathSegment, PathError> {
     Ok(PathSegment {
         attribute,
         predicate: parse_predicate(inner)?,
+        descendant: false,
     })
 }
 
@@ -244,32 +376,51 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     if c.is_empty() {
         return Ok(());
     }
-    // Explicit name/value='...'.
-    if let Some(rest) = c.strip_prefix("name/value") {
-        let value = rest
-            .trim_start()
-            .strip_prefix('=')
-            .map(str::trim)
-            .and_then(|v| v.strip_prefix('\''))
-            .and_then(|v| v.strip_suffix('\''))
-            .ok_or_else(|| PathError::UnsupportedPredicate(c.to_owned()))?;
-        predicate.name_value = Some(value.to_owned());
+    // A bare positive integer is the XPath positional predicate `[n]` (1-based;
+    // BASE `master11-paths` §"Using Positional Parameters").
+    if c.bytes().all(|b| b.is_ascii_digit()) {
+        let n: usize = c
+            .parse()
+            .map_err(|_| PathError::InvalidPosition(c.to_owned()))?;
+        if n == 0 {
+            return Err(PathError::InvalidPosition(c.to_owned()));
+        }
+        predicate.position = Some(n);
         return Ok(());
     }
-    // Explicit @archetype_node_id = '...'.
-    if let Some(rest) = c.strip_prefix("@archetype_node_id") {
-        let value = rest
-            .trim_start()
-            .strip_prefix('=')
-            .map(str::trim)
-            .and_then(|v| v.strip_prefix('\''))
+    // Explicit name/value='...'.
+    if let Some(value) = strip_eq(c, "name/value") {
+        predicate.name_value = Some(unquote(value, c)?.to_owned());
+        return Ok(());
+    }
+    // Uid-based predicate `uid='...'` / `@uid='...'` (§"Using a Uid-based
+    // Predicate").
+    if let Some(value) = strip_eq(c, "@uid").or_else(|| strip_eq(c, "uid")) {
+        predicate.uid = Some(unquote(value, c)?.to_owned());
+        return Ok(());
+    }
+    // Explicit @archetype_node_id='...'.
+    if let Some(value) = strip_eq(c, "@archetype_node_id") {
+        predicate.archetype_node_id = Some(unquote(value, c)?.to_owned());
+        return Ok(());
+    }
+    // Explicit archetype-id predicate at a chaining point:
+    // `[archetype_id=openEHR-EHR-…]` / `[@archetype_id='…']` — the long form of
+    // the bare `[openEHR-EHR-…]` shortcut (§"Paths within Top-level
+    // Structures"). Both resolve against the node's `archetype_node_id`, which
+    // at an archetype root carries the archetype id. The value may be unquoted
+    // (it contains no `'`).
+    if let Some(value) = strip_eq(c, "@archetype_id").or_else(|| strip_eq(c, "archetype_id")) {
+        let value = value
+            .strip_prefix('\'')
             .and_then(|v| v.strip_suffix('\''))
-            .ok_or_else(|| PathError::UnsupportedPredicate(c.to_owned()))?;
+            .unwrap_or(value);
         predicate.archetype_node_id = Some(value.to_owned());
         return Ok(());
     }
     // The bare shortcut: an at-code / id-code or an archetype id. Anything
-    // containing comparison syntax is out of the PATHABLE subset.
+    // containing comparison syntax (a general boolean predicate) is out of the
+    // path-navigation subset.
     if c.contains(['=', '<', '>', '\'']) {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
@@ -277,21 +428,78 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     Ok(())
 }
 
+/// For a conjunct `c` of the form `key = <value>` (optional spaces), return the
+/// trimmed `<value>` part, or `None` if `c` does not start with `key`.
+fn strip_eq<'a>(c: &'a str, key: &str) -> Option<&'a str> {
+    c.strip_prefix(key)
+        .map(str::trim_start)?
+        .strip_prefix('=')
+        .map(str::trim)
+}
+
+/// Strip the surrounding single quotes from a predicate string literal.
+fn unquote<'a>(value: &'a str, conjunct: &str) -> Result<&'a str, PathError> {
+    value
+        .strip_prefix('\'')
+        .and_then(|v| v.strip_suffix('\''))
+        .ok_or_else(|| PathError::UnsupportedPredicate(conjunct.to_owned()))
+}
+
 // ── navigation over the canonical-JSON RM tree ───────────────────────────────
 
 /// One navigation step: from `node`, follow `segment` and append every
 /// matching child to `out`.
+///
+/// The positional conjunct `[n]` (1-based) selects the nth container element
+/// (or, on a single-valued attribute, requires `n == 1`) — BASE
+/// `master11-paths` §"Using Positional Parameters"; the attribute-based
+/// conjuncts are then still ANDed via [`Predicate::matches`].
 fn step<'a>(node: &'a Value, segment: &PathSegment, out: &mut Vec<&'a Value>) {
     let Some(child) = node.get(&segment.attribute) else {
         return;
     };
+    let predicate = &segment.predicate;
     match child {
-        Value::Array(items) => {
-            out.extend(items.iter().filter(|v| segment.predicate.matches(v)));
-        }
+        Value::Array(items) => match predicate.position {
+            Some(pos) => {
+                if let Some(v) = items.get(pos - 1)
+                    && predicate.matches(v)
+                {
+                    out.push(v);
+                }
+            }
+            None => out.extend(items.iter().filter(|v| predicate.matches(v))),
+        },
         v => {
-            if segment.predicate.is_empty() || segment.predicate.matches(v) {
+            // A single-valued attribute has one element at position 1.
+            if predicate.position.is_some_and(|p| p != 1) {
+                return;
+            }
+            if predicate.matches(v) {
                 out.push(v);
+            }
+        }
+    }
+}
+
+/// Descendant-or-self navigation for a `//`-pattern segment: apply [`step`] at
+/// `node` and at every descendant object, so the segment matches at any depth
+/// (BASE `master11-paths` §"Basic Syntax"). Each candidate node is the value of
+/// exactly one (attribute, parent) pair, so a match is produced once.
+fn step_descendant<'a>(node: &'a Value, segment: &PathSegment, out: &mut Vec<&'a Value>) {
+    step(node, segment, out);
+    if let Value::Object(map) = node {
+        for v in map.values() {
+            match v {
+                Value::Array(items) => {
+                    for e in items {
+                        if e.is_object() {
+                            step_descendant(e, segment, out);
+                        }
+                    }
+                }
+                Value::Object(_) => step_descendant(v, segment, out),
+                _ => {}
             }
         }
     }
@@ -324,7 +532,11 @@ pub fn items_at_path<'a>(root: &'a Value, path: &RmPath) -> Vec<&'a Value> {
     for segment in &path.segments {
         let mut next = Vec::new();
         for node in current {
-            step(node, segment, &mut next);
+            if segment.descendant {
+                step_descendant(node, segment, &mut next);
+            } else {
+                step(node, segment, &mut next);
+            }
         }
         if next.is_empty() {
             return Vec::new();
@@ -429,6 +641,7 @@ fn find_path(node: &Value, item: &Value, segments: &mut Vec<PathSegment>) -> boo
         let make_segment = |v: &Value| PathSegment {
             attribute: attr.clone(),
             predicate: predicate_for(v),
+            descendant: false,
         };
         match child {
             Value::Array(items) => {
@@ -444,6 +657,7 @@ fn find_path(node: &Value, item: &Value, segments: &mut Vec<PathSegment>) -> boo
                 segments.push(PathSegment {
                     attribute: attr.clone(),
                     predicate: Predicate::default(),
+                    descendant: false,
                 });
                 if std::ptr::eq(v, item) || find_path(v, item, segments) {
                     return true;
@@ -468,7 +682,284 @@ fn predicate_for(v: &Value) -> Predicate {
             .and_then(|n| n.get("value"))
             .and_then(Value::as_str)
             .map(str::to_owned),
+        uid: None,
+        position: None,
     }
+}
+
+// ── EHR URIs (the `ehr:` scheme) ─────────────────────────────────────────────
+
+/// The literal `ehr` URI scheme (RM `data_types/master10-uri_package`
+/// §Definitions: `Ehr_scheme: String = "ehr"`).
+pub const EHR_SCHEME: &str = "ehr";
+
+/// The `EHR`-class attribute names usable as a `top_level_structure_locator`
+/// (BASE `master11-paths` §"Top-level Structure Locator": "The possible values
+/// … come from attribute names of the class `EHR` … namely `compositions`,
+/// `directory` etc."; RM `ehr` `EHR` class). Only the attributes that reference
+/// a top-level `VERSIONED_OBJECT` are listed (`tags` is an `EHR` attribute but
+/// not a versioned top-level structure).
+const EHR_LOCATOR_ATTRIBUTES: [&str; 6] = [
+    "compositions",
+    "directory",
+    "ehr_status",
+    "ehr_access",
+    "folders",
+    "contributions",
+];
+
+/// Whether `seg` names an `EHR` top-level-structure attribute.
+#[must_use]
+pub fn is_ehr_locator_attribute(seg: &str) -> bool {
+    EHR_LOCATOR_ATTRIBUTES.contains(&seg)
+}
+
+/// How a `top_level_structure_locator` identifies a version of a top-level
+/// object (BASE `master11-paths` §"Top-level Structure Locator").
+// `Eq` is omitted because `ObjectVersionId` is only `PartialEq` (BASE `openehr-base`).
+#[derive(Debug, Clone, PartialEq)]
+pub enum VersionLocator {
+    /// A bare `VERSIONED_OBJECT._uid_` (a GUID). "When a URI uses the object
+    /// identifier, the latest trunk version is always assumed."
+    VersionedObject(String),
+    /// An exact `OBJECT_VERSION_ID`
+    /// (`object_id '::' creating_system_id '::' version_tree_id`).
+    Version(ObjectVersionId),
+}
+
+impl VersionLocator {
+    /// The `VERSIONED_OBJECT._uid_` UUID this locator addresses (the `object_id`
+    /// of an `OBJECT_VERSION_ID`, or the bare uid), when it is a UUID.
+    #[must_use]
+    pub fn object_uuid(&self) -> Option<Uuid> {
+        match self {
+            VersionLocator::VersionedObject(s) => Uuid::parse_str(s).ok(),
+            VersionLocator::Version(ovid) => match ovid.object_id() {
+                Uid::Uuid(u) => Some(u.value),
+                Uid::InternetId(_) | Uid::IsoOid(_) => None,
+            },
+        }
+    }
+}
+
+impl fmt::Display for VersionLocator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VersionLocator::VersionedObject(s) => f.write_str(s),
+            VersionLocator::Version(ovid) => f.write_str(&ovid.value),
+        }
+    }
+}
+
+/// A parsed `top_level_structure_locator`: an optional `EHR` attribute name and
+/// an optional versioned-object reference.
+///
+/// Master11 writes locators as `compositions/<uid-or-OVID>` or `directory`; the
+/// CNF `DV_EHR_URI` fixtures also use the attribute-less short form where the
+/// versioned-object id follows the `ehr_id` directly (both are accepted here).
+#[derive(Debug, Clone, PartialEq)]
+pub struct TopLevelLocator {
+    /// The `EHR` attribute name (`compositions`, `directory`, …), if present.
+    pub attribute: Option<String>,
+    /// The versioned-object reference, if present (absent for e.g. `directory`).
+    pub object: Option<VersionLocator>,
+}
+
+/// A structurally parsed `ehr:` URI (BASE `master11-paths` §"EHR URIs"; RM
+/// `data_types/master10-uri_package` §"DV_EHR_URI Syntax"). Covers the four
+/// absolute forms plus the relative forms (`ehr:compositions/…`, `ehr:directory`).
+///
+/// This is the *structural* grammar on top of the `DV_EHR_URI` scheme
+/// invariant (`Scheme_valid`, which lives in
+/// `data_types/uri/dv_ehr_uri_impl.rs` and is not duplicated here).
+#[derive(Debug, Clone, PartialEq)]
+pub struct EhrUri {
+    /// The EHR system / repository (`ehr://system_id/…`); `None` for the local
+    /// system (`ehr:/…`) and relative forms.
+    pub system_id: Option<String>,
+    /// The `EHR._ehr_id_` (a UUID; "strongly recommended that a UUID always be
+    /// used"). `None` only for the relative forms, which carry no `ehr_id`.
+    pub ehr_id: Option<Uuid>,
+    /// The top-level-structure locator, if the URI reaches beyond the EHR.
+    pub locator: Option<TopLevelLocator>,
+    /// The `path_inside_top_level_structure` (a *relative* [`RmPath`]), if any.
+    pub item_path: Option<RmPath>,
+}
+
+/// Why an `ehr:` URI string was rejected structurally.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum EhrUriError {
+    /// The input was empty.
+    #[error("empty URI")]
+    Empty,
+    /// No `scheme:` prefix was present.
+    #[error("URI has no scheme (expected 'ehr:')")]
+    MissingScheme,
+    /// The scheme was not `ehr` (case-insensitive).
+    #[error("URI scheme is {0:?}, not 'ehr'")]
+    WrongScheme(String),
+    /// The `ehr_id` segment was not a UUID.
+    #[error("EHR id {0:?} is not a UUID")]
+    BadEhrId(String),
+    /// The first locator segment is neither an `EHR` attribute name nor a
+    /// versioned-object id.
+    #[error("top-level locator {0:?} is neither an EHR attribute name nor a versioned-object id")]
+    UnrecognisedLocator(String),
+    /// A versioned-object id in the locator was malformed.
+    #[error("malformed version identifier in locator: {0:?}")]
+    MalformedVersion(String),
+    /// The `path_inside_top_level_structure` did not parse.
+    #[error("invalid path inside top-level structure: {0}")]
+    Path(#[from] PathError),
+}
+
+impl FromStr for EhrUri {
+    type Err = EhrUriError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Err(EhrUriError::Empty);
+        }
+        let (scheme, rest) = s.split_once(':').ok_or(EhrUriError::MissingScheme)?;
+        if !scheme.eq_ignore_ascii_case(EHR_SCHEME) {
+            return Err(EhrUriError::WrongScheme(scheme.to_owned()));
+        }
+        // The three leading forms are distinguished by what follows `ehr:`:
+        //   `//` → authority form (`//system_id/ehr_id/…`);
+        //   `/`  → absolute form  (`/ehr_id/…`);
+        //   else → relative form  (`compositions/…`, `directory`).
+        let (system_id, ehr_id, tail) = if let Some(after) = rest.strip_prefix("//") {
+            let (system, after) = split_first(after);
+            let (ehr, tail) = split_first(after);
+            (Some(system.to_owned()), parse_ehr_id(ehr)?, tail)
+        } else if let Some(after) = rest.strip_prefix('/') {
+            let (ehr, tail) = split_first(after);
+            (None, parse_ehr_id(ehr)?, tail)
+        } else {
+            (None, None, rest)
+        };
+        let (locator, item_path) = parse_locator_and_path(tail)?;
+        Ok(Self {
+            system_id,
+            ehr_id,
+            locator,
+            item_path,
+        })
+    }
+}
+
+impl fmt::Display for EhrUri {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // Components after the `ehr_id`, in order.
+        let mut parts: Vec<String> = Vec::new();
+        if let Some(ehr) = &self.ehr_id {
+            parts.push(ehr.to_string());
+        }
+        if let Some(loc) = &self.locator {
+            if let Some(attr) = &loc.attribute {
+                parts.push(attr.clone());
+            }
+            if let Some(obj) = &loc.object {
+                parts.push(obj.to_string());
+            }
+        }
+        if let Some(path) = &self.item_path {
+            // A relative `RmPath` renders without a leading slash.
+            parts.push(path.to_string());
+        }
+        f.write_str(EHR_SCHEME)?;
+        f.write_str(":")?;
+        match &self.system_id {
+            Some(system) => {
+                write!(f, "//{system}")?;
+                if !parts.is_empty() {
+                    write!(f, "/{}", parts.join("/"))?;
+                }
+            }
+            None if self.ehr_id.is_some() => write!(f, "/{}", parts.join("/"))?,
+            None => f.write_str(&parts.join("/"))?,
+        }
+        Ok(())
+    }
+}
+
+/// Split `s` at its first `/` into `(before, after)`; `after` is `""` when there
+/// is no `/`. Used only for the leading `system_id`/`ehr_id` tokens, which carry
+/// no `[...]` predicates.
+fn split_first(s: &str) -> (&str, &str) {
+    s.split_once('/').unwrap_or((s, ""))
+}
+
+/// Parse an `ehr_id` segment: `None` when empty, `Some(uuid)` when a UUID, error
+/// otherwise.
+fn parse_ehr_id(seg: &str) -> Result<Option<Uuid>, EhrUriError> {
+    if seg.is_empty() {
+        return Ok(None);
+    }
+    Uuid::parse_str(seg)
+        .map(Some)
+        .map_err(|_| EhrUriError::BadEhrId(seg.to_owned()))
+}
+
+/// Whether a locator segment looks like a versioned-object identifier: a bare
+/// UUID (`VERSIONED_OBJECT._uid_`) or a `::`-bearing `OBJECT_VERSION_ID`.
+fn looks_like_version_id(seg: &str) -> bool {
+    seg.contains("::") || Uuid::parse_str(seg).is_ok()
+}
+
+/// Parse one versioned-object locator segment.
+fn parse_version_locator(seg: &str) -> Result<VersionLocator, EhrUriError> {
+    if seg.contains("::") {
+        let ovid = ObjectVersionId::from_str(seg)
+            .map_err(|_| EhrUriError::MalformedVersion(seg.to_owned()))?;
+        Ok(VersionLocator::Version(ovid))
+    } else if Uuid::parse_str(seg).is_ok() {
+        Ok(VersionLocator::VersionedObject(seg.to_owned()))
+    } else {
+        Err(EhrUriError::MalformedVersion(seg.to_owned()))
+    }
+}
+
+/// Split the tail (everything after the `ehr_id`) into the top-level-structure
+/// locator and the relative `path_inside_top_level_structure`.
+fn parse_locator_and_path(
+    tail: &str,
+) -> Result<(Option<TopLevelLocator>, Option<RmPath>), EhrUriError> {
+    if tail.is_empty() {
+        return Ok((None, None));
+    }
+    let mut segs = split_top_level(tail)
+        .map_err(|idx| EhrUriError::Path(PathError::UnterminatedPredicate(idx)))?;
+    // Drop a trailing slash (`ehr:/ehr_id/` addresses the EHR, no locator).
+    while segs.last() == Some(&"") {
+        segs.pop();
+    }
+    if segs.is_empty() {
+        return Ok((None, None));
+    }
+    let first = segs[0];
+    let (attribute, rest): (Option<String>, &[&str]) = if is_ehr_locator_attribute(first) {
+        (Some(first.to_owned()), &segs[1..])
+    } else {
+        (None, &segs[..])
+    };
+    let (object, item_segs): (Option<VersionLocator>, &[&str]) = match rest.first() {
+        Some(&head) if looks_like_version_id(head) => {
+            (Some(parse_version_locator(head)?), &rest[1..])
+        }
+        Some(&head) if attribute.is_none() => {
+            // No `EHR` attribute name and no version id → nothing identifies a
+            // top-level structure.
+            return Err(EhrUriError::UnrecognisedLocator(head.to_owned()));
+        }
+        _ => (None, rest),
+    };
+    let item_path = if item_segs.is_empty() {
+        None
+    } else {
+        Some(item_segs.join("/").parse::<RmPath>()?)
+    };
+    Ok((Some(TopLevelLocator { attribute, object }), item_path))
 }
 
 #[cfg(test)]
@@ -650,5 +1141,303 @@ mod tests {
         );
         // The root has no parent.
         assert!(parent_of(&obs, &obs).is_none());
+    }
+
+    // ── `//` patterns, positional, uid, archetype_id ─────────────────────────
+
+    /// The master11 two-event blood-pressure OBSERVATION (BASE `master11-paths`
+    /// §"Using a Name-based Predicate" / §"Using Positional Parameters", JSON
+    /// form) — a container with two identically-archetyped events, the case the
+    /// spec uses to demonstrate positional and name uniqueness.
+    fn bp_two_events() -> Value {
+        json!({
+            "_type": "OBSERVATION",
+            "archetype_node_id": "openEHR-EHR-OBSERVATION.blood_pressure.v1",
+            "name": {"value": "BP measurement"},
+            "data": {
+                "archetype_node_id": "at0001",
+                "events": [
+                    {
+                        "_type": "POINT_EVENT",
+                        "archetype_node_id": "at0006",
+                        "name": {"value": "sitting"},
+                        "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0003", "items": [
+                            {"archetype_node_id": "at0004", "name": {"value": "systolic"}, "value": {"magnitude": 120.0}},
+                            {"archetype_node_id": "at0005", "name": {"value": "diastolic"}, "value": {"magnitude": 80.0}}
+                        ]}
+                    },
+                    {
+                        "_type": "POINT_EVENT",
+                        "archetype_node_id": "at0006",
+                        "name": {"value": "standing"},
+                        "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0003", "items": [
+                            {"archetype_node_id": "at0004", "name": {"value": "systolic"}, "value": {"magnitude": 105.0}},
+                            {"archetype_node_id": "at0005", "name": {"value": "diastolic"}, "value": {"magnitude": 70.0}}
+                        ]}
+                    }
+                ]
+            }
+        })
+    }
+
+    #[test]
+    fn archetype_node_id_matches_multiple_but_name_is_unique() {
+        let bp = bp_two_events();
+        // The archetype path matches BOTH events (spec NOTE: "it can correspond
+        // to more than one item in runtime data").
+        let both = path("/data/events[at0006]/data/items[at0004]/value/magnitude");
+        assert_eq!(items_at_path(&bp, &both).len(), 2);
+        assert!(!path_unique(&bp, &both));
+        // The name/value shortcut makes it unique (spec §"Using a Name-based
+        // Predicate").
+        let standing = path("/data/events[at0006, 'standing']/data/items[at0004]/value/magnitude");
+        assert_eq!(item_at_path(&bp, &standing).unwrap().as_f64(), Some(105.0));
+        assert!(path_unique(&bp, &standing));
+    }
+
+    #[test]
+    fn positional_predicate_is_one_based_and_unique() {
+        let bp = bp_two_events();
+        // `[1]`/`[2]` select by container order (spec §"Using Positional
+        // Parameters" — the guaranteed-unique form).
+        for (events_pos, items_pos, mag) in
+            [(1, 1, 120.0), (1, 2, 80.0), (2, 1, 105.0), (2, 2, 70.0)]
+        {
+            let p = path(&format!(
+                "/data/events[{events_pos}]/data/items[{items_pos}]/value/magnitude"
+            ));
+            assert!(path_unique(&bp, &p));
+            assert_eq!(item_at_path(&bp, &p).unwrap().as_f64(), Some(mag));
+        }
+        // Out-of-range position resolves to nothing.
+        assert!(!path_exists(&bp, &path("/data/events[3]")));
+        // Position 0 is rejected at parse time (1-based).
+        assert_eq!(
+            "/data/events[0]".parse::<RmPath>(),
+            Err(PathError::InvalidPosition("0".to_owned()))
+        );
+    }
+
+    #[test]
+    fn descendant_pattern_matches_at_any_depth() {
+        let bp = bp_two_events();
+        // `//items[at0004]` finds both systolic ELEMENTs regardless of depth.
+        let p = path("//items[at0004]");
+        assert!(p.segments[0].descendant);
+        assert_eq!(items_at_path(&bp, &p).len(), 2);
+        // Combined with a prefix + a following segment.
+        let q = path("/data//items[at0005, 'diastolic']/value/magnitude");
+        let mags: Vec<f64> = items_at_path(&bp, &q)
+            .iter()
+            .filter_map(|v| v.as_f64())
+            .collect();
+        assert_eq!(mags.len(), 2);
+        assert!(mags.contains(&80.0) && mags.contains(&70.0));
+        // `//` round-trips through Display.
+        assert_eq!(path("//items[at0004]").to_string(), "//items[at0004]");
+        assert_eq!(
+            path("/data//items[at0004]").to_string(),
+            "/data//items[at0004]"
+        );
+        // A dangling `//` is rejected.
+        assert_eq!(
+            "/data//".parse::<RmPath>(),
+            Err(PathError::DanglingDescendant)
+        );
+    }
+
+    #[test]
+    fn uid_predicate_matches_locatable_uid() {
+        let node = json!({
+            "_type": "OBSERVATION",
+            "data": {"events": [
+                {"archetype_node_id": "at0006", "uid": {"_type": "HIER_OBJECT_ID", "value": "25f2f224-64f0-41ec-a5c7-c31c040c77ce"}, "name": {"value": "x"}},
+                {"archetype_node_id": "at0006", "uid": {"_type": "HIER_OBJECT_ID", "value": "aaaaaaaa-64f0-41ec-a5c7-c31c040c77ce"}, "name": {"value": "y"}}
+            ]}
+        });
+        // `[uid='...']` (spec §"Using a Uid-based Predicate").
+        let p = path("/data/events[uid='25f2f224-64f0-41ec-a5c7-c31c040c77ce']");
+        assert!(path_unique(&node, &p));
+        assert_eq!(
+            item_at_path(&node, &p).unwrap()["name"]["value"].as_str(),
+            Some("x")
+        );
+        // Combined `[at0006 and uid='...']`.
+        let q = path("/data/events[at0006 and uid='aaaaaaaa-64f0-41ec-a5c7-c31c040c77ce']");
+        assert_eq!(
+            q.segments[1].predicate.archetype_node_id.as_deref(),
+            Some("at0006")
+        );
+        assert_eq!(
+            item_at_path(&node, &q).unwrap()["name"]["value"].as_str(),
+            Some("y")
+        );
+    }
+
+    #[test]
+    fn archetype_id_predicate_long_form() {
+        // The `[archetype_id=...]` long form (unquoted, as in the CNF DV_EHR_URI
+        // fixture) resolves against `archetype_node_id` — spec §"Paths within
+        // Top-level Structures".
+        let p = path("/content[archetype_id=openEHR-EHR-SECTION.vital_signs.v1]");
+        assert_eq!(
+            p.segments[0].predicate.archetype_node_id.as_deref(),
+            Some("openEHR-EHR-SECTION.vital_signs.v1")
+        );
+        // Quoted form and the bare shortcut agree.
+        let q = path("/content[@archetype_id='openEHR-EHR-SECTION.vital_signs.v1']");
+        assert_eq!(q.segments[0].predicate, p.segments[0].predicate);
+        let bare = path("/content[openEHR-EHR-SECTION.vital_signs.v1]");
+        assert_eq!(bare.segments[0].predicate, p.segments[0].predicate);
+    }
+
+    #[test]
+    fn general_comparison_predicate_still_rejected() {
+        assert!(matches!(
+            "/data/events[at0007 and time >= '2005-06-24T09:30:00']".parse::<RmPath>(),
+            Err(PathError::UnsupportedPredicate(_))
+        ));
+    }
+
+    // ── EHR URIs ─────────────────────────────────────────────────────────────
+
+    fn ehr_uri(s: &str) -> EhrUri {
+        s.parse().unwrap()
+    }
+
+    /// The exact CNF `DV_EHR_URI` §"validate_open" accepted fixtures
+    /// (`master17.7-content_tc_data_types-uri.adoc`) must all parse.
+    #[test]
+    fn cnf_dv_ehr_uri_fixtures_parse() {
+        const EHR: &str = "89c0752e-0815-47d7-8b3c-b3aaea2cea7a";
+        let accepted = [
+            format!("ehr:/{EHR}"),
+            format!("ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"),
+            format!(
+                "ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value"
+            ),
+            format!("ehr://CLOUD_EHRSERVER/{EHR}"),
+            format!(
+                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+            ),
+            format!(
+                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value"
+            ),
+        ];
+        for s in accepted {
+            assert!(s.parse::<EhrUri>().is_ok(), "should parse: {s}");
+        }
+        // Non-`ehr` schemes are rejected structurally.
+        assert!(matches!(
+            "ftp://ftp.is.co.za/rfc/rfc1808.txt".parse::<EhrUri>(),
+            Err(EhrUriError::WrongScheme(_))
+        ));
+        assert!(matches!(
+            "xyz".parse::<EhrUri>(),
+            Err(EhrUriError::MissingScheme)
+        ));
+    }
+
+    #[test]
+    fn ehr_uri_forms_decode() {
+        const EHR: &str = "89c0752e-0815-47d7-8b3c-b3aaea2cea7a";
+        // Bare EHR reference (local system).
+        let u = ehr_uri(&format!("ehr:/{EHR}"));
+        assert_eq!(u.system_id, None);
+        assert_eq!(u.ehr_id, Some(Uuid::parse_str(EHR).unwrap()));
+        assert_eq!(u.locator, None);
+        assert_eq!(u.item_path, None);
+
+        // Attribute-less short form (CNF): the OVID follows the ehr_id directly.
+        let u = ehr_uri(&format!(
+            "ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+        ));
+        let loc = u.locator.unwrap();
+        assert_eq!(loc.attribute, None);
+        match loc.object.unwrap() {
+            VersionLocator::Version(ovid) => {
+                assert_eq!(
+                    ovid.value,
+                    "031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+                );
+            }
+            VersionLocator::VersionedObject(_) => panic!("expected exact version"),
+        }
+
+        // master11 §"Top-level Structure Locator" attribute form with a bare uid
+        // → latest trunk assumed.
+        let u = ehr_uri(
+            "ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2d4b-4e3d-a3f3-f303d2f4f34b",
+        );
+        let loc = u.locator.unwrap();
+        assert_eq!(loc.attribute.as_deref(), Some("compositions"));
+        assert!(matches!(
+            loc.object,
+            Some(VersionLocator::VersionedObject(_))
+        ));
+
+        // `directory` attribute, no uid.
+        let u = ehr_uri("ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/directory");
+        let loc = u.locator.unwrap();
+        assert_eq!(loc.attribute.as_deref(), Some("directory"));
+        assert_eq!(loc.object, None);
+
+        // Authority form.
+        let u = ehr_uri(&format!("ehr://CLOUD_EHRSERVER/{EHR}"));
+        assert_eq!(u.system_id.as_deref(), Some("CLOUD_EHRSERVER"));
+        assert_eq!(u.ehr_id, Some(Uuid::parse_str(EHR).unwrap()));
+
+        // Relative forms carry no ehr_id.
+        let u = ehr_uri("ehr:directory");
+        assert_eq!(u.ehr_id, None);
+        assert_eq!(u.locator.unwrap().attribute.as_deref(), Some("directory"));
+        let u = ehr_uri(
+            "ehr:compositions/87284370-2d4b-4e3d-a3f3-f303d2f4f34b/content[openEHR-EHR-SECTION.vital_signs.v1]",
+        );
+        assert_eq!(u.ehr_id, None);
+        assert!(u.item_path.is_some());
+    }
+
+    #[test]
+    fn ehr_uri_byte_round_trip_simple_forms() {
+        const EHR: &str = "89c0752e-0815-47d7-8b3c-b3aaea2cea7a";
+        // Forms whose predicates need no normalisation round-trip byte-exactly.
+        for s in [
+            format!("ehr:/{EHR}"),
+            format!("ehr:/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"),
+            format!("ehr://CLOUD_EHRSERVER/{EHR}"),
+            format!(
+                "ehr://CLOUD_EHRSERVER/{EHR}/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1"
+            ),
+            "ehr:directory".to_owned(),
+        ] {
+            assert_eq!(ehr_uri(&s).to_string(), s, "byte round-trip: {s}");
+        }
+    }
+
+    #[test]
+    fn ehr_uri_structural_round_trip_with_item_path() {
+        // The item-path form normalises `[archetype_id=…]` to the bare shortcut,
+        // so it round-trips *structurally* (parse == parse∘format∘parse) even
+        // when not byte-identical.
+        let s = "ehr:/89c0752e-0815-47d7-8b3c-b3aaea2cea7a/031f2513-b9ef-47b2-bbef-8db24ae68c2f::EHRSERVER::1/context/other_context[at0001]/items[archetype_id=openEHR-EHR-CLUSTER.sample_symptom.v1]/items[at0034]/items[at0021]/value";
+        let u = ehr_uri(s);
+        let reparsed: EhrUri = u.to_string().parse().unwrap();
+        assert_eq!(u, reparsed);
+    }
+
+    #[test]
+    fn ehr_uri_rejections() {
+        assert_eq!("".parse::<EhrUri>(), Err(EhrUriError::Empty));
+        assert!(matches!(
+            "ehr:/not-a-uuid".parse::<EhrUri>(),
+            Err(EhrUriError::BadEhrId(_))
+        ));
+        // A relative form whose first segment is neither an EHR attribute nor a
+        // version id.
+        assert!(matches!(
+            "ehr:nonsense_attr".parse::<EhrUri>(),
+            Err(EhrUriError::UnrecognisedLocator(_))
+        ));
     }
 }

@@ -82,6 +82,27 @@ gateway clause stops being dead weight.
   seam, 403 otherwise). Changes remain CONTRIBUTION-wrapped and audited like
   all content (RM ehr master04 §EHR Access).
 
+## Layering (rest → sm → ehrbase, strictly)
+
+The decision **data** is the versioned EHR_ACCESS object (RM UML
+`ehr_access.adoc`: "all access decisions to data in the EHR must be made in
+accordance with the policies and rules in this object"); the decision
+**point** is the protocol adapter (SM openehr_platform master02:
+authorisation "is assumed to have been dealt with *before* any particular
+call" — out of band, so never inside the SM traits, which stay the literal
+SM catalog):
+
+- **`ehrbase-sm`** — `EhrAccessAdapter`, a native-API extension trait beside
+  the existing wire adapters (SM defines no `I_EHR_ACCESS` interface — no
+  openEHR spec governs this adapter; our own extension):
+  `current_ehr_access_settings(ehr_id)` returning the parsed scheme settings
+  (or None → default-open).
+- **`ehrbase` (Platform)** — implements the adapter over the normal
+  versioned-object read path; `moka`-cached keyed by `ehr_id`, invalidated
+  on any EHR_ACCESS commit. The REST layer never touches the database.
+- **`ehrbase-rest`** — the `access` module owns the EHR-scoped policy
+  engine, evaluated after authentication and before dispatch.
+
 ## Evaluation points
 
 1. **Per-EHR gate** — every authenticated request on an `/ehr/{ehr_id}`-
@@ -92,11 +113,12 @@ gateway clause stops being dead weight.
    version / versioned-composition): effective level = override(uid) else
    `default_level`; principal ceiling = `full` → ∞, `restricted_below` →
    `max_level`, no entry under `open` → `default_level` + 1 (i.e. default
-   readable unless raised). Level ≥ ceiling → 403.
-3. **EHR_ACCESS writes** — gate-keeper rule above.
-
-Settings are read from the current EHR_ACCESS version and cached (`moka`)
-keyed by `ehr_id`, invalidated on any EHR_ACCESS commit.
+   readable unless raised). Level ≥ ceiling → 403. Evaluated in the REST
+   adapter from settings + the target uid alone (the overrides are
+   uid-keyed), so no post-fetch inspection is needed.
+3. **EHR_ACCESS writes** — gate-keeper preflight in the REST adapter on
+   contribution commits whose version set targets EHR_ACCESS (the only
+   write path; there is no dedicated EHR_ACCESS endpoint in ITS-REST).
 
 ## Explicit v1 scope boundaries (flagged, not silent)
 
