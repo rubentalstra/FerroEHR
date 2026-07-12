@@ -834,9 +834,12 @@ impl Validator {
             // AOM 1.4 §cardinality vs §existence: cardinality constrains the
             // container's membership **when the attribute is present**; whether
             // the attribute may be absent at all is the C_ATTRIBUTE.existence
-            // constraint. An absent (or null) attribute field is therefore not
-            // a cardinality violation — an explicitly present empty container
-            // (`"content": []`) is.
+            // constraint (the vendored Multi_list corpus template pairs
+            // `content` cardinality 1..* with existence 0..1, and its valid
+            // no-content composition relies on the distinction). An absent (or
+            // null) attribute field is therefore not a cardinality violation —
+            // a template that requires members expresses it as existence 1..1;
+            // the RM list invariants forbid the present-empty `[]` encoding.
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
                 if matches!(container.get(&last.attribute), None | Some(Value::Null)) {

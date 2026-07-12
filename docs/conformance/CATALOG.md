@@ -205,18 +205,18 @@ Generated per run — do not edit. Numbers are allocated once in
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-VAL-001 | Active | Validate COMPOSITION — content card any context any | failed |
-| ECC-VAL-002 | Active | Validate COMPOSITION — content card 1plus context any | passed |
-| ECC-VAL-003 | Active | Validate COMPOSITION — content card 3plus context any | passed |
-| ECC-VAL-004 | Active | Validate COMPOSITION — content card OPT context any | failed |
-| ECC-VAL-005 | Active | Validate COMPOSITION — content card mand context any | passed |
-| ECC-VAL-006 | Active | Validate COMPOSITION — content card 3to5 context any | passed |
-| ECC-VAL-007 | Active | Validate COMPOSITION — content card any context mand | failed |
-| ECC-VAL-008 | Active | Validate COMPOSITION — content card 1plus context mand | passed |
-| ECC-VAL-009 | Active | Validate COMPOSITION — content card 3plus context mand | passed |
-| ECC-VAL-010 | Active | Validate COMPOSITION — content card OPT context mand | failed |
-| ECC-VAL-011 | Active | Validate COMPOSITION — content card mand context mand | passed |
-| ECC-VAL-012 | Active | Validate COMPOSITION — content card 3to5 context mand | passed |
+| ECC-VAL-001 | Active | Validate COMPOSITION — content card any context any | passed |
+| ECC-VAL-002 | Active | Validate COMPOSITION — content card 1plus context any | failed |
+| ECC-VAL-003 | Active | Validate COMPOSITION — content card 3plus context any | failed |
+| ECC-VAL-004 | Active | Validate COMPOSITION — content card OPT context any | passed |
+| ECC-VAL-005 | Active | Validate COMPOSITION — content card mand context any | failed |
+| ECC-VAL-006 | Active | Validate COMPOSITION — content card 3to5 context any | failed |
+| ECC-VAL-007 | Active | Validate COMPOSITION — content card any context mand | passed |
+| ECC-VAL-008 | Active | Validate COMPOSITION — content card 1plus context mand | failed |
+| ECC-VAL-009 | Active | Validate COMPOSITION — content card 3plus context mand | failed |
+| ECC-VAL-010 | Active | Validate COMPOSITION — content card OPT context mand | passed |
+| ECC-VAL-011 | Active | Validate COMPOSITION — content card mand context mand | failed |
+| ECC-VAL-012 | Active | Validate COMPOSITION — content card 3to5 context mand | failed |
 | ECC-VAL-013 | Active | Validate OBSERVATION — state ex OPT protocol ex OPT | passed |
 | ECC-VAL-014 | Active | Validate OBSERVATION — state ex OPT protocol ex mand | passed |
 | ECC-VAL-015 | Active | Validate OBSERVATION — state ex mand protocol ex OPT | passed |
