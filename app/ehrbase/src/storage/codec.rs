@@ -1,4 +1,4 @@
-//! Canonical JSON ⇄ node rows (ADR-008; spike-validated in
+//! Canonical JSON ⇄ node rows (our own storage design — no openEHR spec governs it; spike-validated in
 //! `tests/storage_spike.rs`).
 
 use serde_json::{Map, Value};
@@ -12,7 +12,7 @@ use crate::storage::StorageError;
 ///
 /// The five concrete demographic **party roots** (PERSON/ORGANISATION/GROUP/
 /// AGENT/ROLE) are structure roots so `decompose` accepts a party as a
-/// versioned object (ADR-008 — parties reuse the `node`/`vo_version`
+/// versioned object (parties reuse the `node`/`vo_version`
 /// machinery). PORT NOTE: the demographic *container* classes nested inside a
 /// party (`PARTY_IDENTITY`, `CONTACT`, `ADDRESS`, `CAPABILITY`,
 /// `PARTY_RELATIONSHIP`) are deliberately **not** structure types. They are
@@ -49,7 +49,7 @@ const STRUCTURE_TYPES: &[&str] = &[
     "CLUSTER",
     "ELEMENT",
     "FEEDER_AUDIT",
-    // demographic party roots (ADR-008)
+    // demographic party roots
     "PERSON",
     "ORGANISATION",
     "GROUP",

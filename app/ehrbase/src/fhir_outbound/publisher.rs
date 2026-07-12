@@ -1,5 +1,5 @@
-//! The outbound emitter's background drainer (ADR-016 §Decision 4a) — wired like
-//! the E1 outbox publisher (ADR-014 §3), but reading committed `event_outbox`
+//! The outbound emitter's background drainer — wired like
+//! the E1 outbox publisher, but reading committed `event_outbox`
 //! rows through its OWN persistent cursor (`fhir_outbound_cursor.last_seq`), so
 //! it never touches the E1 drainer's `published_at` watermark.
 //!

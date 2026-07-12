@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `POINT_EVENT`.
+//! Hand-written RM class invariants for `POINT_EVENT`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.point_event.adoc`.

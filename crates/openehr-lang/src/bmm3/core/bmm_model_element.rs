@@ -24,7 +24,7 @@ use crate::bmm3::core::model::bmm_package_container::BmmPackageContainer;
 use serde::Serialize;
 
 /// Ancestor class of most BMM model elements.
-/// Closed subtype set of `BMM_MODEL_ELEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_MODEL_ELEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmModelElement {

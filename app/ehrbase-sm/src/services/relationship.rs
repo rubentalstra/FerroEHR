@@ -17,8 +17,8 @@ use crate::types::{ResourceMeta, ServiceResponse};
 /// `I_DEMOGRAPHIC_SERVICE` (`i_demographic_service.adoc`).
 ///
 /// As with [`DemographicService`](super::DemographicService), ITS-REST 1.0.3
-/// defines **no** demographic wire contract, so this seam is our own design by
-/// analogy with the EHR group (ADR-008): relationships are versioned objects on
+/// defines **no** demographic wire contract, so this seam is our own extension by
+/// analogy with the EHR group: relationships are versioned objects on
 /// the same machinery with no EHR scope, and the status codes / `ETag` /
 /// `Location` / `Prefer` / `If-Match` behaviour mirror the party group. Each
 /// method returns a [`ServiceResponse`]; a relationship [`ResourceMeta`] carries

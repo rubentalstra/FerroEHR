@@ -1,5 +1,5 @@
 //! The **`Platform`** supertrait — the SM platform is the set of all its
-//! services (ADR-011).
+//! services.
 //!
 //! `Platform` is the union of every SM catalog interface plus the ITS-REST
 //! adapter-support extension traits (`DefinitionAdapter`, `VersionMetaAdapter`,
@@ -10,7 +10,7 @@
 //! runtime `501`.
 //!
 //! The generated ITS-REST `DefinitionApi` is deliberately **not** a supertrait
-//! here (ADR-011 purity): templates + stored queries are dispatched onto the
+//! here (the protocol-free service seam): templates + stored queries are dispatched onto the
 //! SM `I_DEFINITION_*` traits plus the wire-shaped [`DefinitionAdapter`]
 //! extension, so this crate carries no `openehr-its` types.
 

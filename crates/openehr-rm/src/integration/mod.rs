@@ -2,5 +2,5 @@
 
 pub mod generic_entry;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod generic_entry_impl;

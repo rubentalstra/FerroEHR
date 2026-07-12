@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `ARCHETYPED`.
+//! Hand-written RM class invariant for `ARCHETYPED`.
 //!
 //! `Rm_version_valid` (archie `Archetyped`, `nullOrNotEmpty`): `rm_version` must
 //! be non-empty.

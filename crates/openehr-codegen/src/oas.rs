@@ -1,4 +1,4 @@
-//! `OpenAPI` (OAS) reader for the REST codegen (ADR-005).
+//! `OpenAPI` (OAS) reader for the REST codegen.
 //!
 //! Loads a vendored `*-codegen.openapi.yaml` bundle into a `serde_json::Value`
 //! (via `serde_norway`) and exposes the pieces the emitter needs: the component

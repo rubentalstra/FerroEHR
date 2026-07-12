@@ -6,7 +6,7 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
 /// Parent of built-in types, which are treated as being primitive and non-abstract.
-/// Closed subtype set of `BMM_BUILTIN_TYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_BUILTIN_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmBuiltinType {

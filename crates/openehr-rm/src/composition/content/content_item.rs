@@ -10,7 +10,7 @@ use crate::integration::generic_entry::GenericEntry;
 use serde::Serialize;
 
 /// Abstract ancestor of all concrete content types.
-/// Closed subtype set of `CONTENT_ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `CONTENT_ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ContentItem {

@@ -17,7 +17,7 @@ What remains is the *live* pointer and the *future* work:
   it. Read the blueprint first.
 - `current-phase.md` — the live pointer: which work is active, the session
   goal, and the next action. Update whenever the active work changes.
-- `phase-20-optimization.md`, `phase-99-cutover.md` — the remaining Stage-1
+- `phase-20-optimization.md` (to be rewritten per `WORKLIST.md` W-5; P99 removed 2026-07-12) — the remaining Stage-1
   P-phases (future work). `phase-17`/`phase-18`/`phase-19` are retained for
   their task detail, though their scope was absorbed into the blueprint arc
   (P19 conformance is met; see `docs/PROGRESS.md`).

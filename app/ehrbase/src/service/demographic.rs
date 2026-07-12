@@ -1,13 +1,13 @@
 //! DEMOGRAPHIC (PARTY) domain logic, built on the shared
 //! [`vobject`](super::vobject) versioned-object machinery — the same code path
 //! as COMPOSITION / `EHR_STATUS`, but with **no EHR scope** (`ehr_id = None`,
-//! ADR-008). Parties (PERSON / ORGANISATION / GROUP / AGENT / ROLE) are
+//! by design). Parties (PERSON / ORGANISATION / GROUP / AGENT / ROLE) are
 //! versioned objects in the demographics repository.
 //!
 //! ITS-REST 1.0.3 defines no demographic wire contract (the SM demographic
 //! service is abstract; the CNF demographic schedule — master10 — is all TBD;
 //! CNF profiles list demographic as OPTIONS-profile only). This behaviour is
-//! therefore our own design **by analogy with the EHR group**: identical
+//! therefore our own extension **by analogy with the EHR group**: identical
 //! status/`ETag`/`Location`/`Prefer`/`If-Match`/deleted-read semantics.
 //!
 //! Spec grounding for the RM-level rules enforced here:

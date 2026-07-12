@@ -162,7 +162,7 @@ fn composition(name: &str, magnitude: f64) -> Value {
 }
 
 async fn create_ehr(svc: &EhrbaseService) -> String {
-    // PORT NOTE (ADR-011): the SM `create_ehr` returns the new `UUID`, not the
+    // PORT NOTE: the SM `create_ehr` returns the new `UUID`, not the
     // old `ServiceResponse` RM `EHR` envelope; the EHR's `ehr_id.value` is that
     // uuid, so the string form is the same id the old test read from `.body`.
     svc.create_ehr(None).await.expect("create_ehr").to_string()
@@ -170,7 +170,7 @@ async fn create_ehr(svc: &EhrbaseService) -> String {
 
 /// Create a composition in `ehr_id`, returning its `OBJECT_VERSION_ID`.
 async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: f64) -> String {
-    // PORT NOTE (ADR-011): the SM `create_composition` returns the new
+    // PORT NOTE: the SM `create_composition` returns the new
     // `version_uid` directly (what the old test extracted from `.body.uid.value`
     // / `.meta.uid`).
     svc.create_composition(
@@ -361,7 +361,7 @@ async fn aql_acceptance_set() {
         .query_execute_adhoc(aql, req)
         .await
         .expect_err("fetch + AQL LIMIT must conflict");
-    // PORT NOTE (ADR-011): the paging conflict is now the SM
+    // PORT NOTE: the paging conflict is now the SM
     // `precondition_violation` (`SmError::precondition`), which the adapter maps
     // to the same wire `400` the old `ApiError::BadRequest` produced.
     assert!(
@@ -452,7 +452,7 @@ async fn latest_versus_all_versions() {
     let vo_uuid: Uuid = vo_id.parse().expect("vo_id uuid");
     let mut current = ovid.clone();
     for magnitude in [20.0, 30.0] {
-        // PORT NOTE (ADR-011): the SM `update_composition` returns the new
+        // PORT NOTE: the SM `update_composition` returns the new
         // `version_uid` directly (the old `.meta.uid`).
         current = svc
             .update_composition(
@@ -477,7 +477,7 @@ async fn latest_versus_all_versions() {
         "LATEST_VERSION → 1 current version"
     );
 
-    // ALL_VERSIONS sees all three — a capability EHRbase never had (ADR-008).
+    // ALL_VERSIONS sees all three — a capability EHRbase never had.
     let r = run_aql(
         &svc,
         "SELECT COUNT(*) FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",

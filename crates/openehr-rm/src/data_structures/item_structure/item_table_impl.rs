@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `ITEM_TABLE`.
+//! Hand-written RM class invariants for `ITEM_TABLE`.
 //!
 //! Mirrors archie `ItemTable` + inherited LOCATABLE:
 //! - `Valid_structure`: every item in every row `CLUSTER` is an `ELEMENT`

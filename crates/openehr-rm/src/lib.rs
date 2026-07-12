@@ -1,6 +1,6 @@
 //! openEHR RM (Reference Model), generated from the BMM meta-model.
 //!
-//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
 
 #![allow(
@@ -25,6 +25,6 @@ pub mod model;
 pub mod prelude;
 pub mod support;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod paths;
 pub mod validate;

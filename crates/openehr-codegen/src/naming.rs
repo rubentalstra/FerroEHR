@@ -1,5 +1,5 @@
 //! Name conversions from openEHR spec identifiers to idiomatic Rust names
-//! (ADR-004).
+//!.
 
 /// Convert an openEHR class name to a Rust type name in `PascalCase`.
 ///

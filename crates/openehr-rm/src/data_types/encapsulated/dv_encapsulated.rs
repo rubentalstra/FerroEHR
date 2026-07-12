@@ -5,7 +5,7 @@ use crate::data_types::encapsulated::dv_parsable::DvParsable;
 use serde::Serialize;
 
 /// Abstract class defining the common meta-data of all types of encapsulated data.
-/// Closed subtype set of `DV_ENCAPSULATED` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_ENCAPSULATED`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvEncapsulated {

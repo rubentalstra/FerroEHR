@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariant (ADR-003) for `INTERNET_ID`.
+//! Hand-written RM/BASE class invariant for `INTERNET_ID`.
 //!
 //! `UID.Value_valid`: the identifier string must be non-empty (archie `UID`).
 

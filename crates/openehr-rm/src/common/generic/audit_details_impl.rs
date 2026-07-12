@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `AUDIT_DETAILS`.
+//! Hand-written RM class invariant for `AUDIT_DETAILS`.
 //!
 //! `System_id_valid` (archie `AuditDetails`, `nullOrNotEmpty`): `system_id` must
 //! be non-empty.

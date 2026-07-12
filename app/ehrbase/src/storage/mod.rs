@@ -1,4 +1,4 @@
-//! Greenfield node storage (ADR-008, P10): the codec between canonical
+//! Greenfield node storage (P10 — no openEHR spec governs storage): the codec between canonical
 //! openEHR JSON and the decomposed `node` rows the schema stores.
 //!
 //! `decompose` turns a versioned object's canonical JSON into nested-set

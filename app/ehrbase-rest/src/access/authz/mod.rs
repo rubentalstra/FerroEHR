@@ -1,6 +1,6 @@
 //! Access control for the ehrbase-rs CDR — the two composable layers of
 //! `docs/enterprise/access-control.md`, folded into the protocol adapter
-//! (ADR-011: authorization is an adapter concern; the former `ehrbase-authz`
+//! (authorization is an adapter concern by design; the former `ehrbase-authz`
 //! crate is dissolved here):
 //!
 //! 1. **RBAC** (coarse, always on when auth is enabled): every generated

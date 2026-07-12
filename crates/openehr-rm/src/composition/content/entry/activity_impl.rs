@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `ACTIVITY`.
+//! Hand-written RM class invariants for `ACTIVITY`.
 //!
 //! - `Action_archetype_id_valid` (archie `Activity`, `nullOrNotEmpty`):
 //!   `action_archetype_id` non-empty.

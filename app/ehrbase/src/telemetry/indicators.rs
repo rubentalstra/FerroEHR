@@ -110,7 +110,7 @@ impl HealthIndicator for AuditHealth {
 }
 
 /// `events` — reports the contribution-outbox publisher's broker-delivery
-/// health (ADR-014). Degraded-tolerable (the outbox buffers while the broker is
+/// health. Degraded-tolerable (the outbox buffers while the broker is
 /// down, so delivery lag must not block readiness): a broker outage flips only
 /// the aggregate to `DEGRADED`, never readiness. Registered only when eventing
 /// is enabled.

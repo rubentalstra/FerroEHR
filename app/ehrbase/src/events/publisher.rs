@@ -1,4 +1,4 @@
-//! The background drainer + retention pruner + [`EventsHandle`] (ADR-014 §3/§6).
+//! The background drainer + retention pruner + [`EventsHandle`].
 //!
 //! A **single** tokio task polls the outbox, publishes pending rows in `seq`
 //! order (a global order that trivially preserves per-EHR order), and marks
@@ -53,7 +53,7 @@ impl EventsHandle {
     }
 }
 
-/// Start the publisher over the real AMQP broker (ADR-014 §4). Constructs the
+/// Start the publisher over the real AMQP broker. Constructs the
 /// lazily-connecting [`AmqpPublisher`] and spawns the drainer — a broker that is
 /// down at start is tolerated (rows stay pending until it returns).
 #[must_use]
@@ -113,10 +113,10 @@ async fn run(
         if *shutdown.borrow() {
             break;
         }
-        // (Re)declare + bind the queues for the enabled subscriptions (ADR-014
+        // (Re)declare + bind the queues for the enabled subscriptions (the eventing extension
         // §5) at the top of each cycle. This covers drainer startup AND picks up
         // subscription CRUD (a config-gated admin surface that has no broker
-        // access of its own — ADR-011 keeps the service protocol-free); queue
+        // access of its own — the crate layout keeps the service protocol-free); queue
         // declaration is idempotent, and doing it before this cycle's publishes
         // guarantees a just-created subscription's queue is bound before any
         // matching event is routed (a topic exchange drops unroutable messages).
@@ -203,7 +203,7 @@ async fn drain_batch(
     'rows: for row in &rows {
         let seq: i64 = row.try_get("seq").map_err(DrainError::Db)?;
         let envelope: serde_json::Value = row.try_get("envelope").map_err(DrainError::Db)?;
-        // Per-version fan-out (ADR-014 §5): one message per version entry, each
+        // Per-version fan-out: one message per version entry, each
         // under its own routing key, carrying the shared envelope + seq +
         // version_index. All of a row's messages must confirm before the row is
         // marked published; a failure part-way leaves the whole row pending, so
@@ -213,7 +213,7 @@ async fn drain_batch(
             let payload = build_payload(seq, version_index, &envelope);
             if let Err(e) = publish_with_retry(publisher, &routing_key, &payload, config).await {
                 // Stop at the first failure: never publish a later event for an
-                // EHR before an earlier one (per-EHR ordering, ADR-014 §3).
+                // EHR before an earlier one (per-EHR ordering by design).
                 publish_err = Some(e);
                 break 'rows;
             }
@@ -235,7 +235,7 @@ async fn drain_batch(
     }
 }
 
-/// The per-version routing keys for one envelope (ADR-014 §5): `(version_index,
+/// The per-version routing keys for one envelope: `(version_index,
 /// routing_key)` for each entry in `versions`. A well-formed outbox row always
 /// carries ≥1 version; a defensively-empty envelope yields a single message at
 /// `version_index` 0 with the fallback key so nothing is silently dropped.
@@ -262,7 +262,7 @@ fn build_payload(seq: i64, version_index: usize, envelope: &serde_json::Value) -
     serde_json::to_vec(&payload).unwrap_or_default()
 }
 
-/// Declare + bind the queue for every **enabled** subscription (ADR-014 §5). One
+/// Declare + bind the queue for every **enabled** subscription. One
 /// idempotent `queue_declare` + `queue_bind` per row, keyed by
 /// [`super::subscription_binding_key`]. Best-effort at the call site: an error
 /// (broker unreachable) is propagated for the caller to log and retry next
@@ -297,7 +297,7 @@ async fn sync_subscriptions(
     Ok(())
 }
 
-/// The broker queue name for a subscription (ADR-014 §5): `<exchange>.<name>`
+/// The broker queue name for a subscription: `<exchange>.<name>`
 /// (`ehrbase.events.<name>` for the default exchange) — the configured exchange
 /// prefix + the subscription name. Exposed so a consumer knows the queue to
 /// consume from.
@@ -323,7 +323,7 @@ impl std::fmt::Display for SyncError {
     }
 }
 
-/// Publish with exponential backoff (ADR-014 §3), up to `publish_max_retries`
+/// Publish with exponential backoff, up to `publish_max_retries`
 /// extra attempts, before giving up for this pass.
 async fn publish_with_retry(
     publisher: &dyn EventPublisher,
@@ -337,7 +337,7 @@ async fn publish_with_retry(
         .await
 }
 
-/// Delete published rows older than the retention window (ADR-014 §6). Returns
+/// Delete published rows older than the retention window. Returns
 /// the number pruned.
 async fn prune(pool: &PgPool, retention_days: i64) -> Result<u64, sqlx::Error> {
     let cutoff = format!("{retention_days} days");

@@ -5,7 +5,7 @@ use crate::bmm3::expression::el_defined::ElDefined;
 use serde::Serialize;
 
 /// Parent type of predicate of any object reference.
-/// Closed subtype set of `EL_PREDICATE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_PREDICATE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElPredicate {

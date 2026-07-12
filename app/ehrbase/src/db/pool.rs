@@ -31,7 +31,7 @@ fn base_options(settings: &DbSettings) -> PgPoolOptions {
 /// Every connection is initialized with the standard search path
 /// ([`SET_SEARCH_PATH_SQL`]) so queries can use unqualified table names, as
 /// the schema expects. This is today's pool verbatim — no per-acquire hook, so
-/// zero overhead and byte-identical behaviour when tenancy is off (ADR-015 §3).
+/// zero overhead and byte-identical behaviour when tenancy is off.
 ///
 /// # Errors
 ///
@@ -41,7 +41,7 @@ pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
     Ok(pool)
 }
 
-/// Create the **tenant-scoped** application pool (ADR-015 §4): the same pool
+/// Create the **tenant-scoped** application pool: the same pool
 /// plus a `before_acquire` hook that stamps `ehrbase.tenant_id` on every
 /// checked-out connection from the current request's tenant context
 /// ([`ehrbase_sm::tenant::current`]).
@@ -57,7 +57,7 @@ pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
 /// request's tenant.
 ///
 /// Only wired when tenancy is on (`main.rs`); the extra per-acquire statement is
-/// the multi-tenant cost ADR-015 §Consequences says is "paid only in
+/// the multi-tenant cost that is by design "paid only in
 /// multi-tenant mode".
 ///
 /// # Errors

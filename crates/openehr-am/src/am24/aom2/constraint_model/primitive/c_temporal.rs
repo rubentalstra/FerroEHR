@@ -7,7 +7,7 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 use serde::Serialize;
 
 /// Purpose Abstract parent of `C_ORDERED` types whose base type is an ISO date/time type.
-/// Closed subtype set of `C_TEMPORAL` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_TEMPORAL`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CTemporal {

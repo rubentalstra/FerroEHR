@@ -28,7 +28,7 @@
 //!   (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
 //!   name). This makes the accepted set a *superset* of the grammar (it never
 //!   rejects valid AQL; it additionally tolerates these words as identifiers).
-//!   Per ADR-008 a superset accept-envelope is the sanctioned direction; the
+//!   a superset accept-envelope is the sanctioned direction; the
 //!   reserved-word restriction is a semantic concern, not a syntax one.
 
 use logos::Logos;

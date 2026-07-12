@@ -5,7 +5,7 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 use serde::Serialize;
 
 /// Abstract meta-type of any kind of symbolic variable.
-/// Closed subtype set of `EL_VARIABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_VARIABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElVariable {

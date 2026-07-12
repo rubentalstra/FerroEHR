@@ -13,7 +13,7 @@ use crate::am14::aom14::openehr_archetype_profile::c_quantity::CQuantity;
 use serde::Serialize;
 
 /// Archetype equivalent to LOCATABLE class in openEHR Common reference model. Defines common constraints for any inheritor of LOCATABLE in any reference model.
-/// Closed subtype set of `ARCHETYPE_CONSTRAINT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `ARCHETYPE_CONSTRAINT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ArchetypeConstraint {

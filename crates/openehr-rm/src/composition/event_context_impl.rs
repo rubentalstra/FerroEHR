@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `EVENT_CONTEXT`.
+//! Hand-written RM class invariant for `EVENT_CONTEXT`.
 //!
 //! `Location_validity` (archie `EventContext`, `nullOrNotEmpty`): if present,
 //! `location` must be non-empty.

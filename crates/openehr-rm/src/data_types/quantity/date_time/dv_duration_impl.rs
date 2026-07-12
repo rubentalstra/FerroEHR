@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_DURATION`.
+//! Hand-written RM class invariants for `DV_DURATION`.
 //!
 //! `Value_valid`: `value` is a valid ISO-8601 duration (openEHR permits a
 //! leading sign and a `W` designator mixed with the others). Plus the inherited

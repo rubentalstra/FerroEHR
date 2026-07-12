@@ -7,7 +7,7 @@ use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 use serde::Serialize;
 
 /// Meta-type for literal instance values declared in a model. Instance values may be inline values of primitive types in the usual fashion or complex objects in syntax form, e.g. JSON.
-/// Closed subtype set of `BMM_LITERAL_VALUE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_LITERAL_VALUE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmLiteralValue {

@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine;
 use serde::Serialize;
 
 /// Abstract ancestor of routine body meta-types.
-/// Closed subtype set of `BMM_ROUTINE_DEFINITION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_ROUTINE_DEFINITION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmRoutineDefinition {

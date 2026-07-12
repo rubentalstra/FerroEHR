@@ -1,5 +1,5 @@
 //! Hand-written BASE `Multiplicity_interval` spec functions + invariants
-//! (ADR-003).
+//!.
 //!
 //! `Multiplicity_interval` is an `Interval<Integer>` used to express
 //! multiplicity, cardinality and optionality in models (it is the interval the

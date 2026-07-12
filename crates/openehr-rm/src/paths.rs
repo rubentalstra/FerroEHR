@@ -1,4 +1,4 @@
-//! openEHR path machinery (ADR-003 spec behaviour; hand-written, preserved
+//! openEHR path machinery (hand-written spec behaviour; preserved
 //! across `openehr-codegen` regeneration like `validate.rs`).
 //!
 //! Implements the RM `PATHABLE` pathing functions —

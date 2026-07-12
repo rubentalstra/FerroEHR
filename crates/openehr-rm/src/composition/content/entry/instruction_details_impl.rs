@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `INSTRUCTION_DETAILS`.
+//! Hand-written RM class invariant for `INSTRUCTION_DETAILS`.
 //!
 //! `Activity_path_valid` (archie `InstructionDetails`, `nullOrNotEmpty`):
 //! `activity_id` must be non-empty.

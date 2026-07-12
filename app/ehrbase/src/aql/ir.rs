@@ -1,4 +1,4 @@
-//! The typed AQL query IR (ADR-008, P16; shape per `docs/design/aql-engine.md`
+//! The typed AQL query IR (our own engine, P16; shape per `docs/design/aql-engine.md`
 //! §Typed IR).
 //!
 //! This is a relational-algebra-flavoured, fully typed intermediate
@@ -190,7 +190,7 @@ pub enum VersionScope {
     /// (`upper_inf(sys_period)` partial index).
     Latest,
     /// `ALL_VERSIONS` — every version (the temporal table unfiltered; supported
-    /// from day one per ADR-008).
+    /// from day one by design).
     All,
     /// A standard predicate on version metadata, e.g.
     /// `commit_audit/time_committed <= $t` (version-at-time) or `uid/value=$v`.

@@ -17,7 +17,7 @@ use crate::types::{PartyKind, ResourceMeta, ServiceResponse};
 /// ITS-REST 1.0.3 defines **no** demographic wire contract (the SM demographic
 /// service is abstract; the CNF demographic schedule — master10 — is all TBD;
 /// the CNF profiles table lists demographic as OPTIONS-profile only). This seam
-/// is therefore our own design **by analogy with the EHR group** (ADR-008):
+/// is therefore our own extension **by analogy with the EHR group**:
 /// parties are versioned objects on the same machinery with no EHR scope, and
 /// the status codes / `ETag` / `Location` / `Prefer` / `If-Match` behaviour
 /// mirrors the EHR group. Each method returns a [`ServiceResponse`] (RM payload

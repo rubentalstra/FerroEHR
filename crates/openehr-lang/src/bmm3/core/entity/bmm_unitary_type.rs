@@ -7,7 +7,7 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
 /// Parent of meta-types that may be used as the type of any instantiated object that is not a container object.
-/// Closed subtype set of `BMM_UNITARY_TYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_UNITARY_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmUnitaryType {

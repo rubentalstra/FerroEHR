@@ -1,4 +1,4 @@
-//! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.0.3+, ADR-005).
+//! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.0.3+).
 //!
 //! The transport DTOs, a server trait per API group, and a route table are
 //! **generated** by `openehr-codegen`'s `emit-rest` target into [`generated`],
@@ -7,7 +7,7 @@
 //! re-emitted. This module is the hand-written [`runtime`] (the `ApiError`
 //! response type) + re-exports. `ehrbase-rest` implements the generated traits
 //! and wires axum; the handler bodies are our own service layer (`ehrbase`,
-//! ADR-006/008 — the openEHR specs are the authority, EHRbase is prior art).
+//! the openEHR specs are the authority, EHRbase is prior art).
 //! Regenerate with `cargo run -p openehr-codegen -- emit-rest`.
 
 pub mod generated;

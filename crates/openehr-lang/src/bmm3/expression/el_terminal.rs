@@ -16,7 +16,7 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 use serde::Serialize;
 
 /// Expression entities that are terminals (i.e. leaves) within operator expressions or tuples.
-/// Closed subtype set of `EL_TERMINAL` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_TERMINAL`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElTerminal {

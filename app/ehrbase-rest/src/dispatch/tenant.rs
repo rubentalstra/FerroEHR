@@ -1,8 +1,8 @@
 //! HTTP dispatch for the tenant admin extension API group over the
-//! [`TenantAdapter`](ehrbase_sm::TenantAdapter) seam (ADR-015 §5).
+//! [`TenantAdapter`](ehrbase_sm::TenantAdapter) seam.
 //!
-//! Design: the tenancy model is spec-silent (ADR-015 fills it), so — like the
-//! event-subscription (ADR-014 §5) and terminology
+//! Design: the tenancy model is spec-silent — our own extension — so, like the
+//! event-subscription and terminology
 //! (`docs/design/sm-platform/08-target-architecture.md` §7) groups — this
 //! surface is our own, exposed under the server's extension namespace and
 //! excluded from the ITS-REST drift check. It is mounted under `/admin/` (the
@@ -32,7 +32,7 @@ use ehrbase_sm::Platform;
 use crate::negotiate;
 use crate::state::AppState;
 
-/// The tenant admin extension routes (ADR-015 §5) — our own design (no ITS-REST
+/// The tenant admin extension routes — our own extension (no ITS-REST
 /// contract), mounted alongside the generated `ROUTES`. Group-relative paths
 /// (nested under the configured `base_path`).
 pub(crate) const TENANT_ROUTES: &[(&str, &str, &str)] = &[

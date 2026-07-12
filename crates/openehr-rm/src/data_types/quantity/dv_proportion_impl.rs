@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_PROPORTION`.
+//! Hand-written RM class invariants for `DV_PROPORTION`.
 //!
 //! Mirrors archie `DvProportion` (`ProportionKind` = ratio 0, unitary 1,
 //! percent 2, fraction 3, integer_fraction 4), plus the inherited DV_AMOUNT /

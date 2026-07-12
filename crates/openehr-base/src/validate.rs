@@ -1,4 +1,4 @@
-//! RM/BASE class-invariant contract (ADR-003 spec behaviour).
+//! RM/BASE class-invariant contract (hand-written spec behaviour).
 //!
 //! Hand-written; preserved across `openehr-codegen` regeneration (it is not a
 //! `// @generated` file, so `write_crate` keeps it and `lib.rs` auto-declares

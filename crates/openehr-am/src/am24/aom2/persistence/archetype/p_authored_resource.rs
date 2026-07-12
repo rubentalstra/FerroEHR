@@ -4,7 +4,7 @@ use crate::am24::aom2::persistence::archetype::p_authored_archetype::PAuthoredAr
 use serde::Serialize;
 
 /// Abstract idea of an online resource created by a human author.
-/// Closed subtype set of `P_AUTHORED_RESOURCE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_AUTHORED_RESOURCE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PAuthoredResource {

@@ -283,7 +283,7 @@ impl EhrbaseService {
     /// (`ehr_id = Some`, `party_only = false`), over the shared
     /// [`commit_version_set`](Self::commit_version_set).
     ///
-    /// PORT NOTE (ADR-011): the SM native `commit_contribution(Vec<UpdateVersion>,
+    /// PORT NOTE: the SM native `commit_contribution(Vec<UpdateVersion>,
     /// UpdateAudit)` ([`EhrContributionService`](ehrbase_sm::EhrContributionService))
     /// is a *typed subset* of the wire CONTRIBUTION — `UpdateVersion` mandates
     /// `data` + `lifecycle_state` (SM `update_version.adoc`, both `1..1`) and a

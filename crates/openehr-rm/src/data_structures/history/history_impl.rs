@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants + functions (ADR-003) for `HISTORY`.
+//! Hand-written RM class invariants + functions for `HISTORY`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc`:
@@ -16,7 +16,7 @@
 //! construction with `is_periodic()` computed from `period` (archie marks it
 //! `ignored` for the same reason). `Period_consistency` is a distinct,
 //! non-ignored invariant per the spec and IS enforced here — the spec is the
-//! authority (ADR-008) even though archie does not run it.
+//! authority even though archie does not run it.
 
 use crate::data_structures::history::event_impl::offset_seconds;
 use crate::data_structures::history::history::History;

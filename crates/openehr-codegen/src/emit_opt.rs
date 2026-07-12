@@ -1,4 +1,4 @@
-//! OPT 1.4 emitter (`emit-opt`, ADR-005): generates a typed Rust model
+//! OPT 1.4 emitter (`emit-opt`): generates a typed Rust model
 //! (`opt14`) + canonical-XML `ToXml`/`FromXml` impls for the openEHR
 //! **operational template** XML (`<template>` = `OPERATIONAL_TEMPLATE`).
 //!
@@ -19,13 +19,13 @@
 //! `FromXml` impls are produced by reusing [`emit_xml::emit_to_xml`] /
 //! [`emit_xml::emit_from_xml`] over the [`XmlType`]s this module builds.
 //!
-//! # PORT NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter (ADR-009)
+//! # PORT NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter
 //!
 //! This module re-generates the AOM 1.4 `C_*` constraint tree that
 //! `openehr-am::am14` (BMM-generated) already carries. That duplication is
 //! **intentional and scoped**, not an oversight — the two models are *not*
 //! structurally reconcilable (see `docs/spec-audit/findings/09-templates-opt14.md`
-//! F-09-02 and `docs/ADRs/ADR-009-opt14-wire-model.md` for the field-by-field
+//! F-09-02 and `the opt14-wire-model design record` for the field-by-field
 //! evidence and the full rationale). In summary, the Ocean **OPT-XML** wire shape
 //! (`Template.xsd` + `OpenehrProfile.xsd`, the codegen input here) diverges from
 //! the **AOM 1.4 BMM** logical model that drives `am14`:
@@ -49,13 +49,13 @@
 //! `openehr_rm`/`openehr_base`) would force lossy mapping in both directions and
 //! would require synthesizing an XML codec against types whose shapes do not
 //! match the XSD element order / attribute split — the exact lossy shortcut
-//! ADR-009 rejects. So `opt14` stays a standalone XSD-shaped wire adapter.
+//! the wire model rejects. So `opt14` stays a standalone XSD-shaped wire adapter.
 //!
 //! **Drift guard:** because the two models are generated independently (BMM →
 //! `am14`, XSD → `opt14`), an AOM-1.4 spec bump could silently drift them. The
 //! compile-time inventory sentinel in
 //! `crates/openehr-its/tests/opt14_am14_divergence.rs` fails the build if either
-//! model gains or loses a constraint type, forcing a reconciliation + an ADR-009
+//! model gains or loses a constraint type, forcing a reconciliation + a design-record
 //! update.
 
 use crate::emit::{XmlField, XmlType, XmlVariant};

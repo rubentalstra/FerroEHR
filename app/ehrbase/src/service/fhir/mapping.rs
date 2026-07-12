@@ -1,5 +1,5 @@
 //! The FHIR-connector **mapping definition** schema + the pure FHIR→FLAT
-//! transform (ADR-016 §Decision 2, "mapping-as-data").
+//! transform.
 //!
 //! A mapping definition binds one FHIR R4 resource profile to one openEHR
 //! template. Its `entries` each read a value out of the incoming FHIR resource
@@ -8,12 +8,12 @@
 //! key `openehr-flat` consumes — `crates/openehr-flat/src/flat/sub.rs`). The
 //! resulting flat map is handed to [`openehr_flat::from_flat`] with the
 //! template's `WebTemplate` to build a canonical COMPOSITION, which then commits
-//! through the platform's NORMAL validated path (ADR-016 §Decision 3). This
+//! through the platform's NORMAL validated path. This
 //! module is protocol-free and DB-free: it is the deterministic transform, unit
 //! tested here; the orchestration (mapping-store lookup, EHR resolution,
 //! commit) lives in the parent [`super`] module on `EhrbaseService`.
 //!
-//! PORT NOTE (ADR-016): FHIR↔openEHR mapping is spec-silent, so this schema is
+//! PORT NOTE: FHIR↔openEHR mapping is spec-silent, so this schema is
 //! a design decision, not a transcription. The FHIR side is a deliberate
 //! **subset** of `FHIRPath` — object-field navigation and array indexing only
 //! (`code.coding[0].code`, `component[1].valueQuantity.value`) — NOT the full
@@ -24,7 +24,7 @@
 //! deferred: `code_map` binds a FHIR system URL to an openEHR `terminology_id`
 //! and passes the code through (the `TerminologyService` seam is where value
 //! translation would plug in) — the built COMPOSITION's own terminology
-//! validation (ADR-016 §Decision 6) is the authority on the result.
+//! validation is the authority on the result.
 
 use std::collections::BTreeMap;
 
@@ -34,11 +34,11 @@ use serde_json::{Map, Value, json};
 
 /// The `system_id` recorded in the built COMPOSITION's `FEEDER_AUDIT`
 /// originating-system audit (RM common `FEEDER_AUDIT_DETAILS`), naming the
-/// import channel (ADR-016 §Decision 3).
+/// import channel.
 pub(super) const ORIGINATING_SYSTEM: &str = "fhir-connector";
 
 /// A validated FHIR→openEHR mapping definition (the `definition` JSON stored in
-/// `fhir_mapping.definition`, ADR-016 §Decision 2).
+/// `fhir_mapping.definition`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct FhirMappingDefinition {
@@ -392,7 +392,7 @@ pub(super) fn resource_version(resource: &Value) -> Option<String> {
 }
 
 /// Build the `FEEDER_AUDIT` (canonical JSON) recording the FHIR import trail
-/// (ADR-016 §Decision 3): originating system `fhir-connector`, the resource
+///: originating system `fhir-connector`, the resource
 /// type/id as an originating-system item id, and the resource version + import
 /// time on the originating-system audit (RM common `FEEDER_AUDIT_DETAILS`).
 pub(super) fn feeder_audit(
@@ -425,7 +425,7 @@ pub(super) fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
     }
 }
 
-// ── reverse mapping: canonical COMPOSITION → FHIR resource (ADR-016 §Decision 4) ──
+// ── reverse mapping: canonical COMPOSITION → FHIR resource ──
 //
 // The exact inverse of [`build_flat`]: the COMPOSITION is flattened to the same
 // simSDT FLAT map [`from_flat`] consumes (via [`openehr_flat::to_flat`], so the
@@ -436,7 +436,7 @@ pub(super) fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
 // (`terminology_id` → FHIR system URL). The read façade and the outbound emitter
 // share this transform.
 //
-// PORT NOTE (ADR-016): a `constant` entry is NOT reversed — it injected a fixed
+// PORT NOTE: a `constant` entry is NOT reversed — it injected a fixed
 // openEHR leaf inbound with no FHIR source, so it contributes nothing to the
 // reconstructed resource (round-trip fidelity is defined over the FHIR-sourced
 // mapped fields). The `subject` is reconstructed from the owning EHR's subject
@@ -925,7 +925,7 @@ mod tests {
     }
 
     // ── Full round trip: FHIR → build → reverse → equals the original mapped
-    // fields (ADR-016 §Decision 4). Uses the same BP template + mapping as the
+    // fields. Uses the same BP template + mapping as the
     // inbound end-to-end test above.
     #[test]
     fn reverse_round_trip_equals_original_mapped_fields() {

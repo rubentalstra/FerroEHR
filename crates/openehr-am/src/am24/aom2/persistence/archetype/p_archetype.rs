@@ -6,7 +6,7 @@ use serde::Serialize;
 /// Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
 ///
 /// An archetype is a modelled as a particular kind of AUTHORED_RESOURCE, and as such, includes descriptive meta-data, language information and revision history. The ARCHETYPE class adds identifying information, a definition - expressed in terms of constraints on instances of an object model, and an ontology.
-/// Closed subtype set of `P_ARCHETYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_ARCHETYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PArchetype {

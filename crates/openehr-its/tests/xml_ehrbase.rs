@@ -1,5 +1,5 @@
 #![allow(clippy::doc_markdown)] // prose with proper nouns (EHRbase, openEHR, RM)
-//! Read-fidelity gate against real EHRbase XML fixtures (ADR-005).
+//! Read-fidelity gate against real EHRbase XML fixtures.
 //!
 //! `FromXml` must parse stock EHRbase-authored XML into the RM types, and the
 //! parsed value must round-trip (RM → XML → RM → XML stable). These fixtures are

@@ -8,7 +8,7 @@
 //!
 //! Obtaining tokens (the `OAuth2` authorization-code/client-credentials flows, the
 //! `oauth2` crate) is a *client* concern — a CDR only validates — so it is out
-//! of scope here (recorded per ADR-006's Stage-1 auth scope).
+//! of scope here (a recorded Stage-1 auth-scope decision).
 
 use std::sync::Arc;
 use std::time::Duration;

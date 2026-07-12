@@ -1,7 +1,7 @@
 //! Vendored ITS-REST provenance — the *tested* contract identity (D1).
 //!
 //! The framework must claim exactly the ITS-REST contract it actually tests.
-//! The SUT implements the contract generated (`emit-rest`, ADR-005) from the
+//! The SUT implements the contract generated (`emit-rest`) from the
 //! vendored `-codegen` OAS tree at `crates/openehr-its/vendor/rest-oas/`, whose
 //! `PROVENANCE.md` pins openEHR `specifications-ITS-REST` **master**
 //! (`e8a093e…`, whose bundles self-stamp `info.version: latest` — openEHR's

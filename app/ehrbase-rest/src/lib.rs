@@ -1,11 +1,11 @@
 //! openEHR **ITS-REST 1.0.3** server surface (`axum`) + authentication.
 //!
 //! `ehrbase-rest` implements the openEHR SM native API (`ehrbase-sm`) as a
-//! modern, idiomatic axum application (ADR-005/006/011). The generated `ROUTES`
+//! modern, idiomatic axum application. The generated `ROUTES`
 //! tables drive an HTTP dispatcher ([`dispatch`]) that rebuilds each operation's
 //! `*Params`, negotiates content (canonical JSON / XML via `openehr-its`), and
 //! calls the configured platform service `S: Platform`. The adapter is generic
-//! over `S` (ADR-011: no trait objects, no stub backend) — the `ehrbase` crate
+//! over `S` (no trait objects, no stub backend by design) — the `ehrbase` crate
 //! monomorphizes it over its DB-backed `EhrbaseService` via
 //! [`AppState::with_backend`], and the tests over a mock.
 //!
@@ -32,7 +32,7 @@ mod version_id;
 
 pub use access::authn::{AuthMethod, Authenticator, Principal};
 pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
-// The native API lives in `ehrbase-sm` (ADR-011); re-exported here for the
+// The native API lives in `ehrbase-sm`; re-exported here for the
 // server's public surface (test mocks, the binary) — no local shim module.
 pub use config::{
     AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TenancyConfig, TerminologyConfig,

@@ -119,7 +119,7 @@ pub(super) fn referenced_keys(root: &Value, store: &BlobStore) -> Vec<String> {
 ///
 /// Qualifies only when the value is purely inline (`data` present, `uri`
 /// absent) and its **decoded** length strictly exceeds `threshold`. A value
-/// that already carries a `uri` (client-managed external media, ADR-017 §6) is
+/// that already carries a `uri` (client-managed external media) is
 /// stored verbatim; a small inline value is left untouched (the zero-drift
 /// gate).
 fn offload_one(
@@ -250,8 +250,7 @@ pub(super) fn apply_expand(root: &mut Value, fetched: &HashMap<String, String>, 
 
 /// Verify fetched blob `bytes` hash to the expected `hex` key, returning the
 /// canonical base64 encoding **of the blob bytes** for re-inlining as
-/// `DV_MULTIMEDIA.data`. A mismatch is a hard error (never silent corruption;
-/// ADR-017 §3).
+/// `DV_MULTIMEDIA.data`. A mismatch is a hard error — never silent corruption.
 pub(super) fn verify_and_encode(hex: &str, bytes: &[u8]) -> Result<String, MultimediaError> {
     let (actual, _) = sha256(bytes);
     if actual != hex {

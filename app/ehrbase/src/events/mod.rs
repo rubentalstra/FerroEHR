@@ -1,22 +1,22 @@
-//! Contribution-outbox eventing (ADR-014): drain the transactional
+//! Contribution-outbox eventing: drain the transactional
 //! `event_outbox` (written by `service::vobject` in the same transaction as
 //! every CONTRIBUTION commit) and publish each PHI-free event to a broker.
 //!
-//! ## Design (ADR-014)
+//! ## Design
 //! - **At-least-once, per-EHR ordered.** A single background drainer reads
 //!   pending rows in sequence order, publishes with broker confirms, and only
 //!   then stamps `published_at`. A crash/retry may duplicate (consumers
 //!   deduplicate on `contribution_id`), never lose. The outbox is the buffer
-//!   when the broker is down — commits never block on the broker (§3).
+//!   when the broker is down — commits never block on the broker.
 //! - **PHI-free.** The payload is the stored envelope (contribution id,
 //!   `ehr_id`, `committed_at`, per-version `(vo_id, kind, sys_version,
 //!   change_type, template_id)`) plus the delivery `seq`. No clinical content
-//!   (§2).
+//!   — identity and provenance metadata only, never clinical content.
 //! - **Broker abstraction, AMQP first.** [`EventPublisher`] is the seam;
 //!   [`AmqpPublisher`] is the `RabbitMQ` (lapin) implementation. Publishing is
 //!   **off by default** ([`EventsConfig::enabled`]).
 //! - **Retention.** Published rows are pruned after a configurable window
-//!   (default 7 days, §6).
+//!   (default 7 days).
 //!
 //! ## Module map
 //! - [`config`] — the `figment` [`EventsConfig`].
@@ -34,7 +34,7 @@ pub use amqp::AmqpPublisher;
 pub use config::EventsConfig;
 pub use publisher::{EventsHandle, start, start_with_publisher, subscription_queue_name};
 
-/// Placeholder routing-key segment for an absent value (ADR-014 §5).
+/// Placeholder routing-key segment for an absent value.
 const ABSENT: &str = "-";
 
 /// An eventing failure — either the broker transport or a negative confirm.
@@ -49,7 +49,7 @@ pub enum EventError {
     Nack(String),
 }
 
-/// The broker-publish seam (ADR-014 §4). AMQP is the first implementation
+/// The broker-publish seam. AMQP is the first implementation
 /// ([`AmqpPublisher`]); Kafka would be another impl of this same trait.
 #[async_trait]
 pub trait EventPublisher: Send + Sync {
@@ -58,7 +58,7 @@ pub trait EventPublisher: Send + Sync {
     async fn publish(&self, routing_key: &str, payload: &[u8]) -> Result<(), EventError>;
 
     /// Declare a durable subscription `queue` bound to the topic exchange with
-    /// `binding_key` (ADR-014 §5). The drainer calls this for every enabled
+    /// `binding_key`. The drainer calls this for every enabled
     /// subscription so the broker fans events out to per-subscription queues;
     /// it is idempotent (safe to re-declare a queue/binding). The default is a
     /// no-op so non-AMQP `EventPublisher`s (test doubles, a future Kafka impl
@@ -70,19 +70,19 @@ pub trait EventPublisher: Send + Sync {
 }
 
 /// The `*` single-word topic wildcard used for a NULL subscription predicate
-/// (ADR-014 §5) — distinct from [`ABSENT`] (`-`), which is a *routing* key's
+/// — distinct from [`ABSENT`] (`-`), which is a *routing* key's
 /// empty-template rendering, not a wildcard.
 const WILDCARD: &str = "*";
 
-/// Build the topic routing key for one committed version (ADR-014 §5):
+/// Build the topic routing key for one committed version:
 /// `<kind>.<change_type>.<template_id|->` on the topic exchange.
 ///
-/// PORT NOTE (ADR-014 §5): AMQP topic keys use `.` as the word separator, so a
+/// PORT NOTE: AMQP topic keys use `.` as the word separator, so a
 /// `template_id` containing dots (e.g. `openEHR-EHR-COMPOSITION.encounter.v1`)
 /// is sanitised — every non-`[A-Za-z0-9_-]` char collapses to `_` — to keep the
 /// key exactly three fields. An absent/empty `template_id` renders as `-`.
 ///
-/// PORT NOTE (ADR-014 §5): a CONTRIBUTION may carry several versions of
+/// PORT NOTE: a CONTRIBUTION may carry several versions of
 /// differing kinds (e.g. EHR creation commits `EHR_STATUS` + `EHR_ACCESS`).
 /// Each version is published as **its own message** under its own routing key
 /// (E1 task 4), carrying the shared envelope plus a `version_index` naming which
@@ -96,7 +96,7 @@ pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> 
     format!("{kind}.{change_type}.{template}")
 }
 
-/// Build the topic **binding** key for a subscription's predicates (ADR-014 §5),
+/// Build the topic **binding** key for a subscription's predicates,
 /// parallel to [`routing_key`] but substituting the `*` single-word wildcard for
 /// any NULL (absent) predicate. `archetype` is intentionally absent: the routing
 /// key has no archetype segment (see the `event_subscription.archetype` PORT
@@ -114,7 +114,7 @@ pub fn subscription_binding_key(
     format!("{}.{}.{}", seg(kind), seg(change_type), seg(template_id))
 }
 
-/// Derive the routing key from one stored version entry (ADR-014 §5).
+/// Derive the routing key from one stored version entry.
 fn routing_key_of_version(version: &serde_json::Value) -> String {
     let kind = version
         .get("kind")

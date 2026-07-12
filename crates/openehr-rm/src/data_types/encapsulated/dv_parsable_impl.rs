@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants + functions (ADR-003) for `DV_PARSABLE`.
+//! Hand-written RM class invariants + functions for `DV_PARSABLE`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_parsable.adoc`:

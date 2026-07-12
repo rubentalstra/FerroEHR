@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant + functions (ADR-003) for `REFERENCE_RANGE`.
+//! Hand-written RM class invariant + functions for `REFERENCE_RANGE`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.reference_range.adoc`.

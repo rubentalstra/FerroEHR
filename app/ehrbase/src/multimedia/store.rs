@@ -1,4 +1,4 @@
-//! Content-addressed blob store over `object_store` (ADR-017 §2/§4).
+//! Content-addressed blob store over `object_store`.
 //!
 //! Blobs are keyed by the lowercase hex SHA-256 of their (unencoded) bytes, so
 //! identical media dedups naturally and a key is immutable — matching openEHR

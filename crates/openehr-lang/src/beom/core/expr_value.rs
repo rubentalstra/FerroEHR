@@ -11,7 +11,7 @@ use crate::beom::core::external_query::ExternalQuery;
 use serde::Serialize;
 
 /// Any kind of statement element that can be evaluated. The type will either be supplied in descendant types or else will be inferred by an assignment statement linked to a typed variable.
-/// Closed subtype set of `EXPR_VALUE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPR_VALUE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprValue {

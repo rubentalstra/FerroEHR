@@ -1,5 +1,5 @@
 //! Path analysis + typing against the generated RM model
-//! (`openehr_rm::model`) — the AQL planner's oracle (ADR-008 §3).
+//! (`openehr_rm::model`) — the AQL planner's oracle.
 //!
 //! The central operation is the **path split** (`docs/design/aql-engine.md`
 //! §Core insight): every identified path deterministically splits into

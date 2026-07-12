@@ -1,5 +1,5 @@
 //! Hand-written lexical-form parsing shared by the BASE identification types
-//! (ADR-003 spec behaviour; auto-declared beside the `// @generated` files).
+//! (hand-written spec behaviour; auto-declared beside the `// @generated` files).
 //!
 //! openEHR BASE 1.3.0 defines each identifier class by a *lexical form* (a
 //! grammar over the `value` string) plus accessor functions that decompose it

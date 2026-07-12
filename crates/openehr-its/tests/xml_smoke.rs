@@ -1,4 +1,4 @@
-//! Smoke test for the generated canonical-XML `ToXml` path (ADR-005): load a
+//! Smoke test for the generated canonical-XML `ToXml` path: load a
 //! composition from the JSON corpus, serialize to XML, and check structure.
 use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::Composition;

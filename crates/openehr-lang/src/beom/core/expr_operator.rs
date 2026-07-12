@@ -6,7 +6,7 @@ use crate::beom::core::expr_unary_operator::ExprUnaryOperator;
 use serde::Serialize;
 
 /// Abstract parent of operator types.
-/// Closed subtype set of `EXPR_OPERATOR` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPR_OPERATOR`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprOperator {

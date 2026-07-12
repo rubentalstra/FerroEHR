@@ -6,7 +6,7 @@ use crate::am14::aom14::archetype::assertion::expr_unary_operator::ExprUnaryOper
 use serde::Serialize;
 
 /// Abstract parent of all expression tree items.
-/// Closed subtype set of `EXPR_ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPR_ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprItem {

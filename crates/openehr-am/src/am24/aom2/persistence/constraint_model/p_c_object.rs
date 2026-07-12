@@ -9,7 +9,7 @@ use crate::am24::aom2::persistence::primitive::p_c_terminology_code::PCTerminolo
 use serde::Serialize;
 
 /// Abstract model of constraint on any kind of object node.
-/// Closed subtype set of `P_C_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_C_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PCObject {

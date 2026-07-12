@@ -22,7 +22,7 @@ use openehr_rm::prelude::Composition;
 // The generated `*Params` decode the wire path/query; the operation logic is
 // dispatched onto the SM catalog traits (`DefinitionAdl14Service` /
 // `DefinitionAdl2Service`) + the wire-shaped `DefinitionAdapter` extension —
-// the generated `DefinitionApi` is no longer part of `Platform` (ADR-011).
+// the generated `DefinitionApi` is no longer part of `Platform`.
 use openehr_its::rest::generated::definition::{
     DefinitionQueryListParams, DefinitionQueryStoreYamlParams, DefinitionQueryVersionGetParams,
     DefinitionQueryVersionStoreYamlParams, DefinitionTemplateAdl2ExampleGetParams,

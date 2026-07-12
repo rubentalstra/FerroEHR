@@ -131,7 +131,7 @@ fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
 }
 
 fn app(abac_enabled: bool, audit: Option<AuditSink>) -> Router {
-    // ATNA audit now emits through the backend's SM `SystemLog` (ADR-011); the
+    // ATNA audit now emits through the backend's SM `SystemLog`; the
     // in-memory sink on the mock records events for assertions.
     let mut h = hooks();
     h.audit = audit;
@@ -293,7 +293,7 @@ async fn abac_disabled_restores_behaviour() {
 async fn abac_deny_is_audited() {
     // A 403 from the ABAC gate carries the Principal, so the ATNA layer records
     // a failure audit for the denied caller (§7). The emitter now lives in the
-    // backend's SM `SystemLog` (ADR-011), so we assert the recorded `AuditEvent`
+    // backend's SM `SystemLog`, so we assert the recorded `AuditEvent`
     // (a minor-failure attributed to `svc`); the DICOM rendering is covered by
     // the `ehrbase::system_log` message tests.
     let sink = AuditSink::recording();

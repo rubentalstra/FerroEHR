@@ -1,4 +1,4 @@
-//! Hand-written runtime for canonical-XML (de)serialization (ITS-XML, ADR-005).
+//! Hand-written runtime for canonical-XML (de)serialization (ITS-XML).
 //!
 //! The generated code (`emit-xml`, in `generated/`) implements [`ToXml`] /
 //! `FromXml` for the RM/BASE spec types; this module is the trait definitions,
@@ -244,14 +244,14 @@ impl ToXml for uuid::Uuid {
 }
 
 impl ToXml for serde_json::Value {
-    // SCOPE (ADR-004/005): a `serde_json::Value` slot is a codegen
+    // SCOPE: a `serde_json::Value` slot is a codegen
     // *monomorphization artifact* — the version-family payloads
-    // (`X_VERSIONED_*.data`) and BMM-`Any` fields that ADR-004 deliberately
+    // (`X_VERSIONED_*.data`) and BMM-`Any` fields that the codegen deliberately
     // leaves untyped. These are not concrete openEHR types and have no
     // spec-defined canonical-XML shape, so there is nothing to serialize
     // faithfully; they never occur on the RM composition/EHR wire. The JSON
     // value is emitted as element text as a last resort rather than guessing a
-    // shape. (Resolved if/when ADR-004's monomorphization is made precise.)
+    // shape. (Resolved if/when the codegen monomorphization is made precise.)
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         w.write_text_element(tag, &self.to_string())
     }
@@ -472,7 +472,7 @@ impl<T: FromXml> FromXml for Box<T> {
 }
 
 impl FromXml for serde_json::Value {
-    // SCOPE (ADR-004/005): mirror of the `ToXml` impl above — an untyped codegen
+    // SCOPE: mirror of the `ToXml` impl above — an untyped codegen
     // monomorphization artifact with no spec canonical-XML shape, never on the
     // RM composition/EHR wire. Consume the element and yield Null.
     fn from_xml(reader: &mut XmlReader, _start: &StartTag) -> Result<Self, XmlError> {

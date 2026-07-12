@@ -11,7 +11,7 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 use serde::Serialize;
 
 /// Meta-type representing a value-generating simple expression.
-/// Closed subtype set of `EL_VALUE_GENERATOR` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_VALUE_GENERATOR`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElValueGenerator {

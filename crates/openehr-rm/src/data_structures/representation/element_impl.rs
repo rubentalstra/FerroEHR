@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `ELEMENT`.
+//! Hand-written RM class invariants for `ELEMENT`.
 //!
 //! Mirrors archie `Element` (non-terminology invariants) + inherited LOCATABLE:
 //! - `Inv_null_flavour_indicated`: exactly one of `value` / `null_flavour` is

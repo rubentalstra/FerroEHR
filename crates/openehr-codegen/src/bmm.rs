@@ -19,9 +19,9 @@
 //! (P8/P9), not for BMM ingestion.
 //!
 //! This is the deterministic model that `openehr-codegen` walks to emit the
-//! openEHR spec crates (ADR-004). What BMM captures (and we model): structure.
+//! openEHR spec crates. What BMM captures (and we model): structure.
 //! What it does not (function bodies, invariant logic) stays hand-written per
-//! ADR-003 — but invariant EL text and function signatures remain available in
+//! by design — but invariant EL text and function signatures remain available in
 //! the JSON for scaffolding.
 
 use serde_json::Value;

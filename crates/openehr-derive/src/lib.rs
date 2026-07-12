@@ -1,4 +1,4 @@
-//! Proc-macros for the generated openEHR spec crates (ADR-004).
+//! Proc-macros for the generated openEHR spec crates.
 //!
 //! [`OpenEhrType`] gives a struct canonical-JSON (de)serialization with the
 //! openEHR `_type` discriminator, **without** a per-struct tag field:

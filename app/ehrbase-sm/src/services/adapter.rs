@@ -45,7 +45,7 @@ pub trait VersionMetaAdapter: Send + Sync {
 /// template + stored-query operations the ITS-REST `DEFINITION` group needs
 /// that the SM `I_DEFINITION_*` interfaces do not express directly.
 ///
-/// PORT NOTE (ADR-011): the SM Definitions interfaces
+/// PORT NOTE: the SM Definitions interfaces
 /// ([`DefinitionAdl14Service`](super::DefinitionAdl14Service) /
 /// [`DefinitionAdl2Service`](super::DefinitionAdl2Service) /
 /// [`DefinitionQueryService`](super::DefinitionQueryService)) exchange plain
@@ -158,17 +158,17 @@ pub trait ItemTagAdapter: Send + Sync {
 }
 
 /// **Event-subscription** admin extension — CRUD over the event-filter
-/// subscription store (ADR-014 §5, "Event Trigger" parity).
+/// subscription store.
 ///
 /// PORT NOTE: not an SM interface call. Event/subscription semantics are
-/// spec-silent (ADR-014 §5 is the design record filling that seam), so there is
+/// spec-silent, so there is
 /// no `I_*` interface to transcribe. The subscriptions are a server-side filter
 /// model the broker fans out on (a durable per-subscription queue bound with a
 /// topic key built from the predicates); their CRUD is exposed through a
 /// config-gated admin extension surface in `ehrbase-rest` (like the terminology
 /// group), dispatching to this adapter. Bodies are `serde_json::Value` (the
 /// subscription is a small predicate record, not an RM type). No default bodies
-/// — the platform component implements every method (ADR-011).
+/// — the platform component implements every method.
 #[async_trait]
 pub trait EventSubscriptionAdapter: Send + Sync {
     /// `GET …/admin/event_subscription` — every stored subscription as a JSON
@@ -201,16 +201,16 @@ pub trait EventSubscriptionAdapter: Send + Sync {
 }
 
 /// **Tenant** admin extension — CRUD over the tenant registry, plus the
-/// claim/header → context resolution the middleware needs (ADR-015 §5).
+/// claim/header → context resolution the middleware needs.
 ///
 /// PORT NOTE: not an SM interface call. The tenancy model is spec-silent
-/// (ADR-015 fills it), so — like [`EventSubscriptionAdapter`] — there is no
+/// (our own extension fills it), so — like [`EventSubscriptionAdapter`] — there is no
 /// `I_*` interface to transcribe; the CRUD is a config-gated `/admin/tenant`
 /// extension in `ehrbase-rest`, bodies are `serde_json::Value` (a tenant is a
 /// small `{name, system_id}` record). [`Self::tenant_resolve`] is the
 /// middleware seam, not a wire route: it maps a JWT-claim / header value (a
 /// tenant name or uuid) to the [`TenantContext`] that scopes the request. No
-/// default bodies — the platform component implements every method (ADR-011).
+/// default bodies — the platform component implements every method.
 #[async_trait]
 pub trait TenantAdapter: Send + Sync {
     /// `GET …/admin/tenant` — every tenant as a JSON record
@@ -232,8 +232,7 @@ pub trait TenantAdapter: Send + Sync {
 
     /// `DELETE …/admin/tenant/{id}` — remove the tenant; `404` if unknown.
     /// Deletion is refused (`409`) unless the tenant owns no rows and is not the
-    /// reserved default tenant (ADR-015 §5 — physical purge of a non-empty
-    /// tenant goes through the per-EHR admin delete machinery first).
+    /// reserved default tenant.
     async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError>;
 
     /// Resolve a claim/header value (a tenant name or uuid string) to its
@@ -243,21 +242,21 @@ pub trait TenantAdapter: Send + Sync {
 }
 
 /// **FHIR-connector** extension — mapping-store CRUD plus the inbound
-/// `POST /fhir/r4/{resourceType}` ingest (ADR-016).
+/// `POST /fhir/r4/{resourceType}` ingest.
 ///
-/// PORT NOTE (ADR-016): not an SM interface call. FHIR↔openEHR mapping is
-/// spec-silent (ADR-016 is the design record), so — like
+/// PORT NOTE: not an SM interface call. FHIR↔openEHR mapping is
+/// spec-silent (our own extension), so — like
 /// [`EventSubscriptionAdapter`] / [`TenantAdapter`] — there is no `I_*`
 /// interface to transcribe; the surface is a config-gated `/fhir/r4/*` +
 /// `/admin/fhir_mapping` extension in `ehrbase-rest` (off by default). Mapping
 /// bodies are `serde_json::Value` (a mapping is a small deployable data record,
-/// ADR-016 §Decision 2). [`Self::fhir_ingest`] resolves a mapping by resource
+///). [`Self::fhir_ingest`] resolves a mapping by resource
 /// type + profile, builds a COMPOSITION, and commits it through the platform's
-/// NORMAL validated create path (never a bypass, ADR-016 §Decision 3) with
+/// NORMAL validated create path (never a bypass) with
 /// `FEEDER_AUDIT` provenance; it returns the committed [`ServiceResponse`]
 /// (the composition body + its resource metadata for the wire's `Location`/
 /// `ETag`). No default bodies — the platform component implements every method
-/// (ADR-011).
+///.
 #[async_trait]
 pub trait FhirConnectorAdapter: Send + Sync {
     /// `GET …/admin/fhir_mapping` — every stored mapping as a JSON record
@@ -293,11 +292,11 @@ pub trait FhirConnectorAdapter: Send + Sync {
     /// the mapping by `resource_type` (+ optional `profile` from the resource's
     /// `meta.profile`), build a COMPOSITION from the mapping definition, and
     /// commit it through the NORMAL validated create path with `FEEDER_AUDIT`
-    /// provenance (ADR-016 §Decision 3). Returns the committed composition +
+    /// provenance. Returns the committed composition +
     /// its resource metadata. No enabled mapping for the type/profile →
     /// `versioned_object_does_not_exist` (`404`); a resource that maps to an
     /// invalid COMPOSITION is rejected by the validator (`content_invalid` →
-    /// `422`), never partially stored (ADR-016 §Decision 6).
+    /// `422`), never partially stored.
     async fn fhir_ingest(
         &self,
         resource_type: String,
@@ -306,13 +305,13 @@ pub trait FhirConnectorAdapter: Send + Sync {
     ) -> Result<ServiceResponse, SmError>;
 
     /// `GET …/fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` —
-    /// the **read façade** (ADR-016 §Decision 4b): resolve every enabled mapping
+    /// the **read façade**: resolve every enabled mapping
     /// for the type, run the mapped template's COMPOSITION query (scoped to the
     /// `patient`'s EHR) through the platform's query seam, reverse-map each hit
     /// to a FHIR resource, and return a FHIR `searchset` **Bundle** (`total`,
     /// `entry[].fullUrl`, `entry[].resource`). Read-only and stateless — no FHIR
     /// persistence, no generic FHIR Search (only this explicit `patient` scope,
-    /// ADR-016 §Decision 5). `patient` is mandatory (the protocol edge rejects a
+    ///). `patient` is mandatory (the protocol edge rejects a
     /// missing one `400`); a type with no enabled mapping yields an empty
     /// (`total: 0`) Bundle, not an error.
     async fn fhir_search(
@@ -326,7 +325,7 @@ pub trait FhirConnectorAdapter: Send + Sync {
 /// ITS-REST **CONTRIBUTION** adapter-support extension — the raw-wire
 /// EHR-scoped CONTRIBUTION commit.
 ///
-/// PORT NOTE (ADR-011): the SM `I_EHR_CONTRIBUTION.commit_contribution`
+/// PORT NOTE: the SM `I_EHR_CONTRIBUTION.commit_contribution`
 /// (`Vec<UpdateVersion>, UpdateAudit`) is a *typed subset* of the ITS-REST
 /// wire CONTRIBUTION: `UPDATE_VERSION` mandates `data` + `lifecycle_state`
 /// (SM `update_version.adoc`, both `1..1`) and a committer, so it cannot
@@ -350,10 +349,10 @@ pub trait ContributionAdapter: Send + Sync {
     ) -> Result<ServiceResponse, SmError>;
 }
 
-/// ITS-REST **multimedia expansion** adapter-support extension (ADR-017).
+/// ITS-REST **multimedia expansion** adapter-support extension.
 ///
 /// PORT NOTE: not an SM interface call. When `DV_MULTIMEDIA` externalization is
-/// enabled (ADR-017), a stored COMPOSITION serves its large media by reference
+/// enabled, a stored COMPOSITION serves its large media by reference
 /// (`uri` + integrity fields) by default; the `?expand_multimedia=true` query
 /// parameter on a composition GET asks the server to re-inline the bytes,
 /// verifying each blob's SHA-256 before serving (a mismatch is a `500`, never

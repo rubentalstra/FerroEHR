@@ -1,4 +1,4 @@
-//! Hand-written RM spec functions (ADR-003) for the abstract `EVENT<T>` enum.
+//! Hand-written RM spec functions for the abstract `EVENT<T>` enum.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc`.

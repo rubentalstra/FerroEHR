@@ -1,6 +1,6 @@
 //! Rebuild a generated `*Params` struct from the three HTTP sources.
 //!
-//! The ITS-REST contract (ADR-005) combines an operation's path, query, and
+//! The ITS-REST contract combines an operation's path, query, and
 //! header parameters into a single generated `*Params` struct (see
 //! `openehr_its::rest::generated`). axum, by contrast, extracts those three
 //! sources separately. This module bridges the two with a small **type-directed

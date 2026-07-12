@@ -4,15 +4,15 @@
 //! Loading: defaults ← optional TOML file (`EHRBASE_FHIR_OUTBOUND_CONFIG`) ←
 //! `EHRBASE_FHIR_OUTBOUND_`-prefixed environment (nested keys use `__`).
 //!
-//! PORT NOTE (ADR-016 §Decision 4a): the outbound emitter lives in `ehrbase`
+//! PORT NOTE: the outbound emitter lives in `ehrbase`
 //! (the binary/platform crate), NOT in `ehrbase-rest`'s [`FhirConfig`] — it is a
 //! broker + DB **background** concern (a drainer wired like the E1 outbox
-//! publisher, ADR-014), and `ehrbase-rest` is the protocol adapter only
-//! (ADR-011, no broker/DB work). So the REST `FhirConfig.enabled` gate (the
+//! publisher), and `ehrbase-rest` is the protocol adapter only
+//! (no broker/DB work). So the REST `FhirConfig.enabled` gate (the
 //! inbound/façade surface) and this emitter config are independent switches.
 //!
-//! PHI NOTE (ADR-016 §Decision 4a): unlike the E1 event envelopes — which are
-//! PHI-free by design (ADR-014 §2) — the outbound emitter's payload IS the
+//! PHI NOTE: unlike the E1 event envelopes — which are
+//! PHI-free by design — the outbound emitter's payload IS the
 //! mapped FHIR **resource**, so it carries clinical content by design. It is
 //! therefore off by default behind its own explicit [`enabled`](Self::enabled)
 //! flag, and publishes to a SEPARATE [`exchange`](Self::exchange) (default
@@ -35,7 +35,7 @@ const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
 /// Default per-message publish retry count before the emitter backs off.
 const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
 
-/// FHIR outbound emitter configuration (`[fhir_outbound]`; ADR-016 §Decision
+/// FHIR outbound emitter configuration (`[fhir_outbound]`) — our own extension
 /// 4a). Every field has a default, so an all-defaults value is valid (the
 /// emitter is off unless `enabled`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
