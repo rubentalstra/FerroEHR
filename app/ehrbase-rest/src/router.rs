@@ -19,8 +19,8 @@ use tower_http::trace::TraceLayer;
 
 use ehrbase_sm::Platform;
 
-use crate::access::authn::{self, Authenticator};
-use crate::management::{self, ManagementState};
+use crate::extensions::access::authn::{self, Authenticator};
+use crate::extensions::management::{self, ManagementState};
 use crate::state::AppState;
 use crate::{dispatch, openapi, status};
 
@@ -57,7 +57,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     let api = if cfg.tenancy.enabled {
         api.layer(from_fn_with_state(
             state.clone(),
-            crate::access::tenant::middleware::<S>,
+            crate::extensions::access::tenant::middleware::<S>,
         ))
     } else {
         api
@@ -74,7 +74,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // no-audit case costs one check per request.
     let api = api.layer(from_fn_with_state(
         state.clone(),
-        crate::audit::middleware::<S>,
+        crate::extensions::audit::middleware::<S>,
     ));
     let api = api
         .layer(axum::middleware::from_fn(management::http_metrics))

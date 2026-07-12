@@ -20,9 +20,9 @@ use std::sync::Arc;
 
 use ehrbase_sm::Platform;
 
-use crate::access::authz::AuthzHandle;
+use crate::extensions::access::authz::AuthzHandle;
 use crate::config::RestConfig;
-use crate::management::Observability;
+use crate::extensions::management::Observability;
 
 /// Cheaply-cloneable application state, generic over the platform service `S`:
 /// the configuration, the service the HTTP dispatcher calls into, and the
