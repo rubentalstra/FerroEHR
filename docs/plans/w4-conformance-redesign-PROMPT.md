@@ -1,0 +1,117 @@
+# W-4 session prompt — full redesign + rewrite of `tools/conformance`
+
+Execute **W-4: the complete redesign, re-architecture, and rewrite of the
+conformance framework** (`tools/conformance`, ~18k lines). Owner ruling
+(2026-07-13): the current instrument is **not trusted anymore** — it grew
+incrementally (B1–B6, B5 adjudications, W-3f re-baseline) and encodes
+pre-rewrite server behaviour in places; it must be rethought from the spec
+up, not patched. The goal is **the best possible openEHR CNF testing
+framework**, able to certify not just our server but ANY openEHR CDR.
+
+## The oracle — read it ALL first (owner mandate)
+
+Before designing anything, read the FULL vendored CNF component at
+`docs/specs/openehr/CNF/` so the framework is understood end-to-end:
+
+- `docs/guide/` — the Conformance Guide (methodology: what conformance
+  testing IS, SUT/test-client roles, evidence, profiles).
+- `docs/platform_test_schedule/` — the Platform Conformance Test Schedule
+  masters (the normative test-case catalogue: every `master*-func_tc_*`
+  chapter, area by area).
+- `docs/profiles/` — the conformance profiles (CORE/STANDARD/…): what a
+  claim means, which capabilities each profile requires.
+- `docs/certificate/` — Statement + Certificate artefact definitions
+  (`master03-certificate.adoc`) — the output the framework must emit.
+- `tests/` — the openEHR Robot suite (prior art for case content — we never
+  map to it 1:1, but it is evidence of intended coverage).
+- `PROVENANCE.md`, `README.adoc`, `manifest.json`, `scripts/` — pinning +
+  regeneration.
+
+Also read (project law): the ECC memory rule — **our own numbering/taxonomy,
+generated data sets, latest-spec-versions-only, never a Robot/Python/legacy
+mapping** (`.claude/memory/ecc-own-conformance-framework.md`); the B5 phase
+record (`docs/plans/b5-conformance-instrument.md` — the honesty overhaul:
+identity from provenance, adjudication register, machine-computed profile
+verdicts); blueprint ch 07 (`docs/blueprint/07-cnf.md`); and the W-3f
+platform registers (`docs/design/platform/`) for what the server now is.
+
+## Mission
+
+1. **Spec-first re-derivation of the case catalogue.** Method identical to
+   W-3f (proven three times): registers first, in `docs/design/conformance/`
+   — enumerate the Platform Test Schedule chapter by chapter (every
+   normative test condition, with citation), map the EXISTING cases onto
+   that spine (conformant / divergent / missing / instrument-encodes-server-
+   behaviour), then rewrite. Every case cites its schedule section; skips
+   carry the sanctioned adjudication register; the baseline is re-derived
+   honestly, not inherited.
+2. **Multi-SUT architecture from day one.** The framework drives ANY
+   ITS-REST CDR by URL + capability discovery (OPTIONS), with per-SUT
+   adapters ONLY where a target needs auth/boot quirks — never per-SUT case
+   forks. Targets to support at close:
+   - **ehrbase-rs** (ours; the compose-based boot stays the default);
+   - **EHRbase (Java, upstream)** — Dockerised official image;
+   - the further CDRs the owner names (owner wrote "ehrbase from Cadasto" —
+     **confirm with the owner at session start which product this is**
+     (CaboLabs EhrServer? Better CDR? Code24?) and what else "maybe others"
+     should include; design the adapter seam so adding one is a config
+     entry, not code).
+   - Fairness rules from `docs/plans/x1-comparison.md` (the fairness
+     adjudication register; measured numbers only, no false claims) — W-4
+     ABSORBS X1's ECC half; benchmark overhaul stays X1's.
+3. **First-class outputs:** per-SUT results.json + report + badges;
+   machine-computed profile verdicts (CORE/STANDARD/OPTIONS per profiles/);
+   Statement + Certificate artefacts per certificate/master03; an honest
+   COMPARISON matrix across SUTs (per capability, with the fairness
+   register); CI-runnable against ehrbase-rs on every phase close
+   (`scripts/conformance.sh` stays the entry point, re-pointed).
+4. **Instrument honesty invariants** (carry from B5, verify in the rewrite):
+   spec identity derived from provenance, never hand-asserted; a case that
+   contradicts the vendored spec text is adjudicated (spec-cited) — the
+   server is never bent to a wrong case; every bound on coverage is logged,
+   never silent.
+
+## Method (the standing loop)
+
+- Register first (`docs/design/conformance/`, mirror
+  `docs/design/platform/` — spec skeleton → case map → G-rows → target
+  design), fan-out read-only Opus auditors, **max 2 concurrent workers**
+  (owner cap, `.claude/memory/max-two-concurrent-workers.md`).
+- Then the big-bang rewrite: fresh authoring, never migrate legacy files;
+  audited-faithful case logic may carry re-grounded + re-cited.
+  Intermediate steps need not compile; ONE fix pass; zero-TODO close.
+- Spec citations only (CNF file + §section; schedule case ids); spec-silent
+  design flagged; official CLIs; no import renaming; files ≤ ~700 lines.
+- Deferred checks last: workspace nextest → clippy → then the full run of
+  the NEW framework against ehrbase-rs (the re-derived baseline replaces
+  341/315/0 — expect and document the delta honestly), then against the
+  Java EHRbase (its results are DATA, not a gate).
+- Author `docs/plans/w4-conformance-redesign.md` from this prompt at start;
+  tick as you go; changelog + website book (the conformance page) same-PR;
+  WORKLIST row W-4 closed with the merged PR.
+
+## Fixed constraints
+
+- The SERVER is not in scope — `app/*` changes only if a case adjudication
+  proves a real server defect (separate commit, spec-cited).
+- `docs/specs/openehr/CNF/` is vendored + pinned; re-vendor only via
+  `scripts/vendor-spec-docs.sh` with provenance.
+- Keep the runner pure Rust (`tools/conformance`), reqwest-driven,
+  Docker-composed SUTs; no Robot/Python/ANTLR, ever.
+- The owned-fixture register + generated data sets discipline stands.
+
+## Exit criteria
+
+- [ ] `docs/design/conformance/` registers complete (schedule fully
+      enumerated, every existing case mapped, G-rows cited).
+- [ ] Framework rewritten: multi-SUT core, adapter seam, profile verdicts,
+      Statement/Certificate + comparison outputs.
+- [ ] Full run vs ehrbase-rs: honest re-derived baseline committed
+      (results + report + badges), zero unexplained regressions vs the
+      341/315/0 ancestor (each delta adjudicated or fixed).
+- [ ] Full run vs upstream EHRbase (Java) recorded with the fairness
+      register (absorbing X1's ECC half).
+- [ ] The named third-party CDR(s) confirmed with the owner and either
+      integrated or explicitly deferred with the reason.
+- [ ] Zero actionable TODOs; workspace green; changelog + book + WORKLIST
+      updated; PR merged.

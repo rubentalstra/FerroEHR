@@ -116,7 +116,7 @@ app/ehrbase/src/
 
 - [ ] X1 Register G-rows all closed in code or re-verified cited PORT NOTE
 - [ ] X2 No file > ~700 lines without documented reason; every area maps to its oracle or sits in extensions/ flagged
-- [ ] X3 Changelog entry + website book same-PR updates
+- [ ] X3 Changelog entry + website book: full drift pass/rewrite of affected pages (owner directive 2026-07-13 — zero drift) covering the W-3f user-visible deltas (OR-CONTAINS, lifecycle-transition 422s, case-insensitive template_id, Extract audit events, migration 0007)
 - [ ] X4 WORKLIST row W-3f closed with merged PR; plan closed
 
 ## Exit criteria
