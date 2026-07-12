@@ -91,7 +91,9 @@ pub enum ValidationKind {
     /// An RM class invariant failed.
     Invariant,
     /// An instance node is not admitted by any sibling constraint or open slot
-    /// under a closed (constrained) attribute (ADR-012 closed-archetype).
+    /// under a closed (constrained) attribute (closed-world admission per the
+    /// AOM2 direction — `AM/docs/AOM2/master04.2` `Rm_type_name` matching;
+    /// evidenced by ECC-VAL-119).
     Unexpected,
     /// Any other violation.
     Other,
@@ -233,6 +235,9 @@ impl Validator {
                 self.push(p, iv.message, ValidationKind::Invariant);
             }
         }
+        self.check_archetyped_valid(obj, path);
+        self.check_nonempty_lists(obj, path);
+        self.check_data_structure_shapes(obj, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -247,6 +252,186 @@ impl Validator {
                 }
                 Value::Object(_) => self.rm_invariant_pass(val, &format!("{path}/{k}")),
                 _ => {}
+            }
+        }
+    }
+
+    /// `LOCATABLE.Archetyped_valid`: `is_archetype_root xor archetype_details =
+    /// Void` (`RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc` L60).
+    /// The enforceable arm on an instance is: a **non-root** node — one whose
+    /// `archetype_node_id` is an `at`/`id` term code, which per the node-id
+    /// format can never be the root of an archetyped structure — must NOT carry
+    /// `archetype_details`.
+    ///
+    /// PORT NOTE (A1 rm-common-change-control-R46): the converse arm ("an
+    /// archetype-HRID node must carry `archetype_details`") is NOT enforced —
+    /// the reference object model derives `is_archetype_root` from
+    /// `archetype_details` presence (making that reading tautological), and the
+    /// CNF's own valid data sets + the canonical-JSON corpus systematically omit
+    /// `archetype_details` on nested archetype roots (182 occurrences measured
+    /// 2026-07-11); the CNF fixtures win over a prose reading that would reject
+    /// them (`.claude/rules/spec-adherence.md`). The COMPOSITION root arm stays
+    /// separately enforced (`composition_impl.rs` `Is_archetype_root`).
+    fn check_archetyped_valid(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        let Some(node_id) = obj.get("archetype_node_id").and_then(Value::as_str) else {
+            return;
+        };
+        let is_term_code = node_id
+            .strip_prefix("at")
+            .or_else(|| node_id.strip_prefix("id"))
+            .is_some_and(|rest| rest.chars().next().is_some_and(|c| c.is_ascii_digit()));
+        if is_term_code && obj.get("archetype_details").is_some_and(|d| !d.is_null()) {
+            self.push(
+                norm_path(path),
+                format!(
+                    "node {node_id:?} is not an archetype root (at/id term code) and must \
+                     not carry archetype_details (LOCATABLE.Archetyped_valid)"
+                ),
+                ValidationKind::Invariant,
+            );
+        }
+    }
+
+    /// The RM's "present implies non-empty" list invariants, checkable only at
+    /// the JSON level (after typed deserialize an absent list and a
+    /// present-empty list are both an empty `Vec`):
+    ///
+    /// - `COMPOSITION.Content_valid`: `content /= Void implies not
+    ///   content.is_empty` (`composition.adoc`);
+    /// - `EVENT_CONTEXT.Participations_validity` (`event_context.adoc`);
+    /// - `SECTION.Items_valid` (`section.adoc`);
+    /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
+    ///   ENTRY subtype);
+    /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
+    fn check_nonempty_lists(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        const RULES: &[(&str, &str, &str)] = &[
+            ("COMPOSITION", "content", "Content_valid"),
+            ("EVENT_CONTEXT", "participations", "Participations_validity"),
+            ("SECTION", "items", "Items_valid"),
+            (
+                "OBSERVATION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "EVALUATION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "INSTRUCTION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "ACTION",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "ADMIN_ENTRY",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            (
+                "GENERIC_ENTRY",
+                "other_participations",
+                "Other_participations_valid",
+            ),
+            ("INSTRUCTION", "activities", "Activities_valid"),
+        ];
+        // Attribute-keyed rules that apply on ANY node carrying the attribute
+        // (like the terminology pass's null_flavour handling):
+        // `DV_TEXT.Mappings_valid` and `DV_ORDERED.Other_reference_ranges_validity`
+        // (`dv_text.adoc` / `dv_ordered.adoc`) — no other RM attribute shares
+        // these names.
+        for (attr, invariant) in [
+            ("mappings", "Mappings_valid"),
+            ("other_reference_ranges", "Other_reference_ranges_validity"),
+        ] {
+            if obj
+                .get(attr)
+                .and_then(Value::as_array)
+                .is_some_and(Vec::is_empty)
+            {
+                self.push(
+                    norm_path(path),
+                    format!(
+                        "{attr} is present but empty — a present list must be \
+                         non-empty ({invariant})"
+                    ),
+                    ValidationKind::Invariant,
+                );
+            }
+        }
+        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+            return;
+        };
+        for (rule_ty, attr, invariant) in RULES {
+            if *rule_ty == ty
+                && obj
+                    .get(*attr)
+                    .and_then(Value::as_array)
+                    .is_some_and(Vec::is_empty)
+            {
+                self.push(
+                    norm_path(path),
+                    format!(
+                        "{ty}.{attr} is present but empty — a present list must be \
+                         non-empty ({ty}.{invariant})"
+                    ),
+                    ValidationKind::Invariant,
+                );
+            }
+        }
+    }
+
+    /// JSON-level data-structure shape duties the typed model cannot express:
+    ///
+    /// - `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the
+    ///   ITS-JSON CLUSTER schema lists `items` as required) — after
+    ///   deserialize an absent list collapses into an empty `Vec`, so
+    ///   presence is only checkable here;
+    /// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
+    ///   in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
+    ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
+    ///   else" (RM `data_structures` master06; `history.adoc` generic
+    ///   parameter) — the monomorphized runtime type cannot see `T`.
+    fn check_data_structure_shapes(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+            return;
+        };
+        if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
+            self.push(
+                norm_path(path),
+                "CLUSTER.items is mandatory (1..1 List<ITEM>, cluster.adoc)".to_owned(),
+                ValidationKind::Invariant,
+            );
+        }
+        if ty == "HISTORY"
+            && let Some(events) = obj.get("events").and_then(Value::as_array)
+        {
+            let mut first: Option<&str> = None;
+            for (i, event) in events.iter().enumerate() {
+                let Some(data_ty) = event.pointer("/data/_type").and_then(Value::as_str) else {
+                    continue;
+                };
+                match first {
+                    None => first = Some(data_ty),
+                    Some(locked) if locked != data_ty => {
+                        self.push(
+                            norm_path(&format!("{path}/events[{i}]")),
+                            format!(
+                                "HISTORY events must all carry the same ITEM_STRUCTURE \
+                                 subtype in data — the history is HISTORY<{locked}> but \
+                                 this event carries {data_ty} (RM data_structures \
+                                 master06 §History)"
+                            ),
+                            ValidationKind::Invariant,
+                        );
+                    }
+                    Some(_) => {}
+                }
             }
         }
     }
@@ -649,9 +834,12 @@ impl Validator {
             // AOM 1.4 §cardinality vs §existence: cardinality constrains the
             // container's membership **when the attribute is present**; whether
             // the attribute may be absent at all is the C_ATTRIBUTE.existence
-            // constraint. An absent (or null) attribute field is therefore not
-            // a cardinality violation — an explicitly present empty container
-            // (`"content": []`) is.
+            // constraint (the vendored Multi_list corpus template pairs
+            // `content` cardinality 1..* with existence 0..1, and its valid
+            // no-content composition relies on the distinction). An absent (or
+            // null) attribute field is therefore not a cardinality violation —
+            // a template that requires members expresses it as existence 1..1;
+            // the RM list invariants forbid the present-empty `[]` encoding.
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
                 if matches!(container.get(&last.attribute), None | Some(Value::Null)) {

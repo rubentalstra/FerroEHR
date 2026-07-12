@@ -112,6 +112,14 @@ struct VersionRecord {
     vo_id: Uuid,
     kind: String,
     sys_version: i32,
+    /// `VERSION_TREE_ID` columns (0/0 = trunk row).
+    trunk_version: i32,
+    branch_number: i32,
+    branch_version: i32,
+    /// Stored `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first
+    /// version) and merge provenance (`None` when not a merge).
+    preceding_version_uid: Option<String>,
+    other_input_version_uids: Option<Value>,
     /// Lower/upper bounds of the temporal `sys_period` (`upper = None` ⇒ the
     /// current, still-open version).
     sys_period_lower: Option<String>,
@@ -215,7 +223,9 @@ impl EhrbaseService {
             blobs.push(serde_json::to_vec(record).map_err(ServiceError::from)?);
         }
         let sizes: Vec<usize> = blobs.iter().map(Vec::len).collect();
-        let limit = (spec.segment_split_size as usize).saturating_mul(1024);
+        let limit = usize::try_from(spec.segment_split_size.max(0))
+            .unwrap_or(0)
+            .saturating_mul(1024);
         let ranges = plan_segments(&sizes, limit);
 
         std::fs::create_dir_all(dir).map_err(|e| file_not_writable(dir, &e))?;
@@ -382,6 +392,7 @@ impl EhrbaseService {
     }
 
     /// Read one EHR's `ehr`/audit/contribution/version/tag/archive content.
+    #[allow(clippy::too_many_lines)] // one linear per-EHR collection pass
     async fn collect_one_ehr(&self, ehr_id: Uuid) -> Result<EhrRecord, ServiceError> {
         let row = sqlx::query(
             "SELECT system_id, time_created::text, subject_id, subject_namespace \
@@ -435,7 +446,8 @@ impl EhrbaseService {
         }
 
         let version_rows = sqlx::query(
-            "SELECT vo_id, kind, sys_version, lower(sys_period)::text AS lo, \
+            "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
+             preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
              upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
              template_id, signature, creating_system_id \
              FROM vo_version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
@@ -458,6 +470,11 @@ impl EhrbaseService {
                 vo_id,
                 kind: r.try_get("kind")?,
                 sys_version,
+                trunk_version: r.try_get("trunk_version")?,
+                branch_number: r.try_get("branch_number")?,
+                branch_version: r.try_get("branch_version")?,
+                preceding_version_uid: r.try_get("preceding_version_uid")?,
+                other_input_version_uids: r.try_get("other_input_version_uids")?,
                 sys_period_lower: r.try_get("lo")?,
                 sys_period_upper: r.try_get("hi")?,
                 lifecycle_state,
@@ -639,15 +656,21 @@ async fn insert_version(
     v: &VersionRecord,
 ) -> Result<(), ServiceError> {
     sqlx::query(
-        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, lifecycle_state, \
-         contribution_id, audit_id, template_id, signature, creating_system_id) \
-         VALUES ($1, $2, $3, $4, tstzrange($5::timestamptz, $6::timestamptz, '[)'), $7, $8, $9, \
-         $10, $11, $12)",
+        "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
+         branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
+         lifecycle_state, contribution_id, audit_id, template_id, signature, creating_system_id) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
+         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17)",
     )
     .bind(v.vo_id)
     .bind(&v.kind)
     .bind(ehr_id)
     .bind(v.sys_version)
+    .bind(v.trunk_version)
+    .bind(v.branch_number)
+    .bind(v.branch_version)
+    .bind(&v.preceding_version_uid)
+    .bind(&v.other_input_version_uids)
     .bind(&v.sys_period_lower)
     .bind(&v.sys_period_upper)
     .bind(&v.lifecycle_state)

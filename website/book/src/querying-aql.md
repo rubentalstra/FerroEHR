@@ -154,11 +154,19 @@ version uid.
 
 ## Terminology in queries
 
-Value filters can be backed by terminology. Inside a `matches` clause,
-`TERMINOLOGY('expand', …)` expands a value set so a coded field matches any code
-in it, rather than listing codes by hand. This requires a terminology source; if
-external terminology is not configured, the in-process openEHR bundle is used.
-See [Terminology servers](beyond-core/terminology.md) for wiring an external
+Value filters can be backed by terminology in three ways:
+
+- `TERMINOLOGY('expand', …)` as (or inside) a `matches` operand expands a
+  value set so a coded field matches any code in it, rather than listing
+  codes by hand;
+- `TERMINOLOGY('validate'|'subsumes', …) = true` as a boolean condition
+  evaluates a code-membership or subsumption test once per query;
+- a terminology URI operand — `matches { terminology://… }` — expands the
+  set the URI identifies.
+
+These require a terminology source; if external terminology is not
+configured, the in-process openEHR bundle is used. See
+[Terminology servers](beyond-core/terminology.md) for wiring an external
 FHIR terminology server.
 
 ## Pagination and limits
@@ -189,7 +197,17 @@ results. Supported today includes:
   quantities), `EXISTS`, `LIKE`, `MATCHES` value lists, and range predicates;
 - `ORDER BY` typed leaves, `LIMIT`/`OFFSET`, named query parameters, and the
   `ehr_id`, `offset`, and `fetch` request parameters;
-- terminology-backed `TERMINOLOGY('expand', …)` inside `matches`.
+- the single-row functions: `LENGTH`, `SUBSTRING`, `POSITION`, the string
+  `CONTAINS`, `CONCAT`/`CONCAT_WS`, `ABS`, `MOD`, `CEIL`, `FLOOR`, `ROUND`,
+  and `CURRENT_DATE`/`CURRENT_TIME`/`CURRENT_DATE_TIME`/`NOW`/
+  `CURRENT_TIMEZONE`;
+- terminology-backed `TERMINOLOGY()` operands and terminology-URI `matches`
+  operands (see above).
+
+Semantic analysis is strict: duplicate `FROM` variable names, `LIMIT 0`,
+negative `OFFSET`, wrong function arity, and `SUM`/`AVG` over non-numeric
+paths are all rejected with a clear message. Variable names are
+case-insensitive, as the specification requires.
 
 Where a construct is outside the supported set, the server returns a clear
 error identifying it — you never get a silently incorrect answer.

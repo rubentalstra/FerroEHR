@@ -20,19 +20,27 @@
 //! engine planner ([`super::lower`]) then sees an ordinary `matches { … }` value
 //! list and needs no terminology awareness.
 //!
-//! Staging (blueprint §3 build-order item 5): only `expand` is merged here
-//! (stage (a)). Other `TERMINOLOGY()` forms are left untouched for the planner
-//! to reject with a typed, spec-cited error — the Boolean value-expression form
-//! (`TERMINOLOGY(…) = true`, stage (b)) and the bare-URI operand
-//! (`matches { … }`, stage (c)) — see [`super::error::AqlFeatureError`].
+//! All three master03 §TERMINOLOGY usage forms are realised here:
+//!
+//! * `expand` as (or inside) a `matches` operand — merged into the value list;
+//! * the **Boolean value expression** (`TERMINOLOGY('validate', …) = true`) —
+//!   evaluated once (the arguments are constant strings) and the comparison
+//!   replaced with its constant truth value;
+//! * the **terminology-URI operand** (`matches { terminology://… }`,
+//!   master03 §matches/URI) — expanded through the same seam into an explicit
+//!   value list (a URI operand identifies a set; matching = membership).
+//!
+//! Operations with no defined comparison semantics in AQL (`lookup`, `map`)
+//! remain typed rejects at the seam implementation.
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use async_trait::async_trait;
 use openehr_query::ast::{
-    IdentifiedExpr, MatchesOperand, Primitive, SelectQuery, TerminologyFunction, ValueListItem,
-    WhereExpr,
+    CompareOperand, FunctionCall, IdentifiedExpr, MatchesOperand, Primitive, SelectQuery, Terminal,
+    TerminologyFunction, ValueListItem, WhereExpr,
 };
+use openehr_query::lexer::CompOp;
 
 use super::error::AqlError;
 
@@ -58,6 +66,28 @@ pub trait TerminologyExpander: Send + Sync {
     /// * [`AqlError::Exec`] with `ExecError::Terminology` — the upstream
     ///   terminology server call failed (→ 500).
     async fn expand(&self, service_api: &str, params_uri: &str) -> Result<Vec<String>, AqlError>;
+
+    /// Evaluate a Boolean `TERMINOLOGY()` operation (`validate`, `subsumes`)
+    /// via the terminology service selected by `service_api`.
+    ///
+    /// # Errors
+    ///
+    /// As [`TerminologyExpander::expand`]; an operation with no boolean
+    /// semantics (`lookup`, `map`) is a typed 400.
+    async fn boolean_operation(
+        &self,
+        operation: &str,
+        service_api: &str,
+        params_uri: &str,
+    ) -> Result<bool, AqlError>;
+
+    /// Expand a terminology URI operand (`matches { terminology://… }` —
+    /// master03 §matches/URI) into the set of codes it identifies.
+    ///
+    /// # Errors
+    ///
+    /// As [`TerminologyExpander::expand`].
+    async fn expand_uri(&self, uri: &str) -> Result<Vec<String>, AqlError>;
 }
 
 /// Resolve and merge every `TERMINOLOGY('expand', …)` used as (or inside) a
@@ -81,26 +111,48 @@ pub async fn expand_matches(
         return Ok(());
     };
 
-    // Pass 1 (sync): collect the distinct `expand` requests keyed by
-    // (service_api, params_uri).
-    let mut requests: BTreeSet<(String, String)> = BTreeSet::new();
+    // Pass 1 (sync): collect the distinct terminology requests.
+    let mut requests: BTreeSet<Request> = BTreeSet::new();
     collect(where_, &mut requests);
     if requests.is_empty() {
         return Ok(());
     }
 
     // Resolve each request exactly once (async, off the sync borrow).
-    let mut resolved: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
-    for (service_api, params_uri) in requests {
-        let codes = expander.expand(&service_api, &params_uri).await?;
-        resolved.insert((service_api, params_uri), codes);
+    let mut resolved: BTreeMap<Request, Resolution> = BTreeMap::new();
+    for request in requests {
+        let resolution = match &request {
+            Request::Expand(api, uri) => Resolution::Codes(expander.expand(api, uri).await?),
+            Request::Boolean(op, api, uri) => {
+                Resolution::Bool(expander.boolean_operation(op, api, uri).await?)
+            }
+            Request::Uri(uri) => Resolution::Codes(expander.expand_uri(uri).await?),
+        };
+        resolved.insert(request, resolution);
     }
 
-    // Pass 2 (sync): splice the resolved codes into the value lists.
+    // Pass 2 (sync): splice the resolutions into the WHERE tree.
     if let Some(where_) = query.where_.as_mut() {
         rewrite(where_, &resolved);
     }
     Ok(())
+}
+
+/// One distinct terminology-service request found in the `WHERE` clause.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum Request {
+    /// `TERMINOLOGY('expand', api, uri)` as/inside a `matches` operand.
+    Expand(String, String),
+    /// `TERMINOLOGY(op, api, uri) = <bool>` — the Boolean value expression.
+    Boolean(String, String, String),
+    /// `matches { <terminology uri> }`.
+    Uri(String),
+}
+
+/// A resolved request.
+enum Resolution {
+    Codes(Vec<String>),
+    Bool(bool),
 }
 
 /// Whether a `TERMINOLOGY()` call is an `expand` operation (case-insensitive).
@@ -113,27 +165,52 @@ fn key(tf: &TerminologyFunction) -> (String, String) {
     (tf.arg2.clone(), tf.arg3.clone())
 }
 
-/// Collect the distinct `expand` requests reachable from a `WHERE` sub-tree.
-fn collect(expr: &WhereExpr, out: &mut BTreeSet<(String, String)>) {
+/// Collect the distinct terminology requests reachable from a `WHERE` sub-tree.
+fn collect(expr: &WhereExpr, out: &mut BTreeSet<Request>) {
     match expr {
         WhereExpr::Identified(IdentifiedExpr::Matches { operand, .. }) => match operand {
             MatchesOperand::Terminology(tf) if is_expand(tf) => {
-                out.insert(key(tf));
+                let (api, uri) = key(tf);
+                out.insert(Request::Expand(api, uri));
             }
             MatchesOperand::ValueList(items) => {
                 for tf in items.iter().filter_map(expand_item) {
-                    out.insert(key(tf));
+                    let (api, uri) = key(tf);
+                    out.insert(Request::Expand(api, uri));
                 }
             }
-            MatchesOperand::Terminology(_) | MatchesOperand::Uri(_) => {}
+            MatchesOperand::Uri(uri) => {
+                out.insert(Request::Uri(uri.clone()));
+            }
+            MatchesOperand::Terminology(_) => {}
         },
-        WhereExpr::Identified(_) => {}
+        WhereExpr::Identified(ie) => {
+            if let Some((tf, _, _)) = boolean_form(ie) {
+                let (api, uri) = key(tf);
+                out.insert(Request::Boolean(tf.operation.clone(), api, uri));
+            }
+        }
         WhereExpr::Not(w) => collect(w, out),
         WhereExpr::And(a, b) | WhereExpr::Or(a, b) => {
             collect(a, out);
             collect(b, out);
         }
     }
+}
+
+/// The Boolean value-expression form `TERMINOLOGY(op, api, uri) <=|!=> <bool>`
+/// (master03 §TERMINOLOGY, third usage): the call, the operator, and the
+/// boolean literal.
+fn boolean_form(ie: &IdentifiedExpr) -> Option<(&TerminologyFunction, CompOp, bool)> {
+    let IdentifiedExpr::Compare {
+        lhs: CompareOperand::Function(FunctionCall::Terminology(tf)),
+        op: op @ (CompOp::Eq | CompOp::Ne),
+        rhs: Terminal::Primitive(Primitive::Boolean(b)),
+    } = ie
+    else {
+        return None;
+    };
+    (!is_expand(tf)).then_some((tf, *op, *b))
 }
 
 /// A value-list item that is an `expand` `TERMINOLOGY()` call, if it is one.
@@ -144,14 +221,27 @@ fn expand_item(item: &ValueListItem) -> Option<&TerminologyFunction> {
     }
 }
 
-/// Rewrite the value lists of a `WHERE` sub-tree, replacing resolved `expand`
-/// operands with explicit string codes.
-fn rewrite(expr: &mut WhereExpr, resolved: &BTreeMap<(String, String), Vec<String>>) {
+/// Rewrite a `WHERE` sub-tree, replacing resolved terminology operands: value
+/// lists gain explicit codes; a resolved Boolean value expression becomes its
+/// constant truth value.
+fn rewrite(expr: &mut WhereExpr, resolved: &BTreeMap<Request, Resolution>) {
     match expr {
         WhereExpr::Identified(IdentifiedExpr::Matches { operand, .. }) => {
             rewrite_operand(operand, resolved);
         }
-        WhereExpr::Identified(_) => {}
+        WhereExpr::Identified(ie) => {
+            if let Some((tf, op, rhs)) = boolean_form(ie) {
+                let (api, uri) = key(tf);
+                let request = Request::Boolean(tf.operation.clone(), api, uri);
+                if let Some(Resolution::Bool(value)) = resolved.get(&request) {
+                    let truth = match op {
+                        CompOp::Eq => *value == rhs,
+                        _ => *value != rhs,
+                    };
+                    *ie = IdentifiedExpr::Resolved(truth);
+                }
+            }
+        }
         WhereExpr::Not(w) => rewrite(w, resolved),
         WhereExpr::And(a, b) | WhereExpr::Or(a, b) => {
             rewrite(a, resolved);
@@ -163,26 +253,35 @@ fn rewrite(expr: &mut WhereExpr, resolved: &BTreeMap<(String, String), Vec<Strin
 /// Rewrite a single `matches` operand: a standalone `expand` call becomes a
 /// value list of its codes; a value list has each `expand` item spliced into
 /// its codes (explicit codes and non-`expand` items preserved in order).
-fn rewrite_operand(
-    operand: &mut MatchesOperand,
-    resolved: &BTreeMap<(String, String), Vec<String>>,
-) {
+fn rewrite_operand(operand: &mut MatchesOperand, resolved: &BTreeMap<Request, Resolution>) {
+    let codes_of = |request: &Request| match resolved.get(request) {
+        Some(Resolution::Codes(codes)) => Some(codes),
+        _ => None,
+    };
     match operand {
         MatchesOperand::Terminology(tf) if is_expand(tf) => {
-            *operand = MatchesOperand::ValueList(code_items(resolved.get(&key(tf))));
+            let (api, uri) = key(tf);
+            *operand = MatchesOperand::ValueList(code_items(codes_of(&Request::Expand(api, uri))));
         }
         MatchesOperand::ValueList(items) => {
             let taken = std::mem::take(items);
             let mut rebuilt = Vec::with_capacity(taken.len());
             for item in taken {
                 match expand_item(&item) {
-                    Some(tf) => rebuilt.extend(code_items(resolved.get(&key(tf)))),
+                    Some(tf) => {
+                        let (api, uri) = key(tf);
+                        rebuilt.extend(code_items(codes_of(&Request::Expand(api, uri))));
+                    }
                     None => rebuilt.push(item),
                 }
             }
             *items = rebuilt;
         }
-        MatchesOperand::Terminology(_) | MatchesOperand::Uri(_) => {}
+        MatchesOperand::Uri(uri) => {
+            let request = Request::Uri(uri.clone());
+            *operand = MatchesOperand::ValueList(code_items(codes_of(&request)));
+        }
+        MatchesOperand::Terminology(_) => {}
     }
 }
 
@@ -207,6 +306,20 @@ mod tests {
     #[async_trait]
     impl TerminologyExpander for Fixed {
         async fn expand(&self, _api: &str, _uri: &str) -> Result<Vec<String>, AqlError> {
+            Ok(self.0.clone())
+        }
+
+        async fn boolean_operation(
+            &self,
+            operation: &str,
+            _api: &str,
+            _uri: &str,
+        ) -> Result<bool, AqlError> {
+            // The canned rule: `validate` is true, `subsumes` is false.
+            Ok(operation.eq_ignore_ascii_case("validate"))
+        }
+
+        async fn expand_uri(&self, _uri: &str) -> Result<Vec<String>, AqlError> {
             Ok(self.0.clone())
         }
     }
@@ -293,5 +406,59 @@ mod tests {
             .await
             .expect("expand");
         assert!(matches_values(&q).is_empty());
+    }
+
+    #[tokio::test]
+    async fn boolean_validate_form_resolves_to_a_constant() {
+        // QUERY master03 §TERMINOLOGY third usage: the Boolean value
+        // expression is evaluated at semantic analysis.
+        let mut q = parse_str(
+            "SELECT c FROM COMPOSITION c WHERE \
+             TERMINOLOGY('validate', 'hl7.org/fhir/r4', \
+             'system=http://snomed.info/sct&code=122298005&url=http://snomed.info/sct?fhir_vs') \
+             = true",
+        )
+        .expect("parses");
+        expand_matches(&mut q, &Fixed(vec![]))
+            .await
+            .expect("resolves");
+        assert_eq!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Resolved(true))),
+            "validate=true with a true evaluation is the constant TRUE"
+        );
+    }
+
+    #[tokio::test]
+    async fn boolean_form_honours_the_operator_and_literal() {
+        let mut q = parse_str(
+            "SELECT c FROM COMPOSITION c WHERE \
+             TERMINOLOGY('subsumes', 'hl7.org/fhir/r4', 'system=s&codeA=a&codeB=b') != false",
+        )
+        .expect("parses");
+        expand_matches(&mut q, &Fixed(vec![]))
+            .await
+            .expect("resolves");
+        // subsumes evaluates false; `false != false` is false.
+        assert_eq!(
+            q.where_,
+            Some(WhereExpr::Identified(IdentifiedExpr::Resolved(false)))
+        );
+    }
+
+    #[tokio::test]
+    async fn uri_operand_expands_to_a_value_list() {
+        // QUERY master03 §matches/URI: the terminology URI identifies a set;
+        // matching is membership of its expansion.
+        let mut q = parse_str(
+            "SELECT c FROM COMPOSITION c WHERE \
+             c/context/setting/defining_code/code_string matches \
+             { terminology://snomed-ct/hierarchy?rootConceptId=50043002 }",
+        )
+        .expect("parses");
+        expand_matches(&mut q, &Fixed(vec!["50043002".into(), "12345".into()]))
+            .await
+            .expect("resolves");
+        assert_eq!(matches_values(&q), vec!["50043002", "12345"]);
     }
 }

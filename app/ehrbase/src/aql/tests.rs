@@ -556,3 +556,102 @@ fn whitelisted_function_accepted() {
         }
     ));
 }
+
+// ── chapter-16 audit additions (QUERY master03) ──────────────────────────────
+
+/// Variable names must be unique within an AQL statement (§Variables/Syntax).
+#[test]
+fn duplicate_variable_rejected() {
+    let e = plan_err("SELECT c FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION c");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::DuplicateVariable(v)) if v == "c"
+    ));
+}
+
+/// Variable names are not case-sensitive (§Variables/Syntax) — both for the
+/// uniqueness check and for reference resolution.
+#[test]
+fn variable_names_fold_case() {
+    let e = plan_err("SELECT c FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION C");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::DuplicateVariable(_))
+    ));
+    // A reference differing only by case resolves.
+    plan_ok("SELECT C/name/value FROM EHR e CONTAINS COMPOSITION c");
+}
+
+/// `row_count` minimum is 1, `offset` minimum is 0 (§LIMIT/Syntax).
+#[test]
+fn limit_zero_rejected() {
+    let e = plan_err("SELECT c FROM COMPOSITION c LIMIT 0");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::PagingBounds {
+            clause: "LIMIT",
+            ..
+        })
+    ));
+}
+
+/// SUM/AVG accept Integer/Real input only (§Functions/SUM, AVG) — a textual
+/// leaf is a typed reject.
+#[test]
+fn sum_over_textual_leaf_rejected() {
+    let e = plan_err("SELECT SUM(c/name/value) FROM COMPOSITION c");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::AggregateInputType { func: "SUM", .. })
+    ));
+}
+
+/// Scalar-function arity is validated at lowering (§Functions).
+#[test]
+fn function_arity_enforced() {
+    let e = plan_err("SELECT length(c/name/value, c/name/value) FROM COMPOSITION c");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::FunctionArity { func: "LENGTH", .. })
+    ));
+    let e = plan_err("SELECT current_date(c/name/value) FROM COMPOSITION c");
+    assert!(matches!(
+        e,
+        AqlError::Analysis(AnalysisError::FunctionArity {
+            func: "CURRENT_DATE",
+            ..
+        })
+    ));
+}
+
+/// The whole single-row function set plans (§Functions: string, numeric,
+/// date/time incl. `CURRENT_TIMEZONE`, and the string function `CONTAINS`).
+#[test]
+fn full_scalar_function_set_plans() {
+    for q in [
+        "SELECT substring(c/name/value, 1, 3) FROM COMPOSITION c",
+        "SELECT position('x', c/name/value) FROM COMPOSITION c",
+        "SELECT contains(c/name/value, 'x') FROM COMPOSITION c",
+        "SELECT concat(c/name/value, '!') FROM COMPOSITION c",
+        "SELECT concat_ws('-', c/name/value, 'x') FROM COMPOSITION c",
+        "SELECT abs(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) \
+         FROM OBSERVATION o",
+        "SELECT round(o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude) \
+         FROM OBSERVATION o",
+        "SELECT current_date() FROM COMPOSITION c",
+        "SELECT current_timezone() FROM COMPOSITION c",
+        "SELECT now() FROM COMPOSITION c",
+    ] {
+        plan_ok(q);
+    }
+}
+
+/// `\*` / `\?` in a LIKE pattern are the literal characters (§Operators/LIKE).
+#[test]
+fn like_escapes_are_literal() {
+    assert_eq!(super::sql::aql_like_to_sql_for_tests("a*b"), "a%b");
+    assert_eq!(super::sql::aql_like_to_sql_for_tests("a?b"), "a_b");
+    assert_eq!(super::sql::aql_like_to_sql_for_tests(r"a\*b"), "a*b");
+    assert_eq!(super::sql::aql_like_to_sql_for_tests(r"a\?b"), "a?b");
+    assert_eq!(super::sql::aql_like_to_sql_for_tests("100%"), r"100\%");
+}

@@ -51,7 +51,7 @@ use super::error::{AqlError, SqlError};
 use super::ir::{
     AggFunc, ArchetypeConstraint, Bind, Coercion, Contained, ContainsTree, EhrField, EhrPredicate,
     Expr as IrExpr, LeafPath, LikePattern, Link, NameConstraint, NodeConstraint, Operand, OrderKey,
-    ParamValue, Params, PathTarget, QueryIr, RmSource, SelectColumn, SelectValue, Source,
+    ParamValue, Params, PathTarget, QueryIr, RmSource, ScalarFn, SelectColumn, SelectValue, Source,
     StdPredicate, TypeSet, TypedLit, VersionField, VersionScope,
 };
 use openehr_query::lexer::CompOp;
@@ -513,7 +513,10 @@ impl<'a> Builder<'a> {
         sub.and_where(col(&sn, "sys_version").eq(col(&sv, "sys_version")));
         sub.and_where(col(&sn, "num").eq(Expr::val(0)));
         sub.and_where(col(&sv, "kind").eq(Expr::val("EHR_STATUS")));
+        // Current = the latest TRUNK version (branches coexist with the trunk;
+        // RM common master06 latest_trunk_version).
         sub.and_where(call("upper_inf", vec![col(&sv, "sys_period")]));
+        sub.and_where(col(&sv, "branch_number").eq(Expr::val(0)));
         sub.and_where(
             col(&sn, "data")
                 .binary(BinOper::Custom("->>"), Expr::val("is_queryable"))
@@ -549,6 +552,8 @@ impl<'a> Builder<'a> {
             .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
         self.q
             .and_where(call("upper_inf", vec![col(&vo, "sys_period")]));
+        // Current = latest trunk (master06 latest_trunk_version).
+        self.q.and_where(col(&vo, "branch_number").eq(Expr::val(0)));
         self.q.and_where(col(&node, "vo_id").eq(col(&vo, "vo_id")));
         self.q
             .and_where(col(&node, "sys_version").eq(col(&vo, "sys_version")));
@@ -577,17 +582,23 @@ impl<'a> Builder<'a> {
     fn push_scope(&mut self, voa: &str, scope: &VersionScope) -> Result<(), AqlError> {
         match scope {
             VersionScope::Latest => {
+                // LATEST_VERSION = the latest TRUNK version (RM common master06
+                // latest_trunk_version; open branch tips coexist and are not
+                // "the latest version" of the container).
                 self.q
                     .and_where(call("upper_inf", vec![col(voa, "sys_period")]));
+                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
             }
             VersionScope::All => {}
             VersionScope::Predicate(p) if p.field == VersionField::TimeCommitted => {
-                // Version-at-time: the version whose validity contains the instant
-                // (`sys_period @> $t` — the typed `PgExpr::contains` operator).
+                // Version-at-time: the TRUNK version whose validity contains the
+                // instant (`sys_period @> $t`); a branch open at that instant
+                // coexists by design and must not duplicate the row.
                 let value = self.bind_value(&p.value)?;
                 self.q.and_where(
                     col(voa, "sys_period").contains(cast(Expr::val(value), "timestamptz")),
                 );
+                self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
             }
             VersionScope::Predicate(p) => {
                 let aud = self.ensure_audit(voa);
@@ -623,7 +634,12 @@ impl<'a> Builder<'a> {
             ArchetypeConstraint::NodeCode(c) | ArchetypeConstraint::Archetype(c) => c.clone(),
             ArchetypeConstraint::Param(p) => self.param_str(p)?,
         };
-        Ok(col(node, "archetype").eq(Expr::val(value)))
+        // Composite identifiers compare case-insensitively (BASE base_types
+        // master05 §"Composite Identifiers and Case") — an archetype id
+        // differing only by case identifies the same archetype. Storage stays
+        // case-preserving; only the comparison folds (served by the
+        // idx_node_archetype_lower functional index).
+        Ok(Expr::expr(Func::lower(col(node, "archetype"))).eq(Func::lower(Expr::val(value))))
     }
 
     fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
@@ -744,8 +760,16 @@ impl<'a> Builder<'a> {
                     sql_cols: vec![sql_col],
                 })
             }
-            SelectValue::Function { .. } => {
-                Err(SqlError::Unsupported("scalar function in SELECT".to_owned()).into())
+            SelectValue::Function { func, args } => {
+                let expr = self.scalar_fn_expr(*func, args)?;
+                let sql_col = format!("col{i}");
+                self.q.expr_as(to_jsonb(expr), Alias::new(sql_col.as_str()));
+                Ok(ColumnSpec {
+                    name,
+                    path: None,
+                    kind: CellKind::Scalar,
+                    sql_cols: vec![sql_col],
+                })
             }
         }
     }
@@ -842,6 +866,7 @@ impl<'a> Builder<'a> {
                 };
                 Ok(lhs.like(pat))
             }
+            IrExpr::Const(b) => Ok(Expr::val(*b)),
             IrExpr::Matches {
                 path,
                 values,
@@ -857,14 +882,83 @@ impl<'a> Builder<'a> {
         }
     }
 
+    /// Render a whitelisted scalar function call (QUERY master03 §Functions)
+    /// to `PostgreSQL`. Arity was validated at lowering; argument typing follows
+    /// each function's declared signature (string args extract as text,
+    /// numeric args through the magnitude coercion).
+    fn scalar_fn_expr(&mut self, func: ScalarFn, args: &[Operand]) -> Result<Expr, AqlError> {
+        let text = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Text);
+        let num = |this: &mut Self, i: usize| this.operand_value(&args[i], Coercion::Magnitude);
+        Ok(match func {
+            ScalarFn::Length => Expr::cust_with_exprs("length($1)", [text(self, 0)?]),
+            // SUBSTRING(expression, position[, length]) — 1-based positions,
+            // omitted length extracts to end-of-string (PG substr matches).
+            ScalarFn::Substring => match args.len() {
+                2 => {
+                    Expr::cust_with_exprs("substr($1, ($2)::int4)", [text(self, 0)?, num(self, 1)?])
+                }
+                _ => Expr::cust_with_exprs(
+                    "substr($1, ($2)::int4, ($3)::int4)",
+                    [text(self, 0)?, num(self, 1)?, num(self, 2)?],
+                ),
+            },
+            // POSITION(substring, expression): 1-based index of the first
+            // occurrence, 0 when absent — exactly PG strpos(expression, sub).
+            ScalarFn::Position => {
+                Expr::cust_with_exprs("strpos($2, $1)", [text(self, 0)?, text(self, 1)?])
+            }
+            // The string function CONTAINS(expression, substring) → Boolean.
+            ScalarFn::StrContains => {
+                Expr::cust_with_exprs("(strpos($1, $2) > 0)", [text(self, 0)?, text(self, 1)?])
+            }
+            ScalarFn::Concat | ScalarFn::ConcatWs => {
+                let name = if func == ScalarFn::Concat {
+                    "concat"
+                } else {
+                    "concat_ws"
+                };
+                let rendered = (0..args.len())
+                    .map(|i| text(self, i))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let placeholders = (1..=rendered.len())
+                    .map(|n| format!("${n}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Expr::cust_with_exprs(format!("{name}({placeholders})"), rendered)
+            }
+            ScalarFn::Abs => Expr::cust_with_exprs("abs($1)", [num(self, 0)?]),
+            ScalarFn::Mod => Expr::cust_with_exprs(
+                "mod(($1)::numeric, ($2)::numeric)",
+                [num(self, 0)?, num(self, 1)?],
+            ),
+            // CEIL/FLOOR return Integer (QUERY master03 §Numeric functions).
+            ScalarFn::Ceil => Expr::cust_with_exprs("(ceil($1))::int8", [num(self, 0)?]),
+            ScalarFn::Floor => Expr::cust_with_exprs("(floor($1))::int8", [num(self, 0)?]),
+            // ROUND(expression[, decimal]) — decimal defaults to 0.
+            ScalarFn::Round => match args.len() {
+                1 => Expr::cust_with_exprs("round(($1)::numeric, 0)", [num(self, 0)?]),
+                _ => Expr::cust_with_exprs(
+                    "round(($1)::numeric, ($2)::int4)",
+                    [num(self, 0)?, num(self, 1)?],
+                ),
+            },
+            // Date/time functions: the exact string formats of QUERY master03
+            // §Date and time functions.
+            ScalarFn::CurrentDate => Expr::cust("to_char(now(), 'YYYY-MM-DD')"),
+            ScalarFn::CurrentTime => Expr::cust("to_char(now(), 'HH24:MI:SS')"),
+            ScalarFn::CurrentDateTime | ScalarFn::Now => {
+                Expr::cust("to_char(now(), 'YYYY-MM-DD\"T\"HH24:MI:SS.MSTZH:TZM')")
+            }
+            ScalarFn::CurrentTimezone => Expr::cust("to_char(now(), 'TZH:TZM')"),
+        })
+    }
+
     fn operand_value(&mut self, op: &Operand, coercion: Coercion) -> Result<Expr, AqlError> {
         match op {
             Operand::Path(t) => self.value_expr(t, ValueMode::Value(coercion)),
             Operand::Literal(lit) => Ok(coerce_rhs(literal_value(lit), coercion)),
             Operand::Param(p) => Ok(coerce_rhs(self.param_value(p)?, coercion)),
-            Operand::Function { .. } => {
-                Err(SqlError::Unsupported("scalar function operand".to_owned()).into())
-            }
+            Operand::Function { func, args } => self.scalar_fn_expr(*func, args),
         }
     }
 
@@ -1136,9 +1230,13 @@ fn aggregate_expr(func: AggFunc, inner: Option<Expr>, distinct: bool) -> Expr {
 }
 
 /// The typed SQL for a VERSION metadata field, off the `vo_version`/`audit`
-/// aliases (the `uid` is synthesized as `vo_id::system_id::sys_version` via the
-/// typed `PgExpr::concatenate` `||` operator).
-fn version_field_expr(voa: &str, aud: &str, field: VersionField, system_id: &str) -> Expr {
+/// aliases. The `uid` is synthesized as
+/// `vo_id::creating_system_id::version_tree_id` from the STORED per-version
+/// identity columns (never the live config `system_id` — the creating system
+/// is immutable per version, RM common master06 §Distributed versioning) via
+/// the typed `PgExpr::concatenate` `||` operator; the tree id renders
+/// `trunk[.branch.version]`.
+fn version_field_expr(voa: &str, aud: &str, field: VersionField, _system_id: &str) -> Expr {
     let concat = |parts: Vec<Expr>| -> Expr {
         parts
             .into_iter()
@@ -1149,9 +1247,17 @@ fn version_field_expr(voa: &str, aud: &str, field: VersionField, system_id: &str
         VersionField::Uid => concat(vec![
             cast(col(voa, "vo_id"), "text"),
             Expr::val("::"),
-            Expr::val(system_id.to_owned()),
+            col(voa, "creating_system_id"),
             Expr::val("::"),
-            cast(col(voa, "sys_version"), "text"),
+            cast(col(voa, "trunk_version"), "text"),
+            Expr::cust_with_exprs(
+                "CASE WHEN $1 > 0 THEN '.' || $2 || '.' || $3 ELSE '' END",
+                [
+                    col(voa, "branch_number"),
+                    cast(col(voa, "branch_number"), "text"),
+                    cast(col(voa, "branch_version"), "text"),
+                ],
+            ),
         ]),
         VersionField::TimeCommitted => col(aud, "time_committed"),
         VersionField::SystemId => col(aud, "system_id"),
@@ -1204,15 +1310,34 @@ fn jsonpath(parts: &[String]) -> String {
 
 /// Translate an AQL `LIKE` pattern (`*` any, `?` one) to a SQL `LIKE` pattern,
 /// escaping literal `%`/`_`/`\`. QUERY §Operators/LIKE.
+#[cfg(test)]
+pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
+    aql_like_to_sql(pattern)
+}
+
 fn aql_like_to_sql(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len());
-    for ch in pattern.chars() {
+    let mut chars = pattern.chars().peekable();
+    while let Some(ch) = chars.next() {
         match ch {
             '*' => out.push('%'),
             '?' => out.push('_'),
             '%' => out.push_str("\\%"),
             '_' => out.push_str("\\_"),
-            '\\' => out.push_str("\\\\"),
+            // AQL escapes: `\*` / `\?` are the LITERAL characters (QUERY
+            // master03 §Operators/LIKE) — plain text in SQL LIKE; `\\` is a
+            // literal backslash (SQL-escaped).
+            '\\' => match chars.next() {
+                Some('*') => out.push('*'),
+                Some('?') => out.push('?'),
+                Some(other) => {
+                    out.push_str("\\\\");
+                    if other != '\\' {
+                        out.push(other);
+                    }
+                }
+                None => out.push_str("\\\\"),
+            },
             other => out.push(other),
         }
     }

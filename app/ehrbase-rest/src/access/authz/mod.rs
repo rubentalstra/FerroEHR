@@ -70,9 +70,11 @@ pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>
 pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
 
 /// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
-/// [`ehrbase_sm`] in the binary). `version = None` = the current version.
+/// [`ehrbase_sm`] in the binary). `version` is the `VERSION_TREE_ID` lexical
+/// form (`N` or `N.B.V` — trunk or branch, RM common master06 §Version tree);
+/// `None` = the current version.
 pub type TemplateOfVersionFn =
-    Arc<dyn Fn(String, Option<i32>) -> ResolverFuture<Option<String>> + Send + Sync>;
+    Arc<dyn Fn(String, Option<String>) -> ResolverFuture<Option<String>> + Send + Sync>;
 
 /// The DB-backed attribute resolvers the ABAC PEP calls (§6). Defined here so
 /// the REST layer can hold them; the closures are built in the binary (which
@@ -369,7 +371,7 @@ mod tests {
             subject: Arc::new(|ehr_id: String| {
                 Box::pin(async move { Ok((ehr_id == "known").then(|| "subject-1".to_owned())) })
             }),
-            template_of_version: Arc::new(|_vo: String, version: Option<i32>| {
+            template_of_version: Arc::new(|_vo: String, version: Option<String>| {
                 Box::pin(async move { Ok(version.map(|v| format!("t.v{v}"))) })
             }),
         };
@@ -379,7 +381,7 @@ mod tests {
         );
         assert_eq!((resolvers.subject)("other".to_owned()).await.unwrap(), None);
         assert_eq!(
-            (resolvers.template_of_version)("vo".to_owned(), Some(3))
+            (resolvers.template_of_version)("vo".to_owned(), Some("3".to_owned()))
                 .await
                 .unwrap(),
             Some("t.v3".to_owned())

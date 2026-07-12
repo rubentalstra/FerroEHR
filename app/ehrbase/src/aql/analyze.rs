@@ -67,12 +67,18 @@ pub(crate) enum BindingKind {
 }
 
 impl Bindings {
-    pub(crate) fn insert(&mut self, var: String, binding: Binding) {
-        self.vars.insert(var, binding);
+    /// Variable names are not case-sensitive (QUERY master03
+    /// §Variables/Syntax) — bindings key on the case-folded name.
+    pub(crate) fn insert(&mut self, var: &str, binding: Binding) {
+        self.vars.insert(var.to_ascii_lowercase(), binding);
+    }
+
+    pub(crate) fn contains(&self, var: &str) -> bool {
+        self.vars.contains_key(&var.to_ascii_lowercase())
     }
 
     fn get(&self, var: &str) -> Option<&Binding> {
-        self.vars.get(var)
+        self.vars.get(&var.to_ascii_lowercase())
     }
 }
 
@@ -315,7 +321,15 @@ fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarge
         )
         .into());
     }
-    let op = path.path.as_ref().expect("ehr_status head implies a path");
+    let Some(op) = path.path.as_ref() else {
+        // Unreachable in practice: this branch is entered only for
+        // `e/ehr_status…` heads, which always carry a path; reject typed
+        // rather than panic.
+        return Err(AqlFeatureError::UnsupportedEhrStatusPath(
+            "missing ehr_status path".to_owned(),
+        )
+        .into());
+    };
     if op.parts[0].predicate.is_some() {
         return Err(AqlFeatureError::UnsupportedEhrStatusPath(
             "predicate on ehr_status".to_owned(),

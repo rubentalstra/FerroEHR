@@ -1,0 +1,160 @@
+//! Measurement-service helpers — `MEASUREMENT_SERVICE.is_valid_units_string`
+//! (RM support `measurement_service.adoc`: "True if the units string is a
+//! valid string according to the HL7 UCUM specification"; RM data_types
+//! master06: `DV_QUANTITY.units` is a UCUM case-sensitive code by default).
+//!
+//! This is a SYNTAX validator over the UCUM grammar (unitsofmeasure.org §2.2
+//! "Syntax and Semantics" term grammar) — it does not carry the UCUM atom
+//! table, so it validates the shape (terms, `.`/`/` operators, exponents,
+//! factors, `[...]` atom segments, `{...}` annotations, parentheses), not
+//! whether an atom is a registered UCUM unit.
+//!
+//! PORT NOTE (CNF corpus adjudication): commit-time REJECTION of non-UCUM
+//! `DV_QUANTITY.units` is deliberately NOT wired — the CNF's own valid data
+//! sets carry non-UCUM units (`°C`, `mmHg`, `pH`), and the RM declares no
+//! `Units_valid` invariant on `DV_QUANTITY`; template-declared unit
+//! constraints are enforced by the archetype-conformance walker instead.
+
+/// `MEASUREMENT_SERVICE.is_valid_units_string`: UCUM syntax validity
+/// (case-sensitive form).
+#[must_use]
+pub fn is_valid_units_string(units: &str) -> bool {
+    let bytes = units.as_bytes();
+    if units.is_empty() || !units.is_ascii() {
+        return false;
+    }
+    let mut pos = 0usize;
+    // mainTerm = ['/'] term
+    if bytes[pos] == b'/' {
+        pos += 1;
+    }
+    match parse_term(bytes, pos) {
+        Some(end) => end == bytes.len(),
+        None => false,
+    }
+}
+
+/// term = component { ('.' | '/') component }
+fn parse_term(b: &[u8], mut pos: usize) -> Option<usize> {
+    pos = parse_component(b, pos)?;
+    while pos < b.len() && (b[pos] == b'.' || b[pos] == b'/') {
+        pos = parse_component(b, pos + 1)?;
+    }
+    Some(pos)
+}
+
+/// component = '(' term ')' [exponent] | annotation | annotatable [annotation]
+fn parse_component(b: &[u8], mut pos: usize) -> Option<usize> {
+    if pos >= b.len() {
+        return None;
+    }
+    if b[pos] == b'(' {
+        pos = parse_term(b, pos + 1)?;
+        if pos >= b.len() || b[pos] != b')' {
+            return None;
+        }
+        pos += 1;
+        pos = parse_exponent_opt(b, pos);
+        return Some(pos);
+    }
+    if b[pos] == b'{' {
+        return parse_annotation(b, pos);
+    }
+    // annotatable = simple-unit [exponent]; simple-unit = factor | atom
+    pos = parse_atom_or_factor(b, pos)?;
+    pos = parse_exponent_opt(b, pos);
+    if pos < b.len() && b[pos] == b'{' {
+        pos = parse_annotation(b, pos)?;
+    }
+    Some(pos)
+}
+
+/// An atom: printable ASCII excluding the operator/meta characters, with
+/// balanced `[...]` segments; or a bare integer factor.
+fn parse_atom_or_factor(b: &[u8], mut pos: usize) -> Option<usize> {
+    let start = pos;
+    while pos < b.len() {
+        match b[pos] {
+            b'[' => {
+                pos += 1;
+                while pos < b.len() && b[pos] != b']' {
+                    if !(0x21..=0x7e).contains(&b[pos]) || b[pos] == b'[' {
+                        return None;
+                    }
+                    pos += 1;
+                }
+                if pos >= b.len() {
+                    return None; // unbalanced '['
+                }
+                pos += 1; // ']'
+            }
+            b'.' | b'/' | b'(' | b')' | b'{' | b'}' | b']' => break,
+            // exponent digits/sign are consumed by parse_exponent_opt; inside
+            // an atom, digits terminate the symbol part (e.g. `mm3`).
+            c if (0x21..=0x7e).contains(&c) => pos += 1,
+            _ => return None, // whitespace / non-printable / non-ASCII
+        }
+    }
+    (pos > start).then_some(pos)
+}
+
+/// exponent = ['+'|'-'] digits — but bare trailing digits are already consumed
+/// by the atom scan (`mm3`), so this handles the signed form (`s-1`, `m+2`).
+fn parse_exponent_opt(b: &[u8], mut pos: usize) -> usize {
+    if pos < b.len() && (b[pos] == b'+' || b[pos] == b'-') {
+        let mut digits = pos + 1;
+        while digits < b.len() && b[digits].is_ascii_digit() {
+            digits += 1;
+        }
+        if digits > pos + 1 {
+            pos = digits;
+        }
+    }
+    pos
+}
+
+/// annotation = '{' printable-except-braces '}'
+fn parse_annotation(b: &[u8], mut pos: usize) -> Option<usize> {
+    debug_assert_eq!(b[pos], b'{');
+    pos += 1;
+    while pos < b.len() && b[pos] != b'}' {
+        if !(0x21..=0x7e).contains(&b[pos]) || b[pos] == b'{' {
+            return None;
+        }
+        pos += 1;
+    }
+    (pos < b.len()).then_some(pos + 1)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_valid_units_string;
+
+    /// UCUM syntax forms (unitsofmeasure.org §2.2) — accepted and rejected.
+    #[test]
+    fn ucum_syntax() {
+        for ok in [
+            "kg",
+            "mm[Hg]",
+            "kg/m2",
+            "ms-1",
+            "km/h",
+            "1",
+            "1/d",
+            "/min",
+            "10*3/ul",
+            "cm2",
+            "mol/l",
+            "%",
+            "Cel",
+            "m.s-2",
+            "{beats}/min",
+            "mg{total}",
+        ] {
+            assert!(is_valid_units_string(ok), "{ok} must be valid UCUM syntax");
+        }
+        for bad in ["", "°C", "kg m", "mm[Hg", "a{b{c}}", "kg//m", "(kg"] {
+            assert!(!is_valid_units_string(bad), "{bad:?} must be invalid");
+        }
+    }
+}

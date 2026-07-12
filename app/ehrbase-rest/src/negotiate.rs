@@ -378,6 +378,20 @@ pub(crate) fn prefers_representation(headers: &HeaderMap) -> bool {
         })
 }
 
+/// Whether the client asked for `OBJECT_REF` resolution on `Prefer`
+/// (`resolve_refs` — ITS-REST `Requests_and_responses` §Representation details
+/// negotiation: "services that implement `OBJECT_REF` resolution SHOULD accept
+/// and honour it").
+pub(crate) fn prefers_resolve_refs(headers: &HeaderMap) -> bool {
+    headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|p| {
+            p.split(',')
+                .any(|t| t.trim().eq_ignore_ascii_case("resolve_refs"))
+        })
+}
+
 /// Build the (path-absolute) `Location` URL for an EHR sub-resource under the
 /// configured base path (`headers/Location_*.yaml`). `segment` is the resource
 /// collection (`composition`/`ehr_status`/`directory`/`contribution`); `None`
@@ -516,6 +530,48 @@ pub(crate) fn error_with_meta(
         set_resource_headers(&mut out, base_path, segment, meta);
     }
     out
+}
+
+/// The `201_Template_adl1_4_upload` response: the endpoint produces
+/// `application/xml` only — `Prefer: return=representation` → the OPT XML
+/// itself; `return=identifier` → the template id (text); missing or
+/// `return=minimal` → an empty body. `Location` + `ETag` carry the template
+/// id on every case.
+pub(crate) fn template_upload_response(
+    headers: &HeaderMap,
+    location: &str,
+    template_id: &str,
+    opt_xml: &str,
+) -> Response {
+    let prefer = headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    let mut resp = if prefer
+        .split(',')
+        .any(|t| t.trim().eq_ignore_ascii_case("return=representation"))
+    {
+        xml_body(StatusCode::CREATED, opt_xml.to_owned())
+    } else if prefer
+        .split(',')
+        .any(|t| t.trim().eq_ignore_ascii_case("return=identifier"))
+    {
+        let mut r = (StatusCode::CREATED, template_id.to_owned()).into_response();
+        r.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        r
+    } else {
+        StatusCode::CREATED.into_response()
+    };
+    if let Ok(v) = HeaderValue::from_str(location) {
+        resp.headers_mut().insert(header::LOCATION, v);
+    }
+    if let Ok(v) = HeaderValue::from_str(&format!("W/\"{template_id}\"")) {
+        resp.headers_mut().insert(header::ETAG, v);
+    }
+    resp
 }
 
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)

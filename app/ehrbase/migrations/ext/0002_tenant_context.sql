@@ -1,4 +1,5 @@
--- ext schema: multi-tenancy session context (ADR-015 / E2).
+-- ext schema: multi-tenancy session context (an extension — no openEHR spec
+-- governs multi-tenancy; E2).
 --
 -- Appended to the ext baseline (0001 — append-only forever after). This defines
 -- the single function that BOTH the RLS policies AND the `tenant_id` column
@@ -6,13 +7,13 @@
 -- tenant". Runs with search_path = ext.
 --
 -- The reserved DEFAULT tenant is the nil UUID
--- 00000000-0000-0000-0000-000000000000 (ADR-015 §3): it owns every row created
+-- 00000000-0000-0000-0000-000000000000: it owns every row created
 -- while tenancy is OFF. A session that has NOT set `ehrbase.tenant_id` — every
 -- connection today, every existing test, every ECC run — resolves to this
 -- default tenant, so single-tenant behaviour is byte-identical and the RLS
 -- policy is a true-check. A tenant-scoped request sets
 -- `SET ehrbase.tenant_id = '<uuid>'` on its connection (the app pool's
--- before_acquire hook, ADR-015 §4), and this function then returns that uuid, so:
+-- before_acquire hook), and this function then returns that uuid, so:
 --   * the tenant_id column DEFAULT auto-stamps new rows with the request's
 --     tenant (no per-INSERT wiring anywhere in the service), and
 --   * the RLS policy filters reads/writes to the request's tenant,
@@ -28,4 +29,4 @@ LANGUAGE sql STABLE PARALLEL SAFE AS $$
     )
 $$;
 
-COMMENT ON FUNCTION current_tenant_id() IS 'ADR-015 §3: the current request''s tenant id from the ehrbase.tenant_id session GUC, or the reserved default tenant (nil uuid) when unset. Read by both the tenant_id column DEFAULTs and the RLS policies on the ehr scoping tables, so single-tenant (GUC unset) is byte-identical to pre-tenancy behaviour.';
+COMMENT ON FUNCTION current_tenant_id() IS 'The current request''s tenant id from the ehrbase.tenant_id session GUC, or the reserved default tenant (nil uuid) when unset. Read by both the tenant_id column DEFAULTs and the RLS policies on the ehr scoping tables, so single-tenant (GUC unset) is byte-identical to pre-tenancy behaviour.';

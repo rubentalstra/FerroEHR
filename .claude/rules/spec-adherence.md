@@ -25,6 +25,14 @@ memory, not intuition.
 - **Cite the source:** conformance-relevant decisions name the spec file +
   section heading in the commit/PR description. A deliberate deviation or gap
   gets a `// PORT NOTE:` with the spec reference and the reason.
+- **Spec citations ONLY — never ADR citations (owner hard rule, 2026-07-11).**
+  In code comments, SQL schema comments, doc comments, and PORT NOTEs, justify
+  behaviour by citing the openEHR spec file + section — never `ADR-NNN`. ADRs
+  get superseded and leave stale statements in code; spec citations remain
+  findable when a spec bumps. Where the specs are SILENT on a decision
+  (storage mechanics, indexing, infra, extension features), flag it
+  explicitly: "no openEHR spec governs this — our own design/extension".
+  Scrub ADR citations from any file you touch.
 - **Never resolve a spec question from EHRbase behaviour alone.** EHRbase is
   prior art; if it and the spec text disagree, the spec text wins and the
   divergence is worth a note.

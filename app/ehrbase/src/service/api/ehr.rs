@@ -268,11 +268,12 @@ impl EhrStatusService for EhrbaseService {
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
-        a_version: i32,
+        a_version: &str,
     ) -> Result<Value, SmError> {
+        let tree = version_id::parse_tree_id(a_version)?;
         // F-01-03: the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
         Ok(self
-            .status_by_version(an_ehr_id, a_version_uid, a_version)
+            .status_by_version(an_ehr_id, a_version_uid, tree)
             .await?
             .body)
     }
@@ -316,11 +317,10 @@ impl EhrStatusService for EhrbaseService {
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
-        a_version: i32,
+        a_version: &str,
     ) -> Result<Value, SmError> {
-        Ok(self
-            .status_version(an_ehr_id, a_version_uid, a_version)
-            .await?)
+        let tree = version_id::parse_tree_id(a_version)?;
+        Ok(self.status_version(an_ehr_id, a_version_uid, tree).await?)
     }
 }
 
@@ -560,6 +560,16 @@ impl EhrContributionService for EhrbaseService {
     ) -> Result<Value, SmError> {
         // Inherent `get_contribution` (returns the CONTRIBUTION Value).
         Ok(self.get_contribution(an_ehr_id, a_contrib_id).await?)
+    }
+
+    async fn get_contribution_resolved(
+        &self,
+        an_ehr_id: Uuid,
+        a_contrib_id: Uuid,
+    ) -> Result<Value, SmError> {
+        Ok(self
+            .get_contribution_resolved(an_ehr_id, a_contrib_id)
+            .await?)
     }
 
     async fn commit_contribution(

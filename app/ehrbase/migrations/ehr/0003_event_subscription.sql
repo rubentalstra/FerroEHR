@@ -1,27 +1,28 @@
--- ehr schema: the event-filter subscription store (ADR-014 §5 — "Event
+-- ehr schema: the event-filter subscription store (an extension — no openEHR
+-- spec governs eventing; "Event
 -- Trigger" parity).
 --
--- Append-only on the ADR-013 baseline (0001) + the eventing outbox (0002). A
+-- Append-only on the baseline (0001) + the eventing outbox (0002). A
 -- subscription is a server-side filter over the PHI-free event stream: its
--- predicates select which committed-version events a consumer wants. ADR-014 §5
+-- predicates select which committed-version events a consumer wants.
 -- maps each subscription to an AMQP topic binding key on the `ehrbase.events`
 -- exchange (key <kind>.<change_type>.<template_id|->), so the broker does the
 -- fan-out: the publisher declares a durable per-subscription queue
 -- `ehrbase.events.<name>` bound with that key. An AQL-shaped condition language
--- is explicitly deferred (ADR-014 §5). Subscription CRUD is a config-gated admin
+-- is explicitly deferred. Subscription CRUD is a config-gated admin
 -- extension surface (ehrbase-rest). Follows the baseline discipline: named
 -- constraints (pk_/uq_), COMMENT ON everything, role-guarded grants. Runs with
 -- search_path = ehr, ext.
 
--- ── event_subscription (ADR-014 §5) ──────────────────────────────────────────
+-- ── event_subscription ──────────────────────────────────────────
 CREATE TABLE event_subscription (
     -- Stable subscription identity (uuidv7, PG18): time-ordered, index-friendly,
     -- and the addressable id of the admin CRUD surface.
     id           uuid NOT NULL DEFAULT uuidv7(),
     -- The human-chosen subscription name — also the suffix of its broker queue
-    -- (`ehrbase.events.<name>`, ADR-014 §5). UNIQUE so one name = one queue.
+    -- (`ehrbase.events.<name>`). UNIQUE so one name = one queue.
     name         text NOT NULL,
-    -- ── Predicates (ADR-014 §5) ──────────────────────────────────────────────
+    -- ── Predicates ──────────────────────────────────────────────
     -- Each predicate is a versioned-object facet the subscription matches on;
     -- NULL means "wildcard — match any value for this facet". The three broker-
     -- routable facets (kind/change_type/template_id) form the topic binding key,
@@ -38,12 +39,12 @@ CREATE TABLE event_subscription (
     -- EHR_STATUS/FOLDER/deletes). A predicate NULL = any template.
     template_id  text,
     -- archetype: the root archetype/concept id. NULL = any archetype. PORT NOTE
-    -- (ADR-014 §5): the topic routing key is the fixed three-field
+    --: the topic routing key is the fixed three-field
     -- <kind>.<change_type>.<template_id|-> — it carries NO archetype segment, so
     -- this predicate is persisted as part of the full subscription model but is
     -- NOT expressible in a topic binding key today (broker-side archetype
     -- filtering would need a header exchange or a consumer-side filter — deferred
-    -- with the AQL-shaped condition language, ADR-014 §5).
+    -- with the AQL-shaped condition language).
     archetype    text,
     -- Whether the subscription is active: the publisher declares/binds a queue
     -- only for enabled subscriptions. Disabled = retained but not bound.
@@ -55,19 +56,19 @@ CREATE TABLE event_subscription (
 );
 
 -- The publisher's startup/refresh scan: the enabled subscriptions to declare +
--- bind queues for (ADR-014 §5).
+-- bind queues for.
 CREATE INDEX idx_event_subscription_enabled ON event_subscription (enabled)
     WHERE enabled;
 
-COMMENT ON TABLE event_subscription IS 'Event-filter subscriptions (ADR-014 §5, "Event Trigger" parity): server-side predicate filters over the PHI-free event stream. Each enabled row maps to an AMQP topic binding key <kind>.<change_type>.<template_id|-> (NULL predicate → the `*` topic wildcard) and a durable queue ehrbase.events.<name>; the broker does the fan-out.';
+COMMENT ON TABLE event_subscription IS 'Event-filter subscriptions (an extension — no openEHR spec governs eventing; "Event Trigger" parity): server-side predicate filters over the PHI-free event stream. Each enabled row maps to an AMQP topic binding key <kind>.<change_type>.<template_id|-> (NULL predicate → the `*` topic wildcard) and a durable queue ehrbase.events.<name>; the broker does the fan-out.';
 COMMENT ON COLUMN event_subscription.name IS 'Subscription name; also the suffix of its broker queue (ehrbase.events.<name>). UNIQUE.';
 COMMENT ON COLUMN event_subscription.kind IS 'Predicate: versioned-object RM type (COMPOSITION/EHR_STATUS/FOLDER/EHR_ACCESS). NULL = wildcard (any kind).';
 COMMENT ON COLUMN event_subscription.change_type IS 'Predicate: audit change-type group code (249/251/523/666/…). NULL = wildcard (any change type).';
 COMMENT ON COLUMN event_subscription.template_id IS 'Predicate: OPT template id a COMPOSITION was committed against. NULL = wildcard (any template).';
-COMMENT ON COLUMN event_subscription.archetype IS 'Predicate: root archetype/concept id. NULL = wildcard. PORT NOTE (ADR-014 §5): not expressible in the three-field topic routing key — persisted but not broker-routable today.';
+COMMENT ON COLUMN event_subscription.archetype IS 'Predicate: root archetype/concept id. NULL = wildcard. PORT NOTE: not expressible in the three-field topic routing key — persisted but not broker-routable today.';
 COMMENT ON COLUMN event_subscription.enabled IS 'Whether the subscription is active (its queue is declared/bound). Disabled rows are retained but unbound.';
 
--- ── Grants (ADR-013 §3) ──────────────────────────────────────────────────────
+-- ── Grants ──────────────────────────────────────────────────────
 -- The baseline set ALTER DEFAULT PRIVILEGES for ehrbase_app/ehrbase_reader, so a
 -- table the migrator creates afterwards is auto-granted; repeated explicitly
 -- (role-guarded, like the baseline + 0002) so this migration is self-contained

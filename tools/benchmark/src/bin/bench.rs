@@ -101,10 +101,10 @@ async fn main() {
 fn resolve_target(
     base_url: Option<String>,
     implementation: Implementation,
-    auth: Option<String>,
+    auth: Option<&str>,
 ) -> Result<Target, String> {
     let base = base_url.ok_or_else(|| "--base-url is required".to_owned())?;
-    let cred = auth.as_deref().map(Credential::parse).transpose()?;
+    let cred = auth.map(Credential::parse).transpose()?;
     Target::new(implementation, base, cred.clone(), cred).map_err(|e| e.to_string())
 }
 
@@ -116,7 +116,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
             return 2;
         }
     };
-    let target = match resolve_target(args.base_url, implementation, args.auth) {
+    let target = match resolve_target(args.base_url, implementation, args.auth.as_deref()) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: {e}");
@@ -194,7 +194,11 @@ async fn cmd_run(args: RunArgs) -> i32 {
 }
 
 async fn cmd_seed(args: SeedArgs) -> i32 {
-    let target = match resolve_target(args.base_url, Implementation::EhrbaseRs, args.auth) {
+    let target = match resolve_target(
+        args.base_url,
+        Implementation::EhrbaseRs,
+        args.auth.as_deref(),
+    ) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: {e}");

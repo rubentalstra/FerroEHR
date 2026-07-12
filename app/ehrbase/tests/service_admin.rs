@@ -209,7 +209,7 @@ async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
     svc.create_directory(
         ehr_uuid,
         uv(
-            json!({ "_type": "FOLDER", "name": { "_type": "DV_TEXT", "value": "root" } }),
+            json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } }),
             "249",
             None,
         ),
@@ -448,8 +448,8 @@ async fn admin_statistics_per_service_and_time_range() {
         ),
     ] {
         sqlx::query(AssertSqlSafe(format!(
-            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, sys_period, contribution_id, audit_id, creating_system_id) \
-             VALUES ($1, 'COMPOSITION', $2, $3, {period}, $4, $5, 'ehrbase-rs.test')"
+            "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id) \
+             VALUES ($1, 'COMPOSITION', $2, $3, $3, {period}, $4, $5, 'ehrbase-rs.test')"
         )))
         .bind(vo)
         .bind(ehr)

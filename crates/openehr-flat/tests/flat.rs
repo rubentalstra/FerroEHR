@@ -397,3 +397,57 @@ fn multimedia_and_parsable_leaves_are_valid_rm() {
     let rm = from_flat(&to_map(&flat), wt).unwrap();
     assert!(is_valid_rm(&rm), "multimedia from_flat valid RM: {rm}");
 }
+
+/// The SDT path+terse coded form `"terminology::code|value|"` parses into the
+/// full DV_CODED_TEXT (SIM-B master04 §S_DV_CODED_TEXT; the regular
+/// `|code`/`|terminology`/`|value` form stays the emitted shape).
+#[test]
+fn terse_coded_text_parses() {
+    let wts = web_templates();
+    let wt = wts
+        .get("Corona_Anamnese")
+        .expect("Corona_Anamnese web template");
+    let comp = load("compo_corona.json");
+    let flat0 = to_flat(&comp, wt).unwrap();
+    // Find a TREE coded leaf's |code key (not a special-cased `ctx/…` or
+    // root-level `category`/`language`/`territory` shortcut) and replace the
+    // trio with the terse form.
+    let code_key = flat0
+        .keys()
+        .find(|k| {
+            k.ends_with("|code")
+                && !k.starts_with("ctx/")
+                && !k.ends_with("/category|code")
+                && !k.ends_with("/language|code")
+                && !k.ends_with("/territory|code")
+                && k.matches('/').count() >= 2
+        })
+        .expect("a coded tree leaf in the fixture")
+        .clone();
+    let base = code_key.trim_end_matches("|code").to_owned();
+    let code = flat0[&code_key].as_str().unwrap().to_owned();
+    let terminology = flat0
+        .get(&format!("{base}|terminology"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("local")
+        .to_owned();
+    let value = flat0
+        .get(&format!("{base}|value"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_owned();
+    let mut terse = flat0.clone();
+    terse.shift_remove(&code_key);
+    terse.shift_remove(&format!("{base}|terminology"));
+    terse.shift_remove(&format!("{base}|value"));
+    terse.insert(
+        base.clone(),
+        serde_json::Value::String(format!("{terminology}::{code}|{value}|")),
+    );
+    let rm = from_flat(&to_map(&terse), wt).expect("terse coded form parses");
+    let rm_regular = from_flat(&to_map(&flat0), wt).unwrap();
+    assert_eq!(
+        rm, rm_regular,
+        "the terse and regular coded forms build the identical RM"
+    );
+}

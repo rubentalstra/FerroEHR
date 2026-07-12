@@ -38,3 +38,11 @@ and the spec citation (`docs/specs/openehr/<path>` + heading, or CNF
 test-case id). If the spec is silent on a disputed point, report that as its
 own finding (a `// PORT NOTE:`/ADR decision point), not as a violation.
 State honestly what you did not review. You never edit files — findings only.
+
+## Citation discipline (owner hard rule)
+
+Cite ONLY the openEHR specs (file + section) in code/schema/doc comments and
+findings — never an ADR (`ADR-NNN`). ADRs get superseded and leave stale
+claims; spec citations stay findable. Where the specs are silent, write the
+explicit flag "no openEHR spec governs this — our own design/extension".
+Treat any ADR citation you encounter as a defect to scrub in files you touch.

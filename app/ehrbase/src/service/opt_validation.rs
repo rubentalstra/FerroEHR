@@ -38,8 +38,8 @@
 use std::collections::HashSet;
 
 use openehr_its::opt14::{
-    CArchetypeRoot, CAttribute, CObject, Cardinality, FlatArchetypeOntology, Intervalofinteger,
-    OperationalTemplate,
+    ArchetypeInternalRef, ArchetypeSlot, CArchetypeRoot, CAttribute, CObject, CPrimitive,
+    Cardinality, ConstraintRef, FlatArchetypeOntology, Intervalofinteger, OperationalTemplate,
 };
 use openehr_rm::model;
 
@@ -79,6 +79,11 @@ const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
     ("EVENT", "offset"),
     ("POINT_EVENT", "offset"),
     ("INTERVAL_EVENT", "offset"),
+    // DV_PROPORTION.is_integral is a *computed* function in current RM
+    // (Boolean, org.openehr.rm.data_types dv_proportion) — RM 1.0.x-era
+    // tooling emitted it as a constrainable stored attribute (the vendored
+    // Better corpus templates).
+    ("DV_PROPORTION", "is_integral"),
 ];
 
 impl Violation {
@@ -102,13 +107,27 @@ pub(super) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), Ser
     })
 }
 
+/// The per-walk validation context: the globally-collected code sets plus
+/// whether the artefact declares any `constraint_definitions` at all (which
+/// gates VACDF — see `check_constraint_ref`).
+struct Ctx {
+    defined_at: HashSet<String>,
+    defined_ac: HashSet<String>,
+    has_constraint_defs: bool,
+}
+
 fn check(opt: &OperationalTemplate) -> Result<(), Violation> {
     // Terminology-side rules first (cheap; no tree recursion needed beyond code
     // collection).
-    let defined_at = collect_defined_at_codes(opt);
-    let defined_ac = collect_defined_ac_codes(opt);
-    check_term_bindings(opt, &defined_at)?; // VTTBK
-    check_constraint_bindings(opt, &defined_ac)?; // VTCBK
+    let ctx = Ctx {
+        defined_at: collect_defined_at_codes(opt),
+        defined_ac: collect_defined_ac_codes(opt),
+        has_constraint_defs: flat_ontologies(opt)
+            .iter()
+            .any(|o| o.constraint_definitions.iter().any(|s| !s.items.is_empty())),
+    };
+    check_term_bindings(opt, &ctx.defined_at)?; // VTTBK
+    check_constraint_bindings(opt, &ctx.defined_ac)?; // VTCBK
     check_language_consistency(opt)?; // VTLC
 
     // RM-conformance + structural rules walk the flattened definition tree.
@@ -118,9 +137,14 @@ fn check(opt: &OperationalTemplate) -> Result<(), Violation> {
         opt.definition.rm_type_name.as_str(),
         &opt.definition.node_id,
     )?;
-    check_node_id(&opt.definition.node_id, &defined_at)?; // VATID (root)
+    check_node_id(&opt.definition.node_id, &ctx.defined_at)?; // VATID (root)
+    // VARID / VARDT on the root archetype id (ADL1.4 master08 lines 544/556).
+    check_archetype_id(
+        &opt.definition.archetype_id.value,
+        opt.definition.rm_type_name.as_str(),
+    )?;
     for attr in &opt.definition.attributes {
-        walk_attribute(attr, opt.definition.rm_type_name.as_str(), &defined_at)?;
+        walk_attribute(attr, opt.definition.rm_type_name.as_str(), &ctx)?;
     }
     Ok(())
 }
@@ -129,11 +153,7 @@ fn check(opt: &OperationalTemplate) -> Result<(), Violation> {
 
 /// Recurse into one constrained attribute of an object whose RM type is
 /// `parent_rm`.
-fn walk_attribute(
-    attr: &CAttribute,
-    parent_rm: &str,
-    defined_at: &HashSet<String>,
-) -> Result<(), Violation> {
+fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), Violation> {
     let (attr_name, existence, children, cardinality) = match attr {
         CAttribute::CSingleAttribute(a) => (
             a.rm_attribute_name.as_str(),
@@ -148,6 +168,52 @@ fn walk_attribute(
             Some(&a.cardinality),
         ),
     };
+
+    // C_ATTRIBUTE invariant Rm_attribute_name_valid: `not rm_attribute_name.
+    // is_empty` (AOM1.4 c_attribute class file, Invariants).
+    if attr_name.is_empty() {
+        return Err(Violation::new(
+            "Rm_attribute_name_valid",
+            format!("an attribute constraint under '{parent_rm}' has an empty rm_attribute_name"),
+        ));
+    }
+
+    // C_ATTRIBUTE invariant Existence_set: `existence.lower >= 0 and
+    // existence.upper <= 1` (AOM1.4 c_attribute class file, Invariants).
+    if iv_lower(existence) < 0
+        || existence.upper_unbounded
+        || iv_upper(existence).is_none_or(|u| u > 1)
+        || iv_upper(existence).is_some_and(|u| u < iv_lower(existence))
+    {
+        return Err(Violation::new(
+            "Existence_set",
+            format!(
+                "attribute '{attr_name}' on '{parent_rm}' has an existence outside 0..1 \
+                 (existence.lower >= 0 and existence.upper <= 1)"
+            ),
+        ));
+    }
+
+    // C_SINGLE_ATTRIBUTE invariant Members_valid: every alternative child
+    // satisfies `co.occurrences.upper <= 1` — a single-valued attribute can
+    // hold at most one value (AOM1.4 c_single_attribute class file,
+    // Invariants; also cADL: occurrences upper > 1 only under a container
+    // attribute, AOM1.4 c_object class file, `occurrences`).
+    if cardinality.is_none() {
+        for child in children {
+            let occ = co_occurrences(child);
+            if occ.upper_unbounded || iv_upper(occ).is_some_and(|u| u > 1) {
+                return Err(Violation::new(
+                    "Members_valid",
+                    format!(
+                        "attribute '{attr_name}' on '{parent_rm}' is single-valued but child \
+                         object '{}' has occurrences upper > 1",
+                        co_node_id(child)
+                    ),
+                ));
+            }
+        }
+    }
 
     // RM-conformance checks fire only when the enclosing object's RM type is
     // known to the static model; an unknown parent means we cannot judge its
@@ -188,13 +254,508 @@ fn walk_attribute(
 
     // Recurse into each child object.
     for child in children {
-        walk_object(child, defined_at)?;
+        walk_object(child, ctx)?;
     }
     Ok(())
 }
 
+// ─── AOM 1.4 constraint-model invariants (per-node-kind) ────────────────────────
+
+/// VARID: the archetype id must conform to the openEHR archetype-identifier
+/// syntax (ADL1.4 master08 line 544; BASE `base_types` master05 §Syntaxes), and
+/// VARDT: the RM type named by the constraint node must match the type slot of
+/// the identifier's first segment (ADL1.4 master08 line 556; composite
+/// identifiers compare case-insensitively, BASE `base_types` master05
+/// §"Composite Identifiers and Case").
+fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Violation> {
+    if !is_archetype_id_shaped(id) {
+        return Err(Violation::new(
+            "VARID",
+            format!("'{id}' is not a valid openEHR archetype identifier"),
+        ));
+    }
+    // qualified_rm_entity = rm_originator '-' rm_name '-' rm_entity; the
+    // rm_entity is everything after the second '-'.
+    let qualified = id.split('.').next().unwrap_or("");
+    let entity = qualified
+        .match_indices('-')
+        .nth(1)
+        .map_or("", |(i, _)| &qualified[i + 1..]);
+    let bare_rm = rm_type_name.split('<').next().unwrap_or(rm_type_name);
+    if !entity.eq_ignore_ascii_case(bare_rm) {
+        return Err(Violation::new(
+            "VARDT",
+            format!(
+                "the definition node's RM type '{rm_type_name}' does not match the type slot \
+                 '{entity}' of archetype id '{id}'"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// Archetype-identifier shape for uploaded artefacts:
+/// `rm_originator-rm_name-rm_entity.domain_concept.v<version>` (BASE `base_types`
+/// master05 §Syntaxes). Tolerances beyond the strict BASE `name-str` grammar,
+/// both adjudicated against real published templates (never against CNF valid
+/// fixtures, which all conform strictly):
+///
+/// - the version may be multi-part numeric (`v1.0.0`) — the ADL2-era archetype
+///   HRID form appears in deployed OPT 1.4 exports (the vendored
+///   `Request_for_Pancreas_Special_Urgency_Listing` corpus template);
+/// - PORT NOTE: concept segments tolerate `(`/`)` and digit-leading segments —
+///   Ocean/LANIT tooling emits concept names like
+///   `t_neurologist_examination(1-17)_lanit` (vendored Better corpus); the
+///   strict grammar would refuse real-world templates.
+fn is_archetype_id_shaped(id: &str) -> bool {
+    fn alphanum_str(s: &str) -> bool {
+        let mut chars = s.chars();
+        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+            && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    }
+    // Split the version off the tail: the last `.v` followed by a digit.
+    let Some((head, version)) = id.rsplit_once(".v") else {
+        return false;
+    };
+    let version_ok = !version.is_empty()
+        && version
+            .split('.')
+            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+        && version.split('.').count() <= 3;
+    let Some((qualified, concept)) = head.split_once('.') else {
+        return false;
+    };
+    let entity_parts: Vec<&str> = qualified.split('-').collect();
+    let entity_ok = entity_parts.len() == 3 && entity_parts.iter().all(|p| alphanum_str(p));
+    let concept_ok = !concept.is_empty()
+        && concept
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
+    version_ok && entity_ok && concept_ok
+}
+
+/// `ARCHETYPE_SLOT` checks: VDFAI — an archetype identifier mentioned in a slot
+/// must conform to the archetype-identifier syntax (ADL1.4 master08 line 573).
+/// Slot include/exclude expressions are Perl regexes over archetype ids (cADL
+/// §Archetype Slots), so only a *literal* pattern (regex-escaped dots, no other
+/// metacharacters) is decidable as an identifier; genuine regexes are left to
+/// runtime slot admission.
+fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {
+    for assertion in slot.includes.iter().chain(&slot.excludes) {
+        let Some(pattern) = slot_assertion_pattern(assertion) else {
+            continue;
+        };
+        for alt in pattern.split('|') {
+            let Some(literal) = regex_literal(alt) else {
+                continue;
+            };
+            if !is_archetype_id_shaped(&literal) {
+                return Err(Violation::new(
+                    "VDFAI",
+                    format!(
+                        "slot '{}' names '{literal}', which is not a valid openEHR archetype \
+                         identifier",
+                        slot.node_id
+                    ),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The archetype-id regex carried by a slot assertion (`archetype_id/value
+/// matches {/…/}`), if the expression has that shape.
+fn slot_assertion_pattern(a: &openehr_its::opt14::Assertion) -> Option<String> {
+    use openehr_its::opt14::ExprItem;
+    fn find_pattern(e: &ExprItem) -> Option<String> {
+        match e {
+            ExprItem::ExprLeaf(l) => l
+                .item
+                .as_str()
+                .map(|s| s.trim_matches('/').to_owned())
+                .filter(|s| s.contains("openEHR") || s.contains('\\') || s.contains('.')),
+            ExprItem::ExprBinaryOperator(b) => {
+                find_pattern(&b.right_operand).or_else(|| find_pattern(&b.left_operand))
+            }
+            ExprItem::ExprUnaryOperator(u) => find_pattern(&u.operand),
+        }
+    }
+    find_pattern(&a.expression)
+}
+
+/// If a regex alternative is a literal archetype id (only `\.`-escaped dots,
+/// no other metacharacters), return the unescaped literal; else `None`.
+fn regex_literal(alt: &str) -> Option<String> {
+    let mut out = String::with_capacity(alt.len());
+    let mut chars = alt.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => match chars.next() {
+                Some('.') => out.push('.'),
+                _ => return None,
+            },
+            '.' | '*' | '+' | '?' | '[' | ']' | '(' | ')' | '{' | '}' | '^' | '$' | '|' => {
+                return None;
+            }
+            _ => out.push(c),
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}
+
+/// `ARCHETYPE_INTERNAL_REF` invariant `Target_path_valid`: `target_path /= Void
+/// and then not target_path.is_empty` (AOM1.4 `archetype_internal_ref` class
+/// file, Invariants); the path must be an absolute archetype path (VDFPT,
+/// ADL1.4 master08 line 576). (Flattened OPTs expand internal refs, so this
+/// fires only on a malformed artefact — the whole vendored corpus carries
+/// none.)
+fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violation> {
+    if r.target_path.is_empty() || !r.target_path.starts_with('/') {
+        return Err(Violation::new(
+            "Target_path_valid",
+            format!(
+                "internal reference '{}' has an invalid target_path '{}' (must be a non-empty \
+                 absolute path)",
+                r.node_id, r.target_path
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// VACDF: each constraint code (`acNNNN`) used in the definition must be
+/// defined in the `constraint_definitions` part of the ontology (ADL1.4
+/// master08 line 566).
+///
+/// PORT NOTE (flattened-OPT tolerance): deployed OPT 1.4 exports routinely
+/// carry `CONSTRAINT_REF` nodes with NO `constraint_definitions` sets at all
+/// (Ocean Template Designer drops the constraint vocabulary on flatten — the
+/// vendored RIPPLE/Better corpus templates). VACDF is therefore enforced only
+/// when the artefact declares a constraint vocabulary; an artefact with none
+/// is tolerated.
+fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), Violation> {
+    if ctx.has_constraint_defs && !ctx.defined_ac.contains(&r.reference) {
+        return Err(Violation::new(
+            "VACDF",
+            format!(
+                "constraint reference '{}' (node '{}') is not defined in constraint_definitions",
+                r.reference, r.node_id
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// The `C_PRIMITIVE`-level checks: `C_BOOLEAN` satisfiability, `C_DEFINED_OBJECT`
+/// `Assumed_value_valid` for list/range-constrained primitives, and the
+/// `C_DATE`/`C_TIME`/`C_DATE_TIME` `Pattern_validity` + `C_DURATION` pattern syntax.
+fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Violation> {
+    match p {
+        CPrimitive::CBoolean(b) => {
+            // C_BOOLEAN (AOM1.4 c_boolean class file, Description): true_valid
+            // and false_valid cannot both be False — the constraint would be
+            // unsatisfiable.
+            if !b.true_valid && !b.false_valid {
+                return Err(Violation::new(
+                    "C_BOOLEAN_validity",
+                    format!(
+                        "node '{node_id}': true_valid and false_valid are both false — the \
+                         boolean constraint is unsatisfiable"
+                    ),
+                ));
+            }
+            if let Some(assumed) = b.assumed_value {
+                let ok = if assumed { b.true_valid } else { b.false_valid };
+                if !ok {
+                    return Err(Violation::new(
+                        "Assumed_value_valid",
+                        format!(
+                            "node '{node_id}': the assumed boolean value {assumed} is not \
+                             permitted by the true_valid/false_valid flags"
+                        ),
+                    ));
+                }
+            }
+        }
+        CPrimitive::CString(s) => {
+            // Assumed_value_valid against a closed value list (C_STRING,
+            // AOM1.4 c_string class file; cADL: string constraints are
+            // case-sensitive).
+            if let Some(assumed) = &s.assumed_value
+                && !s.list.is_empty()
+                && s.list_open != Some(true)
+                && !s.list.contains(assumed)
+            {
+                return Err(Violation::new(
+                    "Assumed_value_valid",
+                    format!(
+                        "node '{node_id}': the assumed string '{assumed}' is not in the closed \
+                         value list"
+                    ),
+                ));
+            }
+        }
+        CPrimitive::CInteger(c) => {
+            if let Some(assumed) = c.assumed_value {
+                let list_ok = c.list.is_empty() || c.list.contains(&assumed);
+                let range_ok = c.range.as_ref().is_none_or(|r| int_in_range(assumed, r));
+                if !list_ok || !range_ok {
+                    return Err(Violation::new(
+                        "Assumed_value_valid",
+                        format!(
+                            "node '{node_id}': the assumed integer {assumed} is outside the \
+                             constrained list/range"
+                        ),
+                    ));
+                }
+            }
+        }
+        CPrimitive::CReal(c) => {
+            if let Some(assumed) = c.assumed_value {
+                #[allow(clippy::float_cmp)] // list membership is exact per cADL
+                let list_ok = c.list.is_empty() || c.list.contains(&assumed);
+                let range_ok = c.range.as_ref().is_none_or(|r| real_in_range(assumed, r));
+                if !list_ok || !range_ok {
+                    return Err(Violation::new(
+                        "Assumed_value_valid",
+                        format!(
+                            "node '{node_id}': the assumed real {assumed} is outside the \
+                             constrained list/range"
+                        ),
+                    ));
+                }
+            }
+        }
+        // C_DATE/C_DATE_TIME/C_TIME invariant Pattern_validity:
+        // `pattern /= Void implies valid_iso8601_*_constraint_pattern(pattern)`
+        // (AOM1.4 c_date/c_date_time/c_time class files); the legal patterns
+        // and the optional→optional/disallowed, disallowed→disallowed
+        // field-ordering are cADL §Constraints on Dates/Times (ADL1.4 master05
+        // lines 858–892).
+        CPrimitive::CDate(c) => {
+            if let Some(pattern) = &c.pattern
+                && !valid_date_pattern(pattern)
+            {
+                return Err(pattern_violation(node_id, pattern, "date"));
+            }
+        }
+        CPrimitive::CTime(c) => {
+            if let Some(pattern) = &c.pattern
+                && !valid_time_pattern(pattern)
+            {
+                return Err(pattern_violation(node_id, pattern, "time"));
+            }
+        }
+        CPrimitive::CDateTime(c) => {
+            if let Some(pattern) = &c.pattern
+                && !valid_date_time_pattern(pattern)
+            {
+                return Err(pattern_violation(node_id, pattern, "date-time"));
+            }
+        }
+        // C_DURATION: the pattern must be `P[Y][M][W][D][T[H][M][S]]` — openEHR
+        // deviates from strict ISO 8601 by allowing `W` to be mixed with the
+        // other designators (cADL §Duration Constraints, ADL1.4 master05 lines
+        // 934–980).
+        CPrimitive::CDuration(c) => {
+            if let Some(pattern) = &c.pattern
+                && !valid_duration_pattern(pattern)
+            {
+                return Err(pattern_violation(node_id, pattern, "duration"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Duplicate codes in a terminology-code code list are invalid (ADL2
+/// master04.6 STCDC — "constraint code list contains duplicate codes"; the
+/// same defect in an OPT 1.4 `C_CODE_PHRASE` list).
+fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), Violation> {
+    let mut seen = HashSet::new();
+    for code in code_list {
+        // Empty entries are tooling noise, not codes (Ocean exports emit
+        // repeated empty <code_list/> elements — the vendored UK AoMRC corpus
+        // template); only real codes participate in the duplicate check.
+        if code.is_empty() {
+            continue;
+        }
+        if !seen.insert(code) {
+            return Err(Violation::new(
+                "STCDC",
+                format!("node '{node_id}': code '{code}' is duplicated in the code list"),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> Violation {
+    Violation::new(
+        "Pattern_validity",
+        format!("node '{node_id}': '{pattern}' is not a valid {kind} constraint pattern"),
+    )
+}
+
+/// `C_DEFINED_OBJECT` invariant `Assumed_value_valid` for the code-carrying domain
+/// types (`C_CODE_PHRASE` / `C_CODE_REFERENCE`): the assumed code must be one of
+/// the constrained codes when the code list is closed and non-empty.
+fn check_assumed_code(
+    assumed: Option<&openehr_base::prelude::CodePhrase>,
+    code_list: &[String],
+    node_id: &str,
+) -> Result<(), Violation> {
+    if let Some(assumed) = assumed
+        && !code_list.is_empty()
+        && !code_list.contains(&assumed.code_string)
+    {
+        return Err(Violation::new(
+            "Assumed_value_valid",
+            format!(
+                "node '{node_id}': the assumed code '{}' is not in the constrained code list",
+                assumed.code_string
+            ),
+        ));
+    }
+    Ok(())
+}
+
+// ─── temporal + duration constraint-pattern validity ────────────────────────────
+
+/// `yyyy-<mm|??|XX>-<dd|??|XX>` with the field-ordering rule: optional (`??`)
+/// may be followed only by optional/disallowed; disallowed (`XX`) only by
+/// disallowed (ADL1.4 master05 lines 858–866).
+fn valid_date_pattern(p: &str) -> bool {
+    let parts: Vec<&str> = p.split('-').collect();
+    let [y, m, d] = parts.as_slice() else {
+        return false;
+    };
+    *y == "yyyy" && field_chain_valid(&[(m, "mm"), (d, "dd")])
+}
+
+/// `<HH|??|XX>:<MM|??|XX>:<SS|??|XX>` with the same field-ordering rule and an
+/// optional trailing timezone requirement (`Z` / `±hh` / `±hh:mm` / `±hhmm` —
+/// ADL1.4 master05 lines 852–854, 896–910: a timezone can be required, never
+/// prohibited).
+fn valid_time_pattern(p: &str) -> bool {
+    let body = p
+        .strip_suffix('Z')
+        .or_else(|| strip_tz_offset(p))
+        .unwrap_or(p);
+    let parts: Vec<&str> = body.split(':').collect();
+    let [h, m, s] = parts.as_slice() else {
+        return false;
+    };
+    *h == "HH" && field_chain_valid(&[(m, "MM"), (s, "SS")])
+}
+
+/// `<date>T<time>` (ADL1.4 master05 lines 868–892). The date and time fields
+/// form ONE monotonic ordering chain (Month→Day→Hour→Minute→Second — the
+/// `C_DATE_TIME` `*_validity_optional`/`*_validity_disallowed` invariants).
+/// Unlike `C_TIME`, `C_DATE_TIME` has an `hour_validity`, so `??`/`XX` hours are
+/// legal here (e.g. `yyyy-??-??T??:??:??`, the CNF RIPPLE conformance
+/// template).
+fn valid_date_time_pattern(pattern: &str) -> bool {
+    let Some((date, time)) = pattern.split_once('T') else {
+        return false;
+    };
+    let date_parts: Vec<&str> = date.split('-').collect();
+    let [y, mo, dy] = date_parts.as_slice() else {
+        return false;
+    };
+    let body = time
+        .strip_suffix('Z')
+        .or_else(|| strip_tz_offset(time))
+        .unwrap_or(time);
+    let time_parts: Vec<&str> = body.split(':').collect();
+    let [h, mi, s] = time_parts.as_slice() else {
+        return false;
+    };
+    *y == "yyyy" && field_chain_valid(&[(mo, "mm"), (dy, "dd"), (h, "HH"), (mi, "MM"), (s, "SS")])
+}
+
+/// One monotonic field chain: mandatory (`mm`/`dd`/…) → any; optional (`??`) →
+/// optional or disallowed; disallowed (`XX`) → disallowed.
+fn field_chain_valid(fields: &[(&&str, &str)]) -> bool {
+    let mut state = 0u8; // 0 = mandatory so far, 1 = optional seen, 2 = disallowed seen
+    for (actual, mandatory_form) in fields {
+        let level = if **actual == *mandatory_form {
+            0
+        } else if **actual == "??" {
+            1
+        } else if **actual == "XX" {
+            2
+        } else {
+            return false;
+        };
+        if level < state {
+            return false;
+        }
+        state = state.max(level);
+    }
+    true
+}
+
+/// A time-pattern timezone suffix `±hh`, `±hh:mm`, or `±hhmm` — strip it if
+/// present (the pattern grammar writes them literally, e.g. `HH:MM:SS+hh:mm`).
+fn strip_tz_offset(p: &str) -> Option<&str> {
+    for suffix in ["+hh:mm", "-hh:mm", "+hhmm", "-hhmm", "+hh", "-hh"] {
+        if let Some(body) = p.strip_suffix(suffix) {
+            return Some(body);
+        }
+    }
+    None
+}
+
+/// `P` followed by an in-order subset of `Y M W D`, optionally `T` + an
+/// in-order non-empty subset of `H M S`; at least one designator overall.
+fn valid_duration_pattern(p: &str) -> bool {
+    let Some(rest) = p.strip_prefix('P') else {
+        return false;
+    };
+    if rest.is_empty() {
+        return false;
+    }
+    let (date_part, time_part) = match rest.split_once('T') {
+        Some((d, t)) => (d, Some(t)),
+        None => (rest, None),
+    };
+    if !in_order_subset(date_part, &['Y', 'M', 'W', 'D']) {
+        return false;
+    }
+    match time_part {
+        Some(t) => !t.is_empty() && in_order_subset(t, &['H', 'M', 'S']),
+        None => !date_part.is_empty(),
+    }
+}
+
+/// `s` uses only characters from `order`, each at most once, in order.
+fn in_order_subset(s: &str, order: &[char]) -> bool {
+    let mut pos = 0usize;
+    for c in s.chars() {
+        match order[pos..].iter().position(|o| *o == c) {
+            Some(i) => pos += i + 1,
+            None => return false,
+        }
+    }
+    true
+}
+
+fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
+    let lower_ok = r.lower_unbounded || r.lower.is_none_or(|l| v >= l);
+    let upper_ok = r.upper_unbounded || r.upper.is_none_or(|u| v <= u);
+    lower_ok && upper_ok
+}
+
+fn real_in_range(v: f64, r: &openehr_its::opt14::Intervalofreal) -> bool {
+    let lower_ok = r.lower_unbounded || r.lower.is_none_or(|l| v >= l);
+    let upper_ok = r.upper_unbounded || r.upper.is_none_or(|u| v <= u);
+    lower_ok && upper_ok
+}
+
 /// Check one child object node, then recurse into its own attributes.
-fn walk_object(obj: &CObject, defined_at: &HashSet<String>) -> Result<(), Violation> {
+fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
     let rm_type = co_rm_type(obj);
     let node_id = co_node_id(obj);
 
@@ -207,12 +768,113 @@ fn walk_object(obj: &CObject, defined_at: &HashSet<String>) -> Result<(), Violat
     }
 
     // VATID: every at-code used as a node_id must be defined in terminology.
-    check_node_id(node_id, defined_at)?;
+    check_node_id(node_id, &ctx.defined_at)?;
+
+    // AOM 1.4 per-node-kind invariants (the constraint-model class files).
+    match obj {
+        CObject::CArchetypeRoot(root) => {
+            // VARID / VARDT on every flattened slot-filler root.
+            check_archetype_id(&root.archetype_id.value, &root.rm_type_name)?;
+        }
+        CObject::ArchetypeSlot(slot) => check_slot(slot)?,
+        CObject::ArchetypeInternalRef(r) => check_internal_ref(r)?,
+        CObject::ConstraintRef(r) => check_constraint_ref(r, ctx)?,
+        CObject::CPrimitiveObject(p) => {
+            if let Some(item) = &p.item {
+                check_primitive(item, node_id)?;
+            }
+        }
+        CObject::CCodePhrase(c) => {
+            check_code_list(&c.code_list, node_id)?;
+            check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
+        }
+        CObject::CCodeReference(c) => {
+            check_code_list(&c.code_list, node_id)?;
+            check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
+        }
+        CObject::CDvOrdinal(c) => {
+            // C_DEFINED_OBJECT invariant Assumed_value_valid (AOM1.4
+            // c_defined_object class file): the assumed ordinal must be one of
+            // the constrained (symbol, value) pairs.
+            if let Some(assumed) = &c.assumed_value
+                && !c.list.is_empty()
+                && !c.list.iter().any(|o| o.value == assumed.value)
+            {
+                return Err(Violation::new(
+                    "Assumed_value_valid",
+                    format!(
+                        "node '{node_id}': the assumed DV_ORDINAL value {} is not one of the \
+                         constrained ordinal values",
+                        assumed.value
+                    ),
+                ));
+            }
+        }
+        CObject::CDvQuantity(c) => {
+            // The measurement property must be a member of the openEHR
+            // `property` terminology group (RM support master05 §"Terms and
+            // Codes in the openEHR Reference Model", `Group_id_property`) —
+            // checked when the constraint codes it from the openEHR
+            // terminology.
+            if let Some(property) = &c.property
+                && property
+                    .terminology_id
+                    .value
+                    .eq_ignore_ascii_case("openehr")
+                // PORT NOTE (prior-art OPT tolerance): Ocean Template Designer
+                // emits the placeholder property code "0" for an unconstrained
+                // property (the vendored `action test` corpus template) — a
+                // placeholder is "no constraint", not a foreign code.
+                && !property.code_string.is_empty()
+                && property.code_string != "0"
+                && !openehr_term::bundle::openehr().is_valid_property(&property.code_string)
+            {
+                return Err(Violation::new(
+                    "Property_valid",
+                    format!(
+                        "node '{node_id}': DV_QUANTITY property code '{}' is not in the openEHR \
+                         'property' terminology group",
+                        property.code_string
+                    ),
+                ));
+            }
+            // Assumed_value_valid: the assumed quantity's units must be one of
+            // the constrained unit items, and its magnitude inside that item's
+            // magnitude range.
+            if let Some(assumed) = &c.assumed_value
+                && !c.list.is_empty()
+            {
+                let Some(item) = c.list.iter().find(|i| i.units == assumed.units) else {
+                    return Err(Violation::new(
+                        "Assumed_value_valid",
+                        format!(
+                            "node '{node_id}': the assumed DV_QUANTITY units '{}' are not among \
+                             the constrained units",
+                            assumed.units
+                        ),
+                    ));
+                };
+                if let Some(range) = &item.magnitude
+                    && !real_in_range(assumed.magnitude, range)
+                {
+                    return Err(Violation::new(
+                        "Assumed_value_valid",
+                        format!(
+                            "node '{node_id}': the assumed DV_QUANTITY magnitude {} is outside \
+                             the constrained magnitude range for units '{}'",
+                            assumed.magnitude, assumed.units
+                        ),
+                    ));
+                }
+            }
+        }
+        _ => {}
+    }
 
     // Recurse into a nested C_ARCHETYPE_ROOT's terminology scope-wise via the
     // global set already collected; structurally we just descend its attributes.
     for attr in co_attributes(obj) {
-        walk_attribute(attr, rm_type, defined_at)?;
+        walk_attribute(attr, rm_type, ctx)?;
     }
     Ok(())
 }

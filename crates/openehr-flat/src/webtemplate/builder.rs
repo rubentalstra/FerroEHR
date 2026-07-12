@@ -832,6 +832,21 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
 fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExistence> {
     let mut out = Vec::new();
     for attr in inputs::attributes(co) {
+        // A CONTAINER attribute with existence lower >= 1 demands the
+        // attribute's presence regardless of member cardinality (AOM 1.4
+        // c_attribute `Existence_set`; cardinality then governs membership of
+        // the present container — the two constraints are orthogonal).
+        if let openehr_its::opt14::CAttribute::CMultipleAttribute(m) = attr {
+            let (min, max) = occurrences(&m.existence);
+            if min.unwrap_or(0) >= 1 {
+                out.push(WebTemplateExistence {
+                    min: min.unwrap_or(0),
+                    max,
+                    path: format!("{node_path}/{}", m.rm_attribute_name),
+                });
+            }
+            continue;
+        }
         let openehr_its::opt14::CAttribute::CSingleAttribute(s) = attr else {
             continue;
         };
@@ -865,9 +880,9 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
     out
 }
 
-// ── closed-archetype constraints (ADR-012 F-07-05 + F-07-10) ──────────────────
+// ── closed-archetype constraints (F-07-05 + F-07-10; AOM2 closed-world direction) ──
 
-/// Capture the closed-archetype constraints for the walk (ADR-012): per
+/// Capture the closed-archetype constraints for the walk: per
 /// attribute of `co` that carries **archetype-node-identified** child
 /// alternatives (a fixed at-code / archetype-id sibling set) and/or open
 /// `ARCHETYPE_SLOT`s, record the admissible child identities keyed by the

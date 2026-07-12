@@ -55,6 +55,14 @@ Use `return=representation` when you want the server-completed object back
 (with its assigned version id and any server-set audit fields); use
 `return=minimal` for throughput when you only need the id.
 
+### `Prefer: resolve_refs`
+
+Contribution reads return their `versions` as `OBJECT_REF`s by default. Add
+`resolve_refs` to the `Prefer` header (it combines with the `return=…`
+token, e.g. `Prefer: return=representation, resolve_refs`) and the response
+carries the full `ORIGINAL_VERSION` objects instead — one round trip instead
+of one per version.
+
 ## `ETag` and `If-Match` — optimistic concurrency
 
 openEHR objects are versioned, and updates use HTTP preconditions to prevent
@@ -76,6 +84,16 @@ lost updates:
 `Location` may appear on responses too, but treat it as informational for reads
 (it is marked deprecated on retrieval responses in the contract); the `ETag` is
 the authoritative identifier.
+
+> [!NOTE]
+> Version ids normally end in a plain trunk number (`…::2`), but openEHR
+> version trees can **branch**: when a version that was created on another
+> system is modified locally, the server forks a branch and the new version
+> id ends in a three-part tree id (`…::2.1.1`). Treat the version id as an
+> opaque token — echo it back in `If-Match` exactly as received — and it
+> works the same for trunk and branch versions. `ALL_VERSIONS` queries and
+> version reads return branch versions alongside trunk ones; the *latest*
+> version of an object is always the latest trunk version.
 
 > [!TIP]
 > The round-trip is: read the resource → keep its `ETag` value → send it back as

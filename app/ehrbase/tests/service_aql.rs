@@ -708,3 +708,77 @@ async fn ehr_status_query_empty_db() {
     );
     assert!(rows(&r).is_empty(), "no EHRs → empty result set");
 }
+
+/// The single-row function set executes end-to-end on PostgreSQL (QUERY
+/// master03 §Functions: string, numeric, date/time) — chapter-16 audit: these
+/// were previously represented in the IR but rejected at SQL generation.
+#[tokio::test]
+async fn scalar_functions_execute() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_scalar").await;
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 81.5).await;
+
+    // String functions over c/name/value = "BP".
+    let r = run_aql(
+        &svc,
+        "SELECT length(c/name/value), position('P', c/name/value), \
+                substring(c/name/value, 1, 1), concat(c/name/value, '!'), \
+                concat_ws('-', c/name/value, 'x'), contains(c/name/value, 'B') \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let row = &rows(&r)[0];
+    assert_eq!(row[0], json!(2), "LENGTH('BP') = 2");
+    assert_eq!(row[1], json!(2), "POSITION is 1-based; 'P' is the 2nd char");
+    assert_eq!(row[2], json!("B"), "SUBSTRING 1-based, length 1");
+    assert_eq!(row[3], json!("BP!"), "CONCAT");
+    assert_eq!(row[4], json!("BP-x"), "CONCAT_WS with separator");
+    assert_eq!(row[5], json!(true), "string CONTAINS");
+
+    // Numeric functions over the magnitude 81.5.
+    let aql = format!(
+        "SELECT abs(o/{MAG_PATH}), ceil(o/{MAG_PATH}), floor(o/{MAG_PATH}), \
+                round(o/{MAG_PATH}), round(o/{MAG_PATH}, 1), mod(o/{MAG_PATH}, 2) \
+         FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[{OBS_ARCHETYPE}]"
+    );
+    let r = run_aql(&svc, &aql, ehr_scope(&ehr_id)).await;
+    let row = &rows(&r)[0];
+    assert_eq!(row[0], json!(81.5), "ABS");
+    assert_eq!(row[1], json!(82), "CEIL returns Integer");
+    assert_eq!(row[2], json!(81), "FLOOR returns Integer");
+    assert_eq!(
+        row[3],
+        json!(82),
+        "ROUND defaults to 0 decimals (81.5 → 82)"
+    );
+    assert_eq!(row[4], json!(81.5), "ROUND to 1 decimal");
+    assert_eq!(row[5], json!(1.5), "MOD(81.5, 2)");
+
+    // Date/time functions: shape checks (values are 'now').
+    let r = run_aql(
+        &svc,
+        "SELECT current_date(), current_time(), now(), current_timezone() \
+         FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let row = &rows(&r)[0];
+    let date = row[0].as_str().expect("CURRENT_DATE is a string");
+    assert_eq!(date.len(), 10, "YYYY-MM-DD: {date}");
+    let time = row[1].as_str().expect("CURRENT_TIME is a string");
+    assert_eq!(time.len(), 8, "hh:mm:ss: {time}");
+    let dt = row[2].as_str().expect("NOW is a string");
+    assert!(
+        dt.contains('T') && (dt.contains('+') || dt.contains('-')),
+        "YYYY-MM-DDThh:mm:ss.sss±hh:mm: {dt}"
+    );
+    let tz = row[3].as_str().expect("CURRENT_TIMEZONE is a string");
+    assert!(
+        tz.contains(':') && (tz.starts_with('+') || tz.starts_with('-')),
+        "±hh:mm: {tz}"
+    );
+}

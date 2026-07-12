@@ -285,7 +285,8 @@ impl EhrbaseService {
                 ) else {
                     continue;
                 };
-                let Some(read) = vobject::read_version(&self.pool, vo_id, sys_version).await?
+                let Some(read) =
+                    vobject::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
                 else {
                     continue;
                 };
@@ -350,7 +351,8 @@ impl EhrbaseService {
         sys_version: i32,
     ) -> Result<Vec<(String, String, Value)>, ServiceError> {
         // Load the exact committed version; skip absent / logically-deleted ones.
-        let Some(read) = vobject::read_version(&self.pool, vo_id, sys_version).await? else {
+        let Some(read) = vobject::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+        else {
             return Ok(Vec::new());
         };
         if read.deleted() || !read.canonical.is_object() {

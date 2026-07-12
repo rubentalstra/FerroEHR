@@ -73,6 +73,23 @@ impl EhrbaseService {
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
+        // "Tag target values can only be within the same EHR" (RM ehr
+        // `org.openehr.rm.ehr.ehr.adoc` EHR.tags; master04 §Tags): the target
+        // versioned object must exist AND belong to this EHR — the item_tag
+        // table is deliberately FK-less (a tag may address a specific VERSION),
+        // so the ownership check lives here.
+        let owner: Option<Uuid> =
+            sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
+                .bind(target_vo_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .flatten();
+        if owner != Some(ehr_id) {
+            return Err(ServiceError::NotFound(format!(
+                "tag target {target_vo_id} does not exist in EHR {ehr_id} \
+                 (tag targets can only be within the same EHR)"
+            )));
+        }
         let mut tx = self.pool.begin().await?;
         // Full replace: drop the existing collection, then insert the posted set.
         sqlx::query("DELETE FROM item_tag WHERE ehr_id = $1 AND target_vo_id = $2")

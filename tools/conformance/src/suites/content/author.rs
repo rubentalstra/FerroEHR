@@ -130,6 +130,21 @@ pub fn set_root_multiple_cardinality(
         if let CAttribute::CMultipleAttribute(m) = a
             && m.rm_attribute_name == attr
         {
+            // AOM 1.4: cardinality constrains membership when the attribute is
+            // PRESENT; absence is governed by existence. A truth-table row with
+            // a lower bound >= 1 means "at least N items must be committed", so
+            // the authored artefact must ALSO make the attribute mandatory
+            // (existence 1..1) — otherwise the spec-valid absent-attribute
+            // encoding of "zero items" would be conformant and the negative
+            // rows untestable.
+            let min = if interval.lower_unbounded {
+                0
+            } else {
+                interval.lower.unwrap_or(0)
+            };
+            if min >= 1 {
+                m.existence = closed_interval(1, 1);
+            }
             m.cardinality.interval = interval;
             return true;
         }

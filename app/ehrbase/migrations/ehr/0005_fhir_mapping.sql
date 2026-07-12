@@ -1,24 +1,25 @@
--- ehr schema: the FHIR-connector mapping store (ADR-016 / E3 — FHIR R4
+-- ehr schema: the FHIR-connector mapping store (an extension — no openEHR
+-- spec governs FHIR interop; E3 — FHIR R4
 -- connectors, "mapping-as-data").
 --
--- Append-only on the ADR-013 baseline (0001) + eventing (0002/0003) +
+-- Append-only on the baseline (0001) + eventing (0002/0003) +
 -- multi-tenancy (0004). A FHIR mapping is a versioned, deployable data artefact
--- (uploaded/validated like a template, ADR-016 §Decision 2) binding one openEHR
+-- (uploaded/validated like a template) binding one openEHR
 -- template ↔ one FHIR resource profile: its `definition` JSON carries the
 -- field-path bindings (FHIRPath-lite → simplified openEHR flat paths) the
 -- inbound connector uses to build a COMPOSITION from an incoming FHIR resource,
--- which then commits through the NORMAL validated path (never a bypass, ADR-016
+-- which then commits through the NORMAL validated path (never a bypass
 -- §Decision 3). Mapping CRUD is a config-gated admin extension surface
 -- (`ehrbase-rest`, off by default), like the event-subscription/terminology
 -- groups. Runs with search_path = ehr, ext.
 --
 -- Baseline discipline: named constraints (pk_/uq_/fk_), COMMENT ON everything,
--- role-guarded grants. Tenant-scoped like its siblings (ADR-015 §2): tenant_id
+-- role-guarded grants. Tenant-scoped like its siblings: tenant_id
 -- DEFAULT ext.current_tenant_id() + ENABLE/FORCE RLS + the tenant_isolation
 -- policy, so a single-tenant deployment (GUC unset) is byte-identical to
 -- pre-tenancy behaviour and a multi-tenant one isolates mappings per tenant.
 
--- ── fhir_mapping (ADR-016 §Decision 2) ───────────────────────────────────────
+-- ── fhir_mapping ───────────────────────────────────────
 CREATE TABLE fhir_mapping (
     -- Stable mapping identity (uuidv7, PG18): time-ordered, index-friendly, the
     -- addressable id of the admin CRUD surface.
@@ -27,7 +28,7 @@ CREATE TABLE fhir_mapping (
     -- by a stable name across deployments (the "deployable data" identity).
     name          text NOT NULL,
     -- The FHIR resource type this mapping consumes (e.g. Observation, Patient,
-    -- Condition, DocumentReference — the ADR-016 §Decision 5 starter set). The
+    -- Condition, DocumentReference — the starter set). The
     -- inbound router resolves a POST /fhir/r4/{resourceType} by this + profile.
     resource_type text NOT NULL,
     -- The FHIR profile canonical URL this mapping binds (matched against the
@@ -38,7 +39,7 @@ CREATE TABLE fhir_mapping (
     -- wire address template_store.template_id (as vo_version does), so a mapping
     -- cannot reference an un-ingested template.
     template_id   text NOT NULL,
-    -- The mapping definition (ADR-016 §Decision 2): the FHIRPath-lite → openEHR
+    -- The mapping definition: the FHIRPath-lite → openEHR
     -- flat-path field bindings, code-system translations, and subject/context
     -- rules. Validated on upload (deserialised into the connector's definition
     -- schema); stored verbatim so it round-trips.
@@ -59,30 +60,30 @@ CREATE TABLE fhir_mapping (
 CREATE INDEX idx_fhir_mapping_resolve ON fhir_mapping (resource_type, profile_url)
     WHERE enabled;
 
-COMMENT ON TABLE fhir_mapping IS 'FHIR-connector mapping store (ADR-016 §Decision 2, "mapping-as-data"): versioned, deployable artefacts binding one openEHR template ↔ one FHIR resource profile. The inbound connector resolves a mapping by resource_type + meta.profile, builds a COMPOSITION from its definition, and commits it through the normal validated path with FEEDER_AUDIT provenance. Config-gated admin CRUD (ehrbase-rest, off by default).';
+COMMENT ON TABLE fhir_mapping IS 'FHIR-connector mapping store (an extension — no openEHR spec governs FHIR interop; "mapping-as-data"): versioned, deployable artefacts binding one openEHR template ↔ one FHIR resource profile. The inbound connector resolves a mapping by resource_type + meta.profile, builds a COMPOSITION from its definition, and commits it through the normal validated path with FEEDER_AUDIT provenance. Config-gated admin CRUD (ehrbase-rest, off by default).';
 COMMENT ON COLUMN fhir_mapping.name IS 'Mapping name; the stable, UNIQUE deployable identity.';
-COMMENT ON COLUMN fhir_mapping.resource_type IS 'FHIR resource type consumed (Observation/Patient/Condition/DocumentReference — the ADR-016 starter set). The POST /fhir/r4/{resourceType} router keys on this.';
+COMMENT ON COLUMN fhir_mapping.resource_type IS 'FHIR resource type consumed (Observation/Patient/Condition/DocumentReference — the starter set). The POST /fhir/r4/{resourceType} router keys on this.';
 COMMENT ON COLUMN fhir_mapping.profile_url IS 'FHIR profile canonical URL bound (matched against meta.profile). NULL = the default mapping for the resource type.';
 COMMENT ON COLUMN fhir_mapping.template_id IS 'Target openEHR template. FK → template_store.template_id (the OPT wire address): a mapping cannot reference an un-ingested template.';
-COMMENT ON COLUMN fhir_mapping.definition IS 'The mapping definition (ADR-016 §Decision 2): FHIRPath-lite → openEHR flat-path bindings + code-system translations + subject/context rules. Validated on upload, stored verbatim.';
+COMMENT ON COLUMN fhir_mapping.definition IS 'The mapping definition: FHIRPath-lite → openEHR flat-path bindings + code-system translations + subject/context rules. Validated on upload, stored verbatim.';
 COMMENT ON COLUMN fhir_mapping.enabled IS 'Whether the mapping is applied by the inbound resolver. Disabled rows are retained but not applied.';
 
--- ── tenant scoping + RLS FORCE (ADR-015 §2) ──────────────────────────────────
+-- ── tenant scoping + RLS FORCE ──────────────────────────────────
 -- New scoping table added after the 0004 loop, so it carries its own tenant_id
 -- column + ENABLE/FORCE RLS + the tenant_isolation policy (same shape as 0004).
 ALTER TABLE fhir_mapping ADD COLUMN tenant_id uuid NOT NULL
     DEFAULT ext.current_tenant_id()
     CONSTRAINT fk_fhir_mapping_tenant REFERENCES tenant (id);
-COMMENT ON COLUMN fhir_mapping.tenant_id IS 'ADR-015 §2: owning tenant (FK → tenant). DEFAULT ext.current_tenant_id() auto-stamps the request''s tenant; an unset session ⇒ the reserved default tenant. RLS-enforced (tenant_isolation policy).';
+COMMENT ON COLUMN fhir_mapping.tenant_id IS 'Owning tenant (FK → tenant; multi-tenancy is an extension). DEFAULT ext.current_tenant_id() auto-stamps the request''s tenant; an unset session ⇒ the reserved default tenant. RLS-enforced (tenant_isolation policy).';
 ALTER TABLE fhir_mapping ENABLE ROW LEVEL SECURITY;
--- FORCE so the table OWNER is filtered too (ADR-015 §2); superusers / BYPASSRLS
+-- FORCE so the table OWNER is filtered too; superusers / BYPASSRLS
 -- roles still bypass unconditionally (a Postgres invariant).
 ALTER TABLE fhir_mapping FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON fhir_mapping
     USING (tenant_id = ext.current_tenant_id())
     WITH CHECK (tenant_id = ext.current_tenant_id());
 
--- ── Grants (ADR-013 §3) ──────────────────────────────────────────────────────
+-- ── Grants ──────────────────────────────────────────────────────
 -- The baseline set ALTER DEFAULT PRIVILEGES for ehrbase_app/ehrbase_reader, so a
 -- table the migrator creates afterwards is auto-granted; repeated explicitly
 -- (role-guarded, like 0002/0003/0004) so this migration is self-contained and a

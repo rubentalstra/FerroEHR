@@ -75,6 +75,12 @@ fn valid_minimal_passes() {
 /// ingestion checks may never mis-reject a legitimate template.
 #[test]
 fn corpus_all_valid_opts_pass() {
+    // The service knowledge corpus is the upload-surface oracle. (The
+    // openehr-flat Better/SDK fixtures are deliberately NOT swept: they are
+    // serialization-test material and include artefacts that genuinely violate
+    // the AOM validity rules — e.g. `sdk/section_cardinality.opt` breaks VCOC
+    // with mandatory-occurrence sums exceeding the container cardinality — so
+    // a conformant server MUST reject them at upload.)
     let dir = PathBuf::from(manifest()).join("tests/resources/service");
     let mut files = Vec::new();
     let mut stack = vec![dir.clone()];
@@ -101,10 +107,9 @@ fn corpus_all_valid_opts_pass() {
     let mut failures = Vec::new();
     for path in &files {
         let xml = std::fs::read_to_string(path).expect("read opt");
-        let opt = match opt14::from_xml(&xml) {
-            Ok(opt) => opt,
-            // Parseability is the `opt14_corpus` gate's job, not ours.
-            Err(_) => continue,
+        // Parseability is the `opt14_corpus` gate's job, not ours.
+        let Ok(opt) = opt14::from_xml(&xml) else {
+            continue;
         };
         if let Err(e) = validate_opt_artefact(&opt) {
             failures.push(format!("{}: {e}", path.display()));
@@ -245,12 +250,227 @@ fn vtcbk_undefined_constraint_binding_key() {
     expect_code(&opt, "VTCBK");
 }
 
+// ── AOM 1.4 constraint-model invariants ─────────────────────────────────────
+
+#[test]
+fn existence_set_upper_above_one() {
+    // C_ATTRIBUTE invariant Existence_set: existence.upper <= 1.
+    let xml = mutate_after(
+        &minimal_xml(),
+        "<rm_attribute_name>category</rm_attribute_name>",
+        "<upper>1</upper>",
+        "<upper>2</upper>",
+    );
+    expect_code(&parse(&xml), "Existence_set");
+}
+
+#[test]
+fn members_valid_occurrences_above_one_under_single_attribute() {
+    // `category` is a C_SINGLE_ATTRIBUTE; give its DV_CODED_TEXT child
+    // occurrences 0..5.
+    let xml = minimal_xml();
+    let idx = xml
+        .find("<rm_attribute_name>category</rm_attribute_name>")
+        .expect("category attribute present");
+    let tail = &xml[idx..];
+    let occ = tail.find("<occurrences>").expect("occurrences follows") + idx;
+    let seg_end = xml[occ..].find("</occurrences>").expect("closed") + occ;
+    let seg = &xml[occ..seg_end];
+    let new_seg = seg.replace("<upper>1</upper>", "<upper>5</upper>");
+    assert_ne!(seg, new_seg, "expected an <upper>1</upper> in occurrences");
+    let xml = format!("{}{}{}", &xml[..occ], new_seg, &xml[seg_end..]);
+    expect_code(&parse(&xml), "Members_valid");
+}
+
+#[test]
+fn varid_malformed_archetype_id() {
+    let xml = minimal_xml().replace(
+        "openEHR-EHR-COMPOSITION.minimal.v1",
+        "openEHR-EHR-COMPOSITION.minimal",
+    );
+    expect_code(&parse(&xml), "VARID");
+}
+
+#[test]
+fn varid_tolerates_multipart_version_and_tooling_names() {
+    // The published-template tolerances: ADL2-era `v1.0.0` versions and
+    // parenthesized tooling concept names must pass.
+    let xml = minimal_xml().replace(
+        "openEHR-EHR-COMPOSITION.minimal.v1",
+        "openEHR-EHR-COMPOSITION.minimal.v1.0.0",
+    );
+    validate_opt_artefact(&parse(&xml)).expect("multi-part version accepted");
+    let xml = minimal_xml().replace(
+        "openEHR-EHR-COMPOSITION.minimal.v1",
+        "openEHR-EHR-COMPOSITION.t_exam(1-17)_lanit.v1",
+    );
+    validate_opt_artefact(&parse(&xml)).expect("tooling concept name accepted");
+}
+
+#[test]
+fn vardt_root_type_mismatch() {
+    // Rename the root archetype id's type slot: COMPOSITION definition vs an
+    // OBSERVATION-typed id.
+    let xml = minimal_xml().replace(
+        "openEHR-EHR-COMPOSITION.minimal.v1",
+        "openEHR-EHR-OBSERVATION.minimal.v1",
+    );
+    expect_code(&parse(&xml), "VARDT");
+}
+
+#[test]
+fn c_boolean_unsatisfiable() {
+    use openehr_its::opt14::{CAttribute, CBoolean, CObject, CPrimitive, CPrimitiveObject};
+    let mut opt = parse(&minimal_xml());
+    let occ = opt.definition.occurrences.clone();
+    let boolean_node = CObject::CPrimitiveObject(CPrimitiveObject {
+        rm_type_name: "BOOLEAN".to_owned(),
+        occurrences: occ.clone(),
+        node_id: String::new(),
+        item: Some(Box::new(CPrimitive::CBoolean(CBoolean {
+            true_valid: false,
+            false_valid: false,
+            assumed_value: None,
+        }))),
+    });
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        openehr_its::opt14::CSingleAttribute {
+            rm_attribute_name: "name".to_owned(),
+            existence: openehr_its::opt14::Intervalofinteger {
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower: Some(1),
+                upper: Some(1),
+            },
+            children: vec![boolean_node],
+        },
+    ));
+    expect_code(&opt, "C_BOOLEAN_validity");
+}
+
+#[test]
+fn assumed_value_outside_closed_list() {
+    use openehr_its::opt14::{CAttribute, CObject, CPrimitive, CPrimitiveObject, CString};
+    let mut opt = parse(&minimal_xml());
+    let occ = opt.definition.occurrences.clone();
+    // A C_STRING with a closed value list and an assumed value outside it.
+    let string_node = CObject::CPrimitiveObject(CPrimitiveObject {
+        rm_type_name: "STRING".to_owned(),
+        occurrences: occ,
+        node_id: String::new(),
+        item: Some(Box::new(CPrimitive::CString(CString {
+            pattern: None,
+            list: vec!["red".to_owned(), "green".to_owned()],
+            list_open: None,
+            assumed_value: Some("blue".to_owned()),
+        }))),
+    });
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        openehr_its::opt14::CSingleAttribute {
+            rm_attribute_name: "name".to_owned(),
+            existence: openehr_its::opt14::Intervalofinteger {
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower: Some(1),
+                upper: Some(1),
+            },
+            children: vec![string_node],
+        },
+    ));
+    expect_code(&opt, "Assumed_value_valid");
+}
+
+#[test]
+fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
+    use openehr_its::opt14::{CAttribute, CDate, CObject, CPrimitive, CPrimitiveObject};
+    let mut opt = parse(&minimal_xml());
+    let occ = opt.definition.occurrences.clone();
+    // `yyyy-XX-dd`: disallowed month followed by a mandatory day violates the
+    // Month_validity_disallowed ordering.
+    let date_node = CObject::CPrimitiveObject(CPrimitiveObject {
+        rm_type_name: "DATE".to_owned(),
+        occurrences: occ,
+        node_id: String::new(),
+        item: Some(Box::new(CPrimitive::CDate(CDate {
+            pattern: Some("yyyy-XX-dd".to_owned()),
+            timezone_validity: None,
+            range: None,
+            assumed_value: None,
+        }))),
+    });
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        openehr_its::opt14::CSingleAttribute {
+            rm_attribute_name: "name".to_owned(),
+            existence: openehr_its::opt14::Intervalofinteger {
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower: Some(1),
+                upper: Some(1),
+            },
+            children: vec![date_node],
+        },
+    ));
+    expect_code(&opt, "Pattern_validity");
+}
+
+#[test]
+fn duration_pattern_syntax() {
+    // Every corpus form must validate; out-of-order or foreign designators must
+    // not.
+    for ok in [
+        "PD", "PDTH", "PDTHM", "PDTHMS", "PMTS", "PTH", "PTHMS", "PTM", "PTS", "PWD", "PWDTH",
+        "PY", "PYM", "PYMWD", "PYMWDTH",
+    ] {
+        assert!(super::valid_duration_pattern(ok), "{ok} must be valid");
+    }
+    for bad in ["P", "PT", "PDY", "PTMH", "PX", "YMD", "PYY"] {
+        assert!(!super::valid_duration_pattern(bad), "{bad} must be invalid");
+    }
+}
+
+#[test]
+fn temporal_pattern_validity_forms() {
+    for ok in [
+        ("yyyy-mm-dd", "date"),
+        ("yyyy-??-??", "date"),
+        ("yyyy-mm-XX", "date"),
+        ("yyyy-??-XX", "date"),
+    ] {
+        assert!(super::valid_date_pattern(ok.0), "{} must be valid", ok.0);
+    }
+    assert!(!super::valid_date_pattern("yyyy-XX-??"));
+    assert!(super::valid_time_pattern("HH:MM:SS"));
+    assert!(super::valid_time_pattern("HH:??:XX"));
+    assert!(!super::valid_time_pattern("??:MM:SS"));
+    assert!(super::valid_date_time_pattern("yyyy-mm-ddTHH:MM:SS"));
+    assert!(super::valid_date_time_pattern("yyyy-??-??T??:??:??"));
+    assert!(!super::valid_date_time_pattern("yyyy-??-??THH:MM:SS"));
+}
+
+#[test]
+fn stcdc_duplicate_code_in_code_list() {
+    // Duplicate a code in the first C_CODE_PHRASE code_list.
+    let xml = mutate_after(
+        &minimal_xml(),
+        "C_CODE_PHRASE",
+        "</code_list>",
+        "</code_list><code_list>433</code_list><code_list>433</code_list>",
+    );
+    expect_code(&parse(&xml), "STCDC");
+}
+
 #[test]
 fn vtlc_language_code_set_mismatch() {
     let mut opt = parse(&minimal_xml());
     let term = |code: &str| ArchetypeTerm {
         code: code.to_owned(),
-        items: Default::default(),
+        items: indexmap::IndexMap::default(),
     };
     opt.ontology = Some(FlatArchetypeOntology {
         archetype_id: "openEHR-EHR-COMPOSITION.minimal.v1".to_owned(),

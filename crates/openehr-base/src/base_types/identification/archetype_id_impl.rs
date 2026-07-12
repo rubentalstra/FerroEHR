@@ -166,3 +166,75 @@ mod tests {
         assert_eq!("".parse::<ArchetypeId>(), Err(IdError::Empty));
     }
 }
+
+/// Lexical validity per BASE base_types master05 §Syntaxes:
+/// `archetype_id = qualified_rm_entity '.' domain_concept '.v' version_id`,
+/// `qualified_rm_entity = rm_originator '-' rm_name '-' rm_entity` (each an
+/// `alphanum-str` = letter { letter | digit | '_' }), `domain_concept =
+/// concept_name { '-' specialisation }`, `version_id = '0' | nz-digit [number]`.
+#[must_use]
+pub(crate) fn is_valid_archetype_id(value: &str) -> bool {
+    fn alphanum_str(s: &str) -> bool {
+        let mut chars = s.chars();
+        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+            && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    }
+    let mut sections = value.split('.');
+    let (Some(entity), Some(concept), Some(version), None) = (
+        sections.next(),
+        sections.next(),
+        sections.next(),
+        sections.next(),
+    ) else {
+        return false;
+    };
+    let entity_ok = {
+        let parts: Vec<&str> = entity.split('-').collect();
+        parts.len() == 3 && parts.iter().all(|p| alphanum_str(p))
+    };
+    let concept_ok = concept.split('-').all(alphanum_str);
+    let version_ok = version.strip_prefix('v').is_some_and(|n| {
+        !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) && (n == "0" || !n.starts_with('0'))
+    });
+    entity_ok && concept_ok && version_ok
+}
+
+impl crate::validate::Validate for ArchetypeId {
+    fn validate_invariants(&self, out: &mut Vec<crate::validate::InvariantViolation>) {
+        if !is_valid_archetype_id(&self.value) {
+            out.push(crate::validate::InvariantViolation::here(
+                "Invariant Value_valid failed on type ARCHETYPE_ID (lexical form \
+                 rm_originator-rm_name-rm_entity.domain_concept.vN, BASE base_types \
+                 master05 §Syntaxes)",
+            ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod validity_tests {
+    use super::*;
+
+    /// BASE master05 §Syntaxes `archetype_id` — accepted and rejected forms
+    /// (incl. the L115 WARNING: no `.v1draft` lifecycle suffixes).
+    #[test]
+    fn archetype_id_lexical_form() {
+        for ok in [
+            "openEHR-EHR-COMPOSITION.encounter.v1",
+            "openEHR-EHR-CLUSTER.laboratory_test_analyte.v2",
+            "openEHR-EHR-OBSERVATION.blood_pressure-simple.v0",
+        ] {
+            assert!(is_valid_archetype_id(ok), "{ok} must be valid");
+        }
+        for bad in [
+            "openEHR-EHR-COMPOSITION.encounter.v1draft",
+            "openEHR-EHR.encounter.v1",
+            "openEHR-EHR-COMPOSITION.encounter",
+            "openEHR-EHR-COMPOSITION.1concept.v1",
+            "openEHR-EHR-COMPOSITION.encounter.v01",
+            "",
+        ] {
+            assert!(!is_valid_archetype_id(bad), "{bad} must be invalid");
+        }
+    }
+}

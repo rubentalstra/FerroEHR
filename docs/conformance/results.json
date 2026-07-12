@@ -17,7 +17,7 @@
     "repo": "openEHR/specifications-CNF",
     "commit": "33251d2a"
   },
-  "started": "2026-07-11T10:45:03.644171Z",
+  "started": "2026-07-12T07:37:07.906259Z",
   "selection": {
     "filter": null,
     "profile": null,
@@ -27,7 +27,7 @@
     ]
   },
   "terminology": {
-    "base_url": "http://127.0.0.1:64681",
+    "base_url": "http://127.0.0.1:53744",
     "mode": "fixture",
     "exchanges": [
       {
@@ -68,7 +68,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 201
+      "duration_ms": 67
     },
     {
       "ecc_id": "ECC-EHR-002",
@@ -85,7 +85,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 47
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-EHR-003",
@@ -102,7 +102,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 7
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-EHR-004",
@@ -119,7 +119,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 8
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-EHR-005",
@@ -136,7 +136,7 @@
       "total_data_sets": 16,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 425
+      "duration_ms": 198
     },
     {
       "ecc_id": "ECC-EHR-006",
@@ -153,7 +153,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 28
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-EHR-007",
@@ -170,7 +170,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 54
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-EHR-008",
@@ -187,7 +187,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 84
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-EHR-009",
@@ -204,7 +204,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 59
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-EHR-010",
@@ -221,7 +221,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 10
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-EHR-011",
@@ -238,7 +238,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr/get_ehr; RM 1.2.0 ehr §EHR",
-      "duration_ms": 10
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-STA-001",
@@ -255,7 +255,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 40
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-STA-002",
@@ -272,7 +272,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 36
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-STA-003",
@@ -289,7 +289,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 99
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-STA-004",
@@ -306,7 +306,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 11
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-STA-005",
@@ -323,7 +323,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 58
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-STA-006",
@@ -340,7 +340,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 10
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-STA-007",
@@ -357,7 +357,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 55
+      "duration_ms": 37
     },
     {
       "ecc_id": "ECC-STA-008",
@@ -374,7 +374,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 11
+      "duration_ms": 7
     },
     {
       "ecc_id": "ECC-STA-009",
@@ -391,7 +391,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 57
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-STA-010",
@@ -408,7 +408,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR_STATUS API §get_ehr_status/update_ehr_status; RM 1.2.0 ehr §EHR_STATUS",
-      "duration_ms": 9
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-EHR-012",
@@ -425,7 +425,7 @@
       "total_data_sets": 11,
       "message": null,
       "citation": "ITS-REST 1.0.3 EHR API §create_ehr (422); RM 1.2.0 ehr §EHR_STATUS validation",
-      "duration_ms": 99
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-EHR-013",
@@ -442,43 +442,43 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "CNF master03-profiles §Non-Functional (Anonymous EHRs — CORE+STANDARD); ITS-REST EHR API §create_ehr (no body); RM 1.2.0 ehr §EHR_STATUS",
+      "duration_ms": 12
+    },
+    {
+      "ecc_id": "ECC-COM-001",
+      "id": "com/create-composition-event",
+      "title": "Create composition — event",
+      "capability": "CompositionOps",
+      "profiles": [
+        "Core",
+        "Standard"
+      ],
+      "format": "json",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
+      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
+      "duration_ms": 33
+    },
+    {
+      "ecc_id": "ECC-COM-001",
+      "id": "com/create-composition-event",
+      "title": "Create composition — event",
+      "capability": "CompositionOps",
+      "profiles": [
+        "Core",
+        "Standard"
+      ],
+      "format": "xml",
+      "status": "passed",
+      "passed_data_sets": 1,
+      "total_data_sets": 1,
+      "message": null,
+      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
       "duration_ms": 22
     },
     {
-      "ecc_id": "ECC-COM-001",
-      "id": "com/create-composition-event",
-      "title": "Create composition — event",
-      "capability": "CompositionOps",
-      "profiles": [
-        "Core",
-        "Standard"
-      ],
-      "format": "json",
-      "status": "passed",
-      "passed_data_sets": 1,
-      "total_data_sets": 1,
-      "message": null,
-      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 54
-    },
-    {
-      "ecc_id": "ECC-COM-001",
-      "id": "com/create-composition-event",
-      "title": "Create composition — event",
-      "capability": "CompositionOps",
-      "profiles": [
-        "Core",
-        "Standard"
-      ],
-      "format": "xml",
-      "status": "passed",
-      "passed_data_sets": 1,
-      "total_data_sets": 1,
-      "message": null,
-      "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 38
-    },
-    {
       "ecc_id": "ECC-COM-002",
       "id": "com/create-composition-persistent",
       "title": "Create composition — persistent",
@@ -493,7 +493,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 36
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-COM-002",
@@ -510,7 +510,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 30
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-COM-003",
@@ -527,7 +527,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 41
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-COM-004",
@@ -544,7 +544,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 27
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-COM-005",
@@ -561,7 +561,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 24
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-COM-006",
@@ -578,7 +578,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 20
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-COM-007",
@@ -612,7 +612,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 35
+      "duration_ms": 30
     },
     {
       "ecc_id": "ECC-COM-008",
@@ -629,7 +629,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 34
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-COM-009",
@@ -646,7 +646,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 17
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-COM-010",
@@ -663,7 +663,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 6
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-011",
@@ -680,7 +680,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 21
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-COM-012",
@@ -697,7 +697,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 10
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-013",
@@ -714,7 +714,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 85
+      "duration_ms": 36
     },
     {
       "ecc_id": "ECC-COM-013",
@@ -731,7 +731,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 53
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-COM-014",
@@ -748,7 +748,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 49
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-COM-014",
@@ -765,7 +765,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 41
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-COM-015",
@@ -782,7 +782,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 16
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-COM-016",
@@ -799,7 +799,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 6
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-017",
@@ -816,7 +816,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 173
+      "duration_ms": 170
     },
     {
       "ecc_id": "ECC-COM-018",
@@ -833,7 +833,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 32
+      "duration_ms": 33
     },
     {
       "ecc_id": "ECC-COM-018",
@@ -850,7 +850,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 32
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-COM-019",
@@ -867,7 +867,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 14
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-COM-020",
@@ -884,7 +884,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-COM-021",
@@ -901,7 +901,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 59
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-COM-022",
@@ -918,7 +918,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST COMPOSITION API §get_versioned_composition; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT",
-      "duration_ms": 35
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-COM-022",
@@ -935,7 +935,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST COMPOSITION API §get_versioned_composition; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT",
-      "duration_ms": 37
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-COM-023",
@@ -952,7 +952,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST COMPOSITION API §get_versioned_composition (404); RM 1.2.0 common §VERSIONED_OBJECT",
-      "duration_ms": 17
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-COM-024",
@@ -969,7 +969,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST COMPOSITION API §get_versioned_composition (404); RM 1.2.0 common §VERSIONED_OBJECT",
-      "duration_ms": 5
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-COM-025",
@@ -986,7 +986,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 43
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-COM-026",
@@ -1003,7 +1003,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 38
+      "duration_ms": 28
     },
     {
       "ecc_id": "ECC-COM-027",
@@ -1020,7 +1020,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 23
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-COM-028",
@@ -1037,7 +1037,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 37
+      "duration_ms": 33
     },
     {
       "ecc_id": "ECC-COM-029",
@@ -1054,7 +1054,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 42
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-COM-030",
@@ -1071,7 +1071,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 29
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-COM-031",
@@ -1088,7 +1088,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 COMPOSITION API §create/get/update/delete + versioned_composition; RM 1.2.0 ehr §COMPOSITION",
-      "duration_ms": 12
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-CTB-001",
@@ -1105,7 +1105,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 26
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-CTB-002",
@@ -1122,7 +1122,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 19
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-CTB-003",
@@ -1139,7 +1139,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 15
+      "duration_ms": 13
     },
     {
       "ecc_id": "ECC-CTB-004",
@@ -1156,7 +1156,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 30
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-CTB-005",
@@ -1173,7 +1173,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 17
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-CTB-006",
@@ -1190,7 +1190,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 40
+      "duration_ms": 30
     },
     {
       "ecc_id": "ECC-CTB-007",
@@ -1207,7 +1207,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 38
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-CTB-008",
@@ -1224,7 +1224,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 36
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-CTB-009",
@@ -1241,7 +1241,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 31
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-CTB-010",
@@ -1258,7 +1258,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 29
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-CTB-011",
@@ -1275,7 +1275,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 23
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-CTB-012",
@@ -1292,7 +1292,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 20
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-CTB-013",
@@ -1309,7 +1309,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 15
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-CTB-014",
@@ -1326,7 +1326,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 19
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-CTB-015",
@@ -1343,7 +1343,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 18
+      "duration_ms": 15
     },
     {
       "ecc_id": "ECC-CTB-016",
@@ -1360,7 +1360,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 20
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-CTB-017",
@@ -1377,7 +1377,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 16
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-CTB-018",
@@ -1394,7 +1394,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 26
+      "duration_ms": 22
     },
     {
       "ecc_id": "ECC-CTB-019",
@@ -1411,7 +1411,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 29
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-CTB-020",
@@ -1428,7 +1428,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 12
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-CTB-021",
@@ -1445,7 +1445,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-CTB-022",
@@ -1462,7 +1462,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 28
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-CTB-023",
@@ -1479,7 +1479,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 28
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-CTB-024",
@@ -1496,7 +1496,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 28
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-CTB-025",
@@ -1513,7 +1513,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 5
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-CTB-026",
@@ -1530,7 +1530,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 CONTRIBUTION API §commit_contribution/get_contribution; RM 1.2.0 common §CONTRIBUTION",
-      "duration_ms": 12
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-CTB-027",
@@ -1636,7 +1636,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 21
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-DIR-002",
@@ -1652,7 +1652,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 35
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-DIR-003",
@@ -1668,7 +1668,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 8
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-004",
@@ -1684,7 +1684,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 39
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-DIR-005",
@@ -1700,7 +1700,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 7
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-DIR-006",
@@ -1716,7 +1716,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 37
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-DIR-007",
@@ -1732,7 +1732,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 6
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-008",
@@ -1748,7 +1748,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 54
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-DIR-009",
@@ -1764,7 +1764,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 7
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-DIR-010",
@@ -1780,7 +1780,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 30
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-DIR-011",
@@ -1796,7 +1796,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-012",
@@ -1812,7 +1812,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 22
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-013",
@@ -1828,7 +1828,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 30
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-DIR-014",
@@ -1844,7 +1844,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 6
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-DIR-015",
@@ -1860,7 +1860,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 30
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-DIR-016",
@@ -1876,7 +1876,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 28
+      "duration_ms": 19
     },
     {
       "ecc_id": "ECC-DIR-017",
@@ -1892,7 +1892,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 13
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-018",
@@ -1908,7 +1908,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 5
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-DIR-019",
@@ -1924,7 +1924,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 14
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-020",
@@ -1940,7 +1940,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 33
+      "duration_ms": 24
     },
     {
       "ecc_id": "ECC-DIR-021",
@@ -1956,7 +1956,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 5
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-DIR-022",
@@ -1972,7 +1972,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 12
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-023",
@@ -1988,7 +1988,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 22
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-DIR-024",
@@ -2004,7 +2004,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 23
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-DIR-025",
@@ -2020,7 +2020,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 31
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-DIR-026",
@@ -2036,7 +2036,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 34
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-DIR-027",
@@ -2052,7 +2052,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 13
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DIR-028",
@@ -2068,7 +2068,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 12
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-029",
@@ -2084,7 +2084,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 31
+      "duration_ms": 38
     },
     {
       "ecc_id": "ECC-DIR-030",
@@ -2100,7 +2100,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 4
+      "duration_ms": 3
     },
     {
       "ecc_id": "ECC-DIR-031",
@@ -2116,7 +2116,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 34
+      "duration_ms": 29
     },
     {
       "ecc_id": "ECC-DIR-032",
@@ -2132,7 +2132,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 13
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-033",
@@ -2149,7 +2149,7 @@
       "message": null,
       "citation": "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-empty_ehr realized as GET /ehr/{ehr_id}/directory/{version_uid} (no versioned_directory resource in ITS-REST development@e8a093e/Release-1.0.3); RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
       "schedule_ref": "I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)",
-      "duration_ms": 13
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DIR-034",
@@ -2166,7 +2166,7 @@
       "message": null,
       "citation": "CNF Robot I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions realized as GET /ehr/{ehr_id}/directory/{version_uid}; RM 1.2.0 ehr §FOLDER, common §VERSIONED_OBJECT",
       "schedule_ref": "I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)",
-      "duration_ms": 32
+      "duration_ms": 26
     },
     {
       "ecc_id": "ECC-DIR-035",
@@ -2199,7 +2199,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 13
+      "duration_ms": 12
     },
     {
       "ecc_id": "ECC-DIR-037",
@@ -2215,7 +2215,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DIRECTORY API §create/get/update/delete directory; RM 1.2.0 ehr §FOLDER",
-      "duration_ms": 12
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-TPL-001",
@@ -2232,7 +2232,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST DEFINITION ADL 1.4 API §upload OPT; AM 1.4 §OPERATIONAL_TEMPLATE; CORE Adl14ArchetypeProvisioning evidenced via OPT (archetypes embedded in the OPT)",
-      "duration_ms": 7
+      "duration_ms": 8
     },
     {
       "ecc_id": "ECC-TPL-002",
@@ -2249,7 +2249,7 @@
       "total_data_sets": 18,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 135
+      "duration_ms": 94
     },
     {
       "ecc_id": "ECC-TPL-003",
@@ -2266,7 +2266,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-TPL-004",
@@ -2283,7 +2283,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 11
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-TPL-005",
@@ -2300,7 +2300,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 11
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-TPL-006",
@@ -2317,7 +2317,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 16
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-TPL-007",
@@ -2334,7 +2334,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 12
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-TPL-008",
@@ -2351,7 +2351,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 8
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-TPL-009",
@@ -2368,7 +2368,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 6
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-TPL-010",
@@ -2385,7 +2385,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 20
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-TPL-011",
@@ -2402,7 +2402,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 9
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-TPL-012",
@@ -2419,7 +2419,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload/get/validate/delete OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
-      "duration_ms": 12
+      "duration_ms": 6
     },
     {
       "ecc_id": "ECC-TPL-013",
@@ -2523,7 +2523,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 17
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-SQR-003",
@@ -2539,7 +2539,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 13
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-SQR-004",
@@ -2589,7 +2589,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 6
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-SQR-007",
@@ -2605,7 +2605,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEFINITION QUERY API §store/list stored query; AQL 1.1",
-      "duration_ms": 5
+      "duration_ms": 4
     },
     {
       "ecc_id": "ECC-QRY-001",
@@ -2621,7 +2621,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 10
+      "duration_ms": 7
     },
     {
       "ecc_id": "ECC-QRY-002",
@@ -2637,7 +2637,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 10
+      "duration_ms": 7
     },
     {
       "ecc_id": "ECC-QRY-003",
@@ -2653,7 +2653,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 14
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-QRY-004",
@@ -2669,7 +2669,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query/execute_stored_query; AQL 1.1",
-      "duration_ms": 40
+      "duration_ms": 34
     },
     {
       "ecc_id": "ECC-QRY-005",
@@ -2685,7 +2685,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 14
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-QRY-006",
@@ -2701,7 +2701,7 @@
       "total_data_sets": 25,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 354
+      "duration_ms": 275
     },
     {
       "ecc_id": "ECC-QRY-007",
@@ -2717,7 +2717,7 @@
       "total_data_sets": 18,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 292
+      "duration_ms": 234
     },
     {
       "ecc_id": "ECC-QRY-008",
@@ -2733,7 +2733,7 @@
       "total_data_sets": 11,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 110
+      "duration_ms": 72
     },
     {
       "ecc_id": "ECC-QRY-009",
@@ -2749,7 +2749,7 @@
       "total_data_sets": 16,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 177
+      "duration_ms": 153
     },
     {
       "ecc_id": "ECC-QRY-010",
@@ -2765,7 +2765,7 @@
       "total_data_sets": 21,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 208
+      "duration_ms": 185
     },
     {
       "ecc_id": "ECC-QRY-011",
@@ -2781,7 +2781,7 @@
       "total_data_sets": 15,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 206
+      "duration_ms": 156
     },
     {
       "ecc_id": "ECC-QRY-012",
@@ -2797,7 +2797,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 18
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-QRY-013",
@@ -2813,7 +2813,7 @@
       "total_data_sets": 7,
       "message": null,
       "citation": "ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query; AQL 1.1; reference: CNF query corpus (design-time reading)",
-      "duration_ms": 80
+      "duration_ms": 71
     },
     {
       "ecc_id": "ECC-ADM-001",
@@ -2829,7 +2829,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 14
+      "duration_ms": 21
     },
     {
       "ecc_id": "ECC-ADM-002",
@@ -2861,7 +2861,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 18
+      "duration_ms": 16
     },
     {
       "ecc_id": "ECC-ADM-004",
@@ -2877,7 +2877,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 21
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-ADM-005",
@@ -2893,7 +2893,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 ADMIN API §delete EHR; SM §I_ADMIN_SERVICE.physical_ehr_delete",
-      "duration_ms": 13
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-ADM-006",
@@ -2941,7 +2941,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 12
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-003",
@@ -2957,7 +2957,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 11
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-004",
@@ -2973,7 +2973,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 13
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-005",
@@ -3005,7 +3005,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 16
+      "duration_ms": 17
     },
     {
       "ecc_id": "ECC-DEM-007",
@@ -3117,7 +3117,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 12
+      "duration_ms": 13
     },
     {
       "ecc_id": "ECC-DEM-014",
@@ -3133,7 +3133,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 13
+      "duration_ms": 20
     },
     {
       "ecc_id": "ECC-DEM-015",
@@ -3149,7 +3149,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 6
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-DEM-016",
@@ -3165,7 +3165,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 11
+      "duration_ms": 10
     },
     {
       "ecc_id": "ECC-DEM-017",
@@ -3181,7 +3181,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 12
+      "duration_ms": 11
     },
     {
       "ecc_id": "ECC-DEM-018",
@@ -3229,7 +3229,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 13
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DEM-021",
@@ -3261,7 +3261,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 11
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DEM-023",
@@ -3277,7 +3277,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 12
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-DEM-024",
@@ -3293,7 +3293,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "ITS-REST 1.0.3 DEMOGRAPHIC API; SM §I_DEMOGRAPHIC_SERVICE; RM 1.2.0 demographic",
-      "duration_ms": 11
+      "duration_ms": 9
     },
     {
       "ecc_id": "ECC-VAL-001",
@@ -3310,7 +3310,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 126
+      "duration_ms": 108
     },
     {
       "ecc_id": "ECC-VAL-002",
@@ -3327,7 +3327,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 115
+      "duration_ms": 147
     },
     {
       "ecc_id": "ECC-VAL-003",
@@ -3344,7 +3344,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 115
+      "duration_ms": 99
     },
     {
       "ecc_id": "ECC-VAL-004",
@@ -3361,7 +3361,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 114
+      "duration_ms": 105
     },
     {
       "ecc_id": "ECC-VAL-005",
@@ -3378,7 +3378,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 111
+      "duration_ms": 100
     },
     {
       "ecc_id": "ECC-VAL-006",
@@ -3395,7 +3395,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 114
+      "duration_ms": 101
     },
     {
       "ecc_id": "ECC-VAL-007",
@@ -3412,7 +3412,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 115
+      "duration_ms": 98
     },
     {
       "ecc_id": "ECC-VAL-008",
@@ -3429,7 +3429,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 113
+      "duration_ms": 101
     },
     {
       "ecc_id": "ECC-VAL-009",
@@ -3446,7 +3446,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 124
+      "duration_ms": 110
     },
     {
       "ecc_id": "ECC-VAL-010",
@@ -3463,7 +3463,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 120
+      "duration_ms": 105
     },
     {
       "ecc_id": "ECC-VAL-011",
@@ -3480,7 +3480,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 109
+      "duration_ms": 138
     },
     {
       "ecc_id": "ECC-VAL-012",
@@ -3497,7 +3497,7 @@
       "total_data_sets": 6,
       "message": null,
       "citation": "RM 1.2.0 ehr §COMPOSITION.content/context; AM 1.4 archetype cardinality; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 115
+      "duration_ms": 113
     },
     {
       "ecc_id": "ECC-VAL-013",
@@ -3514,7 +3514,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 40
+      "duration_ms": 38
     },
     {
       "ecc_id": "ECC-VAL-014",
@@ -3531,7 +3531,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 41
+      "duration_ms": 44
     },
     {
       "ecc_id": "ECC-VAL-015",
@@ -3548,7 +3548,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 37
+      "duration_ms": 41
     },
     {
       "ecc_id": "ECC-VAL-016",
@@ -3565,7 +3565,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §OBSERVATION; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 36
+      "duration_ms": 41
     },
     {
       "ecc_id": "ECC-VAL-017",
@@ -3582,7 +3582,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 60
+      "duration_ms": 71
     },
     {
       "ecc_id": "ECC-VAL-018",
@@ -3599,7 +3599,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 62
+      "duration_ms": 67
     },
     {
       "ecc_id": "ECC-VAL-019",
@@ -3616,7 +3616,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 68
+      "duration_ms": 99
     },
     {
       "ecc_id": "ECC-VAL-020",
@@ -3633,7 +3633,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 70
+      "duration_ms": 60
     },
     {
       "ecc_id": "ECC-VAL-021",
@@ -3650,7 +3650,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 66
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-022",
@@ -3667,7 +3667,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 61
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-023",
@@ -3684,7 +3684,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-024",
@@ -3701,7 +3701,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 62
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-025",
@@ -3718,7 +3718,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-026",
@@ -3735,7 +3735,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-027",
@@ -3752,7 +3752,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-028",
@@ -3769,7 +3769,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 ehr §HISTORY; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 65
     },
     {
       "ecc_id": "ECC-VAL-029",
@@ -3786,7 +3786,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 41
+      "duration_ms": 40
     },
     {
       "ecc_id": "ECC-VAL-030",
@@ -3803,7 +3803,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 42
+      "duration_ms": 33
     },
     {
       "ecc_id": "ECC-VAL-031",
@@ -3820,7 +3820,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 20
+      "duration_ms": 18
     },
     {
       "ecc_id": "ECC-VAL-032",
@@ -3837,7 +3837,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 39
+      "duration_ms": 35
     },
     {
       "ecc_id": "ECC-VAL-033",
@@ -3854,7 +3854,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §EVENT; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 41
+      "duration_ms": 37
     },
     {
       "ecc_id": "ECC-VAL-034",
@@ -3871,7 +3871,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 59
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-035",
@@ -3888,7 +3888,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 56
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-036",
@@ -3905,7 +3905,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 61
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-037",
@@ -3922,7 +3922,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-038",
@@ -3939,7 +3939,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 ehr §ITEM_STRUCTURE; AM 1.4 archetype constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 75
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-039",
@@ -3956,7 +3956,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 95
+      "duration_ms": 88
     },
     {
       "ecc_id": "ECC-VAL-040",
@@ -3973,7 +3973,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 104
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-041",
@@ -3990,7 +3990,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_BOOLEAN; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 97
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-042",
@@ -4007,7 +4007,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 102
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-043",
@@ -4024,7 +4024,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_IDENTIFIER; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 92
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-044",
@@ -4041,7 +4041,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 86
+      "duration_ms": 60
     },
     {
       "ecc_id": "ECC-VAL-045",
@@ -4058,7 +4058,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 58
     },
     {
       "ecc_id": "ECC-VAL-046",
@@ -4075,7 +4075,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 63
+      "duration_ms": 64
     },
     {
       "ecc_id": "ECC-VAL-047",
@@ -4092,7 +4092,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 64
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-048",
@@ -4109,7 +4109,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 70
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-049",
@@ -4126,7 +4126,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 63
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-050",
@@ -4143,7 +4143,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_ORDINAL; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 61
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-051",
@@ -4160,7 +4160,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 73
+      "duration_ms": 62
     },
     {
       "ecc_id": "ECC-VAL-052",
@@ -4177,7 +4177,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_SCALE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 71
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-053",
@@ -4194,7 +4194,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 59
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-054",
@@ -4211,7 +4211,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 74
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-055",
@@ -4228,7 +4228,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_COUNT; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 80
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-056",
@@ -4245,7 +4245,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 61
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-057",
@@ -4262,7 +4262,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 66
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-058",
@@ -4279,7 +4279,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 64
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-059",
@@ -4296,7 +4296,7 @@
       "total_data_sets": 3,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_QUANTITY; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 76
+      "duration_ms": 49
     },
     {
       "ecc_id": "ECC-VAL-060",
@@ -4313,7 +4313,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 58
+      "duration_ms": 67
     },
     {
       "ecc_id": "ECC-VAL-061",
@@ -4330,7 +4330,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 66
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-062",
@@ -4347,7 +4347,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 68
+      "duration_ms": 65
     },
     {
       "ecc_id": "ECC-VAL-063",
@@ -4364,7 +4364,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 67
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-064",
@@ -4381,7 +4381,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 75
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-065",
@@ -4398,7 +4398,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 73
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-066",
@@ -4415,7 +4415,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 46
+      "duration_ms": 32
     },
     {
       "ecc_id": "ECC-VAL-067",
@@ -4432,7 +4432,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PROPORTION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 61
     },
     {
       "ecc_id": "ECC-VAL-068",
@@ -4449,7 +4449,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 70
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-069",
@@ -4466,7 +4466,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 94
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-070",
@@ -4483,7 +4483,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 69
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-071",
@@ -4500,7 +4500,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 69
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-072",
@@ -4517,7 +4517,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 69
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-073",
@@ -4534,7 +4534,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 73
+      "duration_ms": 63
     },
     {
       "ecc_id": "ECC-VAL-074",
@@ -4551,7 +4551,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 69
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-075",
@@ -4568,7 +4568,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 68
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-076",
@@ -4585,7 +4585,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 66
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-077",
@@ -4602,7 +4602,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 73
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-078",
@@ -4619,7 +4619,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 106
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-079",
@@ -4636,7 +4636,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 70
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-080",
@@ -4653,7 +4653,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-081",
@@ -4670,7 +4670,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 85
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-082",
@@ -4687,7 +4687,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 77
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-083",
@@ -4704,7 +4704,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-084",
@@ -4721,7 +4721,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 71
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-085",
@@ -4738,7 +4738,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 75
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-086",
@@ -4755,7 +4755,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 73
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-087",
@@ -4772,7 +4772,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 76
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-088",
@@ -4789,7 +4789,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 66
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-089",
@@ -4806,7 +4806,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 81
+      "duration_ms": 52
     },
     {
       "ecc_id": "ECC-VAL-090",
@@ -4823,7 +4823,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-091",
@@ -4840,7 +4840,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-092",
@@ -4857,7 +4857,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 88
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-093",
@@ -4874,7 +4874,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 77
+      "duration_ms": 50
     },
     {
       "ecc_id": "ECC-VAL-094",
@@ -4891,7 +4891,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 74
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-095",
@@ -4908,7 +4908,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 117
+      "duration_ms": 58
     },
     {
       "ecc_id": "ECC-VAL-096",
@@ -4925,7 +4925,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 108
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-097",
@@ -4942,7 +4942,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 112
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-098",
@@ -4959,7 +4959,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 72
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-099",
@@ -4976,7 +4976,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 70
+      "duration_ms": 51
     },
     {
       "ecc_id": "ECC-VAL-100",
@@ -4993,7 +4993,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 59
+      "duration_ms": 58
     },
     {
       "ecc_id": "ECC-VAL-101",
@@ -5010,7 +5010,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 68
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-102",
@@ -5027,7 +5027,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 65
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-103",
@@ -5044,7 +5044,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 57
+      "duration_ms": 66
     },
     {
       "ecc_id": "ECC-VAL-104",
@@ -5061,7 +5061,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 77
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-105",
@@ -5078,7 +5078,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 68
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-VAL-119",
@@ -5095,7 +5095,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "AM 1.4 C_DATE (yyyy-??-XX: month optional, day disallowed; org.openehr.am.aom14.c_date.adoc); valid_templates/all_types/Test_all_types.opt; ITS-REST 1.0.3 composition_create (422 rejected)",
-      "duration_ms": 27
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-VAL-106",
@@ -5112,7 +5112,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 60
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-107",
@@ -5129,7 +5129,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 63
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-108",
@@ -5146,7 +5146,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 93
+      "duration_ms": 56
     },
     {
       "ecc_id": "ECC-VAL-109",
@@ -5163,7 +5163,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 143
+      "duration_ms": 53
     },
     {
       "ecc_id": "ECC-VAL-110",
@@ -5180,7 +5180,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_PARSABLE; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 124
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-111",
@@ -5197,7 +5197,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 71
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-112",
@@ -5214,7 +5214,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_MULTIMEDIA; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 71
+      "duration_ms": 54
     },
     {
       "ecc_id": "ECC-VAL-113",
@@ -5231,7 +5231,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 59
+      "duration_ms": 57
     },
     {
       "ecc_id": "ECC-VAL-114",
@@ -5248,7 +5248,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 77
+      "duration_ms": 124
     },
     {
       "ecc_id": "ECC-VAL-115",
@@ -5265,7 +5265,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 81
+      "duration_ms": 70
     },
     {
       "ecc_id": "ECC-VAL-116",
@@ -5282,7 +5282,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 79
+      "duration_ms": 68
     },
     {
       "ecc_id": "ECC-VAL-117",
@@ -5299,7 +5299,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 75
+      "duration_ms": 59
     },
     {
       "ecc_id": "ECC-VAL-118",
@@ -5316,7 +5316,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "RM 1.2.0 data_types §DV_EHR_URI; AM 1.4 C_* constraint; ITS-REST 1.0.3 composition_create (201/422)",
-      "duration_ms": 105
+      "duration_ms": 55
     },
     {
       "ecc_id": "ECC-SIG-001",
@@ -5332,7 +5332,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
-      "duration_ms": 32
+      "duration_ms": 25
     },
     {
       "ecc_id": "ECC-SIG-001",
@@ -5348,7 +5348,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.2 (digest default-on); §4.4 (rides every VERSION read)",
-      "duration_ms": 36
+      "duration_ms": 27
     },
     {
       "ecc_id": "ECC-SIG-002",
@@ -5380,7 +5380,7 @@
       "total_data_sets": 4,
       "message": null,
       "citation": "version-signing.md §3.3 (all object kinds via the shared vobject commit path)",
-      "duration_ms": 82
+      "duration_ms": 69
     },
     {
       "ecc_id": "ECC-SIG-004",
@@ -5396,7 +5396,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "version-signing.md §3.3 (client-supplied signatures win, stored verbatim)",
-      "duration_ms": 27
+      "duration_ms": 23
     },
     {
       "ecc_id": "ECC-SIG-005",
@@ -5598,7 +5598,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
-      "duration_ms": 14
+      "duration_ms": 65
     },
     {
       "ecc_id": "ECC-TS-002",
@@ -5614,7 +5614,7 @@
       "total_data_sets": 2,
       "message": null,
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
-      "duration_ms": 43
+      "duration_ms": 307
     },
     {
       "ecc_id": "ECC-TS-003",
@@ -5630,7 +5630,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
-      "duration_ms": 30
+      "duration_ms": 166
     },
     {
       "ecc_id": "ECC-TS-004",
@@ -5662,7 +5662,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
-      "duration_ms": 4
+      "duration_ms": 5
     },
     {
       "ecc_id": "ECC-TS-006",
@@ -5676,7 +5676,7 @@
       "status": "skipped",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:64681 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5).",
+      "message": "SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:53744 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5).",
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
       "duration_ms": 5
     },
@@ -5692,7 +5692,7 @@
       "status": "skipped",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64681 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception.",
+      "message": "SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception.",
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
       "duration_ms": 0
     },
@@ -5708,7 +5708,7 @@
       "status": "skipped",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64681 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception.",
+      "message": "SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception.",
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
       "duration_ms": 0
     },
@@ -5724,7 +5724,7 @@
       "status": "skipped",
       "passed_data_sets": 0,
       "total_data_sets": 0,
-      "message": "SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64681 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception.",
+      "message": "SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception.",
       "citation": "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query",
       "duration_ms": 0
     },
@@ -5741,7 +5741,7 @@
       "message": null,
       "citation": "CNF SECURITY_TESTS/I_OAuth2_Keycloak §06 (API endpoints are secured); ITS-REST EHR API §get_ehr (401 unauthenticated)",
       "schedule_ref": "SECURITY_TESTS/I_OAuth2_Keycloak §06 API endpoints are secured",
-      "duration_ms": 0
+      "duration_ms": 1
     },
     {
       "ecc_id": "ECC-SEC-002",
@@ -5755,7 +5755,7 @@
       "total_data_sets": 1,
       "message": null,
       "citation": "CNF SECURITY_TESTS/I_OAuth2_Keycloak (role-privileged access intent); ITS-REST ADMIN API §delete EHR — ADMIN-role-only (SM I_ADMIN_SERVICE)",
-      "duration_ms": 4
+      "duration_ms": 5
     }
   ]
 }

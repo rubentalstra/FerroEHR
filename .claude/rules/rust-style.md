@@ -54,6 +54,13 @@ web service). No PORT STATUS trailer on application code (that was the retired
 - Back-references use `Weak<..>` or an index, never an owning reference; recursive
   containment is boxed (the generated crates already do this).
 - `std::sync::LazyLock` (edition 2024) for statics, not `once_cell`.
+- **No `use X as Y` import renaming (owner hard rule, 2026-07-11).** Import
+  types under their direct names. An alias papers over a naming problem —
+  if the name is bad, FIX THE NAME at its definition; if two imports
+  genuinely collide, qualify one at the use site (full path) instead of
+  renaming. Only alias in highly exceptional cases where no other solution
+  exists, with a comment saying why. (Trait imports as `use Trait as _;`
+  are not renames and are fine.)
 - Edition 2024, resolver v3, MSRV 1.96. `cargo fmt` clean; run `cargo clippy` on
   the crate you touched before considering it done.
 

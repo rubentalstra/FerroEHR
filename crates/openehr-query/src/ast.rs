@@ -161,6 +161,11 @@ pub enum IdentifiedExpr {
         /// The match set.
         operand: MatchesOperand,
     },
+    /// A condition already resolved to a constant during semantic analysis —
+    /// the product of evaluating a `TERMINOLOGY()` Boolean value expression
+    /// (QUERY master03 §TERMINOLOGY: "as a Boolean value expression"). Never
+    /// produced by the parser.
+    Resolved(bool),
 }
 
 /// Left side of a comparison: a path or a function call.
