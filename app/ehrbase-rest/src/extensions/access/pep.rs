@@ -126,7 +126,7 @@ pub(crate) fn query_pre<S: Platform>(
 /// touched template set. An empty result permits (v1 parity). The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
-pub(super) async fn query_post<S: Platform>(
+pub(crate) async fn query_post<S: Platform>(
     state: &AppState<S>,
     op: &'static str,
     outcome: &ehrbase_sm::QueryOutcome,

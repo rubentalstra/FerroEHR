@@ -158,6 +158,7 @@ pub(super) fn mk_update_version(
             change_type: term(change_code),
             description: Some(description.to_owned()),
             committer: committer_proxy(),
+            system_id: None,
         },
         signature: None,
     };
