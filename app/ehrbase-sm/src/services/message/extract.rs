@@ -34,7 +34,7 @@ use uuid::Uuid;
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
-use crate::error::SmError;
+use crate::common::SmError;
 
 /// `I_EHR_EXTRACT_SERVICE` — import/export of EHR Extracts, one Rust method per
 /// SM call (`i_ehr_extract_service.adoc`).

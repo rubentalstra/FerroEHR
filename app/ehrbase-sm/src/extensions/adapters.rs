@@ -13,9 +13,9 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::error::SmError;
+use crate::common::SmError;
+use crate::extensions::response::{ResourceMeta, ServiceResponse};
 use crate::tenant::TenantContext;
-use crate::types::{ResourceMeta, ServiceResponse};
 
 /// Current-version metadata for the `409`/`412` `ETag`/`Location` decoration.
 #[async_trait]

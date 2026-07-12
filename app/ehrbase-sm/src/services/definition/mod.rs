@@ -22,6 +22,6 @@ pub mod adl14;
 pub mod adl2;
 pub mod query;
 
-pub use adl14::DefinitionAdl14Service;
 pub use adl2::DefinitionAdl2Service;
+pub use adl14::DefinitionAdl14Service;
 pub use query::{DefinitionQueryService, QueryDescriptor};

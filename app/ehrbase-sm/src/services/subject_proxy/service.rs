@@ -4,7 +4,7 @@
 
 use async_trait::async_trait;
 
-use crate::error::SmError;
+use crate::common::SmError;
 
 use super::binding::{DataFrame, EnvBinding};
 use super::data_set::{DataSetResult, SubjectDataSet};

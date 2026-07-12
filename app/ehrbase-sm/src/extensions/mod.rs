@@ -11,6 +11,7 @@
 pub mod adapters;
 pub mod ehr_access;
 pub mod response;
+pub mod web_template;
 
 pub use adapters::{
     ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, FhirConnectorAdapter,
@@ -21,3 +22,4 @@ pub use ehr_access::{
     EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter, EhrAccessSettings, Privacy, principal_matches,
 };
 pub use response::{ResourceMeta, ServiceResponse};
+pub use web_template::WebTemplateService;
