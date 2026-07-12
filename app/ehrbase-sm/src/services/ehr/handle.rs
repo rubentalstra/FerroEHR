@@ -1,8 +1,8 @@
 //! The SM `I_EHR` per-EHR accessor, realized as a generic handle.
 //!
-//! `I_EHR` (`docs/specs/openehr/SM/docs/UML/classes/i_ehr.adoc`; digest
-//! `docs/design/sm-platform/02-ehr-service.md` §1) is not an operation
-//! interface — it is a per-EHR *accessor* with four mandatory attributes
+//! `I_EHR` (`i_ehr.adoc`: "Interface for single patient EHR-level
+//! operations") is not an operation interface —
+//! it is a per-EHR *accessor* with four mandatory attributes
 //! (`ehr_status`, `directory`, `compositions`, `contributions`), obtained via
 //! `I_EHR_SERVICE.i_ehr(ehr_id)`. It is realized here as a zero-cost generic
 //! handle over the platform service `S`; the sub-handles delegate to the flat
@@ -11,9 +11,7 @@
 
 use uuid::Uuid;
 
-use crate::services::{
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrStatusService,
-};
+use super::{EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrStatusService};
 
 /// The `I_EHR` accessor: a borrow of the platform service `S` bound to one
 /// `ehr_id`. Built via [`EhrService::i_ehr`](crate::services::EhrService::i_ehr).

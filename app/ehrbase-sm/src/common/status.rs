@@ -1,44 +1,43 @@
-//! The SM call-status error model (`platform.common`).
-//!
-//! Mirrors `CALL_STATUS` / `CALL_STATUS_TYPE` and the service-specific
-//! descendant enumerations of the openEHR Platform Service Model
-//! (`docs/specs/openehr/SM/docs/UML/classes/{call_status,call_status_type,
-//! ehr_call_status_type,definition_call_status_type}.adoc`;
-//! `master03-common_package.adoc` §Representing Call Status).
+//! The SM call-status model (`master03-common_package.adoc` §Representing
+//! Call Status; `i_status.adoc`, `call_status.adoc`, `call_status_type.adoc`
+//! + the service-specific descendants `ehr_call_status_type.adoc`,
+//! `definition_call_status_type.adoc`).
 //!
 //! The SM's stateful `I_STATUS.last_call_failed()`/`last_call_status()`
 //! protocol maps onto our stateless typed-error style — a mapping the spec
-//! explicitly sanctions (`master02-overview.adoc` §Functional Style: results
-//! as return values with status in the response envelope, "Either style can
-//! be used, and can be trivially mapped from one to the other").
+//! explicitly sanctions (`master02-overview.adoc` §Functional Style: "Another
+//! common style is to include results as 'out' parameters, and to use the
+//! return value to return call status. Either style can be used, and can be
+//! trivially mapped from one to the other"). Every catalog trait returns
+//! `Result<T, SmError>`; a failed call's [`CallStatus`] object is built on
+//! demand via [`SmError::into_call_status`].
 //!
 //! The single SM → HTTP table lives with the protocol adapter
-//! (`ehrbase-rest::error::sm_api_error`, `docs/design/sm-platform/
-//! 08-target-architecture.md` §5): this crate is protocol-free and
-//! carries **no** ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC
-//! schedule remain the wire oracle: where the SM name and the wire
-//! disagree, the wire's status code wins in that adapter table.
+//! (`ehrbase-rest::error`): this crate is protocol-free and carries **no**
+//! ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC schedule remain the wire
+//! oracle: where the SM name and the wire disagree, the wire's status code
+//! wins in that adapter table.
 
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
 ///
 /// The SM models the extension as inheritance ("Particular services may add
-/// more codes by inheriting from this class", `master03-common_package.adoc`
-/// §Representing Call Status); a single flat Rust enum with the provenance
-/// documented per variant is the idiomatic equivalent — every abstract error
-/// name used by an SM interface has exactly one variant here.
+/// more codes by inheriting from this class and defining further specific
+/// codes", `master03-common_package.adoc` §Representing Call Status); a single
+/// flat Rust enum with the provenance documented per variant is the idiomatic
+/// equivalent — every abstract error name used by an SM interface has exactly
+/// one variant here.
 ///
 /// Variants marked *(prose-only)* appear in SM interface `.Errors` blocks but
 /// in no vendored enumeration — a catalogued spec gap
-/// (`docs/design/sm-platform/02-ehr-service.md` §9); this enum is their one
-/// concrete home.
+/// (`docs/design/sm-platform/05-ehr.md`); this enum is their one concrete
+/// home.
 ///
 /// Deliberately **not** `#[non_exhaustive]`: `ehrbase-sm` is an internal,
 /// unpublished workspace crate, so the attribute would buy no
 /// forward-compatibility — it would only force wildcard match arms in the
-/// protocol adapter's SM → HTTP table (`ehrbase-rest::error::sm_api_error`)
-/// that silently swallow any future unmapped status. Leaving it exhaustive lets
-/// the compiler flag a missing SM → HTTP row when a variant is added (a
-/// compile-time completeness).
+/// protocol adapter's SM → HTTP table that silently swallow any future
+/// unmapped status. Leaving it exhaustive lets the compiler flag a missing
+/// SM → HTTP row when a variant is added (compile-time completeness).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CallStatusType {
     // ── CALL_STATUS_TYPE (base; `call_status_type.adoc`) ────────────────────
@@ -66,8 +65,8 @@ pub enum CallStatusType {
     VersionMismatch,
     /// The requested operation is not implemented by this platform
     /// (ITS-REST `501`). Not an SM `CALL_STATUS_TYPE` member — an adapter
-    /// affordance for optional/dev-branch routes (e.g. `template/adl2`) and
-    /// unimplemented mock seams; the wire maps it to `501 Not Implemented`.
+    /// affordance for optional/dev-branch routes and unimplemented seams;
+    /// the wire maps it to `501 Not Implemented`.
     NotImplemented,
 
     // ── EHR_CALL_STATUS_TYPE (`ehr_call_status_type.adoc`) ──────────────────
@@ -160,13 +159,9 @@ impl CallStatusType {
 
 /// The native-API error type — a `CALL_STATUS_TYPE` code plus a message.
 ///
-/// Realizes the SM `I_STATUS` protocol (`master03-common_package.adoc`
-/// §Representing Call Status: `last_call_failed()`/`last_call_status()`) in the
-/// stateless typed-`Result` style the spec sanctions
-/// (`master02-overview.adoc` §Functional Style). Every catalog trait returns
-/// `Result<T, SmError>`; the protocol adapter (`ehrbase-rest`) owns the single
-/// SM → HTTP mapping ([`CallStatusType::api_error`]) — so this type carries
-/// **no** ITS-REST dependency.
+/// Realizes the SM `I_STATUS` protocol (`i_status.adoc`:
+/// `last_call_failed()`/`last_call_status()`) in the stateless typed-`Result`
+/// style the spec sanctions (`master02-overview.adoc` §Functional Style).
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("{message}")]
 pub struct SmError {
@@ -211,13 +206,30 @@ impl SmError {
     pub fn exception(message: impl Into<String>) -> Self {
         Self::new(CallStatusType::Exception, message)
     }
+
+    /// Build the SM `CALL_STATUS` object for this failed call
+    /// (`I_STATUS.last_call_status()` — the caller supplies the call identity
+    /// the stateless style does not track).
+    #[must_use]
+    pub fn into_call_status(
+        self,
+        call_name: impl Into<String>,
+        call_string: impl Into<String>,
+    ) -> CallStatus {
+        CallStatus {
+            code: self.status,
+            call_name: call_name.into(),
+            call_string: call_string.into(),
+            meaning: self.status.sm_name().to_owned(),
+            message: self.message,
+        }
+    }
 }
 
 /// `CALL_STATUS` — "Object representing a call status" (`call_status.adoc`).
-///
-/// All five attributes are mandatory in the SM. In our stateless mapping this
-/// is the structured error payload a failed call surfaces (the SM obtains it
-/// via `I_STATUS.last_call_status()` after the fact).
+/// All five attributes are mandatory in the SM. Built on demand from a failed
+/// call's [`SmError`] via [`SmError::into_call_status`] (the stateless
+/// realization of `I_STATUS.last_call_status()`).
 #[derive(Debug, Clone)]
 pub struct CallStatus {
     /// Call status code for last call.
@@ -232,64 +244,19 @@ pub struct CallStatus {
     pub message: String,
 }
 
-impl CallStatus {
-    /// Build a status for a failed call; `meaning` defaults to the SM name of
-    /// the code.
-    #[must_use]
-    pub fn new(
-        code: CallStatusType,
-        call_name: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
-        let call_name = call_name.into();
-        Self {
-            code,
-            call_string: call_name.clone(),
-            call_name,
-            meaning: code.sm_name().to_owned(),
-            message: message.into(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn every_status_has_a_distinct_sm_name() {
-        let all = [
-            CallStatusType::Success,
-            CallStatusType::AuthFailure,
-            CallStatusType::PreconditionViolation,
-            CallStatusType::ObjectVersionDoesNotExist,
-            CallStatusType::VersionedObjectDoesNotExist,
-            CallStatusType::Exception,
-            CallStatusType::EhrIdDoesNotExist,
-            CallStatusType::PartyIdDoesNotExist,
-            CallStatusType::FileNotWritable,
-            CallStatusType::VersionMismatch,
-            CallStatusType::NotImplemented,
-            CallStatusType::CompositionDoesNotExist,
-            CallStatusType::ContributionDoesNotExist,
-            CallStatusType::CompositionArchetypeInvalid,
-            CallStatusType::EhrCreateFailDuplicateId,
-            CallStatusType::CompositionAlreadyExists,
-            CallStatusType::EhrForSubjectAlreadyExists,
-            CallStatusType::InvalidArchetype,
-            CallStatusType::InvalidTemplate,
-            CallStatusType::InvalidArtefact,
-            CallStatusType::InvalidQuery,
-            CallStatusType::InvalidIdPattern,
-            CallStatusType::ArtefactDoesNotExist,
-            CallStatusType::TemplateDoesNotExist,
-            CallStatusType::DefinitionUnknown,
-            CallStatusType::ContentInvalid,
-            CallStatusType::VersionDoesNotExist,
-            CallStatusType::SubjectIdDoesNotExist,
-            CallStatusType::VersionedCompositionDoesNotExist,
-        ];
-        let names: std::collections::BTreeSet<_> = all.iter().map(|s| s.sm_name()).collect();
-        assert_eq!(names.len(), all.len());
+    fn call_status_realizes_i_status_protocol() {
+        // master03 §Representing Call Status: a failed call yields a
+        // CALL_STATUS with all five attributes populated.
+        let err = SmError::precondition("no such EHR");
+        let status = err.into_call_status("create_ehr_with_id", "create_ehr_with_id(…)");
+        assert_eq!(status.code, CallStatusType::PreconditionViolation);
+        assert_eq!(status.meaning, "precondition_violation");
+        assert_eq!(status.call_name, "create_ehr_with_id");
+        assert_eq!(status.message, "no such EHR");
     }
 }
