@@ -247,3 +247,22 @@ service-chapter redesigns to publish a stable in-crate seam:
 
 No PORT NOTE is dropped; the only rewrite is the FHIR crate-layout note, which
 becomes an integration TODO once the module relocates.
+
+---
+
+## W-3f closure (2026-07-13)
+
+The spec-homeless modules relocated under `src/extensions/`: `events/` (`amqp.rs`, `publisher.rs`, `subscription.rs`, `config.rs`, `mod.rs`), `fhir/` (`mapping.rs`, `reverse.rs`, `outbound.rs`, `feeder_audit.rs`, `config.rs`, `mod.rs`), `multimedia/` (`store.rs`, `offload.rs`, `config.rs`, `mod.rs`), and `tenancy.rs`. The two RM-grounded modules reassigned to core registers.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-12-01 | FIXED (quarantine) | AMQP publisher → `extensions/events/{amqp,publisher}.rs` |
+| G-12-02 | FIXED (quarantine) | event subscription → `extensions/events/subscription.rs` |
+| G-12-03 | FIXED (quarantine) | FHIR outbound → `extensions/fhir/outbound.rs` (+ `config.rs`) |
+| G-12-04 | FIXED (quarantine + split) | FHIR connector → `extensions/fhir/`; `mapping.rs` split to 629 lines (+ `reverse.rs` 340), under the ≤700 budget; `FEEDER_AUDIT` in `feeder_audit.rs` |
+| G-12-05 | FIXED (quarantine) | multimedia blob storage → `extensions/multimedia/` |
+| G-12-06 | FIXED (quarantine) | tenancy → `extensions/tenancy.rs` (Stage-2 marker, not extended) |
+| G-12-07 | Reassigned (register-01/EHR) | `EHR_ACCESS` → `service/ehr/access.rs` (RM ehr, cited `master06 §EHR_ACCESS`); stays service-internal, not an extension |
+| G-12-08 | Reassigned (register-01/02) | `service/codes.rs` deleted; change_type/lifecycle code groups folded into `versioning/` (`lifecycle.rs:1-6`, `change.rs`); TERM groups with the terminology bundle |
+
+Open residue: none — the six spec-silent modules quarantined into `extensions/`, the two RM/TERM-grounded modules reassigned to their core registers.

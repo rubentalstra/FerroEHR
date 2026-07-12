@@ -305,3 +305,27 @@ versioning/
 ---
 
 *Chapters upstream: blueprint ch 01 (RM change control), `docs/spec-audit/rm-common-change-control/`. This register is the W-3f spec-onto-code map for the versioning + integrity area; the sibling register **02-storage** owns the node codec + SQL seam referenced in §5.*
+
+---
+
+## W-3f closure (2026-07-13)
+
+The rewrite landed: `service/vobject.rs`/`contribution.rs`/`version_id.rs`/`versioned.rs` and the standalone `signing/` are gone, replaced by the spec-derived `src/versioning/` module of §4.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-01 | FIXED in code | `versioning/lifecycle.rs:104` `validate_transition` — the five-state machine; illegal transition → 422 (`lifecycle.rs:128`), tested `lifecycle.rs:171` |
+| G-02 | FIXED (dissolved) | `versioning/signature/{mod,signer,key,verify,config}.rs` present; standalone `src/signing/` deleted; read-time verifier in `versioning/integrity.rs` |
+| G-03 | PORT NOTE | `versioning/import.rs:13` — imported original stored verbatim, served as ORIGINAL_VERSION; own contribution records local committal |
+| G-04 | FIXED (D1 seam) | SQL split behind `storage/{node_repo,version_repo,ehr_repo,tag_repo}.rs`; semantics/builders in `versioning/*` — 2139-line `vobject.rs` gone |
+| G-05 | PORT NOTE | disjoint merging absent, trunk-only — `versioning/import.rs` / blueprint ch01 |
+| G-06 | PORT NOTE | moving version containers absent, trunk-only — `versioning/import.rs` / blueprint ch01 |
+| G-07 | PORT NOTE | no server-side merge op; client-declared `other_input_version_uids` stored/served — `versioning/change.rs` |
+| G-08 | Reassigned | merged into G-03 (no separate row) |
+| G-09 | FIXED in code | `versioning/object_version_id.rs:139` `eq_composite_id` — case-insensitive, case-preserving; tested `:375` |
+| G-10 | PORT NOTE | canonical form is openEHR JSON (spec TBD); `sha256:` self-description — `versioning/signature/{signer,key}.rs` |
+| G-11 | PORT NOTE (already-correct) | IMPORTED_VERSION own-contribution vs preserved original audit — `versioning/import.rs` |
+| G-12 | PORT NOTE | REVISION_HISTORY serialization choice, wire-correct — `versioning/revision_history.rs` |
+| G-13 | FIXED (relocated) | moved to `service/ehr/composition_validate.rs:176` `check_versioned_composition_invariants`, called via `CommitEnv::pre_composition_modify` hook (`versioning/mod.rs:215`) |
+
+Open residue: none — all G-rows fixed in code, carried as cited PORT NOTE, or reassigned.

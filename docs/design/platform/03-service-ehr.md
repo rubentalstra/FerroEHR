@@ -270,3 +270,24 @@ service/ehr/
 | `ensure_content_writable` returns 409 for a write to a non-modifiable EHR (wire code underdetermined) | `ehr.rs:603-621` | **keep** — ITS-REST does not enumerate the code; 409 is the closest RFC 9110 semantics, cited. |
 | `is_persistent`/`reject_duplicate_persistent` CNF cardinality "under debate in openEHR SEC" | `composition.rs:344-355` | **keep** — CNF-sourced, not RM; cited verbatim. |
 | `commit_contribution` typed→wire-JSON→re-parse round-trip glue | `api/ehr.rs:672-680` → moves to `contribution/` | **keep, re-verify** — flagged as glue; a native typed path is a future cleanup, not W-3f. |
+
+---
+
+## W-3f closure (2026-07-13)
+
+The flat EHR siblings folded into `src/service/ehr/` (`service.rs`, `composition.rs`, `composition_validate.rs`, `directory.rs`, `contributions.rs`, `status.rs`, `status_validate.rs`, `access.rs`, `tags.rs`, `uri.rs`, `meta.rs`); version-meta helpers and SQL moved to `versioning/` and `storage/`.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-1 | already-correct | five discrete EHR_STATUS mutators — `service/ehr/status.rs` `status_mutate`; W-3c gap already closed |
+| G-2 | already-correct | `get_versioned_directory`/`has_directory_version` — `service/ehr/directory.rs` |
+| G-3 | PORT NOTE (quarantine) | read multi-hierarchy / write single-slot by design — `service/ehr/directory.rs`; owned by WORKLIST W-6 (cross-ref only) |
+| G-4 | PORT NOTE | one-EHR-per-subject (`ehr_subject_uq`) narrows `List<EHR_SUMMARY>` to ≤1 — `service/ehr/service.rs`, cited CNF `two_ehrs_same_patient`=409 |
+| G-5 | PORT NOTE | `Pre_no_subject` — id-only create paths accept subject-bearing status (SM-vs-ITS-REST tension), cited — `service/ehr/service.rs` |
+| G-6 | FIXED in code | `versioning/contribution.rs:175` `ensure_ehr_exists` at commit entry when `ehr_id = Some` → clean `ehr_does_not_exist` |
+| G-7 | already-correct | `OBJECT_VERSION_ID` used throughout `delete_composition` (deliberate strengthening; spec internally inconsistent) — `service/ehr/composition.rs` |
+| G-8 | FIXED (structural) | EHR logic folded into `service/ehr/` per §5 (no longer flat siblings + split adapter) |
+| G-9 | FIXED (relocated) | shared version-meta helpers moved to `versioning/` (`object_version_id`, revision-history builders) consumed by every versioned kind |
+| G-10 | FIXED (seam) | `ehr`/`ehr_folder`/`item_tag`/subject-column SQL behind `storage/{ehr_repo,tag_repo}.rs`; schema unchanged |
+
+Open residue: none — G-1/G-2/G-7 already-correct, G-3/G-4/G-5 kept PORT NOTE, G-6/G-8/G-9/G-10 fixed in the rewrite.

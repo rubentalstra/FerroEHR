@@ -266,3 +266,26 @@ app/ehrbase/src/validation/
 
 *Related: `docs/blueprint/03-am.md` (AM requirements A–I); B2 close notes in
 `00-THE-BLUEPRINT.md` §3; `docs/ADRs/ADR-012` (decision history only).*
+
+---
+
+## W-3f closure (2026-07-13)
+
+The two artefact validators moved out of `service/` into `src/validation/`, split along AM boundaries: `validation/opt/` (`invariants.rs`, `interval.rs`, `primitive.rs`, `rm_conformance.rs`, `terminology.rs`, `mod.rs`, `tests.rs`), `validation/adl2/` (`mod.rs`, `odin.rs`, `tests.rs`), and `validation/structure.rs`.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-09-01 | FIXED (relocated) | validators moved to `app/ehrbase/src/validation/` (out of `service/`) |
+| G-09-02 | FIXED (split) | 1,322-line `opt_validation.rs` split into `validation/opt/*` files, each under the ≤700-line budget |
+| G-09-03 | FIXED in code | consumes `openehr_base::prelude::MultiplicityInterval` — `validation/opt/interval.rs:20`; opt14 XSD shape PORT-NOTEd (`:14-17`) |
+| G-09-04 | re-verify / PORT NOTE | ADL2 lexical reader → `validation/adl2/odin.rs` (local registration subset retained; re-verified vs `openehr-lang::odin`) |
+| G-09-05 | FIXED in code | ADR-012 citation removed from code (grep-clean); re-expressed as spec citation — `openehr-flat webtemplate/builder.rs:903` (AOM2 closed-world direction), `validation/mod.rs:589` |
+| G-09-06 | PORT NOTE | VCACA numeric-cardinality bound unenforceable, cADL L268 cited — `validation/opt/*` |
+| G-09-07 | already-correct | AOM 1.4 tuples scope boundary (OPT 1.4 path) — recorded, not a gap |
+| G-09-08 | PORT NOTE | slot genuine-regex deferred to runtime slot admission (F-07-10) — `validation/opt/*` |
+| G-09-09 | PORT NOTE | ADL2 specialisation VCxxx/VSxxx/Sxxx not enforced (no compiler) — `validation/adl2/mod.rs` |
+| G-09-10 | already-correct | corpus-tuned tolerances preserved verbatim through the move — `validation/opt/*` PORT NOTEs |
+| G-09-11 | already-correct | `validate_opt_structure` XML-shape kept in `validation/structure.rs` (CNF-fixture flag) |
+| G-09-12 | already-correct | surface B (`valid_value`) stays in `openehr-flat`, invoked from `service/ehr/composition_validate.rs` (the T2 seam) — not moved by W-3f |
+
+Open residue: none — G-09-01/02/03/05 fixed in code, G-09-04 re-verified, the corpus tolerances and deferred-runtime items kept as cited PORT NOTE / already-correct.

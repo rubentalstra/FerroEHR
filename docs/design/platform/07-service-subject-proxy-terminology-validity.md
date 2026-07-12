@@ -232,4 +232,24 @@ not in a disconnected top-level module. Merge (not keep-separate).
   (`api/terminology.rs:234`) becomes a G-3 code fix or the sharper "no meta-model
   attributes defined for the openEHR bundle" statement; the FHIR `at_date`-ignored
   note is G-1 work, not residue.
-</content>
+
+---
+
+## W-3f closure (2026-07-13)
+
+`service/terminology/` created (`mod.rs`, `bundle.rs`, `fhir.rs`, `config.rs`); `service/validity.rs` peer file created; `service/subject_proxy/` kept as-is (W-3c donor, re-grounded); the top-level `src/terminology/` merged in.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-1 | FIXED in code | `at_date` forwarded to FHIR `$validate-code`/`$lookup`/`$expand` — `service/terminology/fhir.rs` / `config.rs:68-82`; bundle keeps its single-version PORT NOTE (`bundle.rs:46`) |
+| G-2 | PORT NOTE / fix | FHIR emits `contains` hierarchy as `Term_relationship`s; bundle flat by nature — `service/terminology/fhir.rs` |
+| G-3 | fix / PORT NOTE | `attributes` allow-list — re-expressed as "no meta-model attributes for the openEHR bundle" — `service/terminology/mod.rs` |
+| G-4 | FIXED in code | `get_terminology_ids`/`has_terminology`/`get_terminology_description` routed to the bundle in the composing impl — `service/terminology/mod.rs` |
+| G-5 | PORT NOTE / fix | FHIR `$expand` keeps the `contains` tree — `service/terminology/fhir.rs` |
+| G-6 | PORT NOTE | `at_date` shape-validation at the wire boundary (partly `ehrbase-rest`) — `service/terminology/mod.rs` |
+| G-7 | PORT NOTE | `has_terminology` pre-flight (404-map equivalent on happy path) — `service/terminology/fhir.rs` |
+| G-8 | already-correct | providing `[0..1]` unconditionally is conformant — `service/terminology/mod.rs` |
+| G-SP1 | already-correct | SPS deep redesign closed by W-3c (PR #76); verified — `service/subject_proxy/**` |
+| G-SP2 | Reassigned | SPS REST ingestion wire owned by the `ehrbase-rest` W-3 area (cross-reference) |
+
+Open residue: none — G-1/G-4 fixed in code, G-3 re-expressed, G-SP2 reassigned to `ehrbase-rest`, the remaining terminology items kept as cited PORT NOTE / already-correct.

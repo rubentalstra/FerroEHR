@@ -330,3 +330,32 @@ W-3f factors them into dedicated modules and the new modules reference them by a
 - **DROP** — the four `03-demographic-ehr-index-query.md` citations (G-5): the
   doc does not exist; repoint onto this file. The G-4 "`has_party_version_id`
   folded in" note is stale — a distinct call exists — drop it.
+
+---
+
+## W-3f closure (2026-07-13)
+
+`demographic.rs`/`relationship.rs`/`ehr_index.rs` decomposed into `service/demographic/` (`party.rs`, `relationship.rs`, `contribution.rs`, `versioned.rs`, `tags.rs`, `api.rs`, `mod.rs`) and `service/ehr_index/` (`index.rs`, `conflicts.rs`, `api.rs`, `mod.rs`), each file under the ≤~700-line budget.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-1 | PORT NOTE | bare-RM wire seam / native SM takes `UpdateVersion` — `service/demographic/api.rs`, cited `uv_party.adoc` |
+| G-2 | PORT NOTE | `definitions_valid`/`definition_unknown` unimplemented (no demographic OPT store) — `service/demographic/party.rs` |
+| G-3 | PORT NOTE | `reverse_relationships` derived 0..1, unpopulated — `service/demographic/relationship.rs` |
+| G-5 | FIXED (citation) | dangling `03-demographic-ehr-index-query.md` citation repointed — `service/demographic/mod.rs` cites the spec adocs |
+| G-6 | PORT NOTE | `VERSIONED_OBJECT.owner_id` self-references demographic object — `service/demographic/versioned.rs` |
+| G-7 | already-correct | `create_party` returns 201 + representation (id in ETag/Location) — `service/demographic/api.rs` |
+| G-8 | FIXED in code | `EhrIdDoesNotExist`/`SubjectIdDoesNotExist` now emitted — `service/ehr_index/mod.rs:75,79` (were unused in `ehrbase-sm/common/status.rs`) |
+| G-9 | FIXED in code | unknown-EHR vs unknown-association distinguished — `service/ehr_index/mod.rs` (folds into G-8) |
+| G-10 | FIXED (advisory) | duplicate/error-state detection — `service/ehr_index/conflicts.rs` (design-filled advisory read) |
+| G-11 | PORT NOTE | native-API-only / optional config-gated extension (no ITS-REST index binding) — `service/ehr_index/mod.rs` |
+| G-12 | PORT NOTE | `LOCATION_DESC` `{system_id,uri?,description?}` over attribute-less stub |
+| G-13 | PORT NOTE | subject `{id,namespace,type}` not full `OBJECT_REF` |
+| G-14 | PORT NOTE | `add_ehr_subject` idempotent upsert (0..1 cardinality) — `service/ehr_index/index.rs` |
+| G-15 | PORT NOTE | index / `ehr.subject_id` decoupling documented as intentional — `service/ehr_index/mod.rs` |
+| G-16 | PORT NOTE | `start/end_valid_time` `@@` → ISO-8601 (spec defect recorded verbatim) |
+| G-17 | FIXED in code | `PARTY_REF.Type_validity` enforced — `service/demographic/relationship.rs:71-73` `validate_party_ref` |
+| G-18 | FIXED in code | `OBJECT_REF.namespace` legality validated on inbound refs — `service/demographic/relationship.rs:71` (`validate_party_ref`) |
+| G-19 | FIXED (decomposition) | flat files split into `service/demographic/**` + `service/ehr_index/**`, all ≤~700 lines |
+
+Open residue: none — G-5/G-8/G-9/G-10/G-17/G-18/G-19 fixed in code, the remaining index/demographic wire adaptations kept as cited PORT NOTEs.
