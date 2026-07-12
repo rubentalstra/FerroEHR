@@ -1,0 +1,229 @@
+//! Shared version-metadata helpers (G-9): the cross-cutting glue every
+//! versioned kind (EHR_STATUS, COMPOSITION, DIRECTORY — and the demographic
+//! roots) needs to turn a loaded [`VersionRead`] into a wire
+//! [`ServiceResponse`] + its [`ResourceMeta`].
+//!
+//! These were scattered across the flat `ehr.rs`; W-3f hoists them into one
+//! place in the EHR chapter. The `OBJECT_VERSION_ID` law is RM common
+//! `master06-change_control_package.adoc` §Version Identification + BASE
+//! `base_types/master05-identification_package.adoc` §Syntaxes; the
+//! `Last-Modified`/`ETag`/`Location` derivation from a version's commit audit is
+//! ITS-REST, carried in the [`ResourceMeta`] envelope (no openEHR spec governs
+//! that envelope — our own design).
+//!
+//! TODO(w3f-integrate): the demographic worker (`service/demographic/`) consumes
+//! these `pub(in crate::service)` helpers for its versioned party reads; the
+//! `current_vo` / promoted-column SQL is a storage seam (G-10).
+
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use serde_json::{Value, json};
+use sqlx::Row;
+use uuid::Uuid;
+
+use crate::service::EhrbaseService;
+use crate::service::ServiceError;
+use crate::versioning::audit::AuditInput;
+use crate::versioning::{Kind, TreeId, VersionRead, object_version_id};
+
+impl EhrbaseService {
+    /// The current version `(vo_id, VERSION_TREE_ID)` of an EHR's object of a
+    /// given [`Kind`], if any — the current trunk row (`upper_inf(sys_period)`,
+    /// `branch_number = 0`).
+    ///
+    /// TODO(w3f-integrate): storage seam (G-10) — the `vo_version` current-row
+    /// read; no openEHR spec governs the SQL (our own design). The
+    /// [`crate::versioning::CommitEnv`] `current_vo` hook adapts this to its
+    /// `(Uuid, i32)` (trunk) shape at the fix pass.
+    pub(in crate::service) async fn current_vo(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
+        let row = sqlx::query(
+            "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
+        )
+        .bind(ehr_id)
+        .bind(kind.as_str())
+        .fetch_optional(&self.pool)
+        .await?;
+        match row {
+            Some(r) => Ok(Some((
+                r.try_get("vo_id")?,
+                TreeId::from_columns(
+                    r.try_get("trunk_version")?,
+                    r.try_get("branch_number")?,
+                    r.try_get("branch_version")?,
+                ),
+            ))),
+            None => Ok(None),
+        }
+    }
+
+    /// The `OBJECT_VERSION_ID` wire string `{object_id}::{creating_system_id}::
+    /// {version_tree_id}` (RM common master06 §Version Identification).
+    /// `creating_system_id` is the stored per-version value — never re-derived
+    /// from the live config — so a version's uid and digital signature stay
+    /// stable across a later `with_system_id` change (master06 §Distributed
+    /// Versioning).
+    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
+    pub(in crate::service) fn object_version_id(
+        &self,
+        vo_id: Uuid,
+        creating_system_id: &str,
+        version: TreeId,
+    ) -> String {
+        object_version_id(vo_id, creating_system_id, version)
+    }
+
+    /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
+    /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and its
+    /// commit time (the `Last-Modified`).
+    pub(in crate::service) fn version_meta(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        creating_system_id: &str,
+        version: TreeId,
+        at: jiff::Timestamp,
+    ) -> ResourceMeta {
+        ResourceMeta::new(
+            ehr_id.to_string(),
+            self.object_version_id(vo_id, creating_system_id, version),
+        )
+        .with_last_modified(at)
+    }
+
+    /// Inject the `uid` (`OBJECT_VERSION_ID`) into a versioned object's canonical
+    /// JSON so a bare read carries its wire identity.
+    pub(in crate::service) fn with_uid(
+        &self,
+        mut canonical: Value,
+        vo_id: Uuid,
+        creating_system_id: &str,
+        version: TreeId,
+    ) -> Value {
+        if let Value::Object(map) = &mut canonical {
+            map.insert(
+                "uid".to_owned(),
+                json!({
+                    "_type": "OBJECT_VERSION_ID",
+                    "value": self.object_version_id(vo_id, creating_system_id, version)
+                }),
+            );
+        }
+        canonical
+    }
+
+    /// A [`ServiceResponse`] for a loaded versioned object: its canonical body
+    /// with the `uid` injected, plus the resource metadata for the wire headers.
+    pub(in crate::service) fn version_response(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        read: VersionRead,
+    ) -> ServiceResponse {
+        let meta = self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.tree,
+            read.time_committed,
+        );
+        ServiceResponse::new(
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
+            meta,
+        )
+    }
+
+    /// The current version metadata of an EHR-owned object of `kind` (the latest
+    /// `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or `None`.
+    pub(in crate::service) async fn latest_version_meta(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        let Some((vo_id, _)) = self.current_vo(ehr_id, kind).await? else {
+            return Ok(None);
+        };
+        // TODO(w3f-integrate): read-current seam (crate::versioning::read_current).
+        let Some(read) = crate::versioning::read_current(&self.pool, vo_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.tree,
+            read.time_committed,
+        )))
+    }
+
+    /// Build an [`AuditInput`] for a direct (single-object) write: the effective
+    /// system id, the numeric `audit_change_type` code, a description, and the
+    /// request's authenticated committer (RM common master04 §Audit Details).
+    pub(in crate::service) fn audit(&self, change_type: &str, description: &str) -> AuditInput {
+        AuditInput {
+            system_id: self.effective_system_id(),
+            change_type: change_type.to_owned(),
+            description: Some(description.to_owned()),
+            committer: committer(),
+        }
+    }
+}
+
+/// The committer `PARTY_PROXY` for an audit, from the authenticated principal of
+/// the current request (published by the auth middleware). A write with no
+/// authenticated principal (auth disabled, or an internal/system write) is
+/// attributed to the system identity (RM common master04 `AUDIT_DETAILS.committer`
+/// 1..1).
+pub(in crate::service) fn committer() -> Value {
+    match ehrbase_rest::access::authn::current_principal() {
+        Some(principal) => {
+            let id_type = match principal.method {
+                ehrbase_rest::AuthMethod::Basic => "basic",
+                ehrbase_rest::AuthMethod::Bearer => "oauth2",
+            };
+            json!({
+                "_type": "PARTY_IDENTIFIED",
+                "name": principal.subject.clone(),
+                "identifiers": [{
+                    "_type": "DV_IDENTIFIER",
+                    "id": principal.subject,
+                    "issuer": "ehrbase-rs",
+                    "type": id_type
+                }]
+            })
+        }
+        None => json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
+    }
+}
+
+// ── ITS-REST VersionMetaAdapter (adapter-support extension) ───────────────────
+
+#[async_trait::async_trait]
+impl ehrbase_sm::VersionMetaAdapter for EhrbaseService {
+    async fn composition_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+        a_versioned_object_uid: Uuid,
+    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+        Ok(self
+            .composition_current_meta(an_ehr_id, a_versioned_object_uid)
+            .await?)
+    }
+
+    async fn ehr_status_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+        Ok(self.ehr_status_meta(an_ehr_id).await?)
+    }
+
+    async fn directory_latest_meta(
+        &self,
+        an_ehr_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+        Ok(self.directory_meta(an_ehr_id).await?)
+    }
+}
