@@ -17,6 +17,80 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- SMART App Launch resource-server support (openEHR SMART App Launch
+  framework, development edition), config-gated and off by default
+  (`EHRBASE_REST_SMART__*`): the `/.well-known/smart-configuration`
+  discovery document, the full resource-scope grammar
+  (`compartment/resource.permission` with `*`/`**`/`ns::*` patterns), and
+  scope + launch-context (`ehrId`→patient) enforcement composed after
+  RBAC/ABAC.
+- Subject Proxy Service completed (SM `I_SUBJECT_PROXY_SERVICE`): variables
+  are now tracked over time (a persisted sample history per variable),
+  `currency` freshness is evaluated (fresh samples are served without
+  re-querying; data-set registration tightens currency), data-set local
+  aliases resolve on reads, `using_app_ids` lifecycle drops empty data
+  sets, and frames execute with primary→fallback semantics. New FHIR frame
+  executor (config-gated named systems, `EHRBASE_SUBJECT_PROXY__*`) lets
+  variables be populated from FHIR R4 servers; manual variables gain a
+  notification input channel.
+- System API `OPTIONS /` conformance manifest rebuilt: reports the live
+  mounted endpoint groups, a single provenance source (the tested
+  development-edition ITS-REST identity), and configurable identity fields
+  (`EHRBASE_REST_SYSTEM__*`); also mounted at the API base path.
+- Item tags via headers (`openehr-item-tag`/`openehr-version-item-tag`):
+  accepted on EHR-group and demographic writes and echoed on responses.
+- Query API: multi-EHR scoping (`ehr_ids` set), an honest
+  `ehr_id_does_not_exist` (404) for a well-formed absent EHR id, a weak
+  `ETag` on `RESULT_SET` responses, parameter-substituted
+  `meta._executed_aql`, and an optional query execution timeout
+  (`EHRBASE_QUERY__TIMEOUT_MS`) mapped to `408`.
+- Definition API: template list filtering (`template_id` glob, `concept`,
+  `version`) and pagination are honoured; stored-query `query_type` is
+  read with an honest unsupported-formalism rejection; ADL1.4 uploads
+  return the JSON `TemplateIdentifier` under `Prefer: return=identifier`.
+- FLAT/STRUCTURED (Simplified Formats, now STABLE): the `_`-prefixed
+  optional RM attribute family (`_uid`, `_link`, `_feeder_audit`,
+  `_null_flavour`, `_mapping`, `_normal_range`, participations, work-flow
+  ids, …) round-trips in both directions; `|raw` canonical-JSON embedding
+  on write; complete quantity/date-time/multimedia leaf attribute tables;
+  `|other` open-value-set rules enforced.
+
+### Changed
+
+- Development-edition ITS-REST protocol adopted (the server's tested
+  contract identity, now reported consistently as such): `ETag` response
+  headers carry the weak `W/"…"` indicator (bare quoted values are still
+  accepted on `If-Match`); committal metadata uses the lowercase
+  `openehr-version` / `openehr-audit-details` value-form headers (the
+  deprecated `openEHR-VERSION.*` dotted spellings remain accepted) and a
+  client-supplied `system_id` is merged into the commit audit; `Location`
+  is emitted only on resource creation (no longer on reads/deletes);
+  `Preference-Applied` echoes the honoured `Prefer`; `405`/`501` render
+  the openEHR error body.
+- Demographic DELETE follows the published Demographic API: the preceding
+  version id rides in the path; a stale id yields `409` (with the latest
+  version `ETag`), an already-deleted party `400`.
+- Admin `DELETE /admin/ehr/all` follows the published Admin API: `204`
+  with no body, and an absent `ehr_id` parameter now means delete ALL
+  EHRs.
+- FLAT duplicate node-name suffixes default to the specification form
+  (`name_1`); the Better-compatible form (`name2`) is available behind the
+  `ehrbase-quirks` feature.
+- The `ehrbase-rest` and `ehrbase-sm` crates were restructured
+  specification-first (one folder per ITS-REST spec / SM chapter, all
+  spec-silent surfaces quarantined under `extensions/`) — no route
+  changes beyond those listed here.
+
+### Fixed
+
+- Template list endpoints no longer ignore filter and pagination
+  parameters.
+- The conformance manifest and `/rest/status` no longer misreport the
+  implemented ITS-REST edition as `1.0.3`.
+
+
+### Added
+
 - Multiple folder hierarchies per EHR (`EHR.folders`): beyond the
   `/directory` hierarchy, additional root `FOLDER`s can be committed through
   the CONTRIBUTION endpoint, each versioned independently. The EHR resource
