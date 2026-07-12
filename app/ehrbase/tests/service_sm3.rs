@@ -543,12 +543,14 @@ async fn ehr_index_update_status_loc_and_remove() {
         .expect("remove");
     assert!(svc.ehr_subjects(ehr.to_string()).await.unwrap().is_empty());
 
-    // removing again → subject_id_does_not_exist (404)
+    // removing again → the precise SM subject_id_does_not_exist (404) — the
+    // index chapter maps its own errors instead of the generic collapse
+    // (SM i_ehr_index error names).
     let again = svc.remove_ehr_subject(ehr.to_string(), subject).await;
     assert!(matches!(
         again,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::SubjectIdDoesNotExist,
             ..
         })
     ));
@@ -584,19 +586,20 @@ async fn ehr_index_remove_subject_wide_and_unknown_ehr() {
         matches!(
             unknown,
             Err(SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::EhrIdDoesNotExist,
                 ..
             })
         ),
         "unknown ehr is 404, got {unknown:?}"
     );
 
-    // unknown subject on remove_subject → 404
+    // unknown subject on remove_subject → the precise SM
+    // subject_id_does_not_exist (404, SM i_ehr_index error names).
     let no_subject = svc.remove_subject(SubjectRef::person("nope", "mpi")).await;
     assert!(matches!(
         no_subject,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::SubjectIdDoesNotExist,
             ..
         })
     ));

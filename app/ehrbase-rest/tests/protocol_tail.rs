@@ -84,7 +84,9 @@ async fn options_root_is_system_options_and_conformance() {
     );
     // The `Options` conformance manifest body.
     let v: Value = serde_json::from_str(&body).expect("options body");
-    assert_eq!(v["restapi_specs_version"], "1.0.3");
+    // The served identity is provenance-derived (the tested development
+    // edition of ITS-REST), never a hand-asserted release label.
+    assert_eq!(v["restapi_specs_version"], "development@e8a093e");
     assert_eq!(v["conformance_profile"], "STANDARD");
     assert!(v["endpoints"].as_array().is_some_and(|e| !e.is_empty()));
 }
