@@ -30,6 +30,13 @@ fix pass, deferred checks last (nextest → clippy → ECC).
 
 ## Standing rulings
 
+- **Spec→code mapping (owner, 2026-07-12): map the spec ONTO the code, never
+  the code onto the spec.** Each register's skeleton is the spec's own
+  structure — enumerate requirements section-by-section from the oracle
+  chapters first, then map existing code onto each item
+  (conformant/divergent/missing); code with no spec home is classified
+  spec-silent-flagged / extension-quarantine / delete. The target design
+  derives from the spec's decomposition, never from the current file layout.
 - Register first; then chapter/area-at-a-time fresh authoring — never
   migrate legacy files; audited-faithful logic may carry but every file is
   re-grounded and re-verified.
