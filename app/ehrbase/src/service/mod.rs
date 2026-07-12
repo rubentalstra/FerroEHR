@@ -34,6 +34,7 @@ mod directory;
 mod dump_load;
 mod ehr;
 mod ehr_index;
+mod ehr_uri;
 mod event_subscription;
 mod fhir;
 mod item_tag;

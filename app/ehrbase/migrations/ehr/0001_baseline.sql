@@ -293,6 +293,33 @@ COMMENT ON COLUMN vo_version.lifecycle_state IS 'version_lifecycle_state code (r
 COMMENT ON COLUMN vo_version.signature IS 'VERSION.signature (0..1), opaque radix-64. Canonicalisation is spec-TBD (review doc 03 S2 — PORT NOTE).';
 COMMENT ON COLUMN vo_version.other_input_version_uids IS 'ORIGINAL_VERSION merge provenance (master06 §Version Merging); NULL when not a merge; is_merged = derived (Is_merged_validity).';
 
+-- ── ehr_folder ───────────────────────────────────────────────────────────────
+-- One row per folder hierarchy of an EHR (RM ehr master04 §Folders: "at any
+-- time, an entirely new Folder hierarchy may be added, which will be referenced
+-- by a new member of the `EHR._folders_` attribute"). `rank` order is the
+-- `EHR.folders` list order (1-based); `EHR.directory` = the first LIVE hierarchy
+-- (RM ehr §EHR Class `Directory_in_folders`: `folders /= Void implies
+-- folders.item(1) = directory`). Ranks are APPEND-ONLY and never reused — a
+-- deleted hierarchy keeps its rank slot. Each referenced hierarchy is its own
+-- versioned object (rows in `vo_version`/`node`); this table only records
+-- membership + order. No openEHR spec governs the storage mechanism itself (our
+-- own storage design). `vo_id` carries no FK (vo_version is keyed per version,
+-- not per object) — a service-wide UNIQUE stands in. The `ehr_id` FK cascades
+-- like every other ehr-scoped table so a `DELETE FROM ehr` (admin purge) removes
+-- the membership rows too.
+CREATE TABLE ehr_folder (
+    ehr_id uuid  NOT NULL REFERENCES ehr (id) ON DELETE CASCADE,
+    rank   int   NOT NULL,
+    vo_id  uuid  NOT NULL,
+    CONSTRAINT pk_ehr_folder PRIMARY KEY (ehr_id, rank),
+    CONSTRAINT uq_ehr_folder_vo UNIQUE (vo_id),
+    CONSTRAINT ck_ehr_folder_rank_positive CHECK (rank >= 1)
+);
+
+COMMENT ON TABLE ehr_folder IS 'One row per folder hierarchy of an EHR (RM ehr master04 §Folders); rank order = EHR.folders order, EHR.directory = the first live hierarchy (RM ehr §EHR Class Directory_in_folders: folders.item(1) = directory). Ranks are append-only, never reused. No openEHR spec governs this table (our own storage design).';
+COMMENT ON COLUMN ehr_folder.rank IS 'EHR.folders position (1-based, append-only). The lowest-rank LIVE hierarchy is EHR.directory (folders.item(1)).';
+COMMENT ON COLUMN ehr_folder.vo_id IS 'The VERSIONED_FOLDER versioned-object id (a member of EHR.folders). FK-less (vo_version is keyed per version); UNIQUE service-wide instead.';
+
 -- ── node ─────────────────────────────────────────────────────────────────────
 -- The decomposed content: one row per RM structure node, per version. The
 -- nested-set interval (num..=num_cap) makes AQL CONTAINS an integer range join

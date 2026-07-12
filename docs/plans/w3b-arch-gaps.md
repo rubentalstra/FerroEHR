@@ -40,18 +40,24 @@ currently hard-enforces a single root FOLDER
       caps the *directory* at one; CNF tests single directory only —
       wire/SM/CNF silent on hierarchies 2..n, so the surface for them is
       the CONTRIBUTION commit path.)*
-- [ ] Storage redesign: model multiple root FOLDER hierarchies per EHR in
-      the baseline schema (re-author `0001_baseline.sql`; distinguish the
-      `directory` hierarchy from additional named hierarchies).
-- [ ] Service rewrite: create/update/delete of any folder hierarchy via
-      CONTRIBUTION; `EHR.folders` populated correctly on EHR reads;
-      directory semantics preserved exactly.
-- [ ] Wire: ITS-REST `/directory` unchanged; decide + implement the surface
-      for additional hierarchies (contribution commits at minimum; explicit
-      spec-silence flag for anything beyond ITS-REST).
-- [ ] Tests: multi-hierarchy round-trip, per-hierarchy versioning, logical
-      delete, `EHR.folders` refs; ECC DirectoryOps/ChangeSets zero-drift.
-- [ ] Checklist row 6.3 → verified; W-6 closed.
+- [x] Storage redesign: `ehr_folder (ehr_id, rank, vo_id)` membership table
+      re-authored into `0001_baseline.sql` (append-only 1-based ranks;
+      directory = lowest-rank live hierarchy, `Directory_in_folders` by
+      construction).
+- [x] Service rewrite: FOLDER creation via CONTRIBUTION appends a hierarchy
+      (`vobject::apply_change` + the import path `commit_import_scoped`
+      both insert the membership row); directory endpoints resolve through
+      the rank-ordered lookup (`directory_vo_opt`); `EHR.folders` +
+      `EHR.directory` emitted on EHR reads (`ehr.rs`); extract-import
+      folder-singleton rules lifted (`message.rs`).
+- [x] Wire: ITS-REST `/directory` byte-identical (single-hierarchy 409/204
+      semantics preserved); additional hierarchies via CONTRIBUTION only,
+      spec-silence flagged in code.
+- [x] Tests: multi-hierarchy rank order + independent versioning, logical
+      delete drops from `folders`, second directory-create 409, persistence
+      expected-tables updated (`service_ehr.rs`, `persistence.rs`) — scoped
+      suites green; ECC zero-drift gate at phase close.
+- [ ] Checklist row 6.3 → verified; W-6 closed. *(at phase close)*
 
 ### T2 — W-7: AQL archetype-specialisation subsumption
 Checklist row 10.2.2. A parent-archetype predicate must match data created
@@ -106,16 +112,24 @@ Checklist rows 11.2.1, 11.2.4.3, 11.3.1: `//` path patterns, positional
       DV_URI/DV_EHR_URI content validation (master17.7) + directory
       has_path FOLDER-name paths (master09) — the latter is a different,
       simpler path concept, not the Xpath grammar.)*
-- [ ] Generic RM path resolver: implement `//` patterns and positional
-      predicates where locator resolution lives (PATHABLE functions /
-      `crates/openehr-rm`), not in the AQL grammar (AQL 1.1 defines
-      neither — the typed reject there stays, documented).
-- [ ] `ehr:` URI: typed parser for the full URI model (system_id / ehr_id /
-      top-level structure locator / path) + local resolution in the service
-      layer (LINK targets, extract OBJECT_REF use).
-- [ ] Tests: pattern/positional resolution over the corpus; `ehr:` URI
-      parse/format round-trip; resolution against a live store.
-- [ ] Checklist rows → verified; W-8 closed.
+- [x] Generic RM path resolver: `crates/openehr-rm/src/paths.rs` extended
+      with the full predicate set (at-code, archetype HRID, name/comma
+      shortcut, uid, and-chains), `//` descendant patterns, and 1-based
+      positional predicates (`[0]` rejected at parse); PATHABLE functions
+      (`items_at_path`/`item_at_path`/`path_exists`/`path_unique`) per the
+      RM contracts. AQL grammar untouched (AQL 1.1 defines neither — typed
+      rejects stay).
+- [x] `ehr:` URI: typed `EhrUri` parser (four absolute forms + relative;
+      `VersionLocator` uid vs exact OBJECT_VERSION_ID) in `openehr-rm`;
+      local resolution in `app/ehrbase/src/service/ehr_uri.rs`
+      (spec-silence-flagged extension; foreign-system URIs typed NotFound;
+      attribute locators `directory`/`folders` resolve via the rank-ordered
+      directory lookup).
+- [x] Tests: 28 path/URI unit tests in `openehr-rm` (incl. the CNF
+      master17.7 DV_EHR_URI fixture forms) + live-store resolution
+      integration test (`service_ehr.rs`
+      `ehr_uri_resolves_local_structures_and_item_paths`) — green.
+- [ ] Checklist rows → verified; W-8 closed. *(at phase close)*
 
 ### T4 — W-9: EHR_ACCESS realization
 Checklist rows 5.5.1.5, 7.3.2.2, 7.4.1. EHR_ACCESS is stored/versioned but

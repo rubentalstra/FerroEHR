@@ -184,6 +184,33 @@ impl EhrbaseService {
                 "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
             });
         }
+        // EHR.folders (0..1) + EHR.directory (0..1): the LIVE folder hierarchies
+        // in rank order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant
+        // `Folders_valid: for_all f in folders | f.type.is_equal("VERSIONED_FOLDER")`
+        // — RM ehr, EHR class). The directory is the first member (invariant
+        // `Directory_in_folders: folders /= Void implies folders.item(1) =
+        // directory`). Both are emitted only when at least one hierarchy is live
+        // (both attributes are 0..1; a member references the VERSIONED_FOLDER by
+        // its versioned-object id, HIER_OBJECT_ID, like EHR.ehr_access above).
+        let folders = self.live_folder_hierarchies(ehr_id).await?;
+        let refs: Vec<Value> = folders
+            .iter()
+            .map(|vo| {
+                json!({
+                    "_type": "OBJECT_REF",
+                    "namespace": "local",
+                    "type": "VERSIONED_FOLDER",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": vo.to_string() }
+                })
+            })
+            .collect();
+        if let Some(first) = refs.first() {
+            // EHR.directory is folders.item(1) (RM ehr §EHR Class
+            // Directory_in_folders); both attributes are absent when no live
+            // hierarchy exists (0..1).
+            body["directory"] = first.clone();
+            body["folders"] = Value::Array(refs.clone());
+        }
         // For an EHR the `ETag`/`Location` are keyed by the `ehr_id`
         // (`ETag_EHR.yaml` / `Location_EHR.yaml`).
         let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
@@ -392,12 +419,27 @@ impl EhrbaseService {
     }
 
     /// The current directory FOLDER version metadata (for a `412`
-    /// `ETag`/`Location`).
+    /// `ETag`/`Location`). Resolves the directory hierarchy (`EHR.directory` =
+    /// `folders.item(1)`, RM ehr §EHR Class `Directory_in_folders`) rather than
+    /// assuming a single FOLDER versioned object, since an EHR may index several
+    /// hierarchies (RM ehr master04 §Folders).
     pub(super) async fn directory_meta(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        self.latest_version_meta(ehr_id, Kind::Folder).await
+        let Some(vo_id) = self.directory_vo_opt(ehr_id).await? else {
+            return Ok(None);
+        };
+        let Some(read) = vobject::read_current(&self.pool, vo_id).await? else {
+            return Ok(None);
+        };
+        Ok(Some(self.version_meta(
+            ehr_id,
+            vo_id,
+            &read.creating_system_id,
+            read.tree,
+            read.time_committed,
+        )))
     }
 
     /// The current version row (`vo_id`, `sys_version`) of an EHR's object of a
@@ -426,6 +468,59 @@ impl EhrbaseService {
             ))),
             None => Ok(None),
         }
+    }
+
+    /// The versioned-object id of the EHR's directory — `EHR.directory`, which is
+    /// `folders.item(1)` (RM ehr §EHR Class `Directory_in_folders`:
+    /// `folders /= Void implies folders.item(1) = directory`). Resolved as the
+    /// lowest-`rank` LIVE folder hierarchy; when no hierarchy is live it falls
+    /// back to the lowest-`rank` hierarchy that still exists, so a read after a
+    /// logical delete resolves to the deleted version (→ 204,
+    /// `directory_get_at_time.yaml`) rather than 404. `None` when the EHR indexes
+    /// no folder hierarchy at all.
+    ///
+    /// ITS-REST/SM bind only the directory (= `folders[1]`); additional
+    /// hierarchies are committed via CONTRIBUTION only — RM ehr master04 §Folders.
+    pub(super) async fn directory_vo_opt(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<Uuid>, ServiceError> {
+        // Order LIVE hierarchies (lifecycle <> 523) before deleted ones, then by
+        // rank; the first row is EHR.directory.
+        let vo_id: Option<Uuid> = sqlx::query_scalar(
+            "SELECT f.vo_id FROM ehr_folder f \
+             JOIN vo_version v ON v.vo_id = f.vo_id \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+             WHERE f.ehr_id = $1 \
+             ORDER BY (v.lifecycle_state = '523'), f.rank \
+             LIMIT 1",
+        )
+        .bind(ehr_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(vo_id)
+    }
+
+    /// The LIVE folder hierarchies of an EHR in `rank` order — the members of
+    /// `EHR.folders` (RM ehr §EHR Class `Folders_valid`: each references a
+    /// `VERSIONED_FOLDER`; RM ehr master04 §Folders). "Live" = the current trunk
+    /// version exists and is not logically deleted (lifecycle `523`). Empty when
+    /// the EHR indexes no live hierarchy (`EHR.folders` is 0..1).
+    pub(super) async fn live_folder_hierarchies(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Vec<Uuid>, ServiceError> {
+        let rows = sqlx::query(
+            "SELECT f.vo_id FROM ehr_folder f \
+             JOIN vo_version v ON v.vo_id = f.vo_id \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+             WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \
+             ORDER BY f.rank",
+        )
+        .bind(ehr_id)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(|r| Ok(r.try_get("vo_id")?)).collect()
     }
 
     /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true`

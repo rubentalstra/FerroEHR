@@ -92,7 +92,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .expect("ehr bookkeeping");
     // Single squashed baseline per schema. ext: 0001_openehr_functions (functions + roles +
     // grants) + 0002_tenant_context (the ext.current_tenant_id() session
-    // context, appended for E2). ehr: 0001_baseline (18 tables + named
+    // context, appended for E2). ehr: 0001_baseline (19 tables + named
     // constraints, comments, roles/grants, and the spec-compliance
     // fixes) + 0002_event_outbox (the contribution-outbox eventing extension
     // table) + 0003_event_subscription (the event-filter
@@ -118,6 +118,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "audit",
             "contribution",
             "ehr",
+            "ehr_folder",
             "ehr_index",
             "event_outbox",
             "event_subscription",

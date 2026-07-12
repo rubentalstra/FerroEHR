@@ -456,6 +456,29 @@ async fn insert_nodes(
     Ok(())
 }
 
+/// Append a new folder-hierarchy membership row for an EHR (RM ehr master04
+/// §Folders; RM ehr §EHR Class `Directory_in_folders`). `rank` is 1-based,
+/// append-only and never reused: the next rank is `max(rank)+1` for this EHR.
+/// Called once per FOLDER *creation* — the create path (`POST /directory`) and
+/// the CONTRIBUTION creation path both funnel through [`apply_change`]'s
+/// `Change::Create`, so this is the single insertion point. No openEHR spec
+/// governs the `ehr_folder` storage mechanism itself (our own design).
+async fn insert_ehr_folder_rank(
+    tx: &mut PgConnection,
+    ehr_id: Uuid,
+    vo_id: Uuid,
+) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO ehr_folder (ehr_id, rank, vo_id) VALUES \
+         ($1, (SELECT COALESCE(MAX(rank), 0) + 1 FROM ehr_folder WHERE ehr_id = $1), $2)",
+    )
+    .bind(ehr_id)
+    .bind(vo_id)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
 /// One change applied within a CONTRIBUTION (the openEHR change-set unit).
 ///
 /// `signature` carries a **client-supplied** `UPDATE_VERSION.signature` (RM
@@ -693,6 +716,16 @@ async fn apply_change(
             )
             .await?;
             insert_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
+            // A newly created FOLDER hierarchy joins `EHR.folders` as a new
+            // member (RM ehr master04 §Folders: "an entirely new Folder hierarchy
+            // may be added, which will be referenced by a new member of the
+            // `EHR._folders_` attribute"). Recorded only on CREATION — updates and
+            // deletes never touch the rank rows.
+            if kind == Kind::Folder
+                && let Some(ehr_id) = ehr_id
+            {
+                insert_ehr_folder_rank(tx, ehr_id, vo_id).await?;
+            }
             insert_accompanying_attestations(
                 tx,
                 vo_id,
@@ -1864,6 +1897,15 @@ async fn commit_import_scoped(
             if trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
                 close_lineage_at(tx, container.vo_id, &(String::new(), 0, 0), base).await?;
             }
+        } else if container.kind == Kind::Folder
+            && let Some(ehr_id) = ehr_id
+        {
+            // A first-received FOLDER container is a new folder hierarchy of the
+            // EHR — it joins `EHR.folders` exactly like a locally created one
+            // (RM ehr master04 §Folders; master06 §Copying Case 2). Appends to
+            // an existing clone (Case 3, the branch above) already have their
+            // membership row.
+            insert_ehr_folder_rank(tx, ehr_id, container.vo_id).await?;
         }
 
         // Per-lineage period chains: within a lineage each version closes its

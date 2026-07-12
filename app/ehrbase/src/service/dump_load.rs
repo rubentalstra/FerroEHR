@@ -20,8 +20,9 @@
 //! fail"), never a crash.
 //!
 //! PORT NOTE (scope, SM-4 wave 3): the archive carries **EHR-owned content**
-//! only — `ehr`, `audit`, `contribution`, `vo_version`, `node`, `item_tag`, and
-//! any `vo_archive` markers for the EHR's versioned objects. Global DEFINITION
+//! only — `ehr`, `audit`, `contribution`, `vo_version`, `node`, `ehr_folder`
+//! (the `EHR.folders` membership/rank rows — RM ehr master04 §Folders),
+//! `item_tag`, and any `vo_archive` markers for the EHR's versioned objects. Global DEFINITION
 //! artefacts a version may reference (`template_store` OPTs via
 //! `vo_version.template_id`, `stored_query`) are **not** carried: they are
 //! provisioned through the DEFINITION API, not EHR content, and must pre-exist
@@ -78,8 +79,19 @@ struct EhrRecord {
     audits: Vec<AuditRow>,
     contributions: Vec<ContributionRow>,
     versions: Vec<VersionRecord>,
+    /// `EHR.folders` membership: (`rank`, `vo_id`) per folder hierarchy (RM ehr
+    /// §EHR Class `Directory_in_folders`; ranks are append-only). `default`
+    /// tolerates pre-folders dumps (no hierarchies → empty).
+    #[serde(default)]
+    folder_ranks: Vec<FolderRankRow>,
     item_tags: Vec<ItemTagRow>,
     archives: Vec<ArchiveRow>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FolderRankRow {
+    rank: i32,
+    vo_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -487,6 +499,19 @@ impl EhrbaseService {
             });
         }
 
+        let folder_rank_rows =
+            sqlx::query("SELECT rank, vo_id FROM ehr_folder WHERE ehr_id = $1 ORDER BY rank")
+                .bind(ehr_id)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut folder_ranks = Vec::with_capacity(folder_rank_rows.len());
+        for r in folder_rank_rows {
+            folder_ranks.push(FolderRankRow {
+                rank: r.try_get("rank")?,
+                vo_id: r.try_get("vo_id")?,
+            });
+        }
+
         let tag_rows = sqlx::query(
             "SELECT id, target_vo_id, target_type, key, value, target_path, \
              created_at::text AS created_at FROM item_tag WHERE ehr_id = $1 ORDER BY id",
@@ -529,6 +554,7 @@ impl EhrbaseService {
             audits,
             contributions,
             versions,
+            folder_ranks,
             item_tags,
             archives,
         })
@@ -613,6 +639,17 @@ impl EhrbaseService {
 
         for v in &record.versions {
             insert_version(&mut tx, ehr_id, v).await?;
+        }
+
+        // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
+        // Class Directory_in_folders: folders.item(1) = directory).
+        for f in &record.folder_ranks {
+            sqlx::query("INSERT INTO ehr_folder (ehr_id, rank, vo_id) VALUES ($1, $2, $3)")
+                .bind(ehr_id)
+                .bind(f.rank)
+                .bind(f.vo_id)
+                .execute(&mut *tx)
+                .await?;
         }
 
         for t in &record.item_tags {
