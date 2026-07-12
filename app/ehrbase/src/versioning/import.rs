@@ -36,10 +36,9 @@ use crate::versioning::object_version_id::TreeId;
 /// lineage supersede each other; distinct lineages coexist.
 pub(crate) type Lineage = (String, i32, i32);
 
-/// The current state of a to-be-imported container in the target store — the
-/// value contract from `crate::storage::version_repo::imported_container_state`.
-///
-/// TODO(w3f-integrate): storage produces this (the aggregate `vo_version` read).
+/// The current state of a to-be-imported container in the target store —
+/// mapped from the storage aggregate read
+/// (`crate::storage::version_repo::imported_container_state`).
 #[derive(Debug, Clone, Default)]
 pub(crate) struct ContainerState {
     /// The stored kind, if the `vo_id` already exists.
@@ -52,6 +51,28 @@ pub(crate) struct ContainerState {
     pub(crate) max_ordinal: i32,
     /// Whether a still-open current TRUNK version exists.
     pub(crate) trunk_open: bool,
+}
+
+/// Read + map the container state through the storage row I/O; an existing
+/// container with an unrecognized stored kind is a server fault.
+async fn container_state(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+) -> Result<ContainerState, ServiceError> {
+    let row = crate::storage::version_repo::imported_container_state(tx, vo_id).await?;
+    let kind = match row.kind {
+        None => None,
+        Some(text) => Some(Kind::from_type(&text).ok_or_else(|| {
+            ServiceError::Internal(format!("unknown versioned-object kind {text:?}"))
+        })?),
+    };
+    Ok(ContainerState {
+        kind,
+        owner: row.owner,
+        max_trunk: row.max_trunk,
+        max_ordinal: row.max_ordinal,
+        trunk_open: row.trunk_open,
+    })
 }
 
 /// One received `ORIGINAL_VERSION` to import into the local store (SM
@@ -132,9 +153,7 @@ pub(crate) async fn commit_demographic_import(
     }
     let mut fresh = Vec::with_capacity(containers.len());
     for container in containers {
-        // TODO(w3f-integrate): version_repo::imported_container_state.
-        let state =
-            crate::storage::version_repo::imported_container_state(tx, container.vo_id).await?;
+        let state = container_state(tx, container.vo_id).await?;
         if state.kind.is_none() {
             fresh.push(container);
         }
@@ -162,11 +181,10 @@ async fn commit_import_scoped(
 ) -> Result<Uuid, ServiceError> {
     // One local instant anchors the whole import's temporal chain.
     let base = jiff::Timestamp::now();
-    // TODO(w3f-integrate): version_repo::insert_audit / insert_contribution.
     let (contribution_audit_id, import_time) =
-        crate::storage::version_repo::insert_audit(tx, import_audit).await?;
+        crate::storage::version_repo::insert_audit(tx, &import_audit.row()).await?;
     let contribution_id =
-        crate::storage::version_repo::insert_contribution(tx, ehr_id, contribution_audit_id, None)
+        crate::storage::version_repo::insert_contribution(tx, ehr_id, contribution_audit_id)
             .await?;
     let mut outbox_versions: Vec<Value> = Vec::new();
 
@@ -191,9 +209,7 @@ async fn commit_import_scoped(
             }
         }
 
-        // TODO(w3f-integrate): version_repo::imported_container_state.
-        let state =
-            crate::storage::version_repo::imported_container_state(tx, container.vo_id).await?;
+        let state = container_state(tx, container.vo_id).await?;
         if skip_existing && state.kind.is_some() {
             continue;
         }
@@ -230,7 +246,6 @@ async fn commit_import_scoped(
                 )));
             }
             if state.trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
-                // TODO(w3f-integrate): version_repo::close_lineage_at.
                 crate::storage::version_repo::close_lineage_at(
                     tx,
                     container.vo_id,
@@ -244,7 +259,6 @@ async fn commit_import_scoped(
         {
             // A first-received FOLDER container is a new folder hierarchy of the
             // EHR (RM ehr master04 §Folders; master06 §Copying Case 2).
-            // TODO(w3f-integrate): version_repo::insert_ehr_folder_rank.
             crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, container.vo_id)
                 .await?;
         }
@@ -275,11 +289,11 @@ async fn commit_import_scoped(
                         i64::try_from(i + 1 + offset).unwrap_or(0),
                     )
                 });
-            // TODO(w3f-integrate): version_repo::insert_audit_at (preserves the
-            // source commit time verbatim — master06 §Copying "never modified").
+            // Preserves the source commit time verbatim — master06 §Copying
+            // ("the ORIGINAL_VERSION instance is never modified").
             let audit_id = crate::storage::version_repo::insert_audit_at(
                 tx,
-                &version.commit_audit,
+                &version.commit_audit.row(),
                 version.commit_time,
             )
             .await?;
@@ -298,10 +312,11 @@ async fn commit_import_scoped(
                 template_id: None,
                 signature: version.signature.as_deref(),
             };
-            // TODO(w3f-integrate): version_repo::insert_imported_vo_version
-            // (explicit `sys_period` [lower, upper)).
-            crate::storage::version_repo::insert_imported_vo_version(tx, &row, lower, upper)
-                .await?;
+            crate::storage::version_repo::insert_imported_vo_version(
+                tx,
+                &row.imported_row(lower, upper),
+            )
+            .await?;
             // A `523|deleted|` version stores no node rows (data is Void).
             if !version.data.is_null() {
                 let rows = decompose(version.data.clone())?;

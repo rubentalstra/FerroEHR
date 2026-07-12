@@ -16,7 +16,7 @@ use uuid::Uuid;
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::{Change, Kind, change_type, commit_contribution};
 
-use super::{status_for_subject, version_uid};
+use super::{status_for_subject};
 
 impl EhrbaseService {
     /// Create an EHR (with the given id), its initial `EHR_STATUS`, and its

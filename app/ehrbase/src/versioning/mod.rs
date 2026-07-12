@@ -81,25 +81,20 @@ pub mod signature;
 
 // Re-exports: the versioning API the service layer and SM adapters consume.
 pub(crate) use attestation::PendingAttest;
-pub(crate) use audit::{
-    AuditInput, OPENEHR, audit_details, change_type, change_type_code, validate_commit_audit,
-};
-pub(crate) use change::{
-    Change, Committed, NewVersionRow, commit_contribution, create, delete, update,
-};
+pub(crate) use audit::{AuditInput, OPENEHR, audit_details, change_type, change_type_code};
+pub(crate) use change::{Change, Committed, commit_contribution, create, delete, update};
 pub(crate) use contribution::{
     TimeRange, commit_version_set, count_contributions, get_contribution, list_contributions,
 };
 pub(crate) use import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
-pub(crate) use lifecycle::{lifecycle_rubric, lifecycle_state_code, resolve_lifecycle};
+pub(crate) use lifecycle::lifecycle_state_code;
 pub(crate) use object_version_id::{
-    TreeId, VersionIdError, components, expected_from_if_match, object_version_id,
-    parse_object_version_id, parse_tree_id, parse_uid_based_id, parse_version_uid,
+    TreeId, components, expected_from_if_match, object_version_id, parse_object_version_id,
+    parse_tree_id, parse_uid_based_id, parse_version_uid,
 };
 pub(crate) use revision_history::{
-    StoredVersion, VersionRead, build_original_version, object_kind, original_version,
-    read_current, read_version, read_version_by_ordinal, revision_history, version_at,
-    versioned_object,
+    VersionRead, object_kind, original_version, read_current, read_version,
+    read_version_by_ordinal, revision_history, version_at, versioned_object,
 };
 
 /// The kind of versioned object (discriminates `vo_version.kind`).

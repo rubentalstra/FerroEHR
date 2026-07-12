@@ -173,6 +173,16 @@ impl EhrbaseService {
     pub(crate) fn signer(&self) -> &Signer {
         &self.signer
     }
+
+    /// The write-time signing context (RM common master06 §Digital Signature)
+    /// threaded into every versioned-object commit.
+    pub(crate) fn signing_ctx(&self) -> SigningCtx<'_> {
+        SigningCtx {
+            system_id: self.effective_system_id(),
+            signer: &self.signer,
+            multimedia: self.multimedia.as_deref(),
+        }
+    }
 }
 
 /// The cross-area hooks the CONTRIBUTION commit orchestration needs
@@ -195,11 +205,7 @@ impl CommitEnv for EhrbaseService {
     }
 
     fn signing_ctx(&self) -> SigningCtx<'_> {
-        SigningCtx {
-            system_id: EhrbaseService::effective_system_id(self),
-            signer: &self.signer,
-            multimedia: self.multimedia.as_deref(),
-        }
+        EhrbaseService::signing_ctx(self)
     }
 
     async fn validate_for_commit(
@@ -208,8 +214,7 @@ impl CommitEnv for EhrbaseService {
         data: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        self.validate_content_for_commit(kind, data, incomplete)
-            .await
+        EhrbaseService::validate_for_commit(self, kind, data, incomplete).await
     }
 
     async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
@@ -225,7 +230,9 @@ impl CommitEnv for EhrbaseService {
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<(Uuid, i32)>, ServiceError> {
-        EhrbaseService::current_vo(self, ehr_id, kind).await
+        Ok(EhrbaseService::current_vo(self, ehr_id, kind)
+            .await?
+            .map(|(vo_id, tree)| (vo_id, tree.trunk)))
     }
 
     async fn invalidate_ehr_access(&self, ehr_id: Uuid) {

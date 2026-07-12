@@ -63,4 +63,3 @@ mod store;
 // Re-export for the SM Definitions provisioning surface
 // (`service/definition/adl14.rs` `valid_opt` / `upload_opt`), which validates
 // OPT well-formedness before delegating to `store_template`.
-pub(crate) use ingest::validate_opt_structure;

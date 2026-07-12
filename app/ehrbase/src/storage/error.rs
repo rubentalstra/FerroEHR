@@ -35,3 +35,11 @@ pub enum StorageError {
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
 }
+
+impl From<StorageError> for ehrbase_sm::SmError {
+    /// A storage failure is a server fault at the SM boundary
+    /// (`CALL_STATUS_TYPE.exception`).
+    fn from(e: StorageError) -> Self {
+        ehrbase_sm::SmError::new(ehrbase_sm::CallStatusType::Exception, e.to_string())
+    }
+}

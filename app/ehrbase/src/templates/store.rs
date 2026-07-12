@@ -49,7 +49,7 @@ impl EhrbaseService {
         let opt = ingest::parse_opt(xml)?;
         // Structural well-formedness the tolerant codec would otherwise accept
         // (foreign / duplicated top-level elements) — S-05.
-        ingest::validate_opt_structure(xml)?;
+        crate::validation::validate_opt_structure(xml)?;
 
         // TODO(w3f-integrate): validation seam — the AOM2/08 standalone-artefact
         // validity catalogue (VCOC/VACMCO, VATID/VTLC, VTTBK/VTCBK,
