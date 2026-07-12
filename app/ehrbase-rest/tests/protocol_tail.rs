@@ -17,7 +17,7 @@ use tower::ServiceExt;
 
 use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_sm::types::UpdateVersion;
+use ehrbase_sm::UpdateVersion;
 
 mod common;
 use common::{Hooks, Mock};

@@ -40,8 +40,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use ehrbase_sm::Platform;
-use ehrbase_sm::error::SmError;
-use ehrbase_sm::types::ServiceResponse;
+use ehrbase_sm::SmError;
+use ehrbase_sm::ServiceResponse;
 use openehr_its::rest::runtime::ApiError;
 
 use super::{BoxResponse, RequestParts};

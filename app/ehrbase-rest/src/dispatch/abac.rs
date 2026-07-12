@@ -100,7 +100,7 @@ pub(super) fn query_pre<S: Platform>(
 pub(super) async fn query_post<S: Platform>(
     state: &AppState<S>,
     op: &'static str,
-    outcome: &ehrbase_sm::types::QueryOutcome,
+    outcome: &ehrbase_sm::QueryOutcome,
 ) -> Result<(), Response> {
     let Some(handle) = state.authz() else {
         return Ok(());

@@ -37,7 +37,7 @@ use ehrbase::service::EhrbaseService;
 use ehrbase::terminology::{
     FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind,
 };
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, QueryService,
 };
@@ -186,7 +186,7 @@ async fn create_coded(
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str) -> Value {
-    svc.query_execute_adhoc(aql.to_owned(), AqlQueryRequest::default())
+    svc.execute_ad_hoc_query(aql.to_owned(), AqlQueryRequest::default())
         .await
         .unwrap_or_else(|e| panic!("query {aql:?}: {e:?}"))
         .result_set
@@ -258,7 +258,7 @@ async fn terminology_expand_unknown_service_is_bad_request() {
          WHERE o/{CODE_PATH} matches TERMINOLOGY('expand', 'bogus.terminology.api', 'x')"
     );
     let err = svc
-        .query_execute_adhoc(aql, AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql, AqlQueryRequest::default())
         .await
         .expect_err("unknown service_api must be rejected");
     assert_eq!(err.status, CallStatusType::PreconditionViolation, "{err:?}");
@@ -278,7 +278,7 @@ async fn terminology_expand_unknown_value_set_is_bad_request() {
          WHERE o/{CODE_PATH} matches TERMINOLOGY('expand', 'openehr', 'no_such_group')"
     );
     let err = svc
-        .query_execute_adhoc(aql, AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql, AqlQueryRequest::default())
         .await
         .expect_err("unknown value set must be rejected");
     assert_eq!(err.status, CallStatusType::PreconditionViolation, "{err:?}");

@@ -12,7 +12,7 @@ use uuid::Uuid;
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
 use ehrbase_sm::SmError;
 use ehrbase_sm::services::DemographicService;
-use ehrbase_sm::types::PartyKind;
+use ehrbase_sm::PartyKind;
 
 use crate::service::EhrbaseService;
 use crate::service::version_id;

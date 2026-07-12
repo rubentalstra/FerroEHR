@@ -12,7 +12,7 @@
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::ItemTagAdapter;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{CallStatusType, EhrCompositionService, EhrService, SmError};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;

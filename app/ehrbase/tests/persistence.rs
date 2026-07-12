@@ -434,7 +434,7 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
 
     // Unscoped: both compositions are visible (control).
     let all = service
-        .query_execute_adhoc(aql.to_owned(), AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql.to_owned(), AqlQueryRequest::default())
         .await
         .expect("unscoped query");
     assert_eq!(row_count(&all.result_set), 2, "both compositions visible");
@@ -442,7 +442,7 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
     // Scoped to SUBJ-A + collection on: only A's row is fetched, and the touched
     // EHR/template sets are collected despite the projection.
     let scoped = service
-        .query_execute_adhoc(
+        .execute_ad_hoc_query(
             aql.to_owned(),
             AqlQueryRequest {
                 subject_scope: Some("SUBJ-A".to_owned()),

@@ -30,7 +30,7 @@ use ehrbase_sm::services::{
     EhrService, EhrStatusService, ItemTagAdapter, MultimediaAdapter, TimeRange as SmTimeRange,
     VersionMetaAdapter,
 };
-use ehrbase_sm::types::{EhrSummary, Page, ResourceMeta, SubjectRef, UpdateAudit, UpdateVersion};
+use ehrbase_sm::{EhrSummary, Page, ResourceMeta, SubjectRef, UpdateAudit, UpdateVersion};
 use openehr_base::prelude::ObjectVersionId;
 
 use crate::service::ehr::default_ehr_status;
@@ -39,9 +39,9 @@ use crate::service::vobject::Kind;
 use crate::service::{EhrbaseService, ServiceError};
 
 /// Extract the version-uid `String` a write produced from the internal
-/// [`ServiceResponse`](ehrbase_sm::types::ServiceResponse)'s resource metadata —
+/// [`ServiceResponse`](ehrbase_sm::ServiceResponse)'s resource metadata —
 /// the value the SM `create_*`/`update_*`/`delete_*` calls return.
-fn version_uid(resp: ehrbase_sm::types::ServiceResponse) -> Result<String, SmError> {
+fn version_uid(resp: ehrbase_sm::ServiceResponse) -> Result<String, SmError> {
     resp.meta
         .map(|m| m.uid)
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
@@ -635,7 +635,7 @@ impl ContributionAdapter for EhrbaseService {
         &self,
         an_ehr_id: Uuid,
         a_contribution: Value,
-    ) -> Result<ehrbase_sm::types::ServiceResponse, SmError> {
+    ) -> Result<ehrbase_sm::ServiceResponse, SmError> {
         self.create_ehr_contribution(an_ehr_id, a_contribution)
             .await
     }

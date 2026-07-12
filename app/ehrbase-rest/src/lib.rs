@@ -17,18 +17,15 @@
 pub mod access;
 mod audit;
 mod audit_table;
-mod committal;
 pub mod config;
 mod dispatch;
-mod error;
 pub mod management;
-mod negotiate;
 mod openapi;
-mod params;
+pub mod overview;
 mod router;
 mod state;
-mod status;
-mod version_id;
+
+use overview::{committal, error, negotiate, params, status, version_id};
 
 pub use access::authn::{AuthMethod, Authenticator, Principal};
 pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
@@ -38,14 +35,14 @@ pub use config::{
     AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TenancyConfig, TerminologyConfig,
 };
 pub use ehrbase_sm::Platform;
-pub use ehrbase_sm::services::{
+pub use ehrbase_sm::{
     AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
     PartyRelationshipService, QueryService, StatTimeRange, SystemLog, TerminologyService,
     ValidityChecker, VersionMetaAdapter, WebTemplateService,
 };
-pub use ehrbase_sm::types::{
+pub use ehrbase_sm::{
     AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
     QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceMeta, ResourceStatus,
     ServiceResponse, SubjectRef,

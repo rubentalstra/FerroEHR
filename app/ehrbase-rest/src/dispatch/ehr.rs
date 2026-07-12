@@ -3,7 +3,7 @@
 //! Each arm rebuilds the operation's `*Params`, decodes wire strings into the
 //! SM catalog's native argument types (`uuid::Uuid`,
 //! [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId),
-//! [`UpdateVersion`](ehrbase_sm::types::UpdateVersion)) via
+//! [`UpdateVersion`](ehrbase_sm::UpdateVersion)) via
 //! [`crate::version_id`], decodes any body (RM-typed bodies accept JSON or
 //! canonical XML), calls the EHR-core SM catalog methods on the platform service
 //! `S`, and rebuilds a [`ServiceResponse`] (RM payload + typed [`ResourceMeta`])
@@ -50,7 +50,7 @@ use openehr_rm::prelude::{
 // only the contribution trait is named explicitly (its call names collide with
 // other groups, so a trait-path call disambiguates).
 use ehrbase_sm::services::EhrContributionService;
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse, UpdateAudit, UpdateVersion};
+use ehrbase_sm::{ResourceMeta, ServiceResponse, UpdateAudit, UpdateVersion};
 use ehrbase_sm::{CallStatusType, Platform};
 
 use super::{BoxResponse, RequestParts};
