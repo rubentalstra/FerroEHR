@@ -5,7 +5,7 @@ use crate::common::generic::party_self::PartySelf;
 use serde::Serialize;
 
 /// Abstract concept of a proxy description of a party, including an optional link to data for this party in a demographic or other identity management system. Sub- typed into `PARTY_IDENTIFIED` and `PARTY_SELF`.
-/// Closed subtype set of `PARTY_PROXY` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `PARTY_PROXY`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PartyProxy {

@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `OBSERVATION`.
+//! Hand-written RM class invariants for `OBSERVATION`.
 //!
 //! Mirrors archie's `Entry` (non-terminology) + inherited LOCATABLE:
 //! - `Is_archetypeRoot`: an ENTRY is an archetype root, so `archetype_details`

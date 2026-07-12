@@ -304,7 +304,7 @@ async fn contribution_versions_are_signed() {
         )
         .await
         .expect("commit_contribution");
-    // PORT NOTE (ADR-011): `commit_contribution` returns the contribution_uid;
+    // PORT NOTE: `commit_contribution` returns the contribution_uid;
     // the created version's OBJECT_VERSION_ID is read back from the CONTRIBUTION.
     let contribution = svc
         .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
@@ -402,7 +402,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let tampered = svc
         .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await;
-    // PORT NOTE (ADR-011): a signing/integrity failure surfaces at the SM boundary
+    // PORT NOTE: a signing/integrity failure surfaces at the SM boundary
     // as `SmError { status: Exception }` (the adapter maps it to the same wire 5xx
     // the old `ApiError::Internal` produced).
     assert!(

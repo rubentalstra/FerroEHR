@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariants (ADR-003) for `Point_interval`.
+//! Hand-written RM/BASE class invariants for `Point_interval`.
 //!
 //! A point interval represents a single value (`lower == upper`, both included).
 //! It shares the `Interval` boundary-flag invariants (archie reports them under

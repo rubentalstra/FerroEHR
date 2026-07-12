@@ -6,5 +6,5 @@ pub mod original_version;
 pub mod version;
 pub mod versioned_object;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod version_impl;

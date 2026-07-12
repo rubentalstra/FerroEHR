@@ -6,7 +6,7 @@ use crate::ehr_extract::openehr_extract::openehr_content_item::OpenehrContentIte
 use serde::Serialize;
 
 /// Abstract parent of Extract Folder and Content types.
-/// Closed subtype set of `EXTRACT_ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXTRACT_ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExtractItem {

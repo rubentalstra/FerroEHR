@@ -1,7 +1,7 @@
-//! P10 storage spike (ADR-008): measure the candidate greenfield schema on
+//! P10 storage spike: measure the candidate greenfield schema on
 //! a real `PostgreSQL` 18 before committing to migrations.
 //!
-//! What it measures, per ADR-008's open questions:
+//! What it measures (the storage design's open questions):
 //! 1. **Node granularity** — fine (every structure node incl. `ELEMENT` gets
 //!    a row) vs coarse (`ELEMENT`/`FEEDER_AUDIT` stay inline in their parent
 //!    fragment): row counts, fragment sizes, table+index size.

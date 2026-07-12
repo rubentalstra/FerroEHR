@@ -6,7 +6,10 @@ spec-compliant openEHR CDR". This file is the live pointer under it; the
 consolidated gap surface is the blueprint §2 (proven foundations + ECC
 breakdown + spec-area map).
 
-## Active work — X1 comparison (plan review) → P20/P99
+**Open items live in [`WORKLIST.md`](WORKLIST.md)** — one row per item,
+owner-mandated single tracker (2026-07-12).
+
+## Active work — W-1 H1 sweep → W-2 ECC skip elimination → X1 → ADL2 → P20 (re-planned)
 
 **W1 (public documentation website) closed 2026-07-11** — the site is live at
 <https://rubentalstra.github.io/ehrbase-rs/> (landing + versioned book
@@ -21,7 +24,8 @@ Next up, in order:
    overhaul `tools/benchmark` (multi-SUT, percentiles, resource footprint),
    publish a measured comparison page on the docs site. Owner rule: **no
    false claims — measured numbers only.**
-2. **P20 — optimization**, **P99 — cutover** per the blueprint tail.
+2. **P20 — optimization** (to be re-planned first; P99 removed 2026-07-12 —
+   the release machinery already shipped with v3.0.0).
 
 ## Priority order (from the blueprint build order, §3)
 
@@ -29,8 +33,7 @@ Remaining engineering work under the blueprint:
 
 1. **P20 — optimization**: PG18 AIO tuning, hot-read pipelining, `JSON_TABLE`
    codegen (`docs/plans/phase-20-optimization.md`).
-2. **P99 — cutover**: final docs pass, tag the first release
-   (`docs/plans/phase-99-cutover.md`).
+
 
 Every phase still ends with an ECC run showing zero drift; the baseline only
 ratchets upward (blueprint §4 rule 4). The SM Platform Service Model surface is

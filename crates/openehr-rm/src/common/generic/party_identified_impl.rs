@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `PARTY_IDENTIFIED`.
+//! Hand-written RM class invariants for `PARTY_IDENTIFIED`.
 //!
 //! Mirrors archie `PartyIdentified`:
 //! - `Basic_validity`: at least one of `name`, `identifiers`, `external_ref`.

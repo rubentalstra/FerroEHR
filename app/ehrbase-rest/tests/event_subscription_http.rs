@@ -1,12 +1,11 @@
 //! End-to-end HTTP tests for the event-subscription admin extension API group
-//! (ADR-014 §5 — "Event Trigger" parity): the config gate
+//!: the config gate
 //! (`RestConfig::event_subscription.enabled`), the `200`/`201`/`204`/`404`/`400`/
 //! `501` wire outcomes for the CRUD verbs, and the JSON body shapes — driven
 //! through the assembled router with the shared [`Mock`] platform, whose
 //! `event_subscription_*` hooks back an in-memory store so the CRUD round-trips.
 //!
-//! Design: event/subscription semantics are spec-silent (ADR-014 §5 is the
-//! design record); the surface is our own, config-gated like the terminology
+//! Design: event/subscription semantics are spec-silent; the surface is our own, config-gated like the terminology
 //! group, mounted under `/admin/` and dispatching to the
 //! `EventSubscriptionAdapter` extension.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::type_complexity)]

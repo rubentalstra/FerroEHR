@@ -1,4 +1,4 @@
-//! P09/P10 integration tests: the greenfield schema (ADR-008) applies
+//! P09/P10 integration tests: the greenfield schema applies
 //! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow
 //! the spec formulas, the temporal versioning model behaves, and the node
 //! codec round-trips through the database.
@@ -90,19 +90,16 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    // Single squashed baseline per schema (ADR-013 §1 — the accreted
-    // 0001..0010 `ehr` chain and the `ext` functions were re-authored into one
-    // `0001` each; nothing was deployed, so the squash is sanctioned, and it is
-    // append-only from here). ext: 0001_openehr_functions (functions + roles +
-    // grants) + 0002_tenant_context (the ADR-015 ext.current_tenant_id() session
+    // Single squashed baseline per schema. ext: 0001_openehr_functions (functions + roles +
+    // grants) + 0002_tenant_context (the ext.current_tenant_id() session
     // context, appended for E2). ehr: 0001_baseline (18 tables + named
-    // constraints, comments, roles/grants, and the ADR-013 spec-compliance
-    // fixes) + 0002_event_outbox (the ADR-014 contribution-outbox eventing
-    // table) + 0003_event_subscription (the ADR-014 §5 event-filter
-    // subscription store, E1 task 4) + 0004_multitenancy (the ADR-015 `tenant`
+    // constraints, comments, roles/grants, and the spec-compliance
+    // fixes) + 0002_event_outbox (the contribution-outbox eventing extension
+    // table) + 0003_event_subscription (the event-filter
+    // subscription store, E1 task 4) + 0004_multitenancy (the multi-tenancy extension's `tenant`
     // registry + tenant_id scoping + RLS FORCE, appended for E2 task 2) +
-    // 0005_fhir_mapping (the ADR-016 FHIR-connector mapping store, appended for
-    // E3 task 2) + 0006_fhir_outbound_cursor (the ADR-016 §4a outbound-emitter
+    // 0005_fhir_mapping (the FHIR-connector mapping store — our own extension, appended for
+    // E3 task 2) + 0006_fhir_outbound_cursor (the outbound-emitter extension's
     // delivery cursor, appended for E3 tasks 4/5).
     assert_eq!((applied_ext, applied_ehr), (2, 6));
 
@@ -483,14 +480,14 @@ async fn seed_template(pool: &PgPool, template_id: &str) {
 async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     let ehr_id = Uuid::now_v7();
     let vo = Uuid::now_v7();
-    // ehr.system_id is NOT NULL (ADR-013 §5, req 2.1).
+    // ehr.system_id is NOT NULL.
     sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, 'ehrbase-rs.test')")
         .bind(ehr_id)
         .execute(pool)
         .await
         .expect("ehr row");
     // audit.change_type is a coded audit_change_type value ('249' creation),
-    // enforced by ck_audit_change_type (ADR-013 §6, req 1.4.2) — not the rubric.
+    // enforced by ck_audit_change_type — not the rubric.
     let audit_id: Uuid = sqlx::query_scalar(
         "INSERT INTO audit (system_id, change_type, committer)
          VALUES ('test.system', '249', '{\"_type\":\"PARTY_SELF\"}'::jsonb)
@@ -507,7 +504,7 @@ async fn seed_version(pool: &PgPool) -> (Uuid, Uuid) {
     .fetch_one(pool)
     .await
     .expect("contribution row");
-    // creating_system_id is NOT NULL (ADR-013 §8 — no '' sentinel).
+    // creating_system_id is NOT NULL.
     sqlx::query(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, sys_period, contribution_id, audit_id, creating_system_id)
          VALUES ($1, 'COMPOSITION', $2, 1, 1, tstzrange(now(), NULL), $3, $4, 'ehrbase-rs.test')",

@@ -1,7 +1,7 @@
 //! The DEFINITION surface on [`EhrbaseService`]: the SM `I_DEFINITION_*`
 //! interfaces ([`DefinitionAdl14Service`] / [`DefinitionAdl2Service`] /
 //! [`DefinitionQueryService`]) plus the ITS-REST wire-shaped
-//! [`DefinitionAdapter`] extension (ADR-011 — the generated ITS-REST
+//! [`DefinitionAdapter`] extension (the generated ITS-REST
 //! `DefinitionApi` is no longer a `Platform` supertrait; the definition
 //! dispatcher maps the wire onto these native traits).
 //!
@@ -30,7 +30,7 @@ use crate::service::EhrbaseService;
 // The wire-only rich shapes (template summaries, the example COMPOSITION,
 // `StoredQuery` descriptors) the ITS-REST `DEFINITION` group returns, which the
 // SM `I_DEFINITION_*` interfaces do not express. All native (`serde_json::Value`
-// + `SmError`), so `ehrbase-sm` stays protocol-free (ADR-011). The
+// + `SmError`), so `ehrbase-sm` stays protocol-free. The
 // `get_opt`/`get_artefact` retrievals stay on the SM traits below.
 #[async_trait]
 impl DefinitionAdapter for EhrbaseService {

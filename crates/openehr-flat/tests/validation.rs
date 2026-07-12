@@ -103,7 +103,7 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 ///
 /// The vendored corpus mixes openEHR reference data with **EHRbase-SDK** data,
 /// and `EHRbase` is *lenient*: some SDK fixtures omit RM-mandatory attributes that
-/// a strict validator rightly rejects. Per ADR-008 (openEHR spec conformance,
+/// a strict validator rightly rejects. Per the project's conformance stance (openEHR spec conformance,
 /// not `EHRbase` parity) we do **not** tolerate that leniency, so such fixtures are
 /// excluded here with the exact spec violation named — they are not a valid
 /// oracle for "validates clean". Excluded on those grounds:
@@ -155,7 +155,7 @@ fn valid_corpus_compositions_validate_clean() {
 
 /// Strict mandatory-attribute enforcement (phase S2-04, T1, finding F-open-3):
 /// removing the mandatory `COMPOSITION.composer [1]` must be rejected. The
-/// ADR-008 node codec stores raw canonical JSON with no schema enforcement at
+/// The node codec stores raw canonical JSON with no schema enforcement at
 /// commit, so before this fix `openehr-rm::validate::run` silently swallowed the
 /// typed-deserialize failure and the composition committed 201; now it surfaces
 /// the failure → 422.

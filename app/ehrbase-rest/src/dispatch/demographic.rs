@@ -304,7 +304,7 @@ async fn run_shared<S: Platform>(
     }
 }
 
-/// The `PARTY_RELATIONSHIP` extension routes — our own design (no ITS-REST
+/// The `PARTY_RELATIONSHIP` extension routes — our own extension (no ITS-REST
 /// contract; PORT NOTE), mounted alongside the generated demographic `ROUTES`
 /// and served by the same [`dispatch`]. Mirrors the party CRUD + versioned
 /// reads, one segment (`party_relationship` / `versioned_party_relationship`).

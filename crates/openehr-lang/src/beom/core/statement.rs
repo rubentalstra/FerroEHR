@@ -6,7 +6,7 @@ use crate::beom::core::variable_declaration::VariableDeclaration;
 use serde::Serialize;
 
 /// Meta-type for the notion of statement, which is a non-value-returning entity.
-/// Closed subtype set of `STATEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `STATEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Statement {

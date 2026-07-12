@@ -1,6 +1,6 @@
-//! `sea-query` identifier definitions for the greenfield schema (ADR-008 +
-//! ADR-013 enterprise baseline, `migrations/ehr/0001_baseline.sql`). One enum
-//! per table (all 19 — ADR-013 §17): the `Table` variant renders the table
+//! `sea-query` identifier definitions for the greenfield schema (the baseline +
+//! `migrations/ehr/0001_baseline.sql`). One enum
+//! per table (all 19): the `Table` variant renders the table
 //! name, the rest the column names. This is the single typed name catalog;
 //! the AQL SQL generator (P16, `aql/sql.rs`) consumes the `Table` variants,
 //! and dynamic SQL elsewhere addresses columns through these enums rather than

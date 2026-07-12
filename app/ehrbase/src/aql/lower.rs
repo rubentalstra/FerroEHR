@@ -1,4 +1,4 @@
-//! AST → typed IR lowering (ADR-008, P16). Covers the full accepted feature
+//! AST → typed IR lowering (our own engine, P16). Covers the full accepted feature
 //! envelope in `docs/design/aql-engine.md` §Feature envelope; every rejected
 //! construct maps to a precise [`AqlFeatureError`].
 //!

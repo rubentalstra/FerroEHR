@@ -3,6 +3,6 @@
 pub mod dv_ehr_uri;
 pub mod dv_uri;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod dv_ehr_uri_impl;
 pub mod dv_uri_impl;

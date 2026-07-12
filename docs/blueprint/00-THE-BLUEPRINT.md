@@ -42,7 +42,7 @@ profile verdicts **CORE PASS · STANDARD PASS · OPTIONS OBTAINED**. The B1–B6
 build order is executed; §2.2's failure surface is empty; §2.3's State
 column was refreshed at B7 close (per-row deltas live in each build step's
 close note in §3 and the phase files). Remaining trajectory: P20
-optimization, P99 cutover, P17 interop audit.
+optimization (re-planned per WORKLIST W-5), P17 interop audit. (P99 removed 2026-07-12.)
 
 ### 2.1 Proven foundations (evidence, not intent)
 
@@ -261,11 +261,13 @@ report produced. This is the "first fully spec-compliant openEHR CDR" claim.**
 *Closed 2026-07-10: ECC 341 executed · 315 passed · 0 failed; machine
 verdicts CORE PASS · STANDARD PASS · OPTIONS OBTAINED. The claim state is
 reached — measured, not asserted. Remaining trajectory: P20 optimization,
-P99 cutover, P17 interop audit (not conformance-gated).*
+P17 interop audit (not conformance-gated). P99 removed 2026-07-12.*
 
-### Tail — P20 optimization, P99 cleanup/release
+### Tail — P20 optimization (re-plan first)
 Unchanged from the phase plan: PERF(port) items, AIO tuning, index passes
-(P20); release cutover (P99). P17's EhrScape/SIM-B/SDF audit interleaves where
+(P20 — the stale plan is re-evaluated before execution, WORKLIST W-5;
+P99 was removed 2026-07-12, the release machinery having shipped with
+v3.0.0). P17's EhrScape/SIM-B/SDF audit interleaves where
 scheduled (not conformance-gated).
 
 ---

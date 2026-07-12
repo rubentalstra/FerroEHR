@@ -10,7 +10,7 @@ use crate::beom::core::expr_variable_ref::ExprVariableRef;
 use serde::Serialize;
 
 /// Abstract parent of all expression meta-types.
-/// Closed subtype set of `EXPRESSION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPRESSION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Expression {

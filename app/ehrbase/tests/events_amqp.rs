@@ -1,6 +1,6 @@
 //! End-to-end contribution-outbox eventing against a **real broker**
 //! (testcontainers `RabbitMQ`) + a real `PostgreSQL` 18 — the broker half of
-//! ADR-014 (task 3/5b).
+//! Our own extension (task 3/5b).
 //!
 //! Proves: (1) a committed contribution is published to the topic exchange and
 //! is consumable from a bound queue, with the expected routing key and a
@@ -126,7 +126,7 @@ async fn pending_count(pool: &PgPool) -> i64 {
 }
 
 /// The total number of version entries across all outbox rows — the number of
-/// per-version messages the publisher emits (ADR-014 §5, E1 task 4).
+/// per-version messages the publisher emits.
 async fn version_count(pool: &PgPool) -> i64 {
     sqlx::query_scalar(
         "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \
@@ -305,7 +305,7 @@ async fn end_to_end_publish_and_consume() {
     let (routing_key, body) = next_delivery(&mut consumer).await;
     assert_eq!(
         routing_key, "COMPOSITION.249.-",
-        "routing key is <kind>.<change_type>.<template|-> (ADR-014 §5)"
+        "routing key is <kind>.<change_type>.<template|->"
     );
     assert_phi_free(&body);
     assert_eq!(body["versions"][0]["kind"], json!("COMPOSITION"));
@@ -343,7 +343,7 @@ async fn broker_down_then_up_delivers_without_loss() {
         .expect("create_composition");
     let committed = pending_count(&pool).await;
     assert_eq!(committed, 2, "EHR creation + composition ⇒ two rows");
-    // Per-version fan-out (ADR-014 §5, E1 task 4): EHR creation commits
+    // Per-version fan-out: EHR creation commits
     // EHR_STATUS + EHR_ACCESS (2 versions) + the composition (1) ⇒ 3 messages.
     let expected_messages = version_count(&pool).await;
     assert_eq!(
@@ -352,7 +352,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     );
 
     // Broker "down": a publisher pointed at a dead port cannot deliver; rows
-    // stay pending (the outbox buffers — ADR-014 §3).
+    // stay pending (the outbox buffers).
     let bad_url = "amqp://guest:guest@127.0.0.1:1/%2f".to_owned();
     let down = start(events_config(bad_url), pool.clone());
     tokio::time::sleep(Duration::from_millis(600)).await;
@@ -402,7 +402,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     let url = amqp_url(&rmq).await;
     let svc = EhrbaseService::new(pool.clone());
 
-    // Two subscriptions (ADR-014 §5): a wildcard (all predicates NULL → binding
+    // Two subscriptions: a wildcard (all predicates NULL → binding
     // key *.*.* → every event) and a kind filter (kind=COMPOSITION → binding key
     // COMPOSITION.*.* → composition events only). The publisher declares + binds
     // a durable per-subscription queue `ehrbase.events.<name>` for each.

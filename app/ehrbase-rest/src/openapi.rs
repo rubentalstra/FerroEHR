@@ -1,6 +1,6 @@
 //! `OpenAPI` document + Swagger UI.
 //!
-//! Per ADR-005 the **vendored** ITS-REST `OpenAPI` is the authoritative contract;
+//! The **vendored** ITS-REST `OpenAPI` is the authoritative contract;
 //! `utoipa` here serves a Swagger UI and a served `OpenAPI` document for
 //! discoverability, and is the seam for a future code→OAS drift-check against
 //! the vendored spec. It is not the source of truth.
@@ -21,7 +21,7 @@ use crate::state::AppState;
     version = "1.0.3",
     description = "openEHR-spec-conformant CDR (ITS-REST 1.0.3). The authoritative \
                    contract is the vendored OpenAPI; this document is served for \
-                   discoverability (ADR-005)."
+                   discoverability."
 ))]
 pub struct ApiDoc;
 

@@ -3,7 +3,7 @@
 //!
 //! Loading: defaults ← optional TOML file (`EHRBASE_EVENTS_CONFIG`) ←
 //! `EHRBASE_EVENTS_`-prefixed environment (nested keys use `__`). Publishing is
-//! **off by default** (ADR-014 §4): with [`EventsConfig::enabled`] `false` the
+//! **off by default**: with [`EventsConfig::enabled`] `false` the
 //! binary never spawns the publisher and the outbox simply accumulates (and is
 //! not drained) — the commit path always writes the rows regardless, so turning
 //! eventing on later loses nothing already committed.
@@ -14,13 +14,13 @@ use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
 const DEFAULT_URL: &str = "amqp://guest:guest@localhost:5672/%2f";
-/// The default topic exchange (ADR-014 §5).
+/// The default topic exchange.
 const DEFAULT_EXCHANGE: &str = "ehrbase.events";
 /// Default rows drained per poll.
 const DEFAULT_BATCH_SIZE: i64 = 128;
 /// Default poll interval when the outbox is idle (ms).
 const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
-/// Default published-row retention window (days) — ADR-014 §6.
+/// Default published-row retention window (days)
 const DEFAULT_RETENTION_DAYS: i64 = 7;
 /// Default retention-prune cadence (seconds).
 const DEFAULT_PRUNE_INTERVAL_SECS: u64 = 3_600;
@@ -28,19 +28,19 @@ const DEFAULT_PRUNE_INTERVAL_SECS: u64 = 3_600;
 /// drainer backs off and leaves the row pending.
 const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
 
-/// Contribution-outbox eventing configuration (`[events]`; ADR-014). Every
+/// Contribution-outbox eventing configuration (`[events]`) — our own extension. Every
 /// field has a default, so an all-defaults [`EventsConfig`] is valid (eventing
 /// is off unless `enabled`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventsConfig {
-    /// Master switch (`EHRBASE_EVENTS_ENABLED`). Off by default (ADR-014 §4).
+    /// Master switch (`EHRBASE_EVENTS_ENABLED`). Off by default.
     #[serde(default)]
     pub enabled: bool,
     /// AMQP broker URL (`EHRBASE_EVENTS_URL`), e.g.
     /// `amqp://user:pass@host:5672/%2f` (or `amqps://…` for TLS).
     #[serde(default = "defaults::url")]
     pub url: String,
-    /// Topic exchange to publish to (`EHRBASE_EVENTS_EXCHANGE`); ADR-014 §5.
+    /// Topic exchange to publish to (`EHRBASE_EVENTS_EXCHANGE`) — the eventing extension's own setting.
     #[serde(default = "defaults::exchange")]
     pub exchange: String,
     /// Use TLS (`EHRBASE_EVENTS_TLS`): when `true` an `amqp://` URL is upgraded
@@ -54,7 +54,7 @@ pub struct EventsConfig {
     #[serde(default = "defaults::poll_interval_ms")]
     pub poll_interval_ms: u64,
     /// Published-row retention window in days (`EHRBASE_EVENTS_RETENTION_DAYS`);
-    /// ADR-014 §6.
+    /// The eventing extension's own retention setting.
     #[serde(default = "defaults::retention_days")]
     pub retention_days: i64,
     /// Retention-prune cadence in seconds (`EHRBASE_EVENTS_PRUNE_INTERVAL_SECS`).
@@ -100,7 +100,7 @@ impl EventsConfig {
     }
 
     /// The effective broker URL, upgraded to `amqps://` when [`Self::tls`] is set
-    /// and the URL is a plain `amqp://` (ADR-014 §4).
+    /// and the URL is a plain `amqp://`.
     #[must_use]
     pub fn effective_url(&self) -> String {
         if self.tls && self.url.starts_with("amqp://") {

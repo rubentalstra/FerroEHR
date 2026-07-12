@@ -1,5 +1,5 @@
 //! Contribution-outbox eventing tests against a real `PostgreSQL` 18
-//! (testcontainers) — the transactional-outbox half of ADR-014 (tasks 2/3).
+//! (testcontainers) — the transactional-outbox half of the eventing extension (tasks 2/3).
 //!
 //! Proves: (1) every CONTRIBUTION commit path (a direct composition commit, a
 //! CONTRIBUTION commit, and an EHR-Extract import) writes exactly one pending
@@ -178,7 +178,7 @@ fn assert_phi_free(envelope: &Value) {
     let obj = envelope.as_object().expect("envelope is an object");
     // The published payload additionally carries the delivery `seq` and the
     // per-version fan-out `version_index` (both injected at publish time,
-    // ADR-014 §5 / E1 task 4); the stored envelope carries neither. Ignore them
+    // E1 task 4); the stored envelope carries neither. Ignore them
     // for the key check.
     let mut top: Vec<&str> = obj
         .keys()
@@ -443,8 +443,7 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     wait_until(|| async { pending_count(&pool).await == 0 }).await;
 
     let delivered = publisher.published();
-    // Per-version fan-out (ADR-014 §5, E1 task 4 — completes the interim
-    // single-message-per-row shape, not a weakening): each version entry is its
+    // Per-version fan-out: each version entry is its
     // own message. EHR creation commits EHR_STATUS + EHR_ACCESS under one
     // CONTRIBUTION (2 versions); each composition, 1 — so the 3 outbox rows fan
     // out to 4 messages.
@@ -482,7 +481,7 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
 }
 
 /// The total number of version entries across all outbox rows — the number of
-/// per-version messages the drainer publishes (ADR-014 §5).
+/// per-version messages the drainer publishes.
 async fn delivered_version_count(pool: &PgPool) -> usize {
     let n: i64 = sqlx::query_scalar(
         "SELECT coalesce(sum(jsonb_array_length(envelope -> 'versions')), 0)::bigint \

@@ -88,7 +88,7 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
 }
 
 fn app(rbac_enabled: bool, audit: Option<AuditSink>) -> Router {
-    // The ATNA audit emitter now lives in the backend's SM `SystemLog` (ADR-011);
+    // The ATNA audit emitter now lives in the backend's SM `SystemLog`;
     // an in-memory sink on the mock records emitted events for assertions.
     let backend = common::Mock::with(common::Hooks {
         audit,
@@ -239,7 +239,7 @@ async fn admin_scope_alias_migrates_via_scope_role() {
 async fn rbac_deny_is_audited() {
     // A 403 from the RBAC gate carries the Principal on the response, so the
     // ATNA audit layer records a failure audit for the denied caller (§7). The
-    // emitter now lives in the backend's SM `SystemLog` (ADR-011), so we assert
+    // emitter now lives in the backend's SM `SystemLog`, so we assert
     // on the recorded `AuditEvent` (a minor-failure outcome attributed to the
     // caller); the DICOM `EventOutcomeIndicator="4"` / `UserID` rendering is
     // covered by the `ehrbase::system_log` message tests.

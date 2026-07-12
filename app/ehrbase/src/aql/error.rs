@@ -1,4 +1,4 @@
-//! AQL planner errors (ADR-008, P16 packages 2+3).
+//! AQL planner errors (P16 packages 2+3).
 //!
 //! Two families, both surfaced before any SQL is built:
 //!
@@ -7,7 +7,7 @@
 //!   rejection is always explainable against the vendored spec
 //!   (`docs/specs/openehr/QUERY/docs/AQL/`). The accept/reject envelope is
 //!   documented in `docs/design/aql-engine.md` §Feature envelope and must remain
-//!   a superset of `EHRbase`'s (ADR-008 §3).
+//!   a superset of `EHRbase`'s.
 //! * [`AnalysisError`] — path analysis / typing failures (unknown class or
 //!   variable, unresolvable attribute, type mismatch, unbound parameter).
 //! * [`SqlError`] — IR→SQL lowering failures (a construct the planner accepted

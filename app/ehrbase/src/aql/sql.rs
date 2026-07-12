@@ -1,4 +1,4 @@
-//! IR → SQL lowering (ADR-008, P16; mapping table in `docs/design/aql-engine.md`
+//! IR → SQL lowering (P16; mapping table in `docs/design/aql-engine.md`
 //! §SQL mapping). Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
 //! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
 //! **typed** expression API + `sea-query-sqlx` — no string-concatenated SQL
@@ -501,7 +501,7 @@ impl<'a> Builder<'a> {
     /// current (`upper_inf`) `EHR_STATUS` has `is_queryable = true`.
     /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline in
     /// the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
-    /// (`num = 0`; children are pruned but scalars stay — ADR-008 §2).
+    /// (`num = 0`; children are pruned but scalars stay).
     fn queryable_ehr_subquery(&mut self) -> SelectStatement {
         let sv = format!("qgv{}", self.next_ctr());
         let sn = format!("qgn{}", self.next_ctr());

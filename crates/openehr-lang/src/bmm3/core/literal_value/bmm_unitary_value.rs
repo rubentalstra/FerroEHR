@@ -4,7 +4,7 @@ use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 use serde::Serialize;
 
 /// Meta-type for literals whose concrete type is a unitary type in the BMM sense.
-/// Closed subtype set of `BMM_UNITARY_VALUE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_UNITARY_VALUE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmUnitaryValue {

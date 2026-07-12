@@ -5,7 +5,7 @@ use crate::am14::aom14::archetype::constraint_model::c_single_attribute::CSingle
 use serde::Serialize;
 
 /// Abstract model of constraint on any kind of attribute node.
-/// Closed subtype set of `C_ATTRIBUTE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_ATTRIBUTE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CAttribute {

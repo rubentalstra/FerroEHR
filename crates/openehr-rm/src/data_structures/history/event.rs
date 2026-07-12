@@ -5,7 +5,7 @@ use crate::data_structures::history::point_event::PointEvent;
 use serde::Serialize;
 
 /// Defines the abstract notion of a single event in a series. This class is generic, allowing types to be generated which are locked to particular spatial types, such as `EVENT<ITEM_LIST>`. Subtypes express point or intveral data.
-/// Closed subtype set of `EVENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EVENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Event<T> {

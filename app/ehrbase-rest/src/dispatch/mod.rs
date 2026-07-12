@@ -99,16 +99,16 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
             terminology::dispatch::<S>,
         ))
         // Our-own-design event-subscription admin extension routes (no ITS-REST
-        // contract; ADR-014 §5 "Event Trigger" parity), config-gated.
+        // contract; an "Event Trigger"-style extension — no openEHR spec governs eventing), config-gated.
         .merge(mount(
             event_subscription::EVENT_SUBSCRIPTION_ROUTES,
             event_subscription::dispatch::<S>,
         ))
         // Our-own-design tenant admin extension routes (no ITS-REST contract;
-        // ADR-015 §5 multi-tenancy), config-gated.
+        // multi-tenancy — no openEHR spec governs it), config-gated.
         .merge(mount(tenant::TENANT_ROUTES, tenant::dispatch::<S>))
         // Our-own-design FHIR R4 connector routes (no ITS-REST contract;
-        // ADR-016 §Decision 3/5 — inbound ingest + mapping CRUD), config-gated.
+        // a deliberate design decision/5 — inbound ingest + mapping CRUD), config-gated.
         .merge(mount(fhir::FHIR_ROUTES, fhir::dispatch::<S>))
 }
 

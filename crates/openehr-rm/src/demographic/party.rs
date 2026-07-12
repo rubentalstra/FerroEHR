@@ -11,7 +11,7 @@ use serde::Serialize;
 ///
 /// NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `PARTY` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
 /// For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`  would be copied to the `_uid_` field of the `PARTY` object.
-/// Closed subtype set of `PARTY` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `PARTY`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Party {

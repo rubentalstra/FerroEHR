@@ -46,7 +46,7 @@ use crate::error::SmError;
 /// (`openehr_rm::ehr_extract`). Each SM call returns `List<EXTRACT>`, so the
 /// exports return `Vec<Value>` (one `EXTRACT` per element).
 ///
-/// No default method bodies (ADR-011 compile-time completeness): a backend that
+/// No default method bodies (compile-time completeness by design): a backend that
 /// does not implement a call is a build error, not a silent `501`.
 #[async_trait]
 pub trait EhrExtractService: Send + Sync {

@@ -1,4 +1,4 @@
-//! The SM EHR-core service interfaces on [`EhrbaseService`] (ADR-011) — the
+//! The SM EHR-core service interfaces on [`EhrbaseService`] — the
 //! literal openEHR Platform Service Model call set for `I_EHR_SERVICE` /
 //! `I_EHR_STATUS` / `I_EHR_COMPOSITION` / `I_EHR_DIRECTORY` /
 //! `I_EHR_CONTRIBUTION`, plus the ITS-REST adapter-support extension traits

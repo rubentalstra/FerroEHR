@@ -1,4 +1,4 @@
-//! Configuration for `DV_MULTIMEDIA` externalization (ADR-017).
+//! Configuration for `DV_MULTIMEDIA` externalization.
 //!
 //! Loaded independently of the rest of the service (the sibling
 //! `fhir_outbound`/`events`/`signing` config pattern): a `figment` merge of
@@ -6,7 +6,7 @@
 //! `EHRBASE_MULTIMEDIA_*` environment variables.
 //!
 //! **Off by default** (`enabled = false`): with externalization disabled the
-//! commit/read paths are byte-identical to today's inline behaviour (ADR-017
+//! commit/read paths are byte-identical to today's inline behaviour (the offload
 //! §1, the zero-drift gate) and no object store is ever contacted.
 
 // openEHR/product identifiers (SeaweedFS, object_store, …) read as prose in the
@@ -20,13 +20,13 @@ use figment::{
 use serde::{Deserialize, Serialize};
 
 /// Default offload threshold: a decoded (unencoded) `DV_MULTIMEDIA.data`
-/// larger than this is externalized. 256 KiB (ADR-017 §1).
+/// larger than this is externalized. 256 KiB.
 pub const DEFAULT_THRESHOLD_BYTES: usize = 256 * 1024;
 
 /// The default bucket name when a deployment does not set one.
 pub const DEFAULT_BUCKET: &str = "openehr-multimedia";
 
-/// DV_MULTIMEDIA externalization settings (ADR-017).
+/// DV_MULTIMEDIA externalization settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultimediaConfig {
     /// Master switch. `false` (default) = today's inline behaviour, byte for
@@ -34,7 +34,7 @@ pub struct MultimediaConfig {
     #[serde(default)]
     pub enabled: bool,
     /// A decoded `DV_MULTIMEDIA.data` strictly larger than this many bytes is
-    /// offloaded to the object store; at or below it stays inline (ADR-017 §1).
+    /// offloaded to the object store; at or below it stays inline.
     #[serde(default = "defaults::threshold_bytes")]
     pub threshold_bytes: usize,
     /// S3-compatible endpoint URL (e.g. a SeaweedFS S3 gateway

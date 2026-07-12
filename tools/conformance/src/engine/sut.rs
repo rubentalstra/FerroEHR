@@ -7,7 +7,7 @@
 //! by `scripts/conformance.sh` (or any externally deployed SUT) — so the wire
 //! under test is the production `serve_full` stack, never a re-wired
 //! approximation that can drift from the binary (owner ruling 2026-07-09; the
-//! removed `self-host` feature did exactly that during the ADR-011 rebuild).
+//! removed `self-host` feature did exactly that during the crate-layout rebuild).
 //!
 //! The client exposes a [`Transport`](crate::harness::Transport) so a case runs
 //! against any SUT unchanged.

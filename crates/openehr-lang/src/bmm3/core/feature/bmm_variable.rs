@@ -7,7 +7,7 @@ use crate::bmm3::core::feature::bmm_self::BmmSelf;
 use serde::Serialize;
 
 /// A routine-scoped formal element.
-/// Closed subtype set of `BMM_VARIABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_VARIABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmVariable {

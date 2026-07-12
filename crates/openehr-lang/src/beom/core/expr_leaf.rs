@@ -12,7 +12,7 @@ use serde::Serialize;
 /// * a path referring to a value in the archetype;
 /// * a constraint;
 /// * a variable reference.
-/// Closed subtype set of `EXPR_LEAF` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPR_LEAF`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprLeaf {

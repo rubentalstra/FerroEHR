@@ -7,7 +7,7 @@ use crate::composition::content::entry::observation::Observation;
 use serde::Serialize;
 
 /// The abstract parent of all clinical `ENTRY` subtypes. A `CARE_ENTRY` defines protocol and guideline attributes for all clinical Entry subtypes.
-/// Closed subtype set of `CARE_ENTRY` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `CARE_ENTRY`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CareEntry {

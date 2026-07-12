@@ -39,7 +39,7 @@ use crate::error::SmError;
 /// `I_TDD_SERVICE` — import of Template Data Documents, one Rust method per SM
 /// call (`i_tdd_service.adoc`).
 ///
-/// No default method bodies (ADR-011 compile-time completeness): a backend that
+/// No default method bodies (compile-time completeness by design): a backend that
 /// does not implement a call is a build error, not a silent `501`.
 #[async_trait]
 pub trait TddService: Send + Sync {

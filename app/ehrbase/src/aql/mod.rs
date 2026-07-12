@@ -1,4 +1,4 @@
-//! The AQL execution engine (ADR-008, P16) — our own typed IR over the
+//! The AQL execution engine (P16) — our own typed IR over the
 //! greenfield node store.
 //!
 //! This module is the *planning* front half of the engine: it turns a parsed
@@ -9,7 +9,7 @@
 //!
 //! Design authority: `docs/design/aql-engine.md`. Spec authority: the vendored
 //! QUERY 1.1 text at `docs/specs/openehr/QUERY/docs/AQL/`. The RM typing oracle
-//! is the generated `openehr_rm::model` (ADR-008 §3).
+//! is the generated `openehr_rm::model`.
 //!
 //! Entry point: [`plan`].
 

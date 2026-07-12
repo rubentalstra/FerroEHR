@@ -21,7 +21,7 @@ use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
 use serde::Serialize;
 
 /// Abstract parent of all typed expression meta-types.
-/// Closed subtype set of `EL_EXPRESSION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_EXPRESSION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElExpression {

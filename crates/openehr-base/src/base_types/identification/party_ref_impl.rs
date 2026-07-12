@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariants (ADR-003) for `PARTY_REF`.
+//! Hand-written RM/BASE class invariants for `PARTY_REF`.
 //!
 //! Mirrors archie `PartyRef`:
 //! - `Type_validity`: `type` is one of the demographic/party types.
@@ -19,7 +19,7 @@ use crate::validate::{InvariantViolation, Validate};
 /// and the value the CNF platform corpus uses on its **positive** commit
 /// fixtures (`CNF/.../create_composition-persistent.robot` "Alternative flow 1 …
 /// TDD"; every `..__full` COMPOSITION/TDD sets `external_ref.type = "ANY"`). Per
-/// ADR-008 the CNF positive case wins over the strict prose enumeration, so
+/// By the CNF-outranks-prose rule the positive case wins over the strict enumeration, so
 /// `ANY` is admitted; an *unknown* type string (e.g. a typo) is still rejected.
 // PORT NOTE (spec vs CNF): the normative invariant lists a closed set that does
 // not include `ANY`; the CNF positive corpus commits `type="ANY"`. Admitting
@@ -73,7 +73,7 @@ mod tests {
     }
 
     /// `ANY` (the universal supertype) is admitted — the value the CNF positive
-    /// commit corpus uses (see `VALID_PARTY_TYPES` doc; ADR-008: CNF wins).
+    /// commit corpus uses (see `VALID_PARTY_TYPES` doc; CNF wins).
     #[test]
     fn valid_party_ref_any_supertype() {
         assert!(party_ref("local", "ANY").invariants().is_empty());

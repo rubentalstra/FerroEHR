@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `COMPOSITION`.
+//! Hand-written RM class invariants for `COMPOSITION`.
 //!
 //! Mirrors archie `Composition` (non-terminology) + inherited LOCATABLE:
 //! - `Is_archetype_root`: a COMPOSITION is an archetype root, so

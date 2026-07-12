@@ -1,4 +1,4 @@
-//! Hand-written ITS-REST runtime (ADR-005): the API error type the generated
+//! Hand-written ITS-REST runtime: the API error type the generated
 //! server traits return, mapped to an HTTP response. The DTOs, per-group server
 //! traits, and route tables are generated (`emit-rest`) into [`super::generated`];
 //! `ehrbase-rest` implements the traits and wires axum.

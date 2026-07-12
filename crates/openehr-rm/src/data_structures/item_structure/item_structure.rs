@@ -7,7 +7,7 @@ use crate::data_structures::item_structure::item_tree::ItemTree;
 use serde::Serialize;
 
 /// Abstract parent class of all spatial data types.
-/// Closed subtype set of `ITEM_STRUCTURE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `ITEM_STRUCTURE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ItemStructure {

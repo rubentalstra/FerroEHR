@@ -6,7 +6,7 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
 /// Meta-type for a concrete, unitary type that can be used as an actual parameter type in a generic type declaration.
-/// Closed subtype set of `BMM_EFFECTIVE_TYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_EFFECTIVE_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmEffectiveType {

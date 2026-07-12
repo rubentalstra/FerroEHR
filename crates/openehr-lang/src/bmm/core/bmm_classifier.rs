@@ -13,7 +13,7 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
 /// Abstract idea of specifying a type either by definition or by reference.
-/// Closed subtype set of `BMM_CLASSIFIER` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_CLASSIFIER`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmClassifier {

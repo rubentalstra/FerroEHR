@@ -1,9 +1,8 @@
 //! HTTP dispatch for the event-subscription admin extension API group over the
 //! [`EventSubscriptionAdapter`](ehrbase_sm::EventSubscriptionAdapter) seam
-//! (ADR-014 §5 — "Event Trigger" parity).
+//!.
 //!
-//! Design: event/subscription semantics are spec-silent (ADR-014 §5 is the
-//! design record), so — like the terminology group (`docs/design/sm-platform/
+//! Design: event/subscription semantics are spec-silent, so — like the terminology group (`docs/design/sm-platform/
 //! 08-target-architecture.md` §7) — this surface is our own, exposed under the
 //! server's extension namespace and excluded from the ITS-REST drift check. It
 //! is mounted under `/admin/` (a subscription store is an administrative
@@ -33,7 +32,7 @@ use ehrbase_sm::Platform;
 use crate::negotiate;
 use crate::state::AppState;
 
-/// The event-subscription extension routes (ADR-014 §5) — our own design (no
+/// The event-subscription extension routes — our own extension (no
 /// ITS-REST contract), mounted alongside the generated `ROUTES`. Group-relative
 /// paths (nested under the configured `base_path`).
 pub(crate) const EVENT_SUBSCRIPTION_ROUTES: &[(&str, &str, &str)] = &[

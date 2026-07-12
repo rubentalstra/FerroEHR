@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariants + accessor functions (ADR-003) for
+//! Hand-written RM/BASE class invariants + accessor functions for
 //! `VERSION_TREE_ID`.
 //!
 //! Spec: BASE 1.3.0

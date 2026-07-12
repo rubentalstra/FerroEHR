@@ -61,7 +61,7 @@ impl EhrbaseService {
     /// dev-branch only). We map it to `NotFound` → HTTP `404`, the natural REST
     /// reading of an operation on a non-existent resource.
     pub(super) async fn physical_ehr_delete(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
-        // ADR-017: when DV_MULTIMEDIA externalization is on, collect the blob
+        // Our own extension: when DV_MULTIMEDIA externalization is on, collect the blob
         // keys this EHR's nodes reference *before* deletion, so we can GC the
         // ones no other node still references once the delete commits.
         let candidate_blobs = self.collect_ehr_blob_keys(ehr_id).await?;
@@ -133,7 +133,7 @@ impl EhrbaseService {
 
     /// Delete each candidate blob no longer referenced by any surviving `node`.
     ///
-    /// PORT NOTE (ADR-017 §5): this is a conservative scan-based GC — for each
+    /// PORT NOTE: this is a conservative scan-based GC — for each
     /// candidate we check whether its `s3://…` URI still appears in any node's
     /// `data`, deleting only the orphans. A `blob_ref` count table (O(1)
     /// bookkeeping) is deliberately deferred to P20 scale. A blob-store failure
@@ -171,7 +171,7 @@ impl EhrbaseService {
     /// (idempotent bulk delete); the count of EHRs actually deleted is returned.
     ///
     /// PORT NOTE: bulk delete has no spec (not in the SM, not in any OAS). The
-    /// idempotent skip-missing semantics + returned count are our own design so
+    /// idempotent skip-missing semantics + returned count are our own choice so
     /// a partial success is observable at the REST edge.
     pub(super) async fn physical_ehr_delete_all(
         &self,

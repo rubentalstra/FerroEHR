@@ -1,7 +1,7 @@
-//! E2 multi-tenancy isolation integration tests (ADR-015), against a real
+//! E2 multi-tenancy isolation integration tests, against a real
 //! `PostgreSQL` 18 via testcontainers.
 //!
-//! Proves the engine-enforced isolation ADR-015 §2 specifies:
+//! Proves the engine-enforced tenant isolation the tenancy extension specifies:
 //!   * RLS is ENABLED **and** FORCED on every scoping table (catalog assertion);
 //!   * a non-superuser role scoped to tenant A cannot read/list/point-read
 //!     tenant B's EHRs / templates / stored queries — and vice versa — while its
@@ -29,7 +29,7 @@ use uuid::Uuid;
 
 const PG_TAG: &str = "18";
 
-/// Every table ADR-015 §2 puts under tenant scope + RLS FORCE.
+/// Every table the tenancy extension puts under tenant scope + RLS FORCE.
 const SCOPED_TABLES: &[&str] = &[
     "ehr",
     "contribution",

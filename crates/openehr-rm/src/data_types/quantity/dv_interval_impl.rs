@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants + interval functions (ADR-003) for
+//! Hand-written RM class invariants + interval functions for
 //! `DV_INTERVAL`.
 //!
 //! Spec: RM 1.2.0
@@ -21,7 +21,7 @@
 //! `INTERVAL` (its `DvInterval` composes an inner `Interval`); our `DvInterval`
 //! is flat, so we report the concrete type `DV_INTERVAL`. The indexed SQL
 //! realisation of the same ordering is the P16 `openehr_magnitude` function
-//! (ADR-008); this impl is the in-process authority.
+//!; this impl is the in-process authority.
 
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered_impl::OrderedLimit;

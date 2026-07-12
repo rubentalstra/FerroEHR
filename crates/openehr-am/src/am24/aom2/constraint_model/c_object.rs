@@ -15,7 +15,7 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 use serde::Serialize;
 
 /// Abstract model of constraint on any kind of object node.
-/// Closed subtype set of `C_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CObject {

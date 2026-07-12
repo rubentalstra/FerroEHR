@@ -1,4 +1,4 @@
-//! Hand-written BASE `Cardinality` spec functions (ADR-003).
+//! Hand-written BASE `Cardinality` spec functions.
 //!
 //! `Cardinality` expresses constraints on the cardinality of container objects
 //! (the values of multiply-valued attributes), including uniqueness and

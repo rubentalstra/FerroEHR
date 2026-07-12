@@ -6,7 +6,7 @@ use crate::data_types::quantity::date_time::dv_time::DvTime;
 use serde::Serialize;
 
 /// Specialised temporal variant of `DV_ABSOLUTE_QUANTITY` whose diff type is `DV_DURATION`.
-/// Closed subtype set of `DV_TEMPORAL` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_TEMPORAL`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvTemporal {

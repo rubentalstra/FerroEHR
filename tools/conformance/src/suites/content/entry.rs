@@ -345,7 +345,7 @@ async fn drive_hist_case(
         // must be present. Every row here has summary absent, so 0 events is
         // rejected by the RM invariant regardless of the archetype cardinality —
         // this is spec-authoritative over the master16 table's "no events, absent
-        // summary → accepted" row (ADR-008: the RM invariant governs).
+        // summary → accepted" row (the RM invariant governs).
         let accepted = count >= 1 && events_ok(card, count) && !summary_mand;
         let label = format!(
             "{count} event(s), summary absent → {}",

@@ -105,7 +105,7 @@ fn app(store: &Store) -> Router {
             })
         })),
         // The adl1.4 GET routes through the wire-shaped
-        // `DefinitionAdapter::template_adl14_get` (template_id-keyed; ADR-011 —
+        // `DefinitionAdapter::template_adl14_get` (template_id-keyed —
         // the SM `get_opt` is UUID-keyed per SM `i_definition_adl14.adoc`
         // `get_opt(an_opt_id: UUID)`, so the wire's string template id cannot
         // be served through it).

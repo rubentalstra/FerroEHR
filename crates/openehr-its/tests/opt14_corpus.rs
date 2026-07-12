@@ -1,4 +1,4 @@
-//! OPT 1.4 corpus gate (ADR-005): every vendored `.opt` operational template
+//! OPT 1.4 corpus gate: every vendored `.opt` operational template
 //! must parse into the generated `opt14::OperationalTemplate` model without
 //! error. The corpus lives with the `ehrbase` app tests; this crate reads it by
 //! a workspace-relative path.

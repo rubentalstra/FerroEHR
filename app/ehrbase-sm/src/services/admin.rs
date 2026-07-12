@@ -263,7 +263,7 @@ pub struct ExportSpec {
 
 impl ExportSpec {
     /// An uncompressed canonical-JSON export split into `segment_split_size_kb`
-    /// segments — the format the greenfield storage exports natively (ADR-008:
+    /// segments — the format the greenfield storage exports natively (a deliberate design decision:
     /// `node.data` is verbatim canonical openEHR JSON).
     #[must_use]
     pub fn canonical_json(segment_split_size_kb: i32) -> Self {

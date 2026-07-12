@@ -5,7 +5,7 @@ use crate::common::change_control::original_version::OriginalVersion;
 use serde::Serialize;
 
 /// Abstract model of one Version within a Version container, containing data, commit audit trail, and the identifier of its Contribution.
-/// Closed subtype set of `VERSION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `VERSION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Version<T> {

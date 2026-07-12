@@ -1,4 +1,4 @@
-//! Hand-written accessor functions (ADR-003) for `ARCHETYPE_ID`.
+//! Hand-written accessor functions for `ARCHETYPE_ID`.
 //!
 //! Spec: BASE 1.3.0
 //! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.archetype_id.adoc`.

@@ -178,7 +178,7 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub code_lists: Vec<WebTemplateCodeList>,
 
-    /// Closed-archetype constraints (ADR-012 / F-07-05 + F-07-10): per
+    /// Closed-archetype constraints (F-07-05 + F-07-10): per
     /// constrained attribute that carries archetype-node-identified alternatives
     /// and/or open `ARCHETYPE_SLOT`s, the admissible child identities. The walk
     /// rejects an instance child under such an attribute whose `archetype_node_id`
@@ -424,7 +424,7 @@ pub struct WebTemplateCodeList {
     pub codes: Vec<String>,
 }
 
-/// A closed-archetype constraint on one attribute (ADR-012 / F-07-05 + F-07-10;
+/// A closed-archetype constraint on one attribute (F-07-05 + F-07-10;
 /// validation-only, never serialized). Under the constrained attribute at
 /// absolute archetype `path`, an instance child bearing an `archetype_node_id`
 /// is admissible iff it matches one of `allowed_ids` (a fixed at-code /

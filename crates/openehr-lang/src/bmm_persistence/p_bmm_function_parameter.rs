@@ -7,7 +7,7 @@ use crate::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunc
 use serde::Serialize;
 
 /// Persistent form of a BMM function (routine) parameter; abstract parent of the concrete persisted parameter kinds.
-/// Closed subtype set of `P_BMM_FUNCTION_PARAMETER` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_BMM_FUNCTION_PARAMETER`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PBmmFunctionParameter {

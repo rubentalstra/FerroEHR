@@ -321,7 +321,7 @@ citation = "docs/VERSIONS.md §RM-version divergence"
 ecc_id = "ECC-SQR-002"
 disposition = "defect"
 reason = "Upstream rejects ALL_VERSIONS."
-citation = "ADR-008 §2"
+citation = "docs/design/aql-engine.md §version-scope"
 "#;
 
     #[test]

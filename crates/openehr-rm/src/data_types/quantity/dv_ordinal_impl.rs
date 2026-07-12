@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_ORDINAL`.
+//! Hand-written RM class invariants for `DV_ORDINAL`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ordinal.adoc`.

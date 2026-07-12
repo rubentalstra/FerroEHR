@@ -1,5 +1,5 @@
 //! The application service layer (P12): turns ITS-REST calls into persisted,
-//! versioned openEHR data on the greenfield PG18 schema (ADR-008).
+//! versioned openEHR data on the greenfield PG18 schema.
 //!
 //! Design (grounded in the P10 storage foundation + sqlx/PG18 best practices):
 //!
@@ -61,8 +61,7 @@ use openehr_its::rest::runtime::ApiError;
 use sqlx::PgPool;
 
 /// In-process cache of resolved tenants, keyed by the claim/header value (a
-/// tenant name or uuid string) the middleware resolves per request (ADR-015 §4;
-/// "cache in-process"). Shared across service clones (single registry view);
+/// tenant name or uuid string) the middleware resolves per request. Shared across service clones (single registry view);
 /// cleared wholesale on any tenant CRUD write.
 type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
 
@@ -95,13 +94,13 @@ pub struct EhrbaseService {
     /// bundle only. Read through the [`TerminologyExpander`](crate::aql::TerminologyExpander)
     /// impl in `service::api::terminology`.
     pub(crate) external_terminology: Option<Arc<crate::terminology::FhirTerminologyProvider>>,
-    /// The optional `DV_MULTIMEDIA` externalization engine (ADR-017). `None`
+    /// The optional `DV_MULTIMEDIA` externalization engine. `None`
     /// (default) = inline behaviour byte-identical to today (the zero-drift
     /// gate); when a deployment opts in ([`crate::multimedia::MultimediaConfig`]
     /// `enabled = true`) the commit path offloads large media to object storage
     /// and the read path can re-inline it on demand.
     pub(crate) multimedia: Option<Arc<crate::multimedia::MultimediaEngine>>,
-    /// Multi-tenancy tenant registry cache (ADR-015 §4). Only ever populated
+    /// Multi-tenancy tenant registry cache. Only ever populated
     /// when tenancy is on (the middleware resolves through it); in single-tenant
     /// mode it stays empty and is never consulted.
     tenant_cache: TenantCache,
@@ -125,7 +124,7 @@ impl EhrbaseService {
     }
 
     /// The openEHR `system_id` in effect for the current request: the resolved
-    /// tenant's own `system_id` when tenancy is on (ADR-015 §1), else the
+    /// tenant's own `system_id` when tenancy is on, else the
     /// service's configured default. Every request (read or write) runs inside
     /// its tenant's task-local scope, so version ids / audits / `EHR.system_id`
     /// pick up the right value ambiently; with tenancy off the task-local is
@@ -171,7 +170,7 @@ impl EhrbaseService {
         self
     }
 
-    /// Install the `DV_MULTIMEDIA` externalization engine (ADR-017), opt-in via
+    /// Install the `DV_MULTIMEDIA` externalization engine, opt-in via
     /// [`crate::multimedia::MultimediaConfig`]. Without it, inline media is
     /// stored verbatim (byte-identical to today's behaviour).
     #[must_use]
@@ -183,7 +182,7 @@ impl EhrbaseService {
     /// The signing context (system id + signer + optional multimedia offloader)
     /// handed to the `vobject` commit path so every versioned-object write signs
     /// its `ORIGINAL_VERSION` and, when externalization is on, offloads large
-    /// inline `DV_MULTIMEDIA.data` before decomposition (ADR-017).
+    /// inline `DV_MULTIMEDIA.data` before decomposition.
     pub(in crate::service) fn signing_ctx(&self) -> vobject::SigningCtx<'_> {
         vobject::SigningCtx {
             system_id: self.effective_system_id(),
@@ -296,7 +295,7 @@ impl ServiceError {
 
 impl From<ServiceError> for ehrbase_sm::SmError {
     /// Map a service failure onto the SM native `CALL_STATUS_TYPE` error the
-    /// catalog traits return (ADR-011). This is the mirror of the
+    /// catalog traits return. This is the mirror of the
     /// [`From<ServiceError> for ApiError`] table above, expressed in SM status
     /// terms — the protocol adapter (`ehrbase-rest`) then maps the status back
     /// to the ITS-REST status code via [`ehrbase_sm::CallStatusType::api_error`],
@@ -379,7 +378,7 @@ mod sm_error_table_tests {
     /// `ServiceError::sm(status)` routed to the ITS-REST [`ApiError`] must land
     /// on the HTTP status the SM row prescribes (design 08 §5). The SM →
     /// `ApiError` half of the table now lives in the protocol adapter
-    /// (`ehrbase-rest::error::sm_api_error`, ADR-011) and is tested there
+    /// (`ehrbase-rest::error::sm_api_error`) and is tested there
     /// end-to-end; here we verify the service-side `ServiceError::sm` +
     /// `From<ServiceError> for ApiError` composition against the expected code
     /// per status.

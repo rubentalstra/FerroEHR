@@ -11,7 +11,7 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
 /// Abstract idea of specifying a type in some context. This is not the same as 'defining' a class. A type specification is essentially a reference of some kind, that defines the type of an attribute, or function result or argument. It may include generic parameters that might or might not be bound. See subtypes.
-/// Closed subtype set of `BMM_TYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmType {

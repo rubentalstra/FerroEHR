@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_COUNT`.
+//! Hand-written RM class invariants for `DV_COUNT`.
 //!
 //! `DV_COUNT` inherits the DV_AMOUNT / DV_QUANTIFIED invariants
 //! (`Accuracy_is_percent_validity`, `Accuracy_valid`, `Magnitude_status_valid`)
