@@ -34,7 +34,7 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::error::SmError;
+use crate::common::SmError;
 
 /// `I_TDD_SERVICE` — import of Template Data Documents, one Rust method per SM
 /// call (`i_tdd_service.adoc`).

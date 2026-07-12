@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::error::{CallStatusType, SmError};
+use crate::common::{CallStatusType, SmError};
 use openehr_flat::WebTemplate;
 
 /// The single `WebTemplate` resolution seam (W2-K / finding F-13-02).
