@@ -110,7 +110,9 @@ pub(super) fn qualify(name: &str) -> String {
 /// rows identically. Callers pass the [`QualifiedName::qualified`] form, which is
 /// always two-part, so the formalism is never captured in `semantic_id`.
 pub(super) fn split_qualified(qualified_name: &str) -> (&str, &str) {
-    qualified_name.split_once("::").unwrap_or(("", qualified_name))
+    qualified_name
+        .split_once("::")
+        .unwrap_or(("", qualified_name))
 }
 
 /// Apply an SM [`Page`] to an iterator: skip `offset`, take `limit` (`None` ⇒

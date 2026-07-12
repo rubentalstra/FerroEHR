@@ -1,19 +1,43 @@
-//! `EHRbase` application library (the Stage-1 application build).
+//! `EHRbase` application library — the platform crate.
 //!
-//! Modern idiomatic Rust on top of the generated `openehr-*` crates:
-//! persistence, RM↔JSONB mapping, service layer, and the AQL execution
-//! engine. The server binary entry point lives in `main.rs`; this library
-//! exposes the application modules so integration tests (and later phases)
-//! can drive them directly.
+//! Modern idiomatic Rust on top of the generated `openehr-*` crates. Two
+//! layers of module, mirroring the specification structure (W-3f,
+//! `docs/design/platform/`):
+//!
+//! **Spec-governed areas** (each maps to its openEHR oracle):
+//! - [`versioning`] — change control + integrity (RM common
+//!   `master06-change_control_package` + `master04-generic_package`; BASE
+//!   `base_types/master05-identification_package`; digital signature per RM
+//!   common master06 §Digital Signature lives inside it as
+//!   `versioning::signature`).
+//! - [`service`] — the SM Platform Service Model realization, one folder per
+//!   SM chapter mirroring `ehrbase-sm` (`SM/docs/openehr_platform/`).
+//! - [`aql`] — the AQL 1.1 execution engine (QUERY `master03-syntax`; the
+//!   lowering internals are our own design).
+//! - [`validation`] — archetype/template artefact validity along the AOM
+//!   constraint model (AM AOM 1.4 + AOM 2).
+//! - [`templates`] — OPT ingestion, the template store, and derived runtime
+//!   artefacts (BASE `resource/master02-resource_package`; AM OPT).
+//! - [`system_log`] — the SM System Log component ("IHE ATNA-compliant
+//!   system log", SM `master02-overview`; rendered per DICOM PS3.15 §A.5 over
+//!   RFC 5424/5425 syslog).
+//!
+//! **Spec-silent internals and extensions** (no openEHR spec governs these —
+//! our own design, each flagged in its module docs):
+//! - [`storage`] — the decomposed node model, node codec, and row I/O.
+//! - [`db`] — pool, settings, migrators.
+//! - [`telemetry`] — observability infrastructure.
+//! - [`extensions`] — quarantined enterprise extensions (eventing, FHIR
+//!   connector, multimedia offload, tenancy), each off by default behind its
+//!   own config gate.
 
 pub mod aql;
 pub mod db;
-pub mod events;
-pub mod fhir_outbound;
-pub mod multimedia;
+pub mod extensions;
 pub mod service;
-pub mod signing;
 pub mod storage;
 pub mod system_log;
 pub mod telemetry;
-pub mod terminology;
+pub mod templates;
+pub mod validation;
+pub mod versioning;

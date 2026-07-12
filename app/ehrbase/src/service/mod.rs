@@ -1,125 +1,93 @@
-//! The application service layer (P12): turns ITS-REST calls into persisted,
-//! versioned openEHR data on the greenfield PG18 schema.
+//! The application service layer: the SM Platform Service Model realization,
+//! one folder per SM chapter mirroring `app/ehrbase-sm/src/services/`
+//! (vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`).
 //!
-//! Design (grounded in the P10 storage foundation + sqlx/PG18 best practices):
-//!
-//! - **One versioned-object machinery** ([`vobject`]) serves COMPOSITION,
-//!   `EHR_STATUS` and FOLDER uniformly: a write decomposes the canonical JSON into
-//!   `node` rows (the P10 [`crate::storage`] codec), inserts a `vo_version` row
-//!   (temporal `sys_period`, PG18 `WITHOUT OVERLAPS`), and emits a
-//!   `contribution` + `audit` row — all inside one `sqlx` transaction; a read
-//!   loads the version's nodes and reassembles them.
-//! - **Versioning** is temporal: the current version is the `upper_inf` row; an
-//!   update closes the current `sys_period` at `now()` and inserts the next
-//!   `sys_version`. No current/`_history` duplication; `ALL_VERSIONS` is the
-//!   same table unfiltered.
-//! - The service implements the generated ITS-REST server traits (see
-//!   [`api`]); `ehrbase-rest` calls them through its `Backend` seam.
-//!
-//! Static SQL uses runtime `sqlx::query*` (no compile-time macro → no
-//! database needed at build time, matching the P10 spike); dynamic multi-row
-//! node inserts use `sqlx::QueryBuilder`. `sea-query` is reserved for the AQL
-//! engine (P16).
+//! Each chapter folder carries the domain logic plus its
+//! `impl <Interface>Service for EhrbaseService` blocks — the SM native traits
+//! in `ehrbase-sm` are the fixed service seam the protocol adapter
+//! (`ehrbase-rest`) calls through. Change-control semantics live in
+//! [`crate::versioning`]; SQL row I/O lives in [`crate::storage`] (no openEHR
+//! spec governs the SQL — our own design); this layer orchestrates.
 
-mod adl2_validation;
 mod admin;
-mod api;
-mod aql_query;
-mod codes;
-mod composition;
-mod contribution;
 mod definition;
 mod demographic;
-mod directory;
-mod dump_load;
 mod ehr;
-mod ehr_access_cache;
 mod ehr_index;
-mod ehr_uri;
-mod event_subscription;
-mod fhir;
-mod item_tag;
 mod message;
-mod opt_validation;
-mod relationship;
-mod stored_query;
+mod query;
 mod subject_proxy;
-mod tdd;
-mod template;
-mod tenant;
 mod terminology;
-mod version_id;
-mod versioned;
-mod vobject;
+mod validity;
 
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
+pub use terminology::{ExternalTerminologyConfig, FhirTerminologyProvider};
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use crate::signing::Signer;
 use crate::system_log::AuditSender;
-use ehrbase_sm::TenantContext;
+use crate::versioning::signature::Signer;
+use crate::versioning::{CommitEnv, Kind, SigningCtx};
+use async_trait::async_trait;
+use ehrbase_sm::{SmError, TenantContext, WebTemplateService};
+use openehr_flat::WebTemplate;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
+use serde_json::Value;
 use sqlx::PgPool;
+use uuid::Uuid;
 
 /// In-process cache of resolved tenants, keyed by the claim/header value (a
-/// tenant name or uuid string) the middleware resolves per request. Shared across service clones (single registry view);
-/// cleared wholesale on any tenant CRUD write.
-type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
+/// tenant name or uuid string) the middleware resolves per request. Shared
+/// across service clones (single registry view); cleared wholesale on any
+/// tenant CRUD write. Multi-tenancy is spec-silent — our own extension
+/// ([`crate::extensions::tenancy`]).
+pub(crate) type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
 
 /// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
-/// audit rows. Configurable per deployment (P18 wires it from config).
+/// audit rows. Configurable per deployment (`main.rs` wires it from config).
 pub const DEFAULT_SYSTEM_ID: &str = "ehrbase-rs.local";
 
-/// The DB-backed application service — the concrete [`Backend`](ehrbase_rest::Backend).
+/// The DB-backed application service — the concrete platform behind the SM
+/// native traits.
 #[derive(Debug, Clone)]
 pub struct EhrbaseService {
-    pool: PgPool,
+    pub(crate) pool: PgPool,
     system_id: String,
     /// Cache of `WebTemplate`s built from stored OPTs, used by composition
-    /// validation (P15) on create/update. Cheaply cloneable (moka-backed).
-    web_templates: WebTemplateCache,
-    /// Version signer (`VERSION.signature`, RM common §"Digital Signature";
-    /// `docs/design/version-signing.md`). Defaults to server-side `digest`
-    /// signing; `main.rs` wires the configured [`Signer`].
+    /// validation on create/update. Cheaply cloneable (moka-backed).
+    pub(crate) web_templates: WebTemplateCache,
+    /// Version signer (`VERSION.signature`, RM common master06 §Digital
+    /// Signature). Defaults to server-side `digest` signing; `main.rs` wires
+    /// the configured [`Signer`].
     signer: Arc<Signer>,
     /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
-    /// component (`crate::system_log`). `None` = auditing off; the binary wires
-    /// the configured [`AuditSender`] via [`Self::with_audit`]. Read only
-    /// through the [`SystemLog`](ehrbase_sm::SystemLog) impl in
-    /// `crate::system_log`.
+    /// component (`crate::system_log`). `None` = auditing off; the binary
+    /// wires the configured [`AuditSender`] via [`Self::with_audit`].
     pub(crate) audit: Option<AuditSender>,
     /// The optional external terminology provider (FHIR R4), selected when a
-    /// deployment opts in ([`crate::terminology::ExternalTerminologyConfig`]).
-    /// Used by AQL `TERMINOLOGY('expand', 'hl7.org/fhir/…', …)` resolution (B4);
-    /// `None` keeps AQL terminology expansion on the in-process `openehr-term`
-    /// bundle only. Read through the [`TerminologyExpander`](crate::aql::TerminologyExpander)
-    /// impl in `service::api::terminology`.
-    pub(crate) external_terminology: Option<Arc<crate::terminology::FhirTerminologyProvider>>,
-    /// The optional `DV_MULTIMEDIA` externalization engine. `None`
-    /// (default) = inline behaviour byte-identical to today (the zero-drift
-    /// gate); when a deployment opts in ([`crate::multimedia::MultimediaConfig`]
-    /// `enabled = true`) the commit path offloads large media to object storage
-    /// and the read path can re-inline it on demand.
-    pub(crate) multimedia: Option<Arc<crate::multimedia::MultimediaEngine>>,
+    /// deployment opts in ([`ExternalTerminologyConfig`]). Used by AQL
+    /// `TERMINOLOGY(…)` resolution; `None` keeps terminology on the
+    /// in-process `openehr-term` bundle only.
+    pub(crate) external_terminology: Option<Arc<FhirTerminologyProvider>>,
+    /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
+    /// governs media externalization — our own extension,
+    /// [`crate::extensions::multimedia`]). `None` (default) = inline
+    /// behaviour byte-identical.
+    pub(crate) multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
     /// The optional Subject Proxy FHIR-frame executor, selected when a
-    /// deployment configures FHIR systems ([`SubjectProxyConfig`]). Used by the
-    /// `I_DATA_BINDING` FHIR (`API_CALL`/`fhir_get`) frame executor
-    /// (`data_frame.adoc`); `None` (default) makes every FHIR frame a typed
-    /// rejection (fail-closed — the SPS reaches only configured systems).
+    /// deployment configures FHIR systems ([`SubjectProxyConfig`]). `None`
+    /// (default) makes every FHIR frame a typed rejection (fail-closed).
     pub(crate) subject_proxy_fhir: Option<Arc<subject_proxy::SubjectProxyFhir>>,
-    /// Multi-tenancy tenant registry cache. Only ever populated
-    /// when tenancy is on (the middleware resolves through it); in single-tenant
-    /// mode it stays empty and is never consulted.
-    tenant_cache: TenantCache,
-    /// Per-EHR cache of the current `EHR_ACCESS` scheme settings, consulted on
-    /// every EHR-scoped request by the access gate ("All access decisions to
-    /// data in the EHR must be made in accordance with the policies and rules in
-    /// this object" — RM `org.openehr.rm.ehr.ehr_access.adoc`). Invalidated on
-    /// every `EHR_ACCESS` commit; see [`EhrAccessAdapter`](ehrbase_sm::EhrAccessAdapter).
-    ehr_access: ehr_access_cache::EhrAccessCache,
+    /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
+    /// in single-tenant mode).
+    pub(crate) tenant_cache: TenantCache,
+    /// Per-EHR cache of the current `EHR_ACCESS` scheme settings ("All access
+    /// decisions to data in the EHR must be made in accordance with the
+    /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
+    /// Invalidated on every `EHR_ACCESS` commit.
+    pub(in crate::service) ehr_access: ehr::EhrAccessCache,
 }
 
 impl EhrbaseService {
@@ -137,17 +105,15 @@ impl EhrbaseService {
             multimedia: None,
             subject_proxy_fhir: None,
             tenant_cache: TenantCache::default(),
-            ehr_access: ehr_access_cache::EhrAccessCache::default(),
+            ehr_access: ehr::EhrAccessCache::default(),
         }
     }
 
     /// The openEHR `system_id` in effect for the current request: the resolved
-    /// tenant's own `system_id` when tenancy is on, else the
-    /// service's configured default. Every request (read or write) runs inside
-    /// its tenant's task-local scope, so version ids / audits / `EHR.system_id`
-    /// pick up the right value ambiently; with tenancy off the task-local is
-    /// never set and this is byte-identical to the configured `system_id`.
-    pub(super) fn effective_system_id(&self) -> String {
+    /// tenant's own `system_id` when tenancy is on, else the configured
+    /// default (with tenancy off the task-local is never set and this is
+    /// byte-identical to the configured `system_id`).
+    pub(crate) fn effective_system_id(&self) -> String {
         ehrbase_sm::tenant::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
 
@@ -158,8 +124,8 @@ impl EhrbaseService {
         self
     }
 
-    /// Install the configured version [`Signer`] (RM common §"Digital
-    /// Signature").
+    /// Install the configured version [`Signer`] (RM common master06 §Digital
+    /// Signature).
     #[must_use]
     pub fn with_signer(mut self, signer: Arc<Signer>) -> Self {
         self.signer = signer;
@@ -167,8 +133,7 @@ impl EhrbaseService {
     }
 
     /// Install the IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
-    /// component (`crate::system_log`); the binary boots it and wires it here.
-    /// Without it, [`SystemLog`](ehrbase_sm::SystemLog) auditing is off.
+    /// component; the binary boots it and wires it here.
     #[must_use]
     pub fn with_audit(mut self, sender: AuditSender) -> Self {
         self.audit = Some(sender);
@@ -176,52 +141,105 @@ impl EhrbaseService {
     }
 
     /// Install an external FHIR R4 terminology provider (opt-in), used by AQL
-    /// `TERMINOLOGY('expand', 'hl7.org/fhir/…', …)` resolution (B4). Without it,
-    /// AQL terminology expansion routes only to the in-process `openehr-term`
-    /// bundle (`service_api = "openehr"`).
+    /// `TERMINOLOGY(…)` resolution. Without it, terminology routes only to
+    /// the in-process `openehr-term` bundle.
     #[must_use]
-    pub fn with_external_terminology(
-        mut self,
-        provider: Arc<crate::terminology::FhirTerminologyProvider>,
-    ) -> Self {
+    pub fn with_external_terminology(mut self, provider: Arc<FhirTerminologyProvider>) -> Self {
         self.external_terminology = Some(provider);
         self
     }
 
-    /// Install the `DV_MULTIMEDIA` externalization engine, opt-in via
-    /// [`crate::multimedia::MultimediaConfig`]. Without it, inline media is
-    /// stored verbatim (byte-identical to today's behaviour).
+    /// Install the `DV_MULTIMEDIA` externalization engine (opt-in extension).
+    /// Without it, inline media is stored verbatim (byte-identical).
     #[must_use]
-    pub fn with_multimedia(mut self, engine: Arc<crate::multimedia::MultimediaEngine>) -> Self {
+    pub fn with_multimedia(
+        mut self,
+        engine: Arc<crate::extensions::multimedia::MultimediaEngine>,
+    ) -> Self {
         self.multimedia = Some(engine);
         self
     }
 
     /// Install the Subject Proxy FHIR-frame executor (opt-in via
-    /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get` `DATA_FRAME`
-    /// is a typed rejection (`data_frame.adoc`; fail-closed — no configured
-    /// system, no outbound request).
+    /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
+    /// `DATA_FRAME` is a typed rejection (fail-closed).
     #[must_use]
     pub fn with_subject_proxy(mut self, fhir: Arc<subject_proxy::SubjectProxyFhir>) -> Self {
         self.subject_proxy_fhir = Some(fhir);
         self
     }
 
-    /// The signing context (system id + signer + optional multimedia offloader)
-    /// handed to the `vobject` commit path so every versioned-object write signs
-    /// its `ORIGINAL_VERSION` and, when externalization is on, offloads large
-    /// inline `DV_MULTIMEDIA.data` before decomposition.
-    pub(in crate::service) fn signing_ctx(&self) -> vobject::SigningCtx<'_> {
-        vobject::SigningCtx {
-            system_id: self.effective_system_id(),
+    /// The configured version [`Signer`] (used for read-time verification).
+    pub(crate) fn signer(&self) -> &Signer {
+        &self.signer
+    }
+}
+
+/// The cross-area hooks the CONTRIBUTION commit orchestration needs
+/// ([`crate::versioning::contribution::commit_version_set`]): content
+/// validation, the EHR-existence + `is_modifiable` guards, the EHR-singleton
+/// lookup, and EHR_ACCESS cache invalidation — each realized by its owning
+/// service chapter.
+#[async_trait]
+impl CommitEnv for EhrbaseService {
+    fn pool(&self) -> &PgPool {
+        &self.pool
+    }
+
+    fn effective_system_id(&self) -> String {
+        EhrbaseService::effective_system_id(self)
+    }
+
+    fn default_committer(&self) -> Value {
+        ehr::committer()
+    }
+
+    fn signing_ctx(&self) -> SigningCtx<'_> {
+        SigningCtx {
+            system_id: EhrbaseService::effective_system_id(self),
             signer: &self.signer,
             multimedia: self.multimedia.as_deref(),
         }
     }
 
-    /// The configured version [`Signer`] (used for read-time verification).
-    pub(super) fn signer(&self) -> &Signer {
-        &self.signer
+    async fn validate_for_commit(
+        &self,
+        kind: Kind,
+        data: &Value,
+        incomplete: bool,
+    ) -> Result<(), ServiceError> {
+        self.validate_content_for_commit(kind, data, incomplete)
+            .await
+    }
+
+    async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+        EhrbaseService::ensure_ehr_exists(self, ehr_id).await
+    }
+
+    async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+        EhrbaseService::ensure_content_writable(self, ehr_id).await
+    }
+
+    async fn current_vo(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<(Uuid, i32)>, ServiceError> {
+        EhrbaseService::current_vo(self, ehr_id, kind).await
+    }
+
+    async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
+        EhrbaseService::invalidate_ehr_access(self, ehr_id).await;
+    }
+}
+
+/// SM `I_DEFINITION` WebTemplate exposure: one resolution serves validation,
+/// FLAT/STRUCTURED conversion, and `wt+json` (the derived runtime artefact —
+/// the WebTemplate format itself is spec-silent, `crate::templates`).
+#[async_trait]
+impl WebTemplateService for EhrbaseService {
+    async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, SmError> {
+        Ok(self.web_template_for(template_id).await?)
     }
 }
 
@@ -259,9 +277,10 @@ pub enum ServiceError {
     /// A JSON (de)serialization failure.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
-    /// A version-signing or read-time integrity failure (RM common §"Digital
-    /// Signature") — either signing at commit failed, or `verify_on_read =
-    /// strict` found a stored signature that does not match the served version.
+    /// A version-signing or read-time integrity failure (RM common master06
+    /// §Digital Signature) — either signing at commit failed, or
+    /// `verify_on_read = strict` found a stored signature that does not match
+    /// the served version.
     #[error("signing: {0}")]
     Signing(String),
     /// A server-side fault with no more specific variant (SM
@@ -273,8 +292,7 @@ pub enum ServiceError {
 impl ServiceError {
     /// Construct the [`ServiceError`] variant for an SM call status — the
     /// service-side entry into the single SM ↔ `ServiceError` ↔ HTTP table
-    /// (design `docs/design/sm-platform/08-target-architecture.md` §5;
-    /// statuses per `CALL_STATUS_TYPE` + descendants, `ehrbase-sm::error`).
+    /// (statuses per `CALL_STATUS_TYPE` + descendants, `ehrbase-sm::error`).
     ///
     /// Consistency with the wire is test-enforced: for every status,
     /// `ApiError::from(ServiceError::sm(s, m))` and
@@ -340,8 +358,10 @@ impl From<ServiceError> for ehrbase_sm::SmError {
     /// | `Storage`/`Database`/`Json`/`Signing`/`Internal` | `Exception` | 500 |
     ///
     /// `NotFound` cannot recover the concrete resource kind, so it maps to the
-    /// generic `versioned_object_does_not_exist` (all 404s); `Conflict` maps to
-    /// a representative already-exists status (all 409s).
+    /// generic `versioned_object_does_not_exist` (all 404s); a chapter that
+    /// knows the precise kind constructs its own `SmError` instead (e.g. the
+    /// EHR-index chapter's `IndexError`). `Conflict` maps to a representative
+    /// already-exists status (all 409s).
     ///
     /// PORT NOTE (wire): the structured per-path violations of `ValidationFailed`
     /// (the ITS-REST `Error.validationErrors[]` array) do **not** survive the SM
@@ -404,10 +424,10 @@ mod sm_error_table_tests {
     use super::ServiceError;
 
     /// `ServiceError::sm(status)` routed to the ITS-REST [`ApiError`] must land
-    /// on the HTTP status the SM row prescribes (design 08 §5). The SM →
-    /// `ApiError` half of the table now lives in the protocol adapter
-    /// (`ehrbase-rest::error::sm_api_error`) and is tested there
-    /// end-to-end; here we verify the service-side `ServiceError::sm` +
+    /// on the HTTP status the SM row prescribes. The SM → `ApiError` half of
+    /// the table lives in the protocol adapter
+    /// (`ehrbase-rest::error::sm_api_error`) and is tested there end-to-end;
+    /// here we verify the service-side `ServiceError::sm` +
     /// `From<ServiceError> for ApiError` composition against the expected code
     /// per status.
     #[test]

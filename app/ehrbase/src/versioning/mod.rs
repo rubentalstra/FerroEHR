@@ -191,7 +191,7 @@ pub(crate) struct SigningCtx<'a> {
     /// governs media externalization — our own extension). When set, the commit
     /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body
     /// is decomposed and signed.
-    pub(crate) multimedia: Option<&'a crate::multimedia::MultimediaEngine>,
+    pub(crate) multimedia: Option<&'a crate::extensions::multimedia::MultimediaEngine>,
 }
 
 /// The cross-area hooks the CONTRIBUTION commit orchestration
