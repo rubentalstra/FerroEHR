@@ -30,8 +30,7 @@ const BASE: &str = "/ehrbase/rest/openehr/v1";
 const AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -46,7 +45,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }

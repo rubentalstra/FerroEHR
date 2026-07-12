@@ -122,12 +122,10 @@ fn status_error_response(status: StatusCode, message: &str) -> Response {
 // Allowed`." These two axum fallbacks render that rule with the openEHR
 // `{ error, message }` body instead of axum's default bare `405`/text.
 //
-// TODO(w3e-integrate): mount these in `crate::router` — attach
-// `method_not_allowed_handler` as the `MethodRouter::fallback` (or a
-// `MethodNotAllowedLayer`) on the resource routers so a known-route wrong-method
-// renders `405` with the openEHR body, and route `not_implemented_handler` for
-// unrecognized/unimplemented HTTP methods so they render `501`. This crate only
-// owns the `overview/` handlers; the router wiring lives outside it.
+// `method_not_allowed_handler` is mounted as the router's method fallback
+// (`crate::router`), rendering `405` with the openEHR body. Operation-level
+// `501 Not Implemented` rides `ApiError` (a blanket 501 method fallback would
+// misreport unknown paths, `router.rs` doc).
 
 /// Axum fallback for a request whose method is **recognized but not allowed** on
 /// the matched resource → `405 Method Not Allowed` (overview §HTTP Methods).
@@ -140,12 +138,7 @@ pub(crate) async fn method_not_allowed_handler() -> Response {
 
 /// Axum handler for a request whose method is **unrecognized or unimplemented**
 /// → `501 Not Implemented` (overview §HTTP Methods).
-pub(crate) async fn not_implemented_handler() -> Response {
-    status_error_response(
-        StatusCode::NOT_IMPLEMENTED,
-        "the request method is not implemented",
-    )
-}
+
 
 impl IntoResponse for RestError {
     fn into_response(self) -> Response {
@@ -246,11 +239,4 @@ mod tests {
         assert!(body.get("message").and_then(Value::as_str).is_some());
     }
 
-    #[tokio::test]
-    async fn unimplemented_method_renders_501_openehr_body() {
-        let (status, body) = handler_body(super::not_implemented_handler().await).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-        assert_eq!(body["error"], "Not Implemented");
-        assert!(body.get("message").and_then(Value::as_str).is_some());
-    }
 }

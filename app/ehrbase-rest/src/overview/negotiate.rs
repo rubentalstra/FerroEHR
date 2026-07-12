@@ -51,13 +51,7 @@ const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+
 
 /// Whether the client explicitly asks for the Better `web-template` JSON format
 /// on `Accept` (`application/openehr.wt+json`).
-pub(crate) fn wants_web_template(headers: &HeaderMap) -> bool {
-    header_str(headers, header::ACCEPT).is_some_and(|accept| {
-        accept
-            .split(',')
-            .any(|r| r.trim().starts_with(APPLICATION_WT_JSON))
-    })
-}
+
 
 /// Whether the client asks for the FLAT (simSDT) format on `Accept`
 /// (`application/openehr.wt.flat+json`).
@@ -673,43 +667,7 @@ pub(crate) fn error_with_meta(
 /// itself; `return=identifier` → the template id (text); missing or
 /// `return=minimal` → an empty body. `Location` + `ETag` carry the template
 /// id on every case.
-pub(crate) fn template_upload_response(
-    headers: &HeaderMap,
-    location: &str,
-    template_id: &str,
-    opt_xml: &str,
-) -> Response {
-    let prefer = headers
-        .get("prefer")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    let mut resp = if prefer
-        .split(',')
-        .any(|t| t.trim().eq_ignore_ascii_case("return=representation"))
-    {
-        xml_body(StatusCode::CREATED, opt_xml.to_owned())
-    } else if prefer
-        .split(',')
-        .any(|t| t.trim().eq_ignore_ascii_case("return=identifier"))
-    {
-        let mut r = (StatusCode::CREATED, template_id.to_owned()).into_response();
-        r.headers_mut().insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("text/plain; charset=utf-8"),
-        );
-        r
-    } else {
-        StatusCode::CREATED.into_response()
-    };
-    if let Ok(v) = HeaderValue::from_str(location) {
-        resp.headers_mut().insert(header::LOCATION, v);
-    }
-    if let Some(v) = resource_etag(template_id) {
-        resp.headers_mut().insert(header::ETAG, v);
-    }
-    set_preference_applied(&mut resp, applied_preference(headers));
-    resp
-}
+
 
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.
@@ -785,22 +743,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn detects_web_template_accept() {
-        assert!(wants_web_template(&headers(&[(
-            "accept",
-            "application/openehr.wt+json"
-        )])));
-        assert!(wants_web_template(&headers(&[(
-            "accept",
-            "application/xml, application/openehr.wt+json"
-        )])));
-        assert!(!wants_web_template(&headers(&[(
-            "accept",
-            "application/xml"
-        )])));
-        assert!(!wants_web_template(&HeaderMap::new()));
-    }
 
     #[test]
     fn content_type_selection() {
