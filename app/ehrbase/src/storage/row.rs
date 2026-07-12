@@ -1,0 +1,113 @@
+//! Node-row shapes: the full write row produced by decomposition, and the lean
+//! read row the repository fetches back.
+//!
+//! No openEHR spec governs the physical row layout — this is our own decomposed
+//! node model (`docs/architecture.md` §Storage). The promoted columns and the
+//! nested-set index (`num`/`num_cap`/`parent_num`/`citem_num`) exist to make AQL
+//! CONTAINS an integer interval join, never a JSON walk.
+
+use serde_json::Value;
+
+/// One decomposed `node` row to write (content columns only — the storage
+/// context `vo_id`/`sys_version`/`ehr_id` is added by
+/// [`crate::storage::node_repo::write_nodes`]).
+///
+/// Carries the full set of promoted query columns (`rm_type`, `archetype`,
+/// `arch_*`, `name`) alongside the nested-set index and the pruned JSON
+/// fragment — everything the `node` table stores per row.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NodeRow {
+    /// Pre-order number within the versioned object (root = 0).
+    pub num: i32,
+    /// Max `num` in this row's subtree: the subtree is `num..=num_cap`.
+    pub num_cap: i32,
+    /// `num` of the parent structure node (root points at itself/0).
+    pub parent_num: i32,
+    /// `num` of the nearest ancestor carrying an archetype id.
+    pub citem_num: Option<i32>,
+    /// The RM `_type`, verbatim (e.g. `OBSERVATION`).
+    pub rm_type: String,
+    /// `archetype_node_id`, verbatim.
+    pub archetype: Option<String>,
+    /// `qualified_rm_entity` of a full archetype HRID, lowercased for
+    /// comparison; `None` on at/id-code nodes (BASE `base_types` master05
+    /// §Archetype Identifiers).
+    pub arch_entity: Option<String>,
+    /// Full `domain_concept` (incl. specialisation segments) of a full archetype
+    /// HRID, lowercased; `None` on at/id-code nodes. A parent-archetype query
+    /// matches a specialisation child via a `concept-%` prefix (BASE
+    /// `architecture_overview` master10 §Design-time Relationships).
+    pub arch_concept: Option<String>,
+    /// Major version (`.v` major) of a full archetype HRID; `None` on at/id-code
+    /// nodes. The interface-reference major boundary is hard (AM master07
+    /// §Querying).
+    pub arch_major: Option<i32>,
+    /// `name/value`.
+    pub name: Option<String>,
+    /// Materialized path from the root: full attribute names, array index
+    /// appended, `.`-terminated steps (`content0.data.events1.`) so byte
+    /// order under `COLLATE "C"` equals tree order.
+    pub path: String,
+    /// The node's canonical JSON fragment, structure children pruned.
+    pub data: Value,
+}
+
+/// The lean read row: only the columns [`crate::storage::reassemble`] and the
+/// nested-set contract need. The read path fetches exactly these five columns
+/// (G-S6) — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
+/// live inside `data` and are not needed to reconstruct the canonical tree.
+///
+/// `num_cap`/`parent_num` are surfaced (unused by reassembly) because they are
+/// the nested-set interval contract the AQL engine consumes when it reads the
+/// `node` table directly.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ReadRow {
+    /// Pre-order number within the versioned object (root = 0).
+    pub num: i32,
+    /// Max `num` in this row's subtree (`num..=num_cap`).
+    pub num_cap: i32,
+    /// `num` of the parent structure node.
+    pub parent_num: i32,
+    /// Materialized path from the root (see [`NodeRow::path`]).
+    pub path: String,
+    /// The node's canonical JSON fragment.
+    pub data: Value,
+}
+
+/// Read access to the three fields [`crate::storage::reassemble`] needs from a
+/// node row — its pre-order number, its materialized path, and its JSON
+/// fragment. Implemented by both the write [`NodeRow`] and the lean [`ReadRow`],
+/// so reassembly works from either shape without forcing the read path to fetch
+/// the promoted query columns (G-S6).
+pub trait NodeContent {
+    /// Pre-order number within the versioned object (root = 0).
+    fn num(&self) -> i32;
+    /// Materialized path from the root.
+    fn path(&self) -> &str;
+    /// The node's canonical JSON fragment.
+    fn data(&self) -> &Value;
+}
+
+impl NodeContent for NodeRow {
+    fn num(&self) -> i32 {
+        self.num
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn data(&self) -> &Value {
+        &self.data
+    }
+}
+
+impl NodeContent for ReadRow {
+    fn num(&self) -> i32 {
+        self.num
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn data(&self) -> &Value {
+        &self.data
+    }
+}

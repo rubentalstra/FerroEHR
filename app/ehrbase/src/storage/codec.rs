@@ -1,125 +1,27 @@
-//! Canonical JSON ⇄ node rows (our own storage design — no openEHR spec governs it; spike-validated in
-//! `tests/storage_spike.rs`).
+//! Canonical JSON ⇄ node rows — the pure content transform at the heart of the
+//! decomposed store.
+//!
+//! No openEHR spec governs storage; this is our own design
+//! (`docs/architecture.md` §Storage). [`decompose`] turns a versioned object's
+//! canonical JSON into nested-set-numbered [`NodeRow`]s (structure children
+//! pruned out of their parents' fragments, everything else kept verbatim);
+//! [`reassemble`] is its lossless inverse over the lean [`ReadRow`] the
+//! repository fetches back. The codec never re-formats a leaf value — a leaf's
+//! lexical form (ISO-8601 partial precision, decimal-comma, timezone suffix,
+//! duration form; BASE `foundation_types` master06) survives verbatim inside its
+//! `data` fragment.
 
-use openehr_base::prelude::ArchetypeId;
 use serde_json::{Map, Value};
 
 use crate::storage::StorageError;
-
-/// RM structure types: every one of these gets its own `node` row (fine
-/// granularity — the P10 spike decision). LOCATABLE content types plus
-/// `EVENT_CONTEXT` and `FEEDER_AUDIT`, which AQL can address although the RM
-/// does not make them LOCATABLE.
-///
-/// The five concrete demographic **party roots** (PERSON/ORGANISATION/GROUP/
-/// AGENT/ROLE) are structure roots so `decompose` accepts a party as a
-/// versioned object (parties reuse the `node`/`vo_version`
-/// machinery). PORT NOTE: the demographic *container* classes nested inside a
-/// party (`PARTY_IDENTITY`, `CONTACT`, `ADDRESS`, `CAPABILITY`,
-/// `PARTY_RELATIONSHIP`) are deliberately **not** structure types. They are
-/// reached only through non-structure array attributes (`identities`,
-/// `contacts`, `relationships`, `capabilities`), which the codec keeps inline
-/// verbatim (see [`prune_children`]); an `ITEM_TREE`/`ITEM_STRUCTURE` nested
-/// inside such a container therefore stays inside the party's own JSON fragment
-/// and round-trips losslessly, without being split into its own row. The
-/// party's own top-level `details: ITEM_STRUCTURE` (a *direct* structure child)
-/// is pruned normally. Demographic content is not AQL-addressable in Stage 1
-/// (CNF master10 is TBD), so leaving these containers inline is both lossless
-/// and the simpler design (fewer rows, no promotion needed).
-const STRUCTURE_TYPES: &[&str] = &[
-    "COMPOSITION",
-    "EHR_STATUS",
-    "EHR_ACCESS",
-    "FOLDER",
-    "EVENT_CONTEXT",
-    "SECTION",
-    "GENERIC_ENTRY",
-    "ADMIN_ENTRY",
-    "OBSERVATION",
-    "EVALUATION",
-    "INSTRUCTION",
-    "ACTION",
-    "ACTIVITY",
-    "HISTORY",
-    "POINT_EVENT",
-    "INTERVAL_EVENT",
-    "ITEM_TREE",
-    "ITEM_LIST",
-    "ITEM_SINGLE",
-    "ITEM_TABLE",
-    "CLUSTER",
-    "ELEMENT",
-    "FEEDER_AUDIT",
-    // demographic party roots
-    "PERSON",
-    "ORGANISATION",
-    "GROUP",
-    "AGENT",
-    "ROLE",
-];
-
-/// Whether an RM `_type` gets its own `node` row.
-#[must_use]
-pub fn is_structure_type(rm_type: &str) -> bool {
-    STRUCTURE_TYPES.contains(&rm_type)
-}
-
-/// Whether an RM `_type` may be the **root** of a versioned object handed to
-/// [`decompose`]. This is [`is_structure_type`] plus `PARTY_RELATIONSHIP`
-/// (SM-3): a relationship is a standalone versioned object with its own
-/// `node`/`vo_version` rows, yet it is deliberately **not** a structure type
-/// for child-pruning purposes — a `PARTY_RELATIONSHIP` nested inside a party's
-/// `relationships` attribute must stay inline (see the [`STRUCTURE_TYPES`]
-/// note). Splitting the two predicates gives both behaviours from one codec.
-#[must_use]
-pub fn is_versioned_root_type(rm_type: &str) -> bool {
-    is_structure_type(rm_type) || rm_type == "PARTY_RELATIONSHIP"
-}
-
-/// One decomposed `node` row (content columns only — storage context like
-/// `vo_id`/`sys_version`/`ehr_id` is added by the repository).
-#[derive(Debug, Clone, PartialEq)]
-pub struct NodeRow {
-    /// Pre-order number within the versioned object (root = 0).
-    pub num: i32,
-    /// Max `num` in this row's subtree: the subtree is `num..=num_cap`.
-    pub num_cap: i32,
-    /// `num` of the parent structure node (root points at itself/0).
-    pub parent_num: i32,
-    /// `num` of the nearest ancestor carrying an archetype id.
-    pub citem_num: Option<i32>,
-    /// The RM `_type`, verbatim (e.g. `OBSERVATION`).
-    pub rm_type: String,
-    /// `archetype_node_id`, verbatim.
-    pub archetype: Option<String>,
-    /// `qualified_rm_entity` of a full archetype HRID, lowercased for
-    /// comparison; `None` on at/id-code nodes (BASE `base_types` master05
-    /// §Archetype Identifiers).
-    pub arch_entity: Option<String>,
-    /// Full `domain_concept` (incl. specialisation segments) of a full archetype
-    /// HRID, lowercased; `None` on at/id-code nodes. A parent-archetype query
-    /// matches a specialisation child via a `concept-%` prefix (BASE
-    /// `architecture_overview` master10 §Design-time Relationships).
-    pub arch_concept: Option<String>,
-    /// Major version (`.v` major) of a full archetype HRID; `None` on at/id-code
-    /// nodes. The interface-reference major boundary is hard (AM master07
-    /// §Querying).
-    pub arch_major: Option<i32>,
-    /// `name/value`.
-    pub name: Option<String>,
-    /// Materialized path from the root: full attribute names, array index
-    /// appended, `.`-terminated steps (`content0.data.events1.`) so byte
-    /// order under `COLLATE "C"` equals tree order.
-    pub path: String,
-    /// The node's canonical JSON fragment, structure children pruned.
-    pub data: Value,
-}
+use crate::storage::row::{NodeContent, NodeRow};
+use crate::storage::structure::{archetype_parts, is_structure_type, is_versioned_root_type};
 
 /// Decomposes a versioned object's canonical JSON into node rows.
 ///
 /// # Errors
 ///
-/// Fails when the root has no structure `_type`, or an array mixes
+/// Fails when the root has no versioned-root `_type`, or an array mixes
 /// structure and non-structure elements (canonical RM JSON never does).
 pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     let root_type = root.get("_type").and_then(Value::as_str);
@@ -132,7 +34,7 @@ pub fn decompose(root: Value) -> Result<Vec<NodeRow>, StorageError> {
     let mut rows = Vec::new();
     walk(root, "", -1, None, &mut rows)?;
 
-    // num_cap: children always follow their parents — one reverse pass
+    // num_cap: children always follow their parents — one reverse pass.
     let mut caps: Vec<i32> = rows.iter().map(|r| r.num).collect();
     for i in (1..rows.len()).rev() {
         let parent = usize::try_from(rows[i].parent_num).unwrap_or_default();
@@ -177,8 +79,8 @@ fn walk(
         .and_then(|n| n.get("value"))
         .and_then(Value::as_str)
         .map(str::to_owned);
-    // the archetype ancestor for at-code scoping (this node if it carries an
-    // archetype id itself, else inherited)
+    // The archetype ancestor for at-code scoping (this node if it carries a full
+    // archetype id itself, else inherited).
     let child_citem = if archetype
         .as_deref()
         .is_some_and(|a| a.starts_with("openEHR-"))
@@ -251,43 +153,35 @@ fn is_structure(v: &Value) -> bool {
         .is_some_and(is_structure_type)
 }
 
-/// Parse an `archetype_node_id` that is a full archetype HRID into its
-/// `(qualified_rm_entity, domain_concept, major)` parts, lowercased for
-/// case-insensitive comparison (BASE `base_types` master05 §Archetype Identifiers
-/// and §"Composite Identifiers and Case"). Reuses the shared [`ArchetypeId`]
-/// parser (never a hand-rolled regex); returns `None` for at/id-codes and any
-/// value that is not a full HRID with a numeric major.
-fn archetype_parts(node_id: &str) -> Option<(String, String, i32)> {
-    let id: ArchetypeId = node_id.parse().ok()?;
-    let major: i32 = id.major_version().parse().ok()?;
-    Some((
-        id.qualified_rm_entity().to_ascii_lowercase(),
-        id.domain_concept().to_ascii_lowercase(),
-        major,
-    ))
-}
-
 /// Reassembles the canonical JSON from node rows (sorted or not — rows are
-/// ordered by `num` internally). Lossless inverse of [`decompose`].
+/// ordered by `num` internally). Lossless inverse of [`decompose`]. Generic over
+/// [`NodeContent`], so it accepts either the write [`NodeRow`] (from
+/// [`decompose`], e.g. to reassemble the served form for signing) or the lean
+/// [`ReadRow`] the repository fetches back.
 ///
 /// # Errors
 ///
-/// Fails when the rows do not form a single tree rooted at `num = 0`.
-pub fn reassemble(rows: &[NodeRow]) -> Result<Value, StorageError> {
-    let mut ordered: Vec<&NodeRow> = rows.iter().collect();
-    ordered.sort_by_key(|r| r.num);
+/// Fails when the rows do not form a single tree rooted at `num = 0`. An empty
+/// row set is a caller error here (a version legitimately having no nodes — a
+/// logical delete — is handled by
+/// [`crate::storage::node_repo::read_version_canonical`], which returns
+/// `Value::Null` before calling this).
+pub fn reassemble<R: NodeContent>(rows: &[R]) -> Result<Value, StorageError> {
+    let mut ordered: Vec<&R> = rows.iter().collect();
+    ordered.sort_by_key(|r| r.num());
     let Some(root_row) = ordered.first() else {
         return Err(StorageError::InvalidRows("no rows".into()));
     };
-    if root_row.num != 0 || !root_row.path.is_empty() {
+    if root_row.num() != 0 || !root_row.path().is_empty() {
         return Err(StorageError::InvalidRows(format!(
             "root row must have num=0 and empty path (got num={}, path={:?})",
-            root_row.num, root_row.path
+            root_row.num(),
+            root_row.path()
         )));
     }
-    let mut root = root_row.data.clone();
+    let mut root = root_row.data().clone();
     for row in &ordered[1..] {
-        attach(&mut root, &row.path, row.data.clone())?;
+        attach(&mut root, row.path(), row.data().clone())?;
     }
     Ok(root)
 }
@@ -351,6 +245,12 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    /// Reassemble a decomposed write-row set directly (`NodeRow: NodeContent`),
+    /// exercising the full round-trip.
+    fn round_trip(rows: &[NodeRow]) -> Value {
+        reassemble(rows).unwrap()
+    }
+
     fn sample() -> Value {
         json!({
             "_type": "COMPOSITION",
@@ -408,11 +308,11 @@ mod tests {
                 ("POINT_EVENT", "content0.data.events0.", 4, 4, 3, Some(2)),
             ]
         );
-        // structure children are pruned out of the parent fragments
+        // Structure children are pruned out of the parent fragments.
         assert!(rows[0].data.get("context").is_none());
         assert!(rows[0].data.get("content").is_none());
         assert!(rows[2].data.get("data").is_none());
-        // non-structure content stays verbatim
+        // Non-structure content stays verbatim.
         assert_eq!(rows[0].data["name"]["value"], "Report");
         assert_eq!(rows[1].data["setting"]["value"], "other care");
         // Full archetype HRIDs are parsed into the lowercased subsumption
@@ -452,7 +352,7 @@ mod tests {
     fn round_trips_losslessly() {
         let original = sample();
         let rows = decompose(original.clone()).unwrap();
-        assert_eq!(reassemble(&rows).unwrap(), original);
+        assert_eq!(round_trip(&rows), original);
     }
 
     #[test]
@@ -483,7 +383,15 @@ mod tests {
         let original = sample();
         let mut rows = decompose(original.clone()).unwrap();
         rows.reverse();
-        assert_eq!(reassemble(&rows).unwrap(), original);
+        assert_eq!(round_trip(&rows), original);
+    }
+
+    #[test]
+    fn reassemble_rejects_empty_rows() {
+        assert!(matches!(
+            reassemble::<NodeRow>(&[]),
+            Err(StorageError::InvalidRows(m)) if m == "no rows"
+        ));
     }
 
     /// A realistic PERSON with `identities` (each carrying a nested
@@ -598,13 +506,6 @@ mod tests {
     }
 
     #[test]
-    fn party_roots_are_structure_roots() {
-        for t in ["PERSON", "ORGANISATION", "GROUP", "AGENT", "ROLE"] {
-            assert!(is_structure_type(t), "{t} must be a structure root");
-        }
-    }
-
-    #[test]
     fn person_round_trips_losslessly() {
         let original = person();
         let rows = decompose(original.clone()).unwrap();
@@ -626,7 +527,7 @@ mod tests {
             rows.iter().any(|r| r.path == "details."),
             "top-level ITEM_TREE promoted to its own node"
         );
-        assert_eq!(reassemble(&rows).unwrap(), original);
+        assert_eq!(round_trip(&rows), original);
     }
 
     #[test]
@@ -639,7 +540,7 @@ mod tests {
         assert_eq!(rows.len(), 1, "ROLE has no direct structure child");
         assert!(rows[0].data.get("capabilities").is_some());
         assert!(rows[0].data.get("performer").is_some());
-        assert_eq!(reassemble(&rows).unwrap(), original);
+        assert_eq!(round_trip(&rows), original);
     }
 
     #[test]
@@ -647,6 +548,6 @@ mod tests {
         let original = person();
         let mut rows = decompose(original.clone()).unwrap();
         rows.reverse();
-        assert_eq!(reassemble(&rows).unwrap(), original);
+        assert_eq!(round_trip(&rows), original);
     }
 }
