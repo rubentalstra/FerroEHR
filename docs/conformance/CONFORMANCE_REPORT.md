@@ -9,9 +9,9 @@
 - SUT: `http://localhost:8080/ehrbase/rest/openehr/v1`
 - Spec versions: RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0
 - Auth mode: basic
-- Started: 2026-07-12T07:11:28.552132Z
+- Started: 2026-07-12T07:37:07.906259Z
 
-**341 case×format executions · 307 passed · 8 failed · 0 not applicable.**
+**341 case×format executions · 315 passed · 0 failed · 0 not applicable.**
 
 ### Per-area matrix
 
@@ -25,7 +25,7 @@
 | TPL — Template / OPT provisioning | 16 | 12 | 0 | 0 | 4 | 0 |
 | SQR — Stored-query provisioning | 7 | 5 | 0 | 0 | 2 | 0 |
 | QRY — AQL execution | 13 | 13 | 0 | 0 | 0 | 0 |
-| VAL — Content / archetype validation | 119 | 111 | 8 | 0 | 0 | 0 |
+| VAL — Content / archetype validation | 119 | 119 | 0 | 0 | 0 | 0 |
 | DEM — Demographic service | 24 | 24 | 0 | 0 | 0 | 0 |
 | ADM — Admin service | 6 | 6 | 0 | 0 | 0 | 0 |
 | SEC — Security / authorization | 2 | 2 | 0 | 0 | 0 | 0 |
@@ -35,16 +35,7 @@
 
 ### Failures
 
-Each failure must become a finding (`F-AA-NN`) before/with the fix — never an exclusion.
-
-- **ECC-VAL-002** Validate COMPOSITION — content card 1plus context any (`val/comp-content-card-1plus-context-any`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-003** Validate COMPOSITION — content card 3plus context any (`val/comp-content-card-3plus-context-any`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-005** Validate COMPOSITION — content card mand context any (`val/comp-content-card-mand-context-any`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-006** Validate COMPOSITION — content card 3to5 context any (`val/comp-content-card-3to5-context-any`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-008** Validate COMPOSITION — content card 1plus context mand (`val/comp-content-card-1plus-context-mand`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-009** Validate COMPOSITION — content card 3plus context mand (`val/comp-content-card-3plus-context-mand`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-011** Validate COMPOSITION — content card mand context mand (`val/comp-content-card-mand-context-mand`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
-- **ECC-VAL-012** Validate COMPOSITION — content card 3to5 context mand (`val/comp-content-card-3to5-context-mand`, json): 0 content item(s), context present → rejected: expected rejected (ITS-REST validation composition_create.yaml 422), got 201
+_No failures in this run._
 
 ### Not applicable to this SUT (extensions / RM-version-sensitive)
 
@@ -58,8 +49,8 @@ _None — every catalogued case applies to this SUT._
 | Data formats | json, xml |
 | Catalogue (active cases) | 333 |
 | Executed | 341 |
-| Passed | 307 |
-| Failed | 8 |
+| Passed | 315 |
+| Failed | 0 |
 | Not applicable | 0 |
 
 ## 3. Detailed test report
@@ -262,17 +253,17 @@ _None — every catalogued case applies to this SUT._
 | ECC-DEM-023 | DemographicApi | json | 1/1 | PASS |
 | ECC-DEM-024 | DemographicApi | json | 1/1 | PASS |
 | ECC-VAL-001 | ArchetypeValidation | json | 6/6 | PASS |
-| ECC-VAL-002 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-003 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-002 | ArchetypeValidation | json | 6/6 | PASS |
+| ECC-VAL-003 | ArchetypeValidation | json | 6/6 | PASS |
 | ECC-VAL-004 | ArchetypeValidation | json | 6/6 | PASS |
-| ECC-VAL-005 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-006 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-005 | ArchetypeValidation | json | 6/6 | PASS |
+| ECC-VAL-006 | ArchetypeValidation | json | 6/6 | PASS |
 | ECC-VAL-007 | ArchetypeValidation | json | 6/6 | PASS |
-| ECC-VAL-008 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-009 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-008 | ArchetypeValidation | json | 6/6 | PASS |
+| ECC-VAL-009 | ArchetypeValidation | json | 6/6 | PASS |
 | ECC-VAL-010 | ArchetypeValidation | json | 6/6 | PASS |
-| ECC-VAL-011 | ArchetypeValidation | json | 0/0 | **FAIL** |
-| ECC-VAL-012 | ArchetypeValidation | json | 0/0 | **FAIL** |
+| ECC-VAL-011 | ArchetypeValidation | json | 6/6 | PASS |
+| ECC-VAL-012 | ArchetypeValidation | json | 6/6 | PASS |
 | ECC-VAL-013 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-014 | ArchetypeValidation | json | 2/2 | PASS |
 | ECC-VAL-015 | ArchetypeValidation | json | 2/2 | PASS |
@@ -412,7 +403,7 @@ _None — every catalogued case applies to this SUT._
 
 CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is any-passes (obtained if ≥1 optional capability passes) — `master03-profiles.adoc`.
 
-### Core — not claimable
+### Core — **PASS**
 
 | Capability | Passed | Failed | Errored | Skipped | N/A | Verdict |
 |---|--:|--:|--:|--:|--:|---|
@@ -423,10 +414,10 @@ CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is any-pa
 | CompositionOps | 34 | 0 | 0 | 0 | 0 | pass |
 | ChangeSets | 26 | 0 | 0 | 5 | 0 | pass |
 | Versioning | 7 | 0 | 0 | 0 | 0 | pass |
-| ArchetypeValidation | 111 | 8 | 0 | 0 | 0 | fail |
+| ArchetypeValidation | 119 | 0 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 1 | 0 | 0 | 0 | 0 | pass |
 
-### Standard — not claimable
+### Standard — **PASS**
 
 | Capability | Passed | Failed | Errored | Skipped | N/A | Verdict |
 |---|--:|--:|--:|--:|--:|---|
@@ -437,7 +428,7 @@ CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is any-pa
 | CompositionOps | 34 | 0 | 0 | 0 | 0 | pass |
 | ChangeSets | 26 | 0 | 0 | 5 | 0 | pass |
 | Versioning | 7 | 0 | 0 | 0 | 0 | pass |
-| ArchetypeValidation | 111 | 8 | 0 | 0 | 0 | fail |
+| ArchetypeValidation | 119 | 0 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 1 | 0 | 0 | 0 | 0 | pass |
 | DirectoryOps | 34 | 0 | 0 | 0 | 0 | pass |
 | QueryProvisioning | 5 | 0 | 0 | 2 | 0 | pass |
@@ -478,15 +469,15 @@ CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is any-pa
 | SM I_DEFINITION_ADL14.delete_opt() (CNF master04:319) has no ITS-REST ADL 1.4 binding — ITS-REST development@e8a093e (and Release-1.0.3) define no DELETE verb on /definition/template/adl1.4/{id}; OPT deletion lives in the ADMIN API only | 4 |
 | SM I_DEFINITION_QUERY.list_queries() (CNF master05:93) has no ITS-REST binding — ITS-REST development@e8a093e (and Release-1.0.3) expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query collection | 2 |
 | SM I_EHR_CONTRIBUTION.list_contributions() (CNF master08:595) has no ITS-REST binding — ITS-REST development@e8a093e (and Release-1.0.3) define POST only on /ehr/{ehr_id}/contribution, with no GET collection resource; the list is a native-API concern, not wire-exercisable | 5 |
-| SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:53556 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT (EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_* unset) — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:53744 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (host.docker.internal for a runner-host fixture, docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — digest cases prove the capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53556 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53556 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53556 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:53744 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 
 ## 6. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:53556`
+- Server: `http://127.0.0.1:53744`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):

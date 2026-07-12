@@ -13,19 +13,19 @@
 | Vendor | ehrbase-rs (self-assessed) |
 | Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-12T07:11:28.552132Z |
+| Date | 2026-07-12T07:37:07.906259Z |
 
 ## Scope of Test
 
 | | |
 |---|---|
-| Functional | Core (not claimable), Standard (not claimable), Options (OBTAINED) |
+| Functional | Core (PASS), Standard (PASS), Options (OBTAINED) |
 | Sec & Priv | Signing pass, Anonymous EHRs pass |
 | Ext Data Fmt | json, xml |
 
 ## Profile Report
 
-### Core — not claimable
+### Core — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -36,10 +36,10 @@
 | CompositionOps | Y | pass |
 | ChangeSets | Y | pass |
 | Versioning | Y | pass |
-| ArchetypeValidation | Y | fail |
+| ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
 
-### Standard — not claimable
+### Standard — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -50,7 +50,7 @@
 | CompositionOps | Y | pass |
 | ChangeSets | Y | pass |
 | Versioning | Y | pass |
-| ArchetypeValidation | Y | fail |
+| ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
 | DirectoryOps | Y | pass |
 | QueryProvisioning | Y | pass |
@@ -269,17 +269,17 @@ One row per ECC case (formats collapsed to a combined REST verdict). *Conformanc
 | Demographic service | DemographicApi | — | ECC-DEM-023 — Demographic versioned party revision history | pass |
 | Demographic service | DemographicApi | — | ECC-DEM-024 — Demographic person tags | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-001 — Validate COMPOSITION — content card any context any | pass |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-002 — Validate COMPOSITION — content card 1plus context any | **FAIL** |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-003 — Validate COMPOSITION — content card 3plus context any | **FAIL** |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-002 — Validate COMPOSITION — content card 1plus context any | pass |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-003 — Validate COMPOSITION — content card 3plus context any | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-004 — Validate COMPOSITION — content card OPT context any | pass |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-005 — Validate COMPOSITION — content card mand context any | **FAIL** |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-006 — Validate COMPOSITION — content card 3to5 context any | **FAIL** |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-005 — Validate COMPOSITION — content card mand context any | pass |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-006 — Validate COMPOSITION — content card 3to5 context any | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-007 — Validate COMPOSITION — content card any context mand | pass |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-008 — Validate COMPOSITION — content card 1plus context mand | **FAIL** |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-009 — Validate COMPOSITION — content card 3plus context mand | **FAIL** |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-008 — Validate COMPOSITION — content card 1plus context mand | pass |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-009 — Validate COMPOSITION — content card 3plus context mand | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-010 — Validate COMPOSITION — content card OPT context mand | pass |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-011 — Validate COMPOSITION — content card mand context mand | **FAIL** |
-| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-012 — Validate COMPOSITION — content card 3to5 context mand | **FAIL** |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-011 — Validate COMPOSITION — content card mand context mand | pass |
+| Content / archetype validation | ArchetypeValidation | — | ECC-VAL-012 — Validate COMPOSITION — content card 3to5 context mand | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-013 — Validate OBSERVATION — state ex OPT protocol ex OPT | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-014 — Validate OBSERVATION — state ex OPT protocol ex mand | pass |
 | Content / archetype validation | ArchetypeValidation | — | ECC-VAL-015 — Validate OBSERVATION — state ex mand protocol ex OPT | pass |

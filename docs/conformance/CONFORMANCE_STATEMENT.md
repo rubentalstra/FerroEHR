@@ -11,7 +11,7 @@
 | Product | ehrbase-rs 3.0.0 |
 | SUT | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
-| Run started | 2026-07-12T07:11:28.552132Z |
+| Run started | 2026-07-12T07:37:07.906259Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions
@@ -35,8 +35,8 @@ Declared: XML, JSON (`master03-profiles.adoc` §Other Non-Functional). This run 
 
 | Profile | Aggregation | Result |
 |---|---|---|
-| Core | all capabilities | not claimable |
-| Standard | all capabilities | not claimable |
+| Core | all capabilities | PASS |
+| Standard | all capabilities | PASS |
 | Options | any optional capability | OBTAINED |
 
 ### Non-functional attributes
