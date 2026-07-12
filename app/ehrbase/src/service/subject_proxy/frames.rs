@@ -1,0 +1,178 @@
+//! `I_DATA_BINDING` implementation (`i_data_binding.adoc`): execute a retrieve
+//! frame for a subject, with the primary→fallback pipeline of
+//! `data_frame.adoc` ("Alternative method to use if primary retrieve method
+//! fails").
+//!
+//! Dispatch is `model_type` × `call_name` (master10 §Specifying a Binding), not
+//! an invented enum tag: a `QUERY_CALL`/`aql_query` (or any `openehr…`
+//! `model_type`) routes to the openEHR AQL executor; an `API_CALL`/`fhir_get`
+//! and HL7v2 frames are typed rejections for now (see the TODO on
+//! [`EhrbaseService::sp_dispatch_method`]).
+//!
+//! PORT NOTE (pipeline outcome model, `data_frame.adoc`):
+//! - **dispatch-impossible** (no method, unknown `model_type`/`call_name`, or a
+//!   not-yet-wired executor) ⇒ `Err(SmError::not_implemented)`;
+//! - **executed but failed** (backend down, no `query_text`, subject
+//!   unresolved, AQL error) ⇒ `Ok(SAMPLE{is_unavailable})` — a real sample per
+//!   `sample.adoc` ("Every retrieval attempt will generate a new Sample …
+//!   regardless of whether data was actually available or not").
+//!
+//! A failed/unavailable primary tries `fallback_method` when present. Frame-
+//! level `get_frame` does **not** persist samples — persistence is the job of
+//! the variable read paths (`get_variable`/`get_data_set`), which own the
+//! variable context the `sp_sample` FK requires; a bare `get_frame` has no
+//! variable to attach a sample to.
+
+use async_trait::async_trait;
+
+use ehrbase_rest::AqlQueryRequest;
+use ehrbase_sm::{
+    CallStatusType, DataBinding, DataFrame, DataFrameSample, FramePayload, Sample, SmError,
+    SystemCall,
+};
+use serde_json::Value;
+
+use super::store::FrameRow;
+use crate::service::EhrbaseService;
+
+/// `not_implemented` — a dispatch-impossible outcome (no executor for the
+/// frame's `model_type`/`call_name`). Distinct from an executed-but-failed
+/// retrieve, which is a `SAMPLE{is_unavailable}` (`Ok`).
+fn not_implemented(message: impl Into<String>) -> SmError {
+    SmError::new(CallStatusType::NotImplemented, message)
+}
+
+#[async_trait]
+impl DataBinding for EhrbaseService {
+    async fn get_frame(
+        &self,
+        subject_id: String,
+        frame_id: String,
+    ) -> Result<DataFrameSample, SmError> {
+        let Some(FrameRow { frame }) = self.sp_frame(&frame_id).await? else {
+            return Err(SmError::precondition(format!(
+                "no data frame {frame_id:?} is registered (register the binding first)"
+            )));
+        };
+
+        // Primary retrieve.
+        let primary = self
+            .sp_dispatch_method(&subject_id, &frame, frame.primary_method.as_ref())
+            .await;
+        if let Ok(sample) = &primary {
+            if !sample.is_unavailable {
+                return Ok(sample.clone());
+            }
+        }
+
+        // A failed (dispatch-impossible) or unavailable primary triggers the
+        // fallback when present (`data_frame.adoc`).
+        if let Some(fallback) = frame.fallback_method.as_ref() {
+            match self
+                .sp_dispatch_method(&subject_id, &frame, Some(fallback))
+                .await
+            {
+                // Fallback executed (available or unavailable) — its sample wins.
+                Ok(sample) => return Ok(sample),
+                // Fallback dispatch-impossible: keep an executed-but-unavailable
+                // primary; if the primary was also dispatch-impossible, the
+                // frame is unretrievable (dispatch-impossible on both).
+                Err(fallback_err) => return primary.or(Err(fallback_err)),
+            }
+        }
+
+        // No fallback: return the primary outcome (Ok-unavailable or Err).
+        primary
+    }
+}
+
+impl EhrbaseService {
+    /// Dispatch one `SYSTEM_CALL` to its executor. `Ok` = the call executed and
+    /// produced a `SAMPLE` (available or unavailable); `Err(not_implemented)` =
+    /// no executor could be dispatched at all.
+    async fn sp_dispatch_method(
+        &self,
+        subject_id: &str,
+        frame: &DataFrame,
+        method: Option<&SystemCall>,
+    ) -> Result<DataFrameSample, SmError> {
+        let Some(call) = method else {
+            return Err(not_implemented(format!(
+                "data frame {:?} has no retrieval method",
+                frame.id
+            )));
+        };
+        let call_name = call.call_name();
+        let model = frame.model_type.to_lowercase();
+
+        // openEHR: a QUERY_CALL/aql_query, or any `openehr…` model_type.
+        let is_openehr = (matches!(call, SystemCall::Query(_))
+            && call_name.as_deref() == Some("aql_query"))
+            || model.starts_with("openehr");
+        if is_openehr {
+            return Ok(self.sp_dispatch_openehr(subject_id, call).await);
+        }
+
+        // FHIR: an API_CALL/fhir_get.
+        if matches!(call, SystemCall::Api(_)) && call_name.as_deref() == Some("fhir_get") {
+            // TODO(w3c): wire the config-gated FHIR executor — a `reqwest` GET of
+            // `query_text` (a FHIR search/read URL template with `$subject_id`
+            // substitution) against an allowlisted base URL, returning
+            // HL7_FHIR_SAMPLE (docs/design/sm-platform/10-subject-proxy.md §2.2
+            // G-4; the outbound FHIR client already exists as the B4
+            // FhirTerminologyProvider). Until then this is a typed rejection.
+            return Err(not_implemented(
+                "FHIR API_CALL frames are not yet executable (the config-gated FHIR \
+                 executor is follow-up work)",
+            ));
+        }
+
+        // HL7v2 and everything else: no transport in scope.
+        Err(not_implemented(format!(
+            "no executor for data frame {:?} (model_type {:?}, call {call_name:?})",
+            frame.id, frame.model_type
+        )))
+    }
+
+    /// The openEHR executor: run the frame's AQL text through the internal AQL
+    /// engine, scoped to the subject's resolved EHR, binding `$subject_id`.
+    /// Executed-but-failed outcomes (no query text, unresolved subject, AQL
+    /// error) are `SAMPLE{is_unavailable}`, never a dispatch error.
+    async fn sp_dispatch_openehr(&self, subject_id: &str, call: &SystemCall) -> DataFrameSample {
+        let Some(query_text) = call.body().query_text.as_deref() else {
+            return Sample::unavailable("openEHR frame has no query_text to execute");
+        };
+
+        // Resolve the subject id to an EHR (literal EHR uuid, then EHR Index):
+        // an unresolved openEHR subject yields an unavailable sample with reason
+        // (`i_data_binding.adoc`).
+        let ehr_id = match self.sp_resolve_subject_ehr(subject_id).await {
+            Ok(Some(id)) => id,
+            Ok(None) => {
+                return Sample::unavailable(format!(
+                    "could not resolve subject {subject_id:?} to an EHR (no literal EHR id \
+                     and no EHR Index entry)"
+                ));
+            }
+            Err(e) => return Sample::unavailable(e.message),
+        };
+
+        let mut request = AqlQueryRequest {
+            ehr_ids: vec![ehr_id.to_string()],
+            ..AqlQueryRequest::default()
+        };
+        request.parameters.insert(
+            "subject_id".to_owned(),
+            Value::String(subject_id.to_owned()),
+        );
+
+        match self.execute_aql(query_text, None, &request).await {
+            Ok(outcome) => Sample::available(FramePayload::Openehr {
+                result_set: outcome.result_set,
+            }),
+            // Executed but failed: a real (unavailable) sample so the pipeline
+            // can fall back (`data_frame.adoc`).
+            Err(e) => Sample::unavailable(e.message),
+        }
+    }
+}

@@ -129,6 +129,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "sp_binding",
             "sp_data_frame",
             "sp_data_set",
+            "sp_sample",
             "sp_subject",
             "sp_variable",
             "stored_query",

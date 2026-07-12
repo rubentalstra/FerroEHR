@@ -102,6 +102,7 @@ fn uv(data: Value, change_code: &str) -> UpdateVersion {
             description: None,
             committer: serde_json::from_value::<PartyProxy>(committer("event tester"))
                 .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }

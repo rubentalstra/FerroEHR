@@ -29,6 +29,8 @@ const OVID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys::2";
 
 fn config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

@@ -25,7 +25,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use ehrbase_sm::SmError;
-use ehrbase_sm::services::{
+use ehrbase_sm::{
     ContributionAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
     EhrService, EhrStatusService, ItemTagAdapter, MultimediaAdapter, TimeRange as SmTimeRange,
     VersionMetaAdapter,
@@ -280,6 +280,68 @@ impl EhrStatusService for EhrbaseService {
 
     async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_status(an_ehr_id).await?)
+    }
+
+    async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+        // post: `get_ehr_status(an_ehr_id).is_queryable` (i_ehr_status.adoc
+        // §set_ehr_queryable).
+        version_uid(
+            self.status_mutate(an_ehr_id, |m| {
+                m.insert("is_queryable".to_owned(), Value::Bool(true));
+            })
+            .await?,
+        )
+    }
+
+    async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+        // post: `not get_ehr_status(an_ehr_id).is_queryable` (i_ehr_status.adoc
+        // §clear_ehr_queryable).
+        version_uid(
+            self.status_mutate(an_ehr_id, |m| {
+                m.insert("is_queryable".to_owned(), Value::Bool(false));
+            })
+            .await?,
+        )
+    }
+
+    async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+        // post: `get_ehr_status(an_ehr_id).is_modifiable` (i_ehr_status.adoc
+        // §set_ehr_modifiable) — reactivates a deactivated EHR's contents.
+        version_uid(
+            self.status_mutate(an_ehr_id, |m| {
+                m.insert("is_modifiable".to_owned(), Value::Bool(true));
+            })
+            .await?,
+        )
+    }
+
+    async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+        // post: `not get_ehr_status(an_ehr_id).is_modifiable` (i_ehr_status.adoc
+        // §clear_ehr_modifiable). Committable on the EHR it disables: the write
+        // guard scopes to EHR *contents*, never to EHR_STATUS, which "is always
+        // modifiable" (ehr/master04 §"EHR Active Status") — see `status_mutate`.
+        version_uid(
+            self.status_mutate(an_ehr_id, |m| {
+                m.insert("is_modifiable".to_owned(), Value::Bool(false));
+            })
+            .await?,
+        )
+    }
+
+    async fn update_other_details(
+        &self,
+        an_ehr_id: Uuid,
+        a_details: Value,
+    ) -> Result<String, SmError> {
+        // "Update other_details part of EHR_STATUS with new content"
+        // (i_ehr_status.adoc §update_other_details); `a_details` is the
+        // canonical-JSON ITEM_TREE.
+        version_uid(
+            self.status_mutate(an_ehr_id, move |m| {
+                m.insert("other_details".to_owned(), a_details);
+            })
+            .await?,
+        )
     }
 
     async fn replace_ehr_status(
@@ -544,6 +606,25 @@ impl EhrDirectoryService for EhrbaseService {
             .directory_version(an_ehr_id, vo_id, version)
             .await?
             .body)
+    }
+
+    async fn has_directory_version(
+        &self,
+        an_ehr_id: Uuid,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<bool, SmError> {
+        // "True if the directory has a version with specified id"
+        // (i_ehr_directory.adoc §has_directory_version).
+        let (vo_id, version) = version_id::components(&a_version_uid)?;
+        Ok(self
+            .has_directory_version(an_ehr_id, vo_id, version)
+            .await?)
+    }
+
+    async fn get_versioned_directory(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        // "Get the VERSIONED_FOLDER Directory object for the EHR"
+        // (i_ehr_directory.adoc §get_versioned_directory).
+        Ok(self.versioned_directory(an_ehr_id).await?)
     }
 }
 

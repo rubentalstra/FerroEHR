@@ -24,7 +24,8 @@ use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, DataBinding, DataFrame, EhrCompositionService, EhrService, EnvBinding,
-    FrameMethod, SubjectDataSet, SubjectProxyService, SubjectVariable, VariableValue,
+    SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
+    VariableValue,
 };
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
@@ -96,6 +97,7 @@ fn uv(data: Value) -> UpdateVersion {
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "sps tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }
@@ -134,11 +136,13 @@ fn openehr_frame(id: &str) -> DataFrame {
     DataFrame {
         id: id.to_owned(),
         model_type: "openehr".to_owned(),
-        primary_method: FrameMethod::Aql {
-            query_text: "SELECT c/name/value AS comp_name \
-                         FROM EHR e CONTAINS COMPOSITION c"
-                .to_owned(),
-        },
+        primary_method: Some(SystemCall::Query(SystemCallBody {
+            call_name: Some("aql_query".to_owned()),
+            query_text: Some(
+                "SELECT c/name/value AS comp_name FROM EHR e CONTAINS COMPOSITION c".to_owned(),
+            ),
+            ..SystemCallBody::default()
+        })),
         fallback_method: None,
     }
 }
@@ -153,6 +157,8 @@ fn variable(name: &str, frame_id: &str) -> SubjectVariable {
         is_manual: false,
         frame_id: frame_id.to_owned(),
         frame_path: "comp_name".to_owned(),
+        history: Vec::new(),
+        last_frame: None,
     }
 }
 
@@ -311,11 +317,11 @@ async fn subject_proxy_fhir_frame_is_typed_rejection() {
         data_frames: vec![DataFrame {
             id: "fhir::demographics".to_owned(),
             model_type: "hl7-fhir".to_owned(),
-            primary_method: FrameMethod::Fhir {
+            primary_method: Some(SystemCall::Api(SystemCallBody {
                 system_id: Some("ehr1.nhs.org.uk".to_owned()),
                 call_name: Some("fhir_get".to_owned()),
-                query_text: None,
-            },
+                ..SystemCallBody::default()
+            })),
             fallback_method: None,
         }],
     })

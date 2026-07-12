@@ -113,6 +113,8 @@ fn relationship_body() -> Value {
 
 fn config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

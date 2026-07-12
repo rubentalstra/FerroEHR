@@ -9,9 +9,11 @@
 //! `LIMIT`/`OFFSET`/`TOP` (`400`), and otherwise take the AQL clause when present
 //! else the REST parameter.
 
+use std::sync::LazyLock;
 use std::time::Instant;
 
 use jiff::Timestamp;
+use regex::Regex;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -74,8 +76,11 @@ impl EhrbaseService {
                 return Err(e);
             }
         };
-        let ehr_id = match parse_ehr_id(request.ehr_id.as_deref()) {
-            Ok(id) => id,
+        // Multi-EHR scoping (`ehr_ids: List<UUID>`): a malformed id is a client
+        // precondition (`400`); a well-formed but absent id raises
+        // `ehr_id_does_not_exist` (`i_query_service.adoc`).
+        let ehr_ids = match self.resolve_ehr_ids(&request.ehr_ids).await {
+            Ok(ids) => ids,
             Err(e) => {
                 count_query("analysis_error");
                 return Err(e);
@@ -83,7 +88,7 @@ impl EhrbaseService {
         };
         let ctx = SqlCtx {
             system_id: self.effective_system_id(),
-            ehr_id,
+            ehr_ids,
             subject_scope: request.subject_scope.clone(),
             limit,
             offset,
@@ -99,7 +104,10 @@ impl EhrbaseService {
         };
         record_phase("execute", exec_start);
 
-        let mut outcome = QueryOutcome::plain(result_set_json(aql, name, &result));
+        // `_executed_aql` carries the parameter-SUBSTITUTED text (see
+        // `substitute_params`); `q` keeps the original query as submitted.
+        let executed = substitute_params(aql, &params);
+        let mut outcome = QueryOutcome::plain(result_set_json(aql, &executed, name, &result));
         // ABAC query post-check attributes (§6.4): collect the touched EHR/template
         // sets independently of the projection, when the PEP asked for them.
         if request.collect_attributes {
@@ -116,6 +124,35 @@ impl EhrbaseService {
         }
         count_query("ok");
         Ok(outcome)
+    }
+
+    /// Resolve the request's `ehr_ids` (string form) into the scoped `Uuid` set.
+    ///
+    /// Realizes `I_QUERY_SERVICE.execute_*`'s `ehr_ids: List<UUID> [0..1]`
+    /// (`docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`): a
+    /// malformed id is a client precondition (`400`); a well-formed but
+    /// non-existent id raises `ehr_id_does_not_exist`. An empty list scopes
+    /// nothing (the population gate over `is_queryable` EHRs applies).
+    async fn resolve_ehr_ids(&self, ehr_ids: &[String]) -> Result<Vec<Uuid>, SmError> {
+        if ehr_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut ids = Vec::with_capacity(ehr_ids.len());
+        for id in ehr_ids {
+            let uuid = Uuid::parse_str(id)
+                .map_err(|_| SmError::precondition(format!("invalid ehr_id `{id}`")))?;
+            ids.push(uuid);
+        }
+        // Verify existence in one round-trip; report the first absent id.
+        let present: Vec<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = ANY($1)")
+            .bind(&ids)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| SmError::exception(e.to_string()))?;
+        if let Some(missing) = ids.iter().find(|id| !present.contains(id)) {
+            return Err(SmError::ehr_not_found(format!("no EHR with id {missing}")));
+        }
+        Ok(ids)
     }
 }
 
@@ -196,19 +233,46 @@ fn compose_paging(
     Ok((aql_limit.or(request.fetch), aql_offset.or(request.offset)))
 }
 
-/// Parse the `ehr_id` scope into a UUID (`400` on a malformed id).
-fn parse_ehr_id(ehr_id: Option<&str>) -> Result<Option<Uuid>, SmError> {
-    match ehr_id {
-        None => Ok(None),
-        Some(id) => Uuid::parse_str(id)
-            .map(Some)
-            .map_err(|_| SmError::precondition(format!("invalid ehr_id `{id}`"))),
+/// The `$name` parameter-reference token in an AQL query (QUERY §Parameters:
+/// `$` followed by an identifier).
+static PARAM_REF: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\$([A-Za-z_][A-Za-z0-9_]*)").expect("valid param-ref regex"));
+
+/// Render the executed AQL: substitute each bound `$parameter` with its value.
+///
+/// The `RESULT_SET.meta._executed_aql` field is "the executed AQL" — the query
+/// after parameter binding (ITS-REST `schemas/query/ResultSetMeta`; QUERY
+/// §Parameters). We string-render each bound value into the query text:
+/// a `Str` becomes a single-quoted AQL string literal (embedded `'` doubled),
+/// `Int`/`Real`/`Bool` render as their literal form, `Null` as `NULL`. A
+/// `$name` with no binding is left verbatim (the engine already rejects an
+/// unbound parameter at planning time).
+fn substitute_params(aql: &str, params: &Params) -> String {
+    PARAM_REF
+        .replace_all(aql, |caps: &regex::Captures<'_>| {
+            match params.get(&caps[1]) {
+                Some(value) => render_param(value),
+                None => caps[0].to_owned(),
+            }
+        })
+        .into_owned()
+}
+
+/// Render one bound parameter as an AQL literal (see [`substitute_params`]).
+fn render_param(value: &ParamValue) -> String {
+    match value {
+        ParamValue::Int(n) => n.to_string(),
+        ParamValue::Real(r) => r.to_string(),
+        ParamValue::Bool(b) => b.to_string(),
+        ParamValue::Null => "NULL".to_owned(),
+        ParamValue::Str(s) => format!("'{}'", s.replace('\'', "''")),
     }
 }
 
 /// Assemble the ITS-REST 1.0.3 `RESULT_SET` document (`schemas/query/ResultSet`:
-/// `meta` + `q` + `columns[] {name, path}` + `rows[][]`).
-fn result_set_json(aql: &str, name: Option<&str>, result: &QueryResult) -> Value {
+/// `meta` + `q` + `columns[] {name, path}` + `rows[][]`). `q` is the query as
+/// submitted; `executed` is the parameter-substituted text for `_executed_aql`.
+fn result_set_json(aql: &str, executed: &str, name: Option<&str>, result: &QueryResult) -> Value {
     let columns: Vec<Value> = result
         .columns
         .iter()
@@ -222,7 +286,7 @@ fn result_set_json(aql: &str, name: Option<&str>, result: &QueryResult) -> Value
             "_type": "RESULTSET",
             "_schema_version": RESULT_SET_SCHEMA_VERSION,
             "_created": Timestamp::now().to_string(),
-            "_executed_aql": aql,
+            "_executed_aql": executed,
         },
         "q": aql,
         "columns": columns,

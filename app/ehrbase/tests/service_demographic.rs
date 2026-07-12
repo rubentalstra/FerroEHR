@@ -16,10 +16,11 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
+use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{CallStatusType, DemographicService, PartyKind, SmError};
+use ehrbase_sm::{CallStatusType, DemographicService, PartyKind, SmError, UpdateVersion};
 
 struct Pg {
     #[allow(dead_code)]
@@ -126,6 +127,108 @@ fn role(name: &str) -> Value {
         // (ROLE.Capabilities_valid, role.adoc) — absence is the valid way to
         // carry "no capabilities".
     })
+}
+
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM party write, built
+/// from the wire shape (`commit_audit`, terminology-coded lifecycle/change).
+fn uv(data: Value, preceding: Option<&str>) -> UpdateVersion {
+    let mut v = json!({
+        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
+        "data": data,
+        "commit_audit": {
+            "change_type": { "terminology_id": "openehr", "code_string": "249" },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
+        }
+    });
+    if let Some(p) = preceding {
+        v["preceding_version_uid"] = json!({ "value": p });
+    }
+    serde_json::from_value(v).expect("UpdateVersion")
+}
+
+/// The literal SM `I_DEMOGRAPHIC_SERVICE` + `I_PARTY` calls (typed Uuid/version
+/// arguments), not the wire seam: `create_party (UV_PARTY): UUID` →
+/// `has_party`/`get_party`/`get_party_at_version` → `update_party` →
+/// `delete_party`, checking the `Post_party_deleted: not has_party`
+/// post-condition (`i_party.adoc`).
+#[tokio::test]
+async fn party_sm_calls_round_trip() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("demographic_sm_calls").await);
+
+    // create_party(UV_PARTY) → the new VERSIONED_OBJECT's UUID.
+    let vo_id: Uuid = svc
+        .create_party(uv(person("Jane"), None))
+        .await
+        .expect("create_party");
+
+    // has_party true; get_party returns the current PERSON.
+    assert!(svc.has_party(vo_id).await.expect("has_party"), "live party");
+    let got = svc.get_party(vo_id).await.expect("get_party");
+    assert_eq!(got["_type"], "PERSON");
+    assert_eq!(got["name"]["value"], "Jane");
+
+    // The current version id — has_party_version_id + get_party_at_version.
+    let v1 = got["uid"]["value"].as_str().expect("uid.value").to_owned();
+    assert!(v1.ends_with("::1"), "first version, got {v1}");
+    assert!(
+        svc.has_party_version_id(v1.clone())
+            .await
+            .expect("has_party_version_id")
+    );
+    let by_ver = svc
+        .get_party_at_version(v1.clone())
+        .await
+        .expect("get_party_at_version");
+    assert_eq!(by_ver["_type"], "ORIGINAL_VERSION");
+    // An unknown version id → false / object_version_does_not_exist.
+    let bogus = format!("{vo_id}::ehrbase-rs.local::9");
+    assert!(!svc.has_party_version_id(bogus.clone()).await.expect("has"));
+    let miss = svc.get_party_at_version(bogus).await;
+    assert!(
+        matches!(
+            miss,
+            Err(SmError {
+                status: CallStatusType::ObjectVersionDoesNotExist,
+                ..
+            })
+        ),
+        "unknown version → object_version_does_not_exist, got {miss:?}"
+    );
+
+    // update_party(UV_PARTY with preceding_version_uid) → the new version uid.
+    let v2 = svc
+        .update_party(vo_id, uv(person("Jane Roe"), Some(&v1)))
+        .await
+        .expect("update_party");
+    assert!(v2.ends_with("::2"), "second version, got {v2}");
+    let got2 = svc.get_party(vo_id).await.expect("get after update");
+    assert_eq!(got2["name"]["value"], "Jane Roe");
+
+    // delete_party → post-condition `not has_party`.
+    let del = svc.delete_party(vo_id).await.expect("delete_party");
+    assert!(!del.is_empty(), "delete returns the deleted version uid");
+    assert!(
+        !svc.has_party(vo_id).await.expect("has_party after delete"),
+        "Post_party_deleted: not has_party"
+    );
+    // get_party on a deleted (no live current) party → versioned_object_does_not_exist.
+    let after = svc.get_party(vo_id).await;
+    assert!(
+        matches!(
+            after,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
+        "get_party after delete → 404, got {after:?}"
+    );
+
+    // A never-seen id: has_party false, get_party 404.
+    let never = Uuid::now_v7();
+    assert!(!svc.has_party(never).await.expect("has_party unknown"));
+    assert!(svc.get_party(never).await.is_err(), "unknown party → error");
 }
 
 #[tokio::test]

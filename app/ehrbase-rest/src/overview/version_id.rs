@@ -157,8 +157,8 @@ mod tests {
         // must parse to the same OBJECT_VERSION_ID.
         let weak = require_if_match(&format!("W/\"{UID}\"")).expect("weak");
         let bare = require_if_match(&format!("\"{UID}\"")).expect("bare");
-        assert_eq!(weak.to_string(), UID);
-        assert_eq!(bare.to_string(), UID);
+        assert_eq!(weak.value, UID);
+        assert_eq!(bare.value, UID);
     }
 
     #[test]

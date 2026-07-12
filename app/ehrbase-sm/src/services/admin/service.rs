@@ -5,7 +5,7 @@ use async_trait::async_trait;
 
 use crate::common::{CallStatusType, SmError};
 
-use crate::common::{PlatformService};
+use crate::common::PlatformService;
 
 /// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
 /// date-time bounds, each independently optional (open bounds allowed). Realizes
@@ -47,12 +47,13 @@ pub trait AdminService: Send + Sync {
 
     /// `DELETE /admin/ehr/all{?ehr_id*}` — physically delete a **set** of EHRs.
     ///
-    /// PORT NOTE: this operation has no spec at all (not in the SM, not in any
-    /// OAS; the generated param under-models the RFC 6570 `ehr_id*` list as one
-    /// optional string). Our design: `ehr_id` carries a comma-separated id list
-    /// and only those EHRs are deleted; an absent/empty list deletes **nothing**
-    /// and is a 400 (refusing an implicit delete-everything). Returns the number
-    /// of EHRs actually deleted.
+    /// The operation is in the SM-adjacent ITS-REST OAS
+    /// (`operations/admin_ehr_delete_all.yaml`) though not in the abstract
+    /// `i_admin_service.adoc`. `ehr_id` is an **optional** subset selector
+    /// (`parameters/query/ehr_id_Admin.yaml`): when present, only those EHRs are
+    /// deleted; when absent/empty, the operation "Deletes **all** … EHRs"
+    /// (`admin_ehr_delete_all.yaml:5`). Returns the number of EHRs actually
+    /// deleted.
     async fn admin_ehr_delete_all(&self, _ehr_ids: Vec<String>) -> Result<u64, SmError> {
         Err(SmError::new(
             CallStatusType::NotImplemented,
