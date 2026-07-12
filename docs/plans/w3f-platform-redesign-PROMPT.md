@@ -16,16 +16,33 @@ last unstructured one: ~34k lines, a flat `service/` grab-bag, and files of
 
 ## The oracles (in precedence order)
 
-1. **The BASE Architecture Overview** — the *structural* oracle (owner
-   ruling 2026-07-12): `docs/specs/openehr/BASE/docs/architecture_overview/`
-   (masters 00–16). Its chapters define how the concerns compose — read the
-   relevant chapter BEFORE designing each area. Concrete example of the
-   ruling: **§Integrity places digital signature inside the
-   versioning/integrity design**, so the standalone `signing` module
-   dissolves into the versioning area rather than staying a bolt-on.
-   The W-3a distillation is `docs/spec-audit/architecture-overview/CHECKLIST.md`
-   (149 evidence-backed rows) — use it as the index, but re-read the spec
-   text for anything you build.
+1. **The FULL BASE component** — the foundation oracle (owner ruling
+   2026-07-12: check everything under `docs/specs/openehr/BASE/docs/` — a
+   strong foundation needs all four sets, not only the overview):
+   - `architecture_overview/` (18 masters) — the *structural* oracle: its
+     chapters define how the concerns compose; read the relevant chapter
+     BEFORE designing each area. Worked example of the ruling:
+     **§Integrity places digital signature inside the versioning/integrity
+     design**, so the standalone `signing` module dissolves into the
+     versioning area rather than staying a bolt-on. The W-3a distillation
+     (`docs/spec-audit/architecture-overview/CHECKLIST.md`, 149 rows) is
+     the index — re-read the spec text for anything you build.
+   - `base_types/` (7 masters) — identification is the versioning core's
+     law: `OBJECT_VERSION_ID`/`VERSION_TREE_ID` lexical forms, `PARTY_REF`,
+     `OBJECT_REF` namespaces, `ARCHETYPE_ID`/`TEMPLATE_ID` — the
+     `versioning/` and `storage/` registers audit against these masters
+     directly.
+   - `foundation_types/` (11 masters) — the primitive semantics under
+     everything: ISO-8601 time types, `Interval`/`Multiplicity_interval`
+     functions, terms/containers — the `validation/` and `storage/`
+     registers cite these for every primitive-handling decision.
+   - `resource/` (4 masters) — `AUTHORED_RESOURCE` (description,
+     translations, revision history of authored artefacts) — governs the
+     `templates/` area's treatment of archetypes/OPTs as resources.
+   The A1 audit and B2 validation phase already *behaviour-verified* much
+   of base_types/foundation_types — the registers cross-reference those
+   verdicts (`docs/spec-audit/`, blueprint ch 02) instead of re-deriving
+   them, but every structural reading is fresh.
 2. **The SM chapter map** — the service layer mirrors
    `app/ehrbase-sm/src/services/` (one folder per SM chapter, rebuilt at
    W-3c): the impl side should mirror the same chapter structure.
