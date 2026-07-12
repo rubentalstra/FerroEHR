@@ -14,13 +14,31 @@ use super::ir::{
     AggFunc, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand, PathTarget, QueryIr,
     ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
-use super::{ParamValue, Params, plan};
+use super::{ParamValue, Params, SqlCtx, plan};
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 fn plan_ok(q: &str) -> QueryIr {
     let ast = parse_str(q).unwrap_or_else(|e| panic!("parse failed for {q:?}: {e}"));
     plan(&ast, &Params::new()).unwrap_or_else(|e| panic!("plan failed for {q:?}: {e}"))
+}
+
+/// Plan `q` (parameterless) and lower it to SQL, returning the generated SQL
+/// text. Literals bind as `$n` placeholders; structural SQL (EXISTS, OR, CASE …)
+/// is asserted directly against the text — the same technique as
+/// [`super::sql::archetype_predicate_sql_for_tests`].
+fn build_sql(q: &str) -> String {
+    let ir = plan_ok(q);
+    let ctx = SqlCtx {
+        system_id: "sys.example.com".to_owned(),
+        ehr_ids: Vec::new(),
+        subject_scope: None,
+        limit: None,
+        offset: None,
+    };
+    super::sql::build(&ir, &Params::new(), &ctx)
+        .unwrap_or_else(|e| panic!("SQL build failed for {q:?}: {e}"))
+        .sql
 }
 
 fn plan_with(q: &str, params: &Params) -> Result<QueryIr, AqlError> {
@@ -712,5 +730,134 @@ fn archetype_predicate_subsumption_sql() {
     assert!(
         !at_code.contains("arch_entity"),
         "at-code does not use the subsumption columns: {at_code}"
+    );
+}
+
+// ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
+
+/// G-01: OR-containment under an EHR lowers to a disjunction of correlated
+/// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
+/// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
+/// FROM tree; it must now build.
+#[test]
+fn or_contains_under_ehr_lowers_to_disjunctive_exists() {
+    let sql = build_sql(
+        "SELECT e/ehr_id/value FROM EHR e CONTAINS \
+         (OBSERVATION o1[openEHR-EHR-OBSERVATION.lab.v1] \
+          OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
+    );
+    assert_eq!(
+        sql.matches("EXISTS").count(),
+        2,
+        "one EXISTS per OR branch: {sql}"
+    );
+    assert!(sql.contains(" OR "), "the branches are OR-combined: {sql}");
+}
+
+/// G-01: OR-containment under a COMPOSITION shares the parent VO and
+/// interval-anchors each branch inside its node subtree (`num BETWEEN`).
+#[test]
+fn or_contains_under_vo_interval_anchors_each_branch() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS \
+         COMPOSITION c[openEHR-EHR-COMPOSITION.report.v1] CONTAINS \
+         (OBSERVATION o[openEHR-EHR-OBSERVATION.lab.v1] \
+          OR OBSERVATION o1[openEHR-EHR-OBSERVATION.glucose.v1])",
+    );
+    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+    assert!(sql.contains(" OR "), "{sql}");
+    assert!(
+        sql.contains("BETWEEN"),
+        "each branch is interval-anchored in the parent VO: {sql}"
+    );
+}
+
+/// G-01: a nested AND/OR containment tree lowers to the matching boolean tree of
+/// `EXISTS` filters (QUERY master03 §Containment).
+#[test]
+fn nested_and_or_contains_tree_builds() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS \
+         COMPOSITION c[openEHR-EHR-COMPOSITION.report.v1] CONTAINS \
+         (OBSERVATION o1[openEHR-EHR-OBSERVATION.lab.v1] \
+          OR (OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1] \
+              AND OBSERVATION o3[openEHR-EHR-OBSERVATION.bp.v1]))",
+    );
+    assert_eq!(
+        sql.matches("EXISTS").count(),
+        3,
+        "one EXISTS per operand: {sql}"
+    );
+    assert!(sql.contains(" OR ") && sql.contains(" AND "), "{sql}");
+}
+
+/// G-08: NOT CONTAINS generalises to a negated `EXISTS` over an arbitrary
+/// operand tree — a compound (OR) operand now builds (previously
+/// `SqlError::Unsupported`). QUERY master03 §Containment, §NOT.
+#[test]
+fn not_contains_compound_operand_builds() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS \
+         COMPOSITION c[openEHR-EHR-COMPOSITION.referral.v1] NOT CONTAINS \
+         (OBSERVATION o1[openEHR-EHR-OBSERVATION.lab.v1] \
+          OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
+    );
+    assert!(sql.contains("NOT"), "the exclusion is negated: {sql}");
+    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+}
+
+/// G-12: a mixed-type (`Raw`) leaf compared to a numeric literal extracts
+/// numerically with a `jsonb_typeof` guard (non-number occurrences → NULL),
+/// never a lexical text compare (QUERY master03 §Comparison operators).
+#[test]
+fn raw_leaf_numeric_comparison_dispatches_to_numeric() {
+    let sql = build_sql(
+        "SELECT o/name/value FROM EHR e CONTAINS \
+         OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1] \
+         WHERE o/data[at0001]/events[at0006]/data/items[at0004]/value >= 140",
+    );
+    assert!(
+        sql.contains("jsonb_typeof") && sql.contains("'number'"),
+        "the polymorphic value leaf is compared numerically under a type guard: {sql}"
+    );
+}
+
+/// G-12: the same mixed-type leaf compared to a *string* literal stays on the
+/// text path (no numeric guard).
+#[test]
+fn raw_leaf_text_comparison_stays_text() {
+    let sql = build_sql(
+        "SELECT o/name/value FROM EHR e CONTAINS \
+         OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1] \
+         WHERE o/data[at0001]/events[at0006]/data/items[at0004]/value = 'x'",
+    );
+    assert!(
+        !sql.contains("jsonb_typeof"),
+        "a text comparison must not use the numeric guard: {sql}"
+    );
+}
+
+/// G-15: MIN/MAX over a String leaf compare textually, not by forced numeric
+/// magnitude — "Input values type should be either String, Date, Time, Integer
+/// or Real, and it will also determine the return type" (QUERY master03 §MAX).
+#[test]
+fn min_max_over_text_leaf_is_not_forced_numeric() {
+    let sql = build_sql("SELECT MAX(c/name/value) FROM COMPOSITION c");
+    assert!(
+        !sql.contains("numeric") && !sql.contains("openehr_magnitude"),
+        "MAX over a text leaf is not coerced numeric: {sql}"
+    );
+}
+
+/// G-15: MIN/MAX over a numeric leaf still lowers numerically.
+#[test]
+fn min_max_over_numeric_leaf_is_numeric() {
+    let sql = build_sql(
+        "SELECT MAX(o/data[at0001]/events[at0006]/data/items[at0004]/value/magnitude) \
+         FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1]",
+    );
+    assert!(
+        sql.contains("numeric"),
+        "MAX over a numeric leaf casts to numeric: {sql}"
     );
 }

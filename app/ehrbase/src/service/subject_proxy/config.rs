@@ -11,7 +11,7 @@
 //! (`hl7_fhir_sample.adoc`).
 //!
 //! No openEHR spec governs the transport specifics — our own design, mirroring
-//! the external-terminology provider (`crate::terminology::config`) and
+//! the external-terminology provider (`crate::service::terminology::config`) and
 //! `docs/design/terminology-server-integration.md`. Configuration is
 //! **opt-in and fail-closed**: only systems named here are reachable; a frame
 //! whose `system_id` matches no configured system is a typed rejection, never
