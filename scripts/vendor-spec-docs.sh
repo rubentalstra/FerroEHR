@@ -42,7 +42,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 # Upstream repo tooling is not spec text: exclude agent configs and CI.
-rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.github' --exclude='AGENTS.md')
+rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.junie' --exclude='.github' --exclude='AGENTS.md')
 for ext in "${INCLUDE_EXT[@]}"; do
   rsync_args+=(--include="*.$ext")
 done
