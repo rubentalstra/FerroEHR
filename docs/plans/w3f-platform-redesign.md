@@ -100,8 +100,8 @@ app/ehrbase/src/
 - [x] W4 `aql/` re-grounded; `sql.rs` split — sql/{mod,from,expr,value,predicate,select}.rs ≤505 lines; OR-CONTAINS implemented (blueprint claim was false), NOT CONTAINS generalized, MIN/MAX + Raw coercion fixed
 - [x] W5 `validation/` authored fresh along AM boundaries — opt/{invariants,rm_conformance,primitive,terminology,interval} + adl2/; BASE MultiplicityInterval::has consumed; openehr-lang::odin found nonexistent (hand-rolled reader kept, PORT NOTE)
 - [x] W6 `templates/` authored fresh (+ resource/ oracle) — {mod,identity,ingest,store,runtime}.rs; G-T04 case-insensitive template_id law landed
-- [ ] W7 `system_log/` re-grounded
-- [ ] W8 `extensions/` quarantine assembled + flagged
+- [x] W7 `system_log/` re-grounded — citations re-anchored to DICOM PS3.15/RFC 3881/5424-5426; ObjectClass::Extract added (additive); telemetry flagged spec-silent
+- [x] W8 `extensions/` quarantine assembled + flagged — events, subscriptions, fhir (mapping split 3-way), multimedia, tenancy; off = byte-identical invariant preserved
 - [ ] W9 `main.rs`/`lib.rs`/`db/` re-grounded; crate map documented
 - [ ] W10 The ONE fix pass — workspace compiles, all `TODO(w3f-integrate)` resolved
 - [ ] W11 Zero-TODO sweep: inventory + eliminate every actionable marker
