@@ -221,6 +221,18 @@ impl SubjectVariable {
     /// `canonical_name (): String` — "Return canonical name, formed from
     /// `namespace` (if present) and `name` … `namespace::name` … or just
     /// `name`" (`subject_variable.adoc`).
+    /// Subject-variable naming validity (SM master10 §Subject Variable
+    /// Naming): a canonical name "may not include whitespace or any
+    /// unprintable character". Checked over both `name` and `namespace`
+    /// (the canonical name is formed from them); the name must be non-empty.
+    #[must_use]
+    pub fn name_valid(&self) -> bool {
+        fn part_ok(s: &str) -> bool {
+            !s.is_empty() && s.chars().all(|c| !c.is_whitespace() && !c.is_control())
+        }
+        part_ok(&self.name) && self.namespace.as_deref().is_none_or(part_ok)
+    }
+
     #[must_use]
     pub fn canonical_name(&self) -> String {
         match &self.namespace {
@@ -511,6 +523,31 @@ fn now_iso() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name_validity_rejects_whitespace_and_control() {
+        // SM master10 §Subject Variable Naming.
+        let mut v = SubjectVariable {
+            namespace: None,
+            name: "systolic_bp".to_owned(),
+            type_name: "Quantity".to_owned(),
+            currency: None,
+            ask_user: None,
+            is_manual: false,
+            frame_id: "f".to_owned(),
+            frame_path: "p".to_owned(),
+        };
+        assert!(v.name_valid());
+        v.name = "systolic bp".to_owned();
+        assert!(!v.name_valid(), "whitespace rejected");
+        v.name = "sys\u{7}bp".to_owned();
+        assert!(!v.name_valid(), "control character rejected");
+        v.name = String::new();
+        assert!(!v.name_valid(), "empty name rejected");
+        v.name = "ok".to_owned();
+        v.namespace = Some("my ns".to_owned());
+        assert!(!v.name_valid(), "namespace whitespace rejected");
+    }
 
     #[test]
     fn canonical_name_qualifies_with_namespace() {

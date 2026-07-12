@@ -11,7 +11,7 @@
 | Product | ehrbase-rs 3.0.0 |
 | SUT | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
-| Run started | 2026-07-11T10:45:03.644171Z |
+| Run started | 2026-07-12T07:37:07.906259Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions

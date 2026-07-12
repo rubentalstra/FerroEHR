@@ -41,22 +41,36 @@ pub enum AqlError {
 pub enum AqlFeatureError {
     /// `TERMINOLOGY(...) = true` — the Boolean value-expression form (an
     /// assertion tested server-side). QUERY §Functions/Other functions/
-    /// TERMINOLOGY (master03 lines 762–767).
-    ///
-    /// PORT NOTE (B4 stage (b)): only the `expand`-into-`matches` form landed
-    /// (stage (a)); the Boolean `validate`-as-assertion form is a typed reject.
-    /// The blocker is not semantics but the seam: master03's `validate`
-    /// `params_uri` is a free-form, service-api-specific query string
-    /// (`'system=…&code=…&url=…&display=…'`), while our `TerminologyService`
-    /// seam exposes structured `value_set_validate(terminology_id,
-    /// value_set_id, candidate_code)` — no raw pass-through — so parsing the
-    /// URI back into those parts is service-api-specific and deferred.
+    /// TERMINOLOGY (master03 lines 762–767): a `TERMINOLOGY()` call in a
+    /// position the pre-pass could not resolve — used other than as a
+    /// `matches` operand or a Boolean value expression (`= true`/`!= true`),
+    /// e.g. compared to a non-boolean or selected as a column.
     #[error(
-        "TERMINOLOGY() as a Boolean value expression is not supported \
-         (only the `expand`-into-`matches` form is; \
-         QUERY §Functions/Other functions/TERMINOLOGY)"
+        "TERMINOLOGY() may be used as a `matches` operand or as a Boolean \
+         value expression (`= true`); this position is not supported \
+         (QUERY §Functions/Other functions/TERMINOLOGY)"
     )]
     TerminologyFunction,
+
+    /// A Boolean `TERMINOLOGY()` operation the terminology seam cannot
+    /// evaluate to a truth value (`lookup`, `map`, or an unrecognised
+    /// operation). QUERY §Functions/Other functions/TERMINOLOGY: only
+    /// `validate` and `subsumes` have boolean semantics.
+    #[error(
+        "TERMINOLOGY() operation `{0}` has no boolean semantics \
+         (`validate`/`subsumes` may be tested against true/false; \
+         QUERY §Functions/Other functions/TERMINOLOGY)"
+    )]
+    UnsupportedTerminologyOperation(String),
+
+    /// A `TERMINOLOGY()` `params_uri` missing an argument the operation needs
+    /// (e.g. `validate` without `url=`/`code=`). QUERY §Functions/Other
+    /// functions/TERMINOLOGY.
+    #[error(
+        "TERMINOLOGY() params_uri is missing the `{0}` argument \
+         (QUERY §Functions/Other functions/TERMINOLOGY)"
+    )]
+    TerminologyParams(&'static str),
 
     /// A non-`expand` `TERMINOLOGY(...)` used as (or inside) a `matches`
     /// operand. Only `expand` is merged into the value list at semantic
@@ -69,15 +83,13 @@ pub enum AqlFeatureError {
     )]
     MatchesTerminology,
 
-    /// `matches { <uri> }` — a terminology/EHR URI operand. QUERY §matches/URI
-    /// (master03 lines 367–402).
-    ///
-    /// PORT NOTE (B4 stage (c)): a typed reject. The URI-operand form
-    /// (`matches { terminology://… }`) is a distinct addressing scheme from the
-    /// `TERMINOLOGY()` function and is deferred behind stage (a)/(b); it needs
-    /// a `terminology://scheme/authority/path?query` parser mapped onto the
-    /// service seam, which the `TERMINOLOGY('expand', …)` form does not.
-    #[error("matches against a URI operand is not supported (QUERY §Operators/matches)")]
+    /// `matches { <uri> }` reached the planner unresolved — the pre-pass
+    /// resolves terminology URIs (QUERY §matches/URI, master03 lines 367–402);
+    /// this fires only when planning bypasses semantic analysis.
+    #[error(
+        "matches against a URI operand was not resolved at semantic analysis \
+         (QUERY §Operators/matches)"
+    )]
     MatchesUri,
 
     /// A `TERMINOLOGY()` `service_api` that names no configured terminology
@@ -170,6 +182,45 @@ pub enum AnalysisError {
     /// An identified-path root that is not a variable bound in FROM.
     #[error("unknown variable `{0}` (not bound in the FROM clause)")]
     UnknownVariable(String),
+
+    /// A variable name declared by more than one class expression — variable
+    /// names must be unique within an AQL statement (QUERY master03
+    /// §Variables/Syntax).
+    #[error("variable `{0}` is declared more than once (variable names must be unique)")]
+    DuplicateVariable(String),
+
+    /// LIMIT/OFFSET/TOP bound violation: `row_count` minimum is 1, `offset`
+    /// minimum is 0 (QUERY master03 §LIMIT/Syntax).
+    #[error("invalid {clause} value {value} ({clause} minimum is {minimum})")]
+    PagingBounds {
+        /// `LIMIT` / `OFFSET` / `TOP`.
+        clause: &'static str,
+        /// The offending value.
+        value: i64,
+        /// The spec minimum.
+        minimum: i64,
+    },
+
+    /// An aggregate applied to a non-conforming input type (`SUM`/`AVG`
+    /// accept Integer/Real input only — QUERY master03 §Functions/SUM, AVG).
+    #[error("{func} requires a numeric (Integer/Real) input; the path selects {got}")]
+    AggregateInputType {
+        /// The aggregate name.
+        func: &'static str,
+        /// A human description of the selected leaf type.
+        got: &'static str,
+    },
+
+    /// A scalar function called with the wrong number of arguments.
+    #[error("{func} takes {expected} argument(s), got {got}")]
+    FunctionArity {
+        /// The function name.
+        func: &'static str,
+        /// The expected arity description.
+        expected: &'static str,
+        /// The supplied argument count.
+        got: usize,
+    },
 
     /// An attribute that no candidate type of the current path step declares.
     #[error("attribute `{attribute}` is not defined on {on} (RM model)")]

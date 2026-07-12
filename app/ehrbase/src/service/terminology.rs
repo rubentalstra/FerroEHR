@@ -242,16 +242,22 @@ pub(crate) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyEx
     Ok(extract_from_members(terminology_id, vec![member]))
 }
 
-/// `subsumes` — identity only (flat vocabulary, PORT NOTE). `Pre_has_terminology`.
+/// `subsumes` — SM master12 `i_terminology_service.adoc`: "True if
+/// `candidate_child_code` is in the **strict** subsumption of `ref_code`".
+/// Strict subsumption excludes the code itself, and the openEHR bundle's
+/// vocabularies are flat (no is-a hierarchy), so no code strictly subsumes
+/// any other here — always False. `Pre_has_terminology`. (Hierarchical
+/// subsumption is served by the external FHIR provider's
+/// `CodeSystem/$subsumes`.)
 pub(crate) fn subsumes(
     terminology_id: &str,
-    ref_code: &str,
-    candidate_child_code: &str,
+    _ref_code: &str,
+    _candidate_child_code: &str,
 ) -> Result<bool, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
-    Ok(ref_code == candidate_child_code)
+    Ok(false)
 }
 
 /// `has_value_set` — total (no precondition); unknown terminology → `false`.
@@ -376,8 +382,10 @@ mod tests {
     }
 
     #[test]
-    fn subsumes_is_identity_only() {
-        assert!(subsumes("openehr", "249", "249").unwrap());
+    fn subsumes_is_strict_so_flat_vocabularies_never_subsume() {
+        // SM master12: strict subsumption excludes identity; the bundle is
+        // flat, so subsumes is uniformly false (incl. the identity case).
+        assert!(!subsumes("openehr", "249", "249").unwrap());
         assert!(!subsumes("openehr", "249", "250").unwrap());
         assert!(matches!(
             subsumes("bogus", "a", "a"),

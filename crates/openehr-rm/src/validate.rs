@@ -208,13 +208,23 @@ fn is_valid_tz(tz: &str) -> bool {
     let Some(rest) = tz.strip_prefix(['+', '-']) else {
         return false;
     };
+    // BASE `Iso8601_timezone` bounds are ASYMMETRIC (`iso8601_timezone.adoc`
+    // Max_hour_valid / Min_hour_valid; `time_definitions.adoc`
+    // Max_timezone_hour = 14, Min_timezone_hour = 12): `+` offsets go to
+    // +14:00, `-` offsets only to -12:00 (reject `-13:00`).
+    //
+    // PORT NOTE (corpus adjudication): the invariants literally require
+    // `hour > 0` when signed, but the canonical corpus + CNF data sets carry
+    // `+00:00`/`-00:00` UTC forms in 42 files — the corpus outranks the prose
+    // reading, so hour 0 is accepted with either sign (≡ `Z`).
+    let max_hour = if tz.starts_with('+') { 14 } else { 12 };
     if rest.contains(':') {
         matches!(rest.split(':').collect::<Vec<_>>().as_slice(),
-            [h, m] if in_range(h, 0, 14) && in_range(m, 0, 59))
+            [h, m] if in_range(h, 0, max_hour) && in_range(m, 0, 59))
     } else {
         match rest.len() {
-            2 => in_range(rest, 0, 14),
-            4 => in_range(&rest[0..2], 0, 14) && in_range(&rest[2..4], 0, 59),
+            2 => in_range(rest, 0, max_hour),
+            4 => in_range(&rest[0..2], 0, max_hour) && in_range(&rest[2..4], 0, 59),
             _ => false,
         }
     }
@@ -334,8 +344,9 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
     match serde_json::from_value::<T>(value.clone()) {
         Ok(v) => v.validate_invariants(out),
         // A node that does not deserialize into its declared concrete RM type is
-        // NOT "caught by the codec/schema layer" on the commit path: the ADR-008
-        // node codec stores the raw canonical-JSON fragment and the ITS-JSON
+        // NOT "caught by the codec/schema layer" on the commit path: the node
+        // codec stores the raw canonical-JSON fragment verbatim (no openEHR spec
+        // governs the storage mechanics — our own design) and the ITS-JSON
         // schema is not enforced at commit, so a missing mandatory attribute
         // (e.g. `COMPOSITION.composer [1]`) or a wrong nested type (e.g. an
         // `EHR_STATUS.subject` that is not `PARTY_SELF`) reaches here and nowhere
@@ -372,11 +383,13 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 /// invariants.
 #[allow(clippy::too_many_lines)] // a flat _type → run::<T> dispatch table
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+    use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;
     use openehr_base::base_types::identification::object_ref::ObjectRefData;
     use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
     use openehr_base::base_types::identification::party_ref::PartyRef;
+    use openehr_base::base_types::identification::terminology_id::TerminologyId;
     use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
 
     use crate::common::archetyped::archetyped::Archetyped;
@@ -419,9 +432,12 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::quantity::dv_scale::DvScale;
     use crate::data_types::quantity::reference_range::ReferenceRange;
     use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_text::DvText;
     use crate::data_types::text::term_mapping::TermMapping;
+    use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
     use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
     use crate::data_types::uri::dv_uri::DvUriData;
+    use crate::integration::generic_entry::GenericEntry;
 
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
@@ -429,6 +445,10 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     match ty {
         // data_types
         "CODE_PHRASE" => run::<CodePhrase>(value, out),
+        // DV_TEXT + DV_CODED_TEXT share the DvText enum (Valid_value /
+        // Formatting_valid, dv_text.adoc; DV_CODED_TEXT adds the structural
+        // defining_code 1..1 at deserialize).
+        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvText>(value, out),
         "DV_URI" => run::<DvUriData>(value, out),
         "DV_EHR_URI" => run::<DvEhrUri>(value, out),
         "DV_IDENTIFIER" => run::<DvIdentifier>(value, out),
@@ -444,6 +464,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "DV_ORDINAL" => run::<DvOrdinal>(value, out),
         "DV_SCALE" => run::<DvScale>(value, out),
         "DV_PARSABLE" => run::<DvParsable>(value, out),
+        "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(value, out),
         "REFERENCE_RANGE" => run::<ReferenceRange>(value, out),
         // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
         // Limits_consistent ordering invariant runs (F-12-04); fall back to
@@ -479,6 +500,9 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "ACTION" => run::<Action>(value, out),
         "EVALUATION" => run::<Evaluation>(value, out),
         "ADMIN_ENTRY" => run::<AdminEntry>(value, out),
+        // Integration package (RM integration master02): GENERIC_ENTRY carries
+        // only `data: ITEM` (1..1) — the typed deserialize enforces it.
+        "GENERIC_ENTRY" => run::<GenericEntry>(value, out),
         "SECTION" => run::<Section>(value, out),
         "FOLDER" => run::<Folder>(value, out),
         "ITEM_TAG" => run::<ItemTag>(value, out),
@@ -488,6 +512,8 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "VERSION_TREE_ID" => run::<VersionTreeId>(value, out),
         "OBJECT_VERSION_ID" => run::<ObjectVersionId>(value, out),
         "ISO_OID" => run::<IsoOid>(value, out),
+        "ARCHETYPE_ID" => run::<ArchetypeId>(value, out),
+        "TERMINOLOGY_ID" => run::<TerminologyId>(value, out),
         "INTERNET_ID" => run::<InternetId>(value, out),
         _ => {}
     }
@@ -627,6 +653,24 @@ mod tests {
             out.iter()
                 .any(|v| v.message == "Invariant Percent_validity failed on type DV_PROPORTION"),
             "got {out:?}"
+        );
+    }
+
+    /// BASE `Iso8601_timezone`: `+` offsets reach +14:00, `-` offsets stop at
+    /// -12:00; ±00:00 accepted per the corpus (see `is_valid_tz`).
+    #[test]
+    fn timezone_bounds_are_asymmetric() {
+        assert!(is_valid_iso_time("10:00:00+14:00"));
+        assert!(is_valid_iso_time("10:00:00-12:00"));
+        assert!(is_valid_iso_time("10:00:00+00:00"));
+        assert!(is_valid_iso_time("10:00:00-00:00"));
+        assert!(
+            !is_valid_iso_time("10:00:00+15:00"),
+            "+15 exceeds Max_timezone_hour"
+        );
+        assert!(
+            !is_valid_iso_time("10:00:00-13:00"),
+            "-13 exceeds Min_timezone_hour"
         );
     }
 }

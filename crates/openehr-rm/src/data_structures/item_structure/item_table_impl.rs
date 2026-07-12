@@ -33,6 +33,41 @@ impl Validate for ItemTable {
                 "Invariant Valid_number_of_rows failed on type ITEM_TABLE",
             ));
         }
+        // Row regularity (item_table.adoc §description): corresponding
+        // ELEMENTs across rows must have identical names and value types —
+        // "each of which in turn must have identical names and value types in
+        // the corresponding positions in each row".
+        if let Some(first) = self.rows.first() {
+            use crate::data_types::text::dv_text::DvText;
+            let name_of = |name: &DvText| match name {
+                DvText::DvText(t) => t.value.clone(),
+                DvText::DvCodedText(t) => t.value.clone(),
+            };
+            let signature = |row: &crate::data_structures::representation::cluster::Cluster| {
+                row.items
+                    .iter()
+                    .map(|item| match item {
+                        Item::Element(e) => (
+                            name_of(&e.name),
+                            e.value.as_ref().map(std::mem::discriminant),
+                        ),
+                        Item::Cluster(c) => (name_of(&c.name), None),
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let first_sig = signature(first);
+            if self
+                .rows
+                .iter()
+                .skip(1)
+                .any(|row| signature(row) != first_sig)
+            {
+                out.push(InvariantViolation::here(
+                    "Invariant Row_regularity failed on type ITEM_TABLE \
+                     (corresponding row ELEMENTs must share names and value types)",
+                ));
+            }
+        }
         push_archetype_node_id_valid(out, "ITEM_TABLE", &self.archetype_node_id);
     }
 }
@@ -140,6 +175,86 @@ mod tests {
             v.iter()
                 .any(|m| m.message == "Invariant Valid_number_of_rows failed on type ITEM_TABLE"),
             "got {v:?}"
+        );
+    }
+
+    /// Row regularity (`item_table.adoc` §description): corresponding row
+    /// ELEMENTs must share names and value types across all rows.
+    #[test]
+    fn row_regularity_names_and_value_types() {
+        use crate::data_types::quantity::dv_count::DvCount;
+        let named = |name: &str, value: DataValue| Element {
+            name: text(name),
+            archetype_node_id: "at0001".to_owned(),
+            uid: None,
+            links: Vec::new(),
+            archetype_details: None,
+            feeder_audit: None,
+            null_flavour: None,
+            value: Some(value),
+            null_reason: None,
+        };
+        let row = |elems: Vec<Element>| Cluster {
+            name: text("row"),
+            archetype_node_id: "at0002".to_owned(),
+            uid: None,
+            links: Vec::new(),
+            archetype_details: None,
+            feeder_audit: None,
+            items: elems.into_iter().map(Item::Element).collect(),
+        };
+        let bool_val = || DataValue::DvBoolean(DvBoolean { value: true });
+        let count_val = || {
+            DataValue::DvCount(DvCount {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: Vec::new(),
+                magnitude_status: None,
+                accuracy: None,
+                accuracy_is_percent: None,
+                magnitude: 1,
+            })
+        };
+        let table = |rows: Vec<Cluster>| ItemTable {
+            name: text("t"),
+            archetype_node_id: "at0000".to_owned(),
+            uid: None,
+            links: Vec::new(),
+            archetype_details: None,
+            feeder_audit: None,
+            rows,
+        };
+        let regular = table(vec![
+            row(vec![named("a", bool_val()), named("b", count_val())]),
+            row(vec![named("a", bool_val()), named("b", count_val())]),
+        ]);
+        let mut out = Vec::new();
+        regular.validate_invariants(&mut out);
+        assert!(
+            !out.iter().any(|m| m.message.contains("Row_regularity")),
+            "regular rows must pass, got {out:?}"
+        );
+        // Same count, different value type in position 2 → Row_regularity.
+        let irregular = table(vec![
+            row(vec![named("a", bool_val()), named("b", count_val())]),
+            row(vec![named("a", bool_val()), named("b", bool_val())]),
+        ]);
+        let mut out = Vec::new();
+        irregular.validate_invariants(&mut out);
+        assert!(
+            out.iter().any(|m| m.message.contains("Row_regularity")),
+            "type-irregular rows must fail, got {out:?}"
+        );
+        // Different name in position 1 → Row_regularity.
+        let renamed = table(vec![
+            row(vec![named("a", bool_val())]),
+            row(vec![named("x", bool_val())]),
+        ]);
+        let mut out = Vec::new();
+        renamed.validate_invariants(&mut out);
+        assert!(
+            out.iter().any(|m| m.message.contains("Row_regularity")),
+            "name-irregular rows must fail, got {out:?}"
         );
     }
 }

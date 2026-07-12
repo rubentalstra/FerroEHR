@@ -8,6 +8,7 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use super::codes::change_type;
+use super::version_id::TreeId;
 use super::vobject::{self, AuditInput, Change, Kind};
 use super::{EhrbaseService, ServiceError};
 
@@ -54,6 +55,7 @@ impl EhrbaseService {
         vobject::commit_contribution(
             &mut tx,
             Some(ehr_id),
+            None,
             &audit,
             vec![
                 (
@@ -113,11 +115,15 @@ impl EhrbaseService {
     /// Build the canonical EHR object for an existing EHR, with its `ehr_id`
     /// metadata (the `ETag`/`Location` for `POST /ehr`).
     pub(super) async fn ehr_summary(&self, ehr_id: Uuid) -> Result<ServiceResponse, ServiceError> {
-        let row = sqlx::query("SELECT time_created FROM ehr WHERE id = $1")
+        let row = sqlx::query("SELECT system_id, time_created FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .fetch_optional(&self.pool)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
+        // EHR.system_id is IMMUTABLE after creation (RM ehr master04 §Root EHR
+        // Object) — served from the STORED per-EHR value, never the live
+        // service configuration (a config change must not mutate it).
+        let stored_system_id: String = row.try_get("system_id")?;
         // timestamptz via the official jiff-sqlx wrapper (sqlx-conventions.md).
         let time_created: jiff::Timestamp = row
             .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
@@ -129,23 +135,35 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         // The uid uses the stored per-version creating_system_id (M2), not the
         // live config, so it is stable across a `with_system_id` change.
+        let (t, b, v) = status_version.columns();
         let status_csid: String = sqlx::query_scalar(
-            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 AND sys_version = $2",
+            "SELECT creating_system_id FROM vo_version WHERE vo_id = $1 \
+             AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
         )
         .bind(status_vo)
-        .bind(status_version)
+        .bind(t)
+        .bind(b)
+        .bind(v)
         .fetch_one(&self.pool)
         .await?;
         let status_ovid = self.object_version_id(status_vo, &status_csid, status_version);
 
         let mut body = json!({
             "_type": "EHR",
-            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
+            "system_id": { "_type": "HIER_OBJECT_ID", "value": stored_system_id },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
+            // Ehr_status_valid: `ehr_status.type.is_equal("VERSIONED_EHR_STATUS")`
+            // (RM ehr `ehr.adoc` invariants — normative). PORT NOTE (spec
+            // defect): the non-normative ITS-REST example
+            // (`schemas/ehr/Ehr.yaml`) shows `type: EHR_STATUS` with an
+            // OBJECT_VERSION_ID id, contradicting the RM invariant; the RM
+            // invariant wins for `type`, while the id keeps the example's
+            // OBJECT_VERSION_ID form (the invariant does not constrain it and
+            // clients use it to address the current status version).
             "ehr_status": {
                 "_type": "OBJECT_REF",
                 "namespace": "local",
-                "type": "EHR_STATUS",
+                "type": "VERSIONED_EHR_STATUS",
                 "id": { "_type": "OBJECT_VERSION_ID", "value": status_ovid }
             },
             "time_created": {
@@ -183,14 +201,17 @@ impl EhrbaseService {
     /// (`vo_id`), **not** versions (`ehr_summary.adoc` wording). A missing EHR is
     /// `NotFound` (SM `ehr_does_not_exist`).
     pub(super) async fn summarize_ehr(&self, ehr_id: Uuid) -> Result<EhrSummary, ServiceError> {
-        let time_created: jiff::Timestamp =
-            sqlx::query("SELECT time_created FROM ehr WHERE id = $1")
-                .bind(ehr_id)
-                .fetch_optional(&self.pool)
-                .await?
-                .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?
-                .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
-                .to_jiff();
+        let row = sqlx::query("SELECT system_id, time_created FROM ehr WHERE id = $1")
+            .bind(ehr_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
+        // EHR.system_id is immutable per EHR (master04 §Root EHR Object) —
+        // the stored value, not the live config.
+        let stored_system_id: String = row.try_get("system_id")?;
+        let time_created: jiff::Timestamp = row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
+            .to_jiff();
 
         // Copy of EHR.ehr_status: the current EHR_STATUS (bare, with its uid).
         let ehr_status = self.status_at(ehr_id, None).await?.body;
@@ -211,7 +232,7 @@ impl EhrbaseService {
 
         Ok(EhrSummary {
             ehr_id: ehr_id.to_string(),
-            system_id: self.effective_system_id(),
+            system_id: stored_system_id,
             ehr_status,
             time_created: time_created.to_string(),
             contribution_count,
@@ -245,7 +266,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -321,7 +342,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -355,7 +376,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
         let ov = self.original_version(&read)?;
@@ -385,17 +406,24 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         kind: Kind,
-    ) -> Result<Option<(Uuid, i32)>, ServiceError> {
+    ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
         let row = sqlx::query(
-            "SELECT vo_id, sys_version FROM vo_version \
-             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period)",
+            "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+             WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
         )
         .bind(ehr_id)
         .bind(kind.as_str())
         .fetch_optional(&self.pool)
         .await?;
         match row {
-            Some(r) => Ok(Some((r.try_get("vo_id")?, r.try_get("sys_version")?))),
+            Some(r) => Ok(Some((
+                r.try_get("vo_id")?,
+                TreeId::from_columns(
+                    r.try_get("trunk_version")?,
+                    r.try_get("branch_number")?,
+                    r.try_get("branch_version")?,
+                ),
+            ))),
             None => Ok(None),
         }
     }
@@ -413,7 +441,8 @@ impl EhrbaseService {
             "SELECT (n.data->>'is_modifiable') = 'true' \
              FROM vo_version v \
              JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period)",
+             WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
+             AND v.branch_number = 0",
         )
         .bind(ehr_id)
         .fetch_optional(&self.pool)
@@ -467,7 +496,7 @@ impl EhrbaseService {
         &self,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
     ) -> String {
         format!("{vo_id}::{creating_system_id}::{sys_version}")
     }
@@ -480,7 +509,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
         at: jiff::Timestamp,
     ) -> ResourceMeta {
         ResourceMeta::new(
@@ -502,16 +531,11 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
         ServiceResponse::new(
-            self.with_uid(
-                read.canonical,
-                vo_id,
-                &read.creating_system_id,
-                read.sys_version,
-            ),
+            self.with_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
             meta,
         )
     }
@@ -533,7 +557,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         )))
     }
@@ -544,7 +568,7 @@ impl EhrbaseService {
         mut canonical: Value,
         vo_id: Uuid,
         creating_system_id: &str,
-        sys_version: i32,
+        sys_version: TreeId,
     ) -> Value {
         if let Value::Object(map) = &mut canonical {
             map.insert(
@@ -747,12 +771,138 @@ pub(super) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
             }
         }
     }
+
+    // `EHR_STATUS.other_details` (0..1) is typed `ITEM_STRUCTURE` — an abstract
+    // slot whose concrete
+    // slot whose concrete subtypes are ITEM_TREE / ITEM_LIST / ITEM_SINGLE /
+    // ITEM_TABLE (RM ehr `ehr_status.adoc` other_details; RM data_structures
+    // master04 §Item structure). An abstract-typed slot requires the concrete
+    // `_type` on the wire; a foreign `_type` (e.g. a DATA_VALUE) is invalid.
+    if let Some(other) = obj.get("other_details").filter(|v| !v.is_null()) {
+        let ty = other.get("_type").and_then(Value::as_str);
+        match ty {
+            Some("ITEM_TREE" | "ITEM_LIST" | "ITEM_SINGLE" | "ITEM_TABLE") => {}
+            other_ty => {
+                return Err(unproc(format!(
+                    "EHR_STATUS.other_details must be an ITEM_STRUCTURE \
+                     (ITEM_TREE/ITEM_LIST/ITEM_SINGLE/ITEM_TABLE), got _type {other_ty:?}"
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
+/// CONTRIBUTION — there is no direct ITS-REST `EHR_ACCESS` write). RM ehr
+/// `org.openehr.rm.ehr.ehr_access.adoc`:
+///
+/// - a LOCATABLE: `name` (1..1) and a non-empty `archetype_node_id`
+///   (`Archetype_node_id_valid`);
+/// - a foreign `_type` in this slot is invalid (the container holds
+///   `EHR_ACCESS` only);
+/// - `settings` (0..1) is a subtype of the ABSTRACT `ACCESS_CONTROL_SETTINGS`
+///   — the RM defines no concrete scheme, so a present `settings` must carry
+///   a non-empty concrete `_type`, which is what `scheme()` names
+///   (`Scheme_valid`: `not scheme.is_empty`).
+pub(super) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
+    let unproc = |m: String| ServiceError::Unprocessable(m);
+    let obj = access
+        .as_object()
+        .ok_or_else(|| unproc("EHR_ACCESS must be a JSON object".to_owned()))?;
+    match obj.get("_type").and_then(Value::as_str) {
+        None | Some("EHR_ACCESS") => {}
+        Some(other) => {
+            return Err(unproc(format!(
+                "expected an EHR_ACCESS, got _type {other:?}"
+            )));
+        }
+    }
+    if obj.get("name").is_none_or(Value::is_null) {
+        return Err(unproc(
+            "EHR_ACCESS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
+        ));
+    }
+    if obj
+        .get("archetype_node_id")
+        .and_then(Value::as_str)
+        .is_none_or(str::is_empty)
+    {
+        return Err(unproc(
+            "EHR_ACCESS.archetype_node_id is mandatory and non-empty \
+             (LOCATABLE.Archetype_node_id_valid)"
+                .to_owned(),
+        ));
+    }
+    if let Some(settings) = obj.get("settings").filter(|v| !v.is_null())
+        && settings
+            .get("_type")
+            .and_then(Value::as_str)
+            .is_none_or(str::is_empty)
+    {
+        return Err(unproc(
+            "EHR_ACCESS.settings must be a concrete ACCESS_CONTROL_SETTINGS subtype \
+             carrying its _type — the scheme name (EHR_ACCESS.Scheme_valid)"
+                .to_owned(),
+        ));
+    }
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `EHR_STATUS.other_details` must be a concrete `ITEM_STRUCTURE`
+    /// (RM ehr `ehr_status.adoc`; A1 rm-ehr-R15): the four concrete subtypes
+    /// pass, a foreign or missing `_type` rejects.
+    #[test]
+    fn ehr_status_other_details_type_is_enforced() {
+        let with_other = |other: Value| {
+            let mut st = default_ehr_status();
+            st.as_object_mut()
+                .unwrap()
+                .insert("other_details".into(), other);
+            st
+        };
+        for ty in ["ITEM_TREE", "ITEM_LIST", "ITEM_SINGLE", "ITEM_TABLE"] {
+            validate_ehr_status(&with_other(json!({ "_type": ty, "name": { "_type": "DV_TEXT", "value": "d" }, "archetype_node_id": "at0001" })))
+                .unwrap_or_else(|e| panic!("{ty} other_details must be accepted: {e}"));
+        }
+        for bad in [
+            json!({ "_type": "DV_TEXT", "value": "x" }),
+            json!({ "value": "x" }),
+        ] {
+            let err = validate_ehr_status(&with_other(bad))
+                .expect_err("non-ITEM_STRUCTURE other_details must be rejected");
+            assert!(err.to_string().contains("ITEM_STRUCTURE"), "got {err}");
+        }
+    }
+
+    /// `EHR_ACCESS` commit validation (RM ehr `ehr_access.adoc`; A1
+    /// rm-ehr-R20/R22): LOCATABLE structure enforced, a present `settings`
+    /// must be a concrete `ACCESS_CONTROL_SETTINGS` subtype (its `_type` is
+    /// the scheme name — `Scheme_valid`).
+    #[test]
+    fn ehr_access_commit_validation() {
+        validate_ehr_access(&default_ehr_access()).expect("the default EHR_ACCESS is valid");
+        let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }))
+            .expect_err("foreign _type rejected");
+        assert!(err.to_string().contains("EHR_ACCESS"), "got {err}");
+        let err = validate_ehr_access(&json!({
+            "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1"
+        }))
+        .expect_err("missing name rejected");
+        assert!(err.to_string().contains("name"), "got {err}");
+        let err = validate_ehr_access(&json!({
+            "_type": "EHR_ACCESS",
+            "name": { "_type": "DV_TEXT", "value": "EHR Access" },
+            "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+            "settings": { "scheme": "acme" }
+        }))
+        .expect_err("settings without a concrete _type rejected (Scheme_valid)");
+        assert!(err.to_string().contains("Scheme_valid"), "got {err}");
+    }
 
     #[test]
     fn default_status_decomposes() {

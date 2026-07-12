@@ -23,9 +23,23 @@ curl -u ehrbase:ehrbase \
 
 A successful upload returns **201 Created**. Uploading a template whose id
 already exists returns **409 Conflict** — templates are immutable once loaded.
-On upload the server checks the template itself for artefact validity (that its
-constraints are internally consistent) and rejects an invalid one with **400
-Bad Request** and the specific error.
+On upload the server checks the template itself for artefact validity — that
+its constraints are internally consistent per the openEHR archetype model:
+reference-model conformance of every constrained type and attribute,
+occurrence/cardinality consistency, terminology code definedness and
+language consistency, archetype-identifier well-formedness, constraint
+pattern validity (temporal and duration patterns, boolean satisfiability,
+assumed values inside their own constraints), and more. An invalid template
+is rejected with **400 Bad Request** carrying the specific archetype-model
+rule code (e.g. `VCARM`, `VATID`, `Pattern_validity`) and a human-readable
+detail.
+
+ADL2 artefacts (archetypes, templates, operational templates) are accepted
+as `text/plain` source on `…/definition/template/adl2` and validated at
+registration: mandatory sections, header versions, root type and node-id
+rules, specialisation depth, terminology language consistency, code
+definedness, value-set validity. A duplicate ADL2 template id returns
+**409 Conflict** on this endpoint.
 
 List and retrieve loaded templates:
 

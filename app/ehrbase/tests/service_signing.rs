@@ -116,12 +116,9 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
 }
 
 /// Split an `OBJECT_VERSION_ID` into `(object_id uuid, trunk version)`.
-fn version_components(ovid: &str) -> (uuid::Uuid, i32) {
+fn version_components(ovid: &str) -> (uuid::Uuid, String) {
     let parts: Vec<&str> = ovid.split("::").collect();
-    (
-        parts[0].parse().expect("vo uuid"),
-        parts[2].parse().expect("trunk version"),
-    )
+    (parts[0].parse().expect("vo uuid"), parts[2].to_owned())
 }
 
 /// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
@@ -257,7 +254,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
 
     let (status_vo, status_ver) = version_components(&status_ovid_v1);
     let ov = svc
-        .ehr_status_original_version(ehr_uuid, status_vo, status_ver)
+        .ehr_status_original_version(ehr_uuid, status_vo, &status_ver)
         .await
         .expect("versioned ehr_status version");
     assert_eq!(ov["data"]["_type"], "EHR_STATUS");

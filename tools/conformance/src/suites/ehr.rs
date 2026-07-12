@@ -681,14 +681,14 @@ fn run_clear_ehr_modifiable_bad<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
-        let invalid = fixtures::ehr_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
         // Corpus-vs-spec adjudication: `001_ehr_status_subject_empty.json`
         // (`subject: {}`) is labelled "invalid" by the CNF corpus but is
         // spec-valid — RM ehr master04 §EHR Status makes an empty PARTY_SELF a
-        // completely anonymous subject. Per the vendored spec oracle (ADR-008)
+        // completely anonymous subject. Per the vendored spec oracle
         // this fixture must be *accepted*, not rejected; the other ten stay
         // negative. See `docs/conformance/upstream-ehrbase/TRIAGE.md` §B2.
         const SPEC_VALID_ANONYMOUS: &str = "001_ehr_status_subject_empty.json";
+        let invalid = fixtures::ehr_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
         let mut passed = 0u32;
         let mut total = 0u32;
         for fixture in invalid {

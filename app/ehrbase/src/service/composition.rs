@@ -6,6 +6,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::codes::change_type;
+use super::version_id::TreeId;
 use super::vobject::{self, Kind};
 use super::{EhrbaseService, ServiceError};
 
@@ -48,7 +49,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, committed.vo_id, Some(committed.sys_version))
+        self.read_composition(ehr_id, committed.vo_id, Some(committed.tree))
             .await
     }
 
@@ -62,7 +63,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: Option<i32>,
+        version: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = match version {
             Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
@@ -113,7 +114,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: i32,
+        version: TreeId,
     ) -> Result<Value, ServiceError> {
         let read = vobject::read_version(&self.pool, vo_id, version)
             .await?
@@ -146,7 +147,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         );
         let ov = self.original_version(&read)?;
@@ -160,7 +161,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         composition: Value,
-        expected: Option<i32>,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = vobject::read_current(&self.pool, vo_id)
             .await?
@@ -212,7 +213,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, vo_id, Some(committed.sys_version))
+        self.read_composition(ehr_id, vo_id, Some(committed.tree))
             .await
     }
 
@@ -233,7 +234,7 @@ impl EhrbaseService {
             ehr_id,
             vo_id,
             &read.creating_system_id,
-            read.sys_version,
+            read.tree,
             read.time_committed,
         )))
     }
@@ -251,13 +252,18 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// [`ServiceError`] if the version read-back query fails.
+    /// `version` is the `VERSION_TREE_ID` lexical form (`N` or `N.B.V`);
+    /// `None` = the current version.
     pub async fn template_of_version(
         &self,
         vo_id: Uuid,
-        version: Option<i32>,
+        version: Option<&str>,
     ) -> Result<Option<String>, ServiceError> {
         let read = match version {
-            Some(v) => vobject::read_version(&self.pool, vo_id, v).await?,
+            Some(v) => {
+                let tree = super::version_id::parse_tree_id(v)?;
+                vobject::read_version(&self.pool, vo_id, tree).await?
+            }
             None => vobject::read_current(&self.pool, vo_id).await?,
         };
         Ok(read.and_then(|r| r.template_id))
@@ -275,7 +281,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        expected: i32,
+        expected: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = vobject::read_current(&self.pool, vo_id)
             .await?
@@ -290,10 +296,10 @@ impl EhrbaseService {
         // delete (a delete is a new `523|deleted|` version — ehr/master04
         // §"EHR Active Status").
         self.ensure_content_writable(ehr_id).await?;
-        if read.sys_version != expected {
+        if read.tree != expected {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
-                read.sys_version
+                read.tree
             )));
         }
 
@@ -319,7 +325,7 @@ impl EhrbaseService {
         // service system id (passed empty → resolved to it).
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             ehr_id.to_string(),
-            self.object_version_id(vo_id, "", committed.sys_version),
+            self.object_version_id(vo_id, &committed.creating_system_id, committed.tree),
         )))
     }
 
@@ -365,7 +371,7 @@ impl EhrbaseService {
         // in SQL.
         let vo_ids: Vec<Uuid> = sqlx::query_scalar(
             "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
-             AND upper_inf(sys_period) AND lifecycle_state <> $2",
+             AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2",
         )
         .bind(ehr_id)
         .bind(super::codes::lifecycle::DELETED)
@@ -496,7 +502,10 @@ impl EhrbaseService {
             // one supplied on EHR create (CNF master08
             // `commit_contribution-invalid_ehr_status`).
             Kind::EhrStatus => super::ehr::validate_ehr_status(data),
-            Kind::EhrAccess | Kind::Folder => Ok(()),
+            // EHR_ACCESS / FOLDER content committed via a CONTRIBUTION gets the
+            // same structural RM validation as the direct write surfaces.
+            Kind::EhrAccess => super::ehr::validate_ehr_access(data),
+            Kind::Folder => super::directory::validate_folder(data),
             // Demographic party roots validate structurally (typed deserialize +
             // PARTY invariants) via the demographic module.
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {

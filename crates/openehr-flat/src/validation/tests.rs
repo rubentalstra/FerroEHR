@@ -1112,7 +1112,7 @@ fn ordinal_node(rm: &str, scale: bool) -> WebTemplateNode {
     n
 }
 
-fn ordinal_value(rm: &str, v: Value, code: &str) -> Value {
+fn ordinal_value(rm: &str, v: &Value, code: &str) -> Value {
     json!({"_type": rm, "value": v, "symbol": {"_type": "DV_CODED_TEXT",
         "value": "s", "defining_code": {"_type": "CODE_PHRASE",
         "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"}, "code_string": code}}})
@@ -1121,10 +1121,10 @@ fn ordinal_value(rm: &str, v: Value, code: &str) -> Value {
 #[test]
 fn ordinal_pair_must_match() {
     let n = ordinal_node("DV_ORDINAL", false);
-    assert!(walk_only(&ordinal_value("DV_ORDINAL", json!(0), "at0014"), &n).is_empty());
+    assert!(walk_only(&ordinal_value("DV_ORDINAL", &json!(0), "at0014"), &n).is_empty());
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_ORDINAL", json!(1), "at0014"),
+            &ordinal_value("DV_ORDINAL", &json!(1), "at0014"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1132,7 +1132,7 @@ fn ordinal_pair_must_match() {
     );
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_ORDINAL", json!(0), "at0666"),
+            &ordinal_value("DV_ORDINAL", &json!(0), "at0666"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1143,10 +1143,10 @@ fn ordinal_pair_must_match() {
 #[test]
 fn scale_pair_must_match() {
     let n = ordinal_node("DV_SCALE", true);
-    assert!(walk_only(&ordinal_value("DV_SCALE", json!(0.0), "at0014"), &n).is_empty());
+    assert!(walk_only(&ordinal_value("DV_SCALE", &json!(0.0), "at0014"), &n).is_empty());
     assert!(
         kinds(&walk_only(
-            &ordinal_value("DV_SCALE", json!(1.0), "at0014"),
+            &ordinal_value("DV_SCALE", &json!(1.0), "at0014"),
             &n
         ))
         .contains(&ValidationKind::CodedValue),
@@ -1203,4 +1203,148 @@ fn timezone_validity_mandatory_and_disallowed() {
         "a present disallowed timezone is rejected"
     );
     assert!(walk_only(&json!({"_type": "DV_TIME", "value": "10:30:00"}), &n).is_empty());
+}
+
+// ── LOCATABLE.Archetyped_valid (A1 rm-common-change-control-R46) ─────────────────
+
+/// A non-root node — `archetype_node_id` an `at`/`id` term code — must not
+/// carry `archetype_details` (`locatable.adoc` §`Archetyped_valid`); an
+/// archetype-HRID node carrying them, and a nested archetype root *without*
+/// them (the CNF-corpus-sanctioned shape), both stay valid.
+#[test]
+fn non_root_node_with_archetype_details_rejected() {
+    let details = json!({"_type": "ARCHETYPED",
+        "archetype_id": {"_type": "ARCHETYPE_ID", "value": "openEHR-EHR-CLUSTER.x.v1"},
+        "rm_version": "1.0.2"});
+    for bad_id in ["at0001", "id42", "at0001.1"] {
+        let inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": bad_id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "archetype_details": details,
+            "items": []
+        });
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            msgs.iter()
+                .any(|m| m.kind == ValidationKind::Invariant
+                    && m.message.contains("Archetyped_valid")),
+            "expected an Archetyped_valid violation for {bad_id}, got {msgs:?}"
+        );
+    }
+    // Root shapes stay valid: HRID with details, and HRID without details
+    // (nested archetype root as the CNF corpus ships it).
+    for (id, with_details) in [
+        ("openEHR-EHR-CLUSTER.x.v1", true),
+        ("openEHR-EHR-CLUSTER.x.v1", false),
+    ] {
+        let mut inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "items": []
+        });
+        if with_details {
+            inst.as_object_mut()
+                .unwrap()
+                .insert("archetype_details".into(), details.clone());
+        }
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            !msgs.iter().any(|m| m.message.contains("Archetyped_valid")),
+            "root shape (details={with_details}) must not violate Archetyped_valid: {msgs:?}"
+        );
+    }
+}
+
+// ── "present implies non-empty" list invariants (A1 rm-composition) ──────────────
+
+/// `COMPOSITION.Content_valid` / `SECTION.Items_valid` /
+/// `INSTRUCTION.Activities_valid` etc.: a PRESENT empty list violates the
+/// invariant; an absent list does not (`composition.adoc` §Invariants and
+/// siblings).
+#[test]
+fn present_empty_lists_are_rejected() {
+    let base = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.x.v1",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    // Absent content: no Content_valid violation.
+    assert!(
+        !validate_rm_and_terminology(&base)
+            .iter()
+            .any(|m| m.message.contains("Content_valid")),
+        "absent content must not violate Content_valid"
+    );
+    // Present-empty content: violation.
+    let mut empty = base.clone();
+    empty
+        .as_object_mut()
+        .unwrap()
+        .insert("content".into(), json!([]));
+    let msgs = validate_rm_and_terminology(&empty);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Content_valid")),
+        "present-empty content must violate Content_valid, got {msgs:?}"
+    );
+    // A nested SECTION with empty items: Items_valid violation at its path.
+    let mut nested = base;
+    nested.as_object_mut().unwrap().insert(
+        "content".into(),
+        json!([{
+            "_type": "SECTION", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "s"},
+            "items": []
+        }]),
+    );
+    let msgs = validate_rm_and_terminology(&nested);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("Items_valid") && m.path.contains("content")),
+        "present-empty SECTION.items must violate Items_valid, got {msgs:?}"
+    );
+}
+
+// ── data-structure shape duties (A1 rm-data-structures) ─────────────────────────
+
+/// `CLUSTER.items` is 1..1 (`cluster.adoc`; the ITS-JSON CLUSTER schema
+/// requires it) and one `HISTORY`'s events must all carry the same
+/// `ITEM_STRUCTURE` subtype in `data` (RM `data_structures` master06 §History).
+#[test]
+fn data_structure_shapes_are_enforced() {
+    // CLUSTER without items → violation.
+    let cluster = json!({
+        "_type": "CLUSTER", "archetype_node_id": "at0001",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    let msgs = validate_rm_and_terminology(&cluster);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("CLUSTER.items is mandatory")),
+        "items-less CLUSTER must be rejected, got {msgs:?}"
+    );
+
+    // HISTORY mixing ITEM_TREE and ITEM_LIST event data → violation.
+    let history = json!({
+        "_type": "HISTORY", "archetype_node_id": "at0002",
+        "name": {"_type": "DV_TEXT", "value": "h"},
+        "origin": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+        "events": [
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e1"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+              "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} },
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e2"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T01:00:00Z"},
+              "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} }
+        ]
+    });
+    let msgs = validate_rm_and_terminology(&history);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("same ITEM_STRUCTURE") && m.path.contains("events[1]")),
+        "a HISTORY mixing event data types must be rejected, got {msgs:?}"
+    );
 }

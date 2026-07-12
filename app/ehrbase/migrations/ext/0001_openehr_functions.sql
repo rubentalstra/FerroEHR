@@ -1,13 +1,14 @@
 -- ext schema: openEHR support functions + the cluster role/grant baseline
--- (ADR-008 functions; ADR-013 enterprise baseline).
+-- (openEHR-semantics helper functions; no openEHR spec governs SQL helpers —
+-- they realize the cited RM/QUERY semantics).
 --
--- Re-authored as the single squashed `ext` baseline (ADR-013 §1, review doc
+-- Re-authored as the single squashed `ext` baseline (review doc
 -- 02 §5.1 — append-only forever after). This migrator runs BEFORE `ehr`
 -- (db/migrate.rs), so the three application roles are created HERE, ahead of
 -- every GRANT in either schema.
 --
 -- All functions are IMMUTABLE + PARALLEL SAFE so they are legal in btree
--- expression indexes — the ADR-008 pattern: magnitudes are computed (and
+-- expression indexes — magnitudes are computed (and
 -- indexed on demand for measured hot paths, see the ehr baseline's
 -- `idx_node_magnitude`), never stored as synthetic fields inside the canonical
 -- data. Runs with search_path = ext.
@@ -23,7 +24,7 @@
 --                               (year = 365.24 d, month = 30.42 d)
 -- Partial dates assume the first month/day; partial times assume 0.
 
--- ── Roles (ADR-013 §3, review doc 02 §3.1) ───────────────────────────────────
+-- ── Roles (no openEHR spec governs DB roles — operational design) ────────────
 -- Three NOLOGIN group roles, granted at deploy time to the concrete LOGIN
 -- roles (passwords/LOGIN/pg_hba/TLS are deployment-layer, review doc 02 §3.6):
 --   * ehrbase_migrator — owns the schema objects and runs DDL (this migration);
@@ -189,9 +190,9 @@ EXCEPTION WHEN others THEN
     RETURN NULL;
 END $$;
 
--- ── Function documentation (ADR-013 §12) ─────────────────────────────────────
+-- ── Function documentation ─────────────────────────────────────
 COMMENT ON FUNCTION ext.openehr_date_days(text) IS
-    'Days since 0001-01-01 for an ISO-8601 (possibly partial) date string; NULL on unparseable input. Partial dates assume the first month/day. IMMUTABLE — index-legal (ADR-008).';
+    'Days since 0001-01-01 for an ISO-8601 (possibly partial) date string; NULL on unparseable input. Partial dates assume the first month/day. IMMUTABLE — index-legal.';
 COMMENT ON FUNCTION ext.openehr_time_seconds(text) IS
     'Seconds since start of day for an ISO-8601 (possibly partial) time string, ignoring any timezone suffix (callers apply the offset). Partial times assume 0. IMMUTABLE.';
 COMMENT ON FUNCTION ext.openehr_tz_offset_seconds(text) IS
@@ -201,9 +202,9 @@ COMMENT ON FUNCTION ext.openehr_date_time_seconds(text) IS
 COMMENT ON FUNCTION ext.openehr_duration_seconds(text) IS
     'Seconds for an ISO-8601 duration using openEHR *nominal* lengths (year = 365.24 d, month = 30.42 d); NULL on unparseable input. IMMUTABLE.';
 COMMENT ON FUNCTION ext.openehr_magnitude(jsonb) IS
-    'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the RM DV_ORDERED comparison semantics (ADR-008 §2). NULL for non-ordered or unparseable values. IMMUTABLE + PARALLEL SAFE so it is legal in btree expression indexes (see ehr.idx_node_magnitude).';
+    'The ordered magnitude (numeric) of a canonical DV_ORDERED value, per the RM DV_ORDERED comparison semantics. NULL for non-ordered or unparseable values. IMMUTABLE + PARALLEL SAFE so it is legal in btree expression indexes (see ehr.idx_node_magnitude).';
 
--- ── Grants (ADR-013 §3, review doc 02 §3.1/§3.6) ─────────────────────────────
+-- ── Grants (no openEHR spec governs DB grants — operational design) ──────────
 -- The `ext` functions are on the READ path (AQL magnitude ordering); the app
 -- and reader roles need USAGE on the schema and EXECUTE on the functions, and
 -- nothing more (functions are plain, not SECURITY DEFINER — review doc 02 §3.6).

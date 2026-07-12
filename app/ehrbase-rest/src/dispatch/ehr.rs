@@ -168,26 +168,18 @@ fn mk_update_version(
     uv
 }
 
-/// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid, trunk
-/// version)` pair the SM `*_at_version` reads take.
-fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, i32), ApiError> {
+/// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
+/// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
+/// are first-class (RM common master06 §Version tree; the former trunk-only
+/// rejection F-06-09 is retired).
+fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String), ApiError> {
     let vo = object_id_uuid(ovid).ok_or_else(|| {
         ApiError::BadRequest(format!(
             "OBJECT_VERSION_ID object_id is not a UUID: {}",
             ovid.value
         ))
     })?;
-    let tree = ovid.version_tree_id();
-    if tree.is_branch() {
-        return Err(ApiError::BadRequest(format!(
-            "branch version ids are not supported (trunk-only): {}",
-            ovid.value
-        )));
-    }
-    let version = tree.trunk_version().parse::<i32>().map_err(|_| {
-        ApiError::BadRequest(format!("version_tree_id out of range: {}", ovid.value))
-    })?;
-    Ok((vo, version))
+    Ok((vo, ovid.version_tree_id().value.clone()))
 }
 
 #[allow(clippy::too_many_lines)] // one arm per operation; a flat match is clearest
@@ -243,7 +235,7 @@ async fn run<S: Platform>(
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
-                .get_ehr_status_at_version(ehr_id, vo_id, version)
+                .get_ehr_status_at_version(ehr_id, vo_id, &version)
                 .await?;
             let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
             Ok(negotiate::read_rm::<EhrStatus>(
@@ -367,7 +359,7 @@ async fn run<S: Platform>(
             let (vo_id, version) = version_components(&parse_version_uid(&p.version_uid)?)?;
             let body = state
                 .backend()
-                .ehr_status_original_version(ehr_id, vo_id, version)
+                .ehr_status_original_version(ehr_id, vo_id, &version)
                 .await?;
             Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
                 h,
@@ -455,6 +447,26 @@ async fn run<S: Platform>(
             } else {
                 negotiate::rm_value::<Composition>(h, &parts.body)?
             };
+            // A body-supplied COMPOSITION.uid must identify the same
+            // versioned object as the path `uid_based_id` (ITS-REST
+            // `composition_update`: "the uid, if present, must match") —
+            // a mismatched body uid is a 400, never a silent write to the
+            // path's object.
+            if let Some(body_uid) = body
+                .get("uid")
+                .and_then(|u| u.get("value"))
+                .and_then(Value::as_str)
+            {
+                let body_vo = body_uid.split("::").next().unwrap_or(body_uid);
+                if body_vo.parse::<uuid::Uuid>() != Ok(uid.vo_id) {
+                    return Err(ApiError::BadRequest(format!(
+                        "the body COMPOSITION.uid {body_uid:?} does not identify the \
+                         versioned object addressed by the request path ({})",
+                        uid.vo_id
+                    ))
+                    .into());
+                }
+            }
             let uv = mk_update_version(
                 h,
                 body,
@@ -761,8 +773,14 @@ async fn run<S: Platform>(
             let p = params::build::<ContributionGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let cid = parse_uuid(&p.contribution_uid, "contribution id")?;
-            let body =
-                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?;
+            // `Prefer: resolve_refs` (Requests_and_responses §Representation
+            // details negotiation): versions as full ORIGINAL_VERSIONs.
+            let body = if negotiate::prefers_resolve_refs(h) {
+                EhrContributionService::get_contribution_resolved(state.backend(), ehr_id, cid)
+                    .await?
+            } else {
+                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?
+            };
             Ok(negotiate::respond(h, ok, &body))
         }
         // ── item tags ────────────────────────────────────────────────────────

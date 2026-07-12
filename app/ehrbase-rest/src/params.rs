@@ -109,33 +109,13 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
         .map(|(_, v)| v)
 }
 
+/// Percent-decode one form-urlencoded token: `+` is a space
+/// (application/x-www-form-urlencoded), then WHATWG percent-decoding via the
+/// `urlencoding` crate (invalid UTF-8 tolerated lossily; incomplete escapes
+/// recovered per the WHATWG URL standard).
 fn percent_decode(s: &str) -> String {
-    let bytes = s.replace('+', " ");
-    let bytes = bytes.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%'
-            && i + 2 < bytes.len()
-            && let (Some(h), Some(l)) = (hex_val(bytes[i + 1]), hex_val(bytes[i + 2]))
-        {
-            out.push(h << 4 | l);
-            i += 3;
-            continue;
-        }
-        out.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-fn hex_val(b: u8) -> Option<u8> {
-    match b {
-        b'0'..=b'9' => Some(b - b'0'),
-        b'a'..=b'f' => Some(b - b'a' + 10),
-        b'A'..=b'F' => Some(b - b'A' + 10),
-        _ => None,
-    }
+    let plus_decoded = s.replace('+', " ");
+    String::from_utf8_lossy(&urlencoding::decode_binary(plus_decoded.as_bytes())).into_owned()
 }
 
 /// Deserializer over the merged `name → [values]` multi-map. Only map/struct

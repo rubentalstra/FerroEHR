@@ -253,12 +253,7 @@ impl Scenario {
                 p.subject_id = Some(subj);
             }
             // ── EHR_STATUS ───────────────────────────────────────────────────
-            Scenario::EhrStatusUpdate => {
-                let (ehr, _subj) = create_ehr(t).await?;
-                p.ehr_status_version_uid = Some(ehr_status_version(t, &ehr).await?);
-                p.ehr_id = Some(ehr);
-            }
-            Scenario::EhrStatusVersionedGet => {
+            Scenario::EhrStatusUpdate | Scenario::EhrStatusVersionedGet => {
                 let (ehr, _subj) = create_ehr(t).await?;
                 p.ehr_status_version_uid = Some(ehr_status_version(t, &ehr).await?);
                 p.ehr_id = Some(ehr);

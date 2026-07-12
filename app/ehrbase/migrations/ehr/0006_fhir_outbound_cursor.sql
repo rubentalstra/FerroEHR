@@ -1,9 +1,10 @@
--- ehr schema: the FHIR **outbound** emitter's delivery cursor (ADR-016 §Decision
+-- ehr schema: the FHIR **outbound** emitter's delivery cursor (an extension —
+-- no openEHR spec governs FHIR interop;
 -- 4a — event-driven FHIR resource emission).
 --
--- Append-only on the ADR-013 baseline (0001) + eventing (0002/0003) +
+-- Append-only on the baseline (0001) + eventing (0002/0003) +
 -- multi-tenancy (0004) + FHIR mapping store (0005). The outbound emitter is a
--- background task (wired like the E1 outbox drainer, ADR-014 §3) that walks
+-- background task (wired like the E1 outbox drainer) that walks
 -- committed `event_outbox` rows in `seq` order, loads each COMPOSITION whose
 -- template matches an enabled `fhir_mapping`, reverse-maps it to a FHIR resource,
 -- and publishes it to the broker. It cannot reuse `event_outbox.published_at`
@@ -34,10 +35,10 @@ CREATE TABLE fhir_outbound_cursor (
 -- Seed the single row so the emitter always has a cursor to read/advance.
 INSERT INTO fhir_outbound_cursor (only_row, last_seq) VALUES (true, 0);
 
-COMMENT ON TABLE fhir_outbound_cursor IS 'FHIR outbound emitter delivery cursor (ADR-016 §Decision 4a): the single-row high-water-mark of the last event_outbox.seq the emitter has fully processed. Separate from event_outbox.published_at (the E1 drainer''s watermark) so the two consumers do not interfere. Infra watermark — not tenant-scoped, no RLS.';
+COMMENT ON TABLE fhir_outbound_cursor IS 'FHIR outbound emitter delivery cursor: the single-row high-water-mark of the last event_outbox.seq the emitter has fully processed. Separate from event_outbox.published_at (the E1 drainer''s watermark) so the two consumers do not interfere. Infra watermark — not tenant-scoped, no RLS.';
 COMMENT ON COLUMN fhir_outbound_cursor.last_seq IS 'Highest event_outbox.seq fully processed by the outbound emitter; rows with seq > last_seq are pending. Advanced only after all FHIR messages for a row confirm (at-least-once).';
 
--- ── Grants (ADR-013 §3) ──────────────────────────────────────────────────────
+-- ── Grants ──────────────────────────────────────────────────────
 -- The baseline set ALTER DEFAULT PRIVILEGES for ehrbase_app/ehrbase_reader, so a
 -- table the migrator creates afterwards is auto-granted; repeated explicitly
 -- (role-guarded, like 0002/0003/0004/0005) so this migration is self-contained
