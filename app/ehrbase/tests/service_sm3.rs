@@ -20,9 +20,9 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::services::{DemographicService, EhrIndexService, PartyRelationshipService};
+use ehrbase_sm::{CallStatusType, SmError, UpdateVersion};
+use ehrbase_sm::{DemographicService, EhrIndexService, PartyRelationshipService};
 use ehrbase_sm::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
-use ehrbase_sm::{CallStatusType, SmError};
 
 struct Pg {
     #[allow(dead_code)]
@@ -109,7 +109,99 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
     id
 }
 
+/// The SM `UPDATE_VERSION` commit envelope for a bare-RM relationship write.
+fn uv(data: Value, preceding: Option<&str>) -> UpdateVersion {
+    let mut v = json!({
+        "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
+        "data": data,
+        "commit_audit": {
+            "change_type": { "terminology_id": "openehr", "code_string": "249" },
+            "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
+        }
+    });
+    if let Some(p) = preceding {
+        v["preceding_version_uid"] = json!({ "value": p });
+    }
+    serde_json::from_value(v).expect("UpdateVersion")
+}
+
 // ─── PARTY_RELATIONSHIP ───────────────────────────────────────────────────────
+
+/// The literal SM `I_PARTY_RELATIONSHIP` calls (typed Uuid/version arguments),
+/// not the wire seam: `create_party_relationship (UV_PARTY_RELATIONSHIP): UUID`
+/// → `has`/`get`/`get_at_version` → `update` → `delete`, checking the
+/// `Post_relationship_deleted: not has_party_relationship` post-condition
+/// (`i_party_relationship.adoc`).
+#[tokio::test]
+async fn relationship_sm_calls_round_trip() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_sm_calls").await);
+
+    let src = "11111111-1111-4111-8111-111111111111";
+    let tgt = "22222222-2222-4222-8222-222222222222";
+
+    // create_party_relationship(UV) → the new VERSIONED_OBJECT's UUID.
+    let vo_id: Uuid = svc
+        .create_party_relationship(uv(relationship("parent-of", src, tgt), None))
+        .await
+        .expect("create_party_relationship");
+
+    assert!(
+        svc.has_party_relationship(vo_id)
+            .await
+            .expect("has_party_relationship"),
+        "live relationship"
+    );
+    let got = svc
+        .get_party_relationship(vo_id)
+        .await
+        .expect("get_party_relationship");
+    assert_eq!(got["_type"], "PARTY_RELATIONSHIP");
+    assert_eq!(got["name"]["value"], "parent-of");
+
+    let v1 = got["uid"]["value"].as_str().expect("uid.value").to_owned();
+    let by_ver = svc
+        .get_party_relationship_at_version(v1.clone())
+        .await
+        .expect("get_party_relationship_at_version");
+    assert_eq!(by_ver["_type"], "ORIGINAL_VERSION");
+
+    // update_party_relationship(UV with preceding) → the new version uid.
+    let v2 = svc
+        .update_party_relationship(vo_id, uv(relationship("guardian-of", src, tgt), Some(&v1)))
+        .await
+        .expect("update_party_relationship");
+    assert!(v2.ends_with("::2"), "second version, got {v2}");
+    let got2 = svc
+        .get_party_relationship(vo_id)
+        .await
+        .expect("get after update");
+    assert_eq!(got2["name"]["value"], "guardian-of");
+
+    // delete_party_relationship → post-condition `not has_party_relationship`.
+    let del = svc
+        .delete_party_relationship(vo_id)
+        .await
+        .expect("delete_party_relationship");
+    assert!(!del.is_empty(), "delete returns the deleted version uid");
+    assert!(
+        !svc.has_party_relationship(vo_id)
+            .await
+            .expect("has after delete"),
+        "Post_relationship_deleted: not has_party_relationship"
+    );
+    let after = svc.get_party_relationship(vo_id).await;
+    assert!(
+        matches!(
+            after,
+            Err(SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            })
+        ),
+        "get after delete → 404, got {after:?}"
+    );
+}
 
 #[tokio::test]
 async fn relationship_lifecycle_end_to_end() {

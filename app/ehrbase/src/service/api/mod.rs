@@ -29,7 +29,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use ehrbase_sm::services::WebTemplateService;
+use ehrbase_sm::WebTemplateService;
 use ehrbase_sm::{SmError, ValidityChecker};
 use openehr_flat::WebTemplate;
 use serde_json::Value;

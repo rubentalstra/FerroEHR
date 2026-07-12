@@ -83,6 +83,7 @@ fn uv(data: Value, change_code: &str) -> UpdateVersion {
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "event tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }

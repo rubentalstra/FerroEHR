@@ -88,6 +88,8 @@ fn hash_pw(pw: &str) -> String {
 
 fn rest_config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {

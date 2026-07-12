@@ -39,11 +39,11 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, EhrStatusService,
     QueryService, SmError,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
@@ -118,6 +118,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }
@@ -242,8 +243,18 @@ fn rows(result: &Value) -> &Vec<Value> {
 }
 
 fn ehr_scope(ehr_id: &str) -> AqlQueryRequest {
+    // `i_query_service.adoc`: `ehr_ids: List<UUID>`; the single-EHR REST scope is
+    // the one-element case.
     AqlQueryRequest {
-        ehr_id: Some(ehr_id.to_owned()),
+        ehr_ids: vec![ehr_id.to_owned()],
+        ..AqlQueryRequest::default()
+    }
+}
+
+/// Scope a query to a set of EHRs (`ehr_ids: List<UUID>`).
+fn ehr_scope_multi(ehr_ids: &[&str]) -> AqlQueryRequest {
+    AqlQueryRequest {
+        ehr_ids: ehr_ids.iter().map(|s| (*s).to_owned()).collect(),
         ..AqlQueryRequest::default()
     }
 }
@@ -648,6 +659,122 @@ async fn population_query_excludes_not_queryable_ehrs() {
         !ids.contains(&hidden),
         "the non-queryable EHR is excluded from the population result set \
          (is_queryable = True gate): {ids:?}"
+    );
+}
+
+/// Multi-EHR scoping (`ehr_ids: List<UUID>`,
+/// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`): a query
+/// scoped to a *set* of EHRs must span exactly that set — no more, no fewer.
+/// Three EHRs each hold one composition; scoping to two of them counts two.
+#[tokio::test]
+async fn multi_ehr_ids_scopes_to_the_set() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_multi_ehr").await;
+    let svc = EhrbaseService::new(pool);
+
+    let a = create_ehr(&svc).await;
+    let b = create_ehr(&svc).await;
+    let c = create_ehr(&svc).await;
+    create_comp(&svc, &a, "BP", 80.0).await;
+    create_comp(&svc, &b, "BP", 90.0).await;
+    create_comp(&svc, &c, "BP", 100.0).await;
+
+    // Scope to A + B (of A/B/C): the set-scoped count spans only those two.
+    let r = run_aql(
+        &svc,
+        "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope_multi(&[&a, &b]),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(2),
+        "the two scoped EHRs, not the third"
+    );
+}
+
+/// A well-formed but non-existent `ehr_id` in the scope set raises
+/// `ehr_id_does_not_exist` (`i_query_service.adoc` declares the error); a
+/// malformed id is a `precondition_violation` (`400`).
+#[tokio::test]
+async fn absent_ehr_id_raises_ehr_id_does_not_exist() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_absent_ehr").await;
+    let svc = EhrbaseService::new(pool);
+
+    let real = create_ehr(&svc).await;
+    let ghost = Uuid::now_v7().to_string();
+
+    // A well-formed, absent id in the set → ehr_id_does_not_exist.
+    let err = svc
+        .execute_ad_hoc_query(
+            "SELECT COUNT(*) FROM EHR e".to_owned(),
+            ehr_scope_multi(&[&real, &ghost]),
+        )
+        .await
+        .expect_err("an absent ehr_id must be rejected");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::EhrIdDoesNotExist,
+                ..
+            }
+        ),
+        "absent ehr_id is ehr_id_does_not_exist, got {err:?}"
+    );
+
+    // A malformed id → precondition_violation.
+    let err = svc
+        .execute_ad_hoc_query(
+            "SELECT COUNT(*) FROM EHR e".to_owned(),
+            ehr_scope_multi(&["not-a-uuid"]),
+        )
+        .await
+        .expect_err("a malformed ehr_id must be rejected");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "malformed ehr_id is precondition_violation, got {err:?}"
+    );
+}
+
+/// `RESULT_SET.meta._executed_aql` carries the parameter-SUBSTITUTED query text,
+/// while `q` keeps the query as submitted (ITS-REST `schemas/query/ResultSet`;
+/// QUERY §Parameters). A `$magnitude` bound to a number renders as the literal;
+/// a `$name` bound to a string renders as a quoted AQL string literal.
+#[tokio::test]
+async fn executed_aql_substitutes_bound_parameters() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_executed_subst").await;
+    let svc = EhrbaseService::new(pool);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+
+    let aql = format!(
+        "SELECT o/{MAG_PATH} AS m FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] \
+         WHERE o/{MAG_PATH} > $min"
+    );
+    let mut req = ehr_scope(&ehr_id);
+    req.parameters = BTreeMap::from([("min".to_owned(), json!(50))]);
+    let r = run_aql(&svc, &aql, req).await;
+
+    let q = r["q"].as_str().expect("q");
+    let executed = r["meta"]["_executed_aql"].as_str().expect("_executed_aql");
+    assert!(q.contains("$min"), "q keeps the original $parameter: {q}");
+    assert!(
+        !executed.contains("$min"),
+        "_executed_aql has the parameter substituted: {executed}"
+    );
+    assert!(
+        executed.contains("> 50"),
+        "the bound value is rendered into the executed text: {executed}"
     );
 }
 

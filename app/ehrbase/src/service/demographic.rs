@@ -39,6 +39,19 @@ fn kind_of(kind: PartyKind) -> Kind {
     }
 }
 
+/// The REST [`PartyKind`] for a versioned-object [`Kind`], or `None` for a
+/// non-party kind (COMPOSITION / EHR_STATUS / … / PARTY_RELATIONSHIP).
+fn party_kind_of(kind: Kind) -> Option<PartyKind> {
+    match kind {
+        Kind::Agent => Some(PartyKind::Agent),
+        Kind::Group => Some(PartyKind::Group),
+        Kind::Organisation => Some(PartyKind::Organisation),
+        Kind::Person => Some(PartyKind::Person),
+        Kind::Role => Some(PartyKind::Role),
+        _ => None,
+    }
+}
+
 /// Structurally validate a candidate party body of concrete RM type `rm_type`:
 /// deserialize into the corresponding `openehr_rm` demographic type (a type
 /// mismatch → `422`) and enforce the PARTY invariant `Identities_valid`
@@ -649,6 +662,17 @@ impl EhrbaseService {
             )));
         }
         Ok(())
+    }
+
+    /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
+    /// `I_PARTY` calls (which address parties by versioned-object id only). A
+    /// non-party id (COMPOSITION, PARTY_RELATIONSHIP, …) or unknown id is `404`
+    /// (`versioned_object_does_not_exist`).
+    pub(super) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
+        vobject::object_kind(&self.pool, vo_id)
+            .await?
+            .and_then(party_kind_of)
+            .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))
     }
 
     /// Confirm `vo_id` is some party (any of the five kinds) — the check for the

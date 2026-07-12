@@ -252,7 +252,7 @@ impl EhrbaseService {
             })?;
             let wt = self.web_template_for(&def.template_id).await?;
             let request = AqlQueryRequest {
-                ehr_id: scope.ehr_id.map(|u| u.to_string()),
+                ehr_ids: scope.ehr_id.map(|u| u.to_string()).into_iter().collect(),
                 subject_scope: scope.subject_scope.clone(),
                 fetch: count,
                 parameters: std::iter::once((

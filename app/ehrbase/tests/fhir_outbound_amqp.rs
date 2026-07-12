@@ -29,7 +29,7 @@ use ehrbase::db::{self, DbSettings};
 use ehrbase::fhir_outbound::{FhirOutboundConfig, start};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::FhirConnectorAdapter;
-use ehrbase_sm::services::DefinitionAdapter;
+use ehrbase_sm::DefinitionAdapter;
 
 /// The separate PHI exchange the outbound emitter publishes to.
 const EXCHANGE: &str = "ehrbase.fhir";

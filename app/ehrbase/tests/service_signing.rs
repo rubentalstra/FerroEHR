@@ -101,6 +101,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
             change_type: term(change_code),
             description: None,
             committer: committer("conformance tester"),
+            system_id: None,
         },
         signature: None,
     }
@@ -112,6 +113,7 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
         change_type: term(change_code),
         description: None,
         committer: committer(committer_name),
+        system_id: None,
     }
 }
 

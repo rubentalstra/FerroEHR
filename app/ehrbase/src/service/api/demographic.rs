@@ -10,11 +10,14 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use ehrbase_sm::SmError;
-use ehrbase_sm::services::DemographicService;
+use ehrbase_sm::CallStatusType;
+use ehrbase_sm::DemographicService;
 use ehrbase_sm::PartyKind;
+use ehrbase_sm::SmError;
+use ehrbase_sm::UpdateVersion;
 
 use crate::service::EhrbaseService;
+use crate::service::ServiceError;
 use crate::service::version_id;
 
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
@@ -28,9 +31,141 @@ fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
         .map_err(|_| SmError::precondition(format!("invalid version_at_time: {raw}")))
 }
 
+/// The [`PartyKind`] a commit envelope routes to, from its payload `_type`
+/// (`i_party.adoc`: parties are addressed by their concrete RM type). An
+/// unknown/absent `_type` is a `content_invalid` precondition failure.
+fn party_kind_from_body(body: &Value) -> Result<PartyKind, SmError> {
+    match body.get("_type").and_then(Value::as_str) {
+        Some("AGENT") => Ok(PartyKind::Agent),
+        Some("GROUP") => Ok(PartyKind::Group),
+        Some("ORGANISATION") => Ok(PartyKind::Organisation),
+        Some("PERSON") => Ok(PartyKind::Person),
+        Some("ROLE") => Ok(PartyKind::Role),
+        other => Err(SmError::new(
+            CallStatusType::ContentInvalid,
+            format!(
+                "not a demographic party _type: {:?}",
+                other.unwrap_or("<none>")
+            ),
+        )),
+    }
+}
+
+/// The `version_uid` a write produced (the new/deleted `OBJECT_VERSION_ID`),
+/// pulled from the response metadata.
+fn version_uid(resp: ServiceResponse) -> String {
+    resp.meta.map(|m| m.uid).unwrap_or_default()
+}
+
 #[async_trait]
 impl DemographicService for EhrbaseService {
-    // ── PARTY CRUD ───────────────────────────────────────────────────────────
+    // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
+    async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
+        let kind = party_kind_from_body(&a_version.data)?;
+        // Reuse the wire-seam domain logic (validation + versioned create).
+        let resp = EhrbaseService::create_party(self, kind, a_version.data).await?;
+        let (vo_id, _) = version_id::parse_version_uid(&version_uid(resp))?;
+        Ok(vo_id)
+    }
+
+    async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
+        // True iff a *live* party of some kind exists (a logically deleted party
+        // reads `Null`, satisfying the delete post-condition `not has_party`).
+        match self.party_kind_at(a_versioned_party_id).await {
+            Ok(kind) => match self
+                .read_party(kind, a_versioned_party_id, None, None)
+                .await
+            {
+                Ok(resp) => Ok(!resp.is_empty()),
+                Err(ServiceError::NotFound(_)) => Ok(false),
+                Err(e) => Err(e.into()),
+            },
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
+        let Ok((vo_id, tree)) = version_id::parse_version_uid(&a_party_version_id) else {
+            return Ok(false);
+        };
+        match self.party_version(vo_id, tree).await {
+            Ok(_) => Ok(true),
+            Err(ServiceError::NotFound(_)) => Ok(false),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
+        let kind = self.party_kind_at(a_versioned_party_id).await?;
+        let resp = self
+            .read_party(kind, a_versioned_party_id, None, None)
+            .await?;
+        if resp.is_empty() {
+            // Pre `has_party` failed (deleted / no current version).
+            return Err(SmError::new(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("party {a_versioned_party_id} has no current version"),
+            ));
+        }
+        Ok(resp.body)
+    }
+
+    async fn get_party_at_time(
+        &self,
+        a_versioned_party_id: Uuid,
+        a_time: String,
+    ) -> Result<Value, SmError> {
+        let kind = self.party_kind_at(a_versioned_party_id).await?;
+        let at = parse_at_time(&a_time)?;
+        let resp = self
+            .read_party(kind, a_versioned_party_id, None, Some(at))
+            .await?;
+        Ok(resp.body)
+    }
+
+    async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
+        let (vo_id, tree) = version_id::parse_version_uid(&a_party_version_id)?;
+        match self.party_version(vo_id, tree).await {
+            Ok(v) => Ok(v),
+            // A specific version miss is `object_version_does_not_exist`.
+            Err(ServiceError::NotFound(m)) => {
+                Err(SmError::new(CallStatusType::ObjectVersionDoesNotExist, m))
+            }
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    async fn update_party(
+        &self,
+        a_versioned_party_id: Uuid,
+        a_version: UpdateVersion,
+    ) -> Result<String, SmError> {
+        let kind = party_kind_from_body(&a_version.data)?;
+        let expected = match &a_version.preceding_version_uid {
+            Some(ovid) => Some(version_id::components(ovid)?.1),
+            None => None,
+        };
+        let resp = EhrbaseService::update_party(
+            self,
+            kind,
+            a_versioned_party_id,
+            a_version.data,
+            expected,
+        )
+        .await?;
+        Ok(version_uid(resp))
+    }
+
+    async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
+        // The SM `delete_party` has no version argument — delete the current
+        // version unconditionally.
+        let kind = self.party_kind_at(a_versioned_party_id).await?;
+        let resp = EhrbaseService::delete_party(self, kind, a_versioned_party_id, None).await?;
+        Ok(version_uid(resp))
+    }
+
+    // ── PARTY CRUD (wire seam) ────────────────────────────────────────────────
     async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
         Ok(self.create_party(kind, body).await?)
     }

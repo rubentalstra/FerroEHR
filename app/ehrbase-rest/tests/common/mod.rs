@@ -34,7 +34,8 @@ use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
 
 use ehrbase_sm::EhrAccessSettings;
-use ehrbase_sm::services::{
+use ehrbase_sm::extensions::adapters::TemplateListFilter;
+use ehrbase_sm::{AqlQueryRequest, LocationDesc, Page, QueryDescriptor, QueryOutcome, ResourceStatus, 
     AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
     DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrAccessAdapter,
     EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrIndexService,
@@ -394,6 +395,21 @@ impl EhrService for Mock {
 
 #[async_trait]
 impl EhrStatusService for Mock {
+    async fn set_ehr_queryable(&self, _e: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn clear_ehr_queryable(&self, _e: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn set_ehr_modifiable(&self, _e: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn clear_ehr_modifiable(&self, _e: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn update_other_details(&self, _e: Uuid, _d: Value) -> Result<String, SmError> {
+        Err(not_impl())
+    }
     async fn has_ehr_status_version(&self, _e: Uuid, _v: Uuid) -> Result<bool, SmError> {
         Err(not_impl())
     }
@@ -554,6 +570,16 @@ impl EhrCompositionService for Mock {
 
 #[async_trait]
 impl EhrDirectoryService for Mock {
+    async fn has_directory_version(
+        &self,
+        _e: Uuid,
+        _v: ObjectVersionId,
+    ) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn get_versioned_directory(&self, _e: Uuid) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
     async fn has_directory(&self, _e: Uuid) -> Result<bool, SmError> {
         Err(not_impl())
     }
@@ -851,6 +877,86 @@ impl ItemTagAdapter for Mock {
 
 #[async_trait]
 impl DemographicService for Mock {
+    async fn versioned_party_get(&self, _u: String) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn versioned_party_revision_history(
+        &self,
+        _u: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn versioned_party_version_get_at_time(
+        &self,
+        _u: String,
+        _t: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn versioned_party_version_get_by_id(
+        &self,
+        _u: String,
+        _v: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn demographic_contribution_create(&self, _b: Value) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn demographic_contribution_get(&self, _c: String) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn demographic_tags_get(
+        &self,
+        _k: Option<String>,
+        _v: Option<String>,
+        _p: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_tags_get(&self, _k: PartyKind, _u: String) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_tags_update(
+        &self,
+        _k: PartyKind,
+        _u: String,
+        _b: Vec<Value>,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_tags_delete(
+        &self,
+        _k: PartyKind,
+        _u: String,
+        _key: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn create_party(&self, _v: UpdateVersion) -> Result<Uuid, SmError> {
+        Err(not_impl())
+    }
+    async fn has_party(&self, _p: Uuid) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn has_party_version_id(&self, _p: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party(&self, _p: Uuid) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party_at_time(&self, _p: Uuid, _t: String) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party_at_version(&self, _p: String) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn update_party(&self, _p: Uuid, _v: UpdateVersion) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_party(&self, _p: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
     async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
         match &self.h.party_create {
             Some(f) => f(kind, body),
@@ -905,6 +1011,74 @@ impl DemographicService for Mock {
 
 #[async_trait]
 impl PartyRelationshipService for Mock {
+    async fn party_relationship_latest_meta(
+        &self,
+        _u: String,
+    ) -> Result<Option<ResourceMeta>, SmError> {
+        Ok(None)
+    }
+    async fn party_relationship_update(
+        &self,
+        _u: String,
+        _m: String,
+        _b: Value,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_relationship_delete(&self, _u: String) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn versioned_party_relationship_get(
+        &self,
+        _u: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_relationship_revision_history(
+        &self,
+        _u: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_relationship_version_get_at_time(
+        &self,
+        _u: String,
+        _t: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn party_relationship_version_get_by_id(
+        &self,
+        _u: String,
+        _v: String,
+    ) -> Result<ServiceResponse, SmError> {
+        Err(not_impl())
+    }
+    async fn create_party_relationship(&self, _v: UpdateVersion) -> Result<Uuid, SmError> {
+        Err(not_impl())
+    }
+    async fn has_party_relationship(&self, _r: Uuid) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party_relationship(&self, _r: Uuid) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party_relationship_at_time(&self, _r: Uuid, _t: String) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn get_party_relationship_at_version(&self, _r: String) -> Result<Value, SmError> {
+        Err(not_impl())
+    }
+    async fn update_party_relationship(
+        &self,
+        _r: Uuid,
+        _v: UpdateVersion,
+    ) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_party_relationship(&self, _r: Uuid) -> Result<String, SmError> {
+        Err(not_impl())
+    }
     async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
         match &self.h.party_relationship_create {
             Some(f) => f(body),
@@ -923,7 +1097,40 @@ impl PartyRelationshipService for Mock {
     }
 }
 
-impl EhrIndexService for Mock {}
+#[async_trait]
+impl EhrIndexService for Mock {
+    async fn add_ehr_subject(
+        &self,
+        _e: String,
+        _s: SubjectRef,
+        _st: Option<ResourceStatus>,
+        _l: Option<LocationDesc>,
+    ) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn update_ehr_subject_status(
+        &self,
+        _e: String,
+        _s: SubjectRef,
+        _st: ResourceStatus,
+    ) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn update_ehr_subject_loc_desc(
+        &self,
+        _e: String,
+        _s: SubjectRef,
+        _l: Option<LocationDesc>,
+    ) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn remove_ehr_subject(&self, _e: String, _s: SubjectRef) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn remove_subject(&self, _s: SubjectRef) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+}
 
 // ── definition (SM I_DEFINITION_* + wire-shaped DefinitionAdapter) ───────────
 
@@ -931,6 +1138,51 @@ impl EhrIndexService for Mock {}
 // other SM `I_DEFINITION_ADL14` calls keep the trait defaults (501).
 #[async_trait]
 impl DefinitionAdl14Service for Mock {
+    async fn has_archetype(&self, _i: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn valid_archetype(&self, _a: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn upload_archetype(&self, _a: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn get_archetype(&self, _i: String) -> Result<String, SmError> {
+        Err(not_impl())
+    }
+    async fn list_archetypes(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_matching_archetypes(&self, _r: String, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_archetype(&self, _i: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn archetypes_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
+    async fn has_opt(&self, _i: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn valid_opt(&self, _x: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn upload_opt(&self, _x: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn list_opts(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_matching_opts(&self, _r: String, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_opt(&self, _i: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn opts_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
     async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
         match &self.h.get_opt {
             Some(f) => f(an_opt_id),
@@ -941,6 +1193,45 @@ impl DefinitionAdl14Service for Mock {
 
 #[async_trait]
 impl DefinitionAdl2Service for Mock {
+    async fn has_artefact(&self, _i: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn valid_artefact(&self, _a: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn upload_artefact(&self, _a: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn list_artefacts(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_archetypes(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_templates(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_opts(&self, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_matching_artefacts(&self, _r: String, _p: Page) -> Result<Vec<String>, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_artefact(&self, _i: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn artefacts_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
+    async fn archetypes_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
+    async fn templates_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
+    async fn opts_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
     async fn get_artefact(&self, an_id: String) -> Result<String, SmError> {
         match &self.h.get_artefact {
             Some(f) => f(an_id),
@@ -949,7 +1240,40 @@ impl DefinitionAdl2Service for Mock {
     }
 }
 
-impl DefinitionQueryService for Mock {}
+#[async_trait]
+impl DefinitionQueryService for Mock {
+    async fn has_query(&self, _q: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn valid_query(&self, _t: String, _f: String) -> Result<bool, SmError> {
+        Err(not_impl())
+    }
+    async fn store_query(
+        &self,
+        _t: String,
+        _f: String,
+        _n: Option<String>,
+    ) -> Result<QueryDescriptor, SmError> {
+        Err(not_impl())
+    }
+    async fn list_queries(&self, _p: Page) -> Result<Vec<QueryDescriptor>, SmError> {
+        Err(not_impl())
+    }
+    async fn list_matching_queries(
+        &self,
+        _r: String,
+        _a: Option<String>,
+        _p: Page,
+    ) -> Result<Vec<QueryDescriptor>, SmError> {
+        Err(not_impl())
+    }
+    async fn delete_query(&self, _q: String) -> Result<(), SmError> {
+        Err(not_impl())
+    }
+    async fn queries_count(&self) -> Result<i64, SmError> {
+        Err(not_impl())
+    }
+}
 
 // The wire-shaped adapter (no trait defaults — every method is implemented).
 #[async_trait]
@@ -966,7 +1290,11 @@ impl DefinitionAdapter for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError> {
+    async fn template_adl14_list(
+        &self,
+        _f: TemplateListFilter,
+        _p: Page,
+    ) -> Result<Vec<Value>, SmError> {
         match &self.h.template_adl14_list {
             Some(f) => f(),
             None => Err(not_impl()),
@@ -989,7 +1317,11 @@ impl DefinitionAdapter for Mock {
             None => Err(not_impl()),
         }
     }
-    async fn template_adl2_list(&self) -> Result<Vec<Value>, SmError> {
+    async fn template_adl2_list(
+        &self,
+        _f: TemplateListFilter,
+        _p: Page,
+    ) -> Result<Vec<Value>, SmError> {
         match &self.h.template_adl2_list {
             Some(f) => f(),
             None => Err(not_impl()),
@@ -1012,6 +1344,7 @@ impl DefinitionAdapter for Mock {
         &self,
         _qualified_query_name: String,
         _version: Option<String>,
+        _query_type: String,
         _body: String,
     ) -> Result<(), SmError> {
         Err(not_impl())
@@ -1049,7 +1382,24 @@ impl WebTemplateService for Mock {
     }
 }
 
-impl QueryService for Mock {}
+#[async_trait]
+impl QueryService for Mock {
+    async fn execute_ad_hoc_query(
+        &self,
+        _aql: String,
+        _r: AqlQueryRequest,
+    ) -> Result<QueryOutcome, SmError> {
+        Err(not_impl())
+    }
+    async fn execute_stored_query(
+        &self,
+        _n: String,
+        _v: Option<String>,
+        _r: AqlQueryRequest,
+    ) -> Result<QueryOutcome, SmError> {
+        Err(not_impl())
+    }
+}
 
 // ── admin (SM-native, defaults kept; hooks for the overridden methods) ────────
 

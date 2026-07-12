@@ -36,7 +36,7 @@ use uuid::Uuid;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::multimedia::{BlobStore, MultimediaConfig, MultimediaEngine};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::services::MultimediaAdapter;
+use ehrbase_sm::MultimediaAdapter;
 use ehrbase_sm::{AdminDumpLoad, AdminService, EhrService, EhrStatusService, ExportSpec};
 
 const BUCKET: &str = "openehr-multimedia";

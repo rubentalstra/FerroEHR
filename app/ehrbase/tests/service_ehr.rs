@@ -22,11 +22,11 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, DefinitionAdapter, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, SmError,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     #[allow(dead_code)]
@@ -100,6 +100,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }
@@ -986,6 +987,7 @@ async fn stored_query_crud() {
     svc.query_store(
         "org.example::all_comps".to_owned(),
         Some("1.0.0".to_owned()),
+        "AQL".to_owned(),
         aql.clone(),
     )
     .await
@@ -1024,6 +1026,7 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
         svc.query_store(
             "org.example::obs".to_owned(),
             Some(version.to_owned()),
+            "AQL".to_owned(),
             q.to_owned(),
         )
         .await
@@ -1075,6 +1078,7 @@ async fn stored_query_list_matches_name_prefix() {
         svc.query_store(
             name.to_owned(),
             Some(version.to_owned()),
+            "AQL".to_owned(),
             "SELECT e FROM EHR e".to_owned(),
         )
         .await
@@ -1742,4 +1746,185 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
             .expect("foreign uri");
     let err = svc.resolve_ehr_uri(&uri).await.expect_err("foreign system");
     assert!(err.to_string().contains("foreign system"), "got {err}");
+}
+
+/// The discrete `I_EHR_STATUS` mutators (`i_ehr_status.adoc`
+/// §set/clear_ehr_queryable, §set/clear_ehr_modifiable, §update_other_details):
+/// each commits a new implicit-CONTRIBUTION EHR_STATUS version and its
+/// post-condition is observable via `get_ehr_status`. Critically,
+/// `clear_ehr_modifiable` must stay committable on the EHR it disables and
+/// `set_ehr_modifiable` must undo it (EHR_STATUS "is always modifiable",
+/// ehr/master04 §"EHR Active Status").
+#[tokio::test]
+async fn ehr_status_discrete_mutators() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("statusmut").await);
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+
+    // Defaults: both flags true (default_ehr_status).
+    let v1 = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status v1");
+    assert_eq!(v1["is_queryable"], json!(true));
+    assert_eq!(v1["is_modifiable"], json!(true));
+    assert!(uid(&v1).ends_with("::1"));
+
+    // clear_ehr_queryable → false; a new trunk version is committed.
+    let q_off = svc
+        .clear_ehr_queryable(ehr_uuid)
+        .await
+        .expect("clear_ehr_queryable");
+    assert!(q_off.ends_with("::2"), "got {q_off}");
+    let s = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status");
+    assert_eq!(s["is_queryable"], json!(false));
+    assert_eq!(s["is_modifiable"], json!(true), "unrelated flag untouched");
+
+    // set_ehr_queryable → true again.
+    let q_on = svc
+        .set_ehr_queryable(ehr_uuid)
+        .await
+        .expect("set_ehr_queryable");
+    assert!(q_on.ends_with("::3"), "got {q_on}");
+    assert_eq!(
+        svc.get_ehr_status_at_time(ehr_uuid, None)
+            .await
+            .expect("status")["is_queryable"],
+        json!(true)
+    );
+
+    // clear_ehr_modifiable deactivates the EHR's contents — the STATUS write
+    // itself must still succeed (EHR_STATUS is always modifiable).
+    let m_off = svc
+        .clear_ehr_modifiable(ehr_uuid)
+        .await
+        .expect("clear_ehr_modifiable must be committable on the EHR it disables");
+    assert!(m_off.ends_with("::4"), "got {m_off}");
+    assert_eq!(
+        svc.get_ehr_status_at_time(ehr_uuid, None)
+            .await
+            .expect("status")["is_modifiable"],
+        json!(false)
+    );
+
+    // With the EHR deactivated, a CONTENT write is refused (write guard) …
+    let blocked = svc
+        .create_composition(ehr_uuid, uv(composition("blocked"), "249", None))
+        .await;
+    assert!(
+        blocked.is_err(),
+        "content write on a non-modifiable EHR must be refused, got {blocked:?}"
+    );
+
+    // … yet set_ehr_modifiable reactivates it (the STATUS mutator is not gated).
+    let m_on = svc
+        .set_ehr_modifiable(ehr_uuid)
+        .await
+        .expect("set_ehr_modifiable reactivates");
+    assert!(m_on.ends_with("::5"), "got {m_on}");
+    assert_eq!(
+        svc.get_ehr_status_at_time(ehr_uuid, None)
+            .await
+            .expect("status")["is_modifiable"],
+        json!(true)
+    );
+    // Reactivated: content writes now succeed.
+    svc.create_composition(ehr_uuid, uv(composition("allowed"), "249", None))
+        .await
+        .expect("content write after reactivation");
+
+    // update_other_details replaces the ITEM_TREE.
+    let details = json!({
+        "_type": "ITEM_TREE",
+        "archetype_node_id": "at0001",
+        "name": { "_type": "DV_TEXT", "value": "other_details" },
+        "items": []
+    });
+    let od = svc
+        .update_other_details(ehr_uuid, details.clone())
+        .await
+        .expect("update_other_details");
+    assert!(od.ends_with("::6"), "got {od}");
+    let after = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status");
+    assert_eq!(after["other_details"]["_type"], "ITEM_TREE");
+    assert_eq!(after["other_details"]["archetype_node_id"], "at0001");
+}
+
+/// `I_EHR_DIRECTORY` §has_directory_version + §get_versioned_directory: the
+/// existence check is true for real versions (incl. across updates) and false
+/// for an unknown version id; the VERSIONED_OBJECT view carries the mandatory
+/// `time_created` (VERSIONED_OBJECT.time_created, RM common change_control).
+#[tokio::test]
+async fn directory_versioned_and_has_version() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("dirversioned").await);
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+
+    let dir_v1 = svc
+        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await
+        .expect("directory_create");
+    assert!(dir_v1.ends_with("::1"));
+
+    // has_directory_version: true for the real v1 OBJECT_VERSION_ID.
+    assert!(
+        svc.has_directory_version(ehr_uuid, dir_v1.parse().expect("ovid"))
+            .await
+            .expect("has_directory_version v1"),
+        "the committed directory version must exist"
+    );
+
+    // False for a version that does not exist (a v2 that was never committed).
+    let sp: Vec<&str> = dir_v1.split("::").collect();
+    let phantom = format!("{}::{}::2", sp[0], sp[1]);
+    assert!(
+        !svc.has_directory_version(ehr_uuid, phantom.parse().expect("ovid"))
+            .await
+            .expect("has_directory_version phantom"),
+        "an uncommitted version id must not exist"
+    );
+
+    // False for an unrelated versioned-object id.
+    let alien = format!("{}::{}::1", uuid::Uuid::new_v4(), sp[1]);
+    assert!(
+        !svc.has_directory_version(ehr_uuid, alien.parse().expect("ovid"))
+            .await
+            .expect("has_directory_version alien"),
+        "a foreign vo id is not this EHR's directory"
+    );
+
+    // Update → v2; both versions now exist.
+    let mut folder_v2 = folder("root");
+    folder_v2["name"]["value"] = json!("root-renamed");
+    let dir_v2 = svc
+        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
+        .await
+        .expect("directory_update");
+    assert!(dir_v2.ends_with("::2"));
+    assert!(
+        svc.has_directory_version(ehr_uuid, dir_v2.parse().expect("ovid"))
+            .await
+            .expect("has v2")
+    );
+
+    // get_versioned_directory: the VERSIONED_OBJECT view.
+    let versioned = svc
+        .get_versioned_directory(ehr_uuid)
+        .await
+        .expect("get_versioned_directory");
+    assert_eq!(versioned["_type"], "VERSIONED_OBJECT");
+    assert_eq!(versioned["uid"]["value"], sp[0]);
+    assert_eq!(versioned["owner_id"]["id"]["value"], ehr_uuid.to_string());
+    assert!(
+        versioned["time_created"]["value"].is_string(),
+        "VERSIONED_OBJECT.time_created must be present, got {versioned}"
+    );
 }

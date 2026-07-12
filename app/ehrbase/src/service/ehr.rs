@@ -343,6 +343,50 @@ impl EhrbaseService {
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
+    /// Apply a single in-place mutation to the EHR's current `EHR_STATUS` root
+    /// object and commit it as a new implicit-CONTRIBUTION version, returning
+    /// the new version — the shared body of the discrete `I_EHR_STATUS`
+    /// mutators (`i_ehr_status.adoc` §`set_ehr_queryable` …
+    /// §`update_other_details`). Each mutator changes one attribute
+    /// (`is_queryable` / `is_modifiable` / `other_details`) and re-commits the
+    /// whole `EHR_STATUS`; the discrete setters are formally equivalent to the
+    /// whole-object replace the wire uses (`master02-overview.adoc`
+    /// §Interface Calls). The commit reuses [`status_update`](Self::status_update)
+    /// — change type `251|modification|`, lifecycle `532|complete|`,
+    /// server-default committer — with the current version uid as the preceding
+    /// version (server-driven optimistic lock: the read-modify-write is atomic
+    /// under the same current version).
+    ///
+    /// `EHR_STATUS` "is always modifiable" (`ehr/master04-ehr_package.adoc`
+    /// §"EHR Active Status"), so this path is deliberately **not** gated by
+    /// [`ensure_content_writable`](Self::ensure_content_writable) — that guard
+    /// scopes to EHR *contents* (COMPOSITION / FOLDER / content-CONTRIBUTION),
+    /// never to `EHR_STATUS`. That is how [`clear_ehr_modifiable`] disables an
+    /// EHR yet [`set_ehr_modifiable`] can re-enable it afterwards.
+    ///
+    /// [`clear_ehr_modifiable`]: crate::service::EhrbaseService
+    /// [`set_ehr_modifiable`]: crate::service::EhrbaseService
+    pub(super) async fn status_mutate(
+        &self,
+        ehr_id: Uuid,
+        mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
+    ) -> Result<ServiceResponse, ServiceError> {
+        let current = self.status_at(ehr_id, None).await?;
+        let preceding = current
+            .meta
+            .as_ref()
+            .map(|m| m.uid.clone())
+            .unwrap_or_default();
+        let mut body = current.body;
+        if let Value::Object(map) = &mut body {
+            // The read injects `uid`; drop it so the re-commit carries only the
+            // mutated EHR_STATUS content (the server assigns the new version id).
+            map.remove("uid");
+            mutate(map);
+        }
+        self.status_update(ehr_id, body, &preceding).await
+    }
+
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
     pub(super) async fn versioned_status(&self, ehr_id: Uuid) -> Result<Value, ServiceError> {
         let (vo_id, _) = self

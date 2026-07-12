@@ -65,8 +65,12 @@ use openehr_query::lexer::CompOp;
 pub struct SqlCtx {
     /// The openEHR system id stamped into synthesized `OBJECT_VERSION_ID`s.
     pub system_id: String,
-    /// The REST `ehr_id` query parameter, constraining the query to one EHR.
-    pub ehr_id: Option<Uuid>,
+    /// The set of EHRs the query is scoped to (`I_QUERY_SERVICE.execute_*`
+    /// `ehr_ids: List<UUID> [0..1]`,
+    /// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`). The
+    /// ITS-REST single `ehr_id` parameter is the one-element case. Empty = no
+    /// explicit scope (the population gate over `is_queryable` EHRs applies).
+    pub ehr_ids: Vec<Uuid>,
     /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
     /// §6.4): when set, every VO root is restricted to EHRs whose
     /// `subject_id` equals it, so rows the caller may not see are never fetched —
@@ -457,9 +461,14 @@ impl<'a> Builder<'a> {
     }
 
     fn apply_ehr_scope(&mut self) {
-        if let Some(ehr_id) = self.ctx.ehr_id {
+        // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
+        // the id set with `ehr_id IN (…)` (equivalently `= ANY($ids)`). The
+        // single-`ehr_id` REST case is just the one-element set. Empty = no
+        // explicit scope (the population gate takes over).
+        if !self.ctx.ehr_ids.is_empty() {
+            let ids = self.ctx.ehr_ids.clone();
             for root in self.group_roots.clone() {
-                self.q.and_where(col(&root, "ehr_id").eq(Expr::val(ehr_id)));
+                self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
             }
         }
         // ABAC patient scope (§6.4): restrict every VO root to the caller's
@@ -477,16 +486,15 @@ impl<'a> Builder<'a> {
     }
 
     /// The query-population gate (SM `I_QUERY_SERVICE.execute_ad_hoc_query` /
-    /// `execute_stored_query`). When no explicit `ehr_ids` are supplied (here:
-    /// no REST `ehr_id` scope), the `ehr_ids` parameter doc mandates a "full
-    /// population query [...] on all EHRs whose status has the `is_queryable`
-    /// flag set to `True`"
+    /// `execute_stored_query`). When no explicit `ehr_ids` are supplied, the
+    /// `ehr_ids` parameter doc mandates a "full population query [...] on all
+    /// EHRs whose status has the `is_queryable` flag set to `True`"
     /// (`docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`). We
     /// therefore restrict every EHR root — bare `EHR` sources (`ehr.id`) and VO
-    /// roots (`node.ehr_id`) alike — to that set. A scoped query (explicit
-    /// `ehr_id`) targets a specific EHR and is not gated.
+    /// roots (`node.ehr_id`) alike — to that set. A scoped query (a non-empty
+    /// `ehr_ids` set) targets specific EHRs and is not gated.
     fn apply_population_gate(&mut self) {
-        if self.ctx.ehr_id.is_some() {
+        if !self.ctx.ehr_ids.is_empty() {
             return;
         }
         for root in self.group_roots.clone() {
