@@ -1,6 +1,6 @@
-# W-4 session prompt — full redesign + rewrite of `tools/conformance`
+# W-10 session prompt — full redesign + rewrite of `tools/conformance`
 
-Execute **W-4: the complete redesign, re-architecture, and rewrite of the
+Execute **W-10: the complete redesign, re-architecture, and rewrite of the
 conformance framework** (`tools/conformance`, ~18k lines). Owner ruling
 (2026-07-13): the current instrument is **not trusted anymore** — it grew
 incrementally (B1–B6, B5 adjudications, W-3f re-baseline) and encodes
@@ -86,9 +86,9 @@ platform registers (`docs/design/platform/`) for what the server now is.
   the NEW framework against ehrbase-rs (the re-derived baseline replaces
   341/315/0 — expect and document the delta honestly), then against the
   Java EHRbase (its results are DATA, not a gate).
-- Author `docs/plans/w4-conformance-redesign.md` from this prompt at start;
+- Author `docs/plans/w10-conformance-redesign.md` from this prompt at start;
   tick as you go; changelog + website book (the conformance page) same-PR;
-  WORKLIST row W-4 closed with the merged PR.
+  WORKLIST row W-10 closed with the merged PR.
 
 ## Fixed constraints
 
