@@ -67,6 +67,15 @@ simple, cacheable reads.
 
 The query API is **JSON only** (`Accept: application/json`).
 
+### Scoping to an EHR
+
+You can restrict a query to one EHR without writing the constraint into the
+AQL: pass an `ehr_id` query-string parameter (on `GET` **or** `POST`), or the
+`openEHR-EHR-id` request header (the parameter wins when both are present).
+The id must exist: a **malformed** id is a **400**, and a well-formed id that
+matches **no EHR** is an honest **404 Not Found** rather than an empty result
+set, so a typo cannot masquerade as "no data".
+
 ## The result set
 
 A query returns a `RESULT_SET`: a description of the columns and an array of row
@@ -89,8 +98,17 @@ Each entry in `columns` names the column — the `AS` alias, or `#<index>` when
 you did not alias it — and its `path`. Each row in `rows` is an array of cells,
 one per column in column order. A cell can be a scalar or a full RM object
 (for example `{"_type":"DV_TEXT","value":"Labs"}`) depending on what you
-selected. The response also carries a `meta` block (schema version, creation
-time, the executed AQL).
+selected.
+
+The response also carries a `meta` block. Its `_executed_aql` field is the
+AQL the server actually ran, with your named parameters substituted in as
+literals — paste it straight back into an ad-hoc query when debugging a
+parameterised call. The top-level `q` keeps the text exactly as you submitted
+it.
+
+Query responses carry a weak **`ETag`** that is a content digest of the
+result set: two runs returning identical results carry the identical tag, so
+a client can cheaply detect "nothing changed" between polls.
 
 ## Parameters
 
@@ -128,7 +146,10 @@ curl -u ehrbase:ehrbase \
 ```
 
 - `PUT /definition/query/{name}[/{version}]` — store (version is a SemVer;
-  storing an existing version returns **409**).
+  storing an existing version returns **409**). An optional `query_type`
+  parameter names the formalism, default `AQL` (case-insensitive); anything
+  other than AQL is rejected with **400** — the server never silently stores
+  a query it cannot execute.
 - `GET /definition/query/{name}[/{version}]` — list or fetch.
 - `GET|POST /query/{name}[/{version}]` — execute, taking the same `offset`,
   `fetch`, and `query_parameters` as ad-hoc queries. A version can be given
@@ -173,9 +194,13 @@ FHIR terminology server.
 
 Combine `LIMIT`/`OFFSET` in the AQL with the `fetch`/`offset` request
 parameters to page through large result sets. When you ask for more than the
-server will return in one response, page with `offset`. Queries that run too
-long return **408 Request Timeout** — narrow the query (add archetype
-constraints or a `WHERE` filter) rather than retrying unchanged.
+server will return in one response, page with `offset`.
+
+Operators can also cap how long any single query may run: set
+`EHRBASE_QUERY__TIMEOUT_MS` to a per-query execution budget in milliseconds
+(unset or `0` = no per-query cap). A query that exceeds the budget returns
+**408 Request Timeout** — narrow the query (add archetype constraints, an
+`ehr_id` scope, or a `WHERE` filter) rather than retrying unchanged.
 
 > [!TIP]
 > The more specific your `FROM`/`CONTAINS` (name the archetype, scope by

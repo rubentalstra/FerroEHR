@@ -1,8 +1,10 @@
 # Using the API
 
-EHRbase-rs exposes the openEHR **REST API (ITS-REST 1.0.3)**: a resource-based
-HTTP interface for creating EHRs, committing and retrieving versioned clinical
-documents, managing folders and contributions, and running queries. This part
+EHRbase-rs exposes the openEHR **REST API** (the current development edition
+of ITS-REST — the edition the server reports and is conformance-tested
+against): a resource-based HTTP interface for creating EHRs, committing and
+retrieving versioned clinical documents, managing folders and contributions,
+and running queries. This part
 is the practical reference for client developers — the resources and their
 operations, the headers that drive versioning and content negotiation, and the
 error contract. The complete, machine-generated endpoint reference (every path,
@@ -26,6 +28,15 @@ with `EHRBASE_REST_BASE_PATH` (see the
 The public, unauthenticated status probe lives just outside the base path at
 `/ehrbase/rest/status`, and interactive docs at `/ehrbase/swagger-ui` when
 enabled.
+
+An `OPTIONS` request to the API base path (also answered at `/`) returns the
+server's **conformance manifest**: the product name and version, the openEHR
+REST API edition it implements, its conformance profile, and the endpoint
+groups actually mounted in this deployment — useful for capability discovery
+before you call anything else. The identity fields are configurable
+(`EHRBASE_REST_SYSTEM__*`, see the
+[configuration reference](../installation/configuration.md)); the endpoint
+list always reflects reality.
 
 ## Authentication
 

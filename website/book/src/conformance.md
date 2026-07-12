@@ -37,9 +37,10 @@ than silently omitted.
 > [!NOTE]
 > The catalogue is the project's own framework, built from the currently
 > pinned specifications (Reference Model 1.2.0, AQL 1.1.0, Terminology 3.1.0,
-> ITS-REST 1.0.3). It is not a port of any external test harness — the
-> vendored openEHR conformance corpus is design-time reading and a source of
-> input payloads only.
+> and the ITS-REST development edition the server implements and reports).
+> It is not a port of any external test harness — the vendored openEHR
+> conformance corpus is design-time reading and a source of input payloads
+> only.
 
 ## The current result
 

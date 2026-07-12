@@ -61,6 +61,51 @@ Prefix `EHRBASE_REST_`, separator `__`, optional file `EHRBASE_REST_CONFIG`.
 | `EHRBASE_REST_TENANCY__CLAIM` | string | `tenant` | JWT-claim path carrying the tenant key. |
 | `EHRBASE_REST_TENANCY__HEADER` | string | none | Dev-only request-header tenant override. Leave unset in production — a client header must not select a tenant. |
 
+### System identity (`OPTIONS` conformance manifest)
+
+Nested under `EHRBASE_REST_SYSTEM__` (part of the REST config). These fields
+are reported by the conformance manifest served on `OPTIONS` at the API base
+path (and at `/`); the endpoint list in that manifest is not configurable —
+it always reflects the actually mounted API groups.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `EHRBASE_REST_SYSTEM__SOLUTION` | string | `EHRbase-RS` | Product name reported. |
+| `EHRBASE_REST_SYSTEM__SOLUTION_VERSION` | string | the build's version | Product version reported. |
+| `EHRBASE_REST_SYSTEM__VENDOR` | string | `EHRbase-RS project` | Providing organisation. |
+| `EHRBASE_REST_SYSTEM__RESTAPI_SPECS_VERSION` | string | the tested spec identity | The openEHR REST API edition reported (defaults to the development-edition identity the build is tested against). |
+| `EHRBASE_REST_SYSTEM__CONFORMANCE_PROFILE` | string | the last machine-computed verdict | Advertised conformance profile. |
+
+### SMART App Launch
+
+Nested under `EHRBASE_REST_SMART__` (part of the REST config). Off by
+default; when off, the discovery document is not served and the scope gate is
+inert. See [SMART App Launch](../smart-app-launch.md) for what each piece
+does.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `EHRBASE_REST_SMART__ENABLED` | boolean | `false` | Master SMART switch. |
+| `EHRBASE_REST_SMART__PLATFORM_BASE_URL` | string | none (REST root) | Base the `/.well-known/smart-configuration` document hangs off. |
+| `EHRBASE_REST_SMART__EHR_ID_CLAIM` | string | `ehrId` | Token claim carrying the launch context's EHR id. |
+| `EHRBASE_REST_SMART__PATIENT_CLAIM` | string | `patient` | Fallback launch-context claim. |
+| `EHRBASE_REST_SMART__REQUIRE_SMART_SCOPES` | boolean | `false` | Fail-closed: deny Bearer tokens with no matching SMART scope on scope-governed operations. |
+| `EHRBASE_REST_SMART__EPISODE__ENABLED` | boolean | `false` | Advertise + accept episode launch context (experimental, advisory). |
+| `EHRBASE_REST_SMART__LAUNCH_BASE64_JSON` | boolean | `false` | Advertise the base64-JSON launch-parameter capability (experimental). |
+| `EHRBASE_REST_SMART__ENDPOINTS__ISSUER` | URL | none (falls back to the OIDC issuer) | Advertised token issuer. |
+| `EHRBASE_REST_SMART__ENDPOINTS__JWKS_URI` | URL | none | Advertised JWKS URL. |
+| `EHRBASE_REST_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | URL | none | Advertised OAuth2 authorization endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT` | URL | none | Advertised OAuth2 token endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | URL | none | Advertised client-registration endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | URL | none | Advertised introspection endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__REVOCATION_ENDPOINT` | URL | none | Advertised revocation endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | URL | none | Advertised user-management endpoint. |
+| `EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | list | `[]` | Advertised client auth methods. |
+| `EHRBASE_REST_SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | list | `[]` | Advertised grant types (`implicit`/password are rejected at boot). |
+| `EHRBASE_REST_SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | list | `[]` | Advertised response types. |
+| `EHRBASE_REST_SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | list | `[]` | Advertised PKCE methods. |
+| `EHRBASE_REST_SMART__ENDPOINTS__SCOPES_SUPPORTED` | list | `[]` (built-in default list) | Advertised scopes; empty = the defaults the server enforces. |
+
 ## Authentication
 
 Nested under `EHRBASE_REST_AUTH__` (part of the REST config). The Basic-auth
@@ -115,6 +160,14 @@ Prefix `EHRBASE_DB_`, no nesting, environment-only (no config file).
 > `EHRBASE_DB_NAME`, `EHRBASE_DB_USER`, and `EHRBASE_DB_PASSWORD` are **not**
 > read by the server — they configure the PostgreSQL init image. The server
 > takes a single `EHRBASE_DB_URL`.
+
+## Query execution
+
+A single environment-only key (no file, no nesting group behind it).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `EHRBASE_QUERY__TIMEOUT_MS` | integer (ms) | unset (no per-query cap) | Per-query execution budget. `0` or unset disables it; when positive, an AQL query that exceeds the budget returns `408 Request Timeout`. |
 
 ## Telemetry and logging
 
@@ -269,6 +322,21 @@ conventionally `default`).
 | `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-provider connect timeout. |
 | `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-provider request timeout. |
 | `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__OAUTH2_CLIENT` | string | none | Name of an OAuth2 client-credentials client for the provider. |
+
+## Subject Proxy (FHIR frames)
+
+Prefix `EHRBASE_SUBJECT_PROXY_`, separator `__`, optional file
+`EHRBASE_SUBJECT_PROXY_CONFIG`. Empty by default — no external FHIR system is
+reachable until one is named here (fail-closed). Systems are a map keyed by
+the name subject-proxy frames use as their `system_id` (shown as `<NAME>`).
+See [Subject Proxy](../beyond-core/subject-proxy.md).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `EHRBASE_SUBJECT_PROXY_CONFIG` | path | none | Path to the subject-proxy TOML config file. |
+| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__BASE_URL` | URL | none (required per system) | FHIR R4 base URL of the named system. |
+| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-system connect timeout. |
+| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-system request timeout. |
 
 ## Process / CLI
 
