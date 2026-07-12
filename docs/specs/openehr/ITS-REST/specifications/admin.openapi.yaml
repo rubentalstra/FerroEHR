@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: Admin API
+  version: development
+  x-status: DEVELOPMENT
+  x-spec: admin
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/admin/Description.md
+security: []
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+paths:
+  '/admin/ehr/{ehr_id}':
+    delete:
+      $ref: ./operations/admin_ehr_delete.yaml
+  '/admin/ehr/all{?ehr_id*}':
+    delete:
+      $ref: ./operations/admin_ehr_delete_all.yaml
+tags:
+  - name: EHR
+    description: |
+      Admin management of [EHRs](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_class).
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - EHR

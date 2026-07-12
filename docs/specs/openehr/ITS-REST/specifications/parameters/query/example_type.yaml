@@ -1,0 +1,10 @@
+name: type
+in: query
+description: |
+  Type of use for the data example.
+style: form
+explode: true
+schema:
+  type: string
+  enum: [input, output]
+  default: input

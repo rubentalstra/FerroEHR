@@ -1,5 +1,10 @@
 description: |
   `200 OK` is returned when the CONTRIBUTION is successfully retrieved.
+
+  When the request `Accept` header selects a Simplified Formats MIME type (`application/openehr.wt.flat+json` or `application/openehr.wt.structured+json`), the response body is still a canonical CONTRIBUTION envelope; only each `versions[i].data` payload is serialized in the requested FLAT or STRUCTURED form.
+headers:
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
 content:
   application/json:
     schema:

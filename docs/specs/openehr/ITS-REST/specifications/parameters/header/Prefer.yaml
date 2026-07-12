@@ -2,7 +2,7 @@ name: Prefer
 in: header
 description: |
   Request header to indicate the preference over response details.
-  The response will contain the entire resource when the `Prefer` header has a value of `return=representation`.
+  The response will contain the entire resource when the `Prefer` header has a value of `return=representation`, or only the resource identifier (e.g., the `uid`) when the value is `return=identifier`.
 required: false
 style: simple
 schema:
@@ -10,4 +10,5 @@ schema:
   enum:
     - return=representation
     - return=minimal
+    - return=identifier
   default: return=minimal

@@ -4,8 +4,4 @@ allOf:
   - $ref: ../base_types/TerminologyId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [TERMINOLOGY_ID]
 x-discriminator-value: TERMINOLOGY_ID

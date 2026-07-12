@@ -5,18 +5,32 @@ description: |
     - `uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned
     - `audit.time_committed`: server will always set it
     - `audit.system_id`: when provided, it will be validated
+
+  The `audit` and each `versions[i].commit_audit` are `UPDATE_AUDIT` objects: structurally an
+  `AUDIT_DETAILS` minus the server-assigned attributes (`time_committed`, and the optional `system_id`).
+  Clients SHOULD send `_type: "UPDATE_AUDIT"`; for interoperability servers SHOULD additionally accept
+  `_type: "AUDIT_DETAILS"` or an omitted `_type` for this attribute. The `audit.change_type` and each
+  `versions[i].lifecycle_state` are `DV_CODED_TEXT` values coded against the openEHR terminology.
+
+  ### Simplified Formats (FLAT / STRUCTURED)
+
+  The `Content-Type` and `Accept` headers MAY be set to one of the Simplified Formats MIME types - `application/openehr.wt.flat+json` or `application/openehr.wt.structured+json` - in addition to the canonical `application/json` / `application/xml`.
+
+  When a Simplified Formats MIME type is used, the **CONTRIBUTION envelope itself remains canonical JSON** (i.e. `uid`, `versions[]` metadata, and `audit` follow the canonical RM serialization). Only the inner versioned payload - each `versions[i].data` (the embedded `COMPOSITION`, `EHR_STATUS`, or `FOLDER`) - is serialized in the chosen FLAT or STRUCTURED form. See [Simplified Formats](../simplified_formats.html) for the rules that apply to that inner payload.
 tags:
   - CONTRIBUTION
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
 requestBody:
   description: |
     The CONTRIBUTION.
   content:
     application/json:
       schema:
-        $ref: ../schemas/common/NewContribution.yaml
+        $ref: ../schemas/ehr/NewContribution.yaml
   required: true
 responses:
   '201':

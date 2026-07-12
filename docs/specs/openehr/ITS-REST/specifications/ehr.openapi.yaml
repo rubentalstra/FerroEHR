@@ -12,7 +12,7 @@ info:
     name: Creative Commons Attribution-NoDerivs 3.0 Unported
     url: 'https://creativecommons.org/licenses/by-nd/3.0/'
   description:
-    $ref: ./docs/ehr/Intro.md
+    $ref: ./docs/ehr/Description.md
 servers:
   - url: 'https://{baseUrl}/v1'
     description: An example openEHR server URL.
@@ -92,47 +92,78 @@ paths:
   '/ehr/{ehr_id}/contribution/{contribution_uid}':
     get:
       $ref: ./operations/contribution_get.yaml
+  '/ehr/{ehr_id}/tags':
+    get:
+      $ref: ./operations/ehr_tags_get.yaml
+  '/ehr/{ehr_id}/composition/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/composition_tags_get.yaml
+    put:
+      $ref: ./operations/composition_tags_update.yaml
+  '/ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/composition_tags_delete.yaml
+  '/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/ehr_status_tags_get.yaml
+    put:
+      $ref: ./operations/ehr_status_tags_update.yaml
+  '/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/ehr_status_tags_delete.yaml
 tags:
   - name: EHR
     description: |
       Management of [EHRs](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_class).
-      Actions upon resources of this group are also formally described in the [I_EHR_SERVICE](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_service_interface) Abstract Service Model interface.
+      
+      Operations in this group cover creation of new EHRs, retrieval by identifier or subject, and access to associated versioned resources.
+      
+      The `EHR` resource is the top-level resource in the EHR REST API; it contains all other resources in this group. 
+      Identification of the `EHR` resource is usually by the `ehr_id`, and is present in the path segment.
+
   - name: EHR_STATUS
     description: |
       Management of [EHR_STATUS](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_status_class) and [VERSIONED_EHR_STATUS](https://specifications.openehr.org/releases/RM/latest/ehr.html#_versioned_ehr_status_class) resources.
-      Actions upon resources of this group are also formally described in the [I_EHR_STATUS](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_status_interface) Abstract Service Model interface.
+      
+      Operations include retrieval by time or version, update, and inspection of revision history for the versioned status of an EHR.
+
   - name: COMPOSITION
     description: |
       Management of [COMPOSITION](https://specifications.openehr.org/releases/RM/latest/ehr.html#_composition_class) and [VERSIONED_COMPOSITION](https://specifications.openehr.org/releases/RM/latest/ehr.html#_versioned_composition_class) resources.
-      Actions upon resources of this group are also formally described in the [I_EHR_COMPOSITION](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_composition_interface) Abstract Service Model interface.
+      
+      Operations include create, retrieve, update, delete of compositions, and access to their version containers, specific versions and revision history.
+
   - name: DIRECTORY
     description: |
       Management of the [directory](https://specifications.openehr.org/releases/RM/latest/ehr.html#_directory) [FOLDER](https://specifications.openehr.org/releases/RM/latest/common.html#_folder_class) resource.
-      Actions upon resources of this group are also formally described in the [I_EHR_DIRECTORY](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_directory_interface) Abstract Service Model interface.
+      
+      Operations include create, update, delete and time/version-based retrieval of the EHR’s directory structure.
+
   - name: CONTRIBUTION
     description: |
       Management of [CONTRIBUTION](https://specifications.openehr.org/releases/RM/latest/common.html#_contribution_class) resource.
-      Actions upon resources of this group are also formally described in the [I_EHR_CONTRIBUTION](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_i_ehr_contribution_interface) Abstract Service Model interface.
-  - name: EHR_schema
-    x-displayName: EHR
-    description:
-      $ref: ./tags/EHR_schema.md
-  - name: EHR_STATUS_schema
-    x-displayName: EHR_STATUS
-    description:
-      $ref: ./tags/EHR_STATUS_schema.md
-  - name: COMPOSITION_schema
-    x-displayName: COMPOSITION
-    description:
-      $ref: ./tags/COMPOSITION_schema.md
-  - name: DIRECTORY_schema
-    x-displayName: DIRECTORY
-    description:
-      $ref: ./tags/DIRECTORY_schema.md
-  - name: CONTRIBUTION_schema
-    x-displayName: CONTRIBUTION
-    description:
-      $ref: ./tags/CONTRIBUTION_schema.md
+      
+      Operations cover creation of contributions and retrieval by identifier, enabling audit of grouped version commits within an EHR.
+
+  - name: ITEM_TAG
+    description: |
+      Management of [ITEM_TAG](https://specifications.openehr.org/releases/RM/development/common.html#_item_tag_class) resources.
+  - name: CONTENT_ITEM_schema
+    x-displayName: CONTENT_ITEM
+    description: |
+      The abstract `CONTENT_ITEM` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UContentItem" />
+  - name: ITEM_schema
+    x-displayName: ITEM
+    description: |
+      The abstract `ITEM` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItem" />
+  - name: ITEM_STRUCTURE_schema
+    x-displayName: ITEM_STRUCTURE
+    description: |
+      The abstract `ITEM_STRUCTURE` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItemStructure" />
+
 x-tagGroups:
   - name: Resource endpoints
     tags:
@@ -141,16 +172,21 @@ x-tagGroups:
       - COMPOSITION
       - DIRECTORY
       - CONTRIBUTION
-  - name: Resource schemas
+      - ITEM_TAG
+  - name: Related schemas
     tags:
-      - EHR_schema
-      - EHR_STATUS_schema
-      - COMPOSITION_schema
-      - DIRECTORY_schema
-      - CONTRIBUTION_schema
+      - CONTENT_ITEM_schema
+      - ITEM_schema
+      - ITEM_STRUCTURE_schema
 components:
   schemas:
+    UAbstractItem:
+      $ref: ./schemas/data_structures/UAbstractItem.yaml
     UAbstractItemStructure:
       $ref: ./schemas/data_structures/UAbstractItemStructure.yaml
     UAbstractContentItem:
       $ref: ./schemas/ehr/UAbstractContentItem.yaml
+    VersionOfComposition:
+      $ref: ./schemas/ehr/VersionOfComposition.yaml
+    VersionOfEhrStatus:
+      $ref: ./schemas/ehr/VersionOfEhrStatus.yaml

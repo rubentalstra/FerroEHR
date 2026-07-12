@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: PARTY_RELATED
+    enum: [PARTY_RELATED]
   relationship:
     $ref: ../data_types/DvCodedText.yaml
 x-discriminator-value: PARTY_RELATED

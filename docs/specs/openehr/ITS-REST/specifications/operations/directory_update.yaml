@@ -10,6 +10,8 @@ parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/header/If-Match.yaml
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
 requestBody:
   description: |
     The new directory.
@@ -22,9 +24,9 @@ responses:
   '200':
     $ref: ../responses/200_directory_updated.yaml
   '204':
-    $ref: ../responses/204_directory_updated.yaml
+    $ref: ../responses/204_version_updated.yaml
   '400':
-    $ref: ../responses/400_FOLDER.yaml
+    $ref: ../responses/400.yaml
   '404':
     $ref: ../responses/404_unknown_ehr_id.yaml
   '412':

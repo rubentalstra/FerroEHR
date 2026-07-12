@@ -1,7 +1,7 @@
 name: qualified_query_name
 in: path
 description: |
-  The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`.
+  The (fully qualified) name of the query to be executed, in a format of `[{namespace}::]{query-name}`. See [Query Name](#tag/Qualified_query_name) for details on syntax.
 required: true
 style: simple
 schema:

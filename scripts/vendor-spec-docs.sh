@@ -31,7 +31,7 @@ COMPONENTS=(
   "QUERY|specifications-QUERY|Release-1.1.0|a87bb51fa1c515b863c9610a9444a2d5570dc05a"
   "SM|specifications-SM|master|23ffc4711c10bae2ae43724b1948fe3b24a0964e"
   "CNF|specifications-CNF|master|33251d2abe5a75c042e11c9385d2e9a79aa15904"
-  "ITS-REST|specifications-ITS-REST|Release-1.0.3|4aec22de9cdbd5427862f08013e8dce536a291cc"
+  "ITS-REST|specifications-ITS-REST|development (matches the vendored OAS identity)|e8a093e9d6da2ae68d7cfc29cf260a7edb065f47"
   "ITS-XML|specifications-ITS-XML|master (1.0.2 target, 2.0.0 TRIAL)|de8b37ba6c9a5e126623a063cafba3b58ebf1107"
   "ITS-JSON|specifications-ITS-JSON|master (development pin)|5acae056248e917a4b4c56f7e712f4fcfeb616a6"
 )
@@ -41,7 +41,8 @@ COMPONENTS=(
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-rsync_args=(--exclude='.git')
+# Upstream repo tooling is not spec text: exclude agent configs and CI.
+rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.github' --exclude='AGENTS.md')
 for ext in "${INCLUDE_EXT[@]}"; do
   rsync_args+=(--include="*.$ext")
 done

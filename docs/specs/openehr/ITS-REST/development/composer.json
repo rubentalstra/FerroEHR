@@ -4,12 +4,10 @@
     "type": "project",
     "license": "Apache-2.0",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.3",
         "ext-json": "*",
-        "league/openapi-psr7-validator": "^0.18",
         "cebe/php-openapi": "^1.7"
-    }
-    ,
+    },
     "require-dev": {
         "roave/security-advisories": "dev-latest"
     },
@@ -17,5 +15,8 @@
         "psr-4": {
             "OpenEHR\\Specifications\\Tools\\OpenAPI\\": "src/"
         }
-    }
+    },
+    "bin": [
+        "bin/generate_all"
+    ]
 }

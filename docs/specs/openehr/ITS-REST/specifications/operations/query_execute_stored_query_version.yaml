@@ -15,6 +15,7 @@ parameters:
   - $ref: ../parameters/query/offset.yaml
   - $ref: ../parameters/query/fetch.yaml
   - $ref: ../parameters/query/query_parameters.yaml
+  - $ref: ../parameters/header/Accept_JSON.yaml
 responses:
   '200':
     $ref: ../responses/200_Query.yaml

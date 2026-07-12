@@ -4,8 +4,4 @@ allOf:
   - $ref: ../common/PartyRelated.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [PARTY_RELATED]
 x-discriminator-value: PARTY_RELATED

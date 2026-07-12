@@ -7,9 +7,9 @@ properties:
   ehr_id:
     $ref: ../base_types/HierObjectId.yaml
   ehr_status:
-    $ref: ../base_types/ObjectRef.yaml
+    $ref: ../base_types/ObjectRefOfObjectVersionId.yaml
   ehr_access:
-    $ref: ../base_types/ObjectRef.yaml
+    $ref: ../base_types/ObjectRefOfObjectVersionId.yaml
   time_created:
     $ref: ../data_types/DvDateTime.yaml
 example:

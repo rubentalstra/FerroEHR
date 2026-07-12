@@ -1,0 +1,15 @@
+title: SECTION
+type: object
+allOf:
+  - $ref: ../ehr/ContentItem.yaml
+properties:
+  _type:
+    type: string
+    enum: [SECTION]
+  items:
+    type: array
+    minItems: 1
+    items:
+      $ref: ../ehr/UContentItem.yaml
+    description: See [CONTENT_ITEM](#tag/CONTENT_ITEM_schema) schema details.
+x-discriminator-value: SECTION

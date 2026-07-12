@@ -4,10 +4,6 @@ allOf:
   - $ref: ../base_types/ObjectVersionId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [OBJECT_VERSION_ID]
 x-discriminator-value: OBJECT_VERSION_ID
 example:
   _type: OBJECT_VERSION_ID

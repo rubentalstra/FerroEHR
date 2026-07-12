@@ -1,3 +1,3 @@
-This resource represents the definition of a stored Query and is formally specified in the Service Model as [Registered Queries](https://specifications.openehr.org/releases/SM/latest/openehr_platform.html#_registered_queries).
+This resource represents the definition of a stored query, including its qualified name, versioning and parameter declarations. Stored queries provide a reusable, immutable way to identify a specific AQL statement that can be executed later.
 
 <SchemaDefinition schemaRef="#/components/schemas/StoredQuery" />

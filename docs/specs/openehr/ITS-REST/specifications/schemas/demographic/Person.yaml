@@ -1,0 +1,9 @@
+title: PERSON
+type: object
+allOf:
+  - $ref: ../demographic/Actor.yaml
+properties:
+  _type:
+    type: string
+    enum: [PERSON]
+x-discriminator-value: PERSON

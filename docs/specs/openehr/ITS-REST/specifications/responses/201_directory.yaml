@@ -1,12 +1,17 @@
 description: |
-  `201 Created` is returned when the FOLDER was created. 
-  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+  `201 Created` is returned when the FOLDER is successfully created. 
+  If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+  If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
 headers:
   ETag:
     $ref: ../headers/ETag_FOLDER.yaml
   Location:
     $ref: ../headers/Location_directory.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
 content:
   application/json:
     schema:
-      $ref: ../schemas/ehr/Folder.yaml
+      oneOf:
+        - $ref: ../schemas/ehr/Folder.yaml
+        - $ref: ../schemas/others/Identifier.yaml

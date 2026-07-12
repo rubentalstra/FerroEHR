@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_BOOLEAN
+    enum: [DV_BOOLEAN]
   value:
     type: boolean
 x-discriminator-value: DV_BOOLEAN

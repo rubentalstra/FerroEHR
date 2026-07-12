@@ -1,0 +1,18 @@
+title: ITEM_TAG
+type: object
+required:
+  - key
+  - target
+  - owner_id
+properties:
+  key:
+    type: string
+  value:
+    type: string
+  target_path:
+    type: string
+  target:
+    $ref: ../base_types/UObjectRefOfUidBasedId.yaml
+  owner_id:
+    $ref: ../base_types/ObjectRefOfHierObjectId.yaml
+additionalProperties: false

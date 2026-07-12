@@ -1,0 +1,75 @@
+= Scopes
+
+Authorization is governed by *scopes*, which define the type and extent of access that a client _Application_ is requesting from the _Platform_.
+
+As specified in {ietf_html}/rfc6749#section-3.3[OAuth 2.0 Section 3.3^], scopes are passed during the authorization request and are evaluated by the _Platform_ when issuing access tokens.
+The _Platform_ must validate requested scopes against the _Application_ registration metadata, applicable access control policies, the authenticated user's permissions.
+
+*SMART on openEHR* aligns with FHIR's {hl7_smart_app_launch}/scopes-and-launch-context.html[SMART App Launch Framework^], where scopes serve three main purposes:
+
+- **Resource Access**: Grant access to specific resource types (e.g., `patient/composition-\*.rs`).
+- **Context Declaration**: Request specific launch contexts (e.g., `launch/patient`).
+- **Identity Claims**: Enable OpenID Connect scopes (e.g., `openid`) to identify the user.
+
+== Resource Scopes
+
+The _Application_ can request access to the _Platform_ resources using the scope syntax `<compartment>/<resource>.<permission>` where:
+
+- `<compartment>` indicates the scope of access delegation:
+  * `patient`: Access is limited to the current EHR and Patient is present in the context.
+  * `user`: Access is granted based on the authenticated user's permissions.
+  * `system`: Access is granted to backend applications acting without a user context.
+- `<resource>` identifies the openEHR or derived asset being accessed.
+- `<permissions>` specifies the allowed operations.
+
+The following `<compartment>` are supported:
+
+- `patient`: For applications acting in the context of a specific patient/EHR. Access is restricted to data within that patient's EHR.
+- `user`: For applications acting on behalf of a logged-in user (e.g., a practitioner). Access is subject to the user's security profile, not limited to the Patient in context (if any is present).
+- `system`: For server-to-server integrations or backend services, typically using client credentials, based on pre-configured client-specific policy. Grants access across all data.
+
+The following {openehr_its_rest_releases}[openEHR REST APIs] `<resource>` types are supported for use in scopes:
+
+- `template-<templateId>` - Access to operational templates matching `<templateId>` expression.
+- `composition-<templateId>` - Access to compositions of a given template matching `<templateId>` expression.
+- `aql-<queryName>` - Access to pre-defined (matching `<queryName>` expression) or ad-hoc (using wildcard `*`) AQL queries.
+
+The `<templateId>` and `<queryName>` support wildcard and pattern-based matching using `\*` and `**`, as follows:
+
+[width="100%",cols="2,2",options="header"]
+|=======================================================================
+| Pattern | Matches
+| `MyHospital::Template.v0` | Template exact match only
+| `org.openehr::bloodpressure.v1` | Query exact match only
+| `*::Template.v0` | Template.v0 from any namespace
+| `MyHospital::*` | Any template within MyHospital namespace
+| `*` | All available templates or queries
+|=======================================================================
+
+The following permission expressions are supported:
+
+- `c` - Create
+- `r` - Read
+- `u` - Update
+- `d` - Delete
+- `s` - Search or execute (e.g., for AQL queries)
+
+[NOTE]
+====
+Wildcard-based scopes (e.g., `\*` or `**`) should be used cautiously and only when absolutely necessary, as they imply broad access. For example, `system/aql-*.rs` would grant access to all registered and ad-hoc AQL queries system-wide.
+====
+
+The following table is a maximal representation of the scopes made possible in different _compartment_, _resource_ and _permission_ combinations:
+
+[width="100%",cols="1,2",options="header"]
+|=======================================================================
+| Scope | Description
+| `patient/composition-<templateId>.crud` | Full CRUD access to compositions matching `<templateId>` in the current patient's EHR.
+| `user/composition-<templateId>.crud` | Full CRUD access to compositions accessible by the user.
+| `system/composition-<templateId>.crud` | Unrestricted CRUD access to compositions across the entire system.
+| `user/template-<templateId>.crud` | Create and manage templates accessible to the user.
+| `system/template-<templateId>.crud` | Full system-wide template management.
+| `patient/aql-<queryName>.rs` | Execute and read AQL queries on the patient's EHR data.
+| `user/aql-<queryName>.cruds` | Full access to user-permitted AQL definitions or ad-hoc queries.
+| `system/aql-<queryName>.cruds` | System-wide access to AQL queries and endpoints.
+|=======================================================================

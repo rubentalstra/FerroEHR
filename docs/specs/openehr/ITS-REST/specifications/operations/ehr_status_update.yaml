@@ -4,6 +4,9 @@ description: |
   Updates EHR_STATUS associated with the EHR identified by `ehr_id`.
 
   The existing latest `version_uid` of EHR_STATUS resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+  
+  A list of ITEM_TAGs can be associated with the updated EHR_STATUS, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+  The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
 
   The response will contain the updated EHR_STATUS resource when the `Prefer` header has a value of `return=representation`.
 tags:
@@ -12,6 +15,10 @@ parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/header/If-Match.yaml
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
+  - $ref: ../parameters/header/openehr-item-tag.yaml
+  - $ref: ../parameters/header/openehr-version-item-tag.yaml
 requestBody:
   description: |
     The new EHR_STATUS.
@@ -24,8 +31,8 @@ responses:
   '200':
     $ref: ../responses/200_EHR_STATUS_updated.yaml
   '204':
-    $ref: ../responses/204_EHR_STATUS.yaml
-  '400':    
+    $ref: ../responses/204_version_updated.yaml
+  '400':
     $ref: ../responses/400.yaml
   '404':    
     $ref: ../responses/404_unknown_ehr_id.yaml

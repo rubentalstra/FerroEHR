@@ -4,8 +4,4 @@ allOf:
   - $ref: ../ehr/Action.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [ACTION]
 x-discriminator-value: ACTION

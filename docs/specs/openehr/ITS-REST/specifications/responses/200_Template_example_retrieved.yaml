@@ -1,0 +1,17 @@
+description: |
+  `200 OK` is returned when the template is successfully retrieved.
+headers:
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
+content:
+  application/json:
+    schema:
+      oneOf:
+        - $ref: ../schemas/ehr/Composition.yaml
+        - $ref: ../schemas/ehr/EhrStatus.yaml
+        - $ref: ../schemas/ehr/Folder.yaml
+        - $ref: ../schemas/demographic/Agent.yaml
+        - $ref: ../schemas/demographic/Group.yaml
+        - $ref: ../schemas/demographic/Organisation.yaml
+        - $ref: ../schemas/demographic/Person.yaml
+        - $ref: ../schemas/demographic/Role.yaml

@@ -1,0 +1,12 @@
+title: IMPORTED_VERSION
+type: object
+allOf:
+  - $ref: ../ehr/ImportedVersion.yaml
+required:
+  - _type
+properties:
+  data:
+    $ref: ../ehr/EhrStatus.yaml
+  item:
+    $ref: ../ehr/UMOriginalVersionOfEhrStatus.yaml
+x-discriminator-value: IMPORTED_VERSION

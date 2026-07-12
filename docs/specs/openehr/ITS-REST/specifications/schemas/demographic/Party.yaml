@@ -1,0 +1,15 @@
+title: PARTY
+type: object
+allOf:
+  - $ref: ../common/Versionable.yaml
+required:
+  - identities
+properties:
+  identities:
+    $ref: ../demographic/ListOfPartyIdentity.yaml
+  contacts:
+    $ref: ../demographic/ListOfContact.yaml
+  details:
+    $ref: ../data_structures/UItemStructure.yaml
+  relationships:
+    $ref: ../demographic/ListOfPartyRelationship.yaml

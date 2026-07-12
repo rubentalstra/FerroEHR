@@ -1,0 +1,5 @@
+title: PARTY_IDENTITY
+type: array
+items:
+  type: object
+description: See [PARTY_IDENTITY](demographic.html#tag/PARTY_IDENTITY_schema) schema details.

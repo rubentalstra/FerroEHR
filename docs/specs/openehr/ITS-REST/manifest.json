@@ -16,6 +16,17 @@
             "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, headers, http"
         },
         {
+            "id": "system",
+            "title": "System REST API",
+            "title_short": "System",
+            "description": "openEHR System REST API",
+            "summary": "This specification describes service endpoints, resources and operations as well as details of requests and responses that interacts with System openEHR API in a RESTful manner.",
+            "micro_summary": "System API",
+            "copyright_year": "2018",
+            "spec_status": "STABLE",
+            "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, System"
+        },
+        {
             "id": "ehr",
             "title": "EHR REST API",
             "title_short": "EHR API",
@@ -49,15 +60,48 @@
             "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, definitions, resources, templates"
         },
         {
-            "id": "simplified_data_template",
-            "title": "Simplified Data Template (SDT)",
-            "title_short": "SDT",
-            "description": "openEHR Simplified Data Template (SDT)",
-            "summary": "Simplified Data Template specification - a simplified data representation for committing data to the openEHR EHR.",
-            "micro_summary": "Simplified Data Template",
-            "copyright_year": "2019",
+            "id": "demographic",
+            "title": "DEMOGRAPHIC REST API",
+            "title_short": "DEMOGRAPHIC API",
+            "description": "openEHR DEMOGRAPHIC REST API",
+            "summary": "This specification describes service endpoints, resources, functions and operations as well as details of requests and responses that interacts with an openEHR DEMOGRAPHIC API in a RESTful manner.",
+            "micro_summary": "DEMOGRAPHIC API",
+            "copyright_year": "2024",
             "spec_status": "DEVELOPMENT",
-            "keywords": "JSON, REST, web template, commit, simplified data, TDS, SDT, ncSDT, simSDT, structSDT"
+            "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, DEMOGRAPHIC"
+        },
+        {
+            "id": "admin",
+            "title": "Admin REST API",
+            "title_short": "Admin API",
+            "description": "openEHR Admin REST API",
+            "summary": "This specification describes service endpoints, resources, functions and operations as well as details of requests and responses that interacts with an openEHR Admin API in a RESTful manner.",
+            "micro_summary": "Admin API",
+            "copyright_year": "2025",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, Admin"
+        },
+        {
+            "id": "simplified_formats",
+            "title": "Simplified Formats for openEHR Data",
+            "title_short": "Formats",
+            "description": "Simplified Formats (flat, structured) for openEHR Data",
+            "summary": "Simplified Formats (flat, structured) for serialization of openEHR Data.",
+            "micro_summary": "Simplified Formats",
+            "copyright_year": "2019",
+            "spec_status": "STABLE",
+            "keywords": "JSON, REST, web template, simplified data, flat, structured, simplified formats, SDT, simSDT, structSDT"
+        },
+        {
+            "id": "smart_app_launch",
+            "title": "SMART on openEHR (SMART)",
+            "title_short": "SMART",
+            "description": "openEHR SMART App Launch and Service Discovery Framework (SMART)",
+            "summary": "openEHR SMART App Launch and Service Discovery Framework.",
+            "micro_summary": "SMART on openEHR",
+            "copyright_year": "2023",
+            "spec_status": "DEVELOPMENT",
+            "keywords": "JSON, REST, SMART, OAuth2, OIDC, Authentication, Authorization, Application, App"
         },
         {
             "id": "REST_OAS_files",

@@ -5,5 +5,5 @@ allOf:
 properties:
   _type:
     type: string
-    default: PARTY_SELF
+    enum: [PARTY_SELF]
 x-discriminator-value: PARTY_SELF

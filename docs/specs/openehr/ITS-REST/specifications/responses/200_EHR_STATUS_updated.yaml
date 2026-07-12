@@ -1,11 +1,19 @@
 description: |
-  `200 OK` is returned when the EHR_STATUS is successfully updated, and the updated resource is returned in the body when `Prefer` header value is `return=representation`.
+  `200 OK` is returned when the EHR_STATUS is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
 headers:
   ETag:
     $ref: ../headers/ETag.yaml
   Location:
     $ref: ../headers/Location_EHR_STATUS.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
+  openehr-item-tag:
+    $ref: ../headers/openehr-item-tag.yaml
+  openehr-version-item-tag:
+    $ref: ../headers/openehr-version-item-tag.yaml
 content:
   application/json:
     schema:
-      $ref: ../schemas/ehr/EhrStatus.yaml
+      oneOf:
+        - $ref: ../schemas/ehr/EhrStatus.yaml
+        - $ref: ../schemas/others/Identifier.yaml

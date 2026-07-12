@@ -1,4 +1,5 @@
 title: DV_URI
+type: object
 oneOf:
   - $ref: ../data_types/UMDvUri.yaml
   - $ref: ../data_types/UMDvEhrUri.yaml
@@ -7,6 +8,3 @@ discriminator:
   mapping:
     DV_URI: ../data_types/UMDvUri.yaml
     DV_EHR_URI: ../data_types/UMDvEhrUri.yaml
-example:
-  _type: DV_URI
-  value: 'https://www.example.com'

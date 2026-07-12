@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_QUANTITY
+    enum: [DV_QUANTITY]
   magnitude:
     type: number
   precision:

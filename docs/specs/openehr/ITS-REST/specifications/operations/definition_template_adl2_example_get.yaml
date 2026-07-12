@@ -1,0 +1,29 @@
+operationId: definition_template_adl2_example_get
+summary: Get example data by template
+description: |
+  Generates and retrieves an example data instance based on an ADL2 operational template (OPT) identified by the `template_id` parameter.
+
+  The generated example can be either an `input` type (ready for submission to the repository) or an `output` type (as it would appear when retrieved from the repository), controlled by the `type` parameter.
+
+  The level of detail in the generated example can be customized using the `detail_level` parameter, which affects:
+  - Number and complexity of nested elements
+  - Inclusion/exclusion of optional elements
+  - Depth of data point details
+
+  The format of the returned data instance can be controlled via the `Accept` header. See the [data representation specification](overview.html#tag/Resources/Data-representation) for supported formats.
+tags:
+  - ADL2
+parameters:
+  - $ref: ../parameters/path/template_id_adl2.yaml
+  - $ref: ../parameters/query/example_type.yaml
+  - $ref: ../parameters/query/example_detail_level.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+responses:
+  '200':
+    $ref: ../responses/200_Template_example_retrieved.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '404':
+    $ref: ../responses/404_unknown_template_id.yaml
+  '406':
+    $ref: ../responses/406.yaml

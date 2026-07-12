@@ -1,0 +1,13 @@
+title: OBJECT_REF
+type: object
+allOf:
+  - $ref: ../base_types/ObjectRef.yaml
+properties:
+  id:
+    $ref: ../base_types/UMObjectVersionId.yaml
+example:
+  id:
+    _type: OBJECT_VERSION_ID
+    value: 'fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1'
+  namespace: local
+  type: COMPOSITION

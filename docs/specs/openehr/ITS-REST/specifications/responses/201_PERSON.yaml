@@ -1,0 +1,21 @@
+description: |
+  `201 Created` is returned when the PERSON is successfully created. 
+  If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+  If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_PERSON.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
+  openehr-item-tag:
+    $ref: ../headers/openehr-item-tag.yaml
+  openehr-version-item-tag:
+    $ref: ../headers/openehr-version-item-tag.yaml
+content:
+  application/json:
+    schema:
+      oneOf:
+        - $ref: ../schemas/demographic/Person.yaml
+        - $ref: ../schemas/others/Identifier.yaml

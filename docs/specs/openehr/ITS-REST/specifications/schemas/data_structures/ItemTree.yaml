@@ -5,9 +5,10 @@ allOf:
 properties:
   _type:
     type: string
-    default: ITEM_TREE
+    enum: [ITEM_TREE]
   items:
     type: array
     items:
       $ref: ../data_structures/UItem.yaml
+    description: See [ITEM](#tag/ITEM_schema) schema details.
 x-discriminator-value: ITEM_TREE

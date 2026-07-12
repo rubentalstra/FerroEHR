@@ -1,10 +1,8 @@
 name: version
 in: query
-description: |
-  A SEMVER version number.
-  Query parameter to indicate the desired version associated with the request.
 style: form
 explode: true
+deprecated: true
 schema:
   type: string
   example: '1.0.1'

@@ -1,0 +1,11 @@
+title: FOLDER
+type: object
+allOf:
+  - $ref: ../ehr/Folder.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [FOLDER]
+x-discriminator-value: FOLDER

@@ -4,8 +4,4 @@ allOf:
   - $ref: ../ehr/Evaluation.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [EVALUATION]
 x-discriminator-value: EVALUATION

@@ -1,0 +1,4938 @@
+openapi: 3.0.3
+info:
+  title: Demographic API
+  version: development
+  x-status: DEVELOPMENT
+  x-spec: demographic
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    ## Description
+
+    ### Purpose
+
+    This specification describes service endpoints, resources and operations as well as details of requests and responses that interact with the openEHR Demographic API in a RESTful manner.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [Demographic Information Model](https://specifications.openehr.org/releases/RM/latest/demographic.html#_demographic_package)
+
+    Related documents include:
+
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+    ### Status
+
+    This specification is in the `DEVELOPMENT` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/demographic-validation.openapi.yaml), or [for code generators](computable/OAS/demographic-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/demographic.html>.
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+tags:
+  - name: AGENT
+    description: |
+      Management of the [AGENT](https://specifications.openehr.org/releases/RM/latest/demographic.html#_agent_class) class.
+  - name: GROUP
+    description: |
+      Management of the [GROUP](https://specifications.openehr.org/releases/RM/latest/demographic.html#_group_class) class.
+  - name: ORGANISATION
+    description: |
+      Management of the [ORGANISATION](https://specifications.openehr.org/releases/RM/latest/demographic.html#_organisation_class) class.
+  - name: PERSON
+    description: |
+      Management of the [PERSON](https://specifications.openehr.org/releases/RM/latest/demographic.html#_person_class) class.
+  - name: ROLE
+    description: |
+      Management of the [ROLE](https://specifications.openehr.org/releases/RM/latest/demographic.html#_role_class) class.
+  - name: VERSIONED_PARTY
+    description: |
+      Management of the [VERSIONED_PARTY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_versioned_party_class) class.
+  - name: CONTRIBUTION
+    description: |
+      Management of [CONTRIBUTION](https://specifications.openehr.org/releases/RM/latest/common.html#_contribution_class) class.
+  - name: ITEM_TAG
+    description: |
+      Management of [ITEM_TAG](https://specifications.openehr.org/releases/RM/development/common.html#_item_tag_class) resources.
+  - name: CAPABILITY_schema
+    x-displayName: CAPABILITY
+    description: |
+      The `CAPABILITY` schema, formally specified in the Reference Model as the [CAPABILITY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_capability_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/Capability" />
+  - name: CONTACT_schema
+    x-displayName: CONTACT
+    description: |
+      The `CONTACT` schema, formally specified in the Reference Model as the [CONTACT](https://specifications.openehr.org/releases/RM/latest/demographic.html#_contact_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/Contact" />
+  - name: PARTY_IDENTITY_schema
+    x-displayName: PARTY_IDENTITY
+    description: |
+      The `PARTY_IDENTITY` schema, formally specified in the Reference Model as the [PARTY_IDENTITY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_party_identity_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/PartyIdentity" />
+  - name: PARTY_RELATIONSHIP_schema
+    x-displayName: PARTY_RELATIONSHIP
+    description: |
+      The `PARTY_RELATIONSHIP` resource, formally specified in the Reference Model as the [PARTY_RELATIONSHIP](https://specifications.openehr.org/releases/RM/latest/demographic.html#_party_relationship_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/PartyRelationship" />
+  - name: ITEM_schema
+    x-displayName: ITEM
+    description: |
+      The abstract `ITEM` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItem" />
+  - name: ITEM_STRUCTURE_schema
+    x-displayName: ITEM_STRUCTURE
+    description: |
+      The abstract `ITEM_STRUCTURE` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItemStructure" />
+paths:
+  /demographic/agent:
+    post:
+      operationId: agent_create
+      summary: Create AGENT
+      description: |
+        Creates the first version of a new AGENT.
+
+        A list of ITEM_TAGs can be associated with the AGENT, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - AGENT
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-item-tag'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The AGENT.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agent'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_AGENT'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+  /demographic/agent/{uid_based_id}:
+    get:
+      operationId: agent_get
+      summary: Get AGENT
+      description: |
+        Retrieves a version of the AGENT identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to retrieve a specific known version of the AGENT (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+
+        When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ AGENT version.
+
+        See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+
+        When there are ITEM_TAGs associated with the retrieved AGENT, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - AGENT
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_AGENT_retrieved'
+        '204':
+          $ref: '#/components/responses/204_deleted_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+    put:
+      operationId: agent_update
+      summary: Update AGENT
+      description: |
+        Updates AGENT identified by `uid_based_id`.
+
+        The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+        If the request body already contains a AGENT.uid.value, it must match the `uid_based_id` in the URL. 
+
+        The existing latest `version_uid` of AGENT resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+        A list of ITEM_TAGs can be associated with the updated AGENT, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - AGENT
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_versioned_object_uid'
+        - $ref: '#/components/parameters/If-Match'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The new AGENT.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agent'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_AGENT_updated'
+        '204':
+          $ref: '#/components/responses/204_version_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '412':
+          $ref: '#/components/responses/412_AGENT'
+        '422':
+          $ref: '#/components/responses/422'
+    delete:
+      operationId: agent_delete
+      summary: Delete AGENT
+      description: |
+        Deletes the AGENT identified by `uid_based_id`.
+
+        The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+      tags:
+        - AGENT
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_version_uid'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_version_deleted'
+        '400':
+          $ref: '#/components/responses/400_already_deleted'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409_AGENT_with_uid_based_id'
+  /demographic/group:
+    post:
+      operationId: group_create
+      summary: Create GROUP
+      description: |
+        Creates the first version of a new GROUP.
+
+        A list of ITEM_TAGs can be associated with the GROUP, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - GROUP
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-item-tag'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The GROUP.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_GROUP'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+  /demographic/group/{uid_based_id}:
+    get:
+      operationId: group_get
+      summary: Get GROUP
+      description: |
+        Retrieves a version of the GROUP identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to retrieve a specific known version of the GROUP (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+
+        When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ GROUP version.
+
+        See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+
+        When there are ITEM_TAGs associated with the retrieved GROUP, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - GROUP
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_GROUP_retrieved'
+        '204':
+          $ref: '#/components/responses/204_deleted_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+    put:
+      operationId: group_update
+      summary: Update GROUP
+      description: |
+        Updates GROUP identified by `uid_based_id`.
+
+        The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+        If the request body already contains a GROUP.uid.value, it must match the `uid_based_id` in the URL. 
+
+        The existing latest `version_uid` of GROUP resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+        A list of ITEM_TAGs can be associated with the updated GROUP, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - GROUP
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_versioned_object_uid'
+        - $ref: '#/components/parameters/If-Match'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The new GROUP.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_GROUP_updated'
+        '204':
+          $ref: '#/components/responses/204_version_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '412':
+          $ref: '#/components/responses/412_GROUP'
+        '422':
+          $ref: '#/components/responses/422'
+    delete:
+      operationId: group_delete
+      summary: Delete GROUP
+      description: |
+        Deletes the GROUP identified by `uid_based_id`.
+
+        The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+      tags:
+        - GROUP
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_version_uid'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_version_deleted'
+        '400':
+          $ref: '#/components/responses/400_already_deleted'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409_GROUP_with_uid_based_id'
+  /demographic/organisation:
+    post:
+      operationId: organisation_create
+      summary: Create ORGANISATION
+      description: |
+        Creates the first version of a new ORGANISATION.
+
+        A list of ITEM_TAGs can be associated with the ORGANISATION, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ORGANISATION
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-item-tag'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The ORGANISATION.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_ORGANISATION'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+  /demographic/organisation/{uid_based_id}:
+    get:
+      operationId: organisation_get
+      summary: Get ORGANISATION
+      description: |
+        Retrieves a version of the ORGANISATION identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to retrieve a specific known version of the ORGANISATION (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+
+        When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ ORGANISATION version.
+
+        See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+
+        When there are ITEM_TAGs associated with the retrieved ORGANISATION, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ORGANISATION
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ORGANISATION_retrieved'
+        '204':
+          $ref: '#/components/responses/204_deleted_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+    put:
+      operationId: organisation_update
+      summary: Update ORGANISATION
+      description: |
+        Updates ORGANISATION identified by `uid_based_id`.
+
+        The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+        If the request body already contains a ORGANISATION.uid.value, it must match the `uid_based_id` in the URL. 
+
+        The existing latest `version_uid` of ORGANISATION resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+        A list of ITEM_TAGs can be associated with the updated ORGANISATION, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ORGANISATION
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_versioned_object_uid'
+        - $ref: '#/components/parameters/If-Match'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The new ORGANISATION.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ORGANISATION_updated'
+        '204':
+          $ref: '#/components/responses/204_version_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '412':
+          $ref: '#/components/responses/412_ORGANISATION'
+        '422':
+          $ref: '#/components/responses/422'
+    delete:
+      operationId: organisation_delete
+      summary: Delete ORGANISATION
+      description: |
+        Deletes the ORGANISATION identified by `uid_based_id`.
+
+        The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+      tags:
+        - ORGANISATION
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_version_uid'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_version_deleted'
+        '400':
+          $ref: '#/components/responses/400_already_deleted'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409_ORGANISATION_with_uid_based_id'
+  /demographic/person:
+    post:
+      operationId: person_create
+      summary: Create PERSON
+      description: |
+        Creates the first version of a new PERSON.
+
+        A list of ITEM_TAGs can be associated with the PERSON, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - PERSON
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-item-tag'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The PERSON.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_PERSON'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+  /demographic/person/{uid_based_id}:
+    get:
+      operationId: person_get
+      summary: Get PERSON
+      description: |
+        Retrieves a version of the PERSON identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to retrieve a specific known version of the PERSON (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+
+        When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ PERSON version.
+
+        See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+
+        When there are ITEM_TAGs associated with the retrieved PERSON, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - PERSON
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_PERSON_retrieved'
+        '204':
+          $ref: '#/components/responses/204_deleted_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+    put:
+      operationId: person_update
+      summary: Update PERSON
+      description: |
+        Updates PERSON identified by `uid_based_id`.
+
+        The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+        If the request body already contains a PERSON.uid.value, it must match the `uid_based_id` in the URL. 
+
+        The existing latest `version_uid` of PERSON resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+        A list of ITEM_TAGs can be associated with the updated PERSON, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - PERSON
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_versioned_object_uid'
+        - $ref: '#/components/parameters/If-Match'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The new PERSON.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Person'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_PERSON_updated'
+        '204':
+          $ref: '#/components/responses/204_version_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '412':
+          $ref: '#/components/responses/412_PERSON'
+        '422':
+          $ref: '#/components/responses/422'
+    delete:
+      operationId: person_delete
+      summary: Delete PERSON
+      description: |
+        Deletes the PERSON identified by `uid_based_id`.
+
+        The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+      tags:
+        - PERSON
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_version_uid'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_version_deleted'
+        '400':
+          $ref: '#/components/responses/400_already_deleted'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409_PERSON_with_uid_based_id'
+  /demographic/role:
+    post:
+      operationId: role_create
+      summary: Create ROLE
+      description: |
+        Creates the first version of a new ROLE.
+
+        A list of ITEM_TAGs can be associated with the ROLE, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ROLE
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-item-tag'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The ROLE.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_ROLE'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '422':
+          $ref: '#/components/responses/422'
+  /demographic/role/{uid_based_id}:
+    get:
+      operationId: role_get
+      summary: Get ROLE
+      description: |
+        Retrieves a version of the ROLE identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to retrieve a specific known version of the ROLE (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+
+        When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ ROLE version.
+
+        See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+
+        When there are ITEM_TAGs associated with the retrieved ROLE, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ROLE
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ROLE_retrieved'
+        '204':
+          $ref: '#/components/responses/204_deleted_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+    put:
+      operationId: role_update
+      summary: Update ROLE
+      description: |
+        Updates ROLE identified by `uid_based_id`.
+
+        The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+        If the request body already contains a ROLE.uid.value, it must match the `uid_based_id` in the URL. 
+
+        The existing latest `version_uid` of ROLE resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+
+        A list of ITEM_TAGs can be associated with the updated ROLE, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+        The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+      tags:
+        - ROLE
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_versioned_object_uid'
+        - $ref: '#/components/parameters/If-Match'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_LOCATABLE'
+        - $ref: '#/components/parameters/ContentType_LOCATABLE'
+        - $ref: '#/components/parameters/openehr-version-item-tag'
+      requestBody:
+        description: |
+          The new ROLE.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ROLE_updated'
+        '204':
+          $ref: '#/components/responses/204_version_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '412':
+          $ref: '#/components/responses/412_ROLE'
+        '422':
+          $ref: '#/components/responses/422'
+    delete:
+      operationId: role_delete
+      summary: Delete ROLE
+      description: |
+        Deletes the ROLE identified by `uid_based_id`.
+
+        The `uid_based_id` MUST be in a form of an OBJECT_VERSION_ID identifier taken from the last (most recent) VERSION.uid.value, representing the `preceding_version_uid` to be deleted.
+      tags:
+        - ROLE
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id_as_version_uid'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_version_deleted'
+        '400':
+          $ref: '#/components/responses/400_already_deleted'
+        '404':
+          $ref: '#/components/responses/404'
+        '409':
+          $ref: '#/components/responses/409_ROLE_with_uid_based_id'
+  /demographic/versioned_party/{versioned_object_uid}:
+    get:
+      operationId: versioned_party_get
+      summary: Get VERSIONED_PARTY
+      description: |
+        Retrieves a VERSIONED_PARTY identified by `versioned_object_uid`.
+      tags:
+        - VERSIONED_PARTY
+      parameters:
+        - $ref: '#/components/parameters/versioned_object_uid_PARTY'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_VERSIONED_PARTY'
+        '404':
+          $ref: '#/components/responses/404'
+  /demographic/versioned_party/{versioned_object_uid}/revision_history:
+    get:
+      operationId: versioned_party_revision_history
+      summary: Get VERSIONED_PARTY revision history
+      description: |
+        Retrieves revision history of the VERSIONED_PARTY identified by `versioned_object_uid`.
+      tags:
+        - VERSIONED_PARTY
+      parameters:
+        - $ref: '#/components/parameters/versioned_object_uid_PARTY'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_REVISION_HISTORY'
+        '404':
+          $ref: '#/components/responses/404'
+  /demographic/versioned_party/{versioned_object_uid}/version:
+    get:
+      operationId: versioned_party_version_get_at_time
+      summary: Get VERSIONED_PARTY version at time
+      description: |
+        Retrieves a VERSION from the VERSIONED_PARTY identified by `versioned_object_uid`.
+
+        If `version_at_time` is supplied, retrieves the VERSION extant _at specified time_, otherwise retrieves the _latest_ VERSION.
+      tags:
+        - VERSIONED_PARTY
+      parameters:
+        - $ref: '#/components/parameters/versioned_object_uid_PARTY'
+        - $ref: '#/components/parameters/version_at_time'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_VERSION_of_PARTY_at_time'
+        '404':
+          $ref: '#/components/responses/404_not_found_or_no_version_at_time'
+  /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}:
+    get:
+      operationId: versioned_party_version_get_by_id
+      summary: Get VERSIONED_PARTY version by id
+      description: |
+        Retrieves a VERSION identified by `version_uid` of a VERSIONED_PARTY identified by `versioned_object_uid`.
+      tags:
+        - VERSIONED_PARTY
+      parameters:
+        - $ref: '#/components/parameters/versioned_object_uid_PARTY'
+        - $ref: '#/components/parameters/version_uid'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_VERSION_of_PARTY_by_id'
+        '404':
+          $ref: '#/components/responses/404'
+  /demographic/contribution:
+    post:
+      operationId: contribution_create
+      summary: Create CONTRIBUTION
+      description: |
+        We will use the relaxed CONTRIBUTION with the following optional attributes:
+          - `uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned
+          - `audit.time_committed`: server will always set it
+          - `audit.system_id`: when provided, it will be validated
+
+        The `audit` and each `versions[i].commit_audit` are `UPDATE_AUDIT` objects: structurally an
+        `AUDIT_DETAILS` minus the server-assigned attributes (`time_committed`, and the optional `system_id`).
+        Clients SHOULD send `_type: "UPDATE_AUDIT"`; for interoperability servers SHOULD additionally accept
+        `_type: "AUDIT_DETAILS"` or an omitted `_type` for this attribute. The `audit.change_type` and each
+        `versions[i].lifecycle_state` are `DV_CODED_TEXT` values coded against the openEHR terminology.
+      tags:
+        - CONTRIBUTION
+      parameters:
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        description: |
+          The CONTRIBUTION.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewContribution'
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201_demographic_CONTRIBUTION'
+        '400':
+          $ref: '#/components/responses/400_CONTRIBUTION'
+        '409':
+          $ref: '#/components/responses/409'
+  /demographic/contribution/{contribution_uid}:
+    get:
+      operationId: contribution_get
+      summary: Get CONTRIBUTION by id
+      description: |
+        Retrieves a CONTRIBUTION identified by `contribution_uid`.
+      tags:
+        - CONTRIBUTION
+      parameters:
+        - $ref: '#/components/parameters/contribution_uid'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_CONTRIBUTION'
+        '404':
+          $ref: '#/components/responses/404_demographic_CONTRIBUTION'
+  /demographic/tags:
+    get:
+      operationId: demographic_tags_get
+      summary: Get Demographic tags
+      description: |
+        Retrieves the list of ITEM_TAG resources associated with any target VERSION or VERSIONED_PARTY within the Demographic space. 
+
+        This list can be filtered by the given one or more `tag_key`, `tag_value`, `tag_target_path` query parameters. 
+        In case no such parameter is provided then all ITEM_TAG resources will be retrieved.
+
+        This will return an empty list when there is no matching ITEM_TAG associated with any target within given EHR.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/tag_key'
+        - $ref: '#/components/parameters/tag_value'
+        - $ref: '#/components/parameters/tag_target_path'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_PERSON_ItemTagList_retrieved'
+        '400':
+          $ref: '#/components/responses/400'
+  /demographic/agent/{uid_based_id}/tags:
+    get:
+      operationId: agent_tags_get
+      summary: Get AGENT tags
+      description: |
+        Retrieves the list of all ITEM_TAG resources associated with a given target AGENT version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to get the tags of a particular (target) version of the AGENT version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to get the tags of the target VERSIONED_PARTY container.
+
+        This will return an empty list when there is no ITEM_TAG associated with the given target.
+          
+        More than one ITEM_TAG may be associated with a single target AGENT or VERSIONED_PARTY, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_AGENT_ItemTagList_retrieved'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+    put:
+      operationId: agent_tags_update
+      summary: Update AGENT tags
+      description: |
+        Updates the list of all ITEM_TAG resources associated with a given target AGENT version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to update the tags of a particular AGENT version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to update the tags of the target VERSIONED_PARTY container.
+          
+        Providing an empty list will effectively remove all ITEM_TAG associated with the given target.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateItemTag'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_AGENT_ItemTagList_updated'
+        '204':
+          $ref: '#/components/responses/204_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+  /demographic/agent/{uid_based_id}/tags/{key}:
+    delete:
+      operationId: agent_tags_delete
+      summary: Delete AGENT tags
+      description: |
+        Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a given target AGENT version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`),
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to delete the tags a particular (target) version of the AGENT version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to delete the tags of the target VERSIONED_PARTY container.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_deleted'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id_or_key'
+  /demographic/group/{uid_based_id}/tags:
+    get:
+      operationId: group_tags_get
+      summary: Get GROUP tags
+      description: |
+        Retrieves the list of all ITEM_TAG resources associated with a given target GROUP version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to get the tags of a particular (target) version of the GROUP version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to get the tags of the target VERSIONED_PARTY container.
+
+        This will return an empty list when there is no ITEM_TAG associated with the given target.
+          
+        More than one ITEM_TAG may be associated with a single target GROUP or VERSIONED_PARTY, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_GROUP_ItemTagList_retrieved'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+    put:
+      operationId: group_tags_update
+      summary: Update GROUP tags
+      description: |
+        Updates the list of all ITEM_TAG resources associated with a given target GROUP version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to update the tags of a particular GROUP version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to update the tags of the target VERSIONED_PARTY container.
+          
+        Providing an empty list will effectively remove all ITEM_TAG associated with the given target.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateItemTag'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_GROUP_ItemTagList_updated'
+        '204':
+          $ref: '#/components/responses/204_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+  /demographic/group/{uid_based_id}/tags/{key}:
+    delete:
+      operationId: group_tags_delete
+      summary: Delete GROUP tags
+      description: |
+        Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a given target GROUP version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`),
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to delete the tags a particular (target) version of the GROUP version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to delete the tags of the target VERSIONED_PARTY container.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_deleted'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id_or_key'
+  /demographic/organisation/{uid_based_id}/tags:
+    get:
+      operationId: organisation_tags_get
+      summary: Get ORGANISATION tags
+      description: |
+        Retrieves the list of all ITEM_TAG resources associated with a given target ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to get the tags of a particular (target) version of the ORGANISATION version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to get the tags of the target VERSIONED_PARTY container.
+
+        This will return an empty list when there is no ITEM_TAG associated with the given target.
+          
+        More than one ITEM_TAG may be associated with a single target ORGANISATION or VERSIONED_PARTY, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ORGANISATION_ItemTagList_retrieved'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+    put:
+      operationId: organisation_tags_update
+      summary: Update ORGANISATION tags
+      description: |
+        Updates the list of all ITEM_TAG resources associated with a given target ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to update the tags of a particular ORGANISATION version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to update the tags of the target VERSIONED_PARTY container.
+          
+        Providing an empty list will effectively remove all ITEM_TAG associated with the given target.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateItemTag'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ORGANISATION_ItemTagList_updated'
+        '204':
+          $ref: '#/components/responses/204_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+  /demographic/organisation/{uid_based_id}/tags/{key}:
+    delete:
+      operationId: organisation_tags_delete
+      summary: Delete ORGANISATION tags
+      description: |
+        Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a given target ORGANISATION version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`),
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to delete the tags a particular (target) version of the ORGANISATION version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to delete the tags of the target VERSIONED_PARTY container.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_deleted'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id_or_key'
+  /demographic/person/{uid_based_id}/tags:
+    get:
+      operationId: person_tags_get
+      summary: Get PERSON tags
+      description: |
+        Retrieves the list of all ITEM_TAG resources associated with a given target PERSON version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to get the tags of a particular (target) version of the PERSON version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to get the tags of the target VERSIONED_PARTY container.
+
+        This will return an empty list when there is no ITEM_TAG associated with the given target.
+          
+        More than one ITEM_TAG may be associated with a single target PERSON or VERSIONED_PARTY, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_PERSON_ItemTagList_retrieved'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+    put:
+      operationId: person_tags_update
+      summary: Update PERSON tags
+      description: |
+        Updates the list of all ITEM_TAG resources associated with a given target PERSON version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to update the tags of a particular PERSON version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to update the tags of the target VERSIONED_PARTY container.
+          
+        Providing an empty list will effectively remove all ITEM_TAG associated with the given target.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateItemTag'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_PERSON_ItemTagList_updated'
+        '204':
+          $ref: '#/components/responses/204_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+  /demographic/person/{uid_based_id}/tags/{key}:
+    delete:
+      operationId: person_tags_delete
+      summary: Delete PERSON tags
+      description: |
+        Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a given target PERSON version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`),
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to delete the tags a particular (target) version of the PERSON version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to delete the tags of the target VERSIONED_PARTY container.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_deleted'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id_or_key'
+  /demographic/role/{uid_based_id}/tags:
+    get:
+      operationId: role_tags_get
+      summary: Get ROLE tags
+      description: |
+        Retrieves the list of all ITEM_TAG resources associated with a given target ROLE version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to get the tags of a particular (target) version of the ROLE version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to get the tags of the target VERSIONED_PARTY container.
+
+        This will return an empty list when there is no ITEM_TAG associated with the given target.
+          
+        More than one ITEM_TAG may be associated with a single target ROLE or VERSIONED_PARTY, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Accept_canonical'
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ROLE_ItemTagList_retrieved'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+    put:
+      operationId: role_tags_update
+      summary: Update ROLE tags
+      description: |
+        Updates the list of all ITEM_TAG resources associated with a given target ROLE version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), 
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to update the tags of a particular ROLE version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to update the tags of the target VERSIONED_PARTY container.
+          
+        Providing an empty list will effectively remove all ITEM_TAG associated with the given target.
+
+        More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+        by their `key` and `target_path` pair attributes.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/Prefer'
+        - $ref: '#/components/parameters/Accept_canonical'
+        - $ref: '#/components/parameters/ContentType_canonical'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/UpdateItemTag'
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/200_ROLE_ItemTagList_updated'
+        '204':
+          $ref: '#/components/responses/204_updated'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id'
+  /demographic/role/{uid_based_id}/tags/{key}:
+    delete:
+      operationId: role_tags_delete
+      summary: Delete ROLE tags
+      description: |
+        Deletes the ITEM_TAG resource(s) identified by `tag_key`, associated with a given target ROLE version or VERSIONED_PARTY identified by `uid_based_id`.
+
+        The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`),
+        or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_PARTY.uid.value (i.e. a `versioned_object_uid`).
+        The former is used to delete the tags a particular (target) version of the ROLE version (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`),
+        whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to delete the tags of the target VERSIONED_PARTY container.
+      tags:
+        - ITEM_TAG
+      parameters:
+        - $ref: '#/components/parameters/uid_based_id'
+        - $ref: '#/components/parameters/key'
+      responses:
+        '204':
+          $ref: '#/components/responses/204_deleted'
+        '404':
+          $ref: '#/components/responses/404_unknown_uid_based_id_or_key'
+components:
+  schemas:
+    UpdateItemTag:
+      title: UPDATE_ITEM_TAG
+      required:
+        - key
+      type: object
+      properties:
+        key:
+          type: string
+          description: Tag key (identifier)
+        value:
+          type: string
+          description: Tag value
+        target_path:
+          type: string
+          description: An AQL path withing the `target` used to tag a fine-grained element
+      example:
+        key: flag
+        value: follow-up
+        target_path: /context/start_time/value
+      additionalProperties: false
+    UMDvUri:
+      title: DV_URI
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_URI
+          type: string
+        value:
+          type: string
+      example:
+        _type: DV_URI
+        value: https://www.example.com
+    DvEhrUri:
+      title: DV_EHR_URI
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_EHR_URI
+          type: string
+        value:
+          type: string
+      example:
+        _type: DV_EHR_URI
+        value: ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure
+      required:
+        - value
+    UMDvEhrUri:
+      title: DV_EHR_URI
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_EHR_URI
+          type: string
+        value:
+          type: string
+      example:
+        _type: DV_EHR_URI
+        value: ehr://system_id/ehr_id/top_level_structure_locator/path_inside_top_level_structure
+    UDvUri:
+      title: DV_URI
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMDvUri'
+        - $ref: '#/components/schemas/UMDvEhrUri'
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_URI: '#/components/schemas/UMDvUri'
+          DV_EHR_URI: '#/components/schemas/UMDvEhrUri'
+    TerminologyId:
+      title: TERMINOLOGY_ID
+      type: object
+      properties:
+        _type:
+          enum:
+            - TERMINOLOGY_ID
+          type: string
+        value:
+          type: string
+      required:
+        - value
+    CodePhrase:
+      title: CODE_PHRASE
+      required:
+        - terminology_id
+        - code_string
+      type: object
+      properties:
+        terminology_id:
+          $ref: '#/components/schemas/TerminologyId'
+        code_string:
+          type: string
+        preferred_term:
+          type: string
+      example:
+        terminology_id:
+          value: local
+        code_string: at0001
+    DvCodedText:
+      title: DV_CODED_TEXT
+      required:
+        - value
+        - defining_code
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_CODED_TEXT
+          type: string
+        value:
+          type: string
+        hyperlink:
+          $ref: '#/components/schemas/UDvUri'
+        formatting:
+          type: string
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermMapping'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        encoding:
+          $ref: '#/components/schemas/CodePhrase'
+        defining_code:
+          $ref: '#/components/schemas/CodePhrase'
+      example:
+        value: Coded text value
+        defining_code:
+          terminology_id:
+            value: local
+          code_string: at0001
+    TermMapping:
+      title: TERM_MAPPING
+      required:
+        - match
+        - target
+      type: object
+      properties:
+        match:
+          pattern: ^[><=?]$
+          type: string
+        purpose:
+          $ref: '#/components/schemas/DvCodedText'
+        target:
+          $ref: '#/components/schemas/CodePhrase'
+    UMDvText:
+      title: DV_TEXT
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_TEXT
+          type: string
+        value:
+          type: string
+        hyperlink:
+          $ref: '#/components/schemas/UDvUri'
+        formatting:
+          type: string
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermMapping'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        encoding:
+          $ref: '#/components/schemas/CodePhrase'
+      example:
+        _type: DV_TEXT
+        value: Text value
+    UMDvCodedText:
+      title: DV_CODED_TEXT
+      required:
+        - value
+        - defining_code
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_CODED_TEXT
+          type: string
+        value:
+          type: string
+        hyperlink:
+          $ref: '#/components/schemas/UDvUri'
+        formatting:
+          type: string
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TermMapping'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        encoding:
+          $ref: '#/components/schemas/CodePhrase'
+        defining_code:
+          $ref: '#/components/schemas/CodePhrase'
+      example:
+        value: Coded text value
+        defining_code:
+          terminology_id:
+            value: local
+          code_string: at0001
+    UDvText:
+      title: DV_TEXT
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMDvText'
+        - $ref: '#/components/schemas/UMDvCodedText'
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_TEXT: '#/components/schemas/UMDvText'
+          DV_CODED_TEXT: '#/components/schemas/UMDvCodedText'
+    HierObjectId:
+      title: HIER_OBJECT_ID
+      required:
+        - value
+      type: object
+      properties:
+        _type:
+          enum:
+            - HIER_OBJECT_ID
+          type: string
+        value:
+          type: string
+          format: uuid
+      example:
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b
+    UMHierObjectId:
+      title: HIER_OBJECT_ID
+      required:
+        - value
+        - _type
+      type: object
+      example:
+        _type: HIER_OBJECT_ID
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b
+      properties:
+        _type:
+          enum:
+            - HIER_OBJECT_ID
+          type: string
+        value:
+          type: string
+          format: uuid
+    ObjectVersionId:
+      title: OBJECT_VERSION_ID
+      required:
+        - value
+      type: object
+      properties:
+        _type:
+          enum:
+            - OBJECT_VERSION_ID
+          type: string
+        value:
+          type: string
+      example:
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    UMObjectVersionId:
+      title: OBJECT_VERSION_ID
+      required:
+        - value
+        - _type
+      type: object
+      example:
+        _type: OBJECT_VERSION_ID
+        value: 6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+      properties:
+        _type:
+          enum:
+            - OBJECT_VERSION_ID
+          type: string
+        value:
+          type: string
+    UUidBasedId:
+      title: UID_BASED_ID
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMHierObjectId'
+        - $ref: '#/components/schemas/UMObjectVersionId'
+      discriminator:
+        propertyName: _type
+        mapping:
+          HIER_OBJECT_ID: '#/components/schemas/UMHierObjectId'
+          OBJECT_VERSION_ID: '#/components/schemas/UMObjectVersionId'
+    Link:
+      title: LINK
+      required:
+        - meaning
+        - type
+        - target
+      type: object
+      properties:
+        meaning:
+          $ref: '#/components/schemas/UDvText'
+        type:
+          $ref: '#/components/schemas/UDvText'
+        target:
+          $ref: '#/components/schemas/DvEhrUri'
+    ArchetypeId:
+      title: ARCHETYPE_ID
+      type: object
+      properties:
+        _type:
+          enum:
+            - ARCHETYPE_ID
+          type: string
+        value:
+          type: string
+      required:
+        - value
+    TemplateId:
+      title: TEMPLATE_ID
+      type: object
+      properties:
+        _type:
+          enum:
+            - TEMPLATE_ID
+          type: string
+        value:
+          type: string
+      required:
+        - value
+    Archetyped:
+      title: ARCHETYPED
+      required:
+        - archetype_id
+        - rm_version
+      type: object
+      properties:
+        archetype_id:
+          $ref: '#/components/schemas/ArchetypeId'
+        template_id:
+          $ref: '#/components/schemas/TemplateId'
+        rm_version:
+          type: string
+      example:
+        archetype_id:
+          value: openEHR-EHR-COMPOSITION.encounter.v1
+        template_id:
+          value: Example.v1::c7ec861c-c413-39ff-9965-a198ebf44747
+        rm_version: 1.0.2
+      additionalProperties: false
+    DvIdentifier:
+      title: DV_IDENTIFIER
+      required:
+        - id
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_IDENTIFIER
+          type: string
+        issuer:
+          type: string
+        assigner:
+          type: string
+        id:
+          type: string
+        type:
+          type: string
+      description: |
+        Type for representing identifiers of real-world entities. Typical identifiers include drivers licence number, social security number, veterans affairs number, prescription id, order id, and so on.
+
+        DV_IDENTIFIER is used to represent any identifier of a real thing, issued by some authority or agency.
+      example:
+        id: 16b74749-e6aa-4945-b760-b42bdc07098a
+        type: Patient
+    DvMultimedia:
+      title: DV_MULTIMEDIA
+      required:
+        - _type
+        - media_type
+        - size
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_MULTIMEDIA
+          type: string
+        charset:
+          $ref: '#/components/schemas/CodePhrase'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        alternate_text:
+          type: string
+        uri:
+          $ref: '#/components/schemas/UDvUri'
+        data:
+          type: string
+        media_type:
+          $ref: '#/components/schemas/CodePhrase'
+        compression_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        integrity_check:
+          type: string
+        integrity_check_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        thumbnail:
+          $ref: '#/components/schemas/DvMultimedia'
+        size:
+          type: integer
+    UMDvMultimedia:
+      title: DV_MULTIMEDIA
+      required:
+        - _type
+        - media_type
+        - size
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_MULTIMEDIA
+          type: string
+        charset:
+          $ref: '#/components/schemas/CodePhrase'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        alternate_text:
+          type: string
+        uri:
+          $ref: '#/components/schemas/UDvUri'
+        data:
+          type: string
+        media_type:
+          $ref: '#/components/schemas/CodePhrase'
+        compression_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        integrity_check:
+          type: string
+        integrity_check_algorithm:
+          $ref: '#/components/schemas/CodePhrase'
+        thumbnail:
+          $ref: '#/components/schemas/DvMultimedia'
+        size:
+          type: integer
+    UMDvParsable:
+      title: DV_PARSABLE
+      required:
+        - _type
+        - value
+        - formalism
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_PARSABLE
+          type: string
+        charset:
+          $ref: '#/components/schemas/CodePhrase'
+        language:
+          $ref: '#/components/schemas/CodePhrase'
+        value:
+          type: string
+        formalism:
+          type: string
+    UDvEncapsulated:
+      title: DV_ENCAPSULATED
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMDvMultimedia'
+        - $ref: '#/components/schemas/UMDvParsable'
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_MULTIMEDIA: '#/components/schemas/UMDvMultimedia'
+          DV_PARSABLE: '#/components/schemas/UMDvParsable'
+    PartyRef:
+      title: PARTY_REF
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          pattern: ^PERSON|ORGANISATION|GROUP|AGENT|ROLE|PARTY|ACTOR$
+          type: string
+        id:
+          $ref: '#/components/schemas/UMHierObjectId'
+      description: Identifier for parties in a demographic or identity service.
+      example:
+        id:
+          _type: HIER_OBJECT_ID
+          value: b52b9408-7048-4ec8-94bd-831fb0727e67
+        namespace: local
+        type: PERSON
+      required:
+        - namespace
+        - type
+        - id
+    UMPartyIdentified:
+      title: PARTY_IDENTIFIED
+      required:
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - PARTY_IDENTIFIED
+          type: string
+        external_ref:
+          $ref: '#/components/schemas/PartyRef'
+        name:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+      example:
+        _type: PARTY_IDENTIFIED
+        external_ref:
+          id:
+            _type: GENERIC_ID
+            value: 16b74749-e6aa-4945-b760-b42bdc07098a
+            scheme: pid
+          namespace: openEHRSys.example.com
+          type: PERSON
+        name: A name
+    UMPartyRelated:
+      title: PARTY_RELATED
+      required:
+        - _type
+        - relationship
+      type: object
+      properties:
+        _type:
+          enum:
+            - PARTY_RELATED
+          type: string
+        external_ref:
+          $ref: '#/components/schemas/PartyRef'
+        name:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+        relationship:
+          $ref: '#/components/schemas/DvCodedText'
+      example:
+        _type: PARTY_IDENTIFIED
+        external_ref:
+          id:
+            _type: GENERIC_ID
+            value: 16b74749-e6aa-4945-b760-b42bdc07098a
+            scheme: pid
+          namespace: openEHRSys.example.com
+          type: PERSON
+        name: A name
+    UPartyIdentified:
+      title: PARTY_IDENTIFIED
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMPartyIdentified'
+        - $ref: '#/components/schemas/UMPartyRelated'
+      discriminator:
+        propertyName: _type
+        mapping:
+          PARTY_IDENTIFIED: '#/components/schemas/UMPartyIdentified'
+          PARTY_RELATED: '#/components/schemas/UMPartyRelated'
+    UMPartySelf:
+      title: PARTY_SELF
+      required:
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - PARTY_SELF
+          type: string
+        external_ref:
+          $ref: '#/components/schemas/PartyRef'
+    UPartyProxy:
+      title: PARTY_PROXY
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMPartySelf'
+        - $ref: '#/components/schemas/UMPartyIdentified'
+        - $ref: '#/components/schemas/UMPartyRelated'
+      discriminator:
+        propertyName: _type
+        mapping:
+          PARTY_SELF: '#/components/schemas/UMPartySelf'
+          PARTY_IDENTIFIED: '#/components/schemas/UMPartyIdentified'
+          PARTY_RELATED: '#/components/schemas/UMPartyRelated'
+    DvInterval:
+      title: DV_INTERVAL
+      required:
+        - lower_unbounded
+        - upper_unbounded
+        - lower_included
+        - upper_included
+      type: object
+      properties:
+        _type:
+          type: string
+          default: DV_INTERVAL
+        lower_unbounded:
+          type: boolean
+        upper_unbounded:
+          type: boolean
+        lower_included:
+          type: boolean
+        upper_included:
+          type: boolean
+    ReferenceRange:
+      title: REFERENCE_RANGE
+      required:
+        - meaning
+        - range
+      type: object
+      properties:
+        meaning:
+          $ref: '#/components/schemas/UDvText'
+        range:
+          $ref: '#/components/schemas/DvInterval'
+    DvDuration:
+      title: DV_DURATION
+      required:
+        - value
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_DURATION
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+        value:
+          type: string
+    DvDateTime:
+      title: DV_DATE_TIME
+      required:
+        - value
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_DATE_TIME
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy:
+          $ref: '#/components/schemas/DvDuration'
+        value:
+          type: string
+          format: date-time
+      example:
+        _type: DV_DATE_TIME
+        value: '2017-08-15T10:37:15.422+02:00'
+    UMDvBoolean:
+      title: DV_BOOLEAN
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_BOOLEAN
+          type: string
+        value:
+          type: boolean
+    UMDvCount:
+      title: DV_COUNT
+      required:
+        - magnitude
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_COUNT
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+        magnitude:
+          type: integer
+          format: int64
+    UMDvDate:
+      title: DV_DATE
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_DATE
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy:
+          $ref: '#/components/schemas/DvDuration'
+        value:
+          type: string
+          format: date
+      example:
+        _type: DV_DATE
+        value: '2017-08-15'
+    UMDvDateTime:
+      title: DV_DATE_TIME
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_DATE_TIME
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy:
+          $ref: '#/components/schemas/DvDuration'
+        value:
+          type: string
+          format: date-time
+      example:
+        _type: DV_DATE_TIME
+        value: '2017-08-15T10:37:15.422+02:00'
+    UMDvDuration:
+      title: DV_DURATION
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_DURATION
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+        value:
+          type: string
+    UMDvIdentifier:
+      title: DV_IDENTIFIER
+      required:
+        - id
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_IDENTIFIER
+          type: string
+        issuer:
+          type: string
+        assigner:
+          type: string
+        id:
+          type: string
+        type:
+          type: string
+      example:
+        id: 16b74749-e6aa-4945-b760-b42bdc07098a
+        type: Patient
+    UMDvOrdinal:
+      title: DV_ORDINAL
+      required:
+        - symbol
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_ORDINAL
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        symbol:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          type: integer
+    UMDvProportion:
+      title: DV_PROPORTION
+      required:
+        - numerator
+        - denominator
+        - type
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_PROPORTION
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+        numerator:
+          type: number
+        denominator:
+          type: number
+        type:
+          type: integer
+        precision:
+          type: integer
+    UMDvQuantity:
+      title: DV_QUANTITY
+      required:
+        - magnitude
+        - units
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_QUANTITY
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy_is_percent:
+          type: boolean
+        accuracy:
+          type: number
+        magnitude:
+          type: number
+        precision:
+          type: integer
+        units:
+          type: string
+        units_system:
+          type: string
+        units_display_name:
+          type: string
+    UMDvScale:
+      title: DV_SCALE
+      required:
+        - symbol
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_SCALE
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        symbol:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          type: number
+    UMDvState:
+      title: DV_STATE
+      required:
+        - value
+        - is_terminal
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_STATE
+          type: string
+        value:
+          $ref: '#/components/schemas/DvCodedText'
+        is_terminal:
+          type: boolean
+    UMDvTime:
+      title: DV_TIME
+      required:
+        - value
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - DV_TIME
+          type: string
+        normal_status:
+          $ref: '#/components/schemas/CodePhrase'
+        normal_range:
+          $ref: '#/components/schemas/DvInterval'
+        other_reference_ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceRange'
+        magnitude_status:
+          type: string
+          default: '='
+        accuracy:
+          $ref: '#/components/schemas/DvDuration'
+        value:
+          type: string
+          format: time
+      example:
+        _type: DV_TIME
+        value: '08:20:12'
+    UDataValue:
+      title: DATA_VALUE
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMDvBoolean'
+        - $ref: '#/components/schemas/UMDvCodedText'
+        - $ref: '#/components/schemas/UMDvCount'
+        - $ref: '#/components/schemas/UMDvDate'
+        - $ref: '#/components/schemas/UMDvDateTime'
+        - $ref: '#/components/schemas/UMDvDuration'
+        - $ref: '#/components/schemas/UMDvEhrUri'
+        - $ref: '#/components/schemas/UMDvIdentifier'
+        - $ref: '#/components/schemas/UMDvMultimedia'
+        - $ref: '#/components/schemas/UMDvOrdinal'
+        - $ref: '#/components/schemas/UMDvParsable'
+        - $ref: '#/components/schemas/UMDvProportion'
+        - $ref: '#/components/schemas/UMDvQuantity'
+        - $ref: '#/components/schemas/UMDvScale'
+        - $ref: '#/components/schemas/UMDvState'
+        - $ref: '#/components/schemas/UMDvText'
+        - $ref: '#/components/schemas/UMDvUri'
+      discriminator:
+        propertyName: _type
+        mapping:
+          DV_BOOLEAN: '#/components/schemas/UMDvBoolean'
+          DV_CODED_TEXT: '#/components/schemas/UMDvCodedText'
+          DV_COUNT: '#/components/schemas/UMDvCount'
+          DV_DATE: '#/components/schemas/UMDvDate'
+          DV_DATE_TIME: '#/components/schemas/UMDvDateTime'
+          DV_DURATION: '#/components/schemas/UMDvDuration'
+          DV_EHR_URI: '#/components/schemas/UMDvEhrUri'
+          DV_IDENTIFIER: '#/components/schemas/UMDvIdentifier'
+          DV_MULTIMEDIA: '#/components/schemas/UMDvMultimedia'
+          DV_ORDINAL: '#/components/schemas/UMDvOrdinal'
+          DV_PARSABLE: '#/components/schemas/UMDvParsable'
+          DV_PROPORTION: '#/components/schemas/UMDvProportion'
+          DV_QUANTITY: '#/components/schemas/UMDvQuantity'
+          DV_SCALE: '#/components/schemas/UMDvScale'
+          DV_STATE: '#/components/schemas/UMDvState'
+          DV_TEXT: '#/components/schemas/UMDvText'
+          DV_TIME: '#/components/schemas/UMDvTime'
+          DV_URI: '#/components/schemas/UMDvUri'
+    Element:
+      title: ELEMENT
+      type: object
+      properties:
+        _type:
+          enum:
+            - ELEMENT
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        null_flavour:
+          $ref: '#/components/schemas/DvCodedText'
+        value:
+          $ref: '#/components/schemas/UDataValue'
+        null_reason:
+          $ref: '#/components/schemas/UDvText'
+      required:
+        - name
+        - archetype_node_id
+    ItemSingle:
+      title: ITEM_SINGLE
+      required:
+        - name
+        - archetype_node_id
+        - item
+      type: object
+      properties:
+        _type:
+          enum:
+            - ITEM_SINGLE
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        item:
+          $ref: '#/components/schemas/Element'
+    ItemList:
+      title: ITEM_LIST
+      type: object
+      properties:
+        _type:
+          enum:
+            - ITEM_LIST
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Element'
+      required:
+        - name
+        - archetype_node_id
+    Clstr:
+      title: CLUSTER
+      required:
+        - name
+        - archetype_node_id
+        - items
+      type: object
+      properties:
+        _type:
+          enum:
+            - CLUSTER
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UItem'
+    UItem:
+      title: ITEM
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Element'
+        - $ref: '#/components/schemas/Clstr'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ELEMENT: '#/components/schemas/Element'
+          CLUSTER: '#/components/schemas/Clstr'
+    ItemTable:
+      title: ITEM_TABLE
+      type: object
+      properties:
+        _type:
+          enum:
+            - ITEM_TABLE
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Clstr'
+      required:
+        - name
+        - archetype_node_id
+    ItemTree:
+      title: ITEM_TREE
+      type: object
+      properties:
+        _type:
+          enum:
+            - ITEM_TREE
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UItem'
+          description: See [ITEM](#tag/ITEM_schema) schema details.
+      required:
+        - name
+        - archetype_node_id
+    UItemStructure:
+      title: ITEM_STRUCTURE
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/ItemSingle'
+        - $ref: '#/components/schemas/ItemList'
+        - $ref: '#/components/schemas/ItemTable'
+        - $ref: '#/components/schemas/ItemTree'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ITEM_SINGLE: '#/components/schemas/ItemSingle'
+          ITEM_LIST: '#/components/schemas/ItemList'
+          ITEM_TABLE: '#/components/schemas/ItemTable'
+          ITEM_TREE: '#/components/schemas/ItemTree'
+    FeederAuditDetails:
+      title: FEEDER_AUDIT_DETAILS
+      required:
+        - system_id
+      type: object
+      properties:
+        system_id:
+          type: string
+        location:
+          $ref: '#/components/schemas/UPartyIdentified'
+        subject:
+          $ref: '#/components/schemas/UPartyProxy'
+        provider:
+          $ref: '#/components/schemas/UPartyIdentified'
+        time:
+          $ref: '#/components/schemas/DvDateTime'
+        version_id:
+          type: string
+        other_details:
+          $ref: '#/components/schemas/UItemStructure'
+    FeederAudit:
+      title: FEEDER_AUDIT
+      required:
+        - originating_system_audit
+      type: object
+      properties:
+        originating_system_item_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+        feeder_system_item_ids:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvIdentifier'
+        original_content:
+          $ref: '#/components/schemas/UDvEncapsulated'
+        originating_system_audit:
+          $ref: '#/components/schemas/FeederAuditDetails'
+        feeder_system_audit:
+          $ref: '#/components/schemas/FeederAuditDetails'
+    PartyIdentity:
+      title: PARTY_IDENTITY
+      required:
+        - name
+        - archetype_node_id
+        - details
+      type: object
+      properties:
+        _type:
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+    ListOfPartyIdentity:
+      title: ListOfPartyIdentity
+      type: array
+      items:
+        $ref: '#/components/schemas/PartyIdentity'
+    Address:
+      title: ADDRESS
+      required:
+        - name
+        - archetype_node_id
+        - details
+      type: object
+      properties:
+        _type:
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+    DvIntervalOfDate:
+      title: DV_INTERVAL_of_DATE
+      type: object
+      properties:
+        _type:
+          type: string
+          default: DV_INTERVAL
+        lower_unbounded:
+          type: boolean
+        upper_unbounded:
+          type: boolean
+        lower_included:
+          type: boolean
+        upper_included:
+          type: boolean
+        lower:
+          $ref: '#/components/schemas/UMDvDate'
+        upper:
+          $ref: '#/components/schemas/UMDvDate'
+      required:
+        - lower_unbounded
+        - upper_unbounded
+        - lower_included
+        - upper_included
+    Contact:
+      title: CONTACT
+      required:
+        - name
+        - archetype_node_id
+        - addresses
+      type: object
+      properties:
+        _type:
+          enum:
+            - CONTACT
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfContact:
+      title: ListOfContact
+      type: array
+      items:
+        $ref: '#/components/schemas/Contact'
+    PartyRelationship:
+      title: PARTY_RELATIONSHIP
+      required:
+        - name
+        - archetype_node_id
+        - source
+        - target
+      type: object
+      properties:
+        _type:
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        source:
+          $ref: '#/components/schemas/PartyRef'
+        target:
+          $ref: '#/components/schemas/PartyRef'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfPartyRelationship:
+      title: ListOfPartyRelationShip
+      type: array
+      items:
+        $ref: '#/components/schemas/PartyRelationship'
+    Agent:
+      title: AGENT
+      type: object
+      properties:
+        _type:
+          enum:
+            - AGENT
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+      required:
+        - name
+        - archetype_node_id
+        - identities
+    Identifier:
+      title: Identifier
+      required:
+        - uid
+      type: object
+      properties:
+        uid:
+          type: string
+          description: The (version) resource identifier.
+      example:
+        uid: 6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    Error:
+      title: Error
+      required:
+        - message
+        - validationErrors
+      type: object
+      properties:
+        message:
+          type: string
+        validationErrors:
+          type: array
+          items:
+            type: string
+          description: ''
+      example:
+        message: Error message
+        validationErrors:
+          - error1
+          - error2
+    Group:
+      title: GROUP
+      type: object
+      properties:
+        _type:
+          enum:
+            - GROUP
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+      required:
+        - name
+        - archetype_node_id
+        - identities
+    Organisation:
+      title: ORGANISATION
+      type: object
+      properties:
+        _type:
+          enum:
+            - ORGANISATION
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+      required:
+        - name
+        - archetype_node_id
+        - identities
+    Person:
+      title: PERSON
+      type: object
+      properties:
+        _type:
+          enum:
+            - PERSON
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+      required:
+        - name
+        - archetype_node_id
+        - identities
+    Capability:
+      title: CAPABILITY
+      required:
+        - name
+        - archetype_node_id
+        - credentials
+      type: object
+      properties:
+        _type:
+          enum:
+            - CAPABILITY
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        credentials:
+          $ref: '#/components/schemas/UItemStructure'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+    ListOfCapability:
+      title: ListOfCapability
+      type: array
+      items:
+        $ref: '#/components/schemas/Capability'
+    Role:
+      title: ROLE
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - performer
+      type: object
+      properties:
+        _type:
+          enum:
+            - ROLE
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+        performer:
+          $ref: '#/components/schemas/PartyRef'
+        capabilities:
+          $ref: '#/components/schemas/ListOfCapability'
+    ObjectRefOfHierObjectId:
+      title: OBJECT_REF
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          type: string
+        id:
+          $ref: '#/components/schemas/UMHierObjectId'
+      example:
+        id:
+          _type: HIER_OBJECT_ID
+          value: 6cb19121-4307-4648-9da0-d62e4d51f19b
+        namespace: local
+        type: CONTRIBUTION
+      required:
+        - namespace
+        - type
+        - id
+    VersionedParty:
+      title: VERSIONED_PARTY
+      type: object
+      properties:
+        _type:
+          enum:
+            - VERSIONED_PARTY
+          type: string
+        uid:
+          $ref: '#/components/schemas/HierObjectId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+        time_created:
+          $ref: '#/components/schemas/DvDateTime'
+      description: A VERSIONED_PARTY resource
+      example:
+        uid:
+          value: 8849182c-82ad-4088-a07f-48ead4180515
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+        time_created:
+          value: '2015-01-20T19:30:22.765+01:00'
+      required:
+        - uid
+        - owner_id
+        - time_created
+    AuditDetails:
+      title: AUDIT_DETAILS
+      required:
+        - system_id
+        - time_committed
+        - change_type
+        - committer
+      type: object
+      properties:
+        _type:
+          type: string
+          default: AUDIT_DETAILS
+        system_id:
+          type: string
+        time_committed:
+          $ref: '#/components/schemas/DvDateTime'
+        change_type:
+          $ref: '#/components/schemas/DvCodedText'
+        description:
+          $ref: '#/components/schemas/UDvText'
+        committer:
+          $ref: '#/components/schemas/UPartyProxy'
+      description: The set of attributes required to document the committal of an information item to a repository.
+      example:
+        system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
+        committer:
+          _type: PARTY_IDENTIFIED
+          name: A user name
+        time_committed:
+          value: '2017-08-15T10:37:15.422+02:00'
+        change_type:
+          value: creation
+          defining_code:
+            terminology_id:
+              value: openehr
+            code_string: '249'
+        description:
+          value: Description text
+    RevisionHistoryItem:
+      title: REVISION_HISTORY_ITEM
+      required:
+        - version_id
+        - audits
+      type: object
+      properties:
+        version_id:
+          $ref: '#/components/schemas/ObjectVersionId'
+        audits:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditDetails'
+      description: A REVISION_HISTORY_ITEM resource
+      example:
+        version_id:
+          value: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+        audits:
+          - system_id: d60e2348-b083-48ce-93b9-916cef1d3a5a
+            time_committed:
+              value: '2015-01-20T19:30:22.765+01:00'
+            change_type:
+              value: creation
+              defining_code:
+                terminology_id:
+                  value: openehr
+                code_string: '249'
+            description:
+              value: An optional description string
+            committer:
+              _type: PARTY_IDENTIFIED
+              name: A user name
+    RevisionHistory:
+      title: REVISION_HISTORY
+      required:
+        - items
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevisionHistoryItem'
+      description: A REVISION_HISTORY resource
+    UMAgent:
+      title: AGENT
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - AGENT
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+    UMGroup:
+      title: GROUP
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - GROUP
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+    UMOrganisation:
+      title: ORGANISATION
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - ORGANISATION
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+    UMPerson:
+      title: PERSON
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - PERSON
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/UDvText'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartyRef'
+    UMRole:
+      title: ROLE
+      required:
+        - name
+        - archetype_node_id
+        - identities
+        - performer
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - ROLE
+          type: string
+        name:
+          $ref: '#/components/schemas/UDvText'
+        archetype_node_id:
+          type: string
+          xml:
+            attribute: true
+        uid:
+          $ref: '#/components/schemas/UUidBasedId'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        archetype_details:
+          $ref: '#/components/schemas/Archetyped'
+        feeder_audit:
+          $ref: '#/components/schemas/FeederAudit'
+        identities:
+          $ref: '#/components/schemas/ListOfPartyIdentity'
+        contacts:
+          $ref: '#/components/schemas/ListOfContact'
+        details:
+          $ref: '#/components/schemas/UItemStructure'
+        relationships:
+          $ref: '#/components/schemas/ListOfPartyRelationship'
+        time_validity:
+          $ref: '#/components/schemas/DvIntervalOfDate'
+        performer:
+          $ref: '#/components/schemas/PartyRef'
+        capabilities:
+          $ref: '#/components/schemas/ListOfCapability'
+    UVersionable:
+      title: Versionable
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMAgent'
+        - $ref: '#/components/schemas/UMGroup'
+        - $ref: '#/components/schemas/UMOrganisation'
+        - $ref: '#/components/schemas/UMPerson'
+        - $ref: '#/components/schemas/UMRole'
+      discriminator:
+        propertyName: _type
+        mapping:
+          AGENT: '#/components/schemas/UMAgent'
+          GROUP: '#/components/schemas/UMGroup'
+          ORGANISATION: '#/components/schemas/UMOrganisation'
+          PERSON: '#/components/schemas/UMPerson'
+          ROLE: '#/components/schemas/UMRole'
+    Attestation:
+      title: ATTESTATION
+      required:
+        - system_id
+        - time_committed
+        - change_type
+        - committer
+        - reason
+        - is_pending
+      type: object
+      properties:
+        _type:
+          enum:
+            - ATTESTATION
+          type: string
+        system_id:
+          type: string
+        time_committed:
+          $ref: '#/components/schemas/DvDateTime'
+        change_type:
+          $ref: '#/components/schemas/DvCodedText'
+        description:
+          $ref: '#/components/schemas/UDvText'
+        committer:
+          $ref: '#/components/schemas/UPartyProxy'
+        attested_view:
+          $ref: '#/components/schemas/DvMultimedia'
+        proof:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvEhrUri'
+        reason:
+          $ref: '#/components/schemas/UDvText'
+        is_pending:
+          type: boolean
+      example:
+        system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
+        committer:
+          _type: PARTY_IDENTIFIED
+          name: A user name
+        time_committed:
+          value: '2017-08-15T10:37:15.422+02:00'
+        change_type:
+          value: creation
+          defining_code:
+            terminology_id:
+              value: openehr
+            code_string: '249'
+        description:
+          value: Description text
+    UParty:
+      title: PARTY
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMAgent'
+        - $ref: '#/components/schemas/UMGroup'
+        - $ref: '#/components/schemas/UMOrganisation'
+        - $ref: '#/components/schemas/UMPerson'
+        - $ref: '#/components/schemas/UMRole'
+      discriminator:
+        propertyName: _type
+        mapping:
+          AGENT: '#/components/schemas/UMAgent'
+          GROUP: '#/components/schemas/UMGroup'
+          ORGANISATION: '#/components/schemas/UMOrganisation'
+          PERSON: '#/components/schemas/UMPerson'
+          ROLE: '#/components/schemas/UMRole'
+    UMOriginalVersionOfParty:
+      title: ORIGINAL_VERSION
+      required:
+        - contribution
+        - commit_audit
+        - data
+        - uid
+        - lifecycle_state
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - ORIGINAL_VERSION
+          type: string
+        contribution:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+        signature:
+          type: string
+        commit_audit:
+          $ref: '#/components/schemas/AuditDetails'
+        data:
+          $ref: '#/components/schemas/UParty'
+        uid:
+          $ref: '#/components/schemas/ObjectVersionId'
+        preceding_version_uid:
+          $ref: '#/components/schemas/ObjectVersionId'
+        other_input_version_uids:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectVersionId'
+        lifecycle_state:
+          $ref: '#/components/schemas/DvCodedText'
+        attestations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attestation'
+    UMImportedVersionOfParty:
+      title: IMPORTED_VERSION
+      required:
+        - contribution
+        - commit_audit
+        - data
+        - item
+        - _type
+      type: object
+      properties:
+        _type:
+          enum:
+            - IMPORTED_VERSION
+          type: string
+        contribution:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+        signature:
+          type: string
+        commit_audit:
+          $ref: '#/components/schemas/AuditDetails'
+        data:
+          $ref: '#/components/schemas/UParty'
+        item:
+          $ref: '#/components/schemas/UMOriginalVersionOfParty'
+    UVersionOfParty:
+      title: VERSION
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/UMOriginalVersionOfParty'
+        - $ref: '#/components/schemas/UMImportedVersionOfParty'
+      discriminator:
+        propertyName: _type
+        mapping:
+          ORIGINAL_VERSION: '#/components/schemas/UMOriginalVersionOfParty'
+          IMPORTED_VERSION: '#/components/schemas/UMImportedVersionOfParty'
+    UpdateAudit:
+      title: UPDATE_AUDIT
+      required:
+        - change_type
+        - committer
+      type: object
+      properties:
+        _type:
+          type: string
+          default: UPDATE_AUDIT
+        system_id:
+          type: string
+          description: |
+            Optional identifier of the system where the change was committed. When provided it will be
+            validated; when omitted the server sets its own value.
+        change_type:
+          $ref: '#/components/schemas/DvCodedText'
+        description:
+          $ref: '#/components/schemas/UDvText'
+        committer:
+          $ref: '#/components/schemas/UPartyProxy'
+      description: |
+        The set of attributes required to document the committal of an information item to a repository.
+
+        `UPDATE_AUDIT` is a REST commit DTO, not an RM class: structurally an `AUDIT_DETAILS` without the
+        server-assigned attributes (`time_committed` is always set by the server; `system_id` is optional on
+        commit). The server uses it to create the persisted `AUDIT_DETAILS` object.
+
+        Clients SHOULD send `_type: "UPDATE_AUDIT"`. For interoperability with existing implementations,
+        servers SHOULD additionally accept `_type: "AUDIT_DETAILS"` or an omitted `_type` for this attribute.
+      example:
+        _type: UPDATE_AUDIT
+        change_type:
+          value: creation
+          defining_code:
+            terminology_id:
+              value: openehr
+            code_string: '249'
+        description: Description text
+        committer:
+          _type: PARTY_IDENTIFIED
+          name: A user name
+    UpdateAttestation:
+      title: UPDATE_ATTESTATION
+      required:
+        - change_type
+        - committer
+        - reason
+        - is_pending
+      type: object
+      properties:
+        _type:
+          enum:
+            - UPDATE_ATTESTATION
+          type: string
+        system_id:
+          type: string
+          description: |
+            Optional identifier of the system where the change was committed. When provided it will be
+            validated; when omitted the server sets its own value.
+        change_type:
+          $ref: '#/components/schemas/DvCodedText'
+        description:
+          $ref: '#/components/schemas/UDvText'
+        committer:
+          $ref: '#/components/schemas/UPartyProxy'
+        attested_view:
+          $ref: '#/components/schemas/DvMultimedia'
+        proof:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DvEhrUri'
+        reason:
+          $ref: '#/components/schemas/UDvText'
+        is_pending:
+          type: boolean
+      example:
+        _type: UPDATE_AUDIT
+        change_type:
+          value: creation
+          defining_code:
+            terminology_id:
+              value: openehr
+            code_string: '249'
+        description: Description text
+        committer:
+          _type: PARTY_IDENTIFIED
+          name: A user name
+    UpdateVersion:
+      title: UPDATE_VERSION
+      required:
+        - lifecycle_state
+        - data
+        - commit_audit
+      type: object
+      properties:
+        preceding_version_uid:
+          $ref: '#/components/schemas/ObjectVersionId'
+        signature:
+          type: string
+        lifecycle_state:
+          $ref: '#/components/schemas/DvCodedText'
+        attestations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateAttestation'
+        data:
+          $ref: '#/components/schemas/UVersionable'
+        commit_audit:
+          $ref: '#/components/schemas/UpdateAudit'
+    NewContribution:
+      title: NewContribution
+      required:
+        - versions
+        - audit
+      type: object
+      properties:
+        uid:
+          $ref: '#/components/schemas/HierObjectId'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateVersion'
+        audit:
+          $ref: '#/components/schemas/UpdateAudit'
+      description: A new (un-committed) CONTRIBUTION resource for Demographic
+    ObjectRefOfObjectVersionId:
+      title: OBJECT_REF
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          type: string
+        id:
+          $ref: '#/components/schemas/UMObjectVersionId'
+      example:
+        id:
+          _type: OBJECT_VERSION_ID
+          value: fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1
+        namespace: local
+        type: COMPOSITION
+      required:
+        - namespace
+        - type
+        - id
+    Contribution:
+      title: CONTRIBUTION
+      required:
+        - uid
+        - versions
+        - audit
+      type: object
+      properties:
+        uid:
+          $ref: '#/components/schemas/HierObjectId'
+        versions:
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectRefOfObjectVersionId'
+        audit:
+          $ref: '#/components/schemas/AuditDetails'
+      description: A CONTRIBUTION resource
+      example:
+        uid:
+          value: 0826851c-c4c2-4d61-92b9-410fb8275ff0
+        versions:
+          - id:
+              _type: OBJECT_VERSION_ID
+              value: fb458d9c-1323-42bc-b7f8-787f3660a0b5::openEHRSys.example.com::1
+            namespace: local
+            type: COMPOSITION
+          - id:
+              _type: OBJECT_VERSION_ID
+              value: abcdefgh-1323-42bc-b7f8-787f3660a0ba::openEHRSys.example.com::1
+            namespace: local
+            type: FOLDER
+        audit:
+          system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
+          committer:
+            _type: PARTY_IDENTIFIED
+            name: A user name
+          time_committed:
+            value: '2017-08-15T10:37:15.422+02:00'
+          change_type:
+            value: creation
+            defining_code:
+              terminology_id:
+                value: openehr
+              code_string: '249'
+          description:
+            value: Description text
+    UObjectRefOfUidBasedId:
+      title: OBJECT_REF
+      type: object
+      properties:
+        namespace:
+          type: string
+        type:
+          type: string
+        id:
+          $ref: '#/components/schemas/UUidBasedId'
+      example:
+        id:
+          _type: HIER_OBJECT_ID
+          value: 6cb19121-4307-4648-9da0-d62e4d51f19b
+        namespace: local
+        type: COMPOSITION
+      required:
+        - namespace
+        - type
+        - id
+    ItemTagOfPerson:
+      title: ITEM_TAG
+      type: object
+      example:
+        key: flag
+        value: follow-up
+        target_path: ''
+        target:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 8849182c-82ad-4088-a07f-48ead4180515
+          namespace: local
+          type: PERSON
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+      required:
+        - key
+        - target
+        - owner_id
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        target_path:
+          type: string
+        target:
+          $ref: '#/components/schemas/UObjectRefOfUidBasedId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+    ItemTagOfAgent:
+      title: ITEM_TAG
+      type: object
+      example:
+        key: flag
+        value: follow-up
+        target_path: ''
+        target:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 8849182c-82ad-4088-a07f-48ead4180515
+          namespace: local
+          type: AGENT
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+      required:
+        - key
+        - target
+        - owner_id
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        target_path:
+          type: string
+        target:
+          $ref: '#/components/schemas/UObjectRefOfUidBasedId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+    ItemTagOfGroup:
+      title: ITEM_TAG
+      type: object
+      example:
+        key: flag
+        value: follow-up
+        target_path: ''
+        target:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 8849182c-82ad-4088-a07f-48ead4180515
+          namespace: local
+          type: GROUP
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+      required:
+        - key
+        - target
+        - owner_id
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        target_path:
+          type: string
+        target:
+          $ref: '#/components/schemas/UObjectRefOfUidBasedId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+    ItemTagOfOrganisation:
+      title: ITEM_TAG
+      type: object
+      example:
+        key: flag
+        value: follow-up
+        target_path: ''
+        target:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 8849182c-82ad-4088-a07f-48ead4180515
+          namespace: local
+          type: ORGANISATION
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+      required:
+        - key
+        - target
+        - owner_id
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        target_path:
+          type: string
+        target:
+          $ref: '#/components/schemas/UObjectRefOfUidBasedId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+    ItemTagOfRole:
+      title: ITEM_TAG
+      type: object
+      example:
+        key: flag
+        value: follow-up
+        target_path: ''
+        target:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 8849182c-82ad-4088-a07f-48ead4180515
+          namespace: local
+          type: ROLE
+        owner_id:
+          id:
+            _type: HIER_OBJECT_ID
+            value: 7d44b88c-4199-4bad-97dc-d78268e01398
+          namespace: local
+          type: SYSTEM
+      required:
+        - key
+        - target
+        - owner_id
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        target_path:
+          type: string
+        target:
+          $ref: '#/components/schemas/UObjectRefOfUidBasedId'
+        owner_id:
+          $ref: '#/components/schemas/ObjectRefOfHierObjectId'
+  parameters:
+    Prefer:
+      name: Prefer
+      in: header
+      description: |
+        Request header to indicate the preference over response details.
+        The response will contain the entire resource when the `Prefer` header has a value of `return=representation`, or only the resource identifier (e.g., the `uid`) when the value is `return=identifier`.
+      required: false
+      style: simple
+      schema:
+        type: string
+        enum:
+          - return=representation
+          - return=minimal
+          - return=identifier
+        default: return=minimal
+    Accept_LOCATABLE:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+          - application/openehr.wt.flat+json
+          - application/openehr.wt.structured+json
+    ContentType_LOCATABLE:
+      name: Content-Type
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+          - application/openehr.wt.flat+json
+          - application/openehr.wt.structured+json
+    openehr-item-tag:
+      name: openehr-item-tag
+      in: header
+      description: |
+        The list of all ITEM_TAG to be set and associated with the current VERSIONED_OBJECT - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+      required: false
+      style: simple
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/UpdateItemTag'
+      example: key="category",value="final"; key="flag",value="follow-up",target_path="/composition/start_time/value"
+    openehr-version-item-tag:
+      name: openehr-version-item-tag
+      in: header
+      description: |
+        The list of all ITEM_TAG to be set and associated with the current VERSION - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+      required: false
+      style: simple
+      explode: true
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/UpdateItemTag'
+      example: key="category",value="final"; key="flag",value="follow-up",target_path="/composition/start_time/value"
+    uid_based_id:
+      name: uid_based_id
+      in: path
+      description: |
+        An abstract identifier: it can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+    version_at_time:
+      name: version_at_time
+      in: query
+      description: |
+        A given time in the extended ISO 8601 format.
+      style: form
+      explode: true
+      schema:
+        type: string
+        format: datetime
+        example: '2015-01-20T19:30:22.765+01:00'
+    uid_based_id_as_versioned_object_uid:
+      name: uid_based_id
+      in: path
+      description: |
+        An identifier in a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+      required: true
+      style: simple
+      schema:
+        type: string
+        format: uuid
+        example: 8849182c-82ad-4088-a07f-48ead4180515
+    If-Match:
+      name: If-Match
+      in: header
+      description: |
+        Header to make the request conditional. 
+        Together with `ETag` request tag, it helps to prevent simultaneous updates of a resource from overwriting each other ("mid-air collisions").
+        The format is always an `version_uid` identifier enclosed by double quotes.
+        The operation will be performed only if the existing latest `version_uid` of the resource (i.e. the `preceding_version_uid`) matches this header's value.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: '"6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::1"'
+    uid_based_id_as_version_uid:
+      name: uid_based_id
+      in: path
+      description: |
+        An identifier in a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`).
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: 8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1
+    versioned_object_uid_PARTY:
+      name: versioned_object_uid
+      in: path
+      description: |
+        VERSIONED_PARTY identifier taken from VERSIONED_PARTY.uid.value.
+      required: true
+      style: simple
+      schema:
+        type: string
+        format: uuid
+        example: 6cb19121-4307-4648-9da0-d62e4d51f19b
+    Accept_canonical:
+      name: Accept
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+    ContentType_canonical:
+      name: Content-Type
+      in: header
+      style: simple
+      schema:
+        type: string
+        enum:
+          - application/json
+          - application/xml
+    version_uid:
+      name: version_uid
+      in: path
+      description: |
+        VERSION identifier taken from VERSION.uid.value.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: 6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    contribution_uid:
+      name: contribution_uid
+      in: path
+      description: |
+        The CONTRIBUTION uid.
+      required: true
+      style: simple
+      schema:
+        type: string
+        format: uuid
+        example: 0826851c-c4c2-4d61-92b9-410fb8275ff0
+    tag_key:
+      name: tag_key
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: string
+        example: flag
+    tag_value:
+      name: tag_value
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: string
+        example: follow-up
+    tag_target_path:
+      name: tag_target_path
+      in: query
+      style: form
+      explode: true
+      schema:
+        type: string
+        example: /context/start_time/value
+    key:
+      name: key
+      in: path
+      description: |
+        The ITEM_TAG key.
+      required: true
+      style: simple
+      schema:
+        type: string
+        example: flag
+  headers:
+    ETag:
+      description: |
+        The `ETag` (i.e. entity tag) response header is an identifier (e.g. a `version_uid` enclosed by double quotes) for a specific version of a resource.
+      schema:
+        type: string
+        example: W/"6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2"
+    Location_AGENT:
+      description: |
+        The `Location` response header indicates the URL of the AGENT resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/agent/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    ContentType_LOCATABLE:
+      schema:
+        type: string
+        enum:
+          - application/xml
+          - application/json
+          - application/openehr.wt.flat+json
+          - application/openehr.wt.structured+json
+    openehr-item-tag:
+      description: |
+        The list of all ITEM_TAG associated with the current VERSIONED_OBJECT - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+      schema:
+        type: string
+    openehr-version-item-tag:
+      description: |
+        The list of all ITEM_TAG associated with the current VERSION - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+      schema:
+        type: string
+    Location_deprecated:
+      description: |
+        The `Location` is [deprecated](overview.html#tag/Requests_and_responses/HTTP-headers/Location) for this action.
+      deprecated: true
+      schema:
+        type: string
+    Location_version:
+      description: |
+        The `Location` response header indicates the URL of the resource version resulted from the operation.
+      schema:
+        type: string
+        format: url
+    Location_GROUP:
+      description: |
+        The `Location` response header indicates the URL of the GROUP resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/group/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    Location_ORGANISATION:
+      description: |
+        The `Location` response header indicates the URL of the ORGANISATION resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/organisation/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    Location_PERSON:
+      description: |
+        The `Location` response header indicates the URL of the PERSON resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/person/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    Location_ROLE:
+      description: |
+        The `Location` response header indicates the URL of the ROLE resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/role/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2
+    ContentType_canonical:
+      schema:
+        type: string
+        enum:
+          - application/xml
+          - application/json
+    ETag_VERSION:
+      description: |
+        The `ETag` (i.e. entity tag) response header is the VERSION identifier (i.e. the `version_uid`) enclosed by double quotes.
+      schema:
+        type: string
+        example: W/"6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2"
+    ETag_CONTRIBUTION:
+      description: |
+        The `ETag` (i.e. entity tag) response header is the `contribution_uid` identifier, enclosed by double quotes.
+      schema:
+        type: string
+        example: W/"0826851c-c4c2-4d61-92b9-410fb8275ff0"
+    Location_demographic_CONTRIBUTION:
+      description: |
+        The `Location` response header indicates the URL of the CONTRIBUTION resource.
+      schema:
+        type: string
+        format: url
+        example: https://openEHRSys.example.com/v1/demographic/contribution/0826851c-c4c2-4d61-92b9-410fb8275ff0
+  responses:
+    '400':
+      description: |
+        `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content). 
+        The response body MAY contain error details.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    '404':
+      description: |
+        `404 Not Found` is returned when, based on the request parameters, the server did not find a current representation of a target resource, or is not willing to disclose that one exists.
+    '409':
+      description: |
+        `409 Conflict` is returned when a resource with same identifier(s) already exists.
+    '422':
+      description: |
+        `422 Unprocessable Entity` is returned when the content type and syntax is correct, could be converted to a resource, but there are semantic validation errors, such as the underlying template is not known or is not validating the supplied resource.
+    201_AGENT:
+      description: |
+        `201 Created` is returned when the AGENT is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_AGENT'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Agent'
+              - $ref: '#/components/schemas/Identifier'
+    200_AGENT_retrieved:
+      description: |
+        `200 OK` is returned when the requested AGENT is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Agent'
+    204_deleted_at_time:
+      description: |
+        `204 No Content` is returned when the resource identified by the request parameters (at specified `version_at_time`) time has been deleted.
+    404_not_found_or_no_version_at_time:
+      description: |
+        `404 Not Found` is returned when either the URL configured doesn't exist at all, or the targeted resource doesn't exist, or when a VERSION of the resource does not exist at the specified `version_at_time`.
+    200_AGENT_updated:
+      description: |
+        `200 OK` is returned when the AGENT is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_AGENT'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Agent'
+              - $ref: '#/components/schemas/Identifier'
+    204_version_updated:
+      description: |
+        `204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_version'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+    412_AGENT:
+      description: |
+        `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    204_version_deleted:
+      description: |
+        `204 No Content` is returned for a successful delete operation.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    400_already_deleted:
+      description: |
+        `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content) or when the resource identified by the request parameters is already deleted.
+    409_AGENT_with_uid_based_id:
+      description: |
+        `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    201_GROUP:
+      description: |
+        `201 Created` is returned when the GROUP is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_GROUP'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Group'
+              - $ref: '#/components/schemas/Identifier'
+    200_GROUP_retrieved:
+      description: |
+        `200 OK` is returned when the requested GROUP is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Group'
+    200_GROUP_updated:
+      description: |
+        `200 OK` is returned when the GROUP is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_GROUP'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Group'
+              - $ref: '#/components/schemas/Identifier'
+    412_GROUP:
+      description: |
+        `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    409_GROUP_with_uid_based_id:
+      description: |
+        `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    201_ORGANISATION:
+      description: |
+        `201 Created` is returned when the ORGANISATION is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_ORGANISATION'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Organisation'
+              - $ref: '#/components/schemas/Identifier'
+    200_ORGANISATION_retrieved:
+      description: |
+        `200 OK` is returned when the requested ORGANISATION is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Organisation'
+    200_ORGANISATION_updated:
+      description: |
+        `200 OK` is returned when the ORGANISATION is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_ORGANISATION'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Organisation'
+              - $ref: '#/components/schemas/Identifier'
+    412_ORGANISATION:
+      description: |
+        `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    409_ORGANISATION_with_uid_based_id:
+      description: |
+        `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    201_PERSON:
+      description: |
+        `201 Created` is returned when the PERSON is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_PERSON'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Person'
+              - $ref: '#/components/schemas/Identifier'
+    200_PERSON_retrieved:
+      description: |
+        `200 OK` is returned when the requested PERSON is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Person'
+    200_PERSON_updated:
+      description: |
+        `200 OK` is returned when the PERSON is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_PERSON'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Person'
+              - $ref: '#/components/schemas/Identifier'
+    412_PERSON:
+      description: |
+        `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    409_PERSON_with_uid_based_id:
+      description: |
+        `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    201_ROLE:
+      description: |
+        `201 Created` is returned when the ROLE is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_ROLE'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Role'
+              - $ref: '#/components/schemas/Identifier'
+    200_ROLE_retrieved:
+      description: |
+        `200 OK` is returned when the requested ROLE is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Role'
+    200_ROLE_updated:
+      description: |
+        `200 OK` is returned when the ROLE is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_ROLE'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+        openehr-item-tag:
+          $ref: '#/components/headers/openehr-item-tag'
+        openehr-version-item-tag:
+          $ref: '#/components/headers/openehr-version-item-tag'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Role'
+              - $ref: '#/components/schemas/Identifier'
+    412_ROLE:
+      description: |
+        `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    409_ROLE_with_uid_based_id:
+      description: |
+        `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
+        Returns also latest `version_uid` in the `ETag` header.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+    200_VERSIONED_PARTY:
+      description: |
+        `200 OK` is returned when the requested VERSIONED_PARTY is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VersionedParty'
+    200_REVISION_HISTORY:
+      description: |
+        `200 OK` is returned when the requested REVISION_HISTORY is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RevisionHistory'
+    200_VERSION_of_PARTY_at_time:
+      description: |
+        `200 OK` is returned when the requested VERSION is successfully retrieved.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag_VERSION'
+        Location:
+          $ref: '#/components/headers/Location_deprecated'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UVersionOfParty'
+    200_VERSION_of_PARTY_by_id:
+      description: |
+        `200 OK` is returned when the requested VERSION is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UVersionOfParty'
+    201_demographic_CONTRIBUTION:
+      description: |
+        `201 Created` is returned when the CONTRIBUTION is successfully created. 
+        If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+        If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag_CONTRIBUTION'
+        Location:
+          $ref: '#/components/headers/Location_demographic_CONTRIBUTION'
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Contribution'
+              - $ref: '#/components/schemas/Identifier'
+    400_CONTRIBUTION:
+      description: |
+        `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content, or the modification type does not match the operation - i.e. first version of a MODIFICATION).
+        The response body MAY contain error details.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    200_CONTRIBUTION:
+      description: |
+        `200 OK` is returned when the CONTRIBUTION is successfully retrieved.
+
+        When the request `Accept` header selects a Simplified Formats MIME type (`application/openehr.wt.flat+json` or `application/openehr.wt.structured+json`), the response body is still a canonical CONTRIBUTION envelope; only each `versions[i].data` payload is serialized in the requested FLAT or STRUCTURED form.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_LOCATABLE'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Contribution'
+    404_demographic_CONTRIBUTION:
+      description: |
+        `404 Not Found` is returned when a CONTRIBUTION with `contribution_uid` does not exist.
+    200_PERSON_ItemTagList_retrieved:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfPerson'
+    200_AGENT_ItemTagList_retrieved:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfAgent'
+    404_unknown_uid_based_id:
+      description: |
+        `404 Not Found` is returned when the `uid_based_id` does not exist.
+    200_AGENT_ItemTagList_updated:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfAgent'
+    204_updated:
+      description: |
+        `204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`.
+    204_deleted:
+      description: |
+        `204 No Content` is returned when the resource identified by the request parameters has been (logically) deleted.
+    404_unknown_uid_based_id_or_key:
+      description: |
+        `404 Not Found` is returned when the `uid_based_id` does not exist, or when the ITEM_TAG identified by the `key` does not exist.
+    200_GROUP_ItemTagList_retrieved:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfGroup'
+    200_GROUP_ItemTagList_updated:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfGroup'
+    200_ORGANISATION_ItemTagList_retrieved:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfOrganisation'
+    200_ORGANISATION_ItemTagList_updated:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfOrganisation'
+    200_PERSON_ItemTagList_updated:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfPerson'
+    200_ROLE_ItemTagList_retrieved:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfRole'
+    200_ROLE_ItemTagList_updated:
+      description: |
+        `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+      headers:
+        Content-Type:
+          $ref: '#/components/headers/ContentType_canonical'
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ItemTagOfRole'
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - AGENT
+      - GROUP
+      - ORGANISATION
+      - PERSON
+      - ROLE
+      - VERSIONED_PARTY
+      - CONTRIBUTION
+      - ITEM_TAG
+  - name: Related schemas
+    tags:
+      - CAPABILITY_schema
+      - CONTACT_schema
+      - ITEM_schema
+      - ITEM_STRUCTURE_schema
+      - PARTY_IDENTITY_schema
+      - PARTY_RELATIONSHIP_schema

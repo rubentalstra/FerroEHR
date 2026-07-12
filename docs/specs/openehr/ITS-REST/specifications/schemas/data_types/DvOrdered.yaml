@@ -15,18 +15,3 @@ properties:
     items:
       $ref: ../data_types/ReferenceRange.yaml
 x-discriminator-value: DV_ORDERED
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    DV_AMOUNT: '#/components/schemas/DvAmount'
-    DV_COUNT: '#/components/schemas/DvCount'
-    DV_DATE: '#/components/schemas/DvDate'
-    DV_DATE_TIME: '#/components/schemas/DvDateTime'
-    DV_DURATION: '#/components/schemas/DvDuration'
-    DV_ORDINAL: '#/components/schemas/DvOrdinal'
-    DV_PROPORTION: '#/components/schemas/DvProportion'
-    DV_QUANTIFIED: '#/components/schemas/DvQuantified'
-    DV_QUANTITY: '#/components/schemas/DvQuantity'
-    DV_SCALE: '#/components/schemas/DvScale'
-    DV_TEMPORAL: '#/components/schemas/DvTemporal'
-    DV_TIME: '#/components/schemas/DvTime'

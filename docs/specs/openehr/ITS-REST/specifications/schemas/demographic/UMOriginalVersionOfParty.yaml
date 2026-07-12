@@ -1,0 +1,10 @@
+title: ORIGINAL_VERSION
+type: object
+allOf:
+  - $ref: ../demographic/OriginalVersion.yaml
+required:
+  - _type
+properties:
+  data:
+    $ref: ../demographic/UParty.yaml
+x-discriminator-value: ORIGINAL_VERSION

@@ -8,6 +8,7 @@ parameters:
   - $ref: ../parameters/path/qualified_query_name.yaml
   - $ref: ../parameters/path/version.yaml
   - $ref: ../parameters/query/query_type.yaml
+  - $ref: ../parameters/header/Accept_JSON.yaml
 requestBody:
   content:
     text/plain:
@@ -26,6 +27,6 @@ responses:
   '200':
     $ref: ../responses/200_StoredQuery_stored.yaml
   '400':
-    $ref: ../responses/400_StoredQuery.yaml
+    $ref: ../responses/400.yaml
   '409':
     $ref: ../responses/409_StoredQuery_version.yaml

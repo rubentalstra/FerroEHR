@@ -1,0 +1,27 @@
+operationId: person_get
+summary: Get PERSON
+description: |
+  Retrieves a version of the PERSON identified by `uid_based_id`.
+
+  The `uid_based_id` can take a form of an OBJECT_VERSION_ID identifier taken from VERSION.uid.value (i.e. a `version_uid`), or a form of a HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+  The former is used to retrieve a specific known version of the PERSON (e.g. one identified by `8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1`), whereas the latter (e.g. an identifier like `8849182c-82ad-4088-a07f-48ead4180515`) is be used to retrieve a version from the version container whenever the _version_tree_id_ is unknown or irrelevant (such as when most recent version is requested).
+  
+  When the `uid_based_id` has the form of a HIER_OBJECT_ID, if the `version_at_time` is supplied, retrieves the version extant _at specified time_, otherwise retrieves the _latest_ PERSON version.
+
+  See [Resource identification](overview.html#tag/Resources/Resource-identification) for more details about the identifiers usage and meaning.
+  
+  When there are ITEM_TAGs associated with the retrieved PERSON, they will be returned as `openehr-item-tag` and `openehr-version-item-tag` response headers, respectively - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+
+tags:
+  - PERSON
+parameters:
+  - $ref: ../parameters/path/uid_based_id.yaml
+  - $ref: ../parameters/query/version_at_time.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+responses:
+  '200':
+    $ref: ../responses/200_PERSON_retrieved.yaml
+  '204':
+    $ref: ../responses/204_deleted_at_time.yaml
+  '404':
+    $ref: ../responses/404_not_found_or_no_version_at_time.yaml

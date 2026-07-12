@@ -7,6 +7,16 @@ files from the spec text; never migrate legacy**. Full compliance is the
 goal; intermediate steps need not compile (same big-bang ruling as the SM
 rewrite); the `ehrbase` platform impl is fixed afterwards in one pass.
 
+> **Edition ruling (owner, 2026-07-12):** the oracle is the ITS-REST
+> **development** edition @ `e8a093e9` — the same commit the vendored OAS and
+> the B5 conformance identity already use — because it carries the API specs
+> Release-1.0.3 lacks: **System** (STABLE), **Demographic API**
+> (DEVELOPMENT), **Admin API** (DEVELOPMENT), **Formats** (STABLE there),
+> **SMART** (DEVELOPMENT). `scripts/vendor-spec-docs.sh` re-pinned
+> accordingly; the table below reflects the development-edition set. The
+> demographic and admin surfaces therefore get spec-governed `api/` modules
+> (no longer extensions-by-analogy); SMART is recorded, not implemented.
+
 ## The oracle (all vendored)
 
 | Spec | Vendored at | Governs |

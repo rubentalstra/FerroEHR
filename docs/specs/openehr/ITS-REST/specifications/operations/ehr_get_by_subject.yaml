@@ -10,6 +10,7 @@ tags:
 parameters:
   - $ref: ../parameters/query/subject_id.yaml
   - $ref: ../parameters/query/subject_namespace.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
 responses:
   '200':
     $ref: ../responses/200_EHR.yaml

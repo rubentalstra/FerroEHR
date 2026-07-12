@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_PARSABLE
+    enum: [DV_PARSABLE]
   value:
     type: string
   formalism:

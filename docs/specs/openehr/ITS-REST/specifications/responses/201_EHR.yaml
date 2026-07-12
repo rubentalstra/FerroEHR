@@ -1,6 +1,6 @@
 description: |
-  `201 Created` is returned when the EHR has been successfully created. 
-  The new EHR resource is returned in the body when the request's `Prefer` header value is `return=representation`, otherwise only headers are returned.
+  `201 Created` is returned when the EHR has been successfully created, 
+  with the full resource in the body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
 headers:
   ETag:
     $ref: ../headers/ETag_EHR.yaml
@@ -9,4 +9,6 @@ headers:
 content:
   application/json:
     schema:
-      $ref: ../schemas/ehr/Ehr.yaml
+      oneOf:
+        - $ref: ../schemas/ehr/Ehr.yaml
+        - $ref: ../schemas/others/Identifier.yaml

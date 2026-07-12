@@ -1,0 +1,11 @@
+title: ROLE
+type: object
+allOf:
+  - $ref: ../demographic/Role.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [ROLE]
+x-discriminator-value: ROLE

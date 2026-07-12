@@ -1,4 +1,5 @@
 title: OBJECT_ID
+type: object
 oneOf:
   - $ref: ../base_types/UMArchetypeId.yaml
   - $ref: ../base_types/UMTemplateId.yaml
