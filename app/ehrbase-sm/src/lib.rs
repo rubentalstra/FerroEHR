@@ -19,7 +19,6 @@
 //! - [`extensions`] — everything **no openEHR spec governs**: adapter
 //!   support types, ITS-REST-only adapter traits, the `EHR_ACCESS` scheme.
 //! - [`platform`] — the [`Platform`] union trait (the whole component map).
-//! - [`tenant`] — multi-tenancy request context (extension).
 //!
 //! Precedence: the SM governs decomposition, naming, and call semantics (its
 //! pre/post-conditions are test oracles); **ITS-REST 1.0.3 + the CNF/ECC
@@ -30,7 +29,11 @@ pub mod common;
 pub mod extensions;
 pub mod platform;
 pub mod services;
-pub mod tenant;
+
+/// Multi-tenancy request context — physically an extension
+/// ([`extensions::tenant`]; no openEHR spec governs tenancy), re-exported at
+/// the root so `ehrbase_sm::tenant::{scope, current}` stays the call form.
+pub use extensions::tenant;
 
 pub use common::{
     CallStatus, CallStatusType, Page, PlatformService, SmError, UpdateAttestation, UpdateAudit,
@@ -59,4 +62,4 @@ pub use services::{
     TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, VariableSample,
     VariableValue,
 };
-pub use tenant::TenantContext;
+pub use extensions::tenant::TenantContext;

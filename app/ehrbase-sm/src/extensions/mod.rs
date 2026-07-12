@@ -11,6 +11,7 @@
 pub mod adapters;
 pub mod ehr_access;
 pub mod response;
+pub mod tenant;
 pub mod web_template;
 
 pub use adapters::{
@@ -22,4 +23,5 @@ pub use ehr_access::{
     EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter, EhrAccessSettings, Privacy, principal_matches,
 };
 pub use response::{ResourceMeta, ServiceResponse};
+pub use tenant::TenantContext;
 pub use web_template::WebTemplateService;
