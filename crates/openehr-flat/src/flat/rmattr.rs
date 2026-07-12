@@ -48,8 +48,6 @@ pub(crate) fn is_rm_attr(seg_id: &str) -> bool {
 }
 
 // ── RM → FLAT ────────────────────────────────────────────────────────────────
-
-#[allow(dead_code)] // RM→FLAT emit tree: implemented + unit-tested, not yet wired into `to_flat` (see G-1 read-side TODO)
 const DV_ORDERED: &[&str] = &[
     "DV_QUANTITY",
     "DV_COUNT",
@@ -66,7 +64,6 @@ const DV_ORDERED: &[&str] = &[
 /// `base`. Field presence + `_type` gate which family applies, so one entry point
 /// serves every node kind (ELEMENT, the ENTRY types, COMPOSITION, CLUSTER, the
 /// `DV_*` values, PARTY).
-#[allow(dead_code)]
 pub(crate) fn emit_rm_attrs(rm: &Value, base: &str, out: &mut FlatMap) {
     let ty = rm.get("_type").and_then(Value::as_str).unwrap_or("");
     if is_locatable(ty) {
@@ -130,8 +127,6 @@ pub(crate) fn emit_rm_attrs(rm: &Value, base: &str, out: &mut FlatMap) {
         }
     }
 }
-
-#[allow(dead_code)]
 fn is_locatable(ty: &str) -> bool {
     matches!(
         ty,
@@ -147,15 +142,11 @@ fn is_locatable(ty: &str) -> bool {
             | "ELEMENT"
     )
 }
-
-#[allow(dead_code)]
 fn emit_uid(rm: &Value, base: &str, out: &mut FlatMap) {
     if let Some(uid) = rm.pointer("/uid/value") {
         out.insert(format!("{base}/_uid"), uid.clone());
     }
 }
-
-#[allow(dead_code)]
 fn emit_links(rm: &Value, base: &str, out: &mut FlatMap) {
     let Some(links) = rm.get("links").and_then(Value::as_array) else {
         return;
@@ -178,7 +169,6 @@ fn emit_links(rm: &Value, base: &str, out: &mut FlatMap) {
 /// common `originating_system_audit` / `feeder_system_audit` (system_id,
 /// version_id, time) plus `original_content` (DV_PARSABLE); the full audit-detail
 /// PARTY sub-trees are TODO(w3e-formats): _feeder_audit deep PARTY_IDENTIFIED.
-#[allow(dead_code)]
 fn emit_feeder_audit(rm: &Value, base: &str, out: &mut FlatMap) {
     let Some(fa) = rm.get("feeder_audit").filter(|v| !v.is_null()) else {
         return;
@@ -218,8 +208,6 @@ fn emit_feeder_audit(rm: &Value, base: &str, out: &mut FlatMap) {
         }
     }
 }
-
-#[allow(dead_code)]
 fn emit_audit_details(details: Option<&Value>, base: &str, out: &mut FlatMap) {
     let Some(d) = details.filter(|v| !v.is_null()) else {
         return;
@@ -243,7 +231,6 @@ fn emit_audit_details(details: Option<&Value>, base: &str, out: &mut FlatMap) {
 
 /// PARTY_IDENTIFIED / PARTY_RELATED inlined (`|name`, `|id`, `|id_scheme`,
 /// `|id_namespace`), plus `_identifier:i` and (PARTY_RELATED) `/relationship`.
-#[allow(dead_code)]
 fn emit_party(p: &Value, base: &str, out: &mut FlatMap) {
     if let Some(name) = p.get("name").filter(|v| !v.is_null()) {
         out.insert(format!("{base}|name"), name.clone());
@@ -268,8 +255,6 @@ fn emit_party(p: &Value, base: &str, out: &mut FlatMap) {
         );
     }
 }
-
-#[allow(dead_code)]
 fn emit_identifiers(p: &Value, base: &str, out: &mut FlatMap) {
     let Some(ids) = p.get("identifiers").and_then(Value::as_array) else {
         return;
@@ -284,8 +269,6 @@ fn emit_identifiers(p: &Value, base: &str, out: &mut FlatMap) {
         );
     }
 }
-
-#[allow(dead_code)]
 fn emit_participation(p: &Value, base: &str, out: &mut FlatMap) {
     if let Some(f) = p.pointer("/function/value") {
         out.insert(format!("{base}|function"), f.clone());
@@ -308,7 +291,6 @@ fn emit_participation(p: &Value, base: &str, out: &mut FlatMap) {
 }
 
 /// OBJECT_REF (`|type`, `|id`, `|id_scheme`, `|namespace`) — master05 §OBJECT_REF.
-#[allow(dead_code)]
 fn emit_object_ref(oref: Option<&Value>, base: &str, out: &mut FlatMap) {
     let Some(o) = oref.filter(|v| !v.is_null()) else {
         return;
@@ -329,7 +311,6 @@ fn emit_object_ref(oref: Option<&Value>, base: &str, out: &mut FlatMap) {
 
 /// `_language` / `_encoding` (CODE_PHRASE) + `_mapping:i` (TERM_MAPPING) on a
 /// DV_TEXT-family value (master05 §§DV_TEXT, DV_CODED_TEXT, TERM_MAPPING).
-#[allow(dead_code)]
 fn emit_text_meta(rm: &Value, base: &str, out: &mut FlatMap) {
     emit_code_phrase_sub(rm.get("language"), &subpath(base, "_language"), out);
     emit_code_phrase_sub(rm.get("encoding"), &subpath(base, "_encoding"), out);
@@ -346,8 +327,6 @@ fn emit_text_meta(rm: &Value, base: &str, out: &mut FlatMap) {
         }
     }
 }
-
-#[allow(dead_code)]
 fn emit_code_phrase_sub(cp: Option<&Value>, base: &str, out: &mut FlatMap) {
     let Some(cp) = cp.filter(|v| !v.is_null()) else {
         return;
@@ -365,7 +344,6 @@ fn emit_code_phrase_sub(cp: Option<&Value>, base: &str, out: &mut FlatMap) {
 
 /// `_normal_range` (DV_INTERVAL<T>) + `_other_reference_ranges:i`
 /// (REFERENCE_RANGE<T>), the endpoints emitted via the leaf mapper for `T`.
-#[allow(dead_code)]
 fn emit_reference_ranges(rm: &Value, base: &str, t: &str, out: &mut FlatMap) {
     if let Some(nr) = rm.get("normal_range").filter(|v| !v.is_null()) {
         emit_interval(nr, &subpath(base, "_normal_range"), t, out);
@@ -386,8 +364,6 @@ fn emit_reference_ranges(rm: &Value, base: &str, t: &str, out: &mut FlatMap) {
         }
     }
 }
-
-#[allow(dead_code)]
 fn emit_interval(iv: &Value, base: &str, t: &str, out: &mut FlatMap) {
     if let Some(lower) = iv.get("lower").filter(|v| !v.is_null()) {
         mappers::leaf_to_flat(lower, t, &format!("{base}/lower"), None, out);
@@ -409,8 +385,6 @@ fn emit_interval(iv: &Value, base: &str, t: &str, out: &mut FlatMap) {
         }
     }
 }
-
-#[allow(dead_code)]
 fn subpath(base: &str, seg: &str) -> String {
     format!("{base}/{seg}")
 }

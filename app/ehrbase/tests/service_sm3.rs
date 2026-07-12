@@ -25,8 +25,7 @@ use ehrbase_sm::{DemographicService, EhrIndexService, PartyRelationshipService};
 use ehrbase_sm::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -41,7 +40,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }

@@ -31,6 +31,7 @@ incompatible_msrv = "warn"
 [workspace.lints.rust]
 unsafe_code = "forbid"              # server + spec crates should be safe; relax per-crate if ever needed
 missing_debug_implementations = "warn"
+dead_code = "deny"                  # owner rule 2026-07-12: no dead code, ever — delete or wire it
 
 # ─────────────────────────────────────────────────────────────────────────────
 # WORKSPACE DEPENDENCIES  (pinned; features set at the crate that enables them)

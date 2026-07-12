@@ -23,8 +23,7 @@ use uuid::Uuid;
 const PG_TAG: &str = "18";
 
 struct Pg {
-    #[allow(dead_code)] // held for its Drop (container removal)
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -46,7 +45,7 @@ impl Pg {
             .await
             .expect("mapped 5432");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }

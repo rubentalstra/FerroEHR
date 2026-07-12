@@ -50,7 +50,6 @@ pub enum Classification {
     /// route is `Audited`, so the completeness test also asserts the unaudited
     /// allowlist is empty. Kept as the explicit seam a future non-clinical route
     /// would use.
-    #[allow(dead_code)]
     Unaudited,
 }
 
