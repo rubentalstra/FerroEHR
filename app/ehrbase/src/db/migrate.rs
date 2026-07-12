@@ -1,3 +1,7 @@
+//! Schema bootstrap + migration runner. No openEHR spec governs the SQL schema
+//! (`docs/architecture.md` §Storage) — two migrators (`ext` then `ehr`), each
+//! with its own `_sqlx_migrations` bookkeeping, apply our own PG18-native DDL.
+
 use sqlx::PgPool;
 use sqlx::migrate::Migrator;
 

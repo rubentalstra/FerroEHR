@@ -1,0 +1,240 @@
+//! Versioning + integrity: the openEHR change-control model realized over the
+//! greenfield PG18 storage.
+//!
+//! Spec oracles (precedence order):
+//! - RM common `master06-change_control_package.adoc` — the change-control law
+//!   (VERSIONED_OBJECT, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
+//!   audits, Digital Signature, Attestation, version lifecycle, logical
+//!   deletion, version identification, copying/merging).
+//! - RM common `master04-generic_package.adoc` — AUDIT_DETAILS, ATTESTATION,
+//!   REVISION_HISTORY(_ITEM), PARTY_PROXY.
+//! - BASE base_types `master05-identification_package.adoc` — OBJECT_VERSION_ID
+//!   / VERSION_TREE_ID lexical forms, composite-identifier case rules.
+//! - BASE arch-overview `master07-security.adoc` §Integrity,
+//!   `master08-versioning.adoc`, `master09-identification.adoc`.
+//!
+//! Layout derives from the spec's own decomposition. The digital signature is a
+//! section of master06 (change_control), so the signer/verifier live **inside**
+//! this module ([`signature`]), not as a standalone sibling.
+//!
+//! # Seam with storage (`crate::storage`)
+//!
+//! This module owns the *decisions* (classify, tree placement, lifecycle
+//! transition, sign, attest, import policy) and the *builders*
+//! (ORIGINAL_VERSION / VERSIONED_OBJECT / REVISION_HISTORY value construction).
+//! All `sqlx` execution for the `vo_version` / `audit` / `contribution` /
+//! `vo_attestation` rows is delegated to a storage-owned repository. No openEHR
+//! spec governs the SQL — it is our own design.
+//!
+//! TODO(w3f-integrate): the assumed `crate::storage::version_repo` API this
+//! module codes against (reconciled with register 02-storage at the fix pass):
+//! - `insert_audit(&mut PgConnection, &AuditInput) -> Result<(Uuid, jiff::Timestamp)>`
+//! - `insert_audit_at(&mut PgConnection, &AuditInput, jiff::Timestamp) -> Result<Uuid>`
+//! - `insert_contribution(&mut PgConnection, ehr_id: Option<Uuid>, audit_id: Uuid, supplied: Option<Uuid>) -> Result<Uuid>`
+//! - `insert_vo_version(&mut PgConnection, &NewVersionRow) -> Result<()>`
+//! - `insert_imported_vo_version(&mut PgConnection, &NewVersionRow, lower: jiff::Timestamp, upper: Option<jiff::Timestamp>) -> Result<()>`
+//! - `close_ordinal_at_now(&mut PgConnection, vo_id: Uuid, ordinal: i32) -> Result<()>`
+//! - `close_lineage_at(&mut PgConnection, vo_id: Uuid, &Lineage, at: jiff::Timestamp) -> Result<()>`
+//! - `advisory_lock(&mut PgConnection, vo_id: Uuid) -> Result<()>`
+//! - `lineage_tip(&mut PgConnection, vo_id: Uuid, expected: Option<TreeId>) -> Result<Option<PrecedingTip>>`
+//! - `next_ordinal(&mut PgConnection, vo_id: Uuid) -> Result<i32>`
+//! - `next_branch_number(&mut PgConnection, vo_id: Uuid, trunk: i32) -> Result<i32>`
+//! - `current_trunk(&mut PgConnection, vo_id: Uuid, Kind) -> Result<Option<(Option<Uuid>, i32)>>`
+//! - `object_kind(&PgPool, vo_id: Uuid) -> Result<Option<Kind>>`
+//! - `current_vo(&PgPool, ehr_id: Uuid, Kind) -> Result<Option<(Uuid, i32)>>`
+//! - `imported_container_state(&mut PgConnection, vo_id: Uuid) -> Result<ContainerState>`
+//! - `insert_attestation(&mut PgConnection, vo_id, sys_version, contribution_id, &Value) -> Result<()>`
+//! - `attestation_target(&mut PgConnection, vo_id, TreeId, Kind) -> Result<Option<AttestTarget>>`
+//! - `read_attestations(&PgPool, vo_id, sys_version) -> Result<Vec<Value>>`
+//! - `read_attestations_all(&PgPool, vo_id) -> Result<Vec<(i32, Value)>>`
+//! - `read_current`/`read_version`/`read_version_by_ordinal`/`read_version_at`(&PgPool, …) -> Result<Option<StoredVersion>>`
+//! - `all_versions(&PgPool, vo_id) -> Result<Vec<StoredVersion>>`
+//! - `time_created(&PgPool, vo_id) -> Result<Option<jiff::Timestamp>>`
+//! - `contribution_audit(&PgPool, contribution_id, ehr_id) -> Result<Option<AuditInput+time>>`
+//! - `contribution_version_refs(&PgPool, contribution_id) -> Result<Vec<VersionRef>>`
+//! - `list_contributions`/`count_contributions`(&PgPool, ehr_id, window, page)
+//! - `insert_ehr_folder_rank(&mut PgConnection, ehr_id, vo_id) -> Result<()>`
+//! - `write_outbox(&mut PgConnection, contribution_id, ehr_id, at, Vec<Value>) -> Result<()>`
+//!   (README: the outbox row write rides inside the commit tx; versioning
+//!   builds the PHI-free envelope entries.)
+//! And `crate::storage::node_repo::{write_nodes(&mut PgConnection, vo_id,
+//! sys_version, ehr_id, &[NodeRow]), read_version_canonical(&PgPool, vo_id,
+//! sys_version) -> Value}` plus the public `decompose`/`reassemble` codec.
+
+use serde_json::Value;
+use sqlx::PgPool;
+use uuid::Uuid;
+
+use crate::service::ServiceError;
+use crate::versioning::signature::Signer;
+
+pub(crate) mod attestation;
+pub(crate) mod audit;
+pub(crate) mod change;
+pub(crate) mod contribution;
+pub(crate) mod import;
+pub(crate) mod integrity;
+pub(crate) mod lifecycle;
+pub(crate) mod object_version_id;
+pub(crate) mod revision_history;
+pub mod signature;
+
+// Re-exports: the versioning API the service layer and SM adapters consume.
+pub(crate) use attestation::PendingAttest;
+pub(crate) use audit::{
+    AuditInput, OPENEHR, audit_details, change_type, change_type_code, validate_commit_audit,
+};
+pub(crate) use change::{
+    Change, Committed, NewVersionRow, commit_contribution, create, delete, update,
+};
+pub(crate) use contribution::{
+    TimeRange, commit_version_set, count_contributions, get_contribution, list_contributions,
+};
+pub(crate) use import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
+pub(crate) use lifecycle::{lifecycle_rubric, lifecycle_state_code, resolve_lifecycle};
+pub(crate) use object_version_id::{
+    TreeId, VersionIdError, components, expected_from_if_match, object_version_id,
+    parse_object_version_id, parse_tree_id, parse_uid_based_id, parse_version_uid,
+};
+pub(crate) use revision_history::{
+    StoredVersion, VersionRead, build_original_version, object_kind, original_version,
+    read_current, read_version, read_version_by_ordinal, revision_history, version_at,
+    versioned_object,
+};
+
+/// The kind of versioned object (discriminates `vo_version.kind`).
+///
+/// RM common master06 keeps one change-control model for all versioned content;
+/// this CDR realizes it with one unified `vo_version`/`node` machinery, so a
+/// single [`Kind`] discriminates COMPOSITION / EHR_STATUS / EHR_ACCESS / FOLDER
+/// (EHR-scoped) and the demographic party roots + PARTY_RELATIONSHIP (no EHR
+/// scope, RM demographic).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Kind {
+    Composition,
+    EhrStatus,
+    /// The EHR-wide access-control object created with the EHR (RM ehr §"EHR
+    /// Creation") and versioned "via the normal mechanism" (RM ehr §"EHR
+    /// Access").
+    EhrAccess,
+    Folder,
+    // Demographic party roots: versioned objects with no EHR scope; the same
+    // machinery with a NULL `ehr_id`.
+    Agent,
+    Group,
+    Organisation,
+    Person,
+    Role,
+    /// A demographic `PARTY_RELATIONSHIP` (RM demographic): a versioned object
+    /// with no EHR scope, like the party roots, but *not* a PARTY.
+    PartyRelationship,
+}
+
+impl Kind {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Kind::Composition => "COMPOSITION",
+            Kind::EhrStatus => "EHR_STATUS",
+            Kind::EhrAccess => "EHR_ACCESS",
+            Kind::Folder => "FOLDER",
+            Kind::Agent => "AGENT",
+            Kind::Group => "GROUP",
+            Kind::Organisation => "ORGANISATION",
+            Kind::Person => "PERSON",
+            Kind::Role => "ROLE",
+            Kind::PartyRelationship => "PARTY_RELATIONSHIP",
+        }
+    }
+
+    /// Whether this kind is a demographic party root (no EHR scope). This is the
+    /// `/versioned_party` read scope — a `PARTY_RELATIONSHIP` is *not* a party.
+    pub(crate) fn is_party(self) -> bool {
+        matches!(
+            self,
+            Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role
+        )
+    }
+
+    /// Whether this kind is a demographic versioned object (no EHR scope): the
+    /// five party roots plus `PARTY_RELATIONSHIP`.
+    pub(crate) fn is_demographic(self) -> bool {
+        self.is_party() || self == Kind::PartyRelationship
+    }
+
+    /// The versioned-object kind for an RM `_type`, if it is a versioned root.
+    pub(crate) fn from_type(rm_type: &str) -> Option<Self> {
+        match rm_type {
+            "COMPOSITION" => Some(Kind::Composition),
+            "EHR_STATUS" => Some(Kind::EhrStatus),
+            "EHR_ACCESS" => Some(Kind::EhrAccess),
+            "FOLDER" => Some(Kind::Folder),
+            "AGENT" => Some(Kind::Agent),
+            "GROUP" => Some(Kind::Group),
+            "ORGANISATION" => Some(Kind::Organisation),
+            "PERSON" => Some(Kind::Person),
+            "ROLE" => Some(Kind::Role),
+            "PARTY_RELATIONSHIP" => Some(Kind::PartyRelationship),
+            _ => None,
+        }
+    }
+}
+
+/// The signing context threaded into every versioned-object write so the
+/// assembled `ORIGINAL_VERSION` is signed (RM common master06 §Digital
+/// Signature). Borrows the effective system id and the configured [`Signer`].
+pub(crate) struct SigningCtx<'a> {
+    /// The effective openEHR `system_id` for this write — the current tenant's
+    /// own id when tenancy is on, else the service default.
+    pub(crate) system_id: String,
+    pub(crate) signer: &'a Signer,
+    /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
+    /// governs media externalization — our own extension). When set, the commit
+    /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body
+    /// is decomposed and signed.
+    pub(crate) multimedia: Option<&'a crate::multimedia::MultimediaEngine>,
+}
+
+/// The cross-area hooks the CONTRIBUTION commit orchestration
+/// ([`contribution::commit_version_set`]) needs from the service layer. Each
+/// hook is owned by another register: content validation (validation register),
+/// EHR existence + `is_modifiable` write guard + `current_vo` (EHR register),
+/// EHR_ACCESS cache invalidation (EHR register), committer default (EHR
+/// register).
+///
+/// TODO(w3f-integrate): the service type (`crate::service::EhrbaseService`)
+/// implements this at the fix pass; versioning owns only the change-set
+/// decision logic. `default_committer` is the EHR worker's `committer()`;
+/// `ensure_ehr_exists` closes G-6 (register 03: SM `i_ehr_contribution.adoc`
+/// §commit_contribution `Pre_has_ehr`); `ensure_content_writable` is the
+/// EHR_STATUS `is_modifiable` guard.
+#[async_trait::async_trait]
+pub(crate) trait CommitEnv {
+    /// The connection pool for the commit transaction.
+    fn pool(&self) -> &PgPool;
+    /// The effective openEHR `system_id` for this request.
+    fn effective_system_id(&self) -> String;
+    /// The default committer `PARTY_PROXY` (the authenticated principal).
+    fn default_committer(&self) -> Value;
+    /// The write-time signing context.
+    fn signing_ctx(&self) -> SigningCtx<'_>;
+    /// Validate a version's content for commit (relaxed when `incomplete`).
+    async fn validate_for_commit(
+        &self,
+        kind: Kind,
+        data: &Value,
+        incomplete: bool,
+    ) -> Result<(), ServiceError>;
+    /// G-6: the target EHR must exist before a CONTRIBUTION is committed to it.
+    async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
+    /// The EHR_STATUS `is_modifiable = False` content-write guard.
+    async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
+    /// The current versioned object of `kind` in `ehr_id`, if any (for the
+    /// EHR-singleton create guard).
+    async fn current_vo(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<(Uuid, i32)>, ServiceError>;
+    /// Drop the cached EHR_ACCESS settings after an EHR_ACCESS commit.
+    async fn invalidate_ehr_access(&self, ehr_id: Uuid);
+}
