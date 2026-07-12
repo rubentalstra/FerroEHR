@@ -428,7 +428,7 @@ pub(crate) fn set_resource_headers(
     }
     // The single, generic ATNA hook for the participant object: surface the
     // resource ids the envelope already carries for the audit layer (§8.2 step 3).
-    resp.extensions_mut().insert(crate::audit::AuditObject {
+    resp.extensions_mut().insert(crate::extensions::audit::AuditObject {
         ehr_id: Some(meta.ehr_id.clone()),
         uid: Some(meta.uid.clone()),
     });
@@ -525,7 +525,7 @@ pub(crate) fn error_with_meta(
     segment: Option<&str>,
     meta: Option<&ResourceMeta>,
 ) -> Response {
-    let mut out = crate::error::RestError(error).into_response();
+    let mut out = crate::overview::error::RestError(error).into_response();
     if let Some(meta) = meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
@@ -608,7 +608,7 @@ trait IntoErrorResponse {
 
 impl IntoErrorResponse for ApiError {
     fn into_response_body(self) -> Response {
-        crate::error::RestError(self).into_response()
+        crate::overview::error::RestError(self).into_response()
     }
 }
 

@@ -14,17 +14,16 @@
 //! coarse **RBAC** gate ([`authz`]) when an [`AuthzHandle`] is wired.
 //! Fine-grained ABAC is the follow-up (`docs/enterprise/access-control.md`).
 
-pub mod access;
-mod audit;
-mod audit_table;
+pub mod api;
 pub mod config;
-mod dispatch;
-pub mod management;
-mod openapi;
+pub mod extensions;
+pub mod formats;
 pub mod overview;
+pub mod smart;
 mod router;
 mod state;
 
+use extensions::{access, audit, audit_table, management, openapi};
 use overview::{committal, error, negotiate, params, status, version_id};
 
 pub use access::authn::{AuthMethod, Authenticator, Principal};
