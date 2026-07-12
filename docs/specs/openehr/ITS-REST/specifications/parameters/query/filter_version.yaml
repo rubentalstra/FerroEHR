@@ -1,0 +1,8 @@
+name: version
+in: query
+description: |
+  Filter by version (e.g. `1.2.*` or use `*` for all versions), taken from `template_id`; if missing, then only the latest version will be returned.
+style: form
+schema:
+  type: string
+  example: '1.2.*'

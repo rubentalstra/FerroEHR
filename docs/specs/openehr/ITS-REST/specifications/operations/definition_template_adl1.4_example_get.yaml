@@ -1,0 +1,38 @@
+operationId: definition_template_adl1.4_example_get
+summary: Get example data by template
+description: |
+  Generates and retrieves an example data instance based on an ADL 1.4 operational template (OPT) identified by the `template_id` parameter.
+  
+  The generated example can be either of type `input` (i.e., ready to be submitted to the repository) or `output` (as it would appear when retrieved from the repository).
+  This behavior is controlled by the `type` query parameter.
+  
+  The level of detail in the generated example can be customized using the `detail_level` query parameter.
+  It affects the number and complexity of nested elements, the inclusion or exclusion of optional elements, and the depth of data point details.
+  The supported values are:
+  - `required`: a minimal composition including only mandatory data points; intended for training purposes and expected to be committable without adjustment
+  - `medium`: a fairly realistic set of data points, including some optional RM attributes and elements; intended to be committable (e.g., it should not contain more than one choice element, even if the template allows it)
+  - `complete`: a full representation of all possible data points; not expected to be committable or realistic, and intended as reference guidance for how parts of the RM should be represented
+  
+  > NOTE: The implementation and completeness of these examples are not specified, and vendors may produce different results.
+  These examples are intended as pedagogical tools; their output should not be used in production.
+
+  When the server does not support the requested `type` or `detail_level`, it will fall back to the closest supported level, or it may return an error (typically `400 Bad Request`).
+  
+  The format of the returned data instance can be controlled via the `Accept` header. See the [data representation specification](overview.html#tag/Resources/Data-representation) for supported formats.tags:
+
+tags:
+  - ADL1.4
+parameters:
+  - $ref: ../parameters/path/template_id.yaml
+  - $ref: ../parameters/query/example_type.yaml
+  - $ref: ../parameters/query/example_detail_level.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+responses:
+  '200':
+    $ref: ../responses/200_Template_example_retrieved.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '404':
+    $ref: ../responses/404_unknown_template_id.yaml
+  '406':
+    $ref: ../responses/406.yaml

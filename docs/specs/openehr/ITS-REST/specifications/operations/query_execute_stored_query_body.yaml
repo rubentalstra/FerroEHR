@@ -10,6 +10,8 @@ tags:
   - Query
 parameters:
   - $ref: ../parameters/path/qualified_query_name.yaml
+  - $ref: ../parameters/header/Accept_JSON.yaml
+  - $ref: ../parameters/header/ContentType_JSON.yaml
 requestBody:
   description: |
     Specifications for a stored AQL query execution.

@@ -1,0 +1,4 @@
+title: ListOfPartyRelationShip
+type: array
+items:
+  $ref: ../demographic/PartyRelationship.yaml

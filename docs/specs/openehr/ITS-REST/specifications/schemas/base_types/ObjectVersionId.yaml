@@ -5,7 +5,9 @@ allOf:
 required:
   - value
 properties:
-  value:
+  _type:
     type: string
-    example: '6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2'
+    enum: [OBJECT_VERSION_ID]
 x-discriminator-value: OBJECT_VERSION_ID
+example:
+  value: '6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2'

@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: ATTESTATION
+    enum: [ATTESTATION]
   attested_view:
     $ref: ../data_types/DvMultimedia.yaml
   proof:

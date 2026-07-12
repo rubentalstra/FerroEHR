@@ -102,6 +102,36 @@ impl EhrbaseService {
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
+    /// The `VERSIONED_OBJECT` for an EHR's directory (`get_versioned_directory`,
+    /// `i_ehr_directory.adoc`). Resolves `EHR.directory` (= `folders[1]`, RM ehr
+    /// §EHR Class `Directory_in_folders`) and wraps it exactly as the EHR_STATUS
+    /// / COMPOSITION versioned-object views do
+    /// ([`versioned_object`](EhrbaseService::versioned_object): `_type`
+    /// `VERSIONED_OBJECT`, `uid`, `owner_id` → the owning EHR, `time_created`).
+    pub(super) async fn versioned_directory(&self, ehr_id: Uuid) -> Result<Value, ServiceError> {
+        let vo_id = self.directory_vo(ehr_id).await?;
+        self.versioned_object(vo_id, ehr_id).await
+    }
+
+    /// Whether `version` of the directory versioned object `vo_id` exists for
+    /// this EHR (`has_directory_version`). A logically deleted version still
+    /// counts as existing (`i_ehr_directory.adoc`: "True if the directory has a
+    /// version with specified id").
+    pub(super) async fn has_directory_version(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        version: TreeId,
+    ) -> Result<bool, ServiceError> {
+        // The id must name THIS EHR's directory versioned object.
+        if self.directory_vo_opt(ehr_id).await? != Some(vo_id) {
+            return Ok(false);
+        }
+        Ok(vobject::read_version(&self.pool, vo_id, version)
+            .await?
+            .is_some_and(|r| r.ehr_id == Some(ehr_id)))
+    }
+
     /// Update the EHR's directory. `expected` (from `If-Match`) enforces
     /// optimistic concurrency.
     pub(super) async fn update_directory(

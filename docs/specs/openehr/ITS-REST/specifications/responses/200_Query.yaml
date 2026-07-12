@@ -3,6 +3,8 @@ description: |
 headers:
   ETag:
     $ref: ../headers/ETag_RESULT_SET.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_JSON.yaml
 content:
   application/json:
     schema:

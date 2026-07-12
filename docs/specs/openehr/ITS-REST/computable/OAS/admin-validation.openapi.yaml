@@ -1,0 +1,158 @@
+openapi: 3.0.3
+info:
+  title: Admin API
+  version: development
+  x-status: DEVELOPMENT
+  x-spec: admin
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: https://specifications.openehr.org/
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: https://creativecommons.org/licenses/by-nd/3.0/
+  description: |
+    ## Description
+
+    ### Purpose
+
+    This specification describes service endpoints, resources and operations as well as details of requests and responses that interact with the openEHR Admin API in a RESTful manner.
+
+    ### Related Documents
+
+    Prerequisite documents for reading this document include:
+
+    - The [EHR Information Model](https://specifications.openehr.org/releases/RM/latest/ehr.html#_the_ehr_information_model)
+    - The [Demographic Information Model](https://specifications.openehr.org/releases/RM/latest/demographic.html#_demographic_package)
+    - The [Operational Template 2](https://specifications.openehr.org/releases/AM/latest/OPT2.html)
+    - The [Archetype Query Language (AQL)](https://specifications.openehr.org/releases/QUERY/latest/AQL.html)
+
+    Related documents include:
+
+    - The [openEHR Architecture Overview](https://specifications.openehr.org/releases/BASE/latest/architecture_overview.html)
+    - The [openEHR Global Class Index](https://specifications.openehr.org/classes)
+    - The [XML-Schemas (XSD)](https://specifications.openehr.org/releases/ITS-XML/latest)
+    - The [JSON-Schemas](https://specifications.openehr.org/releases/ITS-JSON/latest) and [Simplified Formats](simplified_formats.html)
+
+    ### Status
+
+    This specification is in the `DEVELOPMENT` state, and can be downloaded as [OpenAPI specification](https://spec.openapis.org/oas/v3.0.3) file (in YAML format) [for validation](computable/OAS/admin-validation.openapi.yaml), or [for code generators](computable/OAS/admin-codegen.openapi.yaml).
+    Users are encouraged to comment on and/or advise on these paragraphs as well as the main content.
+
+    The development version of this document can be found at <https://specifications.openehr.org/releases/ITS-REST/development/admin.html>.
+servers:
+  - url: https://{baseUrl}/v1
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+tags:
+  - name: EHR
+    description: |
+      Admin management of [EHRs](https://specifications.openehr.org/releases/RM/latest/ehr.html#_ehr_class).
+paths:
+  /admin/ehr/{ehr_id}:
+    delete:
+      operationId: admin_ehr_delete
+      summary: Delete EHR by id
+      description: |
+        Deletes the EHR identified by `ehr_id`. 
+
+        All resources associated with or owned by the specified EHR (such as COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also be **permanently** and physically deleted, in compliance with applicable data protection regulations (e.g., the GDPR in the European Union).
+
+        The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`.
+        If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.
+      tags:
+        - EHR
+      parameters:
+        - $ref: '#/components/parameters/ehr_id'
+      responses:
+        '202':
+          $ref: '#/components/responses/202'
+        '204':
+          $ref: '#/components/responses/204_deleted_hard'
+        '404':
+          $ref: '#/components/responses/404_unknown_ehr_id'
+  /admin/ehr/all{?ehr_id*}:
+    delete:
+      operationId: admin_ehr_delete_all
+      summary: Delete multiple EHRs
+      description: |
+
+        Deletes all or multiple EHRs, or a specified subset of EHRs identified using the `ehr_id` query parameter. 
+
+        > NOTE: This functionality is intended primarily for **development** or **testing** purposes and may be disabled in **production** environments, in which case server may respond with `405 Method Not Allowed`.
+
+        All resources associated with or owned by the targeted EHRs (such as COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also be **permanently** and physically deleted, in compliance with applicable data protection regulations (e.g., the GDPR in the European Union).
+
+        The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`.
+        If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.
+      tags:
+        - EHR
+      parameters:
+        - $ref: '#/components/parameters/ehr_id_Admin'
+      responses:
+        '202':
+          $ref: '#/components/responses/202'
+        '204':
+          $ref: '#/components/responses/204_deleted_hard'
+        '404':
+          $ref: '#/components/responses/404'
+        '405':
+          $ref: '#/components/responses/405'
+components:
+  parameters:
+    ehr_id:
+      name: ehr_id
+      in: path
+      description: |
+        EHR identifier taken from EHR.ehr_id.value.
+      required: true
+      style: simple
+      schema:
+        type: string
+        format: uuid
+        example: 7d44b88c-4199-4bad-97dc-d78268e01398
+    ehr_id_Admin:
+      name: ehr_id
+      in: query
+      description: |
+        An optional parameter to perform the operation on a subset of EHRs.
+      style: form
+      explode: true
+      schema:
+        type: string
+        format: uuid
+      examples:
+        single:
+          summary: A single EHR identifier
+          value: 7d44b88c-4199-4bad-97dc-d78268e01398
+        multiple:
+          summary: Multiple EHR identifiers
+          value:
+            - 7d44b88c-4199-4bad-97dc-d78268e01398
+            - 297c3e91-7c17-4497-85dd-01e05aaae44e
+  responses:
+    '202':
+      description: |
+        `202 Accepted` is returned when the requested operation has been accepted for processing, 
+        but processing has not been completed or may not have started (i.e. when requests are processed asynchronously). 
+    '404':
+      description: |
+        `404 Not Found` is returned when, based on the request parameters, the server did not find a current representation of a target resource, or is not willing to disclose that one exists.
+    '405':
+      description: |
+        `405 Method Not Allowed` is returned when the service knows the request method, but the target resource doesn't support this method (e.g. due to security concerns). 
+    204_deleted_hard:
+      description: |
+        `204 No Content` is returned when the requested operation succeeded and the resource(s) identified by the request parameters has been physically deleted (i.e. hard-delete).
+    404_unknown_ehr_id:
+      description: |
+        `404 Not Found` is returned when an EHR with `ehr_id` does not exist.
+  schemas: {}
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - EHR

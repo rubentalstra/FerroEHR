@@ -1,0 +1,34 @@
+operationId: contribution_create
+summary: Create CONTRIBUTION
+description: |
+  We will use the relaxed CONTRIBUTION with the following optional attributes:
+    - `uid`: when provided, it will be accepted in case is not in-use, otherwise error will be returned
+    - `audit.time_committed`: server will always set it
+    - `audit.system_id`: when provided, it will be validated
+
+  The `audit` and each `versions[i].commit_audit` are `UPDATE_AUDIT` objects: structurally an
+  `AUDIT_DETAILS` minus the server-assigned attributes (`time_committed`, and the optional `system_id`).
+  Clients SHOULD send `_type: "UPDATE_AUDIT"`; for interoperability servers SHOULD additionally accept
+  `_type: "AUDIT_DETAILS"` or an omitted `_type` for this attribute. The `audit.change_type` and each
+  `versions[i].lifecycle_state` are `DV_CODED_TEXT` values coded against the openEHR terminology.
+tags:
+  - CONTRIBUTION
+parameters:
+  - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
+requestBody:
+  description: |
+    The CONTRIBUTION.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/demographic/NewContribution.yaml
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_demographic_CONTRIBUTION.yaml
+  '400':
+    $ref: ../responses/400_CONTRIBUTION.yaml
+  '409':
+    $ref: ../responses/409.yaml

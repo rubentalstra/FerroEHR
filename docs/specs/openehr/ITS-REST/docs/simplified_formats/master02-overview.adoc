@@ -1,0 +1,62 @@
+= Overview
+
+== Introduction
+
+The serialization format based on *Web Template (WT)* is a JSON representation of openEHR data instances that uses simplified field identifiers instead of canonical archetype paths.
+The format was originally developed by _Better d.o.o._ and later adopted and extended by the _EHRbase_ open-source community.
+In this specification we refer to these as *Simplified Formats*.
+
+Although historically different names have been used (e.g. Web Template serialization and the former “Simplified Data Template” term), in the context of this document they represent the same idea.
+
+NOTE: Prior to Release 1.1.0, the openEHR specification used the name "Simplified Data Template (SDT) specification".
+This has been superseded by the current "Simplified Formats specification".
+
+The Simplified Formats have two structural variants:
+
+* **Flat** - colloquially known as the "flat format"
+* **Structured** - colloquially known as the "structured format"
+
+Key characteristics include:
+
+* __Human-readable field identifiers__: Uses friendly names like `temperature|magnitude` instead of archetype paths like `/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value|magnitude`
+* __JSON-based__: a form of JSON representation of openEHR data
+* __Context data separation__: Clinical data separated from context metadata (usually under a `ctx/` prefix)
+* __Template-specific__: Field identifiers are specific to each operational template
+* __Element-value simplification__: In Flat format, there is no distinction between an ELEMENT and its value
+
+
+== Scope
+
+This specification covers:
+
+* The structure and syntax of the *Flat* and *Structured* formats
+* Field identifier generation rules
+* Context data representation
+* RM attributes handling (underscore-prefixed attributes)
+* Mapping between the Simplified Formats and canonical openEHR RM
+* Serialization and deserialization requirements
+
+This specification does not cover:
+
+* Web Template itself as a resource
+* Archetype technology and associated constraints
+* Storage or indexing strategies
+
+
+== MIME Types
+
+Two MIME types are defined for the Simplified Formats serialization:
+
+* __Flat__ format: `application/openehr.wt.flat+json`
+* __Structured__ format: `application/openehr.wt.structured+json`
+
+
+== Relationship to Other Specifications
+
+The format relates to other openEHR specifications as follows:
+
+* __openEHR Reference Model__: serialized instances represent valid RM structures (e.g. COMPOSITION)
+* __Operational Templates (OPT)__: field identifiers are generated from OPT definitions
+* __AQL__: serialized instances include AQL paths to enable query integration
+* __Canonical JSON/XML__: the Simplified Formats are an alternative serialization, convertible to canonical formats
+

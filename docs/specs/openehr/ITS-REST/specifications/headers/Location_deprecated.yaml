@@ -1,0 +1,5 @@
+description: |
+  The `Location` is [deprecated](overview.html#tag/Requests_and_responses/HTTP-headers/Location) for this action.
+deprecated: true
+schema:
+  type: string

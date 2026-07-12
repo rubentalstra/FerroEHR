@@ -1,4 +1,5 @@
 title: UID_BASED_ID
+type: object
 oneOf:
   - $ref: ../base_types/UMHierObjectId.yaml
   - $ref: ../base_types/UMObjectVersionId.yaml

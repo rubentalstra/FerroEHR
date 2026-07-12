@@ -1,0 +1,73 @@
+= Experimental features
+
+The following concepts and aspects are considered experimental.
+
+[NOTE]
+====
+Implementers should treat its use as provisional and subject to change in future versions of this specification.
+====
+
+== Launch Parameter as a Token
+
+To support efficient and context-rich embedded launches, it is *recommended* that the `launch` parameter be a **base64-encoded JSON object** containing launch context attributes such as:
+
+- `ehrId` - The openEHR EHR identifier
+- `patient` - FHIR Patient ID (if available)
+- `episodeId` - Clinical episode ID (optional)
+
+This allows the _Application_ to initialize its interface with full context and potentially bypass a full authorization cycle if it is already authenticated.
+This significantly improves the user experience, for instance, when switching patients within the same embedded session.
+
+Platforms that support this optimization should advertise the following capabilities in their `/.well-known/smart-configuration` response:
+
+- `launch-base64-json`: May be used to deliver context (including `episodeId`) in a base64-encoded JSON format for embedded iFrame launches.
+
+
+== Experimental: Episode Context
+
+The *Episode* concept represents a bounded period of care or clinical workflow, such as a hospital admission, treatment course, or referral. It serves as a logical container for grouping related clinical activities, encounters, and observations. This concept is particularly relevant for workflows where context must be maintained across multiple interactions or systems.
+
+In the context of SMART on openEHR, Episode selection and usage is considered **experimental**.
+While the openEHR specification outlines the concept of an Episode, formal resource definitions and operational semantics are still evolving.
+As the openEHR specification evolves to formalize Episode as a first-class resource, the following enhancements may be introduced:
+
+- Standardized resource representation of an Episode type or new archetype.
+- Extended query support for filtering by Episode.
+- Improved UI/UX support in authorization servers for Episode selection.
+- FHIR mapping for Episode-related concepts.
+
+This section outlines the current capabilities and usage patterns under evaluation for Episode support.
+
+=== Scopes and Capabilities
+
+To request Episode context during an authorization flow, the following scope may be included in the authorization request:
+
+[width="100%",cols="1,2",options="header"]
+|=======================================================================
+| Scope | Description
+| `launch/episode` | Requests Episode context at launch time. If launching outside an EHR, prompts the _Platform_ to determine or allow selection of the Episode relevant to the session.
+|=======================================================================
+
+Platforms that support Episode context should advertise the following capabilities in their `/.well-known/smart-configuration` response:
+
+- `context-openehr-episode`: Indicates that the _Platform_ supports Episode context selection during launch, requested via `launch/episode` scope.
+
+=== Token Response Parameters
+
+When an authorization request includes `launch/episode` scope and the Platform is capable of resolving the Episode, the following parameter will be included in the token response:
+
+[width="100%",cols="1,2",options="header"]
+|=======================================================================
+| Parameter | Description
+| episodeId | Identifier of the selected or inferred Episode for the session. This may map to an openEHR EHR_STATUS.episode or a platform-specific abstraction. Its semantics are currently implementation-defined.
+|=======================================================================
+
+This value is intended to be used by the client Application to filter or group clinical data relevant to the specific Episode of care.
+
+=== Launch Scenarios
+
+Standalone Launch:
+When the `launch/episode` scope is included, the Platform may prompt the user to select an Episode or infer it automatically based on session context (e.g., currently admitted case, recent discharge summary, etc.).
+
+Embedded iFrame Launch:
+Episode context may be embedded in a base64-encoded `launch` parameter provided at runtime. This can improve usability by avoiding a separate Episode selection prompt during intra-portal navigation.

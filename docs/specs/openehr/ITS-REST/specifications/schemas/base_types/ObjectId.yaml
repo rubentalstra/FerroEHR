@@ -7,12 +7,3 @@ properties:
     type: string
   value:
     type: string
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    ARCHETYPE_ID: '#/components/schemas/ArchetypeId'
-    TEMPLATE_ID: '#/components/schemas/TemplateId'
-    TERMINOLOGY_ID: '#/components/schemas/TerminologyId'
-    GENERIC_ID: '#/components/schemas/GenericId'
-    HIER_OBJECT_ID: '#/components/schemas/HierObjectId'
-    OBJECT_VERSION_ID: '#/components/schemas/ObjectVersionId'

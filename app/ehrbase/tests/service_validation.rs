@@ -30,12 +30,11 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, SmError};
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -50,7 +49,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -100,6 +99,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }

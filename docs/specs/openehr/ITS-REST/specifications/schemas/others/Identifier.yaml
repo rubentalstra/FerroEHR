@@ -1,0 +1,10 @@
+title: Identifier
+type: object
+required:
+  - uid
+properties:
+  uid:
+    type: string
+    description: The (version) resource identifier.
+example:
+  uid: '6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2'

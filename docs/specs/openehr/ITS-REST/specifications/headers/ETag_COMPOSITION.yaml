@@ -2,4 +2,4 @@ description: |
   The `ETag` (i.e. entity tag) response header is an identifier (e.g. a `version_uid` enclosed by double quotes) for a specific version of a resource.
 schema:
   type: string
-  example: '"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"'
+  example: 'W/"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1'

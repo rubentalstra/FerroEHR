@@ -72,7 +72,7 @@ on 2026-07-03 (the versions available as clean `*.bmm.json`).
 | LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | `openehr-lang` — the ODIN + BMM reader that feeds codegen |
 | TERM (Terminology) | 3.1.0 | STABLE | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
 | ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-its` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
-| ITS-REST (REST API) | 1.0.3 | STABLE | ADMIN API is dev-branch only |
+| ITS-REST (REST API) | development @ `e8a093e9` | mixed (per API: Overview/System/EHR/Query/Definition/Formats STABLE; Demographic/Admin/SMART DEVELOPMENT) | the identity the B5 conformance instrument derives (`development@e8a093e`); spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** — all 7 API groups (incl. DEMOGRAPHIC/ADMIN/SYSTEM) |
 | ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
 

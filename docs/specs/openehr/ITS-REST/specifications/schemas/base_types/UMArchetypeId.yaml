@@ -4,8 +4,4 @@ allOf:
   - $ref: ../base_types/ArchetypeId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [ARCHETYPE_ID]
 x-discriminator-value: ARCHETYPE_ID

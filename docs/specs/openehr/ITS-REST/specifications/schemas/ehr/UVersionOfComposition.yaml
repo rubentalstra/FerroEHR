@@ -1,0 +1,10 @@
+title: VERSION
+type: object
+oneOf:
+  - $ref: ../ehr/UMOriginalVersionOfComposition.yaml
+  - $ref: ../ehr/UMImportedVersionOfComposition.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    ORIGINAL_VERSION: ../ehr/UMOriginalVersionOfComposition.yaml
+    IMPORTED_VERSION: ../ehr/UMImportedVersionOfComposition.yaml

@@ -1,0 +1,13 @@
+title: DV_INTERVAL_of_DATE
+type: object
+allOf:
+  - $ref: ../data_types/DvInterval.yaml
+properties:
+  _type:
+    type: string
+    default: DV_INTERVAL
+  lower:
+    $ref: ../data_types/UMDvDate.yaml
+  upper:
+    $ref: ../data_types/UMDvDate.yaml
+x-discriminator-value: DV_INTERVAL_of_DATE

@@ -8,8 +8,10 @@ parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/path/versioned_object_uid_COMPOSITION.yaml
   - $ref: ../parameters/path/version_uid_COMPOSITION.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
 responses:
   '200':
-    $ref: ../responses/200_VERSION.yaml
+    $ref: ../responses/200_VERSION_of_COMPOSITION_by_id.yaml
   '404':
     $ref: ../responses/404_unknown_ehr_id_or_versioned_object_uid_or_version_uid.yaml

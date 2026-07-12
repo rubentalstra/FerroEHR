@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: ACTIVITY
+    enum: [ACTIVITY]
   timing:
     $ref: ../data_types/DvParsable.yaml
   action_archetype_id:

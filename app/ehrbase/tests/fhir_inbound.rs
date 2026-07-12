@@ -29,7 +29,7 @@ use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{FhirConfig, RestConfig};
-use ehrbase_sm::services::DefinitionAdapter;
+use ehrbase_sm::DefinitionAdapter;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const MAPPINGS: &str = "/ehrbase/rest/openehr/v1/admin/fhir_mapping";
@@ -44,8 +44,7 @@ const PROFILE_OK: &str = "http://example.org/StructureDefinition/bp";
 const PROFILE_BAD: &str = "http://example.org/StructureDefinition/bp-bad";
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -60,7 +59,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }

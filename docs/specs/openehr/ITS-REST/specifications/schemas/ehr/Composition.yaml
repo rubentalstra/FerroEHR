@@ -7,13 +7,11 @@ required:
   - language
   - territory
   - category
-  - context
   - composer
-  - content
 properties:
   _type:
     type: string
-    default: COMPOSITION
+    enum: [COMPOSITION]
   language:
     $ref: ../data_types/CodePhrase.yaml
   territory:
@@ -26,8 +24,10 @@ properties:
     $ref: ../common/UPartyProxy.yaml
   content:
     type: array
+    minItems: 1
     items:
       $ref: ../ehr/UContentItem.yaml
+    description: See [CONTENT_ITEM](#tag/CONTENT_ITEM_schema) schema details.
 x-discriminator-value: COMPOSITION
 example:
   archetype_node_id: openEHR-EHR-COMPOSITION.encounter.v1

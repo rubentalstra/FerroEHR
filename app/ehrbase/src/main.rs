@@ -189,6 +189,19 @@ async fn serve() -> anyhow::Result<()> {
         None => {}
     }
 
+    // Opt-in Subject Proxy FHIR-frame executor: when a deployment configures FHIR
+    // systems (EHRBASE_SUBJECT_PROXY__SYSTEMS__…), an `API_CALL`/`fhir_get`
+    // DATA_FRAME retrieves from them (`I_DATA_BINDING`, `hl7_fhir_sample.adoc`);
+    // otherwise every FHIR frame is a typed rejection (fail-closed).
+    if let Some(fhir) = ehrbase::service::SubjectProxyConfig::load()
+        .context("loading subject-proxy configuration")?
+        .build()
+        .context("initialising the subject-proxy FHIR executor")?
+    {
+        tracing::info!("subject-proxy FHIR-frame executor configured");
+        service = service.with_subject_proxy(Arc::new(fhir));
+    }
+
     // Opt-in DV_MULTIMEDIA externalization: off by default (inline
     // behaviour byte-identical). When enabled, large inline media is offloaded
     // to S3-compatible object storage on commit and re-inlined on demand.

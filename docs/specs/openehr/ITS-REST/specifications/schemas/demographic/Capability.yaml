@@ -1,0 +1,14 @@
+title: CAPABILITY
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - credentials
+properties:
+  _type:
+    type: string
+    enum: [CAPABILITY]
+  credentials:
+    $ref: ../data_structures/UItemStructure.yaml
+  time_validity:
+    $ref: ../data_types/DvIntervalOfDate.yaml

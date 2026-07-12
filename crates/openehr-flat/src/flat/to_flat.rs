@@ -13,6 +13,7 @@ use serde_json::Value;
 
 use super::context;
 use super::mappers::{self, FlatMap};
+use super::rmattr;
 use crate::FlatError;
 use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
@@ -45,9 +46,16 @@ fn type_matches(rm: &Value, rm_type: &str) -> bool {
 
 fn walk(node: &WebTemplateNode, rm: &Value, prefix: &str, out: &mut FlatMap) {
     if node.has_input() {
-        mappers::leaf_to_flat(rm, &node.rm_type, prefix, out);
+        let list_open = node.inputs.iter().find_map(|i| i.list_open);
+        mappers::leaf_to_flat(rm, &node.rm_type, prefix, list_open, out);
+        // The `_`-prefixed optional RM attributes on RM→FLAT (master05
+        // per-type tables; master02 §"RM Attributes prefix").
+        rmattr::emit_rm_attrs(rm, prefix, out);
         return;
     }
+    // Container nodes (COMPOSITION / ENTRY types / CLUSTER …) carry their own
+    // `_`-attribute families (master05 per-class tables).
+    rmattr::emit_rm_attrs(rm, prefix, out);
     for child in &node.children {
         // Inside EVENT_CONTEXT only the archetyped `other_context` items are tree
         // leaves; the standard context fields (start_time / setting /

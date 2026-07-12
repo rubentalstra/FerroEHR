@@ -9,7 +9,7 @@ required:
 properties:
   _type:
     type: string
-    default: ACTION
+    enum: [ACTION]
   time:
     $ref: ../data_types/DvDateTime.yaml
   ism_transition:

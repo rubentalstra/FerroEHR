@@ -70,7 +70,9 @@ authenticated request that lacks the required role is refused with `403`.
 Authorization has three composable layers. The per-EHR `EHR_ACCESS` gate is
 the openEHR-specified base and is always on; the coarse role layer is active
 when authentication is enabled; the fine-grained attribute layer is opt-in.
-A request must clear every active layer.
+A request must clear every active layer. Deployments serving SMART apps can
+enable a fourth, token-scope layer on top — see
+[SMART App Launch](smart-app-launch.md).
 
 ### Per-EHR access control (`EHR_ACCESS`)
 

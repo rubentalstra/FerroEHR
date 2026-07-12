@@ -12,7 +12,7 @@ parameters:
   - $ref: ../parameters/path/uid_based_id_as_version_uid.yaml
 responses:
   '204':
-    $ref: ../responses/204_COMPOSITION_deleted.yaml
+    $ref: ../responses/204_version_deleted.yaml
   '400':
     $ref: ../responses/400_already_deleted.yaml
   '404':

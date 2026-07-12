@@ -21,11 +21,6 @@ properties:
   committer:
     $ref: ../common/UPartyProxy.yaml
 x-discriminator-value: AUDIT_DETAILS
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    AUDIT_DETAILS: '#/components/schemas/AuditDetails'
-    ATTESTATION: '#/components/schemas/Attestation'
 example:
   system_id: 9624982A-9F42-41A5-9318-AE13D5F5031F
   committer:

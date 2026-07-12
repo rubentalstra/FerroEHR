@@ -7,9 +7,7 @@
 //! touch the `ehr.subject_id` promotion (the Primary-instance fast path for
 //! `ehr_get_by_subject` stays as-is); the index models the full N:M state.
 
-use ehrbase_sm::types::{
-    EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
-};
+use ehrbase_sm::{EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
 use jiff_sqlx::ToSqlx;
 use serde_json::{Value, json};
 use sqlx::Row;

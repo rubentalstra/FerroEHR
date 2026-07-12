@@ -1,0 +1,14 @@
+operationId: contribution_get
+summary: Get CONTRIBUTION by id
+description: |
+  Retrieves a CONTRIBUTION identified by `contribution_uid`.
+tags:
+  - CONTRIBUTION
+parameters:
+  - $ref: ../parameters/path/contribution_uid.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+responses:
+  '200':
+    $ref: ../responses/200_CONTRIBUTION.yaml
+  '404':
+    $ref: ../responses/404_demographic_CONTRIBUTION.yaml

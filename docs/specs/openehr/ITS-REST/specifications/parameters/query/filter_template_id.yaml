@@ -1,0 +1,8 @@
+name: template_id
+in: query
+description: |
+  Pattern for matching `template_id` (supports wildcards `*`)
+style: form
+schema:
+  type: string
+  example: 'vital*'

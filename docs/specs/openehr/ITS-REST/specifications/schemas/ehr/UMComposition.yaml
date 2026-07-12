@@ -1,0 +1,11 @@
+title: COMPOSITION
+type: object
+allOf:
+  - $ref: ../ehr/Composition.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [COMPOSITION]
+x-discriminator-value: COMPOSITION

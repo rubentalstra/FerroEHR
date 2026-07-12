@@ -9,6 +9,9 @@ allOf:
 required:
   - id
 properties:
+  _type:
+    type: string
+    enum: [DV_IDENTIFIER]
   issuer:
     type: string
   assigner:

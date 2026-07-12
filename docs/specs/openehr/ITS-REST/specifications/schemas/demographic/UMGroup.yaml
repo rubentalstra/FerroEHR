@@ -1,0 +1,11 @@
+title: GROUP
+type: object
+allOf:
+  - $ref: ../demographic/Group.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [GROUP]
+x-discriminator-value: GROUP

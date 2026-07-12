@@ -1,0 +1,26 @@
+operationId: admin_ehr_delete_all
+summary: Delete multiple EHRs
+description: |
+
+  Deletes all or multiple EHRs, or a specified subset of EHRs identified using the `ehr_id` query parameter. 
+
+  > NOTE: This functionality is intended primarily for **development** or **testing** purposes and may be disabled in **production** environments, in which case server may respond with `405 Method Not Allowed`.
+  
+  All resources associated with or owned by the targeted EHRs (such as COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also be **permanently** and physically deleted, in compliance with applicable data protection regulations (e.g., the GDPR in the European Union).
+  
+  The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`.
+  If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.
+
+tags:
+  - EHR
+parameters:
+  - $ref: ../parameters/query/ehr_id_Admin.yaml
+responses:
+  '202':
+    $ref: ../responses/202.yaml
+  '204':
+    $ref: ../responses/204_deleted_hard.yaml
+  '404':
+    $ref: ../responses/404.yaml
+  '405':
+    $ref: ../responses/405.yaml

@@ -14,13 +14,16 @@
 //! SM `I_DEFINITION_*` traits plus the wire-shaped [`DefinitionAdapter`]
 //! extension, so this crate carries no `openehr-its` types.
 
+use crate::extensions::{
+    ContributionAdapter, DefinitionAdapter, EhrAccessAdapter, EventSubscriptionAdapter,
+    FhirConnectorAdapter, ItemTagAdapter, MultimediaAdapter, TenantAdapter, VersionMetaAdapter,
+    WebTemplateService,
+};
 use crate::services::{
-    AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
-    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrAccessAdapter,
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrIndexService,
-    EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter,
-    MultimediaAdapter, PartyRelationshipService, QueryService, SystemLog, TenantAdapter,
-    TerminologyService, VersionMetaAdapter, WebTemplateService,
+    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
+    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, PartyRelationshipService,
+    QueryService, SystemLog, TerminologyService,
 };
 
 /// The full server platform: everything the ITS-REST surface dispatches to.

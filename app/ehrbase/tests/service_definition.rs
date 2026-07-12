@@ -15,14 +15,14 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
+use ehrbase_sm::extensions::adapters::TemplateListFilter;
 use ehrbase_sm::{
     CallStatusType, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, Page, SmError,
 };
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -37,7 +37,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -296,6 +296,133 @@ async fn opt_upload_has_get_list_match_delete() {
     svc.delete_opt(uuid.clone()).await.expect("delete opt");
     assert!(!svc.has_opt(uuid.clone()).await.unwrap());
     assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 0);
+}
+
+/// The ITS-REST `definition_template_adl1.4_list` filter + pagination params
+/// (`operations/definition_template_adl1.4_list.yaml`;
+/// `parameters/query/filter_template_id.yaml` — "supports wildcards `*`";
+/// `master02-overview.adoc` §List Handling). Two OPTs are uploaded through the
+/// wire-shaped `DefinitionAdapter`; the list must honour the `template_id` glob
+/// and the `offset`/`fetch` window (the G-1 gap: previously every param was
+/// dropped and the full set returned).
+#[tokio::test]
+async fn template_adl14_list_filters_and_paginates() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("def_tpl_list").await);
+
+    // Two templates: "IDCR Allergies List.v0" and "IDCR Problem List.v1".
+    svc.template_adl14_upload(fixture(OPT_REL))
+        .await
+        .expect("upload allergies");
+    svc.template_adl14_upload(fixture(
+        "tests/resources/service/knowledge/IDCR Problem List.v1.opt",
+    ))
+    .await
+    .expect("upload problem");
+
+    let template_ids = |list: &[serde_json::Value]| -> Vec<String> {
+        list.iter()
+            .map(|t| t["template_id"].as_str().unwrap_or_default().to_owned())
+            .collect()
+    };
+
+    // Empty filter + Page::all → the full set (both templates).
+    let all = svc
+        .template_adl14_list(TemplateListFilter::default(), Page::all())
+        .await
+        .expect("list all");
+    assert_eq!(all.len(), 2, "both templates without a filter");
+
+    // template_id glob "IDCR Allergies*" → only the allergies template.
+    let filtered = svc
+        .template_adl14_list(
+            TemplateListFilter {
+                template_id: Some("IDCR Allergies*".to_owned()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        )
+        .await
+        .expect("list filtered");
+    assert_eq!(
+        template_ids(&filtered),
+        vec![OPT_TEMPLATE_ID.to_owned()],
+        "glob matches only the allergies template"
+    );
+
+    // A glob matching neither → empty.
+    let none = svc
+        .template_adl14_list(
+            TemplateListFilter {
+                template_id: Some("does-not-exist*".to_owned()),
+                ..TemplateListFilter::default()
+            },
+            Page::all(),
+        )
+        .await
+        .expect("list empty");
+    assert!(none.is_empty(), "no template matches the glob");
+
+    // offset=1 fetch=1 over the sorted set (Allergies < Problem) → the second.
+    let paged = svc
+        .template_adl14_list(
+            TemplateListFilter::default(),
+            Page {
+                item_offset: Some(1),
+                items_to_fetch: Some(1),
+            },
+        )
+        .await
+        .expect("list paged");
+    assert_eq!(
+        template_ids(&paged),
+        vec!["IDCR Problem List.v1".to_owned()],
+        "offset=1 fetch=1 yields the second sorted template"
+    );
+}
+
+/// The wire `query_type` formalism: a non-AQL formalism is an honest
+/// *unsupported-formalism* reject (a distinct `precondition_violation`/`400`,
+/// per `operations/definition_query_store.yaml`'s `200/400` set +
+/// `parameters/query/query_type.yaml`), not a blanket "invalid AQL"; an AQL
+/// formalism stores.
+#[tokio::test]
+async fn query_store_rejects_non_aql_formalism() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("def_qtype").await);
+
+    let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
+
+    // A non-AQL formalism → unsupported-formalism reject.
+    let err = svc
+        .query_store(
+            "org.example::q1".to_owned(),
+            Some("1.0.0".to_owned()),
+            "SQL".to_owned(),
+            aql.clone(),
+        )
+        .await
+        .expect_err("non-AQL formalism must be rejected");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::PreconditionViolation,
+                ..
+            }
+        ),
+        "non-AQL is precondition_violation, got {err:?}"
+    );
+
+    // The AQL formalism (case-insensitive) stores.
+    svc.query_store(
+        "org.example::q1".to_owned(),
+        Some("1.0.0".to_owned()),
+        "aql".to_owned(),
+        aql,
+    )
+    .await
+    .expect("AQL formalism stores");
 }
 
 #[tokio::test]

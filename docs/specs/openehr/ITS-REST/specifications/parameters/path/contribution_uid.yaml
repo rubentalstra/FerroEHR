@@ -6,4 +6,5 @@ required: true
 style: simple
 schema:
   type: string
+  format: uuid
   example: '0826851c-c4c2-4d61-92b9-410fb8275ff0'

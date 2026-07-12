@@ -5,5 +5,5 @@ allOf:
 properties:
   _type:
     type: string
-    default: TERMINOLOGY_ID
+    enum: [TERMINOLOGY_ID]
 x-discriminator-value: TERMINOLOGY_ID

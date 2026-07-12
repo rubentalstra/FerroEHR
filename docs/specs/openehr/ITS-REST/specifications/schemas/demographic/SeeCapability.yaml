@@ -1,0 +1,5 @@
+title: CAPABILITY
+type: array
+items:
+  type: object
+description: See [CAPABILITY](demographic.html#tag/CAPABILITY_schema) schema details.

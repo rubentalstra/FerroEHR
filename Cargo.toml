@@ -25,12 +25,13 @@ all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
 unwrap_used = "warn"
 expect_used = "warn"
-todo = "allow"                      # todo!() is expected during P1-P16
+todo = "deny"                       # owner rule 2026-07-12: no todo!() ever (the P1-P16 era is over)
 incompatible_msrv = "warn"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"              # server + spec crates should be safe; relax per-crate if ever needed
 missing_debug_implementations = "warn"
+dead_code = "deny"                  # owner rule 2026-07-12: no dead code, ever — delete or wire it
 
 # ─────────────────────────────────────────────────────────────────────────────
 # WORKSPACE DEPENDENCIES  (pinned; features set at the crate that enables them)

@@ -87,6 +87,8 @@ impl PolicyEngine for PermitAll {
 
 fn rest_config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: true,
             basic: None,

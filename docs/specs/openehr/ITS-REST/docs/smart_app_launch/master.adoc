@@ -1,0 +1,97 @@
+//
+// ============================================ Asciidoc HEADER =============================================
+//
+include::{ref_dir}/docs/boilerplate/book_style_settings.adoc[]
+include::manifest_vars.adoc[]
+include::{ref_dir}/docs/boilerplate/global_vars.adoc[]
+
+:hl7_smart_app_launch: https://hl7.org/fhir/smart-app-launch/STU2.1
+:oidc_authentication: https://openid.net/specs/openid-connect-core-1_0.html#Authentication
+
+//
+// ============================================ Asciidoc PREAMBLE =============================================
+//
+
+image::{openehr_logo}["openEHR logo",align="center"]
+
+= {spec_title}
+
+include::{ref_dir}/docs/boilerplate/full_front_block.adoc[]
+include::{ref_dir}/docs/references/reference_definitions.adoc[]
+
+//
+// ============================================= Asciidoc BODY ===============================================
+//
+
+include::master00-amendment_record.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- Preface -----------------------------------------------
+//
+
+== Acknowledgements
+
+=== Primary Author
+
+* Sidharth Ramesh; Medblocks.
+* Sebastian Iancu; Architect, Code24, Netherlands
+
+=== Contributors
+
+This specification has benefited from formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following for their contributions.
+
+* Ian McNicoll MD, FreshEHR, UK
+* Bostjan Lah, Senior Architect, Better, Slovenia
+
+A significant part of the design ideas of this specification was derived from:
+
+* SMART App Launch - Release 2.1.0, published by HL7® FHIR® standard
+
+=== Trademarks
+
+* 'openEHR' is a registered trademark of the openEHR Foundation
+* HL7® and FHIR® are the registered trademark of the Health Level Seven International and their use does not constitute endorsement by HL7
+* SMART™ and the SMART logos are trademarks of The Children’s Medical Center Corporation. Used with permission.
+
+//
+// --------------------------------------------- TOC -----------------------------------------------
+//
+//toc::[left]
+
+//
+// --------------------------------------------- CHAPTERS -----------------------------------------------
+//
+:sectnums:
+include::master01-preface.adoc[leveloffset=+1]
+include::master02-overview.adoc[leveloffset=+1]
+include::master03-registration.adoc[leveloffset=+1]
+include::master04-service_discovery.adoc[leveloffset=+1]
+include::master05-application_types.adoc[leveloffset=+1]
+include::master06-authentication.adoc[leveloffset=+1]
+include::master07-authorization.adoc[leveloffset=+1]
+include::master08-scopes.adoc[leveloffset=+1]
+include::master09-experimental_features.adoc[leveloffset=+1]
+
+//
+// --------------------------------------------- REFERENCES -----------------------------------------------
+//
+
+:sectnums!:
+
+[bibliography]
+== References
+
+* SMART App Launch - Release 2.1.0 (2021), {hl7_smart_app_launch}
+* The 'About SMART' page on SMART Health IT, https://smarthealthit.org/about-smart-2/
+* OAuth 2.0 Authorization Framework, {ietf_html}/rfc6749
+* OAuth 2.0 Dynamic Client Registration Protocol, {ietf_html}/rfc7591
+* OpenId Connect (OIDC), {oidc_authentication}
+* JSON Web Token (JWT) Assertion, {ietf_html}/rfc7523
+* JSON Web Signature (JWS), {ietf_html}/rfc7515
+* Best Practices in Authorization for SMART on FHIR EHRs, https://docs.smarthealthit.org/authorization/best-practices
+
+
+[.text-center]
+:figure-caption!:
+.SMART™ and the SMART logos are trademarks of The Children's Medical Center Corporation. Used with permission.
+image::{diagrams_uri}/smart_logo.svg[SMART,140,80,id=smart_logo,link=https://smarthealthit.org/]

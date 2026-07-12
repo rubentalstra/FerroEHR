@@ -27,14 +27,13 @@ use testcontainers_modules::postgres::Postgres;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::events::{EventError, EventPublisher, EventsConfig, start_with_publisher};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{EhrCompositionService, EhrExtractService, EhrService, EhrStatusService};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -49,7 +48,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -102,6 +101,7 @@ fn uv(data: Value, change_code: &str) -> UpdateVersion {
             description: None,
             committer: serde_json::from_value::<PartyProxy>(committer("event tester"))
                 .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }

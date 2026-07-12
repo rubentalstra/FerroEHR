@@ -1,0 +1,2 @@
+description: |
+  `204 No Content` is returned when the requested operation succeeded and the resource(s) identified by the request parameters has been physically deleted (i.e. hard-delete).

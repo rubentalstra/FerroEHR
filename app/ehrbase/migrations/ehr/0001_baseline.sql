@@ -643,6 +643,37 @@ CREATE INDEX idx_sp_data_set_creating_app ON sp_data_set (creating_app_id)
     WHERE creating_app_id IS NOT NULL;
 COMMENT ON TABLE sp_data_set IS 'SM-6 SUBJECT_DATA_SET config: variables registered for a subject by an application (verbatim canonical JSON).';
 
+-- SAMPLE store: the retrieve history of each SUBJECT_VARIABLE. "Every retrieval
+-- attempt will generate a new Sample object, regardless of whether data was
+-- actually available or not" (master10 §Samples / SAMPLE class); the rows
+-- realize SUBJECT_VARIABLE.history + last_frame and, via effective_time, the
+-- currency/freshness decision (master10 §Samples: effective_time "is comparable
+-- to currency in order to determine the freshness of the data"). master10
+-- §Persistence requires only configuration to survive re-initialisation and does
+-- not forbid persisting samples — keeping them is what makes "tracked over time"
+-- real across restarts; reset() truncates this table too. No openEHR spec governs
+-- the storage mechanics — our own design (docs/design/sm-platform/10-subject-proxy.md §2.3).
+CREATE TABLE sp_sample (
+    id             uuid NOT NULL DEFAULT uuidv7(),
+    subject_id     text NOT NULL,
+    canonical_name text NOT NULL,
+    -- frame_id of the producing DATA_FRAME (NULL for a manually-notified sample).
+    frame_id       text,
+    retrieve_time  timestamptz NOT NULL DEFAULT now(),
+    effective_time timestamptz,
+    is_unavailable boolean NOT NULL,
+    -- the VARIABLE_SAMPLE canonical JSON (always) …
+    sample         jsonb NOT NULL,
+    -- … and the producing DATA_FRAME_SAMPLE canonical JSON (frame-driven only).
+    frame_sample   jsonb,
+    CONSTRAINT pk_sp_sample PRIMARY KEY (id),
+    CONSTRAINT fk_sp_sample_variable FOREIGN KEY (subject_id, canonical_name)
+        REFERENCES sp_variable (subject_id, canonical_name) ON DELETE CASCADE
+);
+-- Freshness + history reads are newest-first per variable.
+CREATE INDEX idx_sp_sample_variable ON sp_sample (subject_id, canonical_name, retrieve_time DESC);
+COMMENT ON TABLE sp_sample IS 'SM-6 SAMPLE store: retrieve history per SUBJECT_VARIABLE (master10 §Samples, §Persistence); realizes history/last_frame + currency freshness.';
+
 -- ── Grants (no openEHR spec governs DB grants — operational design) ──────────
 -- Guarded like the role block: applied when the roles exist (production
 -- migrator), skipped with a NOTICE otherwise (dev/compose without CREATEROLE).

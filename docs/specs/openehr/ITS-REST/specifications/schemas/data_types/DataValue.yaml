@@ -3,31 +3,3 @@ type: object
 properties:
   _type:
     type: string
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    DV_AMOUNT: '#/components/schemas/DvAmount'
-    DV_BOOLEAN: '#/components/schemas/DvBoolean'
-    DV_CODED_TEXT: '#/components/schemas/DvCodedText'
-    DV_COUNT: '#/components/schemas/DvCount'
-    DV_DATE: '#/components/schemas/DvDate'
-    DV_DATE_TIME: '#/components/schemas/DvDateTime'
-    DV_DURATION: '#/components/schemas/DvDuration'
-    DV_EHR_URI: '#/components/schemas/DvEhrUri'
-    DV_ENCAPSULATED: '#/components/schemas/DvEncapsulated'
-    DV_IDENTIFIER: '#/components/schemas/DvIdentifier'
-    DV_INTERVAL: '#/components/schemas/DvInterval'
-    DV_INTERVAL_of_DATE_TIME: '#/components/schemas/DvIntervalOfDateTime'
-    DV_MULTIMEDIA: '#/components/schemas/DvMultimedia'
-    DV_ORDERED: '#/components/schemas/DvOrdered'
-    DV_ORDINAL: '#/components/schemas/DvOrdinal'
-    DV_PARSABLE: '#/components/schemas/DvParsable'
-    DV_PROPORTION: '#/components/schemas/DvProportion'
-    DV_QUANTIFIED: '#/components/schemas/DvQuantified'
-    DV_QUANTITY: '#/components/schemas/DvQuantity'
-    DV_SCALE: '#/components/schemas/DvScale'
-    DV_STATE: '#/components/schemas/DvState'
-    DV_TEMPORAL: '#/components/schemas/DvTemporal'
-    DV_TEXT: '#/components/schemas/DvText'
-    DV_TIME: '#/components/schemas/DvTime'
-    DV_URI: '#/components/schemas/DvUri'

@@ -6,7 +6,7 @@ required:
 properties:
   match:
     type: string
-    pattern: '/^[><=?]$/'
+    pattern: '^[><=?]$'
   purpose:
     $ref: ../data_types/DvCodedText.yaml
   target:

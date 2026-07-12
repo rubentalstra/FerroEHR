@@ -1,0 +1,7 @@
+name: Content-Type
+in: header
+style: simple
+schema:
+  type: string
+  enum:
+    - text/plain

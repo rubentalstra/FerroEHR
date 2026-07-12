@@ -1,0 +1,5 @@
+description: |
+  The `Location` response header indicates the URL of the resource version resulted from the operation.
+schema:
+  type: string
+  format: url

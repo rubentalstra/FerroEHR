@@ -52,6 +52,8 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
 /// to `level`, and the given admin-scope configuration.
 fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
     let config = RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: auth_config(admin_scope),
         swagger_ui: false,
         ..RestConfig::default()
@@ -156,6 +158,8 @@ fn recorder() -> &'static PrometheusHandle {
 
 fn app_with_metrics() -> Router {
     let config = RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: false, // exercise the API path without auth in this test
             ..AuthConfig::default()
@@ -253,6 +257,8 @@ fn looks_like_id(value: &str) -> bool {
 async fn separate_port_mode_keeps_management_off_the_main_app() {
     // With `management.port` set, the main app must NOT mount /management…
     let config = RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: false,
             ..AuthConfig::default()

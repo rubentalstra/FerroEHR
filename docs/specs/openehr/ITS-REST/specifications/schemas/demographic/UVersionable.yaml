@@ -1,0 +1,18 @@
+# Note: copy of same schema from `ehr`, as we need to redefine to use only demographic types
+#       reminder to keep them in sync!
+title: Versionable
+type: object
+oneOf:
+  - $ref: ../demographic/UMAgent.yaml
+  - $ref: ../demographic/UMGroup.yaml
+  - $ref: ../demographic/UMOrganisation.yaml
+  - $ref: ../demographic/UMPerson.yaml
+  - $ref: ../demographic/UMRole.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    AGENT: ../demographic/UMAgent.yaml
+    GROUP: ../demographic/UMGroup.yaml
+    ORGANISATION: ../demographic/UMOrganisation.yaml
+    PERSON: ../demographic/UMPerson.yaml
+    ROLE: ../demographic/UMRole.yaml

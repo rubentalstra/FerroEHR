@@ -1,5 +1,10 @@
 description: |
   `200 OK` is returned when the template is successfully retrieved.
+headers:
+  ETag:
+    $ref: ../headers/ETag_Template_adl1_4.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_Template.yaml
 content:
   application/xml:
     schema:

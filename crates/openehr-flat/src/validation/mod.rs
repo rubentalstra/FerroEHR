@@ -166,6 +166,93 @@ pub fn validate_archetype_conformance_incomplete(
     v.out
 }
 
+/// Validate the `|other` open-value-set MUST-rules on a **FLAT input** map,
+/// before conversion to RM (master02/master04 §"Open Value-Sets and the `|other`
+/// Suffix"; master05 §"When a `DV_CODED_TEXT` becomes a `DV_TEXT`"):
+///
+/// * `|other` MUST NOT co-occur with `|code`/`|value`/`|terminology`/
+///   `|preferred_term` on the same leaf path;
+/// * `|other` MUST be rejected when the leaf's WT constraint is a **closed**
+///   coded list (`listOpen: false`).
+///
+/// Returns one [`ValidationMessage`] per violation (empty = the input satisfies
+/// the `|other` rules this check covers).
+#[must_use]
+pub fn validate_flat_other(
+    flat: &serde_json::Map<String, Value>,
+    wt: &WebTemplate,
+) -> Vec<ValidationMessage> {
+    const EXCLUSIVE: &[&str] = &["code", "value", "terminology", "preferred_term"];
+    let mut out = Vec::new();
+    // Collect the suffix set present under each leaf path.
+    let mut per_leaf: IndexMap<String, Vec<String>> = IndexMap::new();
+    for key in flat.keys() {
+        if key == "ctx" || key.starts_with("ctx/") {
+            continue;
+        }
+        let (path, suffix) = match key.split_once('|') {
+            Some((p, s)) => (p.to_owned(), Some(s.to_owned())),
+            None => (key.clone(), None),
+        };
+        let entry = per_leaf.entry(path).or_default();
+        if let Some(s) = suffix {
+            entry.push(s);
+        }
+    }
+    for (path, suffixes) in &per_leaf {
+        if !suffixes.iter().any(|s| s == "other") {
+            continue;
+        }
+        // Mutual exclusion.
+        if let Some(other) = suffixes.iter().find(|s| EXCLUSIVE.contains(&s.as_str())) {
+            out.push(ValidationMessage {
+                path: path.clone(),
+                message: format!("`|other` is mutually exclusive with `|{other}` on the same leaf"),
+                kind: ValidationKind::CodedValue,
+            });
+        }
+        // Closed-list rejection: resolve the WT node for this path.
+        if let Some(node) = find_node_by_flat_path(wt, path)
+            && node.inputs.iter().any(|i| i.list_open == Some(false))
+        {
+            out.push(ValidationMessage {
+                path: path.clone(),
+                message: "`|other` is not allowed on a closed value-set (listOpen: false)"
+                    .to_owned(),
+                kind: ValidationKind::CodedValue,
+            });
+        }
+    }
+    out
+}
+
+/// Resolve the [`WebTemplateNode`] a FLAT leaf `path` addresses by descending the
+/// WT tree on json-id segments (indices and the leading root id stripped).
+fn find_node_by_flat_path<'a>(wt: &'a WebTemplate, path: &str) -> Option<&'a WebTemplateNode> {
+    let mut segs = path.split('/').filter(|s| !s.is_empty());
+    let first = segs.next()?;
+    let strip_idx = |s: &str| {
+        s.split_once(':')
+            .map_or(s.to_owned(), |(id, _)| id.to_owned())
+    };
+    // The first segment is the root template id.
+    if strip_idx(first) != wt.tree.id {
+        return None;
+    }
+    let mut node = &wt.tree;
+    for seg in segs {
+        let id = strip_idx(seg);
+        if id.starts_with('_') {
+            return None; // an RM-attribute segment addresses no template node
+        }
+        node = node
+            .children
+            .iter()
+            .find(|c| c.id == id || c.alt_json_id.as_deref() == Some(id.as_str()))?;
+    }
+    Some(node)
+}
+
 /// The set of identity `(attribute, archetype_node_id)` pairs that appear in
 /// more than one distinct sibling path (relative to `parent_aql`) — i.e. the
 /// template distinguishes same-id siblings by name, so the name fallback in

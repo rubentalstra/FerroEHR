@@ -59,6 +59,8 @@ fn user(name: &str, roles: &[&str]) -> BasicUser {
 /// `user:`/`role:` matching cases.
 fn rest_config(auth_enabled: bool) -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: auth_enabled,
             basic: Some(BasicConfig {

@@ -10,7 +10,7 @@ required:
 properties:
   _type:
     type: string
-    default: EHR_STATUS
+    enum: [EHR_STATUS]
   subject:
     $ref: ../common/UPartyProxy.yaml
   is_queryable:

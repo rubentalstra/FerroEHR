@@ -1,0 +1,44 @@
+operationId: organisation_update
+summary: Update ORGANISATION
+description: |
+  Updates ORGANISATION identified by `uid_based_id`.
+  
+  The `uid_based_id` can take only a form of an HIER_OBJECT_ID identifier taken from VERSIONED_OBJECT.uid.value (i.e. a `versioned_object_uid`).
+
+  If the request body already contains a ORGANISATION.uid.value, it must match the `uid_based_id` in the URL. 
+
+  The existing latest `version_uid` of ORGANISATION resource (i.e. the `preceding_version_uid`) must be specified in the `If-Match` header.
+  
+  A list of ITEM_TAGs can be associated with the updated ORGANISATION, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+  The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+
+tags:
+  - ORGANISATION
+parameters:
+  - $ref: ../parameters/path/uid_based_id_as_versioned_object_uid.yaml
+  - $ref: ../parameters/header/If-Match.yaml
+  - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
+  - $ref: ../parameters/header/openehr-version-item-tag.yaml
+requestBody:
+  description: |
+    The new ORGANISATION.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/demographic/Organisation.yaml
+  required: true
+responses:
+  '200':
+    $ref: ../responses/200_ORGANISATION_updated.yaml
+  '204':
+    $ref: ../responses/204_version_updated.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '404':
+    $ref: ../responses/404.yaml
+  '412':
+    $ref: ../responses/412_ORGANISATION.yaml
+  '422':
+    $ref: ../responses/422.yaml

@@ -14,8 +14,17 @@
 /// `1.0.4` literal.
 pub(crate) const RM_VERSION: &str = "1.2.0";
 
-/// Default time for the RM-mandatory temporal fields FLAT never carries
-/// (`EVENT_CONTEXT.start_time`, `HISTORY.origin`, `EVENT.time`).
+/// Deterministic fill for the RM-mandatory temporal fields FLAT never surfaces
+/// as data (`HISTORY.origin`, `EVENT.time`, and the compacted structural nodes
+/// re-materialised on FLAT→RM). These are never present in FLAT, so a fixed
+/// value keeps the `flat ⇄ flat` round-trip stable (a fresh `now()` computed on
+/// each conversion would make two successive `to_flat` runs disagree).
+///
+/// The SM `app_context.time` "current time" default (`SM/.../app_context.adoc`:
+/// "If not specified current time will be used") applies to an unset `ctx/time`
+/// (`EVENT_CONTEXT.start_time`) — that default is `now()`, applied in
+/// [`super::context::apply_ctx`]. It is safe there because [`super::context::emit_ctx`]
+/// always emits `ctx/time`, so a round-trip never re-materialises it from `now()`.
 pub(crate) const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 /// Default `EVENT_CONTEXT.setting` (openEHR terminology group "setting",

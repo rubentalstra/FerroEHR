@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Demographic API
+  version: development
+  x-status: DEVELOPMENT
+  x-spec: demographic
+  contact:
+    name: Specifications Editorial Committee openEHR
+    url: 'https://specifications.openehr.org/'
+    email: info@openehr.org
+  license:
+    name: Creative Commons Attribution-NoDerivs 3.0 Unported
+    url: 'https://creativecommons.org/licenses/by-nd/3.0/'
+  description:
+    $ref: ./docs/demographic/Description.md
+servers:
+  - url: 'https://{baseUrl}/v1'
+    description: An example openEHR server URL.
+    variables:
+      baseUrl:
+        default: openEHRSys.example.com
+        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
+security: []
+paths:
+  '/demographic/agent':
+    post:
+      $ref: ./operations/agent_create.yaml
+  '/demographic/agent/{uid_based_id}':
+    get:
+      $ref: ./operations/agent_get.yaml
+    put:
+      $ref: ./operations/agent_update.yaml
+    delete:
+      $ref: ./operations/agent_delete.yaml
+  '/demographic/group':
+    post:
+      $ref: ./operations/group_create.yaml
+  '/demographic/group/{uid_based_id}':
+    get:
+      $ref: ./operations/group_get.yaml
+    put:
+      $ref: ./operations/group_update.yaml
+    delete:
+      $ref: ./operations/group_delete.yaml
+  '/demographic/organisation':
+    post:
+      $ref: ./operations/organisation_create.yaml
+  '/demographic/organisation/{uid_based_id}':
+    get:
+      $ref: ./operations/organisation_get.yaml
+    put:
+      $ref: ./operations/organisation_update.yaml
+    delete:
+      $ref: ./operations/organisation_delete.yaml
+  '/demographic/person':
+    post:
+      $ref: ./operations/person_create.yaml
+  '/demographic/person/{uid_based_id}':
+    get:
+      $ref: ./operations/person_get.yaml
+    put:
+      $ref: ./operations/person_update.yaml
+    delete:
+      $ref: ./operations/person_delete.yaml
+  '/demographic/role':
+    post:
+      $ref: ./operations/role_create.yaml
+  '/demographic/role/{uid_based_id}':
+    get:
+      $ref: ./operations/role_get.yaml
+    put:
+      $ref: ./operations/role_update.yaml
+    delete:
+      $ref: ./operations/role_delete.yaml
+  '/demographic/versioned_party/{versioned_object_uid}':
+    get:
+      $ref: ./operations/versioned_party_get.yaml
+  '/demographic/versioned_party/{versioned_object_uid}/revision_history':
+    get:
+      $ref: ./operations/versioned_party_revision_history.yaml
+  '/demographic/versioned_party/{versioned_object_uid}/version':
+    get:
+      $ref: ./operations/versioned_party_version_get_at_time.yaml
+  '/demographic/versioned_party/{versioned_object_uid}/version/{version_uid}':
+    get:
+      $ref: ./operations/versioned_party_version_get_by_id.yaml
+  '/demographic/contribution':
+    post:
+      $ref: ./operations/demographic_contribution_create.yaml
+  '/demographic/contribution/{contribution_uid}':
+    get:
+      $ref: ./operations/demographic_contribution_get.yaml
+  '/demographic/tags':
+    get:
+      $ref: ./operations/demographic_tags_get.yaml
+  '/demographic/agent/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/agent_tags_get.yaml
+    put:
+      $ref: ./operations/agent_tags_update.yaml
+  '/demographic/agent/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/agent_tags_delete.yaml
+  '/demographic/group/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/group_tags_get.yaml
+    put:
+      $ref: ./operations/group_tags_update.yaml
+  '/demographic/group/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/group_tags_delete.yaml
+  '/demographic/organisation/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/organisation_tags_get.yaml
+    put:
+      $ref: ./operations/organisation_tags_update.yaml
+  '/demographic/organisation/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/organisation_tags_delete.yaml
+  '/demographic/person/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/person_tags_get.yaml
+    put:
+      $ref: ./operations/person_tags_update.yaml
+  '/demographic/person/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/person_tags_delete.yaml
+  '/demographic/role/{uid_based_id}/tags':
+    get:
+      $ref: ./operations/role_tags_get.yaml
+    put:
+      $ref: ./operations/role_tags_update.yaml
+  '/demographic/role/{uid_based_id}/tags/{key}':
+    delete:
+      $ref: ./operations/role_tags_delete.yaml
+
+tags:
+  - name: AGENT
+    description: |
+      Management of the [AGENT](https://specifications.openehr.org/releases/RM/latest/demographic.html#_agent_class) class.
+  - name: GROUP
+    description: |
+      Management of the [GROUP](https://specifications.openehr.org/releases/RM/latest/demographic.html#_group_class) class.
+  - name: ORGANISATION
+    description: |
+      Management of the [ORGANISATION](https://specifications.openehr.org/releases/RM/latest/demographic.html#_organisation_class) class.
+  - name: PERSON
+    description: |
+      Management of the [PERSON](https://specifications.openehr.org/releases/RM/latest/demographic.html#_person_class) class.
+  - name: ROLE
+    description: |
+      Management of the [ROLE](https://specifications.openehr.org/releases/RM/latest/demographic.html#_role_class) class.
+  - name: VERSIONED_PARTY
+    description: |
+      Management of the [VERSIONED_PARTY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_versioned_party_class) class.
+  - name: CONTRIBUTION
+    description: |
+      Management of [CONTRIBUTION](https://specifications.openehr.org/releases/RM/latest/common.html#_contribution_class) class.
+  - name: ITEM_TAG
+    description: |
+      Management of [ITEM_TAG](https://specifications.openehr.org/releases/RM/development/common.html#_item_tag_class) resources.
+  - name: CAPABILITY_schema
+    x-displayName: CAPABILITY
+    description: |
+      The `CAPABILITY` schema, formally specified in the Reference Model as the [CAPABILITY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_capability_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/Capability" />
+  - name: CONTACT_schema
+    x-displayName: CONTACT
+    description: |
+      The `CONTACT` schema, formally specified in the Reference Model as the [CONTACT](https://specifications.openehr.org/releases/RM/latest/demographic.html#_contact_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/Contact" />
+  - name: PARTY_IDENTITY_schema
+    x-displayName: PARTY_IDENTITY
+    description: |
+      The `PARTY_IDENTITY` schema, formally specified in the Reference Model as the [PARTY_IDENTITY](https://specifications.openehr.org/releases/RM/latest/demographic.html#_party_identity_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/PartyIdentity" />
+  - name: PARTY_RELATIONSHIP_schema
+    x-displayName: PARTY_RELATIONSHIP
+    description: |
+      The `PARTY_RELATIONSHIP` resource, formally specified in the Reference Model as the [PARTY_RELATIONSHIP](https://specifications.openehr.org/releases/RM/latest/demographic.html#_party_relationship_class) class:
+      <SchemaDefinition schemaRef="#/components/schemas/PartyRelationship" />
+  - name: ITEM_schema
+    x-displayName: ITEM
+    description: |
+      The abstract `ITEM` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItem" />
+  - name: ITEM_STRUCTURE_schema
+    x-displayName: ITEM_STRUCTURE
+    description: |
+      The abstract `ITEM_STRUCTURE` class:
+      <SchemaDefinition schemaRef="#/components/schemas/UItemStructure" />
+x-tagGroups:
+  - name: Resource endpoints
+    tags:
+      - AGENT
+      - GROUP
+      - ORGANISATION
+      - PERSON
+      - ROLE
+      - VERSIONED_PARTY
+      - CONTRIBUTION
+      - ITEM_TAG
+  - name: Related schemas
+    tags:
+      - CAPABILITY_schema
+      - CONTACT_schema
+      - ITEM_schema
+      - ITEM_STRUCTURE_schema
+      - PARTY_IDENTITY_schema
+      - PARTY_RELATIONSHIP_schema
+components:
+  schemas:
+    UAbstractItem:
+      $ref: ./schemas/data_structures/UAbstractItem.yaml
+    UAbstractItemStructure:
+      $ref: ./schemas/data_structures/UAbstractItemStructure.yaml
+    SeeContact:
+      $ref: ./schemas/demographic/SeeContact.yaml
+    SeeCapability:
+      $ref: ./schemas/demographic/SeeCapability.yaml
+    SeePartyIdentity:
+      $ref: ./schemas/demographic/SeePartyIdentity.yaml
+    SeePartyRelationship:
+      $ref: ./schemas/demographic/SeePartyRelationship.yaml
+    VersionOfParty:
+      $ref: ./schemas/demographic/VersionOfParty.yaml

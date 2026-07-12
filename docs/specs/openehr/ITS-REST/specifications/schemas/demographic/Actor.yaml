@@ -1,0 +1,13 @@
+title: ACTOR
+type: object
+allOf:
+  - $ref: ../demographic/Party.yaml
+properties:
+  languages:
+    type: array
+    items:
+      $ref: ../data_types/UDvText.yaml
+  roles:
+    type: array
+    items:
+      $ref: ../base_types/PartyRef.yaml

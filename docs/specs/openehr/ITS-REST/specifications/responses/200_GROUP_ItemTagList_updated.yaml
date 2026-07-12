@@ -1,0 +1,11 @@
+description: |
+  `200 OK` is returned when the requested ITEM_TAG list is successfully retrieved.
+headers:
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
+content:
+  application/json:
+    schema:
+      type: array
+      items:
+        $ref: ../schemas/demographic/ItemTagOfGroup.yaml

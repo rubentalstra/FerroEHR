@@ -1,5 +1,6 @@
 operationId: definition_template_adl2_version_get
 summary: Get a template at version
+deprecated: true
 description: |
   Retrieves the ADL2 operational template identified by `template_id` identifier, at specified `version`.
   
@@ -8,10 +9,11 @@ tags:
 parameters:
   - $ref: ../parameters/path/template_id.yaml
   - $ref: ../parameters/path/version.yaml
+  - $ref: ../parameters/header/Accept_Template_adl2.yaml
 responses:
   '200':
     $ref: ../responses/200_Template_adl2_retrieved.yaml
   '400':
-    $ref: ../responses/400_invalid_template_id.yaml
+    $ref: ../responses/400.yaml
   '404':
     $ref: ../responses/404_unknown_template_id_or_version.yaml

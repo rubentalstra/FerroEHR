@@ -1,0 +1,579 @@
+//! The SMART on openEHR resource-scope grammar
+//! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`),
+//! plus the launch-context scopes of master07 §Context Selection and master09
+//! §Experimental: Episode Context.
+//!
+//! A **total** parser: [`SmartScope::parse`] maps every scope string the token's
+//! `scope` claim carries onto a typed value; anything the grammar does not
+//! recognise becomes [`SmartScope::Other`] and is retained but inert
+//! (forward-compat — master07 notes that standard SMART scopes may travel
+//! alongside the openEHR ones and are non-normative here). The resource-scope
+//! form is `<compartment>/<resource>.<permission>` (master08 §Resource Scopes).
+
+use std::fmt;
+
+/// One parsed scope from the token's space-delimited `scope` claim.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SmartScope {
+    /// `launch` — embedded-iframe launch marker (master07 §Embedded iFrame
+    /// Launch). Advisory: the CDR does not perform launch selection.
+    Launch,
+    /// `launch/patient` | `launch/episode` — a requested launch context
+    /// (master07 §Context Selection; episode is master09 experimental).
+    LaunchContext(LaunchContext),
+    /// An OpenID Connect / identity scope (`openid`, `profile`, `fhirUser`,
+    /// `offline_access`, …) — master08 §Scopes "Identity Claims".
+    Identity(String),
+    /// A resource scope `<compartment>/<resource>.<permission>`
+    /// (master08 §Resource Scopes).
+    Resource(ResourceScope),
+    /// Any other scope string, retained verbatim but inert.
+    Other(String),
+}
+
+/// The launch context a `launch/<ctx>` scope requests (master07/master09).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LaunchContext {
+    /// `launch/patient` — patient/EHR context (master07 §Context Selection).
+    Patient,
+    /// `launch/episode` — episode context (master09, experimental).
+    Episode,
+    /// Any other `launch/<x>` value, retained inert.
+    Other(String),
+}
+
+/// A parsed `<compartment>/<resource>.<permission>` resource scope.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceScope {
+    /// The access-delegation compartment (master08 §Resource Scopes).
+    pub compartment: Compartment,
+    /// The resource family + its id pattern.
+    pub resource: ResourceSelector,
+    /// The permitted operations (`c`/`r`/`u`/`d`/`s`).
+    pub permissions: Permissions,
+}
+
+/// The scope-of-access-delegation compartment (master08 §Resource Scopes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Compartment {
+    /// `patient` — limited to the current EHR/Patient in context.
+    Patient,
+    /// `user` — the authenticated user's security profile.
+    User,
+    /// `system` — backend, no user context, all data.
+    System,
+}
+
+/// A resource family + the id pattern it matches (master08 §Resource Scopes):
+/// `template-<templateId>`, `composition-<templateId>`, `aql-<queryName>`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResourceSelector {
+    /// `template-<templateId>` — operational templates.
+    Template(Pattern),
+    /// `composition-<templateId>` — compositions of a given template.
+    Composition(Pattern),
+    /// `aql-<queryName>` — stored (name) or ad-hoc (`*`) AQL queries.
+    Aql(Pattern),
+}
+
+impl ResourceSelector {
+    /// The resource family this selector targets, independent of its pattern.
+    #[must_use]
+    pub const fn family(&self) -> ResourceFamily {
+        match self {
+            ResourceSelector::Template(_) => ResourceFamily::Template,
+            ResourceSelector::Composition(_) => ResourceFamily::Composition,
+            ResourceSelector::Aql(_) => ResourceFamily::Aql,
+        }
+    }
+
+    /// The id pattern.
+    #[must_use]
+    pub const fn pattern(&self) -> &Pattern {
+        match self {
+            ResourceSelector::Template(p)
+            | ResourceSelector::Composition(p)
+            | ResourceSelector::Aql(p) => p,
+        }
+    }
+}
+
+/// The resource family axis, used by the enforcement layer to map an operation's
+/// [`crate::extensions::access::authz::ResourceKind`] onto the SMART grammar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResourceFamily {
+    /// Operational templates (`template-…`).
+    Template,
+    /// Compositions (`composition-…`).
+    Composition,
+    /// AQL queries (`aql-…`).
+    Aql,
+}
+
+/// The set of CRUDS permissions a resource scope grants (master08 §Resource
+/// Scopes permission list). Parsed from the `.<permission>` tail, order-free.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Permissions {
+    /// `c` — create.
+    pub create: bool,
+    /// `r` — read.
+    pub read: bool,
+    /// `u` — update.
+    pub update: bool,
+    /// `d` — delete.
+    pub delete: bool,
+    /// `s` — search / execute (e.g. AQL).
+    pub search: bool,
+}
+
+/// A single CRUDS permission (the operation axis the enforcement layer resolves
+/// from an operation's `AccessMode`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Permission {
+    /// Create (`c`).
+    Create,
+    /// Read (`r`).
+    Read,
+    /// Update (`u`).
+    Update,
+    /// Delete (`d`).
+    Delete,
+    /// Search / execute (`s`).
+    Search,
+}
+
+impl Permissions {
+    /// Whether this set contains a given permission.
+    #[must_use]
+    pub const fn contains(&self, perm: Permission) -> bool {
+        match perm {
+            Permission::Create => self.create,
+            Permission::Read => self.read,
+            Permission::Update => self.update,
+            Permission::Delete => self.delete,
+            Permission::Search => self.search,
+        }
+    }
+
+    /// Parse the `.<permission>` tail (e.g. `rs`, `crud`, `cruds`). Returns
+    /// `None` on an empty tail or any character outside `{c,r,u,d,s}` (the whole
+    /// scope then falls back to [`SmartScope::Other`], forward-compat).
+    fn parse(tail: &str) -> Option<Self> {
+        if tail.is_empty() {
+            return None;
+        }
+        let mut p = Permissions::default();
+        for ch in tail.chars() {
+            match ch {
+                'c' => p.create = true,
+                'r' => p.read = true,
+                'u' => p.update = true,
+                'd' => p.delete = true,
+                's' => p.search = true,
+                _ => return None,
+            }
+        }
+        Some(p)
+    }
+}
+
+/// A `<templateId>`/`<queryName>` glob (master08 §Resource Scopes pattern
+/// table). Matching semantics (`docs/design/its-rest/smart.md` §4.2):
+/// - a bare `*` (or `**`) matches **all** ids (the table's "All available
+///   templates or queries" row);
+/// - within a `namespace::name` pattern, `*` matches any run of characters
+///   **within one `::`-delimited segment** (it does not cross `::`), and `**`
+///   matches any run including `::`;
+/// - every other character (including `::` and `.`) is literal.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Pattern(String);
+
+impl Pattern {
+    /// Build a pattern from its raw scope text.
+    #[must_use]
+    pub fn new(raw: impl Into<String>) -> Self {
+        Self(raw.into())
+    }
+
+    /// The raw pattern text.
+    #[must_use]
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Whether this pattern matches a concrete template id / query name.
+    #[must_use]
+    pub fn matches(&self, candidate: &str) -> bool {
+        // master08 §Resource Scopes: a bare `*`/`**` matches all ids across all
+        // namespaces (the "All available templates or queries" row), overriding
+        // the otherwise segment-local `*`.
+        if self.0 == "*" || self.0 == "**" {
+            return true;
+        }
+        glob_match(self.0.as_bytes(), candidate.as_bytes())
+    }
+}
+
+impl fmt::Display for Pattern {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+/// Backtracking glob matcher. `**` matches any run of bytes (including `:`);
+/// `*` matches any run of bytes that contains no `:` (so it never crosses the
+/// `::` namespace delimiter); all other bytes are literal.
+fn glob_match(pat: &[u8], text: &[u8]) -> bool {
+    match pat.first() {
+        None => text.is_empty(),
+        Some(&b'*') => {
+            if pat.get(1) == Some(&b'*') {
+                // `**` — consume 0..=len bytes of anything.
+                let rest = &pat[2..];
+                (0..=text.len()).any(|i| glob_match(rest, &text[i..]))
+            } else {
+                // `*` — consume bytes, stopping before any `:`.
+                let rest = &pat[1..];
+                let mut i = 0;
+                loop {
+                    if glob_match(rest, &text[i..]) {
+                        return true;
+                    }
+                    if i == text.len() || text[i] == b':' {
+                        return false;
+                    }
+                    i += 1;
+                }
+            }
+        }
+        Some(&c) => text.first() == Some(&c) && glob_match(&pat[1..], &text[1..]),
+    }
+}
+
+impl SmartScope {
+    /// Parse one scope string. Total: unrecognised forms become
+    /// [`SmartScope::Other`].
+    #[must_use]
+    pub fn parse(raw: &str) -> Self {
+        match raw {
+            "launch" => return SmartScope::Launch,
+            "openid" | "profile" | "fhirUser" | "offline_access" | "online_access" => {
+                return SmartScope::Identity(raw.to_owned());
+            }
+            _ => {}
+        }
+
+        // launch/<ctx> — a requested launch context (master07/master09).
+        if let Some(ctx) = raw.strip_prefix("launch/") {
+            let ctx = match ctx {
+                "patient" => LaunchContext::Patient,
+                "episode" => LaunchContext::Episode,
+                other => LaunchContext::Other(other.to_owned()),
+            };
+            return SmartScope::LaunchContext(ctx);
+        }
+
+        // <compartment>/<resource>.<permission>
+        if let Some(scope) = parse_resource_scope(raw) {
+            return SmartScope::Resource(scope);
+        }
+
+        SmartScope::Other(raw.to_owned())
+    }
+
+    /// Parse a whole space-delimited `scope` claim string into scopes.
+    #[must_use]
+    pub fn parse_all(scope_claim: &str) -> Vec<SmartScope> {
+        scope_claim
+            .split_whitespace()
+            .map(SmartScope::parse)
+            .collect()
+    }
+}
+
+/// Parse the `<compartment>/<resource>.<permission>` form. `None` when it is not
+/// a well-formed resource scope (the caller then keeps it as `Other`).
+fn parse_resource_scope(raw: &str) -> Option<ResourceScope> {
+    let (compartment_str, rest) = raw.split_once('/')?;
+    let compartment = match compartment_str {
+        "patient" => Compartment::Patient,
+        "user" => Compartment::User,
+        "system" => Compartment::System,
+        _ => return None,
+    };
+
+    // The permission tail is the segment after the LAST '.', but template ids
+    // and query names contain '.' (e.g. `Template.v0`, `bloodpressure.v1`), so
+    // split on the final '.' only.
+    let (resource_str, perm_str) = rest.rsplit_once('.')?;
+    let permissions = Permissions::parse(perm_str)?;
+
+    let resource = parse_resource_selector(resource_str)?;
+    Some(ResourceScope {
+        compartment,
+        resource,
+        permissions,
+    })
+}
+
+/// Parse `template-<id>` / `composition-<id>` / `aql-<name>` into a selector.
+fn parse_resource_selector(raw: &str) -> Option<ResourceSelector> {
+    if let Some(id) = raw.strip_prefix("template-") {
+        return Some(ResourceSelector::Template(Pattern::new(id)));
+    }
+    if let Some(id) = raw.strip_prefix("composition-") {
+        return Some(ResourceSelector::Composition(Pattern::new(id)));
+    }
+    if let Some(name) = raw.strip_prefix("aql-") {
+        return Some(ResourceSelector::Aql(Pattern::new(name)));
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn resource(raw: &str) -> ResourceScope {
+        match SmartScope::parse(raw) {
+            SmartScope::Resource(r) => r,
+            other => panic!("expected resource scope, got {other:?}"),
+        }
+    }
+
+    // ── launch-context + identity scopes (master07/08/09) ─────────────────────
+
+    #[test]
+    fn launch_and_context_scopes() {
+        assert_eq!(SmartScope::parse("launch"), SmartScope::Launch);
+        assert_eq!(
+            SmartScope::parse("launch/patient"),
+            SmartScope::LaunchContext(LaunchContext::Patient)
+        );
+        assert_eq!(
+            SmartScope::parse("launch/episode"),
+            SmartScope::LaunchContext(LaunchContext::Episode)
+        );
+        assert_eq!(
+            SmartScope::parse("launch/encounter"),
+            SmartScope::LaunchContext(LaunchContext::Other("encounter".to_owned()))
+        );
+    }
+
+    #[test]
+    fn identity_scopes() {
+        for s in ["openid", "profile", "fhirUser", "offline_access"] {
+            assert_eq!(SmartScope::parse(s), SmartScope::Identity(s.to_owned()));
+        }
+    }
+
+    #[test]
+    fn unknown_scope_is_inert_other() {
+        assert_eq!(
+            SmartScope::parse("something/weird"),
+            SmartScope::Other("something/weird".to_owned())
+        );
+        // A bad compartment falls through to Other, not a panic.
+        assert_eq!(
+            SmartScope::parse("admin/composition-*.r"),
+            SmartScope::Other("admin/composition-*.r".to_owned())
+        );
+    }
+
+    // ── compartments (master08 §Resource Scopes) ──────────────────────────────
+
+    #[test]
+    fn compartments_parse() {
+        assert_eq!(
+            resource("patient/composition-*.r").compartment,
+            Compartment::Patient
+        );
+        assert_eq!(
+            resource("user/composition-*.r").compartment,
+            Compartment::User
+        );
+        assert_eq!(
+            resource("system/composition-*.r").compartment,
+            Compartment::System
+        );
+    }
+
+    // ── resource families (master08 §Resource Scopes) ─────────────────────────
+
+    #[test]
+    fn resource_families_parse() {
+        assert_eq!(
+            resource("user/template-*.cruds").resource.family(),
+            ResourceFamily::Template
+        );
+        assert_eq!(
+            resource("patient/composition-*.r").resource.family(),
+            ResourceFamily::Composition
+        );
+        assert_eq!(
+            resource("patient/aql-*.rs").resource.family(),
+            ResourceFamily::Aql
+        );
+    }
+
+    // ── permission tails (master08 §Resource Scopes permission list) ──────────
+
+    #[test]
+    fn permission_tails_parse_order_free() {
+        let p = resource("patient/composition-*.crud").permissions;
+        assert!(p.create && p.read && p.update && p.delete && !p.search);
+
+        let p = resource("patient/aql-*.rs").permissions;
+        assert!(p.read && p.search && !p.create);
+
+        let p = resource("system/aql-*.cruds").permissions;
+        assert!(p.create && p.read && p.update && p.delete && p.search);
+
+        assert!(
+            resource("patient/composition-*.r")
+                .permissions
+                .contains(Permission::Read)
+        );
+        assert!(
+            !resource("patient/composition-*.r")
+                .permissions
+                .contains(Permission::Create)
+        );
+    }
+
+    #[test]
+    fn bad_permission_char_falls_back_to_other() {
+        // `x` is not a CRUDS permission → the whole scope is retained inert.
+        assert!(matches!(
+            SmartScope::parse("patient/composition-*.rx"),
+            SmartScope::Other(_)
+        ));
+        // An empty permission tail is also not a resource scope.
+        assert!(matches!(
+            SmartScope::parse("patient/composition-*."),
+            SmartScope::Other(_)
+        ));
+    }
+
+    // ── template id / query name with dots survives the tail split ────────────
+
+    #[test]
+    fn dotted_ids_keep_their_dots() {
+        let r = resource("patient/composition-MyHospital::Template.v0.r");
+        assert_eq!(r.resource.pattern().as_str(), "MyHospital::Template.v0");
+        assert!(r.permissions.read);
+
+        let r = resource("patient/aql-org.openehr::bloodpressure.v1.rs");
+        assert_eq!(
+            r.resource.pattern().as_str(),
+            "org.openehr::bloodpressure.v1"
+        );
+        assert!(r.permissions.read && r.permissions.search);
+    }
+
+    // ── the master08 pattern table (§Resource Scopes) ─────────────────────────
+
+    #[test]
+    fn pattern_exact_match_only() {
+        // `MyHospital::Template.v0` — exact match only.
+        let p = Pattern::new("MyHospital::Template.v0");
+        assert!(p.matches("MyHospital::Template.v0"));
+        assert!(!p.matches("MyHospital::Template.v1"));
+        assert!(!p.matches("OtherHospital::Template.v0"));
+        assert!(!p.matches("Template.v0"));
+    }
+
+    #[test]
+    fn pattern_query_exact_match_only() {
+        // `org.openehr::bloodpressure.v1` — exact.
+        let p = Pattern::new("org.openehr::bloodpressure.v1");
+        assert!(p.matches("org.openehr::bloodpressure.v1"));
+        assert!(!p.matches("org.openehr::bloodpressure.v2"));
+    }
+
+    #[test]
+    fn pattern_any_namespace_fixed_name() {
+        // `*::Template.v0` — Template.v0 from any namespace.
+        let p = Pattern::new("*::Template.v0");
+        assert!(p.matches("MyHospital::Template.v0"));
+        assert!(p.matches("org.openehr::Template.v0"));
+        assert!(!p.matches("MyHospital::Template.v1"));
+        // `*` must not cross `::`, so a two-level namespace does not match.
+        assert!(!p.matches("A::B::Template.v0"));
+        // A candidate with no namespace does not satisfy a `ns::name` pattern.
+        assert!(!p.matches("Template.v0"));
+    }
+
+    #[test]
+    fn pattern_fixed_namespace_any_name() {
+        // `MyHospital::*` — any template within MyHospital namespace.
+        let p = Pattern::new("MyHospital::*");
+        assert!(p.matches("MyHospital::Template.v0"));
+        assert!(p.matches("MyHospital::Anything.v9"));
+        assert!(!p.matches("OtherHospital::Template.v0"));
+        // `*` does not cross `::`.
+        assert!(!p.matches("MyHospital::Sub::Template.v0"));
+    }
+
+    #[test]
+    fn pattern_bare_star_matches_all() {
+        // `*` — All available templates or queries (the table's broad row); this
+        // deliberately overrides the segment-local `*` rule.
+        let p = Pattern::new("*");
+        assert!(p.matches("Template.v0"));
+        assert!(p.matches("MyHospital::Template.v0"));
+        assert!(p.matches("org.openehr::bloodpressure.v1"));
+        assert!(p.matches(""));
+    }
+
+    #[test]
+    fn pattern_double_star_is_recursive() {
+        // `**` crosses `::` (recursive), matching everything.
+        let p = Pattern::new("**");
+        assert!(p.matches("A::B::C::deep.v1"));
+        // A `**` in name position spans the remainder including `::`.
+        let p = Pattern::new("MyHospital::**");
+        assert!(p.matches("MyHospital::Sub::Template.v0"));
+        assert!(p.matches("MyHospital::Template.v0"));
+    }
+
+    // ── the maximal scope table rows (master08 §Resource Scopes) ──────────────
+
+    #[test]
+    fn maximal_table_rows_parse() {
+        for row in [
+            "patient/composition-MyTemplate.crud",
+            "user/composition-MyTemplate.crud",
+            "system/composition-MyTemplate.crud",
+            "user/template-MyTemplate.crud",
+            "system/template-MyTemplate.crud",
+            "patient/aql-MyQuery.rs",
+            "user/aql-MyQuery.cruds",
+            "system/aql-MyQuery.cruds",
+        ] {
+            assert!(
+                matches!(SmartScope::parse(row), SmartScope::Resource(_)),
+                "row did not parse as a resource scope: {row}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_all_splits_the_scope_claim() {
+        let scopes = SmartScope::parse_all("openid launch/patient patient/composition-*.rs");
+        assert_eq!(scopes.len(), 3);
+        assert_eq!(scopes[0], SmartScope::Identity("openid".to_owned()));
+        assert_eq!(scopes[1], SmartScope::LaunchContext(LaunchContext::Patient));
+        assert!(matches!(scopes[2], SmartScope::Resource(_)));
+    }
+
+    #[test]
+    fn system_aql_wildcard_grants_all_queries() {
+        // master08 NOTE: `system/aql-*.rs` grants access to all queries.
+        let r = resource("system/aql-*.rs");
+        assert_eq!(r.compartment, Compartment::System);
+        assert!(r.resource.pattern().matches("any::query.v1"));
+        assert!(r.resource.pattern().matches("adhoc"));
+        assert!(r.permissions.search && r.permissions.read);
+    }
+}

@@ -1,0 +1,175 @@
+//! Wire-string decoding for the EHR-core routes: path/header identifiers into
+//! the SM catalog's native argument types (`uuid::Uuid`,
+//! [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId)).
+//!
+//! The SM native API is protocol-free: the catalog takes RM/BASE
+//! identifier types, not raw wire strings. Turning a path parameter such as
+//! `{ehr_id}` or `{version_uid}` into those types is the protocol adapter's
+//! decode job — it lives here, at the ITS-REST edge, and every malformed value
+//! surfaces as `400 Bad Request` ([`ApiError::BadRequest`]).
+//!
+//! Spec: BASE 1.3.0 `object_version_id.adoc` — an `OBJECT_VERSION_ID` is exactly
+//! three `::`-delimited parts (`object_id '::' creating_system_id '::'
+//! version_tree_id`); the strict parse is `ObjectVersionId::from_str`. A
+//! `uid_based_id`/`versioned_object_uid` path segment is either a bare
+//! `HIER_OBJECT_ID` (a UUID) or a full `OBJECT_VERSION_ID`.
+
+use std::str::FromStr;
+
+use openehr_base::prelude::ObjectVersionId;
+use openehr_its::rest::runtime::ApiError;
+use uuid::Uuid;
+
+/// Parse an `{ehr_id}` path parameter into its UUID.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] if `raw` is not a UUID.
+pub(crate) fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
+    Uuid::parse_str(raw).map_err(|_| ApiError::BadRequest(format!("invalid EHR id: {raw}")))
+}
+
+/// Parse a UUID path parameter (a bare `HIER_OBJECT_ID`: a versioned-object or
+/// contribution uid).
+///
+/// # Errors
+/// [`ApiError::BadRequest`] if `raw` is not a UUID.
+pub(crate) fn parse_uuid(raw: &str, what: &str) -> Result<Uuid, ApiError> {
+    Uuid::parse_str(raw).map_err(|_| ApiError::BadRequest(format!("invalid {what}: {raw}")))
+}
+
+/// Parse a full `{version_uid}` path parameter into a BASE
+/// [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId).
+///
+/// # Errors
+/// [`ApiError::BadRequest`] if `raw` is not a well-formed `OBJECT_VERSION_ID`.
+pub(crate) fn parse_version_uid(raw: &str) -> Result<ObjectVersionId, ApiError> {
+    ObjectVersionId::from_str(raw)
+        .map_err(|e| ApiError::BadRequest(format!("malformed OBJECT_VERSION_ID {raw:?}: {e}")))
+}
+
+/// A decoded `uid_based_id`/`versioned_object_uid` path segment: the
+/// versioned-object UUID, plus the full `OBJECT_VERSION_ID` when the segment
+/// carried a version (`{object_id}::{system}::{version}`).
+pub(crate) struct UidBasedId {
+    /// The versioned-object UUID (`object_id`).
+    pub(crate) vo_id: Uuid,
+    /// The full version id, when the segment named a specific version.
+    pub(crate) version: Option<ObjectVersionId>,
+}
+
+/// Parse a `uid_based_id`/`versioned_object_uid` path segment: a bare
+/// `HIER_OBJECT_ID` (UUID → no version) or a full `OBJECT_VERSION_ID`.
+///
+/// # Errors
+/// [`ApiError::BadRequest`] if a `::`-carrying value is not a valid
+/// `OBJECT_VERSION_ID`, or a bare value is not a UUID or its `object_id` is not.
+pub(crate) fn parse_uid_based_id(raw: &str) -> Result<UidBasedId, ApiError> {
+    if raw.contains("::") {
+        let ovid = parse_version_uid(raw)?;
+        let vo_id = object_id_uuid(&ovid).ok_or_else(|| {
+            ApiError::BadRequest(format!(
+                "OBJECT_VERSION_ID object_id is not a UUID: {raw:?}"
+            ))
+        })?;
+        Ok(UidBasedId {
+            vo_id,
+            version: Some(ovid),
+        })
+    } else {
+        Ok(UidBasedId {
+            vo_id: parse_uuid(raw, "versioned_object_uid")?,
+            version: None,
+        })
+    }
+}
+
+/// The `object_id` of an `OBJECT_VERSION_ID` as a UUID (this CDR keys versioned
+/// objects by UUID), or `None` if the `object_id` is some other `UID` form.
+pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
+    use openehr_base::prelude::Uid;
+    match ovid.object_id() {
+        Uid::Uuid(u) => Some(u.value),
+        _ => None,
+    }
+}
+
+/// The `preceding_version_uid` for an operation whose `If-Match` header is
+/// **required** (`ehr_status_update`, `composition_update`, `directory_update`,
+/// `directory_delete` — all `required: true`, `parameters/If-Match`). The value
+/// is the full quoted `OBJECT_VERSION_ID`; a malformed or empty value is a
+/// client error rather than a silently-skipped precondition (F-01-09/F-02-08).
+///
+/// PORT NOTE (wire, spec-silent): ITS-REST defines only the "received and the
+/// condition evaluates to false → `412`" case; it says nothing about a
+/// syntactically invalid `If-Match`. We map an unparseable required `If-Match`
+/// to `400 Bad Request` (the general "malformed request syntax" rule), never to
+/// a silent bypass of the optimistic-concurrency guard.
+///
+/// Both the weak (`W/"…"`) and the bare quoted (`"…"`) forms are accepted:
+/// the overview §"ETag and Last-Modified" now emits the weak form, but a client
+/// that echoes the deprecated bare form "MAY still" be supported
+/// (§"Deprecated headers") — [`strip_etag`] normalizes either into the inner
+/// `OBJECT_VERSION_ID`.
+pub(crate) fn require_if_match(if_match: &str) -> Result<ObjectVersionId, ApiError> {
+    let token = strip_etag(if_match);
+    if token.is_empty() {
+        return Err(ApiError::BadRequest(
+            "If-Match is required for this operation but was empty".to_owned(),
+        ));
+    }
+    ObjectVersionId::from_str(token).map_err(|e| {
+        ApiError::BadRequest(format!(
+            "If-Match must be a quoted OBJECT_VERSION_ID; {token:?} is malformed: {e}"
+        ))
+    })
+}
+
+/// Strip an `ETag`/`If-Match` wrapper down to its opaque value: an optional
+/// leading weakness indicator `W/` (case-insensitive) then the surrounding
+/// double quotes. Accepts the weak form the server now emits and the deprecated
+/// bare quoted form alike (overview §"ETag and Last-Modified").
+pub(crate) fn strip_etag(raw: &str) -> &str {
+    let trimmed = raw.trim();
+    let unweak = trimmed
+        .strip_prefix("W/")
+        .or_else(|| trimmed.strip_prefix("w/"))
+        .unwrap_or(trimmed);
+    unweak.trim().trim_matches('"')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const UID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2";
+
+    #[test]
+    fn strip_etag_handles_weak_and_bare() {
+        assert_eq!(strip_etag(&format!("W/\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("\"{UID}\"")), UID);
+        assert_eq!(strip_etag(&format!("  w/\"{UID}\"  ")), UID);
+        assert_eq!(strip_etag(UID), UID);
+    }
+
+    #[test]
+    fn require_if_match_accepts_weak_and_bare() {
+        // The server now emits the weak form; a client echoing either shape
+        // must parse to the same OBJECT_VERSION_ID.
+        let weak = require_if_match(&format!("W/\"{UID}\"")).expect("weak");
+        let bare = require_if_match(&format!("\"{UID}\"")).expect("bare");
+        assert_eq!(weak.value, UID);
+        assert_eq!(bare.value, UID);
+    }
+
+    #[test]
+    fn require_if_match_empty_is_bad_request() {
+        let err = require_if_match("\"\"").expect_err("empty");
+        assert!(matches!(err, ApiError::BadRequest(_)), "got {err:?}");
+    }
+
+    #[test]
+    fn require_if_match_malformed_is_bad_request() {
+        let err = require_if_match("W/\"not-a-version-id\"").expect_err("malformed");
+        assert!(matches!(err, ApiError::BadRequest(_)), "got {err:?}");
+    }
+}

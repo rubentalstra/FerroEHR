@@ -1,9 +1,21 @@
 name: template_id
 in: path
 description: |
-  Template identifier.
+  Template identifier or partial reference. A partial `template_id` will resolve to “latest” major version of that template
 required: true
 style: simple
 schema:
   type: string
-  example: "Vital Signs"
+examples:
+  legacy:
+    summary: "Legacy format"
+    value: "Vital Signs"
+  legacy_version:
+    summary: "Legacy format with major version"
+    value: "vital_signs.v1"
+  hrid:
+    summary: "Human Readable Identifier (HRID) format"
+    value: "org.highmed::openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0"
+  partial:
+    summary: "Partial HRID format, resolves to latest major version"
+    value: "openEHR-EHR-COMPOSITION.t_vital_signs.v1"

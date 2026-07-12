@@ -3,4 +3,4 @@ description: |
 schema:
   type: string
   format: url
-  example: 'https://openEHRSys.example.com/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0/1.0.1'
+  example: 'https://openEHRSys.example.com/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_clinical_info_ds_sf.v1.0.0'

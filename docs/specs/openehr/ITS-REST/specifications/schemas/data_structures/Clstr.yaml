@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: CLUSTER
+    enum: [CLUSTER]
   items:
     type: array
     items:
