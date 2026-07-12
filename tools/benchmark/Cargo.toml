@@ -24,7 +24,6 @@ thiserror = { workspace = true }
 clap = { workspace = true }
 jiff = { workspace = true }
 tokio = { workspace = true }
-reqwest = { workspace = true }
 hdrhistogram = { workspace = true }
 sysinfo = { workspace = true }
 

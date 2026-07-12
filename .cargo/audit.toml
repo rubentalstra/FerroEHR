@@ -9,4 +9,13 @@ ignore = [
   # keys, so the private-key timing oracle does not apply. Re-check when
   # rsa > 0.9 ships. https://rustsec.org/advisories/RUSTSEC-2023-0071
   "RUSTSEC-2023-0071",
+  # 2026-07-12: two quick-xml 0.40.1 DoS-class advisories (unbounded namespace
+  # allocation; quadratic duplicate-attribute check), pulled in transitively via
+  # object_store 0.14.0 (the S3 multimedia offload) — object_store 0.14.0 is the
+  # LATEST release and requires quick-xml ^0.40, so no fix is reachable yet. The
+  # affected parser only reads S3 API responses from the operator-configured
+  # endpoint (a semi-trusted peer), not client input; our own canonical-XML
+  # path uses quick-xml 0.41 (fixed). Re-check on the next object_store release.
+  "RUSTSEC-2026-0194",
+  "RUSTSEC-2026-0195",
 ]
