@@ -482,9 +482,12 @@ pub fn adapt_ehr_status(mut status: Value, namespace: &str, subject_id: &str) ->
             .or_insert_with(|| Value::String("EHR_STATUS".to_owned()));
         set_type(map.get_mut("name"), "DV_TEXT");
         if let Some(Value::Object(subject)) = map.get_mut("subject") {
+            // RM ehr master04 §EHR Status: `EHR_STATUS.subject` is typed
+            // PARTY_SELF (monomorphic) — the subject identity travels on
+            // PARTY_SELF.external_ref, never as a PARTY_IDENTIFIED.
             subject
                 .entry("_type")
-                .or_insert_with(|| Value::String("PARTY_IDENTIFIED".to_owned()));
+                .or_insert_with(|| Value::String("PARTY_SELF".to_owned()));
             if let Some(Value::Object(ext)) = subject.get_mut("external_ref") {
                 ext.entry("_type")
                     .or_insert_with(|| Value::String("PARTY_REF".to_owned()));
@@ -569,7 +572,7 @@ mod tests {
     fn adaptation_makes_subject_addressable_without_breaking_invalid() {
         let raw = read_json("ehr/valid/000_ehr_status.json").unwrap();
         let adapted = adapt_ehr_status(raw, "conformance", "subj-123");
-        assert_eq!(adapted["subject"]["_type"], "PARTY_IDENTIFIED");
+        assert_eq!(adapted["subject"]["_type"], "PARTY_SELF");
         assert_eq!(
             adapted["subject"]["external_ref"]["namespace"],
             "conformance"

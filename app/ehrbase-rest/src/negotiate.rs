@@ -532,6 +532,48 @@ pub(crate) fn error_with_meta(
     out
 }
 
+/// The `201_Template_adl1_4_upload` response: the endpoint produces
+/// `application/xml` only — `Prefer: return=representation` → the OPT XML
+/// itself; `return=identifier` → the template id (text); missing or
+/// `return=minimal` → an empty body. `Location` + `ETag` carry the template
+/// id on every case.
+pub(crate) fn template_upload_response(
+    headers: &HeaderMap,
+    location: &str,
+    template_id: &str,
+    opt_xml: &str,
+) -> Response {
+    let prefer = headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    let mut resp = if prefer
+        .split(',')
+        .any(|t| t.trim().eq_ignore_ascii_case("return=representation"))
+    {
+        xml_body(StatusCode::CREATED, opt_xml.to_owned())
+    } else if prefer
+        .split(',')
+        .any(|t| t.trim().eq_ignore_ascii_case("return=identifier"))
+    {
+        let mut r = (StatusCode::CREATED, template_id.to_owned()).into_response();
+        r.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        r
+    } else {
+        StatusCode::CREATED.into_response()
+    };
+    if let Ok(v) = HeaderValue::from_str(location) {
+        resp.headers_mut().insert(header::LOCATION, v);
+    }
+    if let Ok(v) = HeaderValue::from_str(&format!("W/\"{template_id}\"")) {
+        resp.headers_mut().insert(header::ETAG, v);
+    }
+    resp
+}
+
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
