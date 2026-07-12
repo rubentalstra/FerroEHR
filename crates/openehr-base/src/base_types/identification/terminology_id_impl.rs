@@ -86,8 +86,7 @@ pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
     }
     match (value.split_once('('), value.contains("://")) {
         // URI-form ids are taken whole (any parentheses belong to the URI).
-        (_, true) => name_ok(value),
-        (None, false) => name_ok(value),
+        (_, true) | (None, false) => name_ok(value),
         (Some((name, rest)), false) => {
             name_ok(name.trim_end())
                 && rest
