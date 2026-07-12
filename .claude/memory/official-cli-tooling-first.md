@@ -11,4 +11,4 @@ Always use the official CLI or tool for any workflow step before doing it by han
 
 **Why:** Ruben was upset ("you are free wheeling it and this is so so so bad") when migration files were hand-named instead of created via sqlx-cli, even though the result was convention-compatible. He values the official path itself, not just an equivalent outcome — it guarantees conventions stay correct as tools evolve.
 
-**How to apply:** Before creating any artifact a tool manages (migrations, scaffolds, configs, releases), check for and use the official CLI first; mention which CLI was used. Applies on top of the repo's existing "don't hand-roll what a crate provides" rule ([[codegen-pivot-and-crate-naming]]).
+**How to apply:** Before creating any artifact a tool manages (migrations, scaffolds, configs, releases), check for and use the official CLI first; mention which CLI was used. Applies on top of the repo's existing "don't hand-roll what a crate provides" rule (CLAUDE.md tech-stack section).
