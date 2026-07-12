@@ -26,7 +26,7 @@ use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
 use ehrbase::db::{self, DbSettings};
-use ehrbase::fhir_outbound::{FhirOutboundConfig, start};
+use ehrbase::extensions::fhir::{FhirOutboundConfig, start};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::FhirConnectorAdapter;
 use ehrbase_sm::DefinitionAdapter;

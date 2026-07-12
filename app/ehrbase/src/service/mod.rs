@@ -21,7 +21,10 @@ mod terminology;
 mod validity;
 
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
-pub use terminology::{ExternalTerminologyConfig, FhirTerminologyProvider};
+pub use terminology::{
+    ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, FhirTerminologyProvider,
+    ProviderKind,
+};
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

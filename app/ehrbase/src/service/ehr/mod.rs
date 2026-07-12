@@ -66,6 +66,8 @@ mod uri;
 
 // The EHR-component surface other service modules and adapters consume.
 pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
+#[cfg(test)]
+pub(in crate::service) use service::default_ehr_status;
 pub(in crate::service) use directory::validate_folder;
 pub(in crate::service) use meta::committer;
 pub(in crate::service) use status_validate::validate_ehr_status;

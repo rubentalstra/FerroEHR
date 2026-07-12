@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase::signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
+use ehrbase::versioning::signature::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
 use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,

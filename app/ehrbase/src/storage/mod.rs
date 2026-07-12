@@ -31,6 +31,7 @@ mod row;
 mod structure;
 
 pub mod node_repo;
+pub mod tag_repo;
 pub mod version_repo;
 
 pub use codec::{decompose, reassemble};

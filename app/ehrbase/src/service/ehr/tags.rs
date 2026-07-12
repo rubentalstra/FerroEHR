@@ -14,7 +14,6 @@
 
 use ehrbase_sm::{ItemTagAdapter, SmError};
 use serde_json::{Value, json};
-use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -22,9 +21,6 @@ use crate::versioning::parse_uid_based_id;
 
 impl EhrbaseService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
-    ///
-    /// TODO(w3f-integrate): storage seam (G-10) — the `item_tag` reads/writes in
-    /// this file.
     pub(in crate::service) async fn ehr_tags(
         &self,
         ehr_id: Uuid,
@@ -32,19 +28,14 @@ impl EhrbaseService {
         value: Option<&str>,
         target_path: Option<&str>,
     ) -> Result<Vec<Value>, ServiceError> {
-        let rows = sqlx::query(
-            "SELECT target_vo_id, target_type, key, value, target_path FROM item_tag \
-             WHERE ehr_id = $1 \
-             AND ($2::text IS NULL OR key = $2) \
-             AND ($3::text IS NULL OR value = $3) \
-             AND ($4::text IS NULL OR target_path = $4) \
-             ORDER BY key",
+        let rows = crate::storage::tag_repo::list_tags(
+            &self.pool,
+            Some(ehr_id),
+            None,
+            key,
+            value,
+            target_path,
         )
-        .bind(ehr_id)
-        .bind(key)
-        .bind(value)
-        .bind(target_path)
-        .fetch_all(&self.pool)
         .await?;
         Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
     }
@@ -55,13 +46,14 @@ impl EhrbaseService {
         ehr_id: Uuid,
         target_vo_id: Uuid,
     ) -> Result<Vec<Value>, ServiceError> {
-        let rows = sqlx::query(
-            "SELECT target_vo_id, target_type, key, value, target_path FROM item_tag \
-             WHERE ehr_id = $1 AND target_vo_id = $2 ORDER BY key",
+        let rows = crate::storage::tag_repo::list_tags(
+            &self.pool,
+            Some(ehr_id),
+            Some(target_vo_id),
+            None,
+            None,
+            None,
         )
-        .bind(ehr_id)
-        .bind(target_vo_id)
-        .fetch_all(&self.pool)
         .await?;
         Ok(rows.iter().map(|r| Self::tag_json(ehr_id, r)).collect())
     }
@@ -82,25 +74,17 @@ impl EhrbaseService {
         // EHR.tags): the target versioned object must exist AND belong to this
         // EHR — the item_tag table is deliberately FK-less (a tag may address a
         // specific VERSION), so the ownership check lives here.
-        let owner: Option<Uuid> =
-            sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
-                .bind(target_vo_id)
-                .fetch_optional(&self.pool)
-                .await?
-                .flatten();
-        if owner != Some(ehr_id) {
+        let owner = crate::storage::version_repo::vo_owner(&self.pool, target_vo_id).await?;
+        if owner != Some(Some(ehr_id)) {
             return Err(ServiceError::NotFound(format!(
                 "tag target {target_vo_id} does not exist in EHR {ehr_id} \
                  (tag targets can only be within the same EHR)"
             )));
         }
-        let mut tx = self.pool.begin().await?;
-        // Full replace: drop the existing collection, then insert the posted set.
-        sqlx::query("DELETE FROM item_tag WHERE ehr_id = $1 AND target_vo_id = $2")
-            .bind(ehr_id)
-            .bind(target_vo_id)
-            .execute(&mut *tx)
-            .await?;
+        // Validate every tag before writing; the `replace_tags` upsert arm covers
+        // same-key repetition (last-wins) in the EHR scope.
+        let mut new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> =
+            Vec::with_capacity(tags.len());
         for tag in &tags {
             let key = tag
                 .get("key")
@@ -121,21 +105,16 @@ impl EhrbaseService {
                 )));
             }
             let target_path = tag.get("target_path").and_then(Value::as_str);
-            sqlx::query(
-                "INSERT INTO item_tag (ehr_id, target_vo_id, target_type, key, value, target_path) \
-                 VALUES ($1, $2, $3, $4, $5, $6) \
-                 ON CONFLICT (ehr_id, target_vo_id, key) \
-                 DO UPDATE SET value = EXCLUDED.value, target_path = EXCLUDED.target_path",
-            )
-            .bind(ehr_id)
-            .bind(target_vo_id)
-            .bind(target_type)
-            .bind(key)
-            .bind(value)
-            .bind(target_path)
-            .execute(&mut *tx)
-            .await?;
+            new_tags.push(crate::storage::tag_repo::NewTag {
+                target_type,
+                key,
+                value,
+                target_path,
+            });
         }
+        let mut tx = self.pool.begin().await?;
+        crate::storage::tag_repo::replace_tags(&mut tx, Some(ehr_id), target_vo_id, &new_tags)
+            .await?;
         tx.commit().await?;
         self.target_tags(ehr_id, target_vo_id).await
     }
@@ -147,15 +126,9 @@ impl EhrbaseService {
         target_vo_id: Uuid,
         key: &str,
     ) -> Result<(), ServiceError> {
-        let deleted = sqlx::query(
-            "DELETE FROM item_tag WHERE ehr_id = $1 AND target_vo_id = $2 AND key = $3",
-        )
-        .bind(ehr_id)
-        .bind(target_vo_id)
-        .bind(key)
-        .execute(&self.pool)
-        .await?;
-        if deleted.rows_affected() == 0 {
+        if !crate::storage::tag_repo::delete_tag(&self.pool, Some(ehr_id), target_vo_id, key)
+            .await?
+        {
             return Err(ServiceError::NotFound(format!("item tag {key:?}")));
         }
         Ok(())
@@ -166,16 +139,15 @@ impl EhrbaseService {
     /// `target` (the tagged versioned object, its RM type in `type`) and
     /// `owner_id` (the owning EHR). No extra fields — the schema is
     /// `additionalProperties: false` (`_type` is its discriminator).
-    fn tag_json(ehr_id: Uuid, row: &sqlx::postgres::PgRow) -> Value {
-        let target_vo_id: Uuid = row.try_get("target_vo_id").unwrap_or_default();
-        let target_type: String = row.try_get("target_type").unwrap_or_default();
+    fn tag_json(ehr_id: Uuid, row: &crate::storage::tag_repo::TagRow) -> Value {
+        let target_vo_id = row.target_vo_id;
         let mut tag = json!({
             "_type": "ITEM_TAG",
-            "key": row.try_get::<String, _>("key").unwrap_or_default(),
+            "key": row.key.as_str(),
             "target": {
                 "_type": "OBJECT_REF",
                 "namespace": "local",
-                "type": target_type,
+                "type": row.target_type.as_str(),
                 "id": { "_type": "HIER_OBJECT_ID", "value": target_vo_id.to_string() }
             },
             "owner_id": {
@@ -185,11 +157,11 @@ impl EhrbaseService {
                 "id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() }
             },
         });
-        if let Ok(Some(value)) = row.try_get::<Option<String>, _>("value") {
-            tag["value"] = json!(value);
+        if let Some(value) = &row.value {
+            tag["value"] = json!(value.as_str());
         }
-        if let Ok(Some(path)) = row.try_get::<Option<String>, _>("target_path") {
-            tag["target_path"] = json!(path);
+        if let Some(path) = &row.target_path {
+            tag["target_path"] = json!(path.as_str());
         }
         tag
     }

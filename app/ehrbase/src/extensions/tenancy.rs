@@ -21,10 +21,8 @@
 //! no session tenant context — and resolution can run before the request's
 //! tenant scope is established (no chicken-and-egg).
 //
-// TODO(w3f-integrate): the helpers below read `self.pool` and `self.tenant_cache`,
-// both private fields of `crate::service::EhrbaseService`; the ONE fix pass must
-// expose them to `crate::extensions` (promote `pool` + `tenant_cache` to
-// `pub(crate)`, or add `pub(crate)` accessors). Behaviour is unchanged.
+// The helpers below read the `pub(crate)` `pool` + `tenant_cache` fields of
+// `crate::service::EhrbaseService`.
 
 use async_trait::async_trait;
 use serde_json::{Value, json};

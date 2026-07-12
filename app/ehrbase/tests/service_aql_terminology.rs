@@ -34,7 +34,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase::terminology::{
+use ehrbase::service::{
     FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind,
 };
 use ehrbase_sm::{UpdateAudit, UpdateVersion};

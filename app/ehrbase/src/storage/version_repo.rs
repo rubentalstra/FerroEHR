@@ -1050,20 +1050,21 @@ pub struct ContributionAudit {
     pub time_committed: jiff::Timestamp,
 }
 
-/// Read a CONTRIBUTION's audit, scoped to its owning EHR. `None` when the
-/// contribution does not exist in that EHR.
+/// Read a CONTRIBUTION's audit, scoped to its owning EHR (`None` scope = the
+/// demographic, ehr-less store). `None` when the contribution does not exist
+/// in that scope.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn contribution_audit(
     pool: &PgPool,
     contribution_id: Uuid,
-    ehr_id: Uuid,
+    ehr_id: Option<Uuid>,
 ) -> Result<Option<ContributionAudit>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT a.system_id, a.change_type, a.description, a.committer, a.time_committed \
          FROM contribution c JOIN audit a ON a.id = c.audit_id \
-         WHERE c.id = $1 AND c.ehr_id = $2",
+         WHERE c.id = $1 AND c.ehr_id IS NOT DISTINCT FROM $2",
     )
     .bind(contribution_id)
     .bind(ehr_id)
@@ -1177,5 +1178,42 @@ pub async fn count_contributions(
     .bind(lower.map(|t| t.to_string()))
     .bind(upper.map(|t| t.to_string()))
     .fetch_one(pool)
+    .await?)
+}
+
+/// The owning EHR of a versioned object (`None` when the object does not
+/// exist; `Some(None)` for an ehr-less demographic object).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn vo_owner(pool: &PgPool, vo_id: Uuid) -> Result<Option<Option<Uuid>>, StorageError> {
+    Ok(
+        sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
+            .bind(vo_id)
+            .fetch_optional(pool)
+            .await?,
+    )
+}
+
+/// The ids of an EHR's current (open trunk tip) versioned objects of one kind,
+/// excluding an optional lifecycle state (e.g. `523|deleted|`).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_vo_ids(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    kind: &str,
+    exclude_lifecycle: Option<&str>,
+) -> Result<Vec<Uuid>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = $2 \
+         AND upper_inf(sys_period) AND branch_number = 0 \
+         AND ($3::text IS NULL OR lifecycle_state <> $3)",
+    )
+    .bind(ehr_id)
+    .bind(kind)
+    .bind(exclude_lifecycle)
+    .fetch_all(pool)
     .await?)
 }

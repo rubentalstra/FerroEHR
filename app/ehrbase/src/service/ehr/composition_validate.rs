@@ -9,7 +9,7 @@
 //! convention).
 
 use serde_json::Value;
-use sqlx::{PgConnection, Row};
+use sqlx::PgConnection;
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -39,15 +39,12 @@ impl EhrbaseService {
         // PERF(port): scans the EHR's live COMPOSITIONs and reassembles each to
         // read its category + template (template_id is not promoted onto
         // vo_version). An EHR holds few persistent compositions.
-        // TODO(w3f-integrate): storage seam (G-10) — the live-COMPOSITION vo_id
-        // scan.
-        let vo_ids: Vec<Uuid> = sqlx::query_scalar(
-            "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
-             AND upper_inf(sys_period) AND branch_number = 0 AND lifecycle_state <> $2",
+        let vo_ids = crate::storage::version_repo::current_vo_ids(
+            &self.pool,
+            ehr_id,
+            "COMPOSITION",
+            Some(lifecycle::state::DELETED),
         )
-        .bind(ehr_id)
-        .bind(lifecycle::state::DELETED)
-        .fetch_all(&self.pool)
         .await?;
         for vo_id in vo_ids {
             if let Some(read) = read_current(&self.pool, vo_id).await?
@@ -78,10 +75,9 @@ impl EhrbaseService {
     /// **lower** limits to zero; RM invariants + terminology stay at full
     /// strictness ("data may be missing, but it may not be wrong").
     ///
-    /// TODO(w3f-integrate): validation seam — `web_template_for` is a
-    /// template-register method and `openehr_flat::validate_*` are the legacy
-    /// validation entry names (`validation/` is rewritten by a later worker);
-    /// re-point both at the fix pass.
+    /// The template lookup goes through
+    /// [`web_template_for`](Self::web_template_for) and the passes through
+    /// `openehr_flat::validate_*`.
     pub(super) async fn validate_composition_for_commit(
         &self,
         composition: &Value,
@@ -135,10 +131,8 @@ impl EhrbaseService {
     /// validation. Shared by the direct create/update path and the CONTRIBUTION
     /// path so neither can bypass validation (F-07-01).
     ///
-    /// TODO(w3f-integrate): the demographic arms (party roots +
-    /// PARTY_RELATIONSHIP) dispatch to the demographic register
-    /// (`service/demographic/`), rewritten by a later worker; wired into
-    /// `impl CommitEnv for EhrbaseService` at the fix pass.
+    /// The demographic arms (party roots + PARTY_RELATIONSHIP) dispatch to the
+    /// demographic register (`service/demographic/`).
     pub(in crate::service) async fn validate_for_commit(
         &self,
         kind: Kind,
@@ -171,32 +165,32 @@ impl EhrbaseService {
 ///
 /// A violating modification is a `422` naming the invariant. Lifted out of the
 /// versioning write path — the EHR chapter now owns it (see the
-/// `crate::versioning::change` `apply_change` TODO).
+/// `crate::versioning::change` `apply_change` TODO). The first-version root read
+/// goes through `crate::storage::node_repo`.
 ///
-/// TODO(w3f-integrate): storage seam (G-10) — the first-version root read; the
-/// CONTRIBUTION path (`crate::versioning::commit_version_set`) must invoke this
-/// for a COMPOSITION modify at the fix pass.
+/// Only the direct create/update path ([`composition`](super::composition))
+/// invokes this today; the CONTRIBUTION path
+/// (`crate::versioning::commit_version_set`) does not yet run it for a
+/// COMPOSITION modify.
 pub(super) async fn check_versioned_composition_invariants(
     tx: &mut PgConnection,
     vo_id: Uuid,
     canonical: &Value,
 ) -> Result<(), ServiceError> {
     const PERSISTENT: &str = "431";
-    let Some(first) = sqlx::query(
-        "SELECT data->>'archetype_node_id' AS ani, \
-                data#>>'{category,defining_code,code_string}' AS category \
-         FROM node WHERE vo_id = $1 AND num = 0 ORDER BY sys_version LIMIT 1",
-    )
-    .bind(vo_id)
-    .fetch_optional(&mut *tx)
-    .await?
-    else {
+    let Some(first) = crate::storage::node_repo::first_version_root(tx, vo_id).await? else {
         // No stored content version (e.g. every prior version deleted) — no
         // first-version root to compare against.
         return Ok(());
     };
-    let first_ani: Option<String> = first.try_get("ani")?;
-    let first_category: Option<String> = first.try_get("category")?;
+    let first_ani = first
+        .get("archetype_node_id")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let first_category = first
+        .pointer("/category/defining_code/code_string")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     let incoming_ani = canonical.get("archetype_node_id").and_then(Value::as_str);
     if let (Some(stored), Some(incoming)) = (first_ani.as_deref(), incoming_ani)
         && stored != incoming

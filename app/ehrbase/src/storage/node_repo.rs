@@ -118,3 +118,22 @@ pub async fn read_version_canonical(
     }
     reassemble(&rows)
 }
+
+/// The root node fragment (`num = 0`) of the FIRST stored content version of
+/// an object — the anchor for cross-version invariants (a root fragment is
+/// small: children are pruned by the decomposition). `None` when no content
+/// version exists (e.g. every prior version deleted).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn first_version_root(
+    tx: &mut sqlx::PgConnection,
+    vo_id: uuid::Uuid,
+) -> Result<Option<serde_json::Value>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT data FROM node WHERE vo_id = $1 AND num = 0 ORDER BY sys_version LIMIT 1",
+    )
+    .bind(vo_id)
+    .fetch_optional(&mut *tx)
+    .await?)
+}

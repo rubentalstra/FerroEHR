@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use ehrbase::terminology::{
+use ehrbase::service::{
     FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind,
 };
 use ehrbase_sm::{CallStatusType, TerminologyService};

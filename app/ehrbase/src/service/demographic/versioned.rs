@@ -4,19 +4,14 @@
 //! contract, so this whole surface is our own extension by analogy with the EHR
 //! group (register `docs/design/platform/04-service-demographic-ehr-index.md`).
 //!
-//! The version-spine reads are interim direct SQL over the storage tables (no
-//! openEHR spec governs the storage read — our own design; RM common master04
-//! §Revision History / master06 §Versioned Objects govern the assembled wire
-//! shape).
-//!
-//! TODO(w3f-integrate): move the ehr-less `vo_version`⋈`audit` reads behind a
-//! `crate::storage::version_repo` demographic helper — storage owns the SQL
-//! (cross-register ruling `docs/design/platform/README.md`); versioning's
-//! `revision_history`/`versioned_object` builders are EHR-scoped and cannot be
-//! reused for an ehr-less party.
+//! The version-spine reads go through `crate::storage::version_repo` (storage
+//! owns the SQL — no openEHR spec governs the storage read, our own design; RM
+//! common master04 §Revision History / master06 §Versioned Objects govern the
+//! assembled wire shape). Versioning's `revision_history`/`versioned_object`
+//! builders are EHR-scoped, so the demographic chapter maps the ehr-less
+//! `VersionMeta` rows into the wire shape itself.
 
 use serde_json::{Value, json};
-use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -31,15 +26,12 @@ impl EhrbaseService {
     /// is `404`.
     pub(crate) async fn versioned_party(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
-        let time_created: jiff_sqlx::Timestamp = sqlx::query_scalar(
-            "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-             WHERE v.vo_id = $1 AND v.sys_version = 1",
-        )
-        .bind(vo_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))?;
-        let time_created = time_created.to_jiff();
+        // `VERSIONED_OBJECT.time_created` is the commit time of the earliest
+        // held version; for a locally-created party that earliest-held version
+        // is v1.
+        let time_created = crate::storage::version_repo::time_created(&self.pool, vo_id)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))?;
         // PORT NOTE (G-6): `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner for
         // a demographic party (no openEHR spec governs the owner of an ehr-less
         // demographic versioned object — our own design); we reference the
@@ -63,40 +55,24 @@ impl EhrbaseService {
     /// §Revision History). A non-party id is `404`.
     pub(crate) async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
-        let rows = sqlx::query(
-            "SELECT v.trunk_version, v.branch_number, v.branch_version, \
-             v.creating_system_id, a.system_id, a.change_type, \
-             a.description, a.committer, a.time_committed \
-             FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-             WHERE v.vo_id = $1 ORDER BY v.sys_version",
-        )
-        .bind(vo_id)
-        .fetch_all(&self.pool)
-        .await?;
+        let metas = crate::storage::version_repo::all_version_meta(&self.pool, vo_id).await?;
 
-        let mut items = Vec::with_capacity(rows.len());
-        for row in &rows {
-            let tree = TreeId::from_columns(
-                row.try_get("trunk_version")?,
-                row.try_get("branch_number")?,
-                row.try_get("branch_version")?,
-            );
-            let creating_system_id: String = row.try_get("creating_system_id")?;
-            let system_id: String = row.try_get("system_id")?;
-            let change_type: String = row.try_get("change_type")?;
-            let description: Option<String> = row.try_get("description")?;
-            let committer: Value = row.try_get("committer")?;
-            let time_committed: jiff::Timestamp = row
-                .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
-                .to_jiff();
+        let mut items = Vec::with_capacity(metas.len());
+        for meta in &metas {
+            let tree =
+                TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
             items.push(json!({
                 "_type": "REVISION_HISTORY_ITEM",
                 "version_id": {
                     "_type": "OBJECT_VERSION_ID",
-                    "value": object_version_id(vo_id, &creating_system_id, tree)
+                    "value": object_version_id(vo_id, &meta.creating_system_id, tree)
                 },
                 "audits": [audit_details(
-                    &system_id, &change_type, description.as_deref(), &committer, &time_committed,
+                    &meta.audit_system_id,
+                    &meta.audit_change_type,
+                    meta.audit_description.as_deref(),
+                    &meta.audit_committer,
+                    &meta.time_committed,
                 )]
             }));
         }

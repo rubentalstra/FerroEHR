@@ -2,16 +2,16 @@
 //! applied to parties (ehr-less: `ehr_id IS NULL`). Our own extension: ITS-REST
 //! 1.0.3 defines no demographic wire contract (register
 //! `docs/design/platform/04-service-demographic-ehr-index.md`). The tag store is
-//! direct SQL over the `item_tag` table (no openEHR spec governs the storage —
-//! our own design; RM `common.item_tag` governs the wire shape + invariants).
+//! backed by the `item_tag` table via `crate::storage::tag_repo` (no openEHR
+//! spec governs the storage — our own design; RM `common.item_tag` governs the
+//! wire shape + invariants).
 //!
-//! TODO(w3f-integrate): the `item_tag` reads/writes should move behind a
-//! storage-owned repository (README cross-register ruling — storage owns the
-//! SQL); the domain here would keep the RM `ITEM_TAG` invariant checks.
+//! The `item_tag` reads/writes go through `crate::storage::tag_repo` (storage
+//! owns the SQL — README cross-register ruling); the RM `ITEM_TAG` invariant
+//! checks (`Inv_key_valid`/`Inv_value_valid`) stay in the domain here.
 
 use ehrbase_sm::PartyKind;
 use serde_json::{Value, json};
-use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -24,31 +24,17 @@ impl EhrbaseService {
         value: Option<&str>,
         target_path: Option<&str>,
     ) -> Result<Vec<Value>, ServiceError> {
-        let rows = sqlx::query(
-            "SELECT target_vo_id, target_type, key, value, target_path FROM item_tag \
-             WHERE ehr_id IS NULL \
-             AND ($1::text IS NULL OR key = $1) \
-             AND ($2::text IS NULL OR value = $2) \
-             AND ($3::text IS NULL OR target_path = $3) \
-             ORDER BY key",
-        )
-        .bind(key)
-        .bind(value)
-        .bind(target_path)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows =
+            crate::storage::tag_repo::list_tags(&self.pool, None, None, key, value, target_path)
+                .await?;
         Ok(rows.iter().map(party_tag_json).collect())
     }
 
     /// The tags on one party.
     pub(crate) async fn party_tags(&self, vo_id: Uuid) -> Result<Vec<Value>, ServiceError> {
-        let rows = sqlx::query(
-            "SELECT target_vo_id, target_type, key, value, target_path FROM item_tag \
-             WHERE ehr_id IS NULL AND target_vo_id = $1 ORDER BY key",
-        )
-        .bind(vo_id)
-        .fetch_all(&self.pool)
-        .await?;
+        let rows =
+            crate::storage::tag_repo::list_tags(&self.pool, None, Some(vo_id), None, None, None)
+                .await?;
         Ok(rows.iter().map(party_tag_json).collect())
     }
 
@@ -91,24 +77,21 @@ impl EhrbaseService {
             );
         }
 
-        let mut tx = self.pool.begin().await?;
-        sqlx::query("DELETE FROM item_tag WHERE ehr_id IS NULL AND target_vo_id = $1")
-            .bind(vo_id)
-            .execute(&mut *tx)
-            .await?;
-        for (key, (value, target_path)) in &deduped {
-            sqlx::query(
-                "INSERT INTO item_tag (ehr_id, target_vo_id, target_type, key, value, target_path) \
-                 VALUES (NULL, $1, $2, $3, $4, $5)",
+        // A NULL (demographic) scope never collides on the unique index (NULLs
+        // are distinct), so the pre-dedup above is what enforces last-wins.
+        let new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> = deduped
+            .iter()
+            .map(
+                |(key, (value, target_path))| crate::storage::tag_repo::NewTag {
+                    target_type: kind.rm_type(),
+                    key: key.as_str(),
+                    value: value.as_deref(),
+                    target_path: target_path.as_deref(),
+                },
             )
-            .bind(vo_id)
-            .bind(kind.rm_type())
-            .bind(key)
-            .bind(value)
-            .bind(target_path)
-            .execute(&mut *tx)
-            .await?;
-        }
+            .collect();
+        let mut tx = self.pool.begin().await?;
+        crate::storage::tag_repo::replace_tags(&mut tx, None, vo_id, &new_tags).await?;
         tx.commit().await?;
         self.party_tags(vo_id).await
     }
@@ -119,14 +102,7 @@ impl EhrbaseService {
         vo_id: Uuid,
         key: &str,
     ) -> Result<(), ServiceError> {
-        let deleted = sqlx::query(
-            "DELETE FROM item_tag WHERE ehr_id IS NULL AND target_vo_id = $1 AND key = $2",
-        )
-        .bind(vo_id)
-        .bind(key)
-        .execute(&self.pool)
-        .await?;
-        if deleted.rows_affected() == 0 {
+        if !crate::storage::tag_repo::delete_tag(&self.pool, None, vo_id, key).await? {
             return Err(ServiceError::NotFound(format!("item tag {key:?}")));
         }
         Ok(())
@@ -138,12 +114,12 @@ impl EhrbaseService {
 /// PORT NOTE (G-6): `owner_id` references the tagged party itself — there is no
 /// owning EHR for a demographic tag (no openEHR spec governs the owner of an
 /// ehr-less demographic tag — our own design).
-fn party_tag_json(row: &sqlx::postgres::PgRow) -> Value {
-    let target_vo_id: Uuid = row.try_get("target_vo_id").unwrap_or_default();
-    let target_type: String = row.try_get("target_type").unwrap_or_default();
+fn party_tag_json(row: &crate::storage::tag_repo::TagRow) -> Value {
+    let target_vo_id = row.target_vo_id;
+    let target_type = row.target_type.as_str();
     let mut tag = json!({
         "_type": "ITEM_TAG",
-        "key": row.try_get::<String, _>("key").unwrap_or_default(),
+        "key": row.key.as_str(),
         "target": {
             "_type": "OBJECT_REF",
             "namespace": "demographic",
@@ -157,11 +133,11 @@ fn party_tag_json(row: &sqlx::postgres::PgRow) -> Value {
             "id": { "_type": "HIER_OBJECT_ID", "value": target_vo_id.to_string() }
         },
     });
-    if let Ok(Some(value)) = row.try_get::<Option<String>, _>("value") {
-        tag["value"] = json!(value);
+    if let Some(value) = &row.value {
+        tag["value"] = json!(value.as_str());
     }
-    if let Ok(Some(path)) = row.try_get::<Option<String>, _>("target_path") {
-        tag["target_path"] = json!(path);
+    if let Some(path) = &row.target_path {
+        tag["target_path"] = json!(path.as_str());
     }
     tag
 }

@@ -23,16 +23,15 @@
 //! ⇒ `integrity_check_algorithm` from the openEHR `Integrity check algorithms`
 //! code set; mandatory unencoded `size`).
 //!
-//! ## Seams to versioning / storage — `TODO(w3f-integrate)`
+//! ## Seams to versioning / storage
 //! The engine is attached to the service via
 //! `EhrbaseService::with_multimedia(...)` and consumed on the commit path
 //! (offload, via the versioning `SigningCtx`) and the read path (expand). Those
 //! call sites live in `crate::versioning` / `crate::service::ehr`; this module
 //! only owns the engine + transforms.
-// TODO(w3f-integrate): `crate::service::EhrbaseService` field
-// `multimedia: Option<Arc<crate::multimedia::MultimediaEngine>>` (service/mod.rs)
-// must be re-pathed to `crate::extensions::multimedia::MultimediaEngine`; its
-// `with_multimedia` setter + `signing_ctx().multimedia` reader are unchanged.
+// The `EhrbaseService.multimedia` field holds this engine; the
+// `with_multimedia` setter attaches it and `signing_ctx().multimedia` reads it
+// on the commit path.
 
 // openEHR/product identifiers (DV_MULTIMEDIA, SeaweedFS, …) read as prose in docs.
 #![allow(clippy::doc_markdown)]
