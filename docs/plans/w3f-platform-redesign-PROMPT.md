@@ -125,14 +125,22 @@ app/ehrbase/src/
 - Tests: the integration suites under `app/ehrbase/tests/` are the safety
   net — they must all pass at close (update only where a register row
   changes spec behaviour, with the citation; never weaken).
-- **Debt owed from the W-3c/W-3e merge** (checks skipped at merge by owner
-  ruling — settle them early in this phase): full workspace
-  `cargo nextest run --workspace` triage (stale pre-rewrite expectations:
-  weak `W/` ETags, Location-on-201-only, admin 204s — update those
-  assertions spec-correctly), workspace clippy under the deny rules, and a
-  full ECC run (`scripts/conformance.sh`, zero drift vs the 341/315/0
-  baseline; the newly-adjudicated admin delete-all cases + any wire deltas
-  must be re-baselined honestly).
+- **Ordering ruling (owner, 2026-07-12): the CODE comes first — ALL of it.**
+  Do NOT start with the ECC or the test triage: rewrite everything, run the
+  single fix pass, and only when *everything* is rewritten do the deferred
+  checks run, in this order at the very end of the phase:
+  1. full workspace `cargo nextest run --workspace` triage (stale
+     pre-rewrite expectations from the W-3c/W-3e merge: weak `W/` ETags,
+     Location-on-201-only, admin 204s — update those assertions
+     spec-correctly, never weaken);
+  2. workspace clippy under the deny rules;
+  3. the full ECC run (`scripts/conformance.sh`) — LAST, once the server is
+     whole. Expect friction: the instrument itself encodes some
+     pre-rewrite behaviour and **may itself be wrong in places** — where a
+     case contradicts the vendored spec text, adjudicate the CASE (the
+     sanctioned B5 process, spec-cited), don't bend the server; a full ECC
+     overhaul is its own future work item. Re-baseline honestly from the
+     341/315/0 ancestor.
 - Close per the standing loop: tick `docs/plans/w3f-platform-redesign.md`
   checkboxes (author it from this prompt at start), changelog + website
   book same-PR rules, WORKLIST row closed with the merged PR, then
@@ -147,5 +155,7 @@ app/ehrbase/src/
       per §Integrity; no file > ~700 lines without a documented reason.
 - [ ] Every register G-row closed in code or a re-verified cited PORT NOTE.
 - [ ] Zero actionable TODO markers; dead-code/todo denies green.
-- [ ] Workspace build + full `nextest` + clippy green; **ECC zero-drift**
-      (the owed run included); changelog + book updated.
+- [ ] Workspace build + full `nextest` + clippy green; changelog + book
+      updated.
+- [ ] LAST: the ECC run — honest re-baseline, spec-cited case
+      adjudications where the instrument (not the server) is wrong.
