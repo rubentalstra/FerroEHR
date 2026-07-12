@@ -1,7 +1,7 @@
 #![allow(clippy::format_push_string, clippy::too_many_lines)]
 
 //! `openehr-codegen` — generates the openEHR spec crates from the vendored BMM
-//! meta-model (ADR-004).
+//! meta-model.
 //!
 //! Usage:
 //!   `openehr-codegen check`          — load + validate the vendored BMM schemas.
@@ -34,7 +34,7 @@ const XSD_V1_DIR: &str = concat!(
 );
 /// v2 (namespace `.../v2`) XSD root (per-component release folders). Supplies the
 /// RM-instance types the v1 `ALL/` bundle lacks (EHR + demographic) or carries
-/// stale (extract) to the emit-xml input (ADR-005; F-05-01).
+/// stale (extract) to the emit-xml input (F-05-01).
 const XSD_V2_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
@@ -106,7 +106,7 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Emit the ITS-REST contract (DTOs, param structs, server trait, route table)
-/// for each API group into `openehr-its/src/rest/generated/` (ADR-005).
+/// for each API group into `openehr-its/src/rest/generated/`.
 fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
     // Groups with operations (overview is an index, system has none).
     const GROUPS: &[&str] = &["admin", "definition", "demographic", "ehr", "query"];
@@ -159,7 +159,7 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Emit canonical-XML `ToXml`/`FromXml` impls for the RM/BASE spec types into
-/// `openehr-its/src/xml/generated/` (ADR-005). Generates both wire lineages: v1
+/// `openehr-its/src/xml/generated/`. Generates both wire lineages: v1
 /// (`.../v1`, parity target) and v2 (`.../v2`, latest).
 fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     let base = load(BASE_BMM)?;
@@ -226,7 +226,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 /// Emit the OPT 1.4 model (`opt14`): typed Rust types + canonical-XML
 /// `ToXml`/`FromXml` for `OPERATIONAL_TEMPLATE`, generated from the AM/OPT
 /// constraint XSD closure (`Template.xsd` + includes). RM instance types
-/// resolve to the already-generated `openehr-base`/`openehr-rm` impls (ADR-005).
+/// resolve to the already-generated `openehr-base`/`openehr-rm` impls.
 fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
     let base = load(BASE_BMM)?;
     let rm = load(RM_BMM)?;
@@ -263,7 +263,7 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Emit the static RM attribute/type model (`openehr-rm/src/model/`) — the AQL
-/// planner's spec-pinned oracle (ADR-008 §3, P16). Generated from the same
+/// planner's spec-pinned oracle. Generated from the same
 /// BASE + RM BMM `emit` consumes. Writes the `model/` subtree in place (does not
 /// touch the generated spec files) and declares `pub mod model;` in `lib.rs` if
 /// absent, so it is correct run standalone; `emit` produces the identical output.
@@ -315,7 +315,7 @@ fn inject_rm_model(files: &mut Vec<emit::GenFile>, mut model_files: Vec<emit::Ge
 }
 
 /// Diagnostic: parse the vendored v1 RM-instance XSDs and print a summary +
-/// a couple of flattened views, to validate the XSD reader (ADR-005).
+/// a couple of flattened views, to validate the XSD reader.
 fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
     let files = xsd::v1_files(Path::new(XSD_V1_DIR));
     let model = xsd::XsdModel::parse_files(&files)?;
@@ -392,7 +392,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let ext_base = External::default().with(base_specs, "openehr_base::prelude");
 
     // openehr-rm: single version, depends on openehr-base. Also carries the
-    // static RM attribute/type model (ADR-008 §3, P16 — `emit-rm-model`), emitted
+    // static RM attribute/type model, emitted
     // here too so a plain `emit` keeps the crate self-consistent (lib.rs declares
     // `model`, and a later `emit` regenerates it byte-identically to the
     // standalone `emit-rm-model` target).
@@ -455,7 +455,7 @@ fn write_crate(
     files: &[emit::GenFile],
 ) -> Result<(), Box<dyn std::error::Error>> {
     let src = crates_root().join(crate_name).join("src");
-    // Preserve hand-written code (ADR-003/004): delete only previously-`@generated`
+    // Preserve hand-written code: delete only previously-`@generated`
     // files, never the hand-written `*_impl.rs` / spec-behaviour modules beside
     // them. (A stale generated file no longer emitted this run is `@generated` →
     // removed; a hand-written sibling is kept.)
@@ -474,7 +474,7 @@ fn write_crate(
     }
     // Weave hand-written modules into the generated tree: any hand-written `.rs`
     // beside a generated `mod.rs` (or at the crate root beside `lib.rs`) is
-    // declared `pub mod <name>;` so ADR-003 `*_impl.rs` files compile without the
+    // declared `pub mod <name>;` so the hand-written `*_impl.rs` files compile without the
     // generator owning them. Deterministic (sorted scan) → drift-check-stable.
     declare_hand_written_modules(&src, &mut written)?;
     rustfmt(&written)?;
@@ -549,9 +549,7 @@ fn declare_hand_written_modules(
             let decl = format!("pub mod {m};");
             if !body.contains(&decl) {
                 if !appended {
-                    body.push_str(
-                        "\n// hand-written modules (spec behaviour), auto-declared:\n",
-                    );
+                    body.push_str("\n// hand-written modules (spec behaviour), auto-declared:\n");
                     appended = true;
                 }
                 body.push_str(&decl);

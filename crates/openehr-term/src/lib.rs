@@ -1,6 +1,6 @@
 //! openEHR TERM (Terminology) data model, generated from the BMM meta-model. The vendored terminology XML content lives in `assets/` (data, not generated); an XML→model loader is added when composition validation needs it.
 //!
-//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
 
 #![allow(
@@ -16,6 +16,6 @@
 pub mod prelude;
 pub mod terminology;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod bundle;
 pub mod measurement;

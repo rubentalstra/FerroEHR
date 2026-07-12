@@ -8,7 +8,7 @@ use crate::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
 use serde::Serialize;
 
 /// Abstract parent of 'statement' types that may be defined to implement BMM Routines.
-/// Closed subtype set of `BMM_STATEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_STATEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmStatement {

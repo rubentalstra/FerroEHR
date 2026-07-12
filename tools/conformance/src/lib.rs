@@ -1,4 +1,4 @@
-//! The ehrbase-rs Conformance Catalogue (ECC) engine — the ADR-008
+//! The ehrbase-rs Conformance Catalogue (ECC) engine — our own
 //! acceptance instrument (`docs/design/conformance-framework.md`, v3.1).
 //!
 //! **Our own conformance framework.** The primary identity system is the ECC

@@ -6,7 +6,7 @@ pub mod multiplicity_interval;
 pub mod point_interval;
 pub mod proper_interval;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod cardinality_impl;
 pub mod interval_impl;
 pub mod multiplicity_interval_impl;

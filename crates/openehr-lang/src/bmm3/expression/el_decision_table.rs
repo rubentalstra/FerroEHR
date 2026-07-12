@@ -5,7 +5,7 @@ use crate::bmm3::expression::el_condition_chain::ElConditionChain;
 use serde::Serialize;
 
 /// Meta-type for decision tables. Generic on the meta-type of the `_result_` attribute of the branches, to allow specialised forms of if/else and case structures to be created.
-/// Closed subtype set of `EL_DECISION_TABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_DECISION_TABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElDecisionTable<T> {

@@ -5,7 +5,7 @@ use crate::bmm3::expression::el_unary_operator::ElUnaryOperator;
 use serde::Serialize;
 
 /// Abstract parent of operator types.
-/// Closed subtype set of `EL_OPERATOR` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_OPERATOR`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElOperator {

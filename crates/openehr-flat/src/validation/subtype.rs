@@ -1,6 +1,6 @@
 //! RM subtype relation for type-conformance checks (F-07-13).
 //!
-//! Backed by the BMM-generated static RM model ([`openehr_rm::model`], ADR-008
+//! Backed by the BMM-generated static RM model ([`openehr_rm::model`]
 //! §3 `emit-rm-model`) — the spec-pinned type hierarchy, generated from the same
 //! BMM meta-model as the RM crate itself, regenerating on any spec bump. This
 //! replaces the former hand-maintained descendant allow-map (which was partial

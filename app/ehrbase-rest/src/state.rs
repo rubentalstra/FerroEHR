@@ -2,7 +2,7 @@
 //!
 //! [`AppState`] is the type the HTTP dispatcher threads through axum as router
 //! state. It is generic over the concrete platform service `S: Platform`
-//! (ADR-011: no trait objects, no stub backend — the binary monomorphizes it
+//! (no trait objects, no stub backend — the binary monomorphizes it
 //! over the DB-backed `EhrbaseService`, the tests over a mock). It is cheap to
 //! clone (an `Arc` inside) and carries the configuration, the service `S` the
 //! dispatcher calls into, the optional authorization handle, and the

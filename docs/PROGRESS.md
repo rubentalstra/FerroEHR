@@ -56,7 +56,7 @@ partially superseded. Phase files 10/16/19 re-scoped.
 
 The linear P17–P20 roadmap was overtaken by the blueprint build order (B1–B8)
 below, which drove the ECC conformance instrument to full green. P17/P18 work
-landed inside that arc; **P19 conformance is met**; P20 optimization and P99
+landed inside that arc; **P19 conformance is met**; P20 optimization
 cutover remain, alongside the documentation-website initiative.
 
 ## SM track (ADR-010/011) — DONE
@@ -119,7 +119,9 @@ Spec-grounded enterprise features from the B8 roadmap; each closed with ECC
   ECC run against upstream, benchmark overhaul, measured numbers only
   (plan drafted, awaiting owner review — `docs/plans/x1-comparison.md`).
 - **P20 optimization** — PG18 AIO tuning, hot-read pipelining, `JSON_TABLE` codegen.
-- **P99 cutover** — final docs pass; the release machinery is already in place (v3.0.0 shipped as pre-release).
+- ~~P99 cutover~~ — removed 2026-07-12 (owner ruling): the release machinery
+  already shipped with v3.0.0; releases are cut from the changelog whenever
+  ready, no dedicated phase needed.
 
 **Stage 2** capabilities (RBAC/attribute authz via the `ehrbase-rest::access`
 module, multi-tenancy, plugin system) largely landed early through the E-arc;

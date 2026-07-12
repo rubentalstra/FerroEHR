@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `DV_IDENTIFIER`.
+//! Hand-written RM class invariant for `DV_IDENTIFIER`.
 //!
 //! `Id_valid` (archie `DvIdentifier`, `nullOrNotEmpty`): `id` must be non-empty.
 

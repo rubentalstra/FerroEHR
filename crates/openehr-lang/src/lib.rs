@@ -1,6 +1,6 @@
 //! openEHR LANG: the BMM / P_BMM object model, generated from the BMM meta-model. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the runtime ODIN and EL parsers are future hand-written work (P8/P9).
 //!
-//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
 
 #![allow(

@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_result::BmmResult;
 use serde::Serialize;
 
 /// Meta-type for writable variables, including the special variable `Result`.
-/// Closed subtype set of `BMM_WRITABLE_VARIABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_WRITABLE_VARIABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmWritableVariable {

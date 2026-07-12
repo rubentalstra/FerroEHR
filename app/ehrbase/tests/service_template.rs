@@ -93,7 +93,7 @@ async fn template_upload_list_get_roundtrip() {
     );
 
     // Retrieve returns the stored OPT XML verbatim.
-    // PORT NOTE (ADR-011): the SM `I_DEFINITION_ADL14::get_opt` is UUID-keyed
+    // PORT NOTE: the SM `I_DEFINITION_ADL14::get_opt` is UUID-keyed
     // (OPTs are stored UUID-keyed; `list_matching_opts` still matches on
     // `template_id`), and returns the OPT XML as a `String` (the old generated
     // `DefinitionApi::..get` was template_id-keyed and returned a JSON-string
@@ -156,7 +156,7 @@ async fn template_upload_list_get_roundtrip() {
 async fn get_unknown_template_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_missing").await);
-    // PORT NOTE (ADR-011): `get_opt` is UUID-keyed at the SM seam, so an unknown
+    // PORT NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown
     // OPT is expressed as an absent (well-formed) uuid → 404
     // (`versioned_object_does_not_exist`); the template_id → uuid resolution the
     // old template_id-keyed GET did is now an adapter concern.

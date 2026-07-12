@@ -12,7 +12,7 @@
 //! ITS-REST 1.0.3 defines **no** terminology contract, so this surface is our
 //! own, exposed under the server's extension namespace (`/terminology`), spec-
 //! first from the SM call semantics and excluded from the ITS-REST drift check.
-//! If/when openEHR publishes a contract, `emit-rest` takes over (ADR-005) and
+//! If/when openEHR publishes a contract, `emit-rest` takes over and
 //! these routes migrate.
 //!
 //! PORT NOTE (mount path, §7): §7 names the namespace `/rest/terminology`; in
@@ -47,7 +47,7 @@ use ehrbase_sm::Platform;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-/// The terminology extension routes — our own design (no ITS-REST contract;
+/// The terminology extension routes — our own extension (no ITS-REST contract;
 /// §7), mounted alongside the generated `ROUTES` and served by [`dispatch`].
 /// Group-relative paths (nested under the configured `base_path`).
 pub(crate) const TERMINOLOGY_ROUTES: &[(&str, &str, &str)] = &[

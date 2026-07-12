@@ -8,7 +8,7 @@
 //! §4.3.
 //!
 //! Export walks the greenfield storage (`ehr` + the versioned-object tables,
-//! ADR-008) and writes a **canonical-JSON archive** to a file-system directory,
+//! by design) and writes a **canonical-JSON archive** to a file-system directory,
 //! split into segment files no larger than `segment_split_size` kb. Each EHR is
 //! one record carrying its `ehr` row, its audit/contribution provenance, and one
 //! entry per stored version whose `body` is the *reassembled canonical openEHR
@@ -65,7 +65,7 @@ struct Manifest {
     /// Segment file names, in order.
     segments: Vec<String>,
     /// Externalized `DV_MULTIMEDIA` blob keys carried in the `blobs/` subdir
-    /// (ADR-017). Empty (and defaulted for pre-blob archives) when
+    ///. Empty (and defaulted for pre-blob archives) when
     /// externalization is off or no version references external media.
     #[serde(default)]
     blobs: Vec<String>,
@@ -185,7 +185,7 @@ impl EhrbaseService {
     /// EHR was dumped successfully (the report carries only failures).
     ///
     /// PORT NOTE (formats): only `openehr_canonical_json` and no compression are
-    /// supported this wave — the storage is verbatim canonical JSON (ADR-008),
+    /// supported this wave — the storage is verbatim canonical JSON,
     /// so JSON export is translation-free, whereas XML would re-serialize via
     /// `openehr-its` and 7z/zip would add a dependency for an ops-only nicety.
     /// A requested `openehr_canonical_xml` or a non-`None` compression format is
@@ -241,7 +241,7 @@ impl EhrbaseService {
             segment_names.push(name);
         }
 
-        // ADR-017: carry every externalized DV_MULTIMEDIA blob the exported
+        // Our own extension: carry every externalized DV_MULTIMEDIA blob the exported
         // versions reference into a `blobs/<hex>` subdir, so a load into an
         // empty target re-populates the object store.
         let blob_keys = self.export_referenced_blobs(dir, &records).await?;
@@ -277,7 +277,7 @@ impl EhrbaseService {
         let manifest: Manifest =
             serde_json::from_slice(&manifest_bytes).map_err(ServiceError::from)?;
 
-        // ADR-017: re-populate the object store from the archive's `blobs/`
+        // Our own extension: re-populate the object store from the archive's `blobs/`
         // subdir before loading versions that reference them.
         self.import_blobs(dir, &manifest.blobs).await?;
 
@@ -308,7 +308,7 @@ impl EhrbaseService {
 
     /// Fetch every externalized `DV_MULTIMEDIA` blob referenced by the exported
     /// records into a `blobs/<hex>` subdir, returning the blob keys written
-    /// (empty when externalization is off). ADR-017.
+    /// (empty when externalization is off). Our own extension — no openEHR spec governs multimedia offload.
     async fn export_referenced_blobs(
         &self,
         dir: &Path,
@@ -343,7 +343,7 @@ impl EhrbaseService {
 
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
     /// (idempotent, content-addressed). A no-op when externalization is off or
-    /// the archive carries no blobs. ADR-017.
+    /// the archive carries no blobs — the multimedia-offload extension's own format.
     async fn import_blobs(&self, dir: &Path, blobs: &[String]) -> Result<(), SmError> {
         if blobs.is_empty() {
             return Ok(());

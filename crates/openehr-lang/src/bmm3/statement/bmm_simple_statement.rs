@@ -7,7 +7,7 @@ use crate::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
 use serde::Serialize;
 
 /// Simple statement, i.e. statement with one logical element - a single expression, procedure call etc.
-/// Closed subtype set of `BMM_SIMPLE_STATEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_SIMPLE_STATEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmSimpleStatement {

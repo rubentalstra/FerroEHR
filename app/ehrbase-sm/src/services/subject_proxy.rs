@@ -1,6 +1,6 @@
 //! The SM Subject Proxy Service — `I_SUBJECT_PROXY_SERVICE` + the internal
 //! `I_DATA_BINDING` interface and their information structures, transcribed
-//! literally from the vendored spec (ADR-011).
+//! literally from the vendored spec.
 //!
 //! Spec sources
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master10-subject_proxy_service.adoc`
@@ -49,7 +49,7 @@ use crate::error::SmError;
 
 /// `VARIABLE_VALUE` — "Abstract parent of variable value structures"
 /// (`variable_value.adoc`). Its three concrete descendants form a closed subtype
-/// set, so this is an idiomatic Rust enum (ADR-004 closed-subtype rule) rather
+/// set, so this is an idiomatic Rust enum (the codegen closed-subtype rule) rather
 /// than a trait; the payloads are `Any`, carried as canonical JSON [`Value`]s.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "_type")]
@@ -134,7 +134,7 @@ impl<T> Sample<T> {
 /// The payload of a [`DataFrameSample`]: the closed set of the three concrete
 /// `DATA_FRAME_SAMPLE` descendants the spec defines
 /// (`openehr_sample.adoc` / `hl7v2_sample.adoc` / `hl7_fhir_sample.adoc`).
-/// Modelling the descendants as an enum variant on the payload is ADR-004's
+/// Modelling the descendants as an enum variant on the payload is the codegen's
 /// closed-subtype treatment.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "_type")]
@@ -382,7 +382,7 @@ pub struct EnvBinding {
 /// with subject variables" (`i_subject_proxy_service.adoc`). One Rust method per
 /// SM call, verbatim call names/parameters/pre-conditions.
 ///
-/// No default method bodies (ADR-011 compile-time completeness): a backend that
+/// No default method bodies (compile-time completeness by design): a backend that
 /// does not implement a call is a build error, not a silent runtime stub.
 #[async_trait]
 pub trait SubjectProxyService: Send + Sync {

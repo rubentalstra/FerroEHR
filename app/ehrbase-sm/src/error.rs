@@ -14,9 +14,9 @@
 //!
 //! The single SM → HTTP table lives with the protocol adapter
 //! (`ehrbase-rest::error::sm_api_error`, `docs/design/sm-platform/
-//! 08-target-architecture.md` §5) — ADR-011: this crate is protocol-free and
+//! 08-target-architecture.md` §5): this crate is protocol-free and
 //! carries **no** ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC
-//! schedule remain the wire oracle (ADR-010): where the SM name and the wire
+//! schedule remain the wire oracle: where the SM name and the wire
 //! disagree, the wire's status code wins in that adapter table.
 
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
@@ -37,7 +37,7 @@
 /// forward-compatibility — it would only force wildcard match arms in the
 /// protocol adapter's SM → HTTP table (`ehrbase-rest::error::sm_api_error`)
 /// that silently swallow any future unmapped status. Leaving it exhaustive lets
-/// the compiler flag a missing SM → HTTP row when a variant is added (ADR-011
+/// the compiler flag a missing SM → HTTP row when a variant is added (a
 /// compile-time completeness).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CallStatusType {

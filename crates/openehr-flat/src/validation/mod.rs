@@ -486,17 +486,17 @@ impl Validator {
         self.check_closure(instance, wt);
     }
 
-    /// Closed-archetype walk (ADR-012, F-07-05 + F-07-10). Under each constrained
+    /// Closed-archetype walk (F-07-05 + F-07-10). Under each constrained
     /// attribute this node records (an attribute with fixed archetype-node
     /// alternatives and/or open `ARCHETYPE_SLOT`s), an instance child bearing an
     /// `archetype_node_id` (i.e. a LOCATABLE — the archetyped-content
     /// discriminator; no RM metadata value carries one) must match a fixed
     /// sibling identity **or** an open slot; any other archetyped child is an
     /// "unexpected node". RM-permitted unconstrained metadata attributes and
-    /// wholly-unconstrained attributes are never recorded, so stay open (ADR-012
+    /// wholly-unconstrained attributes are never recorded, so stay open (closed-world capture
     /// rule 2). A rejected node is not descended into (the walk already skips it).
     ///
-    /// PORT NOTE (ADR-012): AOM 1.4 `valid_value`
+    /// PORT NOTE: AOM 1.4 `valid_value`
     /// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
@@ -525,7 +525,7 @@ impl Validator {
                     if ca.allowed_ids.iter().any(|a| a == nid) {
                         continue; // Matches a fixed sibling alternative.
                     }
-                    // PORT NOTE (ADR-012 rule 4): an unmatched *archetype-rooted*
+                    // PORT NOTE (the closed-world admission rule): an unmatched *archetype-rooted*
                     // child (`openEHR-…` id) is tolerated when the attribute
                     // carries no ARCHETYPE_SLOT constraint — OPT 1.4 flattening
                     // does not enumerate the full slot-fill universe, and the

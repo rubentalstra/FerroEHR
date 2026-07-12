@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_QUANTITY`.
+//! Hand-written RM class invariants for `DV_QUANTITY`.
 //!
 //! `DV_QUANTITY` declares no own invariants; it inherits the DV_AMOUNT
 //! (`Accuracy_is_percent_validity`, `Accuracy_valid`) and DV_QUANTIFIED

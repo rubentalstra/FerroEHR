@@ -5,7 +5,7 @@ use crate::data_structures::representation::element::Element;
 use serde::Serialize;
 
 /// The abstract parent of `CLUSTER` and `ELEMENT` representation classes.
-/// Closed subtype set of `ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Item {

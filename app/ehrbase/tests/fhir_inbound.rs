@@ -1,6 +1,6 @@
 //! End-to-end inbound FHIR connector tests against a real `PostgreSQL` 18
 //! (testcontainers), driven through the assembled `ehrbase-rest` router over the
-//! real DB-backed `EhrbaseService` (ADR-016 / E3).
+//! real DB-backed `EhrbaseService` (our own extension — no openEHR spec governs this; E3).
 //!
 //! Covers: a valid FHIR Observation → `201`, committed through the NORMAL
 //! validated path and **readable via the openEHR surface with `FEEDER_AUDIT`
@@ -219,7 +219,7 @@ async fn valid_resource_commits_and_is_readable_with_feeder_audit() {
     );
 
     // Read it back through the openEHR surface: FEEDER_AUDIT must be present with
-    // the fhir-connector provenance (ADR-016 §Decision 3), and the mapped value.
+    // the fhir-connector provenance, and the mapped value.
     let (status, _, comp) = send(&router, req("GET", &location, None)).await;
     assert_eq!(status, StatusCode::OK, "composition readable: {comp}");
     let feeder = &comp["feeder_audit"];

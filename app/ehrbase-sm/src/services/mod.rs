@@ -1,5 +1,5 @@
 //! The openEHR SM Platform Service Model interfaces, one Rust trait per
-//! interface, transcribed literally (ADR-011): each trait carries its
+//! interface, transcribed literally: each trait carries its
 //! interface's exact SM call names, parameter names and types, spec returns,
 //! and pre/post-conditions (in the per-method doc-comments). Native errors are
 //! [`SmError`](crate::error::SmError) over `CALL_STATUS_TYPE` — **no** ITS-REST

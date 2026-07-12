@@ -8,7 +8,7 @@
 //! UNKNOWN), and a suppressed login event; plus the fail-open drop and
 //! fail-closed 503.
 //!
-//! ADR-011: the audit emitter now lives in the platform's SM `SystemLog` (not
+//! Crate layout: the audit emitter now lives in the platform's SM `SystemLog` (not
 //! router state), so the app carries an in-memory [`AuditSink`] on the mock
 //! backend. The DICOM `AuditMessage` rendering + the syslog transport +
 //! queue-fail modes are covered by `ehrbase::system_log`'s own tests; here we
@@ -105,7 +105,7 @@ fn rest_config() -> RestConfig {
 }
 
 /// Build the app with an in-memory audit sink on the backend's SM `SystemLog`
-/// (ADR-011). `build_with` installs authentication from `rest_config()`.
+///. `build_with` installs authentication from `rest_config()`.
 fn app(sink: AuditSink) -> Router {
     let mut h = hooks();
     h.audit = Some(sink);

@@ -1,4 +1,4 @@
-//! One shared mock [`Platform`] for the `ehrbase-rest` router tests (ADR-011).
+//! One shared mock [`Platform`] for the `ehrbase-rest` router tests.
 //!
 //! The SM catalog has no default bodies on the EHR-core services or the two
 //! ITS-REST adapters (`VersionMetaAdapter`, `ItemTagAdapter`) — a real
@@ -94,7 +94,7 @@ type PartyMeta =
 type RelCreate = Arc<dyn Fn(Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
 type RelGet = Arc<dyn Fn(String, Option<String>) -> Result<ServiceResponse, SmError> + Send + Sync>;
 
-// DEFINITION wire-op hooks — all native (SmError), matching the post-ADR-011
+// DEFINITION wire-op hooks — all native (SmError), matching the post
 // dispatch: OPT retrieval via the SM `get_opt` seam; list/upload/example/query
 // via the wire-shaped `DefinitionAdapter`.
 type GetOpt = Arc<dyn Fn(String) -> Result<String, SmError> + Send + Sync>;
@@ -120,14 +120,14 @@ type ValueSetValidate =
     Arc<dyn Fn(String, String, String, Option<String>) -> Result<bool, SmError> + Send + Sync>;
 type GetValueSet = Arc<dyn Fn(String, String) -> Result<TerminologyExtract, SmError> + Send + Sync>;
 
-// Event-subscription admin extension (ADR-014 §5; EventSubscriptionAdapter).
+// Event-subscription admin extension.
 type EventSubList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
 type EventSubCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
 type EventSubGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
 type EventSubUpdate = Arc<dyn Fn(Uuid, Value) -> Result<Value, SmError> + Send + Sync>;
 type EventSubDelete = Arc<dyn Fn(Uuid) -> Result<(), SmError> + Send + Sync>;
 
-// FHIR connector (ADR-016; FhirConnectorAdapter).
+// FHIR connector extension (FhirConnectorAdapter).
 type FhirMappingList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
 type FhirMappingCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
 type FhirMappingGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
@@ -137,7 +137,7 @@ type FhirIngest =
     Arc<dyn Fn(String, Option<String>, Value) -> Result<ServiceResponse, SmError> + Send + Sync>;
 type FhirSearch = Arc<dyn Fn(String, String, Option<i64>) -> Result<Value, SmError> + Send + Sync>;
 
-// Tenant admin extension (ADR-015 §5; TenantAdapter).
+// Tenant admin extension.
 type TenantList = Arc<dyn Fn() -> Result<Vec<Value>, SmError> + Send + Sync>;
 type TenantCreate = Arc<dyn Fn(Value) -> Result<Value, SmError> + Send + Sync>;
 type TenantGet = Arc<dyn Fn(Uuid) -> Result<Value, SmError> + Send + Sync>;
@@ -203,13 +203,13 @@ pub struct Hooks {
     pub subsumes: Option<Subsumes>,
     pub value_set_validate: Option<ValueSetValidate>,
     pub get_value_set: Option<GetValueSet>,
-    // Event-subscription admin extension (ADR-014 §5).
+    // Event-subscription admin extension.
     pub event_subscription_list: Option<EventSubList>,
     pub event_subscription_create: Option<EventSubCreate>,
     pub event_subscription_get: Option<EventSubGet>,
     pub event_subscription_update: Option<EventSubUpdate>,
     pub event_subscription_delete: Option<EventSubDelete>,
-    // FHIR connector (ADR-016).
+    // FHIR connector.
     pub fhir_mapping_list: Option<FhirMappingList>,
     pub fhir_mapping_create: Option<FhirMappingCreate>,
     pub fhir_mapping_get: Option<FhirMappingGet>,
@@ -217,7 +217,7 @@ pub struct Hooks {
     pub fhir_mapping_delete: Option<FhirMappingDelete>,
     pub fhir_ingest: Option<FhirIngest>,
     pub fhir_search: Option<FhirSearch>,
-    // Tenant admin extension (ADR-015 §5).
+    // Tenant admin extension.
     pub tenant_list: Option<TenantList>,
     pub tenant_create: Option<TenantCreate>,
     pub tenant_get: Option<TenantGet>,
@@ -228,7 +228,7 @@ pub struct Hooks {
     // `SystemLog::emit` records every event (so a test can assert the ATNA
     // event a request produced); `audit_enabled()` is then true. Replaces the
     // old router-state `AuditSender` — the real syslog transport is tested in
-    // `ehrbase::system_log` (the emitter now lives in the backend, ADR-011).
+    // `ehrbase::system_log` (the emitter now lives in the backend).
     pub audit: Option<AuditSink>,
 }
 
@@ -634,7 +634,7 @@ impl ContributionAdapter for Mock {
     }
 }
 
-// The multimedia-expansion adapter (ADR-017) uses its default no-op passthrough
+// The multimedia-expansion adapter uses its default no-op passthrough
 // in tests: the mock backend stores nothing externally, so `?expand_multimedia`
 // is a no-op — the empty impl satisfies the `Platform` bound.
 #[async_trait]
@@ -904,7 +904,7 @@ impl PartyRelationshipService for Mock {
 
 impl EhrIndexService for Mock {}
 
-// ── definition (SM I_DEFINITION_* + wire-shaped DefinitionAdapter; ADR-011) ───
+// ── definition (SM I_DEFINITION_* + wire-shaped DefinitionAdapter) ───────────
 
 // OPT 1.4 retrieval is the SM `get_opt` seam (the dispatcher's adl1.4 GET);
 // other SM `I_DEFINITION_ADL14` calls keep the trait defaults (501).

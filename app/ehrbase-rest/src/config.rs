@@ -34,26 +34,26 @@ pub struct RestConfig {
     /// default — the terminology routes answer `404` unless enabled.
     #[serde(default)]
     pub terminology: TerminologyConfig,
-    /// Event-subscription admin extension API (ADR-014 §5). Disabled by
+    /// Event-subscription admin extension API. Disabled by
     /// default — the routes answer `404` unless enabled.
     #[serde(default)]
     pub event_subscription: EventSubscriptionConfig,
-    /// Multi-tenancy (ADR-015). Disabled by default — no tenant-resolution
+    /// Multi-tenancy. Disabled by default — no tenant-resolution
     /// middleware, no per-request `SET ehrbase.tenant_id`, and the
     /// `/admin/tenant` routes answer `404`; behaviour is byte-identical to
     /// single-tenant.
     #[serde(default)]
     pub tenancy: TenancyConfig,
-    /// FHIR R4 connector (ADR-016). Disabled by default — the `/fhir/r4/*`
+    /// FHIR R4 connector. Disabled by default — the `/fhir/r4/*`
     /// inbound routes and the `/admin/fhir_mapping` CRUD answer `404` unless
     /// enabled.
     #[serde(default)]
     pub fhir: FhirConfig,
 }
 
-/// Multi-tenancy configuration (ADR-015 §3/§4).
+/// Multi-tenancy configuration.
 ///
-/// Tenancy is OFF by default (ADR-015 §3): with `enabled = false` the tenant
+/// Tenancy is OFF by default: with `enabled = false` the tenant
 /// middleware is never installed, the pool takes no per-acquire hook, and the
 /// `/admin/tenant` CRUD answers `404` — a single-tenant deployment is unchanged.
 /// When on, each request's tenant is resolved from `claim` (a JWT-claim path;
@@ -116,8 +116,9 @@ pub struct TerminologyConfig {
     pub enabled: bool,
 }
 
-/// Configuration of the event-subscription admin extension API group (ADR-014
-/// §5, "Event Trigger" parity — CRUD over the event-filter subscription store).
+/// Configuration of the event-subscription admin extension API group — CRUD
+/// over the event-filter subscription store (an "Event Trigger"-style extension;
+/// no openEHR spec governs eventing).
 ///
 /// PORT NOTE: like the ADMIN + terminology groups, the surface is opt-in — when
 /// inactive every `/admin/event_subscription` route answers `404` (as if
@@ -131,13 +132,13 @@ pub struct EventSubscriptionConfig {
     pub enabled: bool,
 }
 
-/// Configuration of the FHIR R4 connector (ADR-016 — connectors + read façade,
-/// NOT a full FHIR server).
+/// Configuration of the FHIR R4 connector extension (connectors + read façade,
+/// NOT a full FHIR server; no openEHR spec governs FHIR interop).
 ///
 /// PORT NOTE: like the ADMIN + terminology + event-subscription groups, the FHIR
 /// surface is opt-in — when inactive every `/fhir/r4/*` + `/admin/fhir_mapping`
 /// route answers `404` (as if unmounted), never a `403`. Off by default so a
-/// stock server exposes only the standardised ITS-REST surface (ADR-016
+/// stock server exposes only the standardised ITS-REST surface (the connector is
 /// §Consequences: feature/config-gated, off by default).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FhirConfig {
@@ -233,9 +234,9 @@ mod tests {
         assert!(!c.terminology.enabled);
         // The event-subscription extension API is opt-in too.
         assert!(!c.event_subscription.enabled);
-        // The FHIR connector is opt-in too (ADR-016).
+        // The FHIR connector is opt-in too.
         assert!(!c.fhir.enabled);
-        // Multi-tenancy is off by default (ADR-015 §3); the claim defaults to `tenant`.
+        // Multi-tenancy is off by default; the claim defaults to `tenant`.
         assert!(!c.tenancy.enabled);
         assert_eq!(c.tenancy.claim, "tenant");
         assert!(c.tenancy.header.is_none());

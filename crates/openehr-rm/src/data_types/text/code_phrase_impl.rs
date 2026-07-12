@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `CODE_PHRASE`.
+//! Hand-written RM class invariant for `CODE_PHRASE`.
 //!
 //! `Code_string_valid` (archie `CodePhrase`, `nullOrNotEmpty`): the code string
 //! must be non-empty.

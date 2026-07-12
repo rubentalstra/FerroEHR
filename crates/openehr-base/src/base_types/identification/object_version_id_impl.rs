@@ -1,4 +1,4 @@
-//! Hand-written accessor functions + lexical invariant (ADR-003) for
+//! Hand-written accessor functions + lexical invariant for
 //! `OBJECT_VERSION_ID`.
 //!
 //! Spec: BASE 1.3.0

@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `PARTY_RELATED`.
+//! Hand-written RM class invariants for `PARTY_RELATED`.
 //!
 //! `PARTY_RELATED` extends `PARTY_IDENTIFIED` and so inherits `Basic_validity`
 //! and `Name_valid`.

@@ -7,7 +7,7 @@ use crate::data_types::quantity::dv_quantity::DvQuantity;
 use serde::Serialize;
 
 /// Abstract class defining the concept of relative quantified  'amounts'. For relative quantities, the  `+` and  `-` operators are defined (unlike descendants of `DV_ABSOLUTE_QUANTITY`, such as the date/time types).
-/// Closed subtype set of `DV_AMOUNT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_AMOUNT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvAmount {

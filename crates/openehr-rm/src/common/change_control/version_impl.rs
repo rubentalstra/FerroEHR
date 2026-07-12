@@ -1,4 +1,4 @@
-//! Hand-written RM spec function `VERSION.canonical_form()` (ADR-003/ADR-004).
+//! Hand-written RM spec function `VERSION.canonical_form()` (hand-written spec behaviour).
 //!
 //! Spec authority:
 //! - RM common §"Digital Signature"

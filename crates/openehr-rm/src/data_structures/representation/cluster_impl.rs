@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `CLUSTER`.
+//! Hand-written RM class invariant for `CLUSTER`.
 //!
 //! Only the inherited LOCATABLE `Archetype_node_id_valid`.
 //!

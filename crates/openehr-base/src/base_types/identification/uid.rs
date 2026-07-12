@@ -6,7 +6,7 @@ use crate::base_types::identification::uuid::Uuid;
 use serde::Serialize;
 
 /// Abstract parent of classes representing unique identifiers which identify information entities in a durable way. UIDs only ever identify one IE in time or space and are never re-used.
-/// Closed subtype set of `UID` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `UID`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Uid {

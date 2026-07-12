@@ -6,7 +6,7 @@ pub mod dv_duration;
 pub mod dv_temporal;
 pub mod dv_time;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod dv_date_impl;
 pub mod dv_date_time_impl;
 pub mod dv_duration_impl;

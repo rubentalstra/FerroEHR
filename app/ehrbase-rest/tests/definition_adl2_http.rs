@@ -27,7 +27,7 @@ const HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
 const SOURCE: &str = "operational_template (adl_version=2.0.6)\n\
     openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n";
 
-/// The ADL2 wire hooks (all SM-native → `SmError`, ADR-011): upload echoes the
+/// The ADL2 wire hooks (all SM-native → `SmError`): upload echoes the
 /// stored HRID, list returns one metadata object, and `get_artefact` serves the
 /// source or `404`.
 fn hooks() -> Hooks {

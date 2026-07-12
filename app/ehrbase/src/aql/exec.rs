@@ -1,4 +1,4 @@
-//! AQL execution + `RESULT_SET` assembly (ADR-008, P16).
+//! AQL execution + `RESULT_SET` assembly (our own engine, P16).
 //!
 //! [`execute`] plans-to-SQL ([`super::sql::build`]), runs the one statement on
 //! the `sqlx` pool, and assembles a [`QueryResult`] (column metadata + canonical

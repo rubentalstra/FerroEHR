@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
 use serde::Serialize;
 
 /// Meta-type for static (i.e. read-only) properties.
-/// Closed subtype set of `BMM_STATIC` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_STATIC`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmStatic {

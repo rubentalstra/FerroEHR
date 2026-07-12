@@ -432,7 +432,7 @@ impl EhrbaseService {
     /// (RM ehr `EHR_STATUS.is_modifiable`, 1..1 Boolean). `is_modifiable` is a
     /// scalar attribute of `EHR_STATUS`, so it lives inline in the `EHR_STATUS`
     /// **root** node's verbatim canonical `data` fragment (`num = 0`; children
-    /// are pruned but scalars stay — ADR-008 §2), the same access the AQL
+    /// are pruned but scalars stay), the same access the AQL
     /// `is_queryable` population filter uses (`aql/sql.rs`). An EHR with no
     /// current `EHR_STATUS` (should not occur — every EHR is created with one)
     /// is treated as modifiable, so the guard never spuriously blocks.
@@ -487,10 +487,10 @@ impl EhrbaseService {
     /// storage — never re-derived from the live config — so a version's uid and
     /// digital signature stay stable across a later `with_system_id` change (RM
     /// common master06 §"Distributed Versioning"). The service writes the real
-    /// creating system id on every version (ADR-013 §8 — no `''` sentinel).
+    /// creating system id on every version.
     // Kept as a method (not a free fn) for call-site ergonomics — every caller
     // already holds the service; the stored `creating_system_id` is now
-    // authoritative, so no `self` state is consulted (ADR-013 §8).
+    // authoritative, so no `self` state is consulted.
     #[allow(clippy::unused_self)]
     pub(super) fn object_version_id(
         &self,
@@ -994,7 +994,7 @@ mod tests {
     /// `001_ehr_status_subject_empty.json` (`subject: {}`) is labelled "invalid"
     /// by the corpus but is **spec-valid**: RM ehr master04 §EHR Status makes an
     /// empty `PARTY_SELF` a *completely anonymous* subject. Per the vendored spec
-    /// oracle (the authority, ADR-008) this is a corpus mislabelling, handled here
+    /// oracle (the authority) this is a corpus mislabelling, handled here
     /// as a documented adjudication (the fixture is asserted *accepted*, not
     /// silently skipped). See `docs/conformance/upstream-ehrbase/TRIAGE.md` §B2.
     /// The other ten fixtures stay asserted-rejected.

@@ -6,7 +6,7 @@ use crate::data_types::quantity::date_time::dv_time::DvTime;
 use serde::Serialize;
 
 /// Abstract class defining the concept of quantified entities whose values are absolute with respect to an origin. Dates and Times are the main example.
-/// Closed subtype set of `DV_ABSOLUTE_QUANTITY` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_ABSOLUTE_QUANTITY`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvAbsoluteQuantity {

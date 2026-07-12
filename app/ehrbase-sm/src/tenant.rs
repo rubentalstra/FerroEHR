@@ -1,6 +1,6 @@
-//! Multi-tenancy request context (ADR-015 / E2).
+//! Multi-tenancy request context (our own extension — no openEHR spec governs this; E2).
 //!
-//! A tenant is one logical openEHR system with its own `system_id` (ADR-015 §1).
+//! A tenant is one logical openEHR system with its own `system_id`.
 //! This module carries the *resolved* tenant of the in-flight request through a
 //! task-local, mirroring exactly how `ehrbase-rest` carries the authenticated
 //! principal (`REQUEST_PRINCIPAL`): the tenant-resolution middleware opens a
@@ -8,12 +8,12 @@
 //! through a trait signature:
 //!
 //!   * the application's connection pool issues `SET ehrbase.tenant_id` from it
-//!     on every acquired connection (so `PostgreSQL` RLS scopes reads AND writes —
-//!     ADR-015 §2/§4), and
+//!     on every acquired connection (so `PostgreSQL` RLS scopes reads AND
+//!     writes), and
 //!   * the service reads the tenant's `system_id` for per-tenant version
-//!     identity / audits / `EHR.system_id` (ADR-015 §1).
+//!     identity / audits / `EHR.system_id`.
 //!
-//! Tenancy is OFF by default (ADR-015 §3): the middleware is never installed,
+//! Tenancy is OFF by default: the middleware is never installed,
 //! the task-local is never set, [`current`] returns `None`, and behaviour is
 //! byte-identical to pre-tenancy.
 
@@ -22,13 +22,13 @@ use std::future::Future;
 use uuid::Uuid;
 
 /// The resolved tenant of the current request: its id (the RLS scope key) and
-/// its own logical-system id (ADR-015 §1).
+/// its own logical-system id.
 #[derive(Debug, Clone)]
 pub struct TenantContext {
     /// The tenant's uuid — the value stamped into `ehrbase.tenant_id` and matched
     /// by the RLS `tenant_isolation` policy.
     pub tenant_id: Uuid,
-    /// The tenant's own logical openEHR `system_id` (ADR-015 §1).
+    /// The tenant's own logical openEHR `system_id`.
     pub system_id: String,
 }
 

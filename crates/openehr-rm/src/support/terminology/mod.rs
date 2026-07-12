@@ -6,6 +6,6 @@ pub mod openehr_terminology_group_identifiers;
 pub mod terminology_access;
 pub mod terminology_service;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod openehr_code_set_identifiers_impl;
 pub mod openehr_terminology_group_identifiers_impl;

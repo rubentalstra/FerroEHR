@@ -5,7 +5,7 @@ use crate::base_types::identification::object_version_id::ObjectVersionId;
 use serde::Serialize;
 
 /// Abstract model of UID-based identifiers consisting of a root part and an optional extension; lexical form: `root '::' extension`.
-/// Closed subtype set of `UID_BASED_ID` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `UID_BASED_ID`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum UidBasedId {

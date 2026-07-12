@@ -11,7 +11,7 @@ use crate::am14::aom14::archetype::primitive::c_time::CTime;
 use serde::Serialize;
 
 /// Parent of types representing constraints on primitive types.
-/// Closed subtype set of `C_PRIMITIVE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_PRIMITIVE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CPrimitive {

@@ -143,7 +143,7 @@ async fn composition_validation_gates_persistence() {
     let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // ── valid composition → committed and retrievable ────────────────────────
-    // PORT NOTE (ADR-011): `create_composition` returns the new version_uid.
+    // PORT NOTE: `create_composition` returns the new version_uid.
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
@@ -169,7 +169,7 @@ async fn composition_validation_gates_persistence() {
         .create_composition(ehr_uuid, uv(composition("ips_invalid.json"), "249", None))
         .await
         .expect_err("invalid composition rejected");
-    // PORT NOTE (ADR-011): the SM boundary flattens `ServiceError::ValidationFailed`
+    // PORT NOTE: the SM boundary flattens `ServiceError::ValidationFailed`
     // to `SmError { status: ContentInvalid, message }`, the per-path violations
     // joined into `message` ("path: msg; …"). The structured per-path list is now
     // built at the protocol adapter's 422 body (`ehrbase-rest`); here we assert the
@@ -204,7 +204,7 @@ async fn composition_validation_gates_persistence() {
         .create_composition(ehr_uuid, uv(unknown, "249", None))
         .await
         .expect_err("unknown template rejected");
-    // PORT NOTE (ADR-011): `ServiceError::Unprocessable` → `ContentInvalid`; the
+    // PORT NOTE: `ServiceError::Unprocessable` → `ContentInvalid`; the
     // cause still rides in the message.
     assert!(
         matches!(
@@ -258,7 +258,7 @@ async fn composition_update_is_validated() {
         )
         .await
         .expect_err("invalid update rejected");
-    // PORT NOTE (ADR-011): ValidationFailed → `ContentInvalid` with the violations
+    // PORT NOTE: ValidationFailed → `ContentInvalid` with the violations
     // in `message`.
     assert!(
         matches!(

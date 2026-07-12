@@ -2,7 +2,7 @@
 //! the SM catalog's native argument types (`uuid::Uuid`,
 //! [`ObjectVersionId`](openehr_base::prelude::ObjectVersionId)).
 //!
-//! The SM native API is protocol-free (ADR-011): the catalog takes RM/BASE
+//! The SM native API is protocol-free: the catalog takes RM/BASE
 //! identifier types, not raw wire strings. Turning a path parameter such as
 //! `{ehr_id}` or `{version_uid}` into those types is the protocol adapter's
 //! decode job — it lives here, at the ITS-REST edge, and every malformed value

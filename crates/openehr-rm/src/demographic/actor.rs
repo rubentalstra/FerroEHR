@@ -7,7 +7,7 @@ use crate::demographic::person::Person;
 use serde::Serialize;
 
 /// Ancestor of all real-world types, including people and organisations. An actor is any real-world entity capable of taking on a role.
-/// Closed subtype set of `ACTOR` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `ACTOR`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Actor {

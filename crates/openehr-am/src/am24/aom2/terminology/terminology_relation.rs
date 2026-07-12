@@ -4,7 +4,7 @@ use crate::am24::aom2::terminology::value_set::ValueSet;
 use serde::Serialize;
 
 /// Class whose instances represent any kind of 1:N relationship between a source term and 1-N target terms.
-/// Closed subtype set of `TERMINOLOGY_RELATION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `TERMINOLOGY_RELATION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum TerminologyRelation {

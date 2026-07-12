@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_EHR_URI`.
+//! Hand-written RM class invariants for `DV_EHR_URI`.
 //!
 //! Mirrors archie `DvEHRURI` (which extends `DvURI`):
 //! - `Scheme_valid`: the URI scheme must be `ehr` (case-insensitive).

@@ -1,4 +1,4 @@
-//! Hand-written accessor function (ADR-003) for `LOCATABLE_REF`.
+//! Hand-written accessor function for `LOCATABLE_REF`.
 //!
 //! Spec: BASE 1.3.0
 //! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.locatable_ref.adoc`.

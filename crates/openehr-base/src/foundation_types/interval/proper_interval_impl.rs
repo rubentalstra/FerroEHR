@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariants (ADR-003) for `Proper_interval`.
+//! Hand-written RM/BASE class invariants for `Proper_interval`.
 //!
 //! Mirrors the reference implementation archie's `com.nedap.archie.base.Interval`
 //! invariants; archie reports them under the base type name `INTERVAL`, which we

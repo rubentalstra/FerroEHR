@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `FOLDER`.
+//! Hand-written RM class invariant for `FOLDER`.
 //!
 //! Only the inherited LOCATABLE `Archetype_node_id_valid`. archie's own
 //! `Folder.Folders_valid` is `ignored`.

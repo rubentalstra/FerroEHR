@@ -4,10 +4,11 @@ use sqlx::migrate::Migrator;
 use crate::db::DbError;
 
 /// The `ext` schema: our openEHR support functions (`openehr_magnitude` and
-/// its ISO-8601 helpers, ADR-008). Runs before `ehr`.
+/// its ISO-8601 helpers). Runs before `ehr`.
 static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 
-/// The `ehr` schema — the greenfield PG18-native CDR schema (ADR-008,
+/// The `ehr` schema — the greenfield PG18-native CDR schema (no openEHR spec
+/// governs the physical schema,
 /// spike-validated at P10): the unified per-version `node` table, the
 /// temporal `vo_version` table, and the supporting tables.
 static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");

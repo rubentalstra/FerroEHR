@@ -1,5 +1,5 @@
 //! The shared versioned-object machinery: persist and load COMPOSITION /
-//! `EHR_STATUS` / FOLDER uniformly (ADR-008). All writes run inside a caller-owned
+//! `EHR_STATUS` / FOLDER uniformly. All writes run inside a caller-owned
 //! `sqlx` transaction so a version + its nodes + the contribution + the audit
 //! commit atomically.
 
@@ -21,11 +21,11 @@ use super::versioned::build_original_version;
 /// system id and configured [`Signer`].
 pub(super) struct SigningCtx<'a> {
     /// The effective openEHR `system_id` for this write — the current tenant's
-    /// own id when tenancy is on (ADR-015 §1), else the service default. Owned
+    /// own id when tenancy is on, else the service default. Owned
     /// because it may come from the per-request tenant context, not `&self`.
     pub(super) system_id: String,
     pub(super) signer: &'a Signer,
-    /// The optional `DV_MULTIMEDIA` externalization engine (ADR-017). When set,
+    /// The optional `DV_MULTIMEDIA` externalization engine. When set,
     /// [`apply_change`] offloads large inline `DV_MULTIMEDIA.data` to object
     /// storage before the canonical body is decomposed (and signed), so the
     /// stored/served/signed form is the externalized one. `None` = inline
@@ -43,7 +43,7 @@ pub(super) enum Kind {
     /// (RM ehr §"EHR Access").
     EhrAccess,
     Folder,
-    // Demographic party roots (ADR-008). These are versioned objects with no
+    // Demographic party roots. These are versioned objects with no
     // EHR scope: they use the same `vo_version`/`node` machinery with a NULL
     // `ehr_id`.
     Agent,
@@ -155,14 +155,14 @@ pub(super) struct Committed {
     #[allow(dead_code)]
     pub(super) contribution_id: Uuid,
     /// The versioned-object kind of this write — carried for the event-outbox
-    /// envelope (ADR-014 §2).
+    /// envelope.
     pub(super) kind: Kind,
     /// The numeric `audit_change_type` group code recorded for this version
-    /// (`249`/`251`/`523`/`666`…) — carried for the outbox envelope (ADR-014 §2).
+    /// (`249`/`251`/`523`/`666`…) — carried for the outbox envelope.
     pub(super) change_type: String,
     /// The OPT `template_id` a COMPOSITION was committed against (`None` for
     /// `EHR_STATUS`/FOLDER/deletes/attestations) — carried for the outbox
-    /// envelope + routing key (ADR-014 §2/§5).
+    /// envelope + routing key.
     pub(super) template_id: Option<String>,
 }
 
@@ -187,7 +187,7 @@ impl Committed {
 pub(super) struct VersionRead {
     pub(super) vo_id: Uuid,
     /// The owning EHR, or `None` for a demographic party (no EHR scope —
-    /// ADR-008). EHR-scoped callers compare against `Some(ehr_id)`.
+    /// by design). EHR-scoped callers compare against `Some(ehr_id)`.
     pub(super) ehr_id: Option<Uuid>,
     /// The version's `VERSION_TREE_ID` (the wire version identity).
     pub(super) tree: TreeId,
@@ -648,7 +648,7 @@ async fn apply_change(
                 sync_ehr_subject(&mut *tx, ehr_id, &canonical).await?;
             }
             // Externalize large inline DV_MULTIMEDIA before decompose/sign, so
-            // the stored, served and signed form is the offloaded one (ADR-017).
+            // the stored, served and signed form is the offloaded one.
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)
@@ -735,7 +735,7 @@ async fn apply_change(
             if kind == Kind::Composition {
                 check_versioned_composition_invariants(&mut *tx, vo_id, &canonical).await?;
             }
-            // Externalize large inline DV_MULTIMEDIA before decompose/sign (ADR-017).
+            // Externalize large inline DV_MULTIMEDIA before decompose/sign.
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)
@@ -867,7 +867,7 @@ async fn apply_change(
 
 /// Insert one `ATTESTATION` row for a version (RM common master06 §Change
 /// Control). Stores the completed canonical `ATTESTATION` verbatim in `data`
-/// (ADR-008: no synthetic fields); `vo_attestation.time_committed` takes the
+/// (no synthetic fields by design); `vo_attestation.time_committed` takes the
 /// transaction timestamp (`now()`), which equals the `data.time_committed`
 /// stamped by [`super::contribution::complete_attestation`] with the same
 /// commit-act time.
@@ -1493,7 +1493,7 @@ pub(super) async fn commit_contribution(
         );
     }
     // One PHI-free outbox event for the whole CONTRIBUTION, same transaction
-    // (ADR-014 §1/§2), carrying every committed version + attestation.
+    //, carrying every committed version + attestation.
     let versions = committed.iter().map(Committed::envelope_entry).collect();
     write_outbox(tx, contribution_id, ehr_id, contribution_time, versions).await?;
     Ok((contribution_id, committed))
@@ -1919,7 +1919,7 @@ async fn commit_import_scoped(
         }
     }
     // One PHI-free outbox event for the whole import CONTRIBUTION, same
-    // transaction (ADR-014 §1/§2). An empty import (no versions) writes none.
+    // transaction. An empty import (no versions) writes none.
     if !outbox_versions.is_empty() {
         write_outbox(tx, contribution_id, ehr_id, import_time, outbox_versions).await?;
     }

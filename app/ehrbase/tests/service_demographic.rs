@@ -3,7 +3,7 @@
 //! contribution + tags lifecycle, driven through the `DemographicService`
 //! envelope seam exactly as the REST layer calls it. Verifies the 0003 party
 //! migration applies cleanly (the harness runs migrations) and that parties
-//! version with no EHR scope (ADR-008).
+//! version with no EHR scope.
 #![allow(
     clippy::expect_used,
     clippy::unwrap_used,

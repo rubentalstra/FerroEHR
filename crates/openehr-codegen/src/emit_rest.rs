@@ -1,4 +1,4 @@
-//! REST emitter (ADR-005): OAS → the Rust *contract* for one API group, into
+//! REST emitter: OAS → the Rust *contract* for one API group, into
 //! `openehr-its/src/rest/generated/`.
 //!
 //! Spec-first: the vendored `-codegen` OAS is the source of truth. For each API

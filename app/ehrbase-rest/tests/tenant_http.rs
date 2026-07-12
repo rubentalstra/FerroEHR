@@ -1,10 +1,10 @@
-//! End-to-end HTTP tests for the tenant admin extension API group (ADR-015 §5):
+//! End-to-end HTTP tests for the tenant admin extension API group:
 //! the config gate (`RestConfig::tenancy.enabled`), the `200`/`201`/`204`/`404`/
 //! `400`/`409`/`501` wire outcomes for the CRUD verbs, and the JSON body shapes
 //! — driven through the assembled router with the shared [`Mock`] platform,
 //! whose `tenant_*` hooks back an in-memory store so the CRUD round-trips.
 //!
-//! Design: the tenancy model is spec-silent (ADR-015 fills it); the surface is
+//! Design: the tenancy model is spec-silent — our own extension; the surface is
 //! our own, config-gated like the event-subscription group, mounted under
 //! `/admin/` and dispatching to the `TenantAdapter` extension.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::type_complexity)]

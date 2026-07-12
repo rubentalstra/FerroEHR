@@ -42,7 +42,7 @@ use crate::integration::generic_entry::GenericEntry;
 use serde::Serialize;
 
 /// Root class of all information model classes that can be archetyped. Most classes in the openEHR reference model inherit from the `LOCATABLE` class, which defines the idea of  locatability in an archetyped structure. `LOCATABLE` defines a runtime name and an `_archetype_node_id_`.
-/// Closed subtype set of `LOCATABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `LOCATABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Locatable {

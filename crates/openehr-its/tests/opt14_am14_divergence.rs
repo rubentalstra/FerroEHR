@@ -1,15 +1,15 @@
-//! opt14 ↔ am14 constraint-model divergence sentinel (ADR-009, F-09-02).
+//! opt14 ↔ am14 constraint-model divergence sentinel (F-09-02).
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
 //! `openehr_am::am14` (the canonical logical model, canonical-JSON codec) and
 //! XSD-generated `openehr_its::opt14` (the Ocean OPT-XML wire adapter). The
 //! divergences between the two are *deliberate and documented* in
-//! `docs/ADRs/ADR-009-opt14-wire-model.md`; this test is the drift guard that
+//! `the opt14-wire-model design record`; this test is the drift guard that
 //! ADR requires: it pins both models' constraint-type inventories with
 //! **exhaustive** (wildcard-free) matches and explicit inventory lists, so an
 //! AOM/OPT spec bump that regenerates either side with a new/removed/renamed
 //! constraint type fails here and forces a conscious reconciliation (update
-//! ADR-009 + this sentinel together).
+//! the design record + this sentinel together).
 //!
 //! It intentionally does NOT compare field shapes — the field-level divergence
 //! (Interval representation, typed vs `Any` assumed values, domain-type sets)
@@ -118,9 +118,9 @@ mod am14_inventory {
     }
 }
 
-/// The *documented* inventory divergence (ADR-009 §"Consequences"): the OPT-XML
+/// The *documented* inventory divergence: the OPT-XML
 /// domain types the BMM model does not carry, and vice versa. If this set
-/// changes (a spec/XSD bump closed or widened the gap), ADR-009 must be
+/// changes (a spec/XSD bump closed or widened the gap), the wire-model design record must be
 /// revisited — that is the point of the failure.
 #[test]
 fn documented_divergence_is_stable() {
@@ -140,7 +140,7 @@ fn documented_divergence_is_stable() {
     // Pin both lists; a regenerated model that gains/loses a type will already
     // have broken the exhaustive matches above — this assert documents *which*
     // names are the expected asymmetry so the fix is a conscious edit here +
-    // in ADR-009, not a silent drift.
+    // by design, not a silent drift.
     assert_eq!(opt_only.len(), 7);
     assert_eq!(am_only.len(), 3);
     assert!(opt_only.is_sorted());

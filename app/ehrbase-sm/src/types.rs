@@ -95,7 +95,7 @@ pub struct UpdateAudit {
 /// (`master03-common_package.adoc`), but the ITS-REST wire carries this
 /// **partial** form — the server completes it into a full RM `ATTESTATION`
 /// (adding `time_committed`/`system_id`, like `UPDATE_AUDIT` →
-/// `AUDIT_DETAILS`). The wire wins at the boundary (ADR-010 precedence
+/// `AUDIT_DETAILS`). The wire wins at the boundary (the wire-precedence
 /// rule); the native API therefore carries this type.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct UpdateAttestation {

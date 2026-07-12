@@ -5,7 +5,7 @@ use crate::data_types::time_specification::dv_periodic_time_specification::DvPer
 use serde::Serialize;
 
 /// This is an abstract class of which all timing specifications are specialisations. Specifies points in time, possibly linked to the calendar, or a real world repeating event, such as  breakfast.
-/// Closed subtype set of `DV_TIME_SPECIFICATION` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_TIME_SPECIFICATION`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvTimeSpecification {

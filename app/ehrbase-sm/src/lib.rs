@@ -1,4 +1,4 @@
-//! The openEHR **SM Platform Service Model** native API (ADR-010).
+//! The openEHR **SM Platform Service Model** native API.
 //!
 //! One Rust trait per SM platform-service interface, the shared service
 //! types, and the call-status error model — the seam between the platform
@@ -8,7 +8,7 @@
 //! master02-overview.adoc` §General Assumptions: a nominal *native API*
 //! reached through protocol adapters).
 //!
-//! Precedence (ADR-010): the SM governs decomposition, naming, and call
+//! Precedence: the SM governs decomposition, naming, and call
 //! semantics (its pre/post-conditions are test oracles); **ITS-REST 1.0.3 +
 //! the CNF/ECC schedule govern the wire** — divergences are recorded at the
 //! declaration with `PORT NOTE`s. Design set: `docs/design/sm-platform/`.

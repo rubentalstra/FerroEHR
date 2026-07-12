@@ -1,6 +1,6 @@
 //! openEHR AM (Archetype Model): am14 (AM 1.4.0, for ADL 1.4) and am24 (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.
 //!
-//! @generated module tree by openehr-codegen (ADR-004). The type files
+//! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
 
 #![allow(

@@ -1,5 +1,5 @@
 //! Tests for the generated static RM attribute/type model (`openehr_rm::model`,
-//! ADR-008 §3, P16 — the AQL planner's oracle). These assert behaviour the
+//! P16 — the AQL planner's oracle). These assert behaviour the
 //! planner relies on: inheritance-aware attribute resolution, descendant/ancestor
 //! sets, container multiplicity, and the node-codec structure classification.
 

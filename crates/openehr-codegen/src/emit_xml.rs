@@ -1,4 +1,4 @@
-//! XML emitter (ADR-005): emits `impl ToXml` + `impl FromXml` for the generated
+//! XML emitter: emits `impl ToXml` + `impl FromXml` for the generated
 //! RM/BASE spec types, into `openehr-its/src/xml/generated/`.
 //!
 //! The Rust facts (field idents, exact field types, enum variants, generics)
@@ -444,7 +444,7 @@ fn check_bmm_field_coverage(ty: &XmlType, xsd: &XsdModel, violations: &mut Vec<S
 // ── serialization ─────────────────────────────────────────────────────────────
 
 /// Emit `impl ToXml` for one [`XmlType`]. Public so the OPT emitter
-/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s (ADR-005).
+/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
 pub fn emit_to_xml(
     b: &mut String,
     ty: &XmlType,
@@ -558,7 +558,7 @@ pub fn emit_to_xml(
 
 fn emit_write_field(b: &mut String, f: &XmlField) {
     // `Hash` (RM `Hash<String,String>`, → `BTreeMap`) and `OrderedDict` (the OPT
-    // `StringDictionaryItem` group, → `IndexMap`, ADR-005 F-09-05) share the same
+    // `StringDictionaryItem` group, → `IndexMap`, F-09-05) share the same
     // `<name id="key">value</name>` wire shape; only the map container differs,
     // and both iterate as `(k, v)` here.
     if f.target == "Hash" || f.target == "OrderedDict" {
@@ -611,7 +611,7 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
 // ── deserialization ─────────────────────────────────────────────────────────
 
 /// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
-/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s (ADR-005).
+/// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
 pub fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
     match ty {
         XmlType::Struct {
