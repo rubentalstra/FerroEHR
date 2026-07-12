@@ -436,7 +436,7 @@ async fn insert_nodes(
     }
     let mut qb = QueryBuilder::new(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
-         rm_type, archetype, name, path, data) ",
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data) ",
     );
     qb.push_values(rows, |mut b, row| {
         b.push_bind(vo_id)
@@ -448,6 +448,9 @@ async fn insert_nodes(
             .push_bind(ehr_id)
             .push_bind(&row.rm_type)
             .push_bind(&row.archetype)
+            .push_bind(&row.arch_entity)
+            .push_bind(&row.arch_concept)
+            .push_bind(row.arch_major)
             .push_bind(&row.name)
             .push_bind(&row.path)
             .push_bind(&row.data);
@@ -2131,6 +2134,11 @@ async fn read_nodes(
             citem_num: row.try_get("citem_num")?,
             rm_type: row.try_get("rm_type")?,
             archetype: row.try_get("archetype")?,
+            // arch_* are query-only promoted columns, unused by `reassemble`
+            // (archetype_node_id is already inside the `data` fragment).
+            arch_entity: None,
+            arch_concept: None,
+            arch_major: None,
             name: row.try_get("name")?,
             path: row.try_get("path")?,
             data: row.try_get("data")?,

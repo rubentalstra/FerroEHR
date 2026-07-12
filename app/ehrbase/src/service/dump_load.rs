@@ -584,6 +584,11 @@ impl EhrbaseService {
                 citem_num: r.try_get("citem_num")?,
                 rm_type: r.try_get("rm_type")?,
                 archetype: r.try_get("archetype")?,
+                // arch_* are query-only promoted columns, unused by `reassemble`
+                // (the load path re-decomposes canonical JSON, recomputing them).
+                arch_entity: None,
+                arch_concept: None,
+                arch_major: None,
                 name: r.try_get("name")?,
                 path: r.try_get("path")?,
                 data: r.try_get("data")?,

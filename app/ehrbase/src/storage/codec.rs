@@ -1,6 +1,7 @@
 //! Canonical JSON ⇄ node rows (our own storage design — no openEHR spec governs it; spike-validated in
 //! `tests/storage_spike.rs`).
 
+use openehr_base::prelude::ArchetypeId;
 use serde_json::{Map, Value};
 
 use crate::storage::StorageError;
@@ -91,6 +92,19 @@ pub struct NodeRow {
     pub rm_type: String,
     /// `archetype_node_id`, verbatim.
     pub archetype: Option<String>,
+    /// `qualified_rm_entity` of a full archetype HRID, lowercased for
+    /// comparison; `None` on at/id-code nodes (BASE `base_types` master05
+    /// §Archetype Identifiers).
+    pub arch_entity: Option<String>,
+    /// Full `domain_concept` (incl. specialisation segments) of a full archetype
+    /// HRID, lowercased; `None` on at/id-code nodes. A parent-archetype query
+    /// matches a specialisation child via a `concept-%` prefix (BASE
+    /// `architecture_overview` master10 §Design-time Relationships).
+    pub arch_concept: Option<String>,
+    /// Major version (`.v` major) of a full archetype HRID; `None` on at/id-code
+    /// nodes. The interface-reference major boundary is hard (AM master07
+    /// §Querying).
+    pub arch_major: Option<i32>,
     /// `name/value`.
     pub name: Option<String>,
     /// Materialized path from the root: full attribute names, array index
@@ -151,6 +165,13 @@ fn walk(
         .get("archetype_node_id")
         .and_then(Value::as_str)
         .map(str::to_owned);
+    // Parse a full archetype HRID into the promoted subsumption columns
+    // (lowercased); at/id-code nodes leave them NULL (BASE `base_types` master05
+    // §Archetype Identifiers; querying per master10 §Design-time Relationships).
+    let (arch_entity, arch_concept, arch_major) = archetype
+        .as_deref()
+        .and_then(archetype_parts)
+        .map_or((None, None, None), |(e, c, m)| (Some(e), Some(c), Some(m)));
     let name = json
         .get("name")
         .and_then(|n| n.get("value"))
@@ -173,6 +194,9 @@ fn walk(
         citem_num: citem,
         rm_type,
         archetype,
+        arch_entity,
+        arch_concept,
+        arch_major,
         name,
         path: path.to_owned(),
         data: Value::Null,
@@ -225,6 +249,22 @@ fn is_structure(v: &Value) -> bool {
     v.get("_type")
         .and_then(Value::as_str)
         .is_some_and(is_structure_type)
+}
+
+/// Parse an `archetype_node_id` that is a full archetype HRID into its
+/// `(qualified_rm_entity, domain_concept, major)` parts, lowercased for
+/// case-insensitive comparison (BASE `base_types` master05 §Archetype Identifiers
+/// and §"Composite Identifiers and Case"). Reuses the shared [`ArchetypeId`]
+/// parser (never a hand-rolled regex); returns `None` for at/id-codes and any
+/// value that is not a full HRID with a numeric major.
+fn archetype_parts(node_id: &str) -> Option<(String, String, i32)> {
+    let id: ArchetypeId = node_id.parse().ok()?;
+    let major: i32 = id.major_version().parse().ok()?;
+    Some((
+        id.qualified_rm_entity().to_ascii_lowercase(),
+        id.domain_concept().to_ascii_lowercase(),
+        major,
+    ))
 }
 
 /// Reassembles the canonical JSON from node rows (sorted or not — rows are
@@ -375,6 +415,37 @@ mod tests {
         // non-structure content stays verbatim
         assert_eq!(rows[0].data["name"]["value"], "Report");
         assert_eq!(rows[1].data["setting"]["value"], "other care");
+        // Full archetype HRIDs are parsed into the lowercased subsumption
+        // columns; at-code nodes leave them NULL.
+        assert_eq!(rows[2].rm_type, "OBSERVATION");
+        assert_eq!(
+            rows[2].arch_entity.as_deref(),
+            Some("openehr-ehr-observation")
+        );
+        assert_eq!(rows[2].arch_concept.as_deref(), Some("bp"));
+        assert_eq!(rows[2].arch_major, Some(2));
+        assert_eq!(rows[3].rm_type, "HISTORY"); // archetype_node_id = at0001
+        assert_eq!(rows[3].arch_entity, None);
+        assert_eq!(rows[3].arch_concept, None);
+        assert_eq!(rows[3].arch_major, None);
+    }
+
+    #[test]
+    fn parses_specialised_archetype_concept() {
+        // The specialisation child keeps the full concept incl. its `-` segment,
+        // so a parent (`laboratory`) query prefix-matches it (master10 §83).
+        let v = json!({
+            "_type": "OBSERVATION",
+            "archetype_node_id": "openEHR-EHR-OBSERVATION.laboratory-glucose.v1",
+            "name": {"_type": "DV_TEXT", "value": "glucose"}
+        });
+        let rows = decompose(v).unwrap();
+        assert_eq!(
+            rows[0].arch_entity.as_deref(),
+            Some("openehr-ehr-observation")
+        );
+        assert_eq!(rows[0].arch_concept.as_deref(), Some("laboratory-glucose"));
+        assert_eq!(rows[0].arch_major, Some(1));
     }
 
     #[test]

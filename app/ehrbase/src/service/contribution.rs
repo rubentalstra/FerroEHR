@@ -591,7 +591,7 @@ impl EhrbaseService {
         validate_commit_audit(&contribution_audit)?;
 
         let mut tx = self.pool.begin().await?;
-        let (contribution_id, _) = vobject::commit_contribution(
+        let (contribution_id, committed) = vobject::commit_contribution(
             &mut tx,
             ehr_id,
             supplied_uid,
@@ -604,6 +604,16 @@ impl EhrbaseService {
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
+
+        // An EHR_ACCESS version in this set changes the EHR's access-control
+        // policy (the settings are change-controlled — RM ehr
+        // `master04-ehr_package.adoc` §EHR Access), so drop the cached settings
+        // the access gate consults per request.
+        if let Some(ehr_id) = ehr_id
+            && committed.iter().any(|c| c.kind == Kind::EhrAccess)
+        {
+            self.invalidate_ehr_access(ehr_id).await;
+        }
 
         Ok(contribution_id)
     }

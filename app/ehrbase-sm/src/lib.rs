@@ -26,17 +26,19 @@ pub use ehr_handle::{
 pub use error::{CallStatus, CallStatusType, SmError};
 pub use platform::Platform;
 pub use services::{
-    AdminArchive, AdminDumpLoad, AdminService, AuditEvent, CompressionFormat, DataBinding,
-    DataFrame, DataFrameSample, DataSetResult, DefinedTerm, DefinitionAdapter,
-    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
-    DumpLoadFailReport, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrExtractService, EhrService, EhrStatusService, EmitOutcome, EnvBinding, EventActionCode,
-    EventOutcome, EventSubscriptionAdapter, ExportFormat, ExportSpec, FhirConnectorAdapter,
-    FrameMethod, FramePayload, ItemTagAdapter, ObjectClass, QueryService, Sample, StatTimeRange,
-    SubjectDataSet, SubjectProxyService, SubjectVariable, SystemLog, TddService, TenantAdapter,
-    TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
-    TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, ValidityChecker,
-    VariableSample, VariableValue, VersionMetaAdapter, WebTemplateService,
+    AccessEntry, AccessLevel, AdminArchive, AdminDumpLoad, AdminService, AuditEvent,
+    CompositionOverride, CompressionFormat, DataBinding, DataFrame, DataFrameSample, DataSetResult,
+    DefaultAccess, DefinedTerm, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
+    DefinitionQueryService, DemographicService, DumpLoadFailReport, EHR_ACCESS_CONTROL_V1_SCHEME,
+    EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter, EhrAccessSettings, EhrCompositionService,
+    EhrContributionService, EhrDirectoryService, EhrExtractService, EhrService, EhrStatusService,
+    EmitOutcome, EnvBinding, EventActionCode, EventOutcome, EventSubscriptionAdapter, ExportFormat,
+    ExportSpec, FhirConnectorAdapter, FrameMethod, FramePayload, ItemTagAdapter, ObjectClass,
+    Privacy, QueryService, Sample, StatTimeRange, SubjectDataSet, SubjectProxyService,
+    SubjectVariable, SystemLog, TddService, TenantAdapter, TermCode, TermEntry, TermRelationship,
+    TerminologyDescription, TerminologyExtract, TerminologyRelation, TerminologyRelationError,
+    TerminologyService, TimeRange, ValidityChecker, VariableSample, VariableValue,
+    VersionMetaAdapter, WebTemplateService, principal_matches,
 };
 pub use tenant::TenantContext;
 pub use types::{

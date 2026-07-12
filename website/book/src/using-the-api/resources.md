@@ -153,7 +153,16 @@ the EHR_STATUS history endpoints.
 ## DIRECTORY
 
 The **DIRECTORY** is an optional `FOLDER` tree for organising compositions
-within an EHR. There is one directory per EHR.
+within an EHR. The `/directory` endpoints manage the EHR's primary hierarchy
+(the openEHR `EHR.directory`, which is always the first member of
+`EHR.folders`).
+
+An EHR can also index **additional folder hierarchies** beyond the directory:
+commit further root `FOLDER`s through the CONTRIBUTION endpoint (the openEHR
+REST API defines no dedicated endpoint for them). The EHR resource then lists
+every live hierarchy in its `folders` attribute, in creation order, with
+`directory` always equal to the first member; deleting the directory promotes
+the next live hierarchy.
 
 ```shell
 # Create the directory

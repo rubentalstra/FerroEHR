@@ -93,6 +93,17 @@ impl ArchetypeId {
     pub fn version_id(&self) -> &str {
         parse(&self.value).map_or("", |p| p.version)
     }
+
+    /// Major version number, e.g. `1` for both `.v1` and `.v1.2.3` — the leading
+    /// numeric segment of `version_id`. BASE base_types master05 §Syntaxes:
+    /// `version_id = '0' | nz-digit [number]` is the major, optionally followed
+    /// by `'.' minor_version '.' patch_version`; only the major is significant to
+    /// interface-reference matching (AM master07 §Referencing: an `ihrid_ref`
+    /// carries the major version only, and a differing major is a hard boundary).
+    #[must_use]
+    pub fn major_version(&self) -> &str {
+        self.version_id().split('.').next().unwrap_or("")
+    }
 }
 
 impl FromStr for ArchetypeId {
@@ -137,6 +148,7 @@ mod tests {
         assert_eq!(a.rm_entity(), "OBSERVATION");
         assert_eq!(a.specialisation(), "cuff");
         assert_eq!(a.version_id(), "1");
+        assert_eq!(a.major_version(), "1");
     }
 
     #[test]
@@ -145,7 +157,17 @@ mod tests {
         assert_eq!(a.domain_concept(), "vital_signs");
         assert_eq!(a.specialisation(), "");
         assert_eq!(a.version_id(), "2");
+        assert_eq!(a.major_version(), "2");
         assert_eq!(a.rm_entity(), "SECTION");
+    }
+
+    #[test]
+    fn major_version_ignores_minor_and_patch() {
+        // A full hrid_ref (major.minor.patch) still yields the major only — the
+        // significant part for interface-reference matching (AM master07).
+        let a = aid("openEHR-EHR-OBSERVATION.pulse.v1.2.3");
+        assert_eq!(a.version_id(), "1.2.3");
+        assert_eq!(a.major_version(), "1");
     }
 
     #[test]
