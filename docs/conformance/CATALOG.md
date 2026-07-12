@@ -8,14 +8,14 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
 | ECC-EHR-001 | Active | EHR existence check — existing EHR id | passed |
-| ECC-EHR-002 | Active | EHR existence check — existing subject id | passed |
+| ECC-EHR-002 | Active | EHR existence check — existing subject id | failed |
 | ECC-EHR-003 | Active | EHR existence check — non existing EHR id | passed |
 | ECC-EHR-004 | Active | EHR existence check — non existing subject id | passed |
 | ECC-EHR-005 | Active | Create EHR — main | passed |
 | ECC-EHR-006 | Active | Create EHR — same EHR twice | passed |
-| ECC-EHR-007 | Active | Create EHR — two EHRs same patient | passed |
+| ECC-EHR-007 | Active | Create EHR — two EHRs same patient | failed |
 | ECC-EHR-008 | Active | Get EHR — existing EHR by EHR id | passed |
-| ECC-EHR-009 | Active | Get EHR — existing EHR by subject id | passed |
+| ECC-EHR-009 | Active | Get EHR — existing EHR by subject id | failed |
 | ECC-EHR-010 | Active | Get EHR — get EHR by invalid EHR id | passed |
 | ECC-EHR-011 | Active | Get EHR — get EHR by invalid subject id | passed |
 | ECC-EHR-012 | Active | Create EHR — reject invalid EHR_STATUS data sets | passed |
@@ -28,20 +28,20 @@ Generated per run — do not edit. Numbers are allocated once in
 | ECC-STA-001 | Active | Get EHR_STATUS — get by EHR id | passed |
 | ECC-STA-002 | Active | Get EHR_STATUS — bad EHR | passed |
 | ECC-STA-003 | Active | Set EHR_STATUS is_queryable — existing EHR | passed |
-| ECC-STA-004 | Active | Set EHR_STATUS is_queryable — bad EHR | passed |
+| ECC-STA-004 | Active | Set EHR_STATUS is_queryable — bad EHR | failed |
 | ECC-STA-005 | Active | Set EHR_STATUS is_modifiable — existing EHR | passed |
-| ECC-STA-006 | Active | Set EHR_STATUS is_modifiable — bad EHR | passed |
+| ECC-STA-006 | Active | Set EHR_STATUS is_modifiable — bad EHR | failed |
 | ECC-STA-007 | Active | Clear EHR_STATUS is_queryable — existing EHR | passed |
-| ECC-STA-008 | Active | Clear EHR_STATUS is_queryable — bad EHR | passed |
+| ECC-STA-008 | Active | Clear EHR_STATUS is_queryable — bad EHR | failed |
 | ECC-STA-009 | Active | Clear EHR_STATUS is_modifiable — existing EHR | passed |
-| ECC-STA-010 | Active | Clear EHR_STATUS is_modifiable — bad EHR | passed |
+| ECC-STA-010 | Active | Clear EHR_STATUS is_modifiable — bad EHR | failed |
 
 ## COM — COMPOSITION (31 cases, 31 active)
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-COM-001 | Active | Create composition — event | passed/passed |
-| ECC-COM-002 | Active | Create composition — persistent | passed/passed |
+| ECC-COM-001 | Active | Create composition — event | failed/passed |
+| ECC-COM-002 | Active | Create composition — persistent | failed/passed |
 | ECC-COM-003 | Active | Create composition — same OPT twice | passed |
 | ECC-COM-004 | Active | Create composition — invalid event | passed |
 | ECC-COM-005 | Active | Create composition — invalid persistent | passed |
@@ -76,10 +76,10 @@ Generated per run — do not edit. Numbers are allocated once in
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-CTB-001 | Active | Commit contribution — valid composition | passed |
+| ECC-CTB-001 | Active | Commit contribution — valid composition | failed |
 | ECC-CTB-002 | Active | Commit contribution — invalid composition | passed |
 | ECC-CTB-003 | Active | Commit contribution — empty | passed |
-| ECC-CTB-004 | Active | Commit contribution — valid invalid compositions | passed |
+| ECC-CTB-004 | Active | Commit contribution — valid invalid compositions | failed |
 | ECC-CTB-005 | Active | Commit contribution — non exiting OPT | passed |
 | ECC-CTB-006 | Active | Commit contribution — event composition | passed |
 | ECC-CTB-007 | Active | Commit contribution — persistent composition | passed |
@@ -154,7 +154,7 @@ Generated per run — do not edit. Numbers are allocated once in
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-TPL-001 | Active | Upload OPT — valid OPT | passed |
+| ECC-TPL-001 | Active | Upload OPT — valid OPT | failed |
 | ECC-TPL-002 | Active | Upload OPT — invalid OPT | passed |
 | ECC-TPL-003 | Active | List OPTs — retrieve all no OPTs | passed |
 | ECC-TPL-004 | Active | Upload OPT — valid OPT twice conflict | passed |
@@ -205,124 +205,124 @@ Generated per run — do not edit. Numbers are allocated once in
 
 | ECC id | Status | Title | Last run |
 |---|---|---|---|
-| ECC-VAL-001 | Active | Validate COMPOSITION — content card any context any | passed |
-| ECC-VAL-002 | Active | Validate COMPOSITION — content card 1plus context any | passed |
-| ECC-VAL-003 | Active | Validate COMPOSITION — content card 3plus context any | passed |
-| ECC-VAL-004 | Active | Validate COMPOSITION — content card OPT context any | passed |
-| ECC-VAL-005 | Active | Validate COMPOSITION — content card mand context any | passed |
-| ECC-VAL-006 | Active | Validate COMPOSITION — content card 3to5 context any | passed |
-| ECC-VAL-007 | Active | Validate COMPOSITION — content card any context mand | passed |
-| ECC-VAL-008 | Active | Validate COMPOSITION — content card 1plus context mand | passed |
-| ECC-VAL-009 | Active | Validate COMPOSITION — content card 3plus context mand | passed |
-| ECC-VAL-010 | Active | Validate COMPOSITION — content card OPT context mand | passed |
-| ECC-VAL-011 | Active | Validate COMPOSITION — content card mand context mand | passed |
-| ECC-VAL-012 | Active | Validate COMPOSITION — content card 3to5 context mand | passed |
+| ECC-VAL-001 | Active | Validate COMPOSITION — content card any context any | failed |
+| ECC-VAL-002 | Active | Validate COMPOSITION — content card 1plus context any | failed |
+| ECC-VAL-003 | Active | Validate COMPOSITION — content card 3plus context any | failed |
+| ECC-VAL-004 | Active | Validate COMPOSITION — content card OPT context any | failed |
+| ECC-VAL-005 | Active | Validate COMPOSITION — content card mand context any | failed |
+| ECC-VAL-006 | Active | Validate COMPOSITION — content card 3to5 context any | failed |
+| ECC-VAL-007 | Active | Validate COMPOSITION — content card any context mand | failed |
+| ECC-VAL-008 | Active | Validate COMPOSITION — content card 1plus context mand | failed |
+| ECC-VAL-009 | Active | Validate COMPOSITION — content card 3plus context mand | failed |
+| ECC-VAL-010 | Active | Validate COMPOSITION — content card OPT context mand | failed |
+| ECC-VAL-011 | Active | Validate COMPOSITION — content card mand context mand | failed |
+| ECC-VAL-012 | Active | Validate COMPOSITION — content card 3to5 context mand | failed |
 | ECC-VAL-013 | Active | Validate OBSERVATION — state ex OPT protocol ex OPT | passed |
 | ECC-VAL-014 | Active | Validate OBSERVATION — state ex OPT protocol ex mand | passed |
 | ECC-VAL-015 | Active | Validate OBSERVATION — state ex mand protocol ex OPT | passed |
 | ECC-VAL-016 | Active | Validate OBSERVATION — state ex mand protocol ex mand | passed |
-| ECC-VAL-017 | Active | Validate HISTORY — events card any summary ex OPT | passed |
-| ECC-VAL-018 | Active | Validate HISTORY — events card 1plus summary ex OPT | passed |
-| ECC-VAL-019 | Active | Validate HISTORY — events card 3plus summary ex OPT | passed |
-| ECC-VAL-020 | Active | Validate HISTORY — events card OPT summary ex OPT | passed |
-| ECC-VAL-021 | Active | Validate HISTORY — events card mand summary ex OPT | passed |
-| ECC-VAL-022 | Active | Validate HISTORY — events card 3to5 summary ex OPT | passed |
-| ECC-VAL-023 | Active | Validate HISTORY — events card any summary ex mand | passed |
-| ECC-VAL-024 | Active | Validate HISTORY — events card 1plus summary ex mand | passed |
-| ECC-VAL-025 | Active | Validate HISTORY — events card 3plus summary ex mand | passed |
-| ECC-VAL-026 | Active | Validate HISTORY — events card OPT summary ex mand | passed |
-| ECC-VAL-027 | Active | Validate HISTORY — events card mand summary ex mand | passed |
-| ECC-VAL-028 | Active | Validate HISTORY — events card 3to5 summary ex mand | passed |
+| ECC-VAL-017 | Active | Validate HISTORY — events card any summary ex OPT | failed |
+| ECC-VAL-018 | Active | Validate HISTORY — events card 1plus summary ex OPT | failed |
+| ECC-VAL-019 | Active | Validate HISTORY — events card 3plus summary ex OPT | failed |
+| ECC-VAL-020 | Active | Validate HISTORY — events card OPT summary ex OPT | failed |
+| ECC-VAL-021 | Active | Validate HISTORY — events card mand summary ex OPT | failed |
+| ECC-VAL-022 | Active | Validate HISTORY — events card 3to5 summary ex OPT | failed |
+| ECC-VAL-023 | Active | Validate HISTORY — events card any summary ex mand | failed |
+| ECC-VAL-024 | Active | Validate HISTORY — events card 1plus summary ex mand | failed |
+| ECC-VAL-025 | Active | Validate HISTORY — events card 3plus summary ex mand | failed |
+| ECC-VAL-026 | Active | Validate HISTORY — events card OPT summary ex mand | failed |
+| ECC-VAL-027 | Active | Validate HISTORY — events card mand summary ex mand | failed |
+| ECC-VAL-028 | Active | Validate HISTORY — events card 3to5 summary ex mand | failed |
 | ECC-VAL-029 | Active | Validate EVENT — state ex OPT | passed |
 | ECC-VAL-030 | Active | Validate EVENT — state ex mand | passed |
 | ECC-VAL-031 | Active | Validate EVENT — type any | passed |
-| ECC-VAL-032 | Active | Validate EVENT — type point event | passed |
-| ECC-VAL-033 | Active | Validate EVENT — type interval event | passed |
-| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | passed |
-| ECC-VAL-035 | Active | Validate ITEM_STRUCTURE — type item tree | passed |
+| ECC-VAL-032 | Active | Validate EVENT — type point event | failed |
+| ECC-VAL-033 | Active | Validate EVENT — type interval event | failed |
+| ECC-VAL-034 | Active | Validate ITEM_STRUCTURE — type any | failed |
+| ECC-VAL-035 | Active | Validate ITEM_STRUCTURE — type item tree | failed |
 | ECC-VAL-036 | Active | Validate ITEM_STRUCTURE — type item list | passed |
 | ECC-VAL-037 | Active | Validate ITEM_STRUCTURE — type item table | passed |
 | ECC-VAL-038 | Active | Validate ITEM_STRUCTURE — type item single | passed |
-| ECC-VAL-039 | Active | Validate DV_BOOLEAN — anything allowed | passed |
-| ECC-VAL-040 | Active | Validate DV_BOOLEAN — only true allowed | passed |
-| ECC-VAL-041 | Active | Validate DV_BOOLEAN — only false allowed | passed |
-| ECC-VAL-042 | Active | Validate DV_IDENTIFIER — all pattern | passed |
-| ECC-VAL-043 | Active | Validate DV_IDENTIFIER — all list | passed |
+| ECC-VAL-039 | Active | Validate DV_BOOLEAN — anything allowed | failed |
+| ECC-VAL-040 | Active | Validate DV_BOOLEAN — only true allowed | failed |
+| ECC-VAL-041 | Active | Validate DV_BOOLEAN — only false allowed | failed |
+| ECC-VAL-042 | Active | Validate DV_IDENTIFIER — all pattern | failed |
+| ECC-VAL-043 | Active | Validate DV_IDENTIFIER — all list | failed |
 | ECC-VAL-044 | Active | Validate DV_TEXT — open | passed |
-| ECC-VAL-045 | Active | Validate DV_TEXT — list | passed |
+| ECC-VAL-045 | Active | Validate DV_TEXT — list | failed |
 | ECC-VAL-046 | Active | Validate DV_CODED_TEXT — open | passed |
-| ECC-VAL-047 | Active | Validate DV_CODED_TEXT — local codes | passed |
-| ECC-VAL-048 | Active | Validate DV_CODED_TEXT — ext term | passed |
+| ECC-VAL-047 | Active | Validate DV_CODED_TEXT — local codes | failed |
+| ECC-VAL-048 | Active | Validate DV_CODED_TEXT — ext term | failed |
 | ECC-VAL-049 | Active | Validate DV_ORDINAL — open | passed |
 | ECC-VAL-050 | Active | Validate DV_ORDINAL — constraint | passed |
-| ECC-VAL-051 | Active | Validate DV_SCALE — open | passed |
-| ECC-VAL-052 | Active | Validate DV_SCALE — constraint | passed |
+| ECC-VAL-051 | Active | Validate DV_SCALE — open | failed |
+| ECC-VAL-052 | Active | Validate DV_SCALE — constraint | failed |
 | ECC-VAL-053 | Active | Validate DV_COUNT — open | passed |
-| ECC-VAL-054 | Active | Validate DV_COUNT — range | passed |
-| ECC-VAL-055 | Active | Validate DV_COUNT — list | passed |
+| ECC-VAL-054 | Active | Validate DV_COUNT — range | failed |
+| ECC-VAL-055 | Active | Validate DV_COUNT — list | failed |
 | ECC-VAL-056 | Active | Validate DV_QUANTITY — open | passed |
-| ECC-VAL-057 | Active | Validate DV_QUANTITY — property | passed |
+| ECC-VAL-057 | Active | Validate DV_QUANTITY — property | failed |
 | ECC-VAL-058 | Active | Validate DV_QUANTITY — property units | passed |
-| ECC-VAL-059 | Active | Validate DV_QUANTITY — property units mag | passed |
+| ECC-VAL-059 | Active | Validate DV_QUANTITY — property units mag | failed |
 | ECC-VAL-060 | Active | Validate DV_PROPORTION — open | passed |
-| ECC-VAL-061 | Active | Validate DV_PROPORTION — ratio | passed |
-| ECC-VAL-062 | Active | Validate DV_PROPORTION — unitary | passed |
-| ECC-VAL-063 | Active | Validate DV_PROPORTION — percent | passed |
-| ECC-VAL-064 | Active | Validate DV_PROPORTION — fraction | passed |
-| ECC-VAL-065 | Active | Validate DV_PROPORTION — integer fraction | passed |
-| ECC-VAL-066 | Active | Validate DV_PROPORTION — any fraction | passed |
-| ECC-VAL-067 | Active | Validate DV_PROPORTION — ratio range | passed |
-| ECC-VAL-068 | Active | Validate DV_INTERVAL<DV_COUNT> — open | passed |
-| ECC-VAL-069 | Active | Validate DV_INTERVAL<DV_COUNT> — lower upper | passed |
-| ECC-VAL-070 | Active | Validate DV_INTERVAL<DV_COUNT> — lower upper list | passed |
-| ECC-VAL-071 | Active | Validate DV_INTERVAL<DV_QUANTITY> — open | passed |
-| ECC-VAL-072 | Active | Validate DV_INTERVAL<DV_QUANTITY> — upper lower | passed |
-| ECC-VAL-073 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — open | passed |
-| ECC-VAL-074 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint | passed |
-| ECC-VAL-075 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range | passed |
-| ECC-VAL-076 | Active | Validate DV_INTERVAL<DV_DATE> — open | passed |
-| ECC-VAL-077 | Active | Validate DV_INTERVAL<DV_DATE> — lower upper constraint | passed |
-| ECC-VAL-078 | Active | Validate DV_INTERVAL<DV_DATE> — lower upper range | passed |
-| ECC-VAL-079 | Active | Validate DV_INTERVAL<DV_TIME> — open | passed |
-| ECC-VAL-080 | Active | Validate DV_INTERVAL<DV_TIME> — lower upper constraint | passed |
-| ECC-VAL-081 | Active | Validate DV_INTERVAL<DV_TIME> — lower upper range | passed |
-| ECC-VAL-082 | Active | Validate DV_INTERVAL<DV_DURATION> — open | passed |
-| ECC-VAL-083 | Active | Validate DV_INTERVAL<DV_DURATION> — constraint | passed |
-| ECC-VAL-084 | Active | Validate DV_INTERVAL<DV_DURATION> — range | passed |
-| ECC-VAL-085 | Active | Validate DV_INTERVAL<DV_ORDINAL> — open | passed |
-| ECC-VAL-086 | Active | Validate DV_INTERVAL<DV_ORDINAL> — constraint | passed |
-| ECC-VAL-087 | Active | Validate DV_INTERVAL<DV_SCALE> — open | passed |
-| ECC-VAL-088 | Active | Validate DV_INTERVAL<DV_SCALE> — constraint | passed |
-| ECC-VAL-089 | Active | Validate DV_INTERVAL<DV_PROPORTION> — open | passed |
-| ECC-VAL-090 | Active | Validate DV_INTERVAL<DV_PROPORTION> — ratio | passed |
-| ECC-VAL-091 | Active | Validate DV_INTERVAL<DV_PROPORTION> — unitary | passed |
-| ECC-VAL-092 | Active | Validate DV_INTERVAL<DV_PROPORTION> — percentage | passed |
-| ECC-VAL-093 | Active | Validate DV_INTERVAL<DV_PROPORTION> — fraction | passed |
-| ECC-VAL-094 | Active | Validate DV_INTERVAL<DV_PROPORTION> — integer fraction | passed |
-| ECC-VAL-095 | Active | Validate DV_INTERVAL<DV_PROPORTION> — ratio range | passed |
+| ECC-VAL-061 | Active | Validate DV_PROPORTION — ratio | failed |
+| ECC-VAL-062 | Active | Validate DV_PROPORTION — unitary | failed |
+| ECC-VAL-063 | Active | Validate DV_PROPORTION — percent | failed |
+| ECC-VAL-064 | Active | Validate DV_PROPORTION — fraction | failed |
+| ECC-VAL-065 | Active | Validate DV_PROPORTION — integer fraction | failed |
+| ECC-VAL-066 | Active | Validate DV_PROPORTION — any fraction | failed |
+| ECC-VAL-067 | Active | Validate DV_PROPORTION — ratio range | failed |
+| ECC-VAL-068 | Active | Validate DV_INTERVAL<DV_COUNT> — open | failed |
+| ECC-VAL-069 | Active | Validate DV_INTERVAL<DV_COUNT> — lower upper | failed |
+| ECC-VAL-070 | Active | Validate DV_INTERVAL<DV_COUNT> — lower upper list | failed |
+| ECC-VAL-071 | Active | Validate DV_INTERVAL<DV_QUANTITY> — open | failed |
+| ECC-VAL-072 | Active | Validate DV_INTERVAL<DV_QUANTITY> — upper lower | failed |
+| ECC-VAL-073 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — open | failed |
+| ECC-VAL-074 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint | failed |
+| ECC-VAL-075 | Active | Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range | failed |
+| ECC-VAL-076 | Active | Validate DV_INTERVAL<DV_DATE> — open | failed |
+| ECC-VAL-077 | Active | Validate DV_INTERVAL<DV_DATE> — lower upper constraint | failed |
+| ECC-VAL-078 | Active | Validate DV_INTERVAL<DV_DATE> — lower upper range | failed |
+| ECC-VAL-079 | Active | Validate DV_INTERVAL<DV_TIME> — open | failed |
+| ECC-VAL-080 | Active | Validate DV_INTERVAL<DV_TIME> — lower upper constraint | failed |
+| ECC-VAL-081 | Active | Validate DV_INTERVAL<DV_TIME> — lower upper range | failed |
+| ECC-VAL-082 | Active | Validate DV_INTERVAL<DV_DURATION> — open | failed |
+| ECC-VAL-083 | Active | Validate DV_INTERVAL<DV_DURATION> — constraint | failed |
+| ECC-VAL-084 | Active | Validate DV_INTERVAL<DV_DURATION> — range | failed |
+| ECC-VAL-085 | Active | Validate DV_INTERVAL<DV_ORDINAL> — open | failed |
+| ECC-VAL-086 | Active | Validate DV_INTERVAL<DV_ORDINAL> — constraint | failed |
+| ECC-VAL-087 | Active | Validate DV_INTERVAL<DV_SCALE> — open | failed |
+| ECC-VAL-088 | Active | Validate DV_INTERVAL<DV_SCALE> — constraint | failed |
+| ECC-VAL-089 | Active | Validate DV_INTERVAL<DV_PROPORTION> — open | failed |
+| ECC-VAL-090 | Active | Validate DV_INTERVAL<DV_PROPORTION> — ratio | failed |
+| ECC-VAL-091 | Active | Validate DV_INTERVAL<DV_PROPORTION> — unitary | failed |
+| ECC-VAL-092 | Active | Validate DV_INTERVAL<DV_PROPORTION> — percentage | failed |
+| ECC-VAL-093 | Active | Validate DV_INTERVAL<DV_PROPORTION> — fraction | failed |
+| ECC-VAL-094 | Active | Validate DV_INTERVAL<DV_PROPORTION> — integer fraction | failed |
+| ECC-VAL-095 | Active | Validate DV_INTERVAL<DV_PROPORTION> — ratio range | failed |
 | ECC-VAL-096 | Active | Validate DV_DURATION — open | passed |
-| ECC-VAL-097 | Active | Validate DV_DURATION — fields | passed |
-| ECC-VAL-098 | Active | Validate DV_DURATION — range | passed |
-| ECC-VAL-099 | Active | Validate DV_DURATION — fields range | passed |
+| ECC-VAL-097 | Active | Validate DV_DURATION — fields | failed |
+| ECC-VAL-098 | Active | Validate DV_DURATION — range | failed |
+| ECC-VAL-099 | Active | Validate DV_DURATION — fields range | failed |
 | ECC-VAL-100 | Active | Validate DV_TIME — open | passed |
-| ECC-VAL-101 | Active | Validate DV_TIME — constraint | passed |
-| ECC-VAL-102 | Active | Validate DV_TIME — range | passed |
+| ECC-VAL-101 | Active | Validate DV_TIME — constraint | failed |
+| ECC-VAL-102 | Active | Validate DV_TIME — range | failed |
 | ECC-VAL-103 | Active | Validate DV_DATE — open | passed |
-| ECC-VAL-104 | Active | Validate DV_DATE — constraint | passed |
-| ECC-VAL-105 | Active | Validate DV_DATE — range | passed |
+| ECC-VAL-104 | Active | Validate DV_DATE — constraint | failed |
+| ECC-VAL-105 | Active | Validate DV_DATE — range | failed |
 | ECC-VAL-106 | Active | Validate DV_DATE_TIME — open | passed |
 | ECC-VAL-107 | Active | Validate DV_DATE_TIME — constraint | passed |
-| ECC-VAL-108 | Active | Validate DV_DATE_TIME — range | passed |
+| ECC-VAL-108 | Active | Validate DV_DATE_TIME — range | failed |
 | ECC-VAL-109 | Active | Validate DV_PARSABLE — open | passed |
-| ECC-VAL-110 | Active | Validate DV_PARSABLE — value formalism | passed |
+| ECC-VAL-110 | Active | Validate DV_PARSABLE — value formalism | failed |
 | ECC-VAL-111 | Active | Validate DV_MULTIMEDIA — open | passed |
-| ECC-VAL-112 | Active | Validate DV_MULTIMEDIA — media type | passed |
+| ECC-VAL-112 | Active | Validate DV_MULTIMEDIA — media type | failed |
 | ECC-VAL-113 | Active | Validate DV_URI — open | passed |
-| ECC-VAL-114 | Active | Validate DV_URI — pattern | passed |
-| ECC-VAL-115 | Active | Validate DV_URI — list | passed |
-| ECC-VAL-116 | Active | Validate DV_EHR_URI — open | passed |
-| ECC-VAL-117 | Active | Validate DV_EHR_URI — pattern | passed |
-| ECC-VAL-118 | Active | Validate DV_EHR_URI — list | passed |
+| ECC-VAL-114 | Active | Validate DV_URI — pattern | failed |
+| ECC-VAL-115 | Active | Validate DV_URI — list | failed |
+| ECC-VAL-116 | Active | Validate DV_EHR_URI — open | failed |
+| ECC-VAL-117 | Active | Validate DV_EHR_URI — pattern | failed |
+| ECC-VAL-118 | Active | Validate DV_EHR_URI — list | failed |
 | ECC-VAL-119 | Active | Validate DV_DATE — day disallowed by C_DATE pattern (defective vendored fixture rejected) | passed |
 
 ## DEM — Demographic service (24 cases, 24 active)

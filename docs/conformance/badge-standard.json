@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "ECC STANDARD",
-  "message": "PASS (13/13 capabilities)",
-  "color": "brightgreen"
+  "message": "7/13 capabilities",
+  "color": "red"
 }

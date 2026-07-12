@@ -82,13 +82,30 @@ async fn run<S: Platform>(
                     "expected an OPT 1.4 XML template body".to_owned(),
                 ))
             })?;
-            Ok(negotiate::respond(
+            let meta = state
+                .backend()
+                .template_adl14_upload(xml.to_owned())
+                .await?;
+            // `201_Template_adl1_4_upload`: the endpoint produces
+            // `application/xml` only — a `return=representation` body is the
+            // OPT itself; `return=identifier` → the template id; missing/
+            // `return=minimal` → empty. `Location` + `ETag` carry the
+            // template id on every case.
+            let template_id = meta
+                .get("template_id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let location = format!(
+                "{}/definition/template/adl1.4/{}",
+                state.config().base_path,
+                urlencoding::encode(&template_id)
+            );
+            Ok(negotiate::template_upload_response(
                 h,
-                StatusCode::CREATED,
-                &state
-                    .backend()
-                    .template_adl14_upload(xml.to_owned())
-                    .await?,
+                &location,
+                &template_id,
+                xml,
             ))
         }
         "definition_template_adl1.4_get" => {
