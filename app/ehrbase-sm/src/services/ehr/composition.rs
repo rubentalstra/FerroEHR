@@ -1,7 +1,4 @@
-//! The SM `I_EHR_COMPOSITION` interface — the literal openEHR Platform Service
-//! Model call set
-//! (`docs/specs/openehr/SM/docs/UML/classes/i_ehr_composition.adoc`; digest
-//! `docs/design/sm-platform/02-ehr-service.md` §5). "Interface for commit and
+//! `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`) — "Interface for commit and
 //! retrieve of Compositions, with implicit Contribution creation."
 
 use async_trait::async_trait;
@@ -10,13 +7,13 @@ use uuid::Uuid;
 
 use openehr_base::prelude::ObjectVersionId;
 
-use crate::error::SmError;
-use crate::types::UpdateVersion;
+use crate::common::{SmError, UpdateVersion};
 
 /// `I_EHR_COMPOSITION` — COMPOSITION operations, one Rust method per SM call.
 /// Reads return the canonical `COMPOSITION`/`VERSION`/`VERSIONED_COMPOSITION`
-/// as [`Value`]; the implicit-Contribution writes return the new `version_uid`
-/// (SM `create_composition`/`update_composition` → `UUID`).
+/// as [`Value`]; the implicit-Contribution writes return the new
+/// `version_uid`. The write payload is the chapter's `UV_COMPOSITION`, i.e.
+/// [`UpdateVersion`]`<COMPOSITION>`.
 #[async_trait]
 pub trait EhrCompositionService: Send + Sync {
     /// `has_composition (an_ehr_id: UUID, a_version_uid: OBJECT_VERSION_ID):
@@ -27,8 +24,8 @@ pub trait EhrCompositionService: Send + Sync {
         a_version_uid: ObjectVersionId,
     ) -> Result<bool, SmError>;
 
-    /// `get_composition_latest (an_ehr_id: UUID, a_versioned_object_uid: UUID):
-    /// COMPOSITION` — pre `has_ehr` + `has_composition`. Error
+    /// `get_composition_latest (an_ehr_id: UUID, a_versioned_object_uid:
+    /// UUID): COMPOSITION` — pre `has_ehr` + `has_composition`. Error
     /// `composition_does_not_exist`. A logically deleted composition resolves
     /// to `Value::Null` (→ wire `204`).
     async fn get_composition_latest(
@@ -68,7 +65,7 @@ pub trait EhrCompositionService: Send + Sync {
     /// pre `has_ehr` + `definitions_valid` + `valid_content`; post
     /// `has_composition(an_ehr_id, Result)`. Errors
     /// `composition_already_exists`, `definition_unknown`, `content_invalid`.
-    /// Creates a `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + CONTRIBUTION.
+    /// Creates a `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`.
     async fn create_composition(
         &self,
         an_ehr_id: Uuid,
@@ -79,7 +76,7 @@ pub trait EhrCompositionService: Send + Sync {
     /// pre `has_ehr` + `definitions_valid` + `valid_content`;
     /// `a_comp.preceding_version_uid` must match the current version
     /// (optimistic lock → `version_mismatch`). New `ORIGINAL_VERSION` +
-    /// CONTRIBUTION. Error `composition_does_not_exist`.
+    /// `CONTRIBUTION`. Error `composition_does_not_exist`.
     async fn update_composition(
         &self,
         an_ehr_id: Uuid,
@@ -87,10 +84,10 @@ pub trait EhrCompositionService: Send + Sync {
         a_comp: UpdateVersion,
     ) -> Result<String, SmError>;
 
-    /// `delete_composition (an_ehr_id: UUID, a_version_uid: OBJECT_VERSION_ID)`
-    /// — logical delete: a new version with content removed, lifecycle
-    /// `523|deleted|`. Returns the deleted `version_uid` (for the wire
-    /// `204_COMPOSITION_deleted` `ETag`/`Location`).
+    /// `delete_composition (an_ehr_id: UUID, a_version_uid:
+    /// OBJECT_VERSION_ID)` — logical delete: a new version with content
+    /// removed, lifecycle `523|deleted|`. Returns the deleted `version_uid`
+    /// (for the wire `204_COMPOSITION_deleted` `ETag`/`Location`).
     async fn delete_composition(
         &self,
         an_ehr_id: Uuid,

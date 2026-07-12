@@ -57,8 +57,9 @@ pub use message::EhrExtractService;
 pub use query::QueryService;
 pub use relationship::PartyRelationshipService;
 pub use subject_proxy::{
-    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FrameMethod, FramePayload,
-    Sample, SubjectDataSet, SubjectProxyService, SubjectVariable, VariableSample, VariableValue,
+    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FramePayload, Sample,
+    SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
+    VariableSample, VariableValue,
 };
 pub use system_log::{
     AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
