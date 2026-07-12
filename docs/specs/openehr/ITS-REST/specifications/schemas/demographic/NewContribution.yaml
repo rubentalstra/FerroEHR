@@ -1,0 +1,17 @@
+# Note: copy of same schema from `ehr`, as we need to redefine to use only demographic types
+#       reminder to keep them in sync!
+title: NewContribution
+type: object
+description: A new (un-committed) CONTRIBUTION resource for Demographic
+required:
+  - versions
+  - audit
+properties:
+  uid:
+    $ref: ../base_types/HierObjectId.yaml
+  versions:
+    type: array
+    items:
+      $ref: ../demographic/UpdateVersion.yaml
+  audit:
+    $ref: ../common/UpdateAudit.yaml

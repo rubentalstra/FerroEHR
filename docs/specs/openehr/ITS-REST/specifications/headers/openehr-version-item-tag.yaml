@@ -1,0 +1,4 @@
+description: |
+  The list of all ITEM_TAG associated with the current VERSION - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+schema:
+  type: string

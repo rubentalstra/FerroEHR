@@ -1,2 +1,0 @@
-description: |
-  `400 Bad Request` is returned when the request URL or body (if provided) could not be parsed or has invalid content (e.g. invalid `ehr_id`, or either the body of the request could not be read, or could not be converted to a valid FOLDER object).

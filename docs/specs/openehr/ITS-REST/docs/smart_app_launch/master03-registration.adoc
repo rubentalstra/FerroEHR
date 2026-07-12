@@ -1,0 +1,25 @@
+= Application Registration
+
+Before an _Application_ can integrate with a _Platform_, it must first be registered.
+This registration process establishes a trusted relationship between the _Application Vendor_ and the _Platform Vendor_, and includes the configuration of necessary parameters for authentication, authorization, and launch.
+
+The registration process includes the following steps:
+
+- The _Application_ registers with the _Platform_ by submitting metadata such as:
+* Application name, logo and identifier
+* Authorized domains and redirection URIs (`redirect_uri`)
+* Supported launch contexts (e.g., patient, practitioner)
+* Application type (e.g., confidential or public client)
+* Client JSON Web Keys (JWKs) or a JWK Set URL
+* Requested OAuth 2.0 scopes
+- Upon successful registration, the _Platform_ issues credentials to the _Application_, such as:
+* A unique `client_id` (always required)
+* A `client_secret` (for confidential clients)
+* Optionally, a set of JSON Web Keys (JWKs) or a JWK Set URL (`jwks_uri`) for JWT-based client authentication
+
+These credentials are used in subsequent OAuth 2.0 flows to authenticate the _Application_ and enable secure, scoped access to protected resources.
+
+The {hl7_smart_app_launch}/client-confidential-asymmetric.html#registering-a-client-communicating-public-keys[SMART App Launch Framework^] describes a corresponding registration flow, including support for registering public keys using `jwks` or `jwks_uri` to enable secure client authentication. The *SMART on openEHR* specification adopts a compatible approach, extending these mechanisms for use with openEHR-based APIs and platforms.
+
+While this registration process could be formalized and automated using the {ietf_html}/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol^], the current recommendation is to handle registration out-of-band in a way that is practical for both the Application Vendor and the Platform Vendor.
+For example, the _Platform_ may provide a dedicated registration portal where _Application Vendors_ can submit their applications for review. This portal may support approval workflows, audit trails, and administrative oversight before issuing credentials, ensuring that only vetted applications are authorized to interact with the Platform.

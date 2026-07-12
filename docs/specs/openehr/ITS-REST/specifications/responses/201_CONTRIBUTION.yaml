@@ -1,12 +1,19 @@
 description: |
-  `201 Created` is returned when the CONTRIBUTION was created. 
-  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+  `201 Created` is returned when the CONTRIBUTION is successfully created.
+  If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included.
+  If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+
+  When the request `Accept` header selects a Simplified Formats MIME type (`application/openehr.wt.flat+json` or `application/openehr.wt.structured+json`) and `Prefer: return=representation`, the response body is still a canonical CONTRIBUTION envelope; only each `versions[i].data` payload is serialized in the requested FLAT or STRUCTURED form.
 headers:
   ETag:
     $ref: ../headers/ETag_CONTRIBUTION.yaml
   Location:
     $ref: ../headers/Location_CONTRIBUTION.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
 content:
   application/json:
     schema:
-      $ref: ../schemas/common/Contribution.yaml
+      oneOf:
+        - $ref: ../schemas/common/Contribution.yaml
+        - $ref: ../schemas/others/Identifier.yaml

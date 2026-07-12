@@ -6,4 +6,5 @@ style: form
 explode: true
 schema:
   type: string
+  format: uuid
   example: '7d44b88c-4199-4bad-97dc-d78268e01398'

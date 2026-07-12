@@ -1,0 +1,5 @@
+:spec_title: Simplified Formats for openEHR Data
+:copyright_year: 2019
+:spec_status: STABLE
+:keywords: JSON, REST, web template, simplified data, flat, structured, simplified formats, SDT, simSDT, structSDT
+:description: Simplified Formats (flat, structured) for openEHR Data

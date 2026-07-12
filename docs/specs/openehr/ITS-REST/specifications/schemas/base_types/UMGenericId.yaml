@@ -4,10 +4,6 @@ allOf:
   - $ref: ../base_types/GenericId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [GENERIC_ID]
 x-discriminator-value: GENERIC_ID
 example:
   _type: GENERIC_ID

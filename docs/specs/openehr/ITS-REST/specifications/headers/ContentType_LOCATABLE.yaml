@@ -1,0 +1,7 @@
+schema:
+  type: string
+  enum:
+    - application/xml
+    - application/json
+    - application/openehr.wt.flat+json
+    - application/openehr.wt.structured+json

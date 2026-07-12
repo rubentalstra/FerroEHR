@@ -1,0 +1,12 @@
+title: IMPORTED_VERSION
+type: object
+allOf:
+  - $ref: ../demographic/ImportedVersion.yaml
+required:
+  - _type
+properties:
+  data:
+    $ref: ../demographic/UParty.yaml
+  item:
+    $ref: ../demographic/UMOriginalVersionOfParty.yaml
+x-discriminator-value: IMPORTED_VERSION

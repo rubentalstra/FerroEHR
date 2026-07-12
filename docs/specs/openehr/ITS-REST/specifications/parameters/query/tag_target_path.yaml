@@ -1,0 +1,7 @@
+name: tag_target_path
+in: query
+style: form
+explode: true
+schema:
+  type: string
+  example: '/context/start_time/value'

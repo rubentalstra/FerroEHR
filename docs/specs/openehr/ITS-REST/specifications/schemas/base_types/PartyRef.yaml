@@ -1,29 +1,17 @@
-# Note: This type codegen is failing around collision on property names _type vs type.
-# TODO: fix this as soon as redoc and/or openapi generator is able to coop with such names and distinguish the discriminator for real property
 title: PARTY_REF
 type: object
 description: Identifier for parties in a demographic or identity service.
-#allOf:
-#  - $ref: ../base_types/ObjectRef.yaml
-required:
-  - namespace
-  - type
-  - id
+allOf:
+  - $ref: ../base_types/ObjectRef.yaml
 properties:
-#  _type:
-#    type: string
-#    default: PARTY_REF
-  namespace:
-    type: string
   type:
     type: string
     pattern: '^PERSON|ORGANISATION|GROUP|AGENT|ROLE|PARTY|ACTOR$'
   id:
-    $ref: ../base_types/UObjectId.yaml
-#x-discriminator-value: PARTY_REF
+    $ref: ../base_types/UMHierObjectId.yaml
 example:
   id:
-    _type: OBJECT_VERSION_ID
-    value: 'b52b9408-7048-4ec8-94bd-831fb0727e67::openEHRSys.example.com::1'
+    _type: HIER_OBJECT_ID
+    value: 'b52b9408-7048-4ec8-94bd-831fb0727e67'
   namespace: local
   type: PERSON

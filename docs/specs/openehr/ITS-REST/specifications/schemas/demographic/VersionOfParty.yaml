@@ -1,0 +1,18 @@
+title: VERSION
+type: object
+description: A VERSION resource
+required:
+  - contribution
+  - commit_audit
+  - data
+properties:
+  _type:
+    type: string
+  contribution:
+    $ref: ../base_types/ObjectRefOfHierObjectId.yaml
+  signature:
+    type: string
+  commit_audit:
+    $ref: ../common/AuditDetails.yaml
+  data:
+    $ref: ../demographic/UParty.yaml

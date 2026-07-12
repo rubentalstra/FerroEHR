@@ -1,0 +1,4 @@
+title: ListOfPartyIdentity
+type: array
+items:
+  $ref: ../demographic/PartyIdentity.yaml

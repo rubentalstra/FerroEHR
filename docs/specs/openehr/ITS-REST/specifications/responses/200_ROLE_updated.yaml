@@ -1,0 +1,19 @@
+description: |
+  `200 OK` is returned when the ROLE is successfully updated, with the full resource in the response body when `Prefer` header is `return=representation`, or only its identifiers when `Prefer` header is `return=identifier`.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_ROLE.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
+  openehr-item-tag:
+    $ref: ../headers/openehr-item-tag.yaml
+  openehr-version-item-tag:
+    $ref: ../headers/openehr-version-item-tag.yaml
+content:
+  application/json:
+    schema:
+      oneOf:
+        - $ref: ../schemas/demographic/Role.yaml
+        - $ref: ../schemas/others/Identifier.yaml

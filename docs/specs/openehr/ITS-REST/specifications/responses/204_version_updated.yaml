@@ -1,0 +1,11 @@
+description: |
+  `204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_version.yaml
+  openehr-item-tag:
+    $ref: ../headers/openehr-item-tag.yaml
+  openehr-version-item-tag:
+    $ref: ../headers/openehr-version-item-tag.yaml

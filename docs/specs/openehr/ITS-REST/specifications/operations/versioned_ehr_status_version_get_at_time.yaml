@@ -9,10 +9,12 @@ tags:
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/query/version_at_time.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
 responses:
   '200':
-    $ref: ../responses/200_VERSION_at_time.yaml
+    $ref: ../responses/200_VERSION_of_EHR_STATUS_at_time.yaml
   '400':
-    $ref: ../responses/400_invalid_version_at_time.yaml
+    $ref: ../responses/400.yaml
   '404':
     $ref: ../responses/404_unknown_ehr_id_or_no_version_at_time.yaml

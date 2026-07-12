@@ -1,0 +1,7 @@
+name: tag_value
+in: query
+style: form
+explode: true
+schema:
+  type: string
+  example: 'follow-up'

@@ -1,0 +1,19 @@
+title: UPDATE_ITEM_TAG
+type: object
+required:
+  - key
+properties:
+  key:
+    type: string
+    description: Tag key (identifier)
+  value:
+    type: string
+    description: Tag value
+  target_path:
+    type: string
+    description: An AQL path withing the `target` used to tag a fine-grained element
+additionalProperties: false
+example:
+  key: flag
+  value: follow-up
+  target_path: /context/start_time/value

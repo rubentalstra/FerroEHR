@@ -6,6 +6,9 @@ description: |
   See also details on usage of [query parameters](query.html#tag/Request/Common-Headers-and-Query-Parameters).
 tags:
   - Query
+parameters:
+  - $ref: ../parameters/header/Accept_JSON.yaml
+  - $ref: ../parameters/header/ContentType_JSON.yaml
 requestBody:
   content:
     application/json:

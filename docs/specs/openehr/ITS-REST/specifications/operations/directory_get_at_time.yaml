@@ -11,10 +11,11 @@ parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/query/version_at_time.yaml
   - $ref: ../parameters/query/path.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
 responses:
   '200':
     $ref: ../responses/200_FOLDER_retrieved.yaml
   '204':
-    $ref: ../responses/204_because_deleted_at_time.yaml
+    $ref: ../responses/204_deleted_at_time.yaml
   '404':
     $ref: ../responses/404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml

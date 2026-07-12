@@ -1,2 +1,0 @@
-description: |
-  `422 Unprocessable Entity` is returned when the content could be converted to a COMPOSITION, but there are semantic validation errors, such as the underlying template is not known or is not validating the supplied COMPOSITION.

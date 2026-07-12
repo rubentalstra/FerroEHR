@@ -1,0 +1,8 @@
+name: concept
+in: query
+description: |
+  PAttern for matching `concept` (supports wildcards `*`)
+style: form
+schema:
+  type: string
+  example: '*signs*'

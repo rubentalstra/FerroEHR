@@ -7,6 +7,8 @@ tags:
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/path/versioned_object_uid_COMPOSITION.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
 responses:
   '200':
     $ref: ../responses/200_REVISION_HISTORY.yaml

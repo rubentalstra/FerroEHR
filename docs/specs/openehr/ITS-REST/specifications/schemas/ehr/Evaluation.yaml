@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: EVALUATION
+    enum: [EVALUATION]
   data:
     $ref: ../data_structures/UItemStructure.yaml
 x-discriminator-value: EVALUATION

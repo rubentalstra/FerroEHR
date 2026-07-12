@@ -1,0 +1,10 @@
+title: VERSION
+type: object
+oneOf:
+  - $ref: ../ehr/UMOriginalVersionOfEhrStatus.yaml
+  - $ref: ../ehr/UMImportedVersionOfEhrStatus.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    ORIGINAL_VERSION: ../ehr/UMOriginalVersionOfEhrStatus.yaml
+    IMPORTED_VERSION: ../ehr/UMImportedVersionOfEhrStatus.yaml

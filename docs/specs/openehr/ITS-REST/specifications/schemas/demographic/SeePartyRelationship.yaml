@@ -1,0 +1,5 @@
+title: PARTY_RELATIONSHIP
+type: array
+items:
+  type: object
+description: See [PARTY_RELATIONSHIP](demographic.html#tag/PARTY_RELATIONSHIP_schema) schema details.

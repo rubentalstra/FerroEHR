@@ -4,6 +4,13 @@ description: |
   List the available ADL2 operational templates on the system.
 tags:
   - ADL2
+parameters:
+  - $ref: ../parameters/header/Accept_JSON.yaml
+  - $ref: ../parameters/query/filter_template_id.yaml
+  - $ref: ../parameters/query/concept.yaml
+  - $ref: ../parameters/query/filter_version.yaml
+  - $ref: ../parameters/query/offset.yaml
+  - $ref: ../parameters/query/fetch.yaml
 responses:
   '200':
     $ref: ../responses/200_TemplateList_adl2.yaml

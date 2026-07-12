@@ -6,6 +6,14 @@ tags:
   - ADL1.4
 parameters:
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_Template.yaml
+  - name: Content-Type
+    in: header
+    style: simple
+    schema:
+      type: string
+      enum:
+        - application/xml
 requestBody:
   description: ''
   content:
@@ -13,7 +21,6 @@ requestBody:
       schema:
         oneOf:
           - $ref: ../schemas/aom/OperationalTemplate.yaml
-          - type: string
       example: >-
         <template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://schemas.openehr.org/v1">
@@ -72,6 +79,6 @@ responses:
   '201':
     $ref: ../responses/201_Template_adl1_4_upload.yaml
   '400':
-    $ref: ../responses/400_invalid_template_content.yaml
+    $ref: ../responses/400.yaml
   '409':
     $ref: ../responses/409_template_already_exists.yaml

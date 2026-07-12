@@ -19,6 +19,8 @@ tags:
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
 requestBody:
   description: |
     An EHR_STATUS resource MAY be also supplied by the client as the request body.

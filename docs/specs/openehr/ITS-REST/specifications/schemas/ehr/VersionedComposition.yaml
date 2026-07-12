@@ -6,7 +6,7 @@ allOf:
 properties:
   _type:
     type: string
-    default: VERSIONED_COMPOSITION
+    enum: [VERSIONED_COMPOSITION]
 x-discriminator-value: VERSIONED_COMPOSITION
 example:
   uid:

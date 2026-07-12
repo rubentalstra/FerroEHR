@@ -1,0 +1,7 @@
+name: tag_key
+in: query
+style: form
+explode: true
+schema:
+  type: string
+  example: 'flag'

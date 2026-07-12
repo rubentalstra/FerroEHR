@@ -1,0 +1,10 @@
+name: Content-Type
+in: header
+style: simple
+schema:
+  type: string
+  enum:
+    - application/json
+    - application/xml
+    - application/openehr.wt.flat+json
+    - application/openehr.wt.structured+json

@@ -20,39 +20,10 @@ include::{ref_dir}/docs/references/reference_definitions.adoc[]
 // ============================================= Asciidoc BODY ===============================================
 //
 
-include::master00-amendment_record.adoc[leveloffset=+1]
-
 //
 // --------------------------------------------- Preface -----------------------------------------------
 //
 
-== Acknowledgements
-
-=== Primary Author
-
-* Thomas Beale, Ars Semantica (UK); openEHR Foundation Management Board.
-
-=== Contributors
-
-This specification has benefited from formal and informal input from the openEHR and wider health informatics community. The openEHR Foundation would like to recognise the following for their contributions.
-
-* Christian Chevalley, Architect, EtherCIS, Thailand
-* Borut Fabjan, Program Manager, Better, Slovenia
-* Bostjan Lah, Senior Architect, Better, Slovenia
-* Ian McNicoll MD, FreshEHR, UK
-* Bjørn Næss, DIPS, Norway
-* Matija Polajnar, Architect, Marand, Slovenia
-
-A significant part of the design ideas and content of this specification was adapted from:
-
-* the Marand 'Web Templates' specification, kindly provided by Better by Marand d.o.o.;
-* the EtherCIS ECISFLAT format by the EtherCIS community;
-* the XSD-based Template Data Schema (TDS) format developed by Ocean Health Systems.
-
-=== Trademarks
-
-* 'openEHR' is a registered trademark of the openEHR Foundation
-* 'OMG' and 'UML' are registered trademarks of the Object Management Group
 
 //
 // --------------------------------------------- TOC -----------------------------------------------
@@ -64,11 +35,14 @@ A significant part of the design ideas and content of this specification was ada
 //
 :sectnums:
 include::master01-preface.adoc[leveloffset=+1]
-include::master02-overview.adoc[leveloffset=+1]
-include::master03-conceptual.adoc[leveloffset=+1]
-include::master04-sopt_generation.adoc[leveloffset=+1]
-include::master05-jdt_concrete_formats.adoc[leveloffset=+1]
-include::master06-instance_conversion.adoc[leveloffset=+1]
+
+
+//
+// --------------------------------------------- Amendment Record -----------------------------------------------
+//
+
+:sectnums!:
+include::master00-amendment_record.adoc[leveloffset=+1]
 
 //
 // --------------------------------------------- REFERENCES -----------------------------------------------

@@ -1,0 +1,9 @@
+description: |
+  `200 OK` is returned when the requested VERSION is successfully retrieved.
+headers:
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/UVersionOfEhrStatus.yaml

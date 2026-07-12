@@ -1,0 +1,29 @@
+= Preface
+
+== Purpose
+
+This document specifies the *Simplified Formats* as a JSON representation for openEHR data instances.
+It provides a simplified, developer-friendly alternative to *canonical* openEHR JSON and XML serializations by using human-readable field identifiers rather than archetype paths.
+
+These formats are designed to lower the barrier to entry for working with openEHR data by providing a more accessible way to create and manipulate content (e.g. Compositions) compared to the canonical formats, making it easier for developers who are new to openEHR.
+
+== Status
+
+This specification is in the {spec_status} state. The development version of this document can be found at {openehr_simplified_formats}[{openehr_simplified_formats}^].
+
+Known omissions or questions are indicated in the text with a 'to be determined' paragraph, as follows:
+[.tbd]
+*TBD*: (example To Be Determined paragraph)
+
+== Feedback
+
+Feedback may be provided on the {openehr_technical_list}/its[openEHR ITS forum^].
+
+Issues may be raised on the {component_prs}[specifications Problem Report tracker^].
+
+To see changes made due to previously reported issues, see the {component_history}[{component} component Change Request tracker^].
+
+== Conformance
+
+When used with openEHR-REST API, the available calls to be conformance tested are the same as for other openEHR serialisation formats (canonical JSON etc), with a different representation format indicated by setting the appropriate `Content-Type` HTTP header.
+Conformance of a data or software artefact to an openEHR specification is determined by a formal test of that artefact against the relevant openEHR Implementation Technology Specification(s) (ITSs).

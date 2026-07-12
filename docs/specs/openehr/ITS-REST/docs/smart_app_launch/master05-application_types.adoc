@@ -1,0 +1,31 @@
+= Application Types
+
+The appropriate authentication flow depends on the type of the client _Application_, particularly its ability to securely manage credentials and the nature of its interaction with users or backend services. The *SMART on openEHR* specification defines two fundamental client types based on credential handling capabilities, and further distinguishes applications by their interaction model.
+
+
+== Classified by Credential Handling
+
+The following client application types are defined by the {hl7_smart_app_launch}/app-launch.html#support-for-public-and-confidential-apps[considered by SMART specification^] based on their ability to securely manage secrets or to secure the client authentication using other means:
+
+- **Confidential applications**:
+These applications can securely hold credentials such as a `client_secret` or private keys. This category includes backend services, server-side web applications, and applications using hardware security modules or additional technology for higher security.
+
+- **Public applications**:
+These applications cannot securely store secrets. This includes native mobile apps and single-page web applications (SPAs) running in browsers. For these apps, authentication must rely on flows that do not require client credentials (e.g., PKCE).
+
+The distinction between _public_ and _confidential_ clients is essential in determining the appropriate OAuth2 flow, and impacts which tokens can be safely issued and under what conditions.
+
+
+== Classified by User Interaction
+
+Applications are also classified by the context in which they are launched and the nature of their end-users:
+
+- **Patient-facing applications**:
+These applications are used directly by the patient, or are launched by a practitioner in the context of a specific patient. Optionally, the launch may be tied to a particular episode of care.
+
+- **Practitioner-facing applications**:
+These applications are used by healthcare professionals and may operate within or outside the context of a specific patient or episode.
+
+- **Backend services**:
+These applications operate autonomously without direct user interaction. They are typically used for system-to-system communication or background processing, such as synchronization, analytics, or alerts.
+

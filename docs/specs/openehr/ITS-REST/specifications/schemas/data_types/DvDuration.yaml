@@ -2,8 +2,12 @@ title: DV_DURATION
 type: object
 allOf:
   - $ref: ../data_types/DvAmount.yaml
+required:
+  - value
 properties:
   _type:
     type: string
-    default: DV_DURATION
+    enum: [DV_DURATION]
+  value:
+    type: string
 x-discriminator-value: DV_DURATION

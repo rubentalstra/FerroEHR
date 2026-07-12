@@ -4,8 +4,4 @@ allOf:
   - $ref: ../base_types/TemplateId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [TEMPLATE_ID]
 x-discriminator-value: TEMPLATE_ID

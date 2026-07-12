@@ -1,2 +1,0 @@
-description: |
-  `400 Bad Request` is returned when the request has invalid content such as an invalid `version_at_time` format.

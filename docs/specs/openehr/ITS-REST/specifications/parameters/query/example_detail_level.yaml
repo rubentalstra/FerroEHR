@@ -1,0 +1,10 @@
+name: detail_level
+in: query
+description: |
+  The level of data points details of the example.
+style: form
+explode: true
+schema:
+  type: string
+  enum: [required, medium, complete]
+  default: required

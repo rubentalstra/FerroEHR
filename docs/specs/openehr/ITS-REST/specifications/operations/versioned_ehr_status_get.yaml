@@ -6,6 +6,8 @@ tags:
   - EHR_STATUS
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
 responses:
   '200':
     $ref: ../responses/200_VERSIONED_EHR_STATUS.yaml

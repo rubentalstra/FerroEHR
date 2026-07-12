@@ -22,9 +22,3 @@ properties:
     $ref: ../common/Archetyped.yaml
   feeder_audit:
     $ref: ../common/FeederAudit.yaml
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    COMPOSITION: '#/components/schemas/Composition'
-    EHR_STATUS: '#/components/schemas/EhrStatus'
-    FOLDER: '#/components/schemas/Folder'

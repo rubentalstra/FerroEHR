@@ -1,9 +1,0 @@
-title: VERSION
-oneOf:
-  - $ref: ../common/UMOriginalVersion.yaml
-  - $ref: ../common/UMImportedVersion.yaml
-discriminator:
-  propertyName: _type
-  mapping:
-    ORIGINAL_VERSION: ../common/UMOriginalVersion.yaml
-    IMPORTED_VERSION: ../common/UMImportedVersion.yaml

@@ -7,6 +7,8 @@ tags:
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
 requestBody:
   description: |
     The directory.
@@ -19,6 +21,6 @@ responses:
   '201':
     $ref: ../responses/201_directory.yaml
   '400':
-    $ref: ../responses/400_FOLDER.yaml
+    $ref: ../responses/400.yaml
   '404':
     $ref: ../responses/404_unknown_ehr_id.yaml

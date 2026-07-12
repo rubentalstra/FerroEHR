@@ -1,0 +1,15 @@
+# Note: copy of same schema from `ehr`, as we need to redefine to use only demographic types
+#       reminder to keep them in sync!
+title: IMPORTED_VERSION
+type: object
+allOf:
+  - $ref: ../demographic/Version.yaml
+required:
+  - item
+properties:
+  _type:
+    type: string
+    enum: [IMPORTED_VERSION]
+  item:
+    $ref: ../demographic/OriginalVersion.yaml
+x-discriminator-value: IMPORTED_VERSION

@@ -1,0 +1,9 @@
+title: ADDRESS
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - details
+properties:
+  details:
+    $ref: ../data_structures/UItemStructure.yaml

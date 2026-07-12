@@ -1,6 +1,6 @@
 title: QueryName
 description: |
   The (fully qualified) name of the query (when is registered as a stored query), in a format of `[{namespace}::]{query-name}`. 
-  The `namespace` prefix is optional, and when used it should be in a form of a reverse domain name.
+  See [Query Name](#tag/Qualified_query_name) for details on syntax.
 type: string
 example: "org.openehr::compositions"

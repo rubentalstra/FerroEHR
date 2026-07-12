@@ -6,4 +6,5 @@ style: form
 explode: true
 schema:
   type: string
+  format: datetime
   example: '2015-01-20T19:30:22.765+01:00'

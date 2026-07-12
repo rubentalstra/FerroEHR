@@ -1,0 +1,17 @@
+description: |
+  `201 Created` is returned when the CONTRIBUTION is successfully created. 
+  If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+  If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
+headers:
+  ETag:
+    $ref: ../headers/ETag_CONTRIBUTION.yaml
+  Location:
+    $ref: ../headers/Location_demographic_CONTRIBUTION.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
+content:
+  application/json:
+    schema:
+      oneOf:
+        - $ref: ../schemas/common/Contribution.yaml
+        - $ref: ../schemas/others/Identifier.yaml

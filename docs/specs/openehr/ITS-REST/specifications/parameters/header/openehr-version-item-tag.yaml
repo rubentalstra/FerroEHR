@@ -1,0 +1,12 @@
+name: openehr-version-item-tag
+in: header
+description: |
+  The list of all ITEM_TAG to be set and associated with the current VERSION - see [details](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag).
+required: false
+style: simple
+explode: true
+schema:
+  type: array
+  items:
+    $ref: ../../schemas/common/UpdateItemTag.yaml
+example: key="category",value="final"; key="flag",value="follow-up",target_path="/composition/start_time/value"

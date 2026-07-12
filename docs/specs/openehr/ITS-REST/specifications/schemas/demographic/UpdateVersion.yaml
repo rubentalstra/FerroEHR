@@ -1,0 +1,23 @@
+# Note: copy of same schema from `ehr`, as we need to redefine to use only demographic types
+#       reminder to keep them in sync!
+title: UPDATE_VERSION
+type: object
+required:
+  - lifecycle_state
+  - data
+  - commit_audit
+properties:
+  preceding_version_uid:
+    $ref: ../base_types/ObjectVersionId.yaml
+  signature:
+    type: string
+  lifecycle_state:
+    $ref: ../data_types/DvCodedText.yaml
+  attestations:
+    type: array
+    items:
+      $ref: ../common/UpdateAttestation.yaml
+  data:
+    $ref: ../demographic/UVersionable.yaml
+  commit_audit:
+    $ref: ../common/UpdateAudit.yaml

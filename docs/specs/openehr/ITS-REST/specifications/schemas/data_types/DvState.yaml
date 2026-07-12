@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_STATE
+    enum: [DV_STATE]
   value:
     $ref: ../data_types/DvCodedText.yaml
   is_terminal:

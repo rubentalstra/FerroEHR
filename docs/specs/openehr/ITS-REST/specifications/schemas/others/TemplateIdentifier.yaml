@@ -1,0 +1,10 @@
+title: Identifier
+type: object
+required:
+  - template_id
+properties:
+  template_id:
+    type: string
+    description: The fully qualified template identifier.
+example:
+  template_id: 'org.highmed::openEHR-EHR-COMPOSITION.t_vital_signs.v1.0.0'

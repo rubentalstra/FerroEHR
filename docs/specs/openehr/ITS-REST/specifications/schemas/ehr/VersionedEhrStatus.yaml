@@ -6,7 +6,7 @@ allOf:
 properties:
   _type:
     type: string
-    default: VERSIONED_EHR_STATUS
+    enum: [VERSIONED_EHR_STATUS]
 x-discriminator-value: VERSIONED_EHR_STATUS
 example:
   uid:

@@ -4,7 +4,7 @@
 
 A common use-case is to execute queries within a specific EHR. 
 
-This is achieved by supplying a `ehr_id` query parameter or setting a `openEHR-EHR-id` request header.
+This is achieved by supplying an `ehr_id` query parameter or setting an `openehr-ehr-id` request header.
 
 
 ## Population queries
@@ -23,7 +23,7 @@ Examples of use-cases can be:
 Stored queries are queries which have their definition stored (registered) on the server. 
 These are identified by their [qualified name and version](#tag/Qualified_query_name).
 
-Using stored queries has several of advantages:
+Using stored queries has several advantages:
 - separation of responsibilities (some users/developers write queries, others just call/execute them and consume the responses),
 - no need to pass long query string over the network.
 
@@ -32,5 +32,5 @@ Queries can be stored or, once stored, their definition can be retrieved using t
 
 ## Ad-hoc queries
 
-As opposed to stored queries, ad-hoc type queries does not have their definitions stored on the server, neither any associated identifier.
-These queries will be executed as-is, as part request body or query parameter, by the [Execute ad-hoc AQL](#tag/Query/operation/query_execute_adhoc_query) operation endpoint. 
+As opposed to stored queries, ad-hoc type queries do not have their definitions stored on the server, nor any associated identifier.
+These queries will be executed as-is, as part of the request body or as a query parameter, by the [Execute ad-hoc AQL](#tag/Query/operation/query_execute_adhoc_query) operation endpoint. 

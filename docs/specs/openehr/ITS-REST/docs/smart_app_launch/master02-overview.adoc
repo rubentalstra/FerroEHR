@@ -1,0 +1,78 @@
+= Overview
+
+== Background
+
+*SMART* stands for “Substitutable Medical Applications and Reusable Technologies”, a healthcare standard enabling applications to access clinical information from a data store.
+It was originally proposed by the https://smarthealthit.org/[SMART Health IT^] project (run by the Computational Health Informatics Program at Boston Children’s Hospital) and later formalized as {hl7_smart_app_launch}/[SMART App Launch Framework^], layered on top of the {hl7_fhir}[FHIR APIs^] to facilitate standardized data access.
+
+The specification builds on {ietf_html}/rfc6749[OAuth 2.0^] and {oidc_authentication}[OpenID Connect (OIDC)^], widely adopted industry standards for authentication and authorization.
+It allows third-party applications to authenticate and interoperate securely with any compliant system.
+It also defines launch sequences, token scopes, context passing mechanisms, and FHIR-based data access norms.
+
+== Glossary
+
+[width="100%",cols="1,7",options="header"]
+|=======================================================================
+| Term             | Definition
+| SMART on openEHR | This specification document detailing the SMART framework for an openEHR enabled platform
+| SMART App Launch | The original SMART framework specified by HL7 FHIR, often referred as "SMART on FHIR"
+| Vendor           | An entity that develops and supplies software to end-users.
+| User             | The individual operating the Application to perform specific functions; also referred to as the "end-user".
+| Application      | A software application developed by a Vendor to operate with a Platform and/or Launcher, potentially built by the same or a different Vendor. In OAuth terminology this is the "client", whereas in FHIR is often called the "SMART App".
+| Platform         | A software ecosystem comprising at minimum an Authorization Server, an openEHR Clinical Data Repository (CDR), and a FHIR Server. It exposes openEHR REST APIs, FHIR APIs, and possibly other APIs. In FHIR this is often referred to as the "EHR system". The Platform includes the authentication and authorization infrastructure that supports OAuth 2.0 Framework and this specification.
+| Launcher         | A user-facing application, typically developed by the Platform vendor, which initiates the launch of Applications within the context of a specific Patient or Practitioner. The Launcher may be integrated into the Platform's main application (e.g. as a Portal) or exist as an independent application.
+| EHR              | A (session) context representing the {openehr_rm_ehr}#_ehr_package[openEHR `EHR` container^] for the corresponding Patient, indicating the subject of interactions through the Application.
+|=======================================================================
+
+[NOTE]
+====
+The {hl7_smart_app_launch}/[SMART App Launch Framework^] specification uses the terms '_EHR_' and '_EHR system_' to describe a system comprising a FHIR Server, Authorization Server, and potentially other components, including a Launcher.
+
+In contrast, openEHR defines an {openehr_rm_ehr}[EHR Information Model^], centered around the {openehr_rm_ehr}#_root_ehr_object[root `EHR` container^].
+
+To avoid ambiguity, this specification reserves the term '_EHR_' exclusively for references to openEHR constructs (e.g., EHR type, EHR ID).
+Alternate terminology will be used to describe equivalent FHIR-based system components.
+====
+
+== Why SMART on openEHR?
+
+A widely accepted vision today is that no single software vendor can provide all the necessary tools and solutions required by a modern healthcare system, while simultaneously ensuring high quality and maintaining a low total cost of ownership.
+Independent vendors, specializing in solving specific problems, often offer advantages over monolithic software suites attempting to address all needs.
+
+In practice, this vision necessitates a collaborative ecosystem where applications from multiple vendors operate together to deliver a comprehensive solution.
+This approach is often referred to as a "best-of-breed" architecture.
+However, current implementations typically involve a lengthy and complex manual "integration" phase, during which vendors must coordinate their systems to interoperate, an expensive and time-consuming process that poses a significant barrier to entry for new vendors.
+
+The SMART specification addresses this challenge by standardizing the security and interactions between systems and applications.
+It establishes a clear contract between the _Application Vendor_ and the _Platform Vendor_, covering the following requirements:
+
+- The _Application_ must be able to run on a domain owned by the _Application Vendor_.
+- The _Platform_ must be able to operate on a domain owned by the _Platform Vendor_.
+- The _Application_ must be able to discover the API services provided by the _Platform_.
+- The _Application_ must be able to authenticate with the _Platform_ to access its APIs.
+- The _Platform_ must be able to authorize the _Application_ for specific actions and data access, based on user roles and granted scopes.
+- The _Application_ must be able to determine the active operational "context" managed by the _Platform_, such as the current EHR.
+- The _Application_ must be able to embed within the _Platform_'s user interface while maintaining the current context to ensure a seamless user experience.
+
+The *SMART on openEHR* specification is designed to maintain compatibility with {hl7_smart_app_launch}/[SMART App Launch Framework^], while extending it to work with {openehr_its_rest_releases}[openEHR REST APIs^] and potentially other API types.
+It defines a framework supporting the following capabilities:
+
+* <<_application_registration,Application Registration>>
+* <<_service_discovery,Service Discovery>>
+* <<_authentication,Authentication>>
+* <<_authorization,Authorization>>
+* <<_scopes,Scopes>>
+* <<_context_selection,Context Selection>>
+* <<_embedded_iframe_launch,Embedded iFrame Launch>>
+
+== Foundational Concepts
+
+The {openehr_rm}[openEHR Reference Model^] and the {openehr_ehr_rest_api}[openEHR REST API specification^] provide the foundational structure for interoperable _Applications_.
+For these applications to be truly portable across systems and vendors, a standardized approach to _authentication_ and _authorization_ is essential.
+
+_Authentication_ is the process of verifying the identity of an end-user or client application, while _Authorization_ is the process of determining what access or privileges that entity has.
+
+The *SMART on openEHR* specification builds on the {ietf_html}/rfc6749[OAuth 2.0 Framework^] and optionally {oidc_authentication}[OpenID Connect (OIDC)^], to allow third-party applications to securely obtain authorized access to protected healthcare data exposed as APIs by the _Platform_.
+
+Moreover, many such applications operate within the _context_ of a specific Patient or a particular Episode.
+Therefore, selection of the appropriate _context_ becomes a critical prerequisite for launching the _Application_.

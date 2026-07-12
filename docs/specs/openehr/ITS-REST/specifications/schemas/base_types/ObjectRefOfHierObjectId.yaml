@@ -1,0 +1,13 @@
+title: OBJECT_REF
+type: object
+allOf:
+  - $ref: ../base_types/ObjectRef.yaml
+properties:
+  id:
+    $ref: ../base_types/UMHierObjectId.yaml
+example:
+  id:
+    _type: HIER_OBJECT_ID
+    value: '6cb19121-4307-4648-9da0-d62e4d51f19b'
+  namespace: local
+  type: CONTRIBUTION

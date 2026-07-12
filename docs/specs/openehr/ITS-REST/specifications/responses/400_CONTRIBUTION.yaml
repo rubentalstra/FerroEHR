@@ -1,5 +1,6 @@
 description: |
-  `400 Bad Request` is returned when the request URL or body could not be parsed or has invalid content (e.g. invalid `ehr_id`, or either the body of the request not be converted to a valid CONTRIBUTION object, or the modification type doesn’t match the operation - i.e. first version of a composition with MODIFICATION).
+  `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content, or the modification type does not match the operation - i.e. first version of a MODIFICATION).
+  The response body MAY contain error details.
 content:
   application/json:
     schema:

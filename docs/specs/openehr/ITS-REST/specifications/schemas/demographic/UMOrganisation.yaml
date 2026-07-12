@@ -1,0 +1,11 @@
+title: ORGANISATION
+type: object
+allOf:
+  - $ref: ../demographic/Organisation.yaml
+required:
+  - _type
+properties:
+  _type:
+    type: string
+    enum: [ORGANISATION]
+x-discriminator-value: ORGANISATION

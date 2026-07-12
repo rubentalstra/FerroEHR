@@ -1,0 +1,21 @@
+operationId: admin_ehr_delete
+summary: Delete EHR by id
+description: |
+  Deletes the EHR identified by `ehr_id`. 
+  
+  All resources associated with or owned by the specified EHR (such as COMPOSITION, EHR_STATUS, ITEM_TAG, CONTRIBUTION, and their historical versions) will also be **permanently** and physically deleted, in compliance with applicable data protection regulations (e.g., the GDPR in the European Union).
+
+  The server may execute this operation asynchronously (e.g. in batches), in which case returns status `202 Accepted`.
+  If the deletion is processed synchronously and completes successfully, the server returns status `204 No Content`.
+
+tags:
+  - EHR
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+responses:
+  '202':
+    $ref: ../responses/202.yaml
+  '204':
+    $ref: ../responses/204_deleted_hard.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml

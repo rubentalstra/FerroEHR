@@ -5,5 +5,5 @@ allOf:
 properties:
   _type:
     type: string
-    default: ARCHETYPE_ID
+    enum: [ARCHETYPE_ID]
 x-discriminator-value: ARCHETYPE_ID

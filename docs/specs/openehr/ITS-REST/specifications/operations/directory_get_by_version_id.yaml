@@ -10,6 +10,7 @@ parameters:
   - $ref: ../parameters/path/ehr_id.yaml
   - $ref: ../parameters/path/version_uid.yaml
   - $ref: ../parameters/query/path.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
 responses:
   '200':
     $ref: ../responses/200_FOLDER_retrieved.yaml

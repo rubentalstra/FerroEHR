@@ -5,8 +5,12 @@ allOf:
 required:
   - value
 properties:
+  _type:
+    type: string
+    enum: [HIER_OBJECT_ID]
   value:
     type: string
     format: uuid
-    example: '6cb19121-4307-4648-9da0-d62e4d51f19b'
 x-discriminator-value: HIER_OBJECT_ID
+example:
+  value: '6cb19121-4307-4648-9da0-d62e4d51f19b'

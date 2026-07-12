@@ -5,7 +5,7 @@ allOf:
 properties:
   _type:
     type: string
-    default: ITEM_TABLE
+    enum: [ITEM_TABLE]
   items:
     type: array
     items:

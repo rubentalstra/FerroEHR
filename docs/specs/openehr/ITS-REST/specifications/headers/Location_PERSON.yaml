@@ -1,0 +1,6 @@
+description: |
+  The `Location` response header indicates the URL of the PERSON resource.
+schema:
+  type: string
+  format: url
+  example: 'https://openEHRSys.example.com/v1/demographic/person/6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys.example.com::2'
