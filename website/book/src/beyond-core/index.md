@@ -26,6 +26,11 @@ how to consume it.
 - **[Terminology servers](terminology.md)** — the bundled openEHR terminology
   for local codes, plus pluggable external FHIR R4 terminology servers for
   validating and expanding coded values against external value sets.
+- **[Subject Proxy](subject-proxy.md)** — read facts about a subject
+  ("date of birth", "latest blood pressure") through named variables backed
+  by data frames — AQL against the CDR, reads from configured external FHIR
+  servers, or manual feeds — with a per-variable sample history and
+  currency-based freshness. A service capability (no REST endpoints yet).
 - **[Change events (AMQP)](amqp.md)** — a transactional outbox that publishes
   a PHI-free, at-least-once, per-EHR-ordered event for every commit to
   AMQP/RabbitMQ, so downstream systems can respond to changes.

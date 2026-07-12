@@ -115,12 +115,13 @@ in the System manifest + /status, AuditOpId on extension routers, the query
 
 ## Exit criteria
 
-- [ ] Every `src/` module maps 1:1 to a spec document (or sits in
+- [x] Every `src/` module maps 1:1 to a spec document (or sits in
   `extensions/` with a spec-silence flag).
-- [ ] The five ITS-REST spec documents fully read and realized; every
+- [x] The nine development-edition spec documents fully read and realized; every
   MUST/SHOULD in the Overview protocol implemented or PORT-NOTEd.
-- [ ] Blueprint map rows 13–15 tails closed.
-- [ ] **Zero `TODO(w3e-*)`/`TODO(w3c…)` markers across the four crates**
-  (grep-verified in the close checklist).
-- [ ] Workspace green (build + clippy + nextest), ECC zero-drift, docs +
-  changelog current.
+- [x] Blueprint map rows 13–15 tails closed (weak ETags, committal-header MUST, Location policy, OPTIONS /, RESULT_SET ETag, 408).
+- [x] **Zero `TODO(w3e-*)`/`TODO(w3c…)` markers across the four crates** (grep-verified 2026-07-12).
+- [~] Workspace builds all targets; docs + changelog current. Full nextest
+  triage, clippy, and the ECC zero-drift run were skipped at merge by owner
+  ruling and are the FIRST debt of W-3f (`w3f-platform-redesign-PROMPT.md`
+  §Constraints).

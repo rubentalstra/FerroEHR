@@ -148,6 +148,26 @@ The telemetry environment variables:
 > database pool, AQL latency, validation failures, audit health) and a starter
 > alert pack — point the server at it with the two OTLP variables above.
 
+## The admin API: physical deletion
+
+Normal openEHR deletes are *logical* — history is retained. The admin API is
+the exception: **physical, irreversible** removal, for legal erasure requests
+and test-data cleanup. It is mounted only when
+`EHRBASE_REST_ADMIN__ENABLED=true` (otherwise its routes are plain `404`s)
+and is classed under admin authorization (the `ADMIN` role).
+
+- `DELETE {base}/admin/ehr/{ehr_id}` — physically delete one EHR and
+  everything in it. **204** on success, **404** for an unknown id.
+- `DELETE {base}/admin/ehr/all` — bulk delete. **With no `ehr_id` parameter
+  this deletes every EHR on the server.** To delete a subset, pass
+  `?ehr_id=<uuid>` — repeatable (`?ehr_id=a&ehr_id=b`) or comma-separated
+  (`?ehr_id=a,b`). Returns **204** with no body.
+
+> [!WARNING]
+> `DELETE /admin/ehr/all` without a parameter empties the repository — there
+> is no confirmation step and no undo. Keep the admin API disabled unless a
+> workflow needs it, and gate the `ADMIN` role tightly.
+
 ## Health probes and the management surface
 
 The management surface — health, info, metrics, and runtime log control — is

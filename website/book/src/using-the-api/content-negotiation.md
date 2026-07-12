@@ -1,10 +1,11 @@
 # Content negotiation & errors
 
-Three HTTP mechanisms cut across every openEHR resource: choosing the wire
-format (JSON or XML), controlling how much a write returns (the `Prefer`
-header), and versioned optimistic concurrency (`ETag` and `If-Match`). This
-chapter explains all three and the shape of error responses, so the examples in
-[Resource walkthroughs](resources.md) make sense in general.
+A handful of HTTP mechanisms cut across every openEHR resource: choosing the
+wire format (JSON or XML), controlling how much a write returns (the `Prefer`
+header), versioned optimistic concurrency (`ETag` and `If-Match`), and the
+request headers that enrich a commit (audit metadata and item tags). This
+chapter explains them all, plus the shape of error responses, so the examples
+in [Resource walkthroughs](resources.md) make sense in general.
 
 ## JSON and XML
 
@@ -55,6 +56,11 @@ Use `return=representation` when you want the server-completed object back
 (with its assigned version id and any server-set audit fields); use
 `return=minimal` for throughput when you only need the id.
 
+The response echoes the preference the server actually honoured in a
+**`Preference-Applied`** header (`return=representation`,
+`return=identifier`, or `return=minimal`), so a client can tell what it got
+without sniffing the body.
+
 ### `Prefer: resolve_refs`
 
 Contribution reads return their `versions` as `OBJECT_REF`s by default. Add
@@ -69,11 +75,13 @@ openEHR objects are versioned, and updates use HTTP preconditions to prevent
 lost updates:
 
 - Every read and successful write returns an **`ETag`** header carrying the
-  object or version identifier (a *weak* ETag, `W/"..."`).
+  object or version identifier as a *weak* ETag, `W/"..."`.
 - Updating or deleting a versioned object requires an **`If-Match`** header
-  set to the **current** version id, in double quotes:
+  set to the **current** version id. Both the weak form and a bare quoted
+  value are accepted — echoing the `ETag` you received works either way:
 
   ```text
+  If-Match: W/"8849182c-82ad-4088-a07f-48ead4180515::your.system::2"
   If-Match: "8849182c-82ad-4088-a07f-48ead4180515::your.system::2"
   ```
 
@@ -81,9 +89,9 @@ lost updates:
   Precondition Failed** and the *current* version id in the response `ETag`.
   Re-read, reconcile, and retry against the new version.
 
-`Location` may appear on responses too, but treat it as informational for reads
-(it is marked deprecated on retrieval responses in the contract); the `ETag` is
-the authoritative identifier.
+A **`Location`** header is emitted only when a resource is **created** —
+reads and deletes identify the version through `ETag` alone, so do not expect
+`Location` on them; the `ETag` is the authoritative identifier.
 
 > [!NOTE]
 > Version ids normally end in a plain trunk number (`…::2`), but openEHR
@@ -99,6 +107,66 @@ the authoritative identifier.
 > The round-trip is: read the resource → keep its `ETag` value → send it back as
 > `If-Match` on the update → get a new `ETag` for the version you just created.
 > Never fabricate a version id; always echo the one the server gave you.
+
+## Commit metadata headers
+
+When you commit through the direct resource endpoints (composition,
+EHR_STATUS, directory), the server builds the version's audit for you. Two
+request headers let you set parts of it — **`openehr-version`** for the
+version's own attributes and **`openehr-audit-details`** for the commit
+audit. The value is a comma-separated list of `attribute.subkey="value"`
+pairs (quoted values may contain commas; the header may repeat, and repeats
+are merged):
+
+```text
+# Commit a composition as a draft (lifecycle state "incomplete", code 553)
+openehr-version: lifecycle_state.code_string="553"
+
+# Name the committer, describe the change, and stamp the source system
+openehr-audit-details: committer.name="John Doe",description.value="Corrected dosage",system_id="pas.example.org"
+```
+
+The attributes the server merges:
+
+| Header | Attribute | Sub-keys |
+|---|---|---|
+| `openehr-version` | `lifecycle_state` | `code_string` |
+| `openehr-audit-details` | `change_type` | `code_string` |
+| `openehr-audit-details` | `description` | `value` |
+| `openehr-audit-details` | `committer` | `name`, `external_ref.id`, `external_ref.namespace`, `external_ref.type` |
+| `openehr-audit-details` | `system_id` | (bare value) |
+
+A client-supplied `system_id` is merged into the commit audit — useful when a
+gateway commits on behalf of a source system; when absent, the server stamps
+its own system id.
+
+> [!NOTE]
+> The older dotted spellings — `openEHR-VERSION.lifecycle_state:
+> code_string="553"`, `openEHR-AUDIT_DETAILS.committer: name="John Doe"`,
+> and so on, with the attribute in the header *name* — are deprecated but
+> still accepted. If both forms appear, the lowercase value-form header wins.
+
+## Item tags via headers
+
+Item tags — small `key`/`value` annotations, optionally pointing at a node
+inside the data via `target_path` — can ride the same request as a write, so
+tagging does not need a second round trip. Two headers carry them:
+
+- **`openehr-item-tag`** — tags targeting the versioned object;
+- **`openehr-version-item-tag`** — tags targeting the version being
+  committed.
+
+The value is a `;`-separated list of tags, each a comma-separated set of
+`key="…"`, `value="…"`, and optional `target_path="…"` pairs:
+
+```text
+openehr-version-item-tag: key="diagnosis",value="confirmed",target_path="/content[0]"; key="reviewed",value="true"
+```
+
+They are accepted on the EHR-group change-controlled writes (composition
+create/update, EHR_STATUS update, directory create/update) and on demographic
+party writes, and the stored tags are echoed back in the same headers on the
+response. Sending the header with an **empty value** removes all tags.
 
 ## Error responses
 
@@ -126,6 +194,9 @@ Errors use conventional HTTP status codes (see the summary in
   ```json
   { "error": "Not Found", "message": "No EHR with id ..." }
   ```
+
+  This shape is used consistently — including for `405 Method Not Allowed`
+  and `501 Not Implemented`, which some servers leave bodyless.
 
 Match on the HTTP status first; read the body for the human-readable detail and,
 for validation, the per-node list.
