@@ -31,5 +31,6 @@ disk (35 GB copy) and was retired 2026-07-12: `target-cli` is deleted, do NOT
 recreate it. Current scheme: the CLI keeps `./target`; the IDE is the one
 isolated (RustRover Cargo settings → env `CARGO_TARGET_DIR=target/ide`).
 Never pkill -9 rustc to "fix" slowness — it corrupts incremental caches and
-makes it worse. Full discipline now lives in CLAUDE.md §"Target-dir &
-warm-build discipline"; see [[per-agent-cargo-target-dir]].
+makes it worse. Full discipline (fixed agent lanes target/agent-t1..t4,
+clean-at->30GB hygiene) lives in CLAUDE.md §"Target-dir & warm-build
+discipline".
