@@ -1,0 +1,746 @@
+//! EHR-Extract export (SM `I_EHR_EXTRACT_SERVICE.export_ehrs` /
+//! `export_ehr_extracts`) over the greenfield versioned store.
+//!
+//! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_ehr_extract_service.adoc`
+//! (`export_ehrs` / `export_ehr_extracts`); the RM EHR-Extract IM in
+//! `docs/specs/openehr/RM/docs/ehr_extract/` — `master05-openehr_extract_package.adoc`
+//! (`X_VERSIONED_OBJECT` and the five `X_VERSIONED_*` wrappers, §Demographic
+//! Referencing) and `master09-semantics.adoc` §Creation Semantics (the
+//! extract-building algorithm: primary set → `X_VERSIONED_COMPOSITION`,
+//! demographic-reference resolution, `OBJECT_REF.namespace = "local"` rewrite,
+//! multimedia include/exclude, `DV_LINK` following). The generated RM types are
+//! in `crates/openehr-rm/src/ehr_extract/`.
+//!
+//! An exported `EXTRACT` is a canonical-JSON `Value` built directly over the
+//! stored versions: each versioned object becomes one `OPENEHR_CONTENT_ITEM`
+//! wrapping an `X_VERSIONED_<kind>` whose `versions` are the exact
+//! `ORIGINAL_VERSION`s the read path serves ([`crate::versioning::original_version`]),
+//! so the extract content is byte-identical to what `GET .../versioned_*`
+//! returns — then its content references are rewritten to the extract-local
+//! namespace per the Creation-Semantics algorithm (see [`rewrite_content_refs`]).
+//!
+//! PORT NOTE (synthetic archetype ids — master05 class tables + BASE
+//! `data_structures` `LOCATABLE.archetype_node_id` 1..1): the extract wrapper
+//! classes (`EXTRACT`, `EXTRACT_CHAPTER`, `OPENEHR_CONTENT_ITEM`) are
+//! `LOCATABLE`s whose `archetype_node_id` must be present, yet this server
+//! *synthesizes* these structural nodes with no generating archetype. We emit
+//! the RM class token (`"EXTRACT"` etc.) as a self-descriptive placeholder
+//! rather than fabricate a fake archetype id — a deliberate deviation, since no
+//! archetype exists for a programmatically-built extract skeleton (G-M6).
+
+use serde_json::{Value, json};
+use sqlx::Row;
+use uuid::Uuid;
+
+use ehrbase_sm::{CallStatusType, SmError};
+use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
+
+use crate::service::{EhrbaseService, ServiceError};
+use crate::versioning::{
+    original_version, read_current, read_version_by_ordinal, revision_history, versioned_object,
+};
+
+/// The extract-local reference namespace (`master09-semantics.adoc` §Creation
+/// Semantics: "rewriting its `OBJECT_REFs` so that `namespace` = \"local\"").
+const LOCAL_NS: &str = "local";
+
+/// Which versions of a versioned object an extract includes, resolved from an
+/// `EXTRACT_VERSION_SPEC` (`extract_version_spec.adoc`). The default (no spec)
+/// is latest-only with data and no revision history.
+#[derive(Debug, Clone, Copy)]
+#[allow(clippy::struct_excessive_bools)] // mirrors the four EXTRACT_VERSION_SPEC boolean flags 1:1
+struct VersionSelection {
+    /// `EXTRACT_SPEC.include_multimedia` — when false, inline `DV_MULTIMEDIA`
+    /// content (`data`) is stripped from exported version bodies
+    /// (`master09-semantics.adoc` §Creation Semantics; the metadata + `uri`
+    /// remain).
+    include_multimedia: bool,
+    /// `include_all_versions` — include every version, not just the latest.
+    include_all: bool,
+    /// `include_revision_history` — attach the full `REVISION_HISTORY`.
+    include_revision_history: bool,
+    /// `include_data` — include the version data; `false` ⇒ revision history
+    /// only, `versions` empty (`X_VERSIONED_OBJECT.extract_version_count = 0`).
+    include_data: bool,
+}
+
+impl VersionSelection {
+    /// The `EXTRACT_VERSION_SPEC` default: latest-only, data included, no
+    /// revision history (`extract_version_spec.adoc`: "By default, only latest
+    /// versions are included").
+    const fn latest_only() -> Self {
+        Self {
+            include_all: false,
+            include_multimedia: true,
+            include_revision_history: false,
+            include_data: true,
+        }
+    }
+}
+
+/// The `X_VERSIONED_*` `_type` for a stored versioned-object `kind`
+/// (`master05-openehr_extract_package.adoc`: the five data-oriented
+/// `VERSIONED_OBJECT` wrappers). A kind with no dedicated wrapper (e.g.
+/// `PARTY_RELATIONSHIP`, never EHR-scoped) falls back to the generic
+/// `X_VERSIONED_OBJECT`.
+fn x_versioned_type(kind: &str) -> &'static str {
+    match kind {
+        "COMPOSITION" => "X_VERSIONED_COMPOSITION",
+        "EHR_STATUS" => "X_VERSIONED_EHR_STATUS",
+        "EHR_ACCESS" => "X_VERSIONED_EHR_ACCESS",
+        "FOLDER" => "X_VERSIONED_FOLDER",
+        "AGENT" | "GROUP" | "ORGANISATION" | "PERSON" | "ROLE" => "X_VERSIONED_PARTY",
+        _ => "X_VERSIONED_OBJECT",
+    }
+}
+
+impl EhrbaseService {
+    /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of both
+    /// export calls; `i_ehr_extract_service.adoc`).
+    async fn extract_ehr_exists(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+        Ok(
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+                .bind(ehr_id)
+                .fetch_one(&self.pool)
+                .await?,
+        )
+    }
+
+    /// The `(vo_id, kind)` of every versioned object currently in the EHR (one
+    /// row per version container — its current, `upper_inf`, trunk version),
+    /// ordered by id for a deterministic extract.
+    async fn ehr_versioned_objects(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Vec<(Uuid, String)>, ServiceError> {
+        let rows = sqlx::query(
+            "SELECT vo_id, kind FROM vo_version \
+             WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
+             ORDER BY vo_id",
+        )
+        .bind(ehr_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut out = Vec::with_capacity(rows.len());
+        for r in rows {
+            out.push((r.try_get("vo_id")?, r.try_get("kind")?));
+        }
+        Ok(out)
+    }
+
+    /// The kind of a version container, if it belongs to `ehr_id` (resolves an
+    /// `EXTRACT_ENTITY_MANIFEST.item_list` reference).
+    async fn ehr_vo_kind(&self, ehr_id: Uuid, vo_id: Uuid) -> Result<Option<String>, ServiceError> {
+        Ok(sqlx::query_scalar(
+            "SELECT kind FROM vo_version \
+             WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
+             AND branch_number = 0",
+        )
+        .bind(vo_id)
+        .bind(ehr_id)
+        .fetch_optional(&self.pool)
+        .await?)
+    }
+
+    /// The `sys_version`s of a version container, in order, each flagged with
+    /// whether it is the current (`upper_inf`, trunk) version.
+    async fn vo_version_numbers(&self, vo_id: Uuid) -> Result<Vec<(i32, bool)>, ServiceError> {
+        let rows = sqlx::query(
+            "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
+             FROM vo_version WHERE vo_id = $1 ORDER BY sys_version",
+        )
+        .bind(vo_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut out = Vec::with_capacity(rows.len());
+        for r in rows {
+            out.push((r.try_get("sys_version")?, r.try_get("is_current")?));
+        }
+        Ok(out)
+    }
+
+    /// Build one `OPENEHR_CONTENT_ITEM` wrapping the `X_VERSIONED_<kind>` for a
+    /// version container (`master05-openehr_extract_package.adoc`). `versions`
+    /// are the exact `ORIGINAL_VERSION`s the read path serves;
+    /// `total_version_count` counts all stored versions, `extract_version_count`
+    /// the included ones.
+    async fn build_openehr_content_item(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+        kind: &str,
+        sel: VersionSelection,
+        is_primary: bool,
+    ) -> Result<Value, ServiceError> {
+        let all = self.vo_version_numbers(vo_id).await?;
+        let total = i32::try_from(all.len()).unwrap_or(i32::MAX);
+
+        // Which versions to serialise: none if data is excluded, else all or the
+        // latest only (EXTRACT_VERSION_SPEC).
+        let selected: Vec<i32> = if !sel.include_data {
+            Vec::new()
+        } else if sel.include_all {
+            all.iter().map(|(sv, _)| *sv).collect()
+        } else {
+            all.iter()
+                .filter(|(_, cur)| *cur)
+                .map(|(sv, _)| *sv)
+                .collect()
+        };
+
+        let mut versions = Vec::with_capacity(selected.len());
+        for sv in &selected {
+            let read = read_version_by_ordinal(&self.pool, vo_id, *sv)
+                .await?
+                .ok_or_else(|| {
+                    ServiceError::NotFound(format!("version {vo_id}::{sv} for extract"))
+                })?;
+            let mut version = original_version(&read, self.signer())?;
+            if !sel.include_multimedia {
+                strip_inline_multimedia(&mut version);
+            }
+            versions.push(version);
+        }
+        let extract_version_count = i32::try_from(versions.len()).unwrap_or(i32::MAX);
+
+        // uid / owner_id / time_created are the VERSIONED_OBJECT's own — reuse
+        // the shared read builder so they match the /versioned_* surface.
+        let vo = versioned_object(&self.pool, vo_id, ehr_id).await?;
+        let mut x = json!({
+            "_type": x_versioned_type(kind),
+            "uid": vo["uid"].clone(),
+            "owner_id": vo["owner_id"].clone(),
+            "time_created": vo["time_created"].clone(),
+            "total_version_count": total,
+            "extract_version_count": extract_version_count,
+            "versions": versions,
+        });
+        if sel.include_revision_history
+            && let Value::Object(map) = &mut x
+        {
+            map.insert(
+                "revision_history".to_owned(),
+                revision_history(&self.pool, ehr_id, vo_id).await?,
+            );
+        }
+
+        Ok(json!({
+            "_type": "OPENEHR_CONTENT_ITEM",
+            "name": { "_type": "DV_TEXT", "value": kind },
+            "archetype_node_id": "OPENEHR_CONTENT_ITEM",
+            "is_primary": is_primary,
+            "item": x,
+        }))
+    }
+
+    /// The demographics-chapter items: every locally-held demographic PARTY
+    /// referenced from the exported content via a `PARTY_REF` with namespace
+    /// `demographic` becomes an `X_VERSIONED_PARTY` content item
+    /// (`is_primary = false`) — `master09-semantics.adoc` §Creation Semantics
+    /// ("Create a demographics `EXTRACT_CHAPTER` and write the `PARTYs` in";
+    /// "obtain the target of the reference from the relevant service, and copy
+    /// it to the … demographics … chapter"). Parties not held locally cannot be
+    /// written in and are skipped. Collected from the ORIGINAL references,
+    /// *before* the content refs are rewritten to `"local"`
+    /// (`master09-semantics.adoc` orders reference resolution ahead of the
+    /// namespace rewrite).
+    async fn demographic_chapter_items(
+        &self,
+        content_items: &[Value],
+        sel: VersionSelection,
+    ) -> Result<Vec<Value>, ServiceError> {
+        fn collect_party_ids(value: &Value, out: &mut Vec<Uuid>) {
+            match value {
+                Value::Object(map) => {
+                    if map.get("_type").and_then(Value::as_str) == Some("PARTY_REF")
+                        && map.get("namespace").and_then(Value::as_str) == Some("demographic")
+                        && let Some(raw) = value.pointer("/id/value").and_then(Value::as_str)
+                        && let Ok(uuid) = raw.parse::<Uuid>()
+                        && !out.contains(&uuid)
+                    {
+                        out.push(uuid);
+                    }
+                    for v in map.values() {
+                        collect_party_ids(v, out);
+                    }
+                }
+                Value::Array(list) => {
+                    for v in list {
+                        collect_party_ids(v, out);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let mut party_ids = Vec::new();
+        for item in content_items {
+            collect_party_ids(item, &mut party_ids);
+        }
+        let mut out = Vec::new();
+        for vo_id in party_ids {
+            let Some(read) = read_current(&self.pool, vo_id).await? else {
+                continue; // not held locally — cannot be written in
+            };
+            if read.ehr_id.is_some() {
+                continue; // an EHR-owned object, not a demographic party
+            }
+            let mut version = original_version(&read, self.signer())?;
+            if !sel.include_multimedia {
+                strip_inline_multimedia(&mut version);
+            }
+            let total = self.vo_version_numbers(vo_id).await?.len();
+            out.push(json!({
+                "_type": "OPENEHR_CONTENT_ITEM",
+                "name": { "_type": "DV_TEXT", "value": "PARTY" },
+                "archetype_node_id": "OPENEHR_CONTENT_ITEM",
+                "is_primary": false,
+                "item": {
+                    "_type": "X_VERSIONED_PARTY",
+                    "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
+                    // The demographic repository is the owner — there is no
+                    // owning EHR (RM demographic content stands alone).
+                    "owner_id": {
+                        "_type": "OBJECT_REF",
+                        "namespace": "demographic",
+                        "type": "SYSTEM",
+                        "id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() }
+                    },
+                    "time_created": version["commit_audit"]["time_committed"].clone(),
+                    "total_version_count": i32::try_from(total).unwrap_or(i32::MAX),
+                    "extract_version_count": 1,
+                    "versions": [version],
+                },
+            }));
+        }
+        Ok(out)
+    }
+
+    /// Assemble the top-level `EXTRACT` from its (already namespace-rewritten)
+    /// content items and the `EXTRACT_SPEC` that reflects the actual content
+    /// (`extract.adoc`: the `specification` "might not be identical with the
+    /// specification of the corresponding request").
+    fn assemble_extract(
+        &self,
+        content_items: Vec<Value>,
+        demographic_items: &[Value],
+        specification: Value,
+        sequence_nr: i32,
+    ) -> Value {
+        let mut extract = json!({
+            "_type": "EXTRACT",
+            "name": { "_type": "DV_TEXT", "value": "EHR Extract" },
+            "archetype_node_id": "EXTRACT",
+            "chapters": [ {
+                "_type": "EXTRACT_CHAPTER",
+                "name": { "_type": "DV_TEXT", "value": "openEHR content" },
+                "archetype_node_id": "EXTRACT_CHAPTER",
+                "items": [],
+            } ],
+            "time_created": {
+                "_type": "DV_DATE_TIME",
+                "value": jiff::Timestamp::now().to_string(),
+            },
+            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
+            "sequence_nr": sequence_nr,
+        });
+        extract["chapters"][0]["items"] = Value::Array(content_items);
+        // A demographics chapter carries the locally-held PARTYs referenced by
+        // the content (`master09-semantics.adoc` §Creation Semantics: "Create a
+        // demographics `EXTRACT_CHAPTER` and write the `PARTYs` in"); omitted
+        // when nothing local is referenced.
+        if !demographic_items.is_empty()
+            && let Some(chapters) = extract["chapters"].as_array_mut()
+        {
+            chapters.push(json!({
+                "_type": "EXTRACT_CHAPTER",
+                "name": { "_type": "DV_TEXT", "value": "demographics" },
+                "archetype_node_id": "EXTRACT_CHAPTER",
+                "items": demographic_items,
+            }));
+        }
+        extract["specification"] = specification;
+        extract
+    }
+
+    /// A synthetic `EXTRACT_SPEC` describing a whole-EHR, latest-only export (for
+    /// `export_ehrs`, which takes no spec) — one entity keyed by the EHR id.
+    fn whole_ehr_spec(ehr_id: Uuid) -> Value {
+        json!({
+            "_type": "EXTRACT_SPEC",
+            "version_spec": {
+                "_type": "EXTRACT_VERSION_SPEC",
+                "include_all_versions": false,
+                "include_revision_history": false,
+                "include_data": true,
+            },
+            "manifest": {
+                "_type": "EXTRACT_MANIFEST",
+                "entities": [ {
+                    "_type": "EXTRACT_ENTITY_MANIFEST",
+                    "extract_id_key": ehr_id.to_string(),
+                    "ehr_id": ehr_id.to_string(),
+                    "other_ids": [],
+                    "item_list": [],
+                } ],
+            },
+            "extract_type": {
+                "_type": "DV_CODED_TEXT",
+                "value": "openehr-ehr",
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "openehr-ehr",
+                },
+            },
+            "include_multimedia": true,
+            "priority": 0,
+            "link_depth": 0,
+            "criteria": [],
+        })
+    }
+
+    /// Build a single whole-EHR `EXTRACT` (every versioned object of the EHR,
+    /// latest version only) — the body of `export_ehrs`. The Creation-Semantics
+    /// order is preserved: build content, resolve demographic references, then
+    /// rewrite content refs to the extract-local namespace.
+    async fn export_whole_ehr(
+        &self,
+        ehr_id: Uuid,
+        sequence_nr: i32,
+    ) -> Result<Value, ServiceError> {
+        let sel = VersionSelection::latest_only();
+        let vos = self.ehr_versioned_objects(ehr_id).await?;
+        let mut items = Vec::with_capacity(vos.len());
+        for (vo_id, kind) in vos {
+            items.push(
+                self.build_openehr_content_item(ehr_id, vo_id, &kind, sel, true)
+                    .await?,
+            );
+        }
+        let mut demographics = self.demographic_chapter_items(&items, sel).await?;
+        rewrite_content_refs(&mut items);
+        rewrite_content_refs(&mut demographics);
+        Ok(self.assemble_extract(
+            items,
+            &demographics,
+            Self::whole_ehr_spec(ehr_id),
+            sequence_nr,
+        ))
+    }
+
+    /// SM `export_ehrs(an_ehr_id)` — the whole-EHR, latest-only export as a
+    /// single-element `List<EXTRACT>` (`i_ehr_extract_service.adoc`).
+    pub(super) async fn export_all_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
+        if !self.extract_ehr_exists(an_ehr_id).await? {
+            return Err(SmError::ehr_not_found(format!(
+                "no EHR with id {an_ehr_id}"
+            )));
+        }
+        Ok(vec![self.export_whole_ehr(an_ehr_id, 1).await?])
+    }
+
+    /// SM `export_ehr_extracts(extract_spec)` — one `EXTRACT` per manifest
+    /// entity, honouring `EXTRACT_VERSION_SPEC` + the item-list selector
+    /// (`i_ehr_extract_service.adoc`; `master09-semantics.adoc` §Creation
+    /// Semantics).
+    pub(super) async fn export_ehr_extracts_spec(
+        &self,
+        extract_spec: ExtractSpec,
+    ) -> Result<Vec<Value>, SmError> {
+        let sel = version_selection(&extract_spec)?;
+        validate_extract_type(&extract_spec)?;
+        let link_depth = extract_spec.link_depth;
+        let criteria_present = !extract_spec.criteria.is_empty();
+        let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
+
+        let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
+        for (idx, entity) in extract_spec.manifest.entities.iter().enumerate() {
+            let ehr_id =
+                resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
+                    .await?;
+
+            // The primary set: an explicit item_list, else every VO of the EHR.
+            // PORT NOTE (keep, re-verify — `master04-common_package.adoc`
+            // `EXTRACT_SPEC.criteria`, an AQL primary-set query; G-M3): AQL
+            // criteria selection lands with the `$ehr`-bound AQL export wave.
+            // Until then it is a typed reject, never a silent over-export.
+            // TODO(w3f-integrate): aql — apply `EXTRACT_SPEC.criteria`.
+            let vo_kinds: Vec<(Uuid, String)> = if entity.item_list.is_empty() {
+                if criteria_present {
+                    return Err(SmError::precondition(
+                        "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
+                         provide EXTRACT_ENTITY_MANIFEST.item_list instead",
+                    ));
+                }
+                self.ehr_versioned_objects(ehr_id).await?
+            } else {
+                let mut resolved = Vec::with_capacity(entity.item_list.len());
+                for obj_ref in &entity.item_list {
+                    let value = serde_json::to_value(obj_ref).map_err(ServiceError::from)?;
+                    let raw = value
+                        .pointer("/id/value")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            SmError::precondition("item_list OBJECT_REF has no id.value")
+                        })?;
+                    let vo_id: Uuid = raw.parse().map_err(|_| {
+                        SmError::precondition(format!(
+                            "item_list id {raw:?} is not a version-container UUID"
+                        ))
+                    })?;
+                    let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
+                        SmError::new(
+                            CallStatusType::VersionedObjectDoesNotExist,
+                            format!("version container {vo_id} not found in EHR {ehr_id}"),
+                        )
+                    })?;
+                    resolved.push((vo_id, kind));
+                }
+                resolved
+            };
+
+            let mut included: Vec<Uuid> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
+            let mut items = Vec::with_capacity(vo_kinds.len());
+            for (vo_id, kind) in vo_kinds {
+                items.push(
+                    self.build_openehr_content_item(ehr_id, vo_id, &kind, sel, true)
+                        .await?,
+                );
+            }
+            // link_depth (`EXTRACT_SPEC.link_depth`; `master09-semantics.adoc`
+            // §Creation Semantics: "for each instance of `DV_LINK` encountered
+            // … follow the links recursively … write the target Compositions in
+            // … set `is_primary` = False"). Only same-EHR targets exist in this
+            // repository; a link outside it cannot be included.
+            let mut depth = link_depth;
+            while depth > 0 {
+                let targets = link_target_uuids(&items);
+                let mut added = false;
+                for target in targets {
+                    if included.contains(&target) {
+                        continue;
+                    }
+                    let Some(kind) = self.ehr_vo_kind(ehr_id, target).await? else {
+                        continue;
+                    };
+                    items.push(
+                        self.build_openehr_content_item(ehr_id, target, &kind, sel, false)
+                            .await?,
+                    );
+                    included.push(target);
+                    added = true;
+                }
+                if !added {
+                    break;
+                }
+                depth -= 1;
+            }
+            let mut demographics = self.demographic_chapter_items(&items, sel).await?;
+            rewrite_content_refs(&mut items);
+            rewrite_content_refs(&mut demographics);
+            let seq = i32::try_from(idx + 1).unwrap_or(i32::MAX);
+            out.push(self.assemble_extract(items, &demographics, spec_value.clone(), seq));
+        }
+        Ok(out)
+    }
+}
+
+/// Read the `EXTRACT_VERSION_SPEC` of a request into a [`VersionSelection`],
+/// rejecting the not-yet-supported `commit_time_interval` selector and enforcing
+/// the invariant that excluding data requires including revision history
+/// (`extract_version_spec.adoc` `Includes_revision_history_valid`).
+fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
+    let Some(vs) = spec.version_spec.as_ref() else {
+        return Ok(VersionSelection::latest_only());
+    };
+    // PORT NOTE (keep — `extract_version_spec.adoc`
+    // `EXTRACT_VERSION_SPEC.commit_time_interval`; G-M4): commit-time-window
+    // version selection lands with the AQL export wave (G-M3); a typed reject
+    // until then, never a silent full export.
+    // TODO(w3f-integrate): aql — apply `commit_time_interval`.
+    if vs.commit_time_interval.is_some() {
+        return Err(SmError::precondition(
+            "EXTRACT_VERSION_SPEC.commit_time_interval is not supported in this stage",
+        ));
+    }
+    // include_data = false ⇒ revision-history-only; the spec requires the
+    // revision history to then be present.
+    if !vs.include_data && !vs.include_revision_history {
+        return Err(SmError::precondition(
+            "include_data = false requires include_revision_history = true \
+             (EXTRACT_VERSION_SPEC: data excluded ⇒ revision-history-only)",
+        ));
+    }
+    Ok(VersionSelection {
+        include_multimedia: spec.include_multimedia,
+        include_all: vs.include_all_versions,
+        include_revision_history: vs.include_revision_history,
+        include_data: vs.include_data,
+    })
+}
+
+/// Recursively rewrite every `OBJECT_REF`-family reference in a version body so
+/// `namespace = "local"` (`master09-semantics.adoc` §Creation Semantics:
+/// "copy/serialise the Composition … rewriting its `OBJECT_REFs` so that
+/// `namespace` = \"local\""). Within an extract every reference is local to the
+/// extract, so its namespace is normalised regardless of the source namespace
+/// (`demographic`, a remote system id, etc.). The `OBJECT_REF` subtypes carrying
+/// a `namespace` are `OBJECT_REF`, `PARTY_REF`, `LOCATABLE_REF` and
+/// `ACCESS_GROUP_REF` (BASE `base_types` `master05-identification_package.adoc`
+/// §References).
+fn rewrite_object_refs_local(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            let is_ref = matches!(
+                map.get("_type").and_then(Value::as_str),
+                Some("OBJECT_REF" | "PARTY_REF" | "LOCATABLE_REF" | "ACCESS_GROUP_REF")
+            );
+            if is_ref && map.contains_key("namespace") {
+                map.insert("namespace".to_owned(), Value::String(LOCAL_NS.to_owned()));
+            }
+            for v in map.values_mut() {
+                rewrite_object_refs_local(v);
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                rewrite_object_refs_local(v);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Apply [`rewrite_object_refs_local`] to the version bodies of a chapter's
+/// content items (`OPENEHR_CONTENT_ITEM.item.versions[].data`) — the "copied /
+/// serialised" content the Creation-Semantics algorithm rewrites. The
+/// `X_VERSIONED_*` wrapper metadata (`uid` / `owner_id` / `contribution`) is
+/// left as built.
+fn rewrite_content_refs(content_items: &mut [Value]) {
+    for item in content_items {
+        if let Some(versions) = item
+            .pointer_mut("/item/versions")
+            .and_then(Value::as_array_mut)
+        {
+            for version in versions {
+                if let Some(data) = version.get_mut("data") {
+                    rewrite_object_refs_local(data);
+                }
+            }
+        }
+    }
+}
+
+/// Strip inline `DV_MULTIMEDIA` content (`data`) from a version body when
+/// `EXTRACT_SPEC.include_multimedia = false` (`master09-semantics.adoc`
+/// §Creation Semantics); the multimedia metadata and any `uri` reference remain.
+fn strip_inline_multimedia(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            if map.get("_type").and_then(Value::as_str) == Some("DV_MULTIMEDIA") {
+                map.remove("data");
+            }
+            for v in map.values_mut() {
+                strip_inline_multimedia(v);
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                strip_inline_multimedia(v);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Every UUID mentioned in a `LOCATABLE.links[].target` URI across the built
+/// content items — the candidate same-EHR link targets for `link_depth`
+/// following (`DV_EHR_URI` values carry the container/version uids).
+fn link_target_uuids(items: &[Value]) -> Vec<Uuid> {
+    fn collect(value: &Value, out: &mut Vec<Uuid>) {
+        match value {
+            Value::Object(map) => {
+                if let Some(links) = map.get("links").and_then(Value::as_array) {
+                    for link in links {
+                        if let Some(uri) = link.pointer("/target/value").and_then(Value::as_str) {
+                            for token in uri.split(|c: char| !c.is_ascii_hexdigit() && c != '-') {
+                                if let Ok(uuid) = token.parse::<Uuid>()
+                                    && !out.contains(&uuid)
+                                {
+                                    out.push(uuid);
+                                }
+                            }
+                        }
+                    }
+                }
+                for v in map.values() {
+                    collect(v, out);
+                }
+            }
+            Value::Array(list) => {
+                for v in list {
+                    collect(v, out);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for item in items {
+        collect(item, &mut out);
+    }
+    out
+}
+
+/// `EXTRACT_SPEC.extract_type` must be coded from the openEHR "extract content
+/// type" group (`extract_spec.adoc`: `openehr-ehr`, `openehr-demographic`,
+/// `generic-emr`, `other`). The group is published in the EHR-Extract spec, not
+/// the terminology XML bundle, so the member set is validated literally here.
+fn validate_extract_type(spec: &ExtractSpec) -> Result<(), SmError> {
+    let value = serde_json::to_value(&spec.extract_type).unwrap_or(Value::Null);
+    let code = value
+        .pointer("/defining_code/code_string")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    match code {
+        "openehr-ehr" | "openehr-demographic" | "generic-emr" | "other" => Ok(()),
+        other => Err(SmError::precondition(format!(
+            "EXTRACT_SPEC.extract_type {other:?} is not in the openEHR extract \
+             content type group (openehr-ehr | openehr-demographic | generic-emr \
+             | other)"
+        ))),
+    }
+}
+
+/// Resolve an `EXTRACT_ENTITY_MANIFEST` to a concrete EHR id: prefer `ehr_id`,
+/// else look the EHR up by `subject_id` (`master04-common_package.adoc`
+/// `EXTRACT_ENTITY_MANIFEST`).
+async fn resolve_entity_ehr(
+    svc: &EhrbaseService,
+    ehr_id: Option<&str>,
+    subject_id: Option<&str>,
+) -> Result<Uuid, SmError> {
+    if let Some(raw) = ehr_id {
+        let id: Uuid = raw.parse().map_err(|_| {
+            SmError::precondition(format!(
+                "EXTRACT_ENTITY_MANIFEST.ehr_id {raw:?} is not a UUID"
+            ))
+        })?;
+        if svc.extract_ehr_exists(id).await? {
+            return Ok(id);
+        }
+        return Err(SmError::ehr_not_found(format!("no EHR with id {id}")));
+    }
+    if let Some(subject) = subject_id {
+        let id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE subject_id = $1")
+            .bind(subject)
+            .fetch_optional(&svc.pool)
+            .await
+            .map_err(ServiceError::from)?;
+        return id
+            .ok_or_else(|| SmError::ehr_not_found(format!("no EHR for subject_id {subject:?}")));
+    }
+    Err(SmError::precondition(
+        "EXTRACT_ENTITY_MANIFEST identifies no entity (neither ehr_id nor subject_id)",
+    ))
+}
