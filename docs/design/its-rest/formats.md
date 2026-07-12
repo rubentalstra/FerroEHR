@@ -72,7 +72,7 @@ implementation onto the now-STABLE spec and is, per blueprint §2.3 row 17, the
   `app/ehrbase-rest/tests/flat_http.rs` + `example_http.rs`.
 
 The bar this document sets: our converters target Better semantics faithfully,
-but Better is now **prior art, not the oracle** (ADR-008 discipline). Where the
+but Better is now **prior art, not the oracle** — the vendored spec text decides. Where the
 STABLE Simplified Formats spec defines a suffix/attribute/rule that Better omits
 or spells differently, the spec wins — the gaps below are where the two diverge.
 
