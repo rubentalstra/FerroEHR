@@ -15,10 +15,8 @@
 //! the drainer's concern (it re-syncs enabled rows each cycle — the service is
 //! kept broker-free).
 //
-// TODO(w3f-integrate): the CRUD helpers below read `self.pool`, a private field
-// of `crate::service::EhrbaseService`; the ONE fix pass must expose it to
-// `crate::extensions` (promote `pool` to `pub(crate)`, or add a
-// `pub(crate) fn pool(&self) -> &PgPool` accessor). Behaviour is unchanged.
+// The CRUD helpers below read the `pub(crate)` `pool` field of
+// `crate::service::EhrbaseService`.
 
 use async_trait::async_trait;
 use serde_json::{Value, json};

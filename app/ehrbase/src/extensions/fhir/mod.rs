@@ -20,18 +20,9 @@
 //!   **outbound reverse-map** ([`EhrbaseService::fhir_outbound_messages`]) — the
 //!   inverse transform ([`reverse`]).
 //
-// TODO(w3f-integrate): moving the connector out of `crate::service` (where it
-// buried under `service/` to reach `pub(super)` seams) exposes these cross-area
-// seams — the ONE fix pass must publish them to `crate::extensions`:
-//   * `EhrbaseService.pool` (private field) → `pub(crate)` or a `pool()` accessor
-//     (the store CRUD + façade SQL read it directly);
-//   * `EhrbaseService::create_composition` (`pub(in crate::service)`,
-//     `service/ehr/composition.rs`) → `pub(crate)` — the ingest commit seam;
-//   * `EhrbaseService::execute_aql` (`pub(super)`, `service/query/execute.rs`)
-//     → `pub(crate)` — the read-façade query seam;
-//   * the versioned read is `crate::storage::version_repo::read_version_by_ordinal`
-//     (public) — replaces the legacy `service::vobject` seam.
-// Behaviour is unchanged; only visibility moves.
+// Cross-area seams (all landed): the `pub(crate)` `EhrbaseService.pool` field,
+// `service::query::execute_aql` and `service::ehr::create_composition`
+// (`pub(crate)`), and the storage `version_repo` reads.
 
 mod config;
 mod feeder_audit;
@@ -286,8 +277,6 @@ impl EhrbaseService {
                 .collect(),
                 ..AqlQueryRequest::default()
             };
-            // TODO(w3f-integrate): `execute_aql` is `pub(super)` in
-            // `service/query/execute.rs` — promote to `pub(crate)`.
             let outcome = self.execute_aql(FHIR_SEARCH_AQL, None, &request).await?;
             let rows = outcome
                 .result_set
@@ -600,8 +589,6 @@ impl FhirConnectorAdapter for EhrbaseService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        // TODO(w3f-integrate): `create_composition` is `pub(in crate::service)`
-        // in `service/ehr/composition.rs` — promote to `pub(crate)`.
         Ok(self.create_composition(ehr_id, composition).await?)
     }
 

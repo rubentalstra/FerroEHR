@@ -257,6 +257,8 @@ fn like_escape(s: &str) -> String {
 /// condition.
 #[cfg(test)]
 pub(super) fn archetype_predicate_sql(value: &str) -> String {
+    use sea_query::{PostgresQueryBuilder, Query};
+
     let cond = archetype_predicate("n", value);
     let mut q = Query::select();
     q.expr(Expr::val(1)).and_where(cond);

@@ -614,7 +614,7 @@ pub(crate) async fn get_contribution(
     contribution_id: Uuid,
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
-    let audit = crate::storage::version_repo::contribution_audit(pool, contribution_id, ehr_id)
+    let audit = crate::storage::version_repo::contribution_audit(pool, contribution_id, Some(ehr_id))
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
     let time_committed = audit.time_committed;
