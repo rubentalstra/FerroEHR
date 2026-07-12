@@ -76,19 +76,19 @@ app/ehrbase/src/
 
 ### Stage 1 — the register (`docs/design/platform/`)
 
-- [ ] R1 Register: versioning + integrity (incl. signing dissolution) — `01-versioning-integrity.md`
-- [ ] R2 Register: storage / node codec / db — `02-storage.md`
-- [ ] R3 Register: service/ehr (EHR, EHR_STATUS, composition, directory, contribution wiring, item tags) — `03-service-ehr.md`
-- [ ] R4 Register: service/demographic + ehr_index — `04-service-demographic-ehr-index.md`
-- [ ] R5 Register: service/definition + query (stored queries, AQL service seam) — `05-service-definition-query.md`
-- [ ] R6 Register: service/message + admin (extract, TDD, dump/load) — `06-service-message-admin.md`
-- [ ] R7 Register: service/subject_proxy + terminology + validity — `07-service-subject-proxy-terminology-validity.md`
-- [ ] R8 Register: aql engine — `08-aql.md`
-- [ ] R9 Register: validation (OPT + ADL2) — `09-validation.md`
-- [ ] R10 Register: templates (OPT ingestion, WebTemplate, AUTHORED_RESOURCE) — `10-templates.md`
-- [ ] R11 Register: system_log + telemetry — `11-system-log.md`
-- [ ] R12 Register: extensions/enterprise quarantine (events, fhir, multimedia/S3, tenancy, ehr_access cache, event subscriptions) — `12-extensions.md`
-- [ ] R13 Register README: crate map, area→oracle table, cross-register integration seams — `README.md`
+- [x] R1 Register: versioning + integrity (incl. signing dissolution) — `01-versioning-integrity.md`
+- [x] R2 Register: storage / node codec / db — `02-storage.md`
+- [x] R3 Register: service/ehr (EHR, EHR_STATUS, composition, directory, contribution wiring, item tags) — `03-service-ehr.md`
+- [x] R4 Register: service/demographic + ehr_index — `04-service-demographic-ehr-index.md`
+- [x] R5 Register: service/definition + query (stored queries, AQL service seam) — `05-service-definition-query.md`
+- [x] R6 Register: service/message + admin (extract, TDD, dump/load) — `06-service-message-admin.md`
+- [x] R7 Register: service/subject_proxy + terminology + validity — `07-service-subject-proxy-terminology-validity.md`
+- [x] R8 Register: aql engine — `08-aql.md`
+- [x] R9 Register: validation (OPT + ADL2) — `09-validation.md`
+- [x] R10 Register: templates (OPT ingestion, WebTemplate, AUTHORED_RESOURCE) — `10-templates.md`
+- [x] R11 Register: system_log + telemetry — `11-system-log.md`
+- [x] R12 Register: extensions/enterprise quarantine (events, fhir, multimedia/S3, tenancy, ehr_access cache, event subscriptions) — `12-extensions.md`
+- [x] R13 Register README: crate map, area→oracle table, cross-register integration seams — `README.md`
 
 ### Stage 2 — the rewrite (big-bang, no intermediate fix passes)
 
