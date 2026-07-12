@@ -1,14 +1,16 @@
 //! Authorization configuration ([`AuthzConfig`]) — a `figment`-loaded serde
-//! struct with its own `EHRBASE_AUTHZ_` prefix (the [`AuditConfig`] precedent),
-//! §8 of `docs/enterprise/access-control.md`.
+//! struct with its own `EHRBASE_AUTHZ_` prefix (mirroring the ATNA audit config
+//! precedent in `ehrbase::system_log`), §8 of
+//! `docs/enterprise/access-control.md`.
+//!
+//! Authorization is spec-silent: no openEHR spec governs RBAC/ABAC (the SM
+//! places it out of band), so this is our own enterprise design.
 //!
 //! Two sections: the coarse RBAC keys (`rbac.*`, always evaluated when auth is
 //! enabled) and the opt-in ABAC keys (`abac.*`, master switch `abac.enabled`,
 //! default `false`). Every field has a default, so an all-defaults
 //! [`AuthzConfig`] is valid (RBAC on, `ADMIN`/`USER` roles, admin-only
 //! management access, ABAC off).
-//!
-//! [`AuditConfig`]: https://docs.rs/ehrbase-audit
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;

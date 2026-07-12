@@ -1,11 +1,11 @@
 //! Shared application state.
 //!
-//! [`AppState`] is the type the HTTP dispatcher threads through axum as router
-//! state. It is generic over the concrete platform service `S: Platform`
+//! [`AppState`] is the router state every group dispatcher in [`crate::api`]
+//! receives. It is generic over the concrete platform service `S: Platform`
 //! (no trait objects, no stub backend — the binary monomorphizes it
 //! over the DB-backed `EhrbaseService`, the tests over a mock). It is cheap to
 //! clone (an `Arc` inside) and carries the configuration, the service `S` the
-//! dispatcher calls into, the optional authorization handle, and the
+//! dispatchers call into, the optional authorization handle, and the
 //! [`Observability`] bundle (management surface + telemetry handles + health
 //! registry) — which defaults to fully off, so a server without observability
 //! is the clean default. ATNA auditing is no longer state-held: it lives in the
@@ -20,8 +20,8 @@ use std::sync::Arc;
 
 use ehrbase_sm::Platform;
 
-use crate::extensions::access::authz::AuthzHandle;
 use crate::config::RestConfig;
+use crate::extensions::access::authz::AuthzHandle;
 use crate::extensions::management::Observability;
 
 /// Cheaply-cloneable application state, generic over the platform service `S`:
@@ -86,7 +86,7 @@ impl<S: Platform> AppState<S> {
         &self.inner.config
     }
 
-    /// The service the HTTP dispatcher calls into.
+    /// The service the group dispatchers call into.
     pub(crate) fn backend(&self) -> &S {
         &self.inner.backend
     }

@@ -1,4 +1,11 @@
 //! HTTP Basic authentication against an Argon2 PHC password store.
+//!
+//! Basic is one of the two Stage-1 mechanisms; the CNF security suites exercise
+//! the Basic flow's 401/403 behaviour
+//! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`), which the
+//! authn middleware ([`super`]) enforces per ITS-REST §Authentication and
+//! authorization. Password verification uses `argon2` (never a hand-rolled
+//! comparison); only the PHC hash is ever stored.
 
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use http::HeaderValue;

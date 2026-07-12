@@ -1,14 +1,14 @@
 //! HTTP dispatch for the tenant admin extension API group over the
 //! [`TenantAdapter`](ehrbase_sm::TenantAdapter) seam.
 //!
-//! Design: the tenancy model is spec-silent — our own extension — so, like the
-//! event-subscription and terminology
-//! (`docs/design/sm-platform/08-target-architecture.md` §7) groups — this
-//! surface is our own, exposed under the server's extension namespace and
-//! excluded from the ITS-REST drift check. It is mounted under `/admin/` (the
-//! tenant registry is an administrative resource), so the coarse RBAC gate
-//! fail-safe classes it as `Admin` (requires the admin role when RBAC is on),
-//! matching the physical-delete ADMIN group.
+//! **No openEHR spec governs this — our own enterprise feature (E2, multi-
+//! tenancy).** The tenancy model has zero SM/ITS-REST governance, so this
+//! surface is ours: exposed under the server's extension namespace and excluded
+//! from the ITS-REST drift check (design record: `docs/enterprise/product-roadmap.md`
+//! §2.3 and the classification register `docs/design/its-rest/extensions.md`).
+//! It is mounted under `/admin/` (the tenant registry is an administrative
+//! resource), so the coarse RBAC gate fail-safe classes it as `Admin` (requires
+//! the admin role when RBAC is on), matching the physical-delete ADMIN group.
 //!
 //! PORT NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
 //! [`TenantAdapter`] extension, not an SM interface. Like the terminology
@@ -48,7 +48,7 @@ pub(crate) const TENANT_ROUTES: &[(&str, &str, &str)] = &[
     ("DELETE", "/admin/tenant/{tenant_id}", "tenant_delete"),
 ];
 
-pub(super) fn dispatch<S: Platform>(
+pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
     op: &'static str,
     parts: RequestParts,

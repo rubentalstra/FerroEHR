@@ -1,7 +1,15 @@
-//! Access control for the ehrbase-rs CDR — the two composable layers of
+//! Authorization for the ehrbase-rs CDR — the two composable layers of
 //! `docs/enterprise/access-control.md`, folded into the protocol adapter
 //! (authorization is an adapter concern by design; the former `ehrbase-authz`
-//! crate is dissolved here):
+//! crate is dissolved here).
+//!
+//! **No openEHR spec governs this.** The SM places authorization out of band
+//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions) and no
+//! CNF profile carries an RBAC/ABAC requirement — everything here is our own
+//! enterprise design, flagged as such rather than presented as conformance. The
+//! spec-grounded access authority is the sibling `EHR_ACCESS` gate
+//! ([`crate::extensions::access::ehr_access`]); these layers compose on top of it.
+//! The layers:
 //!
 //! 1. **RBAC** (coarse, always on when auth is enabled): every generated
 //!    ITS-REST operation is classified ([`classify`]) and gated by a role model
@@ -186,7 +194,7 @@ impl AuthzHandle {
 /// The fine-grained ABAC gate: the PDP engine, the DB-backed attribute
 /// resolvers, and the resolved claim names + directory opt-in
 /// (`docs/enterprise/access-control.md` §5.7/§7). The PEP
-/// ([`crate::api::abac`]) drives it.
+/// ([`crate::extensions::access::pep`]) drives it.
 pub(crate) struct AbacGate {
     pub(crate) engine: Arc<dyn PolicyEngine>,
     pub(crate) resolvers: AuthzResolvers,

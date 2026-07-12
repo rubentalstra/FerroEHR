@@ -91,7 +91,7 @@ pub(super) async fn composition_from_flat<S: Platform>(
 
 /// Render a canonical-JSON composition as a FLAT `application/openehr.wt.flat+json`
 /// response (its template id read from `archetype_details/template_id`).
-pub(super) async fn composition_flat_response<S: Platform>(
+pub(crate) async fn composition_flat_response<S: Platform>(
     state: &AppState<S>,
     status: StatusCode,
     comp: &Value,
@@ -139,7 +139,7 @@ pub(super) async fn composition_from_structured<S: Platform>(
 
 /// Render a canonical-JSON composition as a STRUCTURED
 /// `application/openehr.wt.structured+json` response.
-pub(super) async fn composition_structured_response<S: Platform>(
+pub(crate) async fn composition_structured_response<S: Platform>(
     state: &AppState<S>,
     status: StatusCode,
     comp: &Value,

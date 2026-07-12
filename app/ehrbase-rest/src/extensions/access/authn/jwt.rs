@@ -6,9 +6,14 @@
 //! precedence order: a symmetric HMAC secret, a static JWKS document, or a JWKS
 //! discovered from the issuer's OIDC metadata (`openidconnect`) and cached.
 //!
-//! Obtaining tokens (the `OAuth2` authorization-code/client-credentials flows, the
-//! `oauth2` crate) is a *client* concern — a CDR only validates — so it is out
-//! of scope here (a recorded Stage-1 auth-scope decision).
+//! This is the SMART **resource-server** duty (the `org.openehr.rest` CDR):
+//! validate a presented access token, never issue one. Obtaining tokens (the
+//! authorization-code / client-credentials / JWT-bearer grants) is an
+//! Authorization-Server/client concern — out of scope for a CDR
+//! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master06-authentication.adoc`
+//! §Supported Authentication Flows; the deprecated Implicit and
+//! Resource-Owner-Password grants that a CDR must never advertise are rejected
+//! by `crate::smart::config::SmartConfig::validate`).
 
 use std::sync::Arc;
 use std::time::Duration;

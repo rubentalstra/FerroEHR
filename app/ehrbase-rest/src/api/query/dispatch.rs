@@ -46,7 +46,7 @@ async fn run<S: Platform>(
     // `pub(super)` (visible only inside `extensions`) — after this dispatcher
     // moved into `api/query/`, they must be raised to `pub(crate)` for this
     // call site to compile. Visibility bump only; behaviour unchanged.
-    let (subject_scope, collect) = match crate::extensions::abac::query_pre(&state, op) {
+    let (subject_scope, collect) = match crate::extensions::access::pep::query_pre(&state, op) {
         Ok(prep) => prep,
         Err(deny) => return Ok(deny),
     };
@@ -74,7 +74,7 @@ async fn run<S: Platform>(
 
     // ABAC query post-check (§6.4): PDP fan-out over the touched template set.
     // TODO(w3e-integrate): same `pub(super)` → `pub(crate)` bump as `query_pre`.
-    if let Err(deny) = crate::extensions::abac::query_post(&state, op, &outcome).await {
+    if let Err(deny) = crate::extensions::access::pep::query_post(&state, op, &outcome).await {
         return Ok(deny);
     }
 

@@ -43,7 +43,7 @@ use ehrbase_sm::Platform;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) fn dispatch<S: Platform>(
+pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
     op: &'static str,
     parts: RequestParts,

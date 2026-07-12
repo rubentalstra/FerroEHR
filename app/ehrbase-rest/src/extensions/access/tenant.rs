@@ -1,5 +1,9 @@
 //! Tenant-resolution middleware.
 //!
+//! No openEHR spec governs multi-tenancy — it is our own deployment extension
+//! (the SM assumes a single logical repository). Flagged here per the repo rule
+//! that spec-silent behaviour is called out rather than presented as conformance.
+//!
 //! Runs *inside* the authentication layer (so the [`Principal`] and its JWT
 //! claims are established), resolves the request's tenant from the configured
 //! claim — or an optional dev header override — via the platform's

@@ -11,7 +11,7 @@
 //! AND-composed after RBAC/Cedar (`crate::extensions::access::mod` layering:
 //! `EHR_ACCESS` gate → RBAC → ABAC → this SMART gate).
 //
-// TODO(w3e-integrate): call `evaluate` from `crate::extensions::abac`. Concretely,
+// TODO(w3e-integrate): call `evaluate` from `crate::extensions::access::pep`. Concretely,
 // after the existing `decide(...)` (RBAC + Cedar) succeeds in `pre_check`/
 // `post_check`/`query_pre`+`query_post`:
 //   1. Parse the principal's scopes once per request:

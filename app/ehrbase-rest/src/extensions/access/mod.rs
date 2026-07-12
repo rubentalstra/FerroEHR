@@ -29,23 +29,32 @@
 //!   `org.openehr.rm.ehr.ehr_access.adoc`). Always-on and foundational; runs
 //!   first in the pre-dispatch chain.
 //! - [`authz`] — our **own enterprise extensions** (no openEHR spec governs
-//!   them; the SM places authorisation out of band): the coarse RBAC gate (runs
-//!   in the authn middleware) + the fine-grained ABAC engine (Cedar / remote
-//!   PDP, enforced in the dispatcher, see [`crate::api::abac`]).
+//!   them; the SM places authorisation out of band, SM
+//!   `openehr_platform/master02-overview.adoc` §General Assumptions): the coarse
+//!   RBAC gate (runs in the authn middleware) + the fine-grained ABAC engine
+//!   (Cedar / remote PDP, enforced by the PEP [`pep`]).
+//! - [`pep`] — the policy-enforcement point: the ABAC gate **and** the
+//!   spec-grounded **SMART** resource-scope + launch-context gate
+//!   (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`
+//!   §Resource Scopes; `master07-*.adoc` §Context Selection), the latter
+//!   AND-composed after RBAC/Cedar.
+//! - [`tenant`] — multi-tenant RLS scoping (no openEHR spec governs it; our own
+//!   extension).
 //!
 //! **Layering direction:** the spec-grounded [`ehr_access`] gate is the base;
-//! RBAC + ABAC compose *on top of* it as additive restrictions
-//! (AND-composition — a request must clear the `EHR_ACCESS` gate *and* any
-//! RBAC/ABAC policy), never the reverse. The specs lead; the enterprise layers
-//! build on them.
+//! RBAC → ABAC → the SMART scope gate compose *on top of* it as additive
+//! restrictions (AND-composition — a request must clear the `EHR_ACCESS` gate
+//! *and* any RBAC/ABAC policy *and* the SMART scope gate), never the reverse.
+//! The specs lead; the enterprise layers build on them.
 //!
 //! The authn↔authz seam is the [`Principal`]: authn resolves it, the `EHR_ACCESS`
-//! gate + the RBAC gate + the ABAC PEP all consume it, and the single 401/403
-//! decision lives in [`authn::middleware`].
+//! gate + the RBAC gate + the ABAC/SMART PEP all consume it, and the single
+//! 401/403 decision lives in [`authn::middleware`].
 
 pub mod authn;
 pub mod authz;
 pub mod ehr_access;
+pub mod pep;
 pub mod tenant;
 
 // The authn surface (identity + the request-scoped principal). The middleware

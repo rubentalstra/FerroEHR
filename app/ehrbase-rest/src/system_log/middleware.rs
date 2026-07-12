@@ -1,30 +1,47 @@
-//! The ATNA audit tower layer (binding doc §8.2).
+//! The IHE ATNA audit tower layer: request → resolved [`AuditEvent`] → emit.
 //!
 //! One middleware, installed **outermost** on the API router (wrapping the auth
 //! layer) so it observes every response — including auth rejections the inner
-//! handlers never see. It reads three response extensions the rest of the stack
-//! sets with zero per-handler code:
+//! handlers never see. IHE **ATNA** requires one audit record per audited access
+//! describing *who* acted, on *what*, with *what* outcome, from *where*, and
+//! *when*; this layer assembles exactly that and hands it to the SM `System Log`
+//! component (`ehrbase_sm::SystemLog`, the only normative openEHR requirement
+//! being "System Log | IHE ATNA-compliant system log",
+//! SM `master02-overview.adoc` §openEHR Platform Model). The DICOM Audit Message
+//! (DICOM PS3.15 §A.5) rendering + syslog transport are the platform emitter's
+//! concern (`ehrbase::system_log`).
+//!
+//! It reads three response extensions the rest of the stack sets with zero
+//! per-handler code:
 //!
 //! - [`AuditOpId`] — the matched ITS-REST operation id, inserted once in the
-//!   generic dispatch path ([`crate::dispatch`]).
+//!   generic dispatch path ([`crate::api`]).
 //! - [`AuditObject`] — the resource ids, populated from the `ResourceMeta` the
-//!   dispatch already holds (via `negotiate::set_resource_headers`).
+//!   dispatch already holds (via the content-negotiation layer).
 //! - [`Principal`] — the authenticated caller, republished onto the response by
-//!   the auth middleware ([`crate::auth`]).
+//!   the auth middleware ([`crate::extensions::access::authn`]).
 //!
-//! Coverage is **total**: every generated operation is in the audit table
-//! ([`crate::audit_table`]), so every matched request emits an operation
-//! record. When the envelope carries no `ResourceMeta` (templates, stored
-//! queries, demographic parties), the participant-object id is derived
-//! generically from the request path ([`object_id_from_path`]). Successful
-//! authentications additionally emit a login ("Application Activity") record
-//! unless `suppress_login_events` (§4); auth rejections (401/403) emit a
-//! failure record with the principal `UNKNOWN` on 401.
+//! # Coverage and fail-closed behaviour
 //!
-//! Emission goes through the platform's SM [`SystemLog`](ehrbase_sm::SystemLog)
-//! component ([`AppState::backend`]): the request path never blocks on auditing
-//! (`SystemLog::emit` is a non-blocking `try_send`); fail-closed only rejects
-//! auditable *operations* (§8.4).
+//! Every generated operation is explicitly classified ([`crate::system_log::classify`]);
+//! an operation id with no explicit entry (extension routes, future ops) fails
+//! closed to the documented default and is still audited, never silently
+//! dropped. When the envelope carries no `ResourceMeta` (templates, stored
+//! queries, demographic parties) the participant-object id is derived from the
+//! request path ([`object_id_from_path`]).
+//!
+//! # Authentication records
+//!
+//! Successful authentications additionally emit a login ("Application Activity",
+//! DICOM `EventID` 110100) record unless the deployment suppresses them; auth
+//! rejections (401/403) always emit a failure record (401 → caller `UNKNOWN`) —
+//! security surveillance of failed access is the point of ATNA.
+//!
+//! Emission is non-blocking: `SystemLog::emit` is a `try_send` onto a bounded
+//! queue, so the request path never blocks on auditing. Under `fail_mode=closed`
+//! a rejected operation record turns the response into `503` (the deployment
+//! demanded an audit trail it cannot currently deliver); the auth records never
+//! gate the response.
 
 use std::net::SocketAddr;
 
@@ -36,16 +53,24 @@ use http::StatusCode;
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
 
 use crate::extensions::access::authn::Principal;
-use crate::extensions::audit_table::audit_for;
 use crate::state::AppState;
+use crate::system_log::classify::audit_for;
 
 /// The matched ITS-REST operation id, inserted by the dispatch layer onto the
-/// response (§8.2 step 1). Present iff a request reached the generic dispatcher.
+/// response. Present iff a request reached the generic dispatcher.
+//
+// TODO(w3e-integrate): extension routers (terminology, subject-proxy, events,
+// FHIR) dispatch outside the generated `ROUTES` path and therefore do NOT yet
+// insert an `AuditOpId`, so their responses reach this layer with no operation
+// record (only the auth record fires). To bring them under ATNA coverage each
+// extension router must insert `AuditOpId(<its op id>)` onto the response the
+// same way `crate::api` does; the classifier already fails those ids closed to
+// the audited default, so no table change is needed — only the id must arrive.
 #[derive(Debug, Clone, Copy)]
 pub struct AuditOpId(pub &'static str);
 
 /// The resource ids a handler touched, populated from the `ResourceMeta` the
-/// dispatch already holds (§8.2 step 3). Present for header-bearing operations.
+/// dispatch already holds. Present for header-bearing operations.
 #[derive(Debug, Clone, Default)]
 pub struct AuditObject {
     /// The owning EHR id (for subject enrichment + the patient participant).
@@ -54,13 +79,14 @@ pub struct AuditObject {
     pub uid: Option<String>,
 }
 
-/// The audit middleware. Installed via `from_fn_with_state(state, middleware)`;
+/// The ATNA audit middleware. Installed via `from_fn_with_state(state, middleware)`;
 /// emission is routed through the platform's SM `SystemLog` component.
 pub async fn middleware<S: Platform>(
     State(state): State<AppState<S>>,
     req: Request,
     next: Next,
 ) -> Response {
+    // The SM System Log master switch (audit disabled → no per-request work).
     if !state.backend().audit_enabled() {
         return next.run(req).await;
     }
@@ -79,8 +105,10 @@ pub async fn middleware<S: Platform>(
 
     let mut op_rejected = false;
 
-    // 1) The operation record — every generated operation is audited (total
-    //    coverage); fail-closed applies to these only.
+    // 1) The operation record. `audit_for` fails an unrecognised op id closed to
+    //    the audited default, so any dispatched operation with an `AuditOpId`
+    //    produces a record; only a deliberate opt-out yields `None`. Fail-closed
+    //    (503) applies to operation records only.
     if let Some(AuditOpId(op)) = op
         && let Some((action, object_class)) = audit_for(op)
     {
@@ -97,17 +125,16 @@ pub async fn middleware<S: Platform>(
         op_rejected = state.backend().emit(event) == EmitOutcome::Rejected;
     }
 
-    // 2) The authentication record. Failures (401 unauthenticated, 403
-    //    forbidden — e.g. the admin-scope gate) are ALWAYS audited (security
-    //    surveillance is the point); `suppress_login_events` gates only the
-    //    successful-login "Application Activity" record (§4).
+    // 2) The authentication record. Rejections (401 unauthenticated, 403
+    //    forbidden) are ALWAYS audited; the successful-login "Application
+    //    Activity" record is gated by `suppress_login_events`.
     if status == 401 || status == 403 {
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
             ObjectClass::ApplicationActivity,
             outcome_from_status(status),
         );
-        // 401 → principal UNKNOWN; 403 → attributed to the authenticated caller.
+        // 401 → no principal (caller UNKNOWN); 403 → the authenticated caller.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
         let _ = state.backend().emit(event);
     } else if principal.is_some() && !state.backend().suppress_login_events() {
@@ -121,8 +148,8 @@ pub async fn middleware<S: Platform>(
     }
 
     if op_rejected {
-        // Fail-closed on an auditable operation whose record cannot be
-        // delivered: the deployment demanded auditing it cannot provide (§8.4).
+        // Fail-closed: an auditable operation whose record cannot be delivered
+        // must not be reported as having succeeded.
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             "audit trail unavailable (fail-closed)",
@@ -132,8 +159,11 @@ pub async fn middleware<S: Platform>(
     resp
 }
 
-/// Map an HTTP status code to a DICOM `EventOutcomeIndicator` (binding doc §8.2):
-/// 2xx→Success, 5xx→SeriousFailure, everything else (incl. 401/403/4xx)→MinorFailure.
+/// Map an HTTP status to the DICOM `EventOutcomeIndicator` (PS3.15 §A.5.1):
+/// 2xx → `0` success, 5xx → `8` serious failure (the action was not performed),
+/// everything else (incl. 4xx/401/403) → `4` minor failure (the action failed).
+/// `12` major failure denotes a compromised node and is not inferable from an
+/// HTTP status, so it is never emitted here.
 const fn outcome_from_status(status: u16) -> EventOutcome {
     match status {
         200..=299 => EventOutcome::Success,
@@ -142,6 +172,10 @@ const fn outcome_from_status(status: u16) -> EventOutcome {
     }
 }
 
+/// Fill the participant-common fields: the requesting user (the DICOM source
+/// `ActiveParticipant`, `UserIsRequestor=true`), its network address, and the
+/// event time. An absent principal leaves `user_id` empty, which the emitter
+/// renders as the configured value-if-missing (`UNKNOWN`).
 fn fill_common(
     event: &mut AuditEvent,
     principal: Option<&Principal>,
@@ -154,8 +188,9 @@ fn fill_common(
     event.timestamp = timestamp;
 }
 
-/// The client network address: the `X-Forwarded-For` first hop, else the TCP
-/// peer address (`ConnectInfo`), else `None`.
+/// The client network address for the DICOM `NetworkAccessPointID`: the
+/// `X-Forwarded-For` first hop (proxied deployments), else the TCP peer address
+/// (`ConnectInfo`), else `None`.
 fn client_ip(req: &Request) -> Option<String> {
     if let Some(xff) = req
         .headers()
@@ -180,11 +215,11 @@ fn ehr_id_from_path(path: &str) -> Option<String> {
     segment_after(path, "ehr")
 }
 
-/// Derive the participant-object id from the request path for the operations
-/// whose dispatch carries no `ResourceMeta`: template ids, qualified stored
-/// query names (§3: the query name is the search criteria), and demographic
-/// party uids. Returns `None` for list-style operations (no single object) and
-/// for ad-hoc queries (search criteria = `UNKNOWN` per §3).
+/// Derive the participant-object id from the request path for operations whose
+/// dispatch carries no `ResourceMeta`: template ids, qualified stored-query
+/// names (the query name is the ATNA search criteria), and demographic party
+/// uids. Returns `None` for list-style operations (no single object) and for
+/// ad-hoc queries (search criteria = `UNKNOWN`).
 fn object_id_from_path(op: &str, path: &str) -> Option<String> {
     match op {
         _ if op.starts_with("definition_template_adl1.4") => segment_after(path, "adl1.4"),
@@ -221,6 +256,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn outcome_codes_track_http_status() {
+        assert_eq!(outcome_from_status(200), EventOutcome::Success);
+        assert_eq!(outcome_from_status(204), EventOutcome::Success);
+        assert_eq!(outcome_from_status(400), EventOutcome::MinorFailure);
+        assert_eq!(outcome_from_status(401), EventOutcome::MinorFailure);
+        assert_eq!(outcome_from_status(403), EventOutcome::MinorFailure);
+        assert_eq!(outcome_from_status(404), EventOutcome::MinorFailure);
+        assert_eq!(outcome_from_status(500), EventOutcome::SeriousFailure);
+        assert_eq!(outcome_from_status(503), EventOutcome::SeriousFailure);
+    }
+
+    #[test]
     fn ehr_id_from_various_paths() {
         assert_eq!(
             ehr_id_from_path("/ehrbase/rest/openehr/v1/ehr/abc-123/composition/x"),
@@ -237,7 +284,7 @@ mod tests {
             ehr_id_from_path("/ehrbase/rest/openehr/v1/admin/ehr/zzz"),
             Some("zzz".to_owned())
         );
-        // "ehr_status" / "versioned_ehr_status" are not the `ehr` segment.
+        // "ehr_status" / "versioned_ehr_status" are not the exact `ehr` segment.
         assert_eq!(ehr_id_from_path("/definition/template/adl1.4"), None);
     }
 

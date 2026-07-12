@@ -1,18 +1,45 @@
-//! The HTTP adapter over the generated ITS-REST server traits.
+//! The ITS-REST **API hub** — the assembly over the generated `ROUTES` tables.
 //!
-//! The generated contract combines each operation's path/query/header
-//! parameters into one `*Params` struct and exposes a `ROUTES` table of
-//! `(method, path, operation_id)`. This module turns that table into an axum
-//! router: for every route it mounts a handler that captures the operation id,
-//! collects the request's raw parts, and calls the group's dispatcher. Each
-//! implemented group's dispatcher ([`ehr`], [`definition`]) rebuilds the exact
-//! `*Params` with [`crate::params`], calls the trait method on [`AppState`],
-//! and renders a negotiated response.
+//! The crate is laid out per ITS-REST specification (the development-edition
+//! register, `docs/design/its-rest/README.md`): one module per API group under
+//! `api/`, each split along the spec's own resource boundaries and citing its
+//! governing section. This hub is the wiring layer that turns the generated
+//! contract into one axum router.
 //!
-//! Every API group has its own dispatcher module ([`ehr`], [`definition`],
-//! [`query`], [`demographic`], [`admin`], [`terminology`]); operations whose
-//! backend seam method is not overridden surface as `501` + the standard error
-//! body.
+//! ## The generated contract
+//!
+//! `emit-rest` produces, per API group, a `ROUTES` table of
+//! `(method, path, operation_id)` and one `*Params` struct per operation
+//! (`openehr_its::rest::generated::{ehr,query,definition,admin,demographic}`).
+//! The System API is not part of that contract (no `system` group is emitted),
+//! so its single `OPTIONS /` operation is hand-written in [`system`] and mounted
+//! by [`crate::router`], not here.
+//!
+//! ## The per-group modules
+//!
+//! Each group owns a dispatcher — an operation-id `match` that rebuilds the
+//! exact `*Params` from the raw request parts, calls the SM native-API method on
+//! [`AppState`], and renders a negotiated response:
+//!
+//! - [`ehr`] — the EHR API (EHR, EHR_STATUS, VERSIONED_EHR_STATUS, COMPOSITION,
+//!   VERSIONED_COMPOSITION, DIRECTORY, CONTRIBUTION), re-exporting
+//!   `ehr::dispatch::dispatch`.
+//! - [`query`] — the Query API (adhoc + stored), re-exporting `query::dispatch`.
+//! - [`definition`] — the Definition API (ADL 1.4 / ADL 2 templates + stored
+//!   queries), re-exporting `definition::dispatch`.
+//! - [`demographic`] — the Demographic API (spec-governed, DEVELOPMENT) plus the
+//!   own-design PARTY_RELATIONSHIP extension routes, re-exporting
+//!   `demographic::dispatch` + `demographic::RELATIONSHIP_ROUTES`.
+//! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
+//!   as `admin::dispatch::dispatch` (the group publishes no re-export).
+//! - [`system`] — the System API manifest ([`system::SystemManifest`],
+//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router`].
+//!
+//! Own-design extension surfaces with no ITS-REST contract
+//! ([`crate::extensions`]: terminology, event subscription, multi-tenancy admin,
+//! FHIR connector) carry their own `*_ROUTES` tables + dispatcher and are merged
+//! here behind their config flags, so a stock server exposes only the
+//! standardised ITS-REST surface.
 
 pub mod admin;
 pub mod definition;
@@ -20,9 +47,6 @@ pub mod demographic;
 pub mod ehr;
 pub mod query;
 pub mod system;
-
-use crate::extensions::{abac, event_subscription, fhir, tenant_routes as tenant, terminology};
-use crate::formats as flat;
 
 use std::future::Future;
 use std::pin::Pin;
@@ -36,10 +60,12 @@ use ehrbase_sm::Platform;
 use http::HeaderMap;
 use indexmap::IndexMap;
 
+use crate::extensions::access::{ehr_access, pep};
+use crate::extensions::{event_subscription, fhir, tenant_routes, terminology};
 use crate::state::AppState;
 
 /// A boxed response future — the uniform return type of a group dispatcher.
-type BoxResponse = Pin<Box<dyn Future<Output = Response> + Send>>;
+pub(crate) type BoxResponse = Pin<Box<dyn Future<Output = Response> + Send>>;
 
 /// A group dispatcher: `(state, operation_id, request parts) → response`.
 type Dispatcher<S> = fn(AppState<S>, &'static str, RequestParts) -> BoxResponse;
@@ -75,11 +101,17 @@ impl RequestParts {
 
 /// Build the API router covering every ITS-REST route (group-relative paths;
 /// nest under the configured base path). State is applied by the caller.
+///
+/// Each generated group's dispatcher is mounted through [`mount`]; the private
+/// per-group `dispatch` modules (`query`/`definition`/`demographic`) are reached
+/// through their `pub(crate) use dispatch::dispatch` re-export, `ehr` through its
+/// public `dispatch` module, and `admin` — which publishes no re-export —
+/// through `admin::dispatch::dispatch`.
 pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
     use openehr_its::rest::generated as g;
 
     Router::new()
-        .merge(mount(g::ehr::ROUTES, ehr::dispatch::<S>))
+        .merge(mount(g::ehr::ROUTES, ehr::dispatch::dispatch::<S>))
         .merge(mount(g::demographic::ROUTES, demographic::dispatch::<S>))
         // Our-own-design PARTY_RELATIONSHIP extension routes (no ITS-REST
         // contract; SM-3), served by the same demographic dispatcher.
@@ -89,7 +121,7 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
         ))
         .merge(mount(g::definition::ROUTES, definition::dispatch::<S>))
         .merge(mount(g::query::ROUTES, query::dispatch::<S>))
-        .merge(mount(g::admin::ROUTES, admin::dispatch::<S>))
+        .merge(mount(g::admin::ROUTES, admin::dispatch::dispatch::<S>))
         // Our-own-design terminology extension routes (no ITS-REST contract;
         // SM `I_TERMINOLOGY_SERVICE`, design doc 08 §7), config-gated.
         .merge(mount(
@@ -97,16 +129,21 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
             terminology::dispatch::<S>,
         ))
         // Our-own-design event-subscription admin extension routes (no ITS-REST
-        // contract; an "Event Trigger"-style extension — no openEHR spec governs eventing), config-gated.
+        // contract; an "Event Trigger"-style extension — no openEHR spec governs
+        // eventing), config-gated.
         .merge(mount(
             event_subscription::EVENT_SUBSCRIPTION_ROUTES,
             event_subscription::dispatch::<S>,
         ))
         // Our-own-design tenant admin extension routes (no ITS-REST contract;
         // multi-tenancy — no openEHR spec governs it), config-gated.
-        .merge(mount(tenant::TENANT_ROUTES, tenant::dispatch::<S>))
+        .merge(mount(
+            tenant_routes::TENANT_ROUTES,
+            tenant_routes::dispatch::<S>,
+        ))
         // Our-own-design FHIR R4 connector routes (no ITS-REST contract;
-        // a deliberate design decision/5 — inbound ingest + mapping CRUD), config-gated.
+        // inbound ingest + mapping CRUD — no openEHR spec governs FHIR interop),
+        // config-gated.
         .merge(mount(fhir::FHIR_ROUTES, fhir::dispatch::<S>))
 }
 
@@ -145,23 +182,23 @@ fn mount<S: Platform>(
                     // it runs FIRST, before the enterprise RBAC/ABAC layers; the
                     // latter compose on top as additive restrictions. Always-on
                     // (default-open keeps existing flows working); a deny is 403.
-                    // Then ABAC (§7): pre-check short-circuits before the backend
-                    // on a deny/engine-failure; the post-check may replace a
-                    // success with 403/500. ABAC is inert unless wired.
-                    let mut resp =
-                        match crate::extensions::access::ehr_access::enforce(&state, op, &parts).await {
-                            Ok(()) => match abac::pre_check(&state, op, &parts).await {
-                                Ok(()) => {
-                                    let resp = dispatch(state.clone(), op, parts).await;
-                                    abac::post_check(&state, op, resp).await
-                                }
-                                Err(deny) => deny,
-                            },
+                    // Then ABAC (§7): the PEP pre-check short-circuits before the
+                    // backend on a deny/engine-failure; the post-check may replace
+                    // a success with 403/500. ABAC is inert unless wired.
+                    let mut resp = match ehr_access::enforce(&state, op, &parts).await {
+                        Ok(()) => match pep::pre_check(&state, op, &parts).await {
+                            Ok(()) => {
+                                let resp = dispatch(state.clone(), op, parts).await;
+                                pep::post_check(&state, op, resp).await
+                            }
                             Err(deny) => deny,
-                        };
+                        },
+                        Err(deny) => deny,
+                    };
                     // The single, generic ATNA hook: tag the response with the
                     // matched operation id for the audit layer (§8.2 step 1).
-                    resp.extensions_mut().insert(crate::extensions::audit::AuditOpId(op));
+                    resp.extensions_mut()
+                        .insert(crate::system_log::middleware::AuditOpId(op));
                     resp
                 },
             );
@@ -188,8 +225,9 @@ fn method_filter(method: &str) -> Option<MethodFilter> {
 /// the `OpenAPI` paths carry but axum path templates do not use; `{name}` capture
 /// segments are already axum-0.8 syntax and pass through unchanged.
 ///
-/// Shared with the RBAC gate ([`crate::authz`]), which keys its route→class map
-/// by the same normalized templates so an axum `MatchedPath` resolves exactly.
+/// Shared with the access-control classifier
+/// ([`crate::extensions::access::authz`]), which keys its route→class map by the
+/// same normalized templates so an axum `MatchedPath` resolves exactly.
 pub(crate) fn normalize_path(path: &str) -> String {
     let bytes = path.as_bytes();
     let mut out = String::with_capacity(path.len());

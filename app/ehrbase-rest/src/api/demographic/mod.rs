@@ -99,7 +99,7 @@ fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&Res
         resp.headers_mut().insert(header::LOCATION, loc);
     }
     resp.extensions_mut()
-        .insert(crate::extensions::audit::AuditObject {
+        .insert(crate::system_log::middleware::AuditObject {
             ehr_id: None,
             uid: Some(meta.uid.clone()),
         });
@@ -113,7 +113,7 @@ fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
     // TODO(w3e-integrate): emit via the central helper the overview worker adds;
     // it reads the server-set ITEM_TAGs off the service response and writes the
     // two response headers. Signature to be reconciled at integration.
-    crate::overview::committal::emit_item_tag_header(resp_out, resp);
+    crate::overview::params::emit_item_tag_header(resp_out, resp);
 }
 
 /// Render an error, additionally setting the latest-version `ETag`/`Location`

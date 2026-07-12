@@ -1,9 +1,15 @@
-//! The management surface (binding doc §2/§3): health, info, Prometheus,
-//! metrics, env, and loggers — every endpoint **off by default**, each opt-in
-//! via [`ManagementConfig`], gated by its own access-level layer (reusing the
-//! P11 authentication primitives), and optionally served from a separate
-//! internal port. Observability must never widen the clinical API's attack
-//! surface.
+//! The management surface: health, info, Prometheus, metrics, env, and loggers.
+//!
+//! **No openEHR spec governs this — our own operational surface** (the
+//! classification register `docs/design/its-rest/extensions.md` verdict for
+//! `management/`: pure ops, spec-silent by design). The design authority is the
+//! observability binding design `docs/design/observability.md` (cited as
+//! "binding doc §N" throughout this subtree).
+//!
+//! Every endpoint is **off by default**, each opt-in via [`ManagementConfig`],
+//! gated by its own access-level layer (reusing the authentication primitives),
+//! and optionally served from a separate internal port (binding doc §2/§3).
+//! Observability must never widen the clinical API's attack surface.
 
 pub mod config;
 mod env;
