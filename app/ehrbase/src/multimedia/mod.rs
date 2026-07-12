@@ -1,4 +1,4 @@
-//! DV_MULTIMEDIA externalization to S3-compatible object storage (ADR-017).
+//! DV_MULTIMEDIA externalization to S3-compatible object storage.
 //!
 //! On commit, an inline `DV_MULTIMEDIA.data` larger than a configured threshold
 //! is written to a content-addressed blob store (keyed by its SHA-256) and the
@@ -9,7 +9,7 @@
 //!
 //! **Off by default** ([`MultimediaConfig::enabled`] = `false`): with the
 //! feature disabled nothing here is constructed and the commit/read paths are
-//! byte-identical to inline behaviour (the zero-drift gate, ADR-017 §1).
+//! byte-identical to inline behaviour (the zero-drift gate).
 //!
 //! Spec basis: RM 1.2.0 `DV_MULTIMEDIA` (`uri`/`data` alternatives under
 //! `is_inline or is_external`; `integrity_check` ⇒ `integrity_check_algorithm`
@@ -37,7 +37,7 @@ pub enum MultimediaError {
     #[error("blob store: {0}")]
     Store(#[from] object_store::Error),
     /// A stored blob's bytes do not hash to their content-addressed key — the
-    /// integrity check failed (ADR-017 §3; never served silently).
+    /// integrity check failed.
     #[error("multimedia integrity check failed: expected sha-256 {expected}, got {actual}")]
     Integrity {
         /// The expected SHA-256 (the blob key).

@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `ADMIN_ENTRY`.
+//! Hand-written RM class invariants for `ADMIN_ENTRY`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
 //! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.

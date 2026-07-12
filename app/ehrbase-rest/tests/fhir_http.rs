@@ -1,14 +1,14 @@
-//! End-to-end HTTP tests for the FHIR R4 connector API group (ADR-016 / E3):
+//! End-to-end HTTP tests for the FHIR R4 connector API group (our own extension — no openEHR spec governs this; E3):
 //! the config gate (`RestConfig::fhir.enabled`), the starter-scope `501`, the
 //! inbound `POST /fhir/r4/{resourceType}` outcomes (`201`/`404`/`422`), the
 //! `/admin/fhir_mapping` CRUD, and the FHIR `OperationOutcome` error shape —
 //! driven through the assembled router with the shared [`Mock`] platform whose
 //! `fhir_*` hooks back an in-memory store.
 //!
-//! Design: FHIR↔openEHR mapping is spec-silent (ADR-016 is the design record);
+//! Design: FHIR↔openEHR mapping is spec-silent — our own extension;
 //! the surface is our own, config-gated like the event-subscription group,
 //! dispatching to the `FhirConnectorAdapter` extension. Every error is a FHIR
-//! `OperationOutcome` (ADR-016 §Decision 6).
+//! `OperationOutcome`.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::type_complexity)]
 
 use std::collections::BTreeMap;
@@ -374,7 +374,7 @@ async fn ingest_validation_rejection_is_422_with_validator_message() {
     let (status, _, body) = send(app(true), req("POST", INGEST_OBS, Some(obs))).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_operation_outcome(&body, "invalid");
-    // The openEHR validator's message is carried verbatim (ADR-016 §Decision 6).
+    // The openEHR validator's message is carried verbatim.
     assert!(
         body["issue"][0]["diagnostics"]
             .as_str()

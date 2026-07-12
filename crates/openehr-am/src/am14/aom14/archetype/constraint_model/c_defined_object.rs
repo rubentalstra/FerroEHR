@@ -8,7 +8,7 @@ use crate::am14::aom14::openehr_archetype_profile::c_quantity::CQuantity;
 use serde::Serialize;
 
 /// Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference.
-/// Closed subtype set of `C_DEFINED_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_DEFINED_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CDefinedObject {

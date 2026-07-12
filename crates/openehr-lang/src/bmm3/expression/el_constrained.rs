@@ -4,7 +4,7 @@ use crate::bmm3::expression::el_boolean_expression::ElBooleanExpression;
 use serde::Serialize;
 
 /// Abstract parent for second-order constrained forms of first-order expression meta-types.
-/// Closed subtype set of `EL_CONSTRAINED` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_CONSTRAINED`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElConstrained {

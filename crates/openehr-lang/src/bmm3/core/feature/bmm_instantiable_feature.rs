@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
 use serde::Serialize;
 
 /// Meta-type representing instantiable features, i.e. features that are created as value objects.
-/// Closed subtype set of `BMM_INSTANTIABLE_FEATURE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_INSTANTIABLE_FEATURE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmInstantiableFeature {

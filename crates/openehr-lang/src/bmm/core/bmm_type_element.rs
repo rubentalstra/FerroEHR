@@ -11,7 +11,7 @@ use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use serde::Serialize;
 
-/// Closed subtype set of `BMM_TYPE_ELEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_TYPE_ELEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmTypeElement {

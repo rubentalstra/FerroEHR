@@ -24,7 +24,7 @@ use crate::data_types::uri::dv_uri::DvUri;
 use serde::Serialize;
 
 /// Abstract parent of all `DV_` data value types.
-/// Closed subtype set of `DATA_VALUE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DATA_VALUE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DataValue {

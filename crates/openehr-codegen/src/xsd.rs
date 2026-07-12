@@ -1,4 +1,4 @@
-//! XSD reader for the XML codegen (ADR-005).
+//! XSD reader for the XML codegen.
 //!
 //! Parses the vendored openEHR ITS-XML schemas into a small structural model
 //! the XML emitter needs and BMM does not encode: for each `xs:complexType`,
@@ -254,7 +254,7 @@ pub const RM_FILES_V1_SERVED: &[&str] = &[
 /// definition; only the missing types are added (via first-wins `.or_insert`).
 ///
 /// The RM-instance wire shape is identical across the v1/v2 lineages bar the root
-/// `xmlns` (ADR-005, `main.rs` rationale), so the v1 `LOCATABLE` — base of all
+/// `xmlns` (see the `main.rs` rationale), so the v1 `LOCATABLE` — base of all
 /// these types via the flatten walk — supplies the `archetype_node_id` attribute
 /// and canonical element order for `EHR_STATUS`/`EHR_ACCESS`, the demographic
 /// PARTY hierarchy, and the extract LOCATABLE subtypes. This closes F-05-01.
@@ -278,7 +278,7 @@ pub fn xml_emit_files(v1_all_dir: &Path, v2_root: &Path) -> Vec<std::path::PathB
 }
 
 /// The AM/OPT 1.4 constraint-schema closure (`Template.xsd` and its `xs:include`
-/// chain), for the `emit-opt` OPT generator (ADR-005). Order = merge order;
+/// chain), for the `emit-opt` OPT generator. Order = merge order;
 /// `Template.xsd` first so the OPT-specific types (`OPERATIONAL_TEMPLATE`,
 /// `C_ARCHETYPE_ROOT`, …) win. `Resource.xsd` + `BaseTypes.xsd` overlap the
 /// RM-instance set — those types resolve to the already-generated `openehr-rm`/
@@ -299,7 +299,7 @@ pub fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
 
 /// The v2 RM-instance XSDs, as (component-relative) paths. v2 splits the schemas
 /// per component (RM 1.1.0 + BASE 1.2.0) rather than one flat `ALL/` bundle.
-/// Reserved for a future v2-specific trait (ADR-005); the v1 shape currently
+/// Reserved for a future v2-specific trait; the v1 shape currently
 /// serves both lineages (they differ only by root `xmlns`).
 #[allow(dead_code)]
 pub const RM_FILES_V2: &[&str] = &[
@@ -315,7 +315,7 @@ pub const RM_FILES_V2: &[&str] = &[
 
 /// Resolve the v2 RM-instance file paths under the `its-xml-2.0.0-nsv2/` root.
 #[must_use]
-#[allow(dead_code)] // reserved for a future v2-specific trait (ADR-005)
+#[allow(dead_code)] // reserved for a future v2-specific trait
 pub fn v2_files(root: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V2.iter().map(|f| root.join(f)).collect()
 }

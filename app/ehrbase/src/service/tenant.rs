@@ -1,7 +1,7 @@
-//! The tenant registry (ADR-015) and its [`TenantAdapter`] impl on
+//! The tenant registry and its [`TenantAdapter`] impl on
 //! [`EhrbaseService`].
 //!
-//! A tenant is one logical openEHR system with its own `system_id` (ADR-015
+//! A tenant is one logical openEHR system with its own `system_id` (the tenancy extension
 //! §1). This module owns the CRUD against the `tenant` table plus the
 //! claim/header → [`TenantContext`] resolution the tenant-resolution middleware
 //! calls once per request. The `tenant` table is deliberately NOT RLS-scoped
@@ -11,7 +11,7 @@
 //!
 //! Like [`EventSubscriptionAdapter`](ehrbase_sm::EventSubscriptionAdapter) this
 //! is a config-gated admin extension, not an SM interface call — the tenancy
-//! model is spec-silent (ADR-015 fills it). Bodies are `serde_json::Value` (a
+//! model is spec-silent (our own extension fills it). Bodies are `serde_json::Value` (a
 //! tenant is a small `{name, system_id}` record).
 
 use async_trait::async_trait;
@@ -23,7 +23,7 @@ use ehrbase_sm::{SmError, TenantAdapter, TenantContext};
 
 use super::{EhrbaseService, ServiceError};
 
-/// The reserved default tenant (ADR-015 §3): the nil uuid, owner of every row
+/// The reserved default tenant: the nil uuid, owner of every row
 /// created while tenancy is off. Matches `ext.current_tenant_id()`'s fallback
 /// (`migrations/ext/0002_tenant_context.sql`) and cannot be deleted.
 const DEFAULT_TENANT_ID: Uuid = Uuid::nil();
@@ -108,7 +108,7 @@ impl EhrbaseService {
     }
 
     /// Delete a tenant — only when it is not the reserved default and owns no
-    /// data (ADR-015 §5). The emptiness check scopes a transaction to the
+    /// data. The emptiness check scopes a transaction to the
     /// *target* tenant via `SET LOCAL`, so the RLS policy admits the target's
     /// rows regardless of the caller's own tenant context.
     pub(super) async fn delete_tenant(&self, id: Uuid) -> Result<(), ServiceError> {
@@ -154,7 +154,7 @@ impl EhrbaseService {
     }
 
     /// Resolve a claim/header value (a tenant name or uuid string) to its
-    /// [`TenantContext`], caching the hit in-process (ADR-015 §4).
+    /// [`TenantContext`], caching the hit in-process.
     pub(super) async fn resolve_tenant(
         &self,
         key: &str,

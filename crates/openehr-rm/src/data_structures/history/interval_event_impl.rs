@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants + functions (ADR-003) for `INTERVAL_EVENT`.
+//! Hand-written RM class invariants + functions for `INTERVAL_EVENT`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.interval_event.adoc`.

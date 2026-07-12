@@ -1,4 +1,4 @@
-//! Hand-written BASE `Interval<T>` constraint-evaluation primitives (ADR-003).
+//! Hand-written BASE `Interval<T>` constraint-evaluation primitives.
 //!
 //! Implements the spec functions of the abstract `Interval<T>` class —
 //! `has`, `intersects`, `contains`, `is_equal` — plus boundary accessors, on

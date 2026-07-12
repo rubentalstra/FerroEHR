@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant + functions (ADR-003) for `DV_URI`.
+//! Hand-written RM class invariant + functions for `DV_URI`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_uri.adoc`:

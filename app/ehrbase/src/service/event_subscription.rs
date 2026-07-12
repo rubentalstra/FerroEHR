@@ -1,4 +1,4 @@
-//! The event-filter subscription store (ADR-014 §5 — "Event Trigger" parity)
+//! The event-filter subscription store
 //! and its [`EventSubscriptionAdapter`] impl on [`EhrbaseService`].
 //!
 //! A subscription is a small predicate record (`kind` / `change_type` /
@@ -7,7 +7,7 @@
 //! fans events out to a durable per-subscription queue (`crate::events`). This
 //! module owns only the CRUD against `event_subscription`; queue declaration is
 //! the drainer's concern (it re-syncs enabled rows each cycle — the service is
-//! kept broker-free, ADR-011). Event/subscription semantics are spec-silent, so
+//! kept broker-free). Event/subscription semantics are spec-silent, so
 //! this is an `EventSubscriptionAdapter` extension, not an SM interface call.
 
 use async_trait::async_trait;
@@ -120,8 +120,8 @@ impl EhrbaseService {
 
     /// Delete a subscription by id. `NotFound` if the id is unknown.
     ///
-    /// PORT NOTE (ADR-014 §5): the broker queue the deleted subscription bound
-    /// is not torn down here — the service is broker-free (ADR-011). A durable
+    /// PORT NOTE: the broker queue the deleted subscription bound
+    /// is not torn down here — the service is broker-free. A durable
     /// queue simply stops being (re)bound; operators reap orphaned queues out of
     /// band. Re-binding of the *remaining* subscriptions is the drainer's job.
     pub(super) async fn delete_subscription(&self, id: Uuid) -> Result<(), ServiceError> {

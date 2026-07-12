@@ -10,7 +10,7 @@ use crate::data_types::quantity::dv_quantity::DvQuantity;
 use serde::Serialize;
 
 /// Abstract class defining the concept of true quantified values, i.e. values which are not only ordered, but which have a precise magnitude.
-/// Closed subtype set of `DV_QUANTIFIED` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DV_QUANTIFIED`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DvQuantified {

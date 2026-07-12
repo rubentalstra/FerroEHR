@@ -1,4 +1,4 @@
-//! Hand-written accessor functions (ADR-003) for the `UID_BASED_ID` family
+//! Hand-written accessor functions for the `UID_BASED_ID` family
 //! (`HIER_OBJECT_ID`, `OBJECT_VERSION_ID`) and the abstract enum.
 //!
 //! Spec: BASE 1.3.0

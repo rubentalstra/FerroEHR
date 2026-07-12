@@ -41,7 +41,7 @@ fn concrete_type(rm_type: &str) -> &str {
 // multi-valued attribute reachable in a template (`credentials`,
 // `other_participations`, nested cluster/section variants) would be rebuilt as a
 // single object. Drive multiplicity from the generated BMM RM attribute model
-// (ADR-008/P16) — the same model AQL path analysis mandates — instead of this
+// (the P16 static RM model) — the same model AQL path analysis mandates — instead of this
 // list.
 fn is_multiple(attr: &str) -> bool {
     matches!(attr, "content" | "items" | "events" | "activities")

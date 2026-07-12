@@ -14,7 +14,7 @@ use crate::beom::types::type_def_uri::TypeDefUri;
 use serde::Serialize;
 
 /// Ancestor class for type definitions known in the openEHR Expression formalism.
-/// Closed subtype set of `EXPR_TYPE_DEF` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXPR_TYPE_DEF`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExprTypeDef {

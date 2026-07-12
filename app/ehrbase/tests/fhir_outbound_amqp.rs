@@ -1,5 +1,5 @@
 //! End-to-end FHIR **outbound** emitter against a real broker (testcontainers
-//! `RabbitMQ`) + a real `PostgreSQL` 18 — ADR-016 §Decision 4a.
+//! `RabbitMQ`) + a real `PostgreSQL` 18
 //!
 //! Proves: an inbound FHIR commit (→ a COMPOSITION + an `event_outbox` row) is
 //! picked up by the outbound emitter, reverse-mapped, and published to the
@@ -31,7 +31,7 @@ use ehrbase::service::EhrbaseService;
 use ehrbase_sm::FhirConnectorAdapter;
 use ehrbase_sm::services::DefinitionAdapter;
 
-/// The separate PHI exchange the outbound emitter publishes to (ADR-016 §4a).
+/// The separate PHI exchange the outbound emitter publishes to.
 const EXCHANGE: &str = "ehrbase.fhir";
 const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";

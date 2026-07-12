@@ -1,6 +1,6 @@
 //! Access control for the ITS-REST surface — **authentication** (who the
 //! caller is) and **authorization** (what they may do), unified under one
-//! module (ADR-011 wave-2c; formerly the two floating `auth/` + `authz/`
+//! module (the crate-layout redesign, wave-2c; formerly the two floating `auth/` + `authz/`
 //! sibling folders).
 //!
 //! Spec grounding (`docs/specs/openehr/ITS-REST/.../Requests_and_responses.md`

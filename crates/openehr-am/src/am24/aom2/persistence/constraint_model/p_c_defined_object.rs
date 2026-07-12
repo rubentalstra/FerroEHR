@@ -7,7 +7,7 @@ use crate::am24::aom2::persistence::primitive::p_c_terminology_code::PCTerminolo
 use serde::Serialize;
 
 /// Abstract parent type of C_OBJECT subtypes that are defined by value, i.e. whose definitions are actually in the archetype rather than being by reference.
-/// Closed subtype set of `P_C_DEFINED_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_C_DEFINED_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PCDefinedObject {

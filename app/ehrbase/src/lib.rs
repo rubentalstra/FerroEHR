@@ -1,4 +1,4 @@
-//! `EHRbase` application library (Stage-1 build, ADR-006).
+//! `EHRbase` application library (the Stage-1 application build).
 //!
 //! Modern idiomatic Rust on top of the generated `openehr-*` crates:
 //! persistence, RM↔JSONB mapping, service layer, and the AQL execution

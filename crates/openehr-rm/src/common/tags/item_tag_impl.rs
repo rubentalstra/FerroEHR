@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `ITEM_TAG`.
+//! Hand-written RM class invariants for `ITEM_TAG`.
 //!
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`:

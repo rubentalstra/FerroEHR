@@ -6,7 +6,7 @@ use crate::am14::aom14::archetype::constraint_model::constraint_ref::ConstraintR
 use serde::Serialize;
 
 /// Abstract parent type of C_OBJECT subtypes that are defined by reference.
-/// Closed subtype set of `C_REFERENCE_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_REFERENCE_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CReferenceObject {

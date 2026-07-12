@@ -9,7 +9,7 @@ use crate::data_structures::item_structure::item_tree::ItemTree;
 use serde::Serialize;
 
 /// Abstract parent class of all data structure types. Includes the `_as_hierarchy_` function which can generate the equivalent CEN EN13606 single hierarchy for each subtype's physical representation. For example, the physical representation of an `ITEM_LIST` is `List<ELEMENT>`; its implementation of `_as_hierarchy_` will generate a `CLUSTER` containing the set of `ELEMENT` nodes from the list.
-/// Closed subtype set of `DATA_STRUCTURE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `DATA_STRUCTURE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum DataStructure {

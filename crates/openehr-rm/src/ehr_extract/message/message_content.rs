@@ -5,7 +5,7 @@ use crate::ehr_extract::sync_extract::sync_extract_request::SyncExtractRequest;
 use serde::Serialize;
 
 /// Abstract parent of message payload types.
-/// Closed subtype set of `MESSAGE_CONTENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `MESSAGE_CONTENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum MessageContent {

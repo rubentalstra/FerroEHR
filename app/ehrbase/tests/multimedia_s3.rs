@@ -1,4 +1,4 @@
-//! End-to-end tests for DV_MULTIMEDIA externalization (ADR-017) against a real
+//! End-to-end tests for DV_MULTIMEDIA externalization against a real
 //! S3 backend — a SeaweedFS S3 gateway in a testcontainer — plus a real
 //! `PostgreSQL` 18.
 //!
@@ -8,7 +8,7 @@
 //! externalized value carries `integrity_check` + `integrity_check_algorithm`
 //! (openEHR `Integrity check algorithms` code set, code `SHA-256`) and the
 //! mandatory unencoded `size`. Server-side blob storage is spec-silent — this
-//! is our design (ADR-017), and these tests are its acceptance instrument.
+//! is our design, and these tests are its acceptance instrument.
 //!
 //! Each test owns its containers (Drop removes them; nothing is left running).
 //! Requires Docker. SeaweedFS with no credentials runs in unauthenticated
@@ -359,7 +359,7 @@ async fn corrupted_blob_fails_integrity_on_expand() {
         .expect("overwrite");
 
     // Expansion recomputes the SHA-256, detects the mismatch, and errors (500),
-    // never serving corrupted data (ADR-017 §3).
+    // never serving corrupted data.
     let err = svc.expand_multimedia(stored).await.expect_err("must fail");
     assert_eq!(
         err.status,

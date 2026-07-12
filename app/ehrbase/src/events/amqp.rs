@@ -1,11 +1,11 @@
-//! The AMQP 0.9.1 (`RabbitMQ`) [`EventPublisher`] via `lapin` (ADR-014 §4).
+//! The AMQP 0.9.1 (`RabbitMQ`) [`EventPublisher`] via `lapin`.
 //!
 //! Publishes to a **durable topic exchange** with **publisher confirms**: a
 //! publish resolves only after the broker acknowledges, so the drainer marks a
 //! row published exactly when delivery is guaranteed (at-least-once). The
 //! connection + channel are established lazily and re-established on loss, so a
 //! broker that is down at start (or restarts) is tolerated — the outbox simply
-//! stays pending until the broker returns (ADR-014 §3).
+//! stays pending until the broker returns.
 
 use async_trait::async_trait;
 use lapin::options::{
@@ -104,7 +104,7 @@ impl EventPublisher for AmqpPublisher {
     async fn declare_subscription(&self, queue: &str, binding_key: &str) -> Result<(), EventError> {
         // Idempotent: a durable queue survives a broker restart (matching the
         // persistent delivery mode), and re-declaring an existing queue/binding
-        // with the same arguments is a no-op (ADR-014 §5).
+        // with the same arguments is a no-op.
         let channel = self.channel().await?;
         channel
             .queue_declare(

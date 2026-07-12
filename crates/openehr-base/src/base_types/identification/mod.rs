@@ -18,7 +18,7 @@ pub mod uid_based_id;
 pub mod uuid;
 pub mod version_tree_id;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod archetype_id_impl;
 pub mod internet_id_impl;
 pub mod iso_oid_impl;

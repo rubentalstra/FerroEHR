@@ -13,7 +13,7 @@ use serde::Serialize;
 /// In its simplest form, the constraint accessor returns just a single point `Interval<T>` object, representing a single value.
 ///
 /// The next simplest form is a single proper `Interval <T>` (i.e. normal two-sided or half-open interval). The most complex form is a list of any combination of point and proper intervals.
-/// Closed subtype set of `C_ORDERED` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_ORDERED`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum COrdered {

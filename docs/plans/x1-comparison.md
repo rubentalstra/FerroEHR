@@ -406,7 +406,7 @@ chapter after Conformance; the landing page's conformance strip gains a
 ### 3d. Refresh discipline
 
 - **Per-release rerun:** the `/phase-done`-adjacent release checklist (and
-  `docs/plans/phase-99-cutover.md`) gains: rerun ECC-upstream + the
+  the release checklist) gains: rerun ECC-upstream + the
   benchmark suite, regenerate `_generated/`, before tagging. Benchmarks
   stay **manual/dispatch on consistent hardware** — never shared CI
   runners for absolute numbers (`benchmarking.md:274-282`).
@@ -521,7 +521,7 @@ filed upstream — not worked around).
 - [ ] **X1.6 Refresh discipline.**
   - [ ] Upstream-release watch workflow (monthly, opens a staleness issue).
   - [ ] Release-checklist hook: rerun both suites + regenerate before a tag
-        (`phase-99-cutover.md` note + `/phase-done` item).
+        (release-checklist note + `/phase-done` item).
   - [ ] Stale-marking rule documented on the page ("data measured against
         EHRbase X on DATE; newer upstream releases are flagged, not
         silently assumed comparable").

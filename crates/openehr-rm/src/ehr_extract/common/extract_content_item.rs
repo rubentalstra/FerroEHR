@@ -5,7 +5,7 @@ use crate::ehr_extract::openehr_extract::openehr_content_item::OpenehrContentIte
 use serde::Serialize;
 
 /// Abstract model of a wrapper for one content item in an Extract, containing various meta-data. Indicates whether it was part of the primary set and what its original path was. Intended to be subtyped for wrappers of specific types of content.
-/// Closed subtype set of `EXTRACT_CONTENT_ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EXTRACT_CONTENT_ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExtractContentItem {

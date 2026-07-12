@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_MULTIMEDIA`.
+//! Hand-written RM class invariants for `DV_MULTIMEDIA`.
 //!
 //! Mirrors archie `DvMultimedia` (the non-terminology invariants):
 //! - `Not_empty`: `data` (inline) or `uri` (external) must be present.
@@ -8,7 +8,7 @@
 //!
 //! PORT NOTE: openEHR's `Size_valid` is `size >= 0`; archie implements it as
 //! `size > 0` (a known reference quirk that rejects a legitimately empty
-//! multimedia). We follow the **spec** (`>= 0`) — ADR-008 makes the openEHR
+//! multimedia). We follow the **spec** (`>= 0`) — by design the openEHR
 //! spec, not a specific reference implementation, the conformance target.
 //!
 //! PORT NOTE: the terminology-bound invariants (`Media_type_valid`,

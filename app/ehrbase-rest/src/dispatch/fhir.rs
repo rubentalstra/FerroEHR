@@ -1,6 +1,6 @@
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
 //! over the [`FhirConnectorAdapter`](ehrbase_sm::FhirConnectorAdapter) seam
-//! (ADR-016 / E3).
+//! (our own extension — no openEHR spec governs this; E3).
 //!
 //! Two surfaces, both config-gated (`RestConfig::fhir.enabled`, default
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
@@ -9,27 +9,27 @@
 //! * `POST /fhir/r4/{resource_type}` — the inbound connector. A FHIR R4
 //!   resource is accepted, its mapping resolved by type + `meta.profile`, a
 //!   COMPOSITION built and committed through the NORMAL validated path with
-//!   `FEEDER_AUDIT` provenance (ADR-016 §Decision 3). Only the starter resource
+//!   `FEEDER_AUDIT` provenance. Only the starter resource
 //!   set ([`STARTER_RESOURCES`]) is supported; anything else is a typed
-//!   `501 OperationOutcome` (ADR-016 §Decision 5).
+//!   `501 OperationOutcome`.
 //! * `GET /fhir/r4/{resource_type}?patient=<ehr-subject-or-id>[&_count=N]` — the
-//!   read façade (ADR-016 §Decision 4b). Resolves the enabled mappings for the
+//!   read façade. Resolves the enabled mappings for the
 //!   type, runs the template-bound COMPOSITION query scoped to the patient, and
 //!   returns a FHIR `searchset` Bundle of reverse-mapped resources. The
 //!   `patient` scope is mandatory — a missing one is a typed `400` (explicit
-//!   params only; never generic FHIR Search, ADR-016 §Decision 5). An
+//!   params only; never generic FHIR Search). An
 //!   out-of-scope type is the same typed `501` as inbound.
 //! * `/admin/fhir_mapping[/{id}]` — CRUD over the deployable mapping artefacts
-//!   ("mapping-as-data", ADR-016 §Decision 2). Mounted under `/admin/` like the
+//!   ("mapping-as-data"). Mounted under `/admin/` like the
 //!   event-subscription/tenant extensions (the coarse RBAC gate classes it
 //!   `Admin`).
 //!
-//! PORT NOTE (ADR-016 §Decision 6): every error on this surface is a FHIR
+//! PORT NOTE: every error on this surface is a FHIR
 //! `OperationOutcome` (`severity`/`code`/`diagnostics`), NOT the openEHR error
 //! body — this is the FHIR boundary. Validator rejections surface the openEHR
 //! validator's message verbatim in `diagnostics` (the CDR's rules win: a
 //! resource that maps to an invalid COMPOSITION is rejected `422`, not partially
-//! stored). FHIR↔openEHR mapping is spec-silent (ADR-016 is the design record),
+//! stored). FHIR↔openEHR mapping is spec-silent — our own extension,
 //! so this is our own surface, excluded from the ITS-REST drift check.
 
 use axum::Json;
@@ -52,12 +52,12 @@ use crate::state::AppState;
 /// FHIR R4 media type for the `OperationOutcome` / connector responses.
 const FHIR_JSON: &str = "application/fhir+json";
 
-/// The starter resource set the inbound connector maps (ADR-016 §Decision 5);
+/// The starter resource set the inbound connector maps;
 /// anything else is a typed `501 OperationOutcome`.
 pub(crate) const STARTER_RESOURCES: &[&str] =
     &["Patient", "Observation", "Condition", "DocumentReference"];
 
-/// The FHIR-connector routes — our own design (no ITS-REST contract), mounted
+/// The FHIR-connector routes — our own extension (no ITS-REST contract), mounted
 /// alongside the generated `ROUTES`. Group-relative paths (nested under the
 /// configured `base_path`).
 pub(crate) const FHIR_ROUTES: &[(&str, &str, &str)] = &[
@@ -158,7 +158,7 @@ async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestPa
 }
 
 /// Resolve the `{resource_type}` path param + enforce the starter-scope gate
-/// (ADR-016 §5): a missing param is a routing bug (`500`), an out-of-scope type
+///: a missing param is a routing bug (`500`), an out-of-scope type
 /// is a typed `501` before the backend is touched. Shared by inbound + façade.
 #[allow(clippy::result_large_err)] // the Err is a ready axum Response (large by nature)
 fn scoped_resource_type(parts: &RequestParts) -> Result<String, Response> {
@@ -212,7 +212,7 @@ async fn search<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Respo
     };
     let q = parts.query.as_deref();
     // `patient` is mandatory: the façade serves only this explicit scope,
-    // never generic FHIR Search (ADR-016 §5).
+    // never generic FHIR Search.
     let Some(patient) = crate::params::query_param(q, "patient").filter(|p| !p.is_empty()) else {
         return operation_outcome(
             StatusCode::BAD_REQUEST,

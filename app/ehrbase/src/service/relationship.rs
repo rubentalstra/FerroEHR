@@ -1,7 +1,7 @@
 //! DEMOGRAPHIC `PARTY_RELATIONSHIP` domain logic, built on the shared
 //! [`vobject`](super::vobject) versioned-object machinery — the same code path
 //! as the demographic parties (see [`super::demographic`]), with **no EHR
-//! scope** (`ehr_id = None`, ADR-008). A relationship is a versioned object in
+//! scope** (`ehr_id = None` — our own extension design). A relationship is a versioned object in
 //! the demographics repository, but it is *not* a PARTY (it has its own
 //! `versioned_party_relationship` read surface).
 //!
@@ -10,7 +10,7 @@
 //! (`create_party_relationship(UV_PARTY_RELATIONSHIP): UUID`, pre
 //! `valid_content`, server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` +
 //! `CONTRIBUTION`). ITS-REST 1.0.3 defines no demographic wire contract, so — as
-//! for the parties — this behaviour is our own design by analogy with the EHR
+//! for the parties — this behaviour is our own extension by analogy with the EHR
 //! group (`docs/design/sm-platform/03-demographic-ehr-index-query.md` §5.9).
 //!
 //! PORT NOTEs on the SM spec asymmetries this module normalizes to the PARTY

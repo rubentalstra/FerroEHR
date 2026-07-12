@@ -16,7 +16,7 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 use serde::Serialize;
 
 /// Abstract parent of all constraint model types. Defines conformance and congruence function signatures.
-/// Closed subtype set of `ARCHETYPE_CONSTRAINT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `ARCHETYPE_CONSTRAINT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ArchetypeConstraint {

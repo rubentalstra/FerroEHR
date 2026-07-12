@@ -108,7 +108,7 @@ async fn serve() -> anyhow::Result<()> {
     // auditing if the transport cannot be established, so the CDR still serves).
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
-    // Contribution-outbox eventing (ADR-014): off by default. When enabled, the
+    // Contribution-outbox eventing: off by default. When enabled, the
     // publisher drains the transactional outbox to the broker at-least-once; a
     // broker that is down is tolerated (the outbox buffers), so we spawn it
     // unconditionally-on-enabled and never fail boot on the broker.
@@ -166,7 +166,7 @@ async fn serve() -> anyhow::Result<()> {
 
     // The audit sender (when enabled) is injected into the platform service:
     // it realizes the SM `SystemLog` component the REST audit layer emits
-    // through (ADR-011, ehrbase-audit dissolved into the platform crate).
+    // through (ehrbase-audit dissolved into the platform crate).
     let audit_enabled = audit_sender.is_some();
     let mut service = EhrbaseService::new(pool.clone()).with_signer(signer);
     if let Some(sender) = audit_sender {
@@ -189,7 +189,7 @@ async fn serve() -> anyhow::Result<()> {
         None => {}
     }
 
-    // Opt-in DV_MULTIMEDIA externalization (ADR-017): off by default (inline
+    // Opt-in DV_MULTIMEDIA externalization: off by default (inline
     // behaviour byte-identical). When enabled, large inline media is offloaded
     // to S3-compatible object storage on commit and re-inlined on demand.
     let multimedia_config = ehrbase::multimedia::MultimediaConfig::load()
@@ -209,7 +209,7 @@ async fn serve() -> anyhow::Result<()> {
     // REST server both hold it).
     let service = Arc::new(service);
 
-    // FHIR outbound emitter (ADR-016 §Decision 4a): off by default. When enabled,
+    // FHIR outbound emitter: off by default. When enabled,
     // it walks committed outbox rows, reverse-maps matching COMPOSITIONs, and
     // publishes the FHIR resources to the broker — carrying PHI by design, hence
     // its own explicit gate (a separate switch from the REST FHIR connector).

@@ -8,7 +8,7 @@ use crate::bmm3::expression::el_static_ref::ElStaticRef;
 use serde::Serialize;
 
 /// A reference that is scoped by a containing entity and requires a context qualifier if it is not the currently scoping entity.
-/// Closed subtype set of `EL_FEATURE_REF` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_FEATURE_REF`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElFeatureRef {

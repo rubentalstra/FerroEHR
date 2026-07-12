@@ -1,14 +1,14 @@
-//! The FHIR-connector mapping store + inbound ingest (ADR-016 / E3).
+//! The FHIR-connector mapping store + inbound ingest (our own extension — no openEHR spec governs this; E3).
 //!
 //! Two concerns, both on [`EhrbaseService`]:
 //!
 //! * the **mapping store** — CRUD over `fhir_mapping` (the deployable
-//!   "mapping-as-data" artefacts, ADR-016 §Decision 2), mirroring the
+//!   "mapping-as-data" artefacts), mirroring the
 //!   event-subscription store;
 //! * the **inbound ingest** — [`FhirConnectorAdapter::fhir_ingest`]: resolve a
 //!   mapping by resource type + profile, build a COMPOSITION from it (the pure
 //!   transform in [`mapping`]), stamp `FEEDER_AUDIT` provenance, and commit it
-//!   through the NORMAL validated create path (ADR-016 §Decision 3).
+//!   through the NORMAL validated create path.
 //!
 //! PORT NOTE (crate layout): this module lives inside `service` (not a
 //! top-level `ehrbase::fhir`) because the ingest reuses the `pub(super)`
@@ -16,7 +16,7 @@
 //! moka-cached [`EhrbaseService::web_template_for`] — both service-internal.
 //! The protocol adapter (the `/fhir/r4/*` + `/admin/fhir_mapping` routes,
 //! config-gated) lives in `ehrbase-rest` and dispatches to
-//! [`FhirConnectorAdapter`]; FHIR↔openEHR mapping is spec-silent (ADR-016).
+//! [`FhirConnectorAdapter`]; FHIR↔openEHR mapping is spec-silent.
 
 mod mapping;
 
@@ -230,7 +230,7 @@ impl EhrbaseService {
         }
     }
 
-    /// Assemble the FHIR `searchset` Bundle for the read façade (ADR-016
+    /// Assemble the FHIR `searchset` Bundle for the read façade (our own extension
     /// §Decision 4b): for each enabled mapping of `resource_type`, run its
     /// template-bound COMPOSITION query scoped to `patient`, reverse-map each
     /// hit, and collect the entries. A type with no enabled mapping yields an
@@ -312,11 +312,11 @@ impl EhrbaseService {
                 }));
             }
         }
-        // PORT NOTE (ADR-016 §Decision 4b): `total` is the number of entries in
+        // PORT NOTE: `total` is the number of entries in
         // this Bundle, not a separate full-match count — the façade is a
-        // stateless connector (ADR-016 §1), not a FHIR Search engine, so with
+        // stateless connector, not a FHIR Search engine, so with
         // `_count` it reports the returned page size. No `Bundle.link`
-        // paging is emitted (explicit params only, ADR-016 §5).
+        // paging is emitted (explicit params only, by design).
         Ok(json!({
             "resourceType": "Bundle",
             "type": "searchset",
@@ -328,7 +328,7 @@ impl EhrbaseService {
 
 impl EhrbaseService {
     /// Reverse-map a committed COMPOSITION version for the **outbound emitter**
-    /// (ADR-016 §Decision 4a): load the version at `(vo_id, sys_version)`, read
+    ///: load the version at `(vo_id, sys_version)`, read
     /// its bound template from the canonical `archetype_details/template_id`, and
     /// for every enabled `fhir_mapping` on that template reverse-map it,
     /// returning `(resource_type, template_id, resource)` per mapping.
@@ -339,7 +339,7 @@ impl EhrbaseService {
     /// its template has no enabled mapping. Reuses the versioned read seam
     /// ([`vobject::read_version`]) and the reverse transform.
     ///
-    /// PORT NOTE (ADR-016): the template is read from the COMPOSITION itself (as
+    /// PORT NOTE: the template is read from the COMPOSITION itself (as
     /// the read façade's AQL also does), NOT from `vo_version.template_id` — that
     /// column is currently left NULL on the commit path (`composition::create`),
     /// so relying on it would emit nothing. Deriving it from the canonical body
@@ -428,14 +428,14 @@ struct PatientScope {
 /// template in scope. The template id binds as a parameter (no string
 /// interpolation → no AQL injection).
 ///
-/// PORT NOTE (ADR-016 §Decision 4b): the query selects the synthesized VERSION
+/// PORT NOTE: the query selects the synthesized VERSION
 /// uid `v/uid/value` (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v
 /// CONTAINS COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is
 /// a (null) RM leaf on the AQL read path (the reassembled body carries no uid),
 /// whereas the VERSION variable's uid is the engine-synthesized object-version
 /// id. The COMPOSITION body is then loaded through the versioned read seam
 /// ([`vobject::read_version`]) by that uid, keeping the façade on the query seam
-/// (ADR-016 §Decision 4b) and reusing the same read seam the outbound emitter uses.
+/// and reusing the same read seam the outbound emitter uses.
 const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
      CONTAINS VERSION v CONTAINS COMPOSITION c \
      WHERE c/archetype_details/template_id/value = $templateId";
@@ -463,7 +463,7 @@ fn validated_name(body: &Value) -> Result<String, ServiceError> {
 }
 
 /// Validate the `definition` field: it must be present and deserialise into a
-/// [`FhirMappingDefinition`] (ADR-016 §Decision 2 — validated on upload).
+/// [`FhirMappingDefinition`].
 /// Returns the raw JSON (stored verbatim) + the parsed form (for the column
 /// projection).
 fn validated_definition(body: &Value) -> Result<(Value, FhirMappingDefinition), ServiceError> {
@@ -563,7 +563,7 @@ impl FhirConnectorAdapter for EhrbaseService {
             )
         })?;
 
-        // 4. Stamp FEEDER_AUDIT provenance (ADR-016 §Decision 3).
+        // 4. Stamp FEEDER_AUDIT provenance.
         let feeder = mapping::feeder_audit(
             &resource_type,
             &mapping::resource_id(&a_resource, &resource_type),
@@ -574,7 +574,7 @@ impl FhirConnectorAdapter for EhrbaseService {
 
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
-        //    never partially stored (ADR-016 §Decision 6).
+        //    never partially stored.
         Ok(self.create_composition(ehr_id, composition).await?)
     }
 

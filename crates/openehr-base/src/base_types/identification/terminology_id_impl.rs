@@ -1,4 +1,4 @@
-//! Hand-written accessor functions (ADR-003) for `TERMINOLOGY_ID`.
+//! Hand-written accessor functions for `TERMINOLOGY_ID`.
 //!
 //! Spec: BASE 1.3.0
 //! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.terminology_id.adoc`.

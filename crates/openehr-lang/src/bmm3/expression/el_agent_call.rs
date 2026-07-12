@@ -5,7 +5,7 @@ use crate::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
 use serde::Serialize;
 
 /// A call made to a 'closed' agent, i.e. one with no remaining open arguments.
-/// Closed subtype set of `EL_AGENT_CALL` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_AGENT_CALL`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElAgentCall {

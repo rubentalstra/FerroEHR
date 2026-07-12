@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_self::BmmSelf;
 use serde::Serialize;
 
 /// Meta-type for writable variables, including routine parameters and the special variable `Self`.
-/// Closed subtype set of `BMM_READONLY_VARIABLE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_READONLY_VARIABLE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmReadonlyVariable {

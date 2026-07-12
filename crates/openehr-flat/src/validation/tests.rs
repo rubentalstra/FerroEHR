@@ -922,13 +922,13 @@ fn media_type_code_list() {
     assert!(walk_only(&good, &mm).is_empty());
 }
 
-// ── closed-archetype walk (ADR-012 / F-07-05) ────────────────────────────────
+// ── closed-archetype walk (F-07-05) ─────────────────────────────────────────
 
 use crate::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
 
 /// A COMPOSITION whose `content` is closed to `openEHR-EHR-SECTION.x.v1`: the
 /// defined section is accepted, a foreign OBSERVATION is rejected as unexpected
-/// (ADR-012 rule 1).
+/// (closed-world rule 1).
 #[test]
 fn closed_world_rejects_foreign_content() {
     let mut root = node("COMPOSITION", "");
@@ -943,16 +943,16 @@ fn closed_world_rejects_foreign_content() {
         {"_type": "OBSERVATION", "archetype_node_id": "openEHR-EHR-OBSERVATION.foreign.v1",
          "name": {"_type": "DV_TEXT", "value": "o"}}
     ]});
-    // ADR-012 rule 4 (scope amendment, B2 close): an unmatched
+    // the closed-world admission rule (scope amendment, B2 close): an unmatched
     // *archetype-rooted* child is tolerated (the flat OPT does not enumerate
     // the full slot-fill universe; the CNF corpus itself commits such ENTRYs).
     let msgs = walk_only(&inst, &root);
     assert!(
         msgs.is_empty(),
-        "foreign archetype-rooted content is tolerated (ADR-012 rule 4), got {msgs:?}"
+        "foreign archetype-rooted content is tolerated (the closed-world admission rule), got {msgs:?}"
     );
     // At-coded children remain closed: an at-coded child matching no sibling
-    // constraint is rejected (ADR-012 rule 1).
+    // constraint is rejected (closed-world rule 1).
     let at_foreign = json!({"_type": "COMPOSITION", "archetype_node_id": "x", "content": [
         {"_type": "SECTION", "archetype_node_id": "at0099",
          "name": {"_type": "DV_TEXT", "value": "s"}}
@@ -973,7 +973,7 @@ fn closed_world_rejects_foreign_content() {
 }
 
 /// A metadata value (no `archetype_node_id`, i.e. non-LOCATABLE) under a closed
-/// attribute is never flagged (ADR-012 rule 2 — the `archetype_node_id`
+/// attribute is never flagged (closed-world rule 2 — the `archetype_node_id`
 /// discriminator).
 #[test]
 fn closed_world_ignores_metadata_values() {

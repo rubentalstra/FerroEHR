@@ -8,7 +8,7 @@ use crate::foundation_types::time::iso8601_timezone::Iso8601Timezone;
 use serde::Serialize;
 
 /// Abstract ancestor type of ISO 8601 types, defining interface for 'extended' and 'partial' concepts from ISO 8601.
-/// Closed subtype set of `Iso8601_type` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `Iso8601_type`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Iso8601Type {

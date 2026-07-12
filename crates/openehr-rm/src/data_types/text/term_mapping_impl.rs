@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `TERM_MAPPING`.
+//! Hand-written RM class invariant for `TERM_MAPPING`.
 //!
 //! `Match_valid` (archie `TermMapping.VALID_MATCH_CODES`): `match` must be one
 //! of `< = > ?`.

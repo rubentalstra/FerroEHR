@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariant (ADR-003) for `ISO_OID`.
+//! Hand-written RM/BASE class invariant for `ISO_OID`.
 //!
 //! `UID.Value_valid`: the identifier string must be non-empty (archie `UID`,
 //! `!Strings.isNullOrEmpty(value)`). Surfaces under the concrete type name.

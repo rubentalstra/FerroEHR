@@ -63,7 +63,7 @@ pub(crate) async fn system_options() -> impl IntoResponse {
         solution_version: env!("CARGO_PKG_VERSION"),
         vendor: "ehrbase-rs",
         restapi_specs_version: OPENEHR_REST_API_VERSION,
-        // The conformance profile this CDR targets (ADR-008 / blueprint §1).
+        // The conformance profile this CDR targets (CNF master03 profiles).
         conformance_profile: "STANDARD",
         endpoints: vec!["/ehr", "/definition", "/query"],
     };

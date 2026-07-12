@@ -1,4 +1,4 @@
-//! Tenant-resolution middleware (ADR-015 §4).
+//! Tenant-resolution middleware.
 //!
 //! Runs *inside* the authentication layer (so the [`Principal`] and its JWT
 //! claims are established), resolves the request's tenant from the configured
@@ -6,13 +6,12 @@
 //! [`TenantAdapter::tenant_resolve`], and opens the
 //! [`ehrbase_sm::tenant`] task-local scope around the rest of the request. The
 //! application's tenant-scoped pool then reads that scope on every acquired
-//! connection to set `ehrbase.tenant_id` for RLS (ADR-015 §2).
+//! connection to set `ehrbase.tenant_id` for RLS.
 //!
 //! Only installed when `tenancy.enabled` (`crate::router`), so single-tenant
 //! deployments pay nothing. A request that carries no tenant key, or an
 //! unknown/unresolvable one, runs **unscoped** → the reserved default tenant:
-//! cross-tenant access is an engine-level empty set, never a `403` (ADR-015 §4
-//! — no existence leakage).
+//! cross-tenant access is an engine-level empty set, never a `403`.
 
 use axum::extract::{Request, State};
 use axum::middleware::Next;

@@ -1,5 +1,5 @@
 //! EHR Extract export (SM `I_EHR_EXTRACT_SERVICE.export_ehrs` /
-//! `export_ehr_extracts`) over the greenfield versioned store (ADR-008).
+//! `export_ehr_extracts`) over the greenfield versioned store.
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_ehr_extract_service.adoc`;
 //! RM EHR Extract IM `docs/specs/openehr/RM/docs/ehr_extract/` — master09

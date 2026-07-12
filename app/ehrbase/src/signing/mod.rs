@@ -4,7 +4,7 @@
 //! (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`;
 //! `VERSION.signature` / `VERSION.canonical_form()` in
 //! `org.openehr.rm.common.version`). Core change-control behaviour, so it lives
-//! in the `ehrbase` platform crate as the `signing` module (ADR-011 crate
+//! in the `ehrbase` platform crate as the `signing` module (the crate-layout
 //! consolidation, 2026-07-09). Design: `docs/design/version-signing.md`.
 //!
 //! Two spec-blessed modes, both first-class (design §3.2):

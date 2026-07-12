@@ -7,7 +7,7 @@ use crate::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
 use serde::Serialize;
 
 /// Persistent form of `BMM_TYPE`.
-/// Closed subtype set of `P_BMM_TYPE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `P_BMM_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PBmmType {

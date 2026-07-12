@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `SECTION`.
+//! Hand-written RM class invariant for `SECTION`.
 //!
 //! Only the inherited LOCATABLE `Archetype_node_id_valid`. archie's own
 //! `Section.Items_valid` is `ignored`.

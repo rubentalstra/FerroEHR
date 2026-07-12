@@ -1,4 +1,4 @@
-//! Hand-written RM/BASE class invariant (ADR-003) for `OBJECT_REF`.
+//! Hand-written RM/BASE class invariant for `OBJECT_REF`.
 //!
 //! `Namespace_valid` (archie `ObjectRef`): `namespace` matches the openEHR
 //! namespace regex `[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*` (the special values `local`

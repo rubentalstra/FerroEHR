@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `ATTESTATION`.
+//! Hand-written RM class invariant for `ATTESTATION`.
 //!
 //! `ATTESTATION` extends `AUDIT_DETAILS` and inherits `System_id_valid`.
 //!

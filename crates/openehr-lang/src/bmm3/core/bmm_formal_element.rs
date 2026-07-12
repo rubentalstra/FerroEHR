@@ -11,7 +11,7 @@ use crate::bmm3::core::feature::bmm_singleton::BmmSingleton;
 use serde::Serialize;
 
 /// A formal element having a name, type and a type-based signature.
-/// Closed subtype set of `BMM_FORMAL_ELEMENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_FORMAL_ELEMENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmFormalElement {

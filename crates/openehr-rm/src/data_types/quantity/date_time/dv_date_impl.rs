@@ -1,4 +1,4 @@
-//! Hand-written RM class invariants (ADR-003) for `DV_DATE`.
+//! Hand-written RM class invariants for `DV_DATE`.
 //!
 //! `Value_valid`: `value` is a valid (possibly partial) ISO-8601 date. Plus the
 //! inherited DV_QUANTIFIED `Magnitude_status_valid`.

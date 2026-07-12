@@ -9,7 +9,7 @@ use crate::bmm3::statement::bmm_statement_block::BmmStatementBlock;
 use serde::Serialize;
 
 /// Abstract parent of statement types representing a locally defined routine body.
-/// Closed subtype set of `BMM_STATEMENT_ITEM` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_STATEMENT_ITEM`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmStatementItem {

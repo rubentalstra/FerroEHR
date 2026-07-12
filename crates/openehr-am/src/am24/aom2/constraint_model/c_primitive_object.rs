@@ -14,7 +14,7 @@ use serde::Serialize;
 /// Parent of types representing constraints on primitive types.
 ///
 /// Instances of this type represented in ADL inline form, the `_node_id_` attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
-/// Closed subtype set of `C_PRIMITIVE_OBJECT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `C_PRIMITIVE_OBJECT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum CPrimitiveObject {

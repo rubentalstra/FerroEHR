@@ -1,4 +1,4 @@
-//! Hand-written RM class invariant (ADR-003) for `FEEDER_AUDIT_DETAILS`.
+//! Hand-written RM class invariant for `FEEDER_AUDIT_DETAILS`.
 //!
 //! `System_id_valid` (archie `FeederAuditDetails`, `nullOrNotEmpty`):
 //! `system_id` must be non-empty.

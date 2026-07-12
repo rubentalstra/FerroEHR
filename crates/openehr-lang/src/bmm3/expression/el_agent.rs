@@ -9,7 +9,7 @@ use serde::Serialize;
 /// Instances may include closed delayed calls like `calculate_age (dob="1987-09-13", today="2019-06-03")` but also partially open calls such as `format_structure (struct=?, style=3)`, where `struct` is an open argument.
 ///
 /// Evaluation type (i.e. type of runtime evaluated form) is `BMM_SIGNATURE`.
-/// Closed subtype set of `EL_AGENT` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `EL_AGENT`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ElAgent {

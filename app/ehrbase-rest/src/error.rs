@@ -39,7 +39,7 @@ impl From<ApiError> for RestError {
     }
 }
 
-/// The single SM → HTTP mapping, owned by the protocol adapter (ADR-011,
+/// The single SM → HTTP mapping, owned by the protocol adapter (the crate split,
 /// `docs/design/sm-platform/08-target-architecture.md` §5): a native [`SmError`]
 /// carries only a `CALL_STATUS_TYPE`, and this adapter turns its status into the
 /// ITS-REST 1.0.3 status code. The wire oracle (ITS-REST) decides each row;

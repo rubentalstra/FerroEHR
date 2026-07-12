@@ -24,7 +24,7 @@
 //!
 //! The RM-conformance rules (VCORM/VCARM/VCAEX/VCACA/VCAM, AOM2/08 lines 70–75)
 //! require "a computational representation of the reference model". We use the
-//! BMM-generated static RM model (`openehr_rm::model`, ADR-008 §3) — the same
+//! BMM-generated static RM model (`openehr_rm::model`) — the same
 //! spec-pinned oracle the AQL planner uses.
 //!
 //! # Codes deliberately not implemented here (inapplicable to OPT 1.4)

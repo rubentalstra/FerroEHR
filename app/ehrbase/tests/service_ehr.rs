@@ -166,7 +166,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let svc = EhrbaseService::new(pg.migrated_pool("lifecycle").await);
 
     // ── EHR create + retrieve ────────────────────────────────────────────────
-    // PORT NOTE (ADR-011): the SM `create_ehr` returns the new UUID; the RM `EHR`
+    // PORT NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR`
     // body is read via `ehr_object`. The old create-envelope ETag/Location meta
     // (ehr_id == uid) is exactly that returned uuid — the adapter builds the
     // header — so the meta assertions are folded into the uuid/body checks.
@@ -190,7 +190,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let mut status_v2_body = status_v1.clone();
     status_v2_body.as_object_mut().unwrap().remove("uid");
     status_v2_body["is_modifiable"] = json!(false);
-    // PORT NOTE (ADR-011): `replace_ehr_status` returns the new version_uid (the
+    // PORT NOTE: `replace_ehr_status` returns the new version_uid (the
     // old `.meta.uid`); the content is re-read to assert it.
     let status_v2_uid = svc
         .replace_ehr_status(ehr_uuid, uv(status_v2_body, "251", Some(&status_ovid_v1)))
@@ -345,7 +345,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         ),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
-    // PORT NOTE (ADR-011): the old "bare HIER_OBJECT_ID → 400" sub-check is
+    // PORT NOTE: the old "bare HIER_OBJECT_ID → 400" sub-check is
     // dropped — `delete_composition` now takes a typed `ObjectVersionId`, so a
     // bare id cannot be constructed as an argument; that decode + 400 moved to
     // the protocol adapter (`ehrbase-rest`), where it is exercised.
@@ -1356,7 +1356,7 @@ async fn version_get_at_time_returns_the_original_version() {
     let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
 
     // EHR_STATUS: no version_at_time → the latest VERSION.
-    // PORT NOTE (ADR-011): the reads return the ORIGINAL_VERSION `Value`; the
+    // PORT NOTE: the reads return the ORIGINAL_VERSION `Value`; the
     // ETag/Location uid the old `.meta` carried is the ORIGINAL_VERSION's own
     // `uid.value`.
     let status_version = svc

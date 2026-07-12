@@ -5,7 +5,7 @@ use crate::foundation_types::interval::proper_interval::ProperInterval;
 use serde::Serialize;
 
 /// Interval abstraction, featuring upper and lower limits that may be open or closed, included or not included.
-/// Closed subtype set of `Interval` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `Interval`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum Interval<T> {

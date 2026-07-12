@@ -170,7 +170,7 @@ async fn archetype_errors() {
     let svc = EhrbaseService::new(pg.migrated_pool("def_arch_err").await);
 
     // Invalid ADL → 422 invalid_archetype.
-    // PORT NOTE (ADR-011): the SM-specific Definition statuses (invalid_archetype,
+    // PORT NOTE: the SM-specific Definition statuses (invalid_archetype,
     // artefact_does_not_exist, invalid_id_pattern, …) are flattened through the
     // service's `ServiceError::sm()` → `From<ServiceError> for SmError` round-trip
     // to the generic `content_invalid` (422) / `versioned_object_does_not_exist`
@@ -308,7 +308,7 @@ async fn opt_errors() {
         .upload_opt("<not-a-template/>".to_owned())
         .await
         .expect_err("invalid opt");
-    // PORT NOTE (ADR-011): the OPT ingestion path returns `ServiceError::Unprocessable`,
+    // PORT NOTE: the OPT ingestion path returns `ServiceError::Unprocessable`,
     // flattened at the SM boundary to `content_invalid`.
     assert!(
         matches!(

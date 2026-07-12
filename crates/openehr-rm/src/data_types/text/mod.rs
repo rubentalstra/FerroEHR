@@ -6,7 +6,7 @@ pub mod dv_paragraph;
 pub mod dv_text;
 pub mod term_mapping;
 
-// hand-written modules (ADR-003 spec behaviour), auto-declared:
+// hand-written modules (spec behaviour), auto-declared:
 pub mod code_phrase_impl;
 pub mod dv_text_impl;
 pub mod term_mapping_impl;

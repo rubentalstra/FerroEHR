@@ -8,7 +8,7 @@
 //! canonical XML), calls the EHR-core SM catalog methods on the platform service
 //! `S`, and rebuilds a [`ServiceResponse`] (RM payload + typed [`ResourceMeta`])
 //! from the native result — from which the `negotiate::*` helpers render the
-//! spec's `ETag`/`Location`/`Prefer` behaviour (ADR-011).
+//! spec's `ETag`/`Location`/`Prefer` behaviour.
 //!
 //! The SM `create`/`update` calls return only the new `version_uid` (the literal
 //! SM shape); a `Prefer: return=representation` response therefore re-reads the
@@ -410,7 +410,7 @@ async fn run<S: Platform>(
             if body.is_null() {
                 return Ok(negotiate::empty(no_content));
             }
-            // `?expand_multimedia=true` (ADR-017): transparently re-inline any
+            // `?expand_multimedia=true`: transparently re-inline any
             // externalized DV_MULTIMEDIA blobs, verifying integrity. A no-op
             // when externalization is off or the body has no external media.
             // Not an openEHR spec parameter, so read off the raw query string

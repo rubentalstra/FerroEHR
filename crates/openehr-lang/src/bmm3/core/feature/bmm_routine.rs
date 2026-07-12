@@ -5,7 +5,7 @@ use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use serde::Serialize;
 
 /// A feature defining a routine, scoped to a class.
-/// Closed subtype set of `BMM_ROUTINE` (ADR-004): dispatched on each payload's `_type`.
+/// Closed subtype set of `BMM_ROUTINE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum BmmRoutine {
