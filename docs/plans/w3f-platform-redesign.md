@@ -43,6 +43,8 @@ fix pass, deferred checks last (nextest → clippy → ECC).
 - Intermediate steps need not compile; ONE fix pass at the end.
 - Parallel Opus workers, disjoint file ownership, build lanes
   `target/agent-t1..t4`; cross-folder needs = `// TODO(w3f-integrate):`.
+  **Max 2 workers running at the same time (owner, 2026-07-12 — token
+  budget); the rewrite proceeds in pairs.**
 - Zero-TODO mandate at close; `dead_code`/`clippy::todo` deny.
 - Spec citations only in code; spec-silent design flagged; no import
   renaming; `urlencoding` for percent-coding; official CLIs.
