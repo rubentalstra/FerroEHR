@@ -59,9 +59,21 @@ with specialised archetypes (Architecture Overview master10 §Design-time
 Relationships); AQL matching today is exact equality
 (`app/ehrbase/src/aql/sql.rs:632`).
 
-- [ ] Spec extraction (AM Archetype Identification HRID structure +
+- [x] Spec extraction (AM Archetype Identification HRID structure +
       reference-matching semantics, AQL 1.1 archetype predicate, CNF query
-      cases) reviewed and recorded.
+      cases) reviewed and recorded. *(Notes: data-form id grammar
+      `qualified_rm_entity '.' domain_concept '.v' version_id`, specialisation
+      = `-`-appended concept segments (BASE base_types master05 §Syntaxes);
+      subsumption normative in BASE arch-overview master10 §Design-time
+      Relationships + AM Identification master07 §Querying/§AQL Queries;
+      matching set for data X: X, older minor/patch of X, specialisation
+      parents of X (+ their older variants) — master07 §Supporting
+      Archetype-based Querying; major-only predicate = interface reference
+      (`.v1` matches any v1 release), major boundary hard (master07
+      §Referencing, master04 line 69). Conflicts flagged: AQL 1.1 master03
+      §Archetype predicate literally equates to `archetype_node_id = 'x'`
+      string equality; AOM2 ids carry no lineage semantics in `-` (ADL2-era
+      lineage must come from templates → W-4). No CNF coverage.)*
 - [ ] Matching rule designed in-session and recorded with spec citations
       (concept-segment `-` boundary semantics, version-part semantics,
       conflicts between QUERY silence and the Architecture Overview mandate
@@ -79,9 +91,21 @@ Relationships); AQL matching today is exact equality
 Checklist rows 11.2.1, 11.2.4.3, 11.3.1: `//` path patterns, positional
 `[n]` predicates, `ehr:` URI grammar + resolution beyond `Scheme_valid`.
 
-- [ ] Spec extraction (normative home of the path grammar, DV_EHR_URI /
+- [x] Spec extraction (normative home of the path grammar, DV_EHR_URI /
       LOCATABLE_REF obligations, PATHABLE path-function semantics, AQL 1.1
-      grammar boundaries, CNF coverage) reviewed and recorded.
+      grammar boundaries, CNF coverage) reviewed and recorded. *(Notes: the
+      path grammar's normative home is BASE arch-overview master11 (RM uri
+      package + AQL both defer to it); `//` patterns + positional `[n]` are
+      normative grammar there but conformance-gated nowhere; AQL 1.1
+      enumerates exactly standard/archetype/node predicates — no `//`, no
+      positional → AQL untouched. DV_EHR_URI/LOCATABLE_REF are validate-only
+      for a CDR (no resolution obligation; master11 §EHR URIs name-resolution
+      "ad hoc" clause) → local resolution is our flagged extension.
+      PATHABLE contracts: item_at_path (pre path_unique) / items_at_path /
+      path_exists / path_unique (RM UML pathable.adoc). CNF touches:
+      DV_URI/DV_EHR_URI content validation (master17.7) + directory
+      has_path FOLDER-name paths (master09) — the latter is a different,
+      simpler path concept, not the Xpath grammar.)*
 - [ ] Generic RM path resolver: implement `//` patterns and positional
       predicates where locator resolution lives (PATHABLE functions /
       `crates/openehr-rm`), not in the AQL grammar (AQL 1.1 defines
@@ -98,15 +122,28 @@ Checklist rows 5.5.1.5, 7.3.2.2, 7.4.1. EHR_ACCESS is stored/versioned but
 never consulted; no access list / gate-keeper / privacy levels. openEHR
 publishes no concrete `ACCESS_CONTROL_SETTINGS` scheme.
 
-- [ ] Spec extraction (RM `EHR_ACCESS`/`ACCESS_CONTROL_SETTINGS`, SM
+- [x] Spec extraction (RM `EHR_ACCESS`/`ACCESS_CONTROL_SETTINGS`, SM
       authorization placement, ITS-REST security, CNF SEC cases) reviewed
-      and recorded.
-- [ ] Scheme design (in-session, recorded in `docs/design/`): a concrete
+      and recorded. *(Notes: EHR_ACCESS mandatory + versioned (EHR.ehr_access
+      1..1, Ehr_access_valid; RM ehr master04 §EHR Access);
+      ACCESS_CONTROL_SETTINGS abstract + empty, "currently implementation
+      dependent" — NO published concrete scheme anywhere; the "all access
+      decisions must consult it" clause (RM UML ehr_access.adoc) is
+      unenforceable as written; SM master02 places authn/authz out of band;
+      ITS-REST: no EHR_ACCESS endpoint, 401/403 discipline only; CNF tests
+      no access control (authn Robot suite only). Any decision engine =
+      our own flagged extension.)*
+- [x] Scheme design (in-session, recorded in `docs/design/`): a concrete
       access-control scheme as our own explicitly-flagged extension
       (access list + gate-keeper + per-Composition privacy levels with a
       jurisdiction-configurable vocabulary), scheme identity recorded in
-      the EHR_ACCESS object; schema support re-authored into the baseline
-      if needed.
+      the EHR_ACCESS object. *(→ `docs/design/ehr-access-scheme.md`:
+      `ehrbase.access_control.v1` — settings `_type
+      EHRBASE_ACCESS_CONTROL_V1`, default-open, access list with
+      user:/role: principals, gate-keeper write rule, integer privacy
+      levels with per-composition overrides; AQL-level privacy filtering
+      explicitly out of v1 scope. No baseline schema change needed —
+      settings live in the versioned EHR_ACCESS payload.)*
 - [ ] Implementation: per-EHR evaluation in the `ehrbase-rest` access layer
       (after authn, before dispatch), gate-keeper rule on EHR_ACCESS
       writes, privacy-level filtering on composition reads; default-open
