@@ -1,21 +1,37 @@
 //! HTTP dispatch for the `admin` API group (physical EHR delete) over the
 //! [`AdminService`](ehrbase_sm::services::AdminService) seam.
 //!
-//! Spec grounding: SM `I_ADMIN_SERVICE.physical_ehr_delete`
-//! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`) —
-//! precondition `has_ehr`, error `ehr_id_does_not_exist`; and the CNF Robot
-//! prior art (`CNF/tests/platform/robot/I_ADMIN_SERVICE/001-EHR.robot` +
-//! `_resources/keywords/admin_keywords.robot`): `DELETE /admin/ehr/{ehr_id}` →
-//! `204`, and every backing table returns to its baseline count (a full
-//! physical cascade). The ADMIN API is dev-branch only in ITS-REST (no vendored
-//! OAS; CNF master12 is TBD).
+//! Maturity: the ITS-REST Admin API is **`DEVELOPMENT`** (`admin.openapi.yaml`
+//! `info.version: development`, `x-status: DEVELOPMENT`). It mounts exactly two
+//! operations — both physical EHR delete — and both are dispatched here; there
+//! are **no extension routes** in this group (the other SM admin capabilities —
+//! party delete, statistics, archive, dump/load — have no ITS-REST binding and
+//! stay native-API-only on the `ehrbase-sm` seam).
+//!
+//! Spec grounding (both operations are vendored — `admin.openapi.yaml:24-30`,
+//! `security: []` so auth is out of band, SM master02):
+//! - `admin_ehr_delete` — `operations/admin_ehr_delete.yaml`: `DELETE
+//!   /admin/ehr/{ehr_id}`, physical cascade of every owned resource (COMPOSITION,
+//!   EHR_STATUS, ITEM_TAG, CONTRIBUTION + historical versions) "permanently and
+//!   physically deleted … (e.g., the GDPR)"; sync success → `204 No Content`,
+//!   async → `202 Accepted`, unknown id → `404` (`404_unknown_ehr_id.yaml`).
+//!   Matches the abstract SM `I_ADMIN_SERVICE.physical_ehr_delete`
+//!   (`SM/docs/UML/classes/i_admin_service.adoc` — precondition `has_ehr`, error
+//!   `ehr_id_does_not_exist`) and the CNF Robot prior art
+//!   (`CNF/tests/platform/robot/I_ADMIN_SERVICE/001-EHR.robot`).
+//! - `admin_ehr_delete_all` — `operations/admin_ehr_delete_all.yaml`: `DELETE
+//!   /admin/ehr/all{?ehr_id*}`, "Deletes all or multiple EHRs, or a specified
+//!   subset … identified using the `ehr_id` query parameter"; sync success →
+//!   `204 No Content` (no body), async → `202 Accepted`; may respond `405` when
+//!   disabled in production. This operation exists in the ITS-REST OAS but not
+//!   in the abstract SM `i_admin_service.adoc` — a recorded spec-internal
+//!   inconsistency.
 //!
 //! The group is config-gated (`RestConfig::admin.enabled`, default false): when
 //! disabled every admin route answers `404` without touching the backend.
 
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
-use serde_json::json;
 
 use openehr_its::rest::generated::admin::AdminEhrDeleteParams;
 use openehr_its::rest::runtime::ApiError;
@@ -74,24 +90,27 @@ async fn run<S: Platform>(
             // So the full list is read straight from the raw query here, which
             // accepts BOTH the repeated form and a comma-separated single value
             // (`?ehr_id=a,b`).
+            //
+            // `ehr_id` is OPTIONAL (`parameters/query/ehr_id_Admin.yaml`: "An
+            // optional parameter to perform the operation on a subset of EHRs").
+            // An absent/empty list therefore means "delete ALL EHRs", per
+            // `operations/admin_ehr_delete_all.yaml:5` ("Deletes all or multiple
+            // EHRs, or a specified subset"). The list is passed through verbatim;
+            // an empty vec is the "all EHRs" request.
             let ids = ehr_id_list(q);
-            if ids.is_empty() {
-                // PORT NOTE: delete-all is unspecified (not in the SM, not in any
-                // OAS). We refuse an implicit delete-everything: an absent/empty
-                // list is a 400 rather than a catastrophic wildcard.
-                return Err(RestError(ApiError::BadRequest(
-                    "DELETE /admin/ehr/all requires a non-empty ehr_id list".to_owned(),
-                )));
-            }
-            let deleted = state.backend().admin_ehr_delete_all(ids).await?;
-            // PORT NOTE: the response shape is unspecified; a small
-            // `{"deleted": <n>}` body makes the idempotent partial-success
-            // semantics (existing ids deleted, missing ids skipped) observable.
-            Ok(negotiate::respond(
-                h,
-                StatusCode::OK,
-                &json!({ "deleted": deleted }),
-            ))
+            // TODO(w3e-integrate): the `AdminService::admin_ehr_delete_all` seam
+            // (`ehrbase-sm`) historically treated an empty list as "delete
+            // nothing". Per `operations/admin_ehr_delete_all.yaml:5` +
+            // `parameters/query/ehr_id_Admin.yaml` an absent `ehr_id` means
+            // "delete ALL EHRs" — the seam must honour empty-list = all-EHRs
+            // (or gain a dedicated all-EHRs capability). The wire below already
+            // forwards the empty list for that semantics.
+            state.backend().admin_ehr_delete_all(ids).await?;
+            // `operations/admin_ehr_delete_all.yaml:18-26`: the only declared
+            // success responses are `204 No Content` (sync,
+            // `responses/204_deleted_hard.yaml`) and `202 Accepted` (async,
+            // `responses/202.yaml`) — both bodyless. We are synchronous → `204`.
+            Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted admin operation: {other}"

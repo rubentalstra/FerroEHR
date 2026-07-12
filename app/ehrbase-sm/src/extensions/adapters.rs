@@ -14,8 +14,32 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::common::SmError;
+use crate::common::list::Page;
 use crate::extensions::response::{ResourceMeta, ServiceResponse};
 use crate::tenant::TenantContext;
+
+/// The template-list filter carried by the ITS-REST `definition_template_*_list`
+/// operations. All three are optional query parameters the wire decodes but the
+/// SM `I_DEFINITION_*` list interfaces (which return plain `List<UUID>`) do not
+/// express — so they ride on the wire-shaped [`DefinitionAdapter`] list methods
+/// alongside the SM cursor [`Page`].
+///
+/// - `template_id`: glob pattern matching `template_id`, `*` wildcard
+///   (`parameters/query/filter_template_id.yaml`, "supports wildcards `*`").
+/// - `concept`: glob pattern matching `concept`, `*` wildcard
+///   (`parameters/query/concept.yaml`).
+/// - `version`: version filter taken from `template_id` (e.g. `1.2.*`, or `*`
+///   for all); absent → latest version only
+///   (`parameters/query/filter_version.yaml`).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TemplateListFilter {
+    /// Glob pattern for `template_id` (`*` wildcard); `None` = match all.
+    pub template_id: Option<String>,
+    /// Glob pattern for `concept` (`*` wildcard); `None` = match all.
+    pub concept: Option<String>,
+    /// Version filter (e.g. `1.2.*`, `*`); `None` = latest version only.
+    pub version: Option<String>,
+}
 
 /// Current-version metadata for the `409`/`412` `ETag`/`Location` decoration.
 #[async_trait]
@@ -64,8 +88,18 @@ pub trait DefinitionAdapter: Send + Sync {
     async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError>;
 
     /// `GET …/definition/template/adl1.4` — the list of stored OPT 1.4
-    /// templates as wire summary objects.
-    async fn template_adl14_list(&self) -> Result<Vec<Value>, SmError>;
+    /// templates as wire summary objects, filtered + paginated per the
+    /// operation's query parameters (`operations/definition_template_adl1.4_list.yaml`:
+    /// `filter_template_id`, `concept`, `filter_version`, `offset`, `fetch`).
+    /// `filter` carries the three glob/version filters; `page` is the SM list
+    /// cursor (`offset`/`fetch` → `item_offset`/`items_to_fetch`,
+    /// master02 §List Handling). An empty `filter` + [`Page::all`] returns the
+    /// full, latest-version set.
+    async fn template_adl14_list(
+        &self,
+        filter: TemplateListFilter,
+        page: Page,
+    ) -> Result<Vec<Value>, SmError>;
 
     /// `GET …/definition/template/adl1.4/{template_id}` — the stored OPT 1.4
     /// canonical XML addressed by its **`template_id` string** (the wire's
@@ -91,8 +125,15 @@ pub trait DefinitionAdapter: Send + Sync {
     async fn template_adl2_upload(&self, source: String) -> Result<String, SmError>;
 
     /// `GET …/definition/template/adl2` — the list of stored ADL2 templates as
-    /// wire summary objects.
-    async fn template_adl2_list(&self) -> Result<Vec<Value>, SmError>;
+    /// wire summary objects, filtered + paginated per the operation's query
+    /// parameters (`operations/definition_template_adl2_list.yaml`:
+    /// `filter_template_id`, `concept`, `filter_version`, `offset`, `fetch`) —
+    /// the ADL2 twin of [`Self::template_adl14_list`].
+    async fn template_adl2_list(
+        &self,
+        filter: TemplateListFilter,
+        page: Page,
+    ) -> Result<Vec<Value>, SmError>;
 
     /// `GET …/definition/query/{qualified_query_name}` — the registered
     /// queries under this qualified name, as wire `StoredQuery` descriptors.
@@ -108,11 +149,23 @@ pub trait DefinitionAdapter: Send + Sync {
     ) -> Result<Value, SmError>;
 
     /// `PUT …/definition/query/{qualified_query_name}[/{version}]` — register
-    /// the AQL text `body` under the qualified name (and optional SEMVER).
+    /// the query text `body` under the qualified name (and optional SEMVER).
+    ///
+    /// `query_type` is the wire `query_type` query parameter (default `AQL`,
+    /// case-insensitive; `parameters/query/query_type.yaml` +
+    /// `operations/definition_query_store.yaml`) — the query's *formalism*
+    /// (`QUERY_DESCRIPTOR.formalism`, which "may be any other string value").
+    /// It threads to the SM `store_query`'s `a_type`
+    /// (`i_definition_query.adoc`): the impl runs the AQL syntactic check only
+    /// when the formalism is AQL, persists the declared formalism, and rejects
+    /// an unsupported (non-AQL, unvalidatable) formalism as a distinct typed
+    /// error — *not* a blanket "invalid AQL" — so the descriptor's `type`
+    /// reflects what was stored.
     async fn query_store(
         &self,
         qualified_query_name: String,
         version: Option<String>,
+        query_type: String,
         body: String,
     ) -> Result<(), SmError>;
 }

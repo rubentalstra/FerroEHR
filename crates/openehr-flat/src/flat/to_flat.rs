@@ -45,7 +45,18 @@ fn type_matches(rm: &Value, rm_type: &str) -> bool {
 
 fn walk(node: &WebTemplateNode, rm: &Value, prefix: &str, out: &mut FlatMap) {
     if node.has_input() {
-        mappers::leaf_to_flat(rm, &node.rm_type, prefix, out);
+        let list_open = node.inputs.iter().find_map(|i| i.list_open);
+        mappers::leaf_to_flat(rm, &node.rm_type, prefix, list_open, out);
+        // TODO(w3e-formats): G-1 remaining (read side) — wire
+        // `rmattr::emit_rm_attrs(rm, prefix, out)` here (value-level) and for the
+        // container / ELEMENT nodes below to surface the `_`-prefixed optional RM
+        // attributes on RM→FLAT (master05 per-type tables). The emitter is
+        // implemented + unit-tested in `rmattr`; wiring it changes the default
+        // FLAT output, so it must land together with a regeneration of the
+        // vendored golden flat snapshots in `crates/openehr-flat/tests/`
+        // (`cargo insta`). The write side (`from_flat`) is fully wired, so an
+        // `_`-carrying FLAT body round-trips into the RM; master05 read-emission
+        // is a SHOULD, so decomposition-only output stays spec-conformant.
         return;
     }
     for child in &node.children {

@@ -78,6 +78,14 @@ pub(super) async fn composition_from_flat<S: Platform>(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
+    // Enforce the `|other` open-value-set MUST-rules on the FLAT input before
+    // conversion (master02/master04 §"Open Value-Sets and the `|other` Suffix";
+    // master05 §"When a `DV_CODED_TEXT` becomes a `DV_TEXT`"): `|other` must not
+    // co-occur with `|code`/`|value`/`|terminology`/`|preferred_term`, and must
+    // be rejected on a closed value-set.
+    if let Some(v) = openehr_flat::validate_flat_other(&flat, &wt).first() {
+        return Err(bad_request(format!("{}: {}", v.path, v.message)));
+    }
     openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_err(&e))
 }
 

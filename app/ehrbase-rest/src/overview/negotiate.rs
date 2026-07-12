@@ -392,6 +392,81 @@ pub(crate) fn prefers_resolve_refs(headers: &HeaderMap) -> bool {
         })
 }
 
+/// Whether the client asked for an identifier-only response on `Prefer`
+/// (`return=identifier`). Overview §"Prefer only identifier": a minimal response
+/// with a non-empty body containing only the affected resource's identifier
+/// (`{ "uid": … }`); status is `200 OK` or `201 Created`, never `204`.
+pub(crate) fn prefers_identifier(headers: &HeaderMap) -> bool {
+    headers
+        .get("prefer")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|p| {
+            p.split(',')
+                .any(|t| t.trim().eq_ignore_ascii_case("return=identifier"))
+        })
+}
+
+/// The return preference the server is honouring, for the `Preference-Applied`
+/// response header (overview §"Representation details negotiation": the service
+/// MAY confirm the honoured preference). Precedence mirrors the body branch in
+/// [`write_rm`]: representation, then identifier, then the `minimal` default.
+fn applied_preference(headers: &HeaderMap) -> &'static str {
+    if prefers_representation(headers) {
+        "representation"
+    } else if prefers_identifier(headers) {
+        "identifier"
+    } else {
+        "minimal"
+    }
+}
+
+/// Emit `Preference-Applied: return=<kind>` on a write response (overview
+/// §"Representation details negotiation"; example line 147). A MAY — a courtesy
+/// so a client can detect which preference the server honoured, which matters
+/// once the default shifts toward `identifier` (§"Deprecated headers").
+fn set_preference_applied(resp: &mut Response, kind: &str) {
+    if let Ok(value) = HeaderValue::from_str(&format!("return={kind}")) {
+        resp.headers_mut()
+            .insert(header::HeaderName::from_static("preference-applied"), value);
+    }
+}
+
+/// The status for a `return=identifier` write: `201`/`200`, never `204`
+/// (overview §"Prefer only identifier"). A create keeps its `minimal_status`
+/// (`201`); an update whose minimal status is `204 No Content` uses the
+/// representation status (`200 OK`) so the identifier body is not dropped.
+fn identifier_status(minimal_status: StatusCode, repr_status: StatusCode) -> StatusCode {
+    if minimal_status == StatusCode::NO_CONTENT {
+        repr_status
+    } else {
+        minimal_status
+    }
+}
+
+/// Render a `return=identifier` response body: `{ "uid": "<uid>" }` in JSON
+/// (overview §"Prefer only identifier", example lines 313–319), or the `<uid>`
+/// element as the XML equivalent when XML is negotiated. The identifier is the
+/// affected resource's `version_uid` (`resp.meta.uid`).
+fn identifier_response(headers: &HeaderMap, status: StatusCode, uid: &str) -> Response {
+    match response_format(headers) {
+        Format::Json => json_response(status, &serde_json::json!({ "uid": uid })),
+        Format::Xml => {
+            // The OAS defines the identifier body only for JSON; the spec is
+            // silent on an XML shape for a bare identifier. We emit a minimal
+            // `<uid>` element as the direct XML equivalent of the JSON `{uid}`.
+            xml_body(status, format!("<uid>{}</uid>", xml_escape(uid)))
+        }
+    }
+}
+
+/// Escape the XML text-content special characters. `OBJECT_VERSION_ID` values do
+/// not contain these, but escape defensively.
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 /// Build the (path-absolute) `Location` URL for an EHR sub-resource under the
 /// configured base path (`headers/Location_*.yaml`). `segment` is the resource
 /// collection (`composition`/`ehr_status`/`directory`/`contribution`); `None`
@@ -403,23 +478,25 @@ pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid
     }
 }
 
-/// Set `ETag` (the `uid`, double-quoted), `Location`, and — when the metadata
-/// carries a commit time — `Last-Modified` on a response from resource metadata
-/// (ITS-REST `headers/ETag_*.yaml` + `headers/Location_*.yaml`; the overview
-/// spec's `ETag`/`Last-Modified` section: `Last-Modified` is the version commit
-/// time `VERSION.commit_audit.time_committed.value`, SHOULD-present on responses
-/// targeting a `VERSION`/`VERSIONED_OBJECT` resource).
-pub(crate) fn set_resource_headers(
-    resp: &mut Response,
-    base_path: &str,
-    segment: Option<&str>,
-    meta: &ResourceMeta,
-) {
-    if let Ok(etag) = HeaderValue::from_str(&format!("\"{}\"", meta.uid)) {
+/// The `ETag` header value for a resource identifier: the weak form
+/// `W/"{uid}"`. The overview §"ETag and Last-Modified" makes the weak indicator
+/// a **MUST**: "all `ETag` headers that hold a resource identifier MUST include
+/// a weakness indicator `W/`" (§"Deprecated headers"). The `ETag` value is
+/// independent of the JSON/XML serialization, hence weak-typed.
+pub(crate) fn resource_etag(uid: &str) -> Option<HeaderValue> {
+    HeaderValue::from_str(&format!("W/\"{uid}\"")).ok()
+}
+
+/// Set the versioning headers on a response: the weak `ETag`
+/// ([`resource_etag`]) and — when the metadata carries a commit time —
+/// `Last-Modified` (the version commit time
+/// `VERSION.commit_audit.time_committed.value`, overview §"ETag and
+/// Last-Modified", SHOULD-present on `VERSION`/`VERSIONED_OBJECT` responses).
+/// **No `Location`** — that is create/redirect-only ([`set_location`], overview
+/// §Location). Used by reads, deletes, and the `409`/`412` error path.
+pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
+    if let Some(etag) = resource_etag(&meta.uid) {
         resp.headers_mut().insert(header::ETAG, etag);
-    }
-    if let Ok(loc) = HeaderValue::from_str(&location(base_path, &meta.ehr_id, segment, &meta.uid)) {
-        resp.headers_mut().insert(header::LOCATION, loc);
     }
     if let Some(at) = meta.last_modified
         && let Ok(lm) = HeaderValue::from_str(&http_date(at))
@@ -428,16 +505,50 @@ pub(crate) fn set_resource_headers(
     }
     // The single, generic ATNA hook for the participant object: surface the
     // resource ids the envelope already carries for the audit layer (§8.2 step 3).
-    resp.extensions_mut().insert(crate::extensions::audit::AuditObject {
-        ehr_id: Some(meta.ehr_id.clone()),
-        uid: Some(meta.uid.clone()),
-    });
+    resp.extensions_mut()
+        .insert(crate::extensions::audit::AuditObject {
+            ehr_id: Some(meta.ehr_id.clone()),
+            uid: Some(meta.uid.clone()),
+        });
 }
 
-/// Render a create/update response honouring `Prefer` and setting
-/// `ETag`/`Location`. Default (`return=minimal`) → `minimal_status` with no
-/// body; `return=representation` → `repr_status` with the RM body (JSON or
-/// canonical XML via `T`). `segment` is the `Location` resource collection.
+/// Set the `Location` header for a newly created/updated resource. The overview
+/// §Location: "The `Location` header MUST ONLY be used for resource creation
+/// (e.g., `201 Created`) or redirect responses" — never to indicate an
+/// alternate representation of an existing resource (a `GET`), and it is
+/// deprecated from `DELETE` responses.
+pub(crate) fn set_location(
+    resp: &mut Response,
+    base_path: &str,
+    segment: Option<&str>,
+    meta: &ResourceMeta,
+) {
+    if let Ok(loc) = HeaderValue::from_str(&location(base_path, &meta.ehr_id, segment, &meta.uid)) {
+        resp.headers_mut().insert(header::LOCATION, loc);
+    }
+}
+
+/// Set the full create/update response headers: the versioning headers
+/// ([`set_versioning_headers`]) **plus** `Location` ([`set_location`]). Used by
+/// the write paths ([`write_rm`]/[`write_json`]) and the create responses of the
+/// extension surfaces. Reads and deletes use [`set_versioning_headers`] alone,
+/// so they no longer emit `Location` (overview §Location).
+pub(crate) fn set_resource_headers(
+    resp: &mut Response,
+    base_path: &str,
+    segment: Option<&str>,
+    meta: &ResourceMeta,
+) {
+    set_versioning_headers(resp, meta);
+    set_location(resp, base_path, segment, meta);
+}
+
+/// Render a create/update response honouring `Prefer` and setting the
+/// versioning + `Location` headers. `return=representation` → `repr_status` with
+/// the RM body (JSON or canonical XML via `T`); `return=identifier` → an
+/// identifier-only body (`{ "uid": … }`) at a `200`/`201` status; the default
+/// `return=minimal` → `minimal_status` with no body. `Preference-Applied` echoes
+/// the honoured preference. `segment` is the `Location` resource collection.
 pub(crate) fn write_rm<T>(
     headers: &HeaderMap,
     base_path: &str,
@@ -450,14 +561,18 @@ pub(crate) fn write_rm<T>(
 where
     T: DeserializeOwned + Serialize + ToXml,
 {
+    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
     let mut out = if prefers_representation(headers) {
         respond_rm::<T>(headers, repr_status, &resp.body, root_tag)
+    } else if let (true, Some(uid)) = (prefers_identifier(headers), uid.as_deref()) {
+        identifier_response(headers, identifier_status(minimal_status, repr_status), uid)
     } else {
         empty(minimal_status)
     };
     if let Some(meta) = &resp.meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
+    set_preference_applied(&mut out, applied_preference(headers));
     out
 }
 
@@ -471,20 +586,29 @@ pub(crate) fn write_json(
     segment: Option<&str>,
     resp: &ServiceResponse,
 ) -> Response {
+    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
     let mut out = if prefers_representation(headers) {
         respond(headers, repr_status, &resp.body)
+    } else if let (true, Some(uid)) = (prefers_identifier(headers), uid.as_deref()) {
+        identifier_response(headers, identifier_status(minimal_status, repr_status), uid)
     } else {
         empty(minimal_status)
     };
     if let Some(meta) = &resp.meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
+    set_preference_applied(&mut out, applied_preference(headers));
     out
 }
 
 /// Render a `200 OK` read of a single spec-typed RM object, additionally setting
-/// the `ETag`/`Location` the operation's spec declares (e.g.
-/// `200_COMPOSITION_retrieved.yaml`, `200_EHR_STATUS_retrieved.yaml`).
+/// the weak `ETag`/`Last-Modified` the operation's spec declares (e.g.
+/// `200_COMPOSITION_retrieved.yaml`, `200_EHR_STATUS_retrieved.yaml`). No
+/// `Location`: it "MUST NOT be used to indicate an alternate representation of
+/// an existing resource (e.g. via `GET` method)" (overview §Location).
+///
+/// `base_path`/`segment` are retained in the signature for the dispatch call
+/// sites; a read emits no `Location` so they are currently unused here.
 pub(crate) fn read_rm<T>(
     headers: &HeaderMap,
     base_path: &str,
@@ -495,39 +619,51 @@ pub(crate) fn read_rm<T>(
 where
     T: DeserializeOwned + Serialize + ToXml,
 {
+    let _ = (base_path, segment);
     let mut out = respond_rm::<T>(headers, StatusCode::OK, &resp.body, root_tag);
     if let Some(meta) = &resp.meta {
-        set_resource_headers(&mut out, base_path, segment, meta);
+        set_versioning_headers(&mut out, meta);
     }
     out
 }
 
-/// A `204 No Content` delete outcome carrying the deleted version's
-/// `ETag`/`Location` (`204_COMPOSITION_deleted.yaml`).
+/// A `204 No Content` delete outcome carrying the deleted version's weak
+/// `ETag`/`Last-Modified` (`204_COMPOSITION_deleted.yaml`). No `Location`: it
+/// "was deprecated from responses of `DELETE` methods" (overview §Location).
+///
+/// `base_path`/`segment` are retained in the signature for the dispatch call
+/// sites; a delete emits no `Location` so they are currently unused here.
 pub(crate) fn deleted_with_headers(
     base_path: &str,
     segment: Option<&str>,
     resp: &ServiceResponse,
 ) -> Response {
+    let _ = (base_path, segment);
     let mut out = empty(StatusCode::NO_CONTENT);
     if let Some(meta) = &resp.meta {
-        set_resource_headers(&mut out, base_path, segment, meta);
+        set_versioning_headers(&mut out, meta);
     }
     out
 }
 
-/// Render an error response, additionally setting the latest-version
-/// `ETag`/`Location` the spec requires on a `409`/`412` (the current
-/// `version_uid`; `409_COMPOSITION_with_uid_based_id.yaml`, `412_*.yaml`).
+/// Render an error response, additionally setting the latest-version `ETag` the
+/// spec requires on a `409`/`412` (the current `version_uid`;
+/// `409_COMPOSITION_with_uid_based_id.yaml`, `412_*.yaml`). The overview §If-Match
+/// asks only for the latest `version_uid` "in the `ETag` response headers" on a
+/// false precondition — no `Location` on the error path.
+///
+/// `base_path`/`segment` are retained in the signature for the dispatch call
+/// sites; the error path emits no `Location` so they are currently unused here.
 pub(crate) fn error_with_meta(
     error: ApiError,
     base_path: &str,
     segment: Option<&str>,
     meta: Option<&ResourceMeta>,
 ) -> Response {
+    let _ = (base_path, segment);
     let mut out = crate::overview::error::RestError(error).into_response();
     if let Some(meta) = meta {
-        set_resource_headers(&mut out, base_path, segment, meta);
+        set_versioning_headers(&mut out, meta);
     }
     out
 }
@@ -568,9 +704,10 @@ pub(crate) fn template_upload_response(
     if let Ok(v) = HeaderValue::from_str(location) {
         resp.headers_mut().insert(header::LOCATION, v);
     }
-    if let Ok(v) = HeaderValue::from_str(&format!("W/\"{template_id}\"")) {
+    if let Some(v) = resource_etag(template_id) {
         resp.headers_mut().insert(header::ETAG, v);
     }
+    set_preference_applied(&mut resp, applied_preference(headers));
     resp
 }
 
@@ -897,6 +1034,13 @@ mod tests {
             .map(str::to_owned)
     }
 
+    fn preference_applied(resp: &Response) -> Option<String> {
+        resp.headers()
+            .get("preference-applied")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_owned)
+    }
+
     #[test]
     fn prefer_default_is_minimal() {
         // Absent → minimal (spec default).
@@ -945,13 +1089,17 @@ mod tests {
             "composition",
         );
         assert_eq!(out.status(), StatusCode::CREATED);
-        assert_eq!(etag(&out).as_deref(), Some("\"v::s::1\""));
+        // G-1: the ETag carries the mandatory weak `W/` indicator.
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::1\""));
+        // A create keeps `Location` (overview §Location: creation-only).
         assert_eq!(
             loc(&out).as_deref(),
             Some(&*format!("{BASE}/ehr/e1/composition/v::s::1"))
         );
         // Minimal → no content-type body header.
         assert_eq!(content_type(&out), None);
+        // G-6: `Preference-Applied` echoes the honoured (default) preference.
+        assert_eq!(preference_applied(&out).as_deref(), Some("return=minimal"));
     }
 
     #[test]
@@ -972,20 +1120,25 @@ mod tests {
         // Representation → 200 (repr status) with a JSON body + headers.
         assert_eq!(out.status(), StatusCode::OK);
         assert_eq!(content_type(&out).as_deref(), Some(APPLICATION_JSON));
-        assert_eq!(etag(&out).as_deref(), Some("\"v::s::2\""));
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::2\""));
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=representation")
+        );
     }
 
     #[test]
-    fn deleted_with_headers_is_204_with_etag() {
+    fn deleted_with_headers_is_204_with_weak_etag_no_location() {
         let resp = ServiceResponse::deleted(meta("e1", "v::s::3"));
         let out = deleted_with_headers(BASE, Some("composition"), &resp);
         assert_eq!(out.status(), StatusCode::NO_CONTENT);
-        assert_eq!(etag(&out).as_deref(), Some("\"v::s::3\""));
-        assert!(loc(&out).is_some());
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::3\""));
+        // G-4: `Location` is deprecated from DELETE responses.
+        assert!(loc(&out).is_none());
     }
 
     #[test]
-    fn error_with_meta_sets_latest_version_headers() {
+    fn error_with_meta_sets_latest_version_etag_only() {
         let out = error_with_meta(
             ApiError::PreconditionFailed("stale".to_owned()),
             BASE,
@@ -993,11 +1146,80 @@ mod tests {
             Some(&meta("e1", "v::s::5")),
         );
         assert_eq!(out.status(), StatusCode::PRECONDITION_FAILED);
-        assert_eq!(etag(&out).as_deref(), Some("\"v::s::5\""));
-        assert_eq!(
-            loc(&out).as_deref(),
-            Some(&*format!("{BASE}/ehr/e1/ehr_status/v::s::5"))
+        // §If-Match: the latest `version_uid` goes in the `ETag`, weak-form.
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::5\""));
+        // No `Location` on the error path.
+        assert!(loc(&out).is_none());
+    }
+
+    #[test]
+    fn read_rm_emits_weak_etag_and_no_location() {
+        use openehr_rm::prelude::Composition;
+        let value = serde_json::json!({"_type": "COMPOSITION"});
+        let resp = ServiceResponse::new(value, meta("e1", "v::s::7"));
+        let out = read_rm::<Composition>(
+            &HeaderMap::new(),
+            BASE,
+            Some("composition"),
+            &resp,
+            "composition",
         );
+        assert_eq!(out.status(), StatusCode::OK);
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::7\""));
+        // G-4: reads MUST NOT carry `Location` (overview §Location).
+        assert!(loc(&out).is_none());
+    }
+
+    #[test]
+    fn resource_etag_is_weak() {
+        let v = resource_etag("8849182c::openEHRSys::2").expect("etag");
+        assert_eq!(v.to_str().unwrap(), "W/\"8849182c::openEHRSys::2\"");
+    }
+
+    #[test]
+    fn prefers_identifier_detects_return_identifier() {
+        assert!(prefers_identifier(&headers(&[(
+            "prefer",
+            "return=identifier"
+        )])));
+        assert!(prefers_identifier(&headers(&[(
+            "prefer",
+            "RETURN=IDENTIFIER"
+        )])));
+        assert!(!prefers_identifier(&headers(&[(
+            "prefer",
+            "return=minimal"
+        )])));
+        assert!(!prefers_identifier(&HeaderMap::new()));
+    }
+
+    #[tokio::test]
+    async fn write_rm_identifier_returns_uid_body() {
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::Composition;
+        let value = serde_json::json!({"_type": "COMPOSITION"});
+        let resp = ServiceResponse::new(value, meta("e1", "v::s::9"));
+        let h = headers(&[("prefer", "return=identifier")]);
+        // Update semantics (minimal=204) → identifier promotes to 200, never 204.
+        let out = write_rm::<Composition>(
+            &h,
+            BASE,
+            StatusCode::NO_CONTENT,
+            StatusCode::OK,
+            Some("composition"),
+            &resp,
+            "composition",
+        );
+        assert_eq!(out.status(), StatusCode::OK);
+        assert_eq!(content_type(&out).as_deref(), Some(APPLICATION_JSON));
+        assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::9\""));
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=identifier")
+        );
+        let bytes = out.into_body().collect().await.expect("body").to_bytes();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(body, serde_json::json!({ "uid": "v::s::9" }));
     }
 
     #[test]

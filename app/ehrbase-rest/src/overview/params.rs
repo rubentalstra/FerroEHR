@@ -17,7 +17,7 @@
 //! passes through), which no off-the-shelf crate does across all three sources
 //! at once.
 
-use http::HeaderMap;
+use http::{HeaderMap, HeaderValue};
 use indexmap::IndexMap;
 use serde::de::value::Error as ValueError;
 use serde::de::{self, DeserializeOwned, Deserializer, IntoDeserializer, MapAccess, Visitor};
@@ -107,6 +107,155 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
         .into_iter()
         .find(|(k, _)| k == key)
         .map(|(_, v)| v)
+}
+
+// ── openehr-item-tag / openehr-version-item-tag headers (overview §"openehr- ─
+//    item-tag and openehr-version-item-tag") ──────────────────────────────────
+//
+// Lightweight wrappers over the dedicated ITEM_TAG operations:
+// `openehr-item-tag` targets a VERSIONED_OBJECT, `openehr-version-item-tag` a
+// specific VERSION. The value is a `;`-separated list of ITEM_TAG entries, each
+// a comma-separated `key`/`value`/`target_path` pair set. On `PUT`/`POST` the
+// header sets the tag list for the target (an empty value removes all tags); on
+// `GET`/write responses the server MAY echo the stored tags.
+//
+// TODO(w3e-integrate): the EHR/COMPOSITION dispatchers own the wiring — on a
+// change-controlled `PUT`/`POST` call `parse_item_tag_header` for both header
+// names and forward the entries to the ITEM_TAG service for the target
+// VERSION/VERSIONED_OBJECT (empty value ⇒ delete all), and on reads/writes
+// optionally echo the stored tags with `emit_item_tag_header`. This module owns
+// only the header parse/emit; the dispatch call sites live outside `overview/`.
+
+/// The canonical HTTP header names for the two ITEM_TAG wrapper headers.
+pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
+pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
+
+/// A single `openehr-item-tag` / `openehr-version-item-tag` entry: a `key`, its
+/// `value`, and an optional `target_path`. Multiple ITEM_TAGs may target one
+/// resource, uniquely identified by their `key`+`target_path` pair (overview
+/// §"openehr-item-tag and openehr-version-item-tag").
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ItemTagHeaderEntry {
+    /// The tag key.
+    pub(crate) key: String,
+    /// The tag value (empty is permitted).
+    pub(crate) value: String,
+    /// Optional RM path the tag is anchored to within the target.
+    pub(crate) target_path: Option<String>,
+}
+
+/// Parse an ITEM_TAG wrapper header (`name` = [`H_ITEM_TAG`] or
+/// [`H_VERSION_ITEM_TAG`]) into its entries, merging across repeated
+/// occurrences. Returns `None` when the header is absent; `Some(empty)` when the
+/// header is present but empty — the spec's "remove all ITEM_TAGs" signal.
+pub(crate) fn parse_item_tag_header(
+    headers: &HeaderMap,
+    name: &str,
+) -> Option<Vec<ItemTagHeaderEntry>> {
+    let raws: Vec<String> = headers
+        .get_all(name)
+        .iter()
+        .filter_map(|v| v.to_str().ok().map(str::to_owned))
+        .collect();
+    if raws.is_empty() {
+        return None;
+    }
+    let joined = raws.join(";");
+    // An empty value "will effectively remove all ITEM_TAGs" for the target.
+    if joined.trim().is_empty() {
+        return Some(Vec::new());
+    }
+    let mut out = Vec::new();
+    for segment in joined.split(';') {
+        if segment.trim().is_empty() {
+            continue;
+        }
+        let pairs = tag_pairs(segment);
+        let Some(key) = tag_value(&pairs, "key") else {
+            continue;
+        };
+        out.push(ItemTagHeaderEntry {
+            key,
+            value: tag_value(&pairs, "value").unwrap_or_default(),
+            target_path: tag_value(&pairs, "target_path"),
+        });
+    }
+    Some(out)
+}
+
+/// Render ITEM_TAG entries as a wrapper-header value (`key="…",value="…"
+/// [,target_path="…"]` pairs, `;`-separated), for echoing stored tags on a
+/// response (overview §"Usage in Responses", a MAY).
+pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValue {
+    let rendered = entries
+        .iter()
+        .map(|e| {
+            let mut parts = vec![
+                format!("key=\"{}\"", e.key),
+                format!("value=\"{}\"", e.value),
+            ];
+            if let Some(tp) = &e.target_path {
+                parts.push(format!("target_path=\"{tp}\""));
+            }
+            parts.join(",")
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+    HeaderValue::from_str(&rendered).unwrap_or_else(|_| HeaderValue::from_static(""))
+}
+
+/// The value of a parsed `key` in a tag-pair segment.
+fn tag_value(pairs: &[(String, String)], key: &str) -> Option<String> {
+    pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v.clone())
+}
+
+/// Parse one `;`-segment's comma-separated `key="value"` (or bare `key=value`)
+/// pairs. Quoted values are read opaquely (may contain commas); a bare value
+/// runs to the next comma. The grammar is example-only (overview §"openehr-item-
+/// tag and openehr-version-item-tag" gives no ABNF).
+fn tag_pairs(input: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let bytes = input.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        while i < bytes.len() && (bytes[i] == b',' || bytes[i].is_ascii_whitespace()) {
+            i += 1;
+        }
+        let key_start = i;
+        while i < bytes.len() && bytes[i] != b'=' && bytes[i] != b',' {
+            i += 1;
+        }
+        if i >= bytes.len() || bytes[i] != b'=' {
+            while i < bytes.len() && bytes[i] != b',' {
+                i += 1;
+            }
+            continue;
+        }
+        let key = input[key_start..i].trim().to_owned();
+        i += 1; // consume '='
+        let value = if i < bytes.len() && bytes[i] == b'"' {
+            i += 1;
+            let val_start = i;
+            while i < bytes.len() && bytes[i] != b'"' {
+                i += 1;
+            }
+            let v = input[val_start..i].to_owned();
+            if i < bytes.len() {
+                i += 1;
+            }
+            v
+        } else {
+            let val_start = i;
+            while i < bytes.len() && bytes[i] != b',' {
+                i += 1;
+            }
+            input[val_start..i].trim().to_owned()
+        };
+        if !key.is_empty() {
+            out.push((key, value));
+        }
+    }
+    out
 }
 
 /// Percent-decode one form-urlencoded token: `+` is a space
@@ -371,5 +520,97 @@ mod tests {
                 ("name".to_owned(), "a b".to_owned()),
             ]
         );
+    }
+
+    // ── openehr-item-tag / openehr-version-item-tag ─────────────────────────
+
+    #[test]
+    fn item_tag_header_absent_is_none() {
+        assert_eq!(parse_item_tag_header(&HeaderMap::new(), H_ITEM_TAG), None);
+    }
+
+    #[test]
+    fn item_tag_header_empty_value_clears() {
+        let mut h = HeaderMap::new();
+        h.insert(H_ITEM_TAG, HeaderValue::from_static(""));
+        // Present-but-empty ⇒ "remove all ITEM_TAGs".
+        assert_eq!(parse_item_tag_header(&h, H_ITEM_TAG), Some(Vec::new()));
+    }
+
+    #[test]
+    fn item_tag_single_pair() {
+        let mut h = HeaderMap::new();
+        h.insert(
+            H_ITEM_TAG,
+            HeaderValue::from_static("key=\"category\",value=\"final\""),
+        );
+        assert_eq!(
+            parse_item_tag_header(&h, H_ITEM_TAG),
+            Some(vec![ItemTagHeaderEntry {
+                key: "category".to_owned(),
+                value: "final".to_owned(),
+                target_path: None,
+            }])
+        );
+    }
+
+    #[test]
+    fn version_item_tag_semicolon_list_with_target_path() {
+        // The spec example (line 108).
+        let mut h = HeaderMap::new();
+        h.insert(
+            H_VERSION_ITEM_TAG,
+            HeaderValue::from_static(
+                "key=\"reviewed\",value=\"true\"; key=\"flag\",value=\"follow-up\",target_path=\"/composition/start_time/value\"",
+            ),
+        );
+        let entries = parse_item_tag_header(&h, H_VERSION_ITEM_TAG).expect("entries");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].key, "reviewed");
+        assert_eq!(entries[0].value, "true");
+        assert_eq!(entries[0].target_path, None);
+        assert_eq!(entries[1].key, "flag");
+        assert_eq!(entries[1].value, "follow-up");
+        assert_eq!(
+            entries[1].target_path.as_deref(),
+            Some("/composition/start_time/value")
+        );
+    }
+
+    #[test]
+    fn item_tag_repeated_headers_merge() {
+        let mut h = HeaderMap::new();
+        h.append(
+            H_ITEM_TAG,
+            HeaderValue::from_static("key=\"a\",value=\"1\""),
+        );
+        h.append(
+            H_ITEM_TAG,
+            HeaderValue::from_static("key=\"b\",value=\"2\""),
+        );
+        let entries = parse_item_tag_header(&h, H_ITEM_TAG).expect("entries");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].key, "a");
+        assert_eq!(entries[1].key, "b");
+    }
+
+    #[test]
+    fn item_tag_emit_round_trips() {
+        let entries = vec![
+            ItemTagHeaderEntry {
+                key: "reviewed".to_owned(),
+                value: "true".to_owned(),
+                target_path: None,
+            },
+            ItemTagHeaderEntry {
+                key: "flag".to_owned(),
+                value: "follow-up".to_owned(),
+                target_path: Some("/composition/start_time/value".to_owned()),
+            },
+        ];
+        let hv = emit_item_tag_header(&entries);
+        let mut h = HeaderMap::new();
+        h.insert(H_VERSION_ITEM_TAG, hv);
+        assert_eq!(parse_item_tag_header(&h, H_VERSION_ITEM_TAG), Some(entries));
     }
 }

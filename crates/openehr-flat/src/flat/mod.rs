@@ -39,6 +39,7 @@ mod defaults;
 mod from_flat;
 mod graph;
 mod mappers;
+mod rmattr;
 mod sub;
 mod to_flat;
 
