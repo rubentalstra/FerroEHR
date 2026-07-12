@@ -1,8 +1,8 @@
 description: |
   `412 Precondition Failed` is returned when `If-Match` request header doesn't match the latest version on the service side.
-  Returns also latest `version_uid` in the `Location` and `ETag` headers.
+  Returns also latest `version_uid` in the `ETag` header.
 headers:
   ETag:
     $ref: ../headers/ETag_FOLDER.yaml
   Location:
-    $ref: ../headers/Location_directory.yaml
+    $ref: ../headers/Location_deprecated.yaml

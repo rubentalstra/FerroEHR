@@ -18,7 +18,7 @@
 //! `i_demographic_service.adoc` (the abstract demographic operations).
 
 use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use ehrbase_sm::types::PartyKind;
+use ehrbase_sm::PartyKind;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -36,6 +36,19 @@ fn kind_of(kind: PartyKind) -> Kind {
         PartyKind::Organisation => Kind::Organisation,
         PartyKind::Person => Kind::Person,
         PartyKind::Role => Kind::Role,
+    }
+}
+
+/// The REST [`PartyKind`] for a versioned-object [`Kind`], or `None` for a
+/// non-party kind (COMPOSITION / EHR_STATUS / … / PARTY_RELATIONSHIP).
+fn party_kind_of(kind: Kind) -> Option<PartyKind> {
+    match kind {
+        Kind::Agent => Some(PartyKind::Agent),
+        Kind::Group => Some(PartyKind::Group),
+        Kind::Organisation => Some(PartyKind::Organisation),
+        Kind::Person => Some(PartyKind::Person),
+        Kind::Role => Some(PartyKind::Role),
+        _ => None,
     }
 }
 
@@ -649,6 +662,17 @@ impl EhrbaseService {
             )));
         }
         Ok(())
+    }
+
+    /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
+    /// `I_PARTY` calls (which address parties by versioned-object id only). A
+    /// non-party id (COMPOSITION, PARTY_RELATIONSHIP, …) or unknown id is `404`
+    /// (`versioned_object_does_not_exist`).
+    pub(super) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
+        vobject::object_kind(&self.pool, vo_id)
+            .await?
+            .and_then(party_kind_of)
+            .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))
     }
 
     /// Confirm `vo_id` is some party (any of the five kinds) — the check for the

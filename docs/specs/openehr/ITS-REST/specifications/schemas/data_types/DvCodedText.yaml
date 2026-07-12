@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_CODED_TEXT
+    enum: [DV_CODED_TEXT]
   defining_code:
     $ref: ../data_types/CodePhrase.yaml
 x-discriminator-value: DV_CODED_TEXT

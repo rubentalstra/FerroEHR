@@ -4,8 +4,4 @@ allOf:
   - $ref: ../data_types/DvProportion.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [DV_PROPORTION]
 x-discriminator-value: DV_PROPORTION

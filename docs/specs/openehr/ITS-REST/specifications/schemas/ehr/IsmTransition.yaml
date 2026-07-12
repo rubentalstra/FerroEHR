@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: ISM_TRANSITION
+    enum: [ISM_TRANSITION]
   current_state:
     $ref: ../data_types/DvCodedText.yaml
   transition:

@@ -1,0 +1,2 @@
+description: |
+  `204 No Content` is returned when the update operation was successful and the `Prefer` header is missing or is set to `return=minimal`.

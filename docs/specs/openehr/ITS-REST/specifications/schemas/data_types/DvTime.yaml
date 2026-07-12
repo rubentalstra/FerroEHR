@@ -7,11 +7,11 @@ required:
 properties:
   _type:
     type: string
-    default: DV_TIME
+    enum: [DV_TIME]
   value:
     type: string
     format: time
 x-discriminator-value: DV_TIME
 example:
-  _type: DV_DATE
-  value: '2017-08-15'
+  _type: DV_TIME
+  value: '08:20:12'

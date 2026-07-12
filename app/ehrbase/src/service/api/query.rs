@@ -12,7 +12,7 @@ use crate::service::EhrbaseService;
 
 #[async_trait]
 impl QueryService for EhrbaseService {
-    async fn query_execute_adhoc(
+    async fn execute_ad_hoc_query(
         &self,
         aql: String,
         request: AqlQueryRequest,
@@ -20,7 +20,7 @@ impl QueryService for EhrbaseService {
         self.execute_aql(&aql, None, &request).await
     }
 
-    async fn query_execute_stored(
+    async fn execute_stored_query(
         &self,
         qualified_query_name: String,
         version: Option<String>,

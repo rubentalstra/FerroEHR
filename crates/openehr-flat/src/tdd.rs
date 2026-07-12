@@ -56,12 +56,17 @@
 //!   converter — the *leaf data values* and the full composition/entry context
 //!   are faithful. Driving from the (uncompacted) OPT definition tree to recover
 //!   them is future work (the same BMM-RM-model dependency `from_flat` carries).
-//! * The multi-valued RM-attribute set (`content`/`items`/`events`/`activities`)
-//!   is the hard-coded common set shared with `from_flat` (`// TODO(port)` there).
+//! * The multi-valued RM-attribute set used to re-materialise arrays is derived
+//!   from the generated BMM RM attribute model ([`is_multiple_attr`]) — the same
+//!   single source of truth the FLAT builder ([`from_flat`](crate::from_flat))
+//!   delegates to; no hard-coded list.
 //! * A construct outside the corpus (e.g. an archetyped `other_context`, choice
 //!   leaves) is handled on a best-effort basis; the SM `import_tdd` envelope
 //!   rejects an unconvertible TDD with a typed error rather than committing a
 //!   partial COMPOSITION.
+
+use std::collections::HashSet;
+use std::sync::LazyLock;
 
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value, json};
@@ -500,11 +505,62 @@ fn leaf_value(el: &El, wc: &WebTemplateNode) -> Result<Value, FlatError> {
 
 // ── placement + wrapper re-materialisation (shape shared with `from_flat`) ────
 
-/// RM attributes that are arrays (needed to re-materialise compacted structure).
-/// The common COMPOSITION/HISTORY/ITEM/ENTRY set — the same hard-coded envelope
-/// as `from_flat::is_multiple` (`// TODO(port)`: drive from the BMM RM model).
+/// RM attributes that are arrays (needed to re-materialise compacted structure),
+/// derived from the generated BMM RM attribute model — the single source of
+/// truth shared with the FLAT builder ([`from_flat`](crate::from_flat), which
+/// delegates here). See [`is_multiple_attr`] for the derivation.
 fn is_multiple(attr: &str) -> bool {
-    matches!(attr, "content" | "items" | "events" | "activities")
+    is_multiple_attr(attr)
+}
+
+/// The set of RM attribute names whose value is a multi-valued *structural*
+/// container reachable from a versioned-object root, computed once from the
+/// generated BMM RM attribute model ([`openehr_rm::model`]) instead of a
+/// hard-coded list.
+///
+/// "Structural" means the attribute's container is a `List`/`Set`/`Hash` **and**
+/// its declared element type resolves to a model class — so leaf/primitive byte
+/// arrays such as `DV_MULTIMEDIA.data : Array<Octet>` are excluded (they are
+/// values, not wrapper nodes the FLAT/TDD builders re-materialise), which keeps
+/// single-valued structural attributes such as `OBSERVATION.data : HISTORY`
+/// correctly single. The reachability walk starts at the versioned-object roots
+/// (`COMPOSITION`, `EHR_STATUS`, `FOLDER`) and follows every class-typed
+/// attribute through the RM abstract→concrete descendant sets. Correctness
+/// reference: the attribute cardinalities in openEHR RM `common`, `composition`,
+/// `ehr`, and `data_structures`.
+static MULTIVALUED_ATTRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    let mut set: HashSet<&'static str> = HashSet::new();
+    let mut seen: HashSet<&'static str> = HashSet::new();
+    let mut queue: Vec<&'static str> = vec!["COMPOSITION", "EHR_STATUS", "FOLDER"];
+    while let Some(cls) = queue.pop() {
+        if !seen.insert(cls) {
+            continue;
+        }
+        for attr in openehr_rm::model::attributes(cls) {
+            // Only follow (and count) attributes whose value is itself an RM
+            // class; a primitive/foundation element type (e.g. `Octet`) is not a
+            // structural wrapper.
+            if openehr_rm::model::class(attr.declared_type).is_none() {
+                continue;
+            }
+            if attr.container != openehr_rm::model::Container::None {
+                set.insert(attr.name);
+            }
+            queue.push(attr.declared_type);
+            queue.extend(
+                openehr_rm::model::descendants(attr.declared_type)
+                    .iter()
+                    .copied(),
+            );
+        }
+    }
+    set
+});
+
+/// Whether `attr` is a multi-valued structural RM attribute — the model-driven
+/// membership test shared by the TDD and FLAT composition builders.
+pub(crate) fn is_multiple_attr(attr: &str) -> bool {
+    MULTIVALUED_ATTRS.contains(attr)
 }
 
 /// Insert `child_value` into `parent` at relative path `rel`, materialising the
@@ -812,4 +868,49 @@ fn last_node_id_str(path: &str) -> Option<&str> {
 
 fn is_archetype_root(node_id: &str) -> bool {
     node_id.starts_with("openEHR-") || node_id.starts_with("openEHR_")
+}
+
+#[cfg(test)]
+mod multiplicity_tests {
+    use super::is_multiple_attr;
+
+    /// Completeness guard: the model-driven set must cover every member of the
+    /// former hard-coded COMPOSITION/HISTORY/ITEM/ENTRY envelope, so replacing
+    /// the list with the RM-model lookup does not lose coverage.
+    #[test]
+    fn covers_legacy_hardcoded_set() {
+        for attr in ["content", "items", "events", "activities"] {
+            assert!(
+                is_multiple_attr(attr),
+                "model-driven multiplicity set must include the legacy member `{attr}`",
+            );
+        }
+    }
+
+    /// Behaviour guard: `data` must stay single. Its only container use in the RM
+    /// is `DV_MULTIMEDIA.data : Array<Octet>` (a byte array, not a structural
+    /// wrapper); the structural `data` attributes (`OBSERVATION.data : HISTORY`,
+    /// `ADMIN_ENTRY.data : ITEM_STRUCTURE`) are single-valued and must not be
+    /// re-materialised as arrays.
+    #[test]
+    fn data_stays_single() {
+        assert!(
+            !is_multiple_attr("data"),
+            "`data` must not be treated as multi-valued (OBSERVATION.data is a single HISTORY)",
+        );
+    }
+
+    /// The derivation now reaches genuinely multi-valued structural attributes
+    /// beyond the legacy four (the F-10-11 motivation).
+    #[test]
+    fn covers_reachable_multi_valued_attributes() {
+        assert!(is_multiple_attr("other_participations"));
+    }
+
+    /// An unknown / non-container attribute is not multi-valued.
+    #[test]
+    fn rejects_single_and_unknown() {
+        assert!(!is_multiple_attr("value"));
+        assert!(!is_multiple_attr("not_a_real_attribute"));
+    }
 }

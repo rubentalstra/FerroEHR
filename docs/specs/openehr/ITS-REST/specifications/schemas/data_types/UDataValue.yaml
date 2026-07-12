@@ -1,4 +1,5 @@
 title: DATA_VALUE
+type: object
 oneOf:
   - $ref: ../data_types/UMDvBoolean.yaml
   - $ref: ../data_types/UMDvCodedText.yaml

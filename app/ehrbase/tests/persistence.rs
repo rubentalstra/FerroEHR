@@ -23,8 +23,7 @@ use uuid::Uuid;
 const PG_TAG: &str = "18";
 
 struct Pg {
-    #[allow(dead_code)] // held for its Drop (container removal)
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -46,7 +45,7 @@ impl Pg {
             .await
             .expect("mapped 5432");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -129,6 +128,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
             "sp_binding",
             "sp_data_frame",
             "sp_data_set",
+            "sp_sample",
             "sp_subject",
             "sp_variable",
             "stored_query",
@@ -434,7 +434,7 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
 
     // Unscoped: both compositions are visible (control).
     let all = service
-        .query_execute_adhoc(aql.to_owned(), AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql.to_owned(), AqlQueryRequest::default())
         .await
         .expect("unscoped query");
     assert_eq!(row_count(&all.result_set), 2, "both compositions visible");
@@ -442,7 +442,7 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
     // Scoped to SUBJ-A + collection on: only A's row is fetched, and the touched
     // EHR/template sets are collected despite the projection.
     let scoped = service
-        .query_execute_adhoc(
+        .execute_ad_hoc_query(
             aql.to_owned(),
             AqlQueryRequest {
                 subject_scope: Some("SUBJ-A".to_owned()),

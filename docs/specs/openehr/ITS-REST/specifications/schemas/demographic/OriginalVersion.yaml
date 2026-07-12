@@ -1,0 +1,28 @@
+# Note: copy of same schema from `ehr`, as we need to redefine to use only demographic types
+#       reminder to keep them in sync!
+title: ORIGINAL_VERSION
+type: object
+allOf:
+  - $ref: ../demographic/Version.yaml
+required:
+  - uid
+  - lifecycle_state
+properties:
+  _type:
+    type: string
+    enum: [ORIGINAL_VERSION]
+  uid:
+    $ref: ../base_types/ObjectVersionId.yaml
+  preceding_version_uid:
+    $ref: ../base_types/ObjectVersionId.yaml
+  other_input_version_uids:
+    type: array
+    items:
+      $ref: ../base_types/ObjectVersionId.yaml
+  lifecycle_state:
+    $ref: ../data_types/DvCodedText.yaml
+  attestations:
+    type: array
+    items:
+      $ref: ../common/Attestation.yaml
+x-discriminator-value: ORIGINAL_VERSION

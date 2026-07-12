@@ -1,0 +1,9 @@
+name: key
+in: path
+description: |
+  The ITEM_TAG key.
+required: true
+style: simple
+schema:
+  type: string
+  example: 'flag'

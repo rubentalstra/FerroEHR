@@ -5,7 +5,7 @@ use figment::providers::{Env, Format, Toml};
 use figment::{Figment, providers::Serialized};
 use serde::{Deserialize, Serialize};
 
-use crate::access::authn::AuthConfig;
+use crate::extensions::access::authn::AuthConfig;
 
 /// Top-level REST server configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +49,28 @@ pub struct RestConfig {
     /// enabled.
     #[serde(default)]
     pub fhir: FhirConfig,
+    /// SMART App Launch resource-server configuration
+    /// (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/`). Disabled by
+    /// default — no `/.well-known/smart-configuration` document is served and
+    /// the scope gate is inert, so the wire is byte-identical to a non-SMART
+    /// deployment. The nested `EHRBASE_REST_SMART__*` env keys bind through the
+    /// shared figment chain below with no extra code (`crate::smart::config`).
+    #[serde(default)]
+    pub smart: crate::smart::config::SmartConfig,
+    /// System-Options manifest identity + advertised conformance profile — the
+    /// `OPTIONS /` body's `solution`/`vendor`/`restapi_specs_version`/
+    /// `conformance_profile` fields (ITS-REST System API; `crate::api::system`).
+    /// Sourced from config so the public identity (G-6) and the advertised
+    /// profile (G-2) are not string literals baked into the handler; the live
+    /// endpoint list is supplied separately by [`crate::router`].
+    // INTEGRATION SEAM: embedding this in a `#[derive(Serialize, Deserialize)]`
+    // struct requires `SystemOptionsConfig` to derive `Serialize + Deserialize`
+    // (+ field-level `#[serde(default)]`); it currently derives only
+    // `Debug, Clone`. The fix pass adds those derives in `api/system/options.rs`
+    // (owned by the System-API worker), after which the nested
+    // `EHRBASE_REST_SYSTEM__*` env keys bind through the figment chain below.
+    #[serde(default)]
+    pub system: crate::api::system::options::SystemOptionsConfig,
 }
 
 /// Multi-tenancy configuration.
@@ -161,6 +183,8 @@ impl Default for RestConfig {
             event_subscription: EventSubscriptionConfig::default(),
             tenancy: TenancyConfig::default(),
             fhir: FhirConfig::default(),
+            smart: crate::smart::config::SmartConfig::default(),
+            system: crate::api::system::options::SystemOptionsConfig::default(),
         }
     }
 }
@@ -236,6 +260,15 @@ mod tests {
         assert!(!c.event_subscription.enabled);
         // The FHIR connector is opt-in too.
         assert!(!c.fhir.enabled);
+        // SMART App Launch is opt-in too.
+        assert!(!c.smart.enabled);
+        // The System-Options manifest identity carries the product defaults:
+        // the tested development-edition contract identity (shared provenance),
+        // not the retired `1.0.3` release label.
+        assert_eq!(
+            c.system.restapi_specs_version,
+            crate::extensions::provenance::ITS_REST
+        );
         // Multi-tenancy is off by default; the claim defaults to `tenant`.
         assert!(!c.tenancy.enabled);
         assert_eq!(c.tenancy.claim, "tenant");
@@ -284,6 +317,19 @@ mod tests {
             jail.set_env("EHRBASE_REST_FHIR__ENABLED", "true");
             let c = RestConfig::load().expect("load");
             assert!(c.fhir.enabled);
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn smart_enabled_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_SMART__ENABLED", "true");
+            jail.set_env("EHRBASE_REST_SMART__EHR_ID_CLAIM", "openehr_ehr_id");
+            let c = RestConfig::load().expect("load");
+            assert!(c.smart.enabled);
+            assert_eq!(c.smart.ehr_id_claim, "openehr_ehr_id");
             Ok(())
         });
     }

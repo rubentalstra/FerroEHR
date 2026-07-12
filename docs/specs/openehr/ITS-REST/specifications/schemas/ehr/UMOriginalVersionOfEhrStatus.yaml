@@ -1,0 +1,10 @@
+title: ORIGINAL_VERSION
+type: object
+allOf:
+  - $ref: ../ehr/OriginalVersion.yaml
+required:
+  - _type
+properties:
+  data:
+    $ref: ../ehr/EhrStatus.yaml
+x-discriminator-value: ORIGINAL_VERSION

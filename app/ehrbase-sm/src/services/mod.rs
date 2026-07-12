@@ -1,72 +1,57 @@
-//! The openEHR SM Platform Service Model interfaces, one Rust trait per
-//! interface, transcribed literally: each trait carries its
-//! interface's exact SM call names, parameter names and types, spec returns,
-//! and pre/post-conditions (in the per-method doc-comments). Native errors are
-//! [`SmError`](crate::error::SmError) over `CALL_STATUS_TYPE` — **no** ITS-REST
-//! types in the EHR-core catalog.
+//! The openEHR SM Platform Service Model interfaces — **one module per SM
+//! chapter** (`master04`–`master15`), one Rust trait per interface,
+//! transcribed literally: each trait carries its interface's exact SM call
+//! names, parameter names and types, spec returns, and pre/post-conditions
+//! (in the per-method doc-comments). Native errors are
+//! [`SmError`](crate::SmError) over `CALL_STATUS_TYPE` (chapter 03,
+//! [`crate::common`]) — **no** ITS-REST types in the catalog.
 //!
-//! The EHR mega-service is split along the SM's own interface boundaries
-//! (`I_EHR_SERVICE` / `I_EHR_STATUS` / `I_EHR_COMPOSITION` / `I_EHR_DIRECTORY`
-//! / `I_EHR_CONTRIBUTION`), with the per-EHR `I_EHR` accessor realized as the
-//! generic [`IEhr`](crate::IEhr) handle. ITS-REST-only operations the SM does
-//! not define (item-tag CRUD, `*_latest_meta` decoration) live in the
-//! [`adapter`] extension traits, clearly separated with `PORT NOTE`s.
+//! Chapter map (mirrors `docs/design/sm-platform/`): [`definition`]
+//! (master04), [`ehr`] (master05), [`demographic`] (master06), [`ehr_index`]
+//! (master07), [`query`] (master08), [`message`] (master09),
+//! [`subject_proxy`] (master10), [`terminology`] (master12), [`admin`]
+//! (master15), [`system_log`] (the master02 System Log component: "IHE
+//! ATNA-compliant system log"). ITS-REST-only operations the SM does not
+//! define live in [`crate::extensions`], flagged with `PORT NOTE`s.
 
-pub mod adapter;
 pub mod admin;
-pub mod composition;
-pub mod contribution;
 pub mod definition;
 pub mod demographic;
-pub mod directory;
 pub mod ehr;
-pub mod ehr_access;
 pub mod ehr_index;
-pub mod ehr_status;
 pub mod message;
 pub mod query;
-pub mod relationship;
 pub mod subject_proxy;
 pub mod system_log;
-pub mod tdd;
 pub mod terminology;
-pub mod validity;
-pub mod web_template;
 
-pub use adapter::{
-    ContributionAdapter, DefinitionAdapter, EventSubscriptionAdapter, FhirConnectorAdapter,
-    ItemTagAdapter, MultimediaAdapter, TenantAdapter, VersionMetaAdapter,
-};
 pub use admin::{
     AdminArchive, AdminDumpLoad, AdminService, CompressionFormat, DumpLoadFailReport, ExportFormat,
     ExportSpec, StatTimeRange,
 };
-pub use composition::EhrCompositionService;
-pub use contribution::{EhrContributionService, TimeRange};
-pub use definition::{DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService};
-pub use demographic::DemographicService;
-pub use directory::EhrDirectoryService;
-pub use ehr::EhrService;
-pub use ehr_access::{
-    AccessEntry, AccessLevel, CompositionOverride, DefaultAccess, EHR_ACCESS_CONTROL_V1_SCHEME,
-    EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter, EhrAccessSettings, Privacy, principal_matches,
+pub use definition::{
+    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, QueryDescriptor,
 };
-pub use ehr_index::EhrIndexService;
-pub use ehr_status::EhrStatusService;
-pub use message::EhrExtractService;
-pub use query::QueryService;
-pub use relationship::PartyRelationshipService;
+pub use demographic::{DemographicService, PartyKind, PartyRelationshipService};
+pub use ehr::{
+    EhrCompositionHandle, EhrCompositionService, EhrContributionHandle, EhrContributionService,
+    EhrDirectoryHandle, EhrDirectoryService, EhrService, EhrStatusHandle, EhrStatusService,
+    EhrSummary, IEhr, TimeRange,
+};
+pub use ehr_index::{
+    EhrIndexEntry, EhrIndexService, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
+};
+pub use message::{EhrExtractService, TddService};
+pub use query::{AqlQueryRequest, QueryOutcome, QueryService};
 pub use subject_proxy::{
-    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FrameMethod, FramePayload,
-    Sample, SubjectDataSet, SubjectProxyService, SubjectVariable, VariableSample, VariableValue,
+    DataBinding, DataFrame, DataFrameSample, DataSetResult, EnvBinding, FramePayload, Sample,
+    SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
+    VariableSample, VariableValue,
 };
 pub use system_log::{
     AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, SystemLog,
 };
-pub use tdd::TddService;
 pub use terminology::{
     DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation, TerminologyRelationError, TerminologyService,
 };
-pub use validity::ValidityChecker;
-pub use web_template::WebTemplateService;

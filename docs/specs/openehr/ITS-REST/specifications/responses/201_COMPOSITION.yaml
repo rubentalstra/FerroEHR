@@ -1,12 +1,21 @@
 description: |
-  `201 Created` is returned when the COMPOSITION was created. 
-  Content body is only returned when `Prefer` header has `return=representation`, otherwise only headers are returned.
+  `201 Created` is returned when the COMPOSITION is successfully created. 
+  If `Prefer` header is `return=representation`, the full resource is included in the response body; if is `return=identifier`, only its unique identifier is included. 
+  If the `Prefer` header is missing or set to `return=minimal`, the body is empty.
 headers:
   ETag:
     $ref: ../headers/ETag_COMPOSITION.yaml
   Location:
     $ref: ../headers/Location_COMPOSITION.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_LOCATABLE.yaml
+  openehr-item-tag:
+    $ref: ../headers/openehr-item-tag.yaml
+  openehr-version-item-tag:
+    $ref: ../headers/openehr-version-item-tag.yaml
 content:
   application/json:
     schema:
-      $ref: ../schemas/ehr/Composition.yaml
+      oneOf:
+        - $ref: ../schemas/ehr/Composition.yaml
+        - $ref: ../schemas/others/Identifier.yaml

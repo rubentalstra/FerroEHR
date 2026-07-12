@@ -9,9 +9,3 @@ properties:
   accuracy:
     $ref: ../data_types/DvDuration.yaml
 x-discriminator-value: DV_TEMPORAL
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    DV_DATE: '#/components/schemas/DvDate'
-    DV_DATE_TIME: '#/components/schemas/DvDateTime'
-    DV_DTIME: '#/components/schemas/DvTime'

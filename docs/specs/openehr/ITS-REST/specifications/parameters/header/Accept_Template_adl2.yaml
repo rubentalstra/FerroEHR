@@ -1,0 +1,9 @@
+name: Accept
+in: header
+style: simple
+schema:
+  type: string
+  enum:
+    - application/json
+    - application/xml
+    - text/plain

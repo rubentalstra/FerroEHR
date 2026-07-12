@@ -21,7 +21,16 @@ curl -u ehrbase:ehrbase \
   http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4
 ```
 
-A successful upload returns **201 Created**. Uploading a template whose id
+A successful upload returns **201 Created**. Add
+`Prefer: return=identifier` when you only need the id back — the response
+body is then the JSON identifier object:
+
+```json
+{ "template_id": "vital_signs" }
+```
+
+(`return=representation` returns the stored OPT XML; the default is an empty
+body with the id in `ETag`/`Location`.) Uploading a template whose id
 already exists returns **409 Conflict** — templates are immutable once loaded.
 On upload the server checks the template itself for artefact validity — that
 its constraints are internally consistent per the openEHR archetype model:
@@ -48,10 +57,20 @@ List and retrieve loaded templates:
 curl -u ehrbase:ehrbase \
   http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4
 
+# Filter and page the list
+curl -u ehrbase:ehrbase \
+  'http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4?template_id=vital*&offset=0&fetch=20'
+
 # Get the canonical OPT XML for one template
 curl -u ehrbase:ehrbase -H 'Accept: application/xml' \
   http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4/vital_signs
 ```
+
+The ADL 1.4 list accepts three filters — `template_id`, `concept`, and
+`version`, each a glob pattern (`*` wildcards, e.g.
+`template_id=vital*`) — plus `offset` (rows to skip, default 0) and `fetch`
+(maximum rows; absent or 0 = all). The ADL2 list accepts the same
+`offset`/`fetch` pagination.
 
 ## The WebTemplate
 
@@ -108,6 +127,67 @@ convenience; the canonical JSON and XML remain the openEHR-standard wire format.
 > The FLAT and STRUCTURED formats are always relative to a template — the paths
 > are template paths. Use them for form-driven capture; use canonical JSON/XML
 > for full-fidelity exchange and archival.
+
+### Optional RM attributes (`_`-prefixed keys)
+
+Beyond the template's own fields, FLAT and STRUCTURED carry the optional
+reference-model attributes as `_`-prefixed path segments, round-tripping in
+both directions. Indexed families take an `:n` suffix; sub-fields ride the
+usual `|attribute` pipes:
+
+```json
+{
+  "vital_signs/blood_pressure/_uid": "9fcc1c70-…",
+  "vital_signs/blood_pressure/_link:0|type": "problem",
+  "vital_signs/blood_pressure/_link:0|target": "ehr://…",
+  "vital_signs/blood_pressure/any_event:0/systolic/_null_flavour|code": "253",
+  "vital_signs/blood_pressure/any_event:0/systolic/_normal_range/lower|magnitude": 90,
+  "vital_signs/blood_pressure/_other_participation:0|function": "witness",
+  "vital_signs/blood_pressure/_other_participation:0|name": "Dr. Marcus Johnson"
+}
+```
+
+The supported family: `_uid`, `_link:n`, `_feeder_audit`, `_null_flavour`,
+`_null_reason`, `_mapping:n`, `_normal_range`, `_other_reference_ranges:n`,
+`_accuracy`, `_language`, `_encoding`, `_charset`, `_provider`,
+`_other_participation:n`, `_work_flow_id`, `_guideline_id`, `_expiry_time`,
+`_wf_definition`, `_instruction_details`, `_identifier:n`, and `_thumbnail`.
+
+### Embedding canonical JSON with `|raw`
+
+When one node needs full fidelity inside an otherwise-FLAT commit, write the
+node's canonical JSON verbatim under the `|raw` suffix:
+
+```json
+{
+  "vital_signs/blood_pressure/any_event:0/systolic|raw": {
+    "_type": "DV_QUANTITY", "magnitude": 120, "unit": "mm[Hg]"
+  }
+}
+```
+
+The embedded object **must** carry `_type` (without it, the key is treated as
+a normal leaf). `|raw` is write-only: retrieval always decomposes to regular
+FLAT keys.
+
+### Coded text and open value sets
+
+A coded field whose template value set is **open** accepts free text under
+the `|other` suffix. `|other` may not be combined with `|code`, `|value`,
+`|terminology`, or `|preferred_term` on the same leaf, and is rejected when
+the value set is closed.
+
+### Duplicate node names
+
+When a template contains sibling nodes with the same name, the generated
+WebTemplate/FLAT path ids are disambiguated with underscore suffixes counted
+from 1 — `blood_pressure`, `blood_pressure_1`, `blood_pressure_2` — as the
+specification prescribes. Server builds compiled with the `ehrbase-quirks`
+feature instead use the Better-compatible numbering (`blood_pressure`,
+`blood_pressure2`), and additionally accept the Better-only DV_QUANTITY
+suffixes `|unit_system` and `|unit_display_name`; the standard build does
+neither. If your tooling was written against Better/EHRbase paths, match the
+build to it.
 
 ## Validation on commit
 

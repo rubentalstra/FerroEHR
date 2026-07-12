@@ -1,0 +1,16 @@
+title: PARTY_RELATIONSHIP
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - source
+  - target
+properties:
+  source:
+    $ref: ../base_types/PartyRef.yaml
+  target:
+    $ref: ../base_types/PartyRef.yaml
+  details:
+    $ref: ../data_structures/UItemStructure.yaml
+  time_validity:
+    $ref: ../data_types/DvIntervalOfDate.yaml

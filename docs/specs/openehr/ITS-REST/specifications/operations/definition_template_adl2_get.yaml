@@ -5,11 +5,12 @@ description: |
 tags:
   - ADL2
 parameters:
-  - $ref: ../parameters/path/template_id.yaml
+  - $ref: ../parameters/path/template_id_adl2.yaml
+  - $ref: ../parameters/header/Accept_Template_adl2.yaml
 responses:
   '200':
     $ref: ../responses/200_Template_adl2_retrieved.yaml
   '400':
-    $ref: ../responses/400_invalid_template_id.yaml
+    $ref: ../responses/400.yaml
   '404':
     $ref: ../responses/404_unknown_template_id.yaml

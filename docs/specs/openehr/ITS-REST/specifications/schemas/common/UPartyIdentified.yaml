@@ -1,4 +1,5 @@
 title: PARTY_IDENTIFIED
+type: object
 oneOf:
   - $ref: ../common/UMPartyIdentified.yaml
   - $ref: ../common/UMPartyRelated.yaml

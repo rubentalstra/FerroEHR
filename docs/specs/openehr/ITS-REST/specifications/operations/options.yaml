@@ -1,12 +1,15 @@
 operationId: options
-summary: System Options and Conformance
+summary: Options and Conformance
 description: |
   The `OPTIONS` HTTP method allows a client to determine the options and/or requirements associated with a resource, service or with the system, without implying a resource action.
-  Services SHOULD respond to this method with at least appropriate HTTP codes, headers and potentially with a payload revealing more details about themselves.
+  
+  Services SHOULD respond to this method with the appropriate HTTP codes, headers and potentially with a payload revealing more details about themselves.
   
   Another use-case for this method is related to exposing service capabilities for a conformance manifest.
 tags:
   - Options
+parameters:
+  - $ref: ../parameters/header/Accept_JSON.yaml
 responses:
   '200':
     $ref: ../responses/200_options.yaml

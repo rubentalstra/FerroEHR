@@ -149,11 +149,6 @@ pub(super) struct Committed {
     /// The `creating_system_id` recorded for the new version (the local system
     /// for every non-import write) — the `OBJECT_VERSION_ID` middle part.
     pub(super) creating_system_id: String,
-    /// The CONTRIBUTION this write created. Read by `commit_contribution` (to
-    /// group versions) and the create-response `Location`; retained as part of
-    /// the write result.
-    #[allow(dead_code)]
-    pub(super) contribution_id: Uuid,
     /// The versioned-object kind of this write — carried for the event-outbox
     /// envelope.
     pub(super) kind: Kind,
@@ -266,13 +261,13 @@ async fn version_read(
     let attestations = read_attestations(pool, vo_id, sys_version).await?;
     Ok(VersionRead {
         vo_id,
+        contribution_id: row.try_get("contribution_id")?,
         ehr_id: row.try_get("ehr_id")?,
         tree,
         preceding_version_uid: row.try_get("preceding_version_uid")?,
         other_input_version_uids,
         lifecycle_state,
         creating_system_id: row.try_get("creating_system_id")?,
-        contribution_id: row.try_get("contribution_id")?,
         audit: AuditInput {
             system_id: row.try_get("system_id")?,
             change_type: row.try_get("change_type")?,
@@ -746,7 +741,6 @@ async fn apply_change(
                 sys_version: 1,
                 tree: TreeId::trunk(1),
                 creating_system_id: ctx.system_id.clone(),
-                contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id,
@@ -835,7 +829,6 @@ async fn apply_change(
                 sys_version: next.ordinal,
                 tree: next.tree,
                 creating_system_id: ctx.system_id.clone(),
-                contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id,
@@ -892,7 +885,6 @@ async fn apply_change(
                 sys_version: next.ordinal,
                 tree: next.tree,
                 creating_system_id: ctx.system_id.clone(),
-                contribution_id,
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id: None,
@@ -1001,7 +993,6 @@ async fn attest(
         sys_version: ordinal,
         tree: expected,
         creating_system_id: row.try_get("creating_system_id")?,
-        contribution_id,
         kind,
         // A 666 attestation adds no new version; it is announced in the
         // contribution's outbox envelope as a change to the existing version.

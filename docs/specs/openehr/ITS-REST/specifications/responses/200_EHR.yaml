@@ -1,5 +1,8 @@
 description: |
   `200 OK` is returned when the requested EHR resource is successfully retrieved.
+headers:
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
 content:
   application/json:
     schema:

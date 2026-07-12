@@ -36,6 +36,21 @@ fn non_empty_str(v: Option<&Value>) -> Option<&str> {
 // ── RM → flat ───────────────────────────────────────────────────────────────
 
 /// Emit the `ctx/…` keys for a composition's context.
+///
+/// The bidirectional shortcuts (`SM/.../app_context.adoc`) are symmetric with
+/// [`apply_ctx`]: `language`/`territory`/`composer_*`/`id_namespace`/`id_scheme`,
+/// `time`/`end_time`/`setting`, `location`/`health_care_facility`, and the
+/// indexed `participation_*` family (`_name`/`_function`/`_mode`/`_id`, the
+/// `_identifiers` and a `PARTY_RELATED` `_relationship`). COMPOSITION-level
+/// `links` are not a `ctx/` key: `COMPOSITION` is a `LOCATABLE`
+/// (`RM/.../common/locatable.adoc`), so its links round-trip through the
+/// `_link:i` RM-attribute family (`super::rmattr`), not `ctx/`. The per-`ENTRY`
+/// input-only defaults (`provider_*`, `work_flow_id`, `history_origin`,
+/// `activity_timing`, `instruction_narrative`,
+/// `action_ism_transition_current_state`) stay input-only by design — the spec
+/// frames them as input shortcuts and their output home is the structural
+/// position, so emitting them as `ctx/` would be ambiguous.
+#[allow(clippy::too_many_lines)] // one linear emitter over the context field set
 pub(crate) fn emit_ctx(comp: &Value, out: &mut FlatMap) {
     if let Some(code) = comp.pointer("/language/code_string") {
         out.insert("ctx/language".to_owned(), code.clone());
@@ -56,6 +71,10 @@ pub(crate) fn emit_ctx(comp: &Value, out: &mut FlatMap) {
             }
             if let Some(ns) = non_empty_str(c.pointer("/external_ref/namespace")) {
                 out.insert("ctx/id_namespace".to_owned(), json!(ns));
+            }
+            // `id_scheme` (`app_context.adoc`): the composer's `GENERIC_ID.scheme`.
+            if let Some(sch) = non_empty_str(c.pointer("/external_ref/id/scheme")) {
+                out.insert("ctx/id_scheme".to_owned(), json!(sch));
             }
         }
         None => {}
@@ -120,6 +139,46 @@ pub(crate) fn emit_ctx(comp: &Value, out: &mut FlatMap) {
             if let Some(id) = non_empty_str(p.pointer("/performer/external_ref/id/value")) {
                 out.insert(format!("ctx/participation_id:{i}"), json!(id));
             }
+            // `participation_identifiers` (`app_context.adoc`): the performer's
+            // `PARTY_IDENTIFIED.identifiers[*].id` (List<String>). Rare — no
+            // corpus fixture carries them — but surfaced for symmetry.
+            if let Some(ids) = p
+                .pointer("/performer/identifiers")
+                .and_then(Value::as_array)
+            {
+                for (j, ident) in ids.iter().enumerate() {
+                    if let Some(v) = ident.get("id").filter(|v| !v.is_null()) {
+                        out.insert(format!("ctx/participation_identifiers:{i}.{j}"), v.clone());
+                    }
+                }
+            }
+            // A `PARTY_RELATED` performer's `relationship` (DV_CODED_TEXT),
+            // emitted coded as three indexed-scalar keys (the `name:index` shape
+            // the STRUCTURED nester round-trips), so the reverse rebuilds the
+            // same relationship.
+            if let Some(rel) = p
+                .pointer("/performer/relationship")
+                .filter(|v| !v.is_null())
+            {
+                if let Some(code) = rel.pointer("/defining_code/code_string") {
+                    out.insert(
+                        format!("ctx/participation_relationship_code:{i}"),
+                        code.clone(),
+                    );
+                }
+                if let Some(v) = rel.get("value").filter(|v| !v.is_null()) {
+                    out.insert(
+                        format!("ctx/participation_relationship_value:{i}"),
+                        v.clone(),
+                    );
+                }
+                if let Some(t) = rel.pointer("/defining_code/terminology_id/value") {
+                    out.insert(
+                        format!("ctx/participation_relationship_terminology:{i}"),
+                        t.clone(),
+                    );
+                }
+            }
         }
     }
 }
@@ -129,6 +188,18 @@ pub(crate) fn emit_ctx(comp: &Value, out: &mut FlatMap) {
 /// Read a `ctx/<name>` value from the FLAT input.
 fn ctx_get<'a>(flat: &'a Map<String, Value>, name: &str) -> Option<&'a Value> {
     flat.get(&format!("ctx/{name}"))
+}
+
+/// The composer `external_ref.id` OBJECT_ID. A `ctx/id_scheme` makes it a
+/// `GENERIC_ID` (the scheme-bearing id, `app_context.adoc` `id_scheme`);
+/// without one it is a `HIER_OBJECT_ID` (no scheme) — so a HIER_OBJECT_ID
+/// composer round-trips as itself rather than gaining a fabricated scheme.
+fn composer_object_id(flat: &Map<String, Value>, id: Option<&Value>) -> Value {
+    let value = id.and_then(Value::as_str).unwrap_or("");
+    match ctx_get(flat, "id_scheme").and_then(Value::as_str) {
+        Some(scheme) => json!({"_type": "GENERIC_ID", "value": value, "scheme": scheme}),
+        None => json!({"_type": "HIER_OBJECT_ID", "value": value}),
+    }
 }
 
 /// Apply the `ctx/…` keys (and defaults) onto a composition object, filling the
@@ -166,11 +237,7 @@ pub(crate) fn apply_ctx(flat: &Map<String, Value>, comp: &mut Map<String, Value>
                     "external_ref".into(),
                     json!({
                         "_type": "PARTY_REF",
-                        "id": {
-                            "_type": "GENERIC_ID",
-                            "value": id.and_then(Value::as_str).unwrap_or(""),
-                            "scheme": ctx_get(flat, "id_scheme").and_then(Value::as_str).unwrap_or("id_scheme"),
-                        },
+                        "id": composer_object_id(flat, id),
                         "namespace": namespace.and_then(Value::as_str).unwrap_or("EHR"),
                         "type": "PERSON",
                     }),
@@ -193,9 +260,14 @@ pub(crate) fn apply_ctx(flat: &Map<String, Value>, comp: &mut Map<String, Value>
     if let Value::Object(ctx) = ctx {
         ctx.entry("_type".to_owned())
             .or_insert_with(|| json!("EVENT_CONTEXT"));
+        // `EVENT_CONTEXT.start_time`: the `ctx/time` value, or — when unset —
+        // the current time (`SM/.../app_context.adoc` `time`: "If not specified
+        // current time will be used"), never the epoch. A round-trip always
+        // carries `ctx/time` (emit_ctx emits it), so `now()` only materialises
+        // for a client FLAT that omits it, and never destabilises `flat ⇄ flat`.
         let time = ctx_get(flat, "time")
             .cloned()
-            .unwrap_or_else(|| json!(DEFAULT_TIME));
+            .unwrap_or_else(|| json!(jiff::Timestamp::now().to_string()));
         ctx.entry("start_time".to_owned())
             .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": time}));
         if let Some(end) = ctx_get(flat, "end_time") {
@@ -295,10 +367,13 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
         let Some(rest) = key.strip_prefix("ctx/participation_") else {
             continue;
         };
-        if let Some((_, idx)) = rest.split_once(':')
-            && let Ok(i) = idx.parse::<usize>()
-        {
-            max_idx = Some(max_idx.map_or(i, |m| m.max(i)));
+        if let Some((_, idx)) = rest.split_once(':') {
+            // The index may be followed by `|suffix` (relationship) or `.j`
+            // (identifiers) — take the leading digits.
+            let num: String = idx.chars().take_while(char::is_ascii_digit).collect();
+            if let Ok(i) = num.parse::<usize>() {
+                max_idx = Some(max_idx.map_or(i, |m| m.max(i)));
+            }
         }
     }
     let Some(max) = max_idx else {
@@ -312,7 +387,18 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
         let function = get("function", i);
         let mode = get("mode", i);
         let id = get("id", i).and_then(Value::as_str);
-        if name.is_none() && function.is_none() && mode.is_none() && id.is_none() {
+        // `participation_identifiers:{i}.{j}` (DV_IDENTIFIER `id`s on the
+        // performer) and a `PARTY_RELATED` `participation_relationship_*:{i}` —
+        // the symmetric inverse of `emit_ctx`.
+        let identifiers = participation_identifiers(flat, i);
+        let rel_code = get("relationship_code", i).and_then(Value::as_str);
+        if name.is_none()
+            && function.is_none()
+            && mode.is_none()
+            && id.is_none()
+            && identifiers.is_empty()
+            && rel_code.is_none()
+        {
             continue;
         }
         let mut p = Map::new();
@@ -321,10 +407,34 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
             "function".into(),
             json!({"_type": "DV_TEXT", "value": function.and_then(Value::as_str).unwrap_or("")}),
         );
-        p.insert(
-            "performer".into(),
-            party_identified(flat, name, id, "PERSON"),
-        );
+        let mut performer = party_identified(flat, name, id, "PERSON");
+        if let Value::Object(pm) = &mut performer {
+            if !identifiers.is_empty() {
+                // identifiers make it a PARTY_IDENTIFIED even without a name.
+                pm.insert("_type".into(), json!("PARTY_IDENTIFIED"));
+                pm.insert("identifiers".into(), Value::Array(identifiers));
+            }
+            if let Some(code) = rel_code {
+                // A PARTY_RELATED performer: relationship coded from the openEHR
+                // `subject_relationship` group (`participation.adoc`).
+                let value = get("relationship_value", i)
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
+                let term = get("relationship_terminology", i)
+                    .and_then(Value::as_str)
+                    .unwrap_or("openehr");
+                pm.insert("_type".into(), json!("PARTY_RELATED"));
+                pm.insert(
+                    "relationship".into(),
+                    json!({
+                        "_type": "DV_CODED_TEXT",
+                        "value": value,
+                        "defining_code": code_phrase(term, code),
+                    }),
+                );
+            }
+        }
+        p.insert("performer".into(), performer);
         if let Some(m) = mode {
             // PORT NOTE (F-10-07): `ctx/participation_mode` carries a free-text
             // mode value with no code, but `PARTICIPATION.mode` is a
@@ -344,6 +454,24 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
         out.push(Value::Object(p));
     }
     out
+}
+
+/// Rebuild a performer's `identifiers` (DV_IDENTIFIER) from the
+/// `ctx/participation_identifiers:{i}.{j}` keys (their `id` strings), ordered by
+/// `j` (`app_context.adoc` `participation_identifiers`).
+fn participation_identifiers(flat: &Map<String, Value>, i: usize) -> Vec<Value> {
+    let prefix = format!("ctx/participation_identifiers:{i}.");
+    let mut indexed: Vec<(usize, Value)> = Vec::new();
+    for (key, value) in flat {
+        if let Some(j) = key
+            .strip_prefix(&prefix)
+            .and_then(|s| s.parse::<usize>().ok())
+        {
+            indexed.push((j, json!({"_type": "DV_IDENTIFIER", "id": value.clone()})));
+        }
+    }
+    indexed.sort_by_key(|(j, _)| *j);
+    indexed.into_iter().map(|(_, v)| v).collect()
 }
 
 /// Apply the per-`ENTRY` input-default shortcuts by walking `content`.

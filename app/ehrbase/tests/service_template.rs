@@ -12,11 +12,11 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
+use ehrbase_sm::extensions::adapters::TemplateListFilter;
 use ehrbase_sm::{CallStatusType, DefinitionAdapter, DefinitionAdl14Service, Page, SmError};
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -31,7 +31,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -86,7 +86,7 @@ async fn template_upload_list_get_roundtrip() {
     );
 
     // List includes the uploaded template.
-    let list = svc.template_adl14_list().await.expect("list");
+    let list = svc.template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all()).await.expect("list");
     assert!(
         list.iter().any(|t| t["template_id"] == TEMPLATE_ID),
         "list contains the template: {list:?}"
@@ -131,7 +131,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // The original template is untouched and there is still exactly one row.
     let list2 = svc
-        .template_adl14_list()
+        .template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all())
         .await
         .expect("list after conflicting re-upload");
     assert_eq!(

@@ -37,7 +37,7 @@ use ehrbase::service::EhrbaseService;
 use ehrbase::terminology::{
     FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind,
 };
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, QueryService,
 };
@@ -49,8 +49,7 @@ const CODE_PATH: &str =
     "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/defining_code/code_string";
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -65,7 +64,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -115,6 +114,7 @@ fn uv(data: Value) -> UpdateVersion {
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }
@@ -186,7 +186,7 @@ async fn create_coded(
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str) -> Value {
-    svc.query_execute_adhoc(aql.to_owned(), AqlQueryRequest::default())
+    svc.execute_ad_hoc_query(aql.to_owned(), AqlQueryRequest::default())
         .await
         .unwrap_or_else(|e| panic!("query {aql:?}: {e:?}"))
         .result_set
@@ -258,7 +258,7 @@ async fn terminology_expand_unknown_service_is_bad_request() {
          WHERE o/{CODE_PATH} matches TERMINOLOGY('expand', 'bogus.terminology.api', 'x')"
     );
     let err = svc
-        .query_execute_adhoc(aql, AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql, AqlQueryRequest::default())
         .await
         .expect_err("unknown service_api must be rejected");
     assert_eq!(err.status, CallStatusType::PreconditionViolation, "{err:?}");
@@ -278,7 +278,7 @@ async fn terminology_expand_unknown_value_set_is_bad_request() {
          WHERE o/{CODE_PATH} matches TERMINOLOGY('expand', 'openehr', 'no_such_group')"
     );
     let err = svc
-        .query_execute_adhoc(aql, AqlQueryRequest::default())
+        .execute_ad_hoc_query(aql, AqlQueryRequest::default())
         .await
         .expect_err("unknown value set must be rejected");
     assert_eq!(err.status, CallStatusType::PreconditionViolation, "{err:?}");

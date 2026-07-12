@@ -27,15 +27,37 @@ struct Deduplicator {
     used: HashMap<String, HashSet<String>>,
 }
 
+/// Duplicate-suffix spelling. The STABLE Simplified Formats spec's worked example
+/// (master02/master04 §"Node ID Generation Rules") maps a duplicate "Blood
+/// Pressure" to `blood_pressure_1` — underscore separator, counting from `1`.
+/// Better's `NumericSuffixIdDeduplicator` spells it `blood_pressure2` (no
+/// separator, from `2`).
+///
+/// The SPEC form (master02/master04 §"Node ID Generation Rules": a duplicate
+/// "Blood Pressure" → `blood_pressure_1`, underscore separator, counting from
+/// `1`) is the **default**. Better's `NumericSuffixIdDeduplicator`
+/// (`blood_pressure2`, no separator, from `2`) is available behind the
+/// `ehrbase-quirks` feature for interop with existing Better/EHRbase clients and
+/// stored form definitions (`serialization.md`: Better-only forms are gated, not
+/// hard-coded onto the default path).
+#[cfg(not(feature = "ehrbase-quirks"))]
+const DUP_SEP: &str = "_";
+#[cfg(not(feature = "ehrbase-quirks"))]
+const DUP_START: usize = 1;
+#[cfg(feature = "ehrbase-quirks")]
+const DUP_SEP: &str = "";
+#[cfg(feature = "ehrbase-quirks")]
+const DUP_START: usize = 2;
+
 impl Deduplicator {
     fn unique(&mut self, parent_id: &str, base: &str) -> String {
         let set = self.used.entry(parent_id.to_owned()).or_default();
         if set.contains(base) {
-            let mut i = 2;
-            while i < 100 && set.contains(&format!("{base}{i}")) {
+            let mut i = DUP_START;
+            while i < 100 && set.contains(&format!("{base}{DUP_SEP}{i}")) {
                 i += 1;
             }
-            let candidate = format!("{base}{i}");
+            let candidate = format!("{base}{DUP_SEP}{i}");
             set.insert(candidate.clone());
             candidate
         } else {
@@ -246,13 +268,28 @@ mod tests {
         assert_eq!(normalize_base("ok"), "ok");
     }
 
+    // Default (spec) form: `_`-separated, counting from `1`
+    // (master02/master04 §"Node ID Generation Rules"). Better's `value2` form is
+    // behind the `ehrbase-quirks` feature.
+    #[cfg(not(feature = "ehrbase-quirks"))]
+    #[test]
+    fn dedups_with_numeric_suffix() {
+        let mut d = Deduplicator::default();
+        assert_eq!(d.unique("root", "value"), "value");
+        assert_eq!(d.unique("root", "value"), "value_1");
+        assert_eq!(d.unique("root", "value"), "value_2");
+        // Different parent scope is independent.
+        assert_eq!(d.unique("other", "value"), "value");
+    }
+
+    /// The Better dedup form under the `ehrbase-quirks` feature (`value2`, …).
+    #[cfg(feature = "ehrbase-quirks")]
     #[test]
     fn dedups_with_numeric_suffix() {
         let mut d = Deduplicator::default();
         assert_eq!(d.unique("root", "value"), "value");
         assert_eq!(d.unique("root", "value"), "value2");
         assert_eq!(d.unique("root", "value"), "value3");
-        // Different parent scope is independent.
         assert_eq!(d.unique("other", "value"), "value");
     }
 

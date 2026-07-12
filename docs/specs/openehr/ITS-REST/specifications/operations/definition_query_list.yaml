@@ -13,6 +13,7 @@ tags:
   - Query
 parameters:
   - $ref: ../parameters/path/qualified_query_name.yaml
+  - $ref: ../parameters/header/Accept_JSON.yaml
 responses:
   '200':
     $ref: ../responses/200_QueryList.yaml

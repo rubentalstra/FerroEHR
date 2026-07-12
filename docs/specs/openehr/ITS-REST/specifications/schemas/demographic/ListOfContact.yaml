@@ -1,0 +1,4 @@
+title: ListOfContact
+type: array
+items:
+  $ref: ../demographic/Contact.yaml

@@ -170,15 +170,32 @@ impl EhrbaseService {
     /// [`physical_ehr_delete`] in its own transaction. Missing ids are skipped
     /// (idempotent bulk delete); the count of EHRs actually deleted is returned.
     ///
-    /// PORT NOTE: bulk delete has no spec (not in the SM, not in any OAS). The
-    /// idempotent skip-missing semantics + returned count are our own choice so
-    /// a partial success is observable at the REST edge.
+    /// An **empty** id list means "delete ALL EHRs":
+    /// `operations/admin_ehr_delete_all.yaml:5` — "Deletes **all or multiple**
+    /// EHRs, or a specified subset … identified using the `ehr_id` query
+    /// parameter"; `parameters/query/ehr_id_Admin.yaml` types `ehr_id` as an
+    /// **optional** subset selector, so an absent/empty list denotes the full
+    /// set. (This replaces the former delete-nothing safety posture.)
+    ///
+    /// PORT NOTE: the idempotent skip-missing semantics + returned count are our
+    /// own choice (no openEHR spec governs bulk-delete internals — the abstract
+    /// `i_admin_service.adoc` has no bulk call) so a partial success is
+    /// observable at the REST edge.
     pub(super) async fn physical_ehr_delete_all(
         &self,
         ehr_ids: &[Uuid],
     ) -> Result<u64, ServiceError> {
+        // An empty selector = the full EHR set (see doc above); a non-empty
+        // selector deletes exactly the named EHRs.
+        let targets: Vec<Uuid> = if ehr_ids.is_empty() {
+            sqlx::query_scalar("SELECT id FROM ehr")
+                .fetch_all(&self.pool)
+                .await?
+        } else {
+            ehr_ids.to_vec()
+        };
         let mut deleted = 0u64;
-        for &ehr_id in ehr_ids {
+        for ehr_id in targets {
             match self.physical_ehr_delete(ehr_id).await {
                 Ok(()) => deleted += 1,
                 // A missing EHR is skipped, not an error (idempotent bulk).

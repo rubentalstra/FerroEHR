@@ -4,10 +4,6 @@ allOf:
   - $ref: ../base_types/HierObjectId.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [HIER_OBJECT_ID]
 x-discriminator-value: HIER_OBJECT_ID
 example:
   _type: HIER_OBJECT_ID

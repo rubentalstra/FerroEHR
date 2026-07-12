@@ -1,0 +1,13 @@
+description: |
+  `200 OK` is returned when the requested VERSION is successfully retrieved.
+headers:
+  ETag:
+    $ref: ../headers/ETag_VERSION.yaml
+  Location:
+    $ref: ../headers/Location_deprecated.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/ehr/UVersionOfEhrStatus.yaml

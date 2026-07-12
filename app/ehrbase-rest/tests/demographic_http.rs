@@ -17,7 +17,7 @@ use tower::ServiceExt;
 use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_sm::SmError;
-use ehrbase_sm::types::{ResourceMeta, ServiceResponse};
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 
 mod common;
 use common::{Hooks, Mock};
@@ -113,6 +113,8 @@ fn relationship_body() -> Value {
 
 fn config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

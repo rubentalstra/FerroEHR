@@ -1,0 +1,33 @@
+operationId: person_create
+summary: Create PERSON
+description: |
+  Creates the first version of a new PERSON.
+
+  A list of ITEM_TAGs can be associated with the PERSON, in which case a `openehr-item-tag` or `openehr-version-item-tag` request header can be set as well. 
+  The corresponding response header(s) will return ITEM_TAGs as they were set by the server - see [item tags headers](overview.html#tag/Requests_and_responses/HTTP-headers/openehr-item-tag-and-openehr-version-item-tag) for more details.
+
+tags:
+  - PERSON
+parameters:
+  - $ref: ../parameters/header/Prefer.yaml
+  - $ref: ../parameters/header/Accept_LOCATABLE.yaml
+  - $ref: ../parameters/header/ContentType_LOCATABLE.yaml
+  - $ref: ../parameters/header/openehr-item-tag.yaml
+  - $ref: ../parameters/header/openehr-version-item-tag.yaml
+requestBody:
+  description: |
+    The PERSON.
+  content:
+    application/json:
+      schema:
+        $ref: ../schemas/demographic/Person.yaml
+  required: true
+responses:
+  '201':
+    $ref: ../responses/201_PERSON.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '422':
+    $ref: ../responses/422.yaml
+  '404':
+    $ref: ../responses/404.yaml

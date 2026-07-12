@@ -54,6 +54,8 @@ fn user(name: &str, roles: &[&str]) -> BasicUser {
 
 fn rest_config() -> RestConfig {
     RestConfig {
+        smart: Default::default(),
+        system: Default::default(),
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {

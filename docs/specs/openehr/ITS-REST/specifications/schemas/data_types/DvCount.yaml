@@ -7,8 +7,9 @@ required:
 properties:
   _type:
     type: string
-    default: DV_COUNT
+    enum: [DV_COUNT]
   magnitude:
     type: integer
+    format: int64
 x-discriminator-value: DV_COUNT
 

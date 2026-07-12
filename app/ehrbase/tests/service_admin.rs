@@ -24,16 +24,15 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::services::PartyRelationshipService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::PartyRelationshipService;
 use ehrbase_sm::{
     AdminArchive, AdminService, CallStatusType, DemographicService, EhrDirectoryService,
     EhrService, EhrStatusService, ItemTagAdapter, PartyKind, PlatformService, SmError,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -48,7 +47,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -103,6 +102,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }
@@ -344,6 +344,43 @@ async fn admin_delete_all_deletes_present_and_skips_missing() {
         ),
         "a malformed id must be BadRequest, got {res:?}"
     );
+}
+
+/// An **empty** `ehr_id` selector deletes ALL EHRs
+/// (`operations/admin_ehr_delete_all.yaml:5` — "Deletes **all** or multiple
+/// EHRs"; `parameters/query/ehr_id_Admin.yaml` — `ehr_id` is an OPTIONAL subset
+/// selector, so an absent/empty list denotes the full set). This supersedes the
+/// former delete-nothing safety posture.
+#[tokio::test]
+async fn admin_delete_all_with_empty_list_deletes_every_ehr() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("admin_delete_all_empty").await);
+
+    seed_full_ehr(&svc).await;
+    seed_full_ehr(&svc).await;
+    seed_full_ehr(&svc).await;
+
+    // Empty selector → every seeded EHR deleted.
+    let deleted = svc
+        .admin_ehr_delete_all(vec![])
+        .await
+        .expect("delete all (empty selector)");
+    assert_eq!(deleted, 3, "an empty list deletes ALL EHRs");
+
+    // Idempotent: a second empty delete now finds nothing.
+    let again = svc
+        .admin_ehr_delete_all(vec![])
+        .await
+        .expect("delete all again");
+    assert_eq!(again, 0, "no EHRs remain after the all-delete");
+
+    // A freshly seeded EHR is again the whole set for an empty selector.
+    seed_full_ehr(&svc).await;
+    let after = svc
+        .admin_ehr_delete_all(vec![])
+        .await
+        .expect("delete all after reseed");
+    assert_eq!(after, 1, "empty selector deletes the one remaining EHR");
 }
 
 // ─── SM-4: statistics / physical_party_delete / archive ───────────────────────

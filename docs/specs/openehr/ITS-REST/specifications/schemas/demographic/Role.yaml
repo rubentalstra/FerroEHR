@@ -1,0 +1,17 @@
+title: ROLE
+type: object
+allOf:
+  - $ref: ../demographic/Party.yaml
+required:
+  - performer
+properties:
+  _type:
+    type: string
+    enum: [ROLE]
+  time_validity:
+    $ref: ../data_types/DvIntervalOfDate.yaml
+  performer:
+    $ref: ../base_types/PartyRef.yaml
+  capabilities:
+    $ref: ../demographic/ListOfCapability.yaml
+x-discriminator-value: ROLE

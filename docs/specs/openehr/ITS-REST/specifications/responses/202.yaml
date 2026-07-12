@@ -1,0 +1,3 @@
+description: |
+  `202 Accepted` is returned when the requested operation has been accepted for processing, 
+  but processing has not been completed or may not have started (i.e. when requests are processed asynchronously). 

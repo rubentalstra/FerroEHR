@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: INSTRUCTION_DETAILS
+    enum: [INSTRUCTION_DETAILS]
   instruction_id:
     $ref: ../base_types/LocatableRef.yaml
   activity_id:

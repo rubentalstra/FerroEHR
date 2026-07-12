@@ -2,15 +2,15 @@ title: FOLDER
 description: A FOLDER resource
 type: object
 allOf:
-  - $ref: ../common/Locatable.yaml
+  - $ref: ../common/Versionable.yaml
 properties:
   _type:
     type: string
-    default: FOLDER
+    enum: [FOLDER]
   items:
     type: array
     items:
-      $ref: ../base_types/ObjectRef.yaml
+      $ref: ../base_types/UObjectRefOfUidBasedId.yaml
   folders:
     type: array
     items:

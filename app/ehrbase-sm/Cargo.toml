@@ -22,5 +22,8 @@ openehr-base = { path = "../../crates/openehr-base" }
 openehr-rm = { path = "../../crates/openehr-rm" }
 openehr-flat = { path = "../../crates/openehr-flat" }
 
+[dev-dependencies]
+serde_norway.workspace = true
+
 [lints]
 workspace = true

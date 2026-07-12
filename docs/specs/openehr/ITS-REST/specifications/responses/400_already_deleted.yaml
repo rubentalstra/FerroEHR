@@ -1,2 +1,2 @@
 description: |
-  `400 Bad Request` is returned when the request URL could not be parsed (i.e. invalid format of request parameters) or when the resource identified by the request parameters is already deleted.
+  `400 Bad Request` is returned when the request could not be parsed or is invalid (e.g. malformed request URL syntax, missing required header or parameter, or syntactically invalid header, parameter or content) or when the resource identified by the request parameters is already deleted.

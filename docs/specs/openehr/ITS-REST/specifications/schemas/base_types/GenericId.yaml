@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: GENERIC_ID
+    enum: [GENERIC_ID]
   scheme:
     type: string
 x-discriminator-value: GENERIC_ID

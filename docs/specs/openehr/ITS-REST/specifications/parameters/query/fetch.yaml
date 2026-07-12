@@ -5,5 +5,5 @@ description: |
 style: form
 explode: true
 schema:
-  $ref: ../../schemas/query/Fetch.yaml
-
+  type: integer
+  example: 10

@@ -17,7 +17,7 @@ Below is a mostly self-documented AQL query in a request body.
 Requests based on the `GET` method have URI length restriction, or some characters might not be allowed and have to be encoded.
 Long queries in the `q` parameter and having a long list of `query_parameters` may add up to reach that limit, thus we recommend clients using the `POST` method instead of `GET`.
 
-# Common Headers and Query Parameters 
+## Common Headers and Query Parameters 
 
 All query execution requests SHOULD support at least the following parameters:
 - `ehr_id` - used to execute the query within a single EHR context: an EHR identifier taken from EHR.ehr_id.value
@@ -26,20 +26,20 @@ All query execution requests SHOULD support at least the following parameters:
 - other parameter(s) to replace placeholder(s) within the query, here generically named `query_parameters` (see [below](#tag/Request/Common-Headers-and-Query-Parameters/Query-parameters)).
 
 Related request headers:
-- `openEHR-EHR-id` - used to execute the query within a single EHR context: an EHR identifier taken from EHR.ehr_id.value
+- `openehr-ehr-id` - used to execute the query within a single EHR context: an EHR identifier taken from EHR.ehr_id.value
 
 Related response headers:
 - `ETag` - A unique identifier of the resultSet
 
 
-## About the ehr_id parameter
+### About the ehr_id parameter
 
 The `ehr_id` parameter SHOULD be supplied by clients when executing single EHR queries and MAY be used by the underlying backend to perform routing, optimizations or similar. It MUST NOT be supplied for 'population queries' and similar multi-patient queries.
 
-Depending on the needs, clients MAY supply it as a query parameter `ehr_id` or alternatively as a request header named `openEHR-EHR-id`.
+Depending on the needs, clients MAY supply it as a query parameter `ehr_id` or alternatively as a request header named `openehr-ehr-id`.
 
 
-## Query parameters
+### Query parameters
 
 Depending on each query definition, various query parameters SHOULD be supported, generically named `query_parameters`
 in this specification, but in the real request they will have specific names (e.g. `uid`, `systolic_bp`, etc.)

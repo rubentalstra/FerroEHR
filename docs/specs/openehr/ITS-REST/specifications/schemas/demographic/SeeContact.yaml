@@ -1,0 +1,5 @@
+title: CONTACT
+type: array
+items:
+  type: object
+description: See [CONTACT](demographic.html#tag/CONTACT_schema) schema details.

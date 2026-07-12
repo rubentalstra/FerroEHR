@@ -1,0 +1,29 @@
+operationId: ehr_tags_get
+summary: Get EHR tags
+description: |
+  Retrieves the list of ITEM_TAG resources associated with any target VERSION or 
+  VERSIONED_OBJECT within the EHR identified by `ehr_id`. 
+  
+  This list can be filtered by the given one or more `tag_key`, `tag_value`, `tag_target_path` query parameters. 
+  In case no such parameter is provided then all ITEM_TAG resources will be retrieved.
+  
+  This will return an empty list when there is no matching ITEM_TAG associated with any target within given EHR.
+    
+  More than one ITEM_TAG may be associated with a single target, in which case they are uniquely identified 
+  by their `key` and `target_path` pair attributes.
+
+tags:
+  - ITEM_TAG
+parameters:
+  - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/query/tag_key.yaml
+  - $ref: ../parameters/query/tag_value.yaml
+  - $ref: ../parameters/query/tag_target_path.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+responses:
+  '200':
+    $ref: ../responses/200_COMPOSITION_ItemTagList_retrieved.yaml
+  '400':
+    $ref: ../responses/400.yaml
+  '404':
+    $ref: ../responses/404_unknown_ehr_id.yaml

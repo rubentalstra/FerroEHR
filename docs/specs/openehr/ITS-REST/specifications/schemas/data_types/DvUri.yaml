@@ -11,8 +11,6 @@ properties:
   value:
     type: string
 x-discriminator-value: DV_URI
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    DV_URI: '#/components/schemas/DvUri'
-    DV_EHR_URI: '#/components/schemas/DvEhrUri'
+example:
+  _type: DV_URI
+  value: 'https://www.example.com'

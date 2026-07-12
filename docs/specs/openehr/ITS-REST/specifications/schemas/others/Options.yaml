@@ -17,11 +17,13 @@ properties:
       type: string
 example:
   solution: openEHRSys
-  solution_version: v0.9
+  solution_version: v1.0
   vendor: My-openEHR
-  restapi_specs_version: v1.0.3
+  restapi_specs_version: 1.1.0
   conformance_profile: STANDARD
   endpoints:
     - /ehr
+    - /demographic
     - /definition
     - /query
+    - /admin

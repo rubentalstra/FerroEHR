@@ -5,5 +5,5 @@ allOf:
 properties:
   _type:
     type: string
-    default: TEMPLATE_ID
+    enum: [TEMPLATE_ID]
 x-discriminator-value: TEMPLATE_ID

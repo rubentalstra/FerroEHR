@@ -7,10 +7,3 @@ properties:
     $ref: ../data_structures/UItemStructure.yaml
   guideline_id:
     $ref: ../base_types/ObjectRef.yaml
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    OBSERVATION: '#/components/schemas/Observation'
-    EVALUATION: '#/components/schemas/Evaluation'
-    INSTRUCTION: '#/components/schemas/Instruction'
-    ACTION: '#/components/schemas/Action'

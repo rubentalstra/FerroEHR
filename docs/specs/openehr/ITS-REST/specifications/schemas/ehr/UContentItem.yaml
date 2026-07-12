@@ -1,5 +1,7 @@
 title: CONTENT_ITEM
+type: object
 oneOf:
+  - $ref: ../ehr/UMSection.yaml
   - $ref: ../ehr/UMAdminEntry.yaml
   - $ref: ../ehr/UMObservation.yaml
   - $ref: ../ehr/UMEvaluation.yaml
@@ -8,6 +10,7 @@ oneOf:
 discriminator:
   propertyName: _type
   mapping:
+    SECTION: ../ehr/UMSection.yaml
     ADMIN_ENTRY: ../ehr/UMAdminEntry.yaml
     OBSERVATION: ../ehr/UMObservation.yaml
     EVALUATION: ../ehr/UMEvaluation.yaml

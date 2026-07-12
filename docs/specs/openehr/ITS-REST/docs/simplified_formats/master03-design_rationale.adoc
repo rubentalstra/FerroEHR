@@ -1,0 +1,567 @@
+= Design Rationale
+
+== Background
+
+The information models of openEHR are structured in multiple layers, with the primary distinction being between an information model layer (the 'Reference Model' or RM), and domain-level models expressed in archetypes and templates, that latter of which expresses particular data sets. Each such data set is defined in terms of an {openehr_am_opt2}[openEHR Operational Template (OPT)^], derived from a source template, and ultimately particular archetypes, which are themselves constraint models based on the RM, i.e. the 'canonical model'.
+
+The openEHR RM and supporting models (BASE component) are designed with two computational goals in mind:
+
+1. **Self-standing data instances**: Healthcare data instances are fully defined and self-standing when shared with a data partner that does not use openEHR. All necessary context, structure, and semantics are embedded within the data itself.
+2. **Regular, predictable software behaviour**: Software that implements the model works in regular, expected ways across all use cases. For example, the structure of the openEHR `OBSERVATION`, `HISTORY`, and `EVENT` classes will generically represent any observation, from a single weight measurement to 100,000 samples of complex vital signs data.
+
+The model is accordingly rigorous and comprehensive, ensuring that:
+
+* All clinical contexts are properly captured
+* Data can be queried consistently
+* Information models remain stable over time
+* Systems can validate data against formal definitions
+
+
+== Canonical Format
+
+In the context of openEHR serialization, **"canonical"** means any fully expressed instance data in which:
+
+* the containment structure follows that of the RM;
+* all RM mandatory fields are present;
+* all attributes are named as per the RM, and
+* all cardinalities respect the RM.
+
+The default serialised data representations for openEHR content are canonical XML, based on the {openehr_its_xml_releases}[openEHR RM XSDs^], canonical JSON, described by the {openehr_its_json_releases}[openEHR JSON schemas^], and potentially any other canonical serial format based on the underlying Reference Model (e.g. YAML).
+
+The canonical formats are routinely used by all openEHR implementations implementing the {openehr_ehr_rest_api}[openEHR REST API specification^], and in other ways (e.g., for database dump/load implementation, ETL operations, system integration, etc.).
+
+=== Canonical JSON Example
+
+The following example shows a simple body temperature observation in canonical openEHR JSON format:
+
+[source,json]
+----
+{
+  "_type": "COMPOSITION",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "Blood_Pressure_Demo.v0"
+  },
+  "archetype_details": {
+    "archetype_id": {
+      "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+    },
+    "template_id": {
+      "value": "Blood_Pressure_Demo.v0"
+    },
+    "rm_version": "1.0.4"
+  },
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_639-1"
+    },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": {
+      "_type": "TERMINOLOGY_ID",
+      "value": "ISO_3166-1"
+    },
+    "code_string": "DE"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "event",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "openehr"
+      },
+      "code_string": "433"
+    }
+  },
+  "composer": {
+    "_type": "PARTY_IDENTIFIED",
+    "name": "Max Mustermann"
+  },
+  "context": {
+    "_type": "EVENT_CONTEXT",
+    "start_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2022-02-03T04:05:06"
+    },
+    "end_time": {
+      "_type": "DV_DATE_TIME",
+      "value": "2022-02-03T04:25:41"
+    },
+    "setting": {
+      "_type": "DV_CODED_TEXT",
+      "value": "home",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": {
+          "_type": "TERMINOLOGY_ID",
+          "value": "openehr"
+        },
+        "code_string": "225"
+      }
+    }
+  },
+  "content": [ {
+    "_type": "OBSERVATION",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "Blood pressure"
+    },
+    "archetype_details": {
+      "archetype_id": {
+        "value": "openEHR-EHR-OBSERVATION.blood_pressure.v2"
+      },
+      "rm_version": "1.0.4"
+    },
+    "language": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "ISO_639-1"
+      },
+      "code_string": "en"
+    },
+    "encoding": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": {
+        "_type": "TERMINOLOGY_ID",
+        "value": "IANA_character-sets"
+      },
+      "code_string": "UTF-8"
+    },
+    "subject": {
+      "_type": "PARTY_SELF"
+    },
+    "protocol": {
+      "_type": "ITEM_TREE",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "Tree"
+      },
+      "items": [ {
+        "_type": "ELEMENT",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Method"
+        },
+        "value": {
+          "_type": "DV_CODED_TEXT",
+          "value": "Auscultation",
+          "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": {
+              "_type": "TERMINOLOGY_ID",
+              "value": "local"
+            },
+            "code_string": "at1036"
+          }
+        },
+        "archetype_node_id": "at1035"
+      } ],
+      "archetype_node_id": "at0011"
+    },
+    "data": {
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "History"
+      },
+      "origin": {
+        "_type": "DV_DATE_TIME",
+        "value": "2022-02-03T04:05:06"
+      },
+      "events": [ {
+        "_type": "POINT_EVENT",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Any event"
+        },
+        "time": {
+          "_type": "DV_DATE_TIME",
+          "value": "2022-02-03T04:05:06"
+        },
+        "state": {
+          "_type": "ITEM_TREE",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "state structure"
+          },
+          "items": [ {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Position"
+            },
+            "value": {
+              "_type": "DV_CODED_TEXT",
+              "value": "Standing",
+              "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                  "_type": "TERMINOLOGY_ID",
+                  "value": "local"
+                },
+                "code_string": "at1000"
+              }
+            },
+            "archetype_node_id": "at0008"
+          } ],
+          "archetype_node_id": "at0007"
+        },
+        "data": {
+          "_type": "ITEM_TREE",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "blood pressure"
+          },
+          "items": [ {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Systolic"
+            },
+            "value": {
+              "_type": "DV_QUANTITY",
+              "units": "mm[Hg]",
+              "magnitude": 154.0
+            },
+            "archetype_node_id": "at0004"
+          }, {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Diastolic"
+            },
+            "value": {
+              "_type": "DV_QUANTITY",
+              "units": "mm[Hg]",
+              "magnitude": 98.0
+            },
+            "archetype_node_id": "at0005"
+          }, {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Clinical interpretation"
+            },
+            "value": {
+              "_type": "DV_TEXT",
+              "value": "Stage 2 Hypertension: Blood pressure is significantly elevated with systolic pressure of 154 mmHg and diastolic pressure of 98 mmHg, indicating stage 2 hypertension according to current guidelines."
+            },
+            "archetype_node_id": "at1059"
+          } ],
+          "archetype_node_id": "at0003"
+        },
+        "archetype_node_id": "at0006"
+      }, {
+        "_type": "POINT_EVENT",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "Any event"
+        },
+        "time": {
+          "_type": "DV_DATE_TIME",
+          "value": "2022-02-03T04:25:41"
+        },
+        "state": {
+          "_type": "ITEM_TREE",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "state structure"
+          },
+          "items": [ {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Position"
+            },
+            "value": {
+              "_type": "DV_CODED_TEXT",
+              "value": "Standing",
+              "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {
+                  "_type": "TERMINOLOGY_ID",
+                  "value": "local"
+                },
+                "code_string": "at1000"
+              }
+            },
+            "archetype_node_id": "at0008"
+          } ],
+          "archetype_node_id": "at0007"
+        },
+        "data": {
+          "_type": "ITEM_TREE",
+          "name": {
+            "_type": "DV_TEXT",
+            "value": "blood pressure"
+          },
+          "items": [ {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Systolic"
+            },
+            "value": {
+              "_type": "DV_QUANTITY",
+              "units": "mm[Hg]",
+              "magnitude": 144.0
+            },
+            "archetype_node_id": "at0004"
+          }, {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Diastolic"
+            },
+            "value": {
+              "_type": "DV_QUANTITY",
+              "units": "mm[Hg]",
+              "magnitude": 80.0
+            },
+            "archetype_node_id": "at0005"
+          }, {
+            "_type": "ELEMENT",
+            "name": {
+              "_type": "DV_TEXT",
+              "value": "Clinical interpretation"
+            },
+            "value": {
+              "_type": "DV_TEXT",
+              "value": "Stage 2 Hypertension: Blood pressure remains elevated with systolic pressure of 144 mmHg. Diastolic pressure has improved to 80 mmHg, but systolic pressure still indicates stage 2 hypertension."
+            },
+            "archetype_node_id": "at1059"
+          } ],
+          "archetype_node_id": "at0003"
+        },
+        "archetype_node_id": "at0006"
+      } ],
+      "archetype_node_id": "at0001"
+    },
+    "archetype_node_id": "openEHR-EHR-OBSERVATION.blood_pressure.v2"
+  } ],
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+  "uid": {
+    "_type": "OBJECT_VERSION_ID",
+    "value": "8073f453-8095-44e6-8077-798609b32a2f::local.ehrbase.org::1"
+  }
+}
+----
+
+
+=== The Challenge
+
+While canonical formats ensure data integrity and semantic interoperability, they present significant challenges:
+
+1. __Steep learning curve__: Developers must understand the full openEHR Reference Model hierarchy, including classes like `HISTORY`, `ITEM_TREE`, `EVENT_CONTEXT`, etc.
+2. __Verbose structures__: Even simple data requires extensive JSON/XML structure with many nested objects and mandatory fields.
+3. __Type specifications__: Every object requires `_type` declarations, which adds to verbosity.
+4. __Boilerplate repetition__: Many fields (like `name`, `language`, `encoding`) must be repeated throughout the structure even when they don't vary.
+
+These challenges are particularly acute for developers working on:
+
+* __Form-based applications__: Where templates define a fixed structure
+* __Limited use cases__: Applications targeting specific clinical scenarios (vital signs, lab results, medication lists)
+* __Integration projects__: Where external systems need to submit data to openEHR repositories
+
+The starting point for defining a developer-friendly format is to recognise that the great majority of applications are typically targeted to one or a few specific data sets (e.g. vital signs monitoring, diabetic care management, pregnancy care plans). These applications don't need the full generality of the canonical format for every transaction.
+
+
+== Historical Formats
+
+Creating canonical data instances is not always straightforward, and various alternatives have been used in the past to simplify the job of content creation and committal for application developers. Template-specificity provides a route to simplification: each openEHR template can be used to define one or more reasonably simple commit formats.
+
+The <<tds,Template Data Schema (TDS)>> format was originally devised by Ocean Health Systems as an XSD-based format. An XSLT script transformed `.oet` template source files and archetypes into a single XML Schema (XSD) for any given template. The transformation flattened various RM structures to make them simpler to understand and also converted archetype node codes (at-codes of Object nodes) to XSD tag names, e.g. 'serum_sodium'. This enabled developers to easily identify the XML Element for each data item they needed to populate to create a TDS instance document, known as a Template Data Document (TDD).
+
+The <<ecisflat,ECISFLAT>> format was developed for the EtherCIS project as a JSON-based alternative. It uses AQL-style paths based on natural language-independent codes (like `at0001`) and, apart from simplification of `DV_XXX` and `PARTY_PROXY` types, largely retains the openEHR RM structure.
+
+The <<better-web-template,Web Template (WT)>> serialisation format was developed by Better (formerly Marand). It represents a more radical simplification of the openEHR RM and BASE models, using programmer-friendly, natural language-based paths. The serialisation format was originally based on the TDS, with a concrete expression in JSON and using paths, rather than sparse XML.
+
+EHRbase adopted and extended WT serialisation as <<ehrbase-sdt,Simplified Data Template (SDT)>> format.
+
+
+== Simplified JSON Formats
+
+These Simplified Formats represent a more radical simplification of the openEHR RM and BASE models, using programmer-friendly, natural language-based paths. The approach was originally based on TDS concepts but with:
+
+* Concrete expression in JSON
+* Human-readable path elements (e.g., `body_temperature`, `serum_sodium`)
+* Two variants: **Flat** and **Structured**
+
+Key innovations:
+
+* Node IDs generated from human-readable names in any language
+* Separation of context data (`ctx/` prefix)
+* Elimination of intermediate RM structures (`ITEM_TREE`, `HISTORY`, etc.)
+* Direct element-to-value mapping
+* Optional RM attributes with an underscore prefix
+
+Advantages:
+
+* Highly readable, language-agnostic paths
+* Minimal learning curve for developers
+* Suitable for form-based applications
+* Both flat and hierarchical representations are available
+
+The format with its two variants is the basis for the current specification.
+
+=== Flat format
+
+The Flat format represents data in a flattened key-value structure where paths are used as keys, making it particularly suitable for form-based data entry and simple data structures.
+All nested objects are flattened into a single level using path separators.
+
+[source, json]
+--------
+{
+  "blood_pressure_demo.v0/category|value": "event",
+  "blood_pressure_demo.v0/category|code": "433",
+  "blood_pressure_demo.v0/category|terminology": "openehr",
+  "blood_pressure_demo.v0/context/start_time": "2022-02-03T04:05:06",
+  "blood_pressure_demo.v0/context/setting|terminology": "openehr",
+  "blood_pressure_demo.v0/context/setting|code": "225",
+  "blood_pressure_demo.v0/context/setting|value": "home",
+  "blood_pressure_demo.v0/context/_end_time": "2022-02-03T04:25:41",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/systolic|unit": "mm[Hg]",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/systolic|magnitude": 154.0,
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/diastolic|unit": "mm[Hg]",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/diastolic|magnitude": 98.0,
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/clinical_interpretation": "Stage 2 Hypertension: Blood pressure is significantly elevated with systolic pressure of 154 mmHg and diastolic pressure of 98 mmHg, indicating stage 2 hypertension according to current guidelines.",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/position|terminology": "local",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/position|value": "Standing",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/position|code": "at1000",
+  "blood_pressure_demo.v0/blood_pressure/any_event:0/time": "2022-02-03T04:05:06",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/systolic|unit": "mm[Hg]",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/systolic|magnitude": 144.0,
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/diastolic|magnitude": 80.0,
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/diastolic|unit": "mm[Hg]",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/clinical_interpretation": "Stage 2 Hypertension: Blood pressure remains elevated with systolic pressure of 144 mmHg. Diastolic pressure has improved to 80 mmHg, but systolic pressure still indicates stage 2 hypertension.",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/position|code": "at1000",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/position|terminology": "local",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/position|value": "Standing",
+  "blood_pressure_demo.v0/blood_pressure/any_event:1/time": "2022-02-03T04:25:41",
+  "blood_pressure_demo.v0/blood_pressure/method|code": "at1036",
+  "blood_pressure_demo.v0/blood_pressure/method|value": "Auscultation",
+  "blood_pressure_demo.v0/blood_pressure/method|terminology": "local",
+  "blood_pressure_demo.v0/blood_pressure/language|code": "en",
+  "blood_pressure_demo.v0/blood_pressure/language|terminology": "ISO_639-1",
+  "blood_pressure_demo.v0/blood_pressure/encoding|terminology": "IANA_character-sets",
+  "blood_pressure_demo.v0/blood_pressure/encoding|code": "UTF-8",
+  "blood_pressure_demo.v0/language|terminology": "ISO_639-1",
+  "blood_pressure_demo.v0/language|code": "en",
+  "blood_pressure_demo.v0/territory|terminology": "ISO_3166-1",
+  "blood_pressure_demo.v0/territory|code": "DE",
+  "blood_pressure_demo.v0/composer|name": "Max Mustermann",
+  "blood_pressure_demo.v0/_uid": "8073f453-8095-44e6-8077-798609b32a2f::local.ehrbase.org::1"
+}
+--------
+
+=== Structured format
+
+Another variant for this simplification is the Structured format, with the difference that data is represented in JSON structures based on paths from the associated Web Template, rather than flattening them as a key-value list.
+An example is shown below.
+
+[source, json]
+--------
+{
+  "blood_pressure_demo.v0": {
+    "category": [ {
+      "|value": "event",
+      "|code": "433",
+      "|terminology": "openehr"
+    } ],
+    "context": [ {
+      "start_time": [ "2022-02-03T04:05:06" ],
+      "setting": [ {
+        "|terminology": "openehr",
+        "|code": "225",
+        "|value": "home"
+      } ],
+      "_end_time": [ "2022-02-03T04:25:41" ]
+    } ],
+    "blood_pressure": [ {
+      "any_event": [ {
+        "systolic": [ {
+          "|unit": "mm[Hg]",
+          "|magnitude": 154.0
+        } ],
+        "diastolic": [ {
+          "|unit": "mm[Hg]",
+          "|magnitude": 98.0
+        } ],
+        "clinical_interpretation": [ "Stage 2 Hypertension: Blood pressure is significantly elevated with systolic pressure of 154 mmHg and diastolic pressure of 98 mmHg, indicating stage 2 hypertension according to current guidelines." ],
+        "position": [ {
+          "|terminology": "local",
+          "|value": "Standing",
+          "|code": "at1000"
+        } ],
+        "time": [ "2022-02-03T04:05:06" ]
+      }, {
+        "systolic": [ {
+          "|unit": "mm[Hg]",
+          "|magnitude": 144.0
+        } ],
+        "diastolic": [ {
+          "|magnitude": 80.0,
+          "|unit": "mm[Hg]"
+        } ],
+        "clinical_interpretation": [ "Stage 2 Hypertension: Blood pressure remains elevated with systolic pressure of 144 mmHg. Diastolic pressure has improved to 80 mmHg, but systolic pressure still indicates stage 2 hypertension." ],
+        "position": [ {
+          "|code": "at1000",
+          "|terminology": "local",
+          "|value": "Standing"
+        } ],
+        "time": [ "2022-02-03T04:25:41" ]
+      } ],
+      "method": [ {
+        "|code": "at1036",
+        "|value": "Auscultation",
+        "|terminology": "local"
+      } ],
+      "language": [ {
+        "|code": "en",
+        "|terminology": "ISO_639-1"
+      } ],
+      "encoding": [ {
+        "|terminology": "IANA_character-sets",
+        "|code": "UTF-8"
+      } ]
+    } ],
+    "language": [ {
+      "|terminology": "ISO_639-1",
+      "|code": "en"
+    } ],
+    "territory": [ {
+      "|terminology": "ISO_3166-1",
+      "|code": "DE"
+    } ],
+    "composer": [ {
+      "|name": "Max Mustermann"
+    } ],
+    "_uid": [ "8073f453-8095-44e6-8077-798609b32a2f::local.ehrbase.org::1" ]
+  }
+}
+--------
+
+
+=== Requirements
+
+To make any simplified format viable, the following requirements must be met:
+
+1. **Abstraction capability**: The format makes it possible to abstract away rigorous structural complexity of the canonical model where appropriate, mainly by making the data less self-standing and relying more on a schema (the template).
+
+2. **Machine generability**: The format definition for any given commit data can be completely and routinely machine-generated from its canonical definition (i.e. from an openEHR Operational Template).
+
+3. **Bidirectional conversion**: Data instances of the simplified format can be routinely machine-converted to canonical format at execution time, and vice versa, but requires information from the underlying Operational Template.
+
+4. **Template specificity**: Field identifiers and structure are derived from and validated against a specific operational template.
+
+5. **Preservation of semantics**: Despite simplification, all clinical semantics from the original archetype and template constraints are preserved.
+
+These requirements ensure that the simplified format serves as a practical interface layer while maintaining the full rigour of openEHR at the persistence and interoperability layers.
+
+NOTE: Developers using the simplified formats in example-based use cases do not need to understand the detailed conversion algorithms. Platforms based on openEHR typically provide services that generate example instances from templates and handle conversion transparently. The conversion details are primarily relevant for developers creating and maintaining openEHR platforms or dealing with complex integration scenarios.

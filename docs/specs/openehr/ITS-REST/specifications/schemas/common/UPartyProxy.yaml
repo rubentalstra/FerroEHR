@@ -1,4 +1,5 @@
 title: PARTY_PROXY
+type: object
 oneOf:
   - $ref: ../common/UMPartySelf.yaml
   - $ref: ../common/UMPartyIdentified.yaml

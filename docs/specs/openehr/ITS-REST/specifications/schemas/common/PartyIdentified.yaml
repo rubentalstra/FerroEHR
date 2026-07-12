@@ -13,11 +13,6 @@ properties:
     items:
       $ref: ../data_types/DvIdentifier.yaml
 x-discriminator-value: PARTY_IDENTIFIED
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    PARTY_IDENTIFIED: '#/components/schemas/PartyIdentified'
-    PARTY_RELATED: '#/components/schemas/PartyRelated'
 example:
   _type: PARTY_IDENTIFIED
   external_ref:

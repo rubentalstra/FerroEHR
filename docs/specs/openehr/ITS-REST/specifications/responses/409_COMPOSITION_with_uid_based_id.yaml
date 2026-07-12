@@ -1,8 +1,8 @@
 description: |
   `409 Conflict` is returned when supplied `uid_based_id` doesn't match the latest version.
-  Returns also latest version in the `Location` and `ETag` headers.
+  Returns also latest `version_uid` in the `ETag` header.
 headers:
   ETag:
     $ref: ../headers/ETag_COMPOSITION.yaml
   Location:
-    $ref: ../headers/Location_COMPOSITION.yaml
+    $ref: ../headers/Location_deprecated.yaml

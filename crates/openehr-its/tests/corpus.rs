@@ -2,11 +2,11 @@
 //! Sanity + wiring for the vendored ITS material: the EHRbase canonical-JSON
 //! corpus (`tests/vendor/`) and the ITS-JSON schema (`schemas/`).
 //!
-//! `// TODO(port):` the full interop fidelity gate — deserialize each corpus
-//! file into the generated `openehr-rm` types, re-serialize, assert normalized
-//! value-equality, and validate against the ITS-JSON schema — is a focused
-//! follow-up (needs per-file top-type dispatch and RM 1.1↔1.2 reconciliation,
-//! since the corpus is RM 1.1.0-era and the generated types are RM 1.2.0).
+//! The full interop fidelity gates live in their own suites: `fidelity.rs`
+//! (corpus → generated `openehr-rm` types → re-serialize → normalized
+//! value-equality + ITS-JSON schema validation, with documented exclusions)
+//! and `xml_roundtrip.rs`/`xml_c14n.rs` (the canonical-XML side). This file
+//! only sanity-checks the vendored material itself.
 
 use std::fs;
 use std::path::Path;

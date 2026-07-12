@@ -29,7 +29,7 @@ use testcontainers_modules::rabbitmq::RabbitMq;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::events::{EventsConfig, start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{EhrCompositionService, EhrService, EventSubscriptionAdapter};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
@@ -83,6 +83,7 @@ fn uv(data: Value, change_code: &str) -> UpdateVersion {
                 json!({ "_type": "PARTY_IDENTIFIED", "name": "event tester" }),
             )
             .expect("committer"),
+            system_id: None,
         },
         signature: None,
     }

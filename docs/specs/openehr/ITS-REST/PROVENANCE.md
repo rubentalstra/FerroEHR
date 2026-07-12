@@ -1,8 +1,8 @@
 # Vendored openEHR spec docs: ITS-REST
 
 - Source: https://github.com/openEHR/specifications-ITS-REST
-- Ref: Release-1.0.3
-- Commit: `4aec22de9cdbd5427862f08013e8dce536a291cc`
+- Ref: development (matches the vendored OAS identity)
+- Commit: `e8a093e9d6da2ae68d7cfc29cf260a7edb065f47`
 - Vendored by: `scripts/vendor-spec-docs.sh` (text formats only: adoc md txt csv json yaml yml robot xml opt)
 - Images/UML/XSD/binaries excluded — fetch from the repo at the pinned commit.
 

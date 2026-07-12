@@ -1,0 +1,7 @@
+description: |
+  `204 No Content` is returned for a successful delete operation.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+  Location:
+    $ref: ../headers/Location_deprecated.yaml

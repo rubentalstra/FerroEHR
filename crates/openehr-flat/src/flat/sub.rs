@@ -58,10 +58,21 @@ impl<'a> FlatView<'a> {
     }
 
     /// The value for `|suffix`, if present.
+    ///
+    /// A datum part reaches a leaf-relative view either as an explicit `|suffix`
+    /// (empty path, `Some(name)`) or — when the caller addresses it by its bare
+    /// leaf token with no remaining path — as a single index-less path segment
+    /// (`segs == [name]`, no suffix). Both forms name the same datum part; the
+    /// only single-segment entries a real leaf view also carries are the
+    /// `_`-prefixed RM-attribute entries, which no leaf mapper queries by name.
     pub(crate) fn suffix(&self, name: &str) -> Option<&Value> {
         self.entries
             .iter()
-            .find(|e| e.suffix.as_deref() == Some(name) && e.segs.is_empty())
+            .find(|e| {
+                (e.suffix.as_deref() == Some(name) && e.segs.is_empty())
+                    || (e.suffix.is_none()
+                        && matches!(e.segs.as_slice(), [seg] if seg.id == name && seg.index.is_none()))
+            })
             .map(|e| &e.value)
     }
 

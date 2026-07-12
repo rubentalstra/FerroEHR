@@ -1,0 +1,15 @@
+operationId: versioned_party_get
+summary: Get VERSIONED_PARTY
+description: |
+  Retrieves a VERSIONED_PARTY identified by `versioned_object_uid`.
+tags:
+  - VERSIONED_PARTY
+parameters:
+  - $ref: ../parameters/path/versioned_object_uid_PARTY.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
+  - $ref: ../parameters/header/ContentType_canonical.yaml
+responses:
+  '200':
+    $ref: ../responses/200_VERSIONED_PARTY.yaml
+  '404':
+    $ref: ../responses/404.yaml

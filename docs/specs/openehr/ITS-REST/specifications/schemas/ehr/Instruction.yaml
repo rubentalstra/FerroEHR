@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: INSTRUCTION
+    enum: [INSTRUCTION]
   narrative:
     $ref: ../data_types/UDvText.yaml
   expiry_time:

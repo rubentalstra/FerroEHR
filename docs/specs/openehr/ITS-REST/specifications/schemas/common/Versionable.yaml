@@ -3,8 +3,3 @@ description: A Versionable resource
 type: object
 allOf:
   - $ref: ../common/Locatable.yaml
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    COMPOSITION: '#/components/schemas/Composition'
-    EHR_STATUS: '#/components/schemas/EhrStatus'

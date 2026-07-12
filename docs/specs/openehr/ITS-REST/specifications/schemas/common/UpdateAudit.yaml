@@ -1,6 +1,14 @@
 title: UPDATE_AUDIT
 type: object
-description: The set of attributes required to document the committal of an information item to a repository. Used by the server to create an AUDIT_DETAILS object.
+description: |
+  The set of attributes required to document the committal of an information item to a repository.
+
+  `UPDATE_AUDIT` is a REST commit DTO, not an RM class: structurally an `AUDIT_DETAILS` without the
+  server-assigned attributes (`time_committed` is always set by the server; `system_id` is optional on
+  commit). The server uses it to create the persisted `AUDIT_DETAILS` object.
+
+  Clients SHOULD send `_type: "UPDATE_AUDIT"`. For interoperability with existing implementations,
+  servers SHOULD additionally accept `_type: "AUDIT_DETAILS"` or an omitted `_type` for this attribute.
 required:
   - change_type
   - committer
@@ -8,23 +16,25 @@ properties:
   _type:
     type: string
     default: UPDATE_AUDIT
+  system_id:
+    type: string
+    description: |
+      Optional identifier of the system where the change was committed. When provided it will be
+      validated; when omitted the server sets its own value.
   change_type:
-    $ref: ../base_types/TerminologyCode.yaml
+    $ref: ../data_types/DvCodedText.yaml
   description:
     $ref: ../data_types/UDvText.yaml
   committer:
     $ref: ../common/UPartyProxy.yaml
 x-discriminator-value: UPDATE_AUDIT
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    UPDATE_AUDIT: '#/components/schemas/UpdateAudit'
-    UPDATE_ATTESTATION: '#/components/schemas/UpdateAttestation'
 example:
+  _type: UPDATE_AUDIT
   change_type:
     value: creation
     defining_code:
-      terminology_id: openehr
+      terminology_id:
+        value: openehr
       code_string: '249'
   description: Description text
   committer:

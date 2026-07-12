@@ -1,4 +1,5 @@
 title: ITEM_STRUCTURE
+type: object
 oneOf:
   - $ref: ../data_structures/ItemSingle.yaml
   - $ref: ../data_structures/ItemList.yaml

@@ -1,0 +1,12 @@
+title: Versionable
+type: object
+oneOf:
+  - $ref: ../ehr/UMComposition.yaml
+  - $ref: ../ehr/UMEhrStatus.yaml
+  - $ref: ../ehr/UMFolder.yaml
+discriminator:
+  propertyName: _type
+  mapping:
+    COMPOSITION: ../ehr/UMComposition.yaml
+    EHR_STATUS: ../ehr/UMEhrStatus.yaml
+    FOLDER: ../ehr/UMFolder.yaml

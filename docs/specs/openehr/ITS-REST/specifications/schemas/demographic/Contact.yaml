@@ -1,0 +1,16 @@
+title: CONTACT
+type: object
+allOf:
+  - $ref: ../common/Locatable.yaml
+required:
+  - addresses
+properties:
+  _type:
+    type: string
+    enum: [CONTACT]
+  addresses:
+    type: array
+    items:
+      $ref: ../demographic/Address.yaml
+  time_validity:
+    $ref: ../data_types/DvIntervalOfDate.yaml

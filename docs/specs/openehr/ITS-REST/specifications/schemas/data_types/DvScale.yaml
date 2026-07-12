@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_SCALE
+    enum: [DV_SCALE]
   symbol:
     $ref: ../data_types/DvCodedText.yaml
   value:

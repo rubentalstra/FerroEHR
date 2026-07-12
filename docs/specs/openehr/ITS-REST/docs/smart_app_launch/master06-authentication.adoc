@@ -1,0 +1,64 @@
+= Authentication
+
+In line with the SMART framework, authentication is typically an integral part of the OAuth 2.0 authorization process.
+For verifying end-user identity, an external identity provider is expected, typically using {oidc_authentication}[OpenID Connect (OIDC)^].
+While OIDC is the recommended approach, the exact mechanisms of identity verification are considered implementation-specific and fall outside the scope of this specification.
+
+== Supported Authentication Flows
+
+Client _Applications_ may authenticate with the _Platform_ using one of the following OAuth2-compatible flows.
+The choice of flow depends on the <<_application_types,client application type>> (public vs. confidential) and the desired security posture.
+
+* {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] with {ietf_html}/rfc7636[Proof Key for Code Exchange (PKCE)^]:
+Recommended for public clients (e.g., browser or mobile apps) as it does not require a client secret and mitigates interception risks.
+
+* {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] with `client_secret`:
+Suitable for confidential clients, such as backend web applications capable of securely storing secrets.
+
+* {ietf_html}/rfc6749#section-1.3.4[Client Credentials Grant^]:
+Used when no end-user is involved (e.g., background system-to-system communication).
+
+* {ietf_html}/rfc7523[JWT Bearer Token Grant^]:
+Preferred for confidential clients using asymmetric keys (e.g., JSON Web Keys) to authenticate via signed JWTs in accordance with {ietf_html}/rfc7515[JSON Web Signature (JWS)^].
+
+_Platform_ implementation must clearly advertise which flows are supported in its `.well-known/smart-configuration` metadata document. This allows clients to dynamically determine how to authenticate and obtain tokens.
+
+== Client Authentication Methods
+
+SMART distinguishes two main authentication methods for confidential clients:
+
+* {hl7_smart_app_launch}/client-confidential-asymmetric.html[Asymmetric Authentication^]:
+The preferred method in SMART framework. This approach avoids transmitting shared secrets. It leverages either the {ietf_html}/rfc6749#section-1.3.4[Client Credentials Grant^] or the {ietf_html}/rfc7523[JWT Bearer Token Grant^], using public/private key pairs (e.g., JSON Web Keys) for authentication.
+* {hl7_smart_app_launch}/client-confidential-symmetric.html[Symmetric Authentication^]:
+This approach is simpler but less secure and uses a pre-shared `client_secret` to authenticate. Typically used with the {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] flow.
+
+
+== Deprecated Flows
+
+The following OAuth 2.0 flows are discouraged and MUST NOT be used within SMART on openEHR due to security concerns:
+
+- {ietf_html}/rfc6749#section-1.3.2[Implicit Grant^]: Exposes tokens in the URL and lacks proper confidentiality guarantees.
+- {ietf_html}/rfc6749#section-1.3.3[Resource Owner Password Credentials Grant^]: Involves direct transmission of user credentials and does not support modern identity federation.
+
+
+== Flow Recommendations
+
+The following recommendations apply based on client type and use case:
+
+- **Public clients** should use the {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] with {ietf_html}/rfc7636[Proof Key for Code Exchange (PKCE)^] exclusively. This flow offers strong security without requiring client secrets.
+- **Confidential clients** may use the {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] with {ietf_html}/rfc7636[Proof Key for Code Exchange (PKCE)^], or the {ietf_html}/rfc6749#section-1.3.1[Authorization Code Grant^] with `client_secret`, depending on security infrastructure.
+- **Backend services** must use a confidential client and are recommended to use the {ietf_html}/rfc7523[JWT Bearer Token Grant^] (preferred) or the {ietf_html}/rfc6749#section-1.3.4[Client Credentials Grant^], depending on the level of trust and identity requirements.
+
+These flows ensure secure and appropriate access to the _Platform_ based on the capabilities and deployment context of the application.
+
+The table below illustrates recommended flows for common application scenarios:
+
+[width="100%",cols="5,2,3,4",options="header"]
+|=======================================================================
+| Application Example | Client Type | User Interaction Type | Recommended Flow
+| Single Page Web Application for a Patient Portal | Public | Patient-facing | Authorization Code Grant with PKCE
+| Mobile Application for Tracking Heart Rate | Public | Patient-facing | Authorization Code Grant with PKCE
+| Web Application with Backend for Cardiology Management | Confidential | Practitioner-facing | Authorization Code Grant with PKCE or Authorization Code Grant with `client_secret`
+| Realtime Alert System for Hospital | Confidential | Backend service | JWT Bearer Token Grant with JWS or Client Credentials Grant
+|=======================================================================
+

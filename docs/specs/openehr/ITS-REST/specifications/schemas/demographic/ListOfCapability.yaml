@@ -1,0 +1,4 @@
+title: ListOfCapability
+type: array
+items:
+  $ref: ../demographic/Capability.yaml

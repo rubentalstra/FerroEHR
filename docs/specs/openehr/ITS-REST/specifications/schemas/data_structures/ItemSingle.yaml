@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: ITEM_SINGLE
+    enum: [ITEM_SINGLE]
   item:
     $ref: ../data_structures/Element.yaml
 x-discriminator-value: ITEM_SINGLE

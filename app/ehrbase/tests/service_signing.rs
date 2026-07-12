@@ -15,7 +15,7 @@ use std::sync::Arc;
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
 use ehrbase::signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
-use ehrbase_sm::types::{UpdateAudit, UpdateVersion};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
     EhrStatusService, SmError,
@@ -30,8 +30,7 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
 struct Pg {
-    #[allow(dead_code)]
-    container: ContainerAsync<Postgres>,
+    _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
@@ -46,7 +45,7 @@ impl Pg {
         let host = container.get_host().await.expect("host").to_string();
         let port = container.get_host_port_ipv4(5432).await.expect("port");
         Self {
-            container,
+            _container: container,
             host,
             port,
         }
@@ -101,6 +100,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
             change_type: term(change_code),
             description: None,
             committer: committer("conformance tester"),
+            system_id: None,
         },
         signature: None,
     }
@@ -112,6 +112,7 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
         change_type: term(change_code),
         description: None,
         committer: committer(committer_name),
+        system_id: None,
     }
 }
 

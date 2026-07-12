@@ -1,0 +1,8 @@
+name: Content-Type
+in: header
+style: simple
+schema:
+  type: string
+  enum:
+    - application/json
+    - application/xml

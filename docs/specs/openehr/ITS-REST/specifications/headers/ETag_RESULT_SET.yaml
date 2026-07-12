@@ -2,4 +2,4 @@ description: |
   The `ETag` (i.e. entity tag) response header is an identifier of the RESULT_SET.
 schema:
   type: string
-  example: '"cdbb5db1-e466-4429-a9e5-bf80a54e120b"'
+  example: 'W/"cdbb5db1-e466-4429-a9e5-bf80a54e120b"'

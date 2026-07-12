@@ -1,0 +1,950 @@
+
+= Basic Concepts
+
+== Web Template Metadata
+
+A Web Template is a processed-representation of an openEHR Operational Template that includes:
+
+* Simplified node identifiers
+* AQL paths for all elements
+* Input type definitions for data entry
+* Localized labels and descriptions
+* Multiplicity constraints
+
+Web Template is used to generate and validate data instances. Specification of Web Template metadata is separate from the data serialization format described in this specification.
+
+Example of a Web Template:
+[source,json]
+----
+{
+  "templateId": "Blood_Pressure_Demo.v0",
+  "semVer": "0.2.0",
+  "version": "2.3",
+  "defaultLanguage": "en",
+  "languages": [ "en" ],
+  "tree": {
+    "id": "blood_pressure_demo.v0",
+    "name": "Blood_Pressure_Demo.v0",
+    "localizedName": "Blood_Pressure_Demo.v0",
+    "rmType": "COMPOSITION",
+    "nodeId": "openEHR-EHR-COMPOSITION.encounter.v1",
+    "min": 1,
+    "max": 1,
+    "localizedNames": {
+      "en": "Blood_Pressure_Demo.v0"
+    },
+    "localizedDescriptions": {
+      "en": "Interaction, contact or care event between a subject of care and healthcare provider(s)."
+    },
+    "aqlPath": "",
+    "children": [ {
+      "id": "context",
+      "rmType": "EVENT_CONTEXT",
+      "nodeId": "",
+      "min": 1,
+      "max": 1,
+      "aqlPath": "/context",
+      "children": [ {
+        "id": "start_time",
+        "name": "Start_time",
+        "rmType": "DV_DATE_TIME",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/context/start_time",
+        "inputs": [ {
+          "type": "DATETIME"
+        } ],
+        "inContext": true
+      }, {
+        "id": "setting",
+        "name": "Setting",
+        "rmType": "DV_CODED_TEXT",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/context/setting",
+        "inputs": [ {
+          "suffix": "code",
+          "type": "TEXT"
+        }, {
+          "suffix": "value",
+          "type": "TEXT"
+        } ],
+        "inContext": true
+      } ]
+    }, {
+      "id": "blood_pressure",
+      "name": "Blood pressure",
+      "localizedName": "Blood pressure",
+      "rmType": "OBSERVATION",
+      "nodeId": "openEHR-EHR-OBSERVATION.blood_pressure.v2",
+      "min": 0,
+      "max": 1,
+      "localizedNames": {
+        "en": "Blood pressure"
+      },
+      "localizedDescriptions": {
+        "en": "The local measurement of arterial blood pressure which is a surrogate for arterial pressure in the systemic circulation."
+      },
+      "annotations": {
+        "comment": "Most commonly, use of the term 'blood pressure' refers to measurement of brachial artery pressure in the upper arm."
+      },
+      "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]",
+      "children": [ {
+        "id": "any_event",
+        "name": "Any event",
+        "localizedName": "Any event",
+        "rmType": "EVENT",
+        "nodeId": "at0006",
+        "min": 0,
+        "max": -1,
+        "localizedNames": {
+          "en": "Any event"
+        },
+        "localizedDescriptions": {
+          "en": "Default, unspecified point in time or interval event which may be explicitly defined in a template or at run-time."
+        },
+        "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]",
+        "children": [ {
+          "id": "systolic",
+          "name": "Systolic",
+          "localizedName": "Systolic",
+          "rmType": "DV_QUANTITY",
+          "nodeId": "at0004",
+          "min": 0,
+          "max": 1,
+          "localizedNames": {
+            "en": "Systolic"
+          },
+          "localizedDescriptions": {
+            "en": "Peak systemic arterial blood pressure  - measured in systolic or contraction phase of the heart cycle."
+          },
+          "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value",
+          "inputs": [ {
+            "suffix": "magnitude",
+            "type": "DECIMAL",
+            "validation": {
+              "range": {
+                "minOp": ">=",
+                "min": 0.0,
+                "maxOp": "<",
+                "max": 1000.0
+              },
+              "precision": {
+                "minOp": ">=",
+                "min": 0,
+                "maxOp": "<=",
+                "max": 0
+              }
+            }
+          }, {
+            "suffix": "unit",
+            "type": "CODED_TEXT",
+            "list": [ {
+              "value": "mm[Hg]",
+              "label": "mm[Hg]",
+              "localizedLabels": {
+                "en": "mmHg"
+              },
+              "validation": {
+                "range": {
+                  "minOp": ">=",
+                  "min": 0.0,
+                  "maxOp": "<",
+                  "max": 1000.0
+                },
+                "precision": {
+                  "minOp": ">=",
+                  "min": 0,
+                  "maxOp": "<=",
+                  "max": 0
+                }
+              }
+            } ]
+          } ],
+          "termBindings": {
+            "SNOMED-CT": {
+              "value": "[SNOMED-CT(2003)::271649006]",
+              "terminologyId": "SNOMED-CT"
+            }
+          }
+        }, {
+          "id": "diastolic",
+          "name": "Diastolic",
+          "localizedName": "Diastolic",
+          "rmType": "DV_QUANTITY",
+          "nodeId": "at0005",
+          "min": 0,
+          "max": 1,
+          "localizedNames": {
+            "en": "Diastolic"
+          },
+          "localizedDescriptions": {
+            "en": "Minimum systemic arterial blood pressure - measured in the diastolic or relaxation phase of the heart cycle."
+          },
+          "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]/data[at0003]/items[at0005]/value",
+          "inputs": [ {
+            "suffix": "magnitude",
+            "type": "DECIMAL",
+            "validation": {
+              "range": {
+                "minOp": ">=",
+                "min": 0.0,
+                "maxOp": "<",
+                "max": 1000.0
+              },
+              "precision": {
+                "minOp": ">=",
+                "min": 0,
+                "maxOp": "<=",
+                "max": 0
+              }
+            }
+          }, {
+            "suffix": "unit",
+            "type": "CODED_TEXT",
+            "list": [ {
+              "value": "mm[Hg]",
+              "label": "mm[Hg]",
+              "localizedLabels": {
+                "en": "mmHg"
+              },
+              "validation": {
+                "range": {
+                  "minOp": ">=",
+                  "min": 0.0,
+                  "maxOp": "<",
+                  "max": 1000.0
+                },
+                "precision": {
+                  "minOp": ">=",
+                  "min": 0,
+                  "maxOp": "<=",
+                  "max": 0
+                }
+              }
+            } ]
+          } ],
+          "termBindings": {
+            "SNOMED-CT": {
+              "value": "[SNOMED-CT(2003)::271650006]",
+              "terminologyId": "SNOMED-CT"
+            }
+          }
+        }, {
+          "id": "clinical_interpretation",
+          "name": "Clinical interpretation",
+          "localizedName": "Clinical interpretation",
+          "rmType": "DV_TEXT",
+          "nodeId": "at1059",
+          "min": 0,
+          "max": 1,
+          "localizedNames": {
+            "en": "Clinical interpretation"
+          },
+          "localizedDescriptions": {
+            "en": "Single word, phrase or brief description that represents the clinical meaning and significance of the blood pressure measurement."
+          },
+          "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]/data[at0003]/items[at1059]/value",
+          "inputs": [ {
+            "type": "TEXT"
+          } ]
+        }, {
+          "id": "position",
+          "name": "Position",
+          "localizedName": "Position",
+          "rmType": "DV_CODED_TEXT",
+          "nodeId": "at0008",
+          "min": 0,
+          "max": 1,
+          "dependsOn": [ "systolic", "diastolic", "clinical_interpretation" ],
+          "localizedNames": {
+            "en": "Position"
+          },
+          "localizedDescriptions": {
+            "en": "The position of the individual at the time of measurement."
+          },
+          "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]/state[at0007]/items[at0008]/value",
+          "inputs": [ {
+            "suffix": "code",
+            "type": "CODED_TEXT",
+            "list": [ {
+              "value": "at1000",
+              "label": "Standing",
+              "localizedLabels": {
+                "en": "Standing"
+              },
+              "localizedDescriptions": {
+                "en": "Standing at the time of blood pressure measurement."
+              }
+            }, {
+              "value": "at1001",
+              "label": "Sitting",
+              "localizedLabels": {
+                "en": "Sitting"
+              },
+              "localizedDescriptions": {
+                "en": "Sitting (for example on bed or chair) at the time of blood pressure measurement."
+              }
+            }, {
+              "value": "at1002",
+              "label": "Reclining",
+              "localizedLabels": {
+                "en": "Reclining"
+              },
+              "localizedDescriptions": {
+                "en": "Reclining at the time of blood pressure measurement."
+              }
+            }, {
+              "value": "at1003",
+              "label": "Lying",
+              "localizedLabels": {
+                "en": "Lying"
+              },
+              "localizedDescriptions": {
+                "en": "Lying flat at the time of blood pressure measurement."
+              }
+            }, {
+              "value": "at1014",
+              "label": "Lying with tilt to left",
+              "localizedLabels": {
+                "en": "Lying with tilt to left"
+              },
+              "localizedDescriptions": {
+                "en": "Lying flat with some lateral tilt, usually angled towards the left side.   Commonly required in the last trimester of pregnancy to relieve aortocaval compression."
+              }
+            } ]
+          } ]
+        }, {
+          "id": "time",
+          "name": "Time",
+          "rmType": "DV_DATE_TIME",
+          "min": 1,
+          "max": 1,
+          "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/data[at0001]/events[at0006]/time",
+          "inputs": [ {
+            "type": "DATETIME"
+          } ],
+          "inContext": true
+        } ]
+      }, {
+        "id": "method",
+        "name": "Method",
+        "localizedName": "Method",
+        "rmType": "DV_CODED_TEXT",
+        "nodeId": "at1035",
+        "min": 0,
+        "max": 1,
+        "dependsOn": [ "any_event" ],
+        "localizedNames": {
+          "en": "Method"
+        },
+        "localizedDescriptions": {
+          "en": "Method of measurement of blood pressure."
+        },
+        "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/protocol[at0011]/items[at1035]/value",
+        "inputs": [ {
+          "suffix": "code",
+          "type": "CODED_TEXT",
+          "list": [ {
+            "value": "at1036",
+            "label": "Auscultation",
+            "localizedLabels": {
+              "en": "Auscultation"
+            },
+            "localizedDescriptions": {
+              "en": "Method of measuring blood pressure externally, using a stethoscope and Korotkoff sounds."
+            }
+          }, {
+            "value": "at1037",
+            "label": "Palpation",
+            "localizedLabels": {
+              "en": "Palpation"
+            },
+            "localizedDescriptions": {
+              "en": "Method of measuring blood pressure externally, using palpation (usually of the brachial or radial arteries)."
+            }
+          }, {
+            "value": "at1039",
+            "label": "Machine",
+            "localizedLabels": {
+              "en": "Machine"
+            },
+            "localizedDescriptions": {
+              "en": "Method of measuring blood pressure externally, using a blood pressure machine."
+            }
+          }, {
+            "value": "at1040",
+            "label": "Invasive",
+            "localizedLabels": {
+              "en": "Invasive"
+            },
+            "localizedDescriptions": {
+              "en": "Method of measuring blood pressure internally ie involving penetration of the skin and measuring inside blood vessels."
+            }
+          } ]
+        } ]
+      }, {
+        "id": "language",
+        "name": "Language",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/language",
+        "inContext": true
+      }, {
+        "id": "encoding",
+        "name": "Encoding",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/encoding",
+        "inContext": true
+      }, {
+        "id": "subject",
+        "name": "Subject",
+        "rmType": "PARTY_PROXY",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/content[openEHR-EHR-OBSERVATION.blood_pressure.v2]/subject",
+        "inputs": [ {
+          "suffix": "id",
+          "type": "TEXT"
+        }, {
+          "suffix": "id_scheme",
+          "type": "TEXT"
+        }, {
+          "suffix": "id_namespace",
+          "type": "TEXT"
+        }, {
+          "suffix": "name",
+          "type": "TEXT"
+        } ],
+        "inContext": true
+      } ],
+      "termBindings": {
+        "SNOMED-CT": {
+          "value": "[SNOMED-CT(2003)::364090009]",
+          "terminologyId": "SNOMED-CT"
+        }
+      }
+    }, {
+      "id": "category",
+      "rmType": "DV_CODED_TEXT",
+      "nodeId": "",
+      "min": 1,
+      "max": 1,
+      "aqlPath": "/category",
+      "inputs": [ {
+        "suffix": "code",
+        "type": "CODED_TEXT",
+        "list": [ {
+          "value": "433",
+          "label": "event",
+          "localizedLabels": {
+            "en": "event"
+          }
+        } ],
+        "terminology": "openehr"
+      } ],
+      "inContext": true
+    }, {
+      "id": "language",
+      "name": "Language",
+      "rmType": "CODE_PHRASE",
+      "min": 1,
+      "max": 1,
+      "aqlPath": "/language",
+      "inContext": true
+    }, {
+      "id": "territory",
+      "name": "Territory",
+      "rmType": "CODE_PHRASE",
+      "min": 1,
+      "max": 1,
+      "aqlPath": "/territory",
+      "inContext": true
+    }, {
+      "id": "composer",
+      "name": "Composer",
+      "rmType": "PARTY_PROXY",
+      "min": 1,
+      "max": 1,
+      "aqlPath": "/composer",
+      "inputs": [ {
+        "suffix": "id",
+        "type": "TEXT"
+      }, {
+        "suffix": "id_scheme",
+        "type": "TEXT"
+      }, {
+        "suffix": "id_namespace",
+        "type": "TEXT"
+      }, {
+        "suffix": "name",
+        "type": "TEXT"
+      } ],
+      "inContext": true
+    } ]
+  }
+}
+----
+
+
+== Field Identifiers
+
+The Simplified Formats use hierarchical field identifiers composed of:
+
+1. **Node IDs**: Generated from archetype node names
+2. **Path separators**: Forward slash (`/`) between hierarchy levels
+3. **Instance indicators**: Colon notation (`:0`, `:1`, etc.) for repeating elements
+4. **Attribute suffixes**: Pipe notation (`|magnitude`, `|unit`, etc.) for RM attributes
+5. **RM attribute prefix**: Underscore (`_`) for optional RM attributes not in template
+6. **Raw canonical JSON**: Use of `|raw` attribute to embed openEHR canonical JSON
+
+
+Example identifier structure:
+----
+vital_signs/body_temperature:0/any_event:0/temperature|magnitude
+vital_signs/body_temperature:0/any_event:0/temperature/_normal_range/lower|magnitude
+----
+
+
+=== Node ID Generation Rules
+
+Node IDs are generated from archetype node names using the following algorithm:
+
+1. __Character normalisation__: Replace any character that is not:
+* A Unicode alphabetic character (`\p{IsAlphabetic}`)
+* A digit (`0-9`)
+* An underscore (`_`)
+* A dot (`.`)
+* A dash (`-`)
++
+with an underscore (`_`)
+
+2. __Underscore consolidation__: Replace multiple consecutive underscores with a single underscore
+
+3. __Case normalisation__: Convert to lowercase
+
+4. __Trim underscores__: Remove leading and trailing underscores
+
+5. __Empty ID handling__: If result is empty, use "id" as the identifier
+
+6. __Numeric prefix handling__: If result starts with a digit, prepend "a"
+
+7. __Uniqueness__: Append a numeric suffix if needed to ensure uniqueness among siblings
+
+Examples:
+
+[cols="1,1", options="header"]
+|===
+|Original Name |Generated ID
+
+|Body temperature
+|body_temperature
+
+|Problem/diagnosis
+|problem_diagnosis
+
+|Tests (1, 2, 3)
+|tests_1_2_3
+
+|1st visit
+|a1st_visit
+
+|Blood Pressure
+|blood_pressure
+
+|Blood Pressure _(duplicate)_
+|blood_pressure_1
+
+|===
+
+
+=== Path Construction
+
+Full paths are constructed by concatenating parent node IDs with forward slashes:
+
+----
+composition_id/section_id/observation_id/element_id
+----
+
+
+=== Instance Indexing
+
+When a node can occur multiple times (max > 1 or max = -1), instances are indexed using colon notation:
+
+----
+node_id:0  # First instance
+node_id:1  # Second instance
+node_id:2  # Third instance
+----
+
+The index is appended after the node ID and before the next path separator.
+
+Indexing examples:
+
+Multiple events in an observation:
+----
+vital_signs/body_temperature:0/any_event:0/temperature|magnitude
+vital_signs/body_temperature:0/any_event:1/temperature|magnitude
+----
+
+Multiple observations in a composition:
+----
+vital_signs/body_temperature:0/any_event:0/temperature|magnitude
+vital_signs/body_temperature:1/any_event:0/temperature|magnitude
+----
+
+=== Attribute Suffixes
+
+RM attributes are indicated by pipe-separated suffixes.
+
+Example of such attributes:
+
+[cols="1,1,2", options="header"]
+|===
+|RM Type |Suffix |Description
+|<<DV_QUANTITY,DV_QUANTITY>>           |`\|magnitude`      |Numeric value
+|<<DV_QUANTITY,DV_QUANTITY>>           |`\|unit`           |Unit of measure
+|<<DV_CODED_TEXT,DV_CODED_TEXT>>       |`\|code`           |Terminology code
+|<<DV_CODED_TEXT,DV_CODED_TEXT>>       |`\|value`          |Display term
+|<<DV_CODED_TEXT,DV_CODED_TEXT>>       |`\|terminology`    |Terminology identifier
+|<<PARTY_IDENTIFIED,PARTY_IDENTIFIED>> |`\|id`             |The ID value
+|<<PARTY_IDENTIFIED,PARTY_IDENTIFIED>> |`\|id_namespace`   |The namespace of the ID value
+|===
+
+
+=== RM Attributes prefix
+
+Some attributes are defined by the openEHR Reference Model but are optional and may not be explicitly constrained in the template.
+To access these RM attributes, an underscore prefix (i.e. '_') is used in the path: `_attributeName`.
+
+This convention allows applications to populate optional RM attributes that provide additional metadata, audit information, or structural details beyond what is defined in the template.
+
+Examples:
+[source,json]
+----
+{
+  "conformance/observation:0/_uid": "9fcc1c70-9349-444d-b9cb-8fa817697f5e"
+}
+----
+[source,json]
+----
+{
+  "path/observation:0/_link:0|type": "problem",
+  "path/observation:0/_link:0|target": "ehr://problem-123",
+  "path/observation:0/_link:0|meaning|code": "related_to",
+  "path/observation:0/_link:0|meaning|value": "Related to"
+}
+----
+[source,json]
+----
+{
+  "vital_signs/temperature:0/value|magnitude": 37.5,
+  "vital_signs/temperature:0/value|unit": "°C",
+  "vital_signs/temperature:0/value/_normal_range/lower|magnitude": 36.0,
+  "vital_signs/temperature:0/value/_normal_range/lower|unit": "°C",
+  "vital_signs/temperature:0/value/_normal_range/upper|magnitude": 37.8,
+  "vital_signs/temperature:0/value/_normal_range/upper|unit": "°C"
+}
+----
+
+=== Raw canonical JSON 
+
+The `|raw` attribute is a special bypass mechanism that enables direct embedding of pre-serialized openEHR canonical JSON into flat or structured format inputs.
+This feature allows incorporating fully-formed openEHR Reference Model (RM) objects without decomposing them into individual attributes.
+
+[source,json]
+----
+{
+  "ctx/language": "en",
+  "ctx/territory": "US",
+  "ctx/composer_name": "Dr. Smith",
+  "ctx/time": "2024-01-15T10:30:00Z",
+  "vital_signs/blood_pressure:0/any_event:0/systolic|raw": {
+    "_type": "DV_QUANTITY",
+    "magnitude": 120,
+    "unit": "mm[Hg]"
+  }
+}
+----
+
+This feature proves particularly valuable when:
+
+* Working with pre-existing openEHR canonical JSON data
+* Handling complex RM structures that are cumbersome to express in simplified formats
+* Integrating data from systems that natively produce canonical JSON
+
+The raw JSON value must include the `_type` property indicating the openEHR type, and should conform to the openEHR Reference Model.
+
+
+== Context
+
+Context information represents composition-level metadata and is prefixed with `ctx/`.
+
+This includes:
+
+* Mandatory: language, territory
+* Optional: composer, time, setting, participations, facility information, workflow identifiers
+
+Context data is typically not entered by users but provided by the application.
+The `ctx/time` field, if not explicitly set, defaults to the current server time (`now()`).
+
+See below <<_context_information>> for more details.
+
+
+== Format variants
+
+=== Flat format
+
+In the Flat format, all data elements are represented as key-value pairs at a single level in JSON where:
+
+* Keys are full WT paths (with instance indices and attribute suffixes)
+* Values are primitive types (string, number, boolean), or simple objects
+* There is no distinction between ELEMENT and its value - elements ARE their values
+
+Syntax Rules:
+
+1. All paths MUST be fully qualified from the data instance root
+2. Context fields MUST use `ctx/` prefix
+3. Instance indices MUST be zero-based
+4. Attribute suffixes MUST be separated by pipe (`|`)
+5. RM attribute paths MUST use underscore prefix (`_`)
+6. Path segments MUST be separated by forward slash (`/`)
+
+Example:
+[source,json]
+----
+{
+  "ctx/language": "en",
+  "ctx/territory": "US",
+  "ctx/composer_name": "Dr. Smith",
+  "ctx/time": "2024-01-15T10:30:00Z",
+  "vital_signs/body_temperature:0/any_event:0/temperature|magnitude": 37.5,
+  "vital_signs/body_temperature:0/any_event:0/temperature|unit": "°C",
+  "vital_signs/body_temperature:0/any_event:0/temperature/_normal_range/lower|magnitude": 36.0,
+  "vital_signs/body_temperature:0/any_event:0/temperature/_normal_range/lower|unit": "°C",
+  "vital_signs/body_temperature:0/any_event:0/temperature/_normal_range/upper|magnitude": 37.8,
+  "vital_signs/body_temperature:0/any_event:0/temperature/_normal_range/upper|unit": "°C",
+  "vital_signs/body_temperature:0/any_event:0/time": "2024-01-15T10:30:00Z",
+  "vital_signs/blood_pressure:0/any_event:0/systolic|magnitude": 120,
+  "vital_signs/blood_pressure:0/any_event:0/systolic|unit": "mm[Hg]",
+  "vital_signs/blood_pressure:0/any_event:0/diastolic|magnitude": 80,
+  "vital_signs/blood_pressure:0/any_event:0/diastolic|unit": "mm[Hg]",
+  "vital_signs/blood_pressure:0/any_event:0/time": "2024-01-15T10:30:00Z"
+}
+----
+
+
+=== Structured format
+
+In the Structured format, the hierarchy is preserved as nested JSON objects where:
+
+* Each path segment becomes a property in a nested object
+* Instance indices remain in property names (e.g., `body_temperature`)
+* Attribute suffixes become properties prefixed with pipe (e.g., `|magnitude`)
+* Context data is grouped under `ctx` object
+* Arrays are used throughout, even for single-cardinality elements
+
+Syntax Rules:
+
+1. Hierarchy MUST be represented by nested objects
+2. Instance indices MUST remain in property names
+3. Attribute suffixes MUST use pipe prefix
+4. Context data MUST be grouped under `ctx` property
+5. Arrays MUST be used for data values, even when cardinality is `0..1` or `1..1`
+6. Empty objects SHOULD be omitted
+
+[source,json]
+----
+{
+  "ctx": {
+    "language": "en",
+    "territory": "US",
+    "composer_name": "Dr. Smith",
+    "time": "2024-01-15T10:30:00Z"
+  },
+  "vital_signs": {
+    "body_temperature": [
+      {
+        "any_event": [
+          {
+            "temperature": [
+              {
+                "|magnitude": 37.5,
+                "|unit": "°C"
+              }
+            ],
+            "time": [
+              "2024-01-15T10:30:00Z"
+            ]
+          }
+        ]
+      }
+    ],
+    "blood_pressure": [
+      {
+        "any_event": [
+          {
+            "systolic": [
+              {
+                "|magnitude": 120,
+                "|unit": "mm[Hg]"
+              }
+            ],
+            "diastolic": [
+              {
+                "|magnitude": 80,
+                "|unit": "mm[Hg]"
+              }
+            ],
+            "time": [
+              "2024-01-15T10:30:00Z"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+----
+
+
+== Conversion Between Formats
+
+=== Flat to Structured
+
+Algorithm for converting flat format to structured:
+
+1. Parse each flat key into path segments
+2. Separate context fields (`ctx/`) from composition fields
+3. For each path:
+    a. Split on forward slash (`/`)
+    b. Create nested objects for each segment
+    c. For the final segment, check for attribute suffix (|)
+    d. If attribute suffix exists, create an array containing an object with suffix as property
+    e. Handle RM attributes (underscore prefix) appropriately
+4. Merge all nested structures
+5. Add context object
+
+=== Structured to Flat
+
+Algorithm for converting structured format to flat:
+
+1. Recursively traverse the nested object structure
+2. Build path by concatenating property names with forward slash
+3. For properties with a pipe prefix, append to a parent path with pipe
+4. Unwrap arrays (Structured uses arrays throughout)
+5. Flatten context object with `ctx/` prefix
+6. Preserve instance indices in property names
+7. Preserve RM attribute underscore prefixes
+
+
+== Level Removal
+
+Paths in Flat and Structured formats omit two distinct kinds of segments relative to the canonical RM path:
+
+1. *Container attribute names* of `LOCATABLE`-to-`LOCATABLE` relationships are never present as path segments -- the parent connects directly to the child via the child's archetype node-id alias.
+2. In addition, certain *wrapper node types* are themselves collapsed -- their archetype node-id is also dropped -- because they act only as structural slots and carry no clinically meaningful identity at that level.
+
+=== Container Attributes Elided from Paths
+
+The following RM attribute names are universally absent from paths:
+
+* `COMPOSITION.content`
+* `SECTION.items`
+* `OBSERVATION.data`, `OBSERVATION.state`, `OBSERVATION.protocol`
+* `EVALUATION.data`, `EVALUATION.protocol`
+* `INSTRUCTION.activities`, `INSTRUCTION.protocol`
+* `ACTION.description`, `ACTION.protocol`
+* `ADMIN_ENTRY.data`
+* `ACTIVITY.description`
+* `HISTORY.events`
+* `EVENT.data`, `EVENT.state`
+* `ITEM_TREE.items`, `ITEM_LIST.items`, `ITEM_SINGLE.item`, `ITEM_TABLE.rows`
+* `CLUSTER.items`
+
+=== Always Collapsed Wrapper Types
+
+In addition to the attribute elision above, the following wrapper node types are themselves collapsed -- their archetype node-id is also dropped, so the parent connects directly to the wrapper's contents:
+
+* `ITEM_STRUCTURE` (abstract) and its concrete subtypes:
+** `ITEM_TREE`
+** `ITEM_LIST`
+** `ITEM_SINGLE`
+** `ITEM_TABLE`
+* `HISTORY`
+
+These types act as fixed structural slots in their parent (`ENTRY` for the `ITEM_STRUCTURE` family; `OBSERVATION` for `HISTORY`) and have no archetype node-id distinct from that slot.
+
+=== Conditionally Collapsed Wrapper Types
+
+An `EVENT` node is collapsed when both of the following hold:
+
+1. Its maximum occurrence is 1 (i.e., `max = 1`), AND
+2. No sibling `EVENT` nodes (of any concrete event type) exist in the same parent `HISTORY`.
+
+`EVENT` nodes are retained when:
+
+* Multiple `EVENT` types exist in the same parent `HISTORY` (e.g., a `POINT_EVENT` alongside an `INTERVAL_EVENT`), or
+* The `EVENT` can occur multiple times (`max > 1`).
+
+=== Example
+
+Take a single measurement magnitude inside a laboratory result panel. The canonical RM path is:
+
+[source]
+----
+/content[openEHR-EHR-OBSERVATION.laboratory_test_result.v1]
+  /data[at0001]
+  /events[at0002]
+  /data[at0003]
+  /items[openEHR-EHR-CLUSTER.laboratory_test_panel.v1]
+  /items[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]
+  /items[at0001]
+  /value
+----
+
+The same field in Flat form:
+
+[source]
+----
+laboratory_test_report/laboratory_test/laboratory_test_panel/laboratory_result:0/result_value|magnitude
+----
+
+Differences:
+
+* Container attribute names (`content`, `data`, `events`, `items`, `value`) are elided wherever they appear.
+* The `HISTORY` (`at0001`) and `ITEM_TREE` (`at0003`) wrapper nodes are collapsed; the `EVENT` (`at0002`) is conditionally collapsed (here `max=1`, single event type).
+* The `OBSERVATION` and the two `CLUSTER` nodes are retained under their archetype-id aliases (`laboratory_test`, `laboratory_test_panel`, `laboratory_result`); the inner `CLUSTER` repeats, hence the `:0` instance index.
+* `ELEMENT.value` is replaced by the `|magnitude` attribute suffix.
+
+
+[[open_value_sets]]
+== Open Value-Sets and the `|other` Suffix
+
+When an archetype constrains a leaf to `DV_CODED_TEXT` with an _open_ value-set -- the bound terminology lists recommended codes but the constraint also accepts values outside the list (`listOpen: true` in the web template; non-`limit-to-list` in ADL) -- the same leaf may at runtime carry either a `DV_CODED_TEXT` (chosen from the list) or a `DV_TEXT` (free-text value).
+
+Many archetypes deliberately combine a recommended coded list with free-text fallback (e.g. `state_of_dress`, `confounding_factors`, `overall_test_status`). Without a dedicated FLAT-level discriminator the `DV_CODED_TEXT` vs `DV_TEXT` branch would have to be inferred from value patterns, which is fragile and ambiguous. The `|other` suffix makes the branch explicit at the FLAT level and removes the need for receivers to reason about it.
+
+* On *write*: clients supply the free-text value via `<path>|other: "<text>"`. The server persists the leaf as a `DV_TEXT` in the canonical RM (not as a `DV_CODED_TEXT` with empty `defining_code`).
+* On *read*: when the leaf carries a `DV_TEXT` whose archetype constraint is `DV_CODED_TEXT` with `listOpen: true`, the server SHOULD emit it via `<path>|other: "<text>"` so that round-trip equality holds at the FLAT level.
+* `|other` is mutually exclusive with `|code`, `|value` and `|terminology` on the same leaf path; servers MUST reject combinations.
+* `|other` MUST be rejected when the constraint is closed (`listOpen: false`).
+
+The per-suffix table is in the <<DV_CODED_TEXT>> class section.
+
+
+== Validation
+
+Implementations SHOULD validate:
+
+* Get the WT for the target template and map input fields to the identifiers
+* Check the final segment for the pipe to identify attribute suffix
+* Mandatory context fields (language, territory) are present
+* Field identifiers match WT metadata structure
+* Data types match expected types from the Operational Template
+* Cardinality constraints are satisfied
+* Terminology bindings are valid
+* RM attribute paths (underscore-prefixed) are valid

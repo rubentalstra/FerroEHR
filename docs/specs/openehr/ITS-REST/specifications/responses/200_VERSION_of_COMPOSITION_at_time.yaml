@@ -4,8 +4,10 @@ headers:
   ETag:
     $ref: ../headers/ETag_VERSION_of_COMPOSITION.yaml
   Location:
-    $ref: ../headers/Location_VERSIONED_COMPOSITION_VERSION.yaml
+    $ref: ../headers/Location_deprecated.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_canonical.yaml
 content:
   application/json:
     schema:
-      $ref: ../schemas/common/UVersion.yaml
+      $ref: ../schemas/ehr/UVersionOfComposition.yaml

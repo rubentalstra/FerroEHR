@@ -4,8 +4,4 @@ allOf:
   - $ref: ../data_types/DvScale.yaml
 required:
   - _type
-properties:
-  _type:
-    type: string
-    enum: [DV_SCALE]
 x-discriminator-value: DV_SCALE

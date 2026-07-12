@@ -7,7 +7,7 @@ required:
 properties:
   _type:
     type: string
-    default: OBSERVATION
+    enum: [OBSERVATION]
   data:
     $ref: ../data_structures/History.yaml
   state:

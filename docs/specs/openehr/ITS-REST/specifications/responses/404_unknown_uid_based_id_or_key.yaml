@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when the `uid_based_id` does not exist, or when the ITEM_TAG identified by the `key` does not exist.

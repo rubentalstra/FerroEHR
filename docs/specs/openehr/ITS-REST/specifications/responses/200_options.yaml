@@ -3,6 +3,8 @@ description: |
 headers:
   Allow:
     $ref: ../headers/Allow.yaml
+  Content-Type:
+    $ref: ../headers/ContentType_JSON.yaml
 content:
   application/json:
     schema:

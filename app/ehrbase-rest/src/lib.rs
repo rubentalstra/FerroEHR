@@ -1,58 +1,84 @@
-//! openEHR **ITS-REST 1.0.3** server surface (`axum`) + authentication.
+//! openEHR **ITS-REST 1.0.3** server surface (`axum`) — the protocol adapter
+//! over the SM native API (`ehrbase-sm`).
 //!
-//! `ehrbase-rest` implements the openEHR SM native API (`ehrbase-sm`) as a
-//! modern, idiomatic axum application. The generated `ROUTES`
-//! tables drive an HTTP dispatcher ([`dispatch`]) that rebuilds each operation's
-//! `*Params`, negotiates content (canonical JSON / XML via `openehr-its`), and
-//! calls the configured platform service `S: Platform`. The adapter is generic
-//! over `S` (no trait objects, no stub backend by design) — the `ehrbase` crate
-//! monomorphizes it over its DB-backed `EhrbaseService` via
+//! The crate is organised **per ITS-REST specification** (the development-edition
+//! register, `docs/design/its-rest/README.md`), one folder per spec area:
+//!
+//! - [`overview`] — the cross-cutting Overview protocol (content negotiation,
+//!   committal headers, resource identification, common params, the HTTP
+//!   status/error table); [`RestError`] renders the openEHR error body.
+//! - [`api`] — the resource APIs, one module per group (`ehr`, `query`,
+//!   `definition`, `demographic`, `admin`) implementing the generated
+//!   `openehr_its::rest` contract, plus the hand-written `system` API
+//!   (`OPTIONS /` conformance manifest). [`api::api_router`] is the hub over the
+//!   generated `ROUTES` tables.
+//! - [`formats`] — the Simplified Formats wire (FLAT / STRUCTURED media types).
+//! - [`smart`] — SMART App Launch (service discovery + scope enforcement),
+//!   config-gated, off by default.
+//! - [`system_log`] — the SM System Log component at the wire (the IHE ATNA
+//!   audit middleware + operation classification).
+//! - [`extensions`] — everything the specs do **not** govern, quarantined and
+//!   flagged: authentication + authorization ([`extensions::access`]),
+//!   management/observability, OpenAPI serving, terminology, eventing, FHIR, and
+//!   multi-tenancy — each config-gated so a stock server exposes only the
+//!   standardised ITS-REST surface.
+//!
+//! [`router`] assembles these under the configured base path with the
+//! `tower-http` middleware stack. The adapter is generic over the platform
+//! service `S: Platform` (no trait objects, no stub backend by design) — the
+//! `ehrbase` crate monomorphizes it over its DB-backed `EhrbaseService` via
 //! [`AppState::with_backend`], and the tests over a mock.
 //!
-//! Authentication (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as one
-//! middleware over the API router ([`auth`]); the same middleware runs the
-//! coarse **RBAC** gate ([`authz`]) when an [`AuthzHandle`] is wired.
-//! Fine-grained ABAC is the follow-up (`docs/enterprise/access-control.md`).
+//! **Authentication** (Stage 1) is HTTP Basic + OAuth2/OIDC bearer, applied as
+//! one middleware over the API router; the coarse RBAC gate + fine-grained ABAC
+//! PEP compose on top when wired ([`extensions::access`]). Auth is out of band
+//! per the spec (`overview/Requests_and_responses.md` §Authentication).
 
-pub mod access;
-mod audit;
-mod audit_table;
-mod committal;
+pub mod api;
 pub mod config;
-mod dispatch;
-mod error;
-pub mod management;
-mod negotiate;
-mod openapi;
-mod params;
+pub mod extensions;
+pub mod formats;
+pub mod overview;
 mod router;
+pub mod smart;
 mod state;
-mod status;
-mod version_id;
+pub mod system_log;
+
+// `access` (authn + authz config the binary wires) and `management`
+// (observability the binary assembles) are part of the crate's public surface,
+// re-exported at the root so the binary + tests reach them as
+// `ehrbase_rest::access::…` / `ehrbase_rest::management::…`.
+pub use extensions::{access, management};
+// Crate-root path aliases the per-spec dispatchers resolve against
+// (`crate::negotiate`, `crate::params`); the two shared protocol helpers live
+// under `overview` and are reached through these short paths.
+use overview::{negotiate, params};
 
 pub use access::authn::{AuthMethod, Authenticator, Principal};
 pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
 // The native API lives in `ehrbase-sm`; re-exported here for the
 // server's public surface (test mocks, the binary) — no local shim module.
+pub use api::system::SystemOptionsConfig;
 pub use config::{
     AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TenancyConfig, TerminologyConfig,
 };
 pub use ehrbase_sm::Platform;
-pub use ehrbase_sm::services::{
+pub use ehrbase_sm::{
     AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
     EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
     PartyRelationshipService, QueryService, StatTimeRange, SystemLog, TerminologyService,
     ValidityChecker, VersionMetaAdapter, WebTemplateService,
 };
-pub use ehrbase_sm::types::{
+pub use ehrbase_sm::{
     AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
     QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceMeta, ResourceStatus,
     ServiceResponse, SubjectRef,
 };
-pub use error::RestError;
 pub use management::{ManagementConfig, Observability};
+pub use overview::error::RestError;
 pub use router::{management_router, router};
+pub use smart::config::SmartConfig;
 pub use state::AppState;
 
 /// Errors raised while starting the server.

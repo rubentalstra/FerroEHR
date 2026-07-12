@@ -1,0 +1,18 @@
+name: ehr_id
+in: query
+description: |
+  An optional parameter to perform the operation on a subset of EHRs.
+style: form
+explode: true
+schema:
+  type: string
+  format: uuid
+examples:
+  single:
+    summary: A single EHR identifier
+    value: 7d44b88c-4199-4bad-97dc-d78268e01398
+  multiple:
+    summary: Multiple EHR identifiers
+    value:
+      - 7d44b88c-4199-4bad-97dc-d78268e01398
+      - 297c3e91-7c17-4497-85dd-01e05aaae44e

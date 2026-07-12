@@ -6,6 +6,7 @@ tags:
   - EHR
 parameters:
   - $ref: ../parameters/path/ehr_id.yaml
+  - $ref: ../parameters/header/Accept_canonical.yaml
 responses:
   '200':
     $ref: ../responses/200_EHR.yaml

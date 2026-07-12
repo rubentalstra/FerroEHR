@@ -20,7 +20,7 @@ use serde_json::{Map, Value, json};
 use super::defaults::{DEFAULT_TIME, RM_VERSION};
 use super::mappers::{self};
 use super::sub::{Entry, FlatView, parse_key};
-use super::{context, graph};
+use super::{context, graph, rmattr};
 use crate::FlatError;
 use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
@@ -36,15 +36,16 @@ fn concrete_type(rm_type: &str) -> &str {
 
 /// RM attributes that are arrays (needed to re-materialise compacted structure).
 ///
-// TODO(port): (F-10-11) this multi-valued-attribute set is hard-coded and covers
-// only the common COMPOSITION/HISTORY/ITEM/ENTRY path. Any other genuinely
-// multi-valued attribute reachable in a template (`credentials`,
-// `other_participations`, nested cluster/section variants) would be rebuilt as a
-// single object. Drive multiplicity from the generated BMM RM attribute model
-// (the P16 static RM model) — the same model AQL path analysis mandates — instead of this
-// list.
+/// Multiplicity is driven from the generated BMM RM attribute model (the static
+/// `openehr_rm::model`, the same model AQL path analysis uses) rather than a
+/// hard-coded list: the shared derivation lives in [`crate::tdd::is_multiple_attr`]
+/// (walk from the versioned-object roots, count class-typed `List`/`Set`/`Hash`
+/// attributes, exclude primitive byte arrays such as `DV_MULTIMEDIA.data`). This
+/// now covers every genuinely multi-valued structural attribute a template can
+/// reach (`other_participations`, `participations`, nested cluster/section
+/// variants, …), not only the COMPOSITION/HISTORY/ITEM/ENTRY common path.
 fn is_multiple(attr: &str) -> bool {
-    matches!(attr, "content" | "items" | "events" | "activities")
+    crate::tdd::is_multiple_attr(attr)
 }
 
 /// Convert a FLAT map to a canonical-JSON composition, driven by `wt`.
@@ -179,12 +180,39 @@ fn complete_tree(v: &mut Value) {
 fn build(node: &WebTemplateNode, entries: &[Entry]) -> Value {
     if node.has_input() {
         let view = FlatView::new(entries);
-        return mappers::leaf_from_flat(&node.rm_type, &view)
+        let mut dv = mappers::leaf_from_flat(&node.rm_type, &view)
             .unwrap_or_else(|| json!({"_type": strip_generic(&node.rm_type)}));
+        // Value-level `_`-attributes (`_normal_range`, `_language`, `_mapping`,
+        // `_accuracy`, `_charset`, `_thumbnail`) attach to the DV value itself;
+        // ELEMENT-level ones (`_uid`, `_null_flavour`, …) are applied to the
+        // ELEMENT wrapper by `place` (master05 per-type tables).
+        if let Value::Object(m) = &mut dv {
+            let dv_attrs: Vec<Entry> = entries
+                .iter()
+                .filter(|e| {
+                    e.segs.first().is_some_and(|s| {
+                        rmattr::is_rm_attr(&s.id) && !rmattr::is_element_level(&s.id)
+                    })
+                })
+                .cloned()
+                .collect();
+            if !dv_attrs.is_empty() {
+                rmattr::apply_rm_attrs(m, &dv_attrs, strip_generic(&node.rm_type));
+            }
+        }
+        return dv;
     }
 
     let mut obj = Map::new();
     obj.insert("_type".into(), json!(concrete_type(&node.rm_type)));
+
+    // Container-level `_`-attributes addressed to this node (first segment is an
+    // `_attr`, matching no child) — applied after the children are built.
+    let own_attrs: Vec<Entry> = entries
+        .iter()
+        .filter(|e| e.segs.first().is_some_and(|s| rmattr::is_rm_attr(&s.id)))
+        .cloned()
+        .collect();
 
     let ctx_time = json!(DEFAULT_TIME);
     for child in &node.children {
@@ -219,12 +247,27 @@ fn build(node: &WebTemplateNode, entries: &[Entry]) -> Value {
         let rel = path::relative(&node.aql_path, &child.aql_path);
         for (_, sub) in groups {
             let child_val = build(child, &sub);
-            place(&mut obj, &rel, child_val, child, &ctx_time);
+            // A leaf child sits inside an ELEMENT wrapper `place` creates; route
+            // its ELEMENT-level `_`-attributes there (`_uid`, `_null_flavour`, …).
+            let elem_attrs: Vec<Entry> = if child.has_input() {
+                sub.iter()
+                    .filter(|e| {
+                        e.segs
+                            .first()
+                            .is_some_and(|s| rmattr::is_element_level(&s.id))
+                    })
+                    .cloned()
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            place(&mut obj, &rel, child_val, child, &ctx_time, &elem_attrs);
         }
     }
 
     let mut value = Value::Object(obj);
     if let Value::Object(m) = &mut value {
+        rmattr::apply_rm_attrs(m, &own_attrs, &node.rm_type);
         finish_identity(m, node, false, "");
     }
     value
@@ -238,14 +281,16 @@ fn place(
     child_value: Value,
     child: &WebTemplateNode,
     time: &Value,
+    elem_attrs: &[Entry],
 ) {
     if rel.is_empty() {
         return;
     }
     let id_idx = rel.iter().rposition(|s| is_multiple(&s.attribute));
-    place_rec(parent, rel, 0, id_idx, child_value, child, time);
+    place_rec(parent, rel, 0, id_idx, child_value, child, time, elem_attrs);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn place_rec(
     cur: &mut Map<String, Value>,
     rel: &[PathSegment],
@@ -254,6 +299,7 @@ fn place_rec(
     child_value: Value,
     child: &WebTemplateNode,
     time: &Value,
+    elem_attrs: &[Entry],
 ) {
     let seg = &rel[i];
     let node_id = seg.predicate.archetype_node_id.as_deref();
@@ -275,7 +321,7 @@ fn place_rec(
             // Wrap: the remaining path (e.g. `/value`) lives inside a new element.
             let mut el = new_struct(seg, rel.get(i + 1), child.name.as_deref(), time);
             if let Value::Object(m) = &mut el {
-                place(m, &rel[i + 1..], child_value, child, time);
+                place(m, &rel[i + 1..], child_value, child, time, elem_attrs);
             }
             arr.push(el);
         }
@@ -299,7 +345,7 @@ fn place_rec(
             arr.len() - 1
         };
         if let Some(Value::Object(m)) = arr.get_mut(idx) {
-            place_rec(m, rel, i + 1, id_idx, child_value, child, time);
+            place_rec(m, rel, i + 1, id_idx, child_value, child, time, elem_attrs);
         }
         return;
     }
@@ -307,6 +353,13 @@ fn place_rec(
     // A single-valued (object) attribute.
     if last {
         cur.insert(seg.attribute.clone(), child_value);
+        // The map that receives the `value` attribute is the ELEMENT wrapper the
+        // web-template compacted away; apply its ELEMENT-level `_`-attributes here
+        // (master05 §ELEMENT). Guarded on `value` so a bare leaf (e.g. EVENT.time)
+        // is never misattributed.
+        if seg.attribute == "value" && !elem_attrs.is_empty() {
+            rmattr::apply_rm_attrs(cur, elem_attrs, "");
+        }
         return;
     }
     if !cur.contains_key(&seg.attribute) {
@@ -316,7 +369,7 @@ fn place_rec(
         );
     }
     if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
-        place_rec(m, rel, i + 1, id_idx, child_value, child, time);
+        place_rec(m, rel, i + 1, id_idx, child_value, child, time, elem_attrs);
     }
 }
 
@@ -457,11 +510,21 @@ fn finish_identity(
     }
     // Per-ENTRY mandatory structural fields not surfaced in FLAT (only added when
     // a populated leaf did not already create them, so the round-trip is stable).
-    let item_tree = || json!({"_type": "ITEM_TREE", "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []});
+    // A synthesized structural node stands in for content the simplified form did
+    // not carry; `LOCATABLE.archetype_node_id` is mandatory
+    // (`RM/.../common/locatable.adoc` `Is_archetype_root`/invariants), so the
+    // placeholder `at0001` is stamped — there is no faithful source id for absent
+    // content, and the value only needs to be a non-empty archetype-relative id
+    // for the rebuilt object to be a valid `LOCATABLE`.
+    let item_tree = || {
+        json!({"_type": "ITEM_TREE", "archetype_node_id": "at0001",
+               "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []})
+    };
     match rm_type {
         "OBSERVATION" => {
             obj.entry("data".to_owned()).or_insert_with(|| {
-                json!({"_type": "HISTORY", "name": {"_type": "DV_TEXT", "value": "History"},
+                json!({"_type": "HISTORY", "archetype_node_id": "at0001",
+                       "name": {"_type": "DV_TEXT", "value": "History"},
                        "origin": {"_type": "DV_DATE_TIME", "value": DEFAULT_TIME}, "events": []})
             });
         }

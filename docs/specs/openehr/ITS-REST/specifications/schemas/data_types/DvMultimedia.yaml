@@ -8,7 +8,7 @@ required:
 properties:
   _type:
     type: string
-    default: DV_MULTIMEDIA
+    enum: [DV_MULTIMEDIA]
   alternate_text:
     type: string
   uri:

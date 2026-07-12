@@ -11,10 +11,3 @@ properties:
   accuracy:
     type: number
 x-discriminator-value: DV_AMOUNT
-x-cg-discriminator:
-  propertyName: _type
-  mapping:
-    DV_COUNT: '#/components/schemas/DvCount'
-    DV_DURATION: '#/components/schemas/DvDuration'
-    DV_PROPORTION: '#/components/schemas/DvProportion'
-    DV_QUANTITY: '#/components/schemas/DvQuantity'

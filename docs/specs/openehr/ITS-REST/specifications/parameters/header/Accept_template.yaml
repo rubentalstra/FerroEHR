@@ -1,14 +1,9 @@
 name: Accept
 in: header
-description: |
-  Header to indicate the expected response format.
-required: true
 style: simple
 schema:
+  type: string
   enum:
     - application/json
     - application/xml
-    - text/plain
     - application/openehr.wt+json
-  type: string
-  example: application/xml

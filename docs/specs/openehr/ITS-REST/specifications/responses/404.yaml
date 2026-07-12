@@ -1,0 +1,2 @@
+description: |
+  `404 Not Found` is returned when, based on the request parameters, the server did not find a current representation of a target resource, or is not willing to disclose that one exists.

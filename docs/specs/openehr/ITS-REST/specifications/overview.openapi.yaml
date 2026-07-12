@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: APIs Overview
+  title: Overview
   version: latest
   x-status: STABLE
   x-spec: overview
@@ -12,24 +12,24 @@ info:
     name: Creative Commons Attribution-NoDerivs 3.0 Unported
     url: 'https://creativecommons.org/licenses/by-nd/3.0/'
   description:
-    $ref: ./docs/overview/Intro.md
+    $ref: ./docs/overview/Description.md
 security: []
-servers:
-  - url: 'https://{baseUrl}/v1'
-    description: An example openEHR server URL.
-    variables:
-      baseUrl:
-        default: openEHRSys.example.com
-        description: The (example) server base URL prefix providing openEHR services. This may contain server name, port and base path prefix.
-paths:
-  '/':
-    options:
-      $ref: ./operations/options.yaml
+servers: []
+paths: {}
 tags:
+  - name: Acknowledgements
+    description:
+      $ref: ./docs/overview/Acknowledgements.md
+  - name: Preface
+    description:
+      $ref: ./docs/overview/Preface.md
   - name: Glossary_and_conventions
     x-displayName: Glossary and conventions
     description:
       $ref: ./docs/overview/Glossary_and_conventions.md
+  - name: Specifications
+    description:
+      $ref: ./docs/overview/Specifications.md
   - name: Requests_and_responses
     x-displayName: Requests and responses
     description:
@@ -37,15 +37,8 @@ tags:
   - name: Resources
     description:
       $ref: ./docs/overview/Resources.md
-  - name: Options
-    description: Retrieving system options and conformance information.
-x-tagGroups:
-  - name: Docs
-    tags:
-      - Glossary_and_conventions
-      - Requests_and_responses
-      - Resources
-  - name: Endpoints
-    tags:
-      - Options
+  - name: Amendment_record
+    x-displayName: Amendment Record
+    description:
+      $ref: ./docs/overview/Amendment_record.md
 

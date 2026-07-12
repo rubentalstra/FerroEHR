@@ -1,0 +1,5 @@
+schema:
+  type: string
+  enum:
+    - application/xml
+    - application/json

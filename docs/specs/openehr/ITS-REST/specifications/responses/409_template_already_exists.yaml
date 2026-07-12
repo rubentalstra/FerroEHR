@@ -1,2 +1,2 @@
 description: |
-  `409 Conflict` is returned when a template with same `template_id` (at given version, if supplied) already exists.
+  `409 Conflict` is returned when a template with same `template_id` already exists.
