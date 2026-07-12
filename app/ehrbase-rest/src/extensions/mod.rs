@@ -63,13 +63,15 @@ pub mod terminology;
 /// `1.0.3` spec *text* (`docs/specs/openehr/ITS-REST/`) is a separate vendored
 /// tree, the source of per-section citations only — not the tested contract.
 ///
-/// TODO(w3e-integrate): `crate::api::system::options` (`SystemOptionsConfig`)
-/// and `crate::overview::status` each still carry a local `"1.0.3"` literal for
-/// the same identity; both should read [`provenance::ITS_REST`] here (and the
-/// System manifest may instead thread the runner-derived value from a
-/// `build.rs` constant per that module's own `TODO(w3e-integrate)`), retiring
-/// the last two copies. Spec pins are `docs/VERSIONS.md` (the single source of
-/// truth for the pin values themselves).
+/// All three identity surfaces now read these constants — the former
+/// per-endpoint copies are retired: management `/info` ([`management::info`]),
+/// the System Options manifest (`OPTIONS /`,
+/// [`crate::api::system::options::SystemOptionsConfig`], whose
+/// `restapi_specs_version` / `conformance_profile` defaults quote
+/// [`provenance::ITS_REST`] / [`provenance::CONFORMANCE_PROFILE`]), and
+/// `/status` ([`crate::overview::status`]) all quote [`provenance::ITS_REST`]
+/// for the tested-contract identity. Spec pins are `docs/VERSIONS.md` (the
+/// single source of truth for the pin values themselves).
 pub mod provenance {
     /// The tested openEHR ITS-REST contract identity (development edition — see
     /// the module doc for the derivation). Matches `tools/conformance`
@@ -88,4 +90,12 @@ pub mod provenance {
     /// The `PostgreSQL` version this server targets (`docs/VERSIONS.md`). No
     /// openEHR spec governs the datastore — our own design.
     pub const PG_TARGET: &str = "18.4+";
+    /// The last machine-computed ECC conformance verdict — the highest profile
+    /// obtained — advertised by the System Options manifest (`OPTIONS /`
+    /// `conformance_profile`). No openEHR spec governs the value; the
+    /// conformance instrument computes it (CNF master03 profiles). Updated at
+    /// each conformance re-baseline from the runner's machine verdict recorded
+    /// in `docs/conformance/CONFORMANCE_REPORT.md` §"Profile verdict"
+    /// (Core PASS · Standard PASS). The manifest MUST NOT out-claim it.
+    pub const CONFORMANCE_PROFILE: &str = "STANDARD";
 }

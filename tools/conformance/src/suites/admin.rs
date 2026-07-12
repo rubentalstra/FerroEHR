@@ -12,19 +12,21 @@
 //! cases fully cover it.
 //!
 //! Contract: `204` physical delete of an existing EHR; `404` for an unknown EHR
-//! (and for a re-delete — idempotent); `200 {"deleted": n}` for the bulk delete
-//! (partial success: missing ids skipped); `400` for an empty bulk request. The
+//! (and for a re-delete — idempotent); `204 No Content` (bodyless) for the bulk
+//! delete — including a subset with missing ids (skipped) and an **absent
+//! `ehr_id`**, which deletes **all** EHRs per
+//! `operations/admin_ehr_delete_all.yaml` (success → `204`, `responses/204_deleted_hard.yaml`)
+//! + the optional `ehr_id` selector (`parameters/query/ehr_id_Admin.yaml`). The
 //! admin group is config-gated (`RestConfig::admin.enabled`); the compose dev
 //! config enables it, so these exercise the *active* surface.
 
-use serde_json::Value;
 use uuid::Uuid;
 
 use crate::assert;
 use crate::case::{Capability, CaseMeta, Compare, Format, Profile};
 use crate::catalog::Area;
 use crate::harness::{
-    AuthSlot, CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
+    AuthSlot, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
 };
 use crate::registry::CaseEntry;
 use crate::suites::support;
@@ -147,7 +149,11 @@ fn run_delete_idempotent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// `DELETE /admin/ehr/all?ehr_id=a&ehr_id=b` → `200 {"deleted": 2}`.
+/// `DELETE /admin/ehr/all?ehr_id=a&ehr_id=b` → `204 No Content` (bodyless).
+///
+/// `operations/admin_ehr_delete_all.yaml`: a synchronous bulk delete succeeds
+/// with `204` (`responses/204_deleted_hard.yaml`), not a `200 {"deleted": n}`
+/// body (which the OAS never declares).
 fn run_delete_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let a = support::create_ehr(ctx).await?;
@@ -161,19 +167,14 @@ fn run_delete_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 .with_auth(AuthSlot::Admin),
             )
             .await?;
-        assert::status(&resp, 200)?;
-        let body: Value = resp.json()?;
-        if body["deleted"].as_u64() == Some(2) {
-            Ok(DataSetReport::SINGLE)
-        } else {
-            Err(CaseError::Assertion(format!(
-                "expected {{\"deleted\": 2}}, got {body}"
-            )))
-        }
+        assert::status(&resp, 204)?;
+        Ok(DataSetReport::SINGLE)
     })
 }
 
-/// Bulk delete is partial-success: a real + a missing id → `200 {"deleted": 1}`.
+/// A subset delete with a missing id still succeeds `204` (the absent id is
+/// skipped; `operations/admin_ehr_delete_all.yaml` declares no per-id failure
+/// for the bulk operation).
 fn run_delete_all_partial<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let a = support::create_ehr(ctx).await?;
@@ -187,26 +188,21 @@ fn run_delete_all_partial<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 .with_auth(AuthSlot::Admin),
             )
             .await?;
-        assert::status(&resp, 200)?;
-        let body: Value = resp.json()?;
-        if body["deleted"].as_u64() == Some(1) {
-            Ok(DataSetReport::SINGLE)
-        } else {
-            Err(CaseError::Assertion(format!(
-                "expected {{\"deleted\": 1}} (partial success), got {body}"
-            )))
-        }
+        assert::status(&resp, 204)?;
+        Ok(DataSetReport::SINGLE)
     })
 }
 
-/// An empty bulk request (no `ehr_id`) is refused with `400` (no implicit
-/// delete-everything).
+/// An **absent** `ehr_id` selects the full EHR set: per
+/// `operations/admin_ehr_delete_all.yaml` ("Deletes all or multiple EHRs") +
+/// the optional `ehr_id` selector (`parameters/query/ehr_id_Admin.yaml`), the
+/// bulk delete with no selector deletes **all** EHRs and succeeds `204`.
 fn run_delete_all_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let resp = ctx
             .send(HttpRequest::new(Method::Delete, "/admin/ehr/all").with_auth(AuthSlot::Admin))
             .await?;
-        assert::status(&resp, 400)?;
+        assert::status(&resp, 204)?;
         Ok(DataSetReport::SINGLE)
     })
 }

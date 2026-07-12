@@ -25,11 +25,7 @@ pub(crate) use dispatch::dispatch;
 // The `adl1.4/{id}/example` handler negotiates the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam, exactly
 // as the `ehr` group does; the group-level alias lets `template_adl14`'s
-// `super::flat::…` resolve to that converter module.
-//
-// TODO(w3e-integrate): the shared converters
-// `crate::formats::dispatch::{composition_flat_response,composition_structured_response}`
-// are currently `pub(super)` (visible only inside `crate::formats`); widen them
-// to `pub(crate)` (or re-export at `crate::formats`) so this cross-group call
-// compiles — the same reconciliation the `ehr` example handler needs.
+// `super::flat::…` resolve to that converter module. The shared converters
+// (`crate::formats::dispatch::{composition_flat_response,composition_structured_response}`)
+// are `pub(crate)`, so this cross-group call resolves directly.
 use crate::formats::dispatch as flat;

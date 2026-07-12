@@ -36,15 +36,16 @@ fn concrete_type(rm_type: &str) -> &str {
 
 /// RM attributes that are arrays (needed to re-materialise compacted structure).
 ///
-// TODO(port): (F-10-11) this multi-valued-attribute set is hard-coded and covers
-// only the common COMPOSITION/HISTORY/ITEM/ENTRY path. Any other genuinely
-// multi-valued attribute reachable in a template (`credentials`,
-// `other_participations`, nested cluster/section variants) would be rebuilt as a
-// single object. Drive multiplicity from the generated BMM RM attribute model
-// (the P16 static RM model) — the same model AQL path analysis mandates — instead of this
-// list.
+/// Multiplicity is driven from the generated BMM RM attribute model (the static
+/// `openehr_rm::model`, the same model AQL path analysis uses) rather than a
+/// hard-coded list: the shared derivation lives in [`crate::tdd::is_multiple_attr`]
+/// (walk from the versioned-object roots, count class-typed `List`/`Set`/`Hash`
+/// attributes, exclude primitive byte arrays such as `DV_MULTIMEDIA.data`). This
+/// now covers every genuinely multi-valued structural attribute a template can
+/// reach (`other_participations`, `participations`, nested cluster/section
+/// variants, …), not only the COMPOSITION/HISTORY/ITEM/ENTRY common path.
 fn is_multiple(attr: &str) -> bool {
-    matches!(attr, "content" | "items" | "events" | "activities")
+    crate::tdd::is_multiple_attr(attr)
 }
 
 /// Convert a FLAT map to a canonical-JSON composition, driven by `wt`.
@@ -509,11 +510,21 @@ fn finish_identity(
     }
     // Per-ENTRY mandatory structural fields not surfaced in FLAT (only added when
     // a populated leaf did not already create them, so the round-trip is stable).
-    let item_tree = || json!({"_type": "ITEM_TREE", "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []});
+    // A synthesized structural node stands in for content the simplified form did
+    // not carry; `LOCATABLE.archetype_node_id` is mandatory
+    // (`RM/.../common/locatable.adoc` `Is_archetype_root`/invariants), so the
+    // placeholder `at0001` is stamped — there is no faithful source id for absent
+    // content, and the value only needs to be a non-empty archetype-relative id
+    // for the rebuilt object to be a valid `LOCATABLE`.
+    let item_tree = || {
+        json!({"_type": "ITEM_TREE", "archetype_node_id": "at0001",
+               "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []})
+    };
     match rm_type {
         "OBSERVATION" => {
             obj.entry("data".to_owned()).or_insert_with(|| {
-                json!({"_type": "HISTORY", "name": {"_type": "DV_TEXT", "value": "History"},
+                json!({"_type": "HISTORY", "archetype_node_id": "at0001",
+                       "name": {"_type": "DV_TEXT", "value": "History"},
                        "origin": {"_type": "DV_DATE_TIME", "value": DEFAULT_TIME}, "events": []})
             });
         }

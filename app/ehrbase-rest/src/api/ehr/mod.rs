@@ -42,14 +42,11 @@ pub(crate) use dispatch::dispatch;
 // COMPOSITION create/get/update negotiate the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam; the
 // group-level alias lets the `composition` module's `super::flat::…` resolve to
-// that converter module (the same pattern the `definition` group uses).
-//
-// TODO(w3e-integrate): the shared converters
+// that converter module (the same pattern the `definition` group uses). The
+// shared converters
 // `crate::formats::dispatch::{composition_from_flat,composition_from_structured,
-// composition_flat_response,composition_structured_response}` are currently
-// `pub(super)` (visible only inside `crate::formats`); widen them to
-// `pub(crate)` (or re-export at `crate::formats`) so these cross-group calls
-// compile — the same reconciliation the `definition` example handler needs.
+// composition_flat_response,composition_structured_response}` are `pub(crate)`,
+// so these cross-group calls resolve.
 use crate::formats::dispatch as flat;
 
 use axum::response::Response;

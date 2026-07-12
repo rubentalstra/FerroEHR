@@ -33,29 +33,46 @@
 //!   ([`negotiate::set_resource_headers`]); reads, deletes, and the `409`/`412`
 //!   error path emit versioning headers without `Location`
 //!   ([`negotiate::set_versioning_headers`]).
-//! - **G-5 `return=identifier` — PARTIAL.** [`negotiate::write_rm`] /
+//! - **G-5 `return=identifier` — DONE.** [`negotiate::write_rm`] /
 //!   [`negotiate::write_json`] honour `return=identifier` with a
-//!   `{ "uid": … }` body at a `200`/`201` status (never `204`). Per-API bodies
-//!   that the OAS shapes differently are wired at the dispatch call sites
-//!   (TODO(w3e-integrate) there).
+//!   `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
+//!   overview §"Prefer only identifier" shape ("a single JSON object with a
+//!   single `uid` attribute"). That generic `{uid}` body is the realization for
+//!   every `uid`-versioned resource (EHR, COMPOSITION, EHR_STATUS, FOLDER,
+//!   CONTRIBUTION): the `ehr`-group OAS defines no distinct per-resource
+//!   identifier schema. The one divergence is the `definition` group — templates
+//!   are not `uid`-versioned, so their identifier body is
+//!   `{ "template_id": … }` (`schemas/others/TemplateIdentifier.yaml`), rendered
+//!   in that group's handlers.
 //! - **G-6 `Preference-Applied` — DONE.** Emitted on write responses echoing
 //!   the honoured `return=` preference ([`negotiate`], a MAY).
-//! - **G-7 item-tag headers — PARTIAL.** Parse/emit helpers exist
-//!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]);
-//!   the dispatch wiring to the ITEM_TAG service is a
-//!   TODO(w3e-integrate) in [`params`].
-//! - **G-10 method status — PARTIAL.** [`error::method_not_allowed_handler`]
-//!   (`405`) and [`error::not_implemented_handler`] (`501`) render the openEHR
-//!   body; mounting them on the router is a TODO(w3e-integrate) in [`error`].
+//! - **G-7 item-tag headers — DONE (EHR group).** The parse/emit helpers
+//!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
+//!   consumed by the EHR/COMPOSITION dispatch:
+//!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
+//!   the request wrapper headers onto the ITEM_TAG service on change-controlled
+//!   writes (empty value ⇒ delete all) and
+//!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
+//!   on the response. (The demographic group does not yet emit these — a pending
+//!   service seam.)
+//! - **G-10 method status — DONE.** [`error::method_not_allowed_handler`]
+//!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
+//!   (`crate::router`), so a known path called with a disallowed method renders
+//!   the openEHR `{ error, message }` body; the paired `501` for a
+//!   recognised-but-unimplemented operation rides
+//!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
+//!   dispatch level ([`error::not_implemented_handler`]).
 //! - **G-8 version identity / G-9 `openehr-uri`** are out of this change's
-//!   scope (tracked in the register); `/status` still reports the
-//!   Release-1.0.3 label and `openehr-uri` is not emitted.
+//!   scope (tracked in the register); `/status` reports the tested
+//!   development-edition contract identity (shared provenance,
+//!   `crate::extensions::provenance::ITS_REST`) and `openehr-uri` is not emitted.
 //!
-//! Deferred cross-folder wiring (left as `// TODO(w3e-integrate)` notes in this
-//! module's files): item-tag dispatch (`params`), `405`/`501` router mount
-//! (`error`), per-API identifier bodies, and — a compile follow-up of the new
-//! `UpdateAudit.system_id` field — the `UpdateAudit { … }` literal in
-//! `api/ehr/dispatch.rs` gains `system_id: None`.
+//! All the cross-folder wiring the redesign deferred has since landed: the
+//! item-tag dispatch (the EHR group's `apply_item_tag_headers` / `echo_item_tags`),
+//! the `405` router-fallback mount + the `501` `ApiError` seam, the per-API
+//! identifier bodies, and the `UpdateAudit.system_id` field (set by
+//! [`mk_update_version`](crate::api::ehr::mk_update_version) and merged from the
+//! committal request headers).
 //!
 //! ## Module map (file ↦ governing sections)
 //!

@@ -68,12 +68,11 @@ pub(super) async fn store<S: Platform>(
         .query_type
         .unwrap_or_else(|| DEFAULT_QUERY_TYPE.to_owned());
     let body = negotiate::text_body(&parts.body)?;
-    // TODO(w3e-integrate): the `DefinitionAdapter::query_store` impl
-    // (`app/ehrbase/src/service/stored_query.rs`) must honour `query_type`:
-    // thread it to the SM `store_query`'s `a_type` (currently hardcoded `AQL`),
-    // run the AQL syntactic check only when the formalism is AQL, persist the
-    // declared formalism in the descriptor, and reject an unsupported non-AQL
-    // formalism as a distinct typed error (not "invalid AQL"). See G-2.
+    // The `DefinitionAdapter::query_store` impl honours `query_type`: an
+    // AQL formalism runs the syntactic check, while an unsupported non-AQL
+    // formalism is rejected as a distinct unsupported-formalism `400`
+    // (not a blanket "invalid AQL"). See `QUERY_DESCRIPTOR.formalism`,
+    // `parameters/query/query_type.yaml`.
     state
         .backend()
         .query_store(name.clone(), None, query_type, body)
@@ -133,9 +132,9 @@ pub(super) async fn version_store<S: Platform>(
         .query_type
         .unwrap_or_else(|| DEFAULT_QUERY_TYPE.to_owned());
     let body = negotiate::text_body(&parts.body)?;
-    // TODO(w3e-integrate): as in `store`, the `query_store` impl must honour
-    // `query_type` (thread to SM `store_query` `a_type`; AQL check only for the
-    // AQL formalism; honest unsupported-formalism reject). See G-2.
+    // As in `store`, the `query_store` impl honours `query_type`: the AQL
+    // syntactic check runs only for the AQL formalism, and an unsupported
+    // non-AQL formalism is an honest unsupported-formalism reject.
     state
         .backend()
         .query_store(name.clone(), Some(version.clone()), query_type, body)

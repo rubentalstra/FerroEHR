@@ -27,6 +27,17 @@ pub struct ResourceMeta {
     /// as the `Last-Modified` response header — SHOULD-present on
     /// `VERSION`/`VERSIONED_OBJECT` responses.
     pub last_modified: Option<Timestamp>,
+    /// The ITEM_TAGs (RM `common.item_tag`) currently associated with this
+    /// resource, as their canonical-JSON list (`Value::Array` of `ITEM_TAG`
+    /// objects), or `None` when the operation carries no tags. The ITS-REST
+    /// adapter renders this into the `openehr-item-tag` /
+    /// `openehr-version-item-tag` response headers (`headers/openehr-item-tag.yaml`,
+    /// `headers/openehr-version-item-tag.yaml`).
+    ///
+    /// No openEHR spec governs this envelope field — our own design: the SM
+    /// returns plain values, and this seam carries what the mandated headers
+    /// need. The tag *content* is the RM `common.item_tag.ITEM_TAG` type.
+    pub item_tags: Option<Value>,
 }
 
 impl ResourceMeta {
@@ -38,6 +49,7 @@ impl ResourceMeta {
             ehr_id: ehr_id.into(),
             uid: uid.into(),
             last_modified: None,
+            item_tags: None,
         }
     }
 
@@ -45,6 +57,15 @@ impl ResourceMeta {
     #[must_use]
     pub fn with_last_modified(mut self, at: Timestamp) -> Self {
         self.last_modified = Some(at);
+        self
+    }
+
+    /// Attach the resource's ITEM_TAG list (canonical-JSON `Value::Array` of
+    /// `ITEM_TAG` objects) for the `openehr-item-tag` /
+    /// `openehr-version-item-tag` response headers.
+    #[must_use]
+    pub fn with_item_tags(mut self, tags: Value) -> Self {
+        self.item_tags = Some(tags);
         self
     }
 }

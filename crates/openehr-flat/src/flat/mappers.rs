@@ -81,6 +81,7 @@ fn emit_quantified_extras(dv: &Value, base: &str, out: &mut FlatMap, with_accura
 /// `listOpen`: `|other` is only emitted when the slot is open (`Some(true)` or,
 /// when the template omits the flag, `None`); a `DV_TEXT` in a closed slot
 /// (`Some(false)`) is a data defect and falls back to a plain value.
+#[allow(clippy::too_many_lines)] // one dispatch over the DATA_VALUE leaf set
 pub(crate) fn leaf_to_flat(
     dv: &Value,
     slot_rm_type: &str,
@@ -312,6 +313,7 @@ fn infer_leaf_type(view: &FlatView) -> Option<&'static str> {
     }
 }
 
+#[allow(clippy::match_same_arms)] // arms kept explicit per RM type for clarity
 fn build_for(base: &str, view: &FlatView) -> Option<Value> {
     match base {
         "DV_TEXT" | "DV_PARAGRAPH" => text_from_flat(view, base),

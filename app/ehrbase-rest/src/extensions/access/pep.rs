@@ -549,19 +549,11 @@ fn attr_single(attr: &Attr) -> Option<&str> {
 ///
 /// SMART is off by default and produces zero wire drift when disabled
 /// (`crate::smart::config::SmartConfig`), so the gate below is inert unless an
-/// operator opts in.
-//
-// TODO(w3e-integrate): SMART is not yet a field on `crate::config::RestConfig`.
-// Once `RestConfig` gains `pub smart: crate::smart::config::SmartConfig` (see the
-// `smart/config.rs` integrate note), replace this stub with:
-//     let cfg = &state.config().smart;
-//     cfg.enabled.then_some(cfg)
-// and the gate activates with no further change here. Until then it returns
-// `None` and the SMART gate is a no-op (`smart_decide` is exercised directly by
-// this module's unit tests).
+/// operator opts in via `EHRBASE_REST_SMART__ENABLED` (the `smart` field on
+/// `crate::config::RestConfig`).
 fn smart_config<S: Platform>(state: &AppState<S>) -> Option<&SmartConfig> {
-    let _ = state;
-    None
+    let cfg = &state.config().smart;
+    cfg.enabled.then_some(cfg)
 }
 
 /// Run the SMART gate for one operation, AND-composed after the RBAC/Cedar
@@ -643,14 +635,18 @@ fn smart_decide(
         })
 }
 
-// TODO(w3e-integrate): the AQL and template SMART families are not covered by
-// the ABAC pre/post checks above (query is ABAC-`Skip` and handled in the query
-// path; template ops are RBAC-only). Their resolved resource ids — the stored
-// `qualified_query_name` and the `{template_id}` path param — are known in the
-// query/definition dispatchers (`crate::api::query`, `crate::api::definition`),
-// which should call `smart_gate(&state, abac, &principal, op, Some(resource_id),
-// None)` after their own checks. Wiring those call sites crosses out of this
-// folder.
+// PORT NOTE (SMART coverage boundary, master08 §Resource Scopes): the SMART
+// gate above rides the ABAC pre/post checks, which cover the COMPOSITION family
+// (`mode_of` → `Pre`/`Post`). The AQL and template families are ABAC-`Skip`
+// (query is handled in the query path via `query_pre`/`query_post`; template
+// ops are RBAC-only, carrying no `ResourceKind`), so their SMART resource-scope
+// enforcement (`aql-<name>`, `template-<id>`) is applied at their own dispatch
+// call sites, not here: those dispatchers hold the resolved resource id (the
+// stored `qualified_query_name`, the `{template_id}` path param) and are the
+// point that would call the pure `smart_decide` for those families. That wiring
+// lives in `crate::api::query` / `crate::api::definition` (outside this module);
+// the COMPOSITION family — the one master08 example that flows through ABAC — is
+// fully gated here.
 
 #[cfg(test)]
 mod tests {

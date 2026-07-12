@@ -208,7 +208,7 @@ expression: wt
                     ]
                   },
                   {
-                    "id": "quantity_value2",
+                    "id": "quantity_value_1",
                     "rmType": "DV_QUANTITY",
                     "min": 0,
                     "max": 1,
@@ -247,7 +247,7 @@ expression: wt
                     ]
                   },
                   {
-                    "id": "quantity_value3",
+                    "id": "quantity_value_2",
                     "rmType": "DV_QUANTITY",
                     "min": 0,
                     "max": 1,

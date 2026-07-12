@@ -12,10 +12,11 @@
 //! only (`crates/openehr-its/src/rest/generated/` has no `system` group) — so
 //! this one standalone operation is hand-written here, correctly.
 //!
-//! This module owns the manifest's *shape and content*; mounting it on the
-//! router is the wiring layer's job (see the `TODO(w3e-integrate)` notes on
-//! [`route`] and [`SystemOptionsConfig`]). The register the redesign closes is
-//! `docs/design/its-rest/system.md` §1 (G-1..G-6).
+//! This module owns the manifest's *shape and content*; the wiring layer
+//! (`crate::router`) constructs the [`SystemManifest`] from config plus the
+//! live mounted-group set and mounts [`route`] at the API base-path root. The
+//! register the redesign closes is `docs/design/its-rest/system.md` §1
+//! (G-1..G-6).
 
 use std::sync::Arc;
 
@@ -24,12 +25,8 @@ use axum::routing::{MethodRouter, options};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use serde::Serialize;
 
+use crate::extensions::provenance;
 use crate::overview::negotiate;
-
-/// The openEHR ITS-REST version this server targets. The OAS `example` value
-/// (`1.1.0`, `system-codegen.openapi.yaml` line 114) is illustrative only, not
-/// normative — our conformance target is Release 1.0.3.
-const OPENEHR_REST_API_VERSION: &str = "1.0.3";
 
 /// The HTTP methods this API surface supports — the `Allow` header the OAS
 /// `200_options` response carries (`system-codegen.openapi.yaml` `headers.Allow`,
@@ -41,34 +38,25 @@ const ALLOW_METHODS: &str = "GET, POST, PUT, DELETE, OPTIONS";
 /// (`system-codegen.openapi.yaml` lines 116-121).
 ///
 /// This is the spec-defined **default** only. G-1 requires the *live* list —
-/// exactly the groups the router mounts — so the wiring layer passes its
+/// exactly the groups the router mounts — so [`crate::router`] passes its
 /// actual mounted-group set to [`SystemManifest::new`] rather than relying on
-/// this constant (see the `TODO(w3e-integrate)` on [`route`]).
+/// this constant.
 pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/query", "/admin"];
-
-/// The default conformance profile advertised in the manifest.
-///
-/// PORT NOTE (`docs/design/its-rest/system.md` G-2): this is a *documented
-/// default*, not a value the handler hardcodes — [`SystemManifest`] always
-/// reads [`SystemOptionsConfig::conformance_profile`]. The authoritative
-/// verdict is the conformance runner's machine-computed profile
-/// (`tools/conformance` `reporting/report.rs` / `master03-profiles.adoc`); the
-/// manifest MUST NOT out-claim it. The default is the highest profile the CDR
-/// targets; the wiring layer should override it from build-time ECC badge data
-/// (see the `TODO(w3e-integrate)` on [`SystemOptionsConfig::default`]).
-const DEFAULT_CONFORMANCE_PROFILE: &str = "STANDARD";
 
 /// Identity + conformance fields of the System-Options manifest, sourced from
 /// configuration so the public identity (G-6) and the advertised conformance
 /// profile (G-2) are not string literals baked into the handler.
 ///
-/// TODO(w3e-integrate): `crate::config::RestConfig` should carry (or embed) a
-/// `SystemOptionsConfig`, populated from `EHRBASE_*` config keys, and the
-/// wiring layer should thread it into [`SystemManifest::new`]. The
-/// `conformance_profile` default in particular should be derived from the
-/// committed conformance run's machine verdict — a `build.rs` constant read
-/// from `docs/conformance/results.json` (like `git_sha`), so the manifest
-/// states a *measured* profile — rather than the compile-time default here.
+/// The defaults are the single shared provenance source
+/// ([`crate::extensions::provenance`]): `restapi_specs_version` quotes the
+/// tested-contract identity [`provenance::ITS_REST`] and `conformance_profile`
+/// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
+/// verdict, updated at each conformance re-baseline
+/// (`docs/conformance/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
+/// MUST NOT out-claim that verdict. `crate::config::RestConfig` embeds a
+/// `SystemOptionsConfig` (bound from the `EHRBASE_REST_SYSTEM__*` env keys), so
+/// an operator MAY override any identity field while the defaults stay
+/// measured.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct SystemOptionsConfig {
@@ -92,8 +80,8 @@ impl Default for SystemOptionsConfig {
             solution: "EHRbase-RS".to_owned(),
             solution_version: env!("CARGO_PKG_VERSION").to_owned(),
             vendor: "EHRbase-RS project".to_owned(),
-            restapi_specs_version: OPENEHR_REST_API_VERSION.to_owned(),
-            conformance_profile: DEFAULT_CONFORMANCE_PROFILE.to_owned(),
+            restapi_specs_version: provenance::ITS_REST.to_owned(),
+            conformance_profile: provenance::CONFORMANCE_PROFILE.to_owned(),
         }
     }
 }
@@ -184,23 +172,20 @@ impl SystemManifest {
 /// `MethodRouter<S>` composes with a router of any state type. It is generic
 /// so the wiring layer can mount it on the `AppState`-typed application router.
 ///
-/// TODO(w3e-integrate): `crate::router` should
-///   1. build a [`SystemManifest`] from the server config (a
-///      [`SystemOptionsConfig`]) and the **live** mounted-group list — the
+/// [`crate::router`] wires this:
+///   1. it builds a [`SystemManifest`] from the server config
+///      ([`SystemOptionsConfig`]) and the **live** mounted-group list — the
 ///      groups `crate::api::api_router` actually merges (`/ehr`,
-///      `/demographic`, `/definition`, `/query`, `/admin`, plus any
-///      config-gated extension surfaces it chooses to advertise), not
-///      [`SPEC_ENDPOINTS`] hardcoded (closes G-1);
-///   2. mount `system::options::route(manifest)` at the **API base-path root**
-///      (`cfg.base_path`, e.g. `OPTIONS /ehrbase/rest/openehr/v1`) — the root
-///      the OAS `servers`/`paths` describe (closes G-3);
-///   3. keep the existing bare-`/` mount as a compatibility alias for naive
-///      probes (`docs/design/its-rest/system.md` §2.4 — harmless, helps naive
-///      clients);
-///   4. mount both **above** the `CorsLayer` (that layer treats every
-///      `OPTIONS` as a CORS preflight and short-circuits it — the reason the
-///      current handler is added after the middleware stack in
-///      `router.rs:118-121`).
+///      `/demographic`, `/definition`, `/query`, and `/admin` when its group is
+///      enabled), not [`SPEC_ENDPOINTS`] hardcoded (closes G-1);
+///   2. it mounts this handler at the **API base-path root** (`cfg.base_path`,
+///      e.g. `OPTIONS /ehrbase/rest/openehr/v1`) — the root the OAS
+///      `servers`/`paths` describe (closes G-3);
+///   3. it keeps a bare-`/` mount as a compatibility alias for naive root
+///      probes (`docs/design/its-rest/system.md` §2.4);
+///   4. both mounts sit **above** the `CorsLayer` (that layer treats every
+///      `OPTIONS` as a CORS preflight and short-circuits it), which is why the
+///      handler is added after the middleware stack in `crate::router`.
 pub fn route<S>(manifest: Arc<SystemManifest>) -> MethodRouter<S>
 where
     S: Clone + Send + Sync + 'static,
@@ -260,8 +245,11 @@ mod tests {
         assert!(v["solution"].is_string());
         assert!(v["solution_version"].is_string());
         assert!(v["vendor"].is_string());
-        assert_eq!(v["restapi_specs_version"], "1.0.3");
-        assert_eq!(v["conformance_profile"], "STANDARD");
+        // The tested development-edition contract identity (shared provenance,
+        // matching management `/info` + the ECC report), not the retired
+        // `1.0.3` release label; the profile is the machine-computed verdict.
+        assert_eq!(v["restapi_specs_version"], provenance::ITS_REST);
+        assert_eq!(v["conformance_profile"], provenance::CONFORMANCE_PROFILE);
         assert!(v["endpoints"].is_array());
     }
 

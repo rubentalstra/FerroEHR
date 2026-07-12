@@ -52,7 +52,6 @@ const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+
 /// Whether the client explicitly asks for the Better `web-template` JSON format
 /// on `Accept` (`application/openehr.wt+json`).
 
-
 /// Whether the client asks for the FLAT (simSDT) format on `Accept`
 /// (`application/openehr.wt.flat+json`).
 pub(crate) fn wants_flat(headers: &HeaderMap) -> bool {
@@ -668,7 +667,6 @@ pub(crate) fn error_with_meta(
 /// `return=minimal` → an empty body. `Location` + `ETag` carry the template
 /// id on every case.
 
-
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
@@ -742,7 +740,6 @@ mod tests {
             Format::Xml
         );
     }
-
 
     #[test]
     fn content_type_selection() {

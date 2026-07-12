@@ -12,8 +12,8 @@
 //! hand-written in [`options`]. [`options::route`] builds the `OPTIONS`
 //! handler; the wiring layer (`crate::router`) constructs the
 //! [`options::SystemManifest`] from config + the live mounted-group set and
-//! mounts it at the API base-path root (see the `TODO(w3e-integrate)` notes in
-//! [`options`]).
+//! mounts it at the API base-path root (and a bare-`/` compatibility alias),
+//! above the CORS layer.
 
 pub mod options;
 

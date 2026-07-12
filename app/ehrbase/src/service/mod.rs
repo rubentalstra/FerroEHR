@@ -52,6 +52,8 @@ mod version_id;
 mod versioned;
 mod vobject;
 
+pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -102,6 +104,12 @@ pub struct EhrbaseService {
     /// `enabled = true`) the commit path offloads large media to object storage
     /// and the read path can re-inline it on demand.
     pub(crate) multimedia: Option<Arc<crate::multimedia::MultimediaEngine>>,
+    /// The optional Subject Proxy FHIR-frame executor, selected when a
+    /// deployment configures FHIR systems ([`SubjectProxyConfig`]). Used by the
+    /// `I_DATA_BINDING` FHIR (`API_CALL`/`fhir_get`) frame executor
+    /// (`data_frame.adoc`); `None` (default) makes every FHIR frame a typed
+    /// rejection (fail-closed — the SPS reaches only configured systems).
+    pub(crate) subject_proxy_fhir: Option<Arc<subject_proxy::SubjectProxyFhir>>,
     /// Multi-tenancy tenant registry cache. Only ever populated
     /// when tenancy is on (the middleware resolves through it); in single-tenant
     /// mode it stays empty and is never consulted.
@@ -127,6 +135,7 @@ impl EhrbaseService {
             audit: None,
             external_terminology: None,
             multimedia: None,
+            subject_proxy_fhir: None,
             tenant_cache: TenantCache::default(),
             ehr_access: ehr_access_cache::EhrAccessCache::default(),
         }
@@ -185,6 +194,16 @@ impl EhrbaseService {
     #[must_use]
     pub fn with_multimedia(mut self, engine: Arc<crate::multimedia::MultimediaEngine>) -> Self {
         self.multimedia = Some(engine);
+        self
+    }
+
+    /// Install the Subject Proxy FHIR-frame executor (opt-in via
+    /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get` `DATA_FRAME`
+    /// is a typed rejection (`data_frame.adoc`; fail-closed — no configured
+    /// system, no outbound request).
+    #[must_use]
+    pub fn with_subject_proxy(mut self, fhir: Arc<subject_proxy::SubjectProxyFhir>) -> Self {
+        self.subject_proxy_fhir = Some(fhir);
         self
     }
 

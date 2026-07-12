@@ -40,12 +40,9 @@ async fn run<S: Platform>(
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     // ABAC (§6.4): the patient subject-scope pre-filter + collection flag. A
-    // missing configured patient claim is a ready 403.
-    //
-    // TODO(w3e-integrate): `extensions::abac::{query_pre,query_post}` are
-    // `pub(super)` (visible only inside `extensions`) — after this dispatcher
-    // moved into `api/query/`, they must be raised to `pub(crate)` for this
-    // call site to compile. Visibility bump only; behaviour unchanged.
+    // missing configured patient claim is a ready 403. The PEP entry points
+    // (`extensions::access::pep::{query_pre,query_post}`) are `pub(crate)`, so
+    // this cross-module dispatcher calls them directly.
     let (subject_scope, collect) = match crate::extensions::access::pep::query_pre(&state, op) {
         Ok(prep) => prep,
         Err(deny) => return Ok(deny),
@@ -73,7 +70,6 @@ async fn run<S: Platform>(
     };
 
     // ABAC query post-check (§6.4): PDP fan-out over the touched template set.
-    // TODO(w3e-integrate): same `pub(super)` → `pub(crate)` bump as `query_pre`.
     if let Err(deny) = crate::extensions::access::pep::query_post(&state, op, &outcome).await {
         return Ok(deny);
     }

@@ -6,8 +6,8 @@
 //! composition_tags_update,composition_tags_delete}.yaml`.
 //!
 //! The FLAT/STRUCTURED converters are reached through the group-level
-//! `super::flat` alias (see the parent module's `TODO(w3e-integrate)` on the
-//! `crate::formats::dispatch` visibility reconciliation).
+//! `super::flat` alias onto the `pub(crate)` `crate::formats::dispatch`
+//! converters (see the parent module).
 
 use axum::response::Response;
 use http::StatusCode;

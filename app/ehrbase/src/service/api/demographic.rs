@@ -57,6 +57,29 @@ fn version_uid(resp: ServiceResponse) -> String {
     resp.meta.map(|m| m.uid).unwrap_or_default()
 }
 
+impl EhrbaseService {
+    /// Attach the party's stored ITEM_TAGs (RM `common.item_tag`) to a response's
+    /// metadata seam ([`ResourceMeta::item_tags`]), from which the ITS-REST
+    /// adapter derives the `openehr-item-tag`/`openehr-version-item-tag` response
+    /// headers. A response without metadata (a deleted read → `Null` body) is
+    /// left unchanged. The tags are read from the same store `party_tags_get`
+    /// serves, so the header and the tags sub-resource agree.
+    async fn attach_party_item_tags(
+        &self,
+        vo_id: Uuid,
+        resp: &mut ServiceResponse,
+    ) -> Result<(), SmError> {
+        if resp.meta.is_none() {
+            return Ok(());
+        }
+        let tags = self.party_tags(vo_id).await?;
+        if let Some(meta) = resp.meta.as_mut() {
+            meta.item_tags = Some(Value::Array(tags));
+        }
+        Ok(())
+    }
+}
+
 #[async_trait]
 impl DemographicService for EhrbaseService {
     // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
@@ -167,7 +190,16 @@ impl DemographicService for EhrbaseService {
 
     // ── PARTY CRUD (wire seam) ────────────────────────────────────────────────
     async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
-        Ok(self.create_party(kind, body).await?)
+        let mut resp = self.create_party(kind, body).await?;
+        // Surface the party's stored ITEM_TAGs on the response seam for the
+        // `openehr-item-tag`/`openehr-version-item-tag` response headers
+        // (person_create.yaml). A fresh party has none yet; the wire adapter
+        // persists any request-header tags and re-populates the seam afterwards.
+        if let Some(uid) = resp.meta.as_ref().map(|m| m.uid.clone()) {
+            let (vo_id, _) = version_id::parse_version_uid(&uid)?;
+            self.attach_party_item_tags(vo_id, &mut resp).await?;
+        }
+        Ok(resp)
     }
 
     async fn party_get(
@@ -178,7 +210,11 @@ impl DemographicService for EhrbaseService {
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, version) = version_id::parse_uid_based_id(&uid_based_id)?;
         let at = version_at_time.as_deref().map(parse_at_time).transpose()?;
-        Ok(self.read_party(kind, vo_id, version, at).await?)
+        let mut resp = self.read_party(kind, vo_id, version, at).await?;
+        // Attach the party's stored ITEM_TAGs for the item-tag response headers
+        // (person_get.yaml). A deleted read carries no metadata → no-op.
+        self.attach_party_item_tags(vo_id, &mut resp).await?;
+        Ok(resp)
     }
 
     async fn party_update(

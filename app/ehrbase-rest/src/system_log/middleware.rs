@@ -58,14 +58,15 @@ use crate::system_log::classify::audit_for;
 
 /// The matched ITS-REST operation id, inserted by the dispatch layer onto the
 /// response. Present iff a request reached the generic dispatcher.
-//
-// TODO(w3e-integrate): extension routers (terminology, subject-proxy, events,
-// FHIR) dispatch outside the generated `ROUTES` path and therefore do NOT yet
-// insert an `AuditOpId`, so their responses reach this layer with no operation
-// record (only the auth record fires). To bring them under ATNA coverage each
-// extension router must insert `AuditOpId(<its op id>)` onto the response the
-// same way `crate::api` does; the classifier already fails those ids closed to
-// the audited default, so no table change is needed — only the id must arrive.
+///
+/// The extension routers (terminology, event-subscription, FHIR, multi-tenancy
+/// admin) are mounted through the **same** `crate::api::mount` as the generated
+/// groups — `mount` wraps every op, generated or extension, and inserts
+/// `AuditOpId(op)` on the response uniformly — so extension traffic reaches this
+/// layer carrying its operation id. Their ids have no explicit entry in
+/// [`crate::system_log::classify`], but `classify` fails an unrecognised id
+/// closed to the audited default, so the operation record still fires; no table
+/// change is needed.
 #[derive(Debug, Clone, Copy)]
 pub struct AuditOpId(pub &'static str);
 

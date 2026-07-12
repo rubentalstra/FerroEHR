@@ -119,12 +119,14 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 // header sets the tag list for the target (an empty value removes all tags); on
 // `GET`/write responses the server MAY echo the stored tags.
 //
-// TODO(w3e-integrate): the EHR/COMPOSITION dispatchers own the wiring — on a
-// change-controlled `PUT`/`POST` call `parse_item_tag_header` for both header
-// names and forward the entries to the ITEM_TAG service for the target
-// VERSION/VERSIONED_OBJECT (empty value ⇒ delete all), and on reads/writes
-// optionally echo the stored tags with `emit_item_tag_header`. This module owns
-// only the header parse/emit; the dispatch call sites live outside `overview/`.
+// This module owns only the header parse/emit; the dispatch call sites live
+// outside `overview/`. The EHR group consumes them: on a change-controlled
+// `PUT`/`POST` `crate::api::ehr::apply_item_tag_headers` calls
+// `parse_item_tag_header` for both header names and forwards the entries to the
+// ITEM_TAG service for the target VERSION/VERSIONED_OBJECT (empty value ⇒
+// delete all), and `crate::api::ehr::echo_item_tags` optionally echoes the
+// stored tags with `emit_item_tag_header` on the response. The demographic
+// group does not yet emit these wrapper headers (a pending service seam).
 
 /// The canonical HTTP header names for the two ITEM_TAG wrapper headers.
 pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
@@ -202,6 +204,57 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValu
         .collect::<Vec<_>>()
         .join("; ");
     HeaderValue::from_str(&rendered).unwrap_or_else(|_| HeaderValue::from_static(""))
+}
+
+/// Convert one canonical `ITEM_TAG` JSON object (RM `common.item_tag`) into an
+/// [`ItemTagHeaderEntry`] for [`emit_item_tag_header`]. `None` when the object
+/// carries no `key` (an ITEM_TAG without a key is not a valid tag, RM
+/// `ITEM_TAG.Inv_key_valid`).
+pub(crate) fn item_tag_to_header_entry(tag: &serde_json::Value) -> Option<ItemTagHeaderEntry> {
+    let key = tag
+        .get("key")
+        .and_then(serde_json::Value::as_str)?
+        .to_owned();
+    Some(ItemTagHeaderEntry {
+        key,
+        value: tag
+            .get("value")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+        target_path: tag
+            .get("target_path")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_owned),
+    })
+}
+
+/// Convert parsed request-header entries (from [`parse_item_tag_header`]) into
+/// the canonical `ITEM_TAG` JSON list a tag service persists (RM
+/// `common.item_tag.ITEM_TAG`). An entry with an empty `value` omits the field
+/// (RM `ITEM_TAG.Inv_value_valid`: a set value may not be empty), so the tag
+/// stores an absent value rather than a rejected empty one.
+pub(crate) fn item_tags_from_header_entries(
+    entries: &[ItemTagHeaderEntry],
+) -> Vec<serde_json::Value> {
+    entries
+        .iter()
+        .map(|e| {
+            let mut obj = serde_json::Map::new();
+            obj.insert("_type".to_owned(), serde_json::Value::from("ITEM_TAG"));
+            obj.insert("key".to_owned(), serde_json::Value::from(e.key.clone()));
+            if !e.value.is_empty() {
+                obj.insert("value".to_owned(), serde_json::Value::from(e.value.clone()));
+            }
+            if let Some(tp) = &e.target_path {
+                obj.insert(
+                    "target_path".to_owned(),
+                    serde_json::Value::from(tp.clone()),
+                );
+            }
+            serde_json::Value::Object(obj)
+        })
+        .collect()
 }
 
 /// The value of a parsed `key` in a tag-pair segment.

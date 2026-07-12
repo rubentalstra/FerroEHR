@@ -182,6 +182,7 @@ pub fn validate_flat_other(
     flat: &serde_json::Map<String, Value>,
     wt: &WebTemplate,
 ) -> Vec<ValidationMessage> {
+    const EXCLUSIVE: &[&str] = &["code", "value", "terminology", "preferred_term"];
     let mut out = Vec::new();
     // Collect the suffix set present under each leaf path.
     let mut per_leaf: IndexMap<String, Vec<String>> = IndexMap::new();
@@ -198,7 +199,6 @@ pub fn validate_flat_other(
             entry.push(s);
         }
     }
-    const EXCLUSIVE: &[&str] = &["code", "value", "terminology", "preferred_term"];
     for (path, suffixes) in &per_leaf {
         if !suffixes.iter().any(|s| s == "other") {
             continue;
