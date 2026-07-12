@@ -8,6 +8,41 @@ method that drove the `ehrbase-sm` rewrite
 ([`../sm-platform/`](../sm-platform/README.md)). **SMART is in scope as an
 implementation target**, not just a record.
 
+**Total redesign mandate (owner directive 2026-07-12):** the register is not
+only a gap list — the `ehrbase-rest` crate gets a **complete redesign with a
+proper per-spec folder structure**, exactly like the `ehrbase-sm` rewrite,
+because the current layout (flat `dispatch/` grab-bag, 1,000-line files,
+protocol logic scattered across the root) is unmaintainable. Target
+structure (authored fresh from the spec text, never migrated):
+
+```
+app/ehrbase-rest/src/
+├── lib.rs           crate map + wire-oracle precedence
+├── overview/        the Overview spec (negotiate, committal, headers,
+│                    version_id, params, error — one file per protocol area)
+├── api/
+│   ├── system/      the System API (OPTIONS / conformance manifest)
+│   ├── ehr/         the EHR API (one module per resource: ehr, ehr_status,
+│   │                versioned_ehr_status, composition, versioned_composition,
+│   │                directory, contribution)
+│   ├── query/       the Query API (adhoc, stored, response)
+│   ├── definition/  the Definition API (template_adl14, template_adl2,
+│   │                stored_query)
+│   ├── demographic/ the Demographic API (spec-governed now, not analogy)
+│   └── admin/       the Admin API (physical EHR delete ops)
+├── formats/         the Formats spec wire (flat/structured media types)
+├── smart/           SMART App Launch (discovery, registration, launch,
+│                    scopes — NEW implementation)
+├── extensions/      EVERYTHING spec-silent, quarantined + flagged (access/
+│                    authn+authz, management, EhrScape, events, fhir,
+│                    tenancy middleware, item-tag extras, openapi serving)
+└── router.rs        assembly over the openehr-its generated route tables
+```
+
+Every file cites its governing spec section; spec-silent code moves to
+`extensions/` with the explicit flag; oversized files are broken down along
+the spec's own resource boundaries.
+
 **Oracle:** `docs/specs/openehr/ITS-REST/` — prose under
 `specifications/docs/<api>/` and `docs/{simplified_formats,
 simplified_data_template,smart_app_launch}/`, the machine contract under
