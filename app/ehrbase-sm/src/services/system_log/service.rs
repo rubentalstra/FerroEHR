@@ -61,6 +61,19 @@ pub enum ObjectClass {
     /// uid). Demographic data is person-identifiable, so it is audited under
     /// the Patient-Record `EventID` family.
     Demographic,
+    /// EHR-Extract communication (SM-5 export/import of whole-EHR or
+    /// spec-driven extracts) → "extract"; Patient-Number + object-URI
+    /// participants. Extract communication carries patient-identifiable
+    /// clinical data across systems and is audited for **non-repudiation** —
+    /// the security chapter requires that "logging of communication of
+    /// Extracts … can be used to guarantee non-repudiation of information
+    /// passed between systems" (BASE
+    /// `architecture_overview/master07-security.adoc` §Non-repudiation).
+    // TODO(w3f-integrate): message-service emission — the SM-5 EHR-Extract
+    // export/import path (`ehrbase-sm` message service) does not yet build and
+    // `emit` an `AuditEvent { object: Extract, .. }`; this variant makes the
+    // class classifiable/renderable ahead of that emission seam being wired.
+    Extract,
     /// Login / application activity → "Application Activity"; no clinical object.
     ApplicationActivity,
 }

@@ -1,8 +1,9 @@
 //! Audit configuration ([`AuditConfig`]) — a `figment`-loaded serde struct.
 //!
-//! The env keys are the §5 `EHRBASE_ATNA_`-prefixed set (see
-//! `docs/enterprise/atna-audit.md`). Loading mirrors the `ehrbase-rest`
-//! `RestConfig` pattern: defaults ← optional TOML file
+//! No openEHR spec governs configuration — the `EHRBASE_ATNA_`-prefixed env key
+//! set is our own design (the non-normative design record
+//! `docs/enterprise/atna-audit.md` tabulates it). Loading mirrors the
+//! `ehrbase-rest` `RestConfig` pattern: defaults ← optional TOML file
 //! (`EHRBASE_ATNA_CONFIG`) ← `EHRBASE_ATNA_`-prefixed environment.
 
 use figment::Figment;
@@ -31,7 +32,7 @@ pub enum FailMode {
     Closed,
 }
 
-/// ATNA audit configuration (§5). Every field has a default, so an all-defaults
+/// ATNA audit configuration. Every field has a default, so an all-defaults
 /// [`AuditConfig`] is valid (auditing is off unless `enabled`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditConfig {
