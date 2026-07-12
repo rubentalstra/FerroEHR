@@ -100,6 +100,19 @@ extensions sweep → final rewire:
    rewritten crates in one pass, then the full test suite, ECC zero-drift,
    website book + changelog updates.
 
+## The zero-TODO mandate (owner ruling 2026-07-12)
+
+The parallel rewrite coordinates cross-folder seams via `TODO(w3e-integrate)`
+/ `TODO(w3c…)` / `TODO(w3e-formats)` markers. **The phase does not close
+while ANY of them remains** in `app/ehrbase-rest`, `app/ehrbase-sm`,
+`app/ehrbase` or `crates/openehr-flat`: the final step is an inventoried
+elimination sweep (grep-driven) in which every marker is implemented — incl.
+the in-wave deferrals (SPS FHIR frame executor, the ServiceResponse item-tag
+seam, the formats read-emission wire + snapshot regen, provenance adoption
+in the System manifest + /status, AuditOpId on extension routers, the query
+408 timeout signal, per-API `return=identifier` bodies). Spec-gap
+`PORT NOTE`s (cited records of spec silence/defects) are not TODOs and stay.
+
 ## Exit criteria
 
 - [ ] Every `src/` module maps 1:1 to a spec document (or sits in
@@ -107,5 +120,7 @@ extensions sweep → final rewire:
 - [ ] The five ITS-REST spec documents fully read and realized; every
   MUST/SHOULD in the Overview protocol implemented or PORT-NOTEd.
 - [ ] Blueprint map rows 13–15 tails closed.
+- [ ] **Zero `TODO(w3e-*)`/`TODO(w3c…)` markers across the four crates**
+  (grep-verified in the close checklist).
 - [ ] Workspace green (build + clippy + nextest), ECC zero-drift, docs +
   changelog current.
