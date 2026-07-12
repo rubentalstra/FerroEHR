@@ -319,3 +319,30 @@ claiming multimedia/`link_depth`/demographic-following are unbuilt
 `docs/design/sm-platform/10-message-integration.md` / `04-…` / `08-…` and the
 non-existent `0001_schema.sql` / `0004_vo_attestation.sql` (repoint to this doc,
 the spec sections, and `0001_baseline.sql`).
+
+---
+
+## W-3f closure (2026-07-13)
+
+`message.rs`/`tdd.rs`/`admin.rs`/`dump_load.rs` re-grounded into `service/message/` (`export.rs`, `import.rs`, `tdd.rs`, `mod.rs`) and `service/admin/` (`archive.rs`, `delete.rs`, `dump_load.rs`, `statistics.rs`, `mod.rs`).
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-M1 | Reassigned | the config-gated extension wire lives in `ehrbase-rest`, not this crate — `service/message/mod.rs:42-44`; message service is native-API here |
+| G-M2 | FIXED in code | `OBJECT_REF.namespace="local"` rewrite on export — `service/message/export.rs:44,421,543` `rewrite_content_refs` |
+| G-M3 | PORT NOTE | `EXTRACT_SPEC.criteria` typed reject until `$ehr`-bound AQL export — `service/message/export.rs` (TODO on `aql/`) |
+| G-M4 | PORT NOTE | `EXTRACT_VERSION_SPEC.commit_time_interval` typed reject — `service/message/export.rs` |
+| G-M5 | PORT NOTE | import stored unvalidated / OPT-unlinked / clone `subject_id` unset — `service/message/import.rs` (re-stated vs `templates/`+`storage/`) |
+| G-M6 | PORT NOTE | synthetic `archetype_node_id` on the extract skeleton — `service/message/export.rs` |
+| G-M7 | PORT NOTE | `GENERIC_CONTENT_ITEM` (ISO 13606/CDA) typed reject, openEHR-only scope — `service/message/import.rs` |
+| G-M8 | PORT NOTE | `import_tdds` design-filled signature — `service/message/mod.rs:126`, `tdd.rs` |
+| G-D1 | FIXED (scrub) | dangling `10-message-integration.md`/`0001_schema.sql`/`0004_vo_attestation.sql` citations and the stale version-branching line all removed (grep-clean across `message/`, `admin/`) |
+| G-A1 | PORT NOTE | `admin_ehr_delete_all` spec-silent extension — `service/admin/delete.rs` |
+| G-A2 | PORT NOTE | archive = marker; physical storage-tier move spec-silent — `service/admin/{mod,archive}.rs:33` |
+| G-A3 | PORT NOTE | `archive_parties` marks the party VO only — `service/admin/archive.rs` |
+| G-A4 | PORT NOTE | export = canonical JSON, uncompressed; XML/`zip`/`7z` → 400, cited as deliberately-unbuilt enum members — `service/admin/dump_load.rs:201-218` |
+| G-A5 | already-correct | `PLATFORM_SERVICE` statistics for `Ehr`/`Demographic` only — `service/admin/statistics.rs` |
+| G-A6 | PORT NOTE | dump/load EHR-content-scoped; demographic + standalone attestations out of scope — `service/admin/dump_load.rs:24-33` |
+| G-A7 | already-correct | `time_interval` closed `[lo,hi]` (SM silent) — `service/admin/mod.rs` |
+
+Open residue: none — G-M2/G-D1 fixed in code, G-M1 reassigned to `ehrbase-rest`, the remaining message/admin items kept as cited PORT NOTE / already-correct.

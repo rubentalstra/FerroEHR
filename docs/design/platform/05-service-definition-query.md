@@ -290,3 +290,29 @@ app/ehrbase/src/service/query/
 | `adl2_template_list` omits `concept`/`archetype_id` (no cADL parser) — `definition.rs:425` | **keep** — register-10 dep |
 | Multi-EHR `ehr_ids` extension / `RESULT_SET.id` SM-vs-ITS-REST / formalism subset — 08-query §4 | **re-verify** — multi-EHR now realized (drop the "extension body only" framing); keep the SM/ITS-REST `id` divergence note; keep formalism-subset note |
 | ABAC `subject_scope`/`collect_attributes`, query timeout — `request.rs`, `aql_query.rs` | **keep** — re-label "no openEHR spec governs this — our own extension" (drop any ADR framing) |
+
+---
+
+## W-3f closure (2026-07-13)
+
+`definition.rs`/`stored_query.rs`/`aql_query.rs` re-grounded into `service/definition/` (`adl14.rs`, `adl2.rs`, `query_store.rs`, `wire.rs`, `mod.rs`) and `service/query/` (`execute.rs`, `result_set.rs`, `mod.rs`).
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-05-01 | PORT NOTE | ADL 1.4 lexical (not AOM) validity — `service/definition/adl14.rs` (register-10 parser dep) |
+| G-05-02 | PORT NOTE | ADL2 registration-subset validity — `service/definition/adl2.rs` (WORKLIST W-4) |
+| G-05-03 | already-correct | String/XML interchange form vs AOM object signatures — `service/definition/wire.rs` |
+| G-05-04 | FIXED in code | three-part name decomposed — `service/definition/query_store.rs:18` `parse_qualified_name`/`split_qualified`, formalism lifted out (`:36`) |
+| G-05-05 | fix-in-rewrite (tightened) | `artefact_id_pattern` PORT NOTE tightened pending AQL id enumeration — `service/definition/query_store.rs` (dep register 08) |
+| G-05-06 | fix-in-rewrite | non-AQL formalism documented at trait; query-side doc claim fixed — `service/query/execute.rs` |
+| G-05-07 | FIXED in code | `template_overlay` → `template` storage kind — `service/definition/adl2.rs:247`; no DB CHECK hit; tested `:337` |
+| G-05-08 | PORT NOTE | `list_matching_opts` returns `template_id` strings (SM `List<ARCHETYPE_ID>` defect) — `service/definition/adl14.rs` |
+| G-05-09 | already-correct | enforce `valid_query` (spec naming defect PORT-NOTEd) — `service/definition/query_store.rs` |
+| G-05-10 | already-correct | `store_query_set` → 501 until spec defines it — `service/definition/query_store.rs` |
+| G-05-11 | PORT NOTE | RE2 serving "PERL regex" (backref → `invalid_id_pattern`) — `service/definition/*` `compile_pattern` |
+| G-05-12 | PORT NOTE | ADL2 wire upload 409 vs native replace — `service/definition/wire.rs` |
+| G-05-13 | already-correct | partial-SEMVER stored-query resolution → highest — `service/definition/query_store.rs` |
+| G-05-14 | FIXED in code | case-insensitive composite-identifier equality via `lower(id)=lower($1)` — `service/definition/mod.rs:30`, `adl2.rs:28,62,81`; BASE finding filed |
+| G-05-15 | FIXED in code | `TemplateDoesNotExist` emitted for missing OPT — `service/definition/adl14.rs:166,190,243` |
+
+Open residue: none — G-05-04/07/14/15 fixed in code; G-05-05/06 tightened; the remainder kept as cited PORT NOTE / already-correct.

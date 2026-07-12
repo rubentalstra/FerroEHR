@@ -261,3 +261,25 @@ stable storage API the AQL register consumes.
 | `idx_node_magnitude` SPECULATIVE, P20-repriced; AQL generator must emit the matching `openehr_magnitude(data->'value')` fast path | `0001_baseline.sql:400-416` | **keep** as `PERF(port)` — re-verify + EXPLAIN at P20 |
 | `creating_system_id` "legacy empty-string sentinel" read-path fallback | `vobject.rs:201` | **drop** (G-S5) — dead in a greenfield build; contradicts the schema's "never an empty-string sentinel" |
 | `ehr_index.location` = `LOCATION_DESC` canonical JSON | `0001_baseline.sql:541` | **keep** — SM-3 register, cited |
+
+---
+
+## W-3f closure (2026-07-13)
+
+The node/version SQL moved out of the service layer into `src/storage/` (`codec.rs`, `node_repo.rs`, `version_repo.rs`, `ehr_repo.rs`, `tag_repo.rs`, `structure.rs`, `row.rs`); `db/iden.rs` catalog completed.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-S1 | FIXED in code | `storage/node_repo.rs:110` `read_version_canonical` — single node→canonical reload (the `read_nodes`/`reassemble_version` duplicate is gone) |
+| G-S2 | FIXED in code | `storage/node_repo.rs:32` `write_nodes` — node bulk-insert now in `storage/`, not the service file |
+| G-S3 | FIXED in code | `db/iden.rs:70-76` (`TrunkVersion`/`BranchNumber`/`BranchVersion`/`PrecedingVersionUid`) + `:99-101` (`ArchEntity`/`ArchConcept`/`ArchMajor`); catalog tests `:291` |
+| G-S4 | FIXED in code | duplicate const removed — `storage/structure.rs:32` delegates to BMM-generated `openehr_rm::model::is_structure_root`; agreement test `structure.rs:69,90` |
+| G-S5 | FIXED (dropped) | no empty-string sentinel fallback in `storage/version_repo.rs` (dead `vobject.rs:201` path deleted with the file) |
+| G-S6 | FIXED in code | lean read path via `storage/node_repo.rs:110` `read_version_canonical` |
+| G-S7 | already-correct | static raw SQL permitted; dynamic AQL SQL uses sea-query (no change required) |
+| G-A8 | PORT NOTE | `TEMPLATE_ID` free string — `0001_baseline.sql` `template_store` comment |
+| G-C8 | PORT NOTE | signature canonicalization spec-TBD — `0001_baseline.sql:223` (C8) |
+| G-B1 | Reassigned (quarantine) | `jsonb` numeric re-representation tracked by the ITS canonical-JSON layer (blueprint ch5 §F), not storage |
+| G-C13 | Reassigned (register-01) | import retains the wrapped original's `commit_audit` — verified `versioning/import.rs` |
+
+Open residue: none — S-rows fixed in code, storage PORT NOTEs kept, G-B1/G-C13 reassigned to the ITS layer / register-01.

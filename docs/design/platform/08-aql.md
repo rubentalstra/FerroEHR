@@ -263,3 +263,27 @@ redesign marks each so the integration owner can wire them explicitly:
 
 No PORT NOTE is dropped outright; G-12's note is corrected to match the fix, and
 G-03's dead reject variant is deleted (it carries no PORT NOTE).
+
+---
+
+## W-3f closure (2026-07-13)
+
+`aql/sql.rs` split into `aql/sql/` (`from.rs`, `select.rs`, `predicate.rs`, `expr.rs`, `value.rs`, `mod.rs`); IR/lower/analyze/exec unchanged in shape.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-01 | FIXED in code | OR-CONTAINS lowered — `aql/sql/from.rs:67,234` `ContainsTree::Or` (the `Unsupported` reject is gone) |
+| G-02 | already-correct (verified) | `matches` URI / `TERMINOLOGY()` expanded before planning — `aql/terminology.rs` `expand_matches`, wired on ad-hoc + stored paths |
+| G-03 | FIXED (deleted) | dead `CurrentDateTimeInOrderBy` / `is_temporal_now` removed (grep-clean across `aql/`) |
+| G-04 | PORT NOTE | partial-precision temporal comparison casts to `timestamptz` — `aql/sql/value.rs` |
+| G-05 | PORT NOTE | archetype-predicate subsumption (correct) vs literal equality — `aql/sql/expr.rs` (re-verify at ADL2) |
+| G-06 | PORT NOTE | branch (non-trunk) version addressing rejected, trunk-only — `aql/error.rs`/`analyze.rs` |
+| G-07 | PORT NOTE | VERSION-source semantics designed reading — `aql/ir.rs` `VersionScope` |
+| G-08 | FIXED / boundary | compound (AND/OR) NOT CONTAINS generalised — `aql/sql/from.rs:148,269`; VERSION NOT CONTAINS remains a cited `Unsupported` boundary (`from.rs:94`) |
+| G-09 | PORT NOTE | whole-EHR `system_id` standard predicate rejected (`aql/sql/from.rs:490`); `e/ehr_status` path now supported (`from.rs:407`, `select.rs:44`) |
+| G-10 | PORT NOTE | node-predicate `OR` / `MATCHES CONTAINED_REGEX` rejected — `aql/analyze.rs` |
+| G-11 | PERF→P20 | per-cell whole-object reassembly — `aql/exec.rs` (PERF(port), tracked to P20) |
+| G-12 | FIXED in code | `Raw` numeric dispatch implemented — `aql/sql/value.rs:168` `ValueMode::RawNumeric` → `raw_numeric` (`:183`), guarded jsonb-typeof numeric extraction; doc/impl now agree |
+| G-13 | PORT NOTE | ABAC `subject_scope` flagged as our own extension (population/`ehr_id` gates stay spec-grounded) — `aql/sql/*` |
+
+Open residue: none — the two spec-normative defects (G-01 OR-CONTAINS, G-12 Raw numeric) are fixed in code; G-03 deleted; G-08 generalised with a cited boundary; G-02 verified wired; the rest carried as cited PORT NOTE / PERF(port)→P20.

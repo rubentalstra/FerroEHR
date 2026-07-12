@@ -179,3 +179,24 @@ Design decisions (all re-grounds, no structural change):
 - **Scope boundary (not a PORT NOTE, a doc note):** write/change-control audit
   is `AUDIT_DETAILS` (versioning), not the ATNA system log (G-6); telemetry is
   spec-silent observability, not audit (G-9).
+
+---
+
+## W-3f closure (2026-07-13)
+
+`system_log/` re-grounded (`codes.rs`, `message.rs`, `syslog.rs`, `sender.rs`, `config.rs`, `mod.rs`); code justifications re-anchored to the external standards; `telemetry/` kept as a separate sibling.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-1 | PORT NOTE | empty `I_SYSTEM_LOG` stub → our `emit`/`audit_enabled` contract — `system_log/mod.rs`, `ehrbase-sm` service.rs |
+| G-2 | already-correct | DICOM/RFC codes/schema/transports correct — `system_log/{codes,syslog}.rs` |
+| G-3 | PORT NOTE | EventID choices where DICOM is silent (query/template/demographic) — `system_log/codes.rs:24,29` |
+| G-4 | PORT NOTE | syslog PRI severity=5 (IHE convention) — `system_log/syslog.rs` |
+| G-5 | PORT NOTE | `MSGID="IHE+DICOM"` (IHE app-defined) — `system_log/syslog.rs` |
+| G-6 | already-correct | write-audit = RM `AUDIT_DETAILS` (versioning), documented scope boundary — `system_log/mod.rs` |
+| G-7 | FIXED in code | `Extract` object class added + SM-5 ops classified/emitted — `ehrbase-sm services/system_log/service.rs:45` (`ObjectClass::Extract`), `system_log/codes.rs:218`, `service/message/export.rs:442,554` `emit_extract_audit` |
+| G-8 | FIXED in code | justifications re-anchored to DICOM PS3.15 §A.5.x / RFC 3881 §5.x — `system_log/codes.rs:3,23,63,84`; `atna-audit.md` demoted to "non-normative design record" (`mod.rs:18`, `config.rs:5`, `message.rs:11`) |
+| G-9 | already-correct | `telemetry/` kept as a separate spec-silent observability sibling — not folded into `system_log/` |
+| G-10 | already-correct | no `system_log` DB table (fire-and-forget to the ARR, the ATNA model) — settled schema |
+
+Open residue: none — G-7/G-8 fixed in code, the DICOM/RFC convention choices and scope boundaries kept as cited PORT NOTE / already-correct.

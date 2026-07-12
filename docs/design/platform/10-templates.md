@@ -187,3 +187,26 @@ cache); the platform crate only stores, resolves, and caches (G-T06).
 - **storage/** — the `template_store` table (dual identity) is owned by the
   storage layer; `templates/` calls it, does not define DDL.
 - **service/fhir/** + **service/api/** — read-only WebTemplate consumers.
+
+---
+
+## W-3f closure (2026-07-13)
+
+`template.rs` re-grounded into `src/templates/` (`store.rs`, `ingest.rs`, `identity.rs`, `runtime.rs`, `mod.rs`); the AOM2 artefact-validity catalogue landed in the sibling `validation/opt/` module (register 09) rather than a templates-local `artefact_valid/`, per the cross-register validation-ownership ruling.
+
+| G | Disposition | Evidence |
+|---|---|---|
+| G-T01 | already-correct | `store_template` insert-only, parses+validates — `templates/store.rs` |
+| G-T02 | already-correct | `validate_opt_structure` well-formedness — `validation/structure.rs` (invoked via `templates/ingest.rs`) |
+| G-T03 | FIXED (split) | AOM2/08 catalogue split from the 1,322-line file into `validation/opt/*` (`rm_conformance.rs`, `terminology.rs`, `invariants.rs`, `interval.rs`, `primitive.rs`), each ≤700 lines |
+| G-T04 | FIXED in code | case-insensitive `template_id` equality + store-boundary canonicalisation — `templates/identity.rs:38` `lower()`-normalised form + migration `migrations/ehr/0007_template_id_ci_unique.sql` (`ux_template_store_template_id_ci`) |
+| G-T05 | already-correct | moka cache + `Arc<WebTemplate>` runtime form — `templates/runtime.rs` |
+| G-T06 | PORT NOTE | WebTemplate format stays in `openehr-flat` (no openEHR spec) — `templates/runtime.rs` |
+| G-T07 | already-correct | dual identity (UUID handle + `template_id`) documented in DDL — `templates/store.rs` |
+| G-T08 | PORT NOTE | 422-vs-404 for unknown template (ITS-REST + CNF re-verified) — `templates/store.rs` |
+| G-T09 | PORT NOTE | immutable OPT → 409 — `templates/store.rs` |
+| G-T10 | PORT NOTE | `list_matching_opts` returns `template_id` not `ARCHETYPE_ID` (SM defect) — `templates/store.rs` |
+| G-T11 | PORT NOTE | OPT 1.4 governed by XSD + AOM1.4 (cite ITS-XML Template XSD) — `templates/ingest.rs` |
+| G-T12 | PORT NOTE | OPT meta-data parsed but not surfaced/queried (index `template_id`/`concept`/root only) — `templates/store.rs` |
+
+Open residue: none — G-T03 split into `validation/opt/`, G-T04 fixed in code + migration, the rest kept as cited PORT NOTE / already-correct.

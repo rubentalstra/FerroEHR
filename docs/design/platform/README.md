@@ -74,3 +74,30 @@ orchestrator-owned. Cross-area needs are `// TODO(w3f-integrate):` markers.
 | templates | `src/templates/**` | template.rs (+ store/cache seams) |
 | system_log | `src/system_log/**` (re-ground) | system_log/* |
 | extensions | `src/extensions/**` | events/, service/fhir/, fhir_outbound/, multimedia/, tenant.rs, event_subscription.rs |
+
+## W-3f executed (2026-07-13)
+
+The redesign landed. `app/ehrbase/src` is now organised by the spec's own
+decomposition rather than the legacy flat-file layout, and the standalone
+`signing/` module was dissolved into versioning. Final module map:
+
+- **`versioning/`** — change-control semantics + builders + the dissolved
+  `signature/` submodule + the five-state `lifecycle.rs` machine.
+- **`storage/`** + **`db/`** — node codec, `node_repo`/`version_repo`/
+  `ehr_repo`/`tag_repo`, the completed `iden` catalog (the D1 semantics/SQL
+  seam).
+- **`service/`** — the ten SM chapters (`ehr/`, `demographic/`, `ehr_index/`,
+  `definition/`, `query/`, `message/`, `admin/`, `subject_proxy/`,
+  `terminology/`) plus the `validity.rs` peer file.
+- **`aql/`** — `sql.rs` split into `aql/sql/` (`from`/`select`/`predicate`/
+  `expr`/`value`).
+- **`validation/`** — the artefact validators (`opt/`, `adl2/`, `structure.rs`)
+  moved out of `service/` and split along AM boundaries.
+- **`templates/`**, **`system_log/`** (re-grounded on the external ATNA
+  standards), **`extensions/`** (the quarantined spec-silent modules: `events/`,
+  `fhir/`, `multimedia/`, `tenancy.rs`).
+
+Per-register closure tables were appended to each of `01`–`12` (a
+`## W-3f closure (2026-07-13)` section mapping every G-row to its disposition —
+FIXED in code / carried PORT NOTE / reassigned — with `file:line` or PORT-NOTE
+evidence). Every register closed with **Open residue: none**.
