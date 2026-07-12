@@ -94,8 +94,8 @@ app/ehrbase/src/
 
 ### Stage 2 — the rewrite (big-bang, no intermediate fix passes)
 
-- [ ] W1 `versioning/` authored fresh (change control, audits, attestations, signature per §Integrity; signing/ dissolved)
-- [ ] W2 `storage/` authored fresh (node codec + node model split out of service/vobject.rs)
+- [x] W1 `versioning/` authored fresh (change control, audits, attestations, signature per §Integrity; signing/ dissolved) — 12 files, G-01/G-02/G-09 fixed; legacy deletion + CommitEnv wiring at W10
+- [x] W2 `storage/` authored fresh (node codec + node model split out of service/vobject.rs) — node_repo + version_repo + lean ReadRow; G-S1..S6 fixed; db/ re-grounded
 - [ ] W3 `service/` re-authored one folder per SM chapter (mirroring ehrbase-sm)
 - [ ] W4 `aql/` re-grounded; `sql.rs` split
 - [ ] W5 `validation/` authored fresh along AM boundaries
