@@ -214,14 +214,12 @@ fn negotiate_accept(headers: &HeaderMap) -> Option<TemplateAccept> {
 /// Set the weak `ETag` the retrieved/uploaded template responses mandate
 /// (`headers/ETag_Template_adl1_4.yaml`: `W/"<id>"`). Keyed on the
 /// `template_id` string, matching the upload path so a client's `If-None-Match`
-/// round-trips.
-///
-// TODO(w3e-integrate): fold this weak-ETag construction into the central
-// negotiate helper (`overview::negotiate`) so the upload
-// (`template_upload_response`) and this GET share one implementation instead of
-// two copies of the `W/"…"` format.
+/// round-trips. The weak-form construction goes through the shared
+/// [`negotiate::resource_etag`] helper (overview §"Deprecated headers": a
+/// resource-identifier `ETag` MUST carry the `W/` weakness indicator), so the
+/// upload and this GET share one implementation of the `W/"…"` format.
 fn set_template_etag(resp: &mut Response, template_id: &str) {
-    if let Ok(v) = HeaderValue::from_str(&format!("W/\"{template_id}\"")) {
+    if let Some(v) = negotiate::resource_etag(template_id) {
         resp.headers_mut().insert(header::ETAG, v);
     }
 }
@@ -232,11 +230,10 @@ fn set_template_etag(resp: &mut Response, template_id: &str) {
 /// upload, `schemas/others/TemplateIdentifier.yaml`); missing / `return=minimal`
 /// → an empty body. `Location` + the weak `ETag` are set on every case.
 ///
-// TODO(w3e-integrate): the old shared `overview::negotiate::template_upload_response`
-// returned the `return=identifier` body as a `text/plain` scalar (the G-3
-// defect). This ADL1.4-local responder supersedes it; once no other caller
-// depends on the old helper, remove it from `overview::negotiate` and route
-// both upload paths through one shared builder.
+/// This ADL1.4-local responder is the sole template-upload builder: the former
+/// shared `overview::negotiate::template_upload_response` (which returned the
+/// `return=identifier` body as a `text/plain` scalar — the G-3 defect) has been
+/// removed, so no `text/plain` identifier path remains.
 fn upload_response(
     headers: &HeaderMap,
     location: &str,

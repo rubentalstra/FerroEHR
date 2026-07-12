@@ -33,16 +33,20 @@ struct Deduplicator {
 /// Better's `NumericSuffixIdDeduplicator` spells it `blood_pressure2` (no
 /// separator, from `2`).
 ///
-/// PORT NOTE (master02/master04 §"Node ID Generation Rules"): we keep Better's
-/// `blood_pressure2` spelling as the default because a WebTemplate json-id is a
-/// shared contract with existing Better/EHRbase clients and stored form
-/// definitions — the spec's `_1` form is an *illustrative* example and interop
-/// tooling universally emits the Better form (SPECITS-94 did not touch the dedup
-/// form). Selecting the spec spelling by default flips the constants below.
-// TODO(w3e-formats): G-9 remaining — adopt the spec `_1` spelling as the default
-// once the `crates/openehr-flat/tests/` webtemplate snapshots are regenerated
-// (`cargo insta`); the mechanism (separator + start) is parameterised here.
+/// The SPEC form (master02/master04 §"Node ID Generation Rules": a duplicate
+/// "Blood Pressure" → `blood_pressure_1`, underscore separator, counting from
+/// `1`) is the **default**. Better's `NumericSuffixIdDeduplicator`
+/// (`blood_pressure2`, no separator, from `2`) is available behind the
+/// `ehrbase-quirks` feature for interop with existing Better/EHRbase clients and
+/// stored form definitions (`serialization.md`: Better-only forms are gated, not
+/// hard-coded onto the default path).
+#[cfg(not(feature = "ehrbase-quirks"))]
+const DUP_SEP: &str = "_";
+#[cfg(not(feature = "ehrbase-quirks"))]
+const DUP_START: usize = 1;
+#[cfg(feature = "ehrbase-quirks")]
 const DUP_SEP: &str = "";
+#[cfg(feature = "ehrbase-quirks")]
 const DUP_START: usize = 2;
 
 impl Deduplicator {
@@ -264,13 +268,28 @@ mod tests {
         assert_eq!(normalize_base("ok"), "ok");
     }
 
+    // Default (spec) form: `_`-separated, counting from `1`
+    // (master02/master04 §"Node ID Generation Rules"). Better's `value2` form is
+    // behind the `ehrbase-quirks` feature.
+    #[cfg(not(feature = "ehrbase-quirks"))]
+    #[test]
+    fn dedups_with_numeric_suffix() {
+        let mut d = Deduplicator::default();
+        assert_eq!(d.unique("root", "value"), "value");
+        assert_eq!(d.unique("root", "value"), "value_1");
+        assert_eq!(d.unique("root", "value"), "value_2");
+        // Different parent scope is independent.
+        assert_eq!(d.unique("other", "value"), "value");
+    }
+
+    /// The Better dedup form under the `ehrbase-quirks` feature (`value2`, …).
+    #[cfg(feature = "ehrbase-quirks")]
     #[test]
     fn dedups_with_numeric_suffix() {
         let mut d = Deduplicator::default();
         assert_eq!(d.unique("root", "value"), "value");
         assert_eq!(d.unique("root", "value"), "value2");
         assert_eq!(d.unique("root", "value"), "value3");
-        // Different parent scope is independent.
         assert_eq!(d.unique("other", "value"), "value");
     }
 

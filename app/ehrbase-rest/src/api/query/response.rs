@@ -243,31 +243,26 @@ mod tests {
     }
 }
 
-// ── TODO(w3e-integrate): platform-side raises the query error-response builder
-// then maps to the spec's query status codes ──────────────────────────────────
+// ── Query error-status mapping (the QUERY responses enumerate 400/404/408) ─────
 //
-// G-4 (`ehr_id_does_not_exist` → 404): the wire mapping is already in place —
-// `crate::overview::error::sm_api_error` routes `CallStatusType::EhrIdDoesNotExist`
-// → `ApiError::NotFound` (404), the closest ITS-REST query code (the query
-// responses enumerate 400/404/408 only; `Request.md` §About the ehr_id
-// parameter). The remaining work is platform-side: on a scoped query the
-// executor must probe existence and raise `SmError::ehr_not_found` (variant
-// `CallStatusType::EhrIdDoesNotExist`) for a well-formed-but-absent EHR id —
-// today an absent id silently yields `{ "rows": [] }`. A malformed UUID stays a
-// 400 (`SmError::precondition`). (Register G-4, `docs/design/its-rest/query.md`.)
+// The status codes for a query are assembled platform-side (`app/ehrbase`,
+// `service/aql_query.rs`) as typed `SmError`s and turned into the ITS-REST
+// status by `crate::overview::error::sm_api_error`; this renderer emits the
+// success `RESULT_SET` (and its `meta`) verbatim. The three query codes:
 //
-// G-2 (query-execution timeout → 408, `responses/408_Query.yaml`): there is no
-// per-query timeout signal to map here yet. The engine-level `statement_timeout`
-// + the Postgres `57014` (statement timeout) → distinct error is platform work
-// (`app/ehrbase`); it also needs an `ApiError::RequestTimeout` (status 408) on
-// `openehr_its::rest::runtime` and an SM→HTTP row for a timeout
-// `CallStatusType`. Until those land, an over-long query trips only the blunt
-// global `TimeoutLayer` (`router.rs`). When the platform raises a distinguishable
-// timeout error, extend `sm_api_error`/`ApiError` so it renders `408` with the
-// query error body. (Register G-2.)
+// - `ehr_id_does_not_exist` → `404`: a scoped query probes existence
+//   (`aql_query::resolve_ehr_ids`) and raises `SmError::ehr_not_found`
+//   (`CallStatusType::EhrIdDoesNotExist` → `ApiError::NotFound`) for a
+//   well-formed-but-absent EHR id; a malformed UUID stays a `400`
+//   (`SmError::precondition`). (`Request.md` §About the ehr_id parameter.)
 //
-// G-5 (`meta._executed_aql` = parameter-substituted text): the `RESULT_SET`
-// metadata is assembled in `app/ehrbase` (`service/aql_query.rs::result_set_json`),
-// not in this folder, so the substituted-AQL rendering belongs to the platform
-// fix pass. This renderer emits whatever `meta` the platform assembled verbatim.
-// (Register G-5.)
+// - query-execution timeout → `408` (`responses/408_Query.yaml`): the executor
+//   bounds the DB execution by the `EHRBASE_QUERY__TIMEOUT_MS` budget and, on
+//   overrun, raises the timeout-tagged `SmError` that `sm_api_error`/
+//   `RestError::into_response` render as `408 Request Timeout`
+//   (`Requests_and_responses.md` §HTTP status codes, row `408`). With the budget
+//   unset, an over-long query trips only the blunt global `TimeoutLayer`.
+//
+// - `meta._executed_aql` (the parameter-substituted query text) is assembled by
+//   `aql_query::substitute_params` into the `RESULT_SET.meta`; this renderer
+//   emits it as-is.

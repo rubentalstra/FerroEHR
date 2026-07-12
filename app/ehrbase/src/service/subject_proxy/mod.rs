@@ -12,10 +12,13 @@
 //! `__Pre_…__` clauses and no error codes; every unmet precondition surfaces as
 //! `SmError(PreconditionViolation, …)` (→ `400`).
 
+pub(crate) mod config;
 mod extract;
 mod frames;
 mod freshness;
 mod store;
+
+pub use config::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 
 use async_trait::async_trait;
 use serde_json::Value;

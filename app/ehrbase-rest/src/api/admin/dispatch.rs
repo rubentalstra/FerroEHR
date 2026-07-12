@@ -98,13 +98,12 @@ async fn run<S: Platform>(
             // EHRs, or a specified subset"). The list is passed through verbatim;
             // an empty vec is the "all EHRs" request.
             let ids = ehr_id_list(q);
-            // TODO(w3e-integrate): the `AdminService::admin_ehr_delete_all` seam
-            // (`ehrbase-sm`) historically treated an empty list as "delete
-            // nothing". Per `operations/admin_ehr_delete_all.yaml:5` +
+            // The `AdminService::admin_ehr_delete_all` seam honours the
+            // empty-list = all-EHRs semantics: per
+            // `operations/admin_ehr_delete_all.yaml:5` +
             // `parameters/query/ehr_id_Admin.yaml` an absent `ehr_id` means
-            // "delete ALL EHRs" — the seam must honour empty-list = all-EHRs
-            // (or gain a dedicated all-EHRs capability). The wire below already
-            // forwards the empty list for that semantics.
+            // "delete ALL EHRs", so the empty list forwarded here targets the
+            // full EHR set; a non-empty list targets that subset.
             state.backend().admin_ehr_delete_all(ids).await?;
             // `operations/admin_ehr_delete_all.yaml:18-26`: the only declared
             // success responses are `204 No Content` (sync,

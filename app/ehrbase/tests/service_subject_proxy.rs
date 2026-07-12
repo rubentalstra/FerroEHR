@@ -19,16 +19,20 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
+use std::sync::Arc;
+
 use ehrbase::db::{self, DbSettings};
-use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{EhrbaseService, SpFhirSystem, SubjectProxyConfig};
 use ehrbase_sm::{
     CallStatusType, DataBinding, DataFrame, EhrCompositionService, EhrService, EnvBinding,
-    SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
+    FramePayload, SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
     VariableValue,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -408,4 +412,208 @@ async fn subject_proxy_preconditions_and_reset() {
             .await
             .expect("has_binding")
     );
+}
+
+// ── FHIR frame executor (G-4, config-gated) ─────────────────────────────────
+//
+// `i_data_binding.adoc` (`API_CALL`/`fhir_get`) + `hl7_fhir_sample.adoc`; a
+// hermetic `wiremock` FHIR server stands in for the remote system (no network).
+
+/// A subject-proxy service wired to a single FHIR system `name` → `base_url`.
+fn service_with_fhir(pool: PgPool, name: &str, base_url: &str) -> EhrbaseService {
+    let mut systems = std::collections::BTreeMap::new();
+    systems.insert(
+        name.to_owned(),
+        SpFhirSystem {
+            base_url: base_url.to_owned(),
+            connect_timeout_ms: 500,
+            request_timeout_ms: 1_500,
+        },
+    );
+    let fhir = SubjectProxyConfig { systems }
+        .build()
+        .expect("build fhir executor")
+        .expect("some executor");
+    EhrbaseService::new(pool).with_subject_proxy(Arc::new(fhir))
+}
+
+fn fhir_frame(id: &str, system_id: &str, query_text: &str) -> DataFrame {
+    DataFrame {
+        id: id.to_owned(),
+        model_type: "hl7-fhir".to_owned(),
+        primary_method: Some(SystemCall::Api(SystemCallBody {
+            system_id: Some(system_id.to_owned()),
+            call_name: Some("fhir_get".to_owned()),
+            query_text: Some(query_text.to_owned()),
+            ..SystemCallBody::default()
+        })),
+        fallback_method: None,
+    }
+}
+
+fn fhir_variable(name: &str, frame_id: &str, frame_path: &str, type_name: &str) -> SubjectVariable {
+    SubjectVariable {
+        namespace: None,
+        name: name.to_owned(),
+        type_name: type_name.to_owned(),
+        currency: None,
+        ask_user: None,
+        is_manual: false,
+        frame_id: frame_id.to_owned(),
+        frame_path: frame_path.to_owned(),
+        history: Vec::new(),
+        last_frame: None,
+    }
+}
+
+/// A configured FHIR system serves the resource; `get_variable` retrieves it and
+/// extracts the declared value via the `frame_path` JSON pointer.
+#[tokio::test]
+async fn subject_proxy_fhir_frame_extracts_via_json_pointer() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/Patient/patient-123"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Patient",
+            "id": "patient-123",
+            "birthDate": "1980-02-29",
+            "meta": { "lastUpdated": "2020-01-01T09:00:00Z" }
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let pg = Pg::start().await;
+    let svc = service_with_fhir(pg.migrated_pool("sps_fhir_ok").await, "pas", &server.uri());
+
+    svc.register_binding(EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![fhir_frame(
+            "fhir::demographics",
+            "pas",
+            "Patient/$subject_id",
+        )],
+    })
+    .await
+    .expect("register_binding");
+    svc.register_subject("patient-123".to_owned(), None)
+        .await
+        .expect("register_subject");
+    svc.add_subject_variable(
+        "patient-123".to_owned(),
+        fhir_variable("dob", "fhir::demographics", "/birthDate", "Date"),
+    )
+    .await
+    .expect("add_subject_variable");
+
+    let value = svc
+        .get_variable("patient-123".to_owned(), "dob".to_owned())
+        .await
+        .expect("get_variable");
+    assert_eq!(
+        value,
+        VariableValue::Single {
+            value: Some(json!("1980-02-29"))
+        },
+        "the FHIR frame retrieves the Patient and extracts birthDate via JSON pointer"
+    );
+}
+
+/// A frame targeting a `system_id` that matches no configured system is a typed
+/// rejection (fail-closed) — never an arbitrary outbound request.
+#[tokio::test]
+async fn subject_proxy_fhir_unknown_system_is_typed_rejection() {
+    let server = MockServer::start().await;
+    let pg = Pg::start().await;
+    // Only "pas" is configured; the frame targets "other".
+    let svc = service_with_fhir(
+        pg.migrated_pool("sps_fhir_unknown").await,
+        "pas",
+        &server.uri(),
+    );
+    svc.register_binding(EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![fhir_frame("fhir::x", "other", "Patient/$subject_id")],
+    })
+    .await
+    .expect("register_binding");
+
+    let err = svc
+        .get_frame("patient-123".to_owned(), "fhir::x".to_owned())
+        .await
+        .expect_err("unknown FHIR system");
+    assert_eq!(
+        err.status,
+        CallStatusType::NotImplemented,
+        "unknown system → typed rejection: {err:?}"
+    );
+}
+
+/// A `500` from the primary FHIR retrieve is an unavailable sample, so the
+/// `fallback_method` runs and its result wins (`data_frame.adoc`).
+#[tokio::test]
+async fn subject_proxy_fhir_500_runs_fallback() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/Patient/patient-500"))
+        .respond_with(ResponseTemplate::new(500))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/Observation/patient-500"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Observation", "id": "obs-1"
+        })))
+        .mount(&server)
+        .await;
+
+    let pg = Pg::start().await;
+    let svc = service_with_fhir(
+        pg.migrated_pool("sps_fhir_fallback").await,
+        "pas",
+        &server.uri(),
+    );
+
+    let frame = DataFrame {
+        id: "fhir::with_fallback".to_owned(),
+        model_type: "hl7-fhir".to_owned(),
+        primary_method: Some(SystemCall::Api(SystemCallBody {
+            system_id: Some("pas".to_owned()),
+            call_name: Some("fhir_get".to_owned()),
+            query_text: Some("Patient/$subject_id".to_owned()),
+            ..SystemCallBody::default()
+        })),
+        fallback_method: Some(SystemCall::Api(SystemCallBody {
+            system_id: Some("pas".to_owned()),
+            call_name: Some("fhir_get".to_owned()),
+            query_text: Some("Observation/$subject_id".to_owned()),
+            ..SystemCallBody::default()
+        })),
+    };
+    svc.register_binding(EnvBinding {
+        env_id: "prod".to_owned(),
+        description: None,
+        data_frames: vec![frame],
+    })
+    .await
+    .expect("register_binding");
+
+    let sample = svc
+        .get_frame("patient-500".to_owned(), "fhir::with_fallback".to_owned())
+        .await
+        .expect("get_frame");
+    assert!(
+        !sample.is_unavailable,
+        "the fallback produced an available sample after the primary 500: {sample:?}"
+    );
+    match sample.result {
+        Some(FramePayload::Hl7Fhir { resource }) => assert_eq!(
+            resource.pointer("/resourceType").and_then(Value::as_str),
+            Some("Observation"),
+            "the fallback resource wins"
+        ),
+        other => panic!("expected an HL7_FHIR_SAMPLE fallback payload, got {other:?}"),
+    }
 }

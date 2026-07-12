@@ -113,18 +113,11 @@ impl EhrbaseService {
             return Ok(self.sp_dispatch_openehr(subject_id, call).await);
         }
 
-        // FHIR: an API_CALL/fhir_get.
+        // FHIR: an API_CALL/fhir_get. A config-gated `reqwest` GET of the frame's
+        // `query_text` (with `$subject_id` substitution) against a configured
+        // FHIR system, yielding an HL7_FHIR_SAMPLE (`hl7_fhir_sample.adoc`).
         if matches!(call, SystemCall::Api(_)) && call_name.as_deref() == Some("fhir_get") {
-            // TODO(w3c): wire the config-gated FHIR executor — a `reqwest` GET of
-            // `query_text` (a FHIR search/read URL template with `$subject_id`
-            // substitution) against an allowlisted base URL, returning
-            // HL7_FHIR_SAMPLE (docs/design/sm-platform/10-subject-proxy.md §2.2
-            // G-4; the outbound FHIR client already exists as the B4
-            // FhirTerminologyProvider). Until then this is a typed rejection.
-            return Err(not_implemented(
-                "FHIR API_CALL frames are not yet executable (the config-gated FHIR \
-                 executor is follow-up work)",
-            ));
+            return self.sp_dispatch_fhir(subject_id, frame, call).await;
         }
 
         // HL7v2 and everything else: no transport in scope.
@@ -173,6 +166,71 @@ impl EhrbaseService {
             // Executed but failed: a real (unavailable) sample so the pipeline
             // can fall back (`data_frame.adoc`).
             Err(e) => Sample::unavailable(e.message),
+        }
+    }
+
+    /// The FHIR executor (`i_data_binding.adoc`; `hl7_fhir_sample.adoc`): GET the
+    /// frame's `query_text` (a FHIR search/read URL template) against the
+    /// configured `system_id`, `$subject_id` substituted with the URL-encoded
+    /// subject id (the remote system owns subject resolution — no EHR lookup).
+    ///
+    /// Fail-closed dispatch (`Err(not_implemented)`): no FHIR executor
+    /// configured, no `system_id`, or a `system_id` matching no configured
+    /// system — never an arbitrary outbound request. An executed-but-failed
+    /// retrieve (no `query_text`, non-2xx, timeout, malformed body) is an
+    /// `Ok(SAMPLE{is_unavailable})` so the primary→fallback pipeline runs
+    /// (`data_frame.adoc`).
+    async fn sp_dispatch_fhir(
+        &self,
+        subject_id: &str,
+        frame: &DataFrame,
+        call: &SystemCall,
+    ) -> Result<DataFrameSample, SmError> {
+        let Some(fhir) = self.subject_proxy_fhir.as_ref() else {
+            return Err(not_implemented(format!(
+                "no FHIR executor is configured (data frame {:?}); configure \
+                 EHRBASE_SUBJECT_PROXY__SYSTEMS to enable FHIR retrieval",
+                frame.id
+            )));
+        };
+        let body = call.body();
+        let Some(system_id) = body.system_id.as_deref() else {
+            return Err(not_implemented(format!(
+                "FHIR data frame {:?} has no system_id to route to",
+                frame.id
+            )));
+        };
+        // Fail-closed: an unconfigured system is a typed rejection, never a
+        // request to an arbitrary host.
+        if !fhir.has_system(system_id) {
+            return Err(not_implemented(format!(
+                "FHIR data frame {:?} targets system {system_id:?}, which is not a \
+                 configured subject-proxy FHIR system",
+                frame.id
+            )));
+        }
+        let Some(query_text) = body.query_text.as_deref() else {
+            return Ok(Sample::unavailable(
+                "FHIR frame has no query_text to retrieve",
+            ));
+        };
+        // `$subject_id` → the URL-encoded subject id (never hand-roll a percent
+        // codec — `urlencoding::encode`).
+        let encoded = urlencoding::encode(subject_id);
+        let query_path = query_text.replace("$subject_id", &encoded);
+
+        match fhir.get(system_id, &query_path).await {
+            Ok(fetch) => {
+                let sample = Sample::available(FramePayload::Hl7Fhir {
+                    resource: fetch.resource,
+                });
+                Ok(match fetch.effective_time {
+                    Some(t) => sample.with_effective_time(t),
+                    None => sample,
+                })
+            }
+            // Executed but failed → unavailable sample (feeds primary→fallback).
+            Err(reason) => Ok(Sample::unavailable(reason)),
         }
     }
 }

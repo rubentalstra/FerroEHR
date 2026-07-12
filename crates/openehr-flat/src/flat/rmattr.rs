@@ -87,10 +87,6 @@ pub(crate) fn emit_rm_attrs(rm: &Value, base: &str, out: &mut FlatMap) {
             }
         }
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" => {
-            // TODO(w3e-formats): G-1 remaining — the INSTRUCTION/ACTION-specific
-            // `_wf_definition` (DV_PARSABLE), `_expiry_time` (DV_DATE_TIME) and
-            // `_instruction_details` (INSTRUCTION_DETAILS) attributes (master05
-            // §§INSTRUCTION, ACTION) are not yet surfaced/parsed here.
             emit_object_ref(rm.get("guideline_id"), &subpath(base, "_guideline_id"), out);
             emit_object_ref(rm.get("workflow_id"), &subpath(base, "_work_flow_id"), out);
             if let Some(p) = rm.get("provider").filter(|v| !v.is_null()) {
@@ -100,6 +96,36 @@ pub(crate) fn emit_rm_attrs(rm: &Value, base: &str, out: &mut FlatMap) {
                 for (i, p) in parts.iter().enumerate() {
                     emit_participation(p, &format!("{base}/_other_participation:{i}"), out);
                 }
+            }
+            // INSTRUCTION-specific optional attributes (RM
+            // `composition/instruction.adoc`): `expiry_time` (DV_DATE_TIME),
+            // `wf_definition` (DV_PARSABLE).
+            if ty == "INSTRUCTION" {
+                if let Some(et) = rm.get("expiry_time").filter(|v| !v.is_null()) {
+                    mappers::leaf_to_flat(
+                        et,
+                        "DV_DATE_TIME",
+                        &subpath(base, "_expiry_time"),
+                        None,
+                        out,
+                    );
+                }
+                if let Some(wf) = rm.get("wf_definition").filter(|v| !v.is_null()) {
+                    mappers::leaf_to_flat(
+                        wf,
+                        "DV_PARSABLE",
+                        &subpath(base, "_wf_definition"),
+                        None,
+                        out,
+                    );
+                }
+            }
+            // ACTION-specific optional attribute (RM `composition/action.adoc`,
+            // `instruction_details.adoc`): `instruction_details`.
+            if ty == "ACTION"
+                && let Some(det) = rm.get("instruction_details").filter(|v| !v.is_null())
+            {
+                emit_instruction_details(det, &subpath(base, "_instruction_details"), out);
             }
         }
         "PARTY_IDENTIFIED" | "PARTY_RELATED" => emit_identifiers(rm, base, out),
@@ -165,10 +191,16 @@ fn emit_links(rm: &Value, base: &str, out: &mut FlatMap) {
     }
 }
 
-/// FEEDER_AUDIT (master05 §FEEDER_AUDIT). A pragmatic subset covering the
-/// common `originating_system_audit` / `feeder_system_audit` (system_id,
-/// version_id, time) plus `original_content` (DV_PARSABLE); the full audit-detail
-/// PARTY sub-trees are TODO(w3e-formats): _feeder_audit deep PARTY_IDENTIFIED.
+/// FEEDER_AUDIT (`RM/.../common/feeder_audit.adoc`,
+/// `feeder_audit_details.adoc`). Emits the `originating_system_audit` /
+/// `feeder_system_audit` details (`system_id`, `version_id`, `time`, and the
+/// deep `location` / `subject` / `provider` PARTY_IDENTIFIED sub-trees via
+/// [`emit_party`]), the `originating_system_item_ids` / `feeder_system_item_ids`
+/// (DV_IDENTIFIER arrays), and `original_content` (DV_PARSABLE or DV_MULTIMEDIA).
+///
+/// PORT NOTE: `FEEDER_AUDIT_DETAILS.other_details` is an archetyped
+/// `ITEM_STRUCTURE` (`feeder_audit_details.adoc`) with no simplified `_`-attr
+/// shape — it is a documented scope boundary (not surfaced), not silently wrong.
 fn emit_feeder_audit(rm: &Value, base: &str, out: &mut FlatMap) {
     let Some(fa) = rm.get("feeder_audit").filter(|v| !v.is_null()) else {
         return;
@@ -309,6 +341,31 @@ fn emit_object_ref(oref: Option<&Value>, base: &str, out: &mut FlatMap) {
     }
 }
 
+/// `INSTRUCTION_DETAILS` (`composition/instruction_details.adoc`):
+/// `instruction_id` (LOCATABLE_REF → `|id`/`|type`/`|namespace`/`|path`) and
+/// `activity_id` (String). `wf_details` is an archetyped `ITEM_STRUCTURE` with
+/// no simplified shape — a documented scope boundary, not surfaced.
+fn emit_instruction_details(det: &Value, base: &str, out: &mut FlatMap) {
+    if let Some(iid) = det.get("instruction_id").filter(|v| !v.is_null()) {
+        let b = format!("{base}/instruction_id");
+        if let Some(v) = iid.pointer("/id/value") {
+            out.insert(format!("{b}|id"), v.clone());
+        }
+        if let Some(v) = iid.get("type") {
+            out.insert(format!("{b}|type"), v.clone());
+        }
+        if let Some(v) = iid.get("namespace") {
+            out.insert(format!("{b}|namespace"), v.clone());
+        }
+        if let Some(v) = iid.get("path").filter(|v| !v.is_null()) {
+            out.insert(format!("{b}|path"), v.clone());
+        }
+    }
+    if let Some(aid) = det.get("activity_id").filter(|v| !v.is_null()) {
+        out.insert(format!("{base}|activity_id"), aid.clone());
+    }
+}
+
 /// `_language` / `_encoding` (CODE_PHRASE) + `_mapping:i` (TERM_MAPPING) on a
 /// DV_TEXT-family value (master05 §§DV_TEXT, DV_CODED_TEXT, TERM_MAPPING).
 fn emit_text_meta(rm: &Value, base: &str, out: &mut FlatMap) {
@@ -395,6 +452,7 @@ fn subpath(base: &str, seg: &str) -> String {
 /// node object). `entries` are relative to that node (their first segment is the
 /// `_attr[:i]`). `value_type` is the node's `_type` — used to type the endpoints
 /// of `_normal_range` / `_other_reference_ranges` (`T`).
+#[allow(clippy::too_many_lines)] // one dispatch over the `_`-attribute families
 pub(crate) fn apply_rm_attrs(target: &mut Map<String, Value>, entries: &[Entry], value_type: &str) {
     // Group by the leading `_attr` name and (for `:i` families) index.
     let mut links: Vec<(usize, Vec<Entry>)> = Vec::new();
@@ -489,6 +547,24 @@ pub(crate) fn apply_rm_attrs(target: &mut Map<String, Value>, entries: &[Entry],
             }
             "feeder_audit" => {
                 target.insert("feeder_audit".into(), feeder_audit_from(group));
+            }
+            // INSTRUCTION optional attributes (`composition/instruction.adoc`).
+            "expiry_time" => {
+                if let Some(dv) = mappers::leaf_from_flat("DV_DATE_TIME", &view) {
+                    target.insert("expiry_time".into(), dv);
+                }
+            }
+            "wf_definition" => {
+                if let Some(dv) = mappers::leaf_from_flat("DV_PARSABLE", &view) {
+                    target.insert("wf_definition".into(), dv);
+                }
+            }
+            // ACTION.instruction_details (`composition/instruction_details.adoc`).
+            "instruction_details" => {
+                target.insert(
+                    "instruction_details".into(),
+                    instruction_details_from(group),
+                );
             }
             _ => {}
         }
@@ -716,7 +792,8 @@ fn participation_from(group: &[Entry]) -> Value {
     Value::Object(p)
 }
 
-/// FEEDER_AUDIT (subset mirroring [`emit_feeder_audit`]).
+/// FEEDER_AUDIT (mirroring [`emit_feeder_audit`],
+/// `RM/.../common/feeder_audit.adoc`).
 fn feeder_audit_from(group: &[Entry]) -> Value {
     let mut fa = Map::new();
     fa.insert("_type".into(), json!("FEEDER_AUDIT"));
@@ -726,13 +803,92 @@ fn feeder_audit_from(group: &[Entry]) -> Value {
     if !fsa.is_empty() {
         fa.insert("feeder_system_audit".into(), audit_details_from(&fsa));
     }
+    // `original_content`: DV_PARSABLE (`original_content`) or DV_MULTIMEDIA
+    // (`original_content_multimedia`) — whichever the emitter produced.
     let oc = scoped(group, "original_content");
     if !oc.is_empty()
         && let Some(dv) = mappers::leaf_from_flat("DV_PARSABLE", &FlatView::new(&oc))
     {
         fa.insert("original_content".into(), dv);
     }
+    let ocm = scoped(group, "original_content_multimedia");
+    if !ocm.is_empty()
+        && let Some(dv) = mappers::leaf_from_flat("DV_MULTIMEDIA", &FlatView::new(&ocm))
+    {
+        fa.insert("original_content".into(), dv);
+    }
+    // `originating_system_item_ids` / `feeder_system_item_ids` (DV_IDENTIFIER
+    // arrays, `feeder_audit.adoc`).
+    let osi = indexed_identifiers(group, "originating_system_item_id");
+    if !osi.is_empty() {
+        fa.insert("originating_system_item_ids".into(), Value::Array(osi));
+    }
+    let fsi = indexed_identifiers(group, "feeder_system_item_id");
+    if !fsi.is_empty() {
+        fa.insert("feeder_system_item_ids".into(), Value::Array(fsi));
+    }
     Value::Object(fa)
+}
+
+/// `INSTRUCTION_DETAILS` (`composition/instruction_details.adoc`) from the
+/// `_instruction_details` entries (mirror of [`emit_instruction_details`]):
+/// `instruction_id` (LOCATABLE_REF) + `activity_id` (String). `wf_details`
+/// (archetyped ITEM_STRUCTURE) has no simplified shape — not surfaced.
+fn instruction_details_from(group: &[Entry]) -> Value {
+    let mut o = Map::new();
+    o.insert("_type".into(), json!("INSTRUCTION_DETAILS"));
+    let iid = scoped(group, "instruction_id");
+    if !iid.is_empty() {
+        let view = FlatView::new(&iid);
+        let id = view.suffix("id").and_then(Value::as_str).unwrap_or("");
+        let ty = view
+            .suffix("type")
+            .and_then(Value::as_str)
+            .unwrap_or("VERSIONED_COMPOSITION");
+        let ns = view
+            .suffix("namespace")
+            .and_then(Value::as_str)
+            .unwrap_or("EHR");
+        // LOCATABLE_REF.id is an OBJECT_ID: a `::`-bearing value is an
+        // OBJECT_VERSION_ID, else a HIER_OBJECT_ID (support identifiers).
+        let id_type = if id.contains("::") {
+            "OBJECT_VERSION_ID"
+        } else {
+            "HIER_OBJECT_ID"
+        };
+        let mut lref = json!({
+            "_type": "LOCATABLE_REF",
+            "namespace": ns,
+            "type": ty,
+            "id": {"_type": id_type, "value": id},
+        });
+        if let Some(path) = view.suffix("path").and_then(Value::as_str) {
+            lref["path"] = json!(path);
+        }
+        o.insert("instruction_id".into(), lref);
+    }
+    let view = FlatView::new(group);
+    if let Some(aid) = view.suffix("activity_id") {
+        o.insert("activity_id".into(), aid.clone());
+    }
+    Value::Object(o)
+}
+
+/// Rebuild an indexed `seg:i` DV_IDENTIFIER array (the `feeder_audit`
+/// `*_system_item_ids` lists) from the entries whose leading segment is `seg`.
+fn indexed_identifiers(group: &[Entry], seg: &str) -> Vec<Value> {
+    let mut indexed: Vec<(usize, Vec<Entry>)> = Vec::new();
+    for e in group {
+        if let Some(first) = e.segs.first()
+            && first.id == seg
+        {
+            push_indexed(&mut indexed, first.index.unwrap_or(0), strip_first(e));
+        }
+    }
+    build_indexed(indexed, |g| {
+        mappers::leaf_from_flat("DV_IDENTIFIER", &FlatView::new(g))
+            .unwrap_or_else(|| json!({"_type": "DV_IDENTIFIER"}))
+    })
 }
 
 fn audit_details_from(group: &[Entry]) -> Value {

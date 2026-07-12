@@ -262,8 +262,13 @@ mod tests {
         assert!(!c.fhir.enabled);
         // SMART App Launch is opt-in too.
         assert!(!c.smart.enabled);
-        // The System-Options manifest identity carries the product defaults.
-        assert_eq!(c.system.restapi_specs_version, "1.0.3");
+        // The System-Options manifest identity carries the product defaults:
+        // the tested development-edition contract identity (shared provenance),
+        // not the retired `1.0.3` release label.
+        assert_eq!(
+            c.system.restapi_specs_version,
+            crate::extensions::provenance::ITS_REST
+        );
         // Multi-tenancy is off by default; the claim defaults to `tenant`.
         assert!(!c.tenancy.enabled);
         assert_eq!(c.tenancy.claim, "tenant");

@@ -36,6 +36,7 @@ use http::{HeaderMap, HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
 use crate::overview::error::RestError;
+use crate::overview::params::ItemTagHeaderEntry;
 use ehrbase_sm::{CallStatusType, PartyKind, ResourceMeta, ServiceResponse, SmError};
 
 mod contribution;
@@ -107,15 +108,36 @@ fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&Res
 
 /// Emit the `openehr-item-tag` / `openehr-version-item-tag` **response** headers
 /// mandated by `responses/201_PERSON.yaml` (create) and `person_get.yaml` (get)
-/// when a party carries ITEM_TAGs — the server-set tags are read off the service
-/// response (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
-fn set_item_tag_headers(_resp_out: &mut Response, _resp: &ServiceResponse) {
-    // TODO(w3e-integrate): `ServiceResponse` carries no ITEM_TAG list yet — the
-    // seam must surface the server-set tags (e.g. on `ResourceMeta`) before the
-    // mandated `openehr-item-tag`/`openehr-version-item-tag` response headers
-    // (`responses/201_PERSON.yaml`) can be emitted via
-    // `crate::overview::params::emit_item_tag_header`. Until then no header is
-    // emitted (a miss recorded in docs/design/its-rest/demographic.md G-3).
+/// when a party carries ITEM_TAGs — the server-set tags ride the response
+/// metadata seam ([`ResourceMeta::item_tags`], a canonical `ITEM_TAG` list) and
+/// are rendered through [`crate::overview::params::emit_item_tag_header`]
+/// (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
+///
+/// Demographic ITEM_TAGs are stored against the VERSIONED_OBJECT
+/// (`item_tag.target_vo_id`, no version anchor), so the full set is emitted for
+/// both headers: `openehr-item-tag` (all tags on the VERSIONED_OBJECT) and
+/// `openehr-version-item-tag` (all tags on the current VERSION) coincide here.
+fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
+    let Some(meta) = resp.meta.as_ref() else {
+        return;
+    };
+    let Some(serde_json::Value::Array(tags)) = meta.item_tags.as_ref() else {
+        return;
+    };
+    let entries: Vec<ItemTagHeaderEntry> = tags
+        .iter()
+        .filter_map(crate::overview::params::item_tag_to_header_entry)
+        .collect();
+    if entries.is_empty() {
+        return;
+    }
+    let value = crate::overview::params::emit_item_tag_header(&entries);
+    resp_out
+        .headers_mut()
+        .insert(crate::overview::params::H_ITEM_TAG, value.clone());
+    resp_out
+        .headers_mut()
+        .insert(crate::overview::params::H_VERSION_ITEM_TAG, value);
 }
 
 /// Render an error, additionally setting the latest-version `ETag`/`Location`

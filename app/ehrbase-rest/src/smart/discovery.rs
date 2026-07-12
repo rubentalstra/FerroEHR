@@ -238,13 +238,13 @@ pub fn router<S: Platform>(
     issuer_fallback: Option<&str>,
     rest_root: &str,
 ) -> Router<AppState<S>> {
-    // TODO(w3e-integrate): call this from `crate::router` (near router.rs:83-85,
-    // `.merge(status::router(&rest_root))`), passing:
-    //   - `openehr_base_url = &cfg.base_path` (the CDR's openEHR REST base),
-    //   - `fhir_base_url = cfg.fhir.enabled.then(|| <fhir base>)`,
-    //   - `issuer_fallback = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str())`,
-    //   - `rest_root = &rest_root` (the `/ehrbase/rest` root already computed there).
-    // Merge OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document).
+    // Mounted from `crate::router`: merged beside `status::router(&rest_root)`,
+    // OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document,
+    // master04 §Service Discovery), with `openehr_base_url = &cfg.base_path`,
+    // `fhir_base_url = cfg.fhir.enabled.then(|| "{base_path}/fhir/r4")`,
+    // `issuer_fallback = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str())`, and
+    // `rest_root` = the `/ehrbase/rest` root. Disabled → an empty router (a no-op
+    // merge), so the path is absent (`404`).
     if !cfg.enabled {
         return Router::new();
     }

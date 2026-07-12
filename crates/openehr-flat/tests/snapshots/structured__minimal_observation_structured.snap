@@ -23,9 +23,21 @@ expression: structured
     ],
     "participation_mode": [
       "not specified"
+    ],
+    "participation_relationship_code": [
+      "10"
+    ],
+    "participation_relationship_value": [
+      "mother"
+    ],
+    "participation_relationship_terminology": [
+      "openehr"
     ]
   },
   "minimal": {
+    "_uid": [
+      "__THIS_SHOULD_BE_MODIFIED_BY_THE_TEST_::ehrbase.org::1"
+    ],
     "minimal": [
       {
         "text": [

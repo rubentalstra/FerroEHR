@@ -10,13 +10,14 @@
 //! else the REST parameter.
 
 use std::sync::LazyLock;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use jiff::Timestamp;
 use regex::Regex;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use ehrbase_rest::overview::error::QUERY_TIMEOUT_TAG;
 use ehrbase_rest::{AqlQueryRequest, QueryOutcome};
 use ehrbase_sm::SmError;
 use openehr_query::parser::parse_str;
@@ -95,7 +96,23 @@ impl EhrbaseService {
         };
 
         let exec_start = Instant::now();
-        let result = match aql::execute(&self.pool, &ir, &params, &ctx).await {
+        // Query-level execution budget (`EHRBASE_QUERY__TIMEOUT_MS`): when set,
+        // the DB execution is bounded so an over-long query is aborted and
+        // reported as `408 Request Timeout` rather than hanging until the blunt
+        // global request timeout (`Requests_and_responses.md` §HTTP status codes,
+        // row `408`; `responses/408_Query.yaml`). Default off → zero drift.
+        let exec = aql::execute(&self.pool, &ir, &params, &ctx);
+        let exec_result = match *QUERY_TIMEOUT {
+            Some(budget) => match tokio::time::timeout(budget, exec).await {
+                Ok(inner) => inner,
+                Err(_elapsed) => {
+                    count_query("exec_error");
+                    return Err(query_timeout_error(budget));
+                }
+            },
+            None => exec.await,
+        };
+        let result = match exec_result {
             Ok(result) => result,
             Err(e) => {
                 count_query(exec_outcome(&e));
@@ -154,6 +171,34 @@ impl EhrbaseService {
         }
         Ok(ids)
     }
+}
+
+/// Per-query execution budget, read once from `EHRBASE_QUERY__TIMEOUT_MS`
+/// (milliseconds). Unset, unparseable, or `0` disables the budget — the default
+/// — so the only guard on an over-long query stays the global request timeout
+/// and the ECC zero-drift baseline is preserved. A positive value bounds the DB
+/// execution of every AQL query; on overrun the query is aborted and reported as
+/// `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes).
+static QUERY_TIMEOUT: LazyLock<Option<Duration>> = LazyLock::new(|| {
+    std::env::var("EHRBASE_QUERY__TIMEOUT_MS")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|ms| *ms > 0)
+        .map(Duration::from_millis)
+});
+
+/// The `408` query-execution-timeout error: an `exception` [`SmError`] whose
+/// message is prefixed with [`QUERY_TIMEOUT_TAG`] so the REST adapter renders it
+/// as `408 Request Timeout` — "Request maximum execution time is reached,
+/// therefore the server aborted the request" (`Requests_and_responses.md` §HTTP
+/// status codes; `responses/408_Query.yaml`). The tag is stripped at the wire,
+/// leaving the clean detail below as the client-visible message.
+fn query_timeout_error(budget: Duration) -> SmError {
+    SmError::exception(format!(
+        "{QUERY_TIMEOUT_TAG}query execution exceeded the maximum time of {}ms; \
+         the server aborted the query",
+        budget.as_millis()
+    ))
 }
 
 /// Increment `aql_queries_total{outcome}` (§1.2). Closed outcome set.

@@ -8,8 +8,8 @@
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use ehrbase_sm::SmError;
 use ehrbase_sm::EhrIndexService;
+use ehrbase_sm::SmError;
 use ehrbase_sm::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 
 use crate::service::EhrbaseService;

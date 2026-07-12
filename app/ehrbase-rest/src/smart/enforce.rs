@@ -10,35 +10,18 @@
 //! `403` mapping and the patient-compartment `ehrId` binding stay in the PEP,
 //! AND-composed after RBAC/Cedar (`crate::extensions::access::mod` layering:
 //! `EHR_ACCESS` gate → RBAC → ABAC → this SMART gate).
-//
-// TODO(w3e-integrate): call `evaluate` from `crate::extensions::access::pep`. Concretely,
-// after the existing `decide(...)` (RBAC + Cedar) succeeds in `pre_check`/
-// `post_check`/`query_pre`+`query_post`:
-//   1. Parse the principal's scopes once per request:
-//      `let scopes = SmartScope::parse_all(&principal.scopes.join(" "));`
-//      (or cache a `Vec<SmartScope>` on a request extension). `Principal.scopes`
-//      is already populated from the token `scope`/`scp` claims
-//      (`access/authn/jwt.rs:127-134`).
-//   2. `let family = enforce::family_of_op(op);`
-//      `let permission = enforce::permission_of_op(op);`
-//      `let resource_id = <the template id / query name the PEP resolved>`
-//      (composition: the `template` attr from `abac::pre_template`/`post_template`;
-//      query: each stored-query name; template ops: the `{template_id}` path param).
-//   3. `let outcome = enforce::evaluate(&scopes, family, permission, resource_id,
-//      &enforce::GateConfig { require_smart_scopes: smart_cfg.require_smart_scopes });`
-//      On `ScopeDecision::Deny(reason)` → `forbidden(&principal, &reason)` (the
-//      same `abac::forbidden` 403 that carries the principal for ATNA).
-//   4. If `outcome.bind_patient_compartment` is true, resolve the launch-context
-//      EHR id with `enforce::launch_context_ehr_id(&principal.claims,
-//      &smart_cfg.ehr_id_claim, &smart_cfg.patient_claim)` and run the existing
-//      `abac::subject_gate` with THAT value against the target EHR (master07
-//      §Context Selection: a `patient/` scope requires the resolved `ehrId`
-//      context bound to the EHR being accessed). A `patient/` grant with no
-//      resolvable context claim → deny.
-//   5. Optionally feed the granted scope strings into the Cedar `User.scopes`
-//      attribute (`access/authz/cedar.rs:223-231`, currently populated empty) so
-//      operator policies can reason over scopes — purely additive, the built-in
-//      gate here is the spec-mandated floor.
+//!
+//! [`evaluate`] is called from `crate::extensions::access::pep` (`smart_decide`
+//! / `smart_gate`), after the RBAC/Cedar `decide(...)` succeeds: the PEP parses
+//! `Principal.scopes` via [`SmartScope::parse_all`], maps the op with
+//! [`family_of_op`] + [`permission_of_op`], feeds the resolved template/query id
+//! and the `GateConfig` (from `SmartConfig::require_smart_scopes`) into
+//! [`evaluate`], routes a [`ScopeDecision::Deny`] to the ABAC `forbidden` 403,
+//! and — on `bind_patient_compartment` — binds the [`launch_context_ehr_id`]
+//! against the target EHR through the ABAC subject gate (master07 §Context
+//! Selection). Feeding the granted scopes into the Cedar `User.scopes` attribute
+//! is a purely additive extension left to the authz engine; the built-in gate
+//! here is the spec-mandated floor.
 
 use crate::extensions::access::authz::{AccessMode, ResourceKind};
 

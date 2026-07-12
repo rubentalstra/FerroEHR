@@ -10,6 +10,12 @@
 //! `inputs` mapping, and the compaction/post-processing shape match it.
 //!
 //! FLAT / STRUCTURED (P17) build on the same [`webtemplate`] model.
+//!
+//! Doc prose here is dense with openEHR spec class names (`COMPOSITION`,
+//! `DV_QUANTITY`, `FEEDER_AUDIT`, `PARTY_IDENTIFIED`, …); backticking every
+//! occurrence is noise, so `clippy::doc_markdown` is allowed crate-wide (matching
+//! the tests' existing allow).
+#![allow(clippy::doc_markdown)]
 
 pub mod cache;
 pub mod error;

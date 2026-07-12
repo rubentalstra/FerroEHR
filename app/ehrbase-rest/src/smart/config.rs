@@ -8,18 +8,14 @@
 //! extension-group convention the ADMIN/terminology/FHIR groups follow
 //! (`crate::config` `AdminConfig`/`TerminologyConfig`).
 //!
-//! Environment binding (`EHRBASE_REST_SMART__*`, `__` = nesting): once this
-//! struct is added as a `pub smart: SmartConfig` field on
-//! [`crate::config::RestConfig`] (see the `TODO(w3e-integrate)` below), the
+//! Environment binding (`EHRBASE_REST_SMART__*`, `__` = nesting): this struct
+//! is the `#[serde(default)] pub smart: SmartConfig` field on
+//! [`crate::config::RestConfig`] (alongside `terminology`/`fhir`), so the
 //! existing `Env::prefixed("EHRBASE_REST_").split("__")` figment chain in
-//! `RestConfig::load` picks it up with no extra code. [`SmartConfig::load`] is
-//! the equivalent standalone loader for tests and for the discovery router.
-//
-// TODO(w3e-integrate): add `#[serde(default)] pub smart: SmartConfig` to
-// `crate::config::RestConfig` (alongside `terminology`/`fhir`), thread it into
-// `RestConfig::default()`, and mount the discovery router + scope gate from it
-// (see `discovery::router` and `enforce`). This module owns only the type;
-// wiring it onto `RestConfig` crosses into `crate::config`.
+//! `RestConfig::load` picks it up with no extra code. The discovery router is
+//! mounted from it in [`crate::router`] and the scope gate reads it in
+//! [`crate::extensions::access::pep`]. [`SmartConfig::load`] is the equivalent
+//! standalone loader for tests and for the discovery router.
 
 use figment::Figment;
 use figment::providers::{Env, Serialized};

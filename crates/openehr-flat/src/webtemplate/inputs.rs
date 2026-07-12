@@ -6,10 +6,21 @@
 //! `*WebTemplateInputBuilder`s: suffixes, input types, coded lists, and
 //! validation ranges are transcribed verbatim (`|unit` is singular, per Better).
 //!
-//! Not modelled here (scope boundaries for this PR, recorded as `TODO(port)`):
-//! `defaultValue` from assumed/RM-default values, external `otherTerminologies`,
-//! and the openEHR-terminology rubric lookup (labels fall back to the code when
-//! the archetype rubric is unknown, as for non-`local` terminologies).
+//! Deliberate scope of this mapping (design decisions matching Better, the interop
+//! oracle — the `inputs` describe the *constraint*, not resolved runtime values):
+//!
+//! * **No `defaultValue` synthesis from assumed/RM-default values** — Better emits
+//!   `defaultValue` only from an explicit archetype assumed value; RM defaults are
+//!   a composition-build concern (`flat::graph::fill_structural_mandatory`), not a
+//!   template-input concern.
+//! * **External `otherTerminologies` are not expanded into coded lists** — only
+//!   the archetype-`local` value sets become `codedValues`; bindings to external
+//!   terminologies are surfaced as `termBindings` (wired in [`super::builder`]),
+//!   and external code validation is the terminology service's job
+//!   (`ehrbase-sm` `TerminologyService`), not the template builder's.
+//! * **Rubric source is the archetype ontology** ([`Labels`]); a code whose rubric
+//!   the archetype does not define (unknown code, or a non-`local` terminology)
+//!   uses the code string as its label — the same fallback Better applies.
 
 use indexmap::IndexMap;
 use openehr_its::opt14::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};

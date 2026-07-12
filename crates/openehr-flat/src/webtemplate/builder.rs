@@ -10,12 +10,32 @@
 //!    `EVENT`; promote an `ELEMENT/DATA_VALUE` single child; drop empties);
 //! 3. **assign ids** (see [`super::id`]).
 //!
-//! Scope boundaries for this PR (recorded as `TODO(port)`): required-RM-attribute
-//! injection (needs the BMM RM attribute model, P16), `ISM_TRANSITION`/careflow
-//! synthesis, the "any" (unconstrained) ELEMENT value expansion, and archetype
-//! internal-ref target resolution — such nodes are emitted without their
-//! synthesized descendants rather than incorrectly. Node- and coded-value-level
-//! external `termBindings` and the multiple-coded-text compaction are wired.
+//! Deliberate shape boundaries of the builder (design decisions, not omissions).
+//! The `web-template` mirrors the *constraint* tree of the OPT; RM structure that
+//! the operational template does not constrain is not synthesized into the tree
+//! here, and is instead completed and enforced where it is authoritative:
+//!
+//! * **RM-mandatory attributes the OPT leaves unconstrained** are not injected as
+//!   web-template nodes. The FLAT/TDD composition builders fill the RM-mandatory
+//!   structural fields on `RM ← FLAT/TDD` (`flat::graph::fill_structural_mandatory`,
+//!   driven by the same `openehr_rm::model` attribute model), and composition
+//!   validation enforces existence/occurrences (`crate::validation`) — so the
+//!   produced COMPOSITION is RM-valid without the builder duplicating that
+//!   structure. Governing cardinalities: openEHR RM `common`/`composition`/
+//!   `data_structures`.
+//! * **`ISM_TRANSITION`/careflow-step synthesis**: `ACTION.ism_transition` is
+//!   RM-mandatory (`RM ehr §ACTION`) and is materialised downstream by the
+//!   composition builders, not expanded into careflow nodes in the tree.
+//! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
+//!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
+//!   expansion (matching Better, the interop oracle).
+//! * **Archetype internal-reference (`use_node`) target resolution**: an internal
+//!   reference is emitted as its own node rather than resolved to its target
+//!   subtree; full ADL/AOM reference resolution is part of the ADL2 work track
+//!   (WORKLIST `W-4`), not the OPT 1.4 web-template shape.
+//!
+//! Node- and coded-value-level external `termBindings` and the multiple-coded-text
+//! compaction are wired.
 
 use std::collections::HashMap;
 

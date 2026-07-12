@@ -35,17 +35,16 @@ pub(super) async fn run<S: Platform>(
         "create" => {
             // All per-kind `*CreateParams` are field-identical; reuse one.
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
-            // G-3: the incoming `openehr-item-tag` / `openehr-version-item-tag`
-            // request headers (person_create.yaml) carry ITEM_TAGs to persist.
-            // TODO(w3e-integrate): hand these to the service — `party_create`
-            // currently takes no tags; the central parser lands in the overview
-            // worker's `crate::overview::committal`.
-            let _tags = crate::overview::params::parse_item_tag_header(h, crate::overview::params::H_ITEM_TAG);
             let body = decode_party_body(kind, h, &parts.body)?;
             // person_create.yaml declares 201/400/422/404; a service NotFound
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
             // (overview::error::sm_api_error) — `?` routes each to its status.
-            let resp = state.backend().party_create(kind, body).await?;
+            let mut resp = state.backend().party_create(kind, body).await?;
+            // G-3: the incoming `openehr-item-tag` request header (person_create.yaml)
+            // carries ITEM_TAGs to persist. The party must exist first
+            // (`item_tag.target_vo_id` FK), so tags are persisted after the create
+            // and the stored set is reflected on the response metadata seam.
+            persist_request_tags(&state, kind, h, &mut resp).await?;
             // 201 + ETag/Location; body per Prefer; + item-tag response headers.
             let mut out = write_party(
                 kind,
@@ -79,14 +78,22 @@ pub(super) async fn run<S: Platform>(
                 .party_update(kind, p.uid_based_id, p.if_match, body)
                 .await
             {
-                Ok(resp) => Ok(write_party(
-                    kind,
-                    h,
-                    &base,
-                    StatusCode::NO_CONTENT,
-                    StatusCode::OK,
-                    &resp,
-                )),
+                Ok(mut resp) => {
+                    // G-3: persist any `openehr-item-tag` request-header tags
+                    // against the updated party and reflect the stored set on the
+                    // response metadata (person_update.yaml).
+                    persist_request_tags(&state, kind, h, &mut resp).await?;
+                    let mut out = write_party(
+                        kind,
+                        h,
+                        &base,
+                        StatusCode::NO_CONTENT,
+                        StatusCode::OK,
+                        &resp,
+                    );
+                    super::set_item_tag_headers(&mut out, &resp);
+                    Ok(out)
+                }
                 // person_update.yaml: `If-Match` mismatch → 412 + latest version_uid.
                 Err(e) if super::is_precondition(&e) => {
                     let meta = state
@@ -112,6 +119,35 @@ pub(super) async fn run<S: Platform>(
     }
 }
 
+/// Persist any `openehr-item-tag` request-header ITEM_TAGs against the
+/// just-written party and reflect the stored set on the response metadata seam
+/// so the response headers echo them (person_create.yaml / person_update.yaml
+/// G-3). The party must already exist (`item_tag.target_vo_id` FK), so this runs
+/// after the create/update write. A present-but-empty header clears all tags
+/// (the "remove all ITEM_TAGs" signal); an absent header is a no-op.
+async fn persist_request_tags<S: Platform>(
+    state: &AppState<S>,
+    kind: PartyKind,
+    h: &HeaderMap,
+    resp: &mut ServiceResponse,
+) -> Result<(), RestError> {
+    let Some(entries) =
+        crate::overview::params::parse_item_tag_header(h, crate::overview::params::H_ITEM_TAG)
+    else {
+        return Ok(());
+    };
+    let Some(uid) = resp.meta.as_ref().map(|m| m.uid.clone()) else {
+        return Ok(());
+    };
+    let tags = crate::overview::params::item_tags_from_header_entries(&entries);
+    // Full-collection PUT semantics via the same machinery as `party_tags_update`.
+    let stored = state.backend().party_tags_update(kind, uid, tags).await?;
+    if let Some(meta) = resp.meta.as_mut() {
+        meta.item_tags = Some(stored.body);
+    }
+    Ok(())
+}
+
 /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` +
 /// `ETag`/`Location` of the deleted version.
 ///
@@ -132,14 +168,14 @@ async fn run_delete<S: Platform>(
     // version_uid). All per-kind delete params are field-identical; reuse one.
     let p = params::build::<AgentDeleteParams>(&parts.path, parts.query.as_deref(), h)?;
     let preceding = p.uid_based_id.clone();
-    // PORT NOTE (wire, compatibility): `If-Match` is retained only as a fallback
-    // source of the preceding version for older clients — `person_delete.yaml`
-    // declares no `If-Match` and takes the preceding version from the path.
-    // TODO(w3e-integrate): `party_delete` should take the preceding version_uid
-    // positionally (design its-rest/demographic.md §2.2), and the service should
-    // signal a stale uid via `version_mismatch` (→ 409) and an already-deleted
-    // target via `precondition_violation` (→ 400_already_deleted). Passing the
-    // path uid; `If-Match` kept as the compatibility fallback.
+    // PORT NOTE (wire, compatibility): `person_delete.yaml` declares no `If-Match`
+    // and takes the preceding version from the path `uid_based_id` (an
+    // `OBJECT_VERSION_ID`, design its-rest/demographic.md §2.2), which is passed
+    // positionally to `party_delete` below; `If-Match` is retained only as a
+    // fallback source of the preceding version for older clients. The service
+    // signals a stale uid via `version_mismatch` (→ 409, handled below with the
+    // latest `version_uid` echoed in `ETag`) and an already-deleted target via
+    // `precondition_violation` (→ 400_already_deleted).
     match state
         .backend()
         .party_delete(kind, preceding.clone(), super::if_match_of(h))
