@@ -45,10 +45,21 @@ pub async fn seed_scale(client: &SutClient, scale: Scale, seed: u64) -> Result<u
 
     // One canonical composition per template, rendered once and reused with only
     // the timestamp varied per iteration (register 00 §4: variation touches
-    // values, never structure).
+    // values, never structure). Any fixture-carried `uid` is stripped: version
+    // identities are server-assigned on commit, and re-committing a fixed
+    // OBJECT identity is a `409` (ITS-REST: a resource with the same
+    // identifier already exists) — the corpus `composition_evaluation_test`
+    // fixture ships one.
     let bases: Vec<Value> = TEMPLATES
         .iter()
-        .map(|k| template_composition(*k))
+        .map(|k| {
+            template_composition(*k).map(|mut v| {
+                if let Some(obj) = v.as_object_mut() {
+                    obj.remove("uid");
+                }
+                v
+            })
+        })
         .collect::<Result<_, _>>()?;
 
     let ehr_count = (target / COMPS_PER_EHR).max(1);
