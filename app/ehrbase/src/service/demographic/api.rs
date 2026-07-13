@@ -82,6 +82,33 @@ impl EhrbaseService {
     }
 }
 
+/// Full-`OBJECT_VERSION_ID` `If-Match` verification (ITS-REST overview
+/// §Concurrency control): the precondition names the current latest version
+/// **in full** — object id + creating system id + version — and a mismatch in
+/// ANY segment is a `412`. Reducing the header to the version-tree number
+/// alone would accept a precondition naming a version this server never held.
+/// Non-OVID tokens (a bare trunk number) keep the lenient tree addressing;
+/// an absent header or an object with no current version defers to the
+/// versioning path. Mirrors the EHR path's `ensure_if_match`.
+fn ensure_full_ovid_if_match(
+    if_match: Option<&str>,
+    current: Option<&ResourceMeta>,
+) -> Result<(), SmError> {
+    let Some(raw) = if_match else { return Ok(()) };
+    let token = raw.trim().trim_matches('"');
+    if <openehr_base::prelude::ObjectVersionId as std::str::FromStr>::from_str(token).is_err() {
+        return Ok(());
+    }
+    match current {
+        Some(meta) if meta.uid == token => Ok(()),
+        Some(meta) => Err(SmError::version_mismatch(format!(
+            "If-Match {token:?} does not match the current latest version {:?}",
+            meta.uid
+        ))),
+        None => Ok(()),
+    }
+}
+
 #[async_trait]
 impl DemographicService for EhrbaseService {
     // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
@@ -227,6 +254,8 @@ impl DemographicService for EhrbaseService {
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let current = self.party_current_meta(kind, vo_id).await?;
+        ensure_full_ovid_if_match(Some(&if_match), current.as_ref())?;
         let expected = expected_from_if_match(&if_match);
         Ok(self.update_party(kind, vo_id, body, expected).await?)
     }
@@ -244,6 +273,8 @@ impl DemographicService for EhrbaseService {
         // concurrency comes from `If-Match` when supplied, else the path OVID,
         // else `None` (delete the current version unconditionally).
         let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
+        let current = self.party_current_meta(kind, vo_id).await?;
+        ensure_full_ovid_if_match(if_match.as_deref(), current.as_ref())?;
         let expected = if_match
             .as_deref()
             .and_then(expected_from_if_match)
@@ -470,7 +501,7 @@ impl PartyRelationshipService for EhrbaseService {
             })?;
         let (_, tree) = parse_version_uid(&meta.uid)?;
         let resp = self
-            .delete_relationship(a_versioned_party_rel_id, tree)
+            .delete_relationship(a_versioned_party_rel_id, Some(tree))
             .await?;
         Ok(version_uid(resp))
     }
@@ -497,6 +528,8 @@ impl PartyRelationshipService for EhrbaseService {
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
+        let current = self.relationship_current_meta(vo_id).await?;
+        ensure_full_ovid_if_match(Some(&if_match), current.as_ref())?;
         let expected = expected_from_if_match(&if_match);
         Ok(self.update_relationship(vo_id, body, expected).await?)
     }
@@ -504,10 +537,20 @@ impl PartyRelationshipService for EhrbaseService {
     async fn party_relationship_delete(
         &self,
         uid_based_id: String,
+        if_match: Option<String>,
     ) -> Result<ServiceResponse, SmError> {
-        // The uid_based_id MUST be an OBJECT_VERSION_ID (the preceding version);
-        // a bare HIER_OBJECT_ID → 400 (mirroring the party delete).
-        let (vo_id, expected) = parse_version_uid(&uid_based_id)?;
+        // Mirrors `party_delete`: the path carries the versioned-relationship
+        // id (bare `HIER_OBJECT_ID` or full `OBJECT_VERSION_ID`); the preceding
+        // version for optimistic concurrency comes from `If-Match` when
+        // supplied, else the path OVID, else `None` (delete the current
+        // version — ITS-REST overview §Concurrency control).
+        let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
+        let current = self.relationship_current_meta(vo_id).await?;
+        ensure_full_ovid_if_match(if_match.as_deref(), current.as_ref())?;
+        let expected = if_match
+            .as_deref()
+            .and_then(expected_from_if_match)
+            .or(path_version);
         Ok(self.delete_relationship(vo_id, expected).await?)
     }
 

@@ -1,10 +1,13 @@
-//! Typed fixture mutators (design §2.2a): the upstream
+//! Typed fixture mutators for the content chapters: the upstream
 //! `composition_validation_lib` catalogue re-expressed as Rust over
-//! `serde_json::Value`, so content-chapter variants are generated from the
-//! vendored base fixtures instead of hand-maintaining hundreds of static files.
+//! `serde_json::Value`, so content-chapter data-set variants are generated
+//! from the vendored base fixtures instead of hand-maintaining hundreds of
+//! static files (master15 §Implementation notes).
 //!
-//! Two mutators: set a high-level field to `Exist`/`NotExist`/`Invalid`, and
-//! pad/trim a JSON array to a target count.
+//! Two families: high-level field state (`Exist`/`NotExist`/`Invalid`),
+//! array pad/trim to a target count, and the node-finding / pointer
+//! primitives the OBSERVATION/EVENT injectors and the leaf value-constraint
+//! cases build on.
 
 use serde_json::Value;
 
@@ -68,9 +71,10 @@ pub fn set_array_count(object: &mut Value, array_field: &str, count: usize) {
 }
 
 /// Set `COMPOSITION.category` to a coded value (openEHR terminology group 13):
-/// `433` = `event`, `431` = `persistent` (the `Category_validity` RM invariant
-/// keys context presence off this). Both `value` and `defining_code.code_string`
-/// are updated so the wire object is internally consistent.
+/// `433` = `event`, `431` = `persistent`. Both `value` and
+/// `defining_code.code_string` are updated so the wire object stays internally
+/// consistent (RM composition §`COMPOSITION.Category_validity`: the code must be
+/// a valid composition-category code).
 pub fn set_category(comp: &mut Value, code: &str, value: &str) {
     if let Value::Object(map) = comp {
         map.insert(
@@ -88,7 +92,11 @@ pub fn set_category(comp: &mut Value, code: &str, value: &str) {
     }
 }
 
-/// Remove `COMPOSITION.context` (the "no context" data set).
+/// Remove `COMPOSITION.context` (the "no context" data set). RM 1.2.0
+/// composition §COMPOSITION: `context` is `0..1` with no category↔context
+/// invariant (only `Category_validity`), so a missing context is RM-legal
+/// regardless of category — the authored OPT's `context` existence is the sole
+/// governing constraint (register 12 G-6).
 pub fn remove_context(comp: &mut Value) {
     if let Value::Object(map) = comp {
         map.remove("context");
@@ -103,9 +111,8 @@ pub fn has_context(comp: &Value) -> bool {
 
 /// A depth-first search for the first node (object) whose `_type` equals `ty`,
 /// returning a mutable reference. Arrays and object values are traversed in
-/// document order; the outermost matching node wins.
+/// document order; the outermost matching node wins (pre-order).
 pub fn first_node_mut<'a>(value: &'a mut Value, ty: &str) -> Option<&'a mut Value> {
-    // Check the node itself first (pre-order), then descend.
     if value.get("_type").and_then(Value::as_str) == Some(ty) {
         return Some(value);
     }
@@ -143,7 +150,7 @@ pub fn contains_node(value: &Value, ty: &str) -> bool {
     }
 }
 
-/// Set a scalar field on an object node (creating/overwriting it).
+/// Set a scalar/object field on an object node (creating/overwriting it).
 pub fn set_field(node: &mut Value, field: &str, val: Value) {
     if let Value::Object(map) = node {
         map.insert(field.to_owned(), val);
@@ -159,8 +166,7 @@ pub fn remove_field(node: &mut Value, field: &str) {
 
 /// Set the value at an RFC-6901 JSON Pointer (`/content/0/…/value/units`),
 /// returning whether the slot resolved. Points a constraint-violating value at
-/// exactly the leaf an OPT constrains (design §2.2a: fixture-cited mutation of a
-/// vendored composition, not a hand-built one).
+/// exactly the leaf an OPT constrains.
 pub fn set_pointer(root: &mut Value, pointer: &str, val: Value) -> bool {
     match root.pointer_mut(pointer) {
         Some(slot) => {
@@ -281,8 +287,7 @@ mod tests {
         assert!(contains_node(&v, "DV_QUANTITY"));
         assert!(!contains_node(&v, "DV_URI"));
 
-        // The outermost (pre-order) DV_TEXT is the composition name; mutating it
-        // survives an OBSERVATION.data removal.
+        // The outermost (pre-order) DV_TEXT is the composition name.
         let dv = first_node_mut(&mut v, "DV_TEXT").unwrap();
         set_field(dv, "value", json!("y"));
         assert_eq!(v["name"]["value"], "y");

@@ -83,6 +83,18 @@ impl VersionSelection {
 /// `VERSIONED_OBJECT` wrappers). A kind with no dedicated wrapper (e.g.
 /// `PARTY_RELATIONSHIP`, never EHR-scoped) falls back to the generic
 /// `X_VERSIONED_OBJECT`.
+/// The concrete RM versioned-object class per kind (RM ehr master04:
+/// `VERSIONED_COMPOSITION` / `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER`).
+fn versioned_rm_type(kind: &str) -> &'static str {
+    match kind {
+        "COMPOSITION" => "VERSIONED_COMPOSITION",
+        "EHR_STATUS" => "VERSIONED_EHR_STATUS",
+        "FOLDER" => "VERSIONED_FOLDER",
+        "AGENT" | "GROUP" | "ORGANISATION" | "PERSON" | "ROLE" => "VERSIONED_PARTY",
+        _ => "VERSIONED_OBJECT",
+    }
+}
+
 fn x_versioned_type(kind: &str) -> &'static str {
     match kind {
         "COMPOSITION" => "X_VERSIONED_COMPOSITION",
@@ -205,7 +217,7 @@ impl EhrbaseService {
 
         // uid / owner_id / time_created are the VERSIONED_OBJECT's own — reuse
         // the shared read builder so they match the /versioned_* surface.
-        let vo = versioned_object(&self.pool, vo_id, ehr_id).await?;
+        let vo = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
         let mut x = json!({
             "_type": x_versioned_type(kind),
             "uid": vo["uid"].clone(),

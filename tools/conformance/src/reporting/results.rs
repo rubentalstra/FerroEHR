@@ -5,7 +5,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::version::SpecVersions;
+use crate::edition::EditionPolicy;
+use crate::model::versions::SpecVersions;
+use crate::sut::descriptor::SutKind;
 
 /// The full result set of one conformance run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,6 +88,14 @@ pub struct SutIdentity {
     /// `report --from`.
     #[serde(default)]
     pub product: ProductIdentity,
+    /// The SUT class (ours vs foreign) — gates Certificate emission and the
+    /// fairness register.
+    #[serde(default = "default_sut_kind")]
+    pub kind: SutKind,
+    /// The edition policy the run executed under (pinned for our CI, auto
+    /// for bring-your-own-endpoint targets).
+    #[serde(default = "default_edition_policy")]
+    pub edition_policy: EditionPolicy,
     /// The declared specification versions (a property of the claim).
     #[serde(default)]
     pub versions: SpecVersions,
@@ -238,8 +248,6 @@ pub struct CaseOutcome {
     pub title: String,
     /// The capability label.
     pub capability: String,
-    /// The profiles that require the case's capability.
-    pub profiles: Vec<String>,
     /// The wire format this outcome is for.
     pub format: String,
     /// The status.
@@ -248,17 +256,46 @@ pub struct CaseOutcome {
     pub passed_data_sets: u32,
     /// Data sets attempted.
     pub total_data_sets: u32,
+    /// The data-set rows the governing schedule table defines, where the
+    /// schedule tabulates one — `total_data_sets < schedule_rows` is a
+    /// logged coverage bound (honesty invariant 3).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_rows: Option<u32>,
     /// The failure/skip message, if any.
     pub message: Option<String>,
     /// The spec citation.
     pub citation: String,
-    /// The CNF-schedule trace reference ([`crate::case::CaseMeta::schedule_ref`]),
+    /// The CNF-schedule trace reference (the case's [`crate::model::case::ScheduleTrace`]),
     /// when the case maps directly to a `<SERVICE>.<operation>` schedule id.
     /// Carried into `results.json` so the Conformance Certificate's
     /// per-conformance-point table is self-contained (regenerable via
     /// `report --from`). Absent for ECC-original cases with no direct id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule_ref: Option<String>,
+    /// For a case with no normative schedule backing: why it exists
+    /// (schedule-stub derivation or extension) — a stub-derived case is
+    /// never presented as schedule-conformant.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ecc_original: Option<String>,
+    /// The ITS-REST binding the case drives (or the explicit
+    /// no-binding/native-only fact).
+    #[serde(default)]
+    pub binding: String,
+    /// The lowest edition rung the case's assertions matched, when below the
+    /// newest (the case's edition finding level).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edition_level: Option<String>,
+    /// The individual edition observations recorded during the case.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub edition_findings: Vec<String>,
     /// Wall-clock duration in milliseconds.
     pub duration_ms: u128,
+}
+
+fn default_sut_kind() -> SutKind {
+    SutKind::Ours
+}
+
+fn default_edition_policy() -> EditionPolicy {
+    EditionPolicy::Pinned(crate::edition::Edition::Development)
 }

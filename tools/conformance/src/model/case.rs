@@ -1,173 +1,174 @@
-//! The case model (design §4.2): [`CaseMeta`] and the classification enums.
+//! The case model: [`CaseMeta`] and its classification vocabulary.
 //!
-//! Every case is one of **our own** ECC cases: it carries its ECC registration
-//! key ([`CaseMeta::id`] — a descriptive `<area>/<case>` slug), a human
-//! [`CaseMeta::title`], its catalogue [`Area`], the capability it exercises
-//! ([`Capability`]), which profiles require that capability ([`Profile`]), the
-//! wire formats it runs under ([`Format`]), a spec [`CaseMeta::citation`], and
-//! the payload comparison mode ([`Compare`]). This metadata is what the
-//! generated report and Conformance Statement are scoped from — the claim is a
-//! function of the run, never hand-asserted. There is no runtime mapping to the
-//! legacy CNF corpus: the vendored corpus was design-time reading only.
+//! Every case is one of **our own** ECC cases. The metadata is what the
+//! report, Statement, and Certificate are scoped from — the claim is a
+//! function of the run, never hand-asserted. Two W-10 additions make the
+//! derivation square of `CNF/docs/guide/master04-framework.adoc` §From
+//! Specifications to Runnable Tests machine-readable on every case:
+//!
+//! - [`ScheduleTrace`] — the abstract schedule test case this case
+//!   concretizes (or an explicit `EccOriginal` marker where the schedule
+//!   chapter is a stub — a stub-derived case is never presented as
+//!   schedule-conformant; registers 02/07/08/09/10).
+//! - [`Binding`] — the ITS-REST concretization, or the explicit
+//!   `NoRestBinding` fact for SM operations the REST contract never bound
+//!   (schedule master04 `delete_opt`, master05 `list_queries`, master08
+//!   `list_contributions`, Messaging, native-only Admin ops): those cases
+//!   skip-with-reason or probe, they never fabricate a URL and never book a
+//!   failure.
 
 use serde::Serialize;
 
-use crate::catalog::Area;
+use crate::model::catalog::Area;
 
-/// Static metadata for one conformance test case (design §4.2).
+/// Static metadata for one conformance test case.
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct CaseMeta {
-    /// The registration key: a stable, descriptive slug `<area-slug>/<case-slug>`,
-    /// lowercase kebab-case, e.g. `"ehr/create-default-sets"`, `"val/dv-count-range"`.
+    /// The registration key: a stable, descriptive slug
+    /// `<area-slug>/<case-slug>`, lowercase kebab-case, e.g.
+    /// `"ehr/create-default-sets"`. Bound to an ECC number in the committed
+    /// catalogue; keys carried from the pre-W-10 instrument keep their
+    /// numbers so the baseline delta stays per-case explainable.
     pub id: &'static str,
-    /// The human title shown in `CATALOG.md`, e.g.
-    /// `"Create EHR with default EHR_STATUS"`.
+    /// The human title.
     pub title: &'static str,
-    /// The catalogue area (explicit — the category axis of the ECC id).
+    /// The catalogue area (the category axis of the ECC id).
     pub area: Area,
-    /// The capability the case exercises (design §8 matrix).
+    /// The capability the case exercises (profiles master03 matrix).
     pub capability: Capability,
-    /// Which profiles require this capability.
-    pub profiles: &'static [Profile],
-    /// The wire formats the case runs under (a case runs once per claimed format
-    /// where the payload is format-sensitive).
+    /// The wire formats the case runs under (profiles master03 §Other
+    /// Non-Functional: external data formats are XML + JSON; a case runs
+    /// once per claimed format where the payload is format-sensitive).
     pub formats: &'static [Format],
-    /// The spec grounding: file/section citation(s), e.g.
-    /// `"ITS-REST 1.0.3 EHR §create_ehr; RM 1.2.0 ehr §EHR_STATUS"`.
+    /// The spec grounding: CNF schedule file + § plus the ITS-REST/RM
+    /// sections the assertion enforces (spec citations only — never ADRs).
     pub citation: &'static str,
-    /// The payload comparison mode this case's assertion uses (jsonlib semantics,
-    /// §2.2a).
+    /// The schedule trace (the abstract test case, or the honest
+    /// ECC-original marker).
+    pub schedule: ScheduleTrace,
+    /// The ITS-REST binding this case drives.
+    pub binding: Binding,
+    /// The payload comparison mode the case's content assertions use.
     pub compare: Compare,
-    /// An optional CNF-schedule trace reference: the official
-    /// `<SERVICE_COMPONENT>.<operation>` id (with its schedule locus) this case
-    /// directly concretizes, e.g.
-    /// `"I_EHR_DIRECTORY.get_versioned_directory (CNF master09:670)"`. `None`
-    /// where the case maps to no single CNF schedule test-case id (most
-    /// ECC-original cases). This is the field the catalogue's "trace references
-    /// carried in metadata" claim needs to be literally true (R2 caveat,
-    /// `docs/blueprint/07-cnf.md`); set it best-effort where a module already
-    /// cites a `master NN` schedule id, `None` otherwise. Threaded onto a case
-    /// with [`crate::registry::CaseEntry::with_schedule_ref`].
-    pub schedule_ref: Option<&'static str>,
 }
 
-/// A conformance profile (design §2.1, master03-profiles): claims are made per
-/// profile, composed of capabilities.
+/// The abstract-schedule trace of a case — the (3)→(4) edge of the guide's
+/// derivation square (`guide/master04-framework.adoc` §From Specifications to
+/// Runnable Tests).
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case", tag = "kind", content = "value")]
+pub enum ScheduleTrace {
+    /// The case concretizes a schedule test case: the official
+    /// `<SERVICE_COMPONENT>.<operation>-<id>` form + chapter locus, e.g.
+    /// `"I_EHR_SERVICE.create_ehr-no_status (master06 §create_ehr)"`.
+    Schedule(&'static str),
+    /// The case is ECC-original: no normative schedule backing exists. The
+    /// string states why, e.g. `"schedule stub (master11 is TBD); derived
+    /// from AQL 1.1 + golden corpus"` or `"extension: item tags"`.
+    EccOriginal(&'static str),
+}
+
+/// The ITS-REST concretization of the case — the (1)→(2) edge of the
+/// derivation square.
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case", tag = "kind", content = "value")]
+pub enum Binding {
+    /// The case drives a bound ITS-REST resource; the string names the
+    /// operation(s), e.g. `"POST /ehr"` or `"PUT /ehr/{ehr_id}/composition/{uid}"`.
+    Rest(&'static str),
+    /// The SM operation has **no** ITS-REST binding (the schedule is
+    /// SM-based and wider than the REST contract). The string cites the SM
+    /// operation; the case must resolve to a documented skip or a
+    /// negative-space probe (405/404-when-unbound), never a fabricated URL.
+    NoRestBinding(&'static str),
+    /// Native-API-only capability (e.g. Messaging): evidenced off-wire by
+    /// named integration tests; always skip-with-reason on the wire runner.
+    NativeApiOnly(&'static str),
+}
+
+/// A conformance profile (`profiles/master03-profiles.adoc`): claims are made
+/// per profile, composed of capabilities. CORE/STANDARD require **all**
+/// mentioned capabilities; OPTIONS is obtained if **any** optional capability
+/// passes (per-capability reporting).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Profile {
-    /// CORE — the all-or-nothing baseline (ADL1.4 + OPT provisioning, EHR /
-    /// `EHR_STATUS` / COMPOSITION / change sets / versioning / archetype
-    /// validation, anonymous EHRs).
+    /// CORE — minimal functional openEHR platform (storage + retrieval).
     Core,
-    /// STANDARD — CORE plus query provisioning, directory, AQL basic, and
-    /// Signing.
+    /// STANDARD — CORE plus AQL querying and logging.
     Standard,
-    /// OPTIONS — any optional capability, reported individually.
+    /// OPTIONS — optional capabilities, reported individually (any-of).
     Options,
 }
 
-/// A capability (design §2.1): the unit a profile requires. Names track the
-/// master03 profiles document.
+/// A capability — the unit a profile requires. Names track
+/// `profiles/master03-profiles.adoc` (functional + non-functional tables);
+/// the profile membership lives in [`crate::model::profile`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Capability {
     /// EHR create/get/has operations.
     EhrOperations,
-    /// `EHR_STATUS` get/update operations.
+    /// `EHR_STATUS` get/set operations.
     EhrStatus,
     /// COMPOSITION create/update/delete/get operations.
     CompositionOps,
-    /// CONTRIBUTION change-set commits.
+    /// CONTRIBUTION change-set commits (profiles "Change sets").
     ChangeSets,
-    /// Version reads: history, at-time, by-id, `ALL_VERSIONS`.
+    /// Version reads: history, at-time, by-id.
     Versioning,
-    /// Archetype (RM invariant + terminology) validation of committed content.
+    /// Validation of committed data against semantic models (profiles
+    /// "Archetype Validation"; the master15–17 content suites).
     ArchetypeValidation,
     /// ADL 1.4 archetype provisioning.
     Adl14ArchetypeProvisioning,
-    /// OPT 1.4 operational-template provisioning.
+    /// ADL 1.4 OPT provisioning.
     Adl14OptProvisioning,
-    /// Stored-query (AQL) provisioning.
-    QueryProvisioning,
-    /// DIRECTORY (FOLDER) operations.
-    DirectoryOps,
-    /// Basic AQL execution.
-    AqlBasic,
-    /// Version signing (STANDARD; runner-defined SIGN-* cases, §4.6).
-    Signing,
-    /// Anonymous (subject-less) EHRs.
-    AnonymousEhrs,
-    /// ADMIN API (OPTIONS) — the ITS-REST admin REST surface (physical delete),
-    /// `master03-profiles.adoc` §Functional/REST APIs.
-    AdminApi,
-    /// DEMOGRAPHIC API (OPTIONS).
-    DemographicApi,
-    /// ADL 2 archetype + OPT provisioning (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Definitions. Modeled for the full OPTIONS surface (D4); ADL 2
-    /// is not implemented, so it reports **not evidenced** until dedicated cases
-    /// exist.
+    /// ADL 2 archetype + OPT provisioning (OPTIONS).
     Adl2Provisioning,
-    /// AQL advanced querying (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Querying. STANDARD covers [`Capability::AqlBasic`]; the
-    /// advanced surface is modeled here for the OPTIONS report (D4) and reports
-    /// **not evidenced** until advanced-AQL cases are tagged to it.
+    /// Stored-query provisioning (STANDARD "Query provisioning").
+    QueryProvisioning,
+    /// DIRECTORY (FOLDER) operations (STANDARD).
+    DirectoryOps,
+    /// Basic AQL execution (STANDARD "AQL basic").
+    AqlBasic,
+    /// Advanced AQL (OPTIONS).
     AqlAdvanced,
-    /// Admin — Activity Report (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. Modeled for the OPTIONS surface (D4); unimplemented →
-    /// not evidenced.
+    /// AQL & terminology (OPTIONS).
+    AqlTerminology,
+    /// Demographic Party operations (OPTIONS).
+    PartyOperations,
+    /// Demographic Party-Relationship operations (OPTIONS).
+    PartyRelationshipOperations,
+    /// Admin — Activity Report (OPTIONS).
     AdminActivityReport,
-    /// Admin — Physical Deletion (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. The physical cascade delete is exercised over the
-    /// ADMIN API and tagged [`Capability::AdminApi`]; this functional
-    /// sub-capability is modeled for the OPTIONS surface (D4) and reports
-    /// not-evidenced-directly (the evidence rides `AdminApi`).
+    /// Admin — Physical Deletion (OPTIONS).
     AdminPhysicalDeletion,
-    /// Admin — EHR Dump/Load (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. Modeled (D4); unimplemented → not evidenced.
+    /// Admin — EHR Dump/Load (OPTIONS).
     AdminEhrDumpLoad,
-    /// Admin — Bulk EHR load (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. Modeled (D4); unimplemented → not evidenced.
+    /// Admin — Bulk EHR load (OPTIONS).
     AdminBulkEhrLoad,
-    /// Admin — EHR Archive (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. Modeled (D4); unimplemented → not evidenced.
+    /// Admin — EHR Archive (OPTIONS).
     AdminEhrArchive,
-    /// Admin — Demographic Archive (OPTIONS) — `master03-profiles.adoc`
-    /// §Functional/Admin. Modeled (D4); unimplemented → not evidenced.
+    /// Admin — Demographic Archive (OPTIONS).
     AdminDemographicArchive,
-    /// Messaging — EHR Extract export/import + TDD import (OPTIONS). SM-5
-    /// realizes it as a **native-API-only** capability: openEHR Messaging is an
-    /// OPTIONS-profile feature with no ITS-REST 1.0.3 binding, so the
-    /// HTTP-driven ECC cannot exercise it over the wire and its cases report
-    /// `SKIPPED(NativeApiOnly)`, citing the `ehrbase` integration tests that do
-    /// exercise it. It is therefore *not* in [`crate::profile::required_capabilities`]
-    /// (a wire-tested SUT must not be denied OPTIONS for a capability the wire
-    /// cannot reach) — it is reported individually.
-    Messaging,
-    /// Terminology-server integration (OPTIONS) — the AQL `TERMINOLOGY('expand',
-    /// …)` family (B4). The in-process `openehr-term` bundle
-    /// (`service_api = "openehr"`) is wire-exercisable and its cases pass against
-    /// any SUT; the external FHIR-tx cases depend on the SUT carrying a
-    /// configured FHIR terminology provider and report `SKIPPED(SutConfig)`
-    /// otherwise. Like [`Capability::Messaging`] it is *not* in
-    /// [`crate::profile::required_capabilities`] (an optional, partly
-    /// config-gated capability is reported individually, never blocking a
-    /// profile).
-    Terminology,
-    /// Authentication / authorization enforcement (`SEC` area) — the auth surface
-    /// mirrored from the CNF `SECURITY_TESTS/I_OAuth2_Keycloak` Robot suite
-    /// (unauthenticated access is refused; role-privileged routes distinguish
-    /// roles). openEHR models security as **Non-Functional** attributes (Signing,
-    /// Anonymous EHRs) in `master03-profiles.adoc`, *not* as a gated
-    /// profile-Functional capability — so like [`Capability::Messaging`] /
-    /// [`Capability::Terminology`], `Authentication` is **not** in
-    /// [`crate::profile::required_capabilities`] and never blocks a profile; its
-    /// `SEC` cases are reported in the area matrix + catalogue and skip-with-reason
-    /// when the SUT's auth mode cannot be determined from the wire.
+    /// Messaging — EHR Extract (OPTIONS; native-API-only on the wire).
+    MessagingEhrExtract,
+    /// Messaging — TDS/TDD (OPTIONS; native-API-only on the wire).
+    MessagingTds,
+    /// Version signing (non-functional, STANDARD).
+    Signing,
+    /// Anonymous (subject-less) EHRs (non-functional, CORE).
+    AnonymousEhrs,
+    /// Authentication enforcement (out-of-band per the SM; reported, never
+    /// profile-gating).
     Authentication,
+    /// Terminology-server integration (ehrbase-rs extension + generic
+    /// FHIR-tx cases; reported, never profile-gating).
+    Terminology,
 }
 
-/// A wire format a case runs under.
+/// A wire format a case runs under (profiles master03 §Other Non-Functional).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
@@ -188,15 +189,19 @@ impl Format {
     }
 }
 
-/// The payload comparison mode a case's assertion uses — the upstream `jsonlib`
-/// semantics (design §2.2a).
+/// The payload comparison mode a case's content assertions use (the
+/// retrieved-equals-committed checks the schedule mandates on every read —
+/// register 04 G-1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Compare {
     /// The response must equal the expected payload exactly.
     Exact,
-    /// The response may carry more than the expected payload (a subset match).
+    /// The response may carry more than the expected payload (subset match).
     Superset,
-    /// Diff ignoring the RM `_type`/metadata/path ignore-set.
+    /// Diff ignoring the declared server-assigned ignore-set (uids, audit
+    /// timestamps, `_type` defaults) — the mode content round-trips use.
     IgnoreSet,
+    /// No content comparison (status/header-only case).
+    None,
 }

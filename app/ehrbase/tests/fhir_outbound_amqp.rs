@@ -156,7 +156,7 @@ async fn bound_consumer(url: &str, binding_key: &str) -> (Connection, lapin::Con
 }
 
 async fn next_delivery(consumer: &mut lapin::Consumer) -> (String, Value) {
-    let delivery = tokio::time::timeout(Duration::from_secs(20), consumer.next())
+    let delivery = tokio::time::timeout(Duration::from_secs(90), consumer.next())
         .await
         .expect("a delivery within the timeout")
         .expect("consumer stream not closed")

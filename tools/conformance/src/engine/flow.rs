@@ -21,8 +21,8 @@
 
 use serde_json::Value;
 
-use crate::assert;
-use crate::harness::{CaseError, HttpRequest, HttpResponse, RunContext};
+use crate::engine::assert;
+use crate::engine::harness::{CaseError, HttpRequest, HttpResponse, RunContext};
 
 /// A numbered, named multi-step execution over the SUT transport.
 #[derive(Debug)]

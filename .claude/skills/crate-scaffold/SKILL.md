@@ -1,54 +1,58 @@
 ---
 name: crate-scaffold
 description: >
-  Creates a new crates/<name>/ directory with a Cargo.toml wired to the
-  workspace (package fields, [lints] workspace = true, path deps per the
-  Section 9 dependency arrows) and a doc-comment-only lib.rs. Use when a
-  phase's task list calls for standing up a crate that does not exist yet.
+  Creates a new workspace crate directory (crates/, app/, or tools/) with a
+  Cargo.toml wired to the workspace (inherited package fields, [lints]
+  workspace = true, path deps per the docs/architecture.md dependency
+  arrows), a doc-comment-only lib.rs/main.rs, and the crate's nested
+  CLAUDE.md. Use when a plan calls for standing up a crate that does not
+  exist yet.
 allowed-tools: [Read, Write, Bash]
-argument-hint: "<crate-name, e.g. ehrbase-rest>"
+argument-hint: "<crate-name, e.g. ehrbase-admin-ui>"
 ---
-
-> **⚠️ ADR-004 / naming:** crate names split `openehr-*` (spec) / `ehrbase-*`
-> (application); the binary is `ehrbase`. See `docs/architecture.md` (the crate
-> map) for the current names (e.g. `openehr-term`, `openehr-lang`, `openehr-am`,
-> `openehr-query`, `ehrbase-rest`, `ehrbase`). Do not scaffold
-> `openehr-foundation` (folded into `openehr-base`) or the retired old names.
-> Generated spec crates get their `lib.rs`/`src` from `openehr-codegen`, not
-> this skill.
 
 # /crate-scaffold
 
-Stands up an empty, workspace-wired crate skeleton. Used mainly in Phase 0
-for the ten openEHR spec crates and three server crates, but any later phase
-that needs a new crate uses this too.
+Stands up an empty, workspace-wired crate skeleton (rewritten 2026-07-13 for
+the current three-directory workspace).
+
+> **Naming + placement:** `openehr-*` = the openEHR spec layer → `crates/`
+> (generated crates get their `src` from `openehr-codegen`, NOT this skill);
+> `ehrbase-*` / `ehrbase` = the application → `app/`; dev/verification
+> tooling → `tools/`. Workspace members are the globs
+> `["crates/*", "app/*", "tools/*"]` — **every directory under these globs
+> must contain a Cargo.toml or `cargo metadata` fails**, so never create the
+> directory without the manifest in the same step. Do not scaffold retired
+> names (`openehr-foundation`, `ehrbase-audit`, `ehrbase-signing`,
+> `ehrbase-authz`, `ehrbase-compat` — all folded in or removed).
 
 ## Steps
 
-1. **Look up the crate in `docs/architecture.md`** (the workspace layout +
-   crate map) to get its correct dependency arrows (which other workspace
-   crates it depends on) and its one-line purpose comment.
-2. **Create `crates/<name>/Cargo.toml`**:
-   - `[package]` with `name = "<name>"`, and `version`, `edition`,
-     `rust-version`, `license`, `authors`, `repository` all as
-     `.workspace = true` (inherit from `[workspace.package]` in the root
-     `Cargo.toml` — never hardcode these per-crate).
+1. **Confirm the crate belongs.** Check `docs/architecture.md` (workspace
+   layout + crate map) and the governing plan/design doc for its role and
+   dependency arrows. Dependencies point downward only:
+   `tools/* → app/* → crates/openehr-*`; never `app → app` unless the
+   architecture doc names the seam (e.g. `ehrbase-rest → ehrbase-sm`).
+2. **Create `<dir>/<name>/Cargo.toml`**:
+   - `[package]`: `name`, plus `version`, `edition`, `rust-version`,
+     `license`, `authors`, `repository` all `.workspace = true` (never
+     hardcoded per-crate). Note the versioning split: `openehr-*` spec
+     crates pin their own spec version (see `docs/VERSIONS.md`) instead of
+     inheriting the product version.
    - `[lints] workspace = true`.
-   - `[dependencies]`: path deps on whichever other workspace crates Section
-     9 lists (`path = "../<other-crate>"`, `version.workspace = true` where
-     the root manifest also publishes a version), plus any
-     `[workspace.dependencies]` entries the crate is known to need
-     immediately (e.g. `serde` for a spec crate that will serialize). Do not
-     pre-add dependencies "just in case" — add them when a task actually
-     needs them.
-   - If the crate is `ehrbase` (the application binary), also add
-     `[[bin]] name = "ehrbase" path = "src/main.rs"`.
-3. **Create `crates/<name>/src/lib.rs`** (or `main.rs` for the `ehrbase` binary)
-   containing only a top-of-file doc comment: the crate's one-line purpose
-   (from Section 9), which spec component or Maven module it corresponds to,
-   and a note that it starts empty pending its phase. No `mod` declarations,
-   no placeholder types — an empty crate should compile as an empty crate.
-4. **Add the crate to the root `Cargo.toml`'s `[workspace.members]`** if it
-   is not already covered by a glob.
-5. **Verify** with `cargo check -p <name>` that the new crate builds on its
-   own before reporting done.
+   - `[dependencies]`: path deps on the workspace crates the architecture
+     map lists, `dep.workspace = true` for third-party pins. Do not pre-add
+     dependencies "just in case".
+   - A binary crate also gets `[[bin]]` + `src/main.rs`.
+3. **Create `src/lib.rs`** (or `main.rs`) containing only a top-of-file doc
+   comment: the crate's one-line purpose and its governing spec component
+   or design doc. No `mod` declarations, no placeholder types — an empty
+   crate compiles as an empty crate.
+4. **Create the crate's `CLAUDE.md`** (the layered-memory convention, root
+   `CLAUDE.md` §Layered memory): ~20–35 lines — role, discipline
+   (generated-vs-hand-written if relevant), never-do rules, gates. Model it
+   on the sibling crates' files.
+5. **Verify:** `cargo metadata --no-deps` parses and
+   `cargo check -p <name>` builds before reporting done. No root
+   `Cargo.toml` members edit is needed (the globs cover it) — only check the
+   new name doesn't collide.

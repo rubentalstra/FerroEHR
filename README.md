@@ -15,10 +15,10 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
 [![openEHR](https://img.shields.io/badge/openEHR-RM_1.2_%C2%B7_ITS--REST_1.0.3_%C2%B7_AQL_1.1_%C2%B7_SM-1F6FEB.svg)](https://specifications.openehr.org/)
-[![ECC conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fbadge.json)](docs/conformance/CONFORMANCE_REPORT.md)
-[![ECC CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fbadge-core.json)](docs/conformance/CONFORMANCE_CERTIFICATE.md)
-[![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fbadge-standard.json)](docs/conformance/CONFORMANCE_CERTIFICATE.md)
-[![ECC OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fbadge-options.json)](docs/conformance/CONFORMANCE_CERTIFICATE.md)
+[![ECC conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge.json)](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
+[![ECC CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-core.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+[![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+[![ECC OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-options.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ehrbase--rs-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -225,9 +225,9 @@ scripts/conformance.sh
 
 One command builds the current sources into a container, runs the complete
 openEHR conformance catalogue against it in both wire formats, and writes
-the [report](docs/conformance/CONFORMANCE_REPORT.md), the
-[Conformance Statement](docs/conformance/CONFORMANCE_STATEMENT.md), and the
-[Certificate](docs/conformance/CONFORMANCE_CERTIFICATE.md). Profile verdicts
+the [report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md), the
+[Conformance Statement](docs/conformance/ehrbase-rs/CONFORMANCE_STATEMENT.md), and the
+[Certificate](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md). Profile verdicts
 are computed by the runner — never hand-asserted — and the badges at the top
 of this page are generated from real runs.
 
@@ -264,7 +264,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 |---|---|
 | [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
-| [Conformance report](docs/conformance/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
+| [Conformance report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
 | [Deployment guide](docs/enterprise/deployment.md) | Production operations |
 | [Product roadmap](docs/enterprise/product-roadmap.md) | The capability matrix and what's next |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |

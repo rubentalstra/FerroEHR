@@ -22,7 +22,7 @@ use serde_json::{Value, json};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-use crate::results::TxExchange;
+use crate::reporting::results::TxExchange;
 
 /// The canned value set the fixture expands (`ValueSet/$expand`): the reference
 /// `surface` value set (codes `B`/`L`/`O`).

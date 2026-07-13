@@ -1,16 +1,16 @@
-//! The case registry: the set of registered ECC cases (design v4).
+//! The case registry: the executable set of registered ECC cases.
 //!
-//! The registry is the executable side of the ehrbase-rs Conformance
-//! Catalogue: every entry is one of **our** cases, publicly identified by its
+//! Every entry is one of **our** cases, publicly identified by its
 //! `ECC-<AREA>-<NNN>` number (allocated in `inventory/ecc-catalog.tsv`,
-//! guarded by `tests/coverage.rs`). There is no classification against the
-//! legacy CNF corpus — that corpus is design-time reference reading, not a
-//! runtime dependency.
+//! guarded by `tests/coverage.rs`). The schedule trace and ITS-REST binding
+//! are mandatory fields of [`CaseMeta`] itself
+//! ([`crate::model::case::ScheduleTrace`] / [`crate::model::case::Binding`]),
+//! so the coverage guard can verify the derivation square on every case.
 
 use std::sync::LazyLock;
 
-use crate::case::CaseMeta;
-use crate::harness::CaseRun;
+use crate::engine::harness::CaseRun;
+use crate::model::case::CaseMeta;
 
 /// One registered case: the metadata plus its run function.
 #[derive(Debug, Clone, Copy)]
@@ -19,19 +19,6 @@ pub struct CaseEntry {
     pub meta: CaseMeta,
     /// The function that executes the case against a SUT.
     pub run: CaseRun,
-}
-
-impl CaseEntry {
-    /// Set this case's [`CaseMeta::schedule_ref`] (the CNF-schedule trace) and
-    /// return the entry — the builder-style combinator suites chain onto a case
-    /// that maps directly to one `<SERVICE>.<operation>` schedule id (task 7,
-    /// `docs/blueprint/07-cnf.md` R2), e.g.
-    /// `entry(…).with_schedule_ref("I_DEFINITION_QUERY.list_queries (CNF master05:93)")`.
-    #[must_use]
-    pub const fn with_schedule_ref(mut self, schedule_ref: &'static str) -> Self {
-        self.meta.schedule_ref = Some(schedule_ref);
-        self
-    }
 }
 
 /// The static registry of registered conformance cases.
@@ -54,14 +41,9 @@ impl Registry {
     }
 }
 
-/// Build the registered case set from the suites.
-fn build_entries() -> Vec<CaseEntry> {
-    crate::suites::entries()
-}
-
-/// The process-wide registry.
+/// The process-wide registry, built from the suites.
 static REGISTRY: LazyLock<Registry> = LazyLock::new(|| Registry {
-    entries: build_entries(),
+    entries: crate::suites::entries(),
 });
 
 /// The process-wide registry of registered conformance cases.

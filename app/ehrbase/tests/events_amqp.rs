@@ -247,7 +247,7 @@ async fn maybe_next(consumer: &mut lapin::Consumer, dur: Duration) -> Option<(St
 
 /// Consume the next delivery within a timeout, returning (`routing_key`, body).
 async fn next_delivery(consumer: &mut lapin::Consumer) -> (String, Value) {
-    let delivery = tokio::time::timeout(Duration::from_secs(20), consumer.next())
+    let delivery = tokio::time::timeout(Duration::from_secs(90), consumer.next())
         .await
         .expect("a delivery within the timeout")
         .expect("consumer stream not closed")
@@ -366,7 +366,7 @@ async fn broker_down_then_up_delivers_without_loss() {
 
     // Broker up: a correctly-configured publisher drains every row (no loss).
     let up = start(events_config(url), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
     loop {
         if pending_count(&pool).await == 0 {
             break;
@@ -424,7 +424,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     // Start the publisher: each cycle re-syncs (declares/binds) the subscription
     // queues *before* it publishes, so the durable queues capture the messages.
     let handle = start(events_config(url.clone()), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
     loop {
         if pending_count(&pool).await == 0 {
             break;

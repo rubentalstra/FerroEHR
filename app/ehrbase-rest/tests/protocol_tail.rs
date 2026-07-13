@@ -169,7 +169,7 @@ async fn versioned_composition_serves_xml() {
     let hooks = Hooks {
         get_versioned_composition: Some(Arc::new(|_e, vo| {
             Ok(json!({
-                "_type": "VERSIONED_OBJECT",
+                "_type": "VERSIONED_COMPOSITION",
                 "uid": { "_type": "HIER_OBJECT_ID", "value": vo.to_string() },
                 "owner_id": {
                     "_type": "OBJECT_REF", "namespace": "local", "type": "EHR",

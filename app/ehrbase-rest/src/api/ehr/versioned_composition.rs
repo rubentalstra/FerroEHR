@@ -14,7 +14,7 @@ use openehr_its::rest::generated::ehr::{
     VersionedCompositionVersionGetAtTimeParams, VersionedCompositionVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{Composition, OriginalVersion, RevisionHistory, VersionedObjectData};
+use openehr_rm::prelude::{Composition, OriginalVersion, RevisionHistory, VersionedComposition};
 
 use ehrbase_sm::Platform;
 
@@ -44,7 +44,7 @@ pub(super) async fn run<S: Platform>(
                 .get_versioned_composition(ehr_id, vo_id)
                 .await?;
             // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06).
-            Ok(negotiate::respond_rm::<VersionedObjectData>(
+            Ok(negotiate::respond_rm::<VersionedComposition>(
                 h,
                 ok,
                 &body,

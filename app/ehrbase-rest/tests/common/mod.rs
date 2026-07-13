@@ -1022,7 +1022,11 @@ impl PartyRelationshipService for Mock {
     ) -> Result<ServiceResponse, SmError> {
         Err(not_impl())
     }
-    async fn party_relationship_delete(&self, _u: String) -> Result<ServiceResponse, SmError> {
+    async fn party_relationship_delete(
+        &self,
+        _u: String,
+        _if_match: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
         Err(not_impl())
     }
     async fn versioned_party_relationship_get(

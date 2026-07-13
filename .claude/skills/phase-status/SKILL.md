@@ -11,20 +11,42 @@ argument-hint: (none)
 # /phase-status
 
 A fast orientation dump — step 1 of the six-step loop
-(`CLAUDE.md` "Phase workflow"). Read-only; makes no changes.
+(`CLAUDE.md` "Phase workflow"). Read-only; makes no changes. The live
+state below is injected at invocation time — ground the answer in it, not
+in stale conversation memory.
+
+## Live state (injected)
+
+### docs/plans/current-phase.md
+
+```!
+cat "${CLAUDE_PROJECT_DIR}/docs/plans/current-phase.md"
+```
+
+### Worklist open items (if present)
+
+```!
+[ -f "${CLAUDE_PROJECT_DIR}/docs/plans/WORKLIST.md" ] && grep -E '^\|' "${CLAUDE_PROJECT_DIR}/docs/plans/WORKLIST.md" | head -30 || echo "(no WORKLIST.md)"
+```
+
+### Git
+
+```!
+cd "${CLAUDE_PROJECT_DIR}" && git status --short | head -40 && echo "---" && git log --oneline -5
+```
 
 ## Steps
 
-1. **Read `docs/plans/current-phase.md`** and print its three lines
-   (phase file path, session goal, next action) verbatim.
-2. **Read the referenced phase file** (e.g.
-   `docs/plans/phase-00-scaffolding.md`) and list:
-   - Its `Status` and `Compile required` header fields.
-   - Every unchecked (`- [ ]`) line under `## Tasks`, in order.
-   - Every unchecked line under `## Exit criteria`, so it is clear whether
-     the phase is close to done.
-3. **Run `git status --short`** and `git log --oneline -5` to show
-   uncommitted work and recent history at a glance.
-4. **Do not** modify `current-phase.md`, the phase file, or make any commit
+1. Summarize the pointer: which phase/worklist item is active and what the
+   stated next action is, quoting `current-phase.md` verbatim where it
+   matters.
+2. If `current-phase.md` references a specific phase file
+   (`docs/plans/phase-NN-*.md` or a `w*-*.md` plan), **Read it** and list
+   every unchecked `- [ ]` line under its Tasks and Exit criteria, in
+   order, so it is clear how close the phase is to done.
+3. Summarize the git state from the injected output: current branch work,
+   uncommitted files, last commits — flag uncommitted work that looks
+   finished (the owner rule: never leave finished work sitting unmerged).
+4. **Do not** modify `current-phase.md`, any phase file, or make any commit
    — this is a read-only status check. If the user wants the next task
    turned into a work plan, point them at `/next-task` instead.
