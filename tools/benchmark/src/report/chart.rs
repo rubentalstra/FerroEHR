@@ -446,6 +446,92 @@ pub fn metric_bar_chart(
     s
 }
 
+/// The knee/saturation curve (register 01 §3): the offered-load ladder plotted
+/// as sustained req/s (x, linear) against p99 latency (y, **log₁₀ µs** — three-
+/// plus decades), each point directly labelled with its load factor `L`. Points
+/// are `(rps, p99_us, load_factor)` in ladder order; the 1 s p99 SLO ceiling is
+/// drawn as a reference gridline when it falls in range.
+#[must_use]
+pub fn knee_chart(points: &[(f64, u64, f64)]) -> String {
+    if points.is_empty() {
+        return String::new();
+    }
+    let rps_max = points
+        .iter()
+        .map(|(r, _, _)| *r)
+        .fold(f64::MIN_POSITIVE, f64::max);
+    let lo_us = points.iter().map(|(_, p, _)| *p).min().unwrap_or(1);
+    let hi_us = points.iter().map(|(_, p, _)| *p).max().unwrap_or(1);
+    let lo = (lo_us.max(1) as f64).log10().floor();
+    let hi = (hi_us.max(2) as f64).log10().ceil();
+    let (x0, x1, y0, y1) = (64.0, 660.0, 48.0, 210.0);
+    let (width, height) = (760.0, 252.0);
+
+    // Map an (rps, p99) point to chart coordinates.
+    let px = |rps: f64| x0 + (rps / rps_max).clamp(0.0, 1.0) * (x1 - x0);
+    let py = |us: u64| {
+        let v = (us.max(1) as f64).log10().clamp(lo, hi);
+        y1 - (v - lo) / (hi - lo).max(f64::MIN_POSITIVE) * (y1 - y0)
+    };
+
+    let mut s = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" \
+         role=\"img\" aria-label=\"Knee/saturation curve — sustained req/s vs p99 latency\">\n{STYLE}"
+    );
+    s.push_str(
+        "<text x=\"16\" y=\"22\" class=\"title\">Knee — sustained req/s vs p99 latency (log scale)</text>\n",
+    );
+    // Y (log µs) gridlines + labels, including the 1 s SLO ceiling as a marker.
+    for d in gridlines(lo, hi) {
+        let y = py(d);
+        s.push_str(&format!(
+            "<line class=\"grid\" x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\"/>\n\
+             <text class=\"muted\" x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"end\">{}</text>\n",
+            x0 - 8.0,
+            y + 4.0,
+            fmt_us(d)
+        ));
+    }
+    if (lo..=hi).contains(&6.0) {
+        let y = py(1_000_000);
+        s.push_str(&format!(
+            "<line class=\"s2s\" x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\" stroke-dasharray=\"4 3\"/>\n\
+             <text class=\"muted\" x=\"{:.1}\" y=\"{:.1}\">SLO 1s</text>\n",
+            x1 - 40.0,
+            y - 4.0
+        ));
+    }
+    // X axis label (req/s at the right edge).
+    s.push_str(&format!(
+        "<text class=\"muted\" x=\"{x1}\" y=\"{:.1}\" text-anchor=\"end\">{rps_max:.0} req/s</text>\n",
+        y1 + 18.0
+    ));
+    // The curve (ladder order) + per-point markers with L + p99 labels.
+    let pts: String = points
+        .iter()
+        .map(|(rps, us, _)| format!("{:.1},{:.1}", px(*rps), py(*us)))
+        .collect::<Vec<_>>()
+        .join(" ");
+    s.push_str(&format!(
+        "<polyline class=\"s1s\" fill=\"none\" stroke-width=\"2\" points=\"{pts}\"/>\n"
+    ));
+    for (rps, us, lf) in points {
+        let (x, y) = (px(*rps), py(*us));
+        s.push_str(&format!(
+            "<circle class=\"s1\" cx=\"{x:.1}\" cy=\"{y:.1}\" r=\"3.5\"/>\n\
+             <text x=\"{:.1}\" y=\"{:.1}\">L={lf}</text>\n\
+             <text class=\"muted\" x=\"{:.1}\" y=\"{:.1}\">{}</text>\n",
+            x + 6.0,
+            y - 4.0,
+            x + 6.0,
+            y + 12.0,
+            fmt_us(*us)
+        ));
+    }
+    s.push_str("</svg>\n");
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -505,5 +591,22 @@ mod tests {
     fn empty_inputs_render_nothing() {
         assert!(latency_chart(&BTreeMap::new()).is_empty());
         assert!(comparison_chart("t", &[]).is_empty());
+        assert!(knee_chart(&[]).is_empty());
+    }
+
+    #[test]
+    fn knee_chart_labels_every_step_and_draws_the_slo() {
+        let svg = knee_chart(&[
+            (10.0, 5_000, 1.0),
+            (20.0, 40_000, 2.0),
+            (25.0, 1_200_000, 4.0),
+        ]);
+        // Per-point load-factor labels and the log-µs latency labels.
+        assert!(svg.contains("L=1") && svg.contains("L=2") && svg.contains("L=4"));
+        assert!(svg.contains("5.0ms") && svg.contains("40.0ms") && svg.contains("1.2s"));
+        // The 1 s SLO ceiling is in range (max p99 is 1.2 s) → drawn.
+        assert!(svg.contains("SLO 1s"));
+        assert!(svg.contains("prefers-color-scheme: dark"));
+        assert!(svg.contains("25 req/s"));
     }
 }

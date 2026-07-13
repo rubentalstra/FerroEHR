@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 
 use super::chart;
 use super::json::Results;
+use super::knee::KneeResults;
 
 /// A rendered comparison: the Markdown text and the SVG files it embeds
 /// (filename → content, written under `<out-dir>/charts/`).
@@ -41,9 +42,11 @@ fn metric_map(
 }
 
 /// Render the comparison for exactly the first two results (the harness runs
-/// one SUT at a time; a wider matrix is a publication-step concern).
+/// one SUT at a time; a wider matrix is a publication-step concern). When two
+/// `knee.json` records are also supplied (via `--knee-from`), the maximum-
+/// sustained-throughput (knee) section is added; otherwise it is omitted.
 #[must_use]
-pub fn render(results: &[Results]) -> Comparison {
+pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     let mut md = String::new();
     md.push_str("# Benchmark comparison (generated)\n\n");
     md.push_str(
@@ -87,6 +90,7 @@ pub fn render(results: &[Results]) -> Comparison {
 
     let mut charts = Vec::new();
     headline_charts(&mut md, &mut charts, a, b);
+    knee_section(&mut md, &mut charts, knees);
 
     // Charts: p99 + p50 grouped bars over the classes both runs measured.
     let p99 = vec![
@@ -215,6 +219,47 @@ fn headline_charts(md: &mut String, charts: &mut Vec<(String, String)>, a: &Resu
             ));
         }
         md.push('\n');
+    }
+}
+
+/// The maximum-sustained-throughput (knee) section: a side-by-side table (knee
+/// L, req/s, p99 at the knee) + a grouped bar of max sustained req/s at the SLO.
+/// Added only when two `knee.json` records are supplied; measured only, both
+/// directions.
+fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[KneeResults]) {
+    if knees.len() < 2 {
+        return;
+    }
+    let (a, b) = (&knees[0], &knees[1]);
+    md.push_str("## Maximum sustained throughput (knee)\n\n");
+    md.push_str(
+        "> The last sustainable step on the load-factor ladder (p99 ≤ 1 s, error \
+         ≤ 0.1%), per SUT — the honest capacity signal, not peak req/s. Each SUT's \
+         own `KNEE.md` carries the full ladder and the single-run/same-host \
+         lower-bound caveat.\n\n",
+    );
+    md.push_str("| | Knee L | Sustained req/s | p99 at knee (µs) |\n|---|--:|--:|--:|\n");
+    for k in [a, b] {
+        match &k.knee {
+            Some(step) => md.push_str(&format!(
+                "| **{}** | {} | {:.1} | {} |\n",
+                k.sut.name, step.load_factor, step.rps, step.p99_us
+            )),
+            None => md.push_str(&format!("| **{}** | — | — | — |\n", k.sut.name)),
+        }
+    }
+    md.push('\n');
+
+    let bars: Vec<(String, f64)> = [a, b]
+        .iter()
+        .map(|k| (k.sut.name.clone(), k.knee.as_ref().map_or(0.0, |s| s.rps)))
+        .collect();
+    let chart = chart::metric_bar_chart("Max sustained req/s at the SLO", &bars, |v| {
+        format!("{v:.1} req/s")
+    });
+    if !chart.is_empty() {
+        charts.push(("comparison-knee.svg".to_owned(), chart));
+        md.push_str("![Max sustained req/s at the SLO](charts/comparison-knee.svg)\n\n");
     }
 }
 
@@ -380,22 +425,68 @@ mod tests {
         }
     }
 
+    fn knee(name: &str, rps: f64, p99: u64) -> KneeResults {
+        use super::super::knee::{KneeResults, KneeStep};
+        let step = KneeStep {
+            load_factor: 8.0,
+            rps,
+            error_rate: 0.0,
+            p99_us: p99,
+            requests: 1000,
+        };
+        KneeResults {
+            sut: SutBlock {
+                name: name.to_owned(),
+                kind: "ours".to_owned(),
+                base_url: "http://x/v1".to_owned(),
+                product_label: name.to_owned(),
+                image_digests: BTreeMap::new(),
+                versions: BTreeMap::new(),
+            },
+            scale: "10k".to_owned(),
+            steps: vec![step.clone()],
+            knee: Some(step),
+        }
+    }
+
     #[test]
     fn renders_both_directions_and_charts() {
         let a = results("ehrbase-rs", 10_000);
         let b = results("ehrbase-java", 40_000);
-        let c = render(&[a, b]);
+        let c = render(&[a, b], &[]);
         assert!(c.markdown.contains("Where ehrbase-rs wins"));
         assert!(c.markdown.contains("Where ehrbase-java wins"));
         assert!(c.markdown.contains("4.0×"));
         // p99 + p50 latency, throughput, cold start (no app resources in the
-        // fixture → no memory/CPU charts).
+        // fixture → no memory/CPU charts; no knee records → no knee chart).
         assert_eq!(c.charts.len(), 4);
         let names: Vec<&str> = c.charts.iter().map(|(n, _)| n.as_str()).collect();
         assert!(names.contains(&"comparison-throughput.svg"));
         assert!(names.contains(&"comparison-coldstart.svg"));
         assert!(c.markdown.contains("req/s"));
         assert!(!c.markdown.contains("different workload locks"));
+        assert!(!c.markdown.contains("Maximum sustained throughput"));
+    }
+
+    #[test]
+    fn knee_section_added_when_both_knees_present() {
+        let a = results("ehrbase-rs", 10_000);
+        let b = results("ehrbase-java", 40_000);
+        let c = render(
+            &[a, b],
+            &[
+                knee("ehrbase-rs", 190.0, 60_000),
+                knee("ehrbase-java", 70.0, 900_000),
+            ],
+        );
+        assert!(
+            c.markdown
+                .contains("## Maximum sustained throughput (knee)")
+        );
+        assert!(c.markdown.contains("190.0"));
+        assert!(c.markdown.contains("70.0"));
+        let names: Vec<&str> = c.charts.iter().map(|(n, _)| n.as_str()).collect();
+        assert!(names.contains(&"comparison-knee.svg"));
     }
 
     #[test]
@@ -403,7 +494,7 @@ mod tests {
         let a = results("ehrbase-rs", 10_000);
         let mut b = results("ehrbase-java", 40_000);
         b.workload.lock = "other".to_owned();
-        let c = render(&[a, b]);
+        let c = render(&[a, b], &[]);
         assert!(c.markdown.contains("different workload locks"));
     }
 }

@@ -54,6 +54,11 @@ pub struct ClassSummary {
 #[derive(Debug)]
 pub struct Recorder {
     hists: BTreeMap<OpClass, Histogram<u64>>,
+    /// A merged histogram over every measured sample (all classes), so an
+    /// overall percentile is a direct read rather than a max-of-class-p99s
+    /// approximation — the capacity/knee series (register 01 §3) reads its p99
+    /// from here.
+    overall: Histogram<u64>,
     errors: BTreeMap<OpClass, u64>,
     warmup: Duration,
 }
@@ -80,6 +85,7 @@ impl Recorder {
     pub fn new() -> Self {
         Self {
             hists: BTreeMap::new(),
+            overall: make_hist(),
             errors: BTreeMap::new(),
             warmup: Duration::ZERO,
         }
@@ -109,6 +115,7 @@ impl Recorder {
             .entry(class)
             .or_insert_with(make_hist)
             .saturating_record(micros);
+        self.overall.saturating_record(micros);
     }
 
     /// Record an error for a class (excluded from the latency distribution).
@@ -162,6 +169,14 @@ impl Recorder {
     #[must_use]
     pub fn total_errors(&self) -> u64 {
         self.errors.values().sum()
+    }
+
+    /// The 99th-percentile latency (µs) across **all** measured classes, read
+    /// from the merged overall histogram — the capacity/knee series' SLO probe
+    /// (register 01 §3). Zero when nothing measured.
+    #[must_use]
+    pub fn overall_p99_us(&self) -> u64 {
+        self.overall.value_at_quantile(0.99)
     }
 }
 
@@ -253,6 +268,36 @@ mod tests {
             .deserialize(&mut std::io::Cursor::new(bytes))
             .expect("valid V2 histogram");
         assert_eq!(restored.len(), 50);
+    }
+
+    #[test]
+    fn overall_p99_merges_every_class() {
+        let mut r = Recorder::new();
+        // 80 fast samples across two classes at 10 ms + 20 slow at 2 s (100
+        // total): each fast class's own p99 is 10 ms, but the *merged* p99 (the
+        // 99th of 100) lands on the 2 s tail — the merge is what the knee reads.
+        for _ in 0..40 {
+            r.record(OpClass::CompReadLatest, ms(0), ms(10));
+        }
+        for _ in 0..40 {
+            r.record(OpClass::AqlWard, ms(0), ms(10));
+        }
+        for _ in 0..20 {
+            r.record(OpClass::CompCreateLarge, ms(0), ms(2000));
+        }
+        // Each fast class alone stays at 10 ms.
+        assert!(r.summaries()["comp-read-latest"].p99_us <= 11_000);
+        let p99 = r.overall_p99_us();
+        assert!(
+            p99 >= 1_900_000,
+            "overall p99 {p99} µs should reflect the merged 2 s tail"
+        );
+    }
+
+    #[test]
+    fn overall_p99_is_zero_when_empty() {
+        let r = Recorder::new();
+        assert_eq!(r.overall_p99_us(), 0);
     }
 
     #[test]

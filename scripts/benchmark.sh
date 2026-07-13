@@ -24,6 +24,11 @@
 #   BENCH_LOAD_FACTOR arrival-rate factor L   (default: 1.0).
 #   BENCH_SEED       deterministic generator seed (default: the CLI's fixed seed).
 #   BENCH_NO_SEED    if set, skip seeding (DB already at the scale rung).
+#   BENCH_KNEE       if set, run `bench knee` (the maximum-sustained-throughput
+#                     ladder) instead of `bench run` — same compose management.
+#   BENCH_KNEE_STEPS the ascending load-factor ladder (default: 1,2,4,8,16,32).
+#   BENCH_STEP_WINDOW per-step measurement window in seconds (default: 120).
+#   BENCH_WARMUP     per-step warmup floor in seconds        (default: 15).
 #   BENCH_OUT        artefact root            (default: docs/benchmarks;
 #                    the SUT name is appended by the CLI).
 #   BENCH_NO_COMPOSE if set, do not manage compose (assume the SUT is up).
@@ -145,15 +150,30 @@ if [ "$SUT" = "ehrbase-rs" ]; then
   curl -fsS -o /dev/null "$STATUS_URL"
 fi
 
-echo "==> Running benchmark (sut=$SUT profile=$PROFILE scale=$SCALE ward=$WARD_SIZE L=$LOAD_FACTOR)"
-args=(run --sut "$SUT" --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMIN_AUTH"
-      --profile "$PROFILE" --scale "$SCALE" --ward-size "$WARD_SIZE"
-      --load-factor "$LOAD_FACTOR" --out "$OUT")
-[ -n "$APP_CONTAINER" ] && args+=(--app-container "$APP_CONTAINER")
-[ -n "$DB_CONTAINER" ] && args+=(--db-container "$DB_CONTAINER" --db-user "$DB_USER" --db-name "$DB_NAME")
-[ -n "$COLD_MS" ] && args+=(--cold-start-ms "$COLD_MS")
-[ -n "${BENCH_SEED:-}" ] && args+=(--seed "$BENCH_SEED")
-[ -n "${BENCH_NO_SEED:-}" ] && args+=(--no-seed)
+if [ -n "${BENCH_KNEE:-}" ]; then
+  echo "==> Running knee/saturation ladder (sut=$SUT scale=$SCALE ward=$WARD_SIZE)"
+  kargs=(knee --sut "$SUT" --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMIN_AUTH"
+         --scale "$SCALE" --ward-size "$WARD_SIZE" --out "$OUT")
+  [ -n "$APP_CONTAINER" ] && kargs+=(--app-container "$APP_CONTAINER")
+  [ -n "$DB_CONTAINER" ] && kargs+=(--db-container "$DB_CONTAINER" --db-user "$DB_USER" --db-name "$DB_NAME")
+  [ -n "${BENCH_SEED:-}" ] && kargs+=(--seed "$BENCH_SEED")
+  [ -n "${BENCH_NO_SEED:-}" ] && kargs+=(--no-seed)
+  [ -n "${BENCH_KNEE_STEPS:-}" ] && kargs+=(--steps "$BENCH_KNEE_STEPS")
+  [ -n "${BENCH_STEP_WINDOW:-}" ] && kargs+=(--step-window "$BENCH_STEP_WINDOW")
+  [ -n "${BENCH_WARMUP:-}" ] && kargs+=(--warmup "$BENCH_WARMUP")
+  # Exit code is the CLI's: 0 ok · 2 runner/SUT error.
+  cargo run -q -p benchmark --bin bench -- "${kargs[@]}"
+else
+  echo "==> Running benchmark (sut=$SUT profile=$PROFILE scale=$SCALE ward=$WARD_SIZE L=$LOAD_FACTOR)"
+  args=(run --sut "$SUT" --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMIN_AUTH"
+        --profile "$PROFILE" --scale "$SCALE" --ward-size "$WARD_SIZE"
+        --load-factor "$LOAD_FACTOR" --out "$OUT")
+  [ -n "$APP_CONTAINER" ] && args+=(--app-container "$APP_CONTAINER")
+  [ -n "$DB_CONTAINER" ] && args+=(--db-container "$DB_CONTAINER" --db-user "$DB_USER" --db-name "$DB_NAME")
+  [ -n "$COLD_MS" ] && args+=(--cold-start-ms "$COLD_MS")
+  [ -n "${BENCH_SEED:-}" ] && args+=(--seed "$BENCH_SEED")
+  [ -n "${BENCH_NO_SEED:-}" ] && args+=(--no-seed)
 
-# Exit code is the CLI's: 0 ok · 1 error-rate flag breached · 2 runner/SUT error.
-cargo run -q -p benchmark --bin bench -- "${args[@]}"
+  # Exit code is the CLI's: 0 ok · 1 error-rate flag breached · 2 runner/SUT error.
+  cargo run -q -p benchmark --bin bench -- "${args[@]}"
+fi
