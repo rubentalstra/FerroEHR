@@ -1,95 +1,205 @@
-//! `bench` CLI — the benchmark harness entry point (docs/design/benchmarking.md).
+//! `bench` CLI — the hospital-day stress instrument (register 01 §8).
 //!
-//! `bench run` drives the pre-registered workload against a SUT (external URL,
-//! e.g. the Docker-composed server) and writes the
-//! generated report to `--out`. `bench seed` bulk-loads a SUT for the scale
-//! ladder. `bench report --from results.json` re-renders the markdown.
+//! ```text
+//! bench run    --sut ehrbase-rs|ehrbase-java|byo [--base-url URL] [--auth SPEC]
+//!              [--admin-auth SPEC] --profile smoke|hour|day
+//!              --scale empty|10k|100k|1m [--ward-size N] [--load-factor L]
+//!              [--seed U64] [--app-container NAME] [--db-container NAME]
+//!              [--db-user U] [--db-name D] [--no-seed] [--out DIR]
+//! bench seed   --sut … --scale … [--seed U64]
+//! bench report --from results.json [--out DIR]
+//! ```
+//!
+//! `run` provisions the workload's templates, (optionally) seeds the scale rung,
+//! drives the open-loop schedule against the SUT (the conformance transport —
+//! the fairness guarantee), samples container CPU/RSS + storage, and writes the
+//! per-SUT artefact set into `--out/<sut-name>/`. Exit codes: `0` ok · `1` the
+//! 0.1% error-rate flag was breached · `2` runner/SUT failure.
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::time::Duration;
 
-use benchmark::driver::{DriverConfig, ScenarioResult, run_latency};
-use benchmark::report::{BenchReport, EnvBlock};
-use benchmark::target::{Implementation, Target};
-use benchmark::workload::{Scenario, workload_lock};
-use clap::{Parser, Subcommand};
-use conformance::transport::Credential;
+use clap::{Parser, Subcommand, ValueEnum};
 
-#[derive(Parser)]
+use benchmark::drive::{self, DriveOutcome};
+use benchmark::measure::Recorder;
+use benchmark::model::{self, WorkloadSpec};
+use benchmark::report::json::{
+    ClassRecord, ContainerSummary, EnvironmentBlock, ResourcesBlock, Results, StorageBlock,
+    SutBlock, ThroughputBlock, WorkloadBlock,
+};
+use benchmark::sample::{self, ContainerSeries, DbAccess, ResourceSampler};
+use benchmark::{Profile, Scale, report, seed};
+
+use conformance::sut::builtin;
+use conformance::sut::descriptor::{SutDescriptor, SutKind};
+use conformance::transport::{Credential, SutClient};
+
+/// A fixed default seed so an unqualified run is reproducible run-to-run.
+const DEFAULT_SEED: u64 = 0x_B0_11_CA_FE;
+/// The 0.1% error-rate flag (register 01 §1).
+const ERROR_RATE_FLAG: f64 = 0.001;
+
+#[derive(Debug, Parser)]
 #[command(
     name = "bench",
-    about = "Honest ehrbase-rs vs. EHRbase benchmark harness"
+    about = "The openEHR CDR hospital-day stress instrument"
 )]
 struct Cli {
     #[command(subcommand)]
     command: Command,
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
+#[allow(clippy::large_enum_variant)]
 enum Command {
-    /// Run the workload against a SUT and write the report.
+    /// Drive the workload against a SUT and write its artefact set.
     Run(RunArgs),
-    /// Bulk-seed a SUT (scale ladder).
+    /// Deterministically seed a SUT to a scale rung.
     Seed(SeedArgs),
-    /// Re-render REPORT.md from a results.json.
+    /// Re-render the artefact set from an existing results.json.
     Report(ReportArgs),
 }
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 struct RunArgs {
-    /// SUT base URL (…/ehrbase/rest/openehr/v1).
+    /// The target class (mirrors `conformance run`).
+    #[arg(long, value_enum, default_value_t = SutArg::EhrbaseRs)]
+    sut: SutArg,
+    /// The SUT's ITS-REST base URL (default per target).
     #[arg(long)]
     base_url: Option<String>,
-    /// Which implementation the SUT is (labels the report).
-    #[arg(long, default_value = "ehrbase-rs")]
-    implementation: String,
-    /// Auth spec: basic:<user>:<pass> or bearer:<token>.
+    /// Override the output/lookup name (default: the target's name, or `byo`).
+    #[arg(long)]
+    sut_name: Option<String>,
+    /// Product version label (used for the `ehrbase-java` product label).
+    #[arg(long)]
+    sut_version: Option<String>,
+    /// Regular credential (`basic:<u>:<p>` or `bearer:<t>`).
     #[arg(long)]
     auth: Option<String>,
-    /// Only run this scenario id (W1/W2/W4/W8); default all.
+    /// ADMIN-role credential (same forms).
     #[arg(long)]
-    scenario: Option<String>,
-    /// Fast smoke config (proves the harness, not publishable numbers).
+    admin_auth: Option<String>,
+    /// The run profile.
+    #[arg(long, value_enum)]
+    profile: ProfileArg,
+    /// The pre-seeded scale rung (metadata + the seed target when seeding).
+    #[arg(long, value_enum)]
+    scale: ScaleArg,
+    /// The ward size (admitted patients).
+    #[arg(long, default_value_t = 20)]
+    ward_size: usize,
+    /// The arrival-rate load factor `L`.
+    #[arg(long, default_value_t = 1.0)]
+    load_factor: f64,
+    /// The deterministic generator seed.
+    #[arg(long, default_value_t = DEFAULT_SEED)]
+    seed: u64,
+    /// The app container name (compose-managed; enables CPU/RSS sampling).
     #[arg(long)]
-    smoke: bool,
-    /// Merge this run's results into an existing `out/results.json` (keeping the
-    /// other target's rows) so a two-server comparison lands in one report.
+    app_container: Option<String>,
+    /// The db container name (compose-managed; enables CPU/RSS + storage probe).
     #[arg(long)]
-    merge: bool,
-    /// Output directory.
+    db_container: Option<String>,
+    /// The db psql role for the storage probe.
+    #[arg(long, default_value = "ehrbase")]
+    db_user: String,
+    /// The db name for the storage probe.
+    #[arg(long, default_value = "ehrbase")]
+    db_name: String,
+    /// Skip seeding (the DB is already at the scale rung).
+    #[arg(long)]
+    no_seed: bool,
+    /// Compose-up → first-answer duration, supplied by `scripts/benchmark.sh`.
+    #[arg(long, hide = true)]
+    cold_start_ms: Option<u64>,
+    /// Where to write the artefact set (the SUT name is appended).
     #[arg(long, default_value = "docs/benchmarks")]
     out: PathBuf,
-    /// Override the ISO-8601 run timestamp (default: now). The host machine is
-    /// always auto-captured regardless.
-    #[arg(long)]
-    run_date: Option<String>,
 }
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 struct SeedArgs {
+    #[arg(long, value_enum, default_value_t = SutArg::EhrbaseRs)]
+    sut: SutArg,
     #[arg(long)]
     base_url: Option<String>,
     #[arg(long)]
+    sut_name: Option<String>,
+    #[arg(long)]
+    sut_version: Option<String>,
+    #[arg(long)]
     auth: Option<String>,
-    #[arg(long, default_value_t = 10)]
-    ehrs: u32,
-    #[arg(long, default_value_t = 1)]
-    comps: u32,
+    #[arg(long)]
+    admin_auth: Option<String>,
+    #[arg(long, value_enum)]
+    scale: ScaleArg,
+    #[arg(long, default_value_t = DEFAULT_SEED)]
+    seed: u64,
 }
 
-#[derive(Parser)]
+#[derive(Debug, Parser)]
 struct ReportArgs {
-    /// Path to a results.json produced by `bench run`.
+    /// The results.json to regenerate artefacts from.
     #[arg(long)]
     from: PathBuf,
-    /// Output directory.
+    /// Where to write the artefact set.
     #[arg(long, default_value = "docs/benchmarks")]
     out: PathBuf,
+}
+
+#[derive(Debug, Clone, Copy, Default, ValueEnum)]
+enum SutArg {
+    #[default]
+    EhrbaseRs,
+    EhrbaseJava,
+    Byo,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum ProfileArg {
+    Smoke,
+    Hour,
+    Day,
+}
+
+impl From<ProfileArg> for Profile {
+    fn from(p: ProfileArg) -> Self {
+        match p {
+            ProfileArg::Smoke => Profile::Smoke,
+            ProfileArg::Hour => Profile::Hour,
+            ProfileArg::Day => Profile::Day,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum ScaleArg {
+    Empty,
+    #[value(name = "10k")]
+    TenK,
+    #[value(name = "100k")]
+    HundredK,
+    #[value(name = "1m")]
+    OneM,
+}
+
+impl From<ScaleArg> for Scale {
+    fn from(s: ScaleArg) -> Self {
+        match s {
+            ScaleArg::Empty => Scale::Empty,
+            ScaleArg::TenK => Scale::TenK,
+            ScaleArg::HundredK => Scale::HundredK,
+            ScaleArg::OneM => Scale::OneM,
+        }
+    }
 }
 
 #[tokio::main]
 async fn main() {
-    let cli = Cli::parse();
-    let code = match cli.command {
+    let code = match Cli::parse().command {
         Command::Run(args) => cmd_run(args).await,
         Command::Seed(args) => cmd_seed(args).await,
         Command::Report(args) => cmd_report(&args),
@@ -97,26 +207,100 @@ async fn main() {
     std::process::exit(code);
 }
 
-/// Resolve the external SUT target from `--base-url` + `--auth`.
-fn resolve_target(
-    base_url: Option<String>,
-    implementation: Implementation,
-    auth: Option<&str>,
-) -> Result<Target, String> {
-    let base = base_url.ok_or_else(|| "--base-url is required".to_owned())?;
-    let cred = auth.map(Credential::parse).transpose()?;
-    Target::new(implementation, base, cred.clone(), cred).map_err(|e| e.to_string())
+/// Default base URL per target (matches `scripts/benchmark.sh` / the compose
+/// port mappings).
+fn default_base_url(sut: SutArg) -> Option<&'static str> {
+    match sut {
+        SutArg::EhrbaseRs => Some("http://localhost:8080/ehrbase/rest/openehr/v1"),
+        SutArg::EhrbaseJava => Some("http://localhost:8091/ehrbase/rest/openehr/v1"),
+        SutArg::Byo => None,
+    }
 }
 
+/// Build the SUT descriptor (mirrors `conformance run`).
+fn build_descriptor(
+    sut: SutArg,
+    base_url: Option<String>,
+    sut_name: Option<String>,
+    sut_version: Option<&str>,
+    auth: Option<String>,
+    admin_auth: Option<String>,
+) -> Result<SutDescriptor, String> {
+    let base_url = base_url
+        .or_else(|| default_base_url(sut).map(ToOwned::to_owned))
+        .ok_or_else(|| "--base-url is required for --sut byo".to_owned())?;
+
+    let mut descriptor = match sut {
+        SutArg::EhrbaseRs => builtin::ehrbase_rs(base_url, auth, admin_auth),
+        SutArg::EhrbaseJava => {
+            let version = sut_version.unwrap_or("upstream");
+            builtin::ehrbase_java(base_url, auth, admin_auth, version)
+        }
+        SutArg::Byo => {
+            let mut d = SutDescriptor::byo(sut_name.clone(), base_url);
+            d.auth = auth;
+            d.admin_auth = admin_auth;
+            d
+        }
+    };
+    if let Some(name) = sut_name {
+        descriptor.name = name;
+    }
+    Ok(descriptor)
+}
+
+/// Build the reqwest transport for a descriptor.
+fn build_transport(descriptor: &SutDescriptor) -> Result<SutClient, String> {
+    let regular = descriptor
+        .auth
+        .as_deref()
+        .map(Credential::parse)
+        .transpose()?;
+    let admin = descriptor
+        .admin_auth
+        .as_deref()
+        .map(Credential::parse)
+        .transpose()?;
+    SutClient::new(descriptor.base_url.clone(), regular, admin)
+        .map(|c| c.with_admin_base_url(descriptor.admin_base_url.clone()))
+        .map_err(|e| e.to_string())
+}
+
+fn sut_kind_label(kind: SutKind) -> &'static str {
+    match kind {
+        SutKind::Ours => "ours",
+        SutKind::Foreign => "foreign",
+    }
+}
+
+/// The idle-baseline sampling duration (register 01 §2: 30 s, ~3 s for smoke).
+fn baseline_duration(profile: Profile) -> Duration {
+    match profile {
+        Profile::Smoke => Duration::from_secs(3),
+        _ => Duration::from_secs(30),
+    }
+}
+
+// The run command is a linear pipeline (descriptor → transport → seed → build →
+// sample → drive → probe → write) whose steps read best in sequence; splitting
+// it would scatter the shared locals across helpers.
+#[allow(clippy::too_many_lines)]
 async fn cmd_run(args: RunArgs) -> i32 {
-    let implementation = match args.implementation.parse::<Implementation>() {
-        Ok(i) => i,
+    let descriptor = match build_descriptor(
+        args.sut,
+        args.base_url.clone(),
+        args.sut_name.clone(),
+        args.sut_version.as_deref(),
+        args.auth.clone(),
+        args.admin_auth.clone(),
+    ) {
+        Ok(d) => d,
         Err(e) => {
             eprintln!("error: {e}");
             return 2;
         }
     };
-    let target = match resolve_target(args.base_url, implementation, args.auth.as_deref()) {
+    let transport = match build_transport(&descriptor) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: {e}");
@@ -124,142 +308,353 @@ async fn cmd_run(args: RunArgs) -> i32 {
         }
     };
 
-    let cfg = if args.smoke {
-        DriverConfig::smoke()
-    } else {
-        DriverConfig::default()
-    };
+    let profile = Profile::from(args.profile);
+    let scale = Scale::from(args.scale);
 
-    let scenarios: Vec<Scenario> = match &args.scenario {
-        Some(id) => {
-            if let Some(s) = Scenario::ALL
-                .iter()
-                .find(|s| s.id().eq_ignore_ascii_case(id))
-            {
-                vec![*s]
-            } else {
-                eprintln!("error: unknown scenario {id:?} (expected W1/W2/W4/W8)");
+    // Seed the scale rung first (unless suppressed / empty).
+    let mut seeded_compositions: Option<u64> = None;
+    if !args.no_seed && scale.compositions() > 0 {
+        eprintln!("bench: seeding scale rung {} …", scale.key());
+        match seed::seed_scale(&transport, scale, args.seed).await {
+            Ok(n) => seeded_compositions = Some(n),
+            Err(e) => {
+                eprintln!("error seeding: {e}");
                 return 2;
             }
         }
-        None => Scenario::ALL.to_vec(),
-    };
-
-    let mut results: Vec<ScenarioResult> = Vec::new();
-
-    // Merge: keep the other target's rows from a prior run so a two-server
-    // comparison lands in one report (this run's label overwrites its own).
-    if args.merge {
-        let existing = args.out.join("results.json");
-        if let Ok(text) = std::fs::read_to_string(&existing)
-            && let Ok(prior) = serde_json::from_str::<BenchReport>(&text)
-        {
-            let this = target.label();
-            results.extend(prior.results.into_iter().filter(|r| r.target != this));
-        }
     }
 
-    for s in scenarios {
-        eprintln!(
-            "running {} ({}) against {}",
-            s.id(),
-            s.description(),
-            target.label()
-        );
-        match run_latency(&target, s, cfg).await {
-            Ok(r) => results.push(r),
+    // Build the workload.
+    let spec = WorkloadSpec {
+        profile,
+        ward_size: args.ward_size,
+        load_factor: args.load_factor,
+        seed: args.seed,
+    };
+    let workload = match model::build(&spec) {
+        Ok(w) => w,
+        Err(e) => {
+            eprintln!("error building workload: {e}");
+            return 2;
+        }
+    };
+
+    // Resource sampling: idle baseline, then the run series.
+    let containers: Vec<String> = [args.app_container.clone(), args.db_container.clone()]
+        .into_iter()
+        .flatten()
+        .collect();
+    let idle = if containers.is_empty() {
+        Vec::new()
+    } else {
+        eprintln!("bench: idle baseline ({:?}) …", baseline_duration(profile));
+        match sample::idle_baseline(containers.clone(), baseline_duration(profile)).await {
+            Ok(series) => series,
             Err(e) => {
-                eprintln!("error running {}: {e}", s.id());
-                return 1;
+                eprintln!("bench: idle baseline sampling failed: {e}");
+                Vec::new()
             }
         }
-    }
+    };
+    let sampler = ResourceSampler::start(containers);
 
-    let report = BenchReport {
-        env: EnvBlock {
-            run_date: args.run_date.unwrap_or_else(now_iso),
-            // Auto-captured — every report states the machine that produced it.
-            host: benchmark::host::HostInfo::capture(),
-            payload: benchmark::workload::payload_description(),
-            workload_lock: workload_lock(),
-            harness_revision: option_env!("GIT_REV").unwrap_or("unknown").to_owned(),
-            warmup_iters: cfg.warmup_iters,
-            measure_iters: cfg.measure_iters,
-            runs: cfg.runs,
-        },
-        results,
+    eprintln!(
+        "bench: driving profile={} scale={} ward={} L={} against {}",
+        profile.key(),
+        scale.key(),
+        args.ward_size,
+        args.load_factor,
+        descriptor.base_url
+    );
+    let outcome = match drive::drive(&transport, &workload, Recorder::new()).await {
+        Ok(o) => o,
+        Err(e) => {
+            eprintln!("error driving workload: {e}");
+            let _ = sampler.stop().await;
+            return 2;
+        }
     };
 
-    write_report(&report, &args.out)
+    let run_series = sampler.stop().await.unwrap_or_default();
+
+    // Storage probe (compose-managed db only).
+    let storage = if let Some(container) = &args.db_container {
+        let db = DbAccess {
+            container: container.clone(),
+            user: args.db_user.clone(),
+            db: args.db_name.clone(),
+        };
+        sample::probe_storage(&db).await.map(|bytes| {
+            let comps = seeded_compositions.unwrap_or_else(|| scale.compositions());
+            StorageBlock::new(bytes, comps)
+        })
+    } else {
+        None
+    };
+
+    let results = build_results(
+        &descriptor,
+        &spec,
+        scale,
+        &workload.lock,
+        &outcome,
+        &args,
+        &idle,
+        &run_series,
+        storage,
+    );
+
+    let out_dir = args.out.join(&descriptor.name);
+    if let Err(e) = report::write_all(&results, &out_dir) {
+        eprintln!("error writing artefacts: {e}");
+        return 2;
+    }
+    eprintln!(
+        "bench: {} requests · {} errors · {:.1} req/s · error rate {:.3}% → {}",
+        outcome.requests,
+        outcome.errors,
+        outcome.rps,
+        outcome.error_rate * 100.0,
+        out_dir.display()
+    );
+
+    if outcome.error_rate > ERROR_RATE_FLAG {
+        eprintln!(
+            "bench: error rate {:.3}% exceeds the {:.1}% flag",
+            outcome.error_rate * 100.0,
+            ERROR_RATE_FLAG * 100.0
+        );
+        return 1;
+    }
+    0
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_results(
+    descriptor: &SutDescriptor,
+    spec: &WorkloadSpec,
+    scale: Scale,
+    lock: &str,
+    outcome: &DriveOutcome,
+    args: &RunArgs,
+    idle: &[ContainerSeries],
+    run_series: &[ContainerSeries],
+    storage: Option<StorageBlock>,
+) -> Results {
+    let classes: BTreeMap<String, ClassRecord> = outcome
+        .recorder
+        .summaries()
+        .iter()
+        .map(|(key, summary)| ((*key).to_owned(), ClassRecord::from_summary(summary)))
+        .collect();
+
+    let app = args
+        .app_container
+        .as_deref()
+        .and_then(|name| summarize(name, idle, run_series));
+    let db = args
+        .db_container
+        .as_deref()
+        .and_then(|name| summarize(name, idle, run_series));
+
+    Results {
+        sut: SutBlock {
+            name: descriptor.name.clone(),
+            kind: sut_kind_label(descriptor.kind).to_owned(),
+            base_url: descriptor.base_url.clone(),
+            product_label: descriptor.product_label.clone(),
+            image_digests: BTreeMap::new(),
+            versions: BTreeMap::new(),
+        },
+        workload: WorkloadBlock {
+            lock: lock.to_owned(),
+            profile: spec.profile.key().to_owned(),
+            scale: scale.key().to_owned(),
+            ward_size: spec.ward_size,
+            load_factor: spec.load_factor,
+            seed: spec.seed,
+        },
+        environment: EnvironmentBlock::capture(),
+        classes,
+        throughput: ThroughputBlock {
+            window_s: outcome.window_s,
+            requests: outcome.requests,
+            rps: outcome.rps,
+            error_rate: outcome.error_rate,
+        },
+        resources: ResourcesBlock {
+            app,
+            db,
+            cold_start_ms: args.cold_start_ms,
+        },
+        storage,
+        reproduce: reproduce_command(descriptor, spec, scale),
+        excluded_templates: outcome.excluded_templates.clone(),
+    }
+}
+
+/// Summarize a container's run series with its idle baseline.
+fn summarize(
+    name: &str,
+    idle: &[ContainerSeries],
+    run: &[ContainerSeries],
+) -> Option<ContainerSummary> {
+    let run_series = run.iter().find(|s| s.name == name)?;
+    let idle_series = idle.iter().find(|s| s.name == name);
+    Some(ContainerSummary::from_series(run_series, idle_series))
+}
+
+/// The exact command that reproduces this run (register 01 §5 reproduce-it).
+fn reproduce_command(descriptor: &SutDescriptor, spec: &WorkloadSpec, scale: Scale) -> String {
+    let sut = match descriptor.kind {
+        SutKind::Ours => "ehrbase-rs",
+        SutKind::Foreign => &descriptor.name,
+    };
+    format!(
+        "cargo run -q -p benchmark --bin bench -- run --sut {sut} --base-url {} \
+         --profile {} --scale {} --ward-size {} --load-factor {} --seed {}",
+        descriptor.base_url,
+        spec.profile.key(),
+        scale.key(),
+        spec.ward_size,
+        spec.load_factor,
+        spec.seed,
+    )
 }
 
 async fn cmd_seed(args: SeedArgs) -> i32 {
-    let target = match resolve_target(
+    let descriptor = match build_descriptor(
+        args.sut,
         args.base_url,
-        Implementation::EhrbaseRs,
-        args.auth.as_deref(),
+        args.sut_name,
+        args.sut_version.as_deref(),
+        args.auth,
+        args.admin_auth,
     ) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let transport = match build_transport(&descriptor) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("error: {e}");
             return 2;
         }
     };
-    match benchmark::seed::seed(&target, args.ehrs, args.comps).await {
+    let scale = Scale::from(args.scale);
+    match seed::seed_scale(&transport, scale, args.seed).await {
         Ok(n) => {
-            eprintln!("seeded {n} compositions across {} EHRs", args.ehrs);
+            eprintln!("bench: seeded {n} compositions (scale {})", scale.key());
             0
         }
         Err(e) => {
             eprintln!("seed error: {e}");
-            1
+            2
         }
     }
 }
 
 fn cmd_report(args: &ReportArgs) -> i32 {
-    let json = match std::fs::read_to_string(&args.from) {
-        Ok(s) => s,
+    let results = match report::from_results_file(&args.from) {
+        Ok(r) => r,
         Err(e) => {
             eprintln!("error reading {}: {e}", args.from.display());
             return 2;
         }
     };
-    let report: BenchReport = match serde_json::from_str(&json) {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("error parsing results.json: {e}");
-            return 2;
-        }
-    };
-    write_report(&report, &args.out)
-}
-
-fn write_report(report: &BenchReport, out: &std::path::Path) -> i32 {
-    if let Err(e) = std::fs::create_dir_all(out) {
-        eprintln!("error creating {}: {e}", out.display());
-        return 1;
+    let out_dir = args.out.join(&results.sut.name);
+    if let Err(e) = report::write_all(&results, &out_dir) {
+        eprintln!("error writing artefacts: {e}");
+        return 2;
     }
-    let json = match report.to_json() {
-        Ok(j) => j,
-        Err(e) => {
-            eprintln!("error serializing results: {e}");
-            return 1;
-        }
-    };
-    let md = report.to_markdown();
-    if let Err(e) = std::fs::write(out.join("results.json"), json) {
-        eprintln!("error writing results.json: {e}");
-        return 1;
-    }
-    if let Err(e) = std::fs::write(out.join("REPORT.md"), md) {
-        eprintln!("error writing REPORT.md: {e}");
-        return 1;
-    }
-    eprintln!("wrote {}/REPORT.md + results.json", out.display());
+    eprintln!(
+        "regenerated {} from {}",
+        out_dir.display(),
+        args.from.display()
+    );
     0
 }
 
-fn now_iso() -> String {
-    jiff::Timestamp::now().to_string()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run_args_parse_with_defaults() {
+        let cli = Cli::try_parse_from([
+            "bench",
+            "run",
+            "--sut",
+            "ehrbase-rs",
+            "--profile",
+            "smoke",
+            "--scale",
+            "empty",
+        ])
+        .expect("parse");
+        let Command::Run(args) = cli.command else {
+            panic!("expected run");
+        };
+        assert!(matches!(args.sut, SutArg::EhrbaseRs));
+        assert!(matches!(args.profile, ProfileArg::Smoke));
+        assert!(matches!(args.scale, ScaleArg::Empty));
+        assert_eq!(args.ward_size, 20);
+        assert!((args.load_factor - 1.0).abs() < f64::EPSILON);
+        assert_eq!(args.seed, DEFAULT_SEED);
+    }
+
+    #[test]
+    fn scale_values_accept_the_ladder_spellings() {
+        for (arg, expect) in [
+            ("empty", Scale::Empty),
+            ("10k", Scale::TenK),
+            ("100k", Scale::HundredK),
+            ("1m", Scale::OneM),
+        ] {
+            let cli = Cli::try_parse_from([
+                "bench",
+                "run",
+                "--sut",
+                "byo",
+                "--base-url",
+                "http://x/v1",
+                "--profile",
+                "hour",
+                "--scale",
+                arg,
+            ])
+            .expect("parse");
+            let Command::Run(args) = cli.command else {
+                panic!("expected run");
+            };
+            assert_eq!(Scale::from(args.scale), expect);
+        }
+    }
+
+    #[test]
+    fn byo_without_base_url_is_rejected_at_descriptor_build() {
+        let err = build_descriptor(SutArg::Byo, None, None, None, None, None).unwrap_err();
+        assert!(err.contains("--base-url"));
+    }
+
+    #[test]
+    fn ehrbase_rs_defaults_its_base_url() {
+        let d =
+            build_descriptor(SutArg::EhrbaseRs, None, None, None, None, None).expect("descriptor");
+        assert!(d.base_url.contains("localhost:8080"));
+        assert_eq!(d.name, "ehrbase-rs");
+    }
+
+    #[test]
+    fn seed_args_parse() {
+        let cli = Cli::try_parse_from(["bench", "seed", "--sut", "ehrbase-rs", "--scale", "10k"])
+            .expect("parse");
+        let Command::Seed(args) = cli.command else {
+            panic!("expected seed");
+        };
+        assert_eq!(Scale::from(args.scale), Scale::TenK);
+    }
 }
