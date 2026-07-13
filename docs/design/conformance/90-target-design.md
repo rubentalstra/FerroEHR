@@ -85,7 +85,8 @@ src/
     report.rs               #   CONFORMANCE_REPORT.md per SUT
     statement.rs            #   Conformance Statement (incl. RM versions per
                             #   master03 NOTE + edition findings)
-    certificate.rs          #   Certificate — OUR SUT only, never foreign
+    certificate.rs          #   Certificate — every SUT (self-identifying
+                            #   framework assessment, never official openEHR)
     compare.rs              #   cross-SUT comparison matrix (fairness-gated)
     badges.rs
 ```
