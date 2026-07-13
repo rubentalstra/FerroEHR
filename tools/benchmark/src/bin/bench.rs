@@ -745,12 +745,19 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             error_rate: outcome.error_rate,
             p99_us,
             requests: outcome.requests,
+            max_dispatch_lag_ms: outcome.max_dispatch_lag_ms,
         };
         eprintln!(
-            "bench: L={load_factor} → {:.1} req/s · p99 {p99_us} µs · error rate {:.3}% · {} requests",
+            "bench: L={load_factor} → {:.1} req/s · p99 {p99_us} µs · error rate {:.3}% · {} requests · dispatch lag {} ms{}",
             step.rps,
             step.error_rate * 100.0,
-            step.requests
+            step.requests,
+            step.max_dispatch_lag_ms,
+            if step.generator_bound() {
+                " — GENERATOR-BOUND"
+            } else {
+                ""
+            }
         );
         let saturated = report::knee::ladder_should_stop(p99_us, outcome.error_rate);
         steps_out.push(step.clone());

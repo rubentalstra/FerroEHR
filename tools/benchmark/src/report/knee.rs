@@ -43,6 +43,25 @@ pub struct KneeStep {
     pub p99_us: u64,
     /// Measured (post-warmup) requests at this step.
     pub requests: u64,
+    /// Worst dispatcher lag behind the planned schedule (ms). Above
+    /// [`GENERATOR_BOUND_LAG_MS`] the step is generator-bound: the load
+    /// generator could not keep its own schedule, so the step bounds the
+    /// *instrument*, not the SUT.
+    #[serde(default)]
+    pub max_dispatch_lag_ms: u64,
+}
+
+/// Dispatch lag above which a step is flagged generator-bound (1 s — the same
+/// magnitude as the SLO; a generator a full second late dominates every
+/// CO-corrected sample).
+pub const GENERATOR_BOUND_LAG_MS: u64 = 1_000;
+
+impl KneeStep {
+    /// Whether the load generator, not the SUT, bounded this step.
+    #[must_use]
+    pub fn generator_bound(&self) -> bool {
+        self.max_dispatch_lag_ms > GENERATOR_BOUND_LAG_MS
+    }
 }
 
 /// The knee/saturation machine record (`knee.json`).
@@ -140,22 +159,28 @@ pub fn render_markdown(r: &KneeResults) -> String {
 
     m.push_str("## Ladder\n\n");
     m.push_str(
-        "| L | req/s | error rate | p99 (µs) | requests | verdict |\n|--:|--:|--:|--:|--:|---|\n",
+        "| L | req/s | error rate | p99 (µs) | requests | dispatch lag (ms) | verdict |\n|--:|--:|--:|--:|--:|--:|---|\n",
     );
     for step in &r.steps {
         let sustainable = !ladder_should_stop(step.p99_us, step.error_rate);
+        let verdict = if step.generator_bound() {
+            // The generator could not keep its own schedule — this step bounds
+            // the instrument, never the SUT.
+            "GENERATOR-BOUND (not a SUT limit)"
+        } else if sustainable {
+            "sustained"
+        } else {
+            "SLO breached"
+        };
         m.push_str(&format!(
-            "| {} | {:.1} | {:.3}% | {} | {} | {} |\n",
+            "| {} | {:.1} | {:.3}% | {} | {} | {} | {} |\n",
             step.load_factor,
             step.rps,
             step.error_rate * 100.0,
             step.p99_us,
             step.requests,
-            if sustainable {
-                "sustained"
-            } else {
-                "SLO breached"
-            }
+            step.max_dispatch_lag_ms,
+            verdict
         ));
     }
     m.push('\n');
@@ -205,6 +230,7 @@ mod tests {
             error_rate: err,
             p99_us: p99,
             requests: reqs,
+            max_dispatch_lag_ms: 0,
         }
     }
 

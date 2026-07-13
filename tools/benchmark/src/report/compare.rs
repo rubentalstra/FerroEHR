@@ -433,6 +433,7 @@ mod tests {
             error_rate: 0.0,
             p99_us: p99,
             requests: 1000,
+            max_dispatch_lag_ms: 0,
         };
         KneeResults {
             sut: SutBlock {
