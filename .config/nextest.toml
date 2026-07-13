@@ -1,0 +1,14 @@
+# Workspace nextest configuration.
+#
+# The AMQP integration tests (RabbitMQ + PostgreSQL testcontainers per test)
+# are serialized into one group: under a full-workspace run dozens of
+# containers otherwise start concurrently and broker-delivery deadlines flake
+# on host contention (observed 2026-07-13: fhir_outbound_amqp failed at 42s
+# under load, passes in 8s in isolation). Their delivery assertions are
+# unchanged — only scheduling is constrained.
+[test-groups.amqp]
+max-threads = 1
+
+[[profile.default.overrides]]
+filter = 'binary(events_amqp) | binary(fhir_outbound_amqp)'
+test-group = 'amqp'
