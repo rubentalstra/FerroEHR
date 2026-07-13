@@ -82,18 +82,24 @@ struct Builder {
 
 impl Builder {
     fn new(spec: &WorkloadSpec, window: Duration, warmup: Duration) -> Result<Self, BenchError> {
+        // Preload the CKM-pack skeletons (the compositions the measured events
+        // create/update) so the hot render path is a map lookup + `vary`. The
+        // CKM lab-result contribution skeleton is read by `render::contribution`
+        // itself, so it need not live in this map, but loading the whole pack is
+        // cheap and keeps the set complete.
         let mut skeletons = HashMap::new();
-        for kind in [
-            TemplateKind::Vitals,
-            TemplateKind::Nested,
-            TemplateKind::Persistent,
-        ] {
-            let src = render::template_source(kind);
-            let text = conformance::testdata::fixtures::read_from(src.comp_dir_key, src.comp_file)
-                .map_err(|e| BenchError::Fixture(e.to_string()))?;
-            let value: Value = serde_json::from_str(&text).map_err(BenchError::Json)?;
-            skeletons.insert(kind, value);
+        for tpl in crate::pack::all() {
+            skeletons.insert(tpl.kind, tpl.skeleton()?);
         }
+        // Validate the auxiliary fixtures once so a missing/corrupt file surfaces
+        // as a build error rather than a silently-null payload in the hot loop.
+        conformance::testdata::fixtures::read_from("ehr-status.valid", render::EHR_STATUS_FIXTURE)
+            .map_err(|e| BenchError::Fixture(e.to_string()))?;
+        conformance::testdata::fixtures::read_from(
+            "contribution.valid",
+            render::CONTRIBUTION_ENVELOPE,
+        )
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
         Ok(Self {
             profile: spec.profile,
             load_factor: spec.load_factor,
@@ -156,8 +162,10 @@ impl Builder {
         let mut steps = event.steps();
         match event {
             ClinicalEvent::MedicationRound if self.rng.random_bool(event::MED_CORRECTION_PROB) => {
+                // A missed-dose correction re-versions the medication composition
+                // the round just created (the target exists for the driver).
                 steps.push(Step::UpdateComposition {
-                    template: TemplateKind::Vitals,
+                    template: TemplateKind::CkmMedicationOrder,
                 });
             }
             ClinicalEvent::CarePlan if self.rng.random_bool(event::DIR_UPDATE_PROB) => {
@@ -201,7 +209,7 @@ impl Builder {
                 let n = self.rng.random_range(1..=3);
                 let payload =
                     render::contribution(template, &params, n).unwrap_or_else(|_| Value::Null);
-                Action::CommitContribution { payload }
+                Action::CommitContribution { template, payload }
             }
             Step::AqlPatient => Action::AqlPatient {
                 query: PATIENT_AQL.to_owned(),
@@ -489,7 +497,7 @@ mod tests {
             }
             if op.class.is_read() {
                 reads += 1;
-            } else if let Action::CommitContribution { payload } = &op.action {
+            } else if let Action::CommitContribution { payload, .. } = &op.action {
                 let n = payload
                     .get("versions")
                     .and_then(|v| v.as_array())

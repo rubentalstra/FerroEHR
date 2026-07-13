@@ -27,6 +27,7 @@
 pub mod drive;
 pub mod measure;
 pub mod model;
+pub mod pack;
 pub mod render;
 pub mod report;
 pub mod sample;
@@ -193,16 +194,36 @@ impl Scale {
     }
 }
 
-/// The corpus template a payload is rendered from (register 00 §4). Maps to
-/// the same fixture keys the ECC suite provisions.
+/// The template a payload is rendered from (register 00 §4). Two packs: the
+/// retained ECC-corpus fixtures ([`Vitals`](TemplateKind::Vitals)/
+/// [`Nested`](TemplateKind::Nested)/[`Persistent`](TemplateKind::Persistent),
+/// keyed to the fixtures the ECC suite provisions) and the official openEHR CKM
+/// pack (`Ckm*`, sourced from the vendored [`crate::pack`] — `templates/ckm/`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TemplateKind {
-    /// Small/hot-path event composition (vitals-class).
+    /// Small/hot-path event composition (vitals-class) — ECC corpus fixture.
     Vitals,
-    /// Large, deeply nested event composition.
+    /// Large, deeply nested event composition — ECC corpus fixture.
     Nested,
-    /// Persistent composition (care plan / discharge-summary class).
+    /// Persistent composition (care plan / directory class) — ECC corpus
+    /// fixture; retained for the persistent/directory structure.
     Persistent,
+    /// Official CKM **Vital signs** template (E2 shift observations; small,
+    /// hot-path event composition). Sourced from the vendored CKM pack
+    /// ([`crate::pack`]), not the ECC corpus.
+    CkmVitalSigns,
+    /// Official CKM **Generic lab test result** template (E4 lab-result
+    /// contribution batches).
+    CkmLabResult,
+    /// Official CKM **Medication order** template (E3 medication rounds).
+    CkmMedicationOrder,
+    /// Official CKM **International Patient Summary** template (E1 admission
+    /// assessment / E9 discharge summary; large, deeply nested — the
+    /// deep-stress payload).
+    CkmSummary,
+    /// Official CKM **Clinical synopsis** template (E7 documentation
+    /// corrections; the per-patient correction target seeded at admission).
+    CkmSynopsis,
 }
 
 /// One scheduled operation: dispatched at `at` (offset from the measurement
@@ -247,8 +268,13 @@ pub enum Action {
     ReadLatestComposition,
     /// `GET …/composition/{ovid}` — a specific earlier version.
     ReadCompositionVersion,
-    /// `POST …/contribution` — a rendered multi-version batch.
-    CommitContribution { payload: serde_json::Value },
+    /// `POST …/contribution` — a rendered multi-version batch of `template`
+    /// compositions (the `template` is recorded so an excluded CKM template
+    /// skips its contribution ops at dispatch rather than erroring silently).
+    CommitContribution {
+        template: TemplateKind,
+        payload: serde_json::Value,
+    },
     /// Patient-scoped AQL (`{{ehr_id}}` substituted at dispatch).
     AqlPatient { query: String },
     /// Ward-population AQL (no patient filter).

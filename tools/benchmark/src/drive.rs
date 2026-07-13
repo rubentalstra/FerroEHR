@@ -14,7 +14,7 @@
 //! an op whose prerequisite id has not yet arrived polls briefly (≤2 s) before it
 //! is recorded as a schedule-dependency error.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -54,13 +54,15 @@ pub struct TemplateFixtures {
     pub composition_file: &'static str,
 }
 
-/// The corpus fixtures a [`TemplateKind`] provisions and renders from. The
-/// pairings are the vendored CNF fixtures already exercised by the ECC suite:
-/// `nested.en.v1` (small event, ~5 KB), `composition_evaluation_test` (large,
-/// ~25 KB, deeply nested), `persistent_minimal.en.v1` (persistent category).
+/// The ECC-corpus fixtures a [`TemplateKind`] provisions and renders from, or
+/// `None` for the CKM-pack kinds (sourced from [`crate::pack`], not the
+/// conformance corpus). The corpus pairings are vendored CNF fixtures already
+/// exercised by the ECC suite: `nested.en.v1` (small event, ~5 KB),
+/// `composition_evaluation_test` (large, ~25 KB, deeply nested),
+/// `persistent_minimal.en.v1` (persistent category).
 #[must_use]
-pub fn template_fixtures(kind: TemplateKind) -> TemplateFixtures {
-    match kind {
+pub fn template_fixtures(kind: TemplateKind) -> Option<TemplateFixtures> {
+    Some(match kind {
         TemplateKind::Vitals => TemplateFixtures {
             template_id: "nested.en.v1",
             opt_file: "nested/nested.opt",
@@ -76,27 +78,68 @@ pub fn template_fixtures(kind: TemplateKind) -> TemplateFixtures {
             opt_file: "minimal_persistent/persistent_minimal.opt",
             composition_file: "persistent_minimal.en.v1__full.json",
         },
+        TemplateKind::CkmVitalSigns
+        | TemplateKind::CkmLabResult
+        | TemplateKind::CkmMedicationOrder
+        | TemplateKind::CkmSummary
+        | TemplateKind::CkmSynopsis => return None,
+    })
+}
+
+/// The wire `template_id` a kind registers under (CKM-pack or ECC-corpus).
+#[must_use]
+pub fn template_id_of(kind: TemplateKind) -> &'static str {
+    if let Some(tpl) = crate::pack::get(kind) {
+        tpl.template_id
+    } else {
+        template_fixtures(kind).map_or("unknown", |f| f.template_id)
     }
 }
 
-/// The OPT 1.4 XML that provisions a [`TemplateKind`].
+/// The OPT 1.4 XML that provisions a [`TemplateKind`]: the vendored CKM OPT for
+/// a CKM kind, else the ECC-corpus OPT.
 ///
 /// # Errors
-/// [`BenchError::Fixture`] if the vendored OPT cannot be read.
+/// [`BenchError`] if the OPT cannot be read.
 pub fn template_opt_xml(kind: TemplateKind) -> Result<String, BenchError> {
-    let file = template_fixtures(kind).opt_file;
+    if let Some(tpl) = crate::pack::get(kind) {
+        return tpl.opt_text();
+    }
+    let file = template_fixtures(kind)
+        .ok_or_else(|| BenchError::Fixture(format!("no OPT source for {kind:?}")))?
+        .opt_file;
     fixtures::read_from("template.valid", file).map_err(|e| BenchError::Fixture(e.to_string()))
 }
 
-/// The canonical-JSON composition skeleton for a [`TemplateKind`].
+/// The composition skeleton for a [`TemplateKind`]: the committed CKM example
+/// for a CKM kind, else the canonical-JSON corpus fixture.
 ///
 /// # Errors
-/// [`BenchError::Fixture`] if the vendored composition cannot be read or parsed.
+/// [`BenchError`] if the composition cannot be read or parsed.
 pub fn template_composition(kind: TemplateKind) -> Result<Value, BenchError> {
-    let file = template_fixtures(kind).composition_file;
+    if let Some(tpl) = crate::pack::get(kind) {
+        return tpl.skeleton();
+    }
+    let file = template_fixtures(kind)
+        .ok_or_else(|| BenchError::Fixture(format!("no composition source for {kind:?}")))?
+        .composition_file;
     let text = fixtures::read_from("composition.canonical-json", file)
         .map_err(|e| BenchError::Fixture(e.to_string()))?;
     serde_json::from_str(&text).map_err(BenchError::Json)
+}
+
+/// The [`TemplateKind`] an op commits against, if any (used to skip an excluded
+/// template's ops at dispatch). Reads/queries/EHR/status/directory ops carry no
+/// template.
+#[must_use]
+fn action_template(action: &Action) -> Option<TemplateKind> {
+    match action {
+        Action::CreateComposition { template, .. }
+        | Action::UpdateComposition { template, .. }
+        | Action::CommitContribution { template, .. }
+        | Action::UploadOpt { template } => Some(*template),
+        _ => None,
+    }
 }
 
 // ── The driver ────────────────────────────────────────────────────────────────
@@ -163,16 +206,20 @@ pub async fn drive(
 ) -> Result<DriveOutcome, BenchError> {
     recorder.set_warmup(workload.warmup);
 
-    // Provision every template the workload declares, from its vendored OPT XML.
-    let mut excluded_templates = Vec::new();
+    // Provision every template the workload declares (both packs), from its
+    // vendored OPT XML. A SUT that rejects an upload has that template's kind
+    // recorded as excluded; its scheduled ops are skipped (and counted) at
+    // dispatch rather than dropped one-by-one as errors — fairness note below.
+    let mut excluded_kinds: HashSet<TemplateKind> = HashSet::new();
+    let mut failures: Vec<(TemplateKind, u16)> = Vec::new();
     for kind in &workload.provisioning {
         let xml = template_opt_xml(*kind)?;
-        let fixtures = template_fixtures(*kind);
         if let Some(status) = upload_opt_xml(client, &xml).await {
-            excluded_templates.push(format!("{} (upload → HTTP {status})", fixtures.template_id));
+            excluded_kinds.insert(*kind);
+            failures.push((*kind, status));
             eprintln!(
-                "bench: SUT rejected template `{}` upload (HTTP {status}) — excluded from this run",
-                fixtures.template_id
+                "bench: SUT rejected template `{}` upload (HTTP {status}) — its ops are excluded from this run",
+                template_id_of(*kind)
             );
         }
     }
@@ -199,8 +246,18 @@ pub async fn drive(
     let runtime = Arc::new(Runtime::new());
     let run_start = Instant::now();
     let mut tasks: JoinSet<()> = JoinSet::new();
+    // Per-excluded-kind skip counter (the loud, counted alternative to a silent
+    // per-op drop). `sleep_until` is absolute, so skipping the sleep for an
+    // excluded op leaves every later op's planned dispatch time unchanged.
+    let mut skipped: HashMap<TemplateKind, u64> = HashMap::new();
 
     for op in ops {
+        if let Some(template) = action_template(&op.action)
+            && excluded_kinds.contains(&template)
+        {
+            *skipped.entry(template).or_default() += 1;
+            continue;
+        }
         tokio::time::sleep_until(run_start + op.at).await;
         let client = client.clone();
         let runtime = Arc::clone(&runtime);
@@ -222,6 +279,24 @@ pub async fn drive(
     let recorder = collector
         .await
         .map_err(|e| BenchError::Unexpected(format!("recorder collector task: {e}")))?;
+
+    // Fold the per-kind skip counts into the loud exclusion notes.
+    for (kind, count) in &skipped {
+        eprintln!(
+            "bench: {count} scheduled ops skipped for excluded template `{}`",
+            template_id_of(*kind)
+        );
+    }
+    let excluded_templates: Vec<String> = failures
+        .iter()
+        .map(|(kind, status)| {
+            let n = skipped.get(kind).copied().unwrap_or(0);
+            format!(
+                "{} (upload → HTTP {status}; {n} scheduled ops skipped)",
+                template_id_of(*kind)
+            )
+        })
+        .collect();
 
     let window_s = workload.window.as_secs_f64();
     let requests = recorder.total_measured();
@@ -417,7 +492,7 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
             )
             .await
         }
-        Action::CommitContribution { payload } => {
+        Action::CommitContribution { payload, .. } => {
             let Some(ehr) = resolve_ehr(runtime, patient).await else {
                 return miss("contribution: ehr_id unresolved");
             };
@@ -758,7 +833,7 @@ mod tests {
             TemplateKind::Nested,
             TemplateKind::Persistent,
         ] {
-            let f = template_fixtures(kind);
+            let f = template_fixtures(kind).expect("ECC-corpus kind has fixtures");
             assert_eq!(
                 std::path::Path::new(f.opt_file)
                     .extension()
@@ -773,6 +848,44 @@ mod tests {
             );
             assert!(!f.template_id.is_empty());
         }
+    }
+
+    #[test]
+    fn ckm_kinds_route_through_the_pack_not_the_corpus() {
+        for kind in crate::pack::KINDS {
+            assert!(
+                template_fixtures(kind).is_none(),
+                "{kind:?} must not resolve to an ECC-corpus fixture"
+            );
+            // OPT + composition come from the vendored CKM pack.
+            assert!(
+                template_opt_xml(kind)
+                    .expect("CKM OPT reads")
+                    .contains("template")
+            );
+            assert!(
+                template_composition(kind)
+                    .expect("CKM skeleton parses")
+                    .is_object()
+            );
+            assert_eq!(
+                template_id_of(kind),
+                crate::pack::get(kind).unwrap().template_id
+            );
+        }
+    }
+
+    #[test]
+    fn action_template_identifies_composition_ops() {
+        assert_eq!(
+            action_template(&Action::CommitContribution {
+                template: TemplateKind::CkmLabResult,
+                payload: Value::Null,
+            }),
+            Some(TemplateKind::CkmLabResult)
+        );
+        assert_eq!(action_template(&Action::ReadEhr), None);
+        assert_eq!(action_template(&Action::ReadLatestComposition), None);
     }
 
     #[test]

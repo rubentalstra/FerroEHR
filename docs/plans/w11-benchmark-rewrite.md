@@ -98,7 +98,7 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 - [x] B2. ONE fix pass → crate clippy-zero, `cargo nextest run -p
       benchmark` green, zero TODOs. *Closed 2026-07-13: 0 warnings, 57/57,
       fmt clean.*
-- [ ] B3. **Official CKM template pack** (owner directive 2026-07-13:
+- [x] B3. **Official CKM template pack** (owner directive 2026-07-13:
       "fetch from the CKM online the needed archetypes — the official
       ones — as many as we need"): 5 official openEHR CKM templates
       vendored as CKM's own OPT exports with provenance

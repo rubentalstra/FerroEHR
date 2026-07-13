@@ -17,9 +17,10 @@ mkdir -p "$OUT"
 SET=(
   "1013.26.380|vital-signs|E2 shift observations (small event composition)"
   "1013.26.408|generic-lab-test-result|E4 lab results (contribution batches)"
-  "1013.26.341|medication-order|E3 medication rounds"
-  "1013.26.376|international-patient-summary|E1 admission / E9 discharge (large, deep)"
-  "1013.26.356|clinical-synopsis|E7 documentation corrections (notes)"
+  "1013.26.80|eprescription-fhir|E3 medication rounds (ePrescription, COMPOSITION-rooted)"
+  "1013.26.2|ereferral|E1 admission / E9 discharge (large clinical summary, COMPOSITION-rooted)"
+  "1013.26.376|international-patient-summary|vendored, NOT wired: the server example/validator mismatch on ACTION.medication description is W-12"
+  "1013.26.191|gp-data-set|E7 documentation corrections (GP encounter data set, COMPOSITION-rooted)"
 )
 
 PROV="$OUT/PROVENANCE.md"

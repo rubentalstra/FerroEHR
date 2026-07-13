@@ -188,14 +188,16 @@ impl ClinicalEvent {
     pub fn steps(self) -> Vec<Step> {
         match self {
             ClinicalEvent::Admission => admission_steps(),
-            ClinicalEvent::ShiftVitals | ClinicalEvent::MedicationRound => {
-                vec![Step::CreateComposition {
-                    template: TemplateKind::Vitals,
-                    large: false,
-                }]
-            }
+            ClinicalEvent::ShiftVitals => vec![Step::CreateComposition {
+                template: TemplateKind::CkmVitalSigns,
+                large: false,
+            }],
+            ClinicalEvent::MedicationRound => vec![Step::CreateComposition {
+                template: TemplateKind::CkmMedicationOrder,
+                large: false,
+            }],
             ClinicalEvent::LabResults => vec![Step::Contribution {
-                template: TemplateKind::Vitals,
+                template: TemplateKind::CkmLabResult,
             }],
             ClinicalEvent::ChartReview => vec![
                 Step::ReadLatest,
@@ -207,7 +209,7 @@ impl ClinicalEvent {
             ClinicalEvent::CarePlan => vec![Step::ReadDirectory],
             ClinicalEvent::DocCorrection => vec![
                 Step::UpdateComposition {
-                    template: TemplateKind::Vitals,
+                    template: TemplateKind::CkmSynopsis,
                 },
                 Step::ReadHistory,
             ],
@@ -219,42 +221,47 @@ impl ClinicalEvent {
 }
 
 /// The admission / bootstrap sequence (E1): create the EHR, read it back, commit
-/// the admission-assessment (nested/large) composition, seed an initial vitals
-/// composition, and establish the patient directory. See the module PORT NOTE.
+/// the admission-assessment (CKM IPS — large/deep) composition, seed the
+/// per-patient correction target (CKM clinical synopsis) so E7 corrections have
+/// something to version, and establish the patient directory. See the module
+/// PORT NOTE.
 #[must_use]
 pub fn admission_steps() -> Vec<Step> {
     vec![
         Step::CreateEhr,
         Step::ReadEhr,
         Step::CreateComposition {
-            template: TemplateKind::Nested,
+            template: TemplateKind::CkmSummary,
             large: true,
         },
         Step::CreateComposition {
-            template: TemplateKind::Vitals,
+            template: TemplateKind::CkmSynopsis,
             large: false,
         },
         Step::UpdateDirectory,
     ]
 }
 
-/// The discharge sequence (E9): a large discharge-summary composition then an
-/// `EHR_STATUS` update.
+/// The discharge sequence (E9): a large discharge-summary (CKM IPS) composition
+/// then an `EHR_STATUS` update.
 #[must_use]
 pub fn discharge_steps() -> Vec<Step> {
     vec![
         Step::CreateComposition {
-            template: TemplateKind::Persistent,
+            template: TemplateKind::CkmSummary,
             large: true,
         },
         Step::UpdateStatus,
     ]
 }
 
-/// The provisioning sequence (E10): upload every template's OPT then list.
+/// The provisioning sequence (E10): upload both packs' OPTs then list. The
+/// retained ECC-corpus fixtures precede the official CKM pack (the same order
+/// [`crate::model::build`] provisions in). E10 is not scheduled into the
+/// measured window; this is the catalogue record the `workload.lock` hashes.
 #[must_use]
 pub fn provisioning_steps() -> Vec<Step> {
-    vec![
+    let mut steps = vec![
         Step::UploadOpt {
             template: TemplateKind::Vitals,
         },
@@ -264,8 +271,12 @@ pub fn provisioning_steps() -> Vec<Step> {
         Step::UploadOpt {
             template: TemplateKind::Persistent,
         },
-        Step::ListTemplates,
-    ]
+    ];
+    for &kind in &crate::pack::KINDS {
+        steps.push(Step::UploadOpt { template: kind });
+    }
+    steps.push(Step::ListTemplates);
+    steps
 }
 
 #[cfg(test)]
@@ -273,22 +284,67 @@ mod tests {
     use super::*;
 
     #[test]
-    fn admission_creates_before_dependents() {
+    fn admission_seeds_the_correction_target_and_directory() {
         let steps = admission_steps();
         assert_eq!(steps.first(), Some(&Step::CreateEhr));
         assert!(
             steps.iter().any(|s| matches!(
                 s,
                 Step::CreateComposition {
-                    template: TemplateKind::Vitals,
+                    template: TemplateKind::CkmSynopsis,
                     ..
                 }
             )),
-            "admission must seed a vitals composition for later E7 updates"
+            "admission must seed a CkmSynopsis composition for later E7 corrections"
+        );
+        assert!(
+            steps.iter().any(|s| matches!(
+                s,
+                Step::CreateComposition {
+                    template: TemplateKind::CkmSummary,
+                    large: true,
+                }
+            )),
+            "admission must commit the large CKM IPS admission assessment"
         );
         assert!(
             steps.contains(&Step::UpdateDirectory),
             "admission must establish the directory for E6 reads"
+        );
+    }
+
+    #[test]
+    fn measured_events_use_the_ckm_pack() {
+        // E2 shift vitals → CKM vital signs; E3 medication round → CKM
+        // medication order; E4 lab results → CKM lab-result contribution.
+        assert_eq!(
+            ClinicalEvent::ShiftVitals.steps(),
+            vec![Step::CreateComposition {
+                template: TemplateKind::CkmVitalSigns,
+                large: false,
+            }]
+        );
+        assert_eq!(
+            ClinicalEvent::MedicationRound.steps(),
+            vec![Step::CreateComposition {
+                template: TemplateKind::CkmMedicationOrder,
+                large: false,
+            }]
+        );
+        assert_eq!(
+            ClinicalEvent::LabResults.steps(),
+            vec![Step::Contribution {
+                template: TemplateKind::CkmLabResult,
+            }]
+        );
+        // E9 discharge summary is the large CKM IPS.
+        assert!(
+            ClinicalEvent::Discharge
+                .steps()
+                .contains(&Step::CreateComposition {
+                    template: TemplateKind::CkmSummary,
+                    large: true,
+                })
         );
     }
 
