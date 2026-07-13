@@ -87,12 +87,14 @@ fn if_match_of(h: &HeaderMap) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// Set `ETag` (the resource uid, double-quoted) and a `/demographic/{segment}/
-/// {uid}` `Location` from a demographic [`ResourceMeta`] (whose `ehr_id` is
-/// empty — parties are not EHR-scoped). Location shape: `headers/Location_PERSON.yaml`.
+/// Set `ETag` (the resource uid, weak form `W/"…"` — the ITS-REST overview
+/// §"ETag and Last-Modified" makes resource-identifier ETags weak-type; the
+/// bare quoted form is deprecated) and a `/demographic/{segment}/{uid}`
+/// `Location` from a demographic [`ResourceMeta`] (whose `ehr_id` is empty —
+/// parties are not EHR-scoped). Location shape: `headers/Location_PERSON.yaml`.
 fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&ResourceMeta>) {
     let Some(meta) = meta else { return };
-    if let Ok(etag) = HeaderValue::from_str(&format!("\"{}\"", meta.uid)) {
+    if let Ok(etag) = HeaderValue::from_str(&format!("W/\"{}\"", meta.uid)) {
         resp.headers_mut().insert(header::ETAG, etag);
     }
     let location = format!("{base}/demographic/{segment}/{}", meta.uid);

@@ -115,11 +115,15 @@ pub trait PartyRelationshipService: Send + Sync {
     ) -> Result<ServiceResponse, SmError>;
 
     /// `DELETE /demographic/party_relationship/{uid_based_id}` — logical
-    /// delete (`delete_party_relationship`). The `uid_based_id` MUST be an
-    /// `OBJECT_VERSION_ID`. `204` + `ETag`/`Location` of the deleted version.
+    /// delete (`delete_party_relationship`). The path carries the versioned-
+    /// relationship id (bare `HIER_OBJECT_ID` or full `OBJECT_VERSION_ID`);
+    /// the preceding version for optimistic concurrency comes from `If-Match`
+    /// when supplied (ITS-REST overview §Concurrency control), mirroring the
+    /// party delete. `204` + `ETag`/`Location` of the deleted version.
     async fn party_relationship_delete(
         &self,
         uid_based_id: String,
+        if_match: Option<String>,
     ) -> Result<ServiceResponse, SmError>;
 
     /// `GET /demographic/versioned_party_relationship/{versioned_object_uid}`

@@ -113,7 +113,7 @@ impl EhrbaseService {
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        versioned_object(&self.pool, vo_id, ehr_id).await
+        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.

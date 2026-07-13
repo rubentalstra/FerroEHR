@@ -151,7 +151,7 @@ pub(super) async fn run<S: Platform>(
             let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
             let resp = state
                 .backend()
-                .party_relationship_delete(p.uid_based_id)
+                .party_relationship_delete(p.uid_based_id, super::if_match_of(h))
                 .await?;
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
             super::set_headers(&mut out, &base, SEG, resp.meta.as_ref());
