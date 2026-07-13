@@ -8,6 +8,21 @@ pre-rewrite server behaviour in places; it must be rethought from the spec
 up, not patched. The goal is **the best possible openEHR CNF testing
 framework**, able to certify not just our server but ANY openEHR CDR.
 
+## Fresh evidence (W-3f close, 2026-07-13) — why the rewrite is due
+
+The W-3f endgame caught the instrument being wrong in exactly the feared
+way: its ETag handling still expected the deprecated bare form (the
+ITS-REST overview made ETags weak-type, `W/"…"`), and because case setups
+scrape ids out of response headers with ad-hoc helpers
+(`suites/support.rs::version_uid`, `suites/contribution.rs::contribution_uid`),
+that single client-side spec drift silently corrupted 22 case setups into
+empty-body 404s that looked like server failures. One real server defect
+(CNF master08 E.2) was also found — the split was adjudicated honestly, but
+the lesson stands: **the runner's HTTP/client layer must itself be
+spec-grade and centralized** (header parsing, ETag weak/bare tolerance,
+Prefer handling, id extraction in ONE place), so a wire-form change can
+never rot dozens of cases invisibly.
+
 ## The oracle — read it ALL first (owner mandate)
 
 Before designing anything, read the FULL vendored CNF component at
@@ -57,8 +72,18 @@ platform registers (`docs/design/platform/`) for what the server now is.
      should include; design the adapter seam so adding one is a config
      entry, not code).
    - Fairness rules from `docs/plans/x1-comparison.md` (the fairness
-     adjudication register; measured numbers only, no false claims) — W-4
+     adjudication register; measured numbers only, no false claims) — W-10
      ABSORBS X1's ECC half; benchmark overhaul stays X1's.
+   - **Spec-edition tolerance (load-bearing for fairness):** our server
+     implements the development edition of ITS-REST (weak `W/"…"` ETags,
+     lowercase `openehr-version`/`openehr-audit-details` headers, RM 1.2.0
+     wire); upstream EHRbase (Java) speaks Release-1.0.3-era behaviour and
+     an RM 1.1.0-era wire (`docs/VERSIONS.md` divergence note). Cases must
+     therefore separate the NORMATIVE assertion (what every edition
+     mandates) from EDITION-SPECIFIC forms, with a per-SUT edition profile
+     — otherwise the Java run fails on edition deltas, not defects, and the
+     comparison is dishonest. Where an assertion is edition-specific, the
+     report must say which edition it tested.
 3. **First-class outputs:** per-SUT results.json + report + badges;
    machine-computed profile verdicts (CORE/STANDARD/OPTIONS per profiles/);
    Statement + Certificate artefacts per certificate/master03; an honest
@@ -70,6 +95,14 @@ platform registers (`docs/design/platform/`) for what the server now is.
    contradicts the vendored spec text is adjudicated (spec-cited) — the
    server is never bent to a wrong case; every bound on coverage is logged,
    never silent.
+5. **Decide the data-set strategy explicitly.** The ECC law says *generated
+   data sets, never a Robot mapping* — yet today's fixtures load straight
+   from the vendored Robot corpus (`testdata/fixtures.rs` `CORPUS_ROOT` →
+   `CNF/tests/platform/robot/_resources/test_data_sets`). Resolve the
+   tension in the register: the Robot corpus may serve as *raw material*
+   (it is the schedule's own referenced data), but ownership, generation,
+   and the owned-fixture register must be deliberate design, not an
+   accident of a path constant.
 
 ## Method (the standing loop)
 
@@ -83,9 +116,15 @@ platform registers (`docs/design/platform/`) for what the server now is.
 - Spec citations only (CNF file + §section; schedule case ids); spec-silent
   design flagged; official CLIs; no import renaming; files ≤ ~700 lines.
 - Deferred checks last: workspace nextest → clippy → then the full run of
-  the NEW framework against ehrbase-rs (the re-derived baseline replaces
-  341/315/0 — expect and document the delta honestly), then against the
-  Java EHRbase (its results are DATA, not a gate).
+  the NEW framework against ehrbase-rs, then against the Java EHRbase (its
+  results are DATA, not a gate). The ancestor baseline to re-derive
+  against: **341 executed · 315 passed · 0 failed · 26 adjudicated skips,
+  CORE PASS · STANDARD PASS · OPTIONS OBTAINED** (W-3f close, verdicts
+  machine-computed) — every delta of the re-derived catalogue is explained
+  (new coverage / re-adjudication / real defect), never silently absorbed.
+- Two CI jobs bind the crate and must end green (updated, not deleted):
+  `cargo nextest run -p conformance` (the runner's own tests) and the
+  `cnf coverage guard` job.
 - Author `docs/plans/w10-conformance-redesign.md` from this prompt at start;
   tick as you go; changelog + website book (the conformance page) same-PR;
   WORKLIST row W-10 closed with the merged PR.
