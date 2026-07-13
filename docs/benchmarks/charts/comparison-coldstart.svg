@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 110" role="img" aria-label="Cold start (compose-up → first answer)">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.s1 { fill: #2a78d6; } .s1s { stroke: #2a78d6; }
+.s2 { fill: #1baf7a; } .s2s { stroke: #1baf7a; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.s1 { fill: #3987e5; } .s1s { stroke: #3987e5; }
+.s2 { fill: #199e70; } .s2s { stroke: #199e70; }
+}
+</style>
+<text x="16" y="22" class="title">Cold start (compose-up → first answer)</text>
+<text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
+<rect class="s1" x="170" y="42.0" width="438.7" height="12" rx="4"/>
+<text class="muted" x="614.7" y="52.0">11531 ms</text>
+<text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
+<rect class="s2" x="170" y="68.0" width="450.0" height="12" rx="4"/>
+<text class="muted" x="626.0" y="78.0">11827 ms</text>
+</svg>
