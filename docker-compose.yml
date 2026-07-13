@@ -46,6 +46,9 @@ services:
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
       EHRBASE_DB_MAX_CONNECTIONS: ${EHRBASE_DB_MAX_CONNECTIONS:-10}
+      # Version-signing toggle pass-through (the benchmark harness disables it
+      # for throughput parity — upstream has no signing; see scripts/benchmark.sh).
+      EHRBASE_SIGNING_ENABLED: ${EHRBASE_SIGNING_ENABLED:-true}
       # Dev config mounted below: enables Basic auth with the ehrbase/ehrbase user.
       EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
       # Dev quickstart: human-readable colored logs in `docker compose logs`.

@@ -48,6 +48,13 @@ OUT="${BENCH_OUT:-docs/benchmarks}"
 # Pool parity: exported for both compose files (see the env docs above).
 export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
+# Signing parity (benchmarking.md §3.4): version signing is an ehrbase-rs
+# extension upstream does not perform — running it on-for-us/absent-for-them
+# is an unfair self-handicap in throughput comparisons. OFF for benchmark
+# runs, labeled in the report env; set BENCH_SIGNING=1 to measure with it.
+if [ "${BENCH_SIGNING:-0}" != "1" ]; then
+  export EHRBASE_SIGNING_ENABLED=false
+fi
 WARD_SIZE="${BENCH_WARD_SIZE:-20}"
 LOAD_FACTOR="${BENCH_LOAD_FACTOR:-1.0}"
 

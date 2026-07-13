@@ -2,14 +2,17 @@
 
 > Generated from `knee.json` (never hand-typed). Scale **10k**. The `hour` rate shape is driven at an ascending load-factor ladder on short fixed windows; the ladder stops at the first step past the SLO (p99 > 1 s) or the 0.1% error-rate flag. Method: `docs/design/benchmark/01-measurement.md` §3, `docs/design/benchmarking.md` §2.2.
 
-**Knee: L = 1 → 10.1 req/s at p99 67775 µs** (the last sustainable step; SLO p99 ≤ 1 s, error ≤ 0.1%).
+**Knee: L = 64 → 643.0 req/s at p99 22367 µs** (the last sustainable step; SLO p99 ≤ 1 s, error ≤ 0.1%).
 
 ## Ladder
 
-| L | req/s | error rate | p99 (µs) | requests | verdict |
-|--:|--:|--:|--:|--:|---|
-| 1 | 10.1 | 0.000% | 67775 | 1209 | sustained |
-| 2 | 0.2 | 99.205% | 91455 | 20 | SLO breached |
+| L | req/s | error rate | p99 (µs) | requests | dispatch lag (ms) | verdict |
+|--:|--:|--:|--:|--:|--:|---|
+| 1 | 10.1 | 0.000% | 67199 | 1209 | 7 | sustained |
+| 4 | 40.2 | 0.000% | 34079 | 4823 | 27 | sustained |
+| 16 | 161.4 | 0.000% | 22159 | 19367 | 29 | sustained |
+| 64 | 643.0 | 0.009% | 22367 | 77162 | 13 | sustained |
+| 128 | 1271.4 | 0.116% | 235519 | 152568 | 63 | SLO breached |
 
 ![Knee — sustained req/s vs p99 latency](charts/knee.svg)
 

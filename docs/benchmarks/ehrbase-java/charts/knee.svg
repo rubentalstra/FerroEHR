@@ -18,18 +18,35 @@ text { fill: #c3c2b7; }
 <text x="16" y="22" class="title">Knee — sustained req/s vs p99 latency (log scale)</text>
 <line class="grid" x1="64" y1="210.0" x2="660" y2="210.0"/>
 <text class="muted" x="56.0" y="214.0" text-anchor="end">10.0ms</text>
-<line class="grid" x1="64" y1="161.2" x2="660" y2="161.2"/>
-<text class="muted" x="56.0" y="165.2" text-anchor="end">20.0ms</text>
-<line class="grid" x1="64" y1="96.8" x2="660" y2="96.8"/>
-<text class="muted" x="56.0" y="100.8" text-anchor="end">50.0ms</text>
+<line class="grid" x1="64" y1="185.6" x2="660" y2="185.6"/>
+<text class="muted" x="56.0" y="189.6" text-anchor="end">20.0ms</text>
+<line class="grid" x1="64" y1="153.4" x2="660" y2="153.4"/>
+<text class="muted" x="56.0" y="157.4" text-anchor="end">50.0ms</text>
+<line class="grid" x1="64" y1="129.0" x2="660" y2="129.0"/>
+<text class="muted" x="56.0" y="133.0" text-anchor="end">100.0ms</text>
+<line class="grid" x1="64" y1="104.6" x2="660" y2="104.6"/>
+<text class="muted" x="56.0" y="108.6" text-anchor="end">200.0ms</text>
+<line class="grid" x1="64" y1="72.4" x2="660" y2="72.4"/>
+<text class="muted" x="56.0" y="76.4" text-anchor="end">500.0ms</text>
 <line class="grid" x1="64" y1="48.0" x2="660" y2="48.0"/>
-<text class="muted" x="56.0" y="52.0" text-anchor="end">100.0ms</text>
-<text class="muted" x="660" y="228.0" text-anchor="end">10 req/s</text>
-<polyline class="s1s" fill="none" stroke-width="2" points="660.0,75.4 73.9,54.3"/>
-<circle class="s1" cx="660.0" cy="75.4" r="3.5"/>
-<text x="666.0" y="71.4">L=1</text>
-<text class="muted" x="666.0" y="87.4">67.8ms</text>
-<circle class="s1" cx="73.9" cy="54.3" r="3.5"/>
-<text x="79.9" y="50.3">L=2</text>
-<text class="muted" x="79.9" y="66.3">91.5ms</text>
+<text class="muted" x="56.0" y="52.0" text-anchor="end">1.0s</text>
+<line class="s2s" x1="64" y1="48.0" x2="660" y2="48.0" stroke-dasharray="4 3"/>
+<text class="muted" x="620.0" y="44.0">SLO 1s</text>
+<text class="muted" x="660" y="228.0" text-anchor="end">1271 req/s</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="68.7,143.0 82.8,166.9 139.7,182.0 365.4,181.7 660.0,98.9"/>
+<circle class="s1" cx="68.7" cy="143.0" r="3.5"/>
+<text x="74.7" y="139.0">L=1</text>
+<text class="muted" x="74.7" y="155.0">67.2ms</text>
+<circle class="s1" cx="82.8" cy="166.9" r="3.5"/>
+<text x="88.8" y="162.9">L=4</text>
+<text class="muted" x="88.8" y="178.9">34.1ms</text>
+<circle class="s1" cx="139.7" cy="182.0" r="3.5"/>
+<text x="145.7" y="178.0">L=16</text>
+<text class="muted" x="145.7" y="194.0">22.2ms</text>
+<circle class="s1" cx="365.4" cy="181.7" r="3.5"/>
+<text x="371.4" y="177.7">L=64</text>
+<text class="muted" x="371.4" y="193.7">22.4ms</text>
+<circle class="s1" cx="660.0" cy="98.9" r="3.5"/>
+<text x="666.0" y="94.9">L=128</text>
+<text class="muted" x="666.0" y="110.9">235.5ms</text>
 </svg>

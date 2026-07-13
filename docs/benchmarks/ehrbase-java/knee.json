@@ -13,22 +13,50 @@
       "load_factor": 1.0,
       "rps": 10.075,
       "error_rate": 0.0,
-      "p99_us": 67775,
-      "requests": 1209
+      "p99_us": 67199,
+      "requests": 1209,
+      "max_dispatch_lag_ms": 7
     },
     {
-      "load_factor": 2.0,
-      "rps": 0.16666666666666666,
-      "error_rate": 0.9920508744038156,
-      "p99_us": 91455,
-      "requests": 20
+      "load_factor": 4.0,
+      "rps": 40.19166666666667,
+      "error_rate": 0.0,
+      "p99_us": 34079,
+      "requests": 4823,
+      "max_dispatch_lag_ms": 27
+    },
+    {
+      "load_factor": 16.0,
+      "rps": 161.39166666666668,
+      "error_rate": 0.0,
+      "p99_us": 22159,
+      "requests": 19367,
+      "max_dispatch_lag_ms": 29
+    },
+    {
+      "load_factor": 64.0,
+      "rps": 643.0166666666667,
+      "error_rate": 0.00009071000012958572,
+      "p99_us": 22367,
+      "requests": 77162,
+      "max_dispatch_lag_ms": 13
+    },
+    {
+      "load_factor": 128.0,
+      "rps": 1271.4,
+      "error_rate": 0.0011587940685456152,
+      "p99_us": 235519,
+      "requests": 152568,
+      "max_dispatch_lag_ms": 63
     }
   ],
   "knee": {
-    "load_factor": 1.0,
-    "rps": 10.075,
-    "error_rate": 0.0,
-    "p99_us": 67775,
-    "requests": 1209
-  }
+    "load_factor": 64.0,
+    "rps": 643.0166666666667,
+    "error_rate": 0.00009071000012958572,
+    "p99_us": 22367,
+    "requests": 77162,
+    "max_dispatch_lag_ms": 13
+  },
+  "sut_died": false
 }
