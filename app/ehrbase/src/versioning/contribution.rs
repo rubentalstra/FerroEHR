@@ -525,11 +525,22 @@ async fn reject_duplicate_singleton(
     Ok(())
 }
 
-/// The stored kind of an existing object, or `NotFound`.
+/// The stored kind of an existing object. Every caller resolves a
+/// **body-referenced** target (`preceding_version_uid` of a
+/// modification/deletion/attestation item), so a missing object is the
+/// `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
+/// declares `404` only for an unknown `ehr_id` (the URI resource), never for
+/// content the committed CONTRIBUTION refers to.
 async fn require_kind(pool: &sqlx::PgPool, vo_id: Uuid) -> Result<Kind, ServiceError> {
     revision_history::object_kind(pool, vo_id)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))
+        .ok_or_else(|| {
+            ServiceError::BadRequest(format!(
+                "modification target does not exist: versioned object {vo_id} \
+                 (ITS-REST contribution 400 — the modification does not match \
+                 a stored object)"
+            ))
+        })
 }
 
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the

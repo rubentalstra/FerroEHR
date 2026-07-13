@@ -413,7 +413,11 @@ async fn attestation_error_cases() {
         "got {err:?}"
     );
 
-    // Attestation of a non-existent version → 404.
+    // Attestation of a non-existent version → precondition violation, not an
+    // existence error: SM I_EHR_CONTRIBUTION.commit_contribution declares only
+    // `ehr_id_does_not_exist` (SM `i_ehr_contribution.adoc`) — a missing
+    // body-referenced target is invalid committed content (ITS-REST
+    // `400_CONTRIBUTION`: the modification does not match a stored object).
     let ghost = "00000000-0000-7000-8000-000000000000::ehrbase-rs.local::1";
     let err = attempt(json!({
         "versions": [{
@@ -432,7 +436,7 @@ async fn attestation_error_cases() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
