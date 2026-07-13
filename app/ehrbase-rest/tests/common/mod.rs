@@ -35,20 +35,21 @@ use openehr_flat::WebTemplate;
 
 use ehrbase_sm::EhrAccessSettings;
 use ehrbase_sm::extensions::adapters::TemplateListFilter;
-use ehrbase_sm::{AqlQueryRequest, LocationDesc, Page, QueryDescriptor, QueryOutcome, ResourceStatus, 
-    AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl2Service,
-    DefinitionAdl14Service, DefinitionQueryService, DemographicService, EhrAccessAdapter,
-    EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrIndexService,
-    EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter,
-    MultimediaAdapter, PartyRelationshipService, QueryService, SystemLog, TenantAdapter,
-    TerminologyService, VersionMetaAdapter, WebTemplateService,
-};
 use ehrbase_sm::{
-    EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
+    AdminArchive, AdminService, AqlQueryRequest, ContributionAdapter, DefinitionAdapter,
+    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
+    EhrAccessAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
+    EhrIndexService, EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter,
+    ItemTagAdapter, LocationDesc, MultimediaAdapter, Page, PartyRelationshipService,
+    QueryDescriptor, QueryOutcome, QueryService, ResourceStatus, SystemLog, TenantAdapter,
+    TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
 use ehrbase_sm::{
     AuditEvent, CallStatusType, EmitOutcome, SmError, TenantContext, TerminologyDescription,
     TerminologyExtract,
+};
+use ehrbase_sm::{
+    EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
 
 /// A `501 Not Implemented` SM error — the un-hooked default (old `StubBackend`).
@@ -570,11 +571,7 @@ impl EhrCompositionService for Mock {
 
 #[async_trait]
 impl EhrDirectoryService for Mock {
-    async fn has_directory_version(
-        &self,
-        _e: Uuid,
-        _v: ObjectVersionId,
-    ) -> Result<bool, SmError> {
+    async fn has_directory_version(&self, _e: Uuid, _v: ObjectVersionId) -> Result<bool, SmError> {
         Err(not_impl())
     }
     async fn get_versioned_directory(&self, _e: Uuid) -> Result<Value, SmError> {

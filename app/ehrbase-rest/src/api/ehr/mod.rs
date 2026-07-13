@@ -9,7 +9,7 @@
 //! (`docs/specs/openehr/ITS-REST/specifications/docs/ehr/`,
 //! `specifications/operations/*.yaml`):
 //!
-//! - [`ehr`] — the `EHR` resource + EHR-level item tags
+//! - [`ehr_resource`] — the `EHR` resource + EHR-level item tags
 //! - [`ehr_status`] — the `EHR_STATUS` resource + its item tags
 //! - [`versioned_ehr_status`] — the `VERSIONED_EHR_STATUS` container
 //! - [`composition`] — the `COMPOSITION` resource + its item tags
@@ -32,12 +32,10 @@ pub mod composition;
 pub mod contribution;
 pub mod directory;
 pub mod dispatch;
-pub mod ehr;
+pub mod ehr_resource;
 pub mod ehr_status;
 pub mod versioned_composition;
 pub mod versioned_ehr_status;
-
-pub(crate) use dispatch::dispatch;
 
 // COMPOSITION create/get/update negotiate the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam; the
@@ -181,8 +179,8 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// request headers on a change-controlled write
 /// (`Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag
 /// §Usage in Requests`): the provided tag list **replaces** the target's
-/// ITEM_TAG list, and "providing an empty value for this header will
-/// effectively remove all ITEM_TAGs associated with the given target". The
+/// `ITEM_TAG` list, and "providing an empty value for this header will
+/// effectively remove all `ITEM_TAGs` associated with the given target". The
 /// header parse is [`crate::overview::params::parse_item_tag_header`]; the
 /// entries are folded onto the existing vo-keyed
 /// [`ItemTagAdapter`](ehrbase_sm::ItemTagAdapter) `target_tags_replace` seam
@@ -191,7 +189,7 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// Returns the present header name(s) + the stored list (for the optional
 /// response echo) when either wrapper header was present, or `None` when
 /// neither was — an absent header leaves the target's tags untouched. This
-/// server supports ITEM_TAGs; a server that did not would ignore the headers
+/// server supports `ITEM_TAGs`; a server that did not would ignore the headers
 /// (spec: "these headers will also be unsupported").
 pub(super) async fn apply_item_tag_headers<S: Platform>(
     state: &AppState<S>,
@@ -233,9 +231,9 @@ pub(super) async fn apply_item_tag_headers<S: Platform>(
     Ok(Some((present, stored)))
 }
 
-/// One parsed ITEM_TAG header entry → the ITEM_TAG JSON the storage seam takes.
-/// An empty header value carries no `value` (RM ITEM_TAG `Inv_value_valid`:
-/// "value /= Void implies not value.is_empty" — value is optional but, if set,
+/// One parsed `ITEM_TAG` header entry → the `ITEM_TAG` JSON the storage seam takes.
+/// An empty header value carries no `value` (RM `ITEM_TAG` `Inv_value_valid`:
+/// "value /= Void implies not `value.is_empty`" — value is optional but, if set,
 /// non-empty).
 fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
     let mut t = json!({ "key": entry.key });
@@ -248,11 +246,11 @@ fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
     t
 }
 
-/// Echo the stored ITEM_TAG list onto a create/update response under the
+/// Echo the stored `ITEM_TAG` list onto a create/update response under the
 /// wrapper header name(s) the request used — MAY-level confirmation
 /// (`Requests_and_responses.md §…§Usage in Responses`: "Servers MAY include the
 /// `openehr-item-tag` … header in responses to confirm the actual list of
-/// ITEM_TAGs stored on the server side"). Rendered via
+/// `ITEM_TAGs` stored on the server side"). Rendered via
 /// [`crate::overview::params::emit_item_tag_header`]; an empty list confirms a
 /// clear.
 pub(super) fn echo_item_tags(resp: &mut Response, names: &[&'static str], tags: &[Value]) {
@@ -264,7 +262,7 @@ pub(super) fn echo_item_tags(resp: &mut Response, names: &[&'static str], tags: 
     }
 }
 
-/// A stored ITEM_TAG JSON value → a header entry (for the response echo).
+/// A stored `ITEM_TAG` JSON value → a header entry (for the response echo).
 fn value_to_entry(v: &Value) -> Option<ItemTagHeaderEntry> {
     let key = v.get("key").and_then(Value::as_str)?.to_owned();
     Some(ItemTagHeaderEntry {

@@ -29,8 +29,8 @@ pub(crate) fn dispatch<S: Platform>(
 }
 
 /// Route a generated operation id to its owning resource module (the spec's own
-/// resource boundaries: EHR / EHR_STATUS / VERSIONED_EHR_STATUS / COMPOSITION /
-/// VERSIONED_COMPOSITION / DIRECTORY / CONTRIBUTION).
+/// resource boundaries: EHR / `EHR_STATUS` / `VERSIONED_EHR_STATUS` / COMPOSITION /
+/// `VERSIONED_COMPOSITION` / DIRECTORY / CONTRIBUTION).
 async fn run<S: Platform>(
     state: AppState<S>,
     op: &'static str,
@@ -39,7 +39,7 @@ async fn run<S: Platform>(
     match op {
         // ── EHR (+ EHR-level item tags) ──────────────────────────────────────
         "ehr_get_by_subject" | "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id"
-        | "ehr_tags_get" => super::ehr::run(state, op, parts).await,
+        | "ehr_tags_get" => super::ehr_resource::run(state, op, parts).await,
         // ── EHR_STATUS (+ its item tags) ─────────────────────────────────────
         "ehr_status_get_by_version_id"
         | "ehr_status_get_at_time"

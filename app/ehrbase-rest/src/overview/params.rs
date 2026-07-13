@@ -128,12 +128,12 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 // stored tags with `emit_item_tag_header` on the response. The demographic
 // group does not yet emit these wrapper headers (a pending service seam).
 
-/// The canonical HTTP header names for the two ITEM_TAG wrapper headers.
+/// The canonical HTTP header names for the two `ITEM_TAG` wrapper headers.
 pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
 pub(crate) const H_VERSION_ITEM_TAG: &str = "openehr-version-item-tag";
 
 /// A single `openehr-item-tag` / `openehr-version-item-tag` entry: a `key`, its
-/// `value`, and an optional `target_path`. Multiple ITEM_TAGs may target one
+/// `value`, and an optional `target_path`. Multiple `ITEM_TAGs` may target one
 /// resource, uniquely identified by their `key`+`target_path` pair (overview
 /// §"openehr-item-tag and openehr-version-item-tag").
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -146,10 +146,10 @@ pub(crate) struct ItemTagHeaderEntry {
     pub(crate) target_path: Option<String>,
 }
 
-/// Parse an ITEM_TAG wrapper header (`name` = [`H_ITEM_TAG`] or
+/// Parse an `ITEM_TAG` wrapper header (`name` = [`H_ITEM_TAG`] or
 /// [`H_VERSION_ITEM_TAG`]) into its entries, merging across repeated
 /// occurrences. Returns `None` when the header is absent; `Some(empty)` when the
-/// header is present but empty — the spec's "remove all ITEM_TAGs" signal.
+/// header is present but empty — the spec's "remove all `ITEM_TAGs`" signal.
 pub(crate) fn parse_item_tag_header(
     headers: &HeaderMap,
     name: &str,
@@ -185,7 +185,7 @@ pub(crate) fn parse_item_tag_header(
     Some(out)
 }
 
-/// Render ITEM_TAG entries as a wrapper-header value (`key="…",value="…"
+/// Render `ITEM_TAG` entries as a wrapper-header value (`key="…",value="…"
 /// [,target_path="…"]` pairs, `;`-separated), for echoing stored tags on a
 /// response (overview §"Usage in Responses", a MAY).
 pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValue {
@@ -208,7 +208,7 @@ pub(crate) fn emit_item_tag_header(entries: &[ItemTagHeaderEntry]) -> HeaderValu
 
 /// Convert one canonical `ITEM_TAG` JSON object (RM `common.item_tag`) into an
 /// [`ItemTagHeaderEntry`] for [`emit_item_tag_header`]. `None` when the object
-/// carries no `key` (an ITEM_TAG without a key is not a valid tag, RM
+/// carries no `key` (an `ITEM_TAG` without a key is not a valid tag, RM
 /// `ITEM_TAG.Inv_key_valid`).
 pub(crate) fn item_tag_to_header_entry(tag: &serde_json::Value) -> Option<ItemTagHeaderEntry> {
     let key = tag

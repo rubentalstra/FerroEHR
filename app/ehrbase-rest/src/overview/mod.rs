@@ -15,7 +15,7 @@
 //! MAY. Status below is *descriptive* of what this layer does today (the gap
 //! register in `docs/design/its-rest/overview.md` §2 tracks the source rows):
 //!
-//! - **G-1 ETag weakness indicator — DONE.** Every resource-identifier `ETag`
+//! - **G-1 `ETag` weakness indicator — DONE.** Every resource-identifier `ETag`
 //!   is emitted as the weak `W/"{uid}"` form ([`negotiate::resource_etag`],
 //!   used by [`negotiate::set_versioning_headers`] and the template path).
 //!   Inbound `If-Match` accepts both the weak and the deprecated bare quoted
@@ -38,7 +38,7 @@
 //!   `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
 //!   overview §"Prefer only identifier" shape ("a single JSON object with a
 //!   single `uid` attribute"). That generic `{uid}` body is the realization for
-//!   every `uid`-versioned resource (EHR, COMPOSITION, EHR_STATUS, FOLDER,
+//!   every `uid`-versioned resource (EHR, COMPOSITION, `EHR_STATUS`, FOLDER,
 //!   CONTRIBUTION): the `ehr`-group OAS defines no distinct per-resource
 //!   identifier schema. The one divergence is the `definition` group — templates
 //!   are not `uid`-versioned, so their identifier body is
@@ -50,7 +50,7 @@
 //!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
 //!   consumed by the EHR/COMPOSITION dispatch:
 //!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
-//!   the request wrapper headers onto the ITEM_TAG service on change-controlled
+//!   the request wrapper headers onto the `ITEM_TAG` service on change-controlled
 //!   writes (empty value ⇒ delete all) and
 //!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
 //!   on the response. (The demographic group does not yet emit these — a pending
@@ -86,7 +86,7 @@
 //! - [`committal`] — the committal metadata request headers
 //!   (`Requests_and_responses.md` §openehr-version and openehr-audit-details:
 //!   services MUST accept them; "whatever is provided it MUST be merged with
-//!   the default VERSION and VERSION.audit_details attributes on commit";
+//!   the default VERSION and `VERSION.audit_details` attributes on commit";
 //!   direct `PUT`/`POST`/`DELETE` on change-controlled resources "MUST
 //!   internally be executed using the 'native' way" — a CONTRIBUTION; when
 //!   `system_id` is absent "the server MUST set it to its own configured
@@ -96,10 +96,10 @@
 //!   415/422/500/501; unrecognized method → `501`, known-but-not-allowed →
 //!   `405`) + the optional error body ("if `Prefer: return=representation`")
 //!   + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
-//!   wire here and only here).
+//!     wire here and only here).
 //! - [`version_id`] — resource identification (`Resources.md` §Resource
-//!   identification: `versioned_object_uid` HIER_OBJECT_ID vs `version_uid`
-//!   OBJECT_VERSION_ID `object_id::creating_system_id::version_tree_id`,
+//!   identification: `versioned_object_uid` `HIER_OBJECT_ID` vs `version_uid`
+//!   `OBJECT_VERSION_ID` `object_id::creating_system_id::version_tree_id`,
 //!   `uid_based_id` dual addressing) and the `If-Match` discipline
 //!   (§If-Match: on a false condition "MUST NOT perform the requested
 //!   method … MUST respond with `412 Precondition Failed`, and SHOULD
@@ -110,10 +110,10 @@
 //!   temporal query/path values "MUST always use the extended ISO 8601
 //!   format").
 //! - [`status`] — response headers (`Requests_and_responses.md` §Location:
-//!   201-only; §ETag and Last-Modified: weak `W/` quoted resource
+//!   201-only; §`ETag` and Last-Modified: weak `W/` quoted resource
 //!   identifier + `Last-Modified` from
 //!   `VERSION.commit_audit.time_committed.value`, both SHOULD be present on
-//!   VERSION/VERSIONED_OBJECT responses; §openehr-uri MAY).
+//!   `VERSION/VERSIONED_OBJECT` responses; §openehr-uri MAY).
 //!
 //! Auth is out of band (`Requests_and_responses.md` §Authentication and
 //! authorization: no scheme mandated; `401`/`403`/`407` +

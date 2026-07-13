@@ -1,5 +1,5 @@
-//! ETag expectations use the weak form (`W/"…"`): the ITS-REST overview
-//! §"ETag and Last-Modified" makes the ETag weak-type ("should have a
+//! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
+//! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a
 //! weakness indicator `W/` prefix"); the bare quoted form is deprecated.
 //! End-to-end HTTP tests for the W2-A response-header + `Prefer` handling:
 //! `ETag`/`Location` on the EHR / `EHR_STATUS` / COMPOSITION writes and reads, and
@@ -76,8 +76,8 @@ fn hooks() -> Hooks {
 
 fn config() -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

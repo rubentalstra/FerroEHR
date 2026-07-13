@@ -43,7 +43,7 @@ pub struct UpdateAudit {
     /// System that committed the change. A client MAY supply this through the
     /// `openehr-audit-details` request header's `system_id` value (ITS-REST
     /// overview §"openehr-version and openehr-audit-details":
-    /// "clients MAY supply values for the AUDIT_DETAILS attributes … and
+    /// "clients MAY supply values for the `AUDIT_DETAILS` attributes … and
     /// `system_id`"). When absent, "the server MUST set it to its own
     /// configured system identifier"; `time_committed` is always server-set.
     /// The server default is asserted at the versioning seam, not here — the

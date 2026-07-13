@@ -26,8 +26,8 @@ use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{
     AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TerminologyConfig,
 };
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
 use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase_sm::{ResourceMeta, ServiceResponse};
 
 mod common;
 use common::{Hooks, Mock};
@@ -178,8 +178,8 @@ fn hooks(store: Store) -> Hooks {
 
 fn config(enabled: bool) -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

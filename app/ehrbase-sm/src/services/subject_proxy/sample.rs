@@ -85,7 +85,7 @@ pub enum FramePayload {
         result_set: Value,
     },
     /// `HL7v2_SAMPLE` — "Container for `HL7v2` message based data frame results"
-    /// (`hl7v2_sample.adoc`). A typed seam: no HL7v2 transport exists, so this
+    /// (`hl7v2_sample.adoc`). A typed seam: no `HL7v2` transport exists, so this
     /// is never produced (see `DataBinding::get_frame`).
     #[serde(rename = "HL7v2_SAMPLE")]
     Hl7v2 {
