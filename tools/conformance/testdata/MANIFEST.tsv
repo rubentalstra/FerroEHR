@@ -1,0 +1,80 @@
+# Fixture manifest — the committed, single source of truth for every data set
+# the conformance suites use (register-80 ruling, docs/design/conformance/80-data-sets.md).
+#
+# Format: one tab-separated row per fixture key.
+#   key <TAB> kind <TAB> source <TAB> adaptation <TAB> note
+#
+# kind:   opt | composition | composition-xml | ehr-status | contribution |
+#         directory | aql-query | aql-golden | validation | flat
+# source: owned:<rel-under-testdata/fixtures>
+#         corpus:<rel-under-CNF-corpus>                       (single file)
+#         corpus-dir:<rel-dir>|<ext>[|recursive]              (directory sweep)
+#         generated:<author-fn>                               (programmatic)
+# adaptation: none | <named rule applied by the accessor>
+# note:   REQUIRED — cites the schedule section referencing the data, or the
+#         defect/adjudication for owned rows. Never empty.
+#
+# The corpus is raw material only (the schedule's own referenced data); the
+# runner resolves fixture keys through this manifest ONLY — there is no
+# free-path corpus seam. Blank and #-comment lines are ignored.
+#
+# Preference order for NEW/rewritten cases: generated: > owned: > corpus:.
+
+# ── EHR_STATUS data sets (RM ehr master04 §EHR Status; schedule master06 §Test Data Sets) ──
+ehr-status.valid	ehr-status	corpus-dir:ehr/valid|json	adapt-ehr-status	master06 EHR API §EHR_STATUS test data sets — valid; adapted to RM 1.2.0 wire by adapt-ehr-status
+ehr-status.invalid	ehr-status	corpus-dir:ehr/invalid|json	none	master06 EHR API §EHR_STATUS test data sets — negative path; posted verbatim
+
+# ── COMPOSITION payloads (schedule master07 Composition API §Test Data Sets) ──
+composition.canonical-json	composition	corpus-dir:compositions/CANONICAL_JSON|json	none	master07 Composition API §canonical JSON test data sets
+composition.canonical-xml	composition-xml	corpus-dir:compositions/CANONICAL_XML|xml	none	master07 Composition API §canonical XML test data sets
+
+# ── Operational templates (schedule master14 Definitions API §OPT test data sets) ──
+template.valid	opt	corpus-dir:valid_templates|opt|recursive	none	master14 Definitions API §valid OPT test data sets (valid_templates/**/*.opt)
+template.invalid	opt	corpus-dir:invalid_templates||recursive	none	master14 Definitions API §invalid OPT test data sets (alien_tags, empty_file, multiple_elements, removed_mandatory_elements, removed_template_id, nested, minimal_persistent)
+template.time-series.opt	opt	corpus:valid_templates/time_series/time_series.opt	none	master15 Content §time_series constraining OPT for the FLAT→canonical conversion
+
+# ── CONTRIBUTION payloads (RM common master06 §Contribution; schedule master08) ──
+contribution.valid	contribution	corpus-dir:contributions/valid|json|recursive	none	master08 Contribution API §valid CONTRIBUTION test data sets
+contribution.invalid	contribution	corpus-dir:contributions/invalid|json|recursive	none	master08 Contribution API §invalid CONTRIBUTION test data sets
+
+# ── Directory / FOLDER (schedule master09 Directory API §Test Data Sets) ──
+directory.folder	directory	corpus-dir:directory|json	none	master09 Directory API §FOLDER test data sets
+directory.update	directory	corpus-dir:directory/update|json	none	master09 Directory API §directory update test data sets
+
+# ── AQL queries + goldens (schedule master11 Query API §Test Data Sets, groups A–D) ──
+aql.valid.a	aql-query	corpus-dir:query/aql_queries_valid/A|json	none	master11 Query API §valid AQL group A
+aql.valid.b	aql-query	corpus-dir:query/aql_queries_valid/B|json	none	master11 Query API §valid AQL group B
+aql.valid.c	aql-query	corpus-dir:query/aql_queries_valid/C|json	none	master11 Query API §valid AQL group C
+aql.valid.d	aql-query	corpus-dir:query/aql_queries_valid/D|json	none	master11 Query API §valid AQL group D
+aql.invalid.a	aql-query	corpus-dir:query/aql_queries_invalid/A|json	none	master11 Query API §invalid AQL group A (negative path)
+aql.golden.empty-db.a	aql-golden	corpus-dir:query/expected_results/empty_db/A|json	none	master11 Query API §expected RESULT_SET, empty DB, group A; dialect adjudications in the golden register
+aql.golden.empty-db.b	aql-golden	corpus-dir:query/expected_results/empty_db/B|json	none	master11 Query API §expected RESULT_SET, empty DB, group B; dialect adjudications in the golden register
+aql.golden.empty-db.c	aql-golden	corpus-dir:query/expected_results/empty_db/C|json	none	master11 Query API §expected RESULT_SET, empty DB, group C; dialect adjudications in the golden register
+aql.golden.empty-db.d	aql-golden	corpus-dir:query/expected_results/empty_db/D|json	none	master11 Query API §expected RESULT_SET, empty DB, group D; dialect adjudications in the golden register
+aql.golden.loaded-db.a	aql-golden	corpus-dir:query/expected_results/loaded_db/A|json	none	master11 Query API §expected RESULT_SET, loaded DB, group A; dialect adjudications in the golden register
+aql.golden.loaded-db.b	aql-golden	corpus-dir:query/expected_results/loaded_db/B|json	none	master11 Query API §expected RESULT_SET, loaded DB, group B; dialect adjudications in the golden register
+aql.golden.loaded-db.c	aql-golden	corpus-dir:query/expected_results/loaded_db/C|json	none	master11 Query API §expected RESULT_SET, loaded DB, group C; dialect adjudications in the golden register
+aql.golden.loaded-db.d	aql-golden	corpus-dir:query/expected_results/loaded_db/D|json	none	master11 Query API §expected RESULT_SET, loaded DB, group D; dialect adjudications in the golden register
+aql.data-load.compositions	composition	corpus-dir:query/data_load/compositions|json	none	master11 Query API §data-load COMPOSITIONs seeding the loaded DB
+aql.data-load.ehrs	ehr-status	corpus-dir:query/data_load/ehrs|json	none	master11 Query API §data-load EHRs (EHR_STATUS bodies) seeding the loaded DB
+
+# ── Content-validation data sets (schedule master15 Content §Test Data Sets) ──
+validation.content	validation	corpus-dir:validation||	none	master15 Content §content-validation test data sets (proportion.opt, text and coded.opt)
+
+# ── FLAT (simSDT) instances converted to canonical before commit (schedule master15 Content) ──
+composition.flat.time-series	flat	corpus:compositions/FLAT/time_series.en.v1_20211018103435_000001_1.xml.flat.json	flat-to-canonical	master15 Content §FLAT test data sets; converted via flat-to-canonical against template.time-series.opt
+
+# ── Owned corrected/defective compositions (B2 owned-fixture register, testdata/fixtures/REGISTER.md) ──
+# The at0003 DV_DATE leaf is constrained yyyy-??-XX (AOM14 c_date: day disallowed);
+# the vendored originals supply a day component and are therefore defective.
+owned.composition.all-types.valid	composition	owned:valid/compositions/all_types.composition.json	none	REGISTER.md all_types.composition.json — corrected copy (at0003 DV_DATE truncated to yyyy-mm; AM aom14 c_date §C_DATE day disallowed)
+owned.composition.all-types-v2.valid	composition	owned:valid/compositions/all_types_v2.composition.json	none	REGISTER.md all_types_v2.composition.json — corrected copy; load-bearing base of val/dv-coded-text-local-codes
+owned.composition.all-types.invalid	composition	owned:invalid/compositions/all_types.composition.json	none	REGISTER.md all_types.composition.json — byte-faithful defective original; negative case ECC-VAL-119
+composition.all-types.vendored	composition	corpus:query/data_load/compositions/all_types.composition.json	none	Vendored source of owned.composition.all-types.* (guard: owned invalid copy stays byte-identical)
+composition.all-types-v2.vendored	composition	corpus:query/data_load/compositions/all_types_v2.composition.json	none	Vendored source of owned.composition.all-types-v2.valid (guard: single-leaf diff)
+
+# ── Programmatically authored data sets (register-80 preferred source; master15 §Implementation notes) ──
+# "the constraint archetypes should be generated" — the authoring code lives in
+# the content suites (testdata/author.rs); resolution here returns a marker.
+content.author-opt	opt	generated:author_content_opt	none	master15 Content §Implementation notes — constraint archetypes should be generated (OPT authoring)
+content.author-composition	composition	generated:author_content_composition	none	master15 Content §Implementation notes — generated compositions matching the authored OPTs
