@@ -102,13 +102,15 @@ jobs:
         run: bash scripts/check-codegen-drift.sh
 
   # ── CNF conformance: the enforced-coverage guard (fast, no DB) ───────────────
-  # Parses the vendored openEHR Platform Conformance Test Schedule and asserts
-  # every one of the 322 identified cases is classified (implemented or excluded
-  # with a structural reason) against the committed inventory snapshot — an
-  # upstream/vendoring change fails the build until triaged. The e2e ECC run
-  # goes through the Docker compose stack (scripts/conformance.sh — the real
-  # deployable artefact; the in-process self-host mode was removed 2026-07-09)
-  # at phase gates; this job is the fast always-on coverage signal.
+  # The W-10 instrument's own test suite: the ECC catalogue guard (every
+  # registered case has an allocated, never-reused ECC number), the
+  # derivation-square guard (every case carries a spec citation, a schedule
+  # trace or stated ECC-original reason, and an ITS-REST binding), the fixture
+  # manifest + adjudication-register validation, and the wire/edition/model
+  # unit tests. The e2e ECC run goes through the Docker compose stack
+  # (scripts/conformance.sh, multi-SUT: ehrbase-rs default / ehrbase-java /
+  # bring-your-own-endpoint) at phase gates; this job is the fast always-on
+  # signal.
   conformance:
     name: cnf coverage guard
     runs-on: ubuntu-latest
