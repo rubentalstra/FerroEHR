@@ -6,7 +6,7 @@
 //! Dispatch is `model_type` × `call_name` (master10 §Specifying a Binding), not
 //! an invented enum tag: a `QUERY_CALL`/`aql_query` (or any `openehr…`
 //! `model_type`) routes to the openEHR AQL executor; an `API_CALL`/`fhir_get`
-//! and HL7v2 frames are typed rejections for now (see the TODO on
+//! and `HL7v2` frames are typed rejections for now (see the TODO on
 //! [`EhrbaseService::sp_dispatch_method`]).
 //!
 //! PORT NOTE (pipeline outcome model, `data_frame.adoc`):
@@ -59,10 +59,10 @@ impl DataBinding for EhrbaseService {
         let primary = self
             .sp_dispatch_method(&subject_id, &frame, frame.primary_method.as_ref())
             .await;
-        if let Ok(sample) = &primary {
-            if !sample.is_unavailable {
-                return Ok(sample.clone());
-            }
+        if let Ok(sample) = &primary
+            && !sample.is_unavailable
+        {
+            return Ok(sample.clone());
         }
 
         // A failed (dispatch-impossible) or unavailable primary triggers the

@@ -107,7 +107,7 @@ pub async fn ensure_opt_xml(ctx: &RunContext<'_>, xml: &str) -> Result<(), CaseE
 }
 
 /// The version uid (`OBJECT_VERSION_ID`) a versioned-object write returns — the
-/// `ETag` (ITS-REST `headers/ETag_*.yaml`, double-quoted) preferred (works
+/// `ETag` (ITS-REST `headers/ETag_*.yaml`, weak `W/"…"` or deprecated bare form) preferred (works
 /// regardless of `Prefer`/wire format), else the representation body's
 /// `uid.value`.
 ///
@@ -115,7 +115,14 @@ pub async fn ensure_opt_xml(ctx: &RunContext<'_>, xml: &str) -> Result<(), CaseE
 /// [`CaseError::Assertion`] if neither an `ETag` nor a `uid.value` is present.
 pub fn version_uid(resp: &HttpResponse) -> Result<String, CaseError> {
     if let Some(etag) = resp.header("etag") {
-        let trimmed = etag.trim_matches('"');
+        // The ITS-REST overview §"ETag and Last-Modified" makes the ETag
+        // weak-type (`W/"…"`); the bare quoted form is deprecated but MAY
+        // still be emitted — accept both, stripping the weakness indicator.
+        let trimmed = etag
+            .strip_prefix("W/")
+            .or_else(|| etag.strip_prefix("w/"))
+            .unwrap_or(etag)
+            .trim_matches('"');
         if !trimmed.is_empty() {
             return Ok(trimmed.to_owned());
         }

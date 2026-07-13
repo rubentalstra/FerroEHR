@@ -102,15 +102,12 @@ pub(super) async fn get<S: Platform>(
     let template_id = p.template_id.clone();
     // Resolve the `Accept` before touching storage so an unsupported one is a
     // clean `406` (`operations/definition_template_adl1.4_get.yaml` `406`).
-    let accept = match negotiate_accept(h) {
-        Some(a) => a,
-        None => {
-            return Err(RestError(ApiError::NotAcceptable(
-                "the template is available as application/xml (canonical OPT) or \
-                 application/openehr.wt+json (web template)"
-                    .to_owned(),
-            )));
-        }
+    let Some(accept) = negotiate_accept(h) else {
+        return Err(RestError(ApiError::NotAcceptable(
+            "the template is available as application/xml (canonical OPT) or \
+             application/openehr.wt+json (web template)"
+                .to_owned(),
+        )));
     };
     // Unknown template → 404, so the XML fetch runs regardless (it is the
     // existence probe as well as the canonical body).

@@ -86,7 +86,10 @@ async fn template_upload_list_get_roundtrip() {
     );
 
     // List includes the uploaded template.
-    let list = svc.template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all()).await.expect("list");
+    let list = svc
+        .template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all())
+        .await
+        .expect("list");
     assert!(
         list.iter().any(|t| t["template_id"] == TEMPLATE_ID),
         "list contains the template: {list:?}"

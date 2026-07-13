@@ -119,12 +119,12 @@ pub(super) async fn run<S: Platform>(
     }
 }
 
-/// Persist any `openehr-item-tag` request-header ITEM_TAGs against the
+/// Persist any `openehr-item-tag` request-header `ITEM_TAGs` against the
 /// just-written party and reflect the stored set on the response metadata seam
-/// so the response headers echo them (person_create.yaml / person_update.yaml
+/// so the response headers echo them (`person_create.yaml` / `person_update.yaml`
 /// G-3). The party must already exist (`item_tag.target_vo_id` FK), so this runs
 /// after the create/update write. A present-but-empty header clears all tags
-/// (the "remove all ITEM_TAGs" signal); an absent header is a no-op.
+/// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
 async fn persist_request_tags<S: Platform>(
     state: &AppState<S>,
     kind: PartyKind,
@@ -263,7 +263,7 @@ fn write_party(
 }
 
 /// A `200 OK` read of a party, setting the demographic `ETag`/`Location` and the
-/// ITEM_TAG response headers (person_get.yaml).
+/// `ITEM_TAG` response headers (`person_get.yaml`).
 fn read_party(kind: PartyKind, h: &HeaderMap, base: &str, resp: &ServiceResponse) -> Response {
     let mut out = respond_party(kind, h, StatusCode::OK, &resp.body);
     super::set_headers(&mut out, base, kind.segment(), resp.meta.as_ref());

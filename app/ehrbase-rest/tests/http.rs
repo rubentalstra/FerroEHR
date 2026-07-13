@@ -41,8 +41,8 @@ fn argon2_hash(pw: &str) -> String {
 
 fn config(enabled: bool) -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,
@@ -174,7 +174,9 @@ async fn status_endpoint_is_public() {
     assert_eq!(status, StatusCode::OK);
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
     assert_eq!(v["status"], "UP");
-    assert_eq!(v["openehr_rest_api_version"], "1.0.3");
+    // The served identity is provenance-derived (the tested development
+    // edition of ITS-REST), never a hand-asserted release label.
+    assert_eq!(v["openehr_rest_api_version"], "development@e8a093e");
 }
 
 #[tokio::test]

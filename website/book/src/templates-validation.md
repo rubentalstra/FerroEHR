@@ -32,6 +32,10 @@ body is then the JSON identifier object:
 (`return=representation` returns the stored OPT XML; the default is an empty
 body with the id in `ETag`/`Location`.) Uploading a template whose id
 already exists returns **409 Conflict** — templates are immutable once loaded.
+Template ids are compared **case-insensitively** (the stored casing is
+preserved), so uploading a case-variant of an existing id — `Vital_Signs`
+against a stored `vital_signs` — is also a **409 Conflict**, not a second
+template.
 On upload the server checks the template itself for artefact validity — that
 its constraints are internally consistent per the openEHR archetype model:
 reference-model conformance of every constrained type and attribute,

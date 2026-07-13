@@ -1,7 +1,7 @@
 //! `frame_path` extraction: turn a `DATA_FRAME_SAMPLE` into a typed
 //! `VARIABLE_VALUE` (`subject_variable.adoc` `value()`: "Extract the value
 //! from the source retrieve frame, reprocessing if necessary to obtain
-//! intended type (single, list, time_series)").
+//! intended type (single, list, `time_series`)").
 //!
 //! PORT NOTE (selector grammar). The SM leaves `frame_path` undefined ("Path
 //! within `last_frame` result"); the documented grammar here is our

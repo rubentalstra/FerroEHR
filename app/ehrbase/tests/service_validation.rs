@@ -30,8 +30,8 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, SmError};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

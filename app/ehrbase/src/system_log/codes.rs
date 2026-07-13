@@ -21,12 +21,15 @@ pub const DCM: &str = "DCM";
 pub const RFC_3881: &str = "RFC-3881";
 
 // ── EventID (DICOM PS3.15 §A.5.1, `DCM`) ─────────────────────────────────────
-// EHR / clinical-data ops use "Patient Record" (110110); the CDR varies the
-// `originalText` per resource (composition/contribution/directory/query) while
-// keeping the DICOM `csd-code` 110110 — the mapping the binding doc §3 pins.
-// PORT NOTE: query execution could use the distinct DICOM code 110112 ("Query");
-// the binding doc groups it under the data-op "Patient Record" family with
-// originalText="query", which we follow (docs/enterprise/atna-audit.md §3).
+// EHR / clinical-data ops use "Patient Record" (110110, DICOM PS3.15 §A.5.1);
+// the CDR varies the `originalText` per resource
+// (composition/contribution/directory/query) while keeping the DICOM `csd-code`
+// 110110 — the varied-display pattern the DICOM EventID coding permits.
+// PORT NOTE: query execution could use the distinct DICOM EventID 110112
+// ("Query", DICOM PS3.15 §A.5.1); we group it under the data-op "Patient
+// Record" family with originalText="query" so all clinical-data access shares
+// one EventID and is distinguished by display text. (See also the non-normative
+// design record `docs/enterprise/atna-audit.md` §3.)
 
 /// DICOM `EventID` `csd-code` for "Patient Record".
 pub const EVENT_PATIENT_RECORD_CODE: &str = "110110";
@@ -121,8 +124,9 @@ pub(crate) trait AtnaOutcome {
     fn description(&self) -> &'static str;
 }
 
-/// ATNA (DICOM / RFC-3881) rendering of an [`ObjectClass`] — the `EventID` and
-/// the participant-object shape (binding doc §3 field mapping).
+/// ATNA (DICOM / RFC-3881) rendering of an [`ObjectClass`] — the `EventID`
+/// (DICOM PS3.15 §A.5.1) and the participant-object shape
+/// (`ParticipantObjectIdentification`, DICOM PS3.15 §A.5 / RFC 3881 §5.5).
 pub(crate) trait AtnaObject {
     /// The DICOM `EventID` `(csd-code, originalText)` for this object class.
     fn event_id(&self) -> (&'static str, &'static str);
@@ -180,7 +184,8 @@ impl AtnaOutcome for EventOutcome {
 }
 
 impl AtnaObject for ObjectClass {
-    /// The DICOM `EventID` `(csd-code, originalText)` for this class (§3).
+    /// The DICOM `EventID` `(csd-code, originalText)` for this class
+    /// (DICOM PS3.15 §A.5.1).
     fn event_id(&self) -> (&'static str, &'static str) {
         match self {
             ObjectClass::Ehr => (EVENT_PATIENT_RECORD_CODE, "Patient Record"),
@@ -188,16 +193,29 @@ impl AtnaObject for ObjectClass {
             ObjectClass::Contribution => (EVENT_PATIENT_RECORD_CODE, "contribution"),
             ObjectClass::Directory => (EVENT_PATIENT_RECORD_CODE, "directory"),
             ObjectClass::Query => (EVENT_PATIENT_RECORD_CODE, "query"),
-            // PORT NOTE: the binding doc's §3 EventID table does not define
-            // template provisioning (its data-op family varies `originalText`
-            // under one DCM csd-code). Templates are not patient data, so they
-            // use the Application-Activity code (110100) with
-            // `originalText="template"` — same varied-text pattern.
+            // PORT NOTE: DICOM PS3.15 §A.5.1 lists no EventID for template
+            // provisioning; templates are definitional metadata, not patient
+            // data, so they use the Application-Activity code (110100) with
+            // `originalText="template"` — the varied-display pattern DICOM
+            // EventID coding permits.
             ObjectClass::Template => (EVENT_APPLICATION_ACTIVITY_CODE, "template"),
             // PORT NOTE: demographic parties are person-identifiable, so they
-            // use the Patient-Record code (110110) with
-            // `originalText="demographic"` (doc §3 pattern; not in its table).
+            // use the Patient-Record code (110110, DICOM PS3.15 §A.5.1) with
+            // `originalText="demographic"` (same varied-display pattern).
             ObjectClass::Demographic => (EVENT_PATIENT_RECORD_CODE, "demographic"),
+            // EHR-Extract communication carries patient-identifiable clinical
+            // data, audited for non-repudiation (BASE
+            // `master07-security.adoc` §Non-repudiation): Patient-Record family
+            // (110110) with `originalText="extract"`. The SM-5 message service
+            // emits this class on a completed export/import
+            // (`EhrbaseService::emit_extract_audit`), carrying the direction in
+            // the event's `EventActionCode` (`Read` out / `Create` in).
+            // PORT NOTE: DICOM PS3.15 §A.5.1 also defines dedicated Export
+            // (110106) / Import (110107) EventIDs; a direction-aware `EventID`
+            // rendering could adopt them, but `ObjectClass` carries no direction
+            // and the action code already records it, so we keep the single
+            // Patient-Record `EventID` for the class.
+            ObjectClass::Extract => (EVENT_PATIENT_RECORD_CODE, "extract"),
             ObjectClass::ApplicationActivity => {
                 (EVENT_APPLICATION_ACTIVITY_CODE, "Application Activity")
             }
@@ -212,6 +230,7 @@ impl AtnaObject for ObjectClass {
                 | ObjectClass::Composition
                 | ObjectClass::Contribution
                 | ObjectClass::Directory
+                | ObjectClass::Extract
         )
     }
 
@@ -225,6 +244,7 @@ impl AtnaObject for ObjectClass {
                 | ObjectClass::Directory
                 | ObjectClass::Template
                 | ObjectClass::Demographic
+                | ObjectClass::Extract
         )
     }
 

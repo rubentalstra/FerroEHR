@@ -3,12 +3,13 @@ use serde::Deserialize;
 
 use crate::db::DbError;
 
-/// Connection settings for the `EHRbase` `PostgreSQL` database.
+/// Connection settings for the application `PostgreSQL` database (no openEHR
+/// spec governs persistence — our own design).
 ///
 /// Loaded from the environment: `EHRBASE_DB_URL`, `EHRBASE_DB_MAX_CONNECTIONS`,
 /// `EHRBASE_DB_MIN_CONNECTIONS`, `EHRBASE_DB_ACQUIRE_TIMEOUT_SECS`; a bare
-/// `DATABASE_URL` is accepted as a fallback for the URL. Full server
-/// configuration assembly is a P18 concern — this covers only the database.
+/// `DATABASE_URL` is accepted as a fallback for the URL. This covers only the
+/// database connection; full server configuration is assembled elsewhere.
 #[derive(Debug, Clone, Deserialize)]
 pub struct DbSettings {
     /// `PostgreSQL` connection URL (`postgres://user:pass@host:port/db`).

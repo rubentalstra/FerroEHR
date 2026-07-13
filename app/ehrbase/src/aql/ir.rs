@@ -402,8 +402,12 @@ pub enum Coercion {
     Temporal,
     /// Boolean leaf.
     Boolean,
-    /// Mixed / unknown candidate set — guarded runtime dispatch (numeric for
-    /// numbers, text otherwise); never a silent wrong-type comparison.
+    /// Mixed / unknown candidate set. In a comparison or `matches` against a
+    /// numeric literal the leaf is extracted numerically (non-number
+    /// occurrences yield `NULL` and fail the test — never a silent lexical
+    /// miscompare); otherwise, and for projection/ordering, it is read as text
+    /// (QUERY master03 §Comparison operators). The SQL package resolves this
+    /// dispatch from the comparison partner (`sql::predicate`, `sql::value`).
     Raw,
 }
 
@@ -633,7 +637,7 @@ pub enum ScalarFn {
     Round,
     /// `mod`.
     Mod,
-    // Date/time functions (rejected in ORDER BY; see [`AqlFeatureError`]).
+    // Date/time functions.
     /// `current_date`.
     CurrentDate,
     /// `current_time`.
@@ -644,21 +648,6 @@ pub enum ScalarFn {
     Now,
     /// `current_timezone`.
     CurrentTimezone,
-}
-
-impl ScalarFn {
-    /// Whether this is a time/`now`-family function (rejected in ORDER BY).
-    #[must_use]
-    pub fn is_temporal_now(self) -> bool {
-        matches!(
-            self,
-            ScalarFn::CurrentDate
-                | ScalarFn::CurrentTime
-                | ScalarFn::CurrentDateTime
-                | ScalarFn::Now
-                | ScalarFn::CurrentTimezone
-        )
-    }
 }
 
 // ── The query IR ─────────────────────────────────────────────────────────────

@@ -214,7 +214,10 @@ constructs with an explicit, typed error rather than silently returning wrong
 results. Supported today includes:
 
 - `SELECT` of paths, literals, aliases, `DISTINCT`, and the aggregates
-  `COUNT` (including `COUNT(DISTINCT)`), `MIN`, `MAX`, `SUM`, `AVG`;
+  `COUNT` (including `COUNT(DISTINCT)`), `MIN`, `MAX`, `SUM`, `AVG`. `MIN`
+  and `MAX` order their operand by type — a quantity by its openEHR
+  magnitude, a date/time chronologically, text lexically — so they work over
+  non-numeric leaves, not just numbers;
 - `FROM` over `EHR`, `VERSION` (`LATEST_VERSION` / `ALL_VERSIONS`), and RM
   classes with archetype and name predicates;
 - `CONTAINS` trees with `AND`, `OR`, and `NOT CONTAINS`;

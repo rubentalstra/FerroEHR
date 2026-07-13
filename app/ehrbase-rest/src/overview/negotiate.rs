@@ -49,9 +49,6 @@ const APPLICATION_WT_FLAT_JSON: &str = "application/openehr.wt.flat+json";
 /// Better `web-template` STRUCTURED (structSDT) JSON media type (`openehr-flat`).
 const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+json";
 
-/// Whether the client explicitly asks for the Better `web-template` JSON format
-/// on `Accept` (`application/openehr.wt+json`).
-
 /// Whether the client asks for the FLAT (simSDT) format on `Accept`
 /// (`application/openehr.wt.flat+json`).
 pub(crate) fn wants_flat(headers: &HeaderMap) -> bool {
@@ -472,7 +469,7 @@ pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid
 }
 
 /// The `ETag` header value for a resource identifier: the weak form
-/// `W/"{uid}"`. The overview §"ETag and Last-Modified" makes the weak indicator
+/// `W/"{uid}"`. The overview §"`ETag` and Last-Modified" makes the weak indicator
 /// a **MUST**: "all `ETag` headers that hold a resource identifier MUST include
 /// a weakness indicator `W/`" (§"Deprecated headers"). The `ETag` value is
 /// independent of the JSON/XML serialization, hence weak-typed.
@@ -483,7 +480,7 @@ pub(crate) fn resource_etag(uid: &str) -> Option<HeaderValue> {
 /// Set the versioning headers on a response: the weak `ETag`
 /// ([`resource_etag`]) and — when the metadata carries a commit time —
 /// `Last-Modified` (the version commit time
-/// `VERSION.commit_audit.time_committed.value`, overview §"ETag and
+/// `VERSION.commit_audit.time_committed.value`, overview §"`ETag` and
 /// Last-Modified", SHOULD-present on `VERSION`/`VERSIONED_OBJECT` responses).
 /// **No `Location`** — that is create/redirect-only ([`set_location`], overview
 /// §Location). Used by reads, deletes, and the `409`/`412` error path.
@@ -660,12 +657,6 @@ pub(crate) fn error_with_meta(
     }
     out
 }
-
-/// The `201_Template_adl1_4_upload` response: the endpoint produces
-/// `application/xml` only — `Prefer: return=representation` → the OPT XML
-/// itself; `return=identifier` → the template id (text); missing or
-/// `return=minimal` → an empty body. `Location` + `ETag` carry the template
-/// id on every case.
 
 /// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
 /// verbatim as `application/xml`.

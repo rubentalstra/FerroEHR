@@ -1,7 +1,7 @@
 //! The SM call-status model (`master03-common_package.adoc` §Representing
 //! Call Status; `i_status.adoc`, `call_status.adoc`, `call_status_type.adoc`
 //! + the service-specific descendants `ehr_call_status_type.adoc`,
-//! `definition_call_status_type.adoc`).
+//!   `definition_call_status_type.adoc`).
 //!
 //! The SM's stateful `I_STATUS.last_call_failed()`/`last_call_status()`
 //! protocol maps onto our stateless typed-error style — a mapping the spec

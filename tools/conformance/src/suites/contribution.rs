@@ -318,7 +318,14 @@ fn version_uid_at(resp: &HttpResponse, i: usize) -> Result<String, CaseError> {
 /// `uid.value`).
 fn contribution_uid(resp: &HttpResponse) -> Result<String, CaseError> {
     if let Some(etag) = resp.header("etag") {
-        let trimmed = etag.trim_matches('"');
+        // The ITS-REST overview §"ETag and Last-Modified" makes the ETag
+        // weak-type (`W/"…"`); the bare quoted form is deprecated but MAY
+        // still be emitted — accept both, stripping the weakness indicator.
+        let trimmed = etag
+            .strip_prefix("W/")
+            .or_else(|| etag.strip_prefix("w/"))
+            .unwrap_or(etag)
+            .trim_matches('"');
         if !trimmed.is_empty() {
             return Ok(trimmed.to_owned());
         }

@@ -130,7 +130,7 @@ fn role(name: &str) -> Value {
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM party write, built
 /// from the wire shape (`commit_audit`, terminology-coded lifecycle/change).
-fn uv(data: Value, preceding: Option<&str>) -> UpdateVersion {
+fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
     let mut v = json!({
         "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
         "data": data,
@@ -157,7 +157,7 @@ async fn party_sm_calls_round_trip() {
 
     // create_party(UV_PARTY) → the new VERSIONED_OBJECT's UUID.
     let vo_id: Uuid = svc
-        .create_party(uv(person("Jane"), None))
+        .create_party(uv(&person("Jane"), None))
         .await
         .expect("create_party");
 
@@ -197,7 +197,7 @@ async fn party_sm_calls_round_trip() {
 
     // update_party(UV_PARTY with preceding_version_uid) → the new version uid.
     let v2 = svc
-        .update_party(vo_id, uv(person("Jane Roe"), Some(&v1)))
+        .update_party(vo_id, uv(&person("Jane Roe"), Some(&v1)))
         .await
         .expect("update_party");
     assert!(v2.ends_with("::2"), "second version, got {v2}");
