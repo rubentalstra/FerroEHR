@@ -81,12 +81,12 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 ## Tasks
 
 ### A — Design register
-- [ ] A1. Plan file (this) + workload-model register
+- [x] A1. Plan file (this) + workload-model register
       `docs/design/benchmark/00-workload-model.md`: the clinical event
       table above made exact — per-event operation sequences, payload
       sources, arrival-rate model (diurnal curve), read/write budget,
       scale ladder, profile definitions, `workload.lock` coverage.
-- [ ] A2. Measurement register `docs/design/benchmark/01-measurement.md`:
+- [x] A2. Measurement register `docs/design/benchmark/01-measurement.md`:
       metric set (latency classes, throughput, CPU/RSS sampling via the
       Docker stats API, storage footprint, cold-start), sampling
       architecture, results.json schema, report layout, multi-SUT seam
