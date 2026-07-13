@@ -93,7 +93,7 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       (reuse `conformance::sut`), CLI surface, CI binding (smoke profile).
 
 ### B — Rewrite
-- [ ] B1. Fresh authoring of the crate per A1/A2 (workers ≤2, disjoint
+- [x] B1. Fresh authoring of the crate per A1/A2 (workers ≤2, disjoint
       files; orchestrator owns lib.rs + the workload model core).
 - [ ] B2. ONE fix pass → crate clippy-zero, `cargo nextest run -p
       benchmark` green, zero TODOs.
