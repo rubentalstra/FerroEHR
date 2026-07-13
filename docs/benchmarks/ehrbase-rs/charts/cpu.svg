@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 232" role="img" aria-label="CPU over the run (%)">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.s1 { fill: #2a78d6; } .s1s { stroke: #2a78d6; }
+.s2 { fill: #1baf7a; } .s2s { stroke: #1baf7a; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.s1 { fill: #3987e5; } .s1s { stroke: #3987e5; }
+.s2 { fill: #199e70; } .s2s { stroke: #199e70; }
+}
+</style>
+<text x="16" y="22" class="title">CPU over the run (%)</text>
+<line class="grid" x1="64" y1="190.0" x2="660" y2="190.0"/>
+<text class="muted" x="56.0" y="194.0" text-anchor="end">0%</text>
+<line class="grid" x1="64" y1="115.0" x2="660" y2="115.0"/>
+<text class="muted" x="56.0" y="119.0" text-anchor="end">15%</text>
+<line class="grid" x1="64" y1="40.0" x2="660" y2="40.0"/>
+<text class="muted" x="56.0" y="44.0" text-anchor="end">30%</text>
+<text class="muted" x="660" y="208.0" text-anchor="end">2 min</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="74.2,74.3 89.0,93.8 104.1,190.0 114.3,190.0 129.3,189.6 139.4,189.9 154.5,190.0 169.5,176.8 184.3,144.9 194.3,163.1 209.4,137.4 219.6,189.9 234.4,161.5 249.5,190.0 264.5,152.8 279.2,179.7 289.4,149.7 304.5,171.2 319.5,182.3 334.4,181.5 349.4,163.3 364.5,182.5 379.4,176.5 394.4,121.9 409.5,180.5 424.3,161.6 439.3,172.9 449.4,131.0 464.6,175.6 479.4,173.1 494.5,170.9 509.6,176.9 524.5,176.1 539.6,190.0 549.7,174.5 559.9,132.3 574.7,172.3 589.8,173.5 604.9,180.7 619.7,132.8 634.7,175.0 644.9,174.4 660.0,177.0"/>
+<text x="668.0" y="177.0">app</text>
+<polyline class="s2s" fill="none" stroke-width="2" points="74.2,92.6 89.0,148.5 104.1,186.9 114.3,186.5 129.3,178.3 139.4,185.6 154.5,180.2 169.5,174.1 184.3,40.0 194.3,175.5 209.4,189.5 219.6,189.6 234.4,181.0 249.5,182.9 264.5,182.8 279.2,166.7 289.4,176.0 304.5,187.2 319.5,186.0 334.4,186.3 349.4,183.5 364.5,184.2 379.4,165.5 394.4,185.8 409.5,169.0 424.3,182.7 439.3,183.7 449.4,174.9 464.6,184.1 479.4,161.9 494.5,189.8 509.6,171.8 524.5,189.1 539.6,179.5 549.7,186.9 559.9,170.2 574.7,182.7 589.8,169.4 604.9,189.5 619.7,172.0 634.7,169.6 644.9,181.7 660.0,189.8"/>
+<text x="668.0" y="189.8">db</text>
+<rect class="s1" x="64" y="16.0" width="10" height="10" rx="2"/>
+<text x="80.0" y="25.0">app</text>
+<rect class="s2" x="134" y="16.0" width="10" height="10" rx="2"/>
+<text x="150.0" y="25.0">db</text>
+</svg>
