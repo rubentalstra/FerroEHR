@@ -97,6 +97,19 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       files; orchestrator owns lib.rs + the workload model core).
 - [ ] B2. ONE fix pass → crate clippy-zero, `cargo nextest run -p
       benchmark` green, zero TODOs.
+- [ ] B3. **Official CKM template pack** (owner directive 2026-07-13:
+      "fetch from the CKM online the needed archetypes — the official
+      ones — as many as we need"): 5 official openEHR CKM templates
+      vendored as CKM's own OPT exports with provenance
+      (`tools/benchmark/templates/ckm/`, `scripts/vendor-ckm-templates.sh`
+      — vital-signs, generic-lab-test-result, medication-order,
+      international-patient-summary [1.9 MB deep-stress payload],
+      clinical-synopsis). Wire into the workload: upload at provisioning;
+      composition skeletons obtained from the SUT's own
+      `GET /definition/template/adl1.4/{id}/example` (so any CKM template
+      is usable without hand-authored fixtures), then seeded variation as
+      register 00 §4. Templates a SUT rejects at upload are excluded
+      loudly for that SUT (fairness note in the report), never silently.
 
 ### C — Runs
 - [ ] C1. Smoke profile end-to-end vs composed ehrbase-rs (empty rung):
