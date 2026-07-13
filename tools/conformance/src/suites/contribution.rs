@@ -926,7 +926,7 @@ fn full_status() -> Result<Value, CaseError> {
 /// 201. `full` selects the precondition scenario: scenario 2 (EHR created by
 /// providing a full EHR_STATUS) vs scenario 1 (default EHR_STATUS).
 async fn run_status_matrix(ctx: &RunContext<'_>, full: bool) -> Result<DataSetReport, CaseError> {
-    let mut passed = 0;
+    let mut passed: u32 = 0;
     for (i, row) in STATUS_MATRIX.iter().enumerate() {
         let ehr_id = if full {
             create_ehr_with_status(ctx, &full_status()?).await?
@@ -1067,9 +1067,11 @@ fn run_fail_modify_non_existing_directory<'a>(ctx: &'a RunContext<'a>) -> CaseFu
             "minimal/folder.contribution.modification.json",
         )?;
         normalize_modification(&mut body, 0);
-        // A syntactically valid but nonexistent preceding OBJECT_VERSION_ID: a
-        // fresh uuid with a HIER-shaped tail (no system-id literal; register G-4).
-        set_preceding(&mut body, 0, &format!("{}::conformance::1", Uuid::new_v4()));
+        // A syntactically valid but nonexistent preceding OBJECT_VERSION_ID,
+        // derived from an observed id (the EHR's own default EHR_STATUS version)
+        // so the SUT's real system id is reused — no literal (register 05 G-4).
+        let observed = ids::parse_object_version_id(&ehr_status_uid(ctx, &ehr_id).await?)?;
+        set_preceding(&mut body, 0, &support::nonexistent_version_like(&observed));
         let resp = commit_req(ctx, &ehr_id, &body).await?;
         // Cause (modify a non-existent target) not pinned to one contract code by
         // master08 → the declared negative set {400, 409}.
