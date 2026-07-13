@@ -31,6 +31,11 @@
 #   BENCH_WARMUP     per-step warmup floor in seconds        (default: 15).
 #   BENCH_OUT        artefact root            (default: docs/benchmarks;
 #                    the SUT name is appended by the CLI).
+#   BENCH_DB_POOL    connection-pool ceiling applied to BOTH stacks in
+#                    lockstep (ehrbase-rs EHRBASE_DB_MAX_CONNECTIONS /
+#                    upstream HikariCP maximumPoolSize; default 50 — the
+#                    config-parity dominant tunable; each stack's own
+#                    PostgreSQL max_connections default of 100 covers it).
 #   BENCH_NO_COMPOSE if set, do not manage compose (assume the SUT is up).
 #   SKIP_BUILD       ehrbase-rs: compose up without --build (published-image run).
 set -Eeuo pipefail
@@ -40,6 +45,9 @@ AUTH="${BENCH_AUTH:-basic:ehrbase:ehrbase}"
 PROFILE="${BENCH_PROFILE:-smoke}"
 SCALE="${BENCH_SCALE:-empty}"
 OUT="${BENCH_OUT:-docs/benchmarks}"
+# Pool parity: exported for both compose files (see the env docs above).
+export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
+export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
 WARD_SIZE="${BENCH_WARD_SIZE:-20}"
 LOAD_FACTOR="${BENCH_LOAD_FACTOR:-1.0}"
 
