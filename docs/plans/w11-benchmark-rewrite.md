@@ -129,6 +129,32 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       grouped charts generated; smoke numbers are a preview — the hour
       profile + ladder + ≥5-run protocol is the X1 publication step.
 
+### O — Overnight autonomous run (owner directive 2026-07-13 23:xx, asleep;
+### full autonomy granted: keep testing/benchmarking; amazing-but-honest SVGs
+### on the root README; measured numbers only)
+- [ ] O1. W-12 backpressure fix lands (worker in flight) → gates → commit →
+      rebuild image → **full ECC run** (server changed; zero-drift gate; the
+      shed layer must not disturb conformance — it only bites >256
+      concurrent) → commit ratcheted baseline if changed.
+- [ ] O2. Rerun BOTH knee ladders (pool parity 50 + shedding active;
+      steps 1,4,16,64,128,256,512,1024) → commit knee artefacts; our server
+      must now shed (503s → error-rate breach) instead of dying — if it
+      still dies, record the finding loudly and continue (W-12 iterates
+      later; never hide it).
+- [ ] O3. C2/C3 proper: `hour` profile @ 10k, ehrbase-rs then ehrbase-java
+      (sequential, quiet host) → commit both results + regenerate
+      COMPARISON.md with hour data + knees.
+- [ ] O4. If the night allows: 100k rung seed + hour, both SUTs → commit.
+- [ ] O5. Root README: a "Measured against EHRbase (Java)" section embedding
+      committed comparison SVGs (relative paths; the charts live in
+      docs/benchmarks/**) with the honest caveats line (single-run,
+      same-host preview; link to COMPARISON.md + the methodology) — the
+      wording must survive the no-false-claims rule: charts show measured
+      data, both directions, never an unqualified "faster than Java".
+- [ ] O6. D-phase docs: book benchmark page, blueprint touch-ups,
+      PROGRESS/WORKLIST rows, changelog verify → push; PR opened (merge
+      when CI green, per the standing autonomous flow).
+
 ### D — Close
 - [ ] D1. Workspace gates; scripts/benchmark.sh entry point; CI smoke job.
 - [ ] D2. Docs: `docs/design/benchmarking.md` updated (workload section
