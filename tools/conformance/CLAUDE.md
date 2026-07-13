@@ -15,10 +15,15 @@ Robot/Python CNF suites.
   editing a case to pass (blueprint §4 rule 3).
 - Every case carries citation + schedule trace + binding (the derivation-
   square guard enforces this); no id literals, no silent fallbacks.
-- Runs against the Docker-composed SUT only (`scripts/conformance.sh`);
-  the in-process self-host mode was removed by owner ruling. Multi-SUT
-  (`--sut-url`) exists for the X1 comparison; the fairness register gates
-  SUT-kind-specific adjudications.
+- Runs against a deployed SUT over HTTP only (`scripts/conformance.sh`;
+  the in-process self-host mode was removed by owner ruling). Multi-SUT
+  is first-class (owner 2026-07-13): `CONF_SUT=ehrbase-rs|ehrbase-java|byo`
+  / CLI `--sut byo --base-url …` — the framework assesses ANY openEHR CDR
+  and emits the full artefact set incl. the Certificate for every SUT
+  (always a framework self-assessment, never official openEHR
+  certification). The fairness register applies to foreign SUTs only; the
+  edition ladder is pinned to `development` for our own CI runs so it can
+  never mask a regression.
 - Profile verdicts (CORE/STANDARD/OPTIONS) are machine-computed by the
   runner — never hand-asserted in reports or docs.
 - **ECC gate policy:** phase-close runs must show zero drift vs the
