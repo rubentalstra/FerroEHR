@@ -173,8 +173,38 @@ fn series_chart(
         [app.map(|c| ("app", c, "s1")), db.map(|c| ("db", c, "s2"))]
             .into_iter()
             .flatten()
-            .filter(|(_, c, _)| c.series.len() >= 2)
             .collect();
+    lines_chart(title, series, pick, fmt_y)
+}
+
+/// Cross-SUT overlay of one container measure over the run (slot per SUT).
+pub fn overlay_series_chart(
+    title: &str,
+    entries: &[(String, ContainerSummary)],
+    pick: impl Fn(&crate::sample::ResourceSample) -> f64,
+    fmt_y: impl Fn(f64) -> String,
+) -> Option<String> {
+    let series: Vec<(&str, &ContainerSummary, &str)> = entries
+        .iter()
+        .take(2)
+        .enumerate()
+        .map(|(i, (name, c))| (name.as_str(), c, if i == 0 { "s1" } else { "s2" }))
+        .collect();
+    lines_chart(title, series, pick, fmt_y)
+}
+
+/// The shared line-chart body (one measure, one axis, ≤2 series with legend +
+/// end-of-line direct labels).
+fn lines_chart(
+    title: &str,
+    series: Vec<(&str, &ContainerSummary, &str)>,
+    pick: impl Fn(&crate::sample::ResourceSample) -> f64,
+    fmt_y: impl Fn(f64) -> String,
+) -> Option<String> {
+    let series: Vec<(&str, &ContainerSummary, &str)> = series
+        .into_iter()
+        .filter(|(_, c, _)| c.series.len() >= 2)
+        .collect();
     if series.is_empty() {
         return None;
     }
@@ -362,6 +392,51 @@ pub fn comparison_chart(title: &str, suts: &[(String, BTreeMap<String, u64>)]) -
                 fmt_us(v)
             ));
         }
+    }
+    s.push_str("</svg>\n");
+    s
+}
+
+/// A linear-scale horizontal bar pair for one scalar metric (throughput,
+/// memory, cold start …): slot per SUT, direct value labels, no axis clutter.
+#[must_use]
+pub fn metric_bar_chart(title: &str, entries: &[(String, f64)], fmt: impl Fn(f64) -> String) -> String {
+    if entries.len() < 2 {
+        return String::new();
+    }
+    let max = entries
+        .iter()
+        .map(|(_, v)| *v)
+        .fold(f64::MIN_POSITIVE, f64::max);
+    let (x0, x1) = (170.0, 620.0);
+    let row_h = 26.0;
+    let top = 42.0;
+    let height = top + entries.len().min(2) as f64 * row_h + 16.0;
+    let width = 760.0;
+    let mut s = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" \
+         role=\"img\" aria-label=\"{}\">\n{STYLE}",
+        esc(title)
+    );
+    s.push_str(&format!(
+        "<text x=\"16\" y=\"22\" class=\"title\">{}</text>\n",
+        esc(title)
+    ));
+    for (i, (name, v)) in entries.iter().take(2).enumerate() {
+        let cls = if i == 0 { "s1" } else { "s2" };
+        let y = top + i as f64 * row_h;
+        let bw = ((v / max).max(0.0) * (x1 - x0)).max(2.0);
+        s.push_str(&format!(
+            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"end\">{}</text>\n\
+             <rect class=\"{cls}\" x=\"{x0}\" y=\"{y:.1}\" width=\"{bw:.1}\" height=\"12\" rx=\"4\"/>\n\
+             <text class=\"muted\" x=\"{:.1}\" y=\"{:.1}\">{}</text>\n",
+            x0 - 10.0,
+            y + 10.0,
+            esc(name),
+            x0 + bw + 6.0,
+            y + 10.0,
+            fmt(*v)
+        ));
     }
     s.push_str("</svg>\n");
     s
