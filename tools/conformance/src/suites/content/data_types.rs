@@ -116,26 +116,31 @@ const ALL_TYPES_OPT: &str = "all_types/Test_all_types.opt";
 
 /// `Test_all_types.opt` + its bare canonical composition. OBSERVATION
 /// `data/events[0]/data/items` carry one leaf per data type at fixed indices.
+// The OWNED corrected copy (B2 register): the vendored corpus original's
+// INSTRUCTION-activity `at0003` DV_DATE carries a day, which the OPT's
+// C_DATE pattern `yyyy-??-XX` forbids (AOM 1.4 c_date: day disallowed) —
+// committing the raw corpus file would fail its own accept row; the raw
+// original stays under test as the byte-pinned `invalid/` negative.
 const ALL_TYPES: drive::Constraint = drive::Constraint {
     opt_file: "all_types/Test_all_types.opt",
-    comp_dir_key: "aql.data-load.compositions",
-    comp_file: "all_types.composition.json",
+    comp: drive::CompBase::Key("owned.composition.all-types.valid"),
 };
 
 /// `Test_all_types_v2.opt` — `items[at0005]` (index 1) adds a `local`
 /// `code_list` `{at0023, at0024}` on its `DV_CODED_TEXT`.
 const ALL_TYPES_V2: drive::Constraint = drive::Constraint {
     opt_file: "all_types/Test_all_types_v2.opt",
-    comp_dir_key: "aql.data-load.compositions",
-    comp_file: "all_types_v2.composition.json",
+    comp: drive::CompBase::Key("owned.composition.all-types-v2.valid"),
 };
 
 /// `minimal_action_2.opt` — ACTION `description/items[0]` `DV_PROPORTION`
 /// constrained by a `C_INTEGER` list `{3,4}` on `type`.
 const MINIMAL_ACTION_2_PROPORTION: drive::Constraint = drive::Constraint {
     opt_file: "minimal/minimal_action_2.opt",
-    comp_dir_key: "template.valid",
-    comp_file: "minimal/minimal_action_2.instance.composition.json",
+    comp: drive::CompBase::InDir {
+        dir_key: "template.valid",
+        file: "minimal/minimal_action_2.instance.composition.json",
+    },
 };
 
 /// A registered master17 case: fixed area/capability/binding/format, per-case

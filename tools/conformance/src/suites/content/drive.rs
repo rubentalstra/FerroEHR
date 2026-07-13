@@ -123,10 +123,36 @@ fn codec(e: &fixtures::FixtureError) -> CaseError {
 pub struct Constraint {
     /// OPT file relative to the `template.valid` dir key.
     pub opt_file: &'static str,
-    /// The composition's corpus-dir manifest key (e.g. `composition.canonical-json`).
-    pub comp_dir_key: &'static str,
-    /// The composition file within that dir key.
-    pub comp_file: &'static str,
+    /// The committed valid base composition.
+    pub comp: CompBase,
+}
+
+/// Where a constraint case's valid base composition comes from: a
+/// single-file manifest row (`owned:`/`corpus:` — e.g. the B2 owned-fixture
+/// register's corrected copies) or a file inside a `corpus-dir` row.
+#[derive(Debug, Clone, Copy)]
+pub enum CompBase {
+    /// A single-file manifest key (e.g. `owned.composition.all-types.valid`).
+    Key(&'static str),
+    /// A file within a corpus-dir manifest row.
+    InDir {
+        /// The corpus-dir manifest key.
+        dir_key: &'static str,
+        /// The file within it.
+        file: &'static str,
+    },
+}
+
+impl CompBase {
+    fn load(self) -> Result<Value, CaseError> {
+        let text = match self {
+            CompBase::Key(key) => fixtures::read(key).map_err(|e| codec(&e))?,
+            CompBase::InDir { dir_key, file } => {
+                fixtures::read_from(dir_key, file).map_err(|e| codec(&e))?
+            }
+        };
+        serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))
+    }
 }
 
 /// One constraint-violating data set: a row label, a mutation applied to a clone
@@ -272,9 +298,7 @@ pub async fn drive_constraint(
     accepted_label: &str,
     violations: Vec<Violation>,
 ) -> Result<DataSetReport, CaseError> {
-    let text = fixtures::read_from(constraint.comp_dir_key, constraint.comp_file)
-        .map_err(|e| codec(&e))?;
-    let base = serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))?;
+    let base = constraint.comp.load()?;
     drive_constraint_base(
         ctx,
         "template.valid",

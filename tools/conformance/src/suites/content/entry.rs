@@ -53,8 +53,10 @@ const ITEM_CIT: &str = "RM 1.2.0 data_structures §ITEM_STRUCTURE (ITEM_TREE/LIS
 /// `[4]`=`ITEM_TABLE`, each narrowed by the OPT to that exact subtype).
 const CLINICAL: Constraint = Constraint {
     opt_file: "validation/clinical_content_validation.opt",
-    comp_dir_key: "composition.canonical-json",
-    comp_file: "clinical_content_validation__full.json",
+    comp: drive::CompBase::InDir {
+        dir_key: "composition.canonical-json",
+        file: "clinical_content_validation__full.json",
+    },
 };
 
 /// The persistent base composition (a persistent COMPOSITION carrying
