@@ -497,7 +497,10 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                 return miss("contribution: ehr_id unresolved");
             };
             let req = json_req(Method::Post, format!("/ehr/{ehr}/contribution"), payload);
-            send_expect(client, req, &[201]).await.is_some()
+            // No representation requested → 201 or 204 are both conformant
+            // create-success forms (upstream EHRbase answers 204; the same
+            // tolerance as the seeder).
+            send_expect(client, req, &[201, 204]).await.is_some()
         }
         Action::AqlPatient { query } => {
             let Some(ehr) = resolve_ehr(runtime, patient).await else {

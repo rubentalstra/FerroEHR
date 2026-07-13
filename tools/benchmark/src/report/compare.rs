@@ -85,6 +85,92 @@ pub fn render(results: &[Results]) -> Comparison {
         );
     }
 
+    // Headline scalar comparisons: throughput + resources + cold start.
+    let mut charts = Vec::new();
+    let tp = vec![
+        (a.sut.name.clone(), a.throughput.rps),
+        (b.sut.name.clone(), b.throughput.rps),
+    ];
+    let c_tp = chart::metric_bar_chart("Sustained throughput (req/s)", &tp, |v| {
+        format!("{v:.1} req/s")
+    });
+    if !c_tp.is_empty() {
+        charts.push(("comparison-throughput.svg".to_owned(), c_tp));
+        md.push_str("## Throughput\n\n");
+        md.push_str("![Sustained throughput](charts/comparison-throughput.svg)\n\n");
+    }
+    if let (Some(aa), Some(ba)) = (&a.resources.app, &b.resources.app) {
+        let mem = vec![
+            (a.sut.name.clone(), aa.peak_rss as f64),
+            (b.sut.name.clone(), ba.peak_rss as f64),
+        ];
+        let c_mem = chart::metric_bar_chart("App peak memory (RSS)", &mem, |v| {
+            format!("{:.0} MB", v / 1_048_576.0)
+        });
+        charts.push(("comparison-memory.svg".to_owned(), c_mem));
+        let cpu = vec![
+            (a.sut.name.clone(), aa.mean_cpu),
+            (b.sut.name.clone(), ba.mean_cpu),
+        ];
+        let c_cpu =
+            chart::metric_bar_chart("App mean CPU over the run", &cpu, |v| format!("{v:.1}%"));
+        charts.push(("comparison-cpu.svg".to_owned(), c_cpu));
+        md.push_str("## Resources — app container\n\n");
+        md.push_str("![App peak memory](charts/comparison-memory.svg)\n\n");
+        md.push_str("![App mean CPU](charts/comparison-cpu.svg)\n\n");
+        // Over-the-run overlays (both SUTs' app containers, one measure each).
+        let overlay: Vec<(String, super::json::ContainerSummary)> = vec![
+            (a.sut.name.clone(), aa.clone()),
+            (b.sut.name.clone(), ba.clone()),
+        ];
+        if let Some(c) = chart::overlay_series_chart(
+            "App CPU over the run (%)",
+            &overlay,
+            |p| p.cpu_pct,
+            |v| format!("{v:.0}%"),
+        ) {
+            charts.push(("comparison-cpu-series.svg".to_owned(), c));
+            md.push_str("![App CPU over the run](charts/comparison-cpu-series.svg)\n\n");
+        }
+        if let Some(c) = chart::overlay_series_chart(
+            "App memory (RSS) over the run",
+            &overlay,
+            |p| p.mem_bytes as f64,
+            |v| format!("{:.0} MB", v / 1_048_576.0),
+        ) {
+            charts.push(("comparison-rss-series.svg".to_owned(), c));
+            md.push_str("![App memory over the run](charts/comparison-rss-series.svg)\n\n");
+        }
+    }
+    if let (Some(ac), Some(bc)) = (a.resources.cold_start_ms, b.resources.cold_start_ms) {
+        let cs = vec![
+            (a.sut.name.clone(), ac as f64),
+            (b.sut.name.clone(), bc as f64),
+        ];
+        let c_cs = chart::metric_bar_chart("Cold start (compose-up → first answer)", &cs, |v| {
+            format!("{v:.0} ms")
+        });
+        charts.push(("comparison-coldstart.svg".to_owned(), c_cs));
+        md.push_str("## Cold start\n\n");
+        md.push_str("![Cold start](charts/comparison-coldstart.svg)\n\n");
+    }
+    // Efficiency ratios (register 01 §2): req/s per core + per GB peak RSS.
+    if let (Some(aa), Some(ba)) = (&a.resources.app, &b.resources.app) {
+        md.push_str("## Efficiency (computed)\n\n");
+        md.push_str("| | req/s per CPU-core | req/s per GB peak RSS |\n|---|--:|--:|\n");
+        for (r, app) in [(a, aa), (b, ba)] {
+            let cores = (app.mean_cpu / 100.0).max(0.001);
+            let gb = (app.peak_rss as f64 / 1_073_741_824.0).max(0.001);
+            md.push_str(&format!(
+                "| **{}** | {:.1} | {:.1} |\n",
+                r.sut.name,
+                r.throughput.rps / cores,
+                r.throughput.rps / gb
+            ));
+        }
+        md.push('\n');
+    }
+
     // Charts: p99 + p50 grouped bars over the classes both runs measured.
     let p99 = vec![
         (a.sut.name.clone(), metric_map(a, |c| c.p99_us)),
@@ -94,7 +180,6 @@ pub fn render(results: &[Results]) -> Comparison {
         (a.sut.name.clone(), metric_map(a, |c| c.p50_us)),
         (b.sut.name.clone(), metric_map(b, |c| c.p50_us)),
     ];
-    let mut charts = Vec::new();
     let c99 = chart::comparison_chart("p99 latency per operation class", &p99);
     if !c99.is_empty() {
         charts.push(("comparison-p99.svg".to_owned(), c99));
@@ -111,8 +196,9 @@ pub fn render(results: &[Results]) -> Comparison {
     // The per-class table + computed two-direction ledger.
     md.push_str("## Per-class detail (µs)\n\n");
     md.push_str(&format!(
-        "| Class | {} p50 | {} p50 | {} p99 | {} p99 | p99 gap |\n|---|--:|--:|--:|--:|---|\n",
-        a.sut.name, b.sut.name, a.sut.name, b.sut.name
+        "| Class | {a} p50 | {b} p50 | {a} p90 | {b} p90 | {a} p99 | {b} p99 | {a} p99.9 | {b} p99.9 | {a} max | {b} max | {a} err | {b} err | p99 gap |\n|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|\n",
+        a = a.sut.name,
+        b = b.sut.name
     ));
     let mut a_wins = Vec::new();
     let mut b_wins = Vec::new();
@@ -121,11 +207,19 @@ pub fn render(results: &[Results]) -> Comparison {
             continue;
         };
         md.push_str(&format!(
-            "| {class} | {} | {} | {} | {} | {} |\n",
+            "| {class} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
             ar.p50_us,
             br.p50_us,
+            ar.p90_us,
+            br.p90_us,
             ar.p99_us,
             br.p99_us,
+            ar.p999_us,
+            br.p999_us,
+            ar.max_us,
+            br.max_us,
+            ar.errors,
+            br.errors,
             pct(ar.p99_us as f64, br.p99_us as f64)
         ));
         if ar.p99_us < br.p99_us {
