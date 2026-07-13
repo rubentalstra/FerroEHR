@@ -38,6 +38,7 @@ pub mod api;
 pub mod config;
 pub mod extensions;
 pub mod formats;
+mod overload;
 pub mod overview;
 mod router;
 pub mod smart;

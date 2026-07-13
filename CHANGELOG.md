@@ -17,6 +17,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Overload backpressure: the REST server now caps the number of API requests
+  it handles concurrently and sheds the excess immediately with
+  `503 Service Unavailable` + `Retry-After: 1` instead of queueing every
+  request until it runs out of memory. Under sustained offered load beyond
+  database capacity the server now degrades with clean errors rather than
+  being killed. The cap is configurable via `EHRBASE_REST_MAX_IN_FLIGHT`
+  (concurrent requests, not per second; default 1024, raise for
+  high-throughput deployments; `0` disables shedding). The `/status`, health,
+  and discovery
+  endpoints are never limited, so operators can always probe an overloaded
+  server. (No openEHR spec governs overload behaviour; the `503` follows
+  RFC 9110 §15.6.4.)
 - Conformance framework (`tools/conformance`) redesigned and rewritten from
   the openEHR CNF component up (W-10). It now assesses **any** openEHR CDR:
   point it at a deployed server (`scripts/conformance.sh` with

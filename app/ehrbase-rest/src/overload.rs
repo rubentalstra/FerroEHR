@@ -20,18 +20,44 @@
 //! error back into an infallible response via [`handle_overload`]. The layer is
 //! wired in [`crate::router`]; see that module's doc for the layer order.
 
-use axum::BoxError;
+use axum::error_handling::HandleErrorLayer;
 use axum::response::{IntoResponse, Response};
+use axum::{BoxError, Router};
 use http::{HeaderValue, header};
+use tower::ServiceBuilder;
+use tower::limit::ConcurrencyLimitLayer;
+use tower::load_shed::LoadShedLayer;
 use tower::load_shed::error::Overloaded;
 
+use ehrbase_sm::Platform;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::overview::error::RestError;
+use crate::state::AppState;
 
 /// The `Retry-After` hint (in seconds) sent on a shed response — a short,
 /// fixed backoff (the load is transient by definition).
 const RETRY_AFTER_SECONDS: &str = "1";
+
+/// Wrap the API router in the bounded-concurrency + load-shed stack, applied as
+/// its outermost layer (so a shed request is rejected before auth, audit, or
+/// reading the request body). A `max_in_flight` of `0` returns the router
+/// unchanged — shedding disabled, no layer installed. See [`crate::router`] for
+/// where this sits relative to the shared request stack.
+pub(crate) fn shed_layer<S: Platform>(
+    api: Router<AppState<S>>,
+    max_in_flight: usize,
+) -> Router<AppState<S>> {
+    if max_in_flight == 0 {
+        return api;
+    }
+    api.layer(
+        ServiceBuilder::new()
+            .layer(HandleErrorLayer::new(handle_overload))
+            .layer(LoadShedLayer::new())
+            .layer(ConcurrencyLimitLayer::new(max_in_flight)),
+    )
+}
 
 /// [`HandleErrorLayer`](axum::error_handling::HandleErrorLayer) handler for the
 /// overload-shedding stack: map a shed request to `503 Service Unavailable`
