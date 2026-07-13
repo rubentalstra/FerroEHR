@@ -4,6 +4,20 @@ Corrected copies of vendored CNF fixtures that are **internally inconsistent**
 with their own operational template when read against the vendored openEHR spec
 text.
 
+> **The fixture manifest governs access.** Since the W-10 rewrite, every data
+> set the suites use — owned, corpus-derived, or generated — is named in
+> `tools/conformance/testdata/MANIFEST.tsv`, one row per fixture key, and the
+> loader (`src/testdata/fixtures.rs`) resolves keys through that manifest ONLY
+> (no free-path corpus seam). The owned files documented below appear there as
+> `owned:` rows; their `key`s are:
+> - `owned.composition.all-types.valid` — `valid/compositions/all_types.composition.json`
+> - `owned.composition.all-types-v2.valid` — `valid/compositions/all_types_v2.composition.json`
+> - `owned.composition.all-types.invalid` — `invalid/compositions/all_types.composition.json`
+>
+> The vendored originals they are checked against are the `corpus:` rows
+> `composition.all-types.vendored` / `composition.all-types-v2.vendored`. This
+> B2 policy text stands unchanged; the manifest is the access layer over it.
+
 ## Layout
 
 Fixtures are separated by validity and then by kind:
