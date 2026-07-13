@@ -130,6 +130,55 @@
       same-PR; blueprint ch07 + §2 refreshed; WORKLIST W-10 row closed.
 - [ ] E4. PR opened + merged; PROGRESS.md updated.
 
+## HANDOFF — remaining work (written 2026-07-13, all prior work committed + pushed)
+
+State: framework rewritten and green (crate 0 clippy warnings, 86/86 own
+tests, workspace 1459/1459); first D1 run done (368/313/20/35); all 20
+failures adjudicated against the full vendored specs — 9 instrument-side
+fixed (ladder inversion, cross-format fixture compare, regressed fixture
+pointer, store-time overreach), 6 server defects fixed (contribution status
+mapping ×2, concrete VERSIONED_* wire types, demographic full-OVID If-Match,
+relationship-delete If-Match, demographic weak ETags), rest shared root
+causes. Affected suites re-tested 152/152. Remaining, in order:
+
+- [ ] H1. **D1 rerun**: `bash scripts/conformance.sh` (composes + builds our
+      server). Expect ~0 failures; every remaining failure gets the same
+      triage (fact-check vs docs/specs/openehr — case OR server, never
+      assume). Commit `docs/conformance/ehrbase-rs/` (results.json + report
+      + Statement + Certificate + badges) as the re-derived baseline; write
+      the delta explanation vs the 341/315/0/26 ancestor (new coverage: +27
+      executions incl. relationship family, dialect cases, has_composition;
+      re-adjudications; fixed defects) into this file + blueprint ch07.
+      NOTE: old baseline path was docs/conformance/*.json — update anything
+      referencing docs/conformance/badge.json (README badges?) to the
+      per-SUT path, and prune/redirect the stale root-level artefacts.
+- [ ] H2. **D2 upstream run**: `CONF_SUT=ehrbase-java bash
+      scripts/conformance.sh` (images pre-pulled: ehrbase/ehrbase:2.34.0 +
+      ehrbase-v2-postgres:16.2; set EHRBASE_JAVA_IMAGE=ehrbase/ehrbase:2.34.0
+      to match the fairness register). Results are DATA, never a gate.
+      Triage upstream failures into adjudications/ehrbase-java-2.34.toml
+      (X1 fairness: extension→N/A, rm-version-sensitive→N/A, defect→stays,
+      each cited). Then `conformance compare --from
+      docs/conformance/ehrbase-rs/results.json --from
+      docs/conformance/ehrbase-java/results.json` → commit COMPARISON.md.
+- [ ] H3. **Workspace gates**: cargo nextest run --workspace (fast now —
+      Gatekeeper Developer-Tools exemption enabled 2026-07-13), clippy
+      --workspace --all-targets, fmt, cargo audit/deny if touched deps.
+- [ ] H4. **Docs**: website/book/src/conformance.md rewrite (multi-SUT +
+      BYO endpoint + Certificate-for-any-SUT + edition ladder + new
+      baseline numbers — user-facing voice); blueprint 00 §2 + ch07 refresh
+      (new instrument, new baseline); register 13 prose fix (27→28
+      interval ids — worker-flagged off-by-one); PROGRESS.md entry.
+- [ ] H5. **Close**: WORKLIST W-10 row → closed with the PR; changelog
+      entry exists (verify it still matches reality); tick D1/D2/D3/E1-E4
+      boxes above; PR from claude/w10-conformance-redesign → develop
+      (NO AI attribution anywhere), merge after CI green.
+- [ ] H6. (If D1 rerun still shows VAL-107/temporal failures: the register
+      13 temporal family G-3 flagged the validator's temporal-range
+      enforcement as an open finding — triage against AOM 1.4 §C_DATE_TIME
+      before touching anything; a real gap becomes a spec-cited server fix,
+      possibly deferred to a named WORKLIST row with the owner's consent.)
+
 ## Decisions made this phase
 
 - (recorded as they land; edition-ladder + BYO-endpoint rulings above)
