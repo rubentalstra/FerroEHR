@@ -24,7 +24,7 @@ use serde::Serialize;
 
 /// A spec edition rung, newest first. `Ord`: a *later* edition compares
 /// greater ([`Edition::Development`] > [`Edition::Release103`]).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Edition {
     /// ITS-REST Release 1.0.3-era forms (bare `"…"` ETags, RM 1.1.0-era
@@ -60,7 +60,7 @@ impl Edition {
 }
 
 /// The per-run edition policy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EditionPolicy {
     /// Only the pinned rung is accepted — a lower-rung match is a FAILURE.
