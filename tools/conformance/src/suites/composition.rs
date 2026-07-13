@@ -635,8 +635,12 @@ async fn setup(ctx: &RunContext<'_>, kind: Kind) -> Result<(String, String), Cas
     Ok((ehr_id, uid))
 }
 
-/// PUT an updated `kind` composition (JSON body) against `object_uid` under
-/// `If-Match: precede`, returning the raw response.
+/// PUT an updated `kind` composition against `object_uid` under
+/// `If-Match: precede`, returning the raw response. The body is the run's
+/// format fixture (like [`commit`]): the vendored XML and JSON `nested`
+/// fixtures are NOT content-equivalent (one LINK vs two), so an XML run must
+/// also *update* with the XML fixture or the latest version's content would
+/// diverge from the format-aware [`content_check`] baseline.
 async fn update(
     ctx: &RunContext<'_>,
     ehr_id: &str,
@@ -644,15 +648,21 @@ async fn update(
     precede: &str,
     kind: Kind,
 ) -> Result<HttpResponse, CaseError> {
-    let body = read_json_file(kind.json_file())?;
-    let req = negotiate::if_match(
-        negotiate::representation(
-            HttpRequest::put(format!("/ehr/{ehr_id}/composition/{object_uid}")).json_body(&body)?,
+    let path = format!("/ehr/{ehr_id}/composition/{object_uid}");
+    let req = match ctx.format {
+        Format::Json => negotiate::representation(
+            HttpRequest::put(path).json_body(&read_json_file(kind.json_file())?)?,
             Format::Json,
         ),
-        precede,
-    );
-    ctx.send(req).await
+        Format::Xml => {
+            let xml = fixtures::read_from(XML_DIR, kind.xml_file()).map_err(|e| codec(&e))?;
+            negotiate::representation(
+                HttpRequest::put(path).text_body(xml, "application/xml"),
+                Format::Xml,
+            )
+        }
+    };
+    ctx.send(negotiate::if_match(req, precede)).await
 }
 
 /// Create + update `kind` → two versions; return `(ehr_id, object_uid, uid1, uid2)`.
@@ -697,10 +707,9 @@ fn content_check(ctx: &RunContext<'_>, kind: Kind, retrieved: &Value) -> Result<
         Format::Json => read_json_file(kind.json_file())?,
         Format::Xml => {
             let xml = fixtures::read_from(XML_DIR, kind.xml_file()).map_err(|e| codec(&e))?;
-            let composition = openehr_its::xml::from_canonical_xml::<
-                openehr_rm::prelude::Composition,
-            >(&xml)
-            .map_err(|e| CaseError::Codec(format!("XML fixture parse: {e}")))?;
+            let composition =
+                openehr_its::xml::from_canonical_xml::<openehr_rm::prelude::Composition>(&xml)
+                    .map_err(|e| CaseError::Codec(format!("XML fixture parse: {e}")))?;
             serde_json::to_value(&composition).map_err(|e| CaseError::Codec(e.to_string()))?
         }
     };

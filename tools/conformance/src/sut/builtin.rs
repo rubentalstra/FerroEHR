@@ -6,7 +6,7 @@
 use crate::edition::{Edition, EditionPolicy};
 use crate::sut::descriptor::{SutDescriptor, SutKind};
 
-/// ehrbase-rs behind the `docker/conformance/` compose stack. Edition is
+/// ehrbase-rs behind the root compose stack (`scripts/conformance.sh`). Edition is
 /// PINNED to development: the ladder must never mask a wire regression in
 /// our own server (register 90 §4).
 #[must_use]
