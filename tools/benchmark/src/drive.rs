@@ -778,14 +778,16 @@ fn miss(reason: &str) -> bool {
 
 // ── Response parsing ──────────────────────────────────────────────────────────
 
-/// The version uid from a versioned write: the `ETag` (quotes stripped), else
-/// the last path segment of `Location`.
+/// The version uid from a versioned write: the `ETag` — parsed by the
+/// conformance wire layer, which handles the weak form `W/"…"` the
+/// development edition emits (ITS-REST overview §"`ETag` and Last-Modified");
+/// a hand-rolled quote-strip kept the `W/` prefix and poisoned every stored
+/// uid — else the last path segment of `Location`.
 fn version_uid_from(resp: &HttpResponse) -> Option<String> {
-    if let Some(etag) = resp.header("etag") {
-        let v = etag.trim().trim_matches('"');
-        if !v.is_empty() {
-            return Some(v.to_owned());
-        }
+    if let Some(raw) = resp.header("etag")
+        && let Ok(etag) = conformance::wire::headers::parse_etag(raw)
+    {
+        return Some(etag.value);
     }
     resp.header("location").and_then(last_path_segment)
 }
@@ -915,6 +917,20 @@ mod tests {
                     "http://h/ehr/e/composition/other".to_owned(),
                 ),
             ],
+            body: Vec::new(),
+        };
+        assert_eq!(version_uid_from(&resp).as_deref(), Some("v-uid::sys::1"));
+    }
+
+    #[test]
+    fn version_uid_strips_the_weak_etag_form() {
+        // The development edition emits weak ETags (ITS-REST overview §"ETag
+        // and Last-Modified"); the stored uid must be the bare
+        // OBJECT_VERSION_ID — the C1 smoke run caught the unstripped form
+        // 404-ing every subsequent read.
+        let resp = HttpResponse {
+            status: 201,
+            headers: vec![("etag".to_owned(), "W/\"v-uid::sys::1\"".to_owned())],
             body: Vec::new(),
         };
         assert_eq!(version_uid_from(&resp).as_deref(), Some("v-uid::sys::1"));

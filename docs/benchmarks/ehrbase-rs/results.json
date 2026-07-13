@@ -1,0 +1,639 @@
+{
+  "sut": {
+    "name": "ehrbase-rs",
+    "kind": "ours",
+    "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+    "product_label": "ehrbase-rs 3.0.0",
+    "image_digests": {},
+    "versions": {}
+  },
+  "workload": {
+    "lock": "afa48bd156dc31d9e22d9ac8e4a7f9425f717480b04c28d746d28ae9a9fbec26",
+    "profile": "smoke",
+    "scale": "empty",
+    "ward_size": 20,
+    "load_factor": 1.0,
+    "seed": 2953956094
+  },
+  "environment": {
+    "host": "Apple M2 (8 logical CPUs, 16384 MiB RAM) · Darwin 26.5.1 · arm64",
+    "cpus": 8,
+    "mem_mib": 16384,
+    "harness_sha": "cffa0e152",
+    "started": "2026-07-13T17:36:42.473396Z"
+  },
+  "classes": {
+    "aql-patient": {
+      "count": 22,
+      "errors": 0,
+      "p50_us": 21231,
+      "p90_us": 31279,
+      "p99_us": 35935,
+      "p999_us": 35935,
+      "max_us": 35935,
+      "histogram": "HISTEwAAADIAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJ1FAkcClQsCEQKtAQIAAk0EeQIAAkECxwECIwLtAgInAlkCDQK7AQI1AvkBApUCAmUC"
+    },
+    "aql-ward": {
+      "count": 22,
+      "errors": 0,
+      "p50_us": 15503,
+      "p90_us": 17471,
+      "p99_us": 19359,
+      "p999_us": 19359,
+      "max_us": 19359,
+      "histogram": "HISTEwAAADMAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAIU6AusEAqMCAhcCfQK5AgL/AQLJBgIdAhkCJQIzAhsCAwIDAh8CBwJZAlECJQIFAuEBAg=="
+    },
+    "comp-create-large": {
+      "count": 4,
+      "errors": 0,
+      "p50_us": 44223,
+      "p90_us": 78463,
+      "p99_us": 78463,
+      "p999_us": 78463,
+      "max_us": 78463,
+      "histogram": "HISTEwAAAAsAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJVcArEJApENAjEC"
+    },
+    "comp-create-small": {
+      "count": 90,
+      "errors": 0,
+      "p50_us": 20847,
+      "p90_us": 29295,
+      "p99_us": 97919,
+      "p999_us": 97919,
+      "max_us": 97919,
+      "histogram": "HISTEwAAALQAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAALNCApEBAhMCFQJ7AoEBAk8CvwMCkwECxwECkwMCHwIhAhUCIQJNAiEEAAILAh8CBwINAgsGAAIPAgQRBA8CAAIRAgMCEQIbAgIJAgACAAITAgcCEQIDAgIAAgACBQIFAgMCEwQfAgcCAAIXAg8CAAIJAjECOwKVAQKnAQIVAh0CHQIVAgkCLQIxAh0CAwIfAgsCGQIFAj0CAiUCcwKJAQLNAQIvArcCArEMAtUBAqcBAq8FAg=="
+    },
+    "comp-read-latest": {
+      "count": 0,
+      "errors": 66,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "comp-read-version": {
+      "count": 0,
+      "errors": 22,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "comp-update": {
+      "count": 0,
+      "errors": 28,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "contribution-commit": {
+      "count": 22,
+      "errors": 0,
+      "p50_us": 20575,
+      "p90_us": 26591,
+      "p99_us": 33215,
+      "p999_us": 33215,
+      "max_us": 33215,
+      "histogram": "HISTEwAAADAAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAANlRAh8CVwIDAhcCAgkCNQITAiMCDwIdAhMCLQJlAhsCFwKZAQKbAgItAoUEApUCAg=="
+    },
+    "dir-read": {
+      "count": 22,
+      "errors": 0,
+      "p50_us": 14599,
+      "p90_us": 20079,
+      "p99_us": 24527,
+      "p999_us": 24527,
+      "max_us": 24527,
+      "histogram": "HISTEwAAADQAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAMs5AhsC8QMCjwYCIQKBAgLLAgIxArcBAiECxQEC1wECJwJxAmECEwI7AuEBAnUELQL5AwI="
+    },
+    "dir-update": {
+      "count": 0,
+      "errors": 25,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "ehr-create": {
+      "count": 2,
+      "errors": 0,
+      "p50_us": 17839,
+      "p90_us": 34527,
+      "p99_us": 34527,
+      "p999_us": 34527,
+      "max_us": 34527,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAALNRArUPAg=="
+    },
+    "ehr-read": {
+      "count": 2,
+      "errors": 0,
+      "p50_us": 62271,
+      "p90_us": 65055,
+      "p99_us": 65055,
+      "p999_us": 65055,
+      "max_us": 65055,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAALFuAqsBAg=="
+    },
+    "history-read": {
+      "count": 0,
+      "errors": 22,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "opt-upload": {
+      "count": 0,
+      "errors": 0,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    },
+    "status-update": {
+      "count": 2,
+      "errors": 0,
+      "p50_us": 29631,
+      "p90_us": 43359,
+      "p99_us": 43359,
+      "p999_us": 43359,
+      "max_us": 43359,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAPVcApsIAg=="
+    },
+    "tpl-list": {
+      "count": 0,
+      "errors": 0,
+      "p50_us": 0,
+      "p90_us": 0,
+      "p99_us": 0,
+      "p999_us": 0,
+      "max_us": 0,
+      "histogram": ""
+    }
+  },
+  "throughput": {
+    "window_s": 120.0,
+    "requests": 188,
+    "rps": 1.5666666666666667,
+    "error_rate": 0.46438746438746437
+  },
+  "resources": {
+    "app": {
+      "name": "ehrbase-rs-ehrbase-1",
+      "idle_rss": 4153409,
+      "peak_rss": 126877696,
+      "mean_cpu": 3.574761904761905,
+      "series": [
+        {
+          "t_ms": 2049,
+          "cpu_pct": 32.18,
+          "mem_bytes": 91656028
+        },
+        {
+          "t_ms": 5103,
+          "cpu_pct": 15.96,
+          "mem_bytes": 121005670
+        },
+        {
+          "t_ms": 8127,
+          "cpu_pct": 0.0,
+          "mem_bytes": 120900812
+        },
+        {
+          "t_ms": 11186,
+          "cpu_pct": 0.05,
+          "mem_bytes": 120900812
+        },
+        {
+          "t_ms": 13261,
+          "cpu_pct": 0.04,
+          "mem_bytes": 120900812
+        },
+        {
+          "t_ms": 16271,
+          "cpu_pct": 10.06,
+          "mem_bytes": 110310195
+        },
+        {
+          "t_ms": 19363,
+          "cpu_pct": 2.02,
+          "mem_bytes": 110310195
+        },
+        {
+          "t_ms": 21412,
+          "cpu_pct": 1.08,
+          "mem_bytes": 110310195
+        },
+        {
+          "t_ms": 24458,
+          "cpu_pct": 2.28,
+          "mem_bytes": 110310195
+        },
+        {
+          "t_ms": 27475,
+          "cpu_pct": 2.71,
+          "mem_bytes": 110310195
+        },
+        {
+          "t_ms": 30498,
+          "cpu_pct": 2.47,
+          "mem_bytes": 110624768
+        },
+        {
+          "t_ms": 33555,
+          "cpu_pct": 11.9,
+          "mem_bytes": 114819072
+        },
+        {
+          "t_ms": 36597,
+          "cpu_pct": 1.43,
+          "mem_bytes": 114504499
+        },
+        {
+          "t_ms": 39644,
+          "cpu_pct": 6.66,
+          "mem_bytes": 119013376
+        },
+        {
+          "t_ms": 42693,
+          "cpu_pct": 2.2,
+          "mem_bytes": 118698803
+        },
+        {
+          "t_ms": 45743,
+          "cpu_pct": 3.2,
+          "mem_bytes": 118698803
+        },
+        {
+          "t_ms": 48796,
+          "cpu_pct": 2.4,
+          "mem_bytes": 122893107
+        },
+        {
+          "t_ms": 51839,
+          "cpu_pct": 1.74,
+          "mem_bytes": 126877696
+        },
+        {
+          "t_ms": 54881,
+          "cpu_pct": 1.42,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 57907,
+          "cpu_pct": 2.29,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 60927,
+          "cpu_pct": 2.55,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 63976,
+          "cpu_pct": 2.45,
+          "mem_bytes": 126877696
+        },
+        {
+          "t_ms": 67002,
+          "cpu_pct": 2.39,
+          "mem_bytes": 126877696
+        },
+        {
+          "t_ms": 70029,
+          "cpu_pct": 0.25,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 73080,
+          "cpu_pct": 1.55,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 76120,
+          "cpu_pct": 1.51,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 79136,
+          "cpu_pct": 2.93,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 82192,
+          "cpu_pct": 1.26,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 85231,
+          "cpu_pct": 1.21,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 88310,
+          "cpu_pct": 1.34,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 90353,
+          "cpu_pct": 4.12,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 92391,
+          "cpu_pct": 3.18,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 94474,
+          "cpu_pct": 1.54,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 97503,
+          "cpu_pct": 1.24,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 100530,
+          "cpu_pct": 0.17,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 102602,
+          "cpu_pct": 3.88,
+          "mem_bytes": 126877696
+        },
+        {
+          "t_ms": 105678,
+          "cpu_pct": 5.37,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 107741,
+          "cpu_pct": 2.88,
+          "mem_bytes": 126353408
+        },
+        {
+          "t_ms": 110780,
+          "cpu_pct": 1.35,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 113852,
+          "cpu_pct": 3.73,
+          "mem_bytes": 126877696
+        },
+        {
+          "t_ms": 116872,
+          "cpu_pct": 3.09,
+          "mem_bytes": 126667980
+        },
+        {
+          "t_ms": 119895,
+          "cpu_pct": 0.06,
+          "mem_bytes": 126353408
+        }
+      ]
+    },
+    "db": {
+      "name": "ehrbase-rs-ehrbase-postgres-1",
+      "idle_rss": 37853593,
+      "peak_rss": 98933145,
+      "mean_cpu": 1.6649999999999998,
+      "series": [
+        {
+          "t_ms": 2049,
+          "cpu_pct": 9.18,
+          "mem_bytes": 64130908
+        },
+        {
+          "t_ms": 5103,
+          "cpu_pct": 5.87,
+          "mem_bytes": 64655196
+        },
+        {
+          "t_ms": 8127,
+          "cpu_pct": 0.03,
+          "mem_bytes": 64760053
+        },
+        {
+          "t_ms": 11186,
+          "cpu_pct": 2.63,
+          "mem_bytes": 65053655
+        },
+        {
+          "t_ms": 13261,
+          "cpu_pct": 0.03,
+          "mem_bytes": 65022197
+        },
+        {
+          "t_ms": 16271,
+          "cpu_pct": 9.91,
+          "mem_bytes": 70621593
+        },
+        {
+          "t_ms": 19363,
+          "cpu_pct": 0.36,
+          "mem_bytes": 71995228
+        },
+        {
+          "t_ms": 21412,
+          "cpu_pct": 0.29,
+          "mem_bytes": 71984742
+        },
+        {
+          "t_ms": 24458,
+          "cpu_pct": 0.81,
+          "mem_bytes": 79628861
+        },
+        {
+          "t_ms": 27475,
+          "cpu_pct": 1.25,
+          "mem_bytes": 82176901
+        },
+        {
+          "t_ms": 30498,
+          "cpu_pct": 2.76,
+          "mem_bytes": 85049999
+        },
+        {
+          "t_ms": 33555,
+          "cpu_pct": 0.5,
+          "mem_bytes": 85175828
+        },
+        {
+          "t_ms": 36597,
+          "cpu_pct": 0.43,
+          "mem_bytes": 90984939
+        },
+        {
+          "t_ms": 39644,
+          "cpu_pct": 4.05,
+          "mem_bytes": 91278540
+        },
+        {
+          "t_ms": 42693,
+          "cpu_pct": 0.04,
+          "mem_bytes": 91037368
+        },
+        {
+          "t_ms": 45743,
+          "cpu_pct": 1.28,
+          "mem_bytes": 91351941
+        },
+        {
+          "t_ms": 48796,
+          "cpu_pct": 1.33,
+          "mem_bytes": 91341455
+        },
+        {
+          "t_ms": 51839,
+          "cpu_pct": 3.9,
+          "mem_bytes": 91687485
+        },
+        {
+          "t_ms": 54881,
+          "cpu_pct": 0.05,
+          "mem_bytes": 91656028
+        },
+        {
+          "t_ms": 57907,
+          "cpu_pct": 0.58,
+          "mem_bytes": 91928657
+        },
+        {
+          "t_ms": 60927,
+          "cpu_pct": 3.31,
+          "mem_bytes": 91813314
+        },
+        {
+          "t_ms": 63976,
+          "cpu_pct": 1.09,
+          "mem_bytes": 92002058
+        },
+        {
+          "t_ms": 67002,
+          "cpu_pct": 1.17,
+          "mem_bytes": 91844771
+        },
+        {
+          "t_ms": 70029,
+          "cpu_pct": 0.21,
+          "mem_bytes": 91844771
+        },
+        {
+          "t_ms": 73080,
+          "cpu_pct": 0.4,
+          "mem_bytes": 91886714
+        },
+        {
+          "t_ms": 76120,
+          "cpu_pct": 0.71,
+          "mem_bytes": 91876229
+        },
+        {
+          "t_ms": 79136,
+          "cpu_pct": 1.4,
+          "mem_bytes": 92285173
+        },
+        {
+          "t_ms": 82192,
+          "cpu_pct": 3.35,
+          "mem_bytes": 95179243
+        },
+        {
+          "t_ms": 85231,
+          "cpu_pct": 0.52,
+          "mem_bytes": 95074385
+        },
+        {
+          "t_ms": 88310,
+          "cpu_pct": 0.04,
+          "mem_bytes": 95630131
+        },
+        {
+          "t_ms": 90353,
+          "cpu_pct": 1.21,
+          "mem_bytes": 95451873
+        },
+        {
+          "t_ms": 92391,
+          "cpu_pct": 0.66,
+          "mem_bytes": 96122961
+        },
+        {
+          "t_ms": 94474,
+          "cpu_pct": 0.36,
+          "mem_bytes": 95430901
+        },
+        {
+          "t_ms": 97503,
+          "cpu_pct": 0.45,
+          "mem_bytes": 95755960
+        },
+        {
+          "t_ms": 100530,
+          "cpu_pct": 0.04,
+          "mem_bytes": 95755960
+        },
+        {
+          "t_ms": 102602,
+          "cpu_pct": 1.3,
+          "mem_bytes": 98241085
+        },
+        {
+          "t_ms": 105678,
+          "cpu_pct": 1.65,
+          "mem_bytes": 98304000
+        },
+        {
+          "t_ms": 107741,
+          "cpu_pct": 0.78,
+          "mem_bytes": 98450800
+        },
+        {
+          "t_ms": 110780,
+          "cpu_pct": 0.51,
+          "mem_bytes": 98933145
+        },
+        {
+          "t_ms": 113852,
+          "cpu_pct": 0.63,
+          "mem_bytes": 98608087
+        },
+        {
+          "t_ms": 116872,
+          "cpu_pct": 4.83,
+          "mem_bytes": 98828288
+        },
+        {
+          "t_ms": 119895,
+          "cpu_pct": 0.03,
+          "mem_bytes": 98503229
+        }
+      ]
+    },
+    "cold_start_ms": 11592
+  },
+  "storage": {
+    "bytes_total": 19365888,
+    "compositions": 0,
+    "bytes_per_composition": 0
+  },
+  "reproduce": "cargo run -q -p benchmark --bin bench -- run --sut ehrbase-rs --base-url http://localhost:8080/ehrbase/rest/openehr/v1 --profile smoke --scale empty --ward-size 20 --load-factor 1 --seed 2953956094",
+  "excluded_templates": []
+}
