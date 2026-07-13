@@ -191,6 +191,20 @@ node 'at0001' under 'description'" at the Medication-Summary
    vendored into the ECC owned-fixture set) so the defect class stays
    probed — owner directive.
 
+## Measured P20 fuel (knee ladders, 2026-07-14 overnight — single-host preview)
+
+With pool parity 50, shedding 256, signing off (parity): **our knee = L16
+(161 req/s, p99 34 ms); L64 breaches (p99 2.3 s, 4.2% errors incl. shed
+503s). Upstream rode L64 clean (643 req/s, p99 22 ms) and breached at L128.**
+The server survives (no OOM — W-12 works); the gap is engine-side write-path
+cost under concurrency + the AQL dashboard plan (server log at load: node/
+vo_version INSERTs 1.6–2.2 s, the patient AQL 2 s+ at the 10k rung, every
+statement slowed → PG-level contention). Published as measured (the
+comparison's "where the other side wins"); the optimization work is P20's,
+with this data as its opening evidence. Candidates recorded there: AQL-path
+indexes for the ORDER-BY/CONTAINS dashboard shape; per-commit round-trip
+reduction; temporal-GiST maintenance cost under write concurrency.
+
 ## Decisions made this phase
 
 - **Read:write budget counts a CONTRIBUTION as its N committed
