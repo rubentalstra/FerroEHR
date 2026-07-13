@@ -159,18 +159,33 @@ pub fn entries() -> Vec<CaseEntry> {
             run_person_delete,
         ),
         // ── the other four ACTOR kinds: create / get / delete ───────────────
-        kind_create("dem/agent-create", "agent", "AGENT"),
-        kind_get("dem/agent-get", "agent", "AGENT"),
-        kind_delete("dem/agent-delete", "agent", "AGENT"),
-        kind_create("dem/group-create", "group", "GROUP"),
-        kind_get("dem/group-get", "group", "GROUP"),
-        kind_delete("dem/group-delete", "group", "GROUP"),
-        kind_create("dem/organisation-create", "organisation", "ORGANISATION"),
-        kind_get("dem/organisation-get", "organisation", "ORGANISATION"),
-        kind_delete("dem/organisation-delete", "organisation", "ORGANISATION"),
-        kind_create("dem/role-create", "role", "ROLE"),
-        kind_get("dem/role-get", "role", "ROLE"),
-        kind_delete("dem/role-delete", "role", "ROLE"),
+        kind_create("dem/agent-create", "agent", "AGENT", run_agent_create),
+        kind_get("dem/agent-get", "agent", "AGENT", run_agent_get),
+        kind_delete("dem/agent-delete", "agent", "AGENT", run_agent_delete),
+        kind_create("dem/group-create", "group", "GROUP", run_group_create),
+        kind_get("dem/group-get", "group", "GROUP", run_group_get),
+        kind_delete("dem/group-delete", "group", "GROUP", run_group_delete),
+        kind_create(
+            "dem/organisation-create",
+            "organisation",
+            "ORGANISATION",
+            run_org_create,
+        ),
+        kind_get(
+            "dem/organisation-get",
+            "organisation",
+            "ORGANISATION",
+            run_org_get,
+        ),
+        kind_delete(
+            "dem/organisation-delete",
+            "organisation",
+            "ORGANISATION",
+            run_org_delete,
+        ),
+        kind_create("dem/role-create", "role", "ROLE", run_role_create),
+        kind_get("dem/role-get", "role", "ROLE", run_role_get),
+        kind_delete("dem/role-delete", "role", "ROLE", run_role_delete),
         // ── §3 wire extensions (no SM operation names them) ─────────────────
         case(
             "dem/versioned-party-get",
@@ -369,44 +384,55 @@ macro_rules! case_body {
 
 // ── ACTOR-kind case builders (create / get / delete) ─────────────────────────
 
-fn kind_create(id: &'static str, seg: &'static str, ty: &'static str) -> CaseEntry {
-    let (schedule, binding) = (
-        stub("I_DEMOGRAPHIC_SERVICE.create_party"),
-        kind_binding("POST", seg),
-    );
+fn kind_create(
+    id: &'static str,
+    seg: &'static str,
+    ty: &'static str,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     case(
         id,
         ty_title(ty, "create"),
         Capability::PartyOperations,
         Compare::Superset,
-        kind_citation(seg, "create_party", "person_create"),
-        schedule,
-        binding,
-        kind_run_create(seg),
+        kind_citation(seg, "create_party"),
+        stub("I_DEMOGRAPHIC_SERVICE.create_party"),
+        kind_binding("POST", seg),
+        run,
     )
 }
-fn kind_get(id: &'static str, seg: &'static str, ty: &'static str) -> CaseEntry {
+fn kind_get(
+    id: &'static str,
+    seg: &'static str,
+    ty: &'static str,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     case(
         id,
         ty_title(ty, "get"),
         Capability::PartyOperations,
         Compare::Superset,
-        kind_citation(seg, "get_party", "person_get"),
+        kind_citation(seg, "get_party"),
         stub("I_DEMOGRAPHIC_SERVICE.get_party"),
         kind_binding("GET", seg),
-        kind_run_get(seg),
+        run,
     )
 }
-fn kind_delete(id: &'static str, seg: &'static str, ty: &'static str) -> CaseEntry {
+fn kind_delete(
+    id: &'static str,
+    seg: &'static str,
+    ty: &'static str,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     case(
         id,
         ty_title(ty, "delete"),
         Capability::PartyOperations,
         Compare::None,
-        kind_citation(seg, "delete_party", "person_delete"),
+        kind_citation(seg, "delete_party"),
         stub("I_DEMOGRAPHIC_SERVICE.delete_party"),
         kind_binding("DELETE", seg),
-        kind_run_delete(seg),
+        run,
     )
 }
 
@@ -427,7 +453,7 @@ fn ty_title(ty: &'static str, op: &'static str) -> &'static str {
     }
 }
 
-fn kind_citation(seg: &'static str, op: &'static str, _oas: &'static str) -> &'static str {
+fn kind_citation(seg: &'static str, op: &'static str) -> &'static str {
     // Static citation per (seg, op) — the OAS operation is `<seg>_<verb>`.
     match (seg, op) {
         ("agent", "create_party") => {
@@ -488,50 +514,30 @@ fn kind_binding(verb: &'static str, seg: &'static str) -> Binding {
     }
 }
 
-fn kind_run_create(seg: &'static str) -> crate::engine::harness::CaseRun {
-    match seg {
-        "agent" => |ctx| {
+/// Generate the three named run fns for an ACTOR kind (a `CaseRun` is a bare
+/// `fn` pointer, so each op needs its own named item — a closure would not
+/// coerce to the higher-ranked pointer).
+macro_rules! actor_kind {
+    ($seg:literal, $create:ident, $get:ident, $del:ident) => {
+        fn $create<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             case_body!({
-                create_party(ctx, "agent", &fresh_name()).await?;
+                create_party(ctx, $seg, &fresh_name()).await?;
                 Ok(DataSetReport::SINGLE)
             })
-        },
-        "group" => |ctx| {
-            case_body!({
-                create_party(ctx, "group", &fresh_name()).await?;
-                Ok(DataSetReport::SINGLE)
-            })
-        },
-        "organisation" => |ctx| {
-            case_body!({
-                create_party(ctx, "organisation", &fresh_name()).await?;
-                Ok(DataSetReport::SINGLE)
-            })
-        },
-        _ => |ctx| {
-            case_body!({
-                create_party(ctx, "role", &fresh_name()).await?;
-                Ok(DataSetReport::SINGLE)
-            })
-        },
-    }
+        }
+        fn $get<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            case_body!({ get_and_check(ctx, $seg).await })
+        }
+        fn $del<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+            case_body!({ delete_party(ctx, $seg).await })
+        }
+    };
 }
-fn kind_run_get(seg: &'static str) -> crate::engine::harness::CaseRun {
-    match seg {
-        "agent" => |ctx| case_body!({ get_and_check(ctx, "agent").await }),
-        "group" => |ctx| case_body!({ get_and_check(ctx, "group").await }),
-        "organisation" => |ctx| case_body!({ get_and_check(ctx, "organisation").await }),
-        _ => |ctx| case_body!({ get_and_check(ctx, "role").await }),
-    }
-}
-fn kind_run_delete(seg: &'static str) -> crate::engine::harness::CaseRun {
-    match seg {
-        "agent" => |ctx| case_body!({ delete_party(ctx, "agent").await }),
-        "group" => |ctx| case_body!({ delete_party(ctx, "group").await }),
-        "organisation" => |ctx| case_body!({ delete_party(ctx, "organisation").await }),
-        _ => |ctx| case_body!({ delete_party(ctx, "role").await }),
-    }
-}
+
+actor_kind!("agent", run_agent_create, run_agent_get, run_agent_delete);
+actor_kind!("group", run_group_create, run_group_get, run_group_delete);
+actor_kind!("organisation", run_org_create, run_org_get, run_org_delete);
+actor_kind!("role", run_role_create, run_role_get, run_role_delete);
 
 // ── PARTY bodies (RM 1.2.0 demographic) ──────────────────────────────────────
 
