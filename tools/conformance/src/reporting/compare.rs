@@ -78,8 +78,10 @@ fn render_preamble(out: &mut String) {
          > - Foreign SUTs are triaged through a committed fairness register before \
          publication: an ehrbase-rs *extension* route (a capability the SUT does not \
          implement) reads `not-applicable`, never `fail`; a genuine spec gap reads `fail`.\n>\n\
-         > - No conformance **certificate** is claimed for a foreign run — the Certificate \
-         is a self-assessment of our own product only.\n>\n\
+         > - This published comparison makes **no certification claim on behalf of any other \
+         vendor**: each cell is a capability result computed from that SUT's own run, never a \
+         certificate reference. (Each run does produce its own self-assessment Certificate, \
+         which is that operator's to publish, not ours.)\n>\n\
          > - Where a comparison SUT out-performs ehrbase-rs on a capability, its cell reads \
          `pass` while ours reads `fail`/`not-evidenced` — stated plainly, not hidden.\n\n",
     );
