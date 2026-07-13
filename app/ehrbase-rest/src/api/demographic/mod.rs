@@ -88,7 +88,7 @@ fn if_match_of(h: &HeaderMap) -> Option<String> {
 }
 
 /// Set `ETag` (the resource uid, weak form `W/"…"` — the ITS-REST overview
-/// §"ETag and Last-Modified" makes resource-identifier ETags weak-type; the
+/// §"`ETag` and Last-Modified" makes resource-identifier `ETag`s weak-type; the
 /// bare quoted form is deprecated) and a `/demographic/{segment}/{uid}`
 /// `Location` from a demographic [`ResourceMeta`] (whose `ehr_id` is empty —
 /// parties are not EHR-scoped). Location shape: `headers/Location_PERSON.yaml`.

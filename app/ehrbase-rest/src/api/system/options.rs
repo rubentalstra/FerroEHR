@@ -52,7 +52,7 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// tested-contract identity [`provenance::ITS_REST`] and `conformance_profile`
 /// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
 /// verdict, updated at each conformance re-baseline
-/// (`docs/conformance/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
+/// (`docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
 /// MUST NOT out-claim that verdict. `crate::config::RestConfig` embeds a
 /// `SystemOptionsConfig` (bound from the `EHRBASE_REST_SYSTEM__*` env keys), so
 /// an operator MAY override any identity field while the defaults stay
