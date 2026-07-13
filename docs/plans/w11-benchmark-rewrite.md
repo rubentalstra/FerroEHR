@@ -120,9 +120,14 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       RM-mandatory archetype_node_id) — both fixed spec-cited.*
 - [ ] C2. `hour` profile vs ehrbase-rs at the 10k rung — the first real
       committed baseline (latency + CPU/RSS + storage numbers).
-- [ ] C3. Same profile vs upstream EHRbase Java (fairness rules) → the
-      comparison input recorded as DATA. (The full 100k/1M ladder + ≥5-run
-      publication protocol is the X1 publication step, not W-11 close.)
+- [x] C3. Upstream EHRbase Java runs the byte-identical workload cleanly —
+      **331/331 requests · 0 errors on BOTH SUTs** (smoke @ 10k preview) —
+      after four spec-verified driver/renderer tolerances (weak ETag parse,
+      FOLDER archetype_node_id, 204 create-success on seed + contribution)
+      and two upstream findings recorded (ORDER-BY-must-be-projected
+      "Not implemented"; 204-without-representation). COMPARISON.md +
+      grouped charts generated; smoke numbers are a preview — the hour
+      profile + ladder + ≥5-run protocol is the X1 publication step.
 
 ### D — Close
 - [ ] D1. Workspace gates; scripts/benchmark.sh entry point; CI smoke job.

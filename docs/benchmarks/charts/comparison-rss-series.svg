@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 232" role="img" aria-label="App memory (RSS) over the run">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.s1 { fill: #2a78d6; } .s1s { stroke: #2a78d6; }
+.s2 { fill: #1baf7a; } .s2s { stroke: #1baf7a; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.s1 { fill: #3987e5; } .s1s { stroke: #3987e5; }
+.s2 { fill: #199e70; } .s2s { stroke: #199e70; }
+}
+</style>
+<text x="16" y="22" class="title">App memory (RSS) over the run</text>
+<line class="grid" x1="64" y1="190.0" x2="660" y2="190.0"/>
+<text class="muted" x="56.0" y="194.0" text-anchor="end">0 MB</text>
+<line class="grid" x1="64" y1="115.0" x2="660" y2="115.0"/>
+<text class="muted" x="56.0" y="119.0" text-anchor="end">296 MB</text>
+<line class="grid" x1="64" y1="40.0" x2="660" y2="40.0"/>
+<text class="muted" x="56.0" y="44.0" text-anchor="end">593 MB</text>
+<text class="muted" x="660" y="208.0" text-anchor="end">2 min</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="74.3,167.2 84.4,165.6 94.8,165.2 105.0,165.2 115.2,165.2 130.1,165.2 140.3,165.2 150.5,165.2 160.7,165.2 175.5,165.2 190.9,163.2 201.1,163.1 216.4,163.1 231.7,163.2 242.1,163.2 252.2,163.2 267.4,163.2 282.6,163.2 297.6,163.1 312.8,165.4 322.9,164.1 333.1,164.1 343.4,164.1 358.5,164.1 373.4,164.1 388.5,164.1 403.5,163.1 418.4,162.4 428.6,162.4 443.7,162.4 453.8,162.4 468.9,162.0 479.1,162.0 494.2,161.0 504.5,161.0 519.3,161.0 529.5,161.0 544.5,160.0 559.8,159.2 570.0,161.0 580.2,161.0 590.4,161.0 605.8,161.0 616.0,161.0 631.0,160.0 646.2,159.9"/>
+<text x="668.0" y="159.9">ehrbase-rs</text>
+<polyline class="s2s" fill="none" stroke-width="2" points="73.9,40.4 89.0,40.0 99.1,43.0 109.2,43.5 124.0,43.5 134.4,43.5 144.5,43.0 154.5,42.1 169.4,42.7 184.4,41.4 199.3,42.0 209.5,42.0 224.5,41.9 239.6,41.7 254.6,41.8 269.5,41.7 279.6,41.7 294.8,41.7 305.0,41.6 319.8,41.6 335.2,41.6 345.2,41.5 360.2,41.4 375.2,41.5 390.3,41.3 400.3,41.4 415.3,41.5 430.5,41.4 445.6,41.4 460.6,41.3 475.5,41.1 490.6,41.2 500.6,41.3 515.4,41.2 530.4,41.2 540.4,41.2 550.4,41.2 565.3,41.2 580.3,41.1 590.3,41.1 600.4,41.2 615.2,41.0 630.2,41.1 645.1,41.1 660.0,41.1"/>
+<text x="668.0" y="41.1">ehrbase-java</text>
+<rect class="s1" x="64" y="16.0" width="10" height="10" rx="2"/>
+<text x="80.0" y="25.0">ehrbase-rs</text>
+<rect class="s2" x="134" y="16.0" width="10" height="10" rx="2"/>
+<text x="150.0" y="25.0">ehrbase-java</text>
+</svg>

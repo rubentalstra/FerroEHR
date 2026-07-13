@@ -400,7 +400,11 @@ pub fn comparison_chart(title: &str, suts: &[(String, BTreeMap<String, u64>)]) -
 /// A linear-scale horizontal bar pair for one scalar metric (throughput,
 /// memory, cold start …): slot per SUT, direct value labels, no axis clutter.
 #[must_use]
-pub fn metric_bar_chart(title: &str, entries: &[(String, f64)], fmt: impl Fn(f64) -> String) -> String {
+pub fn metric_bar_chart(
+    title: &str,
+    entries: &[(String, f64)],
+    fmt: impl Fn(f64) -> String,
+) -> String {
     if entries.len() < 2 {
         return String::new();
     }

@@ -85,8 +85,54 @@ pub fn render(results: &[Results]) -> Comparison {
         );
     }
 
-    // Headline scalar comparisons: throughput + resources + cold start.
     let mut charts = Vec::new();
+    headline_charts(&mut md, &mut charts, a, b);
+
+    // Charts: p99 + p50 grouped bars over the classes both runs measured.
+    let p99 = vec![
+        (a.sut.name.clone(), metric_map(a, |c| c.p99_us)),
+        (b.sut.name.clone(), metric_map(b, |c| c.p99_us)),
+    ];
+    let p50 = vec![
+        (a.sut.name.clone(), metric_map(a, |c| c.p50_us)),
+        (b.sut.name.clone(), metric_map(b, |c| c.p50_us)),
+    ];
+    let c99 = chart::comparison_chart("p99 latency per operation class", &p99);
+    if !c99.is_empty() {
+        charts.push(("comparison-p99.svg".to_owned(), c99));
+        md.push_str("## Latency — p99 per operation class\n\n");
+        md.push_str("![p99 latency per operation class](charts/comparison-p99.svg)\n\n");
+    }
+    let c50 = chart::comparison_chart("p50 latency per operation class", &p50);
+    if !c50.is_empty() {
+        charts.push(("comparison-p50.svg".to_owned(), c50));
+        md.push_str("## Latency — p50 per operation class\n\n");
+        md.push_str("![p50 latency per operation class](charts/comparison-p50.svg)\n\n");
+    }
+
+    let (a_wins, b_wins) = per_class_table(&mut md, a, b);
+
+    resources_table(&mut md, a, b);
+    wins_ledger(&mut md, &a.sut.name, &a_wins, &b.sut.name, &b_wins);
+
+    md.push_str("## Limitations\n\n");
+    md.push_str(
+        "Single run per SUT (no inter-run variance yet — the ≥5-run protocol is \
+         the publication step); same host, sequential execution; see each run's \
+         own `REPORT.md` §Limitations for sampler availability.\n",
+    );
+
+    Comparison {
+        markdown: md,
+        charts,
+    }
+}
+
+/// Headline scalar comparisons: throughput, app resources (+ over-the-run
+/// overlays), cold start, and the computed efficiency ratios.
+#[allow(clippy::too_many_lines)]
+fn headline_charts(md: &mut String, charts: &mut Vec<(String, String)>, a: &Results, b: &Results) {
+    // Headline scalar comparisons: throughput + resources + cold start.
     let tp = vec![
         (a.sut.name.clone(), a.throughput.rps),
         (b.sut.name.clone(), b.throughput.rps),
@@ -170,29 +216,15 @@ pub fn render(results: &[Results]) -> Comparison {
         }
         md.push('\n');
     }
+}
 
-    // Charts: p99 + p50 grouped bars over the classes both runs measured.
-    let p99 = vec![
-        (a.sut.name.clone(), metric_map(a, |c| c.p99_us)),
-        (b.sut.name.clone(), metric_map(b, |c| c.p99_us)),
-    ];
-    let p50 = vec![
-        (a.sut.name.clone(), metric_map(a, |c| c.p50_us)),
-        (b.sut.name.clone(), metric_map(b, |c| c.p50_us)),
-    ];
-    let c99 = chart::comparison_chart("p99 latency per operation class", &p99);
-    if !c99.is_empty() {
-        charts.push(("comparison-p99.svg".to_owned(), c99));
-        md.push_str("## Latency — p99 per operation class\n\n");
-        md.push_str("![p99 latency per operation class](charts/comparison-p99.svg)\n\n");
-    }
-    let c50 = chart::comparison_chart("p50 latency per operation class", &p50);
-    if !c50.is_empty() {
-        charts.push(("comparison-p50.svg".to_owned(), c50));
-        md.push_str("## Latency — p50 per operation class\n\n");
-        md.push_str("![p50 latency per operation class](charts/comparison-p50.svg)\n\n");
-    }
-
+/// The per-class percentile table; returns the computed win lists (p99).
+#[allow(clippy::type_complexity)]
+fn per_class_table(
+    md: &mut String,
+    a: &Results,
+    b: &Results,
+) -> (Vec<(String, u64, u64)>, Vec<(String, u64, u64)>) {
     // The per-class table + computed two-direction ledger.
     md.push_str("## Per-class detail (µs)\n\n");
     md.push_str(&format!(
@@ -230,20 +262,7 @@ pub fn render(results: &[Results]) -> Comparison {
     }
     md.push('\n');
 
-    resources_table(&mut md, a, b);
-    wins_ledger(&mut md, &a.sut.name, &a_wins, &b.sut.name, &b_wins);
-
-    md.push_str("## Limitations\n\n");
-    md.push_str(
-        "Single run per SUT (no inter-run variance yet — the ≥5-run protocol is \
-         the publication step); same host, sequential execution; see each run's \
-         own `REPORT.md` §Limitations for sampler availability.\n",
-    );
-
-    Comparison {
-        markdown: md,
-        charts,
-    }
+    (a_wins, b_wins)
 }
 
 /// The side-by-side resources/storage table.
@@ -369,7 +388,13 @@ mod tests {
         assert!(c.markdown.contains("Where ehrbase-rs wins"));
         assert!(c.markdown.contains("Where ehrbase-java wins"));
         assert!(c.markdown.contains("4.0×"));
-        assert_eq!(c.charts.len(), 2);
+        // p99 + p50 latency, throughput, cold start (no app resources in the
+        // fixture → no memory/CPU charts).
+        assert_eq!(c.charts.len(), 4);
+        let names: Vec<&str> = c.charts.iter().map(|(n, _)| n.as_str()).collect();
+        assert!(names.contains(&"comparison-throughput.svg"));
+        assert!(names.contains(&"comparison-coldstart.svg"));
+        assert!(c.markdown.contains("req/s"));
         assert!(!c.markdown.contains("different workload locks"));
     }
 
