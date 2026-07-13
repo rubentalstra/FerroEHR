@@ -132,7 +132,7 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 ### O — Overnight autonomous run (owner directive 2026-07-13 23:xx, asleep;
 ### full autonomy granted: keep testing/benchmarking; amazing-but-honest SVGs
 ### on the root README; measured numbers only)
-- [ ] O1. W-12 backpressure fix lands (worker in flight) → gates → commit →
+- [x] O1. W-12 backpressure fix lands (worker in flight) → gates → commit →
       rebuild image → **full ECC run** (server changed; zero-drift gate; the
       shed layer must not disturb conformance — it only bites >256
       concurrent) → commit ratcheted baseline if changed.
