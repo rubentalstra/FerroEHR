@@ -23,7 +23,7 @@ workflow refuses a tag that has no matching section here.
   request until it runs out of memory. Under sustained offered load beyond
   database capacity the server now degrades with clean errors rather than
   being killed. The cap is configurable via `EHRBASE_REST_MAX_IN_FLIGHT`
-  (concurrent requests, not per second; default 1024, raise for
+  (concurrent requests, not per second; default 256, raise for
   high-throughput deployments; `0` disables shedding). The `/status`, health,
   and discovery
   endpoints are never limited, so operators can always probe an overloaded

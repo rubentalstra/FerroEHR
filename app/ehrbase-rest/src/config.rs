@@ -17,7 +17,7 @@ pub struct RestConfig {
     #[serde(default = "defaults::base_path")]
     pub base_path: String,
     /// Maximum number of API requests allowed in flight at once before the
-    /// server sheds load (`EHRBASE_REST_MAX_IN_FLIGHT`, default 1024 — raise it
+    /// server sheds load (`EHRBASE_REST_MAX_IN_FLIGHT`, default 256 — raise it
     /// for high-throughput deployments; it caps *concurrent* requests, not
     /// throughput). Requests
     /// beyond this bound are rejected immediately with `503 Service
@@ -250,7 +250,11 @@ mod defaults {
         "/ehrbase/rest/openehr/v1".to_owned()
     }
     pub(super) const fn max_in_flight() -> usize {
-        1024
+        // 256 bounds the worst-case buffered-request memory to a sane envelope
+        // (the W-11 knee ladder OOM-killed the container at 1024 in-flight
+        // clinical commits) while still permitting ~10k req/s at 25 ms
+        // latency (throughput = in-flight / latency, Little's law).
+        256
     }
     pub(super) const fn enabled_flag() -> bool {
         true
@@ -268,8 +272,8 @@ mod tests {
     fn defaults_are_sane() {
         let c = RestConfig::default();
         assert_eq!(c.base_path, "/ehrbase/rest/openehr/v1");
-        // Overload shedding is on by default with a 1024 in-flight cap.
-        assert_eq!(c.max_in_flight, 1024);
+        // Overload shedding is on by default with a 256 in-flight cap.
+        assert_eq!(c.max_in_flight, 256);
         assert!(c.auth.enabled);
         // The ADMIN API is opt-in: off unless explicitly enabled.
         assert!(!c.admin.enabled);
