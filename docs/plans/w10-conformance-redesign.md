@@ -69,23 +69,23 @@
 - [x] A1. Plan file authored from the prompt; branch
       `claude/w10-conformance-redesign`; owner SUT-list + version-ladder
       rulings recorded above.
-- [ ] A2. Orchestrator reads the CNF methodology end-to-end: `docs/guide/`
+- [x] A2. Orchestrator reads the CNF methodology end-to-end: `docs/guide/`
       (master03/04/05), `docs/profiles/master03`, `docs/certificate/
       master03`, `README.adoc`, `PROVENANCE.md`, `manifest.json`.
-- [ ] A3. Schedule spine: every `platform_test_schedule/master*-*_tc_*.adoc`
+- [x] A3. Schedule spine: every `platform_test_schedule/master*-*_tc_*.adoc`
       chapter enumerated (normative test condition + citation) into
       `docs/design/conformance/` registers (read-only Opus auditors, ≤2
       concurrent).
 
 ### B — Registers (`docs/design/conformance/`)
-- [ ] B1. Case map: every existing `tools/conformance` case mapped onto the
+- [x] B1. Case map: every existing `tools/conformance` case mapped onto the
       spine — conformant / divergent / missing /
       instrument-encodes-server-behaviour — with file:line evidence.
-- [ ] B2. G-rows: gaps + rulings per area (incl. the W-3f ETag lesson: any
+- [x] B2. G-rows: gaps + rulings per area (incl. the W-3f ETag lesson: any
       client-side wire parsing centralized).
-- [ ] B3. Data-set strategy register: Robot corpus as raw material vs owned
+- [x] B3. Data-set strategy register: Robot corpus as raw material vs owned
       generated fixtures; owned-fixture register design.
-- [ ] B4. Target design register (orchestrator): crate layout, multi-SUT
+- [x] B4. Target design register (orchestrator): crate layout, multi-SUT
       core + adapter seam + BYO-endpoint config, edition/version ladder
       model, spec-grade client layer (single header/ETag/id-extraction
       surface), outputs, CI bindings, comparison matrix, fairness register
