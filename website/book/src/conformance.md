@@ -51,7 +51,7 @@ than silently omitted.
 
 The published run against EHRbase-rs reports:
 
-- **368 case-by-format executions, 333 passed, 0 failed, 35 documented
+- **369 case-by-format executions, 334 passed, 0 failed, 35 documented
   skips.**
 - **Core: PASS. Standard: PASS. Options: OBTAINED.**
 
