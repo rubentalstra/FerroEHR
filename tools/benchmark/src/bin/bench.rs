@@ -402,6 +402,16 @@ fn build_transport(descriptor: &SutDescriptor) -> Result<SutClient, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Whether the SUT still answers HTTP at all (any status counts — a saturated
+/// server answers 5xx; a dead one answers nothing). Used by the knee ladder to
+/// distinguish saturation from a crash.
+async fn sut_answers(client: &SutClient) -> bool {
+    use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
+    let req =
+        HttpRequest::new(Method::Get, "/definition/template/adl1.4").with_auth(AuthSlot::Regular);
+    client.send(req).await.is_ok()
+}
+
 fn sut_kind_label(kind: SutKind) -> &'static str {
     match kind {
         SutKind::Ours => "ours",
@@ -709,6 +719,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
 
     let mut steps_out: Vec<KneeStep> = Vec::new();
     let mut knee: Option<KneeStep> = None;
+    let mut sut_died = false;
     for (step_index, load_factor) in ladder.into_iter().enumerate() {
         let spec = WorkloadSpec {
             profile: Profile::Hour,
@@ -766,6 +777,16 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
                 "bench: SLO breached at L={load_factor} (p99 {p99_us} µs / error {:.3}%) — ladder stops",
                 outcome.error_rate * 100.0
             );
+            // Distinguish a saturated-but-alive SUT from a dead one: probe the
+            // base URL once. No HTTP answer at all → the SUT process died under
+            // load (e.g. OOM-killed) — recorded as a first-class finding so the
+            // ladder never hammers a corpse and the report says what happened.
+            if !sut_answers(&transport).await {
+                sut_died = true;
+                eprintln!(
+                    "bench: SUT no longer answers after L={load_factor} — it DIED under load                      (recorded as a finding); ladder aborts"
+                );
+            }
             break;
         }
         knee = Some(step);
@@ -783,6 +804,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
         scale: scale.key().to_owned(),
         steps: steps_out,
         knee,
+        sut_died,
     };
 
     let out_dir = args.out.join(&descriptor.name);
