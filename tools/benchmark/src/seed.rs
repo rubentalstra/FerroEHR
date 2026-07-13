@@ -160,7 +160,10 @@ async fn commit_composition(
         auth: AuthSlot::Regular,
     };
     let resp = client.send(req).await?;
-    if resp.status == 201 {
+    // 201 with an empty body, or 204 — both are the create-success forms a
+    // conformant server may answer under `Prefer: return=minimal` (upstream
+    // EHRbase answers 204); either way the composition is stored.
+    if resp.status == 201 || resp.status == 204 {
         Ok(())
     } else {
         Err(BenchError::Unexpected(format!(

@@ -10,7 +10,7 @@
   "workload": {
     "lock": "afa48bd156dc31d9e22d9ac8e4a7f9425f717480b04c28d746d28ae9a9fbec26",
     "profile": "smoke",
-    "scale": "empty",
+    "scale": "10k",
     "ward_size": 20,
     "load_factor": 1.0,
     "seed": 2953956094
@@ -19,139 +19,139 @@
     "host": "Apple M2 (8 logical CPUs, 16384 MiB RAM) · Darwin 26.5.1 · arm64",
     "cpus": 8,
     "mem_mib": 16384,
-    "harness_sha": "fdc0c539e",
-    "started": "2026-07-13T17:53:26.283104Z"
+    "harness_sha": "f68ee1e6b",
+    "started": "2026-07-13T18:41:26.664814Z"
   },
   "classes": {
     "aql-patient": {
       "count": 22,
       "errors": 0,
-      "p50_us": 20335,
-      "p90_us": 22063,
-      "p99_us": 25599,
-      "p999_us": 25599,
-      "max_us": 25599,
-      "histogram": "HISTEwAAADAAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAI9HAoUCAgcCbwKJBgJrAg0CHQKlAQIrAlUCEwInAg8CKwIJAgsCAwIzAgJTAuECAg=="
+      "p50_us": 32079,
+      "p90_us": 39711,
+      "p99_us": 42495,
+      "p999_us": 42495,
+      "max_us": 42495,
+      "histogram": "HISTEwAAADAAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAANNSAmUCGwLtBAJ/AosBAjcCGwJ/AskCAiUCaQIAAlsCQQIDAiUCOwIFAn8CZQJDAg=="
     },
     "aql-ward": {
       "count": 22,
       "errors": 0,
-      "p50_us": 14679,
-      "p90_us": 16495,
-      "p99_us": 18063,
-      "p999_us": 18063,
-      "max_us": 18063,
-      "histogram": "HISTEwAAADIAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAMU0As8KAvsCAhUCwwEC1wUCUwJZAqEBAhcCEwIlAgACQwIpAi0CTwIHAg0CewJLAnMC"
+      "p50_us": 28783,
+      "p90_us": 36543,
+      "p99_us": 42015,
+      "p999_us": 42015,
+      "max_us": 42015,
+      "histogram": "HISTEwAAADMAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAPtKAk8C5QcCMwKRAwKZAgJzAm8COQIhAiUCoQECBwJDApMCAgMCBQIRAn0CLwIfArECAg=="
     },
     "comp-create-large": {
       "count": 4,
       "errors": 0,
-      "p50_us": 34335,
-      "p90_us": 71871,
-      "p99_us": 71871,
-      "p999_us": 71871,
-      "max_us": 71871,
-      "histogram": "HISTEwAAAAwAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJ9bAr0FAtsPAoMBAg=="
+      "p50_us": 43487,
+      "p90_us": 78527,
+      "p99_us": 78527,
+      "p999_us": 78527,
+      "max_us": 78527,
+      "histogram": "HISTEwAAAAwAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAPVhAqMDAu0MAoUBAg=="
     },
     "comp-create-small": {
       "count": 90,
       "errors": 0,
-      "p50_us": 19519,
-      "p90_us": 21759,
-      "p99_us": 199807,
-      "p999_us": 199807,
-      "max_us": 199807,
-      "histogram": "HISTEwAAAKYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAANFCAlkCBwIdApMCAv0BAokBAqcBAo0BAs8CAjUC7wECNwJBAgICCwICAAIJAgMCAgACAgACAAYCAAIFAhsEEwIDAhsCAgACAAINAg0CAgMCAAICAAIDAgACBQIPAgUCAg0CCwIAAgACAAQDAgMCBQICAgIHAgsCAAIbBBUEAAQAAgIPAhUCAAIJAgMCAwIhAgMC4QECzQQCewK9AgKdEAKTAQK9FwI="
+      "p50_us": 26863,
+      "p90_us": 32623,
+      "p99_us": 92927,
+      "p999_us": 92927,
+      "max_us": 92927,
+      "histogram": "HISTEwAAALUAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAANlIAs8DAo8BAj8CWQIJAgcClQICMQKdAQKJAQJfAm0CFwJ/Ag8CDQICCwIFAh0CEwIPAjkCUwIABAUCEwIFAgkCGwIDAgACAAIDAgcCAAILBAUCAAITAgMCAAIXAg8CEQIDAiMCAAIHAhMCAwQhAhcCDQIRAhECAAIjAgMCAhECDwIDAgACDQIPAhcCAwIjAgcCNQICEQIXAhkCPQIpAlUCAwIfAhUCCwL5CQKvBQLjAQKtBAI="
     },
     "comp-read-latest": {
       "count": 66,
       "errors": 0,
-      "p50_us": 16351,
-      "p90_us": 18351,
-      "p99_us": 20319,
-      "p999_us": 20319,
-      "max_us": 20319,
-      "histogram": "HISTEwAAAIEAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAIk3ArcDAskDAj8CnwICCQLZAQI/ApcBAg8CDwLDAQKlAQIDAisCjwICkwECWQJzAiUCFQInAgkCQwIAAikCFQIHAgsCCQI/Ag0CAAQlAgICCwQDAgMCEQIEBAACAgkCAAIXAgACFQIAAgkCAwIAAiUCCwIAAhECGQIJAjkCIwJVAg=="
+      "p50_us": 18991,
+      "p90_us": 25935,
+      "p99_us": 27999,
+      "p999_us": 27999,
+      "max_us": 27999,
+      "histogram": "HISTEwAAAIkAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAKk/Ap8CAkcCewJJAqUCAjkCzwMCmwECBQInAjsCEwJhAiUCFwIJAnsCEwINApkBAgACCwIHAkMCCQIHAi0CBQIAAhsCEQIvAj0CGQIFAkECDQIbAhMCGQI5AgkCIQInAhMCBwIRAgIfAgsCRQIAAhsCAhcCFQILAo0BAiECGwIjAhECMwIJAmUC"
     },
     "comp-read-version": {
       "count": 22,
       "errors": 0,
-      "p50_us": 14831,
-      "p90_us": 16799,
-      "p99_us": 17327,
-      "p999_us": 17327,
-      "max_us": 17327,
-      "histogram": "HISTEwAAAC8AAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAN08AjsCuwUC6QECnQECLwKvBQI/AjUCMwQTAiECIwItAgJJAjMChQECGQIvAg0C"
+      "p50_us": 21183,
+      "p90_us": 25807,
+      "p99_us": 27039,
+      "p999_us": 27039,
+      "max_us": 27039,
+      "histogram": "HISTEwAAADUAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAALdFAqMDAlkCDwLDAQL/AwKbAQJhAoECAhECpQECBQJLAtUBAkkCFwIPAmMCAAIvApMBAgAC"
     },
     "comp-update": {
       "count": 28,
       "errors": 0,
-      "p50_us": 21631,
-      "p90_us": 69247,
-      "p99_us": 73151,
-      "p999_us": 73151,
-      "max_us": 73151,
-      "histogram": "HISTEwAAAEAAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAOlEAssDAvUGAtsBApMCAiUCCwIPAg0CGwITAgUCAwJNAgsCVwINAhkCAAIHAkkCCwKvAgLnBQKrEQIbAjMCQQI="
+      "p50_us": 33247,
+      "p90_us": 75327,
+      "p99_us": 80063,
+      "p999_us": 80063,
+      "max_us": 80063,
+      "histogram": "HISTEwAAAEIAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJdPAr8BArEFAs8CAlkCwwECHQL/AQJFAksCVwJVAiECCQIFAjcCDwINAjMCAAJFAjcC+wECpQYCuQYCjwECMQJdAg=="
     },
     "contribution-commit": {
       "count": 22,
       "errors": 0,
-      "p50_us": 19839,
-      "p90_us": 22287,
-      "p99_us": 23391,
-      "p999_us": 23391,
-      "max_us": 23391,
-      "histogram": "HISTEwAAAC8AAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAMdHAr0BAnUCCQLTBgI3Am0CQwIpAhsCDwIAAhMCKwIFAgACGQIJAkMCbQJBAkMC"
+      "p50_us": 27199,
+      "p90_us": 32735,
+      "p99_us": 39231,
+      "p999_us": 39231,
+      "max_us": 39231,
+      "histogram": "HISTEwAAADIAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAPNOApkDAlsC4wECIwLzAgIbAskBAhcCAwJJAg8CLwInBE0CHwK1AQJnAq8BAqsCAmcC"
     },
     "dir-read": {
       "count": 22,
       "errors": 0,
-      "p50_us": 15463,
-      "p90_us": 18719,
-      "p99_us": 22751,
-      "p999_us": 22751,
-      "max_us": 22751,
-      "histogram": "HISTEwAAADUAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAMM9AqcDAhkC1wIClwMCkwICSwLtAgKbAQIRAhECQwI9AgACRwI9AgcCKQIxAokBAgkC6QMC"
+      "p50_us": 20015,
+      "p90_us": 23167,
+      "p99_us": 25887,
+      "p999_us": 25887,
+      "max_us": 25887,
+      "histogram": "HISTEwAAADEAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAItAAt8FAs0CAh8CLQKDAQKJBwJTAgUCDQKxAQIPAlMEHQIfAiECCwJHAmECgwICSwI="
     },
     "dir-update": {
       "count": 5,
       "errors": 0,
-      "p50_us": 20623,
-      "p90_us": 68287,
-      "p99_us": 68287,
-      "p999_us": 68287,
-      "max_us": 68287,
-      "histogram": "HISTEwAAAA4AAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAPNFArsNAlsC/xoCvwEC"
+      "p50_us": 37791,
+      "p90_us": 74303,
+      "p99_us": 74303,
+      "p999_us": 74303,
+      "max_us": 74303,
+      "histogram": "HISTEwAAAA8AAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAOtWAvEFAtUFAtMNAv8BAg=="
     },
     "ehr-create": {
       "count": 2,
       "errors": 0,
-      "p50_us": 19471,
-      "p90_us": 20703,
-      "p99_us": 20703,
-      "p999_us": 20703,
-      "max_us": 20703,
-      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAP9SApcBAg=="
+      "p50_us": 29871,
+      "p90_us": 38207,
+      "p99_us": 38207,
+      "p999_us": 38207,
+      "max_us": 38207,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJNdArsFAg=="
     },
     "ehr-read": {
       "count": 2,
       "errors": 0,
-      "p50_us": 60511,
-      "p90_us": 66047,
-      "p99_us": 66047,
-      "p999_us": 66047,
-      "max_us": 66047,
-      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAMNtAscCAg=="
+      "p50_us": 61727,
+      "p90_us": 69247,
+      "p99_us": 69247,
+      "p999_us": 69247,
+      "max_us": 69247,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAI9uAt8CAg=="
     },
     "history-read": {
       "count": 22,
       "errors": 0,
-      "p50_us": 14855,
-      "p90_us": 17983,
-      "p99_us": 24127,
-      "p999_us": 24127,
-      "max_us": 24127,
-      "histogram": "HISTEwAAADEAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAM9EAs0BAuECAp8BAiUCYQIhAhUCbwICGwJ/Ag8CAAJNAkUCHQIjAicCowECBQL1BQI="
+      "p50_us": 20751,
+      "p90_us": 28191,
+      "p99_us": 46623,
+      "p999_us": 46623,
+      "max_us": 46623,
+      "histogram": "HISTEwAAADcAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAP0/ArUGAoUCAnECywQCswICnwECoQECLwIfAk0CAwITAjMCOQK1AQJLAjMCuwIClwECLQLrCgI="
     },
     "opt-upload": {
       "count": 0,
@@ -166,12 +166,12 @@
     "status-update": {
       "count": 2,
       "errors": 0,
-      "p50_us": 26719,
-      "p90_us": 32687,
-      "p99_us": 32687,
-      "p999_us": 32687,
-      "max_us": 32687,
-      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAIlaAucFAg=="
+      "p50_us": 35327,
+      "p90_us": 41695,
+      "p99_us": 41695,
+      "p999_us": 41695,
+      "max_us": 41695,
+      "histogram": "HISTEwAAAAYAAAAAAAAAAwAAAAAAAAABAAAABQd12AA/8AAAAAAAAJ1hAosDAg=="
     },
     "tpl-list": {
       "count": 0,
@@ -193,457 +193,457 @@
   "resources": {
     "app": {
       "name": "ehrbase-rs-ehrbase-1",
-      "idle_rss": 9879682,
-      "peak_rss": 130233139,
-      "mean_cpu": 4.220465116279069,
+      "idle_rss": 70364692,
+      "peak_rss": 174483046,
+      "mean_cpu": 4.739069767441861,
       "series": [
         {
-          "t_ms": 2036,
-          "cpu_pct": 20.51,
-          "mem_bytes": 101942558
+          "t_ms": 2080,
+          "cpu_pct": 22.98,
+          "mem_bytes": 140194611
         },
         {
-          "t_ms": 5083,
-          "cpu_pct": 20.74,
-          "mem_bytes": 120586240
+          "t_ms": 5111,
+          "cpu_pct": 19.1,
+          "mem_bytes": 145227776
         },
         {
-          "t_ms": 8119,
+          "t_ms": 8211,
           "cpu_pct": 0.0,
-          "mem_bytes": 120586240
+          "mem_bytes": 145227776
         },
         {
-          "t_ms": 10159,
-          "cpu_pct": 0.03,
-          "mem_bytes": 120586240
-        },
-        {
-          "t_ms": 12196,
+          "t_ms": 10292,
           "cpu_pct": 0.0,
-          "mem_bytes": 120481382
+          "mem_bytes": 145227776
         },
         {
-          "t_ms": 15242,
-          "cpu_pct": 0.05,
-          "mem_bytes": 120481382
+          "t_ms": 13370,
+          "cpu_pct": 0.07,
+          "mem_bytes": 145122918
         },
         {
-          "t_ms": 18285,
-          "cpu_pct": 2.35,
-          "mem_bytes": 120481382
+          "t_ms": 15442,
+          "cpu_pct": 0.01,
+          "mem_bytes": 145122918
         },
         {
-          "t_ms": 21335,
-          "cpu_pct": 1.01,
-          "mem_bytes": 121005670
-        },
-        {
-          "t_ms": 24386,
-          "cpu_pct": 5.14,
-          "mem_bytes": 120481382
-        },
-        {
-          "t_ms": 27427,
-          "cpu_pct": 24.98,
-          "mem_bytes": 124675686
-        },
-        {
-          "t_ms": 30492,
-          "cpu_pct": 3.57,
-          "mem_bytes": 124885401
-        },
-        {
-          "t_ms": 33534,
-          "cpu_pct": 11.25,
-          "mem_bytes": 116287078
-        },
-        {
-          "t_ms": 36562,
-          "cpu_pct": 1.61,
-          "mem_bytes": 117650227
-        },
-        {
-          "t_ms": 39607,
-          "cpu_pct": 12.4,
-          "mem_bytes": 125933977
-        },
-        {
-          "t_ms": 42650,
+          "t_ms": 18522,
           "cpu_pct": 0.0,
-          "mem_bytes": 125933977
+          "mem_bytes": 146276352
         },
         {
-          "t_ms": 45702,
+          "t_ms": 21603,
+          "cpu_pct": 2.62,
+          "mem_bytes": 146800640
+        },
+        {
+          "t_ms": 24616,
+          "cpu_pct": 8.96,
+          "mem_bytes": 150680371
+        },
+        {
+          "t_ms": 26680,
+          "cpu_pct": 5.34,
+          "mem_bytes": 154874675
+        },
+        {
+          "t_ms": 29756,
+          "cpu_pct": 10.45,
+          "mem_bytes": 157600972
+        },
+        {
+          "t_ms": 31841,
+          "cpu_pct": 0.01,
+          "mem_bytes": 157600972
+        },
+        {
+          "t_ms": 34873,
+          "cpu_pct": 5.66,
+          "mem_bytes": 164102144
+        },
+        {
+          "t_ms": 37961,
+          "cpu_pct": 0.0,
+          "mem_bytes": 164102144
+        },
+        {
+          "t_ms": 41049,
+          "cpu_pct": 7.39,
+          "mem_bytes": 155189248
+        },
+        {
+          "t_ms": 44057,
+          "cpu_pct": 2.05,
+          "mem_bytes": 144703488
+        },
+        {
+          "t_ms": 46141,
+          "cpu_pct": 8.01,
+          "mem_bytes": 152882380
+        },
+        {
+          "t_ms": 49224,
+          "cpu_pct": 3.73,
+          "mem_bytes": 152882380
+        },
+        {
+          "t_ms": 52301,
+          "cpu_pct": 1.52,
+          "mem_bytes": 152882380
+        },
+        {
+          "t_ms": 55350,
+          "cpu_pct": 1.68,
+          "mem_bytes": 154979532
+        },
+        {
+          "t_ms": 58426,
+          "cpu_pct": 5.31,
+          "mem_bytes": 154979532
+        },
+        {
+          "t_ms": 61510,
+          "cpu_pct": 1.49,
+          "mem_bytes": 154979532
+        },
+        {
+          "t_ms": 64553,
+          "cpu_pct": 2.68,
+          "mem_bytes": 154979532
+        },
+        {
+          "t_ms": 67627,
+          "cpu_pct": 13.52,
+          "mem_bytes": 161270988
+        },
+        {
+          "t_ms": 70708,
+          "cpu_pct": 1.89,
+          "mem_bytes": 161480704
+        },
+        {
+          "t_ms": 73745,
+          "cpu_pct": 5.65,
+          "mem_bytes": 169659596
+        },
+        {
+          "t_ms": 76817,
+          "cpu_pct": 3.39,
+          "mem_bytes": 170079027
+        },
+        {
+          "t_ms": 78891,
+          "cpu_pct": 11.72,
+          "mem_bytes": 174063616
+        },
+        {
+          "t_ms": 81987,
+          "cpu_pct": 2.85,
+          "mem_bytes": 173644185
+        },
+        {
+          "t_ms": 85023,
+          "cpu_pct": 3.36,
+          "mem_bytes": 170079027
+        },
+        {
+          "t_ms": 88121,
+          "cpu_pct": 3.8,
+          "mem_bytes": 165884723
+        },
+        {
+          "t_ms": 91214,
+          "cpu_pct": 2.61,
+          "mem_bytes": 170393600
+        },
+        {
+          "t_ms": 94261,
+          "cpu_pct": 2.76,
+          "mem_bytes": 169974169
+        },
+        {
+          "t_ms": 97342,
+          "cpu_pct": 0.0,
+          "mem_bytes": 170183884
+        },
+        {
+          "t_ms": 99412,
+          "cpu_pct": 3.08,
+          "mem_bytes": 172071321
+        },
+        {
+          "t_ms": 101503,
+          "cpu_pct": 11.45,
+          "mem_bytes": 174273331
+        },
+        {
+          "t_ms": 104536,
+          "cpu_pct": 3.51,
+          "mem_bytes": 174483046
+        },
+        {
+          "t_ms": 107632,
+          "cpu_pct": 3.28,
+          "mem_bytes": 174483046
+        },
+        {
+          "t_ms": 110718,
+          "cpu_pct": 1.85,
+          "mem_bytes": 174273331
+        },
+        {
+          "t_ms": 113743,
+          "cpu_pct": 11.35,
+          "mem_bytes": 174273331
+        },
+        {
+          "t_ms": 116820,
+          "cpu_pct": 2.97,
+          "mem_bytes": 174483046
+        },
+        {
+          "t_ms": 118903,
           "cpu_pct": 3.1,
-          "mem_bytes": 125933977
+          "mem_bytes": 174483046
         },
         {
-          "t_ms": 48744,
-          "cpu_pct": 2.12,
-          "mem_bytes": 130233139
-        },
-        {
-          "t_ms": 51793,
-          "cpu_pct": 3.19,
-          "mem_bytes": 122263961
-        },
-        {
-          "t_ms": 53834,
-          "cpu_pct": 0.0,
-          "mem_bytes": 126038835
-        },
-        {
-          "t_ms": 56853,
-          "cpu_pct": 4.56,
-          "mem_bytes": 126038835
-        },
-        {
-          "t_ms": 59902,
-          "cpu_pct": 2.14,
-          "mem_bytes": 114189926
-        },
-        {
-          "t_ms": 61941,
-          "cpu_pct": 0.0,
-          "mem_bytes": 114399641
-        },
-        {
-          "t_ms": 64993,
-          "cpu_pct": 2.6,
-          "mem_bytes": 114609356
-        },
-        {
-          "t_ms": 67029,
-          "cpu_pct": 5.55,
-          "mem_bytes": 115133644
-        },
-        {
-          "t_ms": 70066,
-          "cpu_pct": 3.7,
-          "mem_bytes": 114819072
-        },
-        {
-          "t_ms": 73120,
-          "cpu_pct": 6.13,
-          "mem_bytes": 114819072
-        },
-        {
-          "t_ms": 76132,
-          "cpu_pct": 2.07,
-          "mem_bytes": 115238502
-        },
-        {
-          "t_ms": 79181,
-          "cpu_pct": 0.52,
-          "mem_bytes": 114819072
-        },
-        {
-          "t_ms": 82227,
-          "cpu_pct": 1.24,
-          "mem_bytes": 119013376
-        },
-        {
-          "t_ms": 84271,
-          "cpu_pct": 1.6,
-          "mem_bytes": 119327948
-        },
-        {
-          "t_ms": 87298,
-          "cpu_pct": 1.26,
-          "mem_bytes": 119118233
-        },
-        {
-          "t_ms": 90357,
-          "cpu_pct": 2.26,
-          "mem_bytes": 119013376
-        },
-        {
-          "t_ms": 92403,
-          "cpu_pct": 4.44,
-          "mem_bytes": 119537664
-        },
-        {
-          "t_ms": 94453,
-          "cpu_pct": 1.07,
-          "mem_bytes": 119537664
-        },
-        {
-          "t_ms": 97476,
-          "cpu_pct": 2.89,
-          "mem_bytes": 119642521
-        },
-        {
-          "t_ms": 100520,
-          "cpu_pct": 6.69,
-          "mem_bytes": 124046540
-        },
-        {
-          "t_ms": 102589,
-          "cpu_pct": 3.37,
-          "mem_bytes": 127716556
-        },
-        {
-          "t_ms": 104638,
-          "cpu_pct": 4.0,
-          "mem_bytes": 127716556
-        },
-        {
-          "t_ms": 107676,
-          "cpu_pct": 2.06,
-          "mem_bytes": 127716556
-        },
-        {
-          "t_ms": 110719,
-          "cpu_pct": 1.22,
-          "mem_bytes": 127716556
-        },
-        {
-          "t_ms": 113765,
-          "cpu_pct": 6.46,
-          "mem_bytes": 130233139
-        },
-        {
-          "t_ms": 116784,
-          "cpu_pct": 3.57,
-          "mem_bytes": 130023424
-        },
-        {
-          "t_ms": 119844,
-          "cpu_pct": 0.03,
-          "mem_bytes": 129918566
+          "t_ms": 121991,
+          "cpu_pct": 2.58,
+          "mem_bytes": 174273331
         }
       ]
     },
     "db": {
       "name": "ehrbase-rs-ehrbase-postgres-1",
-      "idle_rss": 44842352,
-      "peak_rss": 116706508,
-      "mean_cpu": 1.6874418604651162,
+      "idle_rss": 255537971,
+      "peak_rss": 326316851,
+      "mean_cpu": 3.123488372093024,
       "series": [
         {
-          "t_ms": 2036,
-          "cpu_pct": 19.68,
-          "mem_bytes": 73903636
+          "t_ms": 2080,
+          "cpu_pct": 19.34,
+          "mem_bytes": 277138636
         },
         {
-          "t_ms": 5083,
-          "cpu_pct": 6.7,
-          "mem_bytes": 82397102
+          "t_ms": 5111,
+          "cpu_pct": 8.24,
+          "mem_bytes": 286261248
         },
         {
-          "t_ms": 8119,
-          "cpu_pct": 2.23,
-          "mem_bytes": 85458944
-        },
-        {
-          "t_ms": 10159,
-          "cpu_pct": 0.04,
-          "mem_bytes": 85437972
-        },
-        {
-          "t_ms": 12196,
-          "cpu_pct": 0.51,
-          "mem_bytes": 86224404
-        },
-        {
-          "t_ms": 15242,
-          "cpu_pct": 0.1,
-          "mem_bytes": 86245376
-        },
-        {
-          "t_ms": 18285,
-          "cpu_pct": 0.25,
-          "mem_bytes": 86843064
-        },
-        {
-          "t_ms": 21335,
-          "cpu_pct": 0.68,
-          "mem_bytes": 86968893
-        },
-        {
-          "t_ms": 24386,
-          "cpu_pct": 1.11,
-          "mem_bytes": 94109696
-        },
-        {
-          "t_ms": 27427,
-          "cpu_pct": 3.2,
-          "mem_bytes": 97737768
-        },
-        {
-          "t_ms": 30492,
-          "cpu_pct": 1.02,
-          "mem_bytes": 100411637
-        },
-        {
-          "t_ms": 33534,
-          "cpu_pct": 3.08,
-          "mem_bytes": 100306780
-        },
-        {
-          "t_ms": 36562,
-          "cpu_pct": 0.39,
-          "mem_bytes": 106849894
-        },
-        {
-          "t_ms": 39607,
-          "cpu_pct": 0.52,
-          "mem_bytes": 107164467
-        },
-        {
-          "t_ms": 42650,
-          "cpu_pct": 2.92,
-          "mem_bytes": 110519910
-        },
-        {
-          "t_ms": 45702,
-          "cpu_pct": 1.48,
-          "mem_bytes": 112407347
-        },
-        {
-          "t_ms": 48744,
-          "cpu_pct": 3.27,
-          "mem_bytes": 112617062
-        },
-        {
-          "t_ms": 51793,
-          "cpu_pct": 1.55,
-          "mem_bytes": 112826777
-        },
-        {
-          "t_ms": 53834,
-          "cpu_pct": 0.18,
-          "mem_bytes": 112512204
-        },
-        {
-          "t_ms": 56853,
-          "cpu_pct": 0.92,
-          "mem_bytes": 113036492
-        },
-        {
-          "t_ms": 59902,
-          "cpu_pct": 0.69,
-          "mem_bytes": 112617062
-        },
-        {
-          "t_ms": 61941,
-          "cpu_pct": 0.22,
-          "mem_bytes": 113351065
-        },
-        {
-          "t_ms": 64993,
+          "t_ms": 8211,
           "cpu_pct": 0.62,
-          "mem_bytes": 112721920
+          "mem_bytes": 286261248
         },
         {
-          "t_ms": 67029,
-          "cpu_pct": 1.21,
-          "mem_bytes": 113141350
+          "t_ms": 10292,
+          "cpu_pct": 0.69,
+          "mem_bytes": 286261248
         },
         {
-          "t_ms": 70066,
-          "cpu_pct": 0.16,
-          "mem_bytes": 113246208
+          "t_ms": 13370,
+          "cpu_pct": 2.32,
+          "mem_bytes": 287519539
         },
         {
-          "t_ms": 73120,
-          "cpu_pct": 0.49,
-          "mem_bytes": 113246208
+          "t_ms": 15442,
+          "cpu_pct": 0.88,
+          "mem_bytes": 286575820
         },
         {
-          "t_ms": 76132,
-          "cpu_pct": 0.48,
-          "mem_bytes": 113036492
+          "t_ms": 18522,
+          "cpu_pct": 1.94,
+          "mem_bytes": 286995251
         },
         {
-          "t_ms": 79181,
-          "cpu_pct": 2.91,
-          "mem_bytes": 113665638
+          "t_ms": 21603,
+          "cpu_pct": 3.15,
+          "mem_bytes": 290455552
         },
         {
-          "t_ms": 82227,
-          "cpu_pct": 1.32,
-          "mem_bytes": 112721920
+          "t_ms": 24616,
+          "cpu_pct": 29.79,
+          "mem_bytes": 296851865
         },
         {
-          "t_ms": 84271,
-          "cpu_pct": 0.68,
-          "mem_bytes": 113455923
+          "t_ms": 26680,
+          "cpu_pct": 2.88,
+          "mem_bytes": 299787878
         },
         {
-          "t_ms": 87298,
-          "cpu_pct": 0.41,
-          "mem_bytes": 114189926
+          "t_ms": 29756,
+          "cpu_pct": 0.1,
+          "mem_bytes": 303457894
         },
         {
-          "t_ms": 90357,
-          "cpu_pct": 1.22,
-          "mem_bytes": 114294784
+          "t_ms": 31841,
+          "cpu_pct": 0.07,
+          "mem_bytes": 303667609
         },
         {
-          "t_ms": 92403,
-          "cpu_pct": 1.14,
-          "mem_bytes": 114294784
+          "t_ms": 34873,
+          "cpu_pct": 1.79,
+          "mem_bytes": 310378496
         },
         {
-          "t_ms": 94453,
-          "cpu_pct": 0.37,
-          "mem_bytes": 114294784
+          "t_ms": 37961,
+          "cpu_pct": 1.41,
+          "mem_bytes": 313314508
         },
         {
-          "t_ms": 97476,
-          "cpu_pct": 0.9,
-          "mem_bytes": 115133644
+          "t_ms": 41049,
+          "cpu_pct": 1.43,
+          "mem_bytes": 317089382
         },
         {
-          "t_ms": 100520,
-          "cpu_pct": 1.59,
-          "mem_bytes": 115762790
+          "t_ms": 44057,
+          "cpu_pct": 4.63,
+          "mem_bytes": 317089382
         },
         {
-          "t_ms": 102589,
-          "cpu_pct": 1.58,
-          "mem_bytes": 115867648
+          "t_ms": 46141,
+          "cpu_pct": 2.78,
+          "mem_bytes": 317718528
         },
         {
-          "t_ms": 104638,
-          "cpu_pct": 2.06,
-          "mem_bytes": 115448217
+          "t_ms": 49224,
+          "cpu_pct": 0.56,
+          "mem_bytes": 317508812
         },
         {
-          "t_ms": 107676,
-          "cpu_pct": 0.9,
-          "mem_bytes": 116601651
+          "t_ms": 52301,
+          "cpu_pct": 0.8,
+          "mem_bytes": 318137958
         },
         {
-          "t_ms": 110719,
-          "cpu_pct": 0.14,
-          "mem_bytes": 116706508
+          "t_ms": 55350,
+          "cpu_pct": 0.74,
+          "mem_bytes": 317928243
         },
         {
-          "t_ms": 113765,
-          "cpu_pct": 0.36,
-          "mem_bytes": 116287078
+          "t_ms": 58426,
+          "cpu_pct": 1.29,
+          "mem_bytes": 318242816
         },
         {
-          "t_ms": 116784,
-          "cpu_pct": 0.61,
-          "mem_bytes": 116182220
+          "t_ms": 61510,
+          "cpu_pct": 1.15,
+          "mem_bytes": 318347673
         },
         {
-          "t_ms": 119844,
-          "cpu_pct": 2.67,
-          "mem_bytes": 116182220
+          "t_ms": 64553,
+          "cpu_pct": 4.86,
+          "mem_bytes": 318662246
+        },
+        {
+          "t_ms": 67627,
+          "cpu_pct": 0.83,
+          "mem_bytes": 318452531
+        },
+        {
+          "t_ms": 70708,
+          "cpu_pct": 4.17,
+          "mem_bytes": 318452531
+        },
+        {
+          "t_ms": 73745,
+          "cpu_pct": 1.45,
+          "mem_bytes": 318662246
+        },
+        {
+          "t_ms": 76817,
+          "cpu_pct": 1.25,
+          "mem_bytes": 318976819
+        },
+        {
+          "t_ms": 78891,
+          "cpu_pct": 2.99,
+          "mem_bytes": 321912832
+        },
+        {
+          "t_ms": 81987,
+          "cpu_pct": 1.18,
+          "mem_bytes": 321703116
+        },
+        {
+          "t_ms": 85023,
+          "cpu_pct": 5.59,
+          "mem_bytes": 322017689
+        },
+        {
+          "t_ms": 88121,
+          "cpu_pct": 0.04,
+          "mem_bytes": 321703116
+        },
+        {
+          "t_ms": 91214,
+          "cpu_pct": 3.62,
+          "mem_bytes": 322017689
+        },
+        {
+          "t_ms": 94261,
+          "cpu_pct": 0.17,
+          "mem_bytes": 321807974
+        },
+        {
+          "t_ms": 97342,
+          "cpu_pct": 2.08,
+          "mem_bytes": 322437120
+        },
+        {
+          "t_ms": 99412,
+          "cpu_pct": 0.62,
+          "mem_bytes": 322227404
+        },
+        {
+          "t_ms": 101503,
+          "cpu_pct": 3.93,
+          "mem_bytes": 325477990
+        },
+        {
+          "t_ms": 104536,
+          "cpu_pct": 1.44,
+          "mem_bytes": 325268275
+        },
+        {
+          "t_ms": 107632,
+          "cpu_pct": 4.1,
+          "mem_bytes": 325792563
+        },
+        {
+          "t_ms": 110718,
+          "cpu_pct": 0.09,
+          "mem_bytes": 325792563
+        },
+        {
+          "t_ms": 113743,
+          "cpu_pct": 3.57,
+          "mem_bytes": 325792563
+        },
+        {
+          "t_ms": 116820,
+          "cpu_pct": 4.05,
+          "mem_bytes": 326316851
+        },
+        {
+          "t_ms": 118903,
+          "cpu_pct": 1.65,
+          "mem_bytes": 326002278
+        },
+        {
+          "t_ms": 121991,
+          "cpu_pct": 0.03,
+          "mem_bytes": 326002278
         }
       ]
     },
-    "cold_start_ms": null
+    "cold_start_ms": 13705
   },
   "storage": {
-    "bytes_total": 19881984,
-    "compositions": 0,
-    "bytes_per_composition": 0
+    "bytes_total": 281649152,
+    "compositions": 10000,
+    "bytes_per_composition": 28164
   },
-  "reproduce": "cargo run -q -p benchmark --bin bench -- run --sut ehrbase-rs --base-url http://localhost:8080/ehrbase/rest/openehr/v1 --profile smoke --scale empty --ward-size 20 --load-factor 1 --seed 2953956094",
+  "reproduce": "cargo run -q -p benchmark --bin bench -- run --sut ehrbase-rs --base-url http://localhost:8080/ehrbase/rest/openehr/v1 --profile smoke --scale 10k --ward-size 20 --load-factor 1 --seed 2953956094",
   "excluded_templates": []
 }
