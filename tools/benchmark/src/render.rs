@@ -174,12 +174,17 @@ pub fn ehr_status(subject_id: &str, seed: u64) -> Result<Value, BenchError> {
 /// the two SUTs' directories are labelled identically per patient.
 #[must_use]
 pub fn folder(params: &VaryParams) -> Value {
+    // `archetype_node_id` is RM-mandatory on every LOCATABLE
+    // (RM common `LOCATABLE.Archetype_node_id_valid`); the same generic FOLDER
+    // archetype the ECC directory suite commits.
     serde_json::json!({
         "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "root" },
         "folders": [
             {
                 "_type": "FOLDER",
+                "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
                 "name": {
                     "_type": "DV_TEXT",
                     "value": format!("episodes-{}", params.subject_id)

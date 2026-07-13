@@ -113,8 +113,11 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       loudly for that SUT (fairness note in the report), never silently.
 
 ### C — Runs
-- [ ] C1. Smoke profile end-to-end vs composed ehrbase-rs (empty rung):
-      artefacts under `docs/benchmarks/ehrbase-rs/`.
+- [x] C1. Smoke profile end-to-end vs composed ehrbase-rs (empty rung):
+      artefacts under `docs/benchmarks/ehrbase-rs/`. *Closed 2026-07-13:
+      331 requests · 0 errors; the smoke pass caught two real instrument
+      defects first (weak-ETag uid parsing; FOLDER payload missing the
+      RM-mandatory archetype_node_id) — both fixed spec-cited.*
 - [ ] C2. `hour` profile vs ehrbase-rs at the 10k rung — the first real
       committed baseline (latency + CPU/RSS + storage numbers).
 - [ ] C3. Same profile vs upstream EHRbase Java (fairness rules) → the
