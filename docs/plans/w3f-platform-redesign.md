@@ -109,7 +109,7 @@ app/ehrbase/src/
 ### Stage 3 — deferred checks (in this order, only when ALL code is rewritten)
 
 - [x] C1 Full `cargo nextest run --workspace` triage — 1440/1440 green; 17 stale expectations updated spec-correctly with citations (weak ETags per overview §ETag and Last-Modified, Location_deprecated dropped, provenance identity, Admin OAS bulk-delete contract, master06 lifecycle state machine walk, precise SM ehr-index error names, migration 0007 count); zero weakenings — the lifecycle test gained a new illegal-transition assertion
-- [ ] C2 Workspace clippy green under deny rules
+- [x] C2 Workspace clippy green under deny rules — ehrbase crate zero warnings; dead_code/todo denies green workspace-wide (pre-existing W-3c/W-3e doc-lint warnings in ehrbase-sm/-rest noted, out of W-3f scope)
 - [ ] C3 ECC full run LAST (`scripts/conformance.sh`); case adjudications where the instrument is wrong (spec-cited); honest re-baseline from 341/315/0
 
 ### Stage 4 — close
