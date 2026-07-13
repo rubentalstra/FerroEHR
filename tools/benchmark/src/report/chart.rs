@@ -57,14 +57,20 @@ fn log_x(us: u64, lo: f64, hi: f64, x0: f64, x1: f64) -> f64 {
 /// `hi = ceil(log10(max))`): every decade `10^n`, plus the 2× and 5× steps
 /// when the span is two decades or fewer (a narrow span would otherwise show
 /// a single line at the edge).
+// The clamp to [0, 12] before rounding makes truncation and sign loss
+// impossible — the axis exponents are small non-negative decades.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn gridlines(lo: f64, hi: f64) -> Vec<u64> {
     let span = (hi - lo).max(1.0);
     let mut out = Vec::new();
-    let mut n = lo as i32;
-    while f64::from(n) <= hi {
-        let d = 10f64.powi(n) as u64;
+    // Axis exponents are small non-negative decades (µs → minutes ≈ 0..=8);
+    // clamp defensively before the integer walk.
+    let mut n = lo.clamp(0.0, 12.0).round() as u32;
+    let top = hi.clamp(0.0, 12.0).round() as u32;
+    while n <= top {
+        let d = 10u64.saturating_pow(n);
         out.push(d.max(1));
-        if span <= 2.0 && f64::from(n) < hi {
+        if span <= 2.0 && n < top {
             out.push(d.saturating_mul(2));
             out.push(d.saturating_mul(5));
         }
