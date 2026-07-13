@@ -9,7 +9,7 @@ use crate::edition::{Edition, EditionPolicy};
 /// The class of SUT, which gates result-artefact emission (X1 fairness rule
 /// 4: the Conformance Certificate is a self-assessment of OUR product and is
 /// never emitted for a foreign run).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SutKind {
     /// ehrbase-rs — the product this repo builds; Certificate-eligible.
