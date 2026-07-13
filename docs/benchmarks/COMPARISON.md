@@ -34,6 +34,17 @@
 | **ehrbase-rs** | 50.3 | 23.2 |
 | **ehrbase-java** | 16.9 | 4.8 |
 
+## Maximum sustained throughput (knee)
+
+> The last sustainable step on the load-factor ladder (p99 ≤ 1 s, error ≤ 0.1%), per SUT — the honest capacity signal, not peak req/s. Each SUT's own `KNEE.md` carries the full ladder and the single-run/same-host lower-bound caveat.
+
+| | Knee L | Sustained req/s | p99 at knee (µs) |
+|---|--:|--:|--:|
+| **ehrbase-rs** | 1 | 10.1 | 53375 |
+| **ehrbase-java** | 1 | 10.1 | 72767 |
+
+![Max sustained req/s at the SLO](charts/comparison-knee.svg)
+
 ## Latency — p99 per operation class
 
 ![p99 latency per operation class](charts/comparison-p99.svg)

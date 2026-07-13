@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 252" role="img" aria-label="Knee/saturation curve — sustained req/s vs p99 latency">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.s1 { fill: #2a78d6; } .s1s { stroke: #2a78d6; }
+.s2 { fill: #1baf7a; } .s2s { stroke: #1baf7a; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.s1 { fill: #3987e5; } .s1s { stroke: #3987e5; }
+.s2 { fill: #199e70; } .s2s { stroke: #199e70; }
+}
+</style>
+<text x="16" y="22" class="title">Knee — sustained req/s vs p99 latency (log scale)</text>
+<line class="grid" x1="64" y1="210.0" x2="660" y2="210.0"/>
+<text class="muted" x="56.0" y="214.0" text-anchor="end">10.0ms</text>
+<line class="grid" x1="64" y1="161.2" x2="660" y2="161.2"/>
+<text class="muted" x="56.0" y="165.2" text-anchor="end">20.0ms</text>
+<line class="grid" x1="64" y1="96.8" x2="660" y2="96.8"/>
+<text class="muted" x="56.0" y="100.8" text-anchor="end">50.0ms</text>
+<line class="grid" x1="64" y1="48.0" x2="660" y2="48.0"/>
+<text class="muted" x="56.0" y="52.0" text-anchor="end">100.0ms</text>
+<text class="muted" x="660" y="228.0" text-anchor="end">10 req/s</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="660.0,92.2 73.9,93.5"/>
+<circle class="s1" cx="660.0" cy="92.2" r="3.5"/>
+<text x="666.0" y="88.2">L=1</text>
+<text class="muted" x="666.0" y="104.2">53.4ms</text>
+<circle class="s1" cx="73.9" cy="93.5" r="3.5"/>
+<text x="79.9" y="89.5">L=2</text>
+<text class="muted" x="79.9" y="105.5">52.4ms</text>
+</svg>

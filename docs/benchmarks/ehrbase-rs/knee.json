@@ -1,0 +1,34 @@
+{
+  "sut": {
+    "name": "ehrbase-rs",
+    "kind": "ours",
+    "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+    "product_label": "ehrbase-rs 3.0.0",
+    "image_digests": {},
+    "versions": {}
+  },
+  "scale": "10k",
+  "steps": [
+    {
+      "load_factor": 1.0,
+      "rps": 10.075,
+      "error_rate": 0.0,
+      "p99_us": 53375,
+      "requests": 1209
+    },
+    {
+      "load_factor": 2.0,
+      "rps": 0.16666666666666666,
+      "error_rate": 0.9920191540303273,
+      "p99_us": 52351,
+      "requests": 20
+    }
+  ],
+  "knee": {
+    "load_factor": 1.0,
+    "rps": 10.075,
+    "error_rate": 0.0,
+    "p99_us": 53375,
+    "requests": 1209
+  }
+}

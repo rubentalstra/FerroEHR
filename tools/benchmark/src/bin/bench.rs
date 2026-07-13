@@ -709,12 +709,16 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
 
     let mut steps_out: Vec<KneeStep> = Vec::new();
     let mut knee: Option<KneeStep> = None;
-    for load_factor in ladder {
+    for (step_index, load_factor) in ladder.into_iter().enumerate() {
         let spec = WorkloadSpec {
             profile: Profile::Hour,
             ward_size: args.ward_size,
             load_factor,
-            seed: args.seed,
+            // Every step admits a FRESH ward: subject ids derive from the
+            // seed, and both first-class SUTs enforce one EHR per subject
+            // (RM ehr master04 §EHR Status) — re-running the same subjects
+            // 409s every admission and cascades the whole step.
+            seed: args.seed.wrapping_add(step_index as u64),
         };
         let workload = match model::build_capacity(&spec, step_window, warmup) {
             Ok(w) => w,
