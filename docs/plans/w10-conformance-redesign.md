@@ -32,6 +32,14 @@
    self-identifying as a framework assessment (never official openEHR
    certification) with the claim machine-computed from the attached run.
 
+4. **Spine-first suite authoring (owner, mid-session):** every expected
+   status/header/body condition traces to the CNF schedule or the vendored
+   ITS-REST text — never to observed ehrbase-rs behaviour (our code could be
+   wrong; the CNF exists to prove it). Legacy suites are consulted only for
+   request mechanics, never expected outcomes; a case our server fails is a
+   correct instrument outcome, adjudicated as a defect — assertions are
+   never weakened to pass.
+
 ## Mission (from the prompt)
 
 1. Spec-first re-derivation of the case catalogue — registers first in

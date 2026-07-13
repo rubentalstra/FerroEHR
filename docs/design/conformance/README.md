@@ -47,6 +47,11 @@ coverage evidence + raw material only.
   artefact is emitted for any SUT — industry-standard-validator ambition;
   it always self-identifies as a framework assessment, never official
   openEHR certification.
+- **Spine-first authoring** (2026-07-13, mid-session): expectations come
+  from the schedule + ITS-REST text only, never from observed server
+  behaviour; legacy suites inform request mechanics only. A failing case
+  against our own server is a correct outcome (a defect, handled by
+  adjudication) — never a reason to weaken an assertion.
 - **Version ladder:** versioned assertions carry per-edition/per-RM-version
   forms ordered newest→oldest; the runner tries the highest first, steps
   down, and records the satisfied level as an edition finding (never a
