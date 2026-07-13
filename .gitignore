@@ -43,3 +43,6 @@ lcov.info
 /docs-dist
 /.latest-src
 _check/
+
+# Stray local build artifacts
+*.rlib
