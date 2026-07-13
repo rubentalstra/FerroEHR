@@ -49,8 +49,11 @@ Non-negotiables (violations are rejected at review):
   `cargo clippy -p ehrbase-admin-ui --target wasm32-unknown-unknown` green
   (lib), `cargo nextest run -p ehrbase-admin-ui` green, `leptosfmt` +
   `cargo fmt` clean, and `cargo leptos build` completing when the task
-  touches the build surface. Report actual command output; never claim
-  green you didn't see.
+  touches the build surface. When the change touches an E2E-covered journey
+  (design doc §8d) and Docker is available, run `scripts/ui-e2e.sh` too;
+  if you cannot run it, say so explicitly — CI's `ui-e2e` job gates the
+  merge regardless. Report actual command output; never claim green you
+  didn't see.
 
 Your final message reports: what changed (files), gate evidence, any
 deviation from the spec you were handed and why, and anything you

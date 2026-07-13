@@ -47,7 +47,15 @@ cargo nextest run -p ehrbase-admin-ui
 #    touches the build surface (Cargo.toml, styles, assets, features);
 #    otherwise report it as skipped-with-reason
 cargo leptos build
+
+# 5. E2E journeys (merge-gating in CI; local requires Docker) — the
+#    composed stack + headless browser, design doc §8d
+bash scripts/ui-e2e.sh
 ```
+
+Stage 5 locally: run when Docker is available (`docker info`); otherwise
+report `SKIPPED(no docker)` — but state explicitly that CI's `ui-e2e` job
+WILL run it and gates the merge, so a skip here is not a pass.
 
 Adjust the exact feature flags to the crate's `Cargo.toml` (read it first —
 the `ssr`/`hydrate` feature names are the convention, not a guess).

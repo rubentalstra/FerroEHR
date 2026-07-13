@@ -213,9 +213,16 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   catalogs) lives OUT of components in plain types with unit tests
   (`testing`). Components stay thin.
 - Component/browser tests: `wasm-bindgen-test` with `mount_to` — remember
-  updates are async: `tick().await` before asserting. E2E: Rust-native
-  (fantoccini/cucumber per the book's `todo_app_sqlite` example) — NOT
-  Playwright/JS (owner no-JS mandate covers the test suite).
+  updates are async: `tick().await` before asserting.
+- **E2E is a merge gate** (design doc §8d): Rust-native only —
+  `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
+  against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
+  `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs`, skip-with-
+  reason when `UI_E2E_BASE_URL` is unset (CI always sets it). Every journey
+  fails on any browser-console hydration error or panic. Explicit waits on
+  elements/conditions, never `sleep`; a flaky journey is fixed, never
+  `#[ignore]`d or retried-by-default. NOT Playwright/JS (the no-JS mandate
+  covers the test suite).
 - Gates for every UI change: `cargo clippy -p ehrbase-admin-ui
   --all-targets` green on native **and**
   `--target wasm32-unknown-unknown` (lib); `cargo nextest run -p
