@@ -103,10 +103,10 @@ const PACK: [CkmTemplate; 5] = [
     },
     CkmTemplate {
         kind: TemplateKind::CkmSummary,
-        slug: "ereferral",
-        template_id: "eReferral",
-        opt_file: "ereferral.opt",
-        example_file: "ereferral.example.json",
+        slug: "international-patient-summary",
+        template_id: "International Patient Summary",
+        opt_file: "international-patient-summary.opt",
+        example_file: "international-patient-summary.example.json",
     },
     CkmTemplate {
         kind: TemplateKind::CkmSynopsis,
@@ -170,7 +170,7 @@ mod tests {
                 "Generic lab test result example simple",
             ),
             (TemplateKind::CkmMedicationOrder, "ePrescription (FHIR)"),
-            (TemplateKind::CkmSummary, "eReferral"),
+            (TemplateKind::CkmSummary, "International Patient Summary"),
             (TemplateKind::CkmSynopsis, "GP data set"),
         ];
         for (kind, template_id) in expected {

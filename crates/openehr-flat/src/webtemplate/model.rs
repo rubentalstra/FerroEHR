@@ -189,6 +189,21 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub closed_attributes: Vec<WebTemplateClosedAttribute>,
 
+    /// Structural stubs for the RM-mandatory structural attributes of an
+    /// ENTRY-family node (`data`, `description`, `protocol`, `state`) that the
+    /// template **does** constrain with a node-identified structural child
+    /// (`ITEM_TREE[at0017]`, a `HISTORY`, …) which does not survive as a
+    /// web-template tree child because it carries no leaf content and the
+    /// compactor drops it. Recorded so the FLAT/TDD composition builder can
+    /// synthesise the empty attribute with the *constrained* node id/type/name
+    /// rather than a blind `at0001` placeholder — the constrained attribute must
+    /// be filled by a conforming value (AOM 1.4
+    /// `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+    /// Captured at build time from the OPT constraint object. Validation-only;
+    /// `#[serde(skip)]`.
+    #[serde(skip)]
+    pub structural_stubs: Vec<WebTemplateStructuralStub>,
+
     // ── build-time scratch (never serialized) ────────────────────────────────
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
     #[serde(skip)]
@@ -231,6 +246,7 @@ impl WebTemplateNode {
             tz_validity: None,
             code_lists: Vec::new(),
             closed_attributes: Vec::new(),
+            structural_stubs: Vec::new(),
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
@@ -422,6 +438,30 @@ pub struct WebTemplateCodeList {
     pub attr: String,
     pub terminology: Option<String>,
     pub codes: Vec<String>,
+}
+
+/// A structural stub for an RM-mandatory structural attribute of an ENTRY-family
+/// node (validation/synthesis-only, never serialized). The template constrains
+/// the attribute `attr` (e.g. `description`) with a node-identified structural
+/// child of RM type `rm_type` (`ITEM_TREE`, `HISTORY`, …) and archetype node id
+/// `node_id` (`at0017`), whose rubric `name` comes from the archetype
+/// `term_definitions`. When the attribute carries no leaf content, the compacted
+/// web-template drops the wrapper, so this record lets the composition builder
+/// synthesise the empty attribute with the *constrained* identity — a value the
+/// closed-archetype walk admits (AOM 1.4
+/// `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+#[derive(Debug, Clone)]
+pub struct WebTemplateStructuralStub {
+    /// The constrained RM attribute name (`data`, `description`, `protocol`,
+    /// `state`).
+    pub attr: String,
+    /// The constrained structural RM type (`ITEM_TREE`, `HISTORY`, …).
+    pub rm_type: String,
+    /// The constraint's archetype node id (`atNNNN`, or an archetype id at a root).
+    pub node_id: String,
+    /// The rubric text for `node_id` from the archetype `term_definitions`, when
+    /// present.
+    pub name: Option<String>,
 }
 
 /// A closed-archetype constraint on one attribute (F-07-05 + F-07-10;

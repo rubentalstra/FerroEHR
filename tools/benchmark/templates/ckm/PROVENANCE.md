@@ -29,6 +29,6 @@ composed stack after re-vendoring the OPTs.
 | vital-signs | Vital signs | yes | 201 |
 | generic-lab-test-result | Generic lab test result example simple | yes | 201 |
 | eprescription-fhir | ePrescription (FHIR) | yes | 201 |
-| ereferral | eReferral | yes | 201 |
+| ereferral | eReferral | vendored alternate | 201 |
 | gp-data-set | GP data set | yes | 201 |
-| international-patient-summary | International Patient Summary | **no — W-12** | 422: the server's own example is rejected by its own validator ("unexpected node 'at0001' under 'description'" on ACTION.medication inside the Medication Summary section) — a real generator-or-validator defect to be triaged spec-first (AOM/OPT constraint semantics), never papered over here |
+| international-patient-summary | International Patient Summary | **yes** | 201 — the earlier 422 was a real server defect (the example generator's blind at0001 structural placeholder where the template constrains description to ITEM_TREE[at0017]); fixed spec-first in openehr-flat (structural stubs; AOM 1.4 §Valid_value / ADL 1.4 §"Any" Constraints / CNF master15 L38) and probed by ECC-TPL-017 (adl14 example round-trip) with this OPT vendored in the ECC toolkit |

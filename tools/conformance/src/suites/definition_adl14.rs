@@ -3,12 +3,19 @@
 //!
 //! Unlike master05/master11, master04 is a **real, non-stub schedule**: its
 //! test cases carry normative conditions (§`validate_opt/§upload_opt/§get_opt`/
-//! §`get_opts/§delete_opt`), so every case here traces
-//! [`ScheduleTrace::Schedule`] — none is `EccOriginal`. The 16 cases are the
-//! whole `I_DEFINITION_ADL14` surface; the chapter's ADL 2 half
+//! §`get_opts/§delete_opt`), so those 16 cases (the whole `I_DEFINITION_ADL14`
+//! surface) trace [`ScheduleTrace::Schedule`]. The chapter's ADL 2 half
 //! (`I_DEFINITION_ADL2`) defines **no** test cases upstream, so no ADL 2 case
 //! exists (register 01 G-1 — the OPTIONS `Adl2Provisioning` capability stays
 //! unevidenceable until the chapter is filled; recorded, not faked).
+//!
+//! One further case is [`ScheduleTrace::EccOriginal`]: `tpl/adl14-example-roundtrip`
+//! drives the ITS-REST **development** `definition_template_adl1.4_example_get`
+//! operation (example generation) end-to-end — upload an OPT, `GET …/example`,
+//! commit the generated COMPOSITION — asserting the operation's own contract
+//! that a `required` example is "committable without adjustment". The CNF
+//! schedule defines no example / example-commit case (the operation is itself
+//! marked non-normative), so this is ECC-derived, spec-silence flagged.
 //!
 //! Register 01 rulings realized here:
 //!
@@ -39,12 +46,16 @@
 //!   through the upload endpoint); recorded as a deliberate binding, not a
 //!   divergence.
 
+use serde_json::Value;
+
 use crate::engine::assert;
 use crate::engine::harness::{CaseError, CaseFuture, DataSetReport, HttpRequest, RunContext};
 use crate::engine::registry::CaseEntry;
 use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, ScheduleTrace};
 use crate::model::catalog::Area;
+use crate::suites::support;
 use crate::testdata::fixtures;
+use crate::wire::negotiate;
 
 /// JSON is the format axis for the OPT cases (the OPT payload itself is XML on
 /// the ADL 1.4 endpoint; the case's format axis is the runner's negotiation
@@ -73,6 +84,27 @@ const DELETE_SKIP: &str = "master04 §delete_opt: SM I_DEFINITION_ADL14.delete_o
      deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a \
      server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the \
      Admin area.";
+
+/// The owned IPS OPT (REGISTER.md; official openEHR CKM export) that drives the
+/// example round-trip: its `ACTION.medication` constrains `description` to a
+/// content-less `ITEM_TREE[at0017]`, so the example generator must synthesise
+/// that structural attribute with the constrained node id.
+const IPS_OPT_KEY: &str = "owned.template.ips";
+
+const EXAMPLE_CITATION: &str = "ITS-REST development definition_template_adl1.4_example_get \
+     (GET /definition/template/adl1.4/{template_id}/example — the `required` example is \
+     \"expected to be committable without adjustment\"); CNF \
+     master15-content_tc_composition.adoc L38 (a generated instance must be RM/template-valid); \
+     AM 1.4 master04-constraint_model_package.adoc §Valid_value";
+
+// PORT NOTE: the CNF schedule contains NO example-generation or example-commit
+// test case, and the ITS-REST example operation is itself declared non-normative
+// ("vendors may produce different results"). This case is therefore ECC-derived
+// (not schedule-derived) — spec-silence flagged — asserting only the operation's
+// own stated contract: a `required`-level example is committable.
+const EXAMPLE_ECC_REASON: &str = "CNF master04/master15 define no example-generation/commit case; \
+     the ITS-REST example operation is non-normative. ECC-derived: asserts the operation's own \
+     committable-`required` contract end-to-end (upload OPT → GET example → commit 201).";
 
 /// Every registered master04 `I_DEFINITION_ADL14` case (16: 12 wire + 4 delete
 /// skips).
@@ -229,6 +261,26 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /definition/template/adl1.4"),
             run_get_all_no_opts,
         ),
+        // ── example (ITS-REST development operation; ECC-derived, spec-silent) ──
+        CaseEntry {
+            meta: CaseMeta {
+                id: "tpl/adl14-example-roundtrip",
+                title: "Example COMPOSITION round-trips (ADL 1.4 example → commit)",
+                area: Area::Tpl,
+                capability: Capability::Adl14OptProvisioning,
+                formats: JSON,
+                citation: EXAMPLE_CITATION,
+                schedule: ScheduleTrace::EccOriginal(EXAMPLE_ECC_REASON),
+                binding: Binding::Rest(
+                    "GET /definition/template/adl1.4/{template_id}/example → \
+                     POST /ehr/{ehr_id}/composition",
+                ),
+                // A status-code + shape flow (200 example, 201 commit); no golden
+                // body comparison, so Compare::None.
+                compare: Compare::None,
+            },
+            run: run_example_roundtrip,
+        },
         // ── delete_opt — D2 skip-with-reason (no ITS-REST ADL 1.4 DELETE) ──────
         delete_case(
             "tpl/delete-opt-delete-existing",
@@ -397,6 +449,52 @@ fn run_validate_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// the full invalid data-set matrix (register 01 G-3), not a single fixture.
 fn run_validate_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({ reject_invalid_set(ctx).await })
+}
+
+// ── example (ITS-REST development operation) ──────────────────────────────────
+
+/// Upload the IPS OPT, retrieve its `required` input example, and commit it to a
+/// fresh EHR — the example generator's committable contract, end-to-end. A
+/// generator that stamps an `at0001` placeholder for the content-less
+/// `ACTION.medication.description` (constrained `ITEM_TREE[at0017]`) yields a
+/// COMPOSITION the server's own validator rejects, so the final `201` is the
+/// load-bearing assertion.
+fn run_example_roundtrip<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        // 1. Provision the OPT verbatim (2xx new / 409 already-present).
+        let xml = fixtures::read(IPS_OPT_KEY).map_err(|e| codec(&e))?;
+        let template_id = opt_template_id(&xml)?;
+        support::ensure_opt_xml(ctx, &xml).await?;
+
+        // 2. GET the required-level input example (a committable COMPOSITION).
+        //    The `template_id` ("International Patient Summary") carries spaces,
+        //    so its path segment is percent-encoded (never hand-rolled).
+        let encoded = urlencoding::encode(&template_id);
+        let example_path = format!("{ADL14}/{encoded}/example?type=input&detail_level=required");
+        let resp = ctx
+            .send(HttpRequest::get(example_path).header("accept", "application/json"))
+            .await?;
+        assert::status(&resp, 200)?;
+        let example = resp.json()?;
+        // The 200 response is a LOCATABLE `oneOf`; this OPT roots a COMPOSITION.
+        let ty = example.get("_type").and_then(Value::as_str);
+        if ty != Some("COMPOSITION") {
+            return Err(CaseError::Assertion(format!(
+                "example is not a COMPOSITION (_type={ty:?})"
+            )));
+        }
+
+        // 3. Commit the example to a fresh EHR — must be accepted (201).
+        let ehr_id = support::create_ehr(ctx).await?;
+        let commit = ctx
+            .send(negotiate::representation(
+                HttpRequest::post(format!("/ehr/{ehr_id}/composition")).json_body(&example)?,
+                Format::Json,
+            ))
+            .await?;
+        assert::status(&commit, 201)?;
+        Ok(DataSetReport::SINGLE)
+    })
 }
 
 // ── upload_opt ────────────────────────────────────────────────────────────────

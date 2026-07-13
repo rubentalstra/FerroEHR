@@ -510,26 +510,33 @@ fn finish_identity(
     }
     // Per-ENTRY mandatory structural fields not surfaced in FLAT (only added when
     // a populated leaf did not already create them, so the round-trip is stable).
-    // A synthesized structural node stands in for content the simplified form did
-    // not carry; `LOCATABLE.archetype_node_id` is mandatory
-    // (`RM/.../common/locatable.adoc` `Is_archetype_root`/invariants), so the
-    // placeholder `at0001` is stamped — there is no faithful source id for absent
-    // content, and the value only needs to be a non-empty archetype-relative id
-    // for the rebuilt object to be a valid `LOCATABLE`.
-    let item_tree = || {
-        json!({"_type": "ITEM_TREE", "archetype_node_id": "at0001",
-               "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []})
-    };
+    // The synthesized node stands in for a structural attribute the simplified
+    // form carried no content under. Two spec cases:
+    //
+    // * The template **constrains** the attribute to a node-identified structural
+    //   child (e.g. `ACTION.description` → `ITEM_TREE[at0017]`): that constraint
+    //   must be satisfied by a conforming value (AOM 1.4
+    //   `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+    //   The web-template records the constrained identity as a structural stub
+    //   (dropped from the tree because it had no leaf content), so we stamp the
+    //   *constrained* `archetype_node_id`/type/name — an `at0001` placeholder here
+    //   is rejected by the closed-archetype walk (`unexpected node 'at0001'`).
+    // * The template leaves the attribute **unconstrained**: no constraint stated
+    //   means any RM-valid value is permitted (ADL 1.4
+    //   `AM/docs/ADL1.4/master05-cadl.adoc` §"Any" Constraints; CNF
+    //   `master15-content_tc_composition.adoc` L38 — "When there is no constraint
+    //   defined for an attribute … anything is allowed on that attribute"). No
+    //   faithful source id exists, so the `at0001` placeholder is stamped — it
+    //   only needs to be a non-empty archetype-relative id for the rebuilt object
+    //   to be a valid `LOCATABLE` (`RM/.../common/locatable.adoc` invariants).
     match rm_type {
         "OBSERVATION" => {
-            obj.entry("data".to_owned()).or_insert_with(|| {
-                json!({"_type": "HISTORY", "archetype_node_id": "at0001",
-                       "name": {"_type": "DV_TEXT", "value": "History"},
-                       "origin": {"_type": "DV_DATE_TIME", "value": DEFAULT_TIME}, "events": []})
-            });
+            obj.entry("data".to_owned())
+                .or_insert_with(|| structural_from_stub(node, "data", "HISTORY", "History"));
         }
         "EVALUATION" | "ADMIN_ENTRY" => {
-            obj.entry("data".to_owned()).or_insert_with(item_tree);
+            obj.entry("data".to_owned())
+                .or_insert_with(|| structural_from_stub(node, "data", "ITEM_TREE", "Tree"));
         }
         "INSTRUCTION" => {
             obj.entry("narrative".to_owned())
@@ -539,7 +546,7 @@ fn finish_identity(
             obj.entry("time".to_owned())
                 .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": DEFAULT_TIME}));
             obj.entry("description".to_owned())
-                .or_insert_with(item_tree);
+                .or_insert_with(|| structural_from_stub(node, "description", "ITEM_TREE", "Tree"));
             obj.entry("ism_transition".to_owned()).or_insert_with(|| {
                 json!({"_type": "ISM_TRANSITION", "current_state": {
                     "_type": "DV_CODED_TEXT", "value": "initial",
@@ -550,6 +557,67 @@ fn finish_identity(
         }
         _ => {}
     }
+}
+
+/// Synthesize an empty structural node for a missing mandatory ENTRY attribute.
+///
+/// If the resolved web-template `node` records a structural stub for `attr` (the
+/// template constrained the attribute to a node-identified structural child that
+/// carried no content and so was dropped from the compacted tree), the stub's
+/// constrained RM type / `archetype_node_id` / rubric name are stamped — a value
+/// the closed-archetype walk admits (AOM 1.4
+/// `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+/// Otherwise the attribute is unconstrained, so the spec-legal `at0001` "Any"
+/// placeholder (ADL 1.4 `master05-cadl.adoc` §"Any" Constraints; CNF
+/// `master15-content_tc_composition.adoc` L38) is used with `default_rm_type` /
+/// `default_name`.
+fn structural_from_stub(
+    node: &WebTemplateNode,
+    attr: &str,
+    default_rm_type: &str,
+    default_name: &str,
+) -> Value {
+    match node.structural_stubs.iter().find(|s| s.attr == attr) {
+        Some(stub) => {
+            let name = stub.name.as_deref().unwrap_or(default_name);
+            structural_container(concrete_structural(&stub.rm_type), &stub.node_id, name)
+        }
+        None => structural_container(default_rm_type, "at0001", default_name),
+    }
+}
+
+/// A concrete instantiable structural RM type: an abstract `ITEM_STRUCTURE`
+/// constraint (the archetype constrains the family, not a concrete member)
+/// materialises as an `ITEM_TREE`; a concrete type passes through.
+fn concrete_structural(rm_type: &str) -> &str {
+    match rm_type {
+        "ITEM_STRUCTURE" => "ITEM_TREE",
+        other => other,
+    }
+}
+
+/// Build an empty structural container node of `rm_type` with the given
+/// `node_id`/`name` and its RM-mandatory empty child containers (`HISTORY` →
+/// `origin` + `events`; `ITEM_*`/`CLUSTER` → `items`). The final
+/// [`complete_tree`] pass fills any remaining RM-mandatory fields.
+fn structural_container(rm_type: &str, node_id: &str, name: &str) -> Value {
+    let mut o = Map::new();
+    o.insert("_type".into(), json!(rm_type));
+    o.insert("archetype_node_id".into(), json!(node_id));
+    o.insert("name".into(), json!({"_type": "DV_TEXT", "value": name}));
+    match rm_type {
+        "HISTORY" => {
+            o.insert(
+                "origin".into(),
+                json!({"_type": "DV_DATE_TIME", "value": DEFAULT_TIME}),
+            );
+            o.insert("events".into(), json!([]));
+        }
+        _ => {
+            o.insert("items".into(), json!([]));
+        }
+    }
+    Value::Object(o)
 }
 
 /// COMPOSITION.category is mandatory; default to `event` (openEHR 433) if the

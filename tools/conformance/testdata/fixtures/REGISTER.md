@@ -149,3 +149,40 @@ for name in ("all_types.composition.json", "all_types_v2.composition.json"):
     open(f"{ODIR}/{name}", "w", encoding="utf-8").write(
         json.dumps(d, ensure_ascii=False, indent=4))
 ```
+
+---
+
+# Owned vendored external templates (not corpus corrections)
+
+The register also holds **owned, byte-faithful copies of official openEHR
+templates that are not part of the CNF Robot corpus** — vendored so a
+conformance case can drive a real, published operational template through the
+wire. These are not corrections: they are copied verbatim from their published
+source and their `owned:` manifest rows carry `adaptation = none`.
+
+## `templates/international_patient_summary.opt`
+
+- **Source:** the official openEHR **CKM** "International Patient Summary"
+  template (CKM template id `1013.26.376`), CKM's own operational-template
+  (OPT 1.4) export. Copied verbatim from
+  `tools/benchmark/templates/ckm/international-patient-summary.opt` (the
+  benchmark toolkit's vendored copy); OPT `<uid>` `937fca6c-ec24-4c0f-8986-623843b6ebca`,
+  `template_id` `International Patient Summary`.
+- **Manifest key:** `owned.template.ips`
+  (`owned:valid/templates/international_patient_summary.opt`).
+- **Driven by:** `tpl/adl14-example-roundtrip`
+  (`suites/definition_adl14.rs`) — upload the OPT, `GET
+  /definition/template/adl1.4/{template_id}/example`, then POST the generated
+  COMPOSITION to a fresh EHR and require `201`.
+- **Why this template:** its `ACTION.medication` constrains `description` to
+  `ITEM_TREE[at0017]` with no leaf content, so the server's example generator
+  must synthesise that structural attribute. A generator that stamps a blind
+  `at0001` placeholder produces a COMPOSITION the server's own validator then
+  rejects ("unexpected node 'at0001' under 'description'"); the example must be
+  committable (AOM 1.4 `master04-constraint_model_package.adoc` §`Valid_value`;
+  CNF `master15-content_tc_composition.adoc` L38 — a generated instance must be
+  RM/template-valid). This is the end-to-end guard for that class of defect.
+
+There is **no CNF-vendored source guard** for this file (unlike the corrected
+`invalid/` copies above): it has no corpus counterpart, being an external CKM
+export vendored as-is.
