@@ -6,9 +6,7 @@
 
 use std::time::Duration;
 
-use ehrbase::service::{
-    FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind,
-};
+use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 use ehrbase_sm::{CallStatusType, TerminologyService};
 use serde_json::json;
 use wiremock::matchers::{method, path, query_param};

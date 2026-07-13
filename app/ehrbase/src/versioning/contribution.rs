@@ -477,7 +477,7 @@ pub(crate) async fn commit_version_set(
 /// one `EHR_STATUS` and one `EHR_ACCESS` (RM ehr, EHR class). A FOLDER
 /// creation is rejected when a LIVE hierarchy with the SAME root
 /// `archetype_node_id` already exists (CNF schedule master08
-/// §commit_contribution E.2 — creating the existing root FOLDER again is
+/// §`commit_contribution` E.2 — creating the existing root FOLDER again is
 /// negative); a distinct hierarchy joins `EHR.folders` (RM ehr master04
 /// §Folders). COMPOSITIONs are unbounded.
 async fn reject_duplicate_singleton(

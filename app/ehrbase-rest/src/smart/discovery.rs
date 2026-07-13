@@ -7,7 +7,7 @@
 //! required `org.openehr.rest`), the SMART `capabilities`, and the enforced
 //! scope set. The document is **assembled from [`super::config::SmartConfig`]**
 //! — the CDR advertises only what it (or its configured AS) actually offers; it
-//! implements none of the OAuth2 endpoints (`smart.md` §1/§6 PORT NOTEs).
+//! implements none of the `OAuth2` endpoints (`smart.md` §1/§6 PORT NOTEs).
 //!
 //! The response is `application/json` (master04 §Service Discovery, R-02) and is
 //! served **pre-auth**, on the same seam as the status router
@@ -36,16 +36,16 @@ pub struct SmartConfiguration {
     /// The JWKS document URL.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub jwks_uri: Option<String>,
-    /// The OAuth2 authorization endpoint.
+    /// The `OAuth2` authorization endpoint.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub authorization_endpoint: Option<String>,
-    /// The OAuth2 token endpoint.
+    /// The `OAuth2` token endpoint.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token_endpoint: Option<String>,
     /// Supported token-endpoint client-authentication methods.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub token_endpoint_auth_methods_supported: Vec<String>,
-    /// Supported OAuth2 grant types (master06 §Deprecated Flows: never
+    /// Supported `OAuth2` grant types (master06 §Deprecated Flows: never
     /// `implicit`/password — `SmartConfig::validate` guards this).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub grant_types_supported: Vec<String>,
@@ -55,7 +55,7 @@ pub struct SmartConfiguration {
     pub registration_endpoint: Option<String>,
     /// The scopes the Platform advertises as supported.
     pub scopes_supported: Vec<String>,
-    /// Supported OAuth2 response types.
+    /// Supported `OAuth2` response types.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub response_types_supported: Vec<String>,
     /// The user management endpoint.
@@ -93,7 +93,7 @@ pub struct Service {
     /// Link to service documentation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub documentation: Option<String>,
-    /// Link to the OpenAPI definition.
+    /// Link to the `OpenAPI` definition.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub openapi: Option<String>,
 }
@@ -230,7 +230,6 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
 ///
 /// Mount it in `crate::router` beside `overview::status::router` — **outside**
 /// the auth layer (the document is unauthenticated, master04).
-#[must_use]
 pub fn router<S: Platform>(
     cfg: &SmartConfig,
     openehr_base_url: &str,
@@ -267,8 +266,10 @@ mod tests {
     use super::*;
 
     fn enabled_cfg() -> SmartConfig {
-        let mut c = SmartConfig::default();
-        c.enabled = true;
+        let mut c = SmartConfig {
+            enabled: true,
+            ..SmartConfig::default()
+        };
         c.endpoints.authorization_endpoint = Some("https://as.example/authorize".to_owned());
         c.endpoints.token_endpoint = Some("https://as.example/token".to_owned());
         c.endpoints.grant_types_supported = vec![
@@ -366,8 +367,10 @@ mod tests {
 
     #[test]
     fn discovery_path_honours_platform_base() {
-        let mut c = SmartConfig::default();
-        c.platform_base_url = Some("/gateway/v1".to_owned());
+        let mut c = SmartConfig {
+            platform_base_url: Some("/gateway/v1".to_owned()),
+            ..SmartConfig::default()
+        };
         assert_eq!(
             discovery_path(&c, "/ehrbase/rest"),
             "/gateway/v1/.well-known/smart-configuration"

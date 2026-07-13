@@ -1,0 +1,6 @@
+# mdbook-lint configuration (Docs CI: `mdbook-lint lint website/book/src`).
+#
+# MDBOOK010 (unclosed inline math) is disabled: this book enables no math
+# preprocessor, so a lone `$` — e.g. the literal `$subject_id` placeholder in
+# the Subject Proxy frame syntax — is plain text, never an open math block.
+disabled-rules = ["MDBOOK010"]

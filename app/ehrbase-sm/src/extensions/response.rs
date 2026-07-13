@@ -27,7 +27,7 @@ pub struct ResourceMeta {
     /// as the `Last-Modified` response header — SHOULD-present on
     /// `VERSION`/`VERSIONED_OBJECT` responses.
     pub last_modified: Option<Timestamp>,
-    /// The ITEM_TAGs (RM `common.item_tag`) currently associated with this
+    /// The `ITEM_TAGs` (RM `common.item_tag`) currently associated with this
     /// resource, as their canonical-JSON list (`Value::Array` of `ITEM_TAG`
     /// objects), or `None` when the operation carries no tags. The ITS-REST
     /// adapter renders this into the `openehr-item-tag` /
@@ -60,7 +60,7 @@ impl ResourceMeta {
         self
     }
 
-    /// Attach the resource's ITEM_TAG list (canonical-JSON `Value::Array` of
+    /// Attach the resource's `ITEM_TAG` list (canonical-JSON `Value::Array` of
     /// `ITEM_TAG` objects) for the `openehr-item-tag` /
     /// `openehr-version-item-tag` response headers.
     #[must_use]

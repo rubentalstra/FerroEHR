@@ -88,8 +88,8 @@ fn hash_pw(pw: &str) -> String {
 
 fn rest_config() -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {

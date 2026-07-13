@@ -1,6 +1,6 @@
 //! The `EHR_STATUS` resource + its item tags.
 //!
-//! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (EHR_STATUS) +
+//! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (`EHR_STATUS`) +
 //! `specifications/operations/{ehr_status_get_by_version_id,
 //! ehr_status_get_at_time,ehr_status_update,ehr_status_tags_get,
 //! ehr_status_tags_update,ehr_status_tags_delete}.yaml`.

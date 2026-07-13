@@ -12,7 +12,7 @@
 //! `security: []` so auth is out of band, SM master02):
 //! - `admin_ehr_delete` — `operations/admin_ehr_delete.yaml`: `DELETE
 //!   /admin/ehr/{ehr_id}`, physical cascade of every owned resource (COMPOSITION,
-//!   EHR_STATUS, ITEM_TAG, CONTRIBUTION + historical versions) "permanently and
+//!   `EHR_STATUS`, `ITEM_TAG`, CONTRIBUTION + historical versions) "permanently and
 //!   physically deleted … (e.g., the GDPR)"; sync success → `204 No Content`,
 //!   async → `202 Accepted`, unknown id → `404` (`404_unknown_ehr_id.yaml`).
 //!   Matches the abstract SM `I_ADMIN_SERVICE.physical_ehr_delete`

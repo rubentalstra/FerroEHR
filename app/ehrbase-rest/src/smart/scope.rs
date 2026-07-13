@@ -21,7 +21,7 @@ pub enum SmartScope {
     /// `launch/patient` | `launch/episode` — a requested launch context
     /// (master07 §Context Selection; episode is master09 experimental).
     LaunchContext(LaunchContext),
-    /// An OpenID Connect / identity scope (`openid`, `profile`, `fhirUser`,
+    /// An `OpenID` Connect / identity scope (`openid`, `profile`, `fhirUser`,
     /// `offline_access`, …) — master08 §Scopes "Identity Claims".
     Identity(String),
     /// A resource scope `<compartment>/<resource>.<permission>`
@@ -113,6 +113,7 @@ pub enum ResourceFamily {
 /// The set of CRUDS permissions a resource scope grants (master08 §Resource
 /// Scopes permission list). Parsed from the `.<permission>` tail, order-free.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)] // mirrors the five CRUDS letters (c/r/u/d/s) 1:1
 pub struct Permissions {
     /// `c` — create.
     pub create: bool,

@@ -106,7 +106,7 @@ pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
 /// a silent bypass of the optimistic-concurrency guard.
 ///
 /// Both the weak (`W/"…"`) and the bare quoted (`"…"`) forms are accepted:
-/// the overview §"ETag and Last-Modified" now emits the weak form, but a client
+/// the overview §"`ETag` and Last-Modified" now emits the weak form, but a client
 /// that echoes the deprecated bare form "MAY still" be supported
 /// (§"Deprecated headers") — [`strip_etag`] normalizes either into the inner
 /// `OBJECT_VERSION_ID`.
@@ -127,7 +127,7 @@ pub(crate) fn require_if_match(if_match: &str) -> Result<ObjectVersionId, ApiErr
 /// Strip an `ETag`/`If-Match` wrapper down to its opaque value: an optional
 /// leading weakness indicator `W/` (case-insensitive) then the surrounding
 /// double quotes. Accepts the weak form the server now emits and the deprecated
-/// bare quoted form alike (overview §"ETag and Last-Modified").
+/// bare quoted form alike (overview §"`ETag` and Last-Modified").
 pub(crate) fn strip_etag(raw: &str) -> &str {
     let trimmed = raw.trim();
     let unweak = trimmed

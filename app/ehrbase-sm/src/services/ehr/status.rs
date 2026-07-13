@@ -62,7 +62,7 @@ pub trait EhrStatusService: Send + Sync {
     async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError>;
 
     /// `update_other_details (an_ehr_id: UUID, a_details: ITEM_TREE)` —
-    /// "Update other_details part of `EHR_STATUS` with new content." Pre
+    /// "Update `other_details` part of `EHR_STATUS` with new content." Pre
     /// `has_ehr`. `a_details` is the canonical-JSON `ITEM_TREE`.
     async fn update_other_details(
         &self,

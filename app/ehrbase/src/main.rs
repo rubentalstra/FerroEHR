@@ -11,8 +11,8 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
-use ehrbase::versioning::signature::{Signer, SigningConfig};
 use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
+use ehrbase::versioning::signature::{Signer, SigningConfig};
 use ehrbase_rest::access::authz::AuthzConfig;
 use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
 use ehrbase_rest::{AuthzHandle, Observability};
@@ -112,11 +112,14 @@ async fn serve() -> anyhow::Result<()> {
     // publisher drains the transactional outbox to the broker at-least-once; a
     // broker that is down is tolerated (the outbox buffers), so we spawn it
     // unconditionally-on-enabled and never fail boot on the broker.
-    let events_config =
-        ehrbase::extensions::events::EventsConfig::load().context("loading eventing configuration")?;
+    let events_config = ehrbase::extensions::events::EventsConfig::load()
+        .context("loading eventing configuration")?;
     let events_handle = if events_config.enabled {
         tracing::info!(exchange = %events_config.exchange, "contribution-outbox eventing enabled");
-        Some(ehrbase::extensions::events::start(events_config, pool.clone()))
+        Some(ehrbase::extensions::events::start(
+            events_config,
+            pool.clone(),
+        ))
     } else {
         None
     };
@@ -207,8 +210,9 @@ async fn serve() -> anyhow::Result<()> {
     // to S3-compatible object storage on commit and re-inlined on demand.
     let multimedia_config = ehrbase::extensions::multimedia::MultimediaConfig::load()
         .context("loading multimedia configuration")?;
-    if let Some(engine) = ehrbase::extensions::multimedia::MultimediaEngine::from_config(&multimedia_config)
-        .context("initialising the multimedia object store")?
+    if let Some(engine) =
+        ehrbase::extensions::multimedia::MultimediaEngine::from_config(&multimedia_config)
+            .context("initialising the multimedia object store")?
     {
         tracing::info!(
             bucket = %multimedia_config.bucket,

@@ -209,7 +209,7 @@ pub(crate) trait CommitEnv {
     /// Whether the EHR already holds a LIVE folder hierarchy whose root
     /// carries the `(archetype_node_id, name)` LOCATABLE identity pair — the
     /// CONTRIBUTION-route duplicate-directory rejection (CNF schedule master08
-    /// §commit_contribution E.2: creating the root FOLDER again is negative; a
+    /// §`commit_contribution` E.2: creating the root FOLDER again is negative; a
     /// DISTINCT hierarchy is a new `EHR.folders` member — RM ehr master04
     /// §Folders; same-archetype siblings are distinguished by name, RM common
     /// paths semantics).

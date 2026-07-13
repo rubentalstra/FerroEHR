@@ -36,7 +36,7 @@ pub trait DefinitionAdl2Service: Send + Sync {
     /// `upload_artefact (an_artefact: AUTHORED_ARCHETYPE)` with
     /// `__Pre_valid__: valid_artefact (an_arch)` + `__Post_has_artefact__:
     /// has_artefact (an_arch.identifier)` — "Upload an ADL2 artefact, i.e.
-    /// archetype, template or operational_template. If an artefact with the
+    /// archetype, template or `operational_template`. If an artefact with the
     /// same physical identifier and namespace exists, replace it. The
     /// artefact must validate." Error `invalid_artefact` (+ specific
     /// messages; → `422`).

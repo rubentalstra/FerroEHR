@@ -39,6 +39,7 @@ pub use common::{
     CallStatus, CallStatusType, Page, PlatformService, SmError, UpdateAttestation, UpdateAudit,
     UpdateVersion, ValidityChecker,
 };
+pub use extensions::tenant::TenantContext;
 pub use extensions::{
     AccessEntry, AccessLevel, CompositionOverride, ContributionAdapter, DefaultAccess,
     DefinitionAdapter, EHR_ACCESS_CONTROL_V1_SCHEME, EHR_ACCESS_CONTROL_V1_TYPE, EhrAccessAdapter,
@@ -62,4 +63,3 @@ pub use services::{
     TerminologyRelation, TerminologyRelationError, TerminologyService, TimeRange, VariableSample,
     VariableValue,
 };
-pub use extensions::tenant::TenantContext;
