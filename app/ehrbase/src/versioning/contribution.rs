@@ -300,11 +300,16 @@ pub(crate) async fn commit_version_set(
                 // `553|incomplete|` lifecycle (master06 §Incomplete Content).
                 cx.validate_for_commit(kind, &data, incomplete).await?;
                 // An EHR holds exactly one EHR_STATUS / EHR_ACCESS (RM ehr, EHR
-                // class); a CONTRIBUTION that *creates* a second is rejected. A
-                // FOLDER creation is NOT rejected (each new hierarchy joins
-                // `EHR.folders` — RM ehr master04 §Folders).
+                // class) — a CONTRIBUTION that *creates* a second is rejected.
+                // For FOLDERs the CONTRIBUTION route "operates at the
+                // `EHR.directory` level" (CNF platform test schedule
+                // master08-func_tc_ehr_contribution + case E.2): re-creating a
+                // hierarchy whose root already exists (same root
+                // `archetype_node_id`) is negative, while a DISTINCT hierarchy
+                // is a new `EHR.folders` member (RM ehr master04 §Folders —
+                // "an entirely new Folder hierarchy may be added").
                 if let Some(ehr_id) = ehr_id {
-                    reject_duplicate_singleton(cx, ehr_id, kind).await?;
+                    reject_duplicate_singleton(cx, ehr_id, kind, &data).await?;
                 }
                 Change::Create {
                     kind,
@@ -468,22 +473,48 @@ pub(crate) async fn commit_version_set(
     Ok(contribution_id)
 }
 
-/// Reject the *creation* of a second EHR-singleton versioned object. An EHR
-/// holds exactly one `EHR_STATUS` and one `EHR_ACCESS` (RM ehr, EHR class).
-/// COMPOSITIONs and FOLDERs are unbounded.
+/// Reject the *creation* of a duplicate EHR structure. An EHR holds exactly
+/// one `EHR_STATUS` and one `EHR_ACCESS` (RM ehr, EHR class). A FOLDER
+/// creation is rejected when a LIVE hierarchy with the SAME root
+/// `archetype_node_id` already exists (CNF schedule master08
+/// §commit_contribution E.2 — creating the existing root FOLDER again is
+/// negative); a distinct hierarchy joins `EHR.folders` (RM ehr master04
+/// §Folders). COMPOSITIONs are unbounded.
 async fn reject_duplicate_singleton(
     cx: &impl CommitEnv,
     ehr_id: Uuid,
     kind: Kind,
+    data: &Value,
 ) -> Result<(), ServiceError> {
-    if !matches!(kind, Kind::EhrStatus | Kind::EhrAccess) {
-        return Ok(());
-    }
-    if cx.current_vo(ehr_id, kind).await?.is_some() {
-        return Err(ServiceError::Conflict(format!(
-            "EHR {ehr_id} already has a {}; only one is permitted (RM ehr, EHR class)",
-            kind.as_str()
-        )));
+    match kind {
+        Kind::EhrStatus | Kind::EhrAccess => {
+            if cx.current_vo(ehr_id, kind).await?.is_some() {
+                return Err(ServiceError::Conflict(format!(
+                    "EHR {ehr_id} already has a {}; only one is permitted (RM ehr, EHR class)",
+                    kind.as_str()
+                )));
+            }
+        }
+        Kind::Folder => {
+            let root = data
+                .get("archetype_node_id")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let name = data
+                .pointer("/name/value")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if cx.folder_root_exists(ehr_id, root, name).await? {
+                return Err(ServiceError::Conflict(format!(
+                    "EHR {ehr_id} already has a folder hierarchy rooted at \
+                     {root:?} named {name:?}; re-creating an existing directory \
+                     is invalid (CNF schedule master08 §commit_contribution \
+                     E.2) — commit a modification, or a hierarchy with a \
+                     distinct root (RM ehr master04 §Folders)"
+                )));
+            }
+        }
+        _ => {}
     }
     Ok(())
 }

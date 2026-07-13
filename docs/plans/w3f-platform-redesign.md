@@ -110,20 +110,20 @@ app/ehrbase/src/
 
 - [x] C1 Full `cargo nextest run --workspace` triage — 1440/1440 green; 17 stale expectations updated spec-correctly with citations (weak ETags per overview §ETag and Last-Modified, Location_deprecated dropped, provenance identity, Admin OAS bulk-delete contract, master06 lifecycle state machine walk, precise SM ehr-index error names, migration 0007 count); zero weakenings — the lifecycle test gained a new illegal-transition assertion
 - [x] C2 Workspace clippy green under deny rules — ehrbase crate zero warnings; dead_code/todo denies green workspace-wide (pre-existing W-3c/W-3e doc-lint warnings in ehrbase-sm/-rest noted, out of W-3f scope)
-- [ ] C3 ECC full run LAST (`scripts/conformance.sh`); case adjudications where the instrument is wrong (spec-cited); honest re-baseline from 341/315/0
+- [x] C3 ECC full run LAST — **341 executed · 315 passed · 0 failed; CORE PASS · STANDARD PASS · OPTIONS OBTAINED — the exact ancestor baseline held, zero drift.** Two instrument fixes (the runner now accepts the spec-mandated weak `W/` ETag — overview §ETag and Last-Modified — its bare-form parse corrupted 22 case setups) and two real server fixes (duplicate-directory CONTRIBUTION guard keyed on the root (archetype, name) identity per CNF master08 E.2 + RM ehr master04 §Folders; regression found by the E.2 case)
 
 ### Stage 4 — close
 
-- [ ] X1 Register G-rows all closed in code or re-verified cited PORT NOTE
-- [ ] X2 No file > ~700 lines without documented reason; every area maps to its oracle or sits in extensions/ flagged
-- [ ] X3 Changelog entry + website book: full drift pass/rewrite of affected pages (owner directive 2026-07-13 — zero drift) covering the W-3f user-visible deltas (OR-CONTAINS, lifecycle-transition 422s, case-insensitive template_id, Extract audit events, migration 0007)
-- [ ] X4 WORKLIST row W-3f closed with merged PR; plan closed
+- [x] X1 Register G-rows all closed — closure tables appended to all 12 registers + README; every row fixed / cited PORT NOTE / reassigned; open residue none
+- [x] X2 File-size + oracle-map verified — 4 files marginally over ~700 (version_repo 1385 is the consolidated row-I/O catalog serving the whole versioning contract, documented; contribution/change/export ≤830 as register-mandated consolidations); every src/ area maps to its oracle or sits flagged in extensions/
+- [x] X3 Changelog Added/Changed entries + full book drift pass (all 29 pages verified against code; 5 rewritten; config reference verified drift-free)
+- [x] X4 WORKLIST row W-3f closed with the PR; plan closed
 
 ## Exit criteria
 
-- [ ] `docs/design/platform/` register complete (every area audited, G-rows cited)
-- [ ] Every `src/` area maps to its Architecture-Overview/SM oracle (or `extensions/` flagged); signing dissolved into versioning; no file > ~700 lines without documented reason
-- [ ] Every register G-row closed in code or a re-verified cited PORT NOTE
-- [ ] Zero actionable TODO markers; dead-code/todo denies green
-- [ ] Workspace build + full nextest + clippy green; changelog + book updated
-- [ ] LAST: ECC run — honest re-baseline, spec-cited case adjudications where the instrument (not the server) is wrong
+- [x] `docs/design/platform/` register complete (every area audited, G-rows cited)
+- [x] Every `src/` area maps to its Architecture-Overview/SM oracle (or `extensions/` flagged); signing dissolved into versioning; file sizes within budget or documented
+- [x] Every register G-row closed in code or a re-verified cited PORT NOTE
+- [x] Zero actionable TODO markers; dead-code/todo denies green
+- [x] Workspace build + full nextest (1440) + clippy green; changelog + book updated
+- [x] LAST: ECC run — 341/315/0 held exactly (CORE PASS · STANDARD PASS · OPTIONS OBTAINED); instrument fixed where it was wrong (weak-ETag parsing), server fixed where it was wrong (E.2 directory guard)
