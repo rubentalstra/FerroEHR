@@ -89,7 +89,10 @@ SM spec at `specs/openehr/SM/`. The remaining design docs:
   wins for those).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits, mapped
   to phases.
-- `conformance/` — ECC run artifacts: `CONFORMANCE_REPORT.md`, `CATALOG.md`,
-  `COVERAGE_GAPS.md`, `results.json`, badges. Current: **341 executed · 315
-  passed · 0 failed — CORE PASS / STANDARD PASS** (held zero-drift since B6).
+- `conformance/` — ECC run artifacts, one directory per SUT (`ehrbase-rs/`,
+  `ehrbase-java/`, …): `CONFORMANCE_REPORT.md`, `CONFORMANCE_STATEMENT.md`,
+  `CONFORMANCE_CERTIFICATE.md`, `results.json`, badges; the SUT-independent
+  `CATALOG.md` at the root. Current (ehrbase-rs, W-10 re-derived baseline):
+  **368 executed · 333 passed · 0 failed · 35 adjudicated skips — CORE PASS /
+  STANDARD PASS**.
 - `benchmarks/` — `REPORT.md` + `results.json` from the benchmark harness.

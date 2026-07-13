@@ -112,10 +112,11 @@
       clean, coverage guard green; zero TODOs.
 
 ### D — Runs + baseline
-- [ ] D1. Full run vs ehrbase-rs (compose): re-derived baseline committed
+- [x] D1. Full run vs ehrbase-rs (compose): re-derived baseline committed
       (results.json + report + badges + Statement/Certificate); every delta
       vs the 341/315/0/26 ancestor explained (new coverage /
-      re-adjudication / real defect).
+      re-adjudication / real defect). *Closed 2026-07-13: **368 · 333 · 0
+      · 35**, CORE + STANDARD PASS — see "D1 baseline delta" below.*
 - [ ] D2. Full run vs upstream EHRbase (Java, official image): recorded as
       DATA with the fairness adjudication register; comparison matrix
       emitted; no Certificate for the foreign run.
@@ -141,7 +142,7 @@ mapping ×2, concrete VERSIONED_* wire types, demographic full-OVID If-Match,
 relationship-delete If-Match, demographic weak ETags), rest shared root
 causes. Affected suites re-tested 152/152. Remaining, in order:
 
-- [ ] H1. **D1 rerun**: `bash scripts/conformance.sh` (composes + builds our
+- [x] H1. **D1 rerun**: `bash scripts/conformance.sh` (composes + builds our
       server). Expect ~0 failures; every remaining failure gets the same
       triage (fact-check vs docs/specs/openehr — case OR server, never
       assume). Commit `docs/conformance/ehrbase-rs/` (results.json + report
@@ -178,6 +179,55 @@ causes. Affected suites re-tested 152/152. Remaining, in order:
       enforcement as an open finding — triage against AOM 1.4 §C_DATE_TIME
       before touching anything; a real gap becomes a spec-cited server fix,
       possibly deferred to a named WORKLIST row with the owner's consent.)
+
+## D1 baseline delta (2026-07-13) — re-derived, not inherited
+
+New baseline (committed at `docs/conformance/ehrbase-rs/`): **368 executed ·
+333 passed · 0 failed · 35 adjudicated skips — CORE PASS · STANDARD PASS ·
+OPTIONS OBTAINED.** Ancestor (W-3f close, old instrument): 341 · 315 · 0 · 26.
+Every delta accounted for:
+
+- **+27 executions, all new coverage** (per-area: ADM +8, QRY +11, DEM +7,
+  COM +1): the admin dump/load + native-API-evidenced admin surface
+  (ECC-ADM-007..014), the loaded-DB AQL dialect/golden family (ECC-QRY-012+,
+  register 07), the demographic relationship family (register 08), and
+  `has_composition` (COM). No ancestor case was dropped; unique case ids
+  360 (× format where BOTH), 341 → 368 case-executions.
+- **+9 adjudicated skips, all in the new coverage** (ancestor's 26 all
+  stand): ECC-ADM-007..014 (NativeApiOnly — `I_ADMIN_SERVICE` ops with no
+  ITS-REST admin route, evidenced by the named `app/ehrbase` tests) and
+  ECC-QRY-012 (all 11 `C/loaded_db` goldens dialect-routed / need
+  id-substitution — corpus-dialect adjudication, register 07).
+- **20 first-run failures → 0**, each fact-checked against the vendored
+  specs, never assumed: 9 instrument defects fixed (contribution invalidity
+  ladder, SQR store-time overreach, cross-format content baseline, fixture
+  pointers — commit `f05788e7b`), 6 real server defects fixed
+  (contribution status mapping ×2, concrete `VERSIONED_*` wire types,
+  demographic full-OVID If-Match, relationship-delete If-Match, weak
+  demographic ETags — commit `5d6b174ac`), remainder shared root causes.
+  The rerun surfaced 3 more, same triage: **ECC-CTB-017** — real server
+  defect, FOLDER-contribution modification of a missing target returned
+  404 where the contract scopes 404 to unknown `ehr_id` only (ITS-REST
+  `404_unknown_ehr_id.yaml`; `400_CONTRIBUTION.yaml` "modification type
+  does not match — i.e. first version of a MODIFICATION"; CNF master08
+  §fail_modify_non_existing_directory "error indicating the wrong
+  change_type"; SM `i_ehr_contribution.adoc` commit_contribution declares
+  only `ehr_id_does_not_exist`) — fixed at `require_kind`
+  (`versioning/contribution.rs`); **ECC-COM-008 (xml)** — instrument
+  defect, `update` committed the JSON fixture in an XML run while the
+  content baseline was format-aware (the vendored nested XML/JSON fixtures
+  differ by one LINK) — `update` made format-aware like `commit`;
+  **ECC-DIR-025** — instrument flake, zero-margin client-clock `t_before`
+  vs server commit times — far-past instant per the composition-suite
+  pattern.
+- **Artefact layout:** per-SUT dirs (`docs/conformance/<sut>/`) replace the
+  root-level artefact set; stale root files + the old-instrument
+  `upstream-ehrbase/` data pruned (git history preserves them); README
+  badges + all path references repointed; the superseded
+  `docker/conformance/` harness removed (`scripts/conformance.sh` +
+  `docker/benchmark/` are the only compose entry points).
+- H6 (temporal-validation conditional): did not trigger — the VAL temporal
+  family is green in both D1 runs.
 
 ## Decisions made this phase
 

@@ -14,9 +14,9 @@
 | Edition policy | pinned (development) |
 | Spec versions | RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-13T14:02:28.872013Z |
+| Run started | 2026-07-13T14:37:47.512458Z |
 
-**368 case×format executions · 331 passed · 2 failed · 0 errored · 35 skipped · 0 not applicable.**
+**368 case×format executions · 333 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
 
 ## 2. Per-area matrix
 
@@ -24,8 +24,8 @@
 |---|--:|--:|--:|--:|--:|--:|
 | EHR — EHR service | 13 | 13 | 0 | 0 | 0 | 0 |
 | STA — EHR_STATUS | 10 | 10 | 0 | 0 | 0 | 0 |
-| COM — COMPOSITION | 32 | 38 | 1 | 0 | 0 | 0 |
-| CTB — CONTRIBUTION (change sets) | 31 | 25 | 1 | 0 | 5 | 0 |
+| COM — COMPOSITION | 32 | 39 | 0 | 0 | 0 | 0 |
+| CTB — CONTRIBUTION (change sets) | 31 | 26 | 0 | 0 | 5 | 0 |
 | DIR — DIRECTORY (FOLDER) | 37 | 37 | 0 | 0 | 0 | 0 |
 | TPL — Template / OPT provisioning | 16 | 12 | 0 | 0 | 4 | 0 |
 | SQR — Stored-query provisioning | 7 | 5 | 0 | 0 | 2 | 0 |
@@ -48,8 +48,8 @@ Cases grouped by capability; the evidence classification folds a transport error
 | Adl14OptProvisioning | 11 | 0 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | 0 | pass |
-| CompositionOps | 34 | 1 | 0 | 0 | 0 | **FAIL** |
-| ChangeSets | 25 | 1 | 0 | 5 | 0 | **FAIL** |
+| CompositionOps | 35 | 0 | 0 | 0 | 0 | pass |
+| ChangeSets | 26 | 0 | 0 | 5 | 0 | pass |
 | Versioning | 7 | 0 | 0 | 0 | 0 | pass |
 | ArchetypeValidation | 119 | 0 | 0 | 0 | 0 | pass |
 | DirectoryOps | 34 | 0 | 0 | 0 | 0 | pass |
@@ -74,7 +74,7 @@ Cases grouped by capability; the evidence classification folds a transport error
 
 CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is any-of (obtained if any optional capability passes) — `master03-profiles.adoc`. An unevidenced required capability fails the claim.
 
-### Core — not claimable
+### Core — PASS
 
 | Capability | Passed | Failed | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|---|
@@ -82,13 +82,13 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 | Adl14OptProvisioning | 11 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
-| CompositionOps | 34 | 1 | 0 | 0 | **FAIL** |
-| ChangeSets | 25 | 1 | 5 | 0 | **FAIL** |
+| CompositionOps | 35 | 0 | 0 | 0 | pass |
+| ChangeSets | 26 | 0 | 5 | 0 | pass |
 | Versioning | 7 | 0 | 0 | 0 | pass |
 | ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 1 | 0 | 0 | 0 | pass |
 
-### Standard — not claimable
+### Standard — PASS
 
 | Capability | Passed | Failed | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|---|
@@ -96,8 +96,8 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 | Adl14OptProvisioning | 11 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
-| CompositionOps | 34 | 1 | 0 | 0 | **FAIL** |
-| ChangeSets | 25 | 1 | 5 | 0 | **FAIL** |
+| CompositionOps | 35 | 0 | 0 | 0 | pass |
+| ChangeSets | 26 | 0 | 5 | 0 | pass |
 | Versioning | 7 | 0 | 0 | 0 | pass |
 | ArchetypeValidation | 119 | 0 | 0 | 0 | pass |
 | AnonymousEhrs | 1 | 0 | 0 | 0 | pass |
@@ -126,12 +126,7 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 
 ## 5. Failures
 
-Each failure is a conformance finding — never an exclusion (standing rule 3).
-
-- **ECC-COM-008** Get latest composition (`com/get-composition-latest`, xml): payload comparison (Superset) failed: expected {"_type":"COMPOSITION","name":{"_type":"DV_TEXT","value":"Nesting"},"archetype_node_id":"openEHR-EHR-COMPOSITION.nesting.v1","links":[{"_type":"LINK","meaning":{"_type":"DV_TEXT","value":"meaning"},"type":{"_type":"DV_TEXT","value":"type"},"target":{"_type":"DV_EHR_URI","value":"ehr://target1"}}],"a…, got {"name":{"_type":"DV_TEXT","value":"Nesting"},"_type":"COMPOSITION","links":[{"type":{"_type":"DV_TEXT","value":"type"},"_type":"LINK","target":{"_type":"DV_EHR_URI","value":"ehr://target1"},"meaning":{"_type":"DV_TEXT","value":"meaning"}},{"type":{"_type":"DV_TEXT","value":"type"},"_type":"LINK","t…
-  _cite: ITS-REST 1.0.3 COMPOSITION API composition_{create,get,update,delete}.yaml + versioned_composition_get.yaml; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT + change_control_
-- **ECC-CTB-017** Commit contribution — fail modify non existing directory (`ctb/commit-contribution-fail-modify-non-existing-directory`, json): expected status in [400, 409], got 404
-  _cite: master08 §fail_modify_non_existing_directory (modify a directory that does not exist)_
+_No failures in this run._
 
 ## 6. Skipped, by reason
 
@@ -155,11 +150,11 @@ Each failure is a conformance finding — never an exclusion (standing rule 3).
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged | 1 |
 | NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:60617 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:63522 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — the digest cases prove the Signing capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60617 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60617 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60617 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:63522 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:63522 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:63522 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 | all 11 C/loaded_db goldens are dialect-routed or require id-substitution/binds | 1 |
 | master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
 | master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (register 02 G-2 edition probe). | 2 |
@@ -444,7 +439,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 | ECC-COM-011 | CompositionOps | json | 1/1 | — | PASS |
 | ECC-COM-012 | CompositionOps | json | 1/1 | — | PASS |
 | ECC-COM-008 | CompositionOps | json | 1/1 | — | PASS |
-| ECC-COM-008 | CompositionOps | xml | 0/0 | — | **FAIL** |
+| ECC-COM-008 | CompositionOps | xml | 1/1 | — | PASS |
 | ECC-COM-009 | CompositionOps | json | 1/1 | — | PASS |
 | ECC-COM-010 | CompositionOps | json | 1/1 | — | PASS |
 | ECC-COM-013 | CompositionOps | json | 1/1 | — | PASS |
@@ -486,7 +481,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 | ECC-CTB-014 | ChangeSets | json | 1/1 | — | PASS |
 | ECC-CTB-015 | ChangeSets | json | 1/1 | — | PASS |
 | ECC-CTB-016 | ChangeSets | json | 1/1 | — | PASS |
-| ECC-CTB-017 | ChangeSets | json | 0/0 | — | **FAIL** |
+| ECC-CTB-017 | ChangeSets | json | 1/1 | — | PASS |
 | ECC-CTB-018 | ChangeSets | json | 1/1 | — | PASS |
 | ECC-CTB-019 | ChangeSets | json | 1/1 | — | PASS |
 | ECC-CTB-020 | ChangeSets | json | 1/1 | — | PASS |
@@ -779,7 +774,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 
 ## 12. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:60617`
+- Server: `http://127.0.0.1:63522`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):

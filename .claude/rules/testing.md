@@ -43,8 +43,9 @@ applies to every crate — generated (ADR-004) and hand-written alike.
 - **The acceptance instrument is the ECC suite** (`tools/conformance`,
   `scripts/conformance.sh`) — our own conformance framework with its own
   numbering and generated data sets. Phase-close ECC runs must show **zero
-  drift** vs the committed baseline (`docs/conformance/results.json`); the
-  baseline only ratchets upward (blueprint §4 rule 4).
+  drift** vs the committed baseline
+  (`docs/conformance/ehrbase-rs/results.json` — per-SUT artefact dirs since
+  W-10); the baseline only ratchets upward (blueprint §4 rule 4).
 - **The vendored CNF text is the oracle the instrument derives from:**
   `docs/specs/openehr/CNF/docs/platform_test_schedule/` defines what a
   conformant server must do; the upstream Robot suites + fixtures under
