@@ -9,6 +9,7 @@ description: >
   formatted, and tested. Not for architecture, the BFF auth design, or the
   query-builder AST core — the orchestrator keeps those.
 model: opus
+color: cyan
 ---
 
 You implement one bounded task in the `app/ehrbase-admin-ui` crate, exactly

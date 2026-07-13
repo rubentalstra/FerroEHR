@@ -2,7 +2,7 @@
 paths: ["app/ehrbase-rest/**", "app/ehrbase/src/application/**"]
 ---
 
-# REST server (axum) — P11, P17
+# REST server (axum) — the ITS-REST protocol adapter (shipped; rule governs maintenance/extension)
 
 The server is `axum` 0.8 **implementing the generated ITS-REST contract** from
 `openehr-its::rest::generated` (ADR-005/006). It does not re-declare routes or
@@ -46,5 +46,8 @@ prose feels ambiguous, the CNF test case wins. Cite sections
 - **EhrScape / admin** (`/rest/ecis/v1/*`, `/rest/admin`) live in
   `ehrbase-rest` as a feature-gated adapter module (`ehrscape`, P17), reusing the same service layer + `openehr-flat` (the `ehrbase-compat` crate was removed 2026-07-09 — ADR-010).
 
-Behaviour is verified by the CNF conformance suite (P19), not by mirroring another server's
-Java controller structure. Build compiling + tested (`rust-style.md`).
+Behaviour is verified by the **ECC suite** (`tools/conformance` — the CNF
+schedule text is the oracle it derives from), never by mirroring another
+server. Every wire-visible change ends with an ECC run showing zero drift vs
+the committed baseline. Build compiling + tested (`rust-style.md`); REST
+surface changes are user-visible → same-PR website-book + changelog entries.
