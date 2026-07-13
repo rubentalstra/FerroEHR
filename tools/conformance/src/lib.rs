@@ -1,49 +1,42 @@
-//! The ehrbase-rs Conformance Catalogue (ECC) engine — our own
-//! acceptance instrument (`docs/design/conformance-framework.md`, v3.1).
+//! The ehrbase-rs Conformance Catalogue (ECC) runner — W-10 redesign.
 //!
-//! **Our own conformance framework.** The primary identity system is the ECC
-//! catalogue ([`model::catalog`]): every case carries a stable
-//! `ECC-<AREA>-<NNN>` number allocated in the committed
-//! `inventory/ecc-catalog.tsv`, never reused. The official openEHR CNF corpus
-//! (schedule, Robot suite, ITS-REST OAS, AQL corpus — vendored under
-//! `docs/specs/openehr/`) is **design-time reference reading only** — we
-//! studied it, took what is good, and build better: a spec-first case
-//! universe over the *current* pinned specs (RM 1.2.0, ITS-REST 1.0.3,
-//! AQL 1.1, TERM 3.1.0), generated data sets instead of 2019-era hand-copied
-//! fixtures, and machine-enforced profile verdicts. No runtime mapping to
-//! the legacy corpus exists anywhere in this crate.
+//! A spec-first openEHR conformance instrument able to assess **any** ITS-REST
+//! CDR: the case universe derives from the CNF Platform Conformance Test
+//! Schedule (`docs/specs/openehr/CNF/docs/platform_test_schedule/`), profiles
+//! and claims from `CNF/docs/profiles/master03-profiles.adoc`, and the result
+//! artefacts from `CNF/docs/certificate/master03-certificate.adoc`. Design:
+//! `docs/design/conformance/` (registers 01–13, 80 data sets, 90 target).
 //!
-//! Layered layout (enterprise shape, one responsibility per layer):
-//!
-//! - [`model`] — the domain: case metadata, areas, profiles, the ECC catalogue.
-//! - [`testdata`] — typed access to test data (vendored fixtures we reuse as
-//!   inputs, and our own generated data sets).
-//! - [`engine`] — execution: transport, SUT lifecycles, assertions, registry,
-//!   the runner.
-//! - [`reporting`] — the machine/human result artifacts (`results.json`,
-//!   `CONFORMANCE_REPORT`/`CATALOG` markdown, the Conformance
-//!   Statement + Certificate, the four badges).
-//! - [`suites`] — the case implementations, one module per area/chapter.
-//!
-//! Two pedantic lints are allowed crate-wide because they fight the natural
-//! shape of a data-heavy conformance registry, not any real defect:
-//! `too_many_lines` (the per-chapter `entries()` functions are long, flat
-//! `vec![]` case tables) and `needless_pass_by_value` (the case-builder helpers
-//! take small owned payloads by value for call-site ergonomics — a consistent
-//! idiom across every `suites/*` module).
-#![allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
+//! Framework law (owner rulings, carried):
+//! - **Own identity**: every case is an ECC case (`ECC-<AREA>-<NNN>`,
+//!   allocated once in `inventory/ecc-catalog.tsv`, never reused). Official
+//!   schedule ids are trace references ([`model::case::ScheduleTrace`]),
+//!   never the key system; no Robot/legacy mapping machinery exists.
+//! - **Multi-SUT**: one case universe drives every SUT
+//!   ([`sut::SutDescriptor`] — ehrbase-rs, upstream EHRbase, or any
+//!   bring-your-own endpoint by URL). Per-SUT facts (system id, template-id
+//!   format, admin mount) come from the descriptor, never from literals.
+//! - **Edition ladder**: assertions separate their normative core from
+//!   edition-specific wire forms; the runner tries the highest edition first
+//!   and steps down, recording the satisfied level as an edition finding
+//!   ([`edition`]). CNF backing: `master03-overview.adoc` §API Conformance
+//!   (supported RM versions are stated in the Conformance Statement).
+//! - **Honesty invariants**: spec identity from provenance
+//!   ([`model::versions`]); spec-contradicting cases are adjudicated
+//!   ([`model::adjudication`]), the SUT is never bent to a wrong case;
+//!   every coverage bound is logged ([`engine::harness::DataSetReport`]);
+//!   profile verdicts are machine-computed ([`model::profile`]); foreign
+//!   runs get fairness triage ([`model::fairness`]) and never a Certificate.
 
+pub mod edition;
 pub mod engine;
 pub mod model;
 pub mod reporting;
 pub mod suites;
+pub mod sut;
 pub mod testdata;
 pub mod ts;
+pub mod wire;
 
-// Stable public facade: the flat module paths are the crate API (used by the
-// suites, the CLI, and the integration tests); the directories above are the
-// maintenance layout.
-pub use engine::{assert, client, flow, harness, registry, run, sut};
-pub use model::{adjudication, case, catalog, profile, provenance, version};
-pub use reporting::{report, results};
-pub use testdata::fixtures;
+pub use engine::{assert, harness, registry, run, transport};
+pub use model::{adjudication, case, catalog, fairness, profile, versions};
