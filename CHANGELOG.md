@@ -17,6 +17,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Conformance framework (`tools/conformance`) redesigned and rewritten from
+  the openEHR CNF component up (W-10). It now assesses **any** openEHR CDR:
+  point it at a deployed server (`scripts/conformance.sh` with
+  `CONF_SUT=byo CONF_BASE_URL=…`, or the CLI's `--sut byo --base-url …`) and
+  receive the full spec-cited artefact set — `results.json`, a conformance
+  report, a Conformance Statement, a Conformance **Certificate** (a
+  machine-computed framework assessment, explicitly not an official openEHR
+  certification), and badges, written per SUT. Upstream EHRbase (Java) is a
+  built-in target (`CONF_SUT=ehrbase-java`) with a committed fairness
+  register; a cross-SUT comparison matrix can be rendered from two or more
+  runs (`conformance compare`). Assertions carry a **spec-edition ladder**:
+  the runner tries the newest edition form first (weak `W/"…"` ETags,
+  RM 1.2.0 wire) and steps down to Release-1.0.3-era forms, reporting the
+  satisfied edition level per case instead of failing a CDR on edition
+  deltas; ehrbase-rs CI runs stay pinned to the development edition so the
+  ladder can never mask a regression.
+
 - AQL: `OR`-combined `CONTAINS` expressions now execute (previously rejected
   as unsupported), including nested `AND`/`OR`/`NOT` containment trees, and
   `NOT CONTAINS` accepts compound operands.
