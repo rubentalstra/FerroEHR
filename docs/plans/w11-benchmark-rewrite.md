@@ -127,6 +127,36 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       superseded by the register), book page addition, changelog,
       WORKLIST/PROGRESS/blueprint touch-ups; PR + merge.
 
+## Real defect found by the CKM pack (triaged 2026-07-13, 4-way check)
+
+The server's own `/example` for the official CKM **International Patient
+Summary** OPT is rejected by the server's own validator (422: "unexpected
+node 'at0001' under 'description'" at the Medication-Summary
+`ACTION.medication`). Four-way triage, never assumed:
+
+1. **Spec** (spec-researcher, verbatim citations): an *unconstrained*
+   attribute admits anything RM-valid (ADL 1.4 `master05-cadl.adoc` §"Any"
+   Constraints; CNF `master15-content_tc_composition.adoc` L38); a
+   *constrained* one is governed by the AOM 1.4 `valid_value` cascade;
+   RM `ACTION.description` is existence 1..1. CNF has **no** case
+   committing a server-generated example — spec silence, flagged.
+2. **The OPT** (parsed XML, both ACTION.medication occurrences): it DOES
+   constrain `description` to `ITEM_TREE[at0017]` (+ `protocol
+   ITEM_TREE[at0030]`, four ISM_TRANSITION alternatives).
+3. **Validator**: `check_closure` rejects `at0001` where only `at0017` is
+   admissible — **spec-correct** (and its capture rule already leaves
+   wholly-unconstrained attributes open, matching 1).
+4. **Generator** — **the defect**: `openehr-flat` `from_flat`'s per-ENTRY
+   mandatory-structure synthesis stamps a blind `ITEM_TREE[at0001]`
+   placeholder for missing structural attributes even when the template
+   constrains them. Fix in flight: the WebTemplate captures structural
+   stubs (attr → rm_type/node_id/term-definition name) and the synthesis
+   consults them first; the `at0001` placeholder survives only for
+   genuinely unconstrained attributes (where it is spec-legal per 1).
+   Plus a new ECC TPL case ("ADL 1.4 example round-trip", the IPS OPT
+   vendored into the ECC owned-fixture set) so the defect class stays
+   probed — owner directive.
+
 ## Decisions made this phase
 
 - **Read:write budget counts a CONTRIBUTION as its N committed
