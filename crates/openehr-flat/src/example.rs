@@ -344,27 +344,15 @@ fn emit_code_phrase(node: &WebTemplateNode, base: &str, out: &mut Map<String, Va
 }
 
 /// The `(code, value, terminology)` for an example coded value: the first entry
-/// of the input's coded list, else a placeholder local code.
-///
-/// `DV_CODED_TEXT.value` is the *displayable* text of the defining code (RM
-/// data_types §DV_CODED_TEXT), so a label-less `openehr`-terminology entry
-/// resolves its rubric from the TERM 3.1.0 bundle (e.g. `433` → `event`) —
-/// filling the code as the value produced instances other validators rightly
-/// reject.
+/// of the input's coded list, else a placeholder local code. The list labels
+/// already carry the display text — term definitions, then the TERM 3.1.0
+/// rubric for `openehr` codes (`webtemplate::inputs::coded_value`).
 fn coded_example(input: Option<&WebTemplateInput>) -> (String, String, String) {
     match input {
         Some(i) if !i.list.is_empty() => {
             let cv = &i.list[0];
             let terminology = i.terminology.clone().unwrap_or_else(|| "local".to_owned());
-            let value = cv.label.clone().unwrap_or_else(|| {
-                if terminology == "openehr" {
-                    openehr_term::bundle::openehr()
-                        .concept_rubric(&cv.value, "en")
-                        .map_or_else(|| cv.value.clone(), str::to_owned)
-                } else {
-                    cv.value.clone()
-                }
-            });
+            let value = cv.label.clone().unwrap_or_else(|| cv.value.clone());
             (cv.value.clone(), value, terminology)
         }
         Some(i) => (

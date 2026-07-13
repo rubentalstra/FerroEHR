@@ -10,9 +10,9 @@
 |---|---|
 | SUT | EHRbase upstream (foreign) |
 | Base URL | http://localhost:8091/ehrbase/rest/openehr/v1 |
-| Run start | 2026-07-13T18:48:58.725836Z |
+| Run start | 2026-07-13T19:13:50.262677Z |
 | Load-gen host | 8 logical CPUs, 16384 MiB RAM |
-| Harness rev | ec5b59182 |
+| Harness rev | 17d3a3530 |
 | Workload lock | `afa48bd156dc31d9e22d9ac8e4a7f9425f717480b04c28d746d28ae9a9fbec26` |
 
 > A report with a different load-generator line is not directly comparable.
@@ -23,20 +23,20 @@ p50 / p90 / p99 / p99.9 / max latency (µs) and error count per class. Raw HdrHi
 
 | Class | count | errors | p50 | p90 | p99 | p99.9 | max |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| ehr-create | 2 | 0 | 22207 | 27999 | 27999 | 27999 | 27999 |
-| ehr-read | 2 | 0 | 59519 | 61919 | 61919 | 61919 | 61919 |
+| ehr-create | 2 | 0 | 36191 | 51519 | 51519 | 51519 | 51519 |
+| ehr-read | 2 | 0 | 65599 | 69311 | 69311 | 69311 | 69311 |
 | comp-create-small | 0 | 110 | 0 | 0 | 0 | 0 | 0 |
 | comp-create-large | 0 | 24 | 0 | 0 | 0 | 0 | 0 |
 | comp-update | 0 | 28 | 0 | 0 | 0 | 0 | 0 |
 | comp-read-latest | 0 | 66 | 0 | 0 | 0 | 0 | 0 |
 | comp-read-version | 0 | 22 | 0 | 0 | 0 | 0 | 0 |
 | contribution-commit | 0 | 22 | 0 | 0 | 0 | 0 | 0 |
-| aql-patient | 0 | 22 | 0 | 0 | 0 | 0 | 0 |
-| aql-ward | 22 | 0 | 19423 | 26367 | 184959 | 184959 | 184959 |
-| dir-read | 22 | 0 | 18847 | 24223 | 26399 | 26399 | 26399 |
-| dir-update | 5 | 0 | 65439 | 75519 | 75519 | 75519 | 75519 |
+| aql-patient | 22 | 0 | 33823 | 72639 | 125631 | 125631 | 125631 |
+| aql-ward | 22 | 0 | 21823 | 32479 | 44767 | 44767 | 44767 |
+| dir-read | 22 | 0 | 24319 | 44031 | 58495 | 58495 | 58495 |
+| dir-update | 5 | 0 | 76159 | 106111 | 106111 | 106111 | 106111 |
 | history-read | 0 | 22 | 0 | 0 | 0 | 0 | 0 |
-| status-update | 2 | 0 | 49151 | 81215 | 81215 | 81215 | 81215 |
+| status-update | 2 | 0 | 40415 | 93503 | 93503 | 93503 | 93503 |
 | opt-upload | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tpl-list | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
@@ -48,25 +48,25 @@ p50 / p90 / p99 / p99.9 / max latency (µs) and error count per class. Raw HdrHi
 
 ## 3. Throughput
 
-Sustained **0.5 req/s** over a 120 s window (55 measured requests, error rate 85.175%). The knee/saturation series (register 01 §3) is the multi-run publication step.
+Sustained **0.6 req/s** over a 120 s window (77 measured requests, error rate 79.245%). The knee/saturation series (register 01 §3) is the multi-run publication step.
 
 ## 4. Resource efficiency
 
 | Container | mean CPU | peak RSS | idle RSS |
 |---|--:|--:|--:|
-| benchmark-ehrbase-java-1 | 15.0% | 518.7 MiB | 497.6 MiB |
-| benchmark-ehrbase-java-db-1 | 0.9% | 190.4 MiB | 184.4 MiB |
+| benchmark-ehrbase-java-1 | 15.9% | 593.4 MiB | 567.6 MiB |
+| benchmark-ehrbase-java-db-1 | 2.3% | 188.8 MiB | 184.2 MiB |
 
-- **3.0 req/s per app CPU-core** (0.5 req/s ÷ 0.15 cores).
-- **0.8 req/s per GB peak app RSS** (0.5 req/s ÷ 0.544 GB).
+- **4.0 req/s per app CPU-core** (0.6 req/s ÷ 0.16 cores).
+- **1.0 req/s per GB peak app RSS** (0.6 req/s ÷ 0.622 GB).
 
 ## 5. Storage footprint
 
-Database on-disk size **318.2 MiB** over **10000** compositions = **32.6 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
+Database on-disk size **318.1 MiB** over **10000** compositions = **32.6 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
 
 ## 6. Cold start
 
-Compose-up → first successful HTTP answer: **11656 ms** (11.7 s).
+Compose-up → first successful HTTP answer: **950 ms** (0.9 s).
 
 ## 7. Limitations
 

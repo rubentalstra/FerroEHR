@@ -191,8 +191,23 @@ fn coded_values(
 }
 
 fn coded_value(terminology: &str, code: &str, labels: &dyn Labels) -> WebTemplateCodedValue {
+    // Label resolution order: the artefact's own term definitions, then — for
+    // `openehr`-terminology codes, which no archetype defines — the TERM 3.1.0
+    // rubric (`433` → `event`); the bare code is the last resort (the Better
+    // fallback). `DV_CODED_TEXT.value` is the displayable text of the defining
+    // code (RM data_types §DV_CODED_TEXT), so a code-as-label leaks wrong
+    // instance data out of every consumer that renders from the list.
     let label = labels
         .text(terminology, code)
+        .or_else(|| {
+            (terminology == "openehr")
+                .then(|| {
+                    openehr_term::bundle::openehr()
+                        .concept_rubric(code, "en")
+                        .map(str::to_owned)
+                })
+                .flatten()
+        })
         .unwrap_or_else(|| code.to_owned());
     let mut cv = WebTemplateCodedValue::new(code, Some(label));
     cv.localized_labels = labels.localized(terminology, code);
