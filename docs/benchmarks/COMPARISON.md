@@ -40,8 +40,8 @@
 
 | | Knee L | Sustained req/s | p99 at knee (µs) |
 |---|--:|--:|--:|
-| **ehrbase-rs** | 1 | 10.1 | 59711 |
-| **ehrbase-java** | 1 | 10.1 | 67775 |
+| **ehrbase-rs** | 16 | 161.4 | 23087 |
+| **ehrbase-java** | 64 | 643.0 | 22367 |
 
 ![Max sustained req/s at the SLO](charts/comparison-knee.svg)
 
