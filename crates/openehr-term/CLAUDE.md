@@ -1,0 +1,20 @@
+# `openehr-term` — TERM 3.1.0 (hand-written + vendored assets)
+
+The openEHR terminology component: the handful of BMM-defined data
+classes plus the **terminology bundle, XML assets, and access logic — all
+hand-written** (BMM only defines ~6 interface classes; the content is not
+derivable, so this crate is NOT generated).
+
+- The vendored terminology XML assets are **byte-identical** to the
+  published openEHR release — never "clean up", reformat, or re-indent
+  them. Known upstream defects (e.g. SPECPR-51) are handled in access
+  logic with a citation, never by editing the asset.
+- Code sets / group lookups return **codes, not rubrics** — the spec
+  distinction matters for validation; see
+  `docs/specs/openehr/TERM/docs/SupportTerminology/`.
+- External terminology-server integration (FHIR TS) does NOT live here —
+  it is the `TerminologyService` provider seam in `ehrbase-sm`/`ehrbase`.
+  This crate is the local openEHR bundle only.
+- Versioned by the spec (3.1.0); bump only on a TERM pin bump.
+- Gates: `cargo clippy -p openehr-term --all-targets` +
+  `cargo nextest run -p openehr-term`.

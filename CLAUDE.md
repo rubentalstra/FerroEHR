@@ -9,7 +9,21 @@ Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** 
 - `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) + `openehr-derive` (proc-macro) are the hand-written tooling.
 - `app/*` — the application, **three crates** (ADR-010, packaging redesigned by **ADR-011**): `ehrbase` (the binary + `Platform` impl: storage, service layer, AQL engine, versioning; the `signing` [VERSION.signature, was `ehrbase-signing`] + `system_log` [ATNA, was `ehrbase-audit`] modules), `ehrbase-rest` (ITS-REST protocol adapter + auth + the `access` authz module [was `ehrbase-authz`] + EhrScape), and `ehrbase-sm` (the protocol-free SM native-API catalog). `tools/*` — dev/verification tooling, **not part of the app**: `conformance` (the ECC runner) and `benchmark`. Workspace `members = ["crates/*", "app/*", "tools/*"]`. The service layer follows the openEHR **SM Platform Service Model** (ADR-010/011; SM component map in `docs/architecture.md`, vendored SM spec at `docs/specs/openehr/SM/`).
 - `docs/` — **`docs/blueprint/` (the roadmap + consolidated spec-gap surface in `00-THE-BLUEPRINT.md` §2 — start here)**, plans (active + future phases), ADRs, VERSIONS, architecture, postgres-features, design, enterprise, conformance (generated reports), benchmarks. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
-- `.claude/` — rules, skills, hooks, agents, **`memory/`** (the persistent agent memory, moved in-repo 2026-07-12 so it is visible and versioned; the harness memory dir under `~/.claude/projects/` is a symlink to it — never break that link). Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
+- `.claude/` — rules, skills, hooks, agents, **`memory/`** (the persistent agent memory, moved in-repo 2026-07-12 so it is visible and versioned; the harness memory dir under `~/.claude/projects/` is a symlink to it — never break that link). Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`, `ui-implementer`, `leptos-reviewer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
+
+### Layered memory (nested CLAUDE.md — 2026-07-13)
+
+**Every crate carries its own `CLAUDE.md`** (`app/*/CLAUDE.md`,
+`crates/*/CLAUDE.md`, `tools/*/CLAUDE.md`) with crate-local discipline: role,
+generated-vs-hand-written split, never-do rules, gates. Per the official
+Claude Code memory docs, nested files load **on demand** when files in that
+crate are read (not at launch) and are **not re-injected after `/compact`
+until the next read** — therefore: repo-wide hard rules live ONLY in this
+root file; crate-local detail lives in the crate file; never move a global
+rule down into a nested file. Path-scoped deep-dives stay in
+`.claude/rules/*.md` (with `paths:` frontmatter). When crate reality changes
+(a module moves, a gate changes), update that crate's `CLAUDE.md` in the same
+change.
 
 ## Code generation (ADR-004) — READ THIS FIRST
 
