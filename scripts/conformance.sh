@@ -40,7 +40,10 @@ PROFILE="${CONF_PROFILE:-all}"
 FORMAT="${CONF_FORMAT:-both}"
 OUT="${CONF_OUT:-docs/conformance}"
 
+# macOS bash 3.2 treats an empty array expansion as unbound under `set -u`;
+# the compose() wrapper guards the expansion once.
 COMPOSE_ARGS=()
+compose() { docker compose ${COMPOSE_ARGS[@]+"${COMPOSE_ARGS[@]}"} "$@"; }
 case "$SUT" in
   ehrbase-rs)
     BASE_URL="${CONF_BASE_URL:-http://localhost:8080/ehrbase/rest/openehr/v1}"
@@ -78,7 +81,7 @@ manage_compose=1
 
 cleanup() {
   if [ "$manage_compose" = "1" ]; then
-    docker compose "${COMPOSE_ARGS[@]}" down -v || true
+    compose down -v || true
   fi
 }
 trap cleanup EXIT
@@ -86,14 +89,14 @@ trap cleanup EXIT
 wait_healthy() {
   local cid
   for _ in $(seq 1 60); do
-    cid=$(docker compose "${COMPOSE_ARGS[@]}" ps -q "$APP_SERVICE")
+    cid=$(compose ps -q "$APP_SERVICE")
     if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]; then
       return 0
     fi
     sleep 5
   done
   echo "::error::$APP_SERVICE container did not become healthy"
-  docker compose "${COMPOSE_ARGS[@]}" logs "$APP_SERVICE" || true
+  compose logs "$APP_SERVICE" || true
   return 1
 }
 
@@ -103,9 +106,9 @@ if [ "$manage_compose" = "1" ]; then
     # --build: a conformance verdict on OUR server is only meaningful against
     # the current sources — a stale image once produced a silently-wrong drift
     # verdict (2026-07-09). Opt out via SKIP_BUILD=1 for a published-image run.
-    docker compose "${COMPOSE_ARGS[@]}" up -d --build "${CORE_SERVICES[@]}"
+    compose up -d --build "${CORE_SERVICES[@]}"
   else
-    docker compose "${COMPOSE_ARGS[@]}" up -d "${CORE_SERVICES[@]}"
+    compose up -d "${CORE_SERVICES[@]}"
   fi
   echo "==> Waiting for $APP_SERVICE to become healthy"
   wait_healthy
