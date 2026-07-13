@@ -191,7 +191,7 @@ impl EhrbaseService {
     pub(crate) async fn delete_relationship(
         &self,
         vo_id: Uuid,
-        expected: TreeId,
+        expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = self.load_relationship_version(vo_id, None, None).await?;
         if read.deleted() {
@@ -199,12 +199,18 @@ impl EhrbaseService {
                 "PARTY_RELATIONSHIP {vo_id} is already deleted"
             )));
         }
-        if read.tree != expected {
+        // `None` deletes the current version unconditionally (no precondition
+        // supplied — ITS-REST overview §Concurrency control), mirroring the
+        // party delete.
+        if let Some(expected) = expected
+            && read.tree != expected
+        {
             return Err(ServiceError::Conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
                 read.tree
             )));
         }
+        let expected = expected.unwrap_or(read.tree);
 
         let audit = self.demographic_audit(change_type::DELETED, "PARTY_RELATIONSHIP delete");
         let ctx = CommitEnv::signing_ctx(self);

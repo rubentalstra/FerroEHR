@@ -121,7 +121,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
     ) -> Result<Value, ServiceError> {
         let vo_id = self.directory_vo(ehr_id).await?;
-        versioned_object(&self.pool, vo_id, ehr_id).await
+        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_FOLDER").await
     }
 
     /// Whether `version` of the directory versioned object `vo_id` exists for

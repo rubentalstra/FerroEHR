@@ -307,7 +307,7 @@ async fn relationship_lifecycle_end_to_end() {
 
     // delete (mandatory OBJECT_VERSION_ID) → 204; subsequent get → 204 (Null)
     let deleted = svc
-        .party_relationship_delete(ovid_v2.clone())
+        .party_relationship_delete(ovid_v2.clone(), None)
         .await
         .expect("delete");
     assert!(deleted.is_empty());

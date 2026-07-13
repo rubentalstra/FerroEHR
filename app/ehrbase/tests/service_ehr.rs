@@ -297,7 +297,9 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .get_versioned_composition(ehr_uuid, comp_vo_uuid)
         .await
         .expect("versioned_composition_get");
-    assert_eq!(versioned["_type"], "VERSIONED_OBJECT");
+    // RM ehr master04: the concrete binding VERSIONED_COMPOSITION, never the
+    // generic VERSIONED_OBJECT, appears on the wire.
+    assert_eq!(versioned["_type"], "VERSIONED_COMPOSITION");
     assert!(
         versioned["time_created"]["value"].is_string(),
         "VERSIONED_OBJECT.time_created must be present, got {versioned}"
@@ -733,8 +735,9 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // F-06-06 / W2-C: an inbound `250|amendment|` is stored and echoed verbatim
     // (never narrowed to `modification` — RM change_control §"Contributions":
     // a correction is committed with change type 250|amendment|), and
-    // spec-invalid combinations (creation on an existing object; an
-    // out-of-group code) are rejected as 422.
+    // spec-invalid combinations are rejected: creation on an existing object
+    // as 400 (ITS-REST 400_CONTRIBUTION — modification-type mismatch), an
+    // out-of-group code as 422 (content validation).
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribamend").await);
 
@@ -814,11 +817,13 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         matches!(
             bad_creation,
             Err(SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             })
         ),
-        "creation on an existing object must 422, got {bad_creation:?}"
+        "creation on an existing object is a change-control mismatch — the \
+         ITS-REST 400_CONTRIBUTION scope (modification type does not match), \
+         not content validation; got {bad_creation:?}"
     );
 
     // Invalid code: not a member of the audit_change_type group
@@ -1919,7 +1924,8 @@ async fn directory_versioned_and_has_version() {
         .get_versioned_directory(ehr_uuid)
         .await
         .expect("get_versioned_directory");
-    assert_eq!(versioned["_type"], "VERSIONED_OBJECT");
+    // RM ehr master04: the concrete binding VERSIONED_FOLDER.
+    assert_eq!(versioned["_type"], "VERSIONED_FOLDER");
     assert_eq!(versioned["uid"]["value"], sp[0]);
     assert_eq!(versioned["owner_id"]["id"]["value"], ehr_uuid.to_string());
     assert!(
