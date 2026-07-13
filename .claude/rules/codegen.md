@@ -17,6 +17,7 @@ hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
   multiplicity, descendant/ancestor sets, structure classification) into
   `openehr-rm/src/model/` — the AQL planner's oracle (ADR-008 §3). `emit` already
   emits it as part of `openehr-rm`; this target refreshes just that subtree.
+- `emit-opt` → the OPT 1.4 model + XML codec (`opt14`) into `openehr-its`.
 
 ## The one hard rule
 

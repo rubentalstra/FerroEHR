@@ -27,19 +27,23 @@ is a separate step the caller takes after seeing the plan.
      `crates/` and `app/`) rather than guessing paths; if the task names a
      spec component, resolve it against `docs/architecture.md` (the crate map)
      and `docs/specs/openehr/README.md`.
-   - **Which mechanism** applies (all done **in-session**, no subagents/worktrees):
+   - **Which mechanism** applies:
      **openEHR spec/ITS layer** (`openehr-base`/`openehr-rm`/`openehr-am`/
-     `openehr-its`) → **the code generator** — change `openehr-codegen`'s emitter
-     and run `cargo run -p openehr-codegen -- emit`/`emit-xml`/`emit-rest`
-     (ADR-004/005). **EHRbase application** (`ehrbase-*`) → build idiomatic modern
-     Rust on the generated `openehr-*` crates (ADR-006), consulting EHRbase Java
-     as the behavioural reference — not a per-file port. Build compiling + tested.
+     `openehr-its`) → **the code generator** — change `openehr-codegen`'s
+     emitter and regenerate (`/regen-codegen`, ADR-004/005).
+     **Application** (`ehrbase`/`ehrbase-rest`/`ehrbase-sm`) → idiomatic
+     modern Rust of our own design on the generated crates, the openEHR
+     specs as the authority (EHRbase = prior art only, ADR-008). Build
+     compiling + tested. Note whether the task suits fanning out to an
+     `implementer`/`ui-implementer` subagent per the CLAUDE.md
+     Model-orchestration section (max 2 concurrent), or belongs in-session
+     (architecture, the AQL IR/codec core, spec-conformance judgement).
    - **Which spec sections govern it** — for any spec-facing task, name the
      `docs/specs/openehr/...` files (and CNF test-schedule chapters) the
      implementation must be read against, per `spec-adherence.md` /
      `/spec-lookup`. Doing the work starts by reading those.
    - **What "done" looks like** for this task specifically, distinct from
-     the phase's overall exit criteria — including which CNF test cases or
-     corpus gates prove it.
+     the phase's overall exit criteria — including which ECC cases, fidelity
+     gates, or corpus tests prove it.
 4. **Do not tick the checkbox or commit** — that happens after the work is
    actually done (steps 4-5 of the loop), not as part of planning it.

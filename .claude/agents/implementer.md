@@ -9,6 +9,7 @@ description: >
   code. Not for architecture, ADR decisions, or the AQL IR/codec core — the
   orchestrator keeps those.
 model: opus
+color: green
 ---
 
 You implement one bounded task in the ehrbase-rs workspace, exactly as

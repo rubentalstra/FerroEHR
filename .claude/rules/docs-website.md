@@ -1,4 +1,12 @@
+---
+paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scripts/cut-version.sh", ".github/workflows/docs.yml"]
+---
+
 # The documentation website (`website/**`)
+
+<!-- Path-scoped 2026-07-13: the global "same-PR docs" reminder lives in the
+     root CLAUDE.md hard rules; this file carries the detail and loads when
+     website files are touched. -->
 
 The public site — https://rubentalstra.github.io/ehrbase-rs/ — is built from
 `website/` by `.github/workflows/docs.yml` and deployed to GitHub Pages.

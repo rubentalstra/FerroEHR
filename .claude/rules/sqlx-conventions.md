@@ -2,7 +2,7 @@
 paths: ["app/ehrbase/**"]
 ---
 
-# sqlx + sea-query conventions (P09 persistence, P16 AQL)
+# sqlx + sea-query conventions (persistence + the AQL engine — both shipped)
 
 `ehrbase` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
 pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
@@ -11,10 +11,11 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 
 ## Migrations (ADR-008)
 
-- The schema is **our own PG18-native design** (ADR-008): the unified `node`
-  table, the temporal `vo_version` table, supporting tables, and our `ext`
-  helper functions. The interim EHRbase-derived baseline (ADR-007) is replaced
-  wholesale at P10; nothing is deployed, so `0001` is re-authored.
+- The schema is **our own PG18-native design** (ADR-008, re-authored
+  enterprise-grade at B7/ADR-013): the unified `node` table, the temporal
+  `vo_version` table, supporting tables, and our `ext` helper functions. It
+  is live and ECC-verified — schema changes are migrations on top, never a
+  rewrite of shipped history.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ehrbase/migrations/<schema> --sequential <desc>`,
   written as modern PG 18 SQL (`uuidv7()`, temporal `WITHOUT OVERLAPS`,

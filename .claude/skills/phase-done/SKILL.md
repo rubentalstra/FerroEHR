@@ -24,14 +24,23 @@ decide the phase is done on your behalf.
    means someone actually ran `cargo build --workspace` and it succeeded).
 3. **Spec-adherence check:** for a phase that shipped spec-facing behaviour,
    confirm a conformance pass happened (`/spec-audit` findings addressed or
-   filed as tasks; CNF-covered behaviour verified). If it never happened,
-   stop and say so — that is an unmet exit criterion in spirit.
-3b. **User docs updated?** If this phase changed a user-visible surface (REST,
-   configuration, CLI, deployment artifacts), confirm the matching
-   `website/book/src` page was updated in-branch, and — if the REST contract
-   changed — that `scripts/assemble-oas.sh` was re-run
-   (`.claude/rules/docs-website.md`). If not, stop: that page is part of the
-   phase's deliverable.
+   filed as tasks). If it never happened, stop and say so — that is an
+   unmet exit criterion in spirit.
+3a. **ECC zero-drift gate (blueprint §4 rule 4):** confirm a full ECC run
+   (`/run-conformance`) happened at close and shows zero drift vs the
+   committed baseline, and that the ratcheted `docs/conformance/` artifacts
+   (results.json + report + badges) are in-branch. No green ECC run → the
+   phase is not closable.
+3b. **User docs + changelog updated?** If this phase changed a user-visible
+   surface (REST, configuration, CLI, deployment artifacts), confirm BOTH:
+   the matching `website/book/src` page was updated in-branch (and
+   `scripts/assemble-oas.sh` re-run if the REST contract changed —
+   `.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
+   exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
+   If not, stop: both are part of the phase's deliverable.
+3c. **Blueprint maintenance (blueprint §4 rule 7):** confirm the affected
+   blueprint chapter + `00-THE-BLUEPRINT.md` §2 state rows were refreshed to
+   verified reality, and the phase's close note is recorded.
 4. **Update `docs/PROGRESS.md`** with one line for this phase: phase number,
    title, completion date, and a short note (mirroring the phase file's
    `## Decisions made this phase`, if any). Append; never rewrite prior
@@ -49,7 +58,7 @@ decide the phase is done on your behalf.
 
 ## What this skill does not do
 
-It does not run `cargo build`, the test suite, or the parity harness to
-"check" the exit criteria for you — those must already have been run and
-have genuinely passed before this skill is invoked. If in doubt, run
-`/run-parity-test` or the relevant `cargo` command first.
+It does not run `cargo build`, the test suite, or the ECC suite to "check"
+the exit criteria for you — those must already have been run and have
+genuinely passed before this skill is invoked. If in doubt, run
+`/run-conformance` or the relevant `cargo` command first.

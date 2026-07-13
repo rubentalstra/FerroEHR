@@ -2,37 +2,49 @@
 paths: ["app/ehrbase-rest/**", "app/ehrbase/src/config/**", "app/ehrbase/src/**/security/**"]
 ---
 
-# Authentication — Basic + OAuth2/OIDC (Stage 1)
+# Authentication & authorization (rewritten 2026-07-13 — authn + access module are SHIPPED)
 
-EHRbase Java supports **Basic auth** and **OAuth2/OIDC** (Keycloak-style)
-authentication; we do the same in **Stage 1** (ADR-006). Fine-grained
-**RBAC / attribute authorization is Stage 2** — do not build it now.
+**State:** Basic + OAuth2/OIDC authentication shipped at P11 and is live.
+Authorization lives in the **`ehrbase-rest::access` module** (the RBAC/ABAC
+policy-enforcement point; ADR-011 dissolved the old `ehrbase-authz` crate into
+it), with **SMART resource-scope enforcement** (`ehrbase-rest::smart`)
+AND-composed onto that PEP — config-gated, off by default. This rule governs
+maintenance and extension, not initial build.
+
+## Spec authority
+
+- ITS-REST §Authentication + SM `master02` place authorization largely **out
+  of band** — fine-grained authz is our own extension where the spec is
+  silent; flag it as such in comments ("no openEHR spec governs this"),
+  never cite an ADR (spec-adherence.md).
+- **401 vs 403 discipline:** unauthenticated → 401, authenticated-but-
+  unauthorized → 403, per the ITS-REST text — verified by the ECC SEC cases
+  (`ECC-SEC-*` in `tools/conformance`), not by comparison with any other
+  server. Public endpoints (`/rest/status`, health, discovery documents
+  incl. `/.well-known/smart-configuration`) stay outside the auth layer.
+- SMART scope grammar/enforcement: the vendored
+  `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` text (master08 is the
+  load-bearing scope grammar) + `docs/design/its-rest/smart.md`.
+  EHR-level access: `docs/design/ehr-access-scheme.md`.
 
 ## Rules
 
-- **Use the pinned crates, don't hand-roll crypto or token parsing:**
-  `argon2` (+ `password-hash`) for password verification (Basic auth),
-  `jsonwebtoken` for JWT validation, `oauth2` + `openidconnect` for the
-  OAuth2/OIDC flow + JWKS/issuer discovery (Keycloak), `axum-login` /
-  `tower-sessions` where session state helps. `secrecy`/`zeroize` for secrets.
-- **Authentication is a `tower`/axum middleware + extractor**, applied to the
-  generated router (see `rest-axum.md`) — one place, not per-handler. An
-  authenticated principal is put in request extensions for handlers/service.
-- **Config-driven** (`figment`/`config`): which auth modes are enabled, the
-  OIDC issuer/JWKS URL, audience, Basic-auth user store. Mirror EHRbase's
-  `application.yml` security options behaviourally.
-- **Unauthenticated → 401; authenticated-but-unauthorized → 403** — match
-  EHRbase's status/behaviour at the REST surface (parity-verified). Public
-  endpoints (`/rest/status`, health, Swagger) are exempt as EHRbase exempts them.
-- **No RBAC/permission checks in Stage 1** beyond "is authenticated". Row-level
-  / AQL-result filtering by permission is the Stage-2 restoration (now shipped
-  as the `ehrbase-rest::access` module, ADR-015/E-arc); historically a
-  `// TODO(port): Stage 2 RBAC` seam, not an implementation.
-
-The CNF security suites (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`,
-incl. the Keycloak OAuth2 setup) are the conformance reference for the
-401/403 behaviour and the Basic + bearer flows.
-
-Errors map through `openehr-its::rest::runtime::ApiError`. Build compiling +
-tested (auth middleware needs unit + integration tests: 401/403 paths, valid/
-invalid tokens, Basic + bearer).
+- **Use the pinned crates, never hand-roll crypto or token parsing:**
+  `argon2` (+`password-hash`) for Basic-auth password verification,
+  `jsonwebtoken` for JWT validation, `oauth2` + `openidconnect` for
+  OAuth2/OIDC + JWKS/issuer discovery (Keycloak-style), `tower-sessions`
+  where session state helps, `secrecy`/`zeroize` for secret material.
+- **Auth is a `tower`/axum middleware + extractor** on the generated router
+  — one place, never per-handler. The authenticated principal goes into
+  request extensions; the `access` PEP consumes it.
+- **Config-driven** (figment `EHRBASE_*`): enabled modes, OIDC issuer/JWKS,
+  audience, the Basic user store. Config changes are user-visible → same-PR
+  website-book + changelog entries.
+- **Layer order is load-bearing:** authn → `access` (RBAC/ABAC) → SMART
+  scopes (AND-composed — SMART can only narrow, never widen). Disabled
+  SMART must produce zero wire drift.
+- Errors map through `openehr-its::rest::runtime::ApiError`; never invent
+  an error body shape.
+- Every auth change lands with tests (401/403 paths, valid/expired/wrong-
+  audience tokens, Basic + bearer, scope-narrowing cases) and an ECC run
+  showing zero drift — the SEC area covers this surface.
