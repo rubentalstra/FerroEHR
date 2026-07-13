@@ -1,0 +1,28 @@
+# `ehrbase` — the binary + `Platform` implementation
+
+The application core (ADR-010/011): storage, service layer, AQL engine,
+versioning, CLI, plus the `signing` (VERSION.signature) and `system_log`
+(IHE ATNA) modules. Hand-written idiomatic Rust of our own design on the
+generated `openehr-*` crates.
+
+- **Spec first:** every spec-facing behaviour (versioning/change-control,
+  validation, AQL semantics) is implemented from the vendored text under
+  `docs/specs/openehr/` (`/spec-lookup`) — never from memory or EHRbase
+  behaviour. Cite spec file + section in comments; NEVER cite an ADR in code.
+- **Storage is ADR-008 greenfield PG18:** one `node` table (nested-set
+  interval index, canonical JSON fragments — no aliasing, no synthetic
+  fields) + one temporal `vo_version` table (`WITHOUT OVERLAPS`;
+  `ALL_VERSIONS` supported). Every write emits contribution + audit in the
+  same transaction. Change-control semantics are formally audited 1:1
+  against RM common master06 — do not regress them casually.
+- **AQL engine:** typed IR over the BMM-generated RM model, lowered via
+  `sea-query`; every unsupported construct is a typed reject, never a
+  silent wrong answer. Rules: `.claude/rules/aql-engine.md`.
+- **SQL:** `sqlx` + `sea-query` (never sea-orm); migrations only via
+  `sqlx migrate add --sequential`. Rules: `.claude/rules/sqlx-conventions.md`.
+- **Consume `openehr-*` types directly** — never re-model the RM or
+  re-serialize; canonical JSON/XML goes through `openehr-its`.
+- DB tests use testcontainers PG 18 (18.4+); don't leak containers.
+- Gates: `cargo clippy -p ehrbase --all-targets` +
+  `cargo nextest run -p ehrbase` green before commit; full ECC
+  (`scripts/conformance.sh`) must show zero drift at phase close.
