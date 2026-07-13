@@ -44,9 +44,15 @@ const COMMIT_BINDING: &str = "POST /ehr/{ehr_id}/contribution";
 /// The ITS-REST binding the get/has cases drive.
 const GET_BINDING: &str = "GET /ehr/{ehr_id}/contribution/{contribution_uid}";
 
-/// Invalidity ladder: the contract's `400_CONTRIBUTION` (development) with the
-/// prior-edition `422` Unprocessable-Entity form as the lower rung.
-const INVALID_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 400), (Edition::Release103, 422)];
+/// Invalidity ladder for semantically-invalid committed content: `422` —
+/// "content type and syntax is correct … but there are semantic validation
+/// errors, such as the underlying template is not known or is not validating
+/// the supplied resource" (ITS-REST Requests_and_responses §422 + the OAS
+/// `responses/422.yaml`; the same rule `composition_create` enumerates).
+/// `400_CONTRIBUTION` is scoped to parse/syntax/modification-type errors
+/// only, and the spec's prose reserves plain 400 for "when no other 4xx is
+/// appropriate" — so the Release-1.0.3-era plain-400 form is the LOWER rung.
+const INVALID_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 422), (Edition::Release103, 400)];
 /// Conflict ladder: `contribution_create` declares `409` for a change-control
 /// conflict.
 const CONFLICT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 409)];

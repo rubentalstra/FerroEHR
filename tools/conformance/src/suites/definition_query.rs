@@ -258,11 +258,14 @@ fn run_store_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// valid_query-invalid: a malformed AQL body is rejected at store time.
+/// valid_query-invalid: a malformed AQL body at store time.
 //
-// PORT NOTE (register 02 G-5): ITS-REST does not pin 400 (malformed request) vs
-// 422 (semantically-invalid AQL) for stored-query create; both are accepted and
-// the SUT's choice is a recorded boundary, not masked behind a single code.
+// The contract does NOT mandate store-time validation: `definition_query_store`
+// declares only {200, 400} (ITS-REST definition-codegen OAS, operation
+// `definition_query_store`) and its description is silent on validating the
+// stored text — deferring AQL validation to execution is contract-conformant.
+// The spec-determined assertion is therefore: stored (200) or rejected with
+// the declared 400 — never any other code.
 fn run_store_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let aql = invalid_aql()?;
@@ -349,13 +352,16 @@ fn run_list_skip<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── assertion helpers ─────────────────────────────────────────────────────────
 
-/// Store-time rejection: `[400, 422]` (register 02 G-5).
+/// Store disposition for an invalid body: the contract declares only
+/// {200, 400} for `definition_query_store` and does not mandate store-time
+/// AQL validation — acceptance (deferred validation) and the declared 400
+/// are both conformant; any other code is not.
 fn assert_store_rejected(status: u16) -> Result<DataSetReport, CaseError> {
-    if matches!(status, 400 | 422) {
+    if matches!(status, 200 | 400) {
         Ok(DataSetReport::SINGLE)
     } else {
         Err(CaseError::Assertion(format!(
-            "expected a store-time rejection (400 or 422), got {status}"
+            "expected stored (200, validation deferred) or the declared 400, got {status}"
         )))
     }
 }

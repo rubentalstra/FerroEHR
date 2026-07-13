@@ -686,8 +686,24 @@ fn assert_version_number(uid: &str, n: u32) -> Result<(), CaseError> {
 /// all the same data as the committed fixture. Realized as retrieved ⊇
 /// committed ([`Compare::Superset`]) — the server assigns `uid` + committal
 /// metadata, so "contain all the same data" is a superset test.
-fn content_check(kind: Kind, retrieved: &Value) -> Result<(), CaseError> {
-    let committed = read_json_file(kind.json_file())?;
+///
+/// The baseline is **format-aware**: an XML run committed the XML fixture,
+/// whose content is compared via its canonical-JSON form (the vendored XML
+/// and JSON `nested` fixtures are NOT equivalent — the XML carries one LINK,
+/// the JSON two — so comparing an XML commit against the JSON sibling would
+/// fail the server for data it was never given; RM ehr §COMPOSITION.links).
+fn content_check(ctx: &RunContext<'_>, kind: Kind, retrieved: &Value) -> Result<(), CaseError> {
+    let committed = match ctx.format {
+        Format::Json => read_json_file(kind.json_file())?,
+        Format::Xml => {
+            let xml = fixtures::read_from(XML_DIR, kind.xml_file()).map_err(|e| codec(&e))?;
+            let composition = openehr_its::xml::from_canonical_xml::<
+                openehr_rm::prelude::Composition,
+            >(&xml)
+            .map_err(|e| CaseError::Codec(format!("XML fixture parse: {e}")))?;
+            serde_json::to_value(&composition).map_err(|e| CaseError::Codec(e.to_string()))?
+        }
+    };
     support::assert_round_trip(Compare::Superset, &committed, retrieved)
 }
 
@@ -725,7 +741,7 @@ async fn get_and_check(
             j.json()?
         }
     };
-    content_check(kind, &retrieved)
+    content_check(ctx, kind, &retrieved)
 }
 
 /// GET `path` (JSON) and assert `404` — the absent-resource negative
