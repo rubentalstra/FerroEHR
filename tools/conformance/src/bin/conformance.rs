@@ -89,7 +89,7 @@ struct RunArgs {
     /// ADMIN-role credential (same forms as `--auth`).
     #[arg(long)]
     admin_auth: Option<String>,
-    /// Sibling admin-API base URL (upstream EHRbase serves admin at a sibling
+    /// Sibling admin-API base URL (upstream `EHRbase` serves admin at a sibling
     /// mount of `/rest/openehr`); overrides the target default.
     #[arg(long)]
     admin_base_url: Option<String>,
@@ -249,9 +249,9 @@ fn build_descriptor(args: &RunArgs) -> Result<SutDescriptor, String> {
         }
         SutArg::Byo => {
             let mut d = SutDescriptor::byo(args.sut_name.clone(), base_url);
-            d.auth = args.auth.clone();
-            d.admin_auth = args.admin_auth.clone();
-            d.admin_base_url = args.admin_base_url.clone();
+            d.auth.clone_from(&args.auth);
+            d.admin_auth.clone_from(&args.admin_auth);
+            d.admin_base_url.clone_from(&args.admin_base_url);
             d
         }
     };
@@ -259,11 +259,11 @@ fn build_descriptor(args: &RunArgs) -> Result<SutDescriptor, String> {
     // A `--sut-name` override applies to any target (the output subdir + the
     // fairness-register lookup key).
     if let Some(name) = &args.sut_name {
-        descriptor.name = name.clone();
+        descriptor.name.clone_from(name);
     }
     // A `--admin-base-url` override wins over the target default.
     if args.admin_base_url.is_some() {
-        descriptor.admin_base_url = args.admin_base_url.clone();
+        descriptor.admin_base_url.clone_from(&args.admin_base_url);
     }
     // A `--edition` override wins over the target default.
     if let Some(edition) = args.edition {
@@ -364,9 +364,11 @@ fn auto_fairness_path(name: &str) -> Option<PathBuf> {
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| {
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with(name) && n.ends_with(".toml"))
+            p.extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("toml"))
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with(name))
         })
         .collect();
     matches.sort();
@@ -514,11 +516,11 @@ fn cmd_compare(args: &CompareArgs) -> i32 {
         }
     }
     let md = compare::render_comparison_md(&runs);
-    if let Some(parent) = args.out.parent() {
-        if let Err(e) = std::fs::create_dir_all(parent) {
-            eprintln!("error creating {}: {e}", parent.display());
-            return 2;
-        }
+    if let Some(parent) = args.out.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
+        eprintln!("error creating {}: {e}", parent.display());
+        return 2;
     }
     if let Err(e) = std::fs::write(&args.out, md) {
         eprintln!("error writing {}: {e}", args.out.display());
@@ -551,11 +553,11 @@ fn cmd_catalog(args: &CatalogArgs) -> i32 {
         None => None,
     };
     let md = report::render_catalog_md(results.as_ref(), &catalog);
-    if let Some(parent) = args.out.parent() {
-        if let Err(e) = std::fs::create_dir_all(parent) {
-            eprintln!("error creating {}: {e}", parent.display());
-            return 2;
-        }
+    if let Some(parent) = args.out.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
+        eprintln!("error creating {}: {e}", parent.display());
+        return 2;
     }
     if let Err(e) = std::fs::write(&args.out, md) {
         eprintln!("error writing {}: {e}", args.out.display());

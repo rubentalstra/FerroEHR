@@ -73,7 +73,7 @@ pub fn set_array_count(object: &mut Value, array_field: &str, count: usize) {
 /// Set `COMPOSITION.category` to a coded value (openEHR terminology group 13):
 /// `433` = `event`, `431` = `persistent`. Both `value` and
 /// `defining_code.code_string` are updated so the wire object stays internally
-/// consistent (RM composition §COMPOSITION.Category_validity: the code must be
+/// consistent (RM composition §`COMPOSITION.Category_validity`: the code must be
 /// a valid composition-category code).
 pub fn set_category(comp: &mut Value, code: &str, value: &str) {
     if let Value::Object(map) = comp {

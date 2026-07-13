@@ -5,7 +5,9 @@
 
 use async_trait::async_trait;
 
-use crate::engine::harness::{AuthSlot, HttpRequest, HttpResponse, Method, Transport, TransportError};
+use crate::engine::harness::{
+    AuthSlot, HttpRequest, HttpResponse, Method, Transport, TransportError,
+};
 
 /// A SUT credential.
 #[derive(Debug, Clone)]

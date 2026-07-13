@@ -106,6 +106,11 @@ fn binding_string(binding: Binding) -> String {
 ///
 /// # Errors
 /// [`RunError::Catalog`] if the ECC catalogue cannot be loaded.
+#[expect(
+    clippy::too_many_lines,
+    reason = "the case-execution loop assembles each per-format CaseOutcome inline; \
+              extracting it would only trade line count for a many-argument helper"
+)]
 pub async fn run(
     transport: &dyn Transport,
     sut: &SutDescriptor,

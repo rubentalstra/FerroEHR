@@ -1,8 +1,8 @@
 //! The spec-edition/version ladder (owner ruling 2026-07-13; register 90 §4).
 //!
 //! Different CDRs speak different editions of the same specifications: our
-//! server implements the ITS-REST *development* edition (weak `W/"…"` ETags,
-//! RM 1.2.0 wire); upstream EHRbase speaks Release-1.0.3-era forms and an RM
+//! server implements the ITS-REST *development* edition (weak `W/"…"` `ETags`,
+//! RM 1.2.0 wire); upstream `EHRbase` speaks Release-1.0.3-era forms and an RM
 //! 1.1.0-era wire. A single-edition instrument would fail a foreign SUT on
 //! edition deltas rather than defects. So every assertion separates its
 //! **normative core** (what every edition mandates) from **edition-specific
@@ -24,14 +24,16 @@ use serde::Serialize;
 
 /// A spec edition rung, newest first. `Ord`: a *later* edition compares
 /// greater ([`Edition::Development`] > [`Edition::Release103`]).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum Edition {
-    /// ITS-REST Release 1.0.3-era forms (bare `"…"` ETags, RM 1.1.0-era
+    /// ITS-REST Release 1.0.3-era forms (bare `"…"` `ETags`, RM 1.1.0-era
     /// wire shapes) — the older rung.
     Release103,
     /// The ITS-REST development edition (the vendored `-codegen` OAS line:
-    /// weak `W/"…"` ETags, RM 1.2.0 wire) — the newest rung, tried first.
+    /// weak `W/"…"` `ETags`, RM 1.2.0 wire) — the newest rung, tried first.
     Development,
 }
 
@@ -154,7 +156,10 @@ mod tests {
     fn pinned_policy_rejects_lower_rungs() {
         let pinned = EditionPolicy::Pinned(Edition::Development);
         assert!(pinned.accept(Edition::Development).is_ok());
-        assert_eq!(pinned.accept(Edition::Release103), Err(Edition::Development));
+        assert_eq!(
+            pinned.accept(Edition::Release103),
+            Err(Edition::Development)
+        );
         assert!(EditionPolicy::Auto.accept(Edition::Release103).is_ok());
     }
 

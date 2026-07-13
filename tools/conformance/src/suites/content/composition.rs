@@ -18,8 +18,8 @@
 //! truth-table data sets committed.
 //!
 //! **Schedule table (9 rows):** content ∈ {no entries, one entry, three
-//! entries} × context ∈ {no context, context w/o other_context, context w/
-//! other_context}. The accept/reject oracle depends only on the content count
+//! entries} × context ∈ {no context, context w/o `other_context`, context w/
+//! `other_context`}. The accept/reject oracle depends only on the content count
 //! vs the interval and on context present-vs-absent — `other_context` never
 //! flips the outcome across any master15 table (register 12 G-5), so the runner
 //! drives the 6 rows {0,1,3}×{present,absent} and declares the 9-row bound via

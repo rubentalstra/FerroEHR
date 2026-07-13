@@ -12,7 +12,7 @@ use benchmark::report::{BenchReport, EnvBlock};
 use benchmark::target::{Implementation, Target};
 use benchmark::workload::{Scenario, workload_lock};
 use clap::{Parser, Subcommand};
-use conformance::client::Credential;
+use conformance::transport::Credential;
 
 #[derive(Parser)]
 #[command(

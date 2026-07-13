@@ -1,4 +1,4 @@
-//! DEMOGRAPHIC (PARTY + PARTY_RELATIONSHIP) cases — the master10 spine
+//! DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) cases — the master10 spine
 //! (`docs/design/conformance/08-demographic.md`).
 //!
 //! master10-func_tc_demographic.adoc ships **no concrete test case** (every one
@@ -18,7 +18,7 @@
 //! and `get_party_at_time` (G-2) are added here; the relationship wire is an
 //! ehrbase-rs extension (the ITS-REST demographic OAS declares **no**
 //! `party_relationship` path — only the schema), so those cases are
-//! EccOriginal against the extension route, never presented as ITS-REST-bound.
+//! `EccOriginal` against the extension route, never presented as ITS-REST-bound.
 //
 // PORT NOTE: register 08 G-4 (RM wire version ladder) is only partially met —
 // party/relationship request payloads are authored at RM 1.2.0; a per-edition
@@ -50,6 +50,10 @@ const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
 
 /// Every registered DEMOGRAPHIC case (24 carried + 7 new: G-2 + G-3).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── I_DEMOGRAPHIC_SERVICE.create_party ──────────────────────────────
@@ -350,6 +354,10 @@ fn rel_stub(op: &'static str) -> ScheduleTrace {
 }
 
 /// Assemble a DEMOGRAPHIC case entry (area [`Area::Dem`], JSON).
+#[expect(
+    clippy::too_many_arguments,
+    reason = "case-table constructor: each CaseEntry/CaseMeta field is a distinct required argument"
+)]
 fn case(
     id: &'static str,
     title: &'static str,
@@ -572,7 +580,7 @@ fn actor(ty: &str, archetype: &str, name: &str) -> Value {
     })
 }
 
-/// A `ROLE` body. RM 1.2.0 demographic §ROLE.Capabilities_valid: a *present*
+/// A `ROLE` body. RM 1.2.0 demographic §`ROLE.Capabilities_valid`: a *present*
 /// capabilities list must be non-empty, so absence carries "no capabilities".
 fn role_body(name: &str) -> Value {
     json!({
@@ -608,8 +616,8 @@ fn body_for(seg: &str, name: &str) -> Value {
     }
 }
 
-/// A `PARTY_RELATIONSHIP` between two party HIER_OBJECT_IDs (RM 1.2.0
-/// demographic §PARTY_RELATIONSHIP: mandatory `source`/`target` PARTY_REF).
+/// A `PARTY_RELATIONSHIP` between two party `HIER_OBJECT_IDs` (RM 1.2.0
+/// demographic §`PARTY_RELATIONSHIP`: mandatory `source`/`target` `PARTY_REF`).
 fn rel_body(name: &str, source_vo: &str, target_vo: &str) -> Value {
     json!({
         "_type": "PARTY_RELATIONSHIP",
@@ -624,7 +632,7 @@ fn rel_body(name: &str, source_vo: &str, target_vo: &str) -> Value {
 
 // ── wire helpers ─────────────────────────────────────────────────────────────
 
-/// Create a party of `seg` (named `name`), asserting `201` + ETag + Location;
+/// Create a party of `seg` (named `name`), asserting `201` + `ETag` + Location;
 /// returns `(versioned_object_uid, object_version_id)`.
 async fn create_party(
     ctx: &RunContext<'_>,

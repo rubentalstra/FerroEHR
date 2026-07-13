@@ -41,6 +41,10 @@ const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
 
 /// Every registered ADMIN case (6 physical-delete + 8 missing SM ops).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── I_ADMIN_SERVICE.physical_ehr_delete (the one bound operation) ───

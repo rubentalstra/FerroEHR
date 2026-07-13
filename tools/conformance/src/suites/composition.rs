@@ -15,7 +15,7 @@
 //!   not exact equality. Applied over a JSON read (works for both JSON and XML
 //!   runs).
 //! - **Versioning postconditions (G-2).** `update` asserts the audit
-//!   `change_type` CREATE→MODIFY (TERM SupportTerminology audit_change_type:
+//!   `change_type` CREATE→MODIFY (TERM `SupportTerminology` `audit_change_type`:
 //!   249 creation, 251 modification); `delete` asserts the logical-delete
 //!   `VERSION.lifecycle_state = openehr::523|deleted|` (master07 §delete NOTE)
 //!   plus the ITS-REST 204/404 observable.
@@ -66,6 +66,10 @@ const CIT: &str = "ITS-REST 1.0.3 COMPOSITION API composition_{create,get,update
 
 /// Every registered COMPOSITION case (31 carried + 1 new positive `has_composition`).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── create ─────────────────────────────────────────────────────────
@@ -496,6 +500,10 @@ pub fn entries() -> Vec<CaseEntry> {
 }
 
 /// Assemble a COMPOSITION-area case entry.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "case-table constructor: each CaseEntry/CaseMeta field is a distinct required argument"
+)]
 fn case(
     id: &'static str,
     title: &'static str,
@@ -581,13 +589,13 @@ impl Kind {
 /// uploaded) — event kind only (relative to `JSON_DIR`).
 const BAD_OPT_FILE: &str = "nested.en.v1__invalid_opt_doesnt_exist.json";
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// Read a canonical-JSON composition fixture as a [`Value`].
 fn read_json_file(file: &str) -> Result<Value, CaseError> {
-    let text = fixtures::read_from(JSON_DIR, file).map_err(codec)?;
+    let text = fixtures::read_from(JSON_DIR, file).map_err(|e| codec(&e))?;
     serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))
 }
 
@@ -606,7 +614,7 @@ async fn commit(ctx: &RunContext<'_>, ehr_id: &str, kind: Kind) -> Result<HttpRe
             Format::Json,
         ),
         Format::Xml => {
-            let xml = fixtures::read_from(XML_DIR, kind.xml_file()).map_err(codec)?;
+            let xml = fixtures::read_from(XML_DIR, kind.xml_file()).map_err(|e| codec(&e))?;
             negotiate::representation(
                 HttpRequest::post(path).text_body(xml, "application/xml"),
                 Format::Xml,
@@ -721,7 +729,7 @@ async fn get_and_check(
 }
 
 /// GET `path` (JSON) and assert `404` — the absent-resource negative
-/// (composition_get.yaml / versioned_composition_get.yaml 404).
+/// (`composition_get.yaml` / `versioned_composition_get.yaml` 404).
 async fn get_expect_404(ctx: &RunContext<'_>, path: String) -> Result<DataSetReport, CaseError> {
     let resp = ctx
         .send(negotiate::accept(HttpRequest::get(path), Format::Json))
@@ -738,7 +746,7 @@ async fn observe_ovid(ctx: &RunContext<'_>) -> Result<(String, ids::ObjectVersio
     Ok((ehr_id, ids::parse_object_version_id(&uid)?))
 }
 
-/// GET the ORIGINAL_VERSION for `version_uid` (JSON), asserting 200.
+/// GET the `ORIGINAL_VERSION` for `version_uid` (JSON), asserting 200.
 async fn original_version(
     ctx: &RunContext<'_>,
     ehr_id: &str,
@@ -757,16 +765,16 @@ async fn original_version(
     resp.json()
 }
 
-/// The `defining_code.code_string` of a DV_CODED_TEXT node, if present.
+/// The `defining_code.code_string` of a `DV_CODED_TEXT` node, if present.
 fn coded_code(node: &Value) -> Option<&str> {
     node.get("defining_code")
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
 }
 
-/// Assert an ORIGINAL_VERSION's `commit_audit.change_type` is the given
-/// openEHR audit_change_type (matched by code OR rubric — the same coded value
-/// in two representations; TERM SupportTerminology §audit_change_type).
+/// Assert an `ORIGINAL_VERSION`'s `commit_audit.change_type` is the given
+/// openEHR `audit_change_type` (matched by code OR rubric — the same coded value
+/// in two representations; TERM `SupportTerminology` §`audit_change_type`).
 fn assert_change_type(ov: &Value, code: &str, rubric: &str) -> Result<(), CaseError> {
     let ct = &ov["commit_audit"]["change_type"];
     let by_code = coded_code(ct) == Some(code);
@@ -790,7 +798,7 @@ fn run_create_persistent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// Create a new `kind` composition: 201 + ETag/Location; version-tree number 1
-/// (composition_create.yaml 201; RM common §Version tree).
+/// (`composition_create.yaml` 201; RM common §Version tree).
 async fn run_create(ctx: &RunContext<'_>, kind: Kind) -> Result<DataSetReport, CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
     ensure_opt(ctx, kind).await?;
@@ -826,11 +834,12 @@ fn run_create_invalid_persistent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
 }
 
 /// Commit the vendored `__invalid_wrong_structure` fixture (malformed content);
-/// the server must reject it (composition_create.yaml 400/422).
+/// the server must reject it (`composition_create.yaml` 400/422).
 async fn run_create_invalid(ctx: &RunContext<'_>, kind: Kind) -> Result<DataSetReport, CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
     ensure_opt(ctx, kind).await?;
-    let malformed = fixtures::read_from(JSON_DIR, kind.invalid_structure_file()).map_err(codec)?;
+    let malformed =
+        fixtures::read_from(JSON_DIR, kind.invalid_structure_file()).map_err(|e| codec(&e))?;
     let resp = ctx
         .send(
             HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
@@ -1213,7 +1222,7 @@ fn run_update_persistent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// Create then update a `kind` composition → 2 VERSIONs; assert version-tree
 /// number 2 and the audit `change_type` postcondition CREATE(249)→MODIFY(251)
-/// read back from the ORIGINAL_VERSIONs (master07 §update_composition; G-2).
+/// read back from the `ORIGINAL_VERSIONs` (master07 §`update_composition`; G-2).
 async fn run_update(ctx: &RunContext<'_>, kind: Kind) -> Result<DataSetReport, CaseError> {
     let (ehr_id, object, uid1, uid2) = setup_two(ctx, kind).await?;
     assert_version_number(&uid2, 2)?;
@@ -1268,10 +1277,10 @@ fn run_delete_persistent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// Create then delete a `kind` composition → a new (deleted) VERSION. Assert
 /// the logical-delete postcondition: the deleted `VERSION.lifecycle_state =
-/// openehr::523|deleted|` (master07 §delete_composition NOTE) AND a subsequent
-/// GET of the latest composition is 204/404 (composition_get.yaml
-/// 204_because_deleted). The delete path segment is the version uid to delete
-/// (composition_delete.yaml: the uid_based_id MUST be the OBJECT_VERSION_ID of
+/// openehr::523|deleted|` (master07 §`delete_composition` NOTE) AND a subsequent
+/// GET of the latest composition is 204/404 (`composition_get.yaml`
+/// `204_because_deleted`). The delete path segment is the version uid to delete
+/// (`composition_delete.yaml`: the `uid_based_id` MUST be the `OBJECT_VERSION_ID` of
 /// the most recent version).
 async fn run_delete(ctx: &RunContext<'_>, kind: Kind) -> Result<DataSetReport, CaseError> {
     let (ehr_id, uid1) = setup(ctx, kind).await?;

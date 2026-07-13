@@ -46,6 +46,10 @@ const SUBJECT_NS: &str = "conformance";
 
 /// Every registered EHR/`EHR_STATUS` case (21 schedule + 2 extensions).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── I_EHR_SERVICE.has_ehr ──────────────────────────────────────────
@@ -329,8 +333,12 @@ pub fn entries() -> Vec<CaseEntry> {
     ]
 }
 
-/// Assemble a case entry; `area` is derived from `capability` (EHR_STATUS
+/// Assemble a case entry; `area` is derived from `capability` (`EHR_STATUS`
 /// operations file under [`Area::Sta`], the rest under [`Area::Ehr`]).
+#[expect(
+    clippy::too_many_arguments,
+    reason = "case-table constructor: each CaseEntry/CaseMeta field is a distinct required argument"
+)]
 fn case(
     id: &'static str,
     title: &'static str,
@@ -371,7 +379,7 @@ macro_rules! boxed {
 
 // ── EHR_STATUS payload authoring (RM ehr master04 §EHR Status) ───────────────
 
-/// A valid RM 1.2.0 `EHR_STATUS` with a PARTY_SELF subject identified through
+/// A valid RM 1.2.0 `EHR_STATUS` with a `PARTY_SELF` subject identified through
 /// `external_ref` (RM ehr master04 §EHR Status: the subject identity travels on
 /// `PARTY_SELF.external_ref`, never as a foreign `PARTY_IDENTIFIED`).
 fn ehr_status(
@@ -417,7 +425,7 @@ fn fresh_subject() -> String {
     format!("conf-subj-{}", Uuid::new_v4())
 }
 
-/// POST `/ehr` with an `EHR_STATUS` body, asserting `201` + ETag + Location,
+/// POST `/ehr` with an `EHR_STATUS` body, asserting `201` + `ETag` + Location,
 /// returning the created `ehr_id`.
 async fn create_ehr_with_status(ctx: &RunContext<'_>, status: &Value) -> Result<String, CaseError> {
     let req = negotiate::representation(HttpRequest::post("/ehr").json_body(status)?, Format::Json);
@@ -429,7 +437,7 @@ async fn create_ehr_with_status(ctx: &RunContext<'_>, status: &Value) -> Result<
 }
 
 /// GET `path` (JSON) and assert `404` — the absent-resource negative
-/// (ITS-REST EHR/EHR_STATUS API ehr_get.yaml/ehr_status_get.yaml 404).
+/// (ITS-REST `EHR/EHR_STATUS` API `ehr_get.yaml/ehr_status_get.yaml` 404).
 async fn get_expect_404(ctx: &RunContext<'_>, path: String) -> Result<DataSetReport, CaseError> {
     let resp = ctx
         .send(negotiate::accept(HttpRequest::get(path), Format::Json))
@@ -819,7 +827,7 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
         // encoded here with its spec citation (replacing the legacy hardcoded
         // filename + TRIAGE cross-ref).
         let invalid = fixtures::ehr_invalid().map_err(|e| CaseError::Codec(e.to_string()))?;
-        let total = invalid.len() as u32;
+        let total = u32::try_from(invalid.len()).unwrap_or(u32::MAX);
         let mut passed = 0u32;
         for fixture in invalid {
             let body = fixture
@@ -856,9 +864,9 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
     })
 }
 
-/// Whether an `EHR_STATUS` body carries an empty PARTY_SELF subject (present,
+/// Whether an `EHR_STATUS` body carries an empty `PARTY_SELF` subject (present,
 /// but with no identity beyond an optional `_type`) — a completely anonymous
-/// subject, which RM ehr master04 §EHR Status + common §PARTY_SELF make
+/// subject, which RM ehr master04 §EHR Status + common §`PARTY_SELF` make
 /// spec-valid.
 fn is_anonymous_empty_subject(body: &Value) -> bool {
     body.get("subject")

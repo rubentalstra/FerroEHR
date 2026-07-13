@@ -12,7 +12,7 @@
 //! `versioned_directory` resource — verified against `ehr-codegen.openapi.yaml`;
 //! register 06 G-3). Wire ids come only from [`crate::wire::ids`]; there are no
 //! silent id fallbacks (register 06 G-4). If-Match negatives derive a
-//! syntactically valid but nonexistent OBJECT_VERSION_ID from an OBSERVED id
+//! syntactically valid but nonexistent `OBJECT_VERSION_ID` from an OBSERVED id
 //! ([`crate::suites::support::nonexistent_version_like`]) — never a system-id
 //! literal.
 //!
@@ -59,6 +59,10 @@ const ABSENT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 404), (Edition:
 
 /// The registered master09 DIRECTORY cases.
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── has_directory (master09 §C) — 200 has / 404 not; the false/error
@@ -489,15 +493,15 @@ fn entry_ver(
 
 // ── shared fixtures + helpers ───────────────────────────────────────────────────
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// The reference FOLDER tree (`/emergency/{episode_x,episode_y}`,
 /// `/hospitalization`, …) from the vendored corpus.
 fn folder() -> Result<Value, CaseError> {
-    let text =
-        fixtures::read_from("directory.folder", "subfolders_in_directory.json").map_err(codec)?;
+    let text = fixtures::read_from("directory.folder", "subfolders_in_directory.json")
+        .map_err(|e| codec(&e))?;
     serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))
 }
 
@@ -594,7 +598,7 @@ async fn get_dir_version(
 
 /// Create an EHR and its root directory (named [`V1_NAME`]); return
 /// `(ehr_id, v1_version_uid)`. The version uid comes from [`ids::version_uid`]
-/// (ETag preferred) with no silent fallback (register 06 G-4).
+/// (`ETag` preferred) with no silent fallback (register 06 G-4).
 async fn ehr_with_directory(ctx: &RunContext<'_>) -> Result<(String, String), CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
     let resp = create_directory(ctx, &ehr_id, &folder_named(V1_NAME)?).await?;
@@ -909,6 +913,26 @@ fn run_at_time_versions_empty_time<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a
     })
 }
 
+/// G.4 — an EHR **with** a directory, empty time parameter: the current
+/// directory version is returned (master09 §`get_directory_at_time`
+/// `ehr_with_directory_empty_time`).
+fn run_at_time_empty_time<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let f = folder_named(V1_NAME)?;
+        let created = create_directory(ctx, &ehr_id, &f).await?;
+        assert::status(&created, 201)?;
+        let resp = get_dir_at(ctx, &ehr_id, None).await?;
+        assert::status(&resp, 200)?;
+        assert_folder_name(
+            &resp.json()?,
+            V1_NAME,
+            "G.4 empty time selects the current directory",
+        )?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
 fn run_at_time_empty_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let ehr_id = support::create_ehr(ctx).await?;
@@ -1034,9 +1058,9 @@ fn run_versioned_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// L.2 — approximate the VERSIONED_OBJECT "references the two versions" semantics
+/// L.2 — approximate the `VERSIONED_OBJECT` "references the two versions" semantics
 /// by asserting BOTH versions are reachable and return their own content
-/// (register 06 G-3 — the OAS has no versioned_directory resource to drive).
+/// (register 06 G-3 — the OAS has no `versioned_directory` resource to drive).
 fn run_versioned_two<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let (ehr_id, v1, v2) = two_versions(ctx).await?;

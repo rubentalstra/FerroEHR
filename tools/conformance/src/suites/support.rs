@@ -12,7 +12,7 @@ use crate::wire::ids;
 use crate::wire::negotiate;
 
 /// Create a default EHR (`POST /ehr`, no body — schedule master06
-/// §create_ehr data-set class 1.b: the server creates the default
+/// §`create_ehr` data-set class 1.b: the server creates the default
 /// structures), asserting `201`, returning the `ehr_id`.
 ///
 /// # Errors

@@ -182,29 +182,29 @@ macro_rules! boxed {
 
 // ── shared helpers ──────────────────────────────────────────────────────────
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// A valid AQL query string from register 80's corpus (group A, the
 /// `get_ehrs` query — a minimal, always-valid AQL 1.1 statement).
 fn valid_aql() -> Result<String, CaseError> {
-    let fixtures = fixtures::aql_valid("A").map_err(codec)?;
+    let fixtures = fixtures::aql_valid("A").map_err(|e| codec(&e))?;
     let fixture = fixtures
         .iter()
         .find(|f| f.name == "101_get_ehrs.json")
         .or_else(|| fixtures.first())
         .ok_or_else(|| CaseError::Skipped("no valid AQL corpus fixture (group A)".to_owned()))?;
-    fixtures::aql_text(fixture).map_err(codec)
+    fixtures::aql_text(fixture).map_err(|e| codec(&e))
 }
 
 /// A malformed AQL string from register 80's invalid corpus (group A).
 fn invalid_aql() -> Result<String, CaseError> {
-    let fixtures = fixtures::aql_invalid("A").map_err(codec)?;
+    let fixtures = fixtures::aql_invalid("A").map_err(|e| codec(&e))?;
     let fixture = fixtures
         .first()
         .ok_or_else(|| CaseError::Skipped("no invalid AQL corpus fixture (group A)".to_owned()))?;
-    fixtures::aql_text(fixture).map_err(codec)
+    fixtures::aql_text(fixture).map_err(|e| codec(&e))
 }
 
 /// A fresh, unique qualified query name.
@@ -286,7 +286,7 @@ fn run_store_bad_formalism<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── has_query ──────────────────────────────────────────────────────────────
 
-/// has_query (renamed from the schedule `xxx` placeholder — G-3): store a query
+/// `has_query` (renamed from the schedule `xxx` placeholder — G-3): store a query
 /// then confirm existence via the named GET, asserting the stored AQL
 /// round-trips.
 fn run_has_query<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {

@@ -148,6 +148,10 @@ fn sig_stub(what: &'static str) -> ScheduleTrace {
 }
 
 /// Assemble a SIGNING case entry (area [`Area::Sig`], STANDARD Signing capability).
+#[expect(
+    clippy::too_many_arguments,
+    reason = "case-table constructor: each CaseEntry/CaseMeta field is a distinct required argument"
+)]
 fn case(
     id: &'static str,
     title: &'static str,
@@ -180,13 +184,13 @@ macro_rules! case_body {
     };
 }
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// Upload a single-file OPT (manifest key) tolerating a re-upload.
 async fn ensure_opt(ctx: &RunContext<'_>, key: &str) -> Result<(), CaseError> {
-    let xml = fixtures::read(key).map_err(codec)?;
+    let xml = fixtures::read(key).map_err(|e| codec(&e))?;
     support::ensure_opt_xml(ctx, &xml).await
 }
 
@@ -195,7 +199,7 @@ async fn ensure_opt(ctx: &RunContext<'_>, key: &str) -> Result<(), CaseError> {
 async fn commit_composition(ctx: &RunContext<'_>) -> Result<(String, String, String), CaseError> {
     ensure_opt(ctx, NESTED_OPT).await?;
     let ehr_id = support::create_ehr(ctx).await?;
-    let body = fixtures::read_json(NESTED_JSON).map_err(codec)?;
+    let body = fixtures::read_json(NESTED_JSON).map_err(|e| codec(&e))?;
     let resp = ctx
         .send(negotiate::representation(
             HttpRequest::post(format!("/ehr/{ehr_id}/composition")).json_body(&body)?,
@@ -408,14 +412,14 @@ fn run_all_kinds<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let create = commit_contribution(
             ctx,
             &ehr_id,
-            &fixtures::read_json(ADMIN_CONTRIB).map_err(codec)?,
+            &fixtures::read_json(ADMIN_CONTRIB).map_err(|e| codec(&e))?,
         )
         .await?;
         assert::status(&create, 201)?;
         let v1 = contribution_version_uid(&create, 0)?;
         let vo_id = ids::object_uid(&v1).to_owned();
 
-        let mut modify = fixtures::read_json(ADMIN_CONTRIB_MOD).map_err(codec)?;
+        let mut modify = fixtures::read_json(ADMIN_CONTRIB_MOD).map_err(|e| codec(&e))?;
         modify["versions"][0]["preceding_version_uid"] =
             serde_json::json!({ "_type": "OBJECT_VERSION_ID", "value": v1 });
         let update = commit_contribution(ctx, &ehr_id, &modify).await?;
@@ -434,7 +438,7 @@ fn run_all_kinds<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // not API-observable here; the write must be accepted, and the storage-level
         // signing is proven off-wire by app/ehrbase service_signing (a documented
         // instrument-encodes-server-behaviour boundary, register 11 §2).
-        let folder = fixtures::read_json(FOLDER_FIXTURE).map_err(codec)?;
+        let folder = fixtures::read_json(FOLDER_FIXTURE).map_err(|e| codec(&e))?;
         let dir = ctx
             .send(negotiate::representation(
                 HttpRequest::post(format!("/ehr/{ehr_id}/directory")).json_body(&folder)?,
@@ -452,7 +456,7 @@ fn run_client_verbatim<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // stored + served verbatim, never re-signed (RM common master06 §Version).
         ensure_opt(ctx, ADMIN_OPT).await?;
         let ehr_id = support::create_ehr(ctx).await?;
-        let mut body = fixtures::read_json(ADMIN_CONTRIB).map_err(codec)?;
+        let mut body = fixtures::read_json(ADMIN_CONTRIB).map_err(|e| codec(&e))?;
         body["versions"][0]["signature"] = Value::String(CLIENT_SIG.to_owned());
         let resp = commit_contribution(ctx, &ehr_id, &body).await?;
         assert::status(&resp, 201)?;

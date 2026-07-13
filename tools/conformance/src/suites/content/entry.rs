@@ -24,9 +24,9 @@
 //!   over the printed schedule table.
 //! - **EVENT (5, ECC-VAL-029..033)** — `state` existence (2, like OBSERVATION)
 //!   + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract `EVENT` accepts
-//!   either). The valid `INTERVAL_EVENT` is fabricated from the base
-//!   `POINT_EVENT` + the mandatory `width`/`math_function` (register 12 G-8,
-//!   [`build_interval_event`]).
+//!     either). The valid `INTERVAL_EVENT` is fabricated from the base
+//!     `POINT_EVENT` + the mandatory `width`/`math_function` (register 12 G-8,
+//!     [`build_interval_event`]).
 //! - **`ITEM_STRUCTURE` (5, ECC-VAL-034..038)** — type narrowing driven against
 //!   `clinical_content_validation` (four EVALUATION `data` slots narrowed to
 //!   `ITEM_SINGLE`/`TREE`/`LIST`/`TABLE`): the vendored composition accepted, a
@@ -77,6 +77,10 @@ fn events_ok(card: Card, count: usize) -> bool {
 
 /// The 26 master16 ENTRY cases (ECC-VAL-013..038).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     let mut all = Vec::new();
 
@@ -115,7 +119,7 @@ pub fn entries() -> Vec<CaseEntry> {
     }
 
     // ── HISTORY (12) — events cardinality × summary existence ─────────────────
-    const HIST: &[(&str, &str, &str, crate::engine::harness::CaseRun)] = &[
+    let hist: [(&str, &str, &str, crate::engine::harness::CaseRun); 12] = [
         (
             "val/hist-events-card-any-summary-ex-opt",
             "Validate HISTORY — events card any summary ex OPT",
@@ -189,7 +193,7 @@ pub fn entries() -> Vec<CaseEntry> {
             h_3to5_mand,
         ),
     ];
-    for &(id, title, sched, run) in HIST {
+    for (id, title, sched, run) in hist {
         all.push(CaseEntry {
             meta: drive::content_meta(id, title, HIST_CIT, ScheduleTrace::Schedule(sched)),
             run,
@@ -282,8 +286,8 @@ pub fn entries() -> Vec<CaseEntry> {
 // ── OBSERVATION state/protocol existence (register 12 G-1) ────────────────────
 
 /// Inject an `OBSERVATION.state` (a HISTORY, cloned from the mandatory
-/// `data`) and `OBSERVATION.protocol` (an ITEM_STRUCTURE, cloned from the
-/// event's ITEM_TREE `data`) — a fabricated `state present, protocol present`
+/// `data`) and `OBSERVATION.protocol` (an `ITEM_STRUCTURE`, cloned from the
+/// event's `ITEM_TREE` `data`) — a fabricated `state present, protocol present`
 /// instance the persistent base lacks (register 12 G-1/G-8). RM 1.2.0 ehr
 /// §OBSERVATION: `state` is `HISTORY<ITEM_STRUCTURE>`, `protocol` is
 /// `ITEM_STRUCTURE` — both cloned subtrees are RM-valid.
@@ -300,8 +304,8 @@ fn inject_obs_state_protocol(comp: &mut Value) {
     }
 }
 
-/// Inject an `EVENT.state` (an ITEM_STRUCTURE, cloned from the event's ITEM_TREE
-/// `data`) — the fabricated `state present` instance (RM 1.2.0 data_structures
+/// Inject an `EVENT.state` (an `ITEM_STRUCTURE`, cloned from the event's `ITEM_TREE`
+/// `data`) — the fabricated `state present` instance (RM 1.2.0 `data_structures`
 /// §EVENT: `state` is `ITEM_STRUCTURE`).
 fn inject_event_state(comp: &mut Value) {
     if let Some(ev) = mutate::first_node_mut(comp, "POINT_EVENT") {
@@ -430,7 +434,7 @@ obs!(
 /// Drive one EVENT state-existence case: author `EVENT.state` existence on the
 /// persistent OPT, then commit the `data`-absent reject (RM/schema), the
 /// `state`-absent boundary row (the distinguishing row), and a `state`-present
-/// accept row (injected ITEM_STRUCTURE). Declared bound: the 4-row table.
+/// accept row (injected `ITEM_STRUCTURE`). Declared bound: the 4-row table.
 async fn drive_event_state(
     ctx: &RunContext<'_>,
     tid: &'static str,
@@ -500,8 +504,8 @@ fn event_state_mand<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// Fabricate a valid `INTERVAL_EVENT` in place of the base `POINT_EVENT`
 /// (register 12 G-8): promote its `_type` and inject the mandatory `width`
-/// (`DV_DURATION` PT1H) + `math_function` (`DV_CODED_TEXT` openehr::146|mean|;
-/// RM 1.2.0 data_structures §INTERVAL_EVENT).
+/// (`DV_DURATION` PT1H) + `math_function` (`DV_CODED_TEXT` `openehr::146|mean`|;
+/// RM 1.2.0 `data_structures` §`INTERVAL_EVENT`).
 fn build_interval_event(comp: &mut Value) {
     if let Some(e) = mutate::first_node_mut(comp, "POINT_EVENT") {
         mutate::set_field(e, "_type", json!("INTERVAL_EVENT"));
@@ -659,7 +663,7 @@ async fn drive_hist(
 ) -> Result<DataSetReport, CaseError> {
     let mut opt = author::parse_base(PERSIST_OPT_FILE)?;
     author::set_template_id(&mut opt, tid);
-    if !author::constrain_nested_multiple(&mut opt, "HISTORY", "events", card.interval()) {
+    if !author::constrain_nested_multiple(&mut opt, "HISTORY", "events", &card.interval()) {
         return Err(CaseError::Assertion(
             "base OPT has no HISTORY.events multiple attribute to constrain".to_owned(),
         ));
@@ -834,7 +838,7 @@ fn item_str_single<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// `ITEM_TREE`-narrowed EVALUATION `data` slot **re-opened** to the abstract
 /// `ITEM_STRUCTURE`, then commit the vendored composition (slot = `ITEM_TREE`)
 /// and a copy with that slot rebuilt as `ITEM_LIST` — both accepted (any
-/// subtype). Declared bound: the 4-row table (ITEM_TABLE/ITEM_SINGLE need
+/// subtype). Declared bound: the 4-row table (`ITEM_TABLE/ITEM_SINGLE` need
 /// further fabricated instances).
 fn item_str_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {

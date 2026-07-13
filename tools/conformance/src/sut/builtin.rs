@@ -27,7 +27,7 @@ pub fn ehrbase_rs(
     }
 }
 
-/// Upstream EHRbase (Java, the official image). Foreign: fairness register
+/// Upstream `EHRbase` (Java, the official image). Foreign: fairness register
 /// applies, results are data, no Certificate. Admin is a sibling mount
 /// (`…/rest/admin`) on the same host as the openEHR base.
 #[must_use]

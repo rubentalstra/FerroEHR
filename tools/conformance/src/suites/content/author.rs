@@ -245,7 +245,7 @@ pub fn constrain_nested_multiple(
     opt: &mut OperationalTemplate,
     host: &str,
     attr: &str,
-    interval: Intervalofinteger,
+    interval: &Intervalofinteger,
 ) -> bool {
     visit_objects(&mut opt.definition, &mut |obj| {
         if object_rm_type(obj) != Some(host) {

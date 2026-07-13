@@ -4,14 +4,14 @@
 //! This module owns two things:
 //!
 //! 1. **The golden normalizer** ([`Rule`], [`compare`]) — the documented
-//!    suppression layer a served RESULT_SET is diffed through. Design §6: *"a
+//!    suppression layer a served `RESULT_SET` is diffed through. Design §6: *"a
 //!    diff suppressed by the normalizer must name its rule"* — every suppressed
 //!    difference records the [`Rule`] that justified it, so the suppression set
 //!    is auditable. Register 07 G-4 boundary: rules that are **version-specific**
 //!    (RM 1.2.0 `_type`, default-on `signature`, whole-number formatting,
 //!    `meta._schema_version`) carry an edition-rung comment — they suppress a
 //!    *development-edition* wire shape and would be ladder assertions in a full
-//!    RESULT_SET wire adapter (register 90, not yet exposed).
+//!    `RESULT_SET` wire adapter (register 90, not yet exposed).
 //!
 //! 2. **The golden-diff cases** ([`entries`]) — the eight carried per-group ×
 //!    per-DB-state cases (legacy slugs `qry/corpus-{a-d}-{empty,loaded}-db`),
@@ -60,10 +60,10 @@ const CORPUS_CITATION: &str = "AQL 1.1 + the vendored golden RESULT_SETs; ITS-RE
 // ════════════════════════════════════════════════════════════════════════════
 
 /// A normalization rule that can suppress a difference between a served
-/// RESULT_SET and a vendored golden. Each variant documents exactly one class
+/// `RESULT_SET` and a vendored golden. Each variant documents exactly one class
 /// of legitimately-ignored difference (design §6). Rules marked
 /// **VERSION-SPECIFIC** suppress a development-edition wire shape (register 07
-/// G-4) and would be edition-ladder assertions in a full RESULT_SET wire
+/// G-4) and would be edition-ladder assertions in a full `RESULT_SET` wire
 /// adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
@@ -117,7 +117,7 @@ const IGNORE_KEYS: [(&str, Rule); 2] = [
     ("signature", Rule::SignatureDefaultOn),
 ];
 
-/// How much of the RESULT_SET to diff.
+/// How much of the `RESULT_SET` to diff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     /// Diff only `columns` (the deterministic, data-independent projection) —
@@ -131,7 +131,7 @@ pub enum Mode {
 /// The outcome of a golden comparison.
 #[derive(Debug, Clone)]
 pub struct Comparison {
-    /// Whether the served RESULT_SET matched the golden after normalization.
+    /// Whether the served `RESULT_SET` matched the golden after normalization.
     pub matched: bool,
     /// The normalization rules that were invoked (a suppressed diff names its
     /// rule, design §6).
@@ -181,7 +181,7 @@ pub fn is_placeholder(s: &str) -> bool {
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
 }
 
-/// Compare a served RESULT_SET against a golden in `mode`. The `meta` envelope
+/// Compare a served `RESULT_SET` against a golden in `mode`. The `meta` envelope
 /// and `q` echo are always ignored.
 #[must_use]
 pub fn compare(golden: &Value, actual: &Value, mode: Mode) -> Comparison {
@@ -597,14 +597,14 @@ macro_rules! boxed {
     };
 }
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 // ── the group-diff runner ─────────────────────────────────────────────────────
 
 /// Run every golden in `expected_results/<db>/<group>` against the SUT, diffing
-/// the served RESULT_SET through the normalizer. `_empty_db` queries (fixed
+/// the served `RESULT_SET` through the normalizer. `_empty_db` queries (fixed
 /// non-existent id) get the full columns+rows diff; every other query gets the
 /// columns-only diff (shared-SUT-safe). Structurally-unrunnable goldens
 /// (substitution/bind) and dialect-routed goldens are skipped (the latter are
@@ -614,7 +614,7 @@ async fn run_golden_group(
     group: &str,
     db: &str,
 ) -> Result<DataSetReport, CaseError> {
-    let goldens = fixtures::aql_expected(db, group).map_err(codec)?;
+    let goldens = fixtures::aql_expected(db, group).map_err(|e| codec(&e))?;
     let mut passed = 0u32;
     let mut total = 0u32;
     let mut skipped = 0u32;
@@ -631,7 +631,7 @@ async fn run_golden_group(
             continue;
         }
         total += 1;
-        let golden_value = gold.json().map_err(codec)?;
+        let golden_value = gold.json().map_err(|e| codec(&e))?;
         let resp = adhoc(ctx, &aql).await?;
         if resp.status != 200 {
             first_fail.get_or_insert(format!(
@@ -676,9 +676,9 @@ async fn run_golden_group(
 /// The paired query text for a golden of `name` in `group` (paired by identical
 /// base name), or `None` when the golden has no paired query fixture.
 fn paired_query(group: &str, golden_name: &str) -> Result<Option<String>, CaseError> {
-    let fixtures = fixtures::aql_valid(group).map_err(codec)?;
+    let fixtures = fixtures::aql_valid(group).map_err(|e| codec(&e))?;
     match fixtures.iter().find(|f| f.name == golden_name) {
-        Some(fixture) => Ok(Some(fixtures::aql_text(fixture).map_err(codec)?)),
+        Some(fixture) => Ok(Some(fixtures::aql_text(fixture).map_err(|e| codec(&e))?)),
         None => Ok(None),
     }
 }
@@ -735,11 +735,11 @@ async fn run_dialect_reject(
     group: &str,
     name: &str,
 ) -> Result<DataSetReport, CaseError> {
-    let fixtures = fixtures::aql_valid(group).map_err(codec)?;
+    let fixtures = fixtures::aql_valid(group).map_err(|e| codec(&e))?;
     let fixture = fixtures.iter().find(|f| f.name == name).ok_or_else(|| {
         CaseError::Assertion(format!("missing dialect query fixture {group}/{name}"))
     })?;
-    let aql = fixtures::aql_text(fixture).map_err(codec)?;
+    let aql = fixtures::aql_text(fixture).map_err(|e| codec(&e))?;
     let resp = adhoc(ctx, &aql).await?;
     if (400..500).contains(&resp.status) {
         Ok(DataSetReport::SINGLE)
@@ -756,8 +756,10 @@ fn dialect_title(id: &str) -> &'static str {
     DIALECT_CASES
         .iter()
         .find(|(slug, _, _, _)| *slug == id)
-        .map(|_| "AQL corpus — dialect-adjudicated query rejected")
-        .unwrap_or("AQL corpus — dialect query")
+        .map_or(
+            "AQL corpus — dialect query",
+            |_| "AQL corpus — dialect-adjudicated query rejected",
+        )
 }
 
 /// Resolve the generated run fn for a dialect slug. Each slug has a distinct,
@@ -862,7 +864,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    fn golden(columns: Value, rows: Value) -> Value {
+    fn golden(columns: &Value, rows: &Value) -> Value {
         json!({
             "meta": { "_type": "RESULTSET", "_created": "2019-10-19T19:23:02.672Z" },
             "q": "SELECT e/ehr_id/value FROM EHR e",
@@ -880,7 +882,10 @@ mod tests {
 
     #[test]
     fn columns_only_ignores_rows() {
-        let g = golden(json!([{"name": "#0", "path": "/ehr_id/value"}]), json!([]));
+        let g = golden(
+            &json!([{"name": "#0", "path": "/ehr_id/value"}]),
+            &json!([]),
+        );
         let mut a = g.clone();
         a["rows"] = json!([["some-ehr-id"]]);
         assert!(compare(&g, &a, Mode::ColumnsOnly).matched);
@@ -890,8 +895,8 @@ mod tests {
     #[test]
     fn modify_placeholder_matches_any_value() {
         let cols = json!([{"name": "#0", "path": "/ehr_id/value"}]);
-        let g = golden(cols.clone(), json!([["__MODIFY_EHR_ID_1__"]]));
-        let mut a = golden(cols, json!([]));
+        let g = golden(&cols, &json!([["__MODIFY_EHR_ID_1__"]]));
+        let mut a = golden(&cols, &json!([]));
         a["rows"] = json!([["real-ehr-a"]]);
         let c = compare(&g, &a, Mode::Full);
         assert!(c.matched, "{:?}", c.detail);
@@ -901,10 +906,10 @@ mod tests {
     #[test]
     fn rm_type_and_signature_and_number_ignored() {
         let cols = json!([{"name": "#0", "path": "/uid"}]);
-        let g = golden(cols.clone(), json!([[{"value": "x"}]]));
+        let g = golden(&cols, &json!([[{"value": "x"}]]));
         let a = golden(
-            cols,
-            json!([[{"value": "x", "_type": "HIER_OBJECT_ID", "signature": "sha256:..."}]]),
+            &cols,
+            &json!([[{"value": "x", "_type": "HIER_OBJECT_ID", "signature": "sha256:..."}]]),
         );
         let c = compare(&g, &a, Mode::Full);
         assert!(c.matched, "{:?}", c.detail);
