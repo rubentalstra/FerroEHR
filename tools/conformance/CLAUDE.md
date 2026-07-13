@@ -27,7 +27,7 @@ Robot/Python CNF suites.
 - Profile verdicts (CORE/STANDARD/OPTIONS) are machine-computed by the
   runner — never hand-asserted in reports or docs.
 - **ECC gate policy:** phase-close runs must show zero drift vs the
-  committed baseline (`docs/conformance/results.json`); the baseline only
-  ratchets upward.
+  committed baseline (`docs/conformance/ehrbase-rs/results.json` — per-SUT
+  artefact dirs); the baseline only ratchets upward.
 - Gates: `cargo clippy -p conformance --all-targets` +
   `cargo nextest run -p conformance` (the catalogue/guard tests).

@@ -13,7 +13,8 @@ argument-hint: "[area-or-case-filter | --sut byo --base-url <url>]"
 # /run-conformance
 
 Runs the **ECC suite** (`tools/conformance`) via `scripts/conformance.sh` —
-compose up --build → full catalogue → reports under `docs/conformance/`.
+compose up --build → full catalogue → reports under
+`docs/conformance/<sut>/` (our server: `docs/conformance/ehrbase-rs/`).
 Rewritten 2026-07-13 for the multi-SUT instrument (w10).
 
 ## Ground rules (before touching anything)
@@ -41,7 +42,7 @@ Rewritten 2026-07-13 for the multi-SUT instrument (w10).
    `--sut byo --base-url <url>` per the runner's CLI — the fairness
    adjudication register applies to foreign SUTs only.
 3. **Compare against the committed baseline**
-   (`docs/conformance/results.json`): the only permitted delta is
+   (`docs/conformance/ehrbase-rs/results.json`): the only permitted delta is
    newly-green cases — **zero drift** (blueprint §4 rule 4). Report:
    executed / passed / failed / adjudicated-skip counts, the machine
    verdicts, and any drift case-by-case.

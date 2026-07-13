@@ -66,7 +66,7 @@ coverage bound must be **logged per case at the rewrite**, never left silent.
 Two families are genuinely **divergent** (test a substitute, not the case's
 constraint variant):
 
-- **DV_INTERVAL<T> — all 27 cases (`ECC-VAL-068`…`095`)** drive one generic
+- **DV_INTERVAL<T> — all 28 cases (`ECC-VAL-068`…`095`)** drive one generic
   path (`data_types.rs:1357` `drive_interval`): retype a scratch leaf to an
   open `DV_INTERVAL` and assert only the RM `Interval` invariant
   `lower ≤ upper`. The per-variant bound/range/list constraints
@@ -160,7 +160,7 @@ DV_PARAGRAPH: schedule records **0 cases** (NOTE: not used/supported). No ECC ow
 | CONT-DV_PROPORTION-validate_any_fraction | 2/3 | 066 · `run_dv_proportion_any_fraction` (`:722`, `drive_constraint` `C_INTEGER.list {3,4}`) | C |
 | CONT-DV_PROPORTION-validate_ratio_range | 1/3 | 067 · `run_dv_proportion_ratio_range` (`:1526`, `C_REAL.range` on numerator) | C·m — denominator `C_REAL.range` table not driven |
 
-**DV_INTERVAL<T> (`068`…`095`, 27 cases) — all via `drive_interval` (`:1357`);
+**DV_INTERVAL<T> (`068`…`095`, 28 cases) — all via `drive_interval` (`:1357`);
 every one asserts only RM `Interval.lower ≤ upper` (accept `[l,u]` / reject
 `[u,l]`). Verdict D across the board** — the schedule's bound/range/list
 constraint variant is a substitute, and the interval-semantics `_included`
@@ -267,8 +267,8 @@ onto the 80 distinct schedule ids; `ECC-VAL-119` is the single extra.
 
 ## 4. G-rows (gaps + rulings for the rewrite)
 
-**G-1 — DV_INTERVAL<T>: 27 cases collapsed to one generic RM-invariant probe
-(`ECC-VAL-068`…`095`).** All 27 run `drive_interval` (`data_types.rs:1357`),
+**G-1 — DV_INTERVAL<T>: 28 cases collapsed to one generic RM-invariant probe
+(`ECC-VAL-068`…`095`).** All 28 run `drive_interval` (`data_types.rs:1357`),
 asserting only `Interval.lower ≤ upper` on an open retyped leaf. Neither the
 per-variant **constraint** (bound `C_INTEGER.range`/`.list`,
 `C_DV_QUANTITY.list`, temporal bounds, proportion-kind `C_INTEGER.list`) nor
@@ -278,7 +278,7 @@ The suite flags its own limitation (`:1330`, "require DV_INTERVAL constraint
 support the validator does not yet have"). **Ruling:** the rewrite needs (a) a
 `DV_INTERVAL` constraint carrier in the authored-OPT path (register 12's
 `author.rs`) and (b) data sets driving the three interval invariants +
-representative bound rows per variant. Until then these 27 stay **divergent**
+representative bound rows per variant. Until then these 28 stay **divergent**
 and must be reported so in the run (not silently green).
 
 **G-2 — data-set collapse (~1,130 schedule rows → ~160 driven variants,

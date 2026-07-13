@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.0.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-13T14:02:28.872013Z
+- **Run date:** 2026-07-13T14:37:47.512458Z
 
 ## System Under Test (SUT)
 
@@ -17,13 +17,13 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-13T14:02:28.872013Z |
+| Date | 2026-07-13T14:37:47.512458Z |
 
 ## Scope of Test
 
 | | |
 |---|---|
-| Functional | Core (not claimable), Standard (not claimable), Options (OBTAINED) |
+| Functional | Core (PASS), Standard (PASS), Options (OBTAINED) |
 | Sec & Priv | Signing pass, Anonymous EHRs pass |
 | Ext Data Fmt | json, xml |
 
@@ -66,7 +66,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.has_composition (master07 §has_composition) | ECC-COM-032 — Composition existence check — existing composition | pass | — |
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.has_composition-bad_composition (master07 §has_composition) | ECC-COM-011 — Composition existence check — bad composition | pass | — |
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.has_composition-bad_ehr (master07 §has_composition) | ECC-COM-012 — Composition existence check — bad EHR | pass | — |
-| COMPOSITION | CompositionOps | I_EHR_COMPOSITION.get_composition_latest (master07 §get_composition_latest) | ECC-COM-008 — Get latest composition | pass | **FAIL** |
+| COMPOSITION | CompositionOps | I_EHR_COMPOSITION.get_composition_latest (master07 §get_composition_latest) | ECC-COM-008 — Get latest composition | pass | pass |
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.get_composition_latest-bad_composition (master07 §get_composition_latest) | ECC-COM-009 — Get latest composition — bad composition | pass | — |
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.get_composition_latest-bad_ehr (master07 §get_composition_latest) | ECC-COM-010 — Get latest composition — bad EHR | pass | — |
 | COMPOSITION | CompositionOps | I_EHR_COMPOSITION.get_composition_at_time (master07 §get_composition_at_time) | ECC-COM-013 — Get composition at time | pass | pass |
@@ -104,7 +104,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status (master08 §EHR_STATUS CONTRIBUTION Commit) | ECC-CTB-014 — Commit contribution — invalid EHR status | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-valid_directory (master08 §FOLDER CONTRIBUTION Commit) | ECC-CTB-015 — Commit contribution — valid directory | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory (master08 §FOLDER CONTRIBUTION Commit) | ECC-CTB-016 — Commit contribution — fail create existing directory | pass | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory (master08 §FOLDER CONTRIBUTION Commit) | ECC-CTB-017 — Commit contribution — fail modify non existing directory | **FAIL** | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory (master08 §FOLDER CONTRIBUTION Commit) | ECC-CTB-017 — Commit contribution — fail modify non existing directory | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory (master08 §FOLDER CONTRIBUTION Commit) | ECC-CTB-018 — Commit contribution — update existing directory | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.get_contribution-existing (master08 §get_contribution) | ECC-CTB-019 — Get contribution — existing | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.get_contribution-empty_ehr (master08 §get_contribution) | ECC-CTB-020 — Get contribution — empty EHR | pass | — |
@@ -396,7 +396,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 
 ## Profile Report
 
-### Core — not claimable
+### Core — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -404,13 +404,13 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Adl14OptProvisioning | Y | pass |
 | EhrOperations | Y | pass |
 | EhrStatus | Y | pass |
-| CompositionOps | Y | **FAIL** |
-| ChangeSets | Y | **FAIL** |
+| CompositionOps | Y | pass |
+| ChangeSets | Y | pass |
 | Versioning | Y | pass |
 | ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
 
-### Standard — not claimable
+### Standard — PASS
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
@@ -418,8 +418,8 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Adl14OptProvisioning | Y | pass |
 | EhrOperations | Y | pass |
 | EhrStatus | Y | pass |
-| CompositionOps | Y | **FAIL** |
-| ChangeSets | Y | **FAIL** |
+| CompositionOps | Y | pass |
+| ChangeSets | Y | pass |
 | Versioning | Y | pass |
 | ArchetypeValidation | Y | pass |
 | AnonymousEhrs | Y | pass |
