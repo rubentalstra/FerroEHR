@@ -78,3 +78,17 @@ composition.all-types-v2.vendored	composition	corpus:query/data_load/composition
 # the content suites (testdata/author.rs); resolution here returns a marker.
 content.author-opt	opt	generated:author_content_opt	none	master15 Content §Implementation notes — constraint archetypes should be generated (OPT authoring)
 content.author-composition	composition	generated:author_content_composition	none	master15 Content §Implementation notes — generated compositions matching the authored OPTs
+
+# ── SIGNING + TERMINOLOGY suite fixtures (registers 11 SIG/TS; single-file keys) ──
+# The nested event OPT + its canonical composition (category 433) — the SIG
+# digest cases and the TS bundle-constraining cases both commit this pair.
+nested.template.opt	opt	corpus:valid_templates/nested/nested.opt	none	registers 11 SIG/TS — nested event constraining OPT (RM common master06 §Version signing rides the commit; QUERY master03 §TERMINOLOGY expand over COMPOSITION.category)
+nested.composition.json	composition	corpus:compositions/CANONICAL_JSON/nested.en.v1__full.json	none	registers 11 SIG/TS — canonical event composition (category 433) committed for signing + TERMINOLOGY expand
+# The minimal admin OPT + its CONTRIBUTION creation/modification — the SIG
+# all-kinds + client-verbatim cases commit these over the CONTRIBUTION path.
+minimal-admin.template.opt	opt	corpus:valid_templates/minimal/minimal_admin.opt	none	register 11 SIG — minimal admin constraining OPT for the CONTRIBUTION-path signing cases
+minimal-admin.contribution.create	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.json	none	register 11 SIG — CONTRIBUTION creation (v1) for sig/all-kinds + sig/client-verbatim (RM common master06 §Contribution)
+minimal-admin.contribution.modification	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.modification.complete.json	none	register 11 SIG — CONTRIBUTION modification (v2) for sig/all-kinds multi-version signing (RM common master06 §Version tree)
+# A FOLDER write for the SIG all-kinds fourth data set (directory read serves the
+# bare FOLDER; signature proven off-wire per register 11 §2).
+subfolders.directory.json	directory	corpus:directory/subfolders_in_directory.json	none	register 11 SIG — FOLDER write for sig/all-kinds data set 4 (RM ehr §DIRECTORY)
