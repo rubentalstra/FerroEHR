@@ -68,13 +68,11 @@ mod tests {
             java.admin_base_url.as_deref(),
             Some("http://localhost:8081/ehrbase/rest/admin")
         );
-        assert!(!java.certificate_eligible());
     }
 
     #[test]
     fn ours_is_pinned_to_development() {
         let ours = ehrbase_rs("http://x/v1".to_owned(), None, None);
         assert_eq!(ours.pinned_edition(), Some(Edition::Development));
-        assert!(ours.certificate_eligible());
     }
 }

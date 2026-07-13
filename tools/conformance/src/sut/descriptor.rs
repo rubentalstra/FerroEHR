@@ -6,16 +6,19 @@ use serde::Serialize;
 
 use crate::edition::{Edition, EditionPolicy};
 
-/// The class of SUT, which gates result-artefact emission (X1 fairness rule
-/// 4: the Conformance Certificate is a self-assessment of OUR product and is
-/// never emitted for a foreign run).
+/// The class of SUT. Gates ONLY the fairness-register seam (foreign SUTs
+/// get the committed adjudication triage; ours never does — the zero-drift
+/// guarantee). Every artefact — report, Statement, **Certificate** — is
+/// emitted for every SUT (owner ruling 2026-07-13: the framework certifies
+/// any openEHR CDR; the Certificate itself states it is a framework
+/// self-assessment, never an official openEHR certification).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SutKind {
-    /// ehrbase-rs — the product this repo builds; Certificate-eligible.
+    /// ehrbase-rs — the product this repo builds.
     Ours,
-    /// Any other CDR (upstream EHRbase, a bring-your-own endpoint): results
-    /// are data; the fairness register applies; no Certificate.
+    /// Any other CDR (upstream EHRbase, a bring-your-own endpoint): the
+    /// fairness register applies.
     Foreign,
 }
 
@@ -65,12 +68,6 @@ impl SutDescriptor {
             admin_auth: None,
             edition_policy: EditionPolicy::Auto,
         }
-    }
-
-    /// Whether this run may emit the Conformance Certificate artefact.
-    #[must_use]
-    pub fn certificate_eligible(&self) -> bool {
-        self.kind == SutKind::Ours
     }
 
     /// The edition the zero-drift gate pins for this SUT, when pinned.
