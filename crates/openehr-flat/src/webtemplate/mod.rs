@@ -15,5 +15,5 @@ pub use model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
     WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateCodedValue, WebTemplateExistence,
     WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange, WebTemplateSlot,
-    WebTemplateValidation,
+    WebTemplateStructuralStub, WebTemplateValidation,
 };

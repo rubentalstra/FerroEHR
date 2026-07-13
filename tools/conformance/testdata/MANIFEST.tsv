@@ -73,6 +73,9 @@ owned.composition.all-types.invalid	composition	owned:invalid/compositions/all_t
 composition.all-types.vendored	composition	corpus:query/data_load/compositions/all_types.composition.json	none	Vendored source of owned.composition.all-types.* (guard: owned invalid copy stays byte-identical)
 composition.all-types-v2.vendored	composition	corpus:query/data_load/compositions/all_types_v2.composition.json	none	Vendored source of owned.composition.all-types-v2.valid (guard: single-leaf diff)
 
+# ── Owned vendored external template (not a corpus correction; REGISTER.md) ──
+owned.template.ips	opt	owned:valid/templates/international_patient_summary.opt	none	REGISTER.md International Patient Summary — official openEHR CKM OPT export (CKM template 1013.26.376); drives tpl/adl14-example-roundtrip (ITS-REST development definition_template_adl1.4_example_get + CNF master15 L38 template-valid instances)
+
 # ── Programmatically authored data sets (register-80 preferred source; master15 §Implementation notes) ──
 # "the constraint archetypes should be generated" — the authoring code lives in
 # the content suites (testdata/author.rs); resolution here returns a marker.

@@ -49,7 +49,7 @@ use super::inputs::{self, Labels};
 use super::model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
     WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateExistence, WebTemplateInput,
-    WebTemplateInputType, WebTemplateNode, WebTemplateSlot,
+    WebTemplateInputType, WebTemplateNode, WebTemplateSlot, WebTemplateStructuralStub,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -362,6 +362,9 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
     if recurse_attrs {
         node.existence = existence_constraints(co, &node.aql_path);
         node.closed_attributes = closed_attributes(co, &node.aql_path);
+        if is_entry_family(&node.rm_type) {
+            node.structural_stubs = structural_stubs(ctx, co, arch_id);
+        }
     }
     node.children = children;
     post_process(node);
@@ -954,6 +957,70 @@ fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttr
             allowed_ids,
             slots,
         });
+    }
+    out
+}
+
+// ── structural stubs (constrained-but-content-less ENTRY structural attrs) ────
+
+/// The RM-mandatory / structural attributes of an ENTRY whose value the
+/// FLAT/TDD composition builder synthesises when the simplified form carries no
+/// content under them (`RM/docs/UML/classes/org.openehr.rm.composition.*`): the
+/// ENTRY `data`/`state`/`protocol` structural attributes plus `ACTION.description`
+/// (existence `1..1`, `RM/docs/UML/classes/org.openehr.rm.composition.action.adoc`).
+const ENTRY_STRUCTURAL_ATTRS: [&str; 4] = ["data", "description", "protocol", "state"];
+
+fn is_entry_family(rm_type: &str) -> bool {
+    matches!(
+        rm_type,
+        "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" | "GENERIC_ENTRY"
+    )
+}
+
+/// Capture the [`WebTemplateStructuralStub`]s for an ENTRY node: for each
+/// structural attribute (`data`/`description`/`protocol`/`state`) the OPT
+/// constrains with a node-identified structural child, record its RM type,
+/// archetype node id, and rubric name. When the attribute has no leaf content the
+/// compactor drops the wrapper, so this is the only surviving record of the
+/// *constrained* identity — the composition builder synthesises the empty
+/// attribute from it (AOM 1.4 `master04-constraint_model_package.adoc`
+/// §`Valid_value`: a constrained attribute must be filled by a conforming value),
+/// instead of a blind `at0001` placeholder that a closed-archetype walk rejects.
+///
+/// The first node-identified, resolvable structural child per attribute is
+/// recorded; unresolved refs / slots yield no stub (the attribute then keeps its
+/// spec-legal `at0001` "Any" placeholder — ADL 1.4 `master05-cadl.adoc` §"Any"
+/// Constraints).
+fn structural_stubs(ctx: &Ctx, co: &CObject, arch_id: &str) -> Vec<WebTemplateStructuralStub> {
+    let mut out = Vec::new();
+    for attr in inputs::attributes(co) {
+        let attr_name = inputs::attribute_name(attr);
+        if !ENTRY_STRUCTURAL_ATTRS.contains(&attr_name) {
+            continue;
+        }
+        for child in inputs::attribute_children(attr) {
+            // An unresolved slot / reference gives no concrete identity to stamp;
+            // leave the attribute to the spec-legal "Any" placeholder.
+            if matches!(
+                child,
+                CObject::ArchetypeSlot(_)
+                    | CObject::ConstraintRef(_)
+                    | CObject::ArchetypeInternalRef(_)
+            ) {
+                continue;
+            }
+            let node_id = object_archetype_node_id(child);
+            if node_id.is_empty() {
+                continue;
+            }
+            out.push(WebTemplateStructuralStub {
+                attr: attr_name.to_owned(),
+                rm_type: object_rm_type(child).to_owned(),
+                node_id,
+                name: ctx.text(arch_id, object_node_id(child), &ctx.default_language),
+            });
+            break; // first node-identified structural child under this attribute
+        }
     }
     out
 }

@@ -41,6 +41,9 @@ uuid = { workspace = true }
 # external-SUT CLI build stays free of the crypto stack.
 sha2 = { workspace = true }
 base64 = { workspace = true }
+# Percent-encode a `template_id` path segment (e.g. "International Patient
+# Summary") — never hand-roll a percent codec (owner rule).
+urlencoding = { workspace = true }
 
 openehr-base = { path = "../../crates/openehr-base" }
 openehr-its = { path = "../../crates/openehr-its" }
