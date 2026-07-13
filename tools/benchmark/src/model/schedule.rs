@@ -36,8 +36,14 @@ const STEP_SPACING: Duration = Duration::from_millis(1);
 /// Patient-scoped AQL (E5): CONTAINS OBSERVATION + `ehr_id` filter + ORDER BY +
 /// LIMIT — the `{{ehr_id}}` placeholder is substituted by the driver. Valid
 /// AQL 1.1 (orderByClause precedes limitClause, `AqlParser.g4`); the form is the
-/// ECC query suite's EHR-scoped CONTAINS pattern.
-pub const PATIENT_AQL: &str = "SELECT c/uid/value, c/name/value FROM EHR e \
+/// ECC query suite's EHR-scoped CONTAINS pattern. The ORDER BY path is also
+/// projected: AQL 1.1 does not require that, but upstream `EHRbase` rejects an
+/// ORDER BY path absent from SELECT ("Not implemented", observed live against
+/// 2.34.0) — projecting it keeps the byte-identical request executable on both
+/// engines, and a chart review listing the event time is the realistic query
+/// anyway.
+pub const PATIENT_AQL: &str = "SELECT c/uid/value, c/name/value, \
+     c/context/start_time/value FROM EHR e \
      CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
      WHERE e/ehr_id/value = '{{ehr_id}}' \
      ORDER BY c/context/start_time/value DESC LIMIT 20";

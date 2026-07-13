@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 232" role="img" aria-label="Memory (RSS) over the run">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.s1 { fill: #2a78d6; } .s1s { stroke: #2a78d6; }
+.s2 { fill: #1baf7a; } .s2s { stroke: #1baf7a; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.s1 { fill: #3987e5; } .s1s { stroke: #3987e5; }
+.s2 { fill: #199e70; } .s2s { stroke: #199e70; }
+}
+</style>
+<text x="16" y="22" class="title">Memory (RSS) over the run</text>
+<line class="grid" x1="64" y1="190.0" x2="660" y2="190.0"/>
+<text class="muted" x="56.0" y="194.0" text-anchor="end">0 MB</text>
+<line class="grid" x1="64" y1="115.0" x2="660" y2="115.0"/>
+<text class="muted" x="56.0" y="119.0" text-anchor="end">259 MB</text>
+<line class="grid" x1="64" y1="40.0" x2="660" y2="40.0"/>
+<text class="muted" x="56.0" y="44.0" text-anchor="end">519 MB</text>
+<text class="muted" x="660" y="208.0" text-anchor="end">2 min</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="69.3,43.4 84.3,40.7 94.5,42.1 104.8,42.1 119.9,42.1 134.8,42.1 149.9,41.3 165.1,41.3 180.0,41.1 195.1,41.2 205.3,40.9 220.4,40.8 235.6,40.5 245.7,40.7 261.0,40.6 275.8,40.6 290.9,40.5 306.1,40.6 321.3,40.5 331.5,40.4 346.7,40.4 356.9,40.4 371.8,40.5 382.0,40.4 397.2,40.1 407.4,40.2 422.3,40.3 432.5,40.3 442.7,40.2 452.9,40.2 468.0,40.1 483.1,40.1 498.2,40.0 513.4,40.1 528.3,40.2 538.6,40.1 548.8,40.1 564.0,40.2 579.1,40.2 589.3,40.1 604.5,40.2 619.4,40.2 634.5,40.3 644.7,40.5 660.0,40.2"/>
+<text x="668.0" y="40.2">app</text>
+<polyline class="s2s" fill="none" stroke-width="2" points="69.3,136.7 84.3,135.5 94.5,135.2 104.8,135.2 119.9,135.1 134.8,135.2 149.9,135.1 165.1,135.2 180.0,135.2 195.1,135.2 205.3,135.2 220.4,135.2 235.6,135.2 245.7,135.1 261.0,135.2 275.8,135.2 290.9,135.2 306.1,135.2 321.3,135.1 331.5,135.2 346.7,135.1 356.9,135.2 371.8,135.1 382.0,135.1 397.2,135.1 407.4,135.2 422.3,135.1 432.5,135.1 442.7,135.2 452.9,135.1 468.0,135.1 483.1,135.0 498.2,135.1 513.4,135.1 528.3,135.0 538.6,135.1 548.8,135.0 564.0,135.1 579.1,135.0 589.3,135.0 604.5,135.0 619.4,135.0 634.5,134.9 644.7,135.0 660.0,134.9"/>
+<text x="668.0" y="134.9">db</text>
+<rect class="s1" x="64" y="16.0" width="10" height="10" rx="2"/>
+<text x="80.0" y="25.0">app</text>
+<rect class="s2" x="134" y="16.0" width="10" height="10" rx="2"/>
+<text x="150.0" y="25.0">db</text>
+</svg>
