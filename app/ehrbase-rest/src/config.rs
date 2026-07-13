@@ -16,6 +16,19 @@ pub struct RestConfig {
     /// The ITS-REST base path all API routes hang off.
     #[serde(default = "defaults::base_path")]
     pub base_path: String,
+    /// Maximum number of API requests allowed in flight at once before the
+    /// server sheds load (`EHRBASE_REST_MAX_IN_FLIGHT`, default 1024 — raise it
+    /// for high-throughput deployments; it caps *concurrent* requests, not
+    /// throughput). Requests
+    /// beyond this bound are rejected immediately with `503 Service
+    /// Unavailable` + `Retry-After` — shed, never queued — so sustained
+    /// offered load beyond backend capacity cannot exhaust server memory. The
+    /// public `/status`, health, and discovery endpoints are never limited, so
+    /// operators can always probe an overloaded server. `0` disables shedding
+    /// (no bounded-concurrency layer is installed). No openEHR spec governs
+    /// server overload — this is our own design (RFC 9110 §15.6.4).
+    #[serde(default = "defaults::max_in_flight")]
+    pub max_in_flight: usize,
     /// Serve the Swagger UI at `{base_path}/../swagger-ui` (and the `OpenAPI` JSON).
     #[serde(default = "defaults::enabled_flag")]
     pub swagger_ui: bool,
@@ -175,6 +188,7 @@ impl Default for RestConfig {
         Self {
             bind: defaults::bind(),
             base_path: defaults::base_path(),
+            max_in_flight: defaults::max_in_flight(),
             swagger_ui: true,
             cors_permissive: false,
             auth: AuthConfig::default(),
@@ -235,6 +249,9 @@ mod defaults {
     pub(super) fn base_path() -> String {
         "/ehrbase/rest/openehr/v1".to_owned()
     }
+    pub(super) const fn max_in_flight() -> usize {
+        1024
+    }
     pub(super) const fn enabled_flag() -> bool {
         true
     }
@@ -251,6 +268,8 @@ mod tests {
     fn defaults_are_sane() {
         let c = RestConfig::default();
         assert_eq!(c.base_path, "/ehrbase/rest/openehr/v1");
+        // Overload shedding is on by default with a 1024 in-flight cap.
+        assert_eq!(c.max_in_flight, 1024);
         assert!(c.auth.enabled);
         // The ADMIN API is opt-in: off unless explicitly enabled.
         assert!(!c.admin.enabled);
@@ -345,6 +364,21 @@ mod tests {
             assert!(c.tenancy.enabled);
             assert_eq!(c.tenancy.claim, "realm_access.tenant");
             assert_eq!(c.tenancy.header.as_deref(), Some("X-EHRbase-Tenant"));
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[allow(clippy::result_large_err)] // figment::Jail closure signature
+    fn max_in_flight_via_env() {
+        figment::Jail::expect_with(|jail| {
+            jail.set_env("EHRBASE_REST_MAX_IN_FLIGHT", "16");
+            let c = RestConfig::load().expect("load");
+            assert_eq!(c.max_in_flight, 16);
+            // 0 is accepted and disables shedding.
+            jail.set_env("EHRBASE_REST_MAX_IN_FLIGHT", "0");
+            let c = RestConfig::load().expect("load");
+            assert_eq!(c.max_in_flight, 0);
             Ok(())
         });
     }

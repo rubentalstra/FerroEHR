@@ -51,6 +51,7 @@ Prefix `EHRBASE_REST_`, separator `__`, optional file `EHRBASE_REST_CONFIG`.
 | `EHRBASE_REST_CONFIG` | path | none | Path to the REST TOML config file (loaded before env). |
 | `EHRBASE_REST_BIND` | socket address | `0.0.0.0:8080` | Address the API listener binds. |
 | `EHRBASE_REST_BASE_PATH` | string | `/ehrbase/rest/openehr/v1` | Base path all API routes hang off. |
+| `EHRBASE_REST_MAX_IN_FLIGHT` | integer | `1024` | Maximum API requests handled **concurrently** (not per second) before the server sheds load; raise it for high-throughput deployments. Requests beyond the cap are rejected immediately with `503 Service Unavailable` + `Retry-After: 1` (shed, never queued), so offered load beyond backend capacity cannot exhaust server memory. The `/status`, health, and discovery endpoints are never limited. `0` disables shedding. |
 | `EHRBASE_REST_SWAGGER_UI` | boolean | `true` | Serve Swagger UI + the OpenAPI JSON. Consider off in production. |
 | `EHRBASE_REST_CORS_PERMISSIVE` | boolean | `false` | Enable a permissive (development) CORS policy. |
 | `EHRBASE_REST_ADMIN__ENABLED` | boolean | `false` | Mount the ADMIN API group (routes 404 when off). |

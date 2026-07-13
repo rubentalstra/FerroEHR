@@ -62,6 +62,7 @@ fn config(admin_enabled: bool) -> RestConfig {
         system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
+        max_in_flight: 1024,
         swagger_ui: false,
         cors_permissive: false,
         auth: AuthConfig {
