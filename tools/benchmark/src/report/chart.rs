@@ -52,15 +52,23 @@ fn log_x(us: u64, lo: f64, hi: f64, x0: f64, x1: f64) -> f64 {
     x0 + (v - lo) / (hi - lo) * (x1 - x0)
 }
 
-/// The decade gridline positions (`10^n` µs) covering `[lo_us, hi_us]`.
-fn decades(lo_us: u64, hi_us: u64) -> Vec<u64> {
+/// Gridline positions for a log axis spanning the exponents `[lo, hi]`
+/// (as computed by the charts: `lo = floor(log10(min))`,
+/// `hi = ceil(log10(max))`): every decade `10^n`, plus the 2× and 5× steps
+/// when the span is two decades or fewer (a narrow span would otherwise show
+/// a single line at the edge).
+fn gridlines(lo: f64, hi: f64) -> Vec<u64> {
+    let span = (hi - lo).max(1.0);
     let mut out = Vec::new();
-    let mut d = 1u64;
-    while d <= hi_us.max(1) {
-        if d * 10 >= lo_us.max(1) {
-            out.push(d * 10);
+    let mut n = lo as i32;
+    while f64::from(n) <= hi {
+        let d = 10f64.powi(n) as u64;
+        out.push(d.max(1));
+        if span <= 2.0 && f64::from(n) < hi {
+            out.push(d.saturating_mul(2));
+            out.push(d.saturating_mul(5));
         }
-        d *= 10;
+        n += 1;
     }
     out
 }
@@ -97,7 +105,7 @@ pub fn latency_chart(classes: &BTreeMap<String, ClassRecord>) -> String {
          role=\"img\" aria-label=\"Latency ranges per operation class\">\n{STYLE}"
     );
     s.push_str("<text x=\"16\" y=\"22\" class=\"title\">Latency by operation class — p50 → p99.9 (log scale)</text>\n");
-    for d in decades(lo_us, hi_us) {
+    for d in gridlines(lo, hi) {
         let x = log_x(d, lo, hi, x0, x1);
         s.push_str(&format!(
             "<line class=\"grid\" x1=\"{x:.1}\" y1=\"{top}\" x2=\"{x:.1}\" y2=\"{:.1}\"/>\n\
@@ -316,7 +324,7 @@ pub fn comparison_chart(title: &str, suts: &[(String, BTreeMap<String, u64>)]) -
         ));
         lx += 150.0;
     }
-    for d in decades(lo_us, hi_us) {
+    for d in gridlines(lo, hi) {
         let x = log_x(d, lo, hi, x0, x1);
         s.push_str(&format!(
             "<line class=\"grid\" x1=\"{x:.1}\" y1=\"{top}\" x2=\"{x:.1}\" y2=\"{:.1}\"/>\n\
