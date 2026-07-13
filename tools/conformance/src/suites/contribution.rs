@@ -47,7 +47,7 @@ const GET_BINDING: &str = "GET /ehr/{ehr_id}/contribution/{contribution_uid}";
 /// Invalidity ladder for semantically-invalid committed content: `422` —
 /// "content type and syntax is correct … but there are semantic validation
 /// errors, such as the underlying template is not known or is not validating
-/// the supplied resource" (ITS-REST Requests_and_responses §422 + the OAS
+/// the supplied resource" (ITS-REST `Requests_and_responses` §422 + the OAS
 /// `responses/422.yaml`; the same rule `composition_create` enumerates).
 /// `400_CONTRIBUTION` is scoped to parse/syntax/modification-type errors
 /// only, and the spec's prose reserves plain 400 for "when no other 4xx is

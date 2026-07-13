@@ -628,7 +628,11 @@ struct Timed {
 
 async fn two_versions_timed(ctx: &RunContext<'_>) -> Result<Timed, CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
-    let t_before = jiff::Timestamp::now().to_string();
+    // "Before creation" uses a far-past instant, not a client-clock `now()`:
+    // the selection compares against SERVER commit times, and a zero-margin
+    // client timestamp flips to 200 under any client/server clock skew (the
+    // composition at-time cases use the same fixed-past pattern).
+    let t_before = "1900-01-01T00:00:00Z".to_owned();
     let v1resp = create_directory(ctx, &ehr_id, &folder_named(V1_NAME)?).await?;
     assert::status(&v1resp, 201)?;
     let v1 = ids::version_uid(ctx, &v1resp)?;
