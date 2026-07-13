@@ -25,11 +25,11 @@ text { fill: #c3c2b7; }
 <line class="grid" x1="64" y1="48.0" x2="660" y2="48.0"/>
 <text class="muted" x="56.0" y="52.0" text-anchor="end">100.0ms</text>
 <text class="muted" x="660" y="228.0" text-anchor="end">10 req/s</text>
-<polyline class="s1s" fill="none" stroke-width="2" points="660.0,92.2 73.9,93.5"/>
-<circle class="s1" cx="660.0" cy="92.2" r="3.5"/>
-<text x="666.0" y="88.2">L=1</text>
-<text class="muted" x="666.0" y="104.2">53.4ms</text>
-<circle class="s1" cx="73.9" cy="93.5" r="3.5"/>
-<text x="79.9" y="89.5">L=2</text>
-<text class="muted" x="79.9" y="105.5">52.4ms</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="660.0,84.3 73.9,75.7"/>
+<circle class="s1" cx="660.0" cy="84.3" r="3.5"/>
+<text x="666.0" y="80.3">L=1</text>
+<text class="muted" x="666.0" y="96.3">59.7ms</text>
+<circle class="s1" cx="73.9" cy="75.7" r="3.5"/>
+<text x="79.9" y="71.7">L=2</text>
+<text class="muted" x="79.9" y="87.7">67.5ms</text>
 </svg>

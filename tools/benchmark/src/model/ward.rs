@@ -76,10 +76,10 @@ impl Ward {
             } else {
                 Role::Standing
             };
-            patients.push(Self::patient(index, role));
+            patients.push(Self::patient(spec.seed, index, role));
         }
         for index in standing..standing + turnover {
-            patients.push(Self::patient(index, Role::NewAdmit));
+            patients.push(Self::patient(spec.seed, index, Role::NewAdmit));
         }
 
         Self {
@@ -89,10 +89,14 @@ impl Ward {
         }
     }
 
-    fn patient(index: usize, role: Role) -> Patient {
+    fn patient(seed: u64, index: usize, role: Role) -> Patient {
         Patient {
             index,
-            subject_id: format!("bench-patient-{index:06}"),
+            // The seed is part of the identity: both first-class SUTs enforce
+            // one EHR per subject (RM ehr master04 §EHR Status), so every
+            // distinct-seed run (knee ladder steps, re-runs on a non-fresh
+            // database) must admit fresh subjects.
+            subject_id: format!("bench-{seed:08x}-patient-{index:06}"),
             composer: STAFF[index % STAFF.len()].to_owned(),
             role,
         }

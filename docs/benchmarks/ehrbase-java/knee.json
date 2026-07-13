@@ -13,14 +13,14 @@
       "load_factor": 1.0,
       "rps": 10.075,
       "error_rate": 0.0,
-      "p99_us": 72767,
+      "p99_us": 67775,
       "requests": 1209
     },
     {
       "load_factor": 2.0,
       "rps": 0.16666666666666666,
-      "error_rate": 0.9920191540303273,
-      "p99_us": 101311,
+      "error_rate": 0.9920508744038156,
+      "p99_us": 91455,
       "requests": 20
     }
   ],
@@ -28,7 +28,7 @@
     "load_factor": 1.0,
     "rps": 10.075,
     "error_rate": 0.0,
-    "p99_us": 72767,
+    "p99_us": 67775,
     "requests": 1209
   }
 }
