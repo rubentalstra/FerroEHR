@@ -231,6 +231,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Template example generation (`GET /definition/template/adl1.4/{id}/example`)
+  now honours the template's structural constraints: a missing mandatory
+  ENTRY structure (e.g. `ACTION.description`) is synthesized with the
+  template's constrained node (its RM type, `archetype_node_id`, and name)
+  instead of a blind `at0001` placeholder, so generated examples validate
+  and commit against the same template. Surfaced by the official openEHR
+  CKM **International Patient Summary** template; probed by the new
+  conformance case ECC-TPL-017 (example → commit round-trip).
 - Template list endpoints no longer ignore filter and pagination
   parameters.
 - The conformance manifest and `/rest/status` no longer misreport the
