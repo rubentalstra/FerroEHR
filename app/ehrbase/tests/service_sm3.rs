@@ -109,7 +109,7 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
 }
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM relationship write.
-fn uv(data: Value, preceding: Option<&str>) -> UpdateVersion {
+fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
     let mut v = json!({
         "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
         "data": data,
@@ -141,7 +141,7 @@ async fn relationship_sm_calls_round_trip() {
 
     // create_party_relationship(UV) → the new VERSIONED_OBJECT's UUID.
     let vo_id: Uuid = svc
-        .create_party_relationship(uv(relationship("parent-of", src, tgt), None))
+        .create_party_relationship(uv(&relationship("parent-of", src, tgt), None))
         .await
         .expect("create_party_relationship");
 
@@ -167,7 +167,7 @@ async fn relationship_sm_calls_round_trip() {
 
     // update_party_relationship(UV with preceding) → the new version uid.
     let v2 = svc
-        .update_party_relationship(vo_id, uv(relationship("guardian-of", src, tgt), Some(&v1)))
+        .update_party_relationship(vo_id, uv(&relationship("guardian-of", src, tgt), Some(&v1)))
         .await
         .expect("update_party_relationship");
     assert!(v2.ends_with("::2"), "second version, got {v2}");

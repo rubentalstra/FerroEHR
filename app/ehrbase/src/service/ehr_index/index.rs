@@ -1,5 +1,5 @@
 //! `I_EHR_INDEX` write operations (I1–I5, `i_ehr_index.adoc`) + the two
-//! design-filled reads. All direct SQL over the `ehr_index` table (the ehr_index
+//! design-filled reads. All direct SQL over the `ehr_index` table (the `ehr_index`
 //! domain's own design — register §5; no openEHR spec governs the storage,
 //! master07 governs the operation semantics + error names).
 

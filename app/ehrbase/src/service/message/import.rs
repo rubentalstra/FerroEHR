@@ -387,7 +387,7 @@ fn parse_import_containers(
 /// identity (incl. branch `version_tree_id`s), `preceding_version_uid`,
 /// `other_input_version_uids`, `commit_audit`, lifecycle, data, signature and
 /// attestations verbatim (master06 §Copying: "the `ORIGINAL_VERSION` instance
-/// is never modified"; ehr_extract master05
+/// is never modified"; `ehr_extract` master05
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
 #[allow(clippy::too_many_lines)] // the ORIGINAL_VERSION field-by-field parse
 fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> {

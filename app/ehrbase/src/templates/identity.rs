@@ -32,7 +32,7 @@
 /// Case-**preserving**: this is only the comparison/keying form — the original
 /// string is what is stored and returned on the wire. Archetype/template ids are
 /// ASCII by grammar (§Archetype Identifiers), so ASCII case folding is exact and
-/// matches PostgreSQL `lower()` on the same values.
+/// matches `PostgreSQL` `lower()` on the same values.
 #[must_use]
 pub(crate) fn canonical_key(id: &str) -> String {
     id.trim().to_ascii_lowercase()

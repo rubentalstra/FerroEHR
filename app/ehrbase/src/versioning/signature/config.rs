@@ -6,7 +6,7 @@
 //! `EHRBASE_SIGNING_`-prefixed environment (nested keys via `__`).
 //!
 //! The modes it selects are the spec-blessed ones (RM common
-//! `master06-change_control_package.adoc` §Digital Signature: OpenPGP signature
+//! `master06-change_control_package.adoc` §Digital Signature: `OpenPGP` signature
 //! or digest-only integrity check).
 //!
 //! `SigningConfig` intentionally does **not** derive `Serialize`: the
@@ -20,7 +20,7 @@ use figment::providers::{Env, Format, Toml};
 use secrecy::SecretString;
 use serde::Deserialize;
 
-/// The signing mode: a data-integrity digest, or an OpenPGP (RFC 4880) digital
+/// The signing mode: a data-integrity digest, or an `OpenPGP` (RFC 4880) digital
 /// signature (RM common master06 §Digital Signature).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -31,7 +31,7 @@ pub enum Mode {
     #[default]
     Digest,
     /// An RFC 4880 detached signature over the canonical form with a
-    /// server-held OpenPGP private key — authentication + non-repudiation.
+    /// server-held `OpenPGP` private key — authentication + non-repudiation.
     Pgp,
 }
 

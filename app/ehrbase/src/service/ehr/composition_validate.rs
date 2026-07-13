@@ -1,4 +1,4 @@
-//! COMPOSITION commit validation + the VERSIONED_COMPOSITION cross-version
+//! COMPOSITION commit validation + the `VERSIONED_COMPOSITION` cross-version
 //! invariant hook (split out of [`composition`](super::composition) to keep
 //! both files under the size bound).
 //!
@@ -131,7 +131,7 @@ impl EhrbaseService {
     /// validation. Shared by the direct create/update path and the CONTRIBUTION
     /// path so neither can bypass validation (F-07-01).
     ///
-    /// The demographic arms (party roots + PARTY_RELATIONSHIP) dispatch to the
+    /// The demographic arms (party roots + `PARTY_RELATIONSHIP`) dispatch to the
     /// demographic register (`service/demographic/`).
     pub(in crate::service) async fn validate_for_commit(
         &self,

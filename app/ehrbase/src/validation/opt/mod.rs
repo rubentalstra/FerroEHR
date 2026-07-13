@@ -15,7 +15,7 @@
 //! sibling modules along the AOM2/08 catalogue's own section axis:
 //!
 //! - [`invariants`] — AOM 1.4 constraint-model per-node-kind invariants
-//!   (Existence_set, Members_valid, Target_path_valid, VARID/VARDT, VACDF,
+//!   (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
 //!   VDFAI, STCDC);
 //! - [`rm_conformance`] — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
 //!   `openehr_rm::model`;

@@ -1,4 +1,4 @@
-//! ITEM_TAG CRUD — an ITS-REST **experimental** extension (the tags API is
+//! `ITEM_TAG` CRUD — an ITS-REST **experimental** extension (the tags API is
 //! development-branch only), on the `item_tag` table.
 //!
 //! Spec: RM `ITEM_TAG`
@@ -7,7 +7,7 @@
 //! `EHR.tags`: "Tag target values can only be within the same EHR") and the
 //! development-branch OAS `ItemTag` schema (`key`/`value`/`target_path`/
 //! `target`/`owner_id`, `additionalProperties: false`). `PUT …/tags` "updates
-//! the list of **all** ITEM_TAG resources associated with a given target … an
+//! the list of **all** `ITEM_TAG` resources associated with a given target … an
 //! empty list will effectively remove all" — a full-collection replace. Not an
 //! SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10 storage
 //! seam — our own design).

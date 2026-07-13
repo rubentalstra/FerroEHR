@@ -1,11 +1,11 @@
-//! Version reads + the wire builders: VERSIONED_OBJECT / ORIGINAL_VERSION /
-//! REVISION_HISTORY (S-08..S-10, S-12, S-13, S-46, S-47).
+//! Version reads + the wire builders: `VERSIONED_OBJECT` / `ORIGINAL_VERSION` /
+//! `REVISION_HISTORY` (S-08..S-10, S-12, S-13, S-46, S-47).
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Versioned Objects /
 //! §Version and its Subtypes, RM common `master04-generic_package.adoc`
-//! §Revision History, BASE base_types `master05-identification_package.adoc`
+//! §Revision History, BASE `base_types` `master05-identification_package.adoc`
 //! §References. These builders surface the full provenance a versioned object
-//! carries: its OBJECT_VERSION_ID, the CONTRIBUTION that produced it, the
+//! carries: its `OBJECT_VERSION_ID`, the CONTRIBUTION that produced it, the
 //! mandatory commit audit, and its data. All SQL is delegated to
 //! `crate::storage::version_repo`; the canonical body comes from
 //! `crate::storage::node_repo`.
@@ -32,7 +32,7 @@ pub(crate) struct VersionRead {
     pub(crate) lifecycle_state: String,
     /// The immutable identity of the system that created this version (RM common
     /// master06 §Distributed Versioning), the middle part of its
-    /// OBJECT_VERSION_ID.
+    /// `OBJECT_VERSION_ID`.
     pub(crate) creating_system_id: String,
     pub(crate) contribution_id: Uuid,
     /// The mandatory `VERSION.commit_audit` (1..1).
@@ -165,7 +165,7 @@ pub(crate) async fn object_kind(
 /// "there will always be at least one commit audit … there may also be further
 /// attestations").
 ///
-/// PORT NOTE (G-12, master04 §Revision History): the REVISION_HISTORY is
+/// PORT NOTE (G-12, master04 §Revision History): the `REVISION_HISTORY` is
 /// assembled directly as canonical JSON rather than through a typed
 /// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
 /// spec-correct.

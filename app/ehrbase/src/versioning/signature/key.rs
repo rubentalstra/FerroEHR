@@ -1,4 +1,4 @@
-//! OpenPGP key loading + the rPGP detached-signature primitives.
+//! `OpenPGP` key loading + the rPGP detached-signature primitives.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature —
 //! the signature "is generated according to the openPGP standard (IETF RFC
@@ -16,12 +16,12 @@ use pgp::crypto::hash::HashAlgorithm;
 use pgp::types::Password;
 use rand::rngs::OsRng;
 
-/// The hash algorithm used for OpenPGP signatures (SHA-256, matching the digest
+/// The hash algorithm used for `OpenPGP` signatures (SHA-256, matching the digest
 /// mode; RM common master06 §Digital Signature leaves the algorithm to the
 /// format's self-description).
 const HASH: HashAlgorithm = HashAlgorithm::Sha256;
 
-/// A failure loading or exercising the configured OpenPGP signing key.
+/// A failure loading or exercising the configured `OpenPGP` signing key.
 #[derive(Debug, thiserror::Error)]
 pub enum KeyError {
     /// The armored key file could not be read.
@@ -42,7 +42,7 @@ pub enum KeyError {
     Unusable(String),
 }
 
-/// A failure producing a detached OpenPGP signature at runtime.
+/// A failure producing a detached `OpenPGP` signature at runtime.
 #[derive(Debug, thiserror::Error)]
 #[error("OpenPGP detached signature: {0}")]
 pub struct PgpSignError(String);
@@ -58,7 +58,7 @@ pub(crate) enum PgpVerdict {
     Malformed,
 }
 
-/// A loaded OpenPGP signing key: the armored secret key (which also carries the
+/// A loaded `OpenPGP` signing key: the armored secret key (which also carries the
 /// public key) plus the passphrase that unlocks it. Never logged/serialised.
 pub struct PgpKey {
     secret: SignedSecretKey,

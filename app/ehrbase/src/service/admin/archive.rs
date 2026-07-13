@@ -57,7 +57,7 @@ impl EhrbaseService {
     ///
     /// PORT NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
     /// relationships"; G-A3): only the party VO is marked this wave, not the
-    /// related PARTY_RELATIONSHIPs. While archival is a read-neutral marker
+    /// related `PARTY_RELATIONSHIP`s. While archival is a read-neutral marker
     /// (G-A2) this has no observable effect; the relationship marker set is
     /// extended when the storage-tier movement (G-A2) is realised.
     pub(super) async fn archive_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {

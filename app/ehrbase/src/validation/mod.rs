@@ -16,8 +16,8 @@
 //! - **Surface B — instance `valid_value` cascade (a seam, NOT here).** The
 //!   recursive top-down data-conformance function ("the key function of an
 //!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
-//!   package.adoc` §Valid_value) runs at commit time over the compacted
-//!   WebTemplate. It lives in `openehr-flat` (a spec crate) and is invoked from
+//!   package.adoc` §`Valid_value`) runs at commit time over the compacted
+//!   `WebTemplate`. It lives in `openehr-flat` (a spec crate) and is invoked from
 //!   the EHR commit choke point (`service::ehr::composition_validate`). Its
 //!   closed-world semantics are recorded as a spec-cited PORT NOTE below.
 //! - **Surface C — per-kind RM structural validators (a seam, NOT here).** The
@@ -46,7 +46,7 @@
 //!   closed-world check lives in `openehr-flat::validation` (a spec crate,
 //!   outside this crate's ownership). AOM 1.4 defines only the positive
 //!   `valid_value` cascade (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
-//!   §Valid_value, silent on present-but-unmatched nodes); closure — reject
+//!   §`Valid_value`, silent on present-but-unmatched nodes); closure — reject
 //!   unmatched *archetyped* siblings, tolerate RM-permitted metadata, tolerate
 //!   unlisted archetype-rooted fillers under slotless attributes — follows the
 //!   AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
@@ -56,7 +56,7 @@
 //! - **PORT NOTE — terminology binding resolution (T17/T15).** VTTBK/VTCBK
 //!   here check binding *keys* only; resolving ac-code value sets against the
 //!   live terminology service (`TerminologyService`) at ingestion is unwired,
-//!   to land with the CONSTRAINT_REF policy
+//!   to land with the `CONSTRAINT_REF` policy
 //!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology; blueprint 03-am §3).
 
 pub mod adl2;

@@ -98,8 +98,8 @@ impl EhrbaseService {
 
     /// Apply a single in-place mutation to the current `EHR_STATUS` root and
     /// commit it as a new implicit-CONTRIBUTION version — the shared body of the
-    /// discrete `I_EHR_STATUS` mutators (`i_ehr_status.adoc` §set_ehr_queryable …
-    /// §update_other_details), formally equivalent to the whole-object replace
+    /// discrete `I_EHR_STATUS` mutators (`i_ehr_status.adoc` §`set_ehr_queryable` …
+    /// §`update_other_details`), formally equivalent to the whole-object replace
     /// (`master02-overview.adoc` §Interface Calls). Reuses [`Self::status_update`]
     /// with the current version uid as the preceding version (server-driven
     /// optimistic lock).
@@ -208,7 +208,7 @@ impl EhrbaseService {
     }
 
     /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true` (RM ehr
-    /// `EHR_STATUS.is_modifiable`, 1..1 Boolean). Read inline from the EHR_STATUS
+    /// `EHR_STATUS.is_modifiable`, 1..1 Boolean). Read inline from the `EHR_STATUS`
     /// root node's canonical `data` fragment (`num = 0`); an EHR with no current
     /// `EHR_STATUS` (should not occur) is treated as modifiable so the guard
     /// never spuriously blocks.
@@ -269,7 +269,7 @@ impl EhrbaseService {
     /// transaction of the EHR-create / EHR_STATUS-update paths, and — for the
     /// CONTRIBUTION path — through the
     /// [`crate::versioning::CommitEnv::post_status_commit`] hook after an
-    /// EHR_STATUS version. The `UPDATE` stays inline here (not a plain
+    /// `EHR_STATUS` version. The `UPDATE` stays inline here (not a plain
     /// `ehr_repo` read) because it maps the subject-uniqueness constraint
     /// violation to a service-level [`ServiceError::Conflict`] (→ 409); the
     /// `ehr.subject_*` columns are spec-silent index plumbing (our own design).

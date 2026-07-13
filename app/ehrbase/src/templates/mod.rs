@@ -18,7 +18,7 @@
 //!   upload (`409` on a duplicate id, G-T09), and the `template_id`-keyed
 //!   retrieval/listing the ITS-REST `adl1.4` surface uses.
 //! - [`runtime`] — `web_template_for` / `template_example`, the S-08/S-09
-//!   derived near-runtime form, `moka`-cached (G-T05); the WebTemplate *format*
+//!   derived near-runtime form, `moka`-cached (G-T05); the `WebTemplate` *format*
 //!   is spec-silent and stays in `openehr-flat` (G-T06).
 //!
 //! # The inherent-method surface on `EhrbaseService`
@@ -34,7 +34,7 @@
 //!
 //! # PORT NOTE residue (re-cited)
 //!
-//! - **G-T06** — the WebTemplate JSON *format* is the Better `web-template` SDT
+//! - **G-T06** — the `WebTemplate` JSON *format* is the Better `web-template` SDT
 //!   format, **not** openEHR-normative; kept in `openehr-flat`, never presented
 //!   as canonical (see [`runtime`]).
 //! - **G-T08** — an unknown template on a *commit* path is a `422`

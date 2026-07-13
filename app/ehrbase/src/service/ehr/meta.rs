@@ -1,5 +1,5 @@
 //! Shared version-metadata helpers (G-9): the cross-cutting glue every
-//! versioned kind (EHR_STATUS, COMPOSITION, DIRECTORY — and the demographic
+//! versioned kind (`EHR_STATUS`, COMPOSITION, DIRECTORY — and the demographic
 //! roots) needs to turn a loaded [`VersionRead`] into a wire
 //! [`ServiceResponse`] + its [`ResourceMeta`].
 //!

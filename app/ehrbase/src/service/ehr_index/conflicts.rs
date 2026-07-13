@@ -42,6 +42,9 @@ impl EhrbaseService {
     /// conflicting association group (empty = clean). Advisory: detection only,
     /// no mutation — rectification is the operator's `update_ehr_subject_status`
     /// / `remove_ehr_subject` call (I2/I4).
+    ///
+    /// # Errors
+    /// [`IndexError::Service`] on a storage/database fault.
     pub async fn index_conflicts(&self) -> Result<Vec<IndexConflict>, IndexError> {
         let mut conflicts = Vec::new();
 

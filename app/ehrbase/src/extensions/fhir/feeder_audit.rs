@@ -9,7 +9,7 @@
 //! `FEEDER_AUDIT_DETAILS.system_id`/`time`/`version_id`,
 //! `originating_system_item_ids: List<DV_IDENTIFIER>`) —
 //! `docs/specs/openehr/RM/docs/common/feeder_audit.adoc`; the `DV_IDENTIFIER`
-//! shape (with its `Id_valid` non-empty-id invariant) is RM data_types
+//! shape (with its `Id_valid` non-empty-id invariant) is RM `data_types`
 //! `DV_IDENTIFIER`. (master14's *integration* model is archetype-level and does
 //! not govern this builder; the RM `FEEDER_AUDIT` types do.)
 //!

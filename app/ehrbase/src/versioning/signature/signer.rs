@@ -24,7 +24,7 @@ pub enum SigningError {
     /// `pgp` mode was selected but no `key_path` was configured.
     #[error("signing mode is `pgp` but no key_path is configured (EHRBASE_SIGNING_KEY_PATH)")]
     MissingKeyPath,
-    /// The configured OpenPGP key could not be loaded or used.
+    /// The configured `OpenPGP` key could not be loaded or used.
     #[error("loading the OpenPGP signing key: {0}")]
     Key(#[from] KeyError),
 }
@@ -32,7 +32,7 @@ pub enum SigningError {
 /// A failure producing a signature at commit time.
 #[derive(Debug, thiserror::Error)]
 pub enum SignError {
-    /// An OpenPGP signing failure.
+    /// An `OpenPGP` signing failure.
     #[error(transparent)]
     Pgp(#[from] PgpSignError),
 }
@@ -41,7 +41,7 @@ pub enum SignError {
 pub(crate) enum SignerMode {
     /// SHA-256 digest, radix-64 encoded.
     Digest,
-    /// OpenPGP RFC 4880 detached signature with the loaded key.
+    /// `OpenPGP` RFC 4880 detached signature with the loaded key.
     Pgp(Box<PgpKey>),
 }
 
@@ -74,7 +74,7 @@ impl std::fmt::Debug for SignerMode {
 
 impl Signer {
     /// Build a [`Signer`] from configuration, loading + boot-validating the
-    /// OpenPGP key when in `pgp` mode (fail-closed).
+    /// `OpenPGP` key when in `pgp` mode (fail-closed).
     ///
     /// # Errors
     /// [`SigningError`] if `pgp` mode has no key path, or the key cannot be
@@ -129,7 +129,7 @@ impl Signer {
     /// signature.
     ///
     /// # Errors
-    /// [`SignError`] if OpenPGP signing fails (digest signing is infallible).
+    /// [`SignError`] if `OpenPGP` signing fails (digest signing is infallible).
     pub fn sign(&self, canonical: &str) -> Result<String, SignError> {
         match &self.mode {
             SignerMode::Digest => Ok(digest_signature(canonical)),

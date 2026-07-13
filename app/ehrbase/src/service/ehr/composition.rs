@@ -1,6 +1,6 @@
 //! `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`) — COMPOSITION commit/retrieve
 //! with implicit CONTRIBUTION creation. The commit-validation choke point and
-//! the VERSIONED_COMPOSITION cross-version invariant hook live in the sibling
+//! the `VERSIONED_COMPOSITION` cross-version invariant hook live in the sibling
 //! [`composition_validate`](super::composition_validate).
 //!
 //! Spec: RM ehr `versioned_composition.adoc`, RM composition

@@ -419,7 +419,7 @@ mod column_vocab {
         body.lines().any(|line| {
             let t = line.trim_start();
             t.strip_prefix(col)
-                .is_some_and(|rest| rest.starts_with(|c: char| c == ' ' || c == '\t'))
+                .is_some_and(|rest| rest.starts_with([' ', '\t']))
         })
     }
 

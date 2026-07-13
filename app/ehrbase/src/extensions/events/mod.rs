@@ -1,8 +1,8 @@
 //! Contribution-outbox eventing (G-12-01, G-12-02).
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY`
-//! + `FEEDER_AUDIT`), not message brokers, topic routing, or outbound emission;
+//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY` +
+//! `FEEDER_AUDIT`), not message brokers, topic routing, or outbound emission;
 //! master13 is informative deployment guidance and prescribes no eventing. This
 //! surface is therefore quarantined under `crate::extensions`
 //! (`docs/design/platform/12-extensions.md`). Gate: [`EventsConfig::enabled`]
