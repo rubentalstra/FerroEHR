@@ -135,14 +135,6 @@ pub enum AqlFeatureError {
     #[error("FROM source class `{0}` is not in scope (demographic/off-scope class; QUERY §FROM)")]
     UnsupportedSourceClass(String),
 
-    /// A time/`now`-family function used in ORDER BY. Accepted in WHERE as a
-    /// bind-time constant; rejected in ORDER BY. QUERY §Functions/Date and time.
-    #[error(
-        "date/time function `{0}` is not supported in ORDER BY \
-         (QUERY §Functions/Date and time functions)"
-    )]
-    CurrentDateTimeInOrderBy(String),
-
     /// Branch (non-trunk) version addressing. Trunk-only per the storage design
     /// PORT NOTE. QUERY §Predicates/Standard predicate (version).
     #[error("branch version addressing is not supported (trunk-only; QUERY §Predicates)")]

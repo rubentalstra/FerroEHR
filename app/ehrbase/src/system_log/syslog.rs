@@ -8,8 +8,8 @@
 //! - **RFC 5425** — TLS transport with **octet-counting** framing
 //!   (`MSG-LEN SP SYSLOG-MSG`), the mandatory TLS framing (RFC 5425 §4.3).
 //!
-//! Header field choices where the binding doc is silent follow RFC 5424 with the
-//! IHE convention (recorded inline with the citing section).
+//! Header field choices not fixed by RFC 5424 follow the IHE ATNA convention
+//! (recorded inline with the citing RFC section).
 
 use std::io;
 use std::sync::Arc;
@@ -44,7 +44,7 @@ pub const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
 /// Assemble an RFC 5424 `SYSLOG-MSG` carrying the DICOM Audit Message XML.
 ///
 /// - `HOSTNAME` = `hostname` (or `-` when empty; RFC 5424 §6.2.4 NILVALUE).
-/// - `APP-NAME` = `app_name` (the audit source id; §8, RFC 5424 §6.2.5).
+/// - `APP-NAME` = `app_name` (the audit source id; RFC 5424 §6.2.5).
 /// - `PROCID` = `-`, `STRUCTURED-DATA` = `-` (NILVALUE).
 /// - `MSG` = UTF-8 BOM + the XML.
 #[must_use]

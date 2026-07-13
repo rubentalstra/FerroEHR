@@ -1,3 +1,9 @@
+//! The `sqlx` connection pool. No openEHR spec governs the persistence
+//! mechanism — this is our own design (`docs/architecture.md` §Storage). Every
+//! pooled connection is initialized with the application `search_path`; the
+//! optional tenant-scoped variant stamps a session GUC for row-level security
+//! (multi-tenancy is our own extension, spec-silent).
+
 use std::time::Duration;
 
 use sqlx::PgPool;
@@ -5,9 +11,10 @@ use sqlx::postgres::PgPoolOptions;
 
 use crate::db::{DbError, DbSettings};
 
-/// Search path applied to every pooled connection: the application tables
-/// live in `ehr`, the AQL support functions and the `en_US` collation in
-/// `ext` (matching how `EHRbase` configures its datasource).
+/// Search path applied to every pooled connection: the application tables live
+/// in `ehr`, the AQL support functions and the `"C"`/`en_US` collations in
+/// `ext`. Set on every physical connection so queries may use unqualified table
+/// names.
 pub(crate) const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
 
 /// The pool options common to both the plain and the tenant-scoped pool: the

@@ -67,8 +67,8 @@ struct Store {
 
 fn config() -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,

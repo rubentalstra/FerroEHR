@@ -24,7 +24,7 @@
 //! operation-id prefix to a [`PartyKind`] ([`parse_party_op`]); the generated
 //! per-kind `*Params` structs are field-identical, so one representative struct
 //! is reused across kinds. File layout mirrors the spec resources:
-//! [`party`] (`{kind}` CRUD), [`tags`] (ITEM_TAG sub-resources +
+//! [`party`] (`{kind}` CRUD), [`tags`] (`ITEM_TAG` sub-resources +
 //! `demographic_tags_get`), [`versioned_party`], [`contribution`],
 //! [`relationship`] (extension), and [`dispatch`] as the operation-id match.
 //!
@@ -108,14 +108,14 @@ fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&Res
 
 /// Emit the `openehr-item-tag` / `openehr-version-item-tag` **response** headers
 /// mandated by `responses/201_PERSON.yaml` (create) and `person_get.yaml` (get)
-/// when a party carries ITEM_TAGs — the server-set tags ride the response
+/// when a party carries `ITEM_TAGs` — the server-set tags ride the response
 /// metadata seam ([`ResourceMeta::item_tags`], a canonical `ITEM_TAG` list) and
 /// are rendered through [`crate::overview::params::emit_item_tag_header`]
 /// (`headers/openehr-item-tag.yaml`, `headers/openehr-version-item-tag.yaml`).
 ///
-/// Demographic ITEM_TAGs are stored against the VERSIONED_OBJECT
+/// Demographic `ITEM_TAGs` are stored against the `VERSIONED_OBJECT`
 /// (`item_tag.target_vo_id`, no version anchor), so the full set is emitted for
-/// both headers: `openehr-item-tag` (all tags on the VERSIONED_OBJECT) and
+/// both headers: `openehr-item-tag` (all tags on the `VERSIONED_OBJECT`) and
 /// `openehr-version-item-tag` (all tags on the current VERSION) coincide here.
 fn set_item_tag_headers(resp_out: &mut Response, resp: &ServiceResponse) {
     let Some(meta) = resp.meta.as_ref() else {

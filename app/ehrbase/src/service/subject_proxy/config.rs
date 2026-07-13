@@ -11,7 +11,7 @@
 //! (`hl7_fhir_sample.adoc`).
 //!
 //! No openEHR spec governs the transport specifics — our own design, mirroring
-//! the external-terminology provider (`crate::terminology::config`) and
+//! the external-terminology provider (`crate::service::terminology::config`) and
 //! `docs/design/terminology-server-integration.md`. Configuration is
 //! **opt-in and fail-closed**: only systems named here are reachable; a frame
 //! whose `system_id` matches no configured system is a typed rejection, never
@@ -165,6 +165,10 @@ impl SubjectProxyFhir {
     /// non-2xx status, a timeout, or a malformed body — the caller turns an
     /// `Err` into an unavailable `SAMPLE` so the primary→fallback pipeline runs
     /// (`data_frame.adoc`).
+    ///
+    /// # Errors
+    /// An unconfigured `system_id`, a non-2xx response, a request timeout, or
+    /// a malformed body — see above.
     pub async fn get(&self, system_id: &str, query_path: &str) -> Result<FhirFetch, String> {
         let Some(sys) = self.clients.get(system_id) else {
             return Err(format!("FHIR system {system_id:?} is not configured"));

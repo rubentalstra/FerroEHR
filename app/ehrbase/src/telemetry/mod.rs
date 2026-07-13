@@ -1,7 +1,11 @@
-//! Telemetry initialization (binding doc §0/§4): the single `tracing`
-//! instrumentation API fanned out to stdout logs + (opt-in) OTLP spans, the
-//! `metrics` facade pulled via a Prometheus recorder, and (opt-in) an OTLP
-//! metrics push path.
+//! Telemetry initialization: the single `tracing` instrumentation API fanned
+//! out to stdout logs + (opt-in) OTLP spans, the `metrics` facade pulled via a
+//! Prometheus recorder, and (opt-in) an OTLP metrics push path.
+//!
+//! **No openEHR spec governs this — our own design.** This is operational
+//! observability (spans, gauges, Prometheus scrape), categorically distinct
+//! from the ATNA *audit* trail (`crate::system_log`), which is a
+//! security/medico-legal record. The two are deliberately separate siblings.
 //!
 //! [`init`] installs the Prometheus recorder, builds the `OTel` providers when an
 //! endpoint is configured (absent ⇒ nothing installed, zero overhead), sets the

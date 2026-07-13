@@ -47,6 +47,11 @@ This is the mechanism behind cross-system EHR migration: export from the source,
 import into the destination, and the destination's history faithfully reflects
 where each version came from.
 
+When ATNA auditing is enabled (see
+[Security & multi-tenancy](../security.md#atna-audit-trail)), each export and
+import emits a security-audit event under the ATNA `Extract` object class, so
+records moving between systems are captured in the audit trail.
+
 ## Importing TDDs
 
 A Template Data Document (TDD) is a template-shaped XML document carrying the

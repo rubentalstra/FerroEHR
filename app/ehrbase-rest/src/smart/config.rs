@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 /// §Glossary): it advertises the external Authorization-Server endpoints, parses
 /// and enforces the master08 resource-scope grammar, and binds the master07/09
 /// launch context to the patient compartment. It never issues tokens, registers
-/// clients, or runs the OAuth2 endpoints (those are Authorization-Server duties
+/// clients, or runs the `OAuth2` endpoints (those are Authorization-Server duties
 /// — recorded as PORT NOTEs in `docs/design/its-rest/smart.md` §6).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SmartConfig {
@@ -96,7 +96,7 @@ pub struct EpisodeConfig {
     pub enabled: bool,
 }
 
-/// The Authorization-Server endpoints + OAuth2 metadata advertised in the
+/// The Authorization-Server endpoints + `OAuth2` metadata advertised in the
 /// `/.well-known/smart-configuration` document (master04 §Authentication
 /// Endpoints). Every field is operator-supplied; an unset optional endpoint is
 /// simply omitted from the document.
@@ -109,10 +109,10 @@ pub struct SmartEndpoints {
     /// The JWKS document URL (`jwks_uri`).
     #[serde(default)]
     pub jwks_uri: Option<String>,
-    /// The OAuth2 `authorization_endpoint`.
+    /// The `OAuth2` `authorization_endpoint`.
     #[serde(default)]
     pub authorization_endpoint: Option<String>,
-    /// The OAuth2 `token_endpoint`.
+    /// The `OAuth2` `token_endpoint`.
     #[serde(default)]
     pub token_endpoint: Option<String>,
     /// The dynamic-client `registration_endpoint` (master03 recommends
@@ -278,17 +278,10 @@ mod tests {
     #[test]
     #[allow(clippy::result_large_err)] // figment::Jail closure signature
     fn nested_under_rest_prefix() {
-        #[derive(Debug, Serialize, Deserialize)]
+        #[derive(Debug, Default, Serialize, Deserialize)]
         struct Wrapper {
             #[serde(default)]
             smart: SmartConfig,
-        }
-        impl Default for Wrapper {
-            fn default() -> Self {
-                Self {
-                    smart: SmartConfig::default(),
-                }
-            }
         }
         figment::Jail::expect_with(|jail| {
             jail.set_env("EHRBASE_REST_SMART__ENABLED", "true");

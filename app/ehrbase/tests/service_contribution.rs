@@ -14,11 +14,11 @@
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrService, EhrStatusService,
     Page, SmError,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
@@ -654,10 +654,43 @@ async fn contribution_honors_the_five_lifecycle_states() {
         .expect("composition_get incomplete");
     assert_eq!(latest["name"]["value"], "incomplete v1");
 
-    // (2) Walk 553 → 800 (inactive) → 801 (abandoned) → 532 (complete), each a
-    // new version carrying the client lifecycle_state.
+    // (2) The master06 §Version Lifecycle state machine only permits listed
+    // transitions: `inactive` is entered by `deactivate` FROM `complete`, so an
+    // incomplete → inactive modify is rejected 422 naming the state machine.
     let mut current = ovid_v1;
-    for (n, code) in [(2, "800"), (3, "801"), (4, "532")] {
+    let illegal = svc
+        .create_ehr_contribution(
+            ehr_id.parse().expect("ehr uuid"),
+            json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("251", "modification"),
+                        "committer": committer("author")
+                    },
+                    "preceding_version_uid": { "value": current },
+                    "lifecycle_state": lifecycle("800"),
+                    "data": composition("edited")
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("incomplete → inactive is not a listed transition");
+    assert!(
+        matches!(
+            illegal,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ) && illegal.message.contains("state machine"),
+        "expected the 422 naming the state machine, got {illegal:?}"
+    );
+
+    // Walk the LEGAL transitions (master06 §Version Lifecycle + §Abandoned and
+    // Inactive States): 553 →complete→ 532 →deactivate→ 800 →retrieve→ 553
+    // →abandon→ 801 — each a new version carrying the client lifecycle_state.
+    for (n, code) in [(2, "532"), (3, "800"), (4, "553"), (5, "801")] {
         let modified = svc
             .create_ehr_contribution(
                 ehr_id.parse().expect("ehr uuid"),

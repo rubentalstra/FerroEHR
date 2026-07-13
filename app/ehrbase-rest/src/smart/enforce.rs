@@ -80,7 +80,7 @@ impl ScopeOutcome {
 /// §Resource Scopes: `template-…`, `composition-…`, `aql-…`).
 ///
 /// `None` for operation families the master08 grammar defines **no** resource
-/// scope for — EHR, EHR_STATUS, CONTRIBUTION, DIRECTORY. PORT NOTE
+/// scope for — EHR, `EHR_STATUS`, CONTRIBUTION, DIRECTORY. PORT NOTE
 /// (`smart.md` §6): master08 lists only three resource types, so those
 /// operations are governed by the compartment binding + the existing RBAC/ABAC
 /// layers, not by a SMART resource scope; the SMART gate does not deny them.
@@ -206,14 +206,13 @@ pub fn evaluate(
         if !scope.permissions.contains(permission) {
             continue;
         }
-        let id_ok = match resource_id {
-            Some(id) => scope.resource.pattern().matches(id),
+        let id_ok = if let Some(id) = resource_id {
+            scope.resource.pattern().matches(id)
+        } else {
             // No resolved id: only a broad `*`/`**` pattern can permit; a
             // specific pattern is fail-closed against an unknown id.
-            None => {
-                let p = scope.resource.pattern().as_str();
-                p == "*" || p == "**"
-            }
+            let p = scope.resource.pattern().as_str();
+            p == "*" || p == "**"
         };
         if id_ok {
             broadest = Some(broaden(broadest, scope.compartment));

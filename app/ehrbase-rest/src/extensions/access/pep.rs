@@ -811,7 +811,7 @@ mod tests {
         }
     }
 
-    fn principal_with_scopes(scope: &str, claims: serde_json::Value) -> Principal {
+    fn principal_with_scopes(scope: &str, claims: &serde_json::Value) -> Principal {
         Principal {
             subject: "alice".to_owned(),
             scopes: scope.split_whitespace().map(str::to_owned).collect(),
@@ -824,7 +824,7 @@ mod tests {
     #[test]
     fn smart_user_scope_permits_matching_composition_no_binding() {
         // A `user/` grant permits with no launch-context binding required.
-        let p = principal_with_scopes("user/composition-Vitals.v1.r", serde_json::json!({}));
+        let p = principal_with_scopes("user/composition-Vitals.v1.r", &serde_json::json!({}));
         assert_eq!(
             smart_decide(&smart(true), &p, "composition_get", Some("Vitals.v1")),
             Ok(None)
@@ -834,14 +834,14 @@ mod tests {
     #[test]
     fn smart_permission_mismatch_denies() {
         // A read-only scope cannot authorise a create.
-        let p = principal_with_scopes("user/composition-*.r", serde_json::json!({}));
+        let p = principal_with_scopes("user/composition-*.r", &serde_json::json!({}));
         assert!(smart_decide(&smart(false), &p, "composition_create", Some("Vitals.v1")).is_err());
     }
 
     #[test]
     fn smart_advisory_defers_for_plain_oidc_token() {
         // No SMART resource scope + advisory mode → the gate does not engage.
-        let p = principal_with_scopes("openid profile", serde_json::json!({}));
+        let p = principal_with_scopes("openid profile", &serde_json::json!({}));
         assert_eq!(
             smart_decide(&smart(false), &p, "composition_create", Some("Vitals.v1")),
             Ok(None)
@@ -850,7 +850,7 @@ mod tests {
 
     #[test]
     fn smart_fail_closed_denies_without_family_scope() {
-        let p = principal_with_scopes("openid profile", serde_json::json!({}));
+        let p = principal_with_scopes("openid profile", &serde_json::json!({}));
         assert!(smart_decide(&smart(true), &p, "composition_create", Some("Vitals.v1")).is_err());
     }
 
@@ -860,7 +860,7 @@ mod tests {
         // PEP must bind to the target EHR (via the subject gate).
         let p = principal_with_scopes(
             "patient/composition-*.r",
-            serde_json::json!({ "ehrId": "ehr-1" }),
+            &serde_json::json!({ "ehrId": "ehr-1" }),
         );
         assert_eq!(
             smart_decide(&smart(false), &p, "composition_get", Some("Vitals.v1")),
@@ -871,7 +871,7 @@ mod tests {
     #[test]
     fn smart_patient_scope_requires_a_launch_context_claim() {
         // `patient/` compartment but no ehrId/patient claim → deny.
-        let p = principal_with_scopes("patient/composition-*.r", serde_json::json!({}));
+        let p = principal_with_scopes("patient/composition-*.r", &serde_json::json!({}));
         assert!(smart_decide(&smart(false), &p, "composition_get", Some("Vitals.v1")).is_err());
     }
 
@@ -881,7 +881,7 @@ mod tests {
         // (master07 token-response table).
         let p = principal_with_scopes(
             "patient/composition-*.r",
-            serde_json::json!({ "patient": "subject-9" }),
+            &serde_json::json!({ "patient": "subject-9" }),
         );
         assert_eq!(
             smart_decide(&smart(false), &p, "composition_get", Some("Vitals.v1")),
@@ -892,7 +892,7 @@ mod tests {
     #[test]
     fn smart_user_scope_needs_no_patient_binding() {
         // A `user/` grant permits without forcing the launch-context binding.
-        let p = principal_with_scopes("user/composition-*.r", serde_json::json!({}));
+        let p = principal_with_scopes("user/composition-*.r", &serde_json::json!({}));
         assert_eq!(
             smart_decide(&smart(false), &p, "composition_get", Some("Vitals.v1")),
             Ok(None)
@@ -903,7 +903,7 @@ mod tests {
     fn smart_non_family_op_is_never_gated() {
         // EHR ops carry no SMART resource family (master08 lists only
         // template/composition/aql), so the gate defers even fail-closed.
-        let p = principal_with_scopes("openid", serde_json::json!({}));
+        let p = principal_with_scopes("openid", &serde_json::json!({}));
         assert_eq!(smart_decide(&smart(true), &p, "ehr_create", None), Ok(None));
     }
 }

@@ -152,9 +152,6 @@ pub(crate) async fn method_not_allowed_handler() -> Response {
     )
 }
 
-/// Axum handler for a request whose method is **unrecognized or unimplemented**
-/// → `501 Not Implemented` (overview §HTTP Methods).
-
 impl IntoResponse for RestError {
     fn into_response(self) -> Response {
         // 408 Request Timeout: a query-execution timeout is signalled by the

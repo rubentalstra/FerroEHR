@@ -99,8 +99,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // registry + tenant_id scoping + RLS FORCE, appended for E2 task 2) +
     // 0005_fhir_mapping (the FHIR-connector mapping store — our own extension, appended for
     // E3 task 2) + 0006_fhir_outbound_cursor (the outbound-emitter extension's
-    // delivery cursor, appended for E3 tasks 4/5).
-    assert_eq!((applied_ext, applied_ehr), (2, 6));
+    // delivery cursor, appended for E3 tasks 4/5) + 0007_template_id_ci_unique
+    // (case-insensitive TEMPLATE_ID uniqueness — BASE base_types master05
+    // §Composite Identifiers and Case, appended for W-3f G-T04).
+    assert_eq!((applied_ext, applied_ehr), (2, 7));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \

@@ -1,3 +1,6 @@
+//! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
+//! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a
+//! weakness indicator `W/` prefix"); the bare quoted form is deprecated.
 //! End-to-end HTTP tests for the W2-A response-header + `Prefer` handling:
 //! `ETag`/`Location` on the EHR / `EHR_STATUS` / COMPOSITION writes and reads, and
 //! the `return=minimal` (default, header-only) vs `return=representation`
@@ -73,8 +76,8 @@ fn hooks() -> Hooks {
 
 fn config() -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,
@@ -128,7 +131,7 @@ async fn ehr_create_default_is_minimal_with_headers() {
 
     // 201_EHR default (return=minimal): headers only, no body.
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("\"{EHR_ID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{EHR_ID}\"").as_str()));
     assert_eq!(location(&h), Some(format!("{BASE}/ehr/{EHR_ID}").as_str()));
     assert!(body.is_empty(), "minimal create has no body, got {body:?}");
 }
@@ -144,7 +147,7 @@ async fn ehr_create_representation_returns_body() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("\"{EHR_ID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{EHR_ID}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "EHR");
 }
@@ -164,7 +167,7 @@ async fn ehr_status_update_default_is_204_with_headers() {
 
     // 204_EHR_STATUS (default minimal): no body, ETag + Location.
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(etag(&h), Some(format!("\"{STATUS_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/ehr/{EHR_ID}/ehr_status/{STATUS_OVID}").as_str())
@@ -188,7 +191,7 @@ async fn ehr_status_update_representation_is_200_with_body() {
 
     // 200_EHR_STATUS_updated (representation): body present.
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("\"{STATUS_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "EHR_STATUS");
 }
@@ -204,10 +207,11 @@ async fn composition_get_sets_etag_and_location() {
 
     // 200_COMPOSITION_retrieved: ETag(version_uid) + Location.
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("\"{COMP_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{COMP_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/ehr/{EHR_ID}/composition/{COMP_OVID}").as_str())
+        None,
+        "200_COMPOSITION_retrieved marks Location Location_deprecated — not emitted"
     );
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "COMPOSITION");
@@ -215,8 +219,9 @@ async fn composition_get_sets_etag_and_location() {
 
 #[tokio::test]
 async fn versioned_ehr_status_version_at_time_sets_version_headers() {
-    // F-01-05: 200_VERSION_at_time declares ETag (the version_uid) + Location
-    // (the …/versioned_ehr_status/version/{version_uid} VERSION resource URL).
+    // 200_VERSION_of_EHR_STATUS_at_time declares ETag_VERSION (the version_uid)
+    // plus a `Location_deprecated` header — the deprecated Location is no
+    // longer emitted (overview §"Deprecated headers").
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/ehr/{EHR_ID}/versioned_ehr_status/version"))
@@ -225,10 +230,11 @@ async fn versioned_ehr_status_version_at_time_sets_version_headers() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("\"{STATUS_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/ehr/{EHR_ID}/versioned_ehr_status/version/{STATUS_OVID}").as_str())
+        None,
+        "the OAS marks Location on this response Location_deprecated — not emitted"
     );
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "ORIGINAL_VERSION");
@@ -243,12 +249,14 @@ async fn composition_delete_is_204_with_headers() {
         .unwrap();
     let (status, h, body) = send(req).await;
 
-    // 204_COMPOSITION_deleted: ETag + Location of the deleted version.
+    // 204_version_deleted: ETag of the deleted version; its Location is
+    // `Location_deprecated` in the OAS and is no longer emitted.
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(etag(&h), Some(format!("\"{COMP_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{COMP_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/ehr/{EHR_ID}/composition/{COMP_OVID}").as_str())
+        None,
+        "the OAS marks Location on this response Location_deprecated — not emitted"
     );
     assert!(body.is_empty());
 }

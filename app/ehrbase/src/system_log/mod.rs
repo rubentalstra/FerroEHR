@@ -2,12 +2,30 @@
 //! ehrbase-rs CDR — the platform-crate implementation of the SM
 //! [`SystemLog`](ehrbase_sm::SystemLog) component (`I_SYSTEM_LOG`).
 //!
+//! The one normative openEHR statement for this component is a single line of
+//! the SM platform component table — verbatim: "System Log | IHE
+//! ATNA-compliant system log."
+//! (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`); the
+//! `I_SYSTEM_LOG` interface (`.../UML/classes/i_system_log.adoc`) is an empty
+//! stub. Everything below therefore realizes that "IHE ATNA-compliant" mandate
+//! against the external standards it pulls in, cited as external standards
+//! (never as openEHR spec text).
+//!
 //! Emits one **DICOM Audit Message** (DICOM PS3.15 §A.5 — *not* openEHR
 //! ITS-XML) per audited API operation, shipped to an Audit Record Repository
 //! over **syslog** (RFC 5424 framing; RFC 5426 UDP or RFC 5425 TLS). This is
-//! authorized defensive security-audit logging for a healthcare system; see
-//! `docs/enterprise/atna-audit.md` for the behavioural spec (§1–7) and the
-//! implementation binding (§8, which governs this module).
+//! authorized defensive security-audit logging for a healthcare system.
+//! (`docs/enterprise/atna-audit.md` is a non-normative design record — the
+//! behaviour is governed by the standards cited above, not by that document.)
+//!
+//! ## Scope boundary (read/operation audit vs write/change-control audit)
+//! This ATNA system log is the *security surveillance* record of API access
+//! (who did what to which resource, with what outcome). It is **orthogonal to**
+//! the RM change-control audit: every VERSION/CONTRIBUTION write records its
+//! own authorship in `AUDIT_DETAILS` in the versioning path — "every write
+//! access of any kind … is logged with the user identification, time, reason"
+//! (BASE `architecture_overview/master07-security.adoc` §Integrity). That
+//! write-audit is **not** implemented here; do not duplicate it in this module.
 //!
 //! The transport-agnostic event model ([`AuditEvent`](ehrbase_sm::AuditEvent))
 //! and the [`SystemLog`](ehrbase_sm::SystemLog) trait live in the SM native-API
@@ -21,7 +39,7 @@
 //! the binary (`ehrbase`) boots the [`AuditSender`] and supplies the DB-backed
 //! [`SubjectResolver`].
 //!
-//! ## Module map (§8.1)
+//! ## Module map
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the SM
 //!   event enums ([`codes::AtnaCodes`]).

@@ -1,0 +1,315 @@
+//! AOM 1.4 constraint-model per-node-kind invariants for the OPT 1.4 pass
+//! (T4, T5b, T13, T14, T15, T16 of the AM constraint taxonomy).
+//!
+//! These are the invariants the AOM 1.4 constraint-model *class files* declare
+//! (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`) plus the ADL 1.4
+//! identifier/slot syntax rules (`AM/docs/ADL1.4/master08-adl.adoc`,
+//! `master05-cadl.adoc`), decidable structurally on a flattened OPT tree
+//! without running the `valid_value` cascade:
+//!
+//! - **`Rm_attribute_name_valid`** / **`Existence_set`** (`C_ATTRIBUTE`) and
+//!   **`Members_valid`** (`C_SINGLE_ATTRIBUTE`).
+//! - **VARID / VARDT** — archetype-identifier syntax + the RM type / id type
+//!   slot match (master08 lines 544/556).
+//! - **VDFAI** — a slot-referenced archetype id is well-formed (master08 573).
+//! - **`Target_path_valid`** — an `ARCHETYPE_INTERNAL_REF` target path.
+//! - **VACDF** — a `CONSTRAINT_REF` ac-code is defined (master08 566).
+//! - **STCDC** — a terminology-code list has no duplicate codes
+//!   (`ADL2/master04.6-cadl_validity_rules.adoc` STCDC; the same defect in an
+//!   OPT 1.4 `C_CODE_PHRASE` list).
+
+use std::collections::HashSet;
+
+use openehr_its::opt14::{
+    ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
+};
+
+use super::interval::{iv_lower, iv_upper};
+use super::{Ctx, Violation, co_node_id, co_occurrences};
+
+// ─── C_ATTRIBUTE / C_SINGLE_ATTRIBUTE invariants (T4, T5b) ───────────────────────
+
+/// `C_ATTRIBUTE` invariant `Rm_attribute_name_valid`: `not rm_attribute_name.
+/// is_empty` (AOM1.4 `c_attribute` class file, Invariants).
+pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(), Violation> {
+    if attr_name.is_empty() {
+        return Err(Violation::new(
+            "Rm_attribute_name_valid",
+            format!("an attribute constraint under '{parent_rm}' has an empty rm_attribute_name"),
+        ));
+    }
+    Ok(())
+}
+
+/// `C_ATTRIBUTE` invariant `Existence_set`: `existence.lower >= 0 and
+/// existence.upper <= 1` (AOM1.4 `c_attribute` class file, Invariants).
+pub(super) fn check_existence_set(
+    attr_name: &str,
+    parent_rm: &str,
+    existence: &openehr_its::opt14::Intervalofinteger,
+) -> Result<(), Violation> {
+    if iv_lower(existence) < 0
+        || existence.upper_unbounded
+        || iv_upper(existence).is_none_or(|u| u > 1)
+        || iv_upper(existence).is_some_and(|u| u < iv_lower(existence))
+    {
+        return Err(Violation::new(
+            "Existence_set",
+            format!(
+                "attribute '{attr_name}' on '{parent_rm}' has an existence outside 0..1 \
+                 (existence.lower >= 0 and existence.upper <= 1)"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// `C_SINGLE_ATTRIBUTE` invariant `Members_valid`: every alternative child
+/// satisfies `co.occurrences.upper <= 1` — a single-valued attribute can hold
+/// at most one value (AOM1.4 `c_single_attribute` class file, Invariants; also
+/// cADL: occurrences upper > 1 only under a container attribute, AOM1.4
+/// `c_object` class file, `occurrences`). Called only for a single-valued
+/// attribute (no cardinality).
+pub(super) fn check_members_valid(
+    attr_name: &str,
+    parent_rm: &str,
+    children: &[CObject],
+) -> Result<(), Violation> {
+    for child in children {
+        let occ = co_occurrences(child);
+        if occ.upper_unbounded || iv_upper(occ).is_some_and(|u| u > 1) {
+            return Err(Violation::new(
+                "Members_valid",
+                format!(
+                    "attribute '{attr_name}' on '{parent_rm}' is single-valued but child object \
+                     '{}' has occurrences upper > 1",
+                    co_node_id(child)
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+// ─── archetype identifiers (VARID / VARDT, T16) ─────────────────────────────────
+
+/// VARID: the archetype id must conform to the openEHR archetype-identifier
+/// syntax (ADL1.4 master08 line 544; BASE `base_types` master05 §Syntaxes), and
+/// VARDT: the RM type named by the constraint node must match the type slot of
+/// the identifier's first segment (ADL1.4 master08 line 556; composite
+/// identifiers compare case-insensitively, BASE `base_types` master05
+/// §"Composite Identifiers and Case").
+pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Violation> {
+    if !is_archetype_id_shaped(id) {
+        return Err(Violation::new(
+            "VARID",
+            format!("'{id}' is not a valid openEHR archetype identifier"),
+        ));
+    }
+    // qualified_rm_entity = rm_originator '-' rm_name '-' rm_entity; the
+    // rm_entity is everything after the second '-'.
+    let qualified = id.split('.').next().unwrap_or("");
+    let entity = qualified
+        .match_indices('-')
+        .nth(1)
+        .map_or("", |(i, _)| &qualified[i + 1..]);
+    let bare_rm = rm_type_name.split('<').next().unwrap_or(rm_type_name);
+    if !entity.eq_ignore_ascii_case(bare_rm) {
+        return Err(Violation::new(
+            "VARDT",
+            format!(
+                "the definition node's RM type '{rm_type_name}' does not match the type slot \
+                 '{entity}' of archetype id '{id}'"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// Archetype-identifier shape for uploaded artefacts:
+/// `rm_originator-rm_name-rm_entity.domain_concept.v<version>` (BASE `base_types`
+/// master05 §Syntaxes). Tolerances beyond the strict BASE `name-str` grammar,
+/// both adjudicated against real published templates (never against CNF valid
+/// fixtures, which all conform strictly):
+///
+/// - the version may be multi-part numeric (`v1.0.0`) — the ADL2-era archetype
+///   HRID form appears in deployed OPT 1.4 exports (the vendored
+///   `Request_for_Pancreas_Special_Urgency_Listing` corpus template);
+/// - PORT NOTE: concept segments tolerate `(`/`)` and digit-leading segments —
+///   Ocean/LANIT tooling emits concept names like
+///   `t_neurologist_examination(1-17)_lanit` (vendored Better corpus); the
+///   strict grammar would refuse real-world templates.
+fn is_archetype_id_shaped(id: &str) -> bool {
+    fn alphanum_str(s: &str) -> bool {
+        let mut chars = s.chars();
+        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+            && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    }
+    // Split the version off the tail: the last `.v` followed by a digit.
+    let Some((head, version)) = id.rsplit_once(".v") else {
+        return false;
+    };
+    let version_ok = !version.is_empty()
+        && version
+            .split('.')
+            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
+        && version.split('.').count() <= 3;
+    let Some((qualified, concept)) = head.split_once('.') else {
+        return false;
+    };
+    let entity_parts: Vec<&str> = qualified.split('-').collect();
+    let entity_ok = entity_parts.len() == 3 && entity_parts.iter().all(|p| alphanum_str(p));
+    let concept_ok = !concept.is_empty()
+        && concept
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
+    version_ok && entity_ok && concept_ok
+}
+
+// ─── ARCHETYPE_SLOT (VDFAI, T13) ────────────────────────────────────────────────
+
+/// `ARCHETYPE_SLOT` checks: VDFAI — an archetype identifier mentioned in a slot
+/// must conform to the archetype-identifier syntax (ADL1.4 master08 line 573).
+/// Slot include/exclude expressions are Perl regexes over archetype ids (cADL
+/// §Archetype Slots), so only a *literal* pattern (regex-escaped dots, no other
+/// metacharacters) is decidable as an identifier; genuine regexes are left to
+/// runtime slot admission.
+///
+/// PORT NOTE: this decides only the *literal id-shape* case; a genuine PERL
+/// regex include/exclude expression is not a decidable identifier at upload
+/// and is deferred to runtime slot admission (the `WebTemplate` instance walk,
+/// blueprint 03-am F-07-10) — that surface is out of scope for the artefact
+/// pass here (cADL §Archetype Slots, `ADL1.4/master05-cadl.adoc` L535-601).
+pub(super) fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {
+    for assertion in slot.includes.iter().chain(&slot.excludes) {
+        let Some(pattern) = slot_assertion_pattern(assertion) else {
+            continue;
+        };
+        for alt in pattern.split('|') {
+            let Some(literal) = regex_literal(alt) else {
+                continue;
+            };
+            if !is_archetype_id_shaped(&literal) {
+                return Err(Violation::new(
+                    "VDFAI",
+                    format!(
+                        "slot '{}' names '{literal}', which is not a valid openEHR archetype \
+                         identifier",
+                        slot.node_id
+                    ),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// The archetype-id regex carried by a slot assertion (`archetype_id/value
+/// matches {/…/}`), if the expression has that shape.
+fn slot_assertion_pattern(a: &Assertion) -> Option<String> {
+    fn find_pattern(e: &ExprItem) -> Option<String> {
+        match e {
+            ExprItem::ExprLeaf(l) => l
+                .item
+                .as_str()
+                .map(|s| s.trim_matches('/').to_owned())
+                .filter(|s| s.contains("openEHR") || s.contains('\\') || s.contains('.')),
+            ExprItem::ExprBinaryOperator(b) => {
+                find_pattern(&b.right_operand).or_else(|| find_pattern(&b.left_operand))
+            }
+            ExprItem::ExprUnaryOperator(u) => find_pattern(&u.operand),
+        }
+    }
+    find_pattern(&a.expression)
+}
+
+/// If a regex alternative is a literal archetype id (only `\.`-escaped dots,
+/// no other metacharacters), return the unescaped literal; else `None`.
+fn regex_literal(alt: &str) -> Option<String> {
+    let mut out = String::with_capacity(alt.len());
+    let mut chars = alt.chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => match chars.next() {
+                Some('.') => out.push('.'),
+                _ => return None,
+            },
+            '.' | '*' | '+' | '?' | '[' | ']' | '(' | ')' | '{' | '}' | '^' | '$' | '|' => {
+                return None;
+            }
+            _ => out.push(c),
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}
+
+// ─── ARCHETYPE_INTERNAL_REF (Target_path_valid, T14) ────────────────────────────
+
+/// `ARCHETYPE_INTERNAL_REF` invariant `Target_path_valid`: `target_path /= Void
+/// and then not target_path.is_empty` (AOM1.4 `archetype_internal_ref` class
+/// file, Invariants); the path must be an absolute archetype path (VDFPT,
+/// ADL1.4 master08 line 576). (Flattened OPTs expand internal refs, so this
+/// fires only on a malformed artefact — the whole vendored corpus carries
+/// none.)
+pub(super) fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violation> {
+    if r.target_path.is_empty() || !r.target_path.starts_with('/') {
+        return Err(Violation::new(
+            "Target_path_valid",
+            format!(
+                "internal reference '{}' has an invalid target_path '{}' (must be a non-empty \
+                 absolute path)",
+                r.node_id, r.target_path
+            ),
+        ));
+    }
+    Ok(())
+}
+
+// ─── CONSTRAINT_REF (VACDF, T15) ────────────────────────────────────────────────
+
+/// VACDF: each constraint code (`acNNNN`) used in the definition must be
+/// defined in the `constraint_definitions` part of the ontology (ADL1.4
+/// master08 line 566).
+///
+/// PORT NOTE (flattened-OPT tolerance): deployed OPT 1.4 exports routinely
+/// carry `CONSTRAINT_REF` nodes with NO `constraint_definitions` sets at all
+/// (Ocean Template Designer drops the constraint vocabulary on flatten — the
+/// vendored RIPPLE/Better corpus templates). VACDF is therefore enforced only
+/// when the artefact declares a constraint vocabulary; an artefact with none
+/// is tolerated.
+pub(super) fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), Violation> {
+    if ctx.has_constraint_defs && !ctx.defined_ac.contains(&r.reference) {
+        return Err(Violation::new(
+            "VACDF",
+            format!(
+                "constraint reference '{}' (node '{}') is not defined in constraint_definitions",
+                r.reference, r.node_id
+            ),
+        ));
+    }
+    Ok(())
+}
+
+// ─── terminology-code list (STCDC, T9/T10) ──────────────────────────────────────
+
+/// Duplicate codes in a terminology-code code list are invalid (ADL2
+/// master04.6 STCDC — "constraint code list contains duplicate codes"; the
+/// same defect in an OPT 1.4 `C_CODE_PHRASE` list).
+pub(super) fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), Violation> {
+    let mut seen = HashSet::new();
+    for code in code_list {
+        // Empty entries are tooling noise, not codes (Ocean exports emit
+        // repeated empty <code_list/> elements — the vendored UK AoMRC corpus
+        // template); only real codes participate in the duplicate check.
+        if code.is_empty() {
+            continue;
+        }
+        if !seen.insert(code) {
+            return Err(Violation::new(
+                "STCDC",
+                format!("node '{node_id}': code '{code}' is duplicated in the code list"),
+            ));
+        }
+    }
+    Ok(())
+}

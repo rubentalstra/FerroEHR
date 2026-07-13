@@ -27,10 +27,10 @@ use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
 use ehrbase::db::{self, DbSettings};
-use ehrbase::events::{EventsConfig, start, subscription_queue_name};
+use ehrbase::extensions::events::{EventsConfig, start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use ehrbase_sm::{EhrCompositionService, EhrService, EventSubscriptionAdapter};
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 

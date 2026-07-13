@@ -127,8 +127,8 @@ fn hooks(store: Store) -> Hooks {
 
 fn config(enabled: bool) -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         base_path: BASE.to_owned(),
         swagger_ui: false,
         auth: AuthConfig {

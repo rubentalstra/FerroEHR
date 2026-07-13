@@ -9,7 +9,7 @@
 //! renderer live here so both paths stay identical.
 //!
 //! Spec: `ehr_id` may arrive as the `ehr_id` query parameter OR the
-//! `openEHR-EHR-id` request header (`Request.md` §About the ehr_id parameter);
+//! `openEHR-EHR-id` request header (`Request.md` §About the `ehr_id` parameter);
 //! the `200 OK` response carries an `ETag` identifying the `RESULT_SET`
 //! (`responses/200_Query.yaml` + `headers/ETag_RESULT_SET.yaml`).
 
@@ -65,7 +65,7 @@ pub(super) fn decode_body<T: serde::de::DeserializeOwned>(
 }
 
 /// The `ehr_id` scope from the `ehr_id` query parameter or the `openEHR-EHR-id`
-/// request header (`Request.md` §About the ehr_id parameter: either form is
+/// request header (`Request.md` §About the `ehr_id` parameter: either form is
 /// accepted). Returned as an [`Option`]; the caller collects it into the
 /// [`AqlQueryRequest::ehr_ids`] vec (a single wire `ehr_id` is the one-element
 /// case of the SM `List<UUID>` scope).
@@ -91,13 +91,13 @@ pub(super) fn path_segment(parts: &RequestParts, key: &str) -> Result<String, Re
 /// spec-mandated `ETag` header (G-1).
 ///
 /// `200_Query.yaml` declares an `ETag` response header — "an identifier of the
-/// RESULT_SET" — in the weak form (`headers/ETag_RESULT_SET.yaml`:
+/// `RESULT_SET`" — in the weak form (`headers/ETag_RESULT_SET.yaml`:
 /// `W/"…"`). The vendored `ResultSet` schema carries no `id` field, so the tag
 /// is derived deterministically from the assembled document (a stable content
 /// digest rendered as a weak ETag): identical result sets get identical tags,
-/// which is exactly the ETag contract. The body itself is negotiated by
+/// which is exactly the `ETag` contract. The body itself is negotiated by
 /// [`negotiate::respond`] (JSON only — the QUERY operations declare no
-/// canonical-XML representation, so an XML `Accept` yields `406`, and the ETag
+/// canonical-XML representation, so an XML `Accept` yields `406`, and the `ETag`
 /// is set only on the success path).
 pub(super) fn respond_result_set(headers: &HeaderMap, result_set: &serde_json::Value) -> Response {
     let mut resp = negotiate::respond(headers, StatusCode::OK, result_set);

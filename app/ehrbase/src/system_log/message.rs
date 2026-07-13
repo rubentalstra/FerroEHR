@@ -2,9 +2,13 @@
 //!
 //! This is the **DICOM audit schema**, not openEHR ITS-XML — it lives in its own
 //! module and shares nothing with `openehr-its`. Plain structs mirror the schema
-//! elements; [`AuditMessage::to_xml`] renders canonical (indented) XML with
-//! `quick-xml`, which escapes all attribute/text values. The golden vector is the
-//! EHR-create success record in `docs/enterprise/atna-audit.md` §3.
+//! elements (`EventIdentification`, `ActiveParticipant`,
+//! `AuditSourceIdentification`, `ParticipantObjectIdentification`; DICOM PS3.15
+//! §A.5); [`AuditMessage::to_xml`] renders canonical (indented) XML with
+//! `quick-xml`, which escapes all attribute/text values. The golden vector
+//! snapshotted in the tests is a PS3.15 §A.5 EHR-create success record (a
+//! worked example of that shape is also kept in the non-normative design record
+//! `docs/enterprise/atna-audit.md` §3).
 
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
@@ -184,7 +188,8 @@ impl AuditMessage {
     }
 }
 
-/// Assemble the participant objects for an event (§3 field mapping).
+/// Assemble the `ParticipantObjectIdentification` list for an event
+/// (DICOM PS3.15 §A.5 / RFC 3881 §5.5 participant-object mapping).
 fn build_objects(
     event: &AuditEvent,
     subject: Option<&str>,
@@ -223,8 +228,9 @@ fn build_objects(
         // Patient-centric classes already carry the Patient-Number object; the
         // URI object is added when the id is known. Non-patient classes
         // (template / demographic) always carry the URI object, filled with
-        // `value_if_missing` when unknown (§3 missing-mandatory rule) so every
-        // record identifies its participant object.
+        // `value_if_missing` when unknown (DICOM PS3.15 §A.5 mandatory-field
+        // rule — a required element is never absent) so every record
+        // identifies its participant object.
         let id = event.object_id.clone();
         if let Some(id) = id {
             objects.push(uri_object(id, event));
@@ -307,7 +313,7 @@ mod tests {
 
     #[test]
     fn golden_ehr_create() {
-        // The §3 reference EHR-create success record.
+        // The DICOM PS3.15 §A.5 reference EHR-create success record.
         let mut e = event(
             EventActionCode::Create,
             ObjectClass::Ehr,
@@ -436,6 +442,29 @@ mod tests {
         assert!(xml.contains(r#"originalText="demographic""#));
         assert!(xml.contains(r#"ParticipantObjectID="party-77""#));
         assert_audit_snapshot!("demographic_read_R", xml);
+    }
+
+    #[test]
+    fn ehr_extract_export_is_patient_and_uri_scoped() {
+        // G-7: EHR-Extract communication is patient-identifiable clinical data
+        // audited for non-repudiation — it carries both a Patient-Number and an
+        // object-URI participant (DICOM PS3.15 §A.5 / RFC 3881 §5.5), like a
+        // composition, under the Patient-Record EventID family.
+        let mut e = event(
+            EventActionCode::Read,
+            ObjectClass::Extract,
+            EventOutcome::Success,
+        );
+        e.object_id = Some("extract::ehrbase::1".to_owned());
+        let xml = AuditMessage::build(&e, &ctx(), Some("patient-42"))
+            .to_xml()
+            .expect("xml");
+        assert!(xml.contains(r#"csd-code="110110""#));
+        assert!(xml.contains(r#"originalText="extract""#));
+        assert!(xml.contains(r#"originalText="Patient Number""#));
+        assert!(xml.contains(r#"originalText="URI""#));
+        assert!(xml.contains(r#"ParticipantObjectID="patient-42""#));
+        assert!(xml.contains(r#"ParticipantObjectID="extract::ehrbase::1""#));
     }
 
     #[test]

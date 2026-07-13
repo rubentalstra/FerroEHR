@@ -11,3 +11,4 @@
 Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
 already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)
 is not repeated here.
+- [Max 2 concurrent workers](max-two-concurrent-workers.md) — owner cap: implementation subagents run in pairs, never wider

@@ -1,4 +1,4 @@
-//! The ITEM_TAG sub-resources — `operations/person_tags_get.yaml`,
+//! The `ITEM_TAG` sub-resources — `operations/person_tags_get.yaml`,
 //! `person_tags_update.yaml`, `person_tags_delete.yaml` (and the field-identical
 //! `agent_*`/`group_*`/`organisation_*`/`role_*`), plus the kind-agnostic
 //! collection filter `demographic_tags_get.yaml`. Tags use the **canonical**
@@ -18,7 +18,7 @@ use crate::{negotiate, params};
 use ehrbase_sm::{PartyKind, Platform};
 use http::StatusCode;
 
-/// The per-kind ITEM_TAG operations (`tags_get`/`tags_update`/`tags_delete`).
+/// The per-kind `ITEM_TAG` operations (`tags_get`/`tags_update`/`tags_delete`).
 pub(super) async fn run<S: Platform>(
     state: AppState<S>,
     kind: PartyKind,
@@ -65,7 +65,7 @@ pub(super) async fn run<S: Platform>(
     }
 }
 
-/// `GET /demographic/tags` — the kind-agnostic ITEM_TAG collection filter
+/// `GET /demographic/tags` — the kind-agnostic `ITEM_TAG` collection filter
 /// (`demographic_tags_get.yaml`).
 pub(super) async fn run_collection<S: Platform>(
     state: AppState<S>,

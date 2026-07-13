@@ -1,10 +1,13 @@
-//! `sea-query` identifier definitions for the greenfield schema (the baseline +
-//! `migrations/ehr/0001_baseline.sql`). One enum
-//! per table (all 19): the `Table` variant renders the table
-//! name, the rest the column names. This is the single typed name catalog;
-//! the AQL SQL generator (P16, `aql/sql.rs`) consumes the `Table` variants,
-//! and dynamic SQL elsewhere addresses columns through these enums rather than
-//! string-duplicating names.
+//! `sea-query` identifier definitions for the greenfield schema
+//! (`migrations/ehr/0001_baseline.sql`). No openEHR spec governs the SQL schema
+//! — this is our own PG18-native design (`docs/architecture.md` §Storage). One
+//! enum per table: the `Table` variant renders the table name, the rest the
+//! column names. This is the single typed name catalog — the AQL SQL generator
+//! consumes the `Table` variants, and dynamic SQL elsewhere addresses columns
+//! through these enums rather than string-duplicating names. The catalog is
+//! kept complete against the schema (every column that dynamic SQL addresses has
+//! a variant); a drifted catalog forces raw column strings, which this file
+//! exists to prevent.
 
 /// `ehr` — one row per EHR.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
@@ -64,9 +67,13 @@ pub enum VoVersion {
     Kind,
     EhrId,
     SysVersion,
+    TrunkVersion,
+    BranchNumber,
+    BranchVersion,
     SysPeriod,
     LifecycleState,
     CreatingSystemId,
+    PrecedingVersionUid,
     Signature,
     OtherInputVersionUids,
     ContributionId,
@@ -89,6 +96,9 @@ pub enum Node {
     EhrId,
     RmType,
     Archetype,
+    ArchEntity,
+    ArchConcept,
+    ArchMajor,
     Name,
     Path,
     Data,
@@ -278,6 +288,16 @@ mod tests {
         assert_eq!(Node::NumCap.to_string(), "num_cap");
         assert_eq!(Node::CitemNum.to_string(), "citem_num");
         assert_eq!(Node::RmType.to_string(), "rm_type");
+        assert_eq!(Node::ArchEntity.to_string(), "arch_entity");
+        assert_eq!(Node::ArchConcept.to_string(), "arch_concept");
+        assert_eq!(Node::ArchMajor.to_string(), "arch_major");
+        assert_eq!(VoVersion::TrunkVersion.to_string(), "trunk_version");
+        assert_eq!(VoVersion::BranchNumber.to_string(), "branch_number");
+        assert_eq!(VoVersion::BranchVersion.to_string(), "branch_version");
+        assert_eq!(
+            VoVersion::PrecedingVersionUid.to_string(),
+            "preceding_version_uid"
+        );
         assert_eq!(VoVersion::SysPeriod.to_string(), "sys_period");
         assert_eq!(VoVersion::ContributionId.to_string(), "contribution_id");
         assert_eq!(

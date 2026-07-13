@@ -17,8 +17,8 @@
 //! `ehr_id`**, which deletes **all** EHRs per
 //! `operations/admin_ehr_delete_all.yaml` (success → `204`, `responses/204_deleted_hard.yaml`)
 //! + the optional `ehr_id` selector (`parameters/query/ehr_id_Admin.yaml`). The
-//! admin group is config-gated (`RestConfig::admin.enabled`); the compose dev
-//! config enables it, so these exercise the *active* surface.
+//!   admin group is config-gated (`RestConfig::admin.enabled`); the compose dev
+//!   config enables it, so these exercise the *active* surface.
 
 use uuid::Uuid;
 

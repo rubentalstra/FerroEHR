@@ -1,8 +1,10 @@
 //! End-to-end HTTP tests for the ADMIN API group (physical EHR delete): the
-//! config gate (`RestConfig::admin.enabled`), the `204`/`404`/`400`/`200`
-//! wire outcomes, and the `{"deleted": n}` bulk body — driven through the
-//! assembled router with a canned [`AdminService`] backend that records whether
-//! it was consulted.
+//! config gate (`RestConfig::admin.enabled`) and the `204`/`404` wire outcomes
+//! — driven through the assembled router with a canned [`AdminService`]
+//! backend that records whether it was consulted. Per the vendored Admin OAS
+//! (`operations/admin_ehr_delete_all.yaml`) the bulk delete declares only
+//! bodyless successes (`202`/`204`), and an absent `ehr_id` list means
+//! "delete ALL EHRs" (`parameters/query/ehr_id_Admin.yaml`).
 //!
 //! Spec grounding: SM `I_ADMIN_SERVICE.physical_ehr_delete` and the CNF Robot
 //! prior art (`CNF/tests/platform/robot/I_ADMIN_SERVICE/001-EHR.robot`:
@@ -16,7 +18,6 @@ use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
-use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
@@ -57,8 +58,8 @@ fn hooks(calls: Arc<AtomicUsize>) -> Hooks {
 
 fn config(admin_enabled: bool) -> RestConfig {
     RestConfig {
-        smart: Default::default(),
-        system: Default::default(),
+        smart: ehrbase_rest::SmartConfig::default(),
+        system: ehrbase_rest::SystemOptionsConfig::default(),
         bind: "127.0.0.1:0".to_owned(),
         base_path: BASE.to_owned(),
         swagger_ui: false,
@@ -132,44 +133,65 @@ async fn enabled_delete_unknown_maps_to_404() {
 }
 
 #[tokio::test]
-async fn enabled_delete_all_returns_count() {
-    let (app, _calls) = app(true);
+async fn enabled_delete_all_is_204_bodyless() {
+    // `admin_ehr_delete_all.yaml:18-26`: the only declared success responses
+    // are `202` (async) and `204 No Content` (sync) — both bodyless.
+    let (app, calls) = app(true);
     let (status, body) = send(
         app,
         delete(format!("{BASE}/admin/ehr/all?ehr_id={KNOWN},{OTHER}")),
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
-    let v: Value = serde_json::from_str(&body).expect("json body");
-    assert_eq!(v["deleted"], 2, "the comma-separated list has two ids");
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(body.is_empty(), "204 carries no body, got {body:?}");
+    assert_eq!(calls.load(Ordering::SeqCst), 1, "one bulk backend call");
 }
 
 #[tokio::test]
-async fn enabled_delete_all_repeated_param_returns_count() {
-    let (app, _calls) = app(true);
+async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
+    // The repeated `?ehr_id=` form is surfaced from the raw query (the generated
+    // Option<String> param would otherwise keep only the first) — the mock
+    // records the ids it was handed so the RFC 6570 `{?ehr_id*}` list handling
+    // stays covered even though the wire success is bodyless.
+    let seen = Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let recorder = seen.clone();
+    let backend = Arc::new(Mock::with(Hooks {
+        admin_ehr_delete_all: Some(Arc::new(move |ehr_ids: Vec<String>| {
+            recorder.lock().unwrap().clone_from(&ehr_ids);
+            Ok(ehr_ids.len() as u64)
+        })),
+        ..Default::default()
+    }));
+    let router = ehrbase_rest::build_with(config(true), backend).expect("router builds");
     let (status, body) = send(
-        app,
+        router,
         delete(format!(
             "{BASE}/admin/ehr/all?ehr_id={KNOWN}&ehr_id={OTHER}"
         )),
     )
     .await;
-    assert_eq!(status, StatusCode::OK);
-    let v: Value = serde_json::from_str(&body).expect("json body");
-    // The repeated `?ehr_id=` form is surfaced from the raw query (the generated
-    // Option<String> param would otherwise keep only the first).
-    assert_eq!(v["deleted"], 2);
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(body.is_empty(), "204 carries no body, got {body:?}");
+    assert_eq!(
+        *seen.lock().unwrap(),
+        vec![KNOWN.to_owned(), OTHER.to_owned()],
+        "both repeated ehr_id values must reach the backend"
+    );
 }
 
 #[tokio::test]
-async fn enabled_delete_all_missing_list_is_400_without_backend() {
+async fn enabled_delete_all_missing_list_deletes_all() {
+    // `parameters/query/ehr_id_Admin.yaml`: `ehr_id` is "an optional parameter
+    // to perform the operation on a subset of EHRs" — an absent list means
+    // "delete ALL EHRs" (`admin_ehr_delete_all.yaml:5`), expressed to the
+    // backend as the empty list.
     let (app, calls) = app(true);
-    let (status, _) = send(app, delete(format!("{BASE}/admin/ehr/all"))).await;
-    // Refusing an implicit delete-everything: absent list → 400, backend untouched.
-    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (status, body) = send(app, delete(format!("{BASE}/admin/ehr/all"))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert!(body.is_empty(), "204 carries no body, got {body:?}");
     assert_eq!(
         calls.load(Ordering::SeqCst),
-        0,
-        "no backend call on empty list"
+        1,
+        "the all-EHRs request reaches the backend once"
     );
 }

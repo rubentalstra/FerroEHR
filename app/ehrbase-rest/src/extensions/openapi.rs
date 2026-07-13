@@ -2,7 +2,7 @@
 //!
 //! No openEHR spec governs an OAS-serving endpoint; this is our own surface.
 //! What it exposes, though, is the authoritative contract itself: the
-//! **vendored development-edition** ITS-REST OpenAPI bundles at
+//! **vendored development-edition** ITS-REST `OpenAPI` bundles at
 //! `crates/openehr-its/vendor/rest-oas/` — openEHR `specifications-ITS-REST`
 //! `master` @ `e8a093e9…` (the `-codegen` variant `emit-rest` consumes to
 //! generate the served routes). Serving Swagger for that same tree keeps the
@@ -37,6 +37,7 @@ use crate::state::AppState;
                    the tree emit-rest generates from); this document is served for \
                    discoverability only."
 ))]
+#[derive(Debug)]
 pub struct ApiDoc;
 
 /// Build the Swagger UI router (serves the UI and the `OpenAPI` JSON).

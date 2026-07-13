@@ -1,14 +1,44 @@
-//! Greenfield node storage (P10 — no openEHR spec governs storage): the codec between canonical
-//! openEHR JSON and the decomposed `node` rows the schema stores.
+//! Greenfield decomposed node storage — the codec between canonical openEHR
+//! JSON and the stored `node` rows, plus the row I/O for the versioned-object
+//! spine (`vo_version`/`audit`/`contribution`/`vo_attestation`).
 //!
-//! `decompose` turns a versioned object's canonical JSON into nested-set
-//! numbered rows (structure children pruned out of their parents' fragments,
-//! stored verbatim otherwise); `reassemble` is its lossless inverse. Storage
-//! context (`vo_id`, `sys_version`, `ehr_id`) is the repository's concern
-//! (P12) — the codec is a pure content transform.
+//! No openEHR spec governs the physical storage — this is our own PG18-native
+//! design (`docs/architecture.md` §Storage; grounded on docs-verified
+//! `PostgreSQL` physics: no partial jsonb detoast, GIN serves no ordering). The
+//! change-control law the row I/O upholds is RM common master06; the identifier
+//! forms preserved verbatim in each fragment are BASE `base_types` master05 and
+//! `foundation_types` master03/05/06.
+//!
+//! Layers:
+//! - [`decompose`] / [`reassemble`] — the pure content transform (`codec`).
+//! - [`NodeRow`] / [`ReadRow`] — the write and lean read row shapes (`row`).
+//! - [`is_structure_type`] / [`is_versioned_root_type`] / [`archetype_parts`] —
+//!   the decomposition granularity, delegated to the BMM-generated RM model
+//!   (`structure`).
+//! - [`node_repo`] — `node`-table writes + the single node→canonical reload.
+//! - [`version_repo`] — `vo_version`/`audit`/`contribution`/`vo_attestation`
+//!   row I/O, the folder-membership and event-outbox writes, and the version
+//!   read shape ([`version_repo::StoredVersion`]).
+//! - [`ehr_repo`] — `ehr`-table + `ehr_folder`-membership reads/writes (EHR
+//!   root row, subject lookup, folder-hierarchy resolution, the
+//!   `is_modifiable` guard read).
+//!
+//! The seam with the versioning layer (register 01) is a value contract, not
+//! shared SQL: versioning owns the *semantics* (classify, tree placement,
+//! lifecycle, sign, attest, import policy) and calls these functions with plain
+//! inputs, consuming [`version_repo::StoredVersion`] on read.
 
 mod codec;
 mod error;
+mod row;
+mod structure;
 
-pub use codec::{NodeRow, decompose, is_structure_type, reassemble};
+pub mod ehr_repo;
+pub mod node_repo;
+pub mod tag_repo;
+pub mod version_repo;
+
+pub use codec::{decompose, reassemble};
 pub use error::StorageError;
+pub use row::{NodeContent, NodeRow, ReadRow};
+pub use structure::{archetype_parts, is_structure_type, is_versioned_root_type};

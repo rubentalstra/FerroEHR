@@ -14,12 +14,12 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase::signing::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::versioning::signature::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
 use ehrbase_sm::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
     EhrStatusService, SmError,
 };
+use ehrbase_sm::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 use openehr_rm::prelude::PartyProxy;

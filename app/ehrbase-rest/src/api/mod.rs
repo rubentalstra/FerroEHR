@@ -21,14 +21,14 @@
 //! exact `*Params` from the raw request parts, calls the SM native-API method on
 //! [`AppState`], and renders a negotiated response:
 //!
-//! - [`ehr`] — the EHR API (EHR, EHR_STATUS, VERSIONED_EHR_STATUS, COMPOSITION,
-//!   VERSIONED_COMPOSITION, DIRECTORY, CONTRIBUTION), re-exporting
+//! - [`ehr`] — the EHR API (EHR, `EHR_STATUS`, `VERSIONED_EHR_STATUS`, COMPOSITION,
+//!   `VERSIONED_COMPOSITION`, DIRECTORY, CONTRIBUTION), re-exporting
 //!   `ehr::dispatch::dispatch`.
 //! - [`query`] — the Query API (adhoc + stored), re-exporting `query::dispatch`.
 //! - [`definition`] — the Definition API (ADL 1.4 / ADL 2 templates + stored
 //!   queries), re-exporting `definition::dispatch`.
 //! - [`demographic`] — the Demographic API (spec-governed, DEVELOPMENT) plus the
-//!   own-design PARTY_RELATIONSHIP extension routes, re-exporting
+//!   own-design `PARTY_RELATIONSHIP` extension routes, re-exporting
 //!   `demographic::dispatch` + `demographic::RELATIONSHIP_ROUTES`.
 //! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
 //!   as `admin::dispatch::dispatch` (the group publishes no re-export).
