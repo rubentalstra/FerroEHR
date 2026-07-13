@@ -447,6 +447,7 @@ mod tests {
             scale: "10k".to_owned(),
             steps: vec![step.clone()],
             knee: Some(step),
+            sut_died: false,
         }
     }
 

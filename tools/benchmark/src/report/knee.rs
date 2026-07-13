@@ -77,6 +77,11 @@ pub struct KneeResults {
     /// The last sustainable step (highest `L` with p99 ≤ SLO and error ≤ flag),
     /// or `None` when even the first step saturated.
     pub knee: Option<KneeStep>,
+    /// The SUT stopped answering HTTP after the breaching step — it died
+    /// under load (e.g. OOM-killed) rather than merely saturating. A
+    /// first-class finding, surfaced loudly in `KNEE.md`.
+    #[serde(default)]
+    pub sut_died: bool,
 }
 
 impl KneeResults {
@@ -157,6 +162,14 @@ pub fn render_markdown(r: &KneeResults) -> String {
         ),
     }
 
+    if r.sut_died {
+        m.push_str(
+            "> [!WARNING]\n> **The SUT died under load** — after the breaching step it no \
+             longer answered HTTP at all (a crash, e.g. OOM-killed; not mere saturation). \
+             The knee above is where it *stopped surviving*, not where it merely slowed. \
+             This is a finding about the SUT's overload behaviour.\n\n",
+        );
+    }
     m.push_str("## Ladder\n\n");
     m.push_str(
         "| L | req/s | error rate | p99 (µs) | requests | dispatch lag (ms) | verdict |\n|--:|--:|--:|--:|--:|--:|---|\n",
@@ -243,6 +256,7 @@ mod tests {
             scale: "10k".to_owned(),
             steps: vec![s1, s2.clone(), breach],
             knee: Some(s2),
+            sut_died: false,
         }
     }
 
