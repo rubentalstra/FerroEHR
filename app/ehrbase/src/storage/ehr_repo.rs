@@ -145,3 +145,35 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: Uuid) -> Result<Option<boo
     .fetch_optional(pool)
     .await?)
 }
+
+/// Whether the EHR already has a LIVE folder hierarchy whose root carries the
+/// given `archetype_node_id` AND name — the LOCATABLE identity pair that
+/// distinguishes same-archetype siblings (RM common, paths: the name predicate
+/// disambiguates same-archetype nodes). Backs the CONTRIBUTION-route
+/// duplicate-directory rejection.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn live_folder_root_exists(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    root_archetype_node_id: &str,
+    root_name: &str,
+) -> Result<bool, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS( \
+           SELECT 1 FROM ehr_folder f \
+           JOIN vo_version v ON v.vo_id = f.vo_id \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+           JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version \
+             AND n.num = 0 \
+           WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \
+             AND n.data->>'archetype_node_id' = $2 \
+             AND n.data#>>'{name,value}' = $3)",
+    )
+    .bind(ehr_id)
+    .bind(root_archetype_node_id)
+    .bind(root_name)
+    .fetch_one(pool)
+    .await?)
+}

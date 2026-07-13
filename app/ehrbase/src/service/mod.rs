@@ -242,6 +242,21 @@ impl CommitEnv for EhrbaseService {
         EhrbaseService::invalidate_ehr_access(self, ehr_id).await;
     }
 
+    async fn folder_root_exists(
+        &self,
+        ehr_id: Uuid,
+        archetype_node_id: &str,
+        name: &str,
+    ) -> Result<bool, ServiceError> {
+        Ok(crate::storage::ehr_repo::live_folder_root_exists(
+            &self.pool,
+            ehr_id,
+            archetype_node_id,
+            name,
+        )
+        .await?)
+    }
+
     async fn pre_composition_modify(
         &self,
         tx: &mut sqlx::PgConnection,

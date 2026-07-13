@@ -206,6 +206,19 @@ pub(crate) trait CommitEnv {
     ) -> Result<Option<(Uuid, i32)>, ServiceError>;
     /// Drop the cached `EHR_ACCESS` settings after an `EHR_ACCESS` commit.
     async fn invalidate_ehr_access(&self, ehr_id: Uuid);
+    /// Whether the EHR already holds a LIVE folder hierarchy whose root
+    /// carries the `(archetype_node_id, name)` LOCATABLE identity pair — the
+    /// CONTRIBUTION-route duplicate-directory rejection (CNF schedule master08
+    /// §commit_contribution E.2: creating the root FOLDER again is negative; a
+    /// DISTINCT hierarchy is a new `EHR.folders` member — RM ehr master04
+    /// §Folders; same-archetype siblings are distinguished by name, RM common
+    /// paths semantics).
+    async fn folder_root_exists(
+        &self,
+        ehr_id: Uuid,
+        archetype_node_id: &str,
+        name: &str,
+    ) -> Result<bool, ServiceError>;
     /// Enforce the `VERSIONED_COMPOSITION` cross-version invariants
     /// (`Archetype_node_id_valid` / `Persistent_validity`, RM ehr
     /// `versioned_composition.adoc`) of a COMPOSITION *modify* against the

@@ -22,10 +22,65 @@ workflow refuses a tag that has no matching section here.
   `NOT CONTAINS` accepts compound operands.
 - ATNA auditing: EHR-Extract export and import operations now emit audit
   events (object class `Extract`) when auditing is enabled.
-- Admin: `DELETE /admin/ehr/all` without an `ehr_id` list now targets all
-  EHRs, per the Admin API specification ("deletes all or multiple EHRs");
-  bulk deletes answer `204 No Content` (bodyless), replacing the former
-  `200` + count body and the `400` refusal on a missing list.
+- Multiple folder hierarchies per EHR (`EHR.folders`): beyond the
+  `/directory` hierarchy, additional root `FOLDER`s can be committed through
+  the CONTRIBUTION endpoint, each versioned independently. The EHR resource
+  now carries the `folders` reference list (creation order) and `directory`
+  (always its first member); EHR extract import and admin dump/load carry
+  the hierarchies too. The `/directory` endpoints behave exactly as before.
+- `ehr:` URI support: `DV_EHR_URI` values are parsed against the full
+  openEHR `ehr:` grammar (EHR / top-level structure by uid or exact version
+  id / interior item paths, absolute and relative forms), and the server can
+  resolve local `ehr:` references internally (e.g. LINK targets). openEHR
+  path processing now also supports `//` path patterns and 1-based
+  positional predicates in stored-structure navigation (AQL is unchanged —
+  its grammar defines neither).
+- `EHR_ACCESS` access-control is now enforced. The spec-mandated,
+  change-controlled `EHR_ACCESS` object of an EHR (RM ehr §EHR_ACCESS Class)
+  is the foundational access-decision layer, evaluated after authentication
+  and before dispatch on every EHR-scoped route; the enterprise RBAC/ABAC
+  layers compose on top of it. Its `settings` use the
+  `ehrbase.access_control.v1` scheme (`docs/design/ehr-access-scheme.md`):
+  a `default_access` (`open`/`restricted`) with a `user:`/`role:` access
+  list gating the EHR, per-Composition privacy-level ceilings on Composition
+  reads, and a gate-keeper that guards changes to the settings themselves
+  (`403 Forbidden` on a denial). Every existing EHR keeps working — the
+  default (no settings) is open.
+- Client-supplied CONTRIBUTION `uid`s are honoured on commit when unused
+  (`409 Conflict` when already in use; previously silently ignored).
+- `Prefer: resolve_refs` is honoured on contribution reads: the
+  CONTRIBUTION's `versions` are returned as full `ORIGINAL_VERSION`
+  objects instead of `OBJECT_REF`s (ITS-REST representation negotiation).
+- AQL single-row functions now execute: `LENGTH`, `SUBSTRING`, `POSITION`,
+  the string `CONTAINS`, `CONCAT`/`CONCAT_WS`, `ABS`/`MOD`/`CEIL`/`FLOOR`/
+  `ROUND`, and `CURRENT_DATE`/`CURRENT_TIME`/`CURRENT_DATE_TIME`/`NOW`/
+  `CURRENT_TIMEZONE` (QUERY master03 §Functions).
+- AQL `TERMINOLOGY()` Boolean value expressions
+  (`TERMINOLOGY('validate'|'subsumes', …) = true`) and terminology-URI
+  `matches` operands (`matches { terminology://… }`) are now evaluated
+  through the terminology service (previously typed rejects).
+- AQL archetype predicates now honour archetype-specialisation subsumption:
+  a query naming a parent archetype (e.g.
+  `[openEHR-EHR-OBSERVATION.laboratory.v1]`) also matches data created with
+  any specialisation child (e.g. `…laboratory-glucose.v1`), scoped to the
+  same RM entity and major version (BASE architecture_overview master10
+  §Design-time Relationships; AM master07 §Querying). Non-HRID predicates
+  (at/id-codes) keep exact case-folded matching.
+- **Version-tree branching and merge provenance** (RM common master06
+  §Version tree / §Distributed versioning / §Version Merging). Branch
+  version ids (`trunk.branch.version`) are now first-class on every
+  surface: modifying a version that was imported from another system forks
+  a branch with the local `creating_system_id` (the spec's mandated rule
+  for local modifications of copied versions) while the imported trunk
+  version stays the container current; branch tips are continued,
+  superseded, read, exported, and re-imported like any version; the
+  container current / `LATEST_VERSION` (including in AQL) is the latest
+  *trunk* version. `ORIGINAL_VERSION.preceding_version_uid` is now stored
+  at commit (previously synthesized) and `other_input_version_uids` (merge
+  provenance) is accepted on the CONTRIBUTION wire, preserved on import,
+  and served on read. The `vo_version` storage carries the version tree in
+  explicit columns with per-lineage temporal non-overlap constraints and
+  the spec's global version-identity uniqueness tuple.
 
 ### Changed
 
@@ -42,14 +97,16 @@ workflow refuses a tag that has no matching section here.
 - Contribution commits now verify the target EHR exists (`404` otherwise)
   and honour the `EHR_STATUS.is_modifiable = false` write guard and
   versioned-composition invariants on every path, including
-  CONTRIBUTION-wrapped commits.
+  CONTRIBUTION-wrapped commits. Re-creating an existing directory (a folder
+  hierarchy with the same root archetype and name) via a CONTRIBUTION is a
+  `409` conflict; a hierarchy with a distinct root remains a new
+  `EHR.folders` member.
 - EHR-index errors now carry the precise SM error names
   (`ehr_id_does_not_exist`, `subject_id_does_not_exist`) instead of a
   generic not-found.
 - Contribution retrieval now lists versions affected by `attestation`-only
   items alongside committed versions for demographic contributions,
   matching the EHR-scoped behaviour.
-
 - SMART App Launch resource-server support (openEHR SMART App Launch
   framework, development edition), config-gated and off by default
   (`EHRBASE_REST_SMART__*`): the `/.well-known/smart-configuration`
@@ -87,9 +144,6 @@ workflow refuses a tag that has no matching section here.
   ids, …) round-trips in both directions; `|raw` canonical-JSON embedding
   on write; complete quantity/date-time/multimedia leaf attribute tables;
   `|other` open-value-set rules enforced.
-
-### Changed
-
 - Development-edition ITS-REST protocol adopted (the server's tested
   contract identity, now reported consistently as such): `ETag` response
   headers carry the weak `W/"…"` indicator (bare quoted values are still
@@ -113,65 +167,6 @@ workflow refuses a tag that has no matching section here.
   specification-first (one folder per ITS-REST spec / SM chapter, all
   spec-silent surfaces quarantined under `extensions/`) — no route
   changes beyond those listed here.
-
-### Fixed
-
-- Template list endpoints no longer ignore filter and pagination
-  parameters.
-- The conformance manifest and `/rest/status` no longer misreport the
-  implemented ITS-REST edition as `1.0.3`.
-
-
-### Added
-
-- Multiple folder hierarchies per EHR (`EHR.folders`): beyond the
-  `/directory` hierarchy, additional root `FOLDER`s can be committed through
-  the CONTRIBUTION endpoint, each versioned independently. The EHR resource
-  now carries the `folders` reference list (creation order) and `directory`
-  (always its first member); EHR extract import and admin dump/load carry
-  the hierarchies too. The `/directory` endpoints behave exactly as before.
-- `ehr:` URI support: `DV_EHR_URI` values are parsed against the full
-  openEHR `ehr:` grammar (EHR / top-level structure by uid or exact version
-  id / interior item paths, absolute and relative forms), and the server can
-  resolve local `ehr:` references internally (e.g. LINK targets). openEHR
-  path processing now also supports `//` path patterns and 1-based
-  positional predicates in stored-structure navigation (AQL is unchanged —
-  its grammar defines neither).
-
-- `EHR_ACCESS` access-control is now enforced. The spec-mandated,
-  change-controlled `EHR_ACCESS` object of an EHR (RM ehr §EHR_ACCESS Class)
-  is the foundational access-decision layer, evaluated after authentication
-  and before dispatch on every EHR-scoped route; the enterprise RBAC/ABAC
-  layers compose on top of it. Its `settings` use the
-  `ehrbase.access_control.v1` scheme (`docs/design/ehr-access-scheme.md`):
-  a `default_access` (`open`/`restricted`) with a `user:`/`role:` access
-  list gating the EHR, per-Composition privacy-level ceilings on Composition
-  reads, and a gate-keeper that guards changes to the settings themselves
-  (`403 Forbidden` on a denial). Every existing EHR keeps working — the
-  default (no settings) is open.
-- Client-supplied CONTRIBUTION `uid`s are honoured on commit when unused
-  (`409 Conflict` when already in use; previously silently ignored).
-- `Prefer: resolve_refs` is honoured on contribution reads: the
-  CONTRIBUTION's `versions` are returned as full `ORIGINAL_VERSION`
-  objects instead of `OBJECT_REF`s (ITS-REST representation negotiation).
-- AQL single-row functions now execute: `LENGTH`, `SUBSTRING`, `POSITION`,
-  the string `CONTAINS`, `CONCAT`/`CONCAT_WS`, `ABS`/`MOD`/`CEIL`/`FLOOR`/
-  `ROUND`, and `CURRENT_DATE`/`CURRENT_TIME`/`CURRENT_DATE_TIME`/`NOW`/
-  `CURRENT_TIMEZONE` (QUERY master03 §Functions).
-- AQL `TERMINOLOGY()` Boolean value expressions
-  (`TERMINOLOGY('validate'|'subsumes', …) = true`) and terminology-URI
-  `matches` operands (`matches { terminology://… }`) are now evaluated
-  through the terminology service (previously typed rejects).
-- AQL archetype predicates now honour archetype-specialisation subsumption:
-  a query naming a parent archetype (e.g.
-  `[openEHR-EHR-OBSERVATION.laboratory.v1]`) also matches data created with
-  any specialisation child (e.g. `…laboratory-glucose.v1`), scoped to the
-  same RM entity and major version (BASE architecture_overview master10
-  §Design-time Relationships; AM master07 §Querying). Non-HRID predicates
-  (at/id-codes) keep exact case-folded matching.
-
-### Changed
-
 - `PUT …/composition/{uid_based_id}` rejects a body whose
   `COMPOSITION.uid` does not identify the versioned object addressed by
   the path (`400`).
@@ -193,27 +188,6 @@ workflow refuses a tag that has no matching section here.
   language consistency, code definedness, value-set validity, term-binding
   keys) instead of a header-only probe — invalid sources are rejected with
   `422` carrying the AOM2 rule code.
-
-### Added
-
-- **Version-tree branching and merge provenance** (RM common master06
-  §Version tree / §Distributed versioning / §Version Merging). Branch
-  version ids (`trunk.branch.version`) are now first-class on every
-  surface: modifying a version that was imported from another system forks
-  a branch with the local `creating_system_id` (the spec's mandated rule
-  for local modifications of copied versions) while the imported trunk
-  version stays the container current; branch tips are continued,
-  superseded, read, exported, and re-imported like any version; the
-  container current / `LATEST_VERSION` (including in AQL) is the latest
-  *trunk* version. `ORIGINAL_VERSION.preceding_version_uid` is now stored
-  at commit (previously synthesized) and `other_input_version_uids` (merge
-  provenance) is accepted on the CONTRIBUTION wire, preserved on import,
-  and served on read. The `vo_version` storage carries the version tree in
-  explicit columns with per-lineage temporal non-overlap constraints and
-  the spec's global version-identity uniqueness tuple.
-
-### Changed
-
 - **Stricter spec-mandated validation** on the commit path: a client
   `AUDIT_DETAILS` with an empty `system_id`, a committer
   `PARTY_IDENTIFIED`/`PARTY_RELATED` with no identity, an empty committer
@@ -226,7 +200,6 @@ workflow refuses a tag that has no matching section here.
 - AQL `VERSION` `uid` values are now built from each version's stored
   `creating_system_id` and version-tree id, not the server's live
   `system_id` configuration.
-
 - The `ehrbase-rs-postgres` image now pre-creates the layered group roles
   (`ehrbase_migrator`, `ehrbase_app`, `ehrbase_reader`), so Compose/dev
   deployments get the same least-privilege grant topology as hardened
@@ -238,6 +211,13 @@ workflow refuses a tag that has no matching section here.
   tracking `develop`), and an offline OpenAPI endpoint reference covering all
   seven openEHR API groups. Built from `website/` and deployed by CI, with
   link-check and OpenAPI-drift gates.
+
+### Fixed
+
+- Template list endpoints no longer ignore filter and pagination
+  parameters.
+- The conformance manifest and `/rest/status` no longer misreport the
+  implemented ITS-REST edition as `1.0.3`.
 
 ## [3.0.0] - 2026-07-11
 
