@@ -13,7 +13,7 @@
 //! skeletons; the driver ([`drive`]) dispatches at planned times against any
 //! SUT (the conformance `SutClient` — the provably-ECC-identical client),
 //! resolving per-patient runtime ids; [`measure`] records per-class
-//! HdrHistograms against *planned* send times so a stalled SUT cannot hide
+//! `HdrHistogram`s against *planned* send times so a stalled SUT cannot hide
 //! its tail; [`sample`] captures container CPU/RSS, cold start, and storage
 //! footprint; [`report`] emits `results.json` + `REPORT.md` — generated,
 //! never hand-typed.
@@ -227,7 +227,7 @@ pub struct PlannedOp {
 /// `{{ehr_id}}` placeholder the driver substitutes.
 #[derive(Debug, Clone)]
 pub enum Action {
-    /// `POST /ehr` — registers the patient's `ehr_id` (with an EHR_STATUS
+    /// `POST /ehr` — registers the patient's `ehr_id` (with an `EHR_STATUS`
     /// carrying the generated subject id).
     CreateEhr { status: serde_json::Value },
     /// `GET /ehr/{ehr_id}`.

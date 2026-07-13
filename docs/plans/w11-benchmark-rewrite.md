@@ -95,8 +95,9 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 ### B — Rewrite
 - [x] B1. Fresh authoring of the crate per A1/A2 (workers ≤2, disjoint
       files; orchestrator owns lib.rs + the workload model core).
-- [ ] B2. ONE fix pass → crate clippy-zero, `cargo nextest run -p
-      benchmark` green, zero TODOs.
+- [x] B2. ONE fix pass → crate clippy-zero, `cargo nextest run -p
+      benchmark` green, zero TODOs. *Closed 2026-07-13: 0 warnings, 57/57,
+      fmt clean.*
 - [ ] B3. **Official CKM template pack** (owner directive 2026-07-13:
       "fetch from the CKM online the needed archetypes — the official
       ones — as many as we need"): 5 official openEHR CKM templates
@@ -128,4 +129,22 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 
 ## Decisions made this phase
 
-- (recorded as they land)
+- **Read:write budget counts a CONTRIBUTION as its N committed
+  compositions** (a batch commit of N compositions is N clinical writes —
+  register 00 §2 capacity lineage); measured blend ≈73% read, inside
+  70±5. The literal per-HTTP-op blend is ~76% read; E5's rate is the
+  lever if the op-count blend ever becomes the law.
+- **E1 admission extended** beyond the register's literal sequence: it
+  also seeds an initial vitals composition and establishes the directory,
+  so E5/E6/E7 always have pre-existing state (per-patient ordering
+  invariant holds structurally; PORT NOTE in `model/event.rs`).
+- **`TemplateKind::Vitals` renders `composition_evaluation_test`** (a
+  proven both-server event composition) until the CKM `vital-signs`
+  template lands at B3 (PORT NOTE in `render.rs`).
+- **Driver tolerances:** `dir-read` accepts 404 and `opt-upload` accepts
+  409/204 as measured successes (open-loop schedules cannot guarantee a
+  prior directory write; provisioning is idempotent — documented in
+  `drive.rs`); `status-update` performs one unmeasured GET to build a
+  correct If-Match when the uid is not cached (identical cost every SUT).
+- **`workload.lock`** hashes an ordered, extensible template-source list —
+  the B3 CKM pack shifts the lock without an API change.
