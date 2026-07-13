@@ -65,9 +65,17 @@ The knee/saturation series (register 01 §3) reuses `hour` at increasing
 
 ## 4. Data generation (real templates, generated instances)
 
-- **Templates:** the vendored corpus OPTs already exercised by ECC —
+- **Templates:** two packs, provisioned once per run, identically on every
+  SUT: (a) the vendored corpus OPTs already exercised by ECC —
   vitals/minimal (small), nested (large/deep), persistent (directory,
-  care plan) — provisioned once per run, identically on every SUT.
+  care plan); (b) the **official CKM pack** (owner directive 2026-07-13):
+  five templates vendored as CKM's own OPT exports with provenance
+  (`tools/benchmark/templates/ckm/` — vital-signs, generic lab result,
+  medication order, International Patient Summary [1.9 MB], clinical
+  synopsis). CKM-pack composition skeletons come from the SUT's own
+  `GET /definition/template/adl1.4/{id}/example`, so any CKM template is
+  usable without hand-authored fixtures; a template a SUT rejects at
+  upload is excluded loudly for that SUT (fairness note in the report).
 - **Instances:** per-event canonical-JSON compositions produced from the
   fixture skeletons with seeded variation: numeric leaf values within the
   template ranges, event `time` advancing along the simulated day,
