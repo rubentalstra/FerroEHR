@@ -8,9 +8,12 @@
 //! <out>/
 //! ├── results.json
 //! ├── REPORT.md
+//! ├── charts/{latency,cpu,rss}.svg
 //! └── histograms/<class>.hdr.b64
 //! ```
 
+pub mod chart;
+pub mod compare;
 pub mod json;
 pub mod markdown;
 
@@ -34,6 +37,26 @@ pub fn write_all(results: &Results, out_dir: &Path) -> Result<(), BenchError> {
 
     let md = markdown::render(results);
     std::fs::write(out_dir.join("REPORT.md"), md)?;
+
+    // Charts (generated SVG, embedded by REPORT.md §Charts).
+    let chart_dir = out_dir.join("charts");
+    std::fs::create_dir_all(&chart_dir)?;
+    let latency = chart::latency_chart(&results.classes);
+    if !latency.is_empty() {
+        std::fs::write(chart_dir.join("latency.svg"), latency)?;
+    }
+    if let Some(cpu) = chart::cpu_chart(
+        results.resources.app.as_ref(),
+        results.resources.db.as_ref(),
+    ) {
+        std::fs::write(chart_dir.join("cpu.svg"), cpu)?;
+    }
+    if let Some(rss) = chart::rss_chart(
+        results.resources.app.as_ref(),
+        results.resources.db.as_ref(),
+    ) {
+        std::fs::write(chart_dir.join("rss.svg"), rss)?;
+    }
 
     let hist_dir = out_dir.join("histograms");
     std::fs::create_dir_all(&hist_dir)?;

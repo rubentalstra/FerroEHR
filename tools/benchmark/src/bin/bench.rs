@@ -60,6 +60,18 @@ enum Command {
     Seed(SeedArgs),
     /// Re-render the artefact set from an existing results.json.
     Report(ReportArgs),
+    /// Render the cross-SUT comparison (Markdown + charts) from two runs.
+    Compare(CompareArgs),
+}
+
+#[derive(Debug, Parser)]
+struct CompareArgs {
+    /// A results.json to include (repeat; the first two are compared).
+    #[arg(long = "from", required = true, num_args = 1..)]
+    from: Vec<PathBuf>,
+    /// Where to write COMPARISON.md (+ charts/ beside it).
+    #[arg(long, default_value = "docs/benchmarks")]
+    out: PathBuf,
 }
 
 #[derive(Debug, Parser)]
@@ -203,8 +215,46 @@ async fn main() {
         Command::Run(args) => cmd_run(args).await,
         Command::Seed(args) => cmd_seed(args).await,
         Command::Report(args) => cmd_report(&args),
+        Command::Compare(args) => cmd_compare(&args),
     };
     std::process::exit(code);
+}
+
+/// `bench compare` — render the cross-SUT comparison from two results.json.
+fn cmd_compare(args: &CompareArgs) -> i32 {
+    let mut runs = Vec::new();
+    for path in &args.from {
+        match report::from_results_file(path) {
+            Ok(r) => runs.push(r),
+            Err(e) => {
+                eprintln!("error reading {}: {e}", path.display());
+                return 2;
+            }
+        }
+    }
+    let rendered = report::compare::render(&runs);
+    let chart_dir = args.out.join("charts");
+    if let Err(e) = std::fs::create_dir_all(&chart_dir) {
+        eprintln!("error creating {}: {e}", chart_dir.display());
+        return 2;
+    }
+    for (name, svg) in &rendered.charts {
+        if let Err(e) = std::fs::write(chart_dir.join(name), svg) {
+            eprintln!("error writing chart {name}: {e}");
+            return 2;
+        }
+    }
+    let md_path = args.out.join("COMPARISON.md");
+    if let Err(e) = std::fs::write(&md_path, rendered.markdown) {
+        eprintln!("error writing {}: {e}", md_path.display());
+        return 2;
+    }
+    eprintln!(
+        "bench: comparison of {} run(s) → {}",
+        runs.len(),
+        md_path.display()
+    );
+    0
 }
 
 /// Default base URL per target (matches `scripts/benchmark.sh` / the compose

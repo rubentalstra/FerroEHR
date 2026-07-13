@@ -74,6 +74,15 @@ fn latency(m: &mut String, r: &Results) {
         }
     }
     m.push('\n');
+    // Generated SVG companions (report::chart) — the table above stays the
+    // authoritative record; the charts are the readable view of the same data.
+    m.push_str(
+        "![Latency by operation class — p50→p99.9 range on a log scale](charts/latency.svg)\n\n",
+    );
+    if r.resources.app.is_some() || r.resources.db.is_some() {
+        m.push_str("![CPU over the run](charts/cpu.svg)\n\n");
+        m.push_str("![Memory (RSS) over the run](charts/rss.svg)\n\n");
+    }
 }
 
 fn throughput(m: &mut String, r: &Results) {
