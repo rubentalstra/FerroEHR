@@ -203,7 +203,54 @@ extension rows marked N/A, every cell stamped (date, versions, digests).
    any-of per capability).
 5. Foreign runs: fairness triage before publication; no Certificate.
 
-## 8. CI bindings
+## 8. Cross-register rulings (orchestrator, after registers 01–13 landed)
+
+Consolidated from the area registers' G-rows; these bind the rewrite:
+
+1. **`schedule_ref` is threaded on every case** (register 10's pattern is
+   the model): the schedule id + chapter locus where a spine row exists;
+   `ecc-original(<reason>)` markers for stub-derived cases (SQR/QRY over
+   master05/11 stubs; DEM/ADM/MSG over master10/12/13 stubs) — a
+   stub-derived case is never presented as schedule-conformant.
+2. **`Binding` is first-class**: the ITS-REST concretization or
+   `NoRestBinding` (TPL delete, bare SQR list, CTB list_contributions,
+   Messaging, 6 native-only Admin ops) → machine-readable skip-with-reason
+   or edition-ladder probe, never a fabricated URL, never a booked failure.
+3. **The wire layer owns ALL id/header extraction** — replaces
+   `support::version_uid`, `contribution.rs::contribution_uid`/
+   `version_uid_at`, and every inline scrape; silent fallbacks die (the
+   `directory.rs:544 unwrap_or_else(|_| v1.clone())` class of bug).
+4. **SUT-specific wire facts come from the SutDescriptor, never literals**:
+   the `::conformance::` creating-system-id If-Match constructions,
+   `template_id` format (master04 §Test Environment says server-specific),
+   admin mount point. Edition-specific forms (ladder rungs): weak `W/"…"`
+   vs bare ETag; 400-vs-422 reject codes; RM 1.2.0 vs 1.1.0 payload shapes
+   (DV_SCALE needs RM ≥ 1.1.0); `openehr::523` lifecycle literal
+   (terminology-version-sensitive); RESULT_SET `_schema_version`;
+   timestamp precision forms.
+5. **Postcondition depth is restored** (the schedule's own mandate):
+   retrieved == committed content checks on every `get_*` (register 04
+   G-1, via the jsonlib compare modes); `update` → change_type MODIFY and
+   `delete` → lifecycle 523 verified (04 G-2); directory at-time cases
+   actually drive between-version instants (06 G-1); the D.2
+   `full_ehr_status` precondition actually set (05).
+6. **Real coverage gaps to author** (new ECC numbers): `has_composition`
+   positive; the 6 `I_PARTY_RELATIONSHIP` ops + `get_party_at_time`;
+   DV_INTERVAL per-variant constraint depth (27 cases); the OBS/EVENT
+   state/protocol authoring dimension; SEC cases stay generic for foreign
+   SUTs.
+7. **Coverage bounds are reported per case**: `schedule_rows` vs
+   `driven_variants` (register 13 quantified ≈1,130 → ≈160; the report
+   prints the ratio per case — logged, never silent) — widening the driven
+   set is data (`testdata/author.rs` sweeps), not new case ids.
+8. **The golden normalizer + dialect adjudications externalize** to the
+   committed adjudication/golden registers (07 G-3); a golden is never
+   edited.
+9. **Fairness register seeds** (foreign SUTs): DEM wire, SIG, bundle-TS +
+   `/terminology` = `extension → N/A`; SEC + the normative-core assertions
+   of every other area = live.
+
+## 9. CI bindings
 
 - `cargo nextest run -p conformance` — the runner's own tests (wire layer,
   ladder, catalog, registry, reporting; wiremock fixtures).
