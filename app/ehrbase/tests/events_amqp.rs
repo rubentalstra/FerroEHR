@@ -366,7 +366,7 @@ async fn broker_down_then_up_delivers_without_loss() {
 
     // Broker up: a correctly-configured publisher drains every row (no loss).
     let up = start(events_config(url), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
     loop {
         if pending_count(&pool).await == 0 {
             break;
@@ -424,7 +424,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     // Start the publisher: each cycle re-syncs (declares/binds) the subscription
     // queues *before* it publishes, so the durable queues capture the messages.
     let handle = start(events_config(url.clone()), pool.clone());
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    let deadline = tokio::time::Instant::now() + Duration::from_mins(1);
     loop {
         if pending_count(&pool).await == 0 {
             break;

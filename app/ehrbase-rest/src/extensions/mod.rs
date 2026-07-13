@@ -95,7 +95,7 @@ pub mod provenance {
     /// `conformance_profile`). No openEHR spec governs the value; the
     /// conformance instrument computes it (CNF master03 profiles). Updated at
     /// each conformance re-baseline from the runner's machine verdict recorded
-    /// in `docs/conformance/CONFORMANCE_REPORT.md` §"Profile verdict"
+    /// in `docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"
     /// (Core PASS · Standard PASS). The manifest MUST NOT out-claim it.
     pub const CONFORMANCE_PROFILE: &str = "STANDARD";
 }

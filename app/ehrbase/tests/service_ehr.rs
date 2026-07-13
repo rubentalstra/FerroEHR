@@ -604,8 +604,8 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     // calls), a foreign concrete _type (PARTY_IDENTIFIED) in that slot is a
     // 422 (SM ContentInvalid) naming the mismatch — on both EHR create and
     // EHR_STATUS PUT — while an anonymous empty PARTY_SELF is accepted.
-    // Regression for the upstream diff findings B1/B2
-    // (docs/conformance/upstream-ehrbase/TRIAGE.md).
+    // Regression for the upstream diff findings B1/B2 (the X1 upstream
+    // triage ledger; in git history at docs/conformance/upstream-ehrbase/TRIAGE.md).
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("subjecttype").await);
 
