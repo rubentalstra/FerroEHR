@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
 use crate::model::case::{Capability, Profile};
-use crate::model::profile::{OPTIONAL_CAPABILITIES, ProfileVerdict, required_capabilities};
+use crate::model::profile::{OPTIONAL_CAPABILITIES, required_capabilities};
 use crate::reporting::report::{
     ALL_CAPABILITIES, capability_verdict, claim_word, edition_policy_label, evidence_word,
     kind_label, profile_verdict,
@@ -244,7 +244,7 @@ fn render_adjudications(out: &mut String, results: &RunResults) {
         na_seen.entry(key.clone()).or_insert_with(|| {
             na_order.push(key.clone());
             (
-                &c.ecc_id,
+                c.ecc_id.as_str(),
                 c.message.as_deref().unwrap_or("(no reason)"),
                 if c.citation.is_empty() {
                     "—"

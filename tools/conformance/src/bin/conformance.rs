@@ -120,6 +120,10 @@ struct RunArgs {
     /// spin up a hermetic wiremock FHIR-tx fixture (the CI default).
     #[arg(long)]
     tx_server_url: Option<String>,
+    /// The assessor attribution on the Conformance Certificate. Unset: the
+    /// default self-assessment-via-ECC line.
+    #[arg(long)]
+    assessor: Option<String>,
 }
 
 #[derive(Debug, Parser)]
@@ -289,7 +293,7 @@ fn build_transport(descriptor: &SutDescriptor) -> Result<SutClient, String> {
         .as_deref()
         .map(Credential::parse)
         .transpose()?;
-    let client = SutClient::new(&descriptor.base_url, regular, admin)
+    let client = SutClient::new(descriptor.base_url.clone(), regular, admin)
         .map_err(|e| e.to_string())?
         .with_admin_base_url(descriptor.admin_base_url.clone());
     Ok(client)
@@ -459,7 +463,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
     }
 
     let out_dir = args.out.join(&descriptor.name);
-    if let Err(e) = report::write_all(&results, &out_dir) {
+    if let Err(e) = report::write_all(&results, &out_dir, args.assessor.as_deref()) {
         eprintln!("error writing artefacts: {e}");
         return 2;
     }
@@ -482,7 +486,7 @@ fn cmd_report(args: &ReportArgs) -> i32 {
             return 2;
         }
     };
-    if let Err(e) = report::write_all(&results, &args.out) {
+    if let Err(e) = report::write_all(&results, &args.out, None) {
         eprintln!("error writing artefacts: {e}");
         return 2;
     }

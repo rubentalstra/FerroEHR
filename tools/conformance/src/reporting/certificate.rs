@@ -1,18 +1,21 @@
-//! The Conformance **Certificate** (`CONFORMANCE_CERTIFICATE.md`) — a
-//! self-assessment artefact of **our own** product only (X1 fairness rule 4;
-//! `docs/design/conformance/90-target-design.md` §7.5). Rendering a foreign
-//! SUT returns [`CertificateError::ForeignSut`]; the caller
-//! ([`crate::reporting::report::write_all`]) enforces the rule and explains the
-//! suppression.
+//! The Conformance **Certificate** (`CONFORMANCE_CERTIFICATE.md`).
+//!
+//! Owner ruling (2026-07-13): the Certificate is emitted for **any** SUT — the
+//! framework aims to be the industry-standard CNF validator, so any operator
+//! certifying their own CDR (ours, upstream, or a bring-your-own endpoint) gets
+//! the artefact. It therefore carries a mandatory **assessment-basis honesty
+//! block**: the assessor identity (default: self-assessment via the ECC
+//! framework, overridable with `--assessor`), an explicit statement that this
+//! is **not** an official openEHR certification (no such program exists), and
+//! the machine-computed provenance (the attached `results.json`, the run date,
+//! the ECC framework version + catalogue identity).
 //!
 //! The structure follows the vendored CNF template
-//! (`certificate/master03-certificate.adoc`): a **System Under Test** block
-//! (solution / vendor / assessor / infrastructure / date), a **Scope of Test**
-//! block, a **Detailed Test Report** (one row per conformance point, with a
-//! per-format result column), and a **Profile Report** (capability × required ×
-//! result). The template is a filled-in fictional example — the only structural
-//! template the DEVELOPMENT CNF guide ships — so the ECC is named as the
-//! (self-)assessor rather than an external authority.
+//! (`certificate/master03-certificate.adoc`): a **System Under Test** block, a
+//! **Scope of Test** block (which lists any fairness-register not-applicable
+//! adjudications, so a foreign-SUT claim is scoped to applicable capabilities),
+//! a **Detailed Test Report** (one row per conformance point, per-format result
+//! columns), and a **Profile Report** (capability × required × result).
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -20,63 +23,59 @@ use std::fmt::Write as _;
 use crate::model::case::Profile;
 use crate::model::catalog::Catalog;
 use crate::reporting::report::{claim_word, evidence_word, profile_lines, profile_verdict};
-use crate::reporting::results::{CaseStatus, RunResults};
-use crate::sut::descriptor::SutKind;
+use crate::reporting::results::{CaseOutcome, CaseStatus, RunResults};
 
 /// The three profiles, in report order.
 const PROFILES: [Profile; 3] = [Profile::Core, Profile::Standard, Profile::Options];
 
-/// Why a Certificate could not be produced.
-#[derive(Debug, thiserror::Error)]
-pub enum CertificateError {
-    /// The SUT is foreign — a Certificate is never manufactured for another
-    /// product (X1 fairness rule 4).
-    #[error(
-        "refusing to emit a Conformance Certificate for foreign product `{product}` \
-         (a self-assessment artefact is our own product only)"
-    )]
-    ForeignSut {
-        /// The foreign product name.
-        product: String,
-    },
-}
+/// The default assessor line when no `--assessor` override is given.
+const DEFAULT_ASSESSOR: &str =
+    "self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework";
 
-/// Render the Conformance Certificate for our own SUT.
-///
-/// # Errors
-/// [`CertificateError::ForeignSut`] when the recorded SUT is not
-/// [`SutKind::Ours`].
+/// Render the Conformance Certificate for any SUT. `assessor` overrides the
+/// default self-assessment attribution.
+#[must_use]
 pub fn render_certificate_md(
     results: &RunResults,
     catalog: &Catalog,
-) -> Result<String, CertificateError> {
-    if results.sut.kind != SutKind::Ours {
-        return Err(CertificateError::ForeignSut {
-            product: results.sut.product.name.clone(),
-        });
-    }
-
+    assessor: Option<&str>,
+) -> String {
+    let assessor = assessor.unwrap_or(DEFAULT_ASSESSOR);
     let mut out = String::new();
     let _ = writeln!(
         out,
-        "# {} — Conformance Certificate (generated, self-assessed)\n",
+        "# {} — Conformance Certificate (generated)\n",
         results.sut.product.name
     );
-    out.push_str(
-        "> A self-assessed certificate produced by the ehrbase-rs Conformance Catalogue (ECC)\n\
-         > from a conformance run. Its structure follows the CNF\n\
-         > `certificate/master03-certificate.adoc` template; every verdict is machine-computed\n\
-         > from `results.json`.\n\n",
-    );
 
-    render_sut_block(&mut out, results);
+    render_honesty_block(&mut out, results, assessor);
+    render_sut_block(&mut out, results, assessor);
     render_scope(&mut out, results);
     render_detailed_report(&mut out, results, catalog);
     render_profile_report(&mut out, results);
-    Ok(out)
+    out
 }
 
-fn render_sut_block(out: &mut String, results: &RunResults) {
+fn render_honesty_block(out: &mut String, results: &RunResults, assessor: &str) {
+    out.push_str("## Assessment basis (read first)\n\n");
+    let _ = writeln!(out, "- **Assessor:** {assessor}");
+    out.push_str(
+        "- **This is NOT an official openEHR conformance certification.** No official openEHR \
+         certification program exists; this artefact is a self-assessment produced by an \
+         independent framework.\n\
+         - **Machine-computed:** every verdict below is a pure function of the attached run \
+         (`results.json`) — never hand-asserted.\n",
+    );
+    let _ = writeln!(
+        out,
+        "- **ECC framework version:** {} · catalogue `inventory/ecc-catalog.tsv`",
+        env!("CARGO_PKG_VERSION")
+    );
+    let _ = writeln!(out, "- **Machine record:** `results.json` (this directory)");
+    let _ = writeln!(out, "- **Run date:** {}\n", results.started);
+}
+
+fn render_sut_block(out: &mut String, results: &RunResults, assessor: &str) {
     let product = &results.sut.product;
     out.push_str("## System Under Test (SUT)\n\n| | |\n|---|---|\n");
     let _ = writeln!(
@@ -87,8 +86,8 @@ fn render_sut_block(out: &mut String, results: &RunResults) {
     if let Some(digest) = &product.image_digest {
         let _ = writeln!(out, "| Image digest | `{digest}` |");
     }
-    let _ = writeln!(out, "| Vendor | {} (self-assessed) |", product.name);
-    out.push_str("| Assessor | ehrbase-rs Conformance Catalogue (ECC) — self-assessment |\n");
+    let _ = writeln!(out, "| Vendor | {} |", product.name);
+    let _ = writeln!(out, "| Assessor | {assessor} |");
     let _ = writeln!(
         out,
         "| Infrastructure | reference corpus {}@{}; SUT auth mode {} |",
@@ -119,6 +118,51 @@ fn render_scope(out: &mut String, results: &RunResults) {
             results.selection.formats.join(", ")
         }
     );
+
+    // The claim is scoped to applicable capabilities: any fairness-register
+    // not-applicable adjudication (a foreign SUT's extension / RM-version
+    // exclusions) is listed here so the scope is explicit.
+    let mut order: Vec<String> = Vec::new();
+    let mut seen: BTreeMap<String, &CaseOutcome> = BTreeMap::new();
+    for c in results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::NotApplicable)
+    {
+        let key = if c.ecc_id.is_empty() {
+            c.id.clone()
+        } else {
+            c.ecc_id.clone()
+        };
+        seen.entry(key.clone()).or_insert_with(|| {
+            order.push(key.clone());
+            c
+        });
+    }
+    if !order.is_empty() {
+        out.push_str("### Scope exclusions (adjudicated not-applicable)\n\n");
+        out.push_str(
+            "The following capabilities are excluded from this claim per the committed \
+             fairness register (adjudicated extensions / RM-version-sensitive comparisons); \
+             the claim is scoped to the applicable capabilities.\n\n",
+        );
+        for key in &order {
+            let c = seen[key];
+            let _ = writeln!(
+                out,
+                "- **{}** {} — {} _(cite: {})_",
+                c.ecc_id,
+                c.title,
+                c.message.as_deref().unwrap_or("(no reason)"),
+                if c.citation.is_empty() {
+                    "—"
+                } else {
+                    c.citation.as_str()
+                },
+            );
+        }
+        out.push('\n');
+    }
 }
 
 /// The evidence word of a named capability in the STANDARD scope (or `n/a`).
@@ -262,6 +306,7 @@ mod tests {
     use crate::reporting::results::{
         CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity,
     };
+    use crate::sut::descriptor::SutKind;
 
     fn outcome(ecc_id: &str, capability: &str, format: &str, status: CaseStatus) -> CaseOutcome {
         CaseOutcome {
@@ -308,14 +353,48 @@ mod tests {
     }
 
     #[test]
-    fn foreign_sut_is_refused() {
-        let r = results(SutKind::Foreign, Vec::new());
-        let err = render_certificate_md(&r, &Catalog::default()).expect_err("must refuse");
-        assert!(matches!(err, CertificateError::ForeignSut { .. }));
+    fn foreign_sut_is_certified_with_honesty_block() {
+        let mut r = results(
+            SutKind::Foreign,
+            vec![outcome(
+                "ECC-EHR-001",
+                "EhrOperations",
+                "json",
+                CaseStatus::Passed,
+            )],
+        );
+        r.sut.product = ProductIdentity {
+            name: "ehrbase-java".to_owned(),
+            version: "2.34.0".to_owned(),
+            image_digest: None,
+        };
+        let cert = render_certificate_md(&r, &Catalog::default(), None);
+        assert!(cert.starts_with("# ehrbase-java — Conformance Certificate"));
+        assert!(cert.contains("NOT an official openEHR conformance certification"));
+        assert!(cert.contains(DEFAULT_ASSESSOR));
+        assert!(cert.contains("System Under Test"));
+        assert!(cert.contains("Profile Report"));
     }
 
     #[test]
-    fn ours_renders_per_format_columns_and_profile_report() {
+    fn assessor_override_and_scope_exclusions_are_listed() {
+        let mut na = outcome(
+            "ECC-DEM-001",
+            "PartyOperations",
+            "json",
+            CaseStatus::NotApplicable,
+        );
+        na.message = Some("Upstream has no demographic REST API.".to_owned());
+        na.citation = "docs/plans/x1-comparison.md §2c".to_owned();
+        let r = results(SutKind::Foreign, vec![na]);
+        let cert = render_certificate_md(&r, &Catalog::default(), Some("ACME Assessors Ltd"));
+        assert!(cert.contains("| Assessor | ACME Assessors Ltd |"));
+        assert!(cert.contains("Scope exclusions"));
+        assert!(cert.contains("no demographic REST API"));
+    }
+
+    #[test]
+    fn ours_renders_per_format_columns() {
         let cert = render_certificate_md(
             &results(
                 SutKind::Ours,
@@ -325,13 +404,9 @@ mod tests {
                 ],
             ),
             &Catalog::default(),
-        )
-        .expect("ours must render");
-        assert!(cert.contains("System Under Test"));
-        assert!(cert.contains("Detailed Test Report"));
-        assert!(cert.contains("Profile Report"));
+            None,
+        );
         assert!(cert.contains("I_EHR_SERVICE.create_ehr-main"));
-        // JSON passed, XML failed — one row, two columns.
         assert!(cert.contains("| pass | **FAIL** |"));
     }
 }

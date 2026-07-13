@@ -219,13 +219,18 @@ pub fn from_results_file(path: &Path) -> Result<RunResults, ReportError> {
 
 /// Write the per-run artifact set into `out_dir`: `results.json`,
 /// `CONFORMANCE_REPORT.md`, the Conformance **Statement** (every SUT), the
-/// Conformance **Certificate** (our own SUT only — X1 fairness rule 4;
-/// [`crate::reporting::certificate`] enforces it and this function explains the
-/// suppression), and the badge set.
+/// Conformance **Certificate** (every SUT — owner ruling 2026-07-13; it carries
+/// an assessment-basis honesty block making clear it is a self-assessment, not
+/// an official openEHR certification), and the badge set. `assessor` overrides
+/// the default self-assessment attribution on the Certificate.
 ///
 /// # Errors
 /// [`ReportError`] on I/O or serialization failure.
-pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError> {
+pub fn write_all(
+    results: &RunResults,
+    out_dir: &Path,
+    assessor: Option<&str>,
+) -> Result<(), ReportError> {
     std::fs::create_dir_all(out_dir).map_err(|source| ReportError::Io {
         path: out_dir.display().to_string(),
         source,
@@ -250,20 +255,14 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
         &crate::reporting::statement::render_statement_md(results),
     )?;
 
-    // The Certificate is a self-assessment artefact of OUR product only
-    // (X1 fairness rule 4). `render_certificate_md` refuses a foreign SUT;
-    // we log the suppression and continue.
-    match crate::reporting::certificate::render_certificate_md(results, &catalog) {
-        Ok(md) => write_file(&out_dir.join("CONFORMANCE_CERTIFICATE.md"), &md)?,
-        Err(crate::reporting::certificate::CertificateError::ForeignSut { product }) => {
-            eprintln!(
-                "conformance: SUT product `{product}` is foreign — suppressing the Conformance \
-                 Certificate (a self-assessment artefact is never manufactured for another \
-                 product; `docs/design/conformance/90-target-design.md` §7.5). The Statement, \
-                 report, and badges are still written."
-            );
-        }
-    }
+    // The Certificate is emitted for every SUT (owner ruling 2026-07-13): the
+    // framework aims to be the industry-standard CNF validator, so any operator
+    // certifying their own CDR gets the artefact. Its mandatory honesty block
+    // states it is a self-assessment, NOT an official openEHR certification.
+    write_file(
+        &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
+        &crate::reporting::certificate::render_certificate_md(results, &catalog, assessor),
+    )?;
 
     crate::reporting::badges::write_badges(results, &catalog, out_dir)?;
     Ok(())

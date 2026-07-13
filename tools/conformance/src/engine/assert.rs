@@ -83,6 +83,8 @@ pub fn compare(mode: Compare, expected: &Value, actual: &Value) -> Result<(), Ca
         Compare::Exact => exact(expected, actual),
         Compare::Superset => superset(expected, actual),
         Compare::IgnoreSet => ignore_set(expected, actual, DEFAULT_IGNORE_KEYS),
+        // A status/header-only case has no content comparison to make.
+        Compare::None => true,
     };
     if ok {
         Ok(())
