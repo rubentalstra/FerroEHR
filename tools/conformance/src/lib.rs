@@ -26,7 +26,9 @@
 //!   ([`model::adjudication`]), the SUT is never bent to a wrong case;
 //!   every coverage bound is logged ([`engine::harness::DataSetReport`]);
 //!   profile verdicts are machine-computed ([`model::profile`]); foreign
-//!   runs get fairness triage ([`model::fairness`]) and never a Certificate.
+//!   runs get fairness triage ([`model::fairness`]). Every SUT receives the
+//!   full artefact set incl. the Certificate — always a framework
+//!   self-assessment, never an official openEHR certification.
 
 pub mod edition;
 pub mod engine;

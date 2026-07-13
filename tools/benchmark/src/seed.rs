@@ -8,8 +8,8 @@
 //! empty→1M ladder orchestration and its per-rung storage-footprint measurement
 //! (design §3.5) build on it.
 
-use conformance::testdata::fixtures;
 use conformance::harness::{AuthSlot, HttpRequest, Method};
+use conformance::testdata::fixtures;
 
 use crate::BenchError;
 use crate::target::Target;
@@ -26,8 +26,8 @@ const COMPOSITION_FILE: &str = "composition_evaluation_test__full.json";
 /// [`BenchError`] on a transport failure or an unexpected server response.
 pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64, BenchError> {
     ensure_template(target).await?;
-    let body =
-        read_json_from("composition.canonical-json", COMPOSITION_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let body = read_json_from("composition.canonical-json", COMPOSITION_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let body = body.to_string();
 
     let mut committed = 0u64;
@@ -42,7 +42,8 @@ pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64,
 }
 
 async fn ensure_template(target: &Target) -> Result<(), BenchError> {
-    let opt = fixtures::read_from("template.valid", OPT_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let opt = fixtures::read_from("template.valid", OPT_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let req = HttpRequest::new(Method::Post, "/definition/template/adl1.4")
         .with_auth(AuthSlot::Regular)
         .header("content-type", "application/xml")

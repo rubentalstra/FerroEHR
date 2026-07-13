@@ -235,6 +235,21 @@ workflow refuses a tag that has no matching section here.
   parameters.
 - The conformance manifest and `/rest/status` no longer misreport the
   implemented ITS-REST edition as `1.0.3`.
+- Contribution commits: a creation version against an already-existing
+  object, and a modification/deletion/attestation whose
+  `preceding_version_uid` names an object the server does not hold, now
+  return `400` (the contract's modification-type-mismatch scope) instead of
+  `422`/`404` — on `POST /ehr/{ehr_id}/contribution`, `404` is reserved for
+  an unknown `ehr_id`.
+- Versioned-object reads (`GET …/versioned_composition`,
+  `…/versioned_ehr_status`, versioned directory) now emit the concrete RM
+  class (`VERSIONED_COMPOSITION` / `VERSIONED_EHR_STATUS` /
+  `VERSIONED_FOLDER`) in `_type`, not the abstract `VERSIONED_OBJECT`.
+- Demographic API: `If-Match` preconditions now verify the full
+  `OBJECT_VERSION_ID` (previously only the version-tree number, which
+  accepted phantom versions); relationship delete now honours the same
+  `If-Match` preconditions as party delete; demographic `ETag`s are emitted
+  in the weak form (`W/"…"`).
 
 ## [3.0.0] - 2026-07-11
 

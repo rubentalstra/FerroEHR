@@ -120,8 +120,9 @@ from the registers.
 
 Three target classes, ONE case universe (never per-SUT case forks):
 
-1. **ehrbase-rs** — default; compose boot adapter
-   (`docker/conformance/`), `scripts/conformance.sh` stays the entry point.
+1. **ehrbase-rs** — default; compose boot via the root stack
+   (`docker-compose.yml`; the retired `docker/conformance/` harness was
+   removed at D1), `scripts/conformance.sh` stays the entry point.
 2. **EHRbase (Java, upstream)** — official image compose adapter; its
    results are DATA (comparison input), never a gate; fairness register
    applies (extension areas → `not-applicable(extension)`, never failures).

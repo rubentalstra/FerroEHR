@@ -19,8 +19,8 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use conformance::testdata::fixtures;
 use conformance::harness::{AuthSlot, HttpRequest, Method};
+use conformance::testdata::fixtures;
 
 use crate::BenchError;
 use crate::target::Target;
@@ -456,8 +456,8 @@ impl Scenario {
                 &serde_json::json!({ "q": "SELECT COUNT(c) FROM COMPOSITION c" }),
             ),
             Scenario::TemplateUpload => {
-                let opt =
-                    fixtures::read_from("template.valid", OPT_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
+                let opt = fixtures::read_from("template.valid", OPT_FILE)
+                    .map_err(|e| BenchError::Fixture(e.to_string()))?;
                 HttpRequest::new(Method::Post, "/definition/template/adl1.4")
                     .with_auth(AuthSlot::Regular)
                     .header("content-type", "application/xml")
@@ -475,7 +475,8 @@ impl Scenario {
 /// clinical-sized one, not a toy.
 #[must_use]
 pub fn payload_description() -> String {
-    let bytes = fixtures::read_from("composition.canonical-json", COMPOSITION_FILE).map_or(0, |s| s.len());
+    let bytes =
+        fixtures::read_from("composition.canonical-json", COMPOSITION_FILE).map_or(0, |s| s.len());
     format!(
         "{TEMPLATE_ID} — {} KB canonical-JSON composition",
         bytes / 1024
@@ -530,22 +531,23 @@ fn post_json(path: &str, body: &serde_json::Value) -> HttpRequest {
 /// resolves. Using the fixture — not a hand-built body — guarantees *both*
 /// servers accept it.
 fn ehr_status_body(subject_id: &str) -> serde_json::Value {
-    let base = crate::seed::read_json_from("ehr-status.valid", EHR_STATUS_FILE).unwrap_or_else(|_| {
-        serde_json::json!({
-            "_type": "EHR_STATUS",
-            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
-            "name": { "value": "EHR Status" },
-            "subject": {
-                "external_ref": {
-                    "id": { "_type": "GENERIC_ID", "value": subject_id, "scheme": "id_scheme" },
-                    "namespace": SUBJECT_NAMESPACE,
-                    "type": "PERSON"
-                }
-            },
-            "is_modifiable": true,
-            "is_queryable": true
-        })
-    });
+    let base =
+        crate::seed::read_json_from("ehr-status.valid", EHR_STATUS_FILE).unwrap_or_else(|_| {
+            serde_json::json!({
+                "_type": "EHR_STATUS",
+                "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                "name": { "value": "EHR Status" },
+                "subject": {
+                    "external_ref": {
+                        "id": { "_type": "GENERIC_ID", "value": subject_id, "scheme": "id_scheme" },
+                        "namespace": SUBJECT_NAMESPACE,
+                        "type": "PERSON"
+                    }
+                },
+                "is_modifiable": true,
+                "is_queryable": true
+            })
+        });
     let mut status = fixtures::adapt_ehr_status(base, SUBJECT_NAMESPACE, subject_id);
     // EHR_STATUS.subject is PARTY_SELF in the RM (archie enforces it); adapt_ehr_status
     // defaults to PARTY_IDENTIFIED when an external_ref is present, which EHRbase
@@ -563,8 +565,8 @@ fn ehr_status_body(subject_id: &str) -> serde_json::Value {
 }
 
 fn composition_body() -> Result<String, BenchError> {
-    let value =
-        crate::seed::read_json_from("composition.canonical-json", COMPOSITION_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let value = crate::seed::read_json_from("composition.canonical-json", COMPOSITION_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     Ok(value.to_string())
 }
 
@@ -611,7 +613,8 @@ async fn ehr_status_version(t: &Target, ehr_id: &str) -> Result<String, BenchErr
 }
 
 async fn ensure_template(t: &Target) -> Result<(), BenchError> {
-    let opt = fixtures::read_from("template.valid", OPT_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let opt = fixtures::read_from("template.valid", OPT_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let req = HttpRequest::new(Method::Post, "/definition/template/adl1.4")
         .with_auth(AuthSlot::Regular)
         .header("content-type", "application/xml")

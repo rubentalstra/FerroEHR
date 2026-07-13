@@ -1,6 +1,6 @@
 # W-10 — Conformance framework redesign + rewrite (`tools/conformance`)
 
-- Status: in-progress
+- Status: **done** (closed 2026-07-13)
 - Started: 2026-07-13   Owner: Ruben (session: orchestrator)
 - Source prompt: `docs/plans/w10-conformance-redesign-PROMPT.md` (owner ruling
   2026-07-13: the incrementally-grown instrument is not trusted; rethink from
@@ -52,8 +52,10 @@
    profile + the version ladder above; X1 fairness rules absorbed).
 3. First-class outputs: per-SUT results.json + report + badges;
    machine-computed profile verdicts (CORE/STANDARD/OPTIONS);
-   Statement + Certificate per certificate/master03 (self-assessment — never
-   emitted for an upstream/foreign run, X1 rule 4); honest cross-SUT
+   Statement + Certificate per certificate/master03 (self-assessment; the
+   original "never for a foreign run" framing was superseded by owner
+   ruling 3 above — the Certificate is emitted for EVERY SUT, always
+   self-identifying as a framework assessment); honest cross-SUT
    COMPARISON matrix; CI-runnable via `scripts/conformance.sh` (re-pointed).
 4. Instrument honesty invariants (B5): identity from provenance; a case that
    contradicts the vendored spec is adjudicated with citation — the server is
@@ -117,19 +119,33 @@
       vs the 341/315/0/26 ancestor explained (new coverage /
       re-adjudication / real defect). *Closed 2026-07-13: **368 · 333 · 0
       · 35**, CORE + STANDARD PASS — see "D1 baseline delta" below.*
-- [ ] D2. Full run vs upstream EHRbase (Java, official image): recorded as
+- [x] D2. Full run vs upstream EHRbase (Java, official image): recorded as
       DATA with the fairness adjudication register; comparison matrix
-      emitted; no Certificate for the foreign run.
-- [ ] D3. Any adjudicated real server defects fixed in separate spec-cited
-      commits (only if found).
+      emitted. (Certificate emitted for the foreign run too — owner
+      ruling 3; it self-identifies as a framework assessment.) *Closed
+      2026-07-13: ehrbase/ehrbase:2.34.0 — 368 executed · 134 passed ·
+      162 failed · 37 not-applicable (fairness: DEM/SIG extensions) · 35
+      adjudicated skips; `docs/conformance/ehrbase-java/` +
+      `docs/conformance/COMPARISON.md`. The per-case triage of the 162
+      upstream failures (rm-version-sensitive vs genuine defect, each
+      cited) moves to X1 with the comparison page — the seeded extension
+      rules are applied, nothing else is excused.*
+- [x] D3. Any adjudicated real server defects fixed in separate spec-cited
+      commits (only if found). *7 found + fixed: commits `5d6b174ac` (5
+      defects) and `a74fc1e76` (FOLDER-contribution 400) + the earlier
+      contribution-ladder 400 in the same family.*
 
 ### E — Close
-- [ ] E1. Workspace gates: `cargo nextest run --workspace`, clippy, fmt.
-- [ ] E2. CI: both conformance jobs updated + green;
-      `scripts/conformance.sh` re-pointed as the entry point.
-- [ ] E3. Docs: changelog entry; website book conformance page updated
-      same-PR; blueprint ch07 + §2 refreshed; WORKLIST W-10 row closed.
-- [ ] E4. PR opened + merged; PROGRESS.md updated.
+- [x] E1. Workspace gates: `cargo nextest run --workspace`, clippy, fmt.
+- [x] E2. CI: both conformance jobs updated + green;
+      `scripts/conformance.sh` re-pointed as the entry point (multi-SUT
+      wrapper; health-wait falls back to an HTTP probe for containers
+      without a compose healthcheck).
+- [x] E3. Docs: changelog entry (incl. the seven server-defect fixes);
+      website book conformance page rewritten (multi-SUT + BYO +
+      Certificate-for-any-SUT + edition ladder + new baseline); blueprint
+      ch07 + §2 refreshed; WORKLIST W-10 row closed.
+- [x] E4. PR opened + merged; PROGRESS.md updated.
 
 ## HANDOFF — remaining work (written 2026-07-13, all prior work committed + pushed)
 
@@ -153,7 +169,7 @@ causes. Affected suites re-tested 152/152. Remaining, in order:
       NOTE: old baseline path was docs/conformance/*.json — update anything
       referencing docs/conformance/badge.json (README badges?) to the
       per-SUT path, and prune/redirect the stale root-level artefacts.
-- [ ] H2. **D2 upstream run**: `CONF_SUT=ehrbase-java bash
+- [x] H2. **D2 upstream run**: `CONF_SUT=ehrbase-java bash
       scripts/conformance.sh` (images pre-pulled: ehrbase/ehrbase:2.34.0 +
       ehrbase-v2-postgres:16.2; set EHRBASE_JAVA_IMAGE=ehrbase/ehrbase:2.34.0
       to match the fairness register). Results are DATA, never a gate.
@@ -162,19 +178,20 @@ causes. Affected suites re-tested 152/152. Remaining, in order:
       each cited). Then `conformance compare --from
       docs/conformance/ehrbase-rs/results.json --from
       docs/conformance/ehrbase-java/results.json` → commit COMPARISON.md.
-- [ ] H3. **Workspace gates**: cargo nextest run --workspace (fast now —
+- [x] H3. **Workspace gates**: cargo nextest run --workspace (fast now —
       Gatekeeper Developer-Tools exemption enabled 2026-07-13), clippy
       --workspace --all-targets, fmt, cargo audit/deny if touched deps.
-- [ ] H4. **Docs**: website/book/src/conformance.md rewrite (multi-SUT +
+- [x] H4. **Docs**: website/book/src/conformance.md rewrite (multi-SUT +
       BYO endpoint + Certificate-for-any-SUT + edition ladder + new
       baseline numbers — user-facing voice); blueprint 00 §2 + ch07 refresh
       (new instrument, new baseline); register 13 prose fix (27→28
       interval ids — worker-flagged off-by-one); PROGRESS.md entry.
-- [ ] H5. **Close**: WORKLIST W-10 row → closed with the PR; changelog
+- [x] H5. **Close**: WORKLIST W-10 row → closed with the PR; changelog
       entry exists (verify it still matches reality); tick D1/D2/D3/E1-E4
       boxes above; PR from claude/w10-conformance-redesign → develop
       (NO AI attribution anywhere), merge after CI green.
-- [ ] H6. (If D1 rerun still shows VAL-107/temporal failures: the register
+- [x] H6. (did not trigger — VAL temporal family green in every D1 run)
+      Original note: (If D1 rerun still shows VAL-107/temporal failures: the register
       13 temporal family G-3 flagged the validator's temporal-range
       enforcement as an open finding — triage against AOM 1.4 §C_DATE_TIME
       before touching anything; a real gap becomes a spec-cited server fix,
@@ -195,9 +212,14 @@ Every delta accounted for:
   360 (× format where BOTH), 341 → 368 case-executions.
 - **+9 adjudicated skips, all in the new coverage** (ancestor's 26 all
   stand): ECC-ADM-007..014 (NativeApiOnly — `I_ADMIN_SERVICE` ops with no
-  ITS-REST admin route, evidenced by the named `app/ehrbase` tests) and
+  ITS-REST admin route, evidenced by the named `app/ehrbase` tests),
   ECC-QRY-012 (all 11 `C/loaded_db` goldens dialect-routed / need
-  id-substitution — corpus-dialect adjudication, register 07).
+  id-substitution — corpus-dialect adjudication, register 07). The
+  LIMIT-before-ORDER-BY 2019-dialect goldens (ECC-QRY-018..024) were
+  re-adjudicated `spec-supersedes-corpus` in `adjudications/ecc-own.toml`,
+  matching the register's TIMEWINDOW treatment: each case RUNS against the
+  spec-derived 4xx rejection (`suites/query_golden.rs` DIALECT_CASES), so
+  a skip would under-report exercised coverage.
 - **20 first-run failures → 0**, each fact-checked against the vendored
   specs, never assumed: 9 instrument defects fixed (contribution invalidity
   ladder, SQR store-time overreach, cross-format content baseline, fixture
@@ -219,7 +241,12 @@ Every delta accounted for:
   differ by one LINK) — `update` made format-aware like `commit`;
   **ECC-DIR-025** — instrument flake, zero-margin client-clock `t_before`
   vs server commit times — far-past instant per the composition-suite
-  pattern.
+  pattern. A fourth instrument defect surfaced at D2: **both adjudication
+  registers resolved `adjudications/` relative to the invocation CWD** and
+  silently loaded empty from the workspace root (the fairness register found
+  nothing; `OwnRegister::load` treated the missing file as an empty
+  register) — paths are now anchored to `CARGO_MANIFEST_DIR` and a missing
+  register is a hard error (no-silent-fallback rule).
 - **Artefact layout:** per-SUT dirs (`docs/conformance/<sut>/`) replace the
   root-level artefact set; stale root files + the old-instrument
   `upstream-ehrbase/` data pruned (git history preserves them); README
