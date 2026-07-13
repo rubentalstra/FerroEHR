@@ -129,7 +129,7 @@ pub(super) fn paginate<T>(items: impl Iterator<Item = T>, page: Page) -> Vec<T> 
 }
 
 /// A [`Page`] as `(offset, limit)` SQL bind values; a `None` limit binds SQL
-/// `NULL` (`LIMIT NULL` = all rows in PostgreSQL).
+/// `NULL` (`LIMIT NULL` = all rows in `PostgreSQL`).
 pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
     let offset = i64::try_from(page.offset()).unwrap_or(i64::MAX);
     let limit = page.limit().and_then(|l| i64::try_from(l).ok());

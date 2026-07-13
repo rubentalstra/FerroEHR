@@ -42,8 +42,12 @@ fn param_value(value: &Value) -> ParamValue {
 
 /// The `$name` parameter-reference token in an AQL query (QUERY `master03`
 /// §Parameters/Syntax l.106: `$` followed by an identifier).
-static PARAM_REF: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\$([A-Za-z_][A-Za-z0-9_]*)").expect("valid param-ref regex"));
+static PARAM_REF: LazyLock<Regex> = LazyLock::new(|| {
+    // The pattern is a fixed literal, valid by construction — a build-time
+    // invariant, not a runtime condition.
+    #[allow(clippy::expect_used)]
+    Regex::new(r"\$([A-Za-z_][A-Za-z0-9_]*)").expect("valid param-ref regex")
+});
 
 /// Render the executed AQL: substitute each bound `$parameter` with its value.
 ///

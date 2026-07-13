@@ -1,5 +1,5 @@
 //! `EHR_ACCESS` — the EHR-wide access-control top-level structure (arch-overview
-//! `master06-design_of_the_ehr.adoc` §EHR_ACCESS; RM ehr
+//! `master06-design_of_the_ehr.adoc` §`EHR_ACCESS`; RM ehr
 //! `org.openehr.rm.ehr.ehr_access.adoc`). This file owns the object's default +
 //! validation (created under the EHR-creation CONTRIBUTION — there is no direct
 //! ITS-REST `EHR_ACCESS` write) and carries the per-EHR scheme cache.

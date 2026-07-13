@@ -145,7 +145,7 @@ impl EhrbaseService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.relationship_version_response(vo_id, read))
+        Ok(Self::relationship_version_response(vo_id, read))
     }
 
     /// `update_party_relationship` (`i_party_relationship.adoc`): commit a new
@@ -409,7 +409,7 @@ impl EhrbaseService {
 
     /// A [`ServiceResponse`] for a loaded relationship: its canonical body with
     /// the `uid` injected, plus the resource metadata (empty `ehr_id`).
-    fn relationship_version_response(&self, vo_id: Uuid, read: VersionRead) -> ServiceResponse {
+    fn relationship_version_response(vo_id: Uuid, read: VersionRead) -> ServiceResponse {
         let meta = ResourceMeta::new(
             String::new(),
             object_version_id(vo_id, &read.creating_system_id, read.tree),

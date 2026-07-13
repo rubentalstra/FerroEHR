@@ -127,7 +127,7 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: Uuid) -> Result<Option<Uuid>, S
 }
 
 /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true`, read from
-/// the EHR_STATUS root node's canonical `data` fragment (`num = 0`, RM ehr
+/// the `EHR_STATUS` root node's canonical `data` fragment (`num = 0`, RM ehr
 /// `EHR_STATUS.is_modifiable`). `None` when the EHR has no current `EHR_STATUS`
 /// (the caller treats that as modifiable so the guard never spuriously blocks).
 ///

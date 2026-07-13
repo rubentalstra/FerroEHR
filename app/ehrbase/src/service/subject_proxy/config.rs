@@ -165,6 +165,10 @@ impl SubjectProxyFhir {
     /// non-2xx status, a timeout, or a malformed body — the caller turns an
     /// `Err` into an unavailable `SAMPLE` so the primary→fallback pipeline runs
     /// (`data_frame.adoc`).
+    ///
+    /// # Errors
+    /// An unconfigured `system_id`, a non-2xx response, a request timeout, or
+    /// a malformed body — see above.
     pub async fn get(&self, system_id: &str, query_path: &str) -> Result<FhirFetch, String> {
         let Some(sys) = self.clients.get(system_id) else {
             return Err(format!("FHIR system {system_id:?} is not configured"));

@@ -191,7 +191,7 @@ impl EhrbaseService {
 /// The cross-area hooks the CONTRIBUTION commit orchestration needs
 /// ([`crate::versioning::contribution::commit_version_set`]): content
 /// validation, the EHR-existence + `is_modifiable` guards, the EHR-singleton
-/// lookup, and EHR_ACCESS cache invalidation — each realized by its owning
+/// lookup, and `EHR_ACCESS` cache invalidation — each realized by its owning
 /// service chapter.
 #[async_trait]
 impl CommitEnv for EhrbaseService {
@@ -261,9 +261,9 @@ impl CommitEnv for EhrbaseService {
     }
 }
 
-/// SM `I_DEFINITION` WebTemplate exposure: one resolution serves validation,
+/// SM `I_DEFINITION` `WebTemplate` exposure: one resolution serves validation,
 /// FLAT/STRUCTURED conversion, and `wt+json` (the derived runtime artefact —
-/// the WebTemplate format itself is spec-silent, `crate::templates`).
+/// the `WebTemplate` format itself is spec-silent, `crate::templates`).
 #[async_trait]
 impl WebTemplateService for EhrbaseService {
     async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, SmError> {

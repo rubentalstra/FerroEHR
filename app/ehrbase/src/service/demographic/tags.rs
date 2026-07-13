@@ -1,4 +1,4 @@
-//! The demographic ITEM_TAG surface — the RM `common.item_tag` extension
+//! The demographic `ITEM_TAG` surface — the RM `common.item_tag` extension
 //! applied to parties (ehr-less: `ehr_id IS NULL`). Our own extension: ITS-REST
 //! 1.0.3 defines no demographic wire contract (register
 //! `docs/design/platform/04-service-demographic-ehr-index.md`). The tag store is

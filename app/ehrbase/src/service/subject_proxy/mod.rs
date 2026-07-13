@@ -1,5 +1,5 @@
 //! The Subject Proxy Service engine (`I_SUBJECT_PROXY_SERVICE`,
-//! `i_subject_proxy_service.adoc`; master10 subject_proxy_service): the
+//! `i_subject_proxy_service.adoc`; master10 `subject_proxy_service`): the
 //! `SubjectProxyService` impl on [`EhrbaseService`] over the `sp_*` config +
 //! sample stores.
 //!
@@ -72,10 +72,10 @@ impl EhrbaseService {
         let canonical = var.canonical_name();
         let latest = self.sp_latest_sample(subject_id, &canonical).await?;
 
-        if let Some((sample, _)) = &latest {
-            if Self::sp_sample_is_fresh(var.currency.as_deref(), sample) {
-                return Ok(sample.clone());
-            }
+        if let Some((sample, _)) = &latest
+            && Self::sp_sample_is_fresh(var.currency.as_deref(), sample)
+        {
+            return Ok(sample.clone());
         }
 
         if var.is_manual {
@@ -228,10 +228,10 @@ impl SubjectProxyService for EhrbaseService {
 
         // Maintain using_app_ids: the creating app is always a user (G-10).
         let mut using: Vec<String> = definition.using_app_ids.clone();
-        if let Some(app) = &definition.creating_app_id {
-            if !using.contains(app) {
-                using.push(app.clone());
-            }
+        if let Some(app) = &definition.creating_app_id
+            && !using.contains(app)
+        {
+            using.push(app.clone());
         }
         let using_json = serde_json::to_value(&using)
             .map_err(|e| SmError::exception(format!("serialize using_app_ids: {e}")))?;

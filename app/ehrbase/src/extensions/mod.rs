@@ -10,7 +10,7 @@
 //! The no-spec-home finding is verified, not assumed: the only three openEHR
 //! chapters that touch integration / deployment / security-of-access were
 //! checked as the last possible spec home and none claims these features —
-//! `docs/design/platform/12-extensions.md` (register 12) records the file:line
+//! `docs/design/platform/12-extensions.md` (register 12) records the <file:line>
 //! evidence and the master13/master14/master07 cross-check. In particular:
 //!
 //! * **master14** ("Integrating openEHR with other Systems") governs

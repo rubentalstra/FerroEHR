@@ -160,7 +160,7 @@ fn classify(
 /// [`classify`]; the object kind from the payload `_type` (create) or the
 /// stored object (modify/delete).
 ///
-/// G-6 (register 03 — SM `i_ehr_contribution.adoc` §commit_contribution
+/// G-6 (register 03 — SM `i_ehr_contribution.adoc` §`commit_contribution`
 /// `Pre_has_ehr`): the target EHR must exist before committing, so a create-only
 /// CONTRIBUTION to a missing EHR is a clean `NotFound`, not a storage FK error.
 #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
@@ -497,7 +497,7 @@ async fn require_kind(pool: &sqlx::PgPool, vo_id: Uuid) -> Result<Kind, ServiceE
 
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the
 /// already-resolved numeric `audit_change_type` code, defaulting the
-/// committer/system_id to the request context.
+/// `committer/system_id` to the request context.
 fn parse_audit(
     audit: Option<&Value>,
     change_type: String,
@@ -526,7 +526,7 @@ fn parse_audit(
 }
 
 /// Build an [`AuditInput`] for a VERSION's `commit_audit` — the committer and
-/// system_id default from the enclosing CONTRIBUTION's audit when the version
+/// `system_id` default from the enclosing CONTRIBUTION's audit when the version
 /// item omits them (master06 §Committal copy rule, m4).
 fn parse_version_audit(
     audit: Option<&Value>,
@@ -549,7 +549,7 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 
 /// Enforce that a version's object kind matches the contribution's scope: a
 /// demographic contribution (`party_only`) may carry only party roots +
-/// PARTY_RELATIONSHIP, and an EHR contribution may carry neither. A mismatch is
+/// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither. A mismatch is
 /// `422`.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
     if party_only && !kind.is_demographic() {

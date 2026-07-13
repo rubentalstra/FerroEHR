@@ -142,7 +142,7 @@ impl Builder<'_> {
 // ── coercions ─────────────────────────────────────────────────────────────────
 
 /// Apply the value coercion to a jsonb extraction base (QUERY master03
-/// §Comparison operators; DV_ORDERED ordered-magnitude via `ext.openehr_magnitude`).
+/// §Comparison operators; `DV_ORDERED` ordered-magnitude via `ext.openehr_magnitude`).
 pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr {
     match mode {
         ValueMode::Projection => base,

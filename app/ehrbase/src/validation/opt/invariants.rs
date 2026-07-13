@@ -30,7 +30,7 @@ use super::{Ctx, Violation, co_node_id, co_occurrences};
 // ─── C_ATTRIBUTE / C_SINGLE_ATTRIBUTE invariants (T4, T5b) ───────────────────────
 
 /// `C_ATTRIBUTE` invariant `Rm_attribute_name_valid`: `not rm_attribute_name.
-/// is_empty` (AOM1.4 c_attribute class file, Invariants).
+/// is_empty` (AOM1.4 `c_attribute` class file, Invariants).
 pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(), Violation> {
     if attr_name.is_empty() {
         return Err(Violation::new(
@@ -42,7 +42,7 @@ pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(
 }
 
 /// `C_ATTRIBUTE` invariant `Existence_set`: `existence.lower >= 0 and
-/// existence.upper <= 1` (AOM1.4 c_attribute class file, Invariants).
+/// existence.upper <= 1` (AOM1.4 `c_attribute` class file, Invariants).
 pub(super) fn check_existence_set(
     attr_name: &str,
     parent_rm: &str,
@@ -66,9 +66,9 @@ pub(super) fn check_existence_set(
 
 /// `C_SINGLE_ATTRIBUTE` invariant `Members_valid`: every alternative child
 /// satisfies `co.occurrences.upper <= 1` — a single-valued attribute can hold
-/// at most one value (AOM1.4 c_single_attribute class file, Invariants; also
+/// at most one value (AOM1.4 `c_single_attribute` class file, Invariants; also
 /// cADL: occurrences upper > 1 only under a container attribute, AOM1.4
-/// c_object class file, `occurrences`). Called only for a single-valued
+/// `c_object` class file, `occurrences`). Called only for a single-valued
 /// attribute (no cardinality).
 pub(super) fn check_members_valid(
     attr_name: &str,
@@ -177,7 +177,7 @@ fn is_archetype_id_shaped(id: &str) -> bool {
 ///
 /// PORT NOTE: this decides only the *literal id-shape* case; a genuine PERL
 /// regex include/exclude expression is not a decidable identifier at upload
-/// and is deferred to runtime slot admission (the WebTemplate instance walk,
+/// and is deferred to runtime slot admission (the `WebTemplate` instance walk,
 /// blueprint 03-am F-07-10) — that surface is out of scope for the artefact
 /// pass here (cADL §Archetype Slots, `ADL1.4/master05-cadl.adoc` L535-601).
 pub(super) fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {

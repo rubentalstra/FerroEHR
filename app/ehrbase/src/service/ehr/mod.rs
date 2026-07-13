@@ -14,8 +14,8 @@
 //! - [`composition`] — `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`).
 //! - [`contributions`] — `I_EHR_CONTRIBUTION` (`i_ehr_contribution.adoc`).
 //! - [`access`]    — the `EHR_ACCESS` top-level structure (arch-overview
-//!   master06 §EHR_ACCESS) + the spec-silent scheme cache.
-//! - [`tags`]      — ITEM_TAG (ITS-REST experimental extension).
+//!   master06 §`EHR_ACCESS`) + the spec-silent scheme cache.
+//! - [`tags`]      — `ITEM_TAG` (ITS-REST experimental extension).
 //! - [`uri`]       — `ehr:`-URI resolution (spec-silent extension).
 //! - [`meta`]      — the shared version-metadata helpers (G-9).
 //!
@@ -40,7 +40,7 @@
 //! `current_vo` / `invalidate_ehr_access` are `EhrbaseService` methods here, and
 //! the two in-transaction hooks delegate to
 //! [`check_versioned_composition_invariants`] (COMPOSITION modify) and
-//! [`EhrbaseService::sync_ehr_subject`] (EHR_STATUS commit) — the same fns the
+//! [`EhrbaseService::sync_ehr_subject`] (`EHR_STATUS` commit) — the same fns the
 //! direct create/update paths run inline. SQL row I/O is a storage seam
 //! ([`crate::storage::ehr_repo`] / [`crate::storage::version_repo`]; no openEHR
 //! spec governs the schema — our own design).

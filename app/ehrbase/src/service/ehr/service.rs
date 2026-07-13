@@ -3,7 +3,7 @@
 //! folder-hierarchy reads the `EHR` wire body needs.
 //!
 //! Spec: arch-overview `master06-design_of_the_ehr.adoc` §The EHR (EHR root,
-//! `system_id`, EHR_ACCESS, EHR_STATUS, directory, folders, time_created) and
+//! `system_id`, `EHR_ACCESS`, `EHR_STATUS`, directory, folders, `time_created`) and
 //! RM ehr `master04-ehr_package.adoc` §EHR Creation / §Folders. The EHR-table
 //! and folder-membership SQL is a storage seam (G-10; no openEHR spec governs
 //! the schema — our own design).
@@ -93,7 +93,7 @@ impl EhrbaseService {
     /// `id.value` + `namespace`). Served from the promoted `ehr.subject_*`
     /// columns (unique per subject — `ehr_subject_uq`).
     ///
-    /// PORT NOTE (G-4, `i_ehr_service.adoc` §get_ehrs_for_subject): the DB
+    /// PORT NOTE (G-4, `i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
     /// constraint narrows the SM `List<EHR_SUMMARY>` to ≤1. CNF
     /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for the
     /// same subject, which supports the one-EHR-per-subject rule (RM ehr master04

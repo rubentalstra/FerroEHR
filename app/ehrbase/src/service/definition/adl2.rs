@@ -1,5 +1,5 @@
 //! `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts (archetype /
-//! template / operational_template) keyed by `ARCHETYPE_HRID`, on the
+//! template / `operational_template`) keyed by `ARCHETYPE_HRID`, on the
 //! `adl2_artefact` store.
 //!
 //! PORT NOTE (G-05-02, registration-subset validity): `valid_artefact` /

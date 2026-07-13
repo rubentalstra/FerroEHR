@@ -7,7 +7,7 @@
 //! multi-version commit, retrieval assembly) is versioning law and lives in
 //! [`crate::versioning`] (`commit_version_set` / `get_contribution` /
 //! `list_contributions` / `count_contributions`); this file keeps only the
-//! I_EHR_CONTRIBUTION surface and the wire glue. The `Pre_has_ehr` guard (G-6)
+//! `I_EHR_CONTRIBUTION` surface and the wire glue. The `Pre_has_ehr` guard (G-6)
 //! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
@@ -37,7 +37,7 @@ impl EhrbaseService {
     /// an attestation-only (`666`) member, a delete (`523`) member, or a member
     /// inheriting `committer`/`system_id` from the CONTRIBUTION audit (RM common
     /// master06 §Committal m4). This raw-body seam carries the full-fidelity EHR
-    /// CONTRIBUTION commit; all RM change_control semantics stay in
+    /// CONTRIBUTION commit; all RM `change_control` semantics stay in
     /// `crate::versioning::commit_version_set` (over the
     /// [`crate::versioning::CommitEnv`] impl `EhrbaseService` provides).
     ///

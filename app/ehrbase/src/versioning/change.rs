@@ -328,11 +328,11 @@ async fn next_version(
 /// belong to other layers and run around this write, driven by the CONTRIBUTION
 /// orchestration ([`crate::versioning::CommitEnv`], called from
 /// [`super::contribution::commit_version_set`]) and by the direct write paths:
-/// - `CommitEnv::pre_composition_modify` — the VERSIONED_COMPOSITION
+/// - `CommitEnv::pre_composition_modify` — the `VERSIONED_COMPOSITION`
 ///   cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
 ///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify (G-13);
 /// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
-///   after an EHR_STATUS version;
+///   after an `EHR_STATUS` version;
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
 ///   concern, not a storage write.
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)] // the three change arms + commit context

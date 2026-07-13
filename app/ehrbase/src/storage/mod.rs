@@ -4,7 +4,7 @@
 //!
 //! No openEHR spec governs the physical storage — this is our own PG18-native
 //! design (`docs/architecture.md` §Storage; grounded on docs-verified
-//! PostgreSQL physics: no partial jsonb detoast, GIN serves no ordering). The
+//! `PostgreSQL` physics: no partial jsonb detoast, GIN serves no ordering). The
 //! change-control law the row I/O upholds is RM common master06; the identifier
 //! forms preserved verbatim in each fragment are BASE `base_types` master05 and
 //! `foundation_types` master03/05/06.

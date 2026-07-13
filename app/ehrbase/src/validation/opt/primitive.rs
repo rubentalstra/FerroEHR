@@ -3,13 +3,13 @@
 //! (T9, T9b, T9c, T10, T12).
 //!
 //! The `C_PRIMITIVE` family (`AM/docs/ADL1.4/master05-cadl.adoc` §Primitive
-//! Types; AOM1.4 c_boolean/c_string/c_integer/c_real/c_date/c_time/
-//! c_date_time/c_duration class files) carries per-leaf invariants — boolean
+//! Types; AOM1.4 `c_boolean`/`c_string`/`c_integer`/`c_real`/`c_date`/`c_time`/
+//! `c_date_time`/`c_duration` class files) carries per-leaf invariants — boolean
 //! satisfiability, `Assumed_value_valid`, and the ISO-8601 constraint-pattern
 //! `Pattern_validity` — decidable structurally on the flattened OPT. The
 //! openEHR-profile `C_DOMAIN_TYPE`s (`C_DV_QUANTITY`, `C_DV_ORDINAL`,
 //! `C_CODE_PHRASE`, `C_CODE_REFERENCE`) add `property`/assumed-value checks
-//! (UML c_quantity/c_ordinal/c_coded_text; ADL1.4 master09).
+//! (UML `c_quantity`/`c_ordinal`/`c_coded_text`; ADL1.4 master09).
 
 use openehr_base::prelude::CodePhrase;
 use openehr_its::opt14::{CDvOrdinal, CDvQuantity, CPrimitive};
@@ -172,7 +172,7 @@ pub(super) fn check_assumed_code(
     Ok(())
 }
 
-/// `C_DV_ORDINAL` `Assumed_value_valid` (AOM1.4 c_defined_object class file):
+/// `C_DV_ORDINAL` `Assumed_value_valid` (AOM1.4 `c_defined_object` class file):
 /// the assumed ordinal must be one of the constrained (symbol, value) pairs.
 pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Violation> {
     if let Some(assumed) = &c.assumed_value
@@ -191,7 +191,7 @@ pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Viol
     Ok(())
 }
 
-/// `C_DV_QUANTITY` `Property_valid` + `Assumed_value_valid` (UML c_quantity;
+/// `C_DV_QUANTITY` `Property_valid` + `Assumed_value_valid` (UML `c_quantity`;
 /// RM support master05 §"Terms and Codes in the openEHR Reference Model",
 /// `Group_id_property`).
 pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Violation> {

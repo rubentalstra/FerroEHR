@@ -58,7 +58,7 @@ impl EhrbaseService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.party_version_response(vo_id, read))
+        Ok(Self::party_version_response(vo_id, read))
     }
 
     /// `update_party` (`i_party.adoc`): commit a new party version. `expected`

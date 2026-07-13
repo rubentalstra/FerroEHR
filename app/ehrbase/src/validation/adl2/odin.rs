@@ -3,7 +3,7 @@
 //! PORT NOTE (why a local reader — G-09-04 re-verified 2026-07-12): the openEHR
 //! ODIN object syntax has a normative grammar (`AM/docs/ADL2/master08-adl.adoc`
 //! §ODIN), but there is no shared runtime ODIN parser to consume. `openehr-lang`
-//! holds only the BMM / P_BMM object model generated from the meta-model; its
+//! holds only the BMM / `P_BMM` object model generated from the meta-model; its
 //! own module doc records that "the runtime ODIN and EL parsers are future
 //! hand-written work" (`crates/openehr-lang/src/lib.rs`), and no
 //! `openehr_lang::odin` item exists. The ADL2 registration surface therefore

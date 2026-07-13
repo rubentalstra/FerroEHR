@@ -1,17 +1,17 @@
-//! DEMOGRAPHIC (PARTY + PARTY_RELATIONSHIP) service module — the platform-crate
+//! DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) service module — the platform-crate
 //! realization of the SM DEMOGRAPHIC group over the shared
 //! [`crate::versioning`] change-control machinery, with **no EHR scope**
 //! (`ehr_id = None` — our own design: a party has no owning EHR). Parties
-//! (PERSON / ORGANISATION / GROUP / AGENT / ROLE) and PARTY_RELATIONSHIPs are
+//! (PERSON / ORGANISATION / GROUP / AGENT / ROLE) and `PARTY_RELATIONSHIP`s are
 //! versioned objects in the demographics repository.
 //!
 //! Internal split mirrors the SM interface boundaries
 //! (`app/ehrbase-sm/src/services/demographic/`):
 //! [`party`] = `I_PARTY` CRUD (+ `I_DEMOGRAPHIC_SERVICE.create_party`),
 //! [`relationship`] = `I_PARTY_RELATIONSHIP` (+ `create_party_relationship`),
-//! [`versioned`] = the VERSIONED_PARTY read surface (our extension),
+//! [`versioned`] = the `VERSIONED_PARTY` read surface (our extension),
 //! [`contribution`] = the demographic (ehr-less) CONTRIBUTION (our extension),
-//! [`tags`] = the demographic ITEM_TAG surface (our extension), and [`api`] =
+//! [`tags`] = the demographic `ITEM_TAG` surface (our extension), and [`api`] =
 //! the `DemographicService` + `PartyRelationshipService` trait impls.
 //!
 //! ITS-REST 1.0.3 defines no demographic wire contract (the SM demographic
@@ -83,7 +83,7 @@ fn kind_of(kind: PartyKind) -> Kind {
 }
 
 /// The REST [`PartyKind`] for a versioned-object [`Kind`], or `None` for a
-/// non-party kind (COMPOSITION / EHR_STATUS / … / PARTY_RELATIONSHIP).
+/// non-party kind (COMPOSITION / `EHR_STATUS` / … / `PARTY_RELATIONSHIP`).
 fn party_kind_of(kind: Kind) -> Option<PartyKind> {
     match kind {
         Kind::Agent => Some(PartyKind::Agent),
@@ -97,14 +97,17 @@ fn party_kind_of(kind: Kind) -> Option<PartyKind> {
 
 /// `OBJECT_REF.namespace` legality: `"local"`, `"unknown"`, or a value matching
 /// the standard regex `[a-zA-Z][a-zA-Z0-9_.:\/&?=+-]*` (the two specials are
-/// themselves matched by the regex) — BASE base_types
+/// themselves matched by the regex) — BASE `base_types`
 /// `object_ref.adoc §namespace`.
 static NAMESPACE_RE: LazyLock<Regex> = LazyLock::new(|| {
+    // The pattern is a fixed literal, valid by construction — a build-time
+    // invariant, not a runtime condition.
+    #[allow(clippy::expect_used)]
     Regex::new(r"^[a-zA-Z][a-zA-Z0-9_.:/&?=+-]*$").expect("static namespace regex")
 });
 
-/// The legal `PARTY_REF.type` set — BASE base_types `party_ref.adoc
-/// §Type_validity`: `type ∈ {PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY,
+/// The legal `PARTY_REF.type` set — BASE `base_types` `party_ref.adoc`
+/// §`Type_validity`: `type ∈ {PERSON, ORGANISATION, GROUP, AGENT, ROLE, PARTY,
 /// ACTOR}` (abstract supertypes are allowed so a valid ref can still be built
 /// to a subtype not known by the current implementation).
 const PARTY_REF_TYPES: [&str; 7] = [
@@ -262,8 +265,8 @@ fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError
 }
 
 /// Validate a party version reached through the CONTRIBUTION path, where the
-/// [`Kind`] was already derived from the payload `_type` (so only the structural
-/// + invariant checks remain). The `CommitEnv::validate_for_commit`
+/// [`Kind`] was already derived from the payload `_type` (so only the structural +
+/// invariant checks remain). The `CommitEnv::validate_for_commit`
 /// implementation on [`EhrbaseService`] (`ehr/composition_validate.rs`)
 /// dispatches a demographic-party `Kind` here.
 pub(crate) fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result<(), ServiceError> {
@@ -343,7 +346,7 @@ impl EhrbaseService {
 
     /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
     /// `I_PARTY` calls (which address parties by versioned-object id only). A
-    /// non-party id (COMPOSITION, PARTY_RELATIONSHIP, …) or unknown id is `404`
+    /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`
     /// (`versioned_object_does_not_exist`).
     pub(crate) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
         object_kind(&self.pool, vo_id)
@@ -365,7 +368,7 @@ impl EhrbaseService {
     /// A [`ServiceResponse`] for a loaded party: its canonical body with the
     /// `uid` injected (PARTY `Uid_mandatory`) plus the resource metadata (an
     /// empty `ehr_id` — parties are not EHR-scoped).
-    fn party_version_response(&self, vo_id: Uuid, read: VersionRead) -> ServiceResponse {
+    fn party_version_response(vo_id: Uuid, read: VersionRead) -> ServiceResponse {
         let meta = ResourceMeta::new(
             String::new(),
             object_version_id(vo_id, &read.creating_system_id, read.tree),
@@ -403,7 +406,7 @@ mod tests {
         })
     }
 
-    fn person(identities: Value) -> Value {
+    fn person(identities: &Value) -> Value {
         json!({
             "_type": "PERSON",
             "name": { "_type": "DV_TEXT", "value": "person" },
@@ -415,15 +418,15 @@ mod tests {
     #[test]
     fn identities_valid_is_enforced() {
         // Empty / absent identities violate PARTY.Identities_valid.
-        assert!(typed_check("PERSON", &person(json!([]))).is_err());
+        assert!(typed_check("PERSON", &person(&json!([]))).is_err());
         assert!(typed_check("PERSON", &json!({ "_type": "PERSON" })).is_err());
-        typed_check("PERSON", &person(json!([identity()])))
+        typed_check("PERSON", &person(&json!([identity()])))
             .expect("a party with one identity is valid");
     }
 
     #[test]
     fn present_but_empty_lists_are_rejected() {
-        let mut body = person(json!([identity()]));
+        let mut body = person(&json!([identity()]));
         body["contacts"] = json!([]);
         let msg = match typed_check("PERSON", &body) {
             Err(ServiceError::Unprocessable(m)) => m,
@@ -432,7 +435,7 @@ mod tests {
         assert!(msg.contains("Contacts_valid"), "got {msg}");
     }
 
-    /// G-17: a PARTY_REF whose `type` is outside the legal set is a `422`
+    /// G-17: a `PARTY_REF` whose `type` is outside the legal set is a `422`
     /// (`PARTY_REF.Type_validity`); a legal supertype (`ACTOR`) is accepted.
     #[test]
     fn party_ref_type_validity_is_enforced() {
@@ -462,7 +465,7 @@ mod tests {
         }
     }
 
-    /// A ROLE.performer / ACTOR.roles ref is checked for Type_validity (G-17).
+    /// A ROLE.performer / ACTOR.roles ref is checked for `Type_validity` (G-17).
     #[test]
     fn role_performer_ref_is_validated() {
         let role = |performer_type: &str| {

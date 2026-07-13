@@ -18,16 +18,16 @@ use crate::service::ServiceError;
 /// - `name` present (`LOCATABLE.name` 1..1);
 /// - `archetype_node_id` present and non-empty (`Archetype_node_id_valid`);
 /// - `is_queryable` / `is_modifiable` present booleans (both 1..1);
-/// - `subject` present and a `PARTY_SELF` (`EHR_STATUS.subject` 1..1 PARTY_SELF;
+/// - `subject` present and a `PARTY_SELF` (`EHR_STATUS.subject` 1..1 `PARTY_SELF`;
 ///   monomorphic, so a foreign concrete `_type` is invalid — enforced via the
 ///   generated `PartySelf`'s `_type` check). An empty `{}` subject is a valid
-///   **anonymous** subject (RM ehr master04 §EHR Status: PARTY_SELF "enabling it
+///   **anonymous** subject (RM ehr master04 §EHR Status: `PARTY_SELF` "enabling it
 ///   to be made completely anonymous");
 /// - a present `subject.external_ref` is a valid `PARTY_REF` (non-empty
 ///   `id.value` — `Id_exists`; non-empty `namespace` — `Namespace_valid`); a
 ///   NULL `external_ref` is permitted;
 /// - a present `other_details` is a concrete `ITEM_STRUCTURE` (RM ehr
-///   `ehr_status.adoc` `other_details`; RM data_structures master04).
+///   `ehr_status.adoc` `other_details`; RM `data_structures` master04).
 pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(m);
     let obj = status
@@ -200,9 +200,9 @@ mod tests {
         validate_ehr_status(&identified).expect("identified PARTY_SELF EHR_STATUS");
     }
 
-    /// A subject typed with a foreign concrete PARTY_PROXY subtype
-    /// (PARTY_IDENTIFIED) is rejected — `EHR_STATUS.subject` is monomorphic
-    /// PARTY_SELF (RM ehr master04 §EHR Status).
+    /// A subject typed with a foreign concrete `PARTY_PROXY` subtype
+    /// (`PARTY_IDENTIFIED`) is rejected — `EHR_STATUS.subject` is monomorphic
+    /// `PARTY_SELF` (RM ehr master04 §EHR Status).
     #[test]
     fn ehr_status_subject_wrong_type_is_rejected() {
         let bad = json!({
@@ -230,7 +230,7 @@ mod tests {
     }
 
     /// An anonymous subject — empty `{}` or `{"_type":"PARTY_SELF"}` with no
-    /// external_ref — is accepted (RM ehr master04 §EHR Status: "completely
+    /// `external_ref` — is accepted (RM ehr master04 §EHR Status: "completely
     /// anonymous").
     #[test]
     fn anonymous_ehr_status_subject_is_accepted() {
@@ -250,7 +250,7 @@ mod tests {
     /// Every vendored `EHR_STATUS` data set the CNF corpus labels invalid
     /// (`master06 §Test Data Sets`, INVALID class 2) must be rejected — with one
     /// spec-cited exception: `001_ehr_status_subject_empty.json` (`subject: {}`)
-    /// is spec-VALID (an empty PARTY_SELF is a completely anonymous subject,
+    /// is spec-VALID (an empty `PARTY_SELF` is a completely anonymous subject,
     /// master04), a documented corpus-vs-spec adjudication.
     #[test]
     fn every_invalid_ehr_status_fixture_is_rejected() {

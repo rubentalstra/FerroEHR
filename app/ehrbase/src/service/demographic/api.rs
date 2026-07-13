@@ -60,7 +60,7 @@ fn party_kind_from_body(body: &Value) -> Result<PartyKind, SmError> {
 }
 
 impl EhrbaseService {
-    /// Attach the party's stored ITEM_TAGs (RM `common.item_tag`) to a response's
+    /// Attach the party's stored `ITEM_TAG`s (RM `common.item_tag`) to a response's
     /// metadata seam ([`ResourceMeta::item_tags`]), from which the ITS-REST
     /// adapter derives the `openehr-item-tag`/`openehr-version-item-tag` response
     /// headers. A response without metadata (a deleted read → `Null` body) is

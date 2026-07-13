@@ -14,11 +14,11 @@
 //!   performance and to guarantee only validated artefacts run. Our derived form
 //!   is the [`WebTemplate`], memoised in a `moka` cache (G-T05).
 //!
-//! PORT NOTE (G-T06 — WebTemplate format is spec-silent): the concrete
-//! WebTemplate JSON shape is **not openEHR-normative** — it is the Better
+//! PORT NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
+//! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
 //! `web-template` SDT format and lives entirely in `openehr-flat` (a
 //! hand-written spec-adjacent crate). This module only *stores, resolves, and
-//! caches* it; it never presents WebTemplate as canonical openEHR, and the
+//! caches* it; it never presents `WebTemplate` as canonical openEHR, and the
 //! builder's own id-sanitisation is a **vendor** rule, distinct from the
 //! §Composite Identifiers and Case identity law applied to the cache key here
 //! (see [`crate::templates::identity`]).

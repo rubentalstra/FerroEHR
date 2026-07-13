@@ -27,7 +27,7 @@
 //!    parse each `rm:`-namespaced leaf into its RM datatype. A body that does not
 //!    conform to the template is a typed `precondition_violation`.
 //! 3. **Commit** — the produced canonical COMPOSITION goes through the normal
-//!    validated [`EhrbaseService::create_composition`] path (WebTemplate +
+//!    validated [`EhrbaseService::create_composition`] path (`WebTemplate` +
 //!    RM-invariant + terminology validation, contribution/audit — RM common
 //!    master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
 //!    failure is `content_invalid` — never a silent partial COMPOSITION.

@@ -185,7 +185,9 @@ fn glob_to_regex(pattern: &str) -> Regex {
         }
     }
     re.push('$');
-    // The pattern is escaped except for `*` → `.*`, so compilation cannot fail.
+    // The pattern is escaped except for `*` → `.*`, so compilation cannot fail —
+    // a build-time invariant, not a runtime condition.
+    #[allow(clippy::expect_used)]
     Regex::new(&re).expect("glob-derived regex is always valid")
 }
 

@@ -2,8 +2,8 @@
 //! reverse-map (G-12-03, G-12-04).
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY`
-//! + `FEEDER_AUDIT`), not FHIR resources; this connector maps directly to
+//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY` +
+//! `FEEDER_AUDIT`), not FHIR resources; this connector maps directly to
 //! *designed* templates (mapping-as-data), a different, spec-silent mechanism.
 //! Quarantined under `crate::extensions` (`docs/design/platform/12-extensions.md`).
 //! Gate: the `/fhir/r4/*` + `/admin/fhir_mapping` routes are config-gated in

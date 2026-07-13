@@ -26,7 +26,7 @@
 //! # Cross-module wiring
 //!
 //! - **`crate::versioning`** — [`import`] reaches `commit_import` /
-//!   `commit_demographic_import` (IMPORTED_VERSION replay); [`export`] reaches
+//!   `commit_demographic_import` (`IMPORTED_VERSION` replay); [`export`] reaches
 //!   `original_version` / `versioned_object` / `revision_history` / the version
 //!   reads. These are the versioning-engine surface, called directly.
 //! - **`crate::templates` + `crate::validation`** — [`tdd`] resolves the OPT and

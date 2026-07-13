@@ -3,25 +3,25 @@
 //!
 //! Spec oracles (precedence order):
 //! - RM common `master06-change_control_package.adoc` — the change-control law
-//!   (VERSIONED_OBJECT, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
+//!   (`VERSIONED_OBJECT`, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
 //!   audits, Digital Signature, Attestation, version lifecycle, logical
 //!   deletion, version identification, copying/merging).
-//! - RM common `master04-generic_package.adoc` — AUDIT_DETAILS, ATTESTATION,
-//!   REVISION_HISTORY(_ITEM), PARTY_PROXY.
-//! - BASE base_types `master05-identification_package.adoc` — OBJECT_VERSION_ID
-//!   / VERSION_TREE_ID lexical forms, composite-identifier case rules.
+//! - RM common `master04-generic_package.adoc` — `AUDIT_DETAILS`, ATTESTATION,
+//!   `REVISION_HISTORY`(_ITEM), `PARTY_PROXY`.
+//! - BASE `base_types` `master05-identification_package.adoc` — `OBJECT_VERSION_ID`
+//!   / `VERSION_TREE_ID` lexical forms, composite-identifier case rules.
 //! - BASE arch-overview `master07-security.adoc` §Integrity,
 //!   `master08-versioning.adoc`, `master09-identification.adoc`.
 //!
 //! Layout derives from the spec's own decomposition. The digital signature is a
-//! section of master06 (change_control), so the signer/verifier live **inside**
+//! section of master06 (`change_control`), so the signer/verifier live **inside**
 //! this module ([`signature`]), not as a standalone sibling.
 //!
 //! # Seam with storage (`crate::storage`)
 //!
 //! This module owns the *decisions* (classify, tree placement, lifecycle
 //! transition, sign, attest, import policy) and the *builders*
-//! (ORIGINAL_VERSION / VERSIONED_OBJECT / REVISION_HISTORY value construction).
+//! (`ORIGINAL_VERSION` / `VERSIONED_OBJECT` / `REVISION_HISTORY` value construction).
 //! All `sqlx` execution for the `vo_version` / `audit` / `contribution` /
 //! `vo_attestation` rows is delegated to a storage-owned repository. No openEHR
 //! spec governs the SQL — it is our own design.
@@ -73,8 +73,8 @@ pub(crate) use revision_history::{
 ///
 /// RM common master06 keeps one change-control model for all versioned content;
 /// this CDR realizes it with one unified `vo_version`/`node` machinery, so a
-/// single [`Kind`] discriminates COMPOSITION / EHR_STATUS / EHR_ACCESS / FOLDER
-/// (EHR-scoped) and the demographic party roots + PARTY_RELATIONSHIP (no EHR
+/// single [`Kind`] discriminates COMPOSITION / `EHR_STATUS` / `EHR_ACCESS` / FOLDER
+/// (EHR-scoped) and the demographic party roots + `PARTY_RELATIONSHIP` (no EHR
 /// scope, RM demographic).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Kind {
@@ -165,12 +165,12 @@ pub(crate) struct SigningCtx<'a> {
 /// ([`contribution::commit_version_set`]) needs from the service layer. Each
 /// hook is owned by another register: content validation (validation register),
 /// EHR existence + `is_modifiable` write guard + `current_vo` (EHR register),
-/// EHR_ACCESS cache invalidation (EHR register), committer default (EHR
+/// `EHR_ACCESS` cache invalidation (EHR register), committer default (EHR
 /// register). `crate::service::EhrbaseService` implements it; versioning owns
 /// only the change-set decision logic. `default_committer` is the EHR worker's
 /// `committer()`; `ensure_ehr_exists` closes G-6 (SM `i_ehr_contribution.adoc`
-/// §commit_contribution `Pre_has_ehr`); `ensure_content_writable` is the
-/// EHR_STATUS `is_modifiable` guard.
+/// §`commit_contribution` `Pre_has_ehr`); `ensure_content_writable` is the
+/// `EHR_STATUS` `is_modifiable` guard.
 ///
 /// The two in-transaction hooks ([`Self::pre_composition_modify`] and
 /// [`Self::post_status_commit`]) are the cross-version invariant / promoted-
@@ -195,7 +195,7 @@ pub(crate) trait CommitEnv {
     ) -> Result<(), ServiceError>;
     /// G-6: the target EHR must exist before a CONTRIBUTION is committed to it.
     async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
-    /// The EHR_STATUS `is_modifiable = False` content-write guard.
+    /// The `EHR_STATUS` `is_modifiable = False` content-write guard.
     async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
     /// The current versioned object of `kind` in `ehr_id`, if any (for the
     /// EHR-singleton create guard).
@@ -204,7 +204,7 @@ pub(crate) trait CommitEnv {
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<(Uuid, i32)>, ServiceError>;
-    /// Drop the cached EHR_ACCESS settings after an EHR_ACCESS commit.
+    /// Drop the cached `EHR_ACCESS` settings after an `EHR_ACCESS` commit.
     async fn invalidate_ehr_access(&self, ehr_id: Uuid);
     /// Enforce the `VERSIONED_COMPOSITION` cross-version invariants
     /// (`Archetype_node_id_valid` / `Persistent_validity`, RM ehr
