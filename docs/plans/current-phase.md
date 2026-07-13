@@ -9,23 +9,28 @@ breakdown + spec-area map).
 **Open items live in [`WORKLIST.md`](WORKLIST.md)** — one row per item,
 owner-mandated single tracker (2026-07-12).
 
-## Active work — W-1 H1 sweep → W-2 ECC skip elimination → X1 → ADL2 → P20 (re-planned)
+## Active work — W-11 benchmark rewrite (PRIO 1, owner 2026-07-13)
 
-**W1 (public documentation website) closed 2026-07-11** — the site is live at
-<https://rubentalstra.github.io/ehrbase-rs/> (landing + versioned book
-dev · latest · v3.0.0 + offline OpenAPI reference), drift-gated in CI
-(`docs/plans/w1-docs-website.md` for the full record).
+**W-10 (conformance framework redesign) closed 2026-07-13** — re-derived
+baseline **368/333/0/35, CORE + STANDARD PASS** under the rewritten
+multi-SUT instrument; upstream EHRbase 2.34.0 recorded as comparison DATA
+(`docs/plans/w10-conformance-redesign.md`, PR #82).
 
-Next up, in order:
+Active now:
 
-1. **X1 — the honest EHRbase vs EHRbase-rs comparison**
-   (`docs/plans/x1-comparison.md`, plan awaiting owner review): run upstream
-   EHRbase through the ECC suite (with a fairness adjudication register),
-   overhaul `tools/benchmark` (multi-SUT, percentiles, resource footprint),
-   publish a measured comparison page on the docs site. Owner rule: **no
-   false claims — measured numbers only.**
-2. **P20 — optimization** (to be re-planned first; P99 removed 2026-07-12 —
-   the release machinery already shipped with v3.0.0).
+1. **W-11 — `tools/benchmark` complete rewrite: the hospital-day stress
+   instrument** (`docs/plans/w11-benchmark-rewrite.md`): realistic clinical
+   workload (templates + generated data; admissions, observations,
+   medication rounds, lab contributions, chart-review reads, corrections,
+   discharges), latency percentiles + throughput + CPU/RAM + storage
+   footprint, multi-SUT like the ECC runner. Absorbs X1's benchmark half.
+   Owner rule: **no false claims — measured numbers only.**
+
+Then, in order:
+
+2. **X1 publication** — the measured comparison page (ECC matrix from W-10 +
+   the W-11 benchmark ladder; per-case upstream failure triage).
+3. **P20 — optimization** (re-plan first, WORKLIST W-5).
 
 ## Priority order (from the blueprint build order, §3)
 
