@@ -106,9 +106,9 @@
       schema (X1 absorption).
 
 ### C — Rewrite
-- [ ] C1. Fresh authoring of the new framework per B4 (workers ≤2, disjoint
+- [x] C1. Fresh authoring of the new framework per B4 (workers ≤2, disjoint
       file ownership; orchestrator owns lib.rs/engine seams + fix pass).
-- [ ] C2. ONE fix pass → `cargo nextest run -p conformance` green, clippy
+- [x] C2. ONE fix pass → `cargo nextest run -p conformance` green, clippy
       clean, coverage guard green; zero TODOs.
 
 ### D — Runs + baseline
