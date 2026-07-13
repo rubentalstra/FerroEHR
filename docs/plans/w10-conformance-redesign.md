@@ -26,6 +26,12 @@
    failure is only when no supported version form matches the normative
    assertion.
 
+3. **Certificate for every SUT (owner, mid-session):** the framework aims
+   to be the industry-standard CNF validator — the Conformance Certificate
+   artefact is emitted for ANY SUT (ours, upstream, BYO endpoint), always
+   self-identifying as a framework assessment (never official openEHR
+   certification) with the claim machine-computed from the attached run.
+
 ## Mission (from the prompt)
 
 1. Spec-first re-derivation of the case catalogue — registers first in

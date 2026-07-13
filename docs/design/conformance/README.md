@@ -43,6 +43,10 @@ coverage evidence + raw material only.
 - No named third-party SUT; multi-SUT = ehrbase-rs (compose default) +
   upstream EHRbase Java (Docker) + **bring-your-own-endpoint** (URL + auth
   config entry; full report for any CDR).
+- **Certificate for every SUT** (2026-07-13, mid-session): the Certificate
+  artefact is emitted for any SUT — industry-standard-validator ambition;
+  it always self-identifies as a framework assessment, never official
+  openEHR certification.
 - **Version ladder:** versioned assertions carry per-edition/per-RM-version
   forms ordered newest→oldest; the runner tries the highest first, steps
   down, and records the satisfied level as an edition finding (never a

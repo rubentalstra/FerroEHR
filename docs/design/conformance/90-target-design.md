@@ -123,8 +123,7 @@ Three target classes, ONE case universe (never per-SUT case forks):
    (`docker/conformance/`), `scripts/conformance.sh` stays the entry point.
 2. **EHRbase (Java, upstream)** — official image compose adapter; its
    results are DATA (comparison input), never a gate; fairness register
-   applies (extension areas → `not-applicable(extension)`, never failures;
-   no Certificate emitted).
+   applies (extension areas → `not-applicable(extension)`, never failures).
 3. **Bring-your-own-endpooint** — `--sut-url <base>` (+ `--sut-name`,
    `--auth`, `--admin-auth`, `--admin-base-url`, `--edition auto|…`): anyone
    points the runner at a deployed CDR and gets the full spec-cited report +
@@ -188,7 +187,11 @@ Per SUT: `results.json` (SUT identity, image digest where composed, run
 stamps, spec identities from provenance, per-case verdict + edition_level +
 data-set counts), `CONFORMANCE_REPORT.md`, badges, **Conformance Statement**
 (capability scope, RM/edition findings per master03 NOTE, adjudicated
-skips), **Certificate** (our SUT only; certificate/master03 table shapes).
+skips), **Certificate** (certificate/master03 table shapes — emitted for
+EVERY SUT, owner ruling 2026-07-13: the framework certifies any openEHR
+CDR; the artefact itself states assessor = framework self-assessment,
+never an official openEHR certification, and scopes the claim to the
+applicable capabilities incl. fairness N/A adjudications).
 Cross-SUT: `COMPARISON.md` — per capability, fairness-gated (X1 rules 1–10),
 extension rows marked N/A, every cell stamped (date, versions, digests).
 
@@ -201,7 +204,10 @@ extension rows marked N/A, every cell stamped (date, versions, digests).
    formats) is logged in the report — silent truncation is a defect.
 4. Profile verdicts machine-computed only (CORE/STANDARD all-of, OPTIONS
    any-of per capability).
-5. Foreign runs: fairness triage before publication; no Certificate.
+5. Foreign runs: fairness triage before publication; the Certificate is
+   available to every operator but always self-identifies as a framework
+   assessment (no official openEHR certification exists), and OUR published
+   comparison never makes certification claims on upstream's behalf.
 
 ## 8. Cross-register rulings (orchestrator, after registers 01–13 landed)
 
