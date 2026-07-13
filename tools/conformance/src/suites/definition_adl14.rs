@@ -2,8 +2,8 @@
 //! `Tpl`; `docs/design/conformance/01-definitions-adl.md`).
 //!
 //! Unlike master05/master11, master04 is a **real, non-stub schedule**: its
-//! test cases carry normative conditions (§validate_opt/§upload_opt/§get_opt/
-//! §get_opts/§delete_opt), so every case here traces
+//! test cases carry normative conditions (§`validate_opt/§upload_opt/§get_opt`/
+//! §`get_opts/§delete_opt`), so every case here traces
 //! [`ScheduleTrace::Schedule`] — none is `EccOriginal`. The 16 cases are the
 //! whole `I_DEFINITION_ADL14` surface; the chapter's ADL 2 half
 //! (`I_DEFINITION_ADL2`) defines **no** test cases upstream, so no ADL 2 case
@@ -34,7 +34,7 @@
 //!   four delete cases carry [`Binding::NoRestBinding`] and skip-with-reason,
 //!   never a fabricated URL. The ADMIN template-deletion path is evidenced in
 //!   the Admin area, not here.
-//! - **validate-via-upload** is master04 §validate_opt NOTE-sanctioned
+//! - **validate-via-upload** is master04 §`validate_opt` NOTE-sanctioned
 //!   (a server without a standalone validate service realizes validation
 //!   through the upload endpoint); recorded as a deliberate binding, not a
 //!   divergence.
@@ -52,7 +52,7 @@ use crate::testdata::fixtures;
 const JSON: &[Format] = &[Format::Json];
 
 /// The corpus-dir manifest key + file naming the minimal-valid OPT
-/// (master04 §validate_opt/§upload_opt "minimal valid OPT" data-set class).
+/// (master04 §`validate_opt/§upload_opt` "minimal valid OPT" data-set class).
 const MINIMAL_OPT_KEY: &str = "template.valid";
 const MINIMAL_OPT_FILE: &str = "minimal/minimal_evaluation.opt";
 
@@ -77,6 +77,10 @@ const DELETE_SKIP: &str = "master04 §delete_opt: SM I_DEFINITION_ADL14.delete_o
 /// Every registered master04 `I_DEFINITION_ADL14` case (16: 12 wire + 4 delete
 /// skips).
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── validate_opt (realized via upload — §validate_opt NOTE) ──────────
@@ -303,13 +307,13 @@ macro_rules! boxed {
 
 // ── shared OPT helpers ──────────────────────────────────────────────────────
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// The minimal-valid OPT's raw ADL 1.4 XML.
 fn minimal_opt_xml() -> Result<String, CaseError> {
-    fixtures::read_from(MINIMAL_OPT_KEY, MINIMAL_OPT_FILE).map_err(codec)
+    fixtures::read_from(MINIMAL_OPT_KEY, MINIMAL_OPT_FILE).map_err(|e| codec(&e))
 }
 
 /// The `template_id` declared inside an OPT's own content (G-6: never a
@@ -360,7 +364,7 @@ async fn get_template(ctx: &RunContext<'_>, path: String) -> Result<(u16, String
 
 /// Every `.opt` fixture in the invalid set.
 fn invalid_opts() -> Result<Vec<fixtures::Fixture>, CaseError> {
-    let opts = fixtures::opts_invalid().map_err(codec)?;
+    let opts = fixtures::opts_invalid().map_err(|e| codec(&e))?;
     Ok(opts
         .into_iter()
         .filter(|f| {
@@ -374,7 +378,7 @@ fn invalid_opts() -> Result<Vec<fixtures::Fixture>, CaseError> {
 // ── validate_opt ────────────────────────────────────────────────────────────
 
 /// §validate_opt-valid_opt: a valid OPT validates (realized via upload —
-/// 2xx new / 409 already-present both prove validation passed; §validate_opt
+/// 2xx new / 409 already-present both prove validation passed; §`validate_opt`
 /// NOTE sanctions this realization).
 fn run_validate_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
@@ -444,7 +448,7 @@ async fn reject_invalid_set(ctx: &RunContext<'_>) -> Result<DataSetReport, CaseE
     let mut first_fail: Option<String> = None;
     for opt in opts {
         total += 1;
-        let xml = opt.read().map_err(codec)?;
+        let xml = opt.read().map_err(|e| codec(&e))?;
         let status = upload(ctx, xml).await?;
         if (400..500).contains(&status) {
             passed += 1;
@@ -645,12 +649,10 @@ fn list_contains_template(listed: &serde_json::Value, template_id: &str) -> bool
         return false;
     };
     items.iter().any(|item| {
-        item.get("template_id")
-            .map(|t| {
-                t.as_str() == Some(template_id)
-                    || t.get("value").and_then(serde_json::Value::as_str) == Some(template_id)
-            })
-            .unwrap_or(false)
+        item.get("template_id").is_some_and(|t| {
+            t.as_str() == Some(template_id)
+                || t.get("value").and_then(serde_json::Value::as_str) == Some(template_id)
+        })
     })
 }
 

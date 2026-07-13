@@ -178,7 +178,7 @@ fn render_capability_matrix(out: &mut String, runs: &[RunResults]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::edition::{Edition, EditionPolicy};
+    use crate::edition::EditionPolicy;
     use crate::model::versions::SpecVersions;
     use crate::reporting::results::{
         CaseOutcome, CaseStatus, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity,

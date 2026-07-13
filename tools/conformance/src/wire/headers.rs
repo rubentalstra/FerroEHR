@@ -1,6 +1,6 @@
 //! Typed response-header parsing, edition-classified.
 //!
-//! Spec grounding: ITS-REST overview §"ETag and Last-Modified" — the ETag is
+//! Spec grounding: ITS-REST overview §"`ETag` and Last-Modified" — the `ETag` is
 //! weak-type (`W/"…"`) in the development edition; the bare quoted form is
 //! the deprecated Release-1.0.3-era emission. `Location` per the ITS-REST
 //! operation responses; `Last-Modified` per the same overview section.
@@ -12,7 +12,7 @@ use crate::engine::harness::{CaseError, HttpResponse};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Etag {
     /// The value between the quotes (for openEHR versioned resources: an
-    /// `OBJECT_VERSION_ID` or an ehr_id, per the operation).
+    /// `OBJECT_VERSION_ID` or an `ehr_id`, per the operation).
     pub value: String,
     /// The edition rung the observed form belongs to: weak `W/"…"` =
     /// [`Edition::Development`]; deprecated bare `"…"` =
@@ -78,7 +78,7 @@ pub fn location_tail(response: &HttpResponse) -> Result<String, CaseError> {
     Ok(tail.to_owned())
 }
 
-/// The response's `Last-Modified` header (ITS-REST overview §"ETag and
+/// The response's `Last-Modified` header (ITS-REST overview §"`ETag` and
 /// Last-Modified"), when present.
 #[must_use]
 pub fn last_modified(response: &HttpResponse) -> Option<&str> {

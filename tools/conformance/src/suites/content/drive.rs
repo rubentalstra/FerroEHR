@@ -59,7 +59,7 @@ pub enum Expected {
 /// A known-committable base composition from the vendored corpus. The
 /// RM/schema-mandatory rows (master16/17.x) mutate a clone of one of these and
 /// re-commit.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Base {
     /// `persistent_minimal.en.v1` — a persistent COMPOSITION (category 431),
     /// carrying OBSERVATION → HISTORY → `POINT_EVENT`.
@@ -98,19 +98,19 @@ impl Base {
                 "composition.canonical-json",
                 "persistent_minimal.en.v1__full.json",
             )
-            .map_err(codec)
+            .map_err(|e| codec(&e))
             .and_then(|t| serde_json::from_str(&t).map_err(|e| CaseError::Codec(e.to_string()))),
             Base::AllTypes => {
-                fixtures::owned_json("owned.composition.all-types.valid").map_err(codec)
+                fixtures::owned_json("owned.composition.all-types.valid").map_err(|e| codec(&e))
             }
             Base::AllTypesV2 => {
-                fixtures::owned_json("owned.composition.all-types-v2.valid").map_err(codec)
+                fixtures::owned_json("owned.composition.all-types-v2.valid").map_err(|e| codec(&e))
             }
         }
     }
 }
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
@@ -119,6 +119,7 @@ fn codec(e: fixtures::FixtureError) -> CaseError {
 /// (accepted), then commits copies with the constrained leaf violated (rejected).
 /// `opt_file` is a file under the `template.valid` corpus-dir key; `comp_dir_key`
 /// + `comp_file` name a canonical-JSON COMPOSITION in a corpus-dir key.
+#[derive(Debug)]
 pub struct Constraint {
     /// OPT file relative to the `template.valid` dir key.
     pub opt_file: &'static str,
@@ -271,7 +272,8 @@ pub async fn drive_constraint(
     accepted_label: &str,
     violations: Vec<Violation>,
 ) -> Result<DataSetReport, CaseError> {
-    let text = fixtures::read_from(constraint.comp_dir_key, constraint.comp_file).map_err(codec)?;
+    let text = fixtures::read_from(constraint.comp_dir_key, constraint.comp_file)
+        .map_err(|e| codec(&e))?;
     let base = serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))?;
     drive_constraint_base(
         ctx,
@@ -348,22 +350,18 @@ pub async fn entry_data_existence(
              RM/schema data-existence row not drivable"
         )));
     }
-    let present = full.clone();
-    let mut absent = full;
-    if let Some(node) = mutate::first_node_mut(&mut absent, entry_type) {
-        mutate::remove_field(node, "data");
-    }
     let (opt_dir_key, opt_file) = Base::PersistentMinimal.opt();
+    let owned_type = entry_type.to_owned();
     drive_constraint_base(
         ctx,
         opt_dir_key,
         opt_file,
-        present,
+        full,
         &format!("{entry_type} with data (RM present)"),
         vec![(
             format!("{entry_type} without data (RM/schema {entry_type}.data existence.lower)"),
             Box::new(move |c: &mut Value| {
-                if let Some(node) = mutate::first_node_mut(c, entry_type) {
+                if let Some(node) = mutate::first_node_mut(c, &owned_type) {
                     mutate::remove_field(node, "data");
                 }
             }),

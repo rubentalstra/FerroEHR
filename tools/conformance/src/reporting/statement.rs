@@ -13,7 +13,7 @@
 //! listing with citations. Every value is a pure function of the run
 //! ([`crate::reporting::report`] hosts the shared claim math).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use crate::model::case::{Capability, Profile};
@@ -98,13 +98,13 @@ fn render_versions(out: &mut String, results: &RunResults) {
     // satisfied where a laddered assertion stepped below the newest form.
     out.push_str("\n### Discovered edition profile\n\n");
     let mut by_rung: BTreeMap<String, usize> = BTreeMap::new();
-    let mut observations: BTreeMap<String, ()> = BTreeMap::new();
+    let mut observations: BTreeSet<String> = BTreeSet::new();
     for c in &results.cases {
         if let Some(level) = &c.edition_level {
             *by_rung.entry(level.clone()).or_insert(0) += 1;
         }
         for f in &c.edition_findings {
-            observations.insert(f.clone(), ());
+            observations.insert(f.clone());
         }
     }
     if by_rung.is_empty() {
@@ -122,7 +122,7 @@ fn render_versions(out: &mut String, results: &RunResults) {
         }
         if !observations.is_empty() {
             out.push_str("\nObservations:\n\n");
-            for obs in observations.keys() {
+            for obs in &observations {
                 let _ = writeln!(out, "- {obs}");
             }
         }

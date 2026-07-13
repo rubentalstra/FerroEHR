@@ -17,16 +17,16 @@
 //!
 //! Register 07 rulings realized here:
 //!
-//! - **G-2 (AqlAdvanced claimable).** Every master11-spine case is
+//! - **G-2 (`AqlAdvanced` claimable).** Every master11-spine case is
 //!   [`Capability::AqlBasic`] (STANDARD), but [`run_advanced_order_limit`] is
 //!   [`Capability::AqlAdvanced`] (OPTIONS) — an `ORDER BY … LIMIT`/`OFFSET`
 //!   query per AQL 1.1 (`AqlParser.g4` `orderByClause? limitClause?`), so the
 //!   AQL-advanced OPTIONS capability is earned from a real passing case, not
 //!   left unclaimable.
-//! - **G-4 (no `_schema_version` pinning).** RESULT_SET fields are read through
-//!   the local [`result_set`] helpers with explicit ITS-REST RESULT_SET
+//! - **G-4 (no `_schema_version` pinning).** `RESULT_SET` fields are read through
+//!   the local [`result_set`] helpers with explicit ITS-REST `RESULT_SET`
 //!   citations; nothing asserts `meta._schema_version` (a dev-OAS/RM-1.2.0
-//!   artefact). A fully centralized RESULT_SET wire adapter with an edition
+//!   artefact). A fully centralized `RESULT_SET` wire adapter with an edition
 //!   ladder (register 90) is not yet exposed — recorded as a boundary.
 
 use uuid::Uuid;
@@ -53,7 +53,7 @@ const STORED_CITATION: &str = "CNF master11 §I_QUERY_SERVICE (stub, xx flow); I
      §execute_stored_query + DEFINITION QUERY §store; AQL 1.1";
 
 /// Every registered QUERY-execution case (4 master11 spine + 1 invalid-negative
-/// + 1 AqlAdvanced).
+/// + 1 `AqlAdvanced`).
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
@@ -165,7 +165,7 @@ macro_rules! boxed {
 
 // ── shared helpers ──────────────────────────────────────────────────────────
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
@@ -183,17 +183,17 @@ async fn adhoc(ctx: &RunContext<'_>, aql: &str) -> Result<HttpResponse, CaseErro
 /// The AQL text of a group-A query by golden/fixture name (register 80 corpus,
 /// resolved through the manifest — no free-path access).
 fn query_text(group: &str, name: &str) -> Result<String, CaseError> {
-    let fixtures = fixtures::aql_valid(group).map_err(codec)?;
+    let fixtures = fixtures::aql_valid(group).map_err(|e| codec(&e))?;
     let fixture = fixtures
         .iter()
         .find(|f| f.name == name)
         .ok_or_else(|| CaseError::Assertion(format!("missing {group}/{name} query fixture")))?;
-    fixtures::aql_text(fixture).map_err(codec)
+    fixtures::aql_text(fixture).map_err(|e| codec(&e))
 }
 
 // ── RESULT_SET wire reads (G-4: explicit, cited, no `_schema_version`) ─────────
 
-/// RESULT_SET field reads. ITS-REST 1.0.3 QUERY API `200_QUERY.yaml` RESULT_SET:
+/// `RESULT_SET` field reads. ITS-REST 1.0.3 QUERY API `200_QUERY.yaml` `RESULT_SET`:
 /// `{ meta: { _type }, columns: [{ name, path? }], rows: [...] }`. `_schema_version`
 /// is deliberately NOT read/asserted (a dev-OAS/RM-1.2.0 artefact, register 07 G-4).
 mod result_set {
@@ -228,7 +228,7 @@ mod result_set {
 
 // ── master11 real cases (concretizing xx flows) ───────────────────────────────
 
-/// `smoke_test`: a minimal ad-hoc query returns a well-formed RESULT_SET.
+/// `smoke_test`: a minimal ad-hoc query returns a well-formed `RESULT_SET`.
 fn run_smoke_test<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let resp = adhoc(ctx, "SELECT e/ehr_id/value FROM EHR e").await?;
@@ -250,13 +250,13 @@ fn run_smoke_test<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// `execute_ad_hoc_query-empty_db`: a fixed-non-existent-id query returns the
-/// empty golden RESULT_SET (full diff — DB-state-independent).
+/// empty golden `RESULT_SET` (full diff — DB-state-independent).
 fn run_adhoc_empty_db<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let name = "200_get_ehr_by_id_empty_db.json";
         let aql = query_text("A", name)?;
         let golden = fixtures::aql_golden("empty_db", "A", name)
-            .map_err(codec)?
+            .map_err(|e| codec(&e))?
             .ok_or_else(|| CaseError::Assertion("missing A/200 empty_db golden".to_owned()))?;
         let resp = adhoc(ctx, &aql).await?;
         assert::status(&resp, 200)?;
@@ -265,13 +265,13 @@ fn run_adhoc_empty_db<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// `execute_stored_query-empty_db`: store a query, execute it by name, diff the
-/// empty golden RESULT_SET.
+/// empty golden `RESULT_SET`.
 fn run_stored_empty_db<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let name = "200_get_ehr_by_id_empty_db.json";
         let aql = query_text("A", name)?;
         let golden = fixtures::aql_golden("empty_db", "A", name)
-            .map_err(codec)?
+            .map_err(|e| codec(&e))?
             .ok_or_else(|| CaseError::Assertion("missing A/200 empty_db golden".to_owned()))?;
         let qname = format!("org.conformance::stored_{}", Uuid::new_v4().simple());
         let store = ctx
@@ -350,7 +350,7 @@ fn run_invalid_queries<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let mut total = 0u32;
         let mut first_fail: Option<String> = None;
         for fixture in invalid {
-            let aql = fixtures::aql_text(&fixture).map_err(codec)?;
+            let aql = fixtures::aql_text(&fixture).map_err(|e| codec(&e))?;
             total += 1;
             let resp = adhoc(ctx, &aql).await?;
             if (400..500).contains(&resp.status) {
@@ -374,7 +374,7 @@ fn run_invalid_queries<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// AQL-advanced (G-2): an `ORDER BY … LIMIT` query executes and returns a
-/// well-formed, bounded RESULT_SET. Self-contained (queries whatever EHRs the
+/// well-formed, bounded `RESULT_SET`. Self-contained (queries whatever EHRs the
 /// shared SUT holds; the LIMIT bound is the deterministic assertion).
 fn run_advanced_order_limit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
@@ -401,7 +401,7 @@ fn run_advanced_order_limit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── golden + fixture helpers ────────────────────────────────────────────────
 
-/// Diff a served RESULT_SET against a golden through the shared normalizer,
+/// Diff a served `RESULT_SET` against a golden through the shared normalizer,
 /// mapping a mismatch to a finding that names the suppression rules applied.
 fn diff_golden(
     golden: &serde_json::Value,
@@ -423,10 +423,10 @@ fn diff_golden(
 
 /// A canonical-JSON composition fixture by name (register 80 corpus).
 fn compositions_by_name(name: &str) -> Result<serde_json::Value, CaseError> {
-    let comps = fixtures::compositions_canonical_json().map_err(codec)?;
+    let comps = fixtures::compositions_canonical_json().map_err(|e| codec(&e))?;
     let fixture = comps
         .iter()
         .find(|f| f.name == name)
         .ok_or_else(|| CaseError::Assertion(format!("missing composition fixture {name}")))?;
-    fixture.json().map_err(codec)
+    fixture.json().map_err(|e| codec(&e))
 }

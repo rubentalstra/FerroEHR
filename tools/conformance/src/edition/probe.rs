@@ -18,7 +18,7 @@ pub struct SutProbe {
     pub options_conformance: Option<serde_json::Value>,
     /// `solution`/`vendor` fields extracted from the conformance body.
     pub solution: Option<String>,
-    /// The ETag form observed on a cheap write-free exchange, when one was
+    /// The `ETag` form observed on a cheap write-free exchange, when one was
     /// observable (an initial edition hint; per-case observations override).
     pub etag_edition_hint: Option<Edition>,
 }

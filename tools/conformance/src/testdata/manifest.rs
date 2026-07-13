@@ -61,12 +61,12 @@ pub enum ManifestError {
         key: String,
     },
     /// The `source` column was not a recognised source form.
-    #[error("manifest line {line}: unknown source form `{source}` for key `{key}`")]
+    #[error("manifest line {line}: unknown source form `{form}` for key `{key}`")]
     UnknownSource {
         /// 1-based source line number.
         line: usize,
         /// The offending source token.
-        source: String,
+        form: String,
         /// The row's key.
         key: String,
     },
@@ -260,7 +260,7 @@ impl Manifest {
             let source =
                 Source::parse(cols[2].trim()).ok_or_else(|| ManifestError::UnknownSource {
                     line,
-                    source: cols[2].trim().to_owned(),
+                    form: cols[2].trim().to_owned(),
                     key: key.clone(),
                 })?;
             let adaptation = cols[3].trim().to_owned();

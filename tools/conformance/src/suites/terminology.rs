@@ -165,7 +165,7 @@ macro_rules! case_body {
     };
 }
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
@@ -200,9 +200,9 @@ fn row_count(body: &Value) -> usize {
 /// the `ehr_id`.
 async fn commit_nested_composition(ctx: &RunContext<'_>) -> Result<String, CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
-    let xml = fixtures::read(NESTED_OPT).map_err(codec)?;
+    let xml = fixtures::read(NESTED_OPT).map_err(|e| codec(&e))?;
     support::ensure_opt_xml(ctx, &xml).await?;
-    let body = fixtures::read_json(NESTED_JSON).map_err(codec)?;
+    let body = fixtures::read_json(NESTED_JSON).map_err(|e| codec(&e))?;
     let resp = ctx
         .send(crate::wire::negotiate::representation(
             HttpRequest::post(format!("/ehr/{ehr_id}/composition")).json_body(&body)?,

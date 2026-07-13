@@ -17,7 +17,7 @@ use crate::edition::{Edition, EditionPolicy};
 pub enum SutKind {
     /// ehrbase-rs — the product this repo builds.
     Ours,
-    /// Any other CDR (upstream EHRbase, a bring-your-own endpoint): the
+    /// Any other CDR (upstream `EHRbase`, a bring-your-own endpoint): the
     /// fairness register applies.
     Foreign,
 }
@@ -33,7 +33,7 @@ pub struct SutDescriptor {
     /// The ITS-REST base URL, e.g.
     /// `http://localhost:8080/ehrbase/rest/openehr/v1`.
     pub base_url: String,
-    /// An optional sibling admin mount. Upstream EHRbase serves the admin
+    /// An optional sibling admin mount. Upstream `EHRbase` serves the admin
     /// API beside `/rest/openehr` (`…/rest/admin`); ours nests it under the
     /// openEHR base (then `None`).
     pub admin_base_url: Option<String>,

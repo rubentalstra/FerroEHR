@@ -14,7 +14,7 @@ use crate::engine::harness::{CaseError, HttpResponse, RunContext};
 use crate::wire::headers;
 
 /// A structured `OBJECT_VERSION_ID`: `<object_id>::<creating_system_id>::<version_tree_id>`
-/// (RM support §identification / BASE base_types §Identification).
+/// (RM support §identification / BASE `base_types` §Identification).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObjectVersionId {
     /// The full lexical form.
@@ -53,9 +53,9 @@ pub fn parse_object_version_id(value: &str) -> Result<ObjectVersionId, CaseError
 }
 
 /// The `OBJECT_VERSION_ID` a versioned-object write returned: the `ETag`
-/// preferred (works regardless of `Prefer`/format; ITS-REST overview §"ETag
+/// preferred (works regardless of `Prefer`/format; ITS-REST overview §"`ETag`
 /// and Last-Modified"), else the representation body's `uid.value`. The
-/// observed ETag form is recorded on the edition ladder.
+/// observed `ETag` form is recorded on the edition ladder.
 ///
 /// # Errors
 /// [`CaseError::Assertion`] if neither source yields an id — the error names
@@ -90,7 +90,7 @@ pub fn version_id(
 }
 
 /// The versioned-object uid — the segment before the first `::` of an
-/// `OBJECT_VERSION_ID`; a bare uid passes through unchanged (HIER_OBJECT_ID).
+/// `OBJECT_VERSION_ID`; a bare uid passes through unchanged (`HIER_OBJECT_ID`).
 #[must_use]
 pub fn object_uid(version_uid: &str) -> &str {
     version_uid.split("::").next().unwrap_or(version_uid)

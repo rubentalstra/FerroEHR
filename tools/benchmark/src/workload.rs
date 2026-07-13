@@ -19,7 +19,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use conformance::fixtures;
+use conformance::testdata::fixtures;
 use conformance::harness::{AuthSlot, HttpRequest, Method};
 
 use crate::BenchError;
@@ -29,12 +29,12 @@ use crate::target::Target;
 // realistic clinical payload, not a hand-written toy (both servers' OPT parsers
 // accept it; verified). Using a substantial composition is what makes the
 // create/read/serialization numbers meaningful.
-const OPT_PATH: &str = "valid_templates/validation/composition_evaluation_test.opt";
-const COMPOSITION_PATH: &str = "compositions/CANONICAL_JSON/composition_evaluation_test__full.json";
+const OPT_FILE: &str = "validation/composition_evaluation_test.opt";
+const COMPOSITION_FILE: &str = "composition_evaluation_test__full.json";
 const TEMPLATE_ID: &str = "composition_evaluation_test";
 const SUBJECT_NAMESPACE: &str = "ehrbase-bench";
 /// A vendored CNF-valid `EHR_STATUS` (has `archetype_node_id`) both servers accept.
-const EHR_STATUS_PATH: &str = "ehr/valid/000_ehr_status.json";
+const EHR_STATUS_FILE: &str = "000_ehr_status.json";
 
 /// A process-unique subject id source (so get-by-subject always resolves).
 static SUBJECT_SEQ: AtomicU64 = AtomicU64::new(0);
@@ -457,7 +457,7 @@ impl Scenario {
             ),
             Scenario::TemplateUpload => {
                 let opt =
-                    fixtures::read(OPT_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
+                    fixtures::read_from("template.valid", OPT_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
                 HttpRequest::new(Method::Post, "/definition/template/adl1.4")
                     .with_auth(AuthSlot::Regular)
                     .header("content-type", "application/xml")
@@ -475,7 +475,7 @@ impl Scenario {
 /// clinical-sized one, not a toy.
 #[must_use]
 pub fn payload_description() -> String {
-    let bytes = fixtures::read(COMPOSITION_PATH).map_or(0, |s| s.len());
+    let bytes = fixtures::read_from("composition.canonical-json", COMPOSITION_FILE).map_or(0, |s| s.len());
     format!(
         "{TEMPLATE_ID} — {} KB canonical-JSON composition",
         bytes / 1024
@@ -495,8 +495,10 @@ pub fn workload_lock() -> String {
         }
         def.push('\n');
     }
-    def.push_str(OPT_PATH);
-    def.push_str(COMPOSITION_PATH);
+    def.push_str("template.valid/");
+    def.push_str(OPT_FILE);
+    def.push_str("composition.canonical-json/");
+    def.push_str(COMPOSITION_FILE);
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
     for b in def.as_bytes() {
         hash ^= u64::from(*b);
@@ -528,7 +530,7 @@ fn post_json(path: &str, body: &serde_json::Value) -> HttpRequest {
 /// resolves. Using the fixture — not a hand-built body — guarantees *both*
 /// servers accept it.
 fn ehr_status_body(subject_id: &str) -> serde_json::Value {
-    let base = fixtures::read_json(EHR_STATUS_PATH).unwrap_or_else(|_| {
+    let base = crate::seed::read_json_from("ehr-status.valid", EHR_STATUS_FILE).unwrap_or_else(|_| {
         serde_json::json!({
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
@@ -562,7 +564,7 @@ fn ehr_status_body(subject_id: &str) -> serde_json::Value {
 
 fn composition_body() -> Result<String, BenchError> {
     let value =
-        fixtures::read_json(COMPOSITION_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
+        crate::seed::read_json_from("composition.canonical-json", COMPOSITION_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
     Ok(value.to_string())
 }
 
@@ -609,7 +611,7 @@ async fn ehr_status_version(t: &Target, ehr_id: &str) -> Result<String, BenchErr
 }
 
 async fn ensure_template(t: &Target) -> Result<(), BenchError> {
-    let opt = fixtures::read(OPT_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let opt = fixtures::read_from("template.valid", OPT_FILE).map_err(|e| BenchError::Fixture(e.to_string()))?;
     let req = HttpRequest::new(Method::Post, "/definition/template/adl1.4")
         .with_auth(AuthSlot::Regular)
         .header("content-type", "application/xml")

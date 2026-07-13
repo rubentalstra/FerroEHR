@@ -48,8 +48,10 @@ const CORPUS_ROOT: &str = concat!(
 const OWNED_FIXTURES_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/fixtures");
 
 /// The committed fixture manifest, parsed once.
-static MANIFEST: LazyLock<Manifest> =
-    LazyLock::new(|| Manifest::load_default().expect("committed MANIFEST.tsv parses"));
+static MANIFEST: LazyLock<Manifest> = LazyLock::new(|| match Manifest::load_default() {
+    Ok(manifest) => manifest,
+    Err(e) => panic!("committed MANIFEST.tsv must parse: {e}"),
+});
 
 /// Errors accessing a fixture.
 #[derive(Debug, thiserror::Error)]
@@ -615,7 +617,9 @@ pub fn adapt_ehr_status(mut status: Value, namespace: &str, subject_id: &str) ->
     if let Value::Object(map) = &mut status {
         map.entry("_type")
             .or_insert_with(|| Value::String("EHR_STATUS".to_owned()));
-        set_type(map.get_mut("name"), "DV_TEXT");
+        if let Some(name) = map.get_mut("name") {
+            set_type(name, "DV_TEXT");
+        }
         if let Some(Value::Object(subject)) = map.get_mut("subject") {
             subject
                 .entry("_type")
@@ -637,9 +641,9 @@ pub fn adapt_ehr_status(mut status: Value, namespace: &str, subject_id: &str) ->
     status
 }
 
-/// Set `_type` on an optional object node if it is an object missing one.
-fn set_type(node: Option<&mut Value>, ty: &str) {
-    if let Some(Value::Object(obj)) = node {
+/// Set `_type` on an object node if it is an object missing one.
+fn set_type(node: &mut Value, ty: &str) {
+    if let Value::Object(obj) = node {
         obj.entry("_type")
             .or_insert_with(|| Value::String(ty.to_owned()));
     }

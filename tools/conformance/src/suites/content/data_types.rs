@@ -24,7 +24,7 @@
 //! [`DataSetReport::of_schedule_rows`], so the ~7:1 collapse is a visible,
 //! auditable number in the report.
 //!
-//! **G-1 — DV_INTERVAL<T> (`ECC-VAL-068`…`095`, 28 ids).** The schedule's
+//! **G-1 — `DV_INTERVAL`<T> (`ECC-VAL-068`…`095`, 28 ids).** The schedule's
 //! per-variant *bound* constraints (`C_INTEGER.range`/`.list` on the interval
 //! ends, `C_DV_QUANTITY.list`, temporal bounds, proportion-kind lists) are
 //! **inexpressible** with the carried opt14 authoring machinery
@@ -36,14 +36,14 @@
 //! is the RM-invariant subset that holds for every bound type: the nine
 //! `validate_open` cases drive the three universal `Interval` invariants
 //! (`lower ≤ upper`, `lower_included_valid`, `upper_included_valid` — BASE
-//! foundation_types §Interval), the nineteen non-open cases drive the
+//! `foundation_types` §Interval), the nineteen non-open cases drive the
 //! `lower ≤ upper` invariant. Split: **0 per-variant-authored / 28
-//! bound-declared** (the machinery cannot express any DV_INTERVAL bound
+//! bound-declared** (the machinery cannot express any `DV_INTERVAL` bound
 //! constraint).
 //!
 //! **G-3 — `validate_open`/temporal substitutes.** `data_type_mandatory`
 //! removes a mandatory RM field only, so the semantic constraint a case targets
-//! (DV_URI RFC3986 validity `113`, DV_EHR_URI `ehr:` scheme `116`, DV_PROPORTION
+//! (`DV_URI` RFC3986 validity `113`, `DV_EHR_URI` `ehr:` scheme `116`, `DV_PROPORTION`
 //! kind invariants `060`, ISO8601 field-range opens) stands in on the
 //! RM-mandatory dimension; the boundary comment records the untested headline
 //! dimension. The temporal constraint/range cases (`097`…`108` non-open) assert
@@ -52,8 +52,8 @@
 //! finding**, not a masked pass (register 13 open findings 097–108, 107
 //! partial-value).
 //!
-//! **G-4 — edition/RM sensitivity.** DV_SCALE (`051`/`052`, interval-scale
-//! `087`/`088`) needs **RM ≥ 1.1.0** (master17.3 §DV_SCALE, SPECRM-19); on an
+//! **G-4 — edition/RM sensitivity.** `DV_SCALE` (`051`/`052`, interval-scale
+//! `087`/`088`) needs **RM ≥ 1.1.0** (master17.3 §`DV_SCALE`, SPECRM-19); on an
 //! RM < 1.1.0 SUT these are an edition finding, carried by the runner's
 //! version ladder, not a fail. `C_DV_SCALE` does not exist in AM 1.4
 //! (SPECPR-381), so `052` substitutes a `C_REAL` on `value`. Reject status
@@ -84,7 +84,7 @@
 //! **G-7 — `DV_CODED_TEXT-validate_ext_term` binding substitution.**
 //! `ECC-VAL-048` constrains with a direct external `C_CODE_PHRASE` (SNOMED-CT)
 //! rather than the schedule's `CONSTRAINT_REF` → `ac`-code → template
-//! `constraint_binding` path (master17.2 §validate_ext_term NOTE); functionally
+//! `constraint_binding` path (master17.2 §`validate_ext_term` NOTE); functionally
 //! close, but the binding-resolution surface is untested — a coverage note for
 //! the terminology-binding work (register 11).
 
@@ -117,22 +117,25 @@ const ALL_TYPES_OPT: &str = "all_types/Test_all_types.opt";
 /// `Test_all_types.opt` + its bare canonical composition. OBSERVATION
 /// `data/events[0]/data/items` carry one leaf per data type at fixed indices.
 const ALL_TYPES: drive::Constraint = drive::Constraint {
-    opt: "all_types/Test_all_types.opt",
-    comp: "query/data_load/compositions/all_types.composition.json",
+    opt_file: "all_types/Test_all_types.opt",
+    comp_dir_key: "aql.data-load.compositions",
+    comp_file: "all_types.composition.json",
 };
 
 /// `Test_all_types_v2.opt` — `items[at0005]` (index 1) adds a `local`
 /// `code_list` `{at0023, at0024}` on its `DV_CODED_TEXT`.
 const ALL_TYPES_V2: drive::Constraint = drive::Constraint {
-    opt: "all_types/Test_all_types_v2.opt",
-    comp: "query/data_load/compositions/all_types_v2.composition.json",
+    opt_file: "all_types/Test_all_types_v2.opt",
+    comp_dir_key: "aql.data-load.compositions",
+    comp_file: "all_types_v2.composition.json",
 };
 
 /// `minimal_action_2.opt` — ACTION `description/items[0]` `DV_PROPORTION`
 /// constrained by a `C_INTEGER` list `{3,4}` on `type`.
 const MINIMAL_ACTION_2_PROPORTION: drive::Constraint = drive::Constraint {
-    opt: "minimal/minimal_action_2.opt",
-    comp: "valid_templates/minimal/minimal_action_2.instance.composition.json",
+    opt_file: "minimal/minimal_action_2.opt",
+    comp_dir_key: "template.valid",
+    comp_file: "minimal/minimal_action_2.instance.composition.json",
 };
 
 /// A registered master17 case: fixed area/capability/binding/format, per-case
@@ -151,7 +154,7 @@ struct Def {
 }
 
 /// Map a [`fixtures::FixtureError`] onto a codec [`CaseError`].
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
@@ -1313,9 +1316,10 @@ fn run_dv_quantity_units_mag<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // {mm3}); its only committable instance is FLAT, converted in-harness.
         let base =
             fixtures::flat_to_canonical("template.time-series.opt", "composition.flat.time-series")
-                .map_err(codec)?;
+                .map_err(|e| codec(&e))?;
         Ok(drive::drive_constraint_base(
             ctx,
+            "template.valid",
             "time_series/time_series.opt",
             base,
             "DV_QUANTITY 702.9 mm3 in magnitude range [0,inf) (accepted)",
@@ -1354,7 +1358,7 @@ fn run_dv_quantity_units_mag<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── 17.3 DV_PROPORTION ────────────────────────────────────────────────────────
 
-/// Drive one DV_PROPORTION `type`-kind case: constrain `type` to the single kind
+/// Drive one `DV_PROPORTION` `type`-kind case: constrain `type` to the single kind
 /// code, commit an accepted instance (that kind with RM-valid num/den) and a
 /// rejected instance (an off-list kind).
 async fn drive_proportion_kind(
@@ -1578,29 +1582,29 @@ fn run_dv_scale_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 // the other cases drive lower ≤ upper. Every case declares its schedule row count.
 
 /// A canonical bounded, included `DV_INTERVAL`.
-fn iv(lower: Value, upper: Value) -> Value {
+fn iv(lower: &Value, upper: &Value) -> Value {
     json!({ "_type": "DV_INTERVAL", "lower": lower, "upper": upper,
         "lower_included": true, "upper_included": true,
         "lower_unbounded": false, "upper_unbounded": false })
 }
 
 /// An interval violating RM Interval `lower_included_valid`
-/// (`lower_unbounded implies not lower_included`; BASE foundation_types §Interval).
-fn iv_lower_unbounded_included(upper: Value) -> Value {
+/// (`lower_unbounded implies not lower_included`; BASE `foundation_types` §Interval).
+fn iv_lower_unbounded_included(upper: &Value) -> Value {
     json!({ "_type": "DV_INTERVAL", "upper": upper,
         "lower_included": true, "upper_included": true,
         "lower_unbounded": true, "upper_unbounded": false })
 }
 
 /// An interval violating RM Interval `upper_included_valid`
-/// (`upper_unbounded implies not upper_included`; BASE foundation_types §Interval).
-fn iv_upper_unbounded_included(lower: Value) -> Value {
+/// (`upper_unbounded implies not upper_included`; BASE `foundation_types` §Interval).
+fn iv_upper_unbounded_included(lower: &Value) -> Value {
     json!({ "_type": "DV_INTERVAL", "lower": lower,
         "lower_included": true, "upper_included": true,
         "lower_unbounded": false, "upper_unbounded": true })
 }
 
-/// Retype items[4] to an open DV_INTERVAL; drive the three universal RM Interval
+/// Retype items[4] to an open `DV_INTERVAL`; drive the three universal RM Interval
 /// invariants (`lower ≤ upper`, `lower_included_valid`, `upper_included_valid`).
 async fn drive_interval_open(
     ctx: &RunContext<'_>,
@@ -1616,24 +1620,24 @@ async fn drive_interval_open(
         vec![
             (
                 "valid DV_INTERVAL, bounded + included, lower<=upper (accepted)".to_owned(),
-                vec![(p.clone(), iv(lower.clone(), upper.clone()))],
+                vec![(p.clone(), iv(&lower, &upper))],
                 Expected::Accepted,
             ),
             (
                 "reversed DV_INTERVAL lower>upper (RM Interval lower<=upper)".to_owned(),
-                vec![(p.clone(), iv(upper.clone(), lower.clone()))],
+                vec![(p.clone(), iv(&upper, &lower))],
                 Expected::Rejected,
             ),
             (
                 "lower_unbounded with lower_included=true (RM Interval lower_included_valid)"
                     .to_owned(),
-                vec![(p.clone(), iv_lower_unbounded_included(upper))],
+                vec![(p.clone(), iv_lower_unbounded_included(&upper))],
                 Expected::Rejected,
             ),
             (
                 "upper_unbounded with upper_included=true (RM Interval upper_included_valid)"
                     .to_owned(),
-                vec![(p, iv_upper_unbounded_included(lower))],
+                vec![(p, iv_upper_unbounded_included(&lower))],
                 Expected::Rejected,
             ),
         ],
@@ -1641,7 +1645,7 @@ async fn drive_interval_open(
     .await
 }
 
-/// Retype items[4] to an open DV_INTERVAL; drive the RM Interval `lower ≤ upper`
+/// Retype items[4] to an open `DV_INTERVAL`; drive the RM Interval `lower ≤ upper`
 /// invariant (accept `[l,u]`, reject the reversed `[u,l]`).
 async fn drive_interval_bound(
     ctx: &RunContext<'_>,
@@ -1657,12 +1661,12 @@ async fn drive_interval_bound(
         vec![
             (
                 "valid DV_INTERVAL lower<=upper (accepted)".to_owned(),
-                vec![(p.clone(), iv(lower.clone(), upper.clone()))],
+                vec![(p.clone(), iv(&lower, &upper))],
                 Expected::Accepted,
             ),
             (
                 "reversed DV_INTERVAL lower>upper (RM Interval lower<=upper)".to_owned(),
-                vec![(p, iv(upper, lower))],
+                vec![(p, iv(&upper, &lower))],
                 Expected::Rejected,
             ),
         ],
@@ -2128,7 +2132,8 @@ fn run_dv_date_day_disallowed<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
         support::ensure_opt(ctx, "template.valid", "all_types/Test_all_types.opt").await?;
         let ehr_id = support::create_ehr(ctx).await?;
-        let comp = fixtures::owned_json("owned.composition.all-types.invalid").map_err(codec)?;
+        let comp =
+            fixtures::owned_json("owned.composition.all-types.invalid").map_err(|e| codec(&e))?;
         let resp = ctx
             .send(
                 HttpRequest::post(format!("/ehr/{ehr_id}/composition"))

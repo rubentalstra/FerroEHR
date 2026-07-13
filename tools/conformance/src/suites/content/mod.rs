@@ -1,5 +1,5 @@
 //! Content data-validation suites (schedule master15 COMPOSITION + master16
-//! ENTRY + master17.x DATA_VALUE): the "author a constraining archetype/OPT,
+//! ENTRY + master17.x `DATA_VALUE)`: the "author a constraining archetype/OPT,
 //! commit truth-table data-set instances, assert accept/reject" chapter
 //! (`docs/design/conformance/12-content-composition-entry.md` +
 //! `13-data-values.md`; master03-overview §Data Validation Conformance Test

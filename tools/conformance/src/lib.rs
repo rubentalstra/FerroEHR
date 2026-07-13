@@ -13,7 +13,7 @@
 //!   schedule ids are trace references ([`model::case::ScheduleTrace`]),
 //!   never the key system; no Robot/legacy mapping machinery exists.
 //! - **Multi-SUT**: one case universe drives every SUT
-//!   ([`sut::SutDescriptor`] — ehrbase-rs, upstream EHRbase, or any
+//!   ([`sut::SutDescriptor`] — ehrbase-rs, upstream `EHRbase`, or any
 //!   bring-your-own endpoint by URL). Per-SUT facts (system id, template-id
 //!   format, admin mount) come from the descriptor, never from literals.
 //! - **Edition ladder**: assertions separate their normative core from

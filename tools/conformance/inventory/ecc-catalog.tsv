@@ -141,7 +141,7 @@ ECC-TPL-015	TPL	active	tpl/delete-opt-delete-latest-version	Delete OPT — delet
 ECC-TPL-016	TPL	active	tpl/delete-opt-delete-specific-version	Delete OPT — delete specific version
 ECC-SQR-001	SQR	active	sqr/valid-query-valid	Store stored query — valid
 ECC-SQR-002	SQR	active	sqr/list-queries-non-empty	List stored queries — non empty
-ECC-SQR-003	SQR	active	sqr/has-query-xxx	Stored query existence check — xxx
+ECC-SQR-003	SQR	retired	sqr/has-query-xxx	Stored query existence check — xxx
 ECC-SQR-004	SQR	active	sqr/list-queries-empty	List stored queries — empty
 ECC-SQR-005	SQR	active	sqr/list-queries-select-items	List stored queries — select items
 ECC-SQR-006	SQR	active	sqr/valid-query-bad-formalism	Store stored query — bad formalism
@@ -335,3 +335,31 @@ ECC-TS-009	TS	active	ts/fault-malformed	TERMINOLOGY expand (FHIR) — malformed 
 ECC-EHR-013	EHR	active	ehr/create-anonymous-ehr	Create anonymous (subject-less) EHR
 ECC-SEC-001	SEC	active	sec/unauthenticated-401	Unauthenticated request to a protected route is refused (401)
 ECC-SEC-002	SEC	active	sec/forbidden-role-403	Regular credential on an ADMIN-only route is forbidden (403)
+ECC-COM-032	COM	active	com/has-composition	Composition existence check — existing composition
+ECC-SQR-008	SQR	active	sqr/has-query-existing	Stored query existence check — existing
+ECC-QRY-014	QRY	active	qry/advanced-order-by-limit	AQL advanced — ORDER BY + LIMIT/OFFSET
+ECC-QRY-015	QRY	active	qry/dialect-timewindow-a109	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-016	QRY	active	qry/dialect-timewindow-b103	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-017	QRY	active	qry/dialect-timewindow-c103	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-018	QRY	active	qry/dialect-limit-a107	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-019	QRY	active	qry/dialect-limit-a110	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-020	QRY	active	qry/dialect-limit-b104	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-021	QRY	active	qry/dialect-limit-b105	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-022	QRY	active	qry/dialect-limit-b106	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-023	QRY	active	qry/dialect-limit-d312	AQL corpus — dialect-adjudicated query rejected
+ECC-QRY-024	QRY	active	qry/dialect-limit-d313	AQL corpus — dialect-adjudicated query rejected
+ECC-DEM-025	DEM	active	dem/person-get-at-time	Demographic person get at time
+ECC-DEM-026	DEM	active	dem/relationship-create	Demographic relationship create
+ECC-DEM-027	DEM	active	dem/relationship-get	Demographic relationship get
+ECC-DEM-028	DEM	active	dem/relationship-get-at-time	Demographic relationship get at time
+ECC-DEM-029	DEM	active	dem/relationship-update	Demographic relationship update
+ECC-DEM-030	DEM	active	dem/relationship-delete	Demographic relationship delete
+ECC-DEM-031	DEM	active	dem/relationship-get-by-version	Demographic relationship get by version
+ECC-ADM-007	ADM	active	adm/list-contributions	Admin list contributions
+ECC-ADM-008	ADM	active	adm/contribution-count	Admin contribution count
+ECC-ADM-009	ADM	active	adm/versioned-composition-count	Admin versioned composition count
+ECC-ADM-010	ADM	active	adm/composition-version-count	Admin composition version count
+ECC-ADM-011	ADM	active	adm/export-ehrs	Admin export EHRs (dump/load)
+ECC-ADM-012	ADM	active	adm/archive-ehrs	Admin archive EHRs
+ECC-ADM-013	ADM	active	adm/physical-party-delete	Admin physical party delete
+ECC-ADM-014	ADM	active	adm/archive-parties	Admin archive parties

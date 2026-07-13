@@ -17,7 +17,7 @@
 //! no ITS-REST binding (`/ehr/{ehr_id}/contribution` is POST-only, no GET
 //! collection resource in the tested development@e8a093e OAS nor Release-1.0.3).
 //! Wire ids come only from [`crate::wire::ids`]; the sole local body reader is
-//! [`version_uid_in`] (a structured `versions[i].id.value` RM field, not an ETag
+//! [`version_uid_in`] (a structured `versions[i].id.value` RM field, not an `ETag`
 //! scrape), which errors rather than falling back (register 05 G-4).
 
 use serde_json::{Value, json};
@@ -51,12 +51,16 @@ const INVALID_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 400), (Edition
 /// conflict.
 const CONFLICT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 409)];
 /// The contract's declared client-error codes for a commit against an existing
-/// EHR (404_unknown_ehr_id excluded — the EHR exists), used where master08
+/// EHR (`404_unknown_ehr_id` excluded — the EHR exists), used where master08
 /// states only "negative" without pinning the cause to one code.
 const NEGATIVE_SET: &[u16] = &[400, 409];
 
 /// The registered master08 CONTRIBUTION cases.
 #[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "the registered ECC case table is inherently enumerative"
+)]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── commit_contribution: COMPOSITION (master08 §Test Cases C) ─────────
@@ -390,14 +394,14 @@ fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> C
 
 // ── shared fixtures + helpers ───────────────────────────────────────────────────
 
-fn codec(e: fixtures::FixtureError) -> CaseError {
+fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
 /// Load a contribution fixture (a named file under a `corpus-dir:` manifest key)
 /// as canonical JSON.
 fn load(dir_key: &str, file: &str) -> Result<Value, CaseError> {
-    let text = fixtures::read_from(dir_key, file).map_err(codec)?;
+    let text = fixtures::read_from(dir_key, file).map_err(|e| codec(&e))?;
     serde_json::from_str(&text).map_err(|e| CaseError::Codec(e.to_string()))
 }
 
@@ -498,7 +502,7 @@ async fn ehr_status_uid(ctx: &RunContext<'_>, ehr_id: &str) -> Result<String, Ca
 }
 
 /// Create an EHR by providing a full `EHR_STATUS` (`POST /ehr` with a body) —
-/// master08 §EHR_STATUS Combinations scenario 2. Returns the `ehr_id`.
+/// master08 §`EHR_STATUS` Combinations scenario 2. Returns the `ehr_id`.
 async fn create_ehr_with_status(ctx: &RunContext<'_>, status: &Value) -> Result<String, CaseError> {
     let resp = ctx
         .send(negotiate::representation(
@@ -533,7 +537,7 @@ macro_rules! case {
 
 // ── commit_contribution: COMPOSITION ─────────────────────────────────────────
 
-/// C.1 — commit a valid COMPOSITION → 201 + ETag; the created VERSION is `::1`;
+/// C.1 — commit a valid COMPOSITION → 201 + `ETag`; the created VERSION is `::1`;
 /// the CONTRIBUTION is then retrievable with a non-empty version list.
 fn run_valid_composition<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -560,7 +564,10 @@ fn run_valid_composition<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 cbody["_type"]
             )));
         }
-        if cbody["versions"].as_array().is_none_or(|v| v.is_empty()) {
+        if cbody["versions"]
+            .as_array()
+            .is_none_or(std::vec::Vec::is_empty)
+        {
             return Err(CaseError::Assertion(
                 "post-condition: retrieved CONTRIBUTION has an empty version list".to_owned(),
             ));
@@ -843,7 +850,7 @@ fn run_two_commits_second_creation<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a
 
 // ── commit_contribution: EHR_STATUS ──────────────────────────────────────────
 
-/// Which `subject.external_ref` shape a matrix row uses (master08 §EHR_STATUS
+/// Which `subject.external_ref` shape a matrix row uses (master08 §`EHR_STATUS`
 /// Accepted Cases).
 #[derive(Debug, Clone, Copy)]
 enum ExtRef {
@@ -855,7 +862,7 @@ enum ExtRef {
     Null,
 }
 
-/// The 15-row EHR_STATUS accepted matrix, verbatim from master08 §EHR_STATUS
+/// The 15-row `EHR_STATUS` accepted matrix, verbatim from master08 §`EHR_STATUS`
 /// Accepted Cases (lines listing `is_modifiable | is_queryable |
 /// subject.external_ref` — including the schedule's own duplicated `false|true`
 /// rows). `is_modifiable × is_queryable × {HIER_OBJECT_ID, GENERIC_ID, NULL}`.
@@ -905,16 +912,16 @@ fn apply_status_row(data: &mut Value, row: (bool, bool, ExtRef), unique: &str) {
     data["subject"] = subject;
 }
 
-/// Build a full `EHR_STATUS` (subject.external_ref populated) for the scenario-2
+/// Build a full `EHR_STATUS` (`subject.external_ref` populated) for the scenario-2
 /// precondition, adapted to the RM 1.2.0 wire from a vendored valid fixture.
 fn full_status() -> Result<Value, CaseError> {
     let base = fixtures::ehr_valid()
-        .map_err(codec)?
+        .map_err(|e| codec(&e))?
         .into_iter()
         .next()
         .ok_or_else(|| CaseError::Skipped("no ehr-status.valid fixture available".to_owned()))?
         .json()
-        .map_err(codec)?;
+        .map_err(|e| codec(&e))?;
     Ok(fixtures::adapt_ehr_status(
         base,
         "conformance-ctb",
@@ -922,9 +929,9 @@ fn full_status() -> Result<Value, CaseError> {
     ))
 }
 
-/// Drive the 15-row EHR_STATUS accepted matrix, each row a valid modification →
+/// Drive the 15-row `EHR_STATUS` accepted matrix, each row a valid modification →
 /// 201. `full` selects the precondition scenario: scenario 2 (EHR created by
-/// providing a full EHR_STATUS) vs scenario 1 (default EHR_STATUS).
+/// providing a full `EHR_STATUS`) vs scenario 1 (default `EHR_STATUS`).
 async fn run_status_matrix(ctx: &RunContext<'_>, full: bool) -> Result<DataSetReport, CaseError> {
     let mut passed: u32 = 0;
     for (i, row) in STATUS_MATRIX.iter().enumerate() {
@@ -956,24 +963,24 @@ async fn run_status_matrix(ctx: &RunContext<'_>, full: bool) -> Result<DataSetRe
     }
     Ok(DataSetReport {
         passed,
-        total: STATUS_MATRIX.len() as u32,
-        schedule_rows: Some(STATUS_MATRIX.len() as u32),
+        total: u32::try_from(STATUS_MATRIX.len()).unwrap_or(u32::MAX),
+        schedule_rows: Some(u32::try_from(STATUS_MATRIX.len()).unwrap_or(u32::MAX)),
     })
 }
 
-/// D.1 — the accepted EHR_STATUS matrix over the default (scenario-1) status.
+/// D.1 — the accepted `EHR_STATUS` matrix over the default (scenario-1) status.
 fn run_minimal_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({ run_status_matrix(ctx, false).await })
 }
 
-/// D.2 — the accepted EHR_STATUS matrix over a provided full status (scenario 2):
-/// the EHR is created WITH a full EHR_STATUS, the distinct precondition master08
+/// D.2 — the accepted `EHR_STATUS` matrix over a provided full status (scenario 2):
+/// the EHR is created WITH a full `EHR_STATUS`, the distinct precondition master08
 /// draws (register 05 D.2 — the legacy runner reused D.1 verbatim).
 fn run_full_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({ run_status_matrix(ctx, true).await })
 }
 
-/// D.3 — `change_type=creation` on an EHR that already has an EHR_STATUS is
+/// D.3 — `change_type=creation` on an EHR that already has an `EHR_STATUS` is
 /// rejected (STATUS cannot be created again, nor deleted).
 fn run_ehr_status_invalid_change_type<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -997,7 +1004,7 @@ fn run_ehr_status_invalid_change_type<'a>(ctx: &'a RunContext<'a>) -> CaseFuture
     })
 }
 
-/// D.4 — a modification with invalid EHR_STATUS content is rejected.
+/// D.4 — a modification with invalid `EHR_STATUS` content is rejected.
 fn run_invalid_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let ehr_id = support::create_ehr(ctx).await?;
