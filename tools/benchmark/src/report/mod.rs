@@ -15,6 +15,7 @@
 pub mod chart;
 pub mod compare;
 pub mod json;
+pub mod knee;
 pub mod markdown;
 
 use std::path::Path;

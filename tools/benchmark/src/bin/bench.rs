@@ -6,8 +6,12 @@
 //!              --scale empty|10k|100k|1m [--ward-size N] [--load-factor L]
 //!              [--seed U64] [--app-container NAME] [--db-container NAME]
 //!              [--db-user U] [--db-name D] [--no-seed] [--out DIR]
+//! bench knee   --sut … --scale … [--ward-size N] [--seed U64]
+//!              [--steps "1,2,4,8,16,32"] [--step-window 120] [--warmup 15]
+//!              [--app-container NAME] [--db-container NAME] [--no-seed] [--out DIR]
 //! bench seed   --sut … --scale … [--seed U64]
 //! bench report --from results.json [--out DIR]
+//! bench compare --from a.json --from b.json [--knee-from a-knee.json …] [--out DIR]
 //! ```
 //!
 //! `run` provisions the workload's templates, (optionally) seeds the scale rung,
@@ -15,6 +19,11 @@
 //! the fairness guarantee), samples container CPU/RSS + storage, and writes the
 //! per-SUT artefact set into `--out/<sut-name>/`. Exit codes: `0` ok · `1` the
 //! 0.1% error-rate flag was breached · `2` runner/SUT failure.
+//!
+//! `knee` provisions + seeds once, then drives the `hour` rate shape at an
+//! ascending load-factor ladder on short fixed windows (register 01 §3), stops
+//! at the first step past the SLO (p99 > 1 s) or the 0.1% error flag, and writes
+//! `knee.json` + `KNEE.md` + `charts/knee.svg`. Exit: `0` ok · `2` failure.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -29,6 +38,7 @@ use benchmark::report::json::{
     ClassRecord, ContainerSummary, EnvironmentBlock, ResourcesBlock, Results, StorageBlock,
     SutBlock, ThroughputBlock, WorkloadBlock,
 };
+use benchmark::report::knee::{KneeResults, KneeStep};
 use benchmark::sample::{self, ContainerSeries, DbAccess, ResourceSampler};
 use benchmark::{Profile, Scale, report, seed};
 
@@ -56,6 +66,8 @@ struct Cli {
 enum Command {
     /// Drive the workload against a SUT and write its artefact set.
     Run(RunArgs),
+    /// Drive the knee/saturation ladder and write the knee artefact set.
+    Knee(KneeArgs),
     /// Deterministically seed a SUT to a scale rung.
     Seed(SeedArgs),
     /// Re-render the artefact set from an existing results.json.
@@ -69,7 +81,69 @@ struct CompareArgs {
     /// A results.json to include (repeat; the first two are compared).
     #[arg(long = "from", required = true, num_args = 1..)]
     from: Vec<PathBuf>,
+    /// An optional knee.json to include (repeat; the first two add the knee
+    /// section). When fewer than two are supplied the knee section is omitted.
+    #[arg(long = "knee-from", num_args = 1..)]
+    knee_from: Vec<PathBuf>,
     /// Where to write COMPARISON.md (+ charts/ beside it).
+    #[arg(long, default_value = "docs/benchmarks")]
+    out: PathBuf,
+}
+
+#[derive(Debug, Parser)]
+struct KneeArgs {
+    /// The target class (mirrors `bench run`).
+    #[arg(long, value_enum, default_value_t = SutArg::EhrbaseRs)]
+    sut: SutArg,
+    /// The SUT's ITS-REST base URL (default per target).
+    #[arg(long)]
+    base_url: Option<String>,
+    /// Override the output/lookup name (default: the target's name, or `byo`).
+    #[arg(long)]
+    sut_name: Option<String>,
+    /// Product version label (used for the `ehrbase-java` product label).
+    #[arg(long)]
+    sut_version: Option<String>,
+    /// Regular credential (`basic:<u>:<p>` or `bearer:<t>`).
+    #[arg(long)]
+    auth: Option<String>,
+    /// ADMIN-role credential (same forms).
+    #[arg(long)]
+    admin_auth: Option<String>,
+    /// The pre-seeded scale rung (metadata + the seed target when seeding).
+    #[arg(long, value_enum)]
+    scale: ScaleArg,
+    /// The ward size (admitted patients).
+    #[arg(long, default_value_t = 20)]
+    ward_size: usize,
+    /// The deterministic generator seed.
+    #[arg(long, default_value_t = DEFAULT_SEED)]
+    seed: u64,
+    /// The app container name (compose-managed; accepted for CLI symmetry).
+    #[arg(long)]
+    app_container: Option<String>,
+    /// The db container name (compose-managed; accepted for CLI symmetry).
+    #[arg(long)]
+    db_container: Option<String>,
+    /// The db psql role (accepted for CLI symmetry with `bench run`).
+    #[arg(long, default_value = "ehrbase")]
+    db_user: String,
+    /// The db name (accepted for CLI symmetry with `bench run`).
+    #[arg(long, default_value = "ehrbase")]
+    db_name: String,
+    /// Skip seeding (the DB is already at the scale rung).
+    #[arg(long)]
+    no_seed: bool,
+    /// The ascending load-factor ladder (comma list).
+    #[arg(long, default_value = "1,2,4,8,16,32", value_delimiter = ',')]
+    steps: Vec<f64>,
+    /// The fixed per-step measurement window (seconds).
+    #[arg(long, default_value_t = 120)]
+    step_window: u64,
+    /// The per-step warmup floor (seconds).
+    #[arg(long, default_value_t = 15)]
+    warmup: u64,
+    /// Where to write the knee artefact set (the SUT name is appended).
     #[arg(long, default_value = "docs/benchmarks")]
     out: PathBuf,
 }
@@ -213,6 +287,7 @@ impl From<ScaleArg> for Scale {
 async fn main() {
     let code = match Cli::parse().command {
         Command::Run(args) => cmd_run(args).await,
+        Command::Knee(args) => cmd_knee(args).await,
         Command::Seed(args) => cmd_seed(args).await,
         Command::Report(args) => cmd_report(&args),
         Command::Compare(args) => cmd_compare(&args),
@@ -220,7 +295,8 @@ async fn main() {
     std::process::exit(code);
 }
 
-/// `bench compare` — render the cross-SUT comparison from two results.json.
+/// `bench compare` — render the cross-SUT comparison from two results.json
+/// (and, optionally, two knee.json for the knee section).
 fn cmd_compare(args: &CompareArgs) -> i32 {
     let mut runs = Vec::new();
     for path in &args.from {
@@ -232,7 +308,17 @@ fn cmd_compare(args: &CompareArgs) -> i32 {
             }
         }
     }
-    let rendered = report::compare::render(&runs);
+    let mut knees = Vec::new();
+    for path in &args.knee_from {
+        match report::knee::from_file(path) {
+            Ok(k) => knees.push(k),
+            Err(e) => {
+                eprintln!("error reading {}: {e}", path.display());
+                return 2;
+            }
+        }
+    }
+    let rendered = report::compare::render(&runs, &knees);
     let chart_dir = args.out.join("charts");
     if let Err(e) = std::fs::create_dir_all(&chart_dir) {
         eprintln!("error creating {}: {e}", chart_dir.display());
@@ -572,6 +658,143 @@ fn reproduce_command(descriptor: &SutDescriptor, spec: &WorkloadSpec, scale: Sca
     )
 }
 
+// The knee command is a linear pipeline (descriptor → transport → seed once →
+// ladder of build_capacity + drive → write) whose steps read best in sequence.
+#[allow(clippy::too_many_lines)]
+async fn cmd_knee(args: KneeArgs) -> i32 {
+    let descriptor = match build_descriptor(
+        args.sut,
+        args.base_url.clone(),
+        args.sut_name.clone(),
+        args.sut_version.as_deref(),
+        args.auth.clone(),
+        args.admin_auth.clone(),
+    ) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let transport = match build_transport(&descriptor) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let scale = Scale::from(args.scale);
+
+    // Normalize the ladder: positive load factors, ascending, deduplicated.
+    let mut ladder: Vec<f64> = args.steps.iter().copied().filter(|l| *l > 0.0).collect();
+    ladder.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    ladder.dedup_by(|a, b| (*a - *b).abs() < f64::EPSILON);
+    if ladder.is_empty() {
+        eprintln!("error: --steps must list at least one positive load factor");
+        return 2;
+    }
+
+    // Provision + seed happen ONCE: seeding here, provisioning on the first
+    // drive (re-applied idempotently at each later step).
+    if !args.no_seed && scale.compositions() > 0 {
+        eprintln!("bench: seeding scale rung {} …", scale.key());
+        if let Err(e) = seed::seed_scale(&transport, scale, args.seed).await {
+            eprintln!("error seeding: {e}");
+            return 2;
+        }
+    }
+
+    let step_window = Duration::from_secs(args.step_window);
+    let warmup = Duration::from_secs(args.warmup);
+
+    let mut steps_out: Vec<KneeStep> = Vec::new();
+    let mut knee: Option<KneeStep> = None;
+    for load_factor in ladder {
+        let spec = WorkloadSpec {
+            profile: Profile::Hour,
+            ward_size: args.ward_size,
+            load_factor,
+            seed: args.seed,
+        };
+        let workload = match model::build_capacity(&spec, step_window, warmup) {
+            Ok(w) => w,
+            Err(e) => {
+                eprintln!("error building capacity workload: {e}");
+                return 2;
+            }
+        };
+        eprintln!(
+            "bench: capacity step L={load_factor} (window {}s, warmup {}s) against {}",
+            args.step_window, args.warmup, descriptor.base_url
+        );
+        let outcome = match drive::drive(&transport, &workload, Recorder::new()).await {
+            Ok(o) => o,
+            Err(e) => {
+                eprintln!("error driving workload: {e}");
+                return 2;
+            }
+        };
+        let p99_us = outcome.recorder.overall_p99_us();
+        let step = KneeStep {
+            load_factor,
+            rps: outcome.rps,
+            error_rate: outcome.error_rate,
+            p99_us,
+            requests: outcome.requests,
+        };
+        eprintln!(
+            "bench: L={load_factor} → {:.1} req/s · p99 {p99_us} µs · error rate {:.3}% · {} requests",
+            step.rps,
+            step.error_rate * 100.0,
+            step.requests
+        );
+        let saturated = report::knee::ladder_should_stop(p99_us, outcome.error_rate);
+        steps_out.push(step.clone());
+        if saturated {
+            eprintln!(
+                "bench: SLO breached at L={load_factor} (p99 {p99_us} µs / error {:.3}%) — ladder stops",
+                outcome.error_rate * 100.0
+            );
+            break;
+        }
+        knee = Some(step);
+    }
+
+    let results = KneeResults {
+        sut: SutBlock {
+            name: descriptor.name.clone(),
+            kind: sut_kind_label(descriptor.kind).to_owned(),
+            base_url: descriptor.base_url.clone(),
+            product_label: descriptor.product_label.clone(),
+            image_digests: BTreeMap::new(),
+            versions: BTreeMap::new(),
+        },
+        scale: scale.key().to_owned(),
+        steps: steps_out,
+        knee,
+    };
+
+    let out_dir = args.out.join(&descriptor.name);
+    if let Err(e) = report::knee::write_all(&results, &out_dir) {
+        eprintln!("error writing artefacts: {e}");
+        return 2;
+    }
+    match &results.knee {
+        Some(step) => eprintln!(
+            "bench: knee = L {} → {:.1} req/s at p99 {} µs → {}",
+            step.load_factor,
+            step.rps,
+            step.p99_us,
+            out_dir.display()
+        ),
+        None => eprintln!(
+            "bench: no sustainable step (first ladder step saturated) → {}",
+            out_dir.display()
+        ),
+    }
+    0
+}
+
 async fn cmd_seed(args: SeedArgs) -> i32 {
     let descriptor = match build_descriptor(
         args.sut,
@@ -696,6 +919,70 @@ mod tests {
             build_descriptor(SutArg::EhrbaseRs, None, None, None, None, None).expect("descriptor");
         assert!(d.base_url.contains("localhost:8080"));
         assert_eq!(d.name, "ehrbase-rs");
+    }
+
+    #[test]
+    fn knee_args_parse_with_defaults() {
+        let cli = Cli::try_parse_from(["bench", "knee", "--sut", "ehrbase-rs", "--scale", "10k"])
+            .expect("parse");
+        let Command::Knee(args) = cli.command else {
+            panic!("expected knee");
+        };
+        assert_eq!(Scale::from(args.scale), Scale::TenK);
+        assert_eq!(args.steps, vec![1.0, 2.0, 4.0, 8.0, 16.0, 32.0]);
+        assert_eq!(args.step_window, 120);
+        assert_eq!(args.warmup, 15);
+        assert_eq!(args.ward_size, 20);
+        assert_eq!(args.seed, DEFAULT_SEED);
+    }
+
+    #[test]
+    fn knee_steps_override_parses_the_comma_ladder() {
+        let cli = Cli::try_parse_from([
+            "bench",
+            "knee",
+            "--sut",
+            "byo",
+            "--base-url",
+            "http://x/v1",
+            "--scale",
+            "empty",
+            "--steps",
+            "1,3,9",
+            "--step-window",
+            "60",
+            "--warmup",
+            "10",
+        ])
+        .expect("parse");
+        let Command::Knee(args) = cli.command else {
+            panic!("expected knee");
+        };
+        assert_eq!(args.steps, vec![1.0, 3.0, 9.0]);
+        assert_eq!(args.step_window, 60);
+        assert_eq!(args.warmup, 10);
+    }
+
+    #[test]
+    fn compare_accepts_knee_from() {
+        let cli = Cli::try_parse_from([
+            "bench",
+            "compare",
+            "--from",
+            "a.json",
+            "--from",
+            "b.json",
+            "--knee-from",
+            "a-knee.json",
+            "--knee-from",
+            "b-knee.json",
+        ])
+        .expect("parse");
+        let Command::Compare(args) = cli.command else {
+            panic!("expected compare");
+        };
+        assert_eq!(args.from.len(), 2);
+        assert_eq!(args.knee_from.len(), 2);
     }
 
     #[test]
