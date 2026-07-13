@@ -74,8 +74,9 @@ crates wrap ECharts/Plotly, which are JavaScript). The one we pick
 
 ## 3. Framework selection
 
-**Pick: [Leptos](https://leptos.dev/) 0.8** (latest `0.8.19` as of July 2026;
-on a path to 1.0). Fine-grained reactive (surgical DOM updates, ideal for a
+**Pick: [Leptos](https://leptos.dev/) 0.8** (latest stable `0.8.20`, verified
+live on crates.io 2026-07-13; a `0.9.0-alpha` exists — we stay on the stable
+0.8 line). Fine-grained reactive (surgical DOM updates, ideal for a
 data-dense admin dashboard), web-first, and — the clincher for *this* repo — its
 **0.8 line targets `axum` 0.8**, the exact version the workspace already pins.
 Same server stack, same `tower`/`tracing` idioms.
@@ -84,7 +85,7 @@ Same server stack, same `tower`/`tracing` idioms.
 
 | Framework | Version (Jul 2026) | Verdict for this job |
 |---|---|---|
-| **Leptos** | 0.8.19 | **Chosen.** Web-first, fine-grained, `axum` 0.8 native, richest *pure-Rust* web-widget ecosystem (§4), first-class BFF via server functions (§5). |
+| **Leptos** | 0.8.20 | **Chosen.** Web-first, fine-grained, `axum` 0.8 native, richest *pure-Rust* web-widget ecosystem (§4), first-class BFF via server functions (§5). |
 | Dioxus | 0.7.3 (0.7.0 shipped 29 Jan 2026) | **Viable alternative.** Cross-platform (web/desktop/mobile from one codebase), superb DX (Rust hot-patching), also `axum`-based fullstack. Choose it **only** if a desktop/mobile build of the console is ever wanted; for web-only it is heavier (virtual-DOM diff vs Leptos's fine-grained updates) and its *web* widget/chart ecosystem is thinner. ([Dioxus 0.7](https://dioxuslabs.com/blog/release-070/)) |
 | Yew | 0.21 | **Ruled out.** Mature but slow-moving React-style vDOM; no edge over Leptos here. |
 | egui / eframe | current | **Ruled out for this UI.** Immediate-mode, renders to a WebGL/WebGPU **canvas** — no page search, weak mobile text editing, poor accessibility. Wrong for a mobile-friendly admin console (great for internal debug tools, which this is not). ([egui](https://github.com/emilk/egui) · [Rust GUI landscape 2026](https://wrenlearnsrust.com/posts/2026-03-11-rust-gui-landscape-2026.html)) |
@@ -93,15 +94,15 @@ Same server stack, same `tower`/`tracing` idioms.
 
 ## 4. The Rust-only stack (all verified pure-Rust / CSS, no authored JS)
 
-| Concern | Choice | Version (Jul 2026) | No-JS status |
+| Concern | Choice | Version (verified live 2026-07-13) | No-JS status |
 |---|---|---|---|
-| UI framework | `leptos` (SSR/full-stack) | 0.8.19 | Rust → WASM |
-| Build / bundler | `cargo-leptos` | current | Builds both binaries (native server + WASM client); **bundles the Tailwind standalone binary — no Node/npm**. ([cargo-leptos](https://github.com/leptos-rs/cargo-leptos)) |
+| UI framework | `leptos` (SSR/full-stack) | 0.8.20 | Rust → WASM |
+| Build / bundler | `cargo-leptos` | 0.3.7 (2026-07-03) | Builds both binaries (native server + WASM client); **bundles the Tailwind standalone binary — no Node/npm**. ([cargo-leptos](https://github.com/leptos-rs/cargo-leptos)) |
 | Styling | Tailwind CSS v4 (via `cargo-leptos` standalone) | v4.2.x (pin with `LEPTOS_TAILWIND_VERSION`) | CSS, no JS |
-| Component kit | [`thaw`](https://github.com/thaw-ui/thaw) (Fluent-design) | **`0.5.0-beta`** — targets Leptos **0.8.5** | Rust → WASM. **Owner decision (2026-07-13): use the 0.5 beta.** The "stable" 0.4.8 is pinned to Leptos **0.7.7** and is *not* 0.8-compatible, so the beta is the only 0.8 line. Pin the newest `0.5.0-beta.N` published at scaffold time. (Leptonic is stale — last release Feb 2024 — **do not use**.) |
-| Data grid / tables | [`leptos-struct-table`](https://docs.rs/leptos-struct-table) | 0.18.0 (2026-02-03) | Rust → WASM. Async data from a REST source, virtualization, pagination, multi-column sort, column hide/reorder, headless (our CSS). Exactly the RESULT_SET / EHR-list widget. |
-| Charts | [`leptos-chartistry`](https://github.com/feral-dot-io/leptos-chartistry) | 0.2.3 (~Mar 2026) | **Pure Rust + SVG — "no JS, no canvas."** Leptos 0.8, has an SSR feature. Dashboard tiles. |
-| Reactive utils | `leptos-use` | 0.18 | Rust → WASM (storage, debounce, clipboard, etc.) |
+| Component kit | [`thaw`](https://github.com/thaw-ui/thaw) (Fluent-design) | **`0.5.0-beta`** — leptos req `^0.8.0` (crates.io index) | Rust → WASM. **Owner decision (2026-07-13): use the 0.5 beta.** The "stable" 0.4.8 is pinned to Leptos **^0.7.7** and is *not* 0.8-compatible, so the beta is the only 0.8 line. Published 2025-08-03 — nearly a year old; the main branch is the active 0.8 line. Pin the newest `0.5.0-beta.N` published at scaffold time; fall back to a pinned git rev of main only if the beta fails against Leptos 0.8.20. (Leptonic is stale — last release Feb 2024 — **do not use**.) |
+| Data grid / tables | [`leptos-struct-table`](https://docs.rs/leptos-struct-table) | 0.19.0 (2026-06-23), leptos `^0.8`, leptos-use `^0.19` | Rust → WASM. Async data from a REST source, virtualization, pagination, multi-column sort, column hide/reorder, headless (our CSS). Exactly the RESULT_SET / EHR-list widget. |
+| Charts | [`leptos-chartistry`](https://github.com/feral-dot-io/leptos-chartistry) | 0.2.3 (2026-01-23), leptos `^0.8` | **Pure Rust + SVG — "no JS, no canvas."** Has an SSR feature. Dashboard tiles. Note: depends on leptos-use `^0.18` while struct-table wants `^0.19` — cargo resolves both (pre-1.0 minors are distinct), at the cost of a duplicated leptos-use in the WASM bundle until chartistry bumps. Accepted. |
+| Reactive utils | `leptos-use` | 0.19.0 (2026-06-22) | Rust → WASM (storage, debounce, clipboard, etc.) |
 | Server→CDR HTTP | `reqwest` 0.13 (rustls) | workspace pin | Server-side only; the BFF's call into the CDR (§5). |
 
 Everything above is already the kind of dependency this workspace uses
@@ -380,9 +381,9 @@ best practice from the first line of code:
 business logic — query-builder AST assembly, criteria validation, the OPT
 path catalog — lives in plain, component-free types with ordinary unit tests;
 components stay thin. Browser-level tests use `wasm-bindgen-test`
-(`mount_to` + `tick().await`); end-to-end tests are **Rust-native**
-(fantoccini/cucumber, per the book's `todo_app_sqlite` example) — not
-Playwright, which would put JavaScript in the repo against the mandate.
+(`mount_to` + `tick().await`); end-to-end tests are **Rust-native and
+merge-gating** — the full design is **§8d** — not Playwright, which would
+put JavaScript in the repo against the mandate.
 
 ## 8c. CLAUDE.md edits (docs-verified 2026-07-13)
 
@@ -427,6 +428,68 @@ and now names the new UI agents.
    official ~200-line guidance. Not done unilaterally — the root is the
    always-loaded safety net, and every removal must be verified as covered
    by a nested file first.
+
+## 8d. End-to-end testing — Rust-native, merge-gating (owner mandate 2026-07-13)
+
+The test pyramid's top layer: drive the **real composed stack** with a **real
+browser** and assert full user journeys. Unit tests can't see hydration; wasm
+tests can't see the BFF↔CDR path; only E2E sees the product. It is a
+**gate**, not a nice-to-have.
+
+### Stack (all Rust / declarative — zero JS in the test suite)
+
+| Concern | Choice | Why |
+|---|---|---|
+| Browser driver | **`thirtyfour`** (0.37.2, 2026-07-05 — verified live; earlier drafts said "0.31 built on fantoccini", both stale: current releases carry no fantoccini dependency) | High-level Rust WebDriver client with Selenium-style ergonomics; same W3C WebDriver protocol family as the `fantoccini` the Leptos book's own e2e example uses. |
+| Browser | Headless Chromium + chromedriver (geckodriver as the cross-check, non-gating) | Standard WebDriver endpoints; no vendored browser tooling. |
+| Test runner | `cargo nextest` — journeys are plain `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs` | Follows `testing.md` (tests live in the owning crate); no new runner. `cucumber-rs` (Gherkin journeys) is an optional later layer if owner-readable specs are wanted — pure Rust too. |
+| Stack under test | `scripts/ui-e2e.sh`: docker compose up **postgres + ehrbase + ehrbase-admin-ui + Keycloak** → chromedriver → nextest → teardown | Mirrors the proven `scripts/conformance.sh` pattern exactly. Keycloak is in the compose because auth v1 is dual (§10) — the OIDC journey is gated, not deferred. |
+
+**Skip-with-reason seam** (the B4 `--tx-server-url` precedent): the e2e tests
+read `UI_E2E_BASE_URL` (+ `UI_E2E_WEBDRIVER_URL`); when unset they skip with
+a printed reason, so a plain `cargo nextest run --workspace` without Docker
+stays green. The CI job always sets them — skipping is impossible in the
+gate.
+
+### The v1 journey set (each one merge-gating)
+
+1. **Login (Basic)** → dashboard renders; **login (OIDC)** → Keycloak
+   redirect → code exchange → session established.
+2. **Hydration proof:** after first paint, interact (click a counter/filter)
+   and assert the DOM updated — proves WASM loaded and hydration attached,
+   not just that SSR emitted HTML.
+3. **Template Manager:** upload a corpus OPT → appears in the list →
+   inspect its path catalog.
+4. **Query Builder:** point-and-click template → archetype → path → typed
+   criterion → run → RESULT_SET rows render in the table; save as stored
+   query; re-run from saved.
+5. **Composition browser:** open an EHR → composition → **JSON ⇄ XML
+   toggle** round-trip renders both canonical forms.
+6. **Progressive enhancement:** one journey with JavaScript disabled in the
+   browser profile — `<ActionForm>` mutation still works via plain form
+   POST + redirect (the Leptos degradation contract, §5.1).
+7. **Auth discipline:** unauthenticated request → login redirect;
+   insufficient scope → 403 surface renders.
+
+**Standing assertion on every journey:** read the browser console log
+(WebDriver `goog:loggingPrefs`) and **fail on any hydration error or panic**
+— the cheapest possible detector for the §8-class bugs, applied everywhere.
+
+### Gating (how it's enforced)
+
+- **CI job `ui-e2e`** in the main workflow: path-filtered to
+  `app/ehrbase-admin-ui/**` (plus the compose/e2e script paths), **required
+  for merge** on PRs touching them, and always run on release tags. Runs
+  `scripts/ui-e2e.sh` on the standard runner (Docker + chromium +
+  chromedriver are stock on `ubuntu-latest`-class runners).
+- **`/ui-gates` skill** gains the E2E battery as its final stage (runs when
+  Docker is available; reports SKIPPED(no docker) locally, never in CI).
+- **`.claude/rules/leptos-ui.md` §10** lists the e2e gate; the
+  `ui-implementer` agent's done-definition includes it for journeys its
+  change touches.
+- **Flake discipline = `testing.md`:** a flaky journey is fixed (explicit
+  waits on elements/conditions — never `sleep`), **never** `#[ignore]`d,
+  retried-by-default, or deleted to get green.
 
 ## 9. Risks & honest tradeoffs
 
@@ -479,6 +542,10 @@ and now names the new UI agents.
 - Write the ADR (owner said not yet) recording the framework + BFF decision.
 - Scaffold `app/ehrbase-admin-ui` (workspace member, `openehr-*` deps only).
 - Extend `container-images.md` + `containers.yml` + the quickstart compose.
+- Build the E2E harness (§8d): `scripts/ui-e2e.sh` (compose stack incl.
+  Keycloak + chromedriver), the `e2e_*.rs` journey tests, and the
+  merge-gating `ui-e2e` CI job — landing with the first UI feature PR, not
+  after.
 - `CHANGELOG.md` `[Unreleased]` entry + a `website/book` operator page (both are
   standing same-PR rules for user-visible surfaces).
 - **Acknowledgement in the root `README.md`.** Add a credit that the admin
