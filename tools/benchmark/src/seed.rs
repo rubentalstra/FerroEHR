@@ -65,15 +65,37 @@ pub async fn seed_scale(client: &SutClient, scale: Scale, seed: u64) -> Result<u
     let ehr_count = (target / COMPS_PER_EHR).max(1);
     let per_ehr = target.div_ceil(ehr_count);
 
+    // Per EHR: exactly ONE persistent composition (a persistent COMPOSITION is
+    // a per-EHR singleton updated over time — RM ehr §COMPOSITION category
+    // `persistent`; the SUT rightly answers 409 on a second create), then
+    // event compositions (Vitals/Nested alternating) for the bulk. One care
+    // plan + a stream of events per patient is also the realistic shape.
+    let (persistent, events): (Vec<&Value>, Vec<&Value>) = {
+        let mut p = Vec::new();
+        let mut e = Vec::new();
+        for (kind, base) in TEMPLATES.iter().zip(bases.iter()) {
+            if matches!(kind, TemplateKind::Persistent) {
+                p.push(base);
+            } else {
+                e.push(base);
+            }
+        }
+        (p, e)
+    };
+
     let mut committed: u64 = 0;
     'ehrs: for _ in 0..ehr_count {
         let ehr = create_ehr(client).await?;
-        for _ in 0..per_ehr {
+        for slot in 0..per_ehr {
             if committed >= target {
                 break 'ehrs;
             }
-            let idx = usize::try_from(committed % bases.len() as u64).unwrap_or(0);
-            let body = vary_timestamp(&bases[idx], seed, committed);
+            let body = if slot == 0 && !persistent.is_empty() {
+                vary_timestamp(persistent[0], seed, committed)
+            } else {
+                let idx = usize::try_from(committed % events.len() as u64).unwrap_or(0);
+                vary_timestamp(events[idx], seed, committed)
+            };
             commit_composition(client, &ehr, &body).await?;
             committed += 1;
             if committed.is_multiple_of(1000) {
