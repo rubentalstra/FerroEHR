@@ -110,11 +110,12 @@ struct RunArgs {
     #[arg(long, default_value = "docs/conformance")]
     out: PathBuf,
     /// The upstream fairness register (TOML) for a foreign SUT. Unset:
-    /// auto-resolve `adjudications/<sut-name>*.toml`. Ignored for ehrbase-rs.
+    /// auto-resolve `<crate>/adjudications/<sut-name>*.toml` — anchored to the
+    /// crate dir, not the invocation CWD. Ignored for ehrbase-rs.
     #[arg(long)]
     fairness_register: Option<PathBuf>,
     /// The own-corpus adjudication register (vendored-data defects).
-    #[arg(long, default_value = "adjudications/ecc-own.toml")]
+    #[arg(long, default_value = concat!(env!("CARGO_MANIFEST_DIR"), "/adjudications/ecc-own.toml"))]
     own_adjudications: PathBuf,
     /// Real FHIR R4 terminology-server base URL for the `TS` cases. Unset:
     /// spin up a hermetic wiremock FHIR-tx fixture (the CI default).
@@ -355,10 +356,12 @@ fn resolve_fairness_register(
     }
 }
 
-/// Find `adjudications/<name>*.toml`, returning the lexicographically first
-/// match (deterministic).
+/// Find `<crate>/adjudications/<name>*.toml`, returning the lexicographically
+/// first match (deterministic). Anchored to the crate dir so resolution never
+/// depends on the invocation CWD (the CWD-relative form silently found
+/// nothing when run from the workspace root).
 fn auto_fairness_path(name: &str) -> Option<PathBuf> {
-    let dir = Path::new("adjudications");
+    let dir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/adjudications"));
     let mut matches: Vec<PathBuf> = std::fs::read_dir(dir)
         .ok()?
         .filter_map(Result::ok)

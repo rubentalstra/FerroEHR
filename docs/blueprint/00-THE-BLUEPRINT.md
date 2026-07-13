@@ -36,13 +36,20 @@ framework (`tools/conformance`, 310 catalogued cases).
 
 ## 2. Compliance state
 
-Baseline conformance signal (refreshed 2026-07-10, B7): ECC = **341
-executions · 315 pass · 0 fail** (26 documented adjudication skips); machine
-profile verdicts **CORE PASS · STANDARD PASS · OPTIONS OBTAINED**. The B1–B6
-build order is executed; §2.2's failure surface is empty; §2.3's State
-column was refreshed at B7 close (per-row deltas live in each build step's
-close note in §3 and the phase files). Remaining trajectory: P20
-optimization (re-planned per WORKLIST W-5), P17 interop audit. (P99 removed 2026-07-12.)
+Baseline conformance signal (re-derived 2026-07-13 by the **W-10 instrument
+rewrite** — spine-first case derivation, multi-SUT + BYO endpoint, edition
+ladder, per-SUT artefacts under `docs/conformance/<sut>/`;
+`docs/plans/w10-conformance-redesign.md`): ECC = **368 executions · 333
+pass · 0 fail** (35 documented adjudication skips); machine profile verdicts
+**CORE PASS · STANDARD PASS · OPTIONS OBTAINED**. Ancestor (B7-era
+instrument): 341 · 315 · 0 · 26 — every delta explained in the W-10 plan
+file (new coverage +27; +9 adjudicated skips in that new coverage; all
+first-run failures spec-triaged into instrument fixes or real, separately
+committed server fixes). The B1–B6 build order is executed; §2.2's failure
+surface is empty; §2.3's State column was refreshed at B7 close (per-row
+deltas live in each build step's close note in §3 and the phase files).
+Remaining trajectory: P20 optimization (re-planned per WORKLIST W-5), P17
+interop audit. (P99 removed 2026-07-12.)
 
 ### 2.1 Proven foundations (evidence, not intent)
 
@@ -298,7 +305,8 @@ the ADRs; deviations are defects):
    (owner ruling); from B1 close onward every phase ends with an ECC run that
    must show **zero drift** vs the standing baseline — the only permitted
    delta is newly-green cases. The baseline ratchets upward at each phase
-   close and is committed (`docs/conformance/results.json` + report + badges).
+   close and is committed (`docs/conformance/ehrbase-rs/results.json` +
+   report + badges — per-SUT artefact dirs since W-10).
    Profile claims (CORE/STANDARD/OPTIONS) are machine-computed by the runner,
    never hand-asserted.
 5. **Generated layer discipline.** Never hand-edit a `// @generated` file —

@@ -100,21 +100,18 @@ pub struct OwnRegister {
 }
 
 impl OwnRegister {
-    /// Load from `path`; a missing file is an empty register.
+    /// Load from `path`. A missing file is an error, never an empty register:
+    /// a silently-empty register flips `corpus-dialect` skips into green
+    /// passes and misreports the run (no-silent-fallback rule).
     ///
     /// # Errors
-    /// [`OwnRegisterError`] on unreadable/malformed/uncited/duplicate content.
+    /// [`OwnRegisterError`] on missing/unreadable/malformed/uncited/duplicate
+    /// content.
     pub fn load(path: &Path) -> Result<Self, OwnRegisterError> {
-        let text = match std::fs::read_to_string(path) {
-            Ok(t) => t,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::default()),
-            Err(source) => {
-                return Err(OwnRegisterError::Io {
-                    path: path.display().to_string(),
-                    source,
-                });
-            }
-        };
+        let text = std::fs::read_to_string(path).map_err(|source| OwnRegisterError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
         Self::parse(&text)
     }
 
@@ -195,7 +192,7 @@ citation = "x"
     }
 
     #[test]
-    fn rejects_duplicates_and_tolerates_missing_file() {
+    fn rejects_duplicates_and_missing_file() {
         let dup = r#"
 [[entry]]
 ecc_id = "ECC-A-001"
@@ -213,7 +210,11 @@ citation = "c"
             OwnRegister::parse(dup),
             Err(OwnRegisterError::Duplicate { .. })
         ));
-        let missing = OwnRegister::load(Path::new("/nonexistent/ecc-own.toml")).expect("empty");
-        assert!(missing.is_empty());
+        // A missing register is an error, never a silent empty: an empty
+        // register flips corpus-dialect skips into green passes.
+        assert!(matches!(
+            OwnRegister::load(Path::new("/nonexistent/ecc-own.toml")),
+            Err(OwnRegisterError::Io { .. })
+        ));
     }
 }

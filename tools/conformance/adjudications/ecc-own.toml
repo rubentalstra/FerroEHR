@@ -50,49 +50,53 @@ disposition = "spec-supersedes-corpus"
 reason = "Golden C/103 (get_entries_within_timewindow) uses TIMEWINDOW, removed from AQL 1.1; the query must be rejected (4xx)."
 citation = "QUERY master00-amendment_record SPECQUERY-20 (remove TIMEWINDOW); CNF tests corpus aql_queries_valid/C/103_get_entries_within_timewindow.json"
 
-# ── LIMIT before ORDER BY: 2019-era corpus dialect → corpus-dialect (skip) ─────
+# ── LIMIT before ORDER BY: 2019-era corpus dialect → spec-supersedes-corpus ────
 # The AQL 1.1 grammar orders `orderByClause? limitClause?` (AqlParser.g4), so a
 # query placing LIMIT before ORDER BY is invalid AQL and the golden is defective.
-# The runner SKIPS these with the citation; the golden is never edited.
+# Like the TIMEWINDOW family above, the spec-derived expectation REPLACES the
+# void golden: the dedicated dialect cases (`suites/query_golden.rs`
+# DIALECT_CASES) assert the 4xx rejection, so each case RUNS against that
+# spec-cited expectation — a skip would under-report exercised coverage. The
+# golden is never edited.
 
 [[entry]]
 ecc_id = "ECC-QRY-018"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query A/107 (get_ehrs_top_5) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar (orderByClause? limitClause?), so the vendored golden is a 2019-dialect defect."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/A/107_get_ehrs_top_5.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-019"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query A/110 (get_ehrs_top_5_orderby) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/A/110_get_ehrs_top_5_orderby.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-020"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query B/104 (get_compositions_top_5_ordered_by_starttime_asc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/104_get_compositions_top_5_ordered_by_starttime_asc.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-021"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query B/105 (get_compositions_top_5_ordered_by_starttime_desc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/105_get_compositions_top_5_ordered_by_starttime_desc.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-022"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query B/106 (get_compositions_top_5_ordered_by_starttimevalue_asc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/106_get_compositions_top_5_ordered_by_starttimevalue_asc.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-023"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query D/312 (select_data_values_…_top_5) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json"
 
 [[entry]]
 ecc_id = "ECC-QRY-024"
-disposition = "corpus-dialect"
+disposition = "spec-supersedes-corpus"
 reason = "Query D/313 (select_data_values_…_top_5_orderby) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
 citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/D/313_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5_orderby.json"

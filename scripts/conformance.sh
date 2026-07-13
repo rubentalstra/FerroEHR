@@ -87,11 +87,21 @@ cleanup() {
 trap cleanup EXIT
 
 wait_healthy() {
-  local cid
+  # Containers with a compose healthcheck report .State.Health; ones without
+  # (the upstream ehrbase-java image) are probed over HTTP instead — any HTTP
+  # answer on the API base means the server is up.
+  local cid health code
   for _ in $(seq 1 60); do
     cid=$(compose ps -q "$APP_SERVICE")
-    if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]; then
-      return 0
+    if [ -n "$cid" ]; then
+      health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid")
+      if [ "$health" = "healthy" ]; then
+        return 0
+      fi
+      if [ "$health" = "none" ]; then
+        code=$(curl -s -o /dev/null -w '%{http_code}' -u ehrbase:ehrbase "$BASE_URL/ehr" || true)
+        [ "$code" != "000" ] && return 0
+      fi
     fi
     sleep 5
   done
