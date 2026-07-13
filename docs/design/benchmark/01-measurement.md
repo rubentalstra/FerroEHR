@@ -114,7 +114,7 @@ tools/benchmark/src/
 │   ├── ward.rs       #   patients, admission state, staff pool
 │   ├── schedule.rs   #   open-loop arrival schedule + diurnal curve
 │   └── lock.rs       #   workload.lock hashing
-├── gen.rs            # seeded instance-data generator over fixture skeletons
+├── render.rs         # seeded instance-data renderer over fixture skeletons (`gen` is a 2024 keyword)
 ├── drive.rs          # executor: planned-time dispatch, warmup, knee series
 ├── measure.rs        # per-class HdrHistogram + CO correction
 ├── sample.rs         # docker stats poller, cold start, storage probe

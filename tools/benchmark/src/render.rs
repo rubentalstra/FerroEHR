@@ -25,6 +25,7 @@ use serde_json::Value;
 
 use conformance::testdata::fixtures;
 
+use crate::pack;
 use crate::{BenchError, TemplateKind};
 
 /// The subject-id namespace stamped into every rendered `EHR_STATUS`
@@ -32,8 +33,12 @@ use crate::{BenchError, TemplateKind};
 pub const SUBJECT_NAMESPACE: &str = "ehrbase-bench";
 
 /// The vendored contribution envelope reused (and re-filled) for batch commits —
-/// a proven both-SUT-accepted `CONTRIBUTION` shape (register 00 §4; E4).
-const CONTRIBUTION_ENVELOPE: &str = "minimal/minimal_observation.contribution.json";
+/// a proven both-SUT-accepted `CONTRIBUTION` shape (register 00 §4; E4). The
+/// `contribution.valid` corpus-dir file.
+pub const CONTRIBUTION_ENVELOPE: &str = "minimal/minimal_observation.contribution.json";
+
+/// The `ehr-status.valid` corpus-dir file used for every `EHR_STATUS` body.
+pub const EHR_STATUS_FIXTURE: &str = "000_ehr_status.json";
 
 /// The corpus provenance of one [`TemplateKind`]: the OPT to provision and the
 /// canonical-JSON composition skeleton to vary. The `template_id` is the id the
@@ -52,16 +57,16 @@ pub struct TemplateSource {
     pub template_id: &'static str,
 }
 
-/// The corpus source for a template kind.
+/// The ECC-corpus source for a template kind, or `None` for the CKM-pack kinds
+/// (which are sourced from [`crate::pack`], not the conformance fixtures).
 ///
-/// PORT NOTE: `Vitals` maps to the corpus `composition_evaluation_test` event
-/// composition (a proven both-server-accepted payload) as the small/hot-path
-/// stand-in until the CKM `vital-signs` template is wired in at B3 (skeletons
-/// then sourced from the SUT's `GET …/template/{id}/example`); no openEHR spec
-/// governs the benchmark's template selection.
+/// PORT NOTE: no openEHR spec governs the benchmark's template selection. The
+/// ECC-corpus kinds are retained as proven both-server-accepted payloads; the
+/// CKM-pack kinds (E1–E4/E7/E9 clinical events) are the official openEHR CKM
+/// templates in `templates/ckm/`.
 #[must_use]
-pub fn template_source(kind: TemplateKind) -> TemplateSource {
-    match kind {
+pub fn template_source(kind: TemplateKind) -> Option<TemplateSource> {
+    Some(match kind {
         TemplateKind::Vitals => TemplateSource {
             opt_dir_key: "template.valid",
             opt_rel: "validation/composition_evaluation_test.opt",
@@ -83,7 +88,12 @@ pub fn template_source(kind: TemplateKind) -> TemplateSource {
             comp_file: "persistent_minimal.en.v1__full.json",
             template_id: "persistent_minimal.en.v1",
         },
-    }
+        TemplateKind::CkmVitalSigns
+        | TemplateKind::CkmLabResult
+        | TemplateKind::CkmMedicationOrder
+        | TemplateKind::CkmSummary
+        | TemplateKind::CkmSynopsis => return None,
+    })
 }
 
 /// The seeded variation inputs for one rendered payload.
@@ -102,9 +112,13 @@ pub struct VaryParams {
 /// Read the raw OPT text for a template kind (for provisioning uploads).
 ///
 /// # Errors
-/// [`BenchError::Fixture`] if the OPT cannot be read.
+/// [`BenchError`] if the OPT cannot be read.
 pub fn opt_text(kind: TemplateKind) -> Result<String, BenchError> {
-    let src = template_source(kind);
+    if let Some(tpl) = pack::get(kind) {
+        return tpl.opt_text();
+    }
+    let src = template_source(kind)
+        .ok_or_else(|| BenchError::Fixture(format!("no OPT source for {kind:?}")))?;
     fixtures::read_from(src.opt_dir_key, src.opt_rel)
         .map_err(|e| BenchError::Fixture(e.to_string()))
 }
@@ -119,9 +133,14 @@ pub fn composition(kind: TemplateKind, params: &VaryParams) -> Result<Value, Ben
     Ok(vary(&skeleton, params))
 }
 
-/// Read (and cache-free parse) the canonical-JSON composition skeleton.
+/// Read (and cache-free parse) the composition skeleton: the committed CKM
+/// example for a CKM kind, else the canonical-JSON corpus fixture.
 fn read_composition_skeleton(kind: TemplateKind) -> Result<Value, BenchError> {
-    let src = template_source(kind);
+    if let Some(tpl) = pack::get(kind) {
+        return tpl.skeleton();
+    }
+    let src = template_source(kind)
+        .ok_or_else(|| BenchError::Fixture(format!("no skeleton source for {kind:?}")))?;
     let text = fixtures::read_from(src.comp_dir_key, src.comp_file)
         .map_err(|e| BenchError::Fixture(e.to_string()))?;
     serde_json::from_str(&text).map_err(BenchError::Json)
@@ -134,7 +153,7 @@ fn read_composition_skeleton(kind: TemplateKind) -> Result<Value, BenchError> {
 /// # Errors
 /// [`BenchError::Fixture`] if the fixture cannot be read.
 pub fn ehr_status(subject_id: &str, seed: u64) -> Result<Value, BenchError> {
-    let text = fixtures::read_from("ehr-status.valid", "000_ehr_status.json")
+    let text = fixtures::read_from("ehr-status.valid", EHR_STATUS_FIXTURE)
         .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let base: Value = serde_json::from_str(&text).map_err(BenchError::Json)?;
     // is_modifiable / is_queryable jitter would change semantics; keep the
@@ -256,10 +275,10 @@ fn vary_value(value: &mut Value, rng: &mut StdRng, params: &VaryParams) {
             // keeping the RNG draw order deterministic.
             let keys: Vec<String> = map.keys().cloned().collect();
             for key in keys {
-                if key == "composer" {
-                    if let Some(child) = map.get_mut(&key) {
-                        set_name_field(child, &params.composer);
-                    }
+                if key == "composer"
+                    && let Some(child) = map.get_mut(&key)
+                {
+                    set_name_field(child, &params.composer);
                 }
                 if let Some(child) = map.get_mut(&key) {
                     vary_value(child, rng, params);
@@ -307,10 +326,10 @@ fn set_string(map: &mut serde_json::Map<String, Value>, field: &str, val: &str) 
 fn set_name_field(node: &mut Value, name: &str) {
     if let Some(obj) = node.as_object_mut() {
         match obj.get_mut("name") {
-            Some(Value::String(s)) => *s = name.to_owned(),
+            Some(Value::String(s)) => name.clone_into(s),
             Some(Value::Object(name_obj)) => {
                 if let Some(Value::String(v)) = name_obj.get_mut("value") {
-                    *v = name.to_owned();
+                    name.clone_into(v);
                 }
             }
             _ => {}
@@ -328,11 +347,11 @@ fn set_committer_name(node: &mut Value, audit_field: &str, name: &str) {
     }
 }
 
-/// Set a `committer.name` string directly (the AUDIT_DETAILS committer name is a
-/// plain string, not a `DV_TEXT`).
+/// Set a `committer.name` string directly (the `AUDIT_DETAILS` committer name is
+/// a plain string, not a `DV_TEXT`).
 fn set_name_field_direct(committer: &mut Value, name: &str) {
     if let Some(Value::String(s)) = committer.get_mut("name") {
-        *s = name.to_owned();
+        name.clone_into(s);
     }
 }
 
@@ -406,6 +425,34 @@ mod tests {
                 "structure changed for {kind:?}"
             );
         }
+    }
+
+    #[test]
+    fn vary_preserves_structure_for_every_ckm_template() {
+        for tpl in pack::all() {
+            let skeleton = read_composition_skeleton(tpl.kind).expect("CKM skeleton reads");
+            let rendered = vary(&skeleton, &params());
+            assert_eq!(
+                signature(&skeleton),
+                signature(&rendered),
+                "structure changed for CKM {}",
+                tpl.slug
+            );
+        }
+    }
+
+    #[test]
+    fn ckm_render_is_deterministic_and_varies() {
+        // The CKM skeletons come from the pack module, then through the same
+        // `vary` core: same params render identically, a changed event time
+        // changes the payload (the DV_DATE_TIME leaves advance).
+        let a = composition(TemplateKind::CkmVitalSigns, &params()).expect("render");
+        let b = composition(TemplateKind::CkmVitalSigns, &params()).expect("render");
+        assert_eq!(a, b, "same params must render identically");
+        let mut p2 = params();
+        p2.event_time = "2024-06-01T14:30:00.000Z".to_owned();
+        let c = composition(TemplateKind::CkmVitalSigns, &p2).expect("render");
+        assert_ne!(a, c, "different event time must change the CKM payload");
     }
 
     #[test]

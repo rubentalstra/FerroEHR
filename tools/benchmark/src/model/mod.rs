@@ -15,7 +15,7 @@ pub mod ward;
 use std::time::Duration;
 
 use crate::render;
-use crate::{Action, BenchError, PlannedOp, Profile, TemplateKind};
+use crate::{BenchError, PlannedOp, Profile, TemplateKind};
 use ward::Ward;
 
 /// The inputs that fully determine a workload (register 00 §1/§3).
@@ -55,26 +55,23 @@ pub fn build(spec: &WorkloadSpec) -> Result<Workload, BenchError> {
     let ward = Ward::new(spec);
     let ops = schedule::build_ops(spec, &ward, window, warmup)?;
 
-    // Provisioning = the templates any composition-producing op uses, in a
-    // stable order (honest: only what the run actually exercises).
-    let mut provisioning = Vec::new();
-    for kind in [
+    // Both packs are provisioned every run, in a fixed order: the retained
+    // ECC-corpus fixtures (proven payloads + the persistent/directory
+    // structure) then the official openEHR CKM pack (the clinical-event
+    // templates). Register 00 §4 / the B3 owner directive — this is a fixed
+    // union, not an op scan; a SUT that rejects an upload has that template's
+    // ops excluded loudly at dispatch (see `drive`).
+    let mut provisioning = vec![
         TemplateKind::Vitals,
         TemplateKind::Nested,
         TemplateKind::Persistent,
-    ] {
-        if ops.iter().any(|op| op_uses_template(&op.action, kind)) {
-            provisioning.push(kind);
-        }
-    }
+    ];
+    provisioning.extend(crate::pack::KINDS);
 
-    // The extensible template-source list the lock hashes over.
+    // The extensible, ordered template-source list the lock hashes over.
     let template_sources: Vec<String> = provisioning
         .iter()
-        .map(|&kind| {
-            let src = render::template_source(kind);
-            format!("{}|{}|{}", src.template_id, src.opt_rel, src.comp_file)
-        })
+        .map(|&kind| source_descriptor(kind))
         .collect();
     let lock = lock::compute(spec, window, warmup, &template_sources);
 
@@ -97,15 +94,16 @@ pub fn profile_timing(profile: Profile) -> (Duration, Duration) {
     }
 }
 
-/// Whether an action provisions or writes a composition of `kind` (the
-/// contribution batch uses the vitals template).
-fn op_uses_template(action: &Action, kind: TemplateKind) -> bool {
-    match action {
-        Action::CreateComposition { template, .. }
-        | Action::UpdateComposition { template, .. }
-        | Action::UploadOpt { template } => *template == kind,
-        Action::CommitContribution { .. } => kind == TemplateKind::Vitals,
-        _ => false,
+/// The `workload.lock` source descriptor for a provisioned template: the
+/// CKM-pack descriptor (`ckm:<slug>|…`) for a CKM kind, else the ECC-corpus
+/// `template_id|opt|composition` descriptor.
+fn source_descriptor(kind: TemplateKind) -> String {
+    if let Some(tpl) = crate::pack::get(kind) {
+        tpl.source_descriptor()
+    } else if let Some(src) = render::template_source(kind) {
+        format!("{}|{}|{}", src.template_id, src.opt_rel, src.comp_file)
+    } else {
+        format!("unknown:{kind:?}")
     }
 }
 
@@ -134,13 +132,40 @@ mod tests {
     }
 
     #[test]
-    fn provisioning_covers_the_used_templates() {
-        // A ward with turnover exercises all three templates (admission=nested,
-        // discharge=persistent, events=vitals).
+    fn provisioning_carries_both_packs() {
+        // The retained ECC-corpus fixtures plus every CKM-pack template.
         let w = build(&spec(Profile::Hour, 40)).expect("build");
         assert!(w.provisioning.contains(&TemplateKind::Vitals));
         assert!(w.provisioning.contains(&TemplateKind::Nested));
         assert!(w.provisioning.contains(&TemplateKind::Persistent));
+        for kind in crate::pack::KINDS {
+            assert!(
+                w.provisioning.contains(&kind),
+                "provisioning must carry CKM {kind:?}"
+            );
+        }
+        assert_eq!(w.provisioning.len(), 3 + crate::pack::KINDS.len());
+    }
+
+    #[test]
+    fn ckm_pack_shifts_the_lock_source_list() {
+        // The lock's template-source list gains the five `ckm:<slug>` entries;
+        // dropping them (fixtures only) must change the lock value.
+        let s = spec(Profile::Hour, 20);
+        let (window, warmup) = profile_timing(s.profile);
+        let with_ckm = build(&s).expect("build").lock;
+
+        let fixtures_only: Vec<String> = [
+            TemplateKind::Vitals,
+            TemplateKind::Nested,
+            TemplateKind::Persistent,
+        ]
+        .into_iter()
+        .map(source_descriptor)
+        .collect();
+        assert!(fixtures_only.iter().all(|s| !s.starts_with("ckm:")));
+        let without_ckm = lock::compute(&s, window, warmup, &fixtures_only);
+        assert_ne!(with_ckm, without_ckm, "the CKM pack must shift the lock");
     }
 
     #[test]
