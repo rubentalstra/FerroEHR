@@ -169,7 +169,7 @@ async fn person_create_default_is_minimal_with_headers() {
 
     // 201 default (return=minimal): headers only, no body — and no longer 501.
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("\"{PARTY_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{PARTY_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/demographic/person/{PARTY_OVID}").as_str())
@@ -189,7 +189,7 @@ async fn person_create_representation_returns_body() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("\"{PARTY_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{PARTY_OVID}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "PERSON");
 }
@@ -204,7 +204,7 @@ async fn person_get_sets_etag_and_location() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("\"{PARTY_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{PARTY_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/demographic/person/{PARTY_OVID}").as_str())
@@ -236,7 +236,7 @@ async fn person_delete_is_204_with_headers() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(etag(&h), Some(format!("\"{PARTY_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{PARTY_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/demographic/person/{PARTY_OVID}").as_str())
@@ -276,7 +276,7 @@ async fn stale_update_is_412_with_latest_headers() {
     // Precondition failure → 412, decorated with the latest version headers
     // (mirrors the EHR group's ehr_status/composition update path).
     assert_eq!(status, StatusCode::PRECONDITION_FAILED);
-    assert_eq!(etag(&h), Some(format!("\"{PARTY_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{PARTY_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/demographic/person/{PARTY_OVID}").as_str())
@@ -322,7 +322,7 @@ async fn party_relationship_create_is_mounted_with_headers() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("\"{REL_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{REL_OVID}\"").as_str()));
     assert_eq!(
         location(&h),
         Some(format!("{BASE}/demographic/party_relationship/{REL_OVID}").as_str())
@@ -341,7 +341,7 @@ async fn party_relationship_get_is_mounted() {
     let (status, h, body) = send(req).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("\"{REL_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{REL_OVID}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "PARTY_RELATIONSHIP");
 }

@@ -1,24 +1,30 @@
-//! Report generation (design v4): from a [`RunResults`] write the committed,
-//! public artifact set — `results.json` (the single machine record),
-//! `CONFORMANCE_REPORT.md` (the run: identity, scope, per-area matrix,
-//! machine profile verdicts, failures, deviations), `CATALOG.md` (the full
-//! per-category catalogue), the Conformance **Statement**
-//! (`CONFORMANCE_STATEMENT.md`) + **Certificate** (`CONFORMANCE_CERTIFICATE.md`)
-//! artefacts ([`crate::reporting::statement`], R9/R10), and the four badges
-//! (total + core/standard/options, shields endpoint schema).
+//! Per-SUT `CONFORMANCE_REPORT.md` (+ the `results.json` machine record and
+//! the per-run artifact set) rendered from a [`RunResults`].
 //!
-//! Everything is **catalogue-driven**: the denominator is our own ECC
-//! catalogue, the identities are ECC numbers, and the claim is a pure
-//! function of the run — never hand-asserted.
+//! Everything is a pure function of the run: identities and spec versions
+//! come from the recorded [`SutIdentity`], the capability/profile verdicts are
+//! machine-computed ([`crate::model::profile`]), and every coverage bound
+//! (data-set truncation, ECC-original stubs, edition findings) is printed —
+//! honesty invariants 3/4 (`docs/design/conformance/90-target-design.md` §7).
+//!
+//! This module also hosts the shared capability/profile accounting
+//! ([`capability_verdict`], [`profile_lines`], [`profile_verdict`],
+//! [`ALL_CAPABILITIES`]) the Statement, Certificate, badge, and comparison
+//! renderers reuse, so the claim math has exactly one implementation.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
 
-use crate::case::Profile;
-use crate::catalog::{Area, Catalog, EccStatus};
-use crate::profile::verdict;
-use crate::results::{CaseStatus, RunResults};
+use crate::edition::EditionPolicy;
+use crate::model::case::{Capability, Profile};
+use crate::model::catalog::{Area, Catalog, EccStatus};
+use crate::model::profile::{
+    CapabilityEvidence, CapabilityVerdict, OPTIONAL_CAPABILITIES, ProfileVerdict, all_of_verdict,
+    any_of_verdict, required_capabilities,
+};
+use crate::reporting::results::{CaseOutcome, CaseStatus, RunResults};
+use crate::sut::descriptor::SutKind;
 
 /// Errors raised while writing the report set.
 #[derive(Debug, thiserror::Error)]
@@ -36,6 +42,169 @@ pub enum ReportError {
     Codec(String),
 }
 
+/// Every [`Capability`] variant, in report order. There is no `ALL` const on
+/// the enum (it lives in the generated-adjacent `model::case`), so the full
+/// list is maintained here for the capability matrix; a capability with no
+/// cases renders as a logged coverage bound (`NoCases`), never silently
+/// dropped.
+pub const ALL_CAPABILITIES: [Capability; 28] = [
+    Capability::Adl14ArchetypeProvisioning,
+    Capability::Adl14OptProvisioning,
+    Capability::Adl2Provisioning,
+    Capability::EhrOperations,
+    Capability::EhrStatus,
+    Capability::CompositionOps,
+    Capability::ChangeSets,
+    Capability::Versioning,
+    Capability::ArchetypeValidation,
+    Capability::DirectoryOps,
+    Capability::QueryProvisioning,
+    Capability::AqlBasic,
+    Capability::AqlAdvanced,
+    Capability::AqlTerminology,
+    Capability::PartyOperations,
+    Capability::PartyRelationshipOperations,
+    Capability::AdminActivityReport,
+    Capability::AdminPhysicalDeletion,
+    Capability::AdminEhrDumpLoad,
+    Capability::AdminBulkEhrLoad,
+    Capability::AdminEhrArchive,
+    Capability::AdminDemographicArchive,
+    Capability::MessagingEhrExtract,
+    Capability::MessagingTds,
+    Capability::Signing,
+    Capability::AnonymousEhrs,
+    Capability::Authentication,
+    Capability::Terminology,
+];
+
+// ── Shared capability / profile accounting ──────────────────────────────────
+
+/// The per-status case tally for one capability.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct CapCount {
+    /// Cases passed.
+    pub passed: u32,
+    /// Cases failed (conformance finding).
+    pub failed: u32,
+    /// Cases errored (runner/SUT transport fault — not a conformance finding,
+    /// but never counts as passed for a machine verdict).
+    pub errored: u32,
+    /// Cases skipped for a stated reason.
+    pub skipped: u32,
+    /// Cases adjudicated not-applicable (foreign-SUT fairness register).
+    pub not_applicable: u32,
+}
+
+impl CapCount {
+    /// The number of case×format outcomes that touched this capability.
+    #[must_use]
+    pub fn total(self) -> u32 {
+        self.passed + self.failed + self.errored + self.skipped + self.not_applicable
+    }
+}
+
+/// Tally every recorded outcome for `capability` (matched on the outcome's
+/// `capability` string, which is the `Debug` form of the enum — the exact
+/// value the executor records).
+#[must_use]
+pub fn capability_count(results: &RunResults, capability: Capability) -> CapCount {
+    let name = format!("{capability:?}");
+    let mut cc = CapCount::default();
+    for c in results.cases.iter().filter(|c| c.capability == name) {
+        match c.status {
+            CaseStatus::Passed => cc.passed += 1,
+            CaseStatus::Failed => cc.failed += 1,
+            CaseStatus::Errored => cc.errored += 1,
+            CaseStatus::Skipped => cc.skipped += 1,
+            CaseStatus::NotApplicable => cc.not_applicable += 1,
+        }
+    }
+    cc
+}
+
+/// The machine verdict line for one capability. A transport error folds into
+/// the `failed` bucket for evidence purposes (an errored capability can never
+/// be claimed as passed), while the display keeps the counts distinct.
+#[must_use]
+pub fn capability_verdict(results: &RunResults, capability: Capability) -> CapabilityVerdict {
+    let cc = capability_count(results, capability);
+    CapabilityVerdict::classify(
+        capability,
+        cc.passed,
+        cc.failed + cc.errored,
+        cc.skipped,
+        cc.not_applicable,
+    )
+}
+
+/// The capability lines a profile is scored over: the required set for
+/// CORE/STANDARD, the optional set for OPTIONS.
+#[must_use]
+pub fn profile_lines(results: &RunResults, profile: Profile) -> Vec<CapabilityVerdict> {
+    let caps: &[Capability] = match profile {
+        Profile::Options => OPTIONAL_CAPABILITIES,
+        other => required_capabilities(other),
+    };
+    caps.iter()
+        .map(|&c| capability_verdict(results, c))
+        .collect()
+}
+
+/// The machine-computed profile verdict: all-of for CORE/STANDARD, any-of for
+/// OPTIONS (`profiles/master03-profiles.adoc`).
+#[must_use]
+pub fn profile_verdict(results: &RunResults, profile: Profile) -> ProfileVerdict {
+    let lines = profile_lines(results, profile);
+    match profile {
+        Profile::Options => any_of_verdict(&lines),
+        _ => all_of_verdict(&lines),
+    }
+}
+
+/// The claim word for a profile verdict (OPTIONS is "obtained"; the gated
+/// profiles are "PASS"/"not claimable").
+#[must_use]
+pub fn claim_word(profile: Profile, verdict: ProfileVerdict) -> &'static str {
+    match (profile, verdict) {
+        (Profile::Options, ProfileVerdict::Pass) => "OBTAINED",
+        (Profile::Options, ProfileVerdict::Fail) => "not obtained",
+        (_, ProfileVerdict::Pass) => "PASS",
+        (_, ProfileVerdict::Fail) => "not claimable",
+    }
+}
+
+/// The Markdown cell word for a capability's evidence classification.
+#[must_use]
+pub fn evidence_word(evidence: CapabilityEvidence) -> &'static str {
+    match evidence {
+        CapabilityEvidence::Passed => "pass",
+        CapabilityEvidence::Failed => "**FAIL**",
+        CapabilityEvidence::NotEvidenced => "not evidenced",
+        CapabilityEvidence::NoCases => "no cases",
+    }
+}
+
+/// A human label for the SUT class.
+#[must_use]
+pub fn kind_label(kind: SutKind) -> &'static str {
+    match kind {
+        SutKind::Ours => "ours (ehrbase-rs)",
+        SutKind::Foreign => "foreign (comparison data)",
+    }
+}
+
+/// A human label for the edition policy the run executed under.
+#[must_use]
+pub fn edition_policy_label(policy: EditionPolicy) -> String {
+    match policy {
+        EditionPolicy::Pinned(e) => format!("pinned ({})", e.label()),
+        EditionPolicy::Auto => "auto (ladder: newest form first, step down)".to_owned(),
+    }
+}
+
+// ── The public artifact set ─────────────────────────────────────────────────
+
 /// Read a `results.json` back into a [`RunResults`] (the `report --from` path).
 ///
 /// # Errors
@@ -48,16 +217,26 @@ pub fn from_results_file(path: &Path) -> Result<RunResults, ReportError> {
     serde_json::from_str(&text).map_err(|e| ReportError::Codec(e.to_string()))
 }
 
-/// Write the full report set into `out_dir`.
+/// Write the per-run artifact set into `out_dir`: `results.json`,
+/// `CONFORMANCE_REPORT.md`, the Conformance **Statement** (every SUT), the
+/// Conformance **Certificate** (every SUT — owner ruling 2026-07-13; it carries
+/// an assessment-basis honesty block making clear it is a self-assessment, not
+/// an official openEHR certification), and the badge set. `assessor` overrides
+/// the default self-assessment attribution on the Certificate.
 ///
 /// # Errors
 /// [`ReportError`] on I/O or serialization failure.
-pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError> {
+pub fn write_all(
+    results: &RunResults,
+    out_dir: &Path,
+    assessor: Option<&str>,
+) -> Result<(), ReportError> {
     std::fs::create_dir_all(out_dir).map_err(|source| ReportError::Io {
         path: out_dir.display().to_string(),
         source,
     })?;
     let catalog = Catalog::load_default().unwrap_or_default();
+
     let json =
         serde_json::to_string_pretty(results).map_err(|e| ReportError::Codec(e.to_string()))?;
     write_file(&out_dir.join("results.json"), &json)?;
@@ -65,42 +244,27 @@ pub fn write_all(results: &RunResults, out_dir: &Path) -> Result<(), ReportError
         &out_dir.join("CONFORMANCE_REPORT.md"),
         &render_report_md(results, &catalog),
     )?;
+
+    // The Conformance Statement is emitted for EVERY SUT (the framework
+    // certifies any CDR): it is the SUT's declared scope + machine claims, not
+    // a self-assessment badge. (This is the W-10 change from the legacy
+    // instrument, which suppressed the Statement for non-ehrbase-rs SUTs —
+    // §6 of the target design mandates a Statement per SUT.)
     write_file(
-        &out_dir.join("CATALOG.md"),
-        &render_catalog_md(results, &catalog),
+        &out_dir.join("CONFORMANCE_STATEMENT.md"),
+        &crate::reporting::statement::render_statement_md(results),
     )?;
-    // The Conformance Statement + Certificate artefacts (R9/R10) are
-    // **self-assessment** artifacts of *our* product — emitted only when the SUT
-    // is `ehrbase-rs` (§3a.2, honesty rule 4). We never manufacture a
-    // conformance certificate for someone else's product; an upstream run gets
-    // `results.json` + report + catalogue only. Both artifacts are pure
-    // functions of the machine verdicts, so `report --from results.json`
-    // regenerates them identically to a live run.
-    if results.sut.is_ehrbase_rs() {
-        write_file(
-            &out_dir.join("CONFORMANCE_STATEMENT.md"),
-            &crate::reporting::statement::render_statement_md(results),
-        )?;
-        write_file(
-            &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
-            &crate::reporting::statement::render_certificate_md(results, &catalog),
-        )?;
-    } else {
-        eprintln!(
-            "conformance: SUT product is `{}` (not ehrbase-rs) — suppressing the \
-             Conformance Statement + Certificate (self-assessment artifacts are \
-             never emitted for another product, §3a.2)",
-            results.sut.product.name
-        );
-    }
+
+    // The Certificate is emitted for every SUT (owner ruling 2026-07-13): the
+    // framework aims to be the industry-standard CNF validator, so any operator
+    // certifying their own CDR gets the artefact. Its mandatory honesty block
+    // states it is a self-assessment, NOT an official openEHR certification.
     write_file(
-        &out_dir.join("badge.json"),
-        &render_badge(results, &catalog),
+        &out_dir.join("CONFORMANCE_CERTIFICATE.md"),
+        &crate::reporting::certificate::render_certificate_md(results, &catalog, assessor),
     )?;
-    for profile in [Profile::Core, Profile::Standard, Profile::Options] {
-        let name = format!("badge-{}.json", format!("{profile:?}").to_lowercase());
-        write_file(&out_dir.join(name), &render_profile_badge(profile, results))?;
-    }
+
+    crate::reporting::badges::write_badges(results, &catalog, out_dir)?;
     Ok(())
 }
 
@@ -111,19 +275,87 @@ fn write_file(path: &Path, content: &str) -> Result<(), ReportError> {
     })
 }
 
-/// The catalogue's active-case count per area (the coverage denominator).
-fn active_per_area(catalog: &Catalog) -> BTreeMap<Area, usize> {
-    let mut by: BTreeMap<Area, usize> = BTreeMap::new();
-    for e in catalog.entries() {
-        if e.status == EccStatus::Active {
-            *by.entry(e.area).or_insert(0) += 1;
-        }
-    }
-    by
+// ── CONFORMANCE_REPORT.md ────────────────────────────────────────────────────
+
+/// Render the per-SUT `CONFORMANCE_REPORT.md`.
+#[must_use]
+pub fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
+    let mut out = String::new();
+    out.push_str("# Conformance Report (generated)\n\n");
+    out.push_str(
+        "> Generated from a conformance run — never hand-asserted. Every claim is a\n\
+         > pure function of the recorded outcomes; every coverage bound is printed.\n\n",
+    );
+
+    render_identity(&mut out, results);
+    render_summary(&mut out, results);
+    render_area_matrix(&mut out, results, catalog);
+    render_capability_matrix(&mut out, results);
+    render_profile_verdicts(&mut out, results);
+    render_failures(&mut out, results);
+    render_errors(&mut out, results);
+    render_skips(&mut out, results);
+    render_not_applicable(&mut out, results);
+    render_edition_findings(&mut out, results);
+    render_coverage_bounds(&mut out, results);
+    render_ecc_original(&mut out, results);
+    render_detailed(&mut out, results);
+    render_terminology(&mut out, results);
+    out
 }
 
-/// Per-area execution tallies from the run outcomes, resolved through the
-/// catalogue (outcomes carry the ECC id).
+fn render_identity(out: &mut String, results: &RunResults) {
+    let s = &results.sut;
+    out.push_str("## 1. System under test\n\n| Field | Value |\n|---|---|\n");
+    let _ = writeln!(
+        out,
+        "| Product | {} {} |",
+        s.product.name, s.product.version
+    );
+    if let Some(digest) = &s.product.image_digest {
+        let _ = writeln!(out, "| Image digest | `{digest}` |");
+    }
+    let _ = writeln!(out, "| SUT class | {} |", kind_label(s.kind));
+    let _ = writeln!(out, "| Base URL | `{}` |", s.base_url);
+    let _ = writeln!(out, "| Auth mode | {} |", s.auth_mode);
+    let _ = writeln!(
+        out,
+        "| Edition policy | {} |",
+        edition_policy_label(s.edition_policy)
+    );
+    let _ = writeln!(
+        out,
+        "| Spec versions | RM {} · ITS-REST {} · AQL {} · TERM {} |",
+        s.versions.rm, s.versions.its_rest, s.versions.aql, s.versions.term
+    );
+    let _ = writeln!(
+        out,
+        "| Reference corpus | {}@{} |",
+        results.corpus.repo, results.corpus.commit
+    );
+    let _ = writeln!(out, "| Run started | {} |\n", results.started);
+}
+
+fn render_summary(out: &mut String, results: &RunResults) {
+    let errored = status_count(results, CaseStatus::Errored);
+    let skipped = status_count(results, CaseStatus::Skipped);
+    let _ = write!(
+        out,
+        "**{} case×format executions · {} passed · {} failed · {} errored · {} skipped · \
+         {} not applicable.**\n\n",
+        results.executed(),
+        results.passed(),
+        results.failed(),
+        errored,
+        skipped,
+        results.not_applicable(),
+    );
+}
+
+fn status_count(results: &RunResults, status: CaseStatus) -> usize {
+    results.cases.iter().filter(|c| c.status == status).count()
+}
+
 #[derive(Default, Clone, Copy)]
 struct AreaTally {
     passed: usize,
@@ -133,19 +365,23 @@ struct AreaTally {
     not_applicable: usize,
 }
 
-fn tally_by_area(results: &RunResults, catalog: &Catalog) -> BTreeMap<Area, AreaTally> {
-    let mut by: BTreeMap<Area, AreaTally> = BTreeMap::new();
-    for case in &results.cases {
-        let Some(area) = catalog
+fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog) {
+    // Resolve each outcome to an area through the catalogue (outcomes carry
+    // the ECC id).
+    let area_of = |ecc_id: &str| -> Option<Area> {
+        catalog
             .entries()
             .iter()
-            .find(|e| e.ecc_id == case.ecc_id)
+            .find(|e| e.ecc_id == ecc_id)
             .map(|e| e.area)
-        else {
+    };
+    let mut by: BTreeMap<Area, AreaTally> = BTreeMap::new();
+    for c in &results.cases {
+        let Some(area) = area_of(&c.ecc_id) else {
             continue;
         };
         let t = by.entry(area).or_default();
-        match case.status {
+        match c.status {
             CaseStatus::Passed => t.passed += 1,
             CaseStatus::Failed => t.failed += 1,
             CaseStatus::Errored => t.errored += 1,
@@ -153,36 +389,16 @@ fn tally_by_area(results: &RunResults, catalog: &Catalog) -> BTreeMap<Area, Area
             CaseStatus::NotApplicable => t.not_applicable += 1,
         }
     }
-    by
-}
-
-fn render_header(out: &mut String, results: &RunResults) {
-    let product = &results.sut.product;
-    let _ = write!(out, "- Product: {} {}", product.name, product.version);
-    if let Some(digest) = &product.image_digest {
-        let _ = write!(out, " (`{digest}`)");
+    let mut denominators: BTreeMap<Area, usize> = BTreeMap::new();
+    for e in catalog
+        .entries()
+        .iter()
+        .filter(|e| e.status == EccStatus::Active)
+    {
+        *denominators.entry(e.area).or_insert(0) += 1;
     }
-    let _ = write!(
-        out,
-        "\n- SUT: `{}`\n- Spec versions: RM {} · ITS-REST {} · AQL {} · TERM {}\n\
-         - Auth mode: {}\n- Started: {}\n\n",
-        results.sut.base_url,
-        results.sut.versions.rm,
-        results.sut.versions.its_rest,
-        results.sut.versions.aql,
-        results.sut.versions.term,
-        results.sut.auth_mode,
-        results.started
-    );
-}
 
-/// The per-area execution matrix + the failures list (sections of the
-/// consolidated report).
-fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog) {
-    let by = tally_by_area(results, catalog);
-    let denominators = active_per_area(catalog);
-
-    out.push_str("### Per-area matrix\n\n");
+    out.push_str("## 2. Per-area matrix\n\n");
     out.push_str("| Area | Catalogue (active) | Passed | Failed | Errored | Skipped | N/A |\n");
     out.push_str("|---|--:|--:|--:|--:|--:|--:|\n");
     for area in Area::ALL {
@@ -201,94 +417,377 @@ fn render_area_matrix(out: &mut String, results: &RunResults, catalog: &Catalog)
             t.failed,
             t.errored,
             t.skipped,
-            t.not_applicable
+            t.not_applicable,
         );
     }
+    out.push('\n');
+}
 
-    // Failures — each links to the finding workflow.
-    let failures: Vec<_> = results
-        .cases
-        .iter()
-        .filter(|c| c.status == CaseStatus::Failed)
-        .collect();
-    out.push_str("\n### Failures\n\n");
-    if failures.is_empty() {
-        out.push_str("_No failures in this run._\n\n");
-    } else {
-        out.push_str(
-            "Each failure must become a finding (`F-AA-NN`) before/with the fix — never an exclusion.\n\n",
-        );
-        for c in failures {
-            let _ = writeln!(
-                out,
-                "- **{}** {} (`{}`, {}): {}",
-                c.ecc_id,
-                c.title,
-                c.id,
-                c.format,
-                c.message.as_deref().unwrap_or("(no message)")
-            );
+fn render_capability_matrix(out: &mut String, results: &RunResults) {
+    out.push_str("## 3. Capability matrix\n\n");
+    out.push_str(
+        "Cases grouped by capability; the evidence classification folds a transport \
+         error into `failed` (an errored capability is never claimed as passed).\n\n",
+    );
+    out.push_str("| Capability | Passed | Failed | Errored | Skipped | N/A | Evidence |\n");
+    out.push_str("|---|--:|--:|--:|--:|--:|---|\n");
+    for cap in ALL_CAPABILITIES {
+        let cc = capability_count(results, cap);
+        if cc.total() == 0 {
+            continue; // no cases touch this capability — a bound, printed in profile tables
         }
-        out.push('\n');
-    }
-
-    // Extensions / RM-version-sensitive routes adjudicated not-applicable to
-    // this SUT (§3a.3/§3a.4) — excluded from pass/fail, listed with the cited
-    // reason. One line per ECC id (formats collapsed).
-    let mut na_seen: BTreeMap<String, &crate::results::CaseOutcome> = BTreeMap::new();
-    let mut na_order: Vec<String> = Vec::new();
-    for c in results
-        .cases
-        .iter()
-        .filter(|c| c.status == CaseStatus::NotApplicable)
-    {
-        let key = if c.ecc_id.is_empty() {
-            c.id.clone()
-        } else {
-            c.ecc_id.clone()
-        };
-        na_seen.entry(key.clone()).or_insert_with(|| {
-            na_order.push(key.clone());
-            c
-        });
-    }
-    out.push_str("### Not applicable to this SUT (extensions / RM-version-sensitive)\n\n");
-    if na_order.is_empty() {
-        out.push_str("_None — every catalogued case applies to this SUT._\n\n");
-    } else {
-        out.push_str(
-            "Adjudicated in the committed register, not a conformance finding \
-             (excluded from pass/fail and capability math).\n\n",
+        let v = capability_verdict(results, cap);
+        let _ = writeln!(
+            out,
+            "| {cap:?} | {} | {} | {} | {} | {} | {} |",
+            cc.passed,
+            cc.failed,
+            cc.errored,
+            cc.skipped,
+            cc.not_applicable,
+            evidence_word(v.evidence),
         );
-        for key in &na_order {
-            let c = na_seen[key];
+    }
+    out.push('\n');
+}
+
+fn render_profile_verdicts(out: &mut String, results: &RunResults) {
+    out.push_str("## 4. Profile verdict (machine-computed)\n\n");
+    out.push_str(
+        "CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is \
+         any-of (obtained if any optional capability passes) — `master03-profiles.adoc`. \
+         An unevidenced required capability fails the claim.\n\n",
+    );
+    for profile in [Profile::Core, Profile::Standard, Profile::Options] {
+        let verdict = profile_verdict(results, profile);
+        let _ = writeln!(out, "### {profile:?} — {}\n", claim_word(profile, verdict));
+        out.push_str("| Capability | Passed | Failed | Skipped | N/A | Evidence |\n");
+        out.push_str("|---|--:|--:|--:|--:|---|\n");
+        for line in profile_lines(results, profile) {
             let _ = writeln!(
                 out,
-                "- **{}** {} — {} _(cite: {})_",
-                c.ecc_id,
-                c.title,
-                c.message.as_deref().unwrap_or("(no reason)"),
-                if c.citation.is_empty() {
-                    "—"
-                } else {
-                    c.citation.as_str()
-                }
+                "| {:?} | {} | {} | {} | {} | {} |",
+                line.capability,
+                line.passed,
+                line.failed,
+                line.skipped,
+                line.not_applicable,
+                evidence_word(line.evidence),
             );
         }
         out.push('\n');
     }
 }
 
-/// Render `CATALOG.md` — the full ECC catalogue grouped per area: every
-/// allocated case with its status and its latest run outcome.
-fn render_catalog_md(results: &RunResults, catalog: &Catalog) -> String {
+fn render_failures(out: &mut String, results: &RunResults) {
+    let failures: Vec<&CaseOutcome> = results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::Failed)
+        .collect();
+    out.push_str("## 5. Failures\n\n");
+    if failures.is_empty() {
+        out.push_str("_No failures in this run._\n\n");
+        return;
+    }
+    out.push_str(
+        "Each failure is a conformance finding — never an exclusion (standing rule 3).\n\n",
+    );
+    for c in failures {
+        let _ = writeln!(
+            out,
+            "- **{}** {} (`{}`, {}): {}\n  _cite: {}_",
+            c.ecc_id,
+            c.title,
+            c.id,
+            c.format,
+            c.message.as_deref().unwrap_or("(no message)"),
+            citation_or_dash(&c.citation),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_errors(out: &mut String, results: &RunResults) {
+    let errors: Vec<&CaseOutcome> = results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::Errored)
+        .collect();
+    if errors.is_empty() {
+        return;
+    }
+    out.push_str("## 5b. Runner/SUT errors (transport)\n\n");
+    out.push_str(
+        "Transport-level errors — not conformance findings, but the affected \
+         capabilities cannot be claimed as passed.\n\n",
+    );
+    for c in errors {
+        let _ = writeln!(
+            out,
+            "- **{}** {} ({}): {}",
+            c.ecc_id,
+            c.title,
+            c.format,
+            c.message.as_deref().unwrap_or("(no message)"),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_skips(out: &mut String, results: &RunResults) {
+    out.push_str("## 6. Skipped, by reason\n\n");
+    let mut reasons: BTreeMap<&str, usize> = BTreeMap::new();
+    for c in results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::Skipped)
+    {
+        *reasons
+            .entry(c.message.as_deref().unwrap_or("(unstated)"))
+            .or_insert(0) += 1;
+    }
+    if reasons.is_empty() {
+        out.push_str("_No skips in this run._\n\n");
+        return;
+    }
+    out.push_str("| Reason | Cases |\n|---|--:|\n");
+    for (reason, count) in &reasons {
+        let _ = writeln!(out, "| {reason} | {count} |");
+    }
+    out.push('\n');
+}
+
+fn render_not_applicable(out: &mut String, results: &RunResults) {
+    // Collapse formats — one line per ECC id.
+    let mut order: Vec<String> = Vec::new();
+    let mut seen: BTreeMap<String, &CaseOutcome> = BTreeMap::new();
+    for c in results
+        .cases
+        .iter()
+        .filter(|c| c.status == CaseStatus::NotApplicable)
+    {
+        let key = na_key(c);
+        seen.entry(key.clone()).or_insert_with(|| {
+            order.push(key.clone());
+            c
+        });
+    }
+    out.push_str("## 7. Not applicable to this SUT (extensions / RM-version-sensitive)\n\n");
+    if order.is_empty() {
+        out.push_str("_None — every catalogued case applies to this SUT._\n\n");
+        return;
+    }
+    out.push_str(
+        "Adjudicated in the committed fairness register (foreign SUTs only), not a \
+         conformance finding — excluded from pass/fail and capability math.\n\n",
+    );
+    for key in &order {
+        let c = seen[key];
+        let _ = writeln!(
+            out,
+            "- **{}** {} — {} _(cite: {})_",
+            c.ecc_id,
+            c.title,
+            c.message.as_deref().unwrap_or("(no reason)"),
+            citation_or_dash(&c.citation),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_edition_findings(out: &mut String, results: &RunResults) {
+    let with_findings: Vec<&CaseOutcome> = results
+        .cases
+        .iter()
+        .filter(|c| c.edition_level.is_some() || !c.edition_findings.is_empty())
+        .collect();
+    out.push_str("## 8. Edition findings (the SUT's discovered edition profile)\n\n");
+    out.push_str(
+        "A case satisfied its normative core at a rung below the newest edition — recorded, \
+         never a silent pass (`master03-overview.adoc` §API Conformance; the aggregated \
+         findings feed the Conformance Statement's supported-versions field).\n\n",
+    );
+    if with_findings.is_empty() {
+        out.push_str("_None — every laddered assertion matched the newest edition form._\n\n");
+        return;
+    }
+    out.push_str("| ECC id | Format | Satisfied rung | Observations |\n|---|---|---|---|\n");
+    for c in with_findings {
+        let _ = writeln!(
+            out,
+            "| {} | {} | {} | {} |",
+            c.ecc_id,
+            c.format,
+            c.edition_level.as_deref().unwrap_or("—"),
+            if c.edition_findings.is_empty() {
+                "—".to_owned()
+            } else {
+                c.edition_findings.join("; ")
+            },
+        );
+    }
+    out.push('\n');
+}
+
+fn render_coverage_bounds(out: &mut String, results: &RunResults) {
+    let bounded: Vec<&CaseOutcome> = results
+        .cases
+        .iter()
+        .filter(|c| c.schedule_rows.is_some_and(|rows| c.total_data_sets < rows))
+        .collect();
+    out.push_str("## 9. Coverage bounds (driven vs schedule data-set rows)\n\n");
+    out.push_str(
+        "Cases whose driven data-set count is below the governing schedule table's row \
+         count — a bound is logged, never silent (honesty invariant 3; register 13 G-2). \
+         Widening the driven set is data, not a new case.\n\n",
+    );
+    if bounded.is_empty() {
+        out.push_str("_No coverage bounds — every case drives its full schedule data set._\n\n");
+        return;
+    }
+    out.push_str("| ECC id | Format | Driven / schedule rows |\n|---|---|--:|\n");
+    for c in bounded {
+        let _ = writeln!(
+            out,
+            "| {} | {} | {}/{} |",
+            c.ecc_id,
+            c.format,
+            c.total_data_sets,
+            c.schedule_rows.unwrap_or(c.total_data_sets),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_ecc_original(out: &mut String, results: &RunResults) {
+    // Collapse formats — one line per ECC id.
+    let mut order: Vec<String> = Vec::new();
+    let mut seen: BTreeMap<String, &CaseOutcome> = BTreeMap::new();
+    for c in results.cases.iter().filter(|c| c.ecc_original.is_some()) {
+        let key = na_key(c);
+        seen.entry(key.clone()).or_insert_with(|| {
+            order.push(key.clone());
+            c
+        });
+    }
+    out.push_str("## 10. ECC-original cases (no direct schedule backing)\n\n");
+    out.push_str(
+        "Stub-derived / extension cases — labelled here and **never presented as \
+         schedule-conformant** (register 08 G-1). Their result stands, but the claim \
+         is against our own derivation, not an abstract schedule test case.\n\n",
+    );
+    if order.is_empty() {
+        out.push_str("_None — every executed case traces to a schedule test case._\n\n");
+        return;
+    }
+    for key in &order {
+        let c = seen[key];
+        let _ = writeln!(
+            out,
+            "- **{}** {} — {}",
+            c.ecc_id,
+            c.title,
+            c.ecc_original.as_deref().unwrap_or("ECC-original"),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_detailed(out: &mut String, results: &RunResults) {
+    out.push_str("## 11. Detailed test report\n\n");
+    if results.cases.is_empty() {
+        out.push_str("_No cases executed in this run._\n\n");
+        return;
+    }
+    out.push_str(
+        "| ECC id | Capability | Format | Data sets | Rung | Result |\n\
+         |---|---|---|--:|---|---|\n",
+    );
+    for c in &results.cases {
+        let _ = writeln!(
+            out,
+            "| {} | {} | {} | {}/{} | {} | {} |",
+            c.ecc_id,
+            c.capability,
+            c.format,
+            c.passed_data_sets,
+            c.total_data_sets,
+            c.edition_level.as_deref().unwrap_or("—"),
+            result_word(c.status),
+        );
+    }
+    out.push('\n');
+}
+
+fn render_terminology(out: &mut String, results: &RunResults) {
+    out.push_str("## 12. Terminology server (TS area)\n\n");
+    let Some(tx) = &results.terminology else {
+        out.push_str("_No terminology server was established for this run._\n");
+        return;
+    };
+    let _ = writeln!(out, "- Server: `{}`\n- Mode: {}\n", tx.base_url, tx.mode);
+    if tx.exchanges.is_empty() {
+        out.push_str("_No FHIR-tx exchange recorded._\n");
+        return;
+    }
+    let _ = writeln!(
+        out,
+        "Recorded FHIR-tx exchange ({} request(s)):\n",
+        tx.exchanges.len()
+    );
+    out.push_str("| # | Method | Path | Query |\n|--:|---|---|---|\n");
+    for (i, e) in tx.exchanges.iter().enumerate() {
+        let _ = writeln!(
+            out,
+            "| {} | {} | `{}` | {} |",
+            i + 1,
+            e.method,
+            e.path,
+            e.query.as_deref().unwrap_or("—"),
+        );
+    }
+}
+
+/// The result word for a case status in the detailed report.
+fn result_word(status: CaseStatus) -> &'static str {
+    match status {
+        CaseStatus::Passed => "PASS",
+        CaseStatus::Failed => "**FAIL**",
+        CaseStatus::Errored => "ERROR",
+        CaseStatus::Skipped => "skipped",
+        CaseStatus::NotApplicable => "N/A",
+    }
+}
+
+fn na_key(c: &CaseOutcome) -> String {
+    if c.ecc_id.is_empty() {
+        c.id.clone()
+    } else {
+        c.ecc_id.clone()
+    }
+}
+
+fn citation_or_dash(citation: &str) -> &str {
+    if citation.is_empty() { "—" } else { citation }
+}
+
+// ── CATALOG.md (the `catalog` subcommand) ────────────────────────────────────
+
+/// Render `CATALOG.md` — the full ECC catalogue grouped per area, optionally
+/// annotated with the last run's outcome per case.
+#[must_use]
+pub fn render_catalog_md(results: Option<&RunResults>, catalog: &Catalog) -> String {
     let mut out = String::from(
-        "# The ehrbase-rs Conformance Catalogue (ECC)\n\n\
-         Generated per run — do not edit. Numbers are allocated once in\n\
+        "# The Conformance Catalogue (ECC)\n\n\
+         Generated — do not edit. Numbers are allocated once in\n\
          `tools/conformance/inventory/ecc-catalog.tsv` and never reused.\n\n",
     );
 
-    let outcome_of = |ecc_id: &str| {
+    let outcome_of = |ecc_id: &str| -> String {
+        let Some(results) = results else {
+            return String::new();
+        };
         results
             .cases
             .iter()
@@ -317,10 +816,9 @@ fn render_catalog_md(results: &RunResults, catalog: &Catalog) -> String {
             area.tag(),
             area.title(),
             lines.len(),
-            active
+            active,
         );
-        out.push_str("| ECC id | Status | Title | Last run |\n");
-        out.push_str("|---|---|---|---|\n");
+        out.push_str("| ECC id | Status | Title | Last run |\n|---|---|---|---|\n");
         for e in lines {
             let run = outcome_of(&e.ecc_id);
             let _ = writeln!(
@@ -333,387 +831,91 @@ fn render_catalog_md(results: &RunResults, catalog: &Catalog) -> String {
                     "—".to_owned()
                 } else {
                     run
-                }
+                },
             );
         }
         out.push('\n');
     }
     out
-}
-
-fn render_report_md(results: &RunResults, catalog: &Catalog) -> String {
-    let mut out = String::new();
-    out.push_str("# ehrbase-rs Conformance Report (generated)\n\n");
-    out.push_str(
-        "> Generated from a conformance run — never hand-asserted. Scoped and\n\
-         > honest: the deviations section lists every skip with its reason.\n\n",
-    );
-
-    out.push_str("## 1. SUT identity\n\n");
-    render_header(&mut out, results);
-    let _ = write!(
-        out,
-        "**{} case×format executions · {} passed · {} failed · {} not applicable.**\n\n",
-        results.executed(),
-        results.passed(),
-        results.failed(),
-        results.not_applicable(),
-    );
-    render_area_matrix(&mut out, results, catalog);
-
-    out.push_str("## 2. Scope of test\n\n");
-    out.push_str("| Field | Value |\n|---|---|\n");
-    let _ = writeln!(
-        out,
-        "| Profiles requested | {} |",
-        results
-            .selection
-            .profile
-            .clone()
-            .unwrap_or_else(|| "all".to_owned())
-    );
-    let _ = writeln!(
-        out,
-        "| Data formats | {} |",
-        results.selection.formats.join(", ")
-    );
-    let active = catalog
-        .entries()
-        .iter()
-        .filter(|e| e.status == EccStatus::Active)
-        .count();
-    let _ = write!(
-        out,
-        "| Catalogue (active cases) | {active} |\n| Executed | {} |\n| Passed | {} |\n\
-         | Failed | {} |\n| Not applicable | {} |\n\n",
-        results.executed(),
-        results.passed(),
-        results.failed(),
-        results.not_applicable()
-    );
-
-    out.push_str("## 3. Detailed test report\n\n");
-    if results.cases.is_empty() {
-        out.push_str("_No cases executed in this run._\n\n");
-    } else {
-        out.push_str(
-            "| ECC id | Capability | Format | Data sets | Result |\n|---|---|---|--:|---|\n",
-        );
-        for c in &results.cases {
-            let result = match c.status {
-                CaseStatus::Passed => "PASS",
-                CaseStatus::Failed => "**FAIL**",
-                CaseStatus::Errored => "ERROR",
-                CaseStatus::Skipped => "skipped",
-                CaseStatus::NotApplicable => "N/A",
-            };
-            let _ = writeln!(
-                out,
-                "| {} | {} | {} | {}/{} | {result} |",
-                c.ecc_id, c.capability, c.format, c.passed_data_sets, c.total_data_sets
-            );
-        }
-        out.push('\n');
-    }
-
-    out.push_str("## 4. Profile verdict (machine-computed)\n\n");
-    out.push_str(
-        "CORE/STANDARD are all-or-nothing (every capability must pass); OPTIONS is \
-         any-passes (obtained if ≥1 optional capability passes) — `master03-profiles.adoc`.\n\n",
-    );
-    for profile in [
-        crate::case::Profile::Core,
-        crate::case::Profile::Standard,
-        crate::case::Profile::Options,
-    ] {
-        let v = crate::profile::verdict(profile, results);
-        let outcome = match profile {
-            crate::case::Profile::Options if v.pass => "**OBTAINED** (any-passes)",
-            crate::case::Profile::Options => "not obtained",
-            _ if v.pass => "**PASS**",
-            _ => "not claimable",
-        };
-        let _ = writeln!(out, "### {profile:?} — {outcome}\n");
-        out.push_str("| Capability | Passed | Failed | Errored | Skipped | N/A | Verdict |\n");
-        out.push_str("|---|--:|--:|--:|--:|--:|---|\n");
-        for c in &v.capabilities {
-            let _ = writeln!(
-                out,
-                "| {} | {} | {} | {} | {} | {} | {} |",
-                c.capability,
-                c.passed,
-                c.failed,
-                c.errored,
-                c.skipped,
-                c.not_applicable,
-                c.label()
-            );
-        }
-        out.push('\n');
-    }
-
-    out.push_str("## 5. Deviations (skips), by reason\n\n");
-    let mut reasons: BTreeMap<&str, usize> = BTreeMap::new();
-    for c in &results.cases {
-        if c.status == CaseStatus::Skipped {
-            *reasons
-                .entry(c.message.as_deref().unwrap_or("(unstated)"))
-                .or_insert(0) += 1;
-        }
-    }
-    if reasons.is_empty() {
-        out.push_str("_No skips in this run._\n");
-    } else {
-        out.push_str("| Reason | Cases |\n|---|--:|\n");
-        for (reason, count) in &reasons {
-            let _ = writeln!(out, "| {reason} | {count} |");
-        }
-    }
-
-    render_terminology(&mut out, results);
-    out
-}
-
-/// The terminology-server section (B4 `TS` area): the tx server the run had
-/// available and the recorded FHIR-tx exchange.
-fn render_terminology(out: &mut String, results: &RunResults) {
-    out.push_str("\n## 6. Terminology server (TS area)\n\n");
-    let Some(tx) = &results.terminology else {
-        out.push_str("_No terminology server was established for this run._\n");
-        return;
-    };
-    let _ = writeln!(out, "- Server: `{}`\n- Mode: {}\n", tx.base_url, tx.mode);
-    if tx.exchanges.is_empty() {
-        out.push_str("_No FHIR-tx exchange recorded._\n");
-        return;
-    }
-    let _ = writeln!(
-        out,
-        "Recorded FHIR-tx exchange ({} request(s)):\n",
-        tx.exchanges.len()
-    );
-    out.push_str("| # | Method | Path | Query |\n|--:|---|---|---|\n");
-    for (i, e) in tx.exchanges.iter().enumerate() {
-        let _ = writeln!(
-            out,
-            "| {} | {} | `{}` | {} |",
-            i + 1,
-            e.method,
-            e.path,
-            e.query.as_deref().unwrap_or("—")
-        );
-    }
-}
-
-fn render_badge(results: &RunResults, catalog: &Catalog) -> String {
-    let active = catalog
-        .entries()
-        .iter()
-        .filter(|e| e.status == EccStatus::Active)
-        .count();
-    let passed = results.passed();
-    let failed = results.failed();
-    let color = if failed > 0 {
-        "red"
-    } else if active > 0 && passed >= active {
-        "brightgreen"
-    } else {
-        "yellow"
-    };
-    let badge = serde_json::json!({
-        "schemaVersion": 1,
-        "label": "ECC conformance",
-        "message": format!("{passed}/{active}"),
-        "color": color,
-    });
-    serde_json::to_string_pretty(&badge).unwrap_or_else(|_| "{}".to_owned())
-}
-
-/// Render one per-profile badge (design §6): the message and colour come
-/// from the machine all-or-nothing verdict — a profile badge can never say
-/// PASS unless [`crate::profile::verdict`] does.
-fn render_profile_badge(profile: Profile, results: &RunResults) -> String {
-    let v = verdict(profile, results);
-    let total = v.capabilities.len();
-    let passing = v.capabilities.iter().filter(|c| c.pass).count();
-    let any_broken = v.capabilities.iter().any(|c| c.failed > 0 || c.errored > 0);
-    let (message, color) = if v.pass {
-        (
-            format!("PASS ({passing}/{total} capabilities)"),
-            "brightgreen",
-        )
-    } else if any_broken {
-        (format!("{passing}/{total} capabilities"), "red")
-    } else {
-        // Unevidenced (not yet run/claimable), but nothing failing.
-        (format!("{passing}/{total} capabilities"), "yellow")
-    };
-    let badge = serde_json::json!({
-        "schemaVersion": 1,
-        "label": format!("ECC {}", format!("{profile:?}").to_uppercase()),
-        "message": message,
-        "color": color,
-    });
-    serde_json::to_string_pretty(&badge).unwrap_or_else(|_| "{}".to_owned())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::results::{CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity};
-    use crate::version::SpecVersions;
+    use crate::model::versions::SpecVersions;
+    use crate::reporting::results::{
+        CaseOutcome, CorpusPin, ProductIdentity, SelectionInfo, SutIdentity,
+    };
 
-    fn zero_state_results() -> RunResults {
+    fn outcome(ecc_id: &str, capability: &str, status: CaseStatus) -> CaseOutcome {
+        CaseOutcome {
+            ecc_id: ecc_id.to_owned(),
+            id: "area/slug".to_owned(),
+            title: "A case".to_owned(),
+            capability: capability.to_owned(),
+            format: "json".to_owned(),
+            status,
+            passed_data_sets: 1,
+            total_data_sets: 1,
+            schedule_rows: None,
+            message: None,
+            citation: String::new(),
+            schedule_ref: None,
+            ecc_original: None,
+            binding: String::new(),
+            edition_level: None,
+            edition_findings: Vec::new(),
+            duration_ms: 0,
+        }
+    }
+
+    fn results(cases: Vec<CaseOutcome>) -> RunResults {
         RunResults {
             sut: SutIdentity {
                 base_url: "http://sut".to_owned(),
                 product: ProductIdentity::default(),
+                kind: SutKind::Ours,
+                edition_policy: EditionPolicy::Pinned(crate::edition::Edition::Development),
                 versions: SpecVersions::latest(),
-                auth_mode: "none".to_owned(),
+                auth_mode: "basic".to_owned(),
             },
             corpus: CorpusPin::default(),
-            started: "2026-07-07T00:00:00Z".to_owned(),
+            started: "2026-07-13T00:00:00Z".to_owned(),
             selection: SelectionInfo::default(),
             terminology: None,
-            cases: Vec::new(),
+            cases,
         }
     }
 
     #[test]
-    fn zero_state_renders_all_artifacts() {
-        let r = zero_state_results();
-        let catalog = Catalog::default();
-        let report = render_report_md(&r, &catalog);
-        assert!(report.contains("0 passed"));
-        assert!(report.contains("_No failures in this run._"));
-        assert!(report.contains("Scope of test"));
-        assert!(report.contains("Profile verdict"));
-        let badge = render_badge(&r, &catalog);
-        assert!(badge.contains("\"message\": \"0/0\""));
-        assert!(badge.contains("yellow"));
+    fn errored_capability_never_passes_the_profile() {
+        let r = results(vec![outcome(
+            "ECC-EHR-001",
+            "EhrOperations",
+            CaseStatus::Errored,
+        )]);
+        let v = capability_verdict(&r, Capability::EhrOperations);
+        assert_eq!(v.evidence, CapabilityEvidence::Failed);
     }
 
     #[test]
-    fn write_all_produces_the_artifact_set() {
-        let dir = std::env::temp_dir().join(format!("ecc-report-{}", std::process::id()));
-        write_all(&zero_state_results(), &dir).expect("write");
-        for name in [
-            "results.json",
-            "CONFORMANCE_REPORT.md",
-            "CATALOG.md",
-            "CONFORMANCE_STATEMENT.md",
-            "CONFORMANCE_CERTIFICATE.md",
-            "badge.json",
-            "badge-core.json",
-            "badge-standard.json",
-            "badge-options.json",
-        ] {
-            assert!(dir.join(name).exists(), "{name} written");
-        }
-        let back = from_results_file(&dir.join("results.json")).expect("read back");
-        assert_eq!(back.executed(), 0);
-        let _ = std::fs::remove_dir_all(&dir);
+    fn zero_state_report_renders_every_section() {
+        let md = render_report_md(&results(Vec::new()), &Catalog::default());
+        assert!(md.contains("System under test"));
+        assert!(md.contains("Capability matrix"));
+        assert!(md.contains("Profile verdict"));
+        assert!(md.contains("Edition findings"));
+        assert!(md.contains("Coverage bounds"));
+        assert!(md.contains("ECC-original"));
+        assert!(md.contains("0 passed"));
     }
 
-    /// A non-ehrbase-rs SUT gets `results.json` + report + catalogue + badges,
-    /// but **no** Statement/Certificate (§3a.2) — those are self-assessment
-    /// artifacts of our own product only.
     #[test]
-    fn upstream_sut_suppresses_statement_and_certificate() {
-        let mut r = zero_state_results();
-        r.sut.product = ProductIdentity {
-            name: "ehrbase-java".to_owned(),
-            version: "2.34.0".to_owned(),
-            image_digest: Some("sha256:cafe".to_owned()),
-        };
-        let dir = std::env::temp_dir().join(format!("ecc-upstream-{}", std::process::id()));
-        write_all(&r, &dir).expect("write");
-        // The machine record and the human/badge artifacts are still written.
-        for name in [
-            "results.json",
-            "CONFORMANCE_REPORT.md",
-            "CATALOG.md",
-            "badge.json",
-        ] {
-            assert!(
-                dir.join(name).exists(),
-                "{name} must be written for upstream"
-            );
-        }
-        // The self-assessment artifacts are suppressed.
-        assert!(
-            !dir.join("CONFORMANCE_STATEMENT.md").exists(),
-            "Statement must be suppressed for a non-ehrbase-rs SUT"
-        );
-        assert!(
-            !dir.join("CONFORMANCE_CERTIFICATE.md").exists(),
-            "Certificate must be suppressed for a non-ehrbase-rs SUT"
-        );
-        // The identity is recorded in results.json and survives a round-trip.
-        let back = from_results_file(&dir.join("results.json")).expect("read back");
-        assert_eq!(back.sut.product.name, "ehrbase-java");
-        assert_eq!(back.sut.product.version, "2.34.0");
-        assert_eq!(
-            back.sut.product.image_digest.as_deref(),
-            Some("sha256:cafe")
-        );
-        assert!(!back.sut.is_ehrbase_rs());
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    /// Our own product's identity is written into `results.json` and the report
-    /// header shows it (§3a.1).
-    #[test]
-    fn self_sut_identity_is_recorded_and_rendered() {
-        let r = zero_state_results();
-        let catalog = Catalog::default();
-        let report = render_report_md(&r, &catalog);
-        assert!(
-            report.contains(&format!(
-                "Product: ehrbase-rs {}",
-                env!("CARGO_PKG_VERSION")
-            )),
-            "the report header states the product identity"
-        );
-        let json = serde_json::to_string(&r).expect("serialize");
-        assert!(json.contains("\"product\""), "results.json carries product");
-        assert!(json.contains("ehrbase-rs"));
-    }
-
-    /// A `NotApplicable` outcome is excluded from pass/fail and rendered in its own
-    /// section with the cited reason.
-    #[test]
-    fn not_applicable_outcome_is_reported_separately() {
-        let mut r = zero_state_results();
-        r.sut.product = ProductIdentity {
-            name: "ehrbase-java".to_owned(),
-            version: "2.34.0".to_owned(),
-            image_digest: None,
-        };
-        r.cases.push(CaseOutcome {
-            ecc_id: "ECC-DEM-001".to_owned(),
-            id: "dem/create".to_owned(),
-            title: "Create a party".to_owned(),
-            capability: "DemographicApi".to_owned(),
-            profiles: vec!["Options".to_owned()],
-            format: "json".to_owned(),
-            status: CaseStatus::NotApplicable,
-            passed_data_sets: 0,
-            total_data_sets: 0,
-            message: Some("Upstream has no demographic REST API.".to_owned()),
-            citation: "docs/plans/x1-comparison.md §2c".to_owned(),
-            schedule_ref: None,
-            duration_ms: 0,
-        });
-        assert_eq!(r.passed(), 0);
-        assert_eq!(r.failed(), 0);
-        assert_eq!(r.not_applicable(), 1);
-        let catalog = Catalog::default();
-        let report = render_report_md(&r, &catalog);
-        assert!(report.contains("Not applicable to this SUT"));
-        assert!(report.contains("ECC-DEM-001"));
-        assert!(report.contains("no demographic REST API"));
-        assert!(report.contains("x1-comparison.md §2c"));
-        assert!(report.contains("· 1 not applicable"));
+    fn coverage_bound_is_printed_when_driven_below_schedule() {
+        let mut c = outcome("ECC-VAL-001", "ArchetypeValidation", CaseStatus::Passed);
+        c.total_data_sets = 3;
+        c.schedule_rows = Some(27);
+        let md = render_report_md(&results(vec![c]), &Catalog::default());
+        assert!(md.contains("3/27"), "the driven/schedule ratio is printed");
     }
 }

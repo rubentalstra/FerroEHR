@@ -4,16 +4,20 @@ paths: ["crates/openehr-query/**", "app/ehrbase/src/aql/**"]
 
 # AQL engine rules
 
-The AQL engine is the crown jewel and the hardest part (P16). It spans two
-locations:
+The AQL engine is the crown jewel — **built (P16, extended through B2–B6)**;
+this rule governs maintenance and extension. It spans two locations:
 
-- `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**,
-  **done** (`logos` + `chumsky`, corpus-validated). Semantic path analysis
-  against WebTemplates is done as part of the engine (P16), consuming this AST.
-- `app/ehrbase/src/aql/` — the **execution engine** (P16): AST → **our own
-  typed query IR** → PostgreSQL, designed fresh per ADR-008 over the P10 node
-  model, with path analysis driven by the **BMM-generated RM attribute model**
-  (no reflection, no hand tables). EHRbase's engine is prior art only.
+- `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**
+  (`logos` + `chumsky`, corpus-validated). Semantic path analysis consumes
+  this AST inside the engine.
+- `app/ehrbase/src/aql/` — the **execution engine**: AST → **our own typed
+  query IR** → PostgreSQL, designed fresh per ADR-008 over the node model,
+  with path analysis driven by the **BMM-generated RM attribute model** (no
+  reflection, no hand tables). The AQL terminology family
+  (`TERMINOLOGY('expand')` merged into `matches` at semantic analysis; later
+  stages typed rejects) landed at B4. EHRbase's engine is prior art only.
+- **Every unsupported construct is a typed, citable reject** — never a
+  silent wrong answer, never a generic 500.
 
 ## No ANTLR, ever
 
@@ -42,16 +46,17 @@ perf tuning of the SQL that isn't needed for correctness is a
 
 AQL semantics (grammar, operators, functions, `RESULT_SET`) are answered from
 the vendored spec text at `docs/specs/openehr/QUERY/docs/AQL/` — never from
-EHRbase behaviour. The conformance expectations are
-`docs/specs/openehr/CNF/docs/platform_test_schedule/master05-func_tc_definition_query.adoc`
-+ `master11-func_tc_querying.adoc` and the QUERY Robot suites under
-`docs/specs/openehr/CNF/tests/platform/robot/` — the accept/reject envelope,
-status codes, and result shapes must satisfy those test cases. Use
-`/spec-lookup` and cite the section (spec-adherence.md).
+EHRbase behaviour. Conformance expectations derive from the CNF schedule
+(`docs/specs/openehr/CNF/docs/platform_test_schedule/master05-func_tc_definition_query.adoc`
++ `master11-func_tc_querying.adoc`; the upstream Robot suites are reference
+material only) and are **verified by the ECC QUERY/AqlBasic areas**
+(`tools/conformance`) — the accept/reject envelope, status codes, and result
+shapes. Use `/spec-lookup` and cite the section (spec-adherence.md).
 
 ## Boundary
 
 `openehr-query` produces a parsed, semantically-analysable AST; everything after
 (the IR, SQL generation via `sea-query`, execution via `sqlx`) lives in `ehrbase`.
 Keep it clean: no SQL in the spec crate, no grammar/parsing in the server crate.
-Behaviour is verified by the AQL corpus + the CNF conformance suite (P19).
+Behaviour is verified by the AQL corpus + the ECC suite — every engine change
+ends with an ECC run showing zero drift vs the committed baseline.

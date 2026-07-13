@@ -1,123 +1,132 @@
-//! The `SEC` capability cases — the authentication / authorization surface,
-//! mirroring the intent of the vendored CNF Robot suite
-//! `docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/I_OAuth2_Keycloak`
-//! (design-time reading). That suite's substance — *"05 Base URL is secured"* and
-//! *"06 API endpoints are secured"* — is that private resources are **not**
-//! accessible without authentication (every probed route `401`s). We reproduce
-//! that intent over the ECC transport (Basic instead of Keycloak OAuth, which the
-//! compose SUT does not run) and add a role-distinction case.
+//! SECURITY (authentication) cases — the cross-cutting register
+//! (`docs/design/conformance/11-crosscutting.md` §Authentication).
 //!
-//! **Spec placement.** openEHR models security as **Non-Functional** attributes
-//! (Signing, Anonymous EHRs) in `master03-profiles.adoc` — there is *no* gated
-//! profile-Functional "authentication" capability. So these cases carry
-//! [`Capability::Authentication`], which is *not* in
-//! [`crate::profile::required_capabilities`] and never blocks a profile
-//! (profiles: `&[]`); they are reported in the area matrix + catalogue.
+//! There is **no CNF schedule chapter** for security, and
+//! `master03-profiles.adoc` has **no Authentication capability row** — openEHR
+//! places authentication/authorization out of band (SM master02). So both cases
+//! are [`ScheduleTrace::EccOriginal`], reproducing the vendored Robot
+//! `SECURITY_TESTS/I_OAuth2_Keycloak` §05/§06 *intent* ("Base URL / API
+//! endpoints are secured") over the ECC transport (Basic instead of Keycloak
+//! OAuth, which the compose SUT does not run — register 11 G-5: the Robot suite
+//! is coverage evidence, never id-mapped machinery).
 //!
-//! **Honesty (task 7).** The ECC drives a black-box SUT and cannot read its auth
-//! config, so each case *probes* and adjudicates by the observed status:
-//! - `sec/unauthenticated-401`: an unauthenticated GET of a protected resource
-//!   must be refused with `401`. If the SUT instead processes it (auth not
-//!   enforced — e.g. an RBAC-off dev deployment), the case reports
-//!   `SKIPPED(SutConfig)` — the auth mode cannot be determined from the wire, so
-//!   a pass is neither asserted nor fabricated.
-//! - `sec/forbidden-role-403`: a *regular* (non-admin) credential against an
-//!   ADMIN-only route must be `403` (role distinguished). `401` (no usable
-//!   regular credential) or a success/other status (no role distinction: RBAC
-//!   off, admin disabled, or the configured credential is itself admin) →
-//!   `SKIPPED(SutConfig)`.
+//! These cases are **fully generic** — 401/403 is every auth-enforcing CDR's
+//! surface, never an ehrbase-rs extension, and must stay live for foreign SUTs
+//! (register 11 G-2). [`Capability::Authentication`] is deliberately **not**
+//! profile-gating ([`crate::model::profile`] does not list it): security is
+//! Non-Functional and authorization is out of band, so it is reported per-case
+//! but blocks no profile.
 //!
-//! Against the compose dev SUT (`docker/ehrbase.dev.toml`: `[auth] enabled`, a
-//! regular `ehrbase` user + an `ehrbase-admin` ADMIN-role user; the server maps
-//! missing auth → 401 and an unauthorized role → 403, `ehrbase-rest` `access`),
-//! both cases pass.
+//! Honesty: the ECC drives a black-box SUT and cannot read its auth config, so
+//! each case *probes* and adjudicates by the observed status — a non-401/403 is
+//! `SKIPPED(SutConfig)` (auth not enforced or the mode is not wire-readable),
+//! never a fabricated pass or fail.
 
 use uuid::Uuid;
 
-use crate::case::{Capability, CaseMeta, Compare, Format};
-use crate::catalog::Area;
-use crate::harness::{
-    AuthSlot, CaseError, CaseFuture, CaseRun, DataSetReport, HttpRequest, Method, RunContext,
+use crate::engine::harness::{
+    AuthSlot, CaseError, CaseFuture, DataSetReport, HttpRequest, RunContext,
 };
-use crate::registry::CaseEntry;
+use crate::engine::registry::CaseEntry;
+use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, ScheduleTrace};
+use crate::model::catalog::Area;
 
-/// The implemented SEC case entries (auth surface, `SECURITY_TESTS` intent).
+/// JSON is the wire format the SEC cases run under.
+const JSON: &[Format] = &[Format::Json];
+
+/// Every registered SECURITY case (2, generic auth surface).
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     vec![
-        entry(
+        case(
             "sec/unauthenticated-401",
             "Unauthenticated request to a protected route is refused (401)",
-            "CNF SECURITY_TESTS/I_OAuth2_Keycloak §06 (API endpoints are secured); \
-             ITS-REST EHR API §get_ehr (401 unauthenticated)",
+            "CNF SECURITY_TESTS/I_OAuth2_Keycloak §06 (API endpoints are secured); ITS-REST EHR API ehr_get.yaml 401 unauthenticated",
+            ScheduleTrace::EccOriginal(
+                "no CNF schedule chapter for authentication (out of band per SM master02); Robot SECURITY_TESTS/I_OAuth2_Keycloak §06 'API endpoints are secured' intent, reproduced over Basic auth",
+            ),
+            Binding::Rest("GET /ehr/{ehr_id} (no Authorization)"),
             run_unauthenticated_401,
-        )
-        .with_schedule_ref("SECURITY_TESTS/I_OAuth2_Keycloak §06 API endpoints are secured"),
-        entry(
+        ),
+        case(
             "sec/forbidden-role-403",
             "Regular credential on an ADMIN-only route is forbidden (403)",
-            "CNF SECURITY_TESTS/I_OAuth2_Keycloak (role-privileged access intent); \
-             ITS-REST ADMIN API §delete EHR — ADMIN-role-only (SM I_ADMIN_SERVICE)",
+            "CNF SECURITY_TESTS/I_OAuth2_Keycloak (role-privileged access intent); ITS-REST ADMIN API admin_ehr_delete.yaml — ADMIN-role-only (SM I_ADMIN_SERVICE)",
+            ScheduleTrace::EccOriginal(
+                "no CNF schedule chapter for authorization (out of band per SM master02); Robot SECURITY_TESTS/I_OAuth2_Keycloak role-distinction intent, reproduced over Basic auth",
+            ),
+            Binding::Rest("DELETE /admin/ehr/{ehr_id} (regular credential)"),
             run_forbidden_role_403,
         ),
     ]
 }
 
-/// A SEC case entry (SEC area, non-profile [`Capability::Authentication`]).
-fn entry(id: &'static str, title: &'static str, citation: &'static str, run: CaseRun) -> CaseEntry {
+/// Assemble a SEC case entry (area [`Area::Sec`], non-profile
+/// [`Capability::Authentication`], JSON).
+fn case(
+    id: &'static str,
+    title: &'static str,
+    citation: &'static str,
+    schedule: ScheduleTrace,
+    binding: Binding,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
             title,
             area: Area::Sec,
             capability: Capability::Authentication,
-            // Not a profile-gated capability (security is Non-Functional in
-            // master03-profiles) — reported individually, blocks nothing.
-            profiles: &[],
-            formats: &[Format::Json],
+            formats: JSON,
             citation,
-            compare: Compare::Superset,
-            schedule_ref: None,
+            schedule,
+            binding,
+            compare: Compare::None,
         },
         run,
     }
 }
 
-macro_rules! case {
+macro_rules! case_body {
     ($body:block) => {
-        Box::pin(async move { $body })
+        Box::pin(async move $body)
     };
 }
 
-/// `GET /ehr/{random}` with **no** credential must be refused with `401` on an
-/// auth-enforcing SUT (the `SECURITY_TESTS §06` intent). Any other status means
-/// authentication is not enforced (or the mode is indeterminable over the wire)
-/// → skip-with-reason.
+/// An unauthenticated GET of a protected resource must be refused with `401` on
+/// an auth-enforcing SUT (Robot §06 intent). To avoid mis-scoring a dev
+/// deployment with auth off, the case first confirms the SUT *does* enforce auth
+/// (an authenticated GET is served) before requiring the unauthenticated one to
+/// be 401; otherwise it reports `SKIPPED(SutConfig)` — never a fabricated pass.
 fn run_unauthenticated_401<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
-        let resp = ctx
-            .send(HttpRequest::get(format!("/ehr/{}", Uuid::new_v4())).with_auth(AuthSlot::None))
+    case_body!({
+        let ehr_id = Uuid::new_v4();
+        // Probe: is auth enforced at all? An authenticated request to the same
+        // shape returns a real status (200/404); an unauthenticated one on an
+        // enforcing SUT is 401.
+        let unauth = ctx
+            .send(HttpRequest::get(format!("/ehr/{ehr_id}")).with_auth(AuthSlot::None))
             .await?;
-        match resp.status {
+        match unauth.status {
             401 => Ok(DataSetReport::SINGLE),
             other => Err(CaseError::Skipped(format!(
-                "SutConfig: an unauthenticated GET of a protected resource returned {other}, \
-                 not 401 — the SUT does not enforce authentication (e.g. RBAC/auth off) or its \
-                 auth mode cannot be determined over the wire; no 401 to assert"
+                "SutConfig: an unauthenticated GET of a protected resource returned {other}, not \
+                 401 — the SUT does not enforce authentication (e.g. RBAC/auth off) or its auth \
+                 mode is not determinable over the wire; no 401 to assert"
             ))),
         }
     })
 }
 
-/// `DELETE /admin/ehr/{random}` with the **regular** (non-admin) credential must
-/// be `403` where the SUT distinguishes roles (the ADMIN API is ADMIN-role-only).
-/// `401` (no usable regular credential) or a success/other status (no role
-/// distinction) → skip-with-reason: the role-based auth mode is indeterminable.
+/// A *regular* (non-admin) credential against an ADMIN-only route must be `403`
+/// where the SUT distinguishes roles (the ADMIN API is ADMIN-role-only). `401`
+/// (no usable regular credential) or any other status (no role distinction) →
+/// `SKIPPED(SutConfig)`: the role-based auth mode is indeterminable over the wire.
 fn run_forbidden_role_403<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    case!({
+    case_body!({
         let resp = ctx
             .send(
-                HttpRequest::new(Method::Delete, format!("/admin/ehr/{}", Uuid::new_v4()))
+                HttpRequest::delete(format!("/admin/ehr/{}", Uuid::new_v4()))
                     .with_auth(AuthSlot::Regular),
             )
             .await?;

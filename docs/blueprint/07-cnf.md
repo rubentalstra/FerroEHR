@@ -121,21 +121,41 @@ what a platform must demonstrably pass and how the demonstration is produced.
 
 ## Current implementation state (verified, not assumed)
 
-The instrument is `tools/conformance` (the **ECC** framework, ADR-008's
-acceptance instrument; design `docs/design/conformance-framework.md`): our own
-case universe with stable `ECC-<AREA>-<NNN>` ids allocated in
+> **W-10 refresh (2026-07-13).** The instrument was **rethought from the spec
+> up and rewritten** (`docs/plans/w10-conformance-redesign.md`): spine-first
+> case derivation from the schedule registers (`docs/design/conformance/`),
+> multi-SUT from day one (ehrbase-rs compose · upstream EHRbase Java ·
+> BYO-endpoint by URL), a spec-edition ladder (`auto` starts at the highest
+> pinned edition and steps down, every lower-edition match an explicit
+> *edition finding*; pinned to `development` for our own gate runs), one
+> spec-grade client layer for all header/ETag/id parsing, per-SUT artefact
+> dirs (`docs/conformance/<sut>/` — results.json + report + Statement +
+> Certificate-for-any-SUT + badges), the fairness adjudication register for
+> foreign SUTs, and `conformance compare` (the cross-SUT matrix). The
+> re-derived baseline (2026-07-13): **368 case×format executions · 333
+> passed · 0 failed · 35 adjudicated skips — CORE PASS · STANDARD PASS ·
+> OPTIONS OBTAINED** (`docs/conformance/ehrbase-rs/`); the full delta vs the
+> 341/315/0/26 ancestor is recorded in the W-10 plan file. The audit and
+> per-requirement state below is the **pre-W-10 record** (B5-era, kept as
+> the findings ledger the D1–D5 fixes and the W-10 rewrite executed); where
+> it disagrees with the rewritten crate, the crate + the W-10 registers win.
+
+Pre-W-10 state (historical): the instrument was `tools/conformance` (the
+**ECC** framework, ADR-008's acceptance instrument; design
+`docs/design/conformance-framework.md`): our own case universe with stable
+`ECC-<AREA>-<NNN>` ids allocated in
 `tools/conformance/inventory/ecc-catalog.tsv` (314 lines, 310 allocations, 0
 retired/planned), executed by `scripts/conformance.sh` /
 `tools/conformance/src/bin/conformance.rs` against an external SUT — the
 Docker-composed server built from the current sources (the in-process
-self-host mode was removed 2026-07-09; owner ruling, one mode / real artefact). Latest committed run (2026-07-09, `docs/conformance/results.json` +
-`CONFORMANCE_REPORT.md`): **318 case×format executions · 211 passed · 106
-failed · 1 skipped**. Blueprint §2.2 marks ArchetypeValidation
+self-host mode was removed 2026-07-09; owner ruling, one mode / real
+artefact). Committed run of 2026-07-09: **318 case×format executions · 211
+passed · 106 failed · 1 skipped**. Blueprint §2.2 marks ArchetypeValidation
 (81 failures) as the one big rock (built at B2); the blueprint also records ECC
 as *"suspended during the ADR-011 rebuild, re-converges at B1/P19"* (§4.4 gate
 policy).
 
-Per requirement:
+Per requirement (pre-W-10 record):
 
 - **R1 (both aspects)** — **DONE (as ECC).** API cases (EHR/STA/COM/CTB/DIR/
   TPL/SQR/QRY/ADM/DEM areas) + data-validation cases (VAL area, 118 cases,

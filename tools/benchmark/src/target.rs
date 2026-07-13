@@ -3,8 +3,8 @@
 //! **provably identical** to the one driving `EHRbase` Java — the core fairness
 //! guarantee (design §5).
 
-use conformance::client::{Credential, SutClient};
 use conformance::harness::{HttpRequest, HttpResponse, Transport, TransportError};
+use conformance::transport::{Credential, SutClient};
 
 /// Which implementation a target points at — recorded in the report so a reader
 /// always knows which server produced a number.

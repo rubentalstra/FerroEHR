@@ -1,13 +1,28 @@
 #!/usr/bin/env bash
 # .claude/hooks/protect_vendored_specs.sh
 #
-# Claude Code PreToolUse hook (matcher: Write|Edit|NotebookEdit). Blocks
-# hand-edits to the vendored openEHR spec text under docs/specs/openehr/ —
-# it is upstream-verbatim reference material (the conformance oracle), only
-# ever refreshed by scripts/vendor-spec-docs.sh. The single exception is the
-# top-level README.md (our own index).
+# Claude Code PreToolUse hook (matcher: Write|Edit|NotebookEdit). Mechanical
+# enforcement of the repo's "never hand-edit" hard rules (CLAUDE.md):
+#
+#   1. docs/specs/openehr/**            — vendored upstream openEHR spec text
+#      (the conformance oracle); refreshed only by scripts/vendor-spec-docs.sh.
+#      Exception: the top-level README.md (our own index).
+#   2. crates/openehr-codegen/vendor/** — vendored BMM codegen inputs
+#      crates/openehr-its/vendor/**     — vendored REST OAS
+#      crates/openehr-its/schemas/**    — vendored XSD / ITS-JSON schemas
+#      (re-vendor on a pin bump; never edit).
+#   3. crates/openehr-its/src/**/generated/** — generator-owned output trees.
+#   4. website/api/spec/** + website/api/vendor/** — assembled/vendored site
+#      assets (scripts/assemble-oas.sh owns spec/; CI drift-gates it).
+#   5. ANY existing file whose head carries an `@generated` marker — the
+#      generated spec crates (openehr-base/rm/am, generated impls). Change
+#      the emitter (crates/openehr-codegen) and regenerate (/regen-codegen);
+#      never the output. (`openehr-codegen` itself writes via its own
+#      process, not this tool, so it is unaffected.)
 #
 # Reads the tool-call JSON on stdin. Exit 2 blocks; exit 0 allows.
+# Extended 2026-07-13 (was: docs/specs only). Filename kept stable so
+# settings.json and concurrently-running sessions stay valid.
 
 set -euo pipefail
 
@@ -20,14 +35,38 @@ else
 fi
 [ -n "${path:-}" ] || exit 0
 
+block() {
+  echo "BLOCKED: $1" >&2
+  exit 2
+}
+
 case "$path" in
   */docs/specs/openehr/README.md | docs/specs/openehr/README.md)
     exit 0
     ;;
   */docs/specs/openehr/* | docs/specs/openehr/*)
-    echo "BLOCKED: docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor-spec-docs.sh; pins live in that script + docs/VERSIONS.md." >&2
-    exit 2
+    block "docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor-spec-docs.sh; pins live in that script + docs/VERSIONS.md."
+    ;;
+  */crates/openehr-codegen/vendor/* | crates/openehr-codegen/vendor/* | \
+  */crates/openehr-its/vendor/*     | crates/openehr-its/vendor/*     | \
+  */crates/openehr-its/schemas/*    | crates/openehr-its/schemas/*)
+    block "vendored spec inputs (BMM / OAS / XSD / ITS-JSON) are upstream-verbatim and must never be hand-edited. Re-vendor on a pin bump (provenance files + docs/VERSIONS.md)."
+    ;;
+  */crates/openehr-its/src/xml/generated/*  | crates/openehr-its/src/xml/generated/*  | \
+  */crates/openehr-its/src/rest/generated/* | crates/openehr-its/src/rest/generated/*)
+    block "openehr-its generated/ trees are generator-owned (emit-xml / emit-rest). Edit the emitter in crates/openehr-codegen and run /regen-codegen; never the output."
+    ;;
+  */website/api/spec/*   | website/api/spec/*   | \
+  */website/api/vendor/* | website/api/vendor/*)
+    block "website/api/{spec,vendor}/** is generated/vendored (scripts/assemble-oas.sh; CI drift gate). Never hand-edit; regenerate instead."
     ;;
 esac
+
+# Content guard: block edits to any existing file carrying an @generated
+# marker in its head (the generated spec crates and any future generated
+# output, wherever it lives).
+if [ -f "$path" ] && head -c 400 "$path" 2>/dev/null | grep -q '@generated'; then
+  block "'$path' carries an @generated marker — it is produced by openehr-codegen. Change the emitter (crates/openehr-codegen/src/emit.rs or the *_impl.rs sibling) and run /regen-codegen; never hand-edit generated output."
+fi
 
 exit 0

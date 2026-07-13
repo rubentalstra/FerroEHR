@@ -139,7 +139,7 @@ impl EhrbaseService {
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        versioned_object(&self.pool, vo_id, ehr_id).await
+        versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await
     }
 
     /// The `REVISION_HISTORY` of an EHR's `EHR_STATUS`.

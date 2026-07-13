@@ -1,48 +1,99 @@
-//! Typed, read-only access to the vendored CNF fixture corpus (design §2.2, §6):
-//! `docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`.
+//! Manifest-keyed, read-only access to the conformance data sets.
 //!
-//! The whole corpus is exposed — every category, valid **and** invalid — so the
-//! runner drives real openEHR payloads rather than synthetic ones wherever a
-//! fixture exists. Categories:
+//! Every data set the suites drive is named in the committed fixture manifest
+//! (`testdata/MANIFEST.tsv`, loaded by [`crate::testdata::manifest`]); this
+//! module resolves those keys to bytes. There is **no free-path corpus API** —
+//! the vendored Robot corpus is raw material, reachable only through a manifest
+//! key (register-80 ruling, `docs/design/conformance/80-data-sets.md`). The
+//! corpus root and the owned-fixture root are private constants; a suite that
+//! wants a file the manifest does not name must add a manifest row.
 //!
-//! - `ehr/valid`, `ehr/invalid` — `EHR_STATUS` data sets;
-//! - `compositions/{CANONICAL_JSON,CANONICAL_XML,FLAT,STRUCTURED,TDD,valid}`,
-//!   `xml_compositions`, `flat_compositions` — committable content
-//!   (FLAT/STRUCTURED/TDD are the `EhrScape` interop layer, not CNF-scored per
-//!   design §3.3, but still accessible);
-//! - `valid_templates/**` (121 files: 32 `.opt`, plus `.xml`/`.json` variants)
-//!   and `invalid_templates/**` (21 files: `alien_tags`, `empty_file`,
-//!   `multiple_elements`, `removed_mandatory_elements`, `removed_template_id`,
-//!   nested, `minimal_persistent`);
-//! - `contributions/{valid,invalid}/{minimal,minimal_persistent}`;
-//! - `directory/`, `directory/update/`;
-//! - `query/aql_queries_{valid,invalid}/{A,B,C,D}`, `query/data_load/**`,
-//!   `query/expected_results/{empty_db,loaded_db}/{A,B,C,D}` (golden sets);
-//! - `validation/`.
+//! Three source kinds resolve to bytes:
 //!
-//! ## RM-version adaptation (§6)
+//! - `owned:` — reviewed committed corrections under `testdata/fixtures/`
+//!   (the B2 owned-fixture register, `testdata/fixtures/REGISTER.md`).
+//! - `corpus:` / `corpus-dir:` — vendored CNF corpus under
+//!   `docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`.
+//! - `generated:` — programmatically authored data sets; the authoring code
+//!   lives in the content suites, so resolution here returns a typed marker
+//!   error directing the caller to the authoring path.
 //!
-//! The fixtures are authored in the RM-1.0.x era, where the canonical JSON omits
+//! ## RM-version adaptation
+//!
+//! The corpus is authored in the RM-1.0.x era, where the canonical JSON omits
 //! the `_type` discriminator on many nodes. Our RM 1.2.0 canonical-JSON layer
 //! requires `_type` on abstract slots (`subject: PARTY_PROXY`, `name: DV_TEXT`,
 //! …). [`adapt_ehr_status`] applies the minimal, documented overlay to make a
-//! vendored `EHR_STATUS` wire-valid for RM 1.2.0 **without** changing its meaning —
-//! never touching a value whose absence is the fixture's intended defect, so the
-//! `invalid/` set stays invalid.
+//! vendored `EHR_STATUS` wire-valid for RM 1.2.0 **without** changing its
+//! meaning — never touching a value whose absence is the fixture's intended
+//! defect, so the `ehr-status.invalid` set stays invalid.
 
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 
 use serde_json::Value;
 
-/// The corpus root, resolved relative to this crate.
-pub const CORPUS_ROOT: &str = concat!(
+use crate::testdata::manifest::{Entry, Manifest, ManifestError, Source};
+
+/// The vendored CNF corpus root, resolved relative to this crate. **Private** —
+/// every corpus access goes through a manifest key (register-80 ruling); there
+/// is no public free-path seam into `docs/specs/openehr/CNF/tests/`.
+const CORPUS_ROOT: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets"
 );
 
-/// Errors accessing the fixture corpus.
+/// The owned-fixture root (reviewed corrections of internally-defective corpus
+/// fixtures). **Private** — accessed only through `owned:` manifest keys.
+const OWNED_FIXTURES_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/fixtures");
+
+/// The committed fixture manifest, parsed once.
+static MANIFEST: LazyLock<Manifest> = LazyLock::new(|| match Manifest::load_default() {
+    Ok(manifest) => manifest,
+    Err(e) => panic!("committed MANIFEST.tsv must parse: {e}"),
+});
+
+/// Errors accessing a fixture.
 #[derive(Debug, thiserror::Error)]
 pub enum FixtureError {
+    /// The manifest itself failed to parse.
+    #[error("fixture manifest: {0}")]
+    Manifest(#[from] ManifestError),
+    /// No manifest row names this key.
+    #[error("fixture key `{key}` is not in the manifest")]
+    UnknownKey {
+        /// The requested key.
+        key: String,
+    },
+    /// The key resolves to a source of the wrong shape for the operation
+    /// (e.g. `list` on a single-file row, `read` on a directory row).
+    #[error("fixture key `{key}` is a {found} source, but {expected} was required")]
+    SourceKind {
+        /// The requested key.
+        key: String,
+        /// What the operation required.
+        expected: &'static str,
+        /// What the row actually is.
+        found: &'static str,
+    },
+    /// The key names a programmatically generated data set.
+    #[error(
+        "fixture key `{key}` is generated by author fn `{author_fn}` — resolve it through the content-suite authoring path, not the corpus loader"
+    )]
+    Generated {
+        /// The requested key.
+        key: String,
+        /// The authoring function's documented name.
+        author_fn: String,
+    },
+    /// A `read_from` file argument tried to escape its directory.
+    #[error("fixture file `{file}` under key `{key}` contains an illegal path segment")]
+    PathEscape {
+        /// The directory key.
+        key: String,
+        /// The offending file argument.
+        file: String,
+    },
     /// A file or directory could not be read.
     #[error("fixture I/O at {path}: {source}")]
     Io {
@@ -63,23 +114,11 @@ pub enum FixtureError {
     /// `from_flat`).
     #[error("FLAT→canonical conversion for {what}: {detail}")]
     Convert {
-        /// What was being converted (the OPT + FLAT paths).
+        /// What was being converted.
         what: String,
         /// The underlying error text.
         detail: String,
     },
-}
-
-/// The corpus root as a path.
-#[must_use]
-pub fn root() -> PathBuf {
-    PathBuf::from(CORPUS_ROOT)
-}
-
-/// Resolve a path relative to the corpus root.
-#[must_use]
-pub fn path(rel: &str) -> PathBuf {
-    root().join(rel)
 }
 
 /// One fixture file.
@@ -97,10 +136,7 @@ impl Fixture {
     /// # Errors
     /// [`FixtureError::Io`] if the file cannot be read.
     pub fn read(&self) -> Result<String, FixtureError> {
-        std::fs::read_to_string(&self.path).map_err(|source| FixtureError::Io {
-            path: self.path.display().to_string(),
-            source,
-        })
+        read_path(&self.path)
     }
 
     /// The file parsed as JSON.
@@ -108,11 +144,7 @@ impl Fixture {
     /// # Errors
     /// [`FixtureError`] on I/O or parse failure.
     pub fn json(&self) -> Result<Value, FixtureError> {
-        let text = self.read()?;
-        serde_json::from_str(&text).map_err(|source| FixtureError::Json {
-            path: self.path.display().to_string(),
-            source,
-        })
+        parse_json(&self.path, &self.read()?)
     }
 
     /// The fixture's base name without extension (its logical id).
@@ -125,102 +157,205 @@ impl Fixture {
     }
 }
 
-/// Read a fixture file (path relative to the corpus root) as text.
-///
-/// # Errors
-/// [`FixtureError::Io`] if the file cannot be read.
-pub fn read(rel: &str) -> Result<String, FixtureError> {
-    let p = path(rel);
-    std::fs::read_to_string(&p).map_err(|source| FixtureError::Io {
-        path: p.display().to_string(),
+// ── Manifest resolution ──────────────────────────────────────────────────────
+
+/// The parsed committed manifest.
+#[must_use]
+pub fn manifest() -> &'static Manifest {
+    &MANIFEST
+}
+
+fn entry(key: &str) -> Result<&'static Entry, FixtureError> {
+    MANIFEST.entry(key).ok_or_else(|| FixtureError::UnknownKey {
+        key: key.to_owned(),
+    })
+}
+
+fn corpus_root() -> PathBuf {
+    PathBuf::from(CORPUS_ROOT)
+}
+
+fn owned_root() -> PathBuf {
+    PathBuf::from(OWNED_FIXTURES_ROOT)
+}
+
+/// Resolve a single-file key (`owned:` or `corpus:`) to its absolute path.
+fn single_file_path(key: &str) -> Result<PathBuf, FixtureError> {
+    match &entry(key)?.source {
+        Source::Owned { rel } => Ok(owned_root().join(rel)),
+        Source::Corpus { rel } => Ok(corpus_root().join(rel)),
+        Source::CorpusDir { .. } => Err(FixtureError::SourceKind {
+            key: key.to_owned(),
+            expected: "single-file (owned/corpus)",
+            found: "corpus-dir",
+        }),
+        Source::Generated { author_fn } => Err(FixtureError::Generated {
+            key: key.to_owned(),
+            author_fn: author_fn.clone(),
+        }),
+    }
+}
+
+fn read_path(path: &Path) -> Result<String, FixtureError> {
+    std::fs::read_to_string(path).map_err(|source| FixtureError::Io {
+        path: path.display().to_string(),
         source,
     })
 }
 
-/// Read a fixture file as JSON.
-///
-/// # Errors
-/// [`FixtureError`] on I/O or parse failure.
-pub fn read_json(rel: &str) -> Result<Value, FixtureError> {
-    let text = read(rel)?;
-    serde_json::from_str(&text).map_err(|source| FixtureError::Json {
-        path: rel.to_owned(),
+fn parse_json(path: &Path, text: &str) -> Result<Value, FixtureError> {
+    serde_json::from_str(text).map_err(|source| FixtureError::Json {
+        path: path.display().to_string(),
         source,
     })
 }
 
-// ── Owned (corrected) fixtures ────────────────────────────────────────────────
+// ── Primary loaders (manifest keys only) ─────────────────────────────────────
 
-/// The owned-fixture directory, resolved relative to this crate.
-///
-/// These are reviewed corrections of vendored CNF fixtures that are internally
-/// inconsistent with their own OPT when read against the vendored spec text. The
-/// vendored corpus under `docs/specs/openehr/` is read-only and never edited; a
-/// correction lives here as a file, its defect and one-leaf change documented in
-/// [`REGISTER.md`](../../testdata/fixtures/REGISTER.md), and each corrected
-/// fixture has a companion negative ECC case asserting the SUT rejects the
-/// uncorrected original.
-pub const OWNED_FIXTURES_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/fixtures");
-
-/// Read an owned (corrected) fixture by file name (from [`OWNED_FIXTURES_ROOT`])
-/// as JSON. Mirrors [`read_json`], but resolves against the owned-fixture dir
-/// rather than the vendored corpus.
+/// Read a single-file fixture (`owned:` or `corpus:` row) as text.
 ///
 /// # Errors
-/// [`FixtureError`] on I/O or parse failure.
-pub fn owned_fixture(name: &str) -> Result<Value, FixtureError> {
-    let p = PathBuf::from(OWNED_FIXTURES_ROOT).join(name);
-    let text = std::fs::read_to_string(&p).map_err(|source| FixtureError::Io {
-        path: p.display().to_string(),
-        source,
-    })?;
-    serde_json::from_str(&text).map_err(|source| FixtureError::Json {
-        path: p.display().to_string(),
-        source,
-    })
+/// [`FixtureError`] if the key is unknown, is not a single-file row, is
+/// generated, or the file cannot be read.
+pub fn read(key: &str) -> Result<String, FixtureError> {
+    read_path(&single_file_path(key)?)
 }
 
-/// List fixtures in a directory (relative to the corpus root) with `ext`
-/// (without the dot; empty matches any file), sorted by name.
+/// Read a single-file fixture as JSON.
 ///
 /// # Errors
-/// [`FixtureError::Io`] if the directory cannot be read.
-pub fn list(rel_dir: &str, ext: &str) -> Result<Vec<Fixture>, FixtureError> {
-    let dir = path(rel_dir);
-    let mut out = Vec::new();
-    let entries = std::fs::read_dir(&dir).map_err(|source| FixtureError::Io {
+/// [`FixtureError`] on lookup, I/O, or parse failure.
+pub fn read_json(key: &str) -> Result<Value, FixtureError> {
+    let path = single_file_path(key)?;
+    let text = read_path(&path)?;
+    parse_json(&path, &text)
+}
+
+/// Read an owned (corrected) fixture (`owned:` row) as JSON. Like [`read_json`],
+/// but rejects a key whose source is not `owned:` so a suite cannot silently
+/// read a vendored file where a reviewed correction was intended.
+///
+/// # Errors
+/// [`FixtureError`] on lookup, wrong-source, I/O, or parse failure.
+pub fn owned_json(key: &str) -> Result<Value, FixtureError> {
+    match &entry(key)?.source {
+        Source::Owned { rel } => {
+            let path = owned_root().join(rel);
+            let text = read_path(&path)?;
+            parse_json(&path, &text)
+        }
+        Source::Corpus { .. } => Err(FixtureError::SourceKind {
+            key: key.to_owned(),
+            expected: "owned",
+            found: "corpus",
+        }),
+        Source::CorpusDir { .. } => Err(FixtureError::SourceKind {
+            key: key.to_owned(),
+            expected: "owned",
+            found: "corpus-dir",
+        }),
+        Source::Generated { author_fn } => Err(FixtureError::Generated {
+            key: key.to_owned(),
+            author_fn: author_fn.clone(),
+        }),
+    }
+}
+
+/// Read one named file inside a `corpus-dir:` row (e.g. a specific OPT under
+/// `template.valid`). `file` may name a subdirectory path (`nested/…`); it is
+/// rejected if it contains a `..` segment or is absolute, so it cannot escape
+/// the manifested directory.
+///
+/// # Errors
+/// [`FixtureError`] if the key is not a corpus-dir row, `file` escapes the
+/// directory, or the file cannot be read.
+pub fn read_from(dir_key: &str, file: &str) -> Result<String, FixtureError> {
+    let Source::CorpusDir { rel, .. } = &entry(dir_key)?.source else {
+        return Err(FixtureError::SourceKind {
+            key: dir_key.to_owned(),
+            expected: "corpus-dir",
+            found: source_label(&entry(dir_key)?.source),
+        });
+    };
+    let candidate = Path::new(file);
+    if candidate.is_absolute()
+        || candidate
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(FixtureError::PathEscape {
+            key: dir_key.to_owned(),
+            file: file.to_owned(),
+        });
+    }
+    read_path(&corpus_root().join(rel).join(candidate))
+}
+
+/// List the fixtures a `corpus-dir:` row names (respecting its extension filter
+/// and recursion flag), sorted by path.
+///
+/// # Errors
+/// [`FixtureError`] if the key is not a corpus-dir row or a directory cannot be
+/// read.
+pub fn list(key: &str) -> Result<Vec<Fixture>, FixtureError> {
+    match &entry(key)?.source {
+        Source::CorpusDir {
+            rel,
+            ext,
+            recursive,
+        } => {
+            let dir = corpus_root().join(rel);
+            let mut out = Vec::new();
+            if *recursive {
+                walk(&dir, ext, &mut out)?;
+            } else {
+                shallow(&dir, ext, &mut out)?;
+            }
+            out.sort_by(|a, b| a.path.cmp(&b.path));
+            Ok(out)
+        }
+        other => Err(FixtureError::SourceKind {
+            key: key.to_owned(),
+            expected: "corpus-dir",
+            found: source_label(other),
+        }),
+    }
+}
+
+fn source_label(source: &Source) -> &'static str {
+    match source {
+        Source::Owned { .. } => "owned",
+        Source::Corpus { .. } => "corpus",
+        Source::CorpusDir { .. } => "corpus-dir",
+        Source::Generated { .. } => "generated",
+    }
+}
+
+fn ext_matches(path: &Path, ext: &str) -> bool {
+    ext.is_empty() || path.extension().and_then(|e| e.to_str()) == Some(ext)
+}
+
+fn fixture_of(path: PathBuf) -> Fixture {
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or_default()
+        .to_owned();
+    Fixture { name, path }
+}
+
+fn shallow(dir: &Path, ext: &str, out: &mut Vec<Fixture>) -> Result<(), FixtureError> {
+    let entries = std::fs::read_dir(dir).map_err(|source| FixtureError::Io {
         path: dir.display().to_string(),
         source,
     })?;
-    for entry in entries.filter_map(Result::ok) {
-        let p = entry.path();
-        if !p.is_file() {
-            continue;
+    for de in entries.filter_map(Result::ok) {
+        let p = de.path();
+        if p.is_file() && ext_matches(&p, ext) {
+            out.push(fixture_of(p));
         }
-        if !ext.is_empty() && p.extension().and_then(|e| e.to_str()) != Some(ext) {
-            continue;
-        }
-        let name = p
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or_default()
-            .to_owned();
-        out.push(Fixture { name, path: p });
     }
-    out.sort_by(|a, b| a.name.cmp(&b.name));
-    Ok(out)
-}
-
-/// Recursively list fixtures under a directory (relative to the corpus root)
-/// with `ext` (empty matches any), sorted by path.
-///
-/// # Errors
-/// [`FixtureError::Io`] if a directory cannot be read.
-pub fn list_recursive(rel_dir: &str, ext: &str) -> Result<Vec<Fixture>, FixtureError> {
-    let mut out = Vec::new();
-    walk(&path(rel_dir), ext, &mut out)?;
-    out.sort_by(|a, b| a.path.cmp(&b.path));
-    Ok(out)
+    Ok(())
 }
 
 fn walk(dir: &Path, ext: &str, out: &mut Vec<Fixture>) -> Result<(), FixtureError> {
@@ -228,160 +363,160 @@ fn walk(dir: &Path, ext: &str, out: &mut Vec<Fixture>) -> Result<(), FixtureErro
         path: dir.display().to_string(),
         source,
     })?;
-    for entry in entries.filter_map(Result::ok) {
-        let p = entry.path();
+    for de in entries.filter_map(Result::ok) {
+        let p = de.path();
         if p.is_dir() {
             walk(&p, ext, out)?;
-        } else if p.is_file()
-            && (ext.is_empty() || p.extension().and_then(|e| e.to_str()) == Some(ext))
-        {
-            let name = p
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or_default()
-                .to_owned();
-            out.push(Fixture { name, path: p });
+        } else if p.is_file() && ext_matches(&p, ext) {
+            out.push(fixture_of(p));
         }
     }
     Ok(())
 }
 
-// ── Category accessors (the whole corpus) ────────────────────────────────────
+// ── Typed category accessors (thin wrappers over the manifest keys) ──────────
+// Each wrapper's key is a MANIFEST row; suites keep a stable vocabulary while
+// the manifest owns the provenance.
 
-/// Valid `EHR_STATUS` data sets (`ehr/valid/*.json`).
+/// Valid `EHR_STATUS` data sets (`ehr-status.valid`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn ehr_valid() -> Result<Vec<Fixture>, FixtureError> {
-    list("ehr/valid", "json")
+    list("ehr-status.valid")
 }
 
-/// Invalid `EHR_STATUS` data sets (`ehr/invalid/*.json`) — the negative path.
+/// Invalid `EHR_STATUS` data sets (`ehr-status.invalid`) — the negative path.
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn ehr_invalid() -> Result<Vec<Fixture>, FixtureError> {
-    list("ehr/invalid", "json")
+    list("ehr-status.invalid")
 }
 
-/// Canonical-JSON compositions (`compositions/CANONICAL_JSON/*.json`).
+/// Canonical-JSON compositions (`composition.canonical-json`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn compositions_canonical_json() -> Result<Vec<Fixture>, FixtureError> {
-    list("compositions/CANONICAL_JSON", "json")
+    list("composition.canonical-json")
 }
 
-/// Canonical-XML compositions (`compositions/CANONICAL_XML/*.xml`).
+/// Canonical-XML compositions (`composition.canonical-xml`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn compositions_canonical_xml() -> Result<Vec<Fixture>, FixtureError> {
-    list("compositions/CANONICAL_XML", "xml")
+    list("composition.canonical-xml")
 }
 
-/// Valid operational templates (`valid_templates/**/*.opt`).
+/// Valid operational templates (`template.valid`, `valid_templates/**/*.opt`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn opts_valid() -> Result<Vec<Fixture>, FixtureError> {
-    list_recursive("valid_templates", "opt")
+    list("template.valid")
 }
 
-/// Invalid operational templates (`invalid_templates/**`) — every class
-/// (`alien_tags`, `empty_file`, `multiple_elements`, `removed_mandatory_elements`,
-/// `removed_template_id`, nested, `minimal_persistent`).
+/// Invalid operational templates (`template.invalid`, every class under
+/// `invalid_templates/**`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn opts_invalid() -> Result<Vec<Fixture>, FixtureError> {
-    list_recursive("invalid_templates", "")
+    list("template.invalid")
 }
 
-/// Valid contributions (`contributions/valid/**/*.json`).
+/// Valid contributions (`contribution.valid`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn contributions_valid() -> Result<Vec<Fixture>, FixtureError> {
-    list_recursive("contributions/valid", "json")
+    list("contribution.valid")
 }
 
-/// Invalid contributions (`contributions/invalid/**/*.json`).
+/// Invalid contributions (`contribution.invalid`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn contributions_invalid() -> Result<Vec<Fixture>, FixtureError> {
-    list_recursive("contributions/invalid", "json")
+    list("contribution.invalid")
 }
 
-/// Directory (FOLDER) fixtures (`directory/*.json`).
+/// Directory (FOLDER) fixtures (`directory.folder`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn directory() -> Result<Vec<Fixture>, FixtureError> {
-    list("directory", "json")
+    list("directory.folder")
 }
 
-/// Directory update fixtures (`directory/update/*.json`).
+/// Directory update fixtures (`directory.update`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn directory_update() -> Result<Vec<Fixture>, FixtureError> {
-    list("directory/update", "json")
+    list("directory.update")
 }
 
-/// Valid AQL queries for a group (`query/aql_queries_valid/<group>/*.json`),
-/// `group` in `A`–`D`.
+/// Valid AQL queries for a group (`aql.valid.<group>`), `group` in `A`–`D`.
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn aql_valid(group: &str) -> Result<Vec<Fixture>, FixtureError> {
-    list(&format!("query/aql_queries_valid/{group}"), "json")
+    list(&format!("aql.valid.{}", group.to_ascii_lowercase()))
 }
 
-/// Invalid AQL queries for a group (`query/aql_queries_invalid/<group>/*.json`).
+/// Invalid AQL queries for a group (`aql.invalid.<group>`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn aql_invalid(group: &str) -> Result<Vec<Fixture>, FixtureError> {
-    list(&format!("query/aql_queries_invalid/{group}"), "json")
+    list(&format!("aql.invalid.{}", group.to_ascii_lowercase()))
 }
 
-/// Golden query results for a group under a DB state
-/// (`query/expected_results/<db>/<group>/*.json`), `db` in `empty_db`/`loaded_db`.
+/// Golden query results for a group under a DB state (`aql.golden.<db>.<group>`),
+/// `db` in `empty_db`/`loaded_db`.
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn aql_expected(db: &str, group: &str) -> Result<Vec<Fixture>, FixtureError> {
-    list(&format!("query/expected_results/{db}/{group}"), "json")
+    list(&golden_key(db, group))
 }
 
-/// AQL data-load compositions (`query/data_load/compositions/*.json`).
+/// AQL data-load compositions (`aql.data-load.compositions`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn aql_data_load_compositions() -> Result<Vec<Fixture>, FixtureError> {
-    list("query/data_load/compositions", "json")
+    list("aql.data-load.compositions")
 }
 
-/// AQL data-load EHRs (`query/data_load/ehrs/*.json`).
+/// AQL data-load EHRs (`aql.data-load.ehrs`, `EHR_STATUS` bodies).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn aql_data_load_ehrs() -> Result<Vec<Fixture>, FixtureError> {
-    list("query/data_load/ehrs", "json")
+    list("aql.data-load.ehrs")
 }
 
-/// Content-validation fixtures (`validation/*`).
+/// Content-validation fixtures (`validation.content`).
 ///
 /// # Errors
-/// [`FixtureError::Io`] on read failure.
+/// [`FixtureError`] on lookup or read failure.
 pub fn validation() -> Result<Vec<Fixture>, FixtureError> {
-    list("validation", "")
+    list("validation.content")
 }
 
-/// The AQL text (`q`) of a query fixture (`query/aql_queries_valid/<group>/…` or
-/// `…_invalid/…`). The `q` field is the query string the case executes.
+fn golden_key(db: &str, group: &str) -> String {
+    let db = db.replace('_', "-");
+    format!("aql.golden.{db}.{}", group.to_ascii_lowercase())
+}
+
+// ── AQL helpers (operate on Fixtures / manifest keys) ────────────────────────
+
+/// The AQL text (`q`) of a query fixture. The `q` field is the query string the
+/// case executes.
 ///
 /// # Errors
 /// [`FixtureError`] on I/O or parse failure, or if the fixture has no string
@@ -398,20 +533,20 @@ pub fn aql_text(fixture: &Fixture) -> Result<String, FixtureError> {
 }
 
 /// The golden `RESULT_SET` for a query in a DB state, matched by identical base
-/// name under `query/expected_results/<db>/<group>/<name>.json`. Returns `None`
-/// (not an error) when no golden exists for that query in that DB state — the
-/// corpus deliberately ships each query's golden in only the DB state(s) that
-/// apply to it (design §6).
+/// name among the `aql.golden.<db>.<group>` fixtures. Returns `None` (not an
+/// error) when no golden exists for that query in that DB state — the corpus
+/// deliberately ships each query's golden only in the DB state(s) that apply to
+/// it.
 ///
 /// # Errors
-/// [`FixtureError::Json`] if a golden file exists but is not valid JSON.
+/// [`FixtureError`] on lookup or if a golden file is not valid JSON.
 pub fn aql_golden(db: &str, group: &str, name: &str) -> Result<Option<Value>, FixtureError> {
-    let rel = format!("query/expected_results/{db}/{group}/{name}");
-    let p = path(&rel);
-    if !p.is_file() {
-        return Ok(None);
+    for fixture in list(&golden_key(db, group))? {
+        if fixture.name == name {
+            return fixture.json().map(Some);
+        }
     }
-    read_json(&rel).map(Some)
+    Ok(None)
 }
 
 /// Build a `serde_json::Error` carrying `msg` (for the typed `q`-missing case).
@@ -419,27 +554,25 @@ fn serde_de_error(msg: &str) -> serde_json::Error {
     <serde_json::Error as serde::de::Error>::custom(msg)
 }
 
-// ── FLAT→canonical conversion (design §4.5) ──────────────────────────────────
+// ── FLAT→canonical conversion ────────────────────────────────────────────────
 
 /// Convert a vendored FLAT (simSDT) instance into a canonical-JSON COMPOSITION,
 /// driven by its constraining OPT's `WebTemplate` — the **same** `from_flat`
-/// path the SUT's FLAT endpoint uses (`ehrbase-rest` `dispatch/flat.rs`), run
-/// deterministically in-harness so a content case whose only constraining
-/// template ships a FLAT instance (no canonical composition) becomes drivable
-/// without a double-commit (design §4.5, path *b*).
+/// path the SUT's FLAT endpoint uses, run deterministically in-harness so a
+/// content case whose only constraining template ships a FLAT instance (no
+/// canonical composition) becomes drivable without a double-commit.
 ///
-/// `opt_valid_rel` is `valid_templates/`-relative (matching
-/// [`crate::suites::support::ensure_opt`]); `flat_rel` is corpus-root-relative.
-/// The result is committable directly (the OPT is provisioned separately by the
-/// case), so storage↔API needs no translation.
+/// `opt_key` and `flat_key` are single-file manifest keys (`corpus:`/`owned:`);
+/// additional FLAT+OPT pairs are added as their own manifest rows. The result
+/// is committable directly (the OPT is provisioned separately by the case).
 ///
 /// # Errors
 /// [`FixtureError::Io`]/[`FixtureError::Json`] on fixture access, or
 /// [`FixtureError::Convert`] if the OPT does not parse, the `WebTemplate` cannot
 /// be built, or `from_flat` fails.
-pub fn flat_to_canonical(opt_valid_rel: &str, flat_rel: &str) -> Result<Value, FixtureError> {
-    let what = format!("valid_templates/{opt_valid_rel} + {flat_rel}");
-    let xml = read(&format!("valid_templates/{opt_valid_rel}"))?;
+pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, FixtureError> {
+    let what = format!("{opt_key} + {flat_key}");
+    let xml = read(opt_key)?;
     let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| FixtureError::Convert {
         what: what.clone(),
         detail: format!("opt14 parse: {e}"),
@@ -448,10 +581,11 @@ pub fn flat_to_canonical(opt_valid_rel: &str, flat_rel: &str) -> Result<Value, F
         what: what.clone(),
         detail: format!("build_web_template: {e}"),
     })?;
-    let flat_text = read(flat_rel)?;
+    let flat_path = single_file_path(flat_key)?;
+    let flat_text = read_path(&flat_path)?;
     let flat: serde_json::Map<String, Value> =
         serde_json::from_str(&flat_text).map_err(|source| FixtureError::Json {
-            path: flat_rel.to_owned(),
+            path: flat_path.display().to_string(),
             source,
         })?;
     openehr_flat::from_flat(&flat, &wt).map_err(|e| FixtureError::Convert {
@@ -460,7 +594,7 @@ pub fn flat_to_canonical(opt_valid_rel: &str, flat_rel: &str) -> Result<Value, F
     })
 }
 
-// ── RM-version adaptation overlay (§6) ───────────────────────────────────────
+// ── RM-version adaptation overlay ────────────────────────────────────────────
 
 /// Adapt a vendored `EHR_STATUS` (RM-1.0.x-era) into an RM-1.2.0-wire-valid one:
 /// inject the `_type` discriminators our canonical-JSON layer requires on
@@ -469,22 +603,24 @@ pub fn flat_to_canonical(opt_valid_rel: &str, flat_rel: &str) -> Result<Value, F
 /// EHR is addressable by subject.
 ///
 /// The adaptation is additive and never removes or contradicts a fixture value;
-/// applied only to the `valid/` set (a missing value that *is* the defect in an
-/// `invalid/` fixture is left untouched — those are posted verbatim).
+/// applied only to the `ehr-status.valid` set (a missing value that *is* the
+/// defect in an `ehr-status.invalid` fixture is left untouched — those are
+/// posted verbatim).
 ///
-// PORT NOTE: this is the design §6 fixture overlay, in code rather than a copied
-// file, so the vendored corpus stays read-only; the change (added `_type` tags +
-// unique subject) is recorded here as the provenance.
+// PORT NOTE: this is the fixture overlay in code rather than a copied file, so
+// the vendored corpus stays read-only; the change (added `_type` tags + unique
+// subject) is recorded here as the provenance. RM ehr master04 §EHR Status:
+// `EHR_STATUS.subject` is typed PARTY_SELF (monomorphic) — the subject identity
+// travels on PARTY_SELF.external_ref, never as a PARTY_IDENTIFIED.
 #[must_use]
 pub fn adapt_ehr_status(mut status: Value, namespace: &str, subject_id: &str) -> Value {
     if let Value::Object(map) = &mut status {
         map.entry("_type")
             .or_insert_with(|| Value::String("EHR_STATUS".to_owned()));
-        set_type(map.get_mut("name"), "DV_TEXT");
+        if let Some(name) = map.get_mut("name") {
+            set_type(name, "DV_TEXT");
+        }
         if let Some(Value::Object(subject)) = map.get_mut("subject") {
-            // RM ehr master04 §EHR Status: `EHR_STATUS.subject` is typed
-            // PARTY_SELF (monomorphic) — the subject identity travels on
-            // PARTY_SELF.external_ref, never as a PARTY_IDENTIFIED.
             subject
                 .entry("_type")
                 .or_insert_with(|| Value::String("PARTY_SELF".to_owned()));
@@ -505,9 +641,9 @@ pub fn adapt_ehr_status(mut status: Value, namespace: &str, subject_id: &str) ->
     status
 }
 
-/// Set `_type` on an optional object node if it is an object missing one.
-fn set_type(node: Option<&mut Value>, ty: &str) {
-    if let Some(Value::Object(obj)) = node {
+/// Set `_type` on an object node if it is an object missing one.
+fn set_type(node: &mut Value, ty: &str) {
+    if let Value::Object(obj) = node {
         obj.entry("_type")
             .or_insert_with(|| Value::String(ty.to_owned()));
     }
@@ -521,12 +657,12 @@ mod tests {
     fn the_whole_corpus_is_present_and_pinned() {
         // Pin the load-bearing categories so a re-vendor that drops fixtures
         // fails the build (the same guard discipline as the schedule inventory).
-        assert_eq!(ehr_valid().unwrap().len(), 7, "ehr/valid");
-        assert_eq!(ehr_invalid().unwrap().len(), 11, "ehr/invalid");
+        assert_eq!(ehr_valid().unwrap().len(), 7, "ehr-status.valid");
+        assert_eq!(ehr_invalid().unwrap().len(), 11, "ehr-status.invalid");
         assert_eq!(compositions_canonical_json().unwrap().len(), 10);
         assert_eq!(compositions_canonical_xml().unwrap().len(), 7);
-        assert_eq!(opts_valid().unwrap().len(), 32, "valid_templates/**/*.opt");
-        assert_eq!(opts_invalid().unwrap().len(), 21, "invalid_templates/**");
+        assert_eq!(opts_valid().unwrap().len(), 32, "template.valid");
+        assert_eq!(opts_invalid().unwrap().len(), 21, "template.invalid");
         assert_eq!(directory().unwrap().len(), 8);
         assert_eq!(directory_update().unwrap().len(), 3);
         assert_eq!(aql_valid("A").unwrap().len(), 31);
@@ -547,15 +683,53 @@ mod tests {
     }
 
     #[test]
+    fn list_on_single_file_key_is_rejected() {
+        assert!(matches!(
+            list("composition.all-types.vendored"),
+            Err(FixtureError::SourceKind {
+                found: "corpus",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn read_on_dir_key_is_rejected() {
+        assert!(matches!(
+            read("template.valid"),
+            Err(FixtureError::SourceKind {
+                found: "corpus-dir",
+                ..
+            })
+        ));
+    }
+
+    #[test]
+    fn generated_key_returns_marker_error() {
+        assert!(matches!(
+            read("content.author-opt"),
+            Err(FixtureError::Generated { .. })
+        ));
+    }
+
+    #[test]
+    fn read_from_reads_a_named_opt_and_rejects_escape() {
+        let opt = read_from("template.valid", "time_series/time_series.opt")
+            .expect("read time_series OPT via template.valid dir key");
+        assert!(opt.contains("template"), "OPT looks like XML");
+        assert!(matches!(
+            read_from("template.valid", "../../../etc/passwd"),
+            Err(FixtureError::PathEscape { .. })
+        ));
+    }
+
+    #[test]
     fn flat_to_canonical_time_series_yields_committable_quantity() {
-        // The `time_series` DV_QUANTITY (magnitude range [0,+inf), units mm3)
-        // ships ONLY as a FLAT instance — convert it via the same `from_flat`
-        // path the SUT uses and confirm the constrained leaf is addressable.
-        let comp = flat_to_canonical(
-            "time_series/time_series.opt",
-            "compositions/FLAT/time_series.en.v1_20211018103435_000001_1.xml.flat.json",
-        )
-        .expect("convert time_series FLAT");
+        // The `time_series` DV_QUANTITY ships ONLY as a FLAT instance — convert
+        // it via the same `from_flat` path the SUT uses and confirm the leaf is
+        // addressable. Keys are manifest rows.
+        let comp = flat_to_canonical("template.time-series.opt", "composition.flat.time-series")
+            .expect("convert time_series FLAT");
         assert_eq!(comp["_type"], "COMPOSITION");
         let mag = comp
             .pointer("/content/0/data/events/0/data/items/0/value/magnitude")
@@ -570,7 +744,7 @@ mod tests {
 
     #[test]
     fn adaptation_makes_subject_addressable_without_breaking_invalid() {
-        let raw = read_json("ehr/valid/000_ehr_status.json").unwrap();
+        let raw = read_json_by_name("ehr-status.valid", "000_ehr_status.json");
         let adapted = adapt_ehr_status(raw, "conformance", "subj-123");
         assert_eq!(adapted["subject"]["_type"], "PARTY_SELF");
         assert_eq!(
@@ -584,15 +758,26 @@ mod tests {
 
         // An invalid fixture missing its subject stays subject-less after
         // adaptation (the defect is preserved).
-        let invalid = read_json("ehr/invalid/001_ehr_status_subject_missing.json").unwrap();
+        let invalid =
+            read_json_by_name("ehr-status.invalid", "001_ehr_status_subject_missing.json");
         let adapted_invalid = adapt_ehr_status(invalid, "conformance", "x");
         assert!(adapted_invalid.get("subject").is_none());
     }
 
+    /// Read a specific JSON fixture by name from a corpus-dir key (test helper).
+    fn read_json_by_name(dir_key: &str, name: &str) -> Value {
+        list(dir_key)
+            .unwrap()
+            .into_iter()
+            .find(|f| f.name == name)
+            .unwrap_or_else(|| panic!("{dir_key}: no fixture {name}"))
+            .json()
+            .unwrap()
+    }
+
     /// The JSON path of the `at0003` INSTRUCTION-activity `DV_DATE` leaf that the
     /// `all_types` OPT constrains with the `yyyy-??-XX` `C_DATE` pattern (day
-    /// disallowed) — the single leaf the owned corrections change
-    /// (`testdata/fixtures/REGISTER.md`).
+    /// disallowed) — the single leaf the owned corrections change.
     const AT0003_DATE_PTR: &str =
         "/content/2/items/0/items/0/items/0/activities/0/description/items/0/value/value";
 
@@ -601,16 +786,9 @@ mod tests {
         // The negative case `val/dv-date-day-disallowed-pattern` commits the
         // owned invalid/ copy; it must stay a byte-faithful copy of the vendored
         // defective original so the defect it proves rejected is the real corpus
-        // fixture, not a divergent copy that could drift out from under the case.
-        let vendored = std::fs::read(path(
-            "query/data_load/compositions/all_types.composition.json",
-        ))
-        .expect("read vendored all_types");
-        let owned = std::fs::read(
-            PathBuf::from(OWNED_FIXTURES_ROOT)
-                .join("invalid/compositions/all_types.composition.json"),
-        )
-        .expect("read owned invalid all_types");
+        // fixture, not a divergent copy.
+        let vendored = read("composition.all-types.vendored").expect("vendored all_types");
+        let owned = read("owned.composition.all-types.invalid").expect("owned invalid all_types");
         assert_eq!(
             owned, vendored,
             "owned invalid/ copy diverged from the vendored original — re-copy it verbatim"
@@ -622,31 +800,31 @@ mod tests {
         // Each corrected fixture must differ from its vendored source at exactly
         // the at0003 DV_DATE leaf: truncating only that leaf on the vendored copy
         // must reproduce the owned corrected file, proving nothing else changed.
-        for (vendored_rel, owned_rel) in [
+        for (vendored_key, owned_key) in [
             (
-                "query/data_load/compositions/all_types.composition.json",
-                "valid/compositions/all_types.composition.json",
+                "composition.all-types.vendored",
+                "owned.composition.all-types.valid",
             ),
             (
-                "query/data_load/compositions/all_types_v2.composition.json",
-                "valid/compositions/all_types_v2.composition.json",
+                "composition.all-types-v2.vendored",
+                "owned.composition.all-types-v2.valid",
             ),
         ] {
-            let mut vendored = read_json(vendored_rel).unwrap();
-            let owned = owned_fixture(owned_rel).unwrap();
+            let mut vendored = read_json(vendored_key).unwrap();
+            let owned = owned_json(owned_key).unwrap();
             let full = vendored
                 .pointer(AT0003_DATE_PTR)
                 .and_then(Value::as_str)
-                .unwrap_or_else(|| panic!("{vendored_rel}: no at0003 DV_DATE leaf"))
+                .unwrap_or_else(|| panic!("{vendored_key}: no at0003 DV_DATE leaf"))
                 .to_owned();
             assert!(
                 full.len() > 7,
-                "{vendored_rel}: at0003 date should be a full yyyy-mm-dd"
+                "{vendored_key}: at0003 date should be a full yyyy-mm-dd"
             );
             *vendored.pointer_mut(AT0003_DATE_PTR).unwrap() = Value::String(full[..7].to_owned());
             assert_eq!(
                 vendored, owned,
-                "{owned_rel}: differs from its vendored source beyond the at0003 DV_DATE leaf"
+                "{owned_key}: differs from its vendored source beyond the at0003 DV_DATE leaf"
             );
         }
     }

@@ -220,7 +220,12 @@ pub(crate) async fn revision_history(
     Ok(json!({ "_type": "REVISION_HISTORY", "items": items }))
 }
 
-/// A `VERSIONED_OBJECT` for `vo_id` owned by `ehr_id`, including the mandatory
+/// A versioned-object wire body for `vo_id` owned by `ehr_id`, carrying the
+/// **concrete** RM `_type` (`rm_type`: `VERSIONED_COMPOSITION` /
+/// `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER` — RM ehr master04 defines the
+/// concrete bindings of `VERSIONED_OBJECT<T>`; the ITS-REST
+/// `200_VERSIONED_COMPOSITION` schema pins the discriminator to the concrete
+/// class, never the generic `VERSIONED_OBJECT`), including the mandatory
 /// `time_created` (1..1) — the commit time of the object's first version
 /// (`VERSIONED_OBJECT.time_created`, RM common master06 §Versioned Objects).
 ///
@@ -233,12 +238,13 @@ pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     ehr_id: Uuid,
+    rm_type: &str,
 ) -> Result<Value, ServiceError> {
     let time_created = crate::storage::version_repo::time_created(pool, vo_id)
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
     Ok(json!({
-        "_type": "VERSIONED_OBJECT",
+        "_type": rm_type,
         "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
         "owner_id": {
             "_type": "OBJECT_REF",

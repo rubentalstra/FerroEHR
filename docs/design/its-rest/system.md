@@ -123,7 +123,7 @@ The manifest should not out-claim the instrument. Options, in order of
 preference:
 
 1. **Report the highest profile the last committed ECC run obtained**
-   (CORE/STANDARD), read from the committed `docs/conformance/results.json`
+   (CORE/STANDARD), read from the committed `docs/conformance/ehrbase-rs/results.json`
    badge data at build time (a `build.rs` constant, like `git_sha`), so the
    manifest states a *measured* profile, never a hand-asserted one. Surface
    CORE too when both pass (e.g. `conformance_profile: "STANDARD"` with the

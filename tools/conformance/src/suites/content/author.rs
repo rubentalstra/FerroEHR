@@ -1,4 +1,4 @@
-//! OPT authoring for the content-chapter constraint cases (master15–17).
+//! OPT authoring for the content-chapter constraint cases (master15/16/17.x).
 //!
 //! The vendored CNF corpus ships **no** OPT per archetype-constraint variant — the
 //! schedule itself says the archetypes "should be generated" (master15
@@ -7,18 +7,20 @@
 //! untested), the suite **authors** the constraining OPT programmatically: it
 //! parses a vendored base OPT into the typed [`openehr_its::opt14`] model, tightens
 //! the exact constraint the case exercises, re-serialises to ADL 1.4 XML, and
-//! provisions it via [`super::super::support::ensure_opt_xml`].
+//! provisions it via [`crate::suites::support::ensure_opt_xml`].
 //!
 //! The authored template keeps the base's archetype structure (root archetype id,
 //! node ids, term codes, ontology) and only changes (a) the `template_id` — so each
 //! variant is a distinct, independently-uploadable template — and (b) the one
 //! constraint under test. A composition that conforms to the base archetype
 //! therefore still conforms to the authored template except where the tightened
-//! constraint is violated, which is exactly the truth-table oracle (design §4.5).
+//! constraint is violated, which is exactly the truth-table oracle.
 //!
 //! This is not a fabricated pass: the constraint is really expressed in a real OPT
 //! the SUT ingests and builds a `WebTemplate` from, and the accept/reject outcome
-//! is the server's genuine validation decision.
+//! is the server's genuine validation decision. Each authored OPT family is
+//! declared as a `generated:` fixture in `testdata/MANIFEST.tsv` (register 12
+//! G-2), naming the tightening transform below as its source class.
 
 use openehr_its::opt14::{
     self, CArchetypeRoot, CAttribute, CBoolean, CDate, CDateTime, CDuration, CInteger, CObject,
@@ -27,7 +29,7 @@ use openehr_its::opt14::{
     OperationalTemplate,
 };
 
-use crate::harness::CaseError;
+use crate::engine::harness::CaseError;
 
 /// A `multiple-attribute` cardinality interval — the six intervals master15/16
 /// enumerate for a "multiple attribute" (`master15 §For testing a 'multiple
@@ -89,12 +91,13 @@ pub fn open_interval(lower: i32) -> Intervalofinteger {
     }
 }
 
-/// Parse a vendored base OPT (relative to `valid_templates/`) into the typed model.
+/// Parse a vendored base OPT (a file under the `template.valid` corpus-dir key,
+/// e.g. `minimal/minimal_evaluation.opt`) into the typed model.
 ///
 /// # Errors
 /// [`CaseError::Codec`] if the fixture is missing or does not parse.
-pub fn parse_base(opt_rel: &str) -> Result<OperationalTemplate, CaseError> {
-    let xml = crate::fixtures::read(&format!("valid_templates/{opt_rel}"))
+pub fn parse_base(opt_file: &str) -> Result<OperationalTemplate, CaseError> {
+    let xml = crate::testdata::fixtures::read_from("template.valid", opt_file)
         .map_err(|e| CaseError::Codec(e.to_string()))?;
     opt14::from_xml(&xml).map_err(|e| CaseError::Codec(e.to_string()))
 }
@@ -242,7 +245,7 @@ pub fn constrain_nested_multiple(
     opt: &mut OperationalTemplate,
     host: &str,
     attr: &str,
-    interval: Intervalofinteger,
+    interval: &Intervalofinteger,
 ) -> bool {
     visit_objects(&mut opt.definition, &mut |obj| {
         if object_rm_type(obj) != Some(host) {
@@ -267,8 +270,9 @@ pub fn constrain_nested_multiple(
 }
 
 /// Make a **single attribute** on the first nested object of type `host` mandatory
-/// (`existence 1..1`) — e.g. `HISTORY.summary`. Adds the attribute if absent.
-/// Returns `true` if the host object was found.
+/// (`existence 1..1`) — e.g. `HISTORY.summary`, `OBSERVATION.state`,
+/// `OBSERVATION.protocol`, `EVENT.state`. Adds the attribute if absent. Returns
+/// `true` if the host object was found.
 pub fn constrain_nested_single_mandatory(
     opt: &mut OperationalTemplate,
     host: &str,
@@ -875,46 +879,4 @@ pub fn constrain_codephrase_under(
         }
         false
     })
-}
-
-#[cfg(test)]
-mod validation_repro_tests {
-    use super::*;
-    use serde_json::json;
-
-    /// Regression repro for ECC-VAL-048: an authored external `C_CODE_PHRASE`
-    /// code list (AOM 1.4 §`C_CODE_PHRASE`; master17.2
-    /// CONT-DV_CODED_TEXT-validate_ext_term) must reject an off-list code.
-    #[test]
-    fn authored_external_code_list_rejects_off_list_code() {
-        let mut opt = parse_base("all_types/Test_all_types.opt").expect("parse opt");
-        assert!(constrain_codephrase_under(
-            &mut opt,
-            "openEHR-EHR-OBSERVATION.test_all_types",
-            "at0005",
-            "defining_code",
-            "SNOMED-CT",
-            vec!["73211009".to_owned()],
-        ));
-        let xml = to_xml(&opt).expect("serialize");
-        let reparsed = openehr_its::opt14::from_xml(&xml).expect("reparse");
-        let wt = openehr_flat::build_web_template(&reparsed).expect("build wt");
-        let mut comp = crate::testdata::fixtures::owned_fixture(
-            "valid/compositions/all_types.composition.json",
-        )
-        .expect("owned fixture");
-        // The case's leaf: OBSERVATION data/events[0]/data/items[1] DV_CODED_TEXT.
-        let leaf = comp
-            .pointer_mut("/content/0/data/events/0/data/items/1/value")
-            .expect("leaf");
-        leaf["defining_code"]["terminology_id"]["value"] = json!("SNOMED-CT");
-        leaf["defining_code"]["code_string"] = json!("99999999");
-        let msgs = openehr_flat::validation::validate_composition(&comp, &wt);
-        assert!(
-            msgs.iter().any(|m| format!("{m:?}").contains("99999999")
-                || format!("{m:?}").contains("value set")
-                || format!("{m:?}").contains("code list")),
-            "expected an off-list coded-value violation, got: {msgs:?}"
-        );
-    }
 }

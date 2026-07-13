@@ -1,0 +1,102 @@
+# Own-corpus adjudications — committed reclassification of vendored-data defects
+# for OUR OWN baseline (register 07 §4 G-3; format documented in
+# `src/model/adjudication.rs`). Applied by the runner (`src/engine/run.rs`) to
+# every SUT, keyed by ECC id:
+#
+#   - corpus-dialect        → the vendored golden/query contradicts the pinned
+#                             spec; the runner SKIPS the case with the citation
+#                             (standing rule 3: the defective golden is never
+#                             edited, only adjudicated here).
+#   - spec-supersedes-corpus → the pinned spec's meaning replaces the corpus
+#                             expectation; the case RUNS against the
+#                             spec-derived expectation (documented here).
+#
+# The dedicated dialect cases are authored in `src/suites/query_golden.rs`
+# (`DIALECT_CASES`); each body asserts the spec-derived reject (4xx) so the case
+# is green whether or not the runner short-circuits it.
+#
+# ECC-id NOTE (fix-pass reconciliation): the QRY dialect cases are NEW slugs, so
+# their ECC numbers are allocated by `REGEN_CATALOG=1` in registry order after
+# the carried QRY-001..013. The ids below assume the allocation
+# QRY-015..QRY-024 (query.rs appends `qry/advanced-order-by-limit` = QRY-014
+# first, then query_golden.rs appends the ten dialect cases). Verify against
+# `inventory/ecc-catalog.tsv` after regeneration and correct any drift — a
+# mismatched key is a no-op (the corpus-dialect skip simply does not apply; the
+# case body still asserts the spec-derived reject and stays green).
+
+[meta]
+description = "Own-corpus adjudications: AQL golden-dialect defects (spec-cited)."
+
+# ── TIMEWINDOW: removed from the AQL 1.1 grammar → spec-supersedes-corpus ──────
+# The corpus classifies these `TIMEWINDOW` queries as valid; AQL 1.1 removed the
+# clause, so the spec-derived expectation is a 4xx rejection. The case RUNS
+# against that expectation (the runner does not skip spec-supersedes-corpus).
+
+[[entry]]
+ecc_id = "ECC-QRY-015"
+disposition = "spec-supersedes-corpus"
+reason = "Golden A/109 (get_ehrs_within_timewindow) uses TIMEWINDOW, removed from AQL 1.1; the query must be rejected (4xx), not diffed against its void golden."
+citation = "QUERY master00-amendment_record SPECQUERY-20 (remove TIMEWINDOW); CNF tests corpus aql_queries_valid/A/109_get_ehrs_within_timewindow.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-016"
+disposition = "spec-supersedes-corpus"
+reason = "Golden B/103 (get_compositions_within_timewindow) uses TIMEWINDOW, removed from AQL 1.1; the query must be rejected (4xx)."
+citation = "QUERY master00-amendment_record SPECQUERY-20 (remove TIMEWINDOW); CNF tests corpus aql_queries_valid/B/103_get_compositions_within_timewindow.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-017"
+disposition = "spec-supersedes-corpus"
+reason = "Golden C/103 (get_entries_within_timewindow) uses TIMEWINDOW, removed from AQL 1.1; the query must be rejected (4xx)."
+citation = "QUERY master00-amendment_record SPECQUERY-20 (remove TIMEWINDOW); CNF tests corpus aql_queries_valid/C/103_get_entries_within_timewindow.json"
+
+# ── LIMIT before ORDER BY: 2019-era corpus dialect → spec-supersedes-corpus ────
+# The AQL 1.1 grammar orders `orderByClause? limitClause?` (AqlParser.g4), so a
+# query placing LIMIT before ORDER BY is invalid AQL and the golden is defective.
+# Like the TIMEWINDOW family above, the spec-derived expectation REPLACES the
+# void golden: the dedicated dialect cases (`suites/query_golden.rs`
+# DIALECT_CASES) assert the 4xx rejection, so each case RUNS against that
+# spec-cited expectation — a skip would under-report exercised coverage. The
+# golden is never edited.
+
+[[entry]]
+ecc_id = "ECC-QRY-018"
+disposition = "spec-supersedes-corpus"
+reason = "Query A/107 (get_ehrs_top_5) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar (orderByClause? limitClause?), so the vendored golden is a 2019-dialect defect."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/A/107_get_ehrs_top_5.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-019"
+disposition = "spec-supersedes-corpus"
+reason = "Query A/110 (get_ehrs_top_5_orderby) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/A/110_get_ehrs_top_5_orderby.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-020"
+disposition = "spec-supersedes-corpus"
+reason = "Query B/104 (get_compositions_top_5_ordered_by_starttime_asc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/104_get_compositions_top_5_ordered_by_starttime_asc.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-021"
+disposition = "spec-supersedes-corpus"
+reason = "Query B/105 (get_compositions_top_5_ordered_by_starttime_desc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/105_get_compositions_top_5_ordered_by_starttime_desc.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-022"
+disposition = "spec-supersedes-corpus"
+reason = "Query B/106 (get_compositions_top_5_ordered_by_starttimevalue_asc) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/B/106_get_compositions_top_5_ordered_by_starttimevalue_asc.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-023"
+disposition = "spec-supersedes-corpus"
+reason = "Query D/312 (select_data_values_…_top_5) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/D/312_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5.json"
+
+[[entry]]
+ecc_id = "ECC-QRY-024"
+disposition = "spec-supersedes-corpus"
+reason = "Query D/313 (select_data_values_…_top_5_orderby) places LIMIT before ORDER BY; invalid under the AQL 1.1 grammar."
+citation = "QUERY AqlParser.g4 selectQuery (orderByClause? limitClause?); CNF tests corpus aql_queries_valid/D/313_select_data_values_from_all_ehrs_contains_composition_with_archetype_top_5_orderby.json"

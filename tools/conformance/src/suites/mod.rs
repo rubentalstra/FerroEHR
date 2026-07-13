@@ -1,50 +1,54 @@
-//! Our own ECC conformance cases, one module per catalogue area (design §4.1).
-//! The registry is assembled from [`entries`].
+//! The case universe, one module per schedule chapter (+ the cross-cutting
+//! profile capabilities), fresh-authored from the W-10 registers
+//! (`docs/design/conformance/01–13`). Every module exposes
+//! `entries() -> Vec<CaseEntry>`; [`entries`] aggregates them for the
+//! registry.
 //!
-//! Every case is a native ECC case with its own `<area>/<case>` slug, human
-//! title, declared [`crate::catalog::Area`], and spec citation — no legacy CNF
-//! ids, no runtime mapping to the frozen upstream corpus (that corpus was
-//! design-time reference reading only). Each module's cases cite the current
-//! pinned specifications (ITS-REST 1.0.3, RM 1.2.0, AM 1.4, AQL 1.1, SM) their
-//! assertions concretize; where a design-time reading of the old corpus is the
-//! only grounding, the citation records it as a reference.
+//! Authoring law (register 90): ids carried from the pre-W-10 instrument
+//! keep their slugs (the ECC number persists — baseline deltas stay
+//! per-case explainable); wire ids come ONLY from [`crate::wire`]; per-SUT
+//! facts from [`crate::engine::harness::RunContext::sut`]; edition-variant
+//! assertions through [`crate::engine::assert::status_ladder`] /
+//! [`crate::wire::headers`]; schedule data-set bounds declared via
+//! [`crate::engine::harness::DataSetReport::of_schedule_rows`].
 
-use crate::registry::CaseEntry;
+use crate::engine::registry::CaseEntry;
 
+pub mod admin;
+pub mod composition;
 pub mod content;
+pub mod contribution;
+pub mod definition_adl14;
+pub mod definition_query;
+pub mod demographic;
+pub mod directory;
+pub mod ehr;
+pub mod message;
+pub mod query;
+pub mod query_golden;
+pub mod security;
 pub mod signing;
 pub mod support;
+pub mod terminology;
 
-mod admin;
-mod composition;
-mod contribution;
-mod definition_adl14;
-mod definition_query;
-mod demographic;
-mod directory;
-mod ehr;
-mod message;
-mod query;
-mod security;
-mod terminology;
-
-/// All implemented case entries, in registration order.
+/// Every registered case, in suite order.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
-    let mut all = Vec::new();
-    all.extend(ehr::entries()); // master06
-    all.extend(composition::entries()); // master07
-    all.extend(contribution::entries()); // master08
-    all.extend(directory::entries()); // master09
-    all.extend(definition_adl14::entries()); // master04
-    all.extend(definition_query::entries()); // master05
-    all.extend(query::entries()); // master11
-    all.extend(admin::entries()); // master12 (OPTIONS)
-    all.extend(demographic::entries()); // master10 (OPTIONS)
-    all.extend(content::entries()); // master15/16/17.x
-    all.extend(signing::entries()); // runner-defined SIGN-* (§4.6)
-    all.extend(message::entries()); // master13 (SM-5 Messaging; native-API-only, skipped)
-    all.extend(terminology::entries()); // B4 (AQL TERMINOLOGY family + FHIR-tx)
-    all.extend(security::entries()); // SECURITY_TESTS/I_OAuth2 intent (auth 401/403 surface)
-    all
+    let mut out = Vec::new();
+    out.extend(ehr::entries());
+    out.extend(composition::entries());
+    out.extend(contribution::entries());
+    out.extend(directory::entries());
+    out.extend(definition_adl14::entries());
+    out.extend(definition_query::entries());
+    out.extend(query::entries());
+    out.extend(query_golden::entries());
+    out.extend(content::entries());
+    out.extend(demographic::entries());
+    out.extend(admin::entries());
+    out.extend(message::entries());
+    out.extend(security::entries());
+    out.extend(signing::entries());
+    out.extend(terminology::entries());
+    out
 }

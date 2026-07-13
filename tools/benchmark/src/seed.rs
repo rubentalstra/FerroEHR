@@ -8,15 +8,15 @@
 //! empty→1M ladder orchestration and its per-rung storage-footprint measurement
 //! (design §3.5) build on it.
 
-use conformance::fixtures;
 use conformance::harness::{AuthSlot, HttpRequest, Method};
+use conformance::testdata::fixtures;
 
 use crate::BenchError;
 use crate::target::Target;
 
 // The same large (64 KB) real composition the workload uses.
-const OPT_PATH: &str = "valid_templates/validation/composition_evaluation_test.opt";
-const COMPOSITION_PATH: &str = "compositions/CANONICAL_JSON/composition_evaluation_test__full.json";
+const OPT_FILE: &str = "validation/composition_evaluation_test.opt";
+const COMPOSITION_FILE: &str = "composition_evaluation_test__full.json";
 
 /// Seed `ehrs` EHRs, each with `comps_per_ehr` compositions of the nested
 /// template. Returns the number of compositions committed. Idempotent on the
@@ -26,8 +26,8 @@ const COMPOSITION_PATH: &str = "compositions/CANONICAL_JSON/composition_evaluati
 /// [`BenchError`] on a transport failure or an unexpected server response.
 pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64, BenchError> {
     ensure_template(target).await?;
-    let body =
-        fixtures::read_json(COMPOSITION_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let body = read_json_from("composition.canonical-json", COMPOSITION_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let body = body.to_string();
 
     let mut committed = 0u64;
@@ -42,7 +42,8 @@ pub async fn seed(target: &Target, ehrs: u32, comps_per_ehr: u32) -> Result<u64,
 }
 
 async fn ensure_template(target: &Target) -> Result<(), BenchError> {
-    let opt = fixtures::read(OPT_PATH).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let opt = fixtures::read_from("template.valid", OPT_FILE)
+        .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let req = HttpRequest::new(Method::Post, "/definition/template/adl1.4")
         .with_auth(AuthSlot::Regular)
         .header("content-type", "application/xml")
@@ -92,4 +93,17 @@ async fn commit_composition(target: &Target, ehr_id: &str, body: &str) -> Result
             resp.status
         )))
     }
+}
+
+/// Read + parse one JSON file inside a `corpus-dir` manifest row (the
+/// conformance fixture manifest governs every data-set access).
+pub(crate) fn read_json_from(
+    dir_key: &str,
+    file: &str,
+) -> Result<serde_json::Value, conformance::testdata::fixtures::FixtureError> {
+    let text = fixtures::read_from(dir_key, file)?;
+    serde_json::from_str(&text).map_err(|e| conformance::testdata::fixtures::FixtureError::Io {
+        path: format!("{dir_key}/{file}"),
+        source: std::io::Error::new(std::io::ErrorKind::InvalidData, e),
+    })
 }

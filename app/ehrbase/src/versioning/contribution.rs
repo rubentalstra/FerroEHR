@@ -79,10 +79,14 @@ fn classify(
     match code.as_str() {
         change_type::CREATION => {
             if has_preceding {
-                return Err(ServiceError::Unprocessable(
+                // A change-control mismatch, not content validation: ITS-REST
+                // scopes `400_CONTRIBUTION` to "the modification type does not
+                // match the operation" — a 400, never a 422.
+                return Err(ServiceError::BadRequest(
                     "change_type 249|creation| is invalid for an existing object \
                      (preceding_version_uid present); creation commits a new \
-                     VERSIONED_OBJECT (RM change_control §Contributions)"
+                     VERSIONED_OBJECT (RM change_control §Contributions; ITS-REST \
+                     contribution 400: modification type does not match)"
                         .to_owned(),
                 ));
             }
@@ -439,7 +443,8 @@ pub(crate) async fn commit_version_set(
         } = change
         {
             cx.pre_composition_modify(&mut tx, *vo_id, canonical)
-                .await?;
+                .await
+                .map_err(body_target_not_found_is_bad_request)?;
         }
     }
     let (contribution_id, committed) = change::commit_contribution(
@@ -451,7 +456,8 @@ pub(crate) async fn commit_version_set(
         attests,
         &cx.signing_ctx(),
     )
-    .await?;
+    .await
+    .map_err(body_target_not_found_is_bad_request)?;
     // Keep the EHR's promoted subject columns in sync after each committed
     // EHR_STATUS version (one EHR per subject — RM ehr master04 §EHR Status).
     if let Some(ehr_id) = ehr_id {
@@ -519,11 +525,22 @@ async fn reject_duplicate_singleton(
     Ok(())
 }
 
-/// The stored kind of an existing object, or `NotFound`.
+/// The stored kind of an existing object. Every caller resolves a
+/// **body-referenced** target (`preceding_version_uid` of a
+/// modification/deletion/attestation item), so a missing object is the
+/// `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
+/// declares `404` only for an unknown `ehr_id` (the URI resource), never for
+/// content the committed CONTRIBUTION refers to.
 async fn require_kind(pool: &sqlx::PgPool, vo_id: Uuid) -> Result<Kind, ServiceError> {
     revision_history::object_kind(pool, vo_id)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))
+        .ok_or_else(|| {
+            ServiceError::BadRequest(format!(
+                "modification target does not exist: versioned object {vo_id} \
+                 (ITS-REST contribution 400 — the modification does not match \
+                 a stored object)"
+            ))
+        })
 }
 
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the
@@ -780,6 +797,22 @@ async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: Uuid) -> Result<(), Serv
     }
 }
 
+/// Inside a CONTRIBUTION commit the modification/deletion target is
+/// **body-referenced** (`preceding_version_uid`), not the request URI: the
+/// ITS-REST `contribution_create` operation declares `404` only for an
+/// unknown `ehr_id` (the URI resource), so a missing target versioned object
+/// is a change-control mismatch in the committed content — the
+/// `400_CONTRIBUTION` scope — never a 404.
+fn body_target_not_found_is_bad_request(e: ServiceError) -> ServiceError {
+    match e {
+        ServiceError::NotFound(m) => ServiceError::BadRequest(format!(
+            "modification target does not exist: {m} (ITS-REST contribution 400 — \
+             the modification does not match a stored object)"
+        )),
+        other => other,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -815,7 +848,9 @@ mod tests {
 
     #[test]
     fn classify_rejects_spec_invalid_combinations() {
-        assert!(classify_err(Some("249"), true, true).contains("249|creation|"));
+        // creation with a preceding version is a change-control mismatch —
+        // the ITS-REST `400_CONTRIBUTION` scope, not content validation.
+        assert!(classify_bad_request(Some("249"), true, true).contains("249|creation|"));
         assert!(classify_err(Some("250"), false, true).contains("preceding_version_uid"));
         assert!(classify_err(Some("523"), true, true).contains("must not carry data"));
         assert!(classify_err(Some("523"), false, false).contains("preceding_version_uid"));

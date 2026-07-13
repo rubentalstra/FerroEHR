@@ -918,10 +918,10 @@ mod tests {
     async fn respond_rm_renders_versioned_object_xml() {
         // F-05-06 / ECC-COM-022: the VERSIONED_OBJECT container serves as XML.
         use http_body_util::BodyExt;
-        use openehr_rm::prelude::VersionedObjectData;
+        use openehr_rm::prelude::VersionedComposition;
 
         let value = serde_json::json!({
-            "_type": "VERSIONED_OBJECT",
+            "_type": "VERSIONED_COMPOSITION",
             "uid": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" },
             "owner_id": {
                 "_type": "OBJECT_REF", "namespace": "local", "type": "EHR",
@@ -931,7 +931,7 @@ mod tests {
         });
         let h = headers(&[("accept", "application/xml")]);
         let resp =
-            respond_rm::<VersionedObjectData>(&h, StatusCode::OK, &value, "versioned_composition");
+            respond_rm::<VersionedComposition>(&h, StatusCode::OK, &value, "versioned_composition");
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(content_type(&resp).as_deref(), Some(APPLICATION_XML));
         let bytes = resp.into_body().collect().await.expect("body").to_bytes();

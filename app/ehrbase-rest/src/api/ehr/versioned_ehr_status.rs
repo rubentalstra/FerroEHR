@@ -14,7 +14,7 @@ use openehr_its::rest::generated::ehr::{
     VersionedEhrStatusVersionGetAtTimeParams, VersionedEhrStatusVersionGetByIdParams,
 };
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::prelude::{EhrStatus, OriginalVersion, RevisionHistory, VersionedObjectData};
+use openehr_rm::prelude::{EhrStatus, OriginalVersion, RevisionHistory, VersionedEhrStatus};
 
 use ehrbase_sm::Platform;
 
@@ -41,8 +41,8 @@ pub(super) async fn run<S: Platform>(
             let body = state.backend().get_versioned_ehr_status(ehr_id).await?;
             // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06:
             // ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
-            // `ToXml` for `VersionedObjectData` serves it).
-            Ok(negotiate::respond_rm::<VersionedObjectData>(
+            // `ToXml` for the concrete `VERSIONED_*` class serves it).
+            Ok(negotiate::respond_rm::<VersionedEhrStatus>(
                 h,
                 ok,
                 &body,

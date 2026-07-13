@@ -9,8 +9,8 @@
 
 use serde_json::Value;
 
-use crate::case::Compare;
-use crate::harness::{CaseError, HttpResponse};
+use crate::engine::harness::{CaseError, HttpResponse};
+use crate::model::case::Compare;
 
 /// The default ignore-set for [`Compare::IgnoreSet`]: the RM `_type` discriminator
 /// (present on our RM 1.2.0 output, often absent from RM-1.0.x-era fixtures) plus
@@ -83,6 +83,8 @@ pub fn compare(mode: Compare, expected: &Value, actual: &Value) -> Result<(), Ca
         Compare::Exact => exact(expected, actual),
         Compare::Superset => superset(expected, actual),
         Compare::IgnoreSet => ignore_set(expected, actual, DEFAULT_IGNORE_KEYS),
+        // A status/header-only case has no content comparison to make.
+        Compare::None => true,
     };
     if ok {
         Ok(())
@@ -144,6 +146,63 @@ fn truncate(s: &str, max: usize) -> String {
         end -= 1;
     }
     format!("{}…", &s[..end])
+}
+
+/// Assert the response status against an **edition ladder**: `(rung, code)`
+/// pairs ordered newest→oldest (register 90 §4). The newest matching rung is
+/// recorded on the context's [`EditionRecorder`] and returned; under a
+/// [`EditionPolicy::Pinned`] policy a lower-rung match is a failure (the
+/// ladder must never mask drift in the pinned SUT). No rung matching is the
+/// normative failure and names every rung tried.
+///
+/// # Errors
+/// [`CaseError::Assertion`] when no rung matches, or when the matched rung is
+/// below the pinned edition.
+pub fn status_ladder(
+    ctx: &crate::engine::harness::RunContext<'_>,
+    response: &HttpResponse,
+    rungs: &[(crate::edition::Edition, u16)],
+    what: &str,
+) -> Result<crate::edition::Edition, CaseError> {
+    for (edition, code) in rungs {
+        if response.status == *code {
+            match ctx.edition_policy.accept(*edition) {
+                Ok(accepted) => {
+                    ctx.edition.note(
+                        accepted,
+                        format!("{what}: status {code} ({})", accepted.label()),
+                    );
+                    return Ok(accepted);
+                }
+                Err(pinned) => {
+                    return Err(CaseError::Assertion(format!(
+                        "{what}: status {} matches the {} edition form, but the run is pinned to {} \
+                         (expected {})",
+                        response.status,
+                        edition.label(),
+                        pinned.label(),
+                        rungs
+                            .iter()
+                            .find(|(e, _)| *e == pinned)
+                            .map_or_else(|| "n/a".to_owned(), |(_, c)| c.to_string()),
+                    )));
+                }
+            }
+        }
+    }
+    let tried = rungs
+        .iter()
+        .map(|(e, c)| format!("{}={c}", e.label()))
+        .collect::<Vec<_>>()
+        .join(", ");
+    Err(CaseError::Assertion(format!(
+        "{what}: status {} matches no supported edition form (tried {tried}); body: {}",
+        response.status,
+        String::from_utf8_lossy(&response.body)
+            .chars()
+            .take(300)
+            .collect::<String>()
+    )))
 }
 
 #[cfg(test)]

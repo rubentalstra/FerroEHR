@@ -37,8 +37,12 @@ an ADR is needed).
    - **Decision** — the actual choice, stated as a single clear sentence
      first, then supporting detail.
    - **Consequences** — what this makes easier, what it makes harder, and
-     any follow-up task it creates (e.g. "restoration is Stage 2, see
-     Section 11").
+     any follow-up task it creates (filed in `docs/plans/WORKLIST.md` or the
+     owning phase file).
+   - **Remember the citation rule:** ADRs are decision history only — code,
+     schema comments, and PORT NOTEs must cite openEHR spec sections, never
+     `ADR-NNN` (owner hard rule; spec-adherence.md). Write the ADR so the
+     spec citations it contains can be lifted straight into the code.
 4. **Do not invent a decision that was not actually made.** If the
    conversation has not settled on a choice yet, say so and ask, rather than
    writing an ADR that only records one option.

@@ -1,35 +1,54 @@
 ---
 name: run-conformance
 description: >
-  Runs the openEHR conformance suite (scripts/conformance.sh) — the CNF
-  platform test schedule plus the corpus suites — against the Rust server
-  (ADR-008 acceptance instrument). Use when the user asks to check
-  conformance, run the conformance suite, or verify spec compliance.
+  Runs the ECC conformance suite (scripts/conformance.sh) — our own
+  conformance framework and the ADR-008 acceptance instrument — against the
+  Docker-composed server (or any BYO SUT). Use when the user asks to check
+  conformance, run the conformance/ECC suite, verify spec compliance, or at
+  phase close for the zero-drift gate.
 allowed-tools: [Read, Bash]
-argument-hint: "[api-group-or-test-filter]"
+argument-hint: "[area-or-case-filter | --sut byo --base-url <url>]"
 ---
 
 # /run-conformance
 
-Runs `scripts/conformance.sh` (built out from P12 smoke coverage to the full
-CNF Platform Conformance Test Schedule at P19).
+Runs the **ECC suite** (`tools/conformance`) via `scripts/conformance.sh` —
+compose up --build → full catalogue → reports under
+`docs/conformance/<sut>/` (our server: `docs/conformance/ehrbase-rs/`).
+Rewritten 2026-07-13 for the multi-SUT instrument (w10).
+
+## Ground rules (before touching anything)
+
+- ECC is **our own framework**: own case ids (`ECC-*`), own generated data
+  sets, spec-derived expectations (`tools/conformance/CLAUDE.md`). The
+  upstream CNF Robot suites are reference text, never the instrument.
+- **Never weaken a case to pass.** A failing case against our server is a
+  correct instrument outcome; corpus/golden defects go through the
+  adjudication registers (`tools/conformance/adjudications/`,
+  skip-with-reason) — never through editing the case.
+- Profile verdicts (CORE/STANDARD/OPTIONS) are **machine-computed** by the
+  runner; never hand-assert them anywhere.
 
 ## Steps
 
-1. Confirm `scripts/conformance.sh` exists; if not, report that conformance
-   wiring starts at P12 (see `docs/plans/phase-19-conformance-parity.md`).
-2. Run it (optionally with the given filter), with the server under test
-   built from the current tree.
-3. Report failures grouped by API group / test case, with the spec clause
-   each failing case asserts. Never weaken a test to pass (testing.md).
-
-## The CNF source of truth (vendored)
-
-The schedule the runner implements is vendored in-repo:
-`docs/specs/openehr/CNF/docs/platform_test_schedule/` (the test-case
-definitions, per API group + per data type) and
-`docs/specs/openehr/CNF/tests/platform/robot/` (the executable upstream Robot
-suites + fixtures: `.opt` templates, canonical JSON/XML payloads). When a
-conformance failure needs diagnosis — or the runner doesn't cover an area
-yet — read the matching test case there and the spec section it cites; fix
-the server, never the expectation.
+1. **Preflight:** Docker available (`docker info`); no conflicting compose
+   stack already running. The runner always drives a deployed SUT over HTTP
+   — there is no in-process mode (owner ruling).
+2. **Run.** Default (our server, from the current tree):
+   ```bash
+   bash scripts/conformance.sh          # optionally: <area-or-case-filter>
+   ```
+   Foreign/BYO SUT (the X1 comparison path): `CONF_SUT=ehrbase-java` or
+   `--sut byo --base-url <url>` per the runner's CLI — the fairness
+   adjudication register applies to foreign SUTs only.
+3. **Compare against the committed baseline**
+   (`docs/conformance/ehrbase-rs/results.json`): the only permitted delta is
+   newly-green cases — **zero drift** (blueprint §4 rule 4). Report:
+   executed / passed / failed / adjudicated-skip counts, the machine
+   verdicts, and any drift case-by-case.
+4. **Diagnose failures** from the case's own citation + schedule trace
+   (every ECC case carries them): read the cited
+   `docs/specs/openehr/...` section, then fix the **server** — or, for a
+   genuine corpus/instrument defect, file an adjudication with its reason.
+5. **At phase close:** the ratcheted results + report + badges under
+   `docs/conformance/` are committed with the phase.
