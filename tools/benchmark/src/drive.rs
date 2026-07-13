@@ -161,6 +161,11 @@ pub struct DriveOutcome {
     pub rps: f64,
     /// Fraction of requests that errored (`errors / (requests + errors)`).
     pub error_rate: f64,
+    /// The worst dispatcher lag behind the planned schedule (how late an op
+    /// was SENT vs its planned time). When this grows past ~1s the load
+    /// generator — not the SUT — is the bottleneck and the step is
+    /// generator-bound; the knee report flags it.
+    pub max_dispatch_lag_ms: u64,
     /// `template_id`s the SUT refused to provision, with the observed status.
     pub excluded_templates: Vec<String>,
 }
@@ -187,6 +192,31 @@ struct Sample {
     completion: Option<Duration>,
 }
 
+/// Provision every template the workload declares (both packs), from its
+/// vendored OPT XML. A SUT that rejects an upload has that template's kind
+/// recorded as excluded; its scheduled ops are skipped (and counted) at
+/// dispatch rather than dropped one-by-one as errors — the fairness note in
+/// the report carries the exclusions.
+async fn provision_templates(
+    client: &SutClient,
+    provisioning: &[TemplateKind],
+) -> Result<(HashSet<TemplateKind>, Vec<(TemplateKind, u16)>), BenchError> {
+    let mut excluded_kinds: HashSet<TemplateKind> = HashSet::new();
+    let mut failures: Vec<(TemplateKind, u16)> = Vec::new();
+    for kind in provisioning {
+        let xml = template_opt_xml(*kind)?;
+        if let Some(status) = upload_opt_xml(client, &xml).await {
+            excluded_kinds.insert(*kind);
+            failures.push((*kind, status));
+            eprintln!(
+                "bench: SUT rejected template `{}` upload (HTTP {status}) — its ops are excluded from this run",
+                template_id_of(*kind)
+            );
+        }
+    }
+    Ok((excluded_kinds, failures))
+}
+
 /// Provision the workload's templates, dispatch its open-loop schedule against
 /// the SUT, and return the populated recorder + throughput accounting.
 ///
@@ -206,23 +236,7 @@ pub async fn drive(
 ) -> Result<DriveOutcome, BenchError> {
     recorder.set_warmup(workload.warmup);
 
-    // Provision every template the workload declares (both packs), from its
-    // vendored OPT XML. A SUT that rejects an upload has that template's kind
-    // recorded as excluded; its scheduled ops are skipped (and counted) at
-    // dispatch rather than dropped one-by-one as errors — fairness note below.
-    let mut excluded_kinds: HashSet<TemplateKind> = HashSet::new();
-    let mut failures: Vec<(TemplateKind, u16)> = Vec::new();
-    for kind in &workload.provisioning {
-        let xml = template_opt_xml(*kind)?;
-        if let Some(status) = upload_opt_xml(client, &xml).await {
-            excluded_kinds.insert(*kind);
-            failures.push((*kind, status));
-            eprintln!(
-                "bench: SUT rejected template `{}` upload (HTTP {status}) — its ops are excluded from this run",
-                template_id_of(*kind)
-            );
-        }
-    }
+    let (excluded_kinds, failures) = provision_templates(client, &workload.provisioning).await?;
 
     // The collector owns the recorder and folds samples in on a single task, so
     // the recorder needs no interior mutability under the concurrent dispatch.
@@ -251,6 +265,7 @@ pub async fn drive(
     // excluded op leaves every later op's planned dispatch time unchanged.
     let mut skipped: HashMap<TemplateKind, u64> = HashMap::new();
 
+    let mut max_dispatch_lag = std::time::Duration::ZERO;
     for op in ops {
         if let Some(template) = action_template(&op.action)
             && excluded_kinds.contains(&template)
@@ -259,6 +274,13 @@ pub async fn drive(
             continue;
         }
         tokio::time::sleep_until(run_start + op.at).await;
+        // How late the SEND is vs plan — generator-side pressure, not SUT
+        // latency (CO correction measures the SUT against the plan anyway;
+        // this tells us when the plan itself became unkeepable).
+        let lag = run_start.elapsed().saturating_sub(op.at);
+        if lag > max_dispatch_lag {
+            max_dispatch_lag = lag;
+        }
         let client = client.clone();
         let runtime = Arc::clone(&runtime);
         let tx = tx.clone();
@@ -320,6 +342,7 @@ pub async fn drive(
         errors,
         rps,
         error_rate,
+        max_dispatch_lag_ms: u64::try_from(max_dispatch_lag.as_millis()).unwrap_or(u64::MAX),
         excluded_templates,
     })
 }
