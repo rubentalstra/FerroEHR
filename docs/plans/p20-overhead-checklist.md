@@ -165,7 +165,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
 - [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
       pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
       applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
-- [ ] **24. AQL ehr_id predicate is text-cast + duplicated is_queryable
+- [x] **24. AQL ehr_id predicate is text-cast + duplicated is_queryable
       guards (LIVE evidence, owner-captured server logs during T5 L=16: the
       patient-dashboard query runs 1.0–1.3 s under load DESPITE the promoted
       ORDER BY)**: the generator lowers `e/ehr_id/value = '…'` as
@@ -178,7 +178,9 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       `n1.ehr_id`, once against `e0.id`) and each scans every current
       EHR_STATUS row per query — dedupe to one guard and give it an
       index-served shape. Generator work (orchestrator) queued behind the
-      in-flight item-9 agent to avoid a file collision.
+      in-flight item-9 agent to avoid a file collision. **DONE 9ffd16abd**
+      (uuid-typed equality = BASE master05 identifier semantics; one
+      correlated EXISTS gate per join-connected component).
 - [ ] **23. Bench-profile tracing filter** (from F14): confirm the composed
       server's log level; filter `tower_http::trace` spans out of the
       benchmark profile if enabled.
@@ -191,7 +193,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       COMPARISON refreshed with whatever the numbers say. No number is
       claimed from this checklist without it.
 
-- [ ] **25. Benchmark reporting: RPS + TPM (owner, 2026-07-14).** Not a
+- [x] **25. Benchmark reporting: RPS + TPM (owner, 2026-07-14).** Not a
       rewrite — a reporting addition. (a) Dual-unit display: every published
       throughput figure shows requests/minute beside requests/second (same
       measurement, friendlier unit). (b) The true TPC-style metric:
@@ -199,7 +201,9 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       round, lab batch, discharge…) is a multi-request business transaction;
       the driver counts an event completed only when ALL its steps
       succeeded, and REPORT/COMPARISON/knee tables carry events/min per
-      class + total alongside req/s.
+      class + total alongside req/s. **DONE 1b1162ad6 (25a) + 80c93a475
+      (25b — all-steps-success completion rule, warmup by the last step's
+      planned send, wins-ledger row).**
 
 ## Considered and deferred
 
