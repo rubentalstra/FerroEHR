@@ -253,6 +253,35 @@ pub async fn probe_storage(db: &DbAccess) -> Option<u64> {
     String::from_utf8_lossy(&output.stdout).trim().parse().ok()
 }
 
+/// Pay the database's maintenance debt outside the measured windows: seeding
+/// (and each rung's writes) accumulates dead tuples and analyze debt, and
+/// autovacuum's threshold then fires DURING a later window — a multi-minute,
+/// multi-core VACUUM/ANALYZE of the jsonb-heavy `node` table was observed
+/// saturating PostgreSQL mid-rung (2026-07-14: the `L=16` rung breached the SLO
+/// while `last_autovacuum` on 1.19M `node` rows landed inside its window; the
+/// first post-vacuum rung ran clean at 73 ms p99). Running `VACUUM ANALYZE`
+/// deterministically after seeding and in each inter-rung drain moves that
+/// work outside every measured window, identically for every SUT (fairness).
+/// Returns `false` when `docker exec`/`psql` is unavailable (BYO) — the
+/// caller logs the gap honestly instead of pretending the state is settled.
+pub async fn settle_maintenance(db: &DbAccess) -> bool {
+    let output = Command::new("docker")
+        .args([
+            "exec",
+            &db.container,
+            "psql",
+            "-U",
+            &db.user,
+            "-d",
+            &db.db,
+            "-Atc",
+            "VACUUM ANALYZE",
+        ])
+        .output()
+        .await;
+    matches!(output, Ok(o) if o.status.success())
+}
+
 #[cfg(test)]
 mod tests {
     // The expected-value arithmetic mirrors the parser's own byte casts.
