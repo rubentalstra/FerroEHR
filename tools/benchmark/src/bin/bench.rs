@@ -429,6 +429,26 @@ async fn sut_answers(client: &SutClient) -> bool {
     client.send(req).await.is_ok()
 }
 
+/// Settle the SUT database's maintenance debt (`VACUUM ANALYZE`) outside the
+/// measured windows — see [`sample::settle_maintenance`] for the observed
+/// mid-rung autovacuum storm this prevents. Logs honestly when no db handle
+/// is available (BYO) instead of pretending the state is settled.
+async fn settle_db(db: Option<&DbAccess>, phase: &str) {
+    match db {
+        Some(db) => {
+            eprintln!("bench: settling db maintenance ({phase}: VACUUM ANALYZE) …");
+            if !sample::settle_maintenance(db).await {
+                eprintln!(
+                    "bench: {phase} VACUUM ANALYZE failed — autovacuum may land in a measured window"
+                );
+            }
+        }
+        None => eprintln!(
+            "bench: no db container configured — {phase} maintenance not settled (autovacuum may land in a measured window)"
+        ),
+    }
+}
+
 /// Wait for the SUT to drain its in-flight backlog between ladder steps. A
 /// breached step leaves hundreds of admitted requests still queued on the
 /// server (each may wait out the SUT's full DB-pool acquire timeout), so the
@@ -782,6 +802,13 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
         return 2;
     }
 
+    // The db handle for maintenance settling (compose-managed db only).
+    let db_access = args.db_container.as_ref().map(|container| DbAccess {
+        container: container.clone(),
+        user: args.db_user.clone(),
+        db: args.db_name.clone(),
+    });
+
     // Provision + seed happen ONCE: seeding here, provisioning on the first
     // drive (re-applied idempotently at each later step).
     if !args.no_seed && scale.compositions() > 0 {
@@ -791,6 +818,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             return 2;
         }
     }
+    settle_db(db_access.as_ref(), "post-seed").await;
 
     let step_window = Duration::from_secs(args.step_window);
     let warmup = Duration::from_secs(args.warmup);
@@ -804,10 +832,14 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
     let mut step_index: usize = 0;
     while let Some(load_factor) = queue.pop_front() {
         // Let the previous rung's in-flight backlog drain before opening the
-        // next window (see drain_settle) — the first rung starts clean.
+        // next window (see drain_settle), then settle the database's
+        // maintenance debt (see sample::settle_maintenance) — no measured
+        // window absorbs the previous rung's autovacuum. The first rung
+        // starts clean (the post-seed settle above).
         if step_index > 0 {
             eprintln!("bench: draining the SUT before L={load_factor} …");
             drain_settle(&transport).await;
+            settle_db(db_access.as_ref(), "inter-rung").await;
         }
         let spec = WorkloadSpec {
             profile: Profile::Hour,
