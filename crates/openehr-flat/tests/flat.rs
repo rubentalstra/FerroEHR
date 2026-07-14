@@ -451,3 +451,115 @@ fn terse_coded_text_parses() {
         "the terse and regular coded forms build the identical RM"
     );
 }
+
+// ── persistent-Composition context (finding 3) ──────────────────────────────────
+//
+// `COMPOSITION.context` is optional (0..1). A `431|persistent|` Composition
+// idiomatically carries NO Event context (RM ehr
+// `master05-composition_package.adoc` §"Persistent Compositions may optionally
+// have an Event context" — the pre-1.0.4 invariant forbidding it was removed by
+// SPECRM-52). `from_flat` must therefore NOT fabricate a default Event context
+// for a persistent Composition that carried none, while still preserving one the
+// caller explicitly supplied (participations / location / facility / end_time),
+// and while still building the mandatory context for an event Composition.
+
+const CNF_CORPUS: &str =
+    "../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets";
+
+fn persistent_wt() -> WebTemplate {
+    let opt_xml = std::fs::read_to_string(format!(
+        "{CNF_CORPUS}/valid_templates/minimal_persistent/persistent_minimal.opt"
+    ))
+    .unwrap_or_else(|e| panic!("read persistent OPT: {e}"));
+    let opt = opt14::from_xml(&opt_xml).unwrap_or_else(|e| panic!("parse OPT: {e}"));
+    build_web_template(&opt).unwrap_or_else(|e| panic!("build WT: {e}"))
+}
+
+#[test]
+fn persistent_composition_round_trip_synthesises_no_context() {
+    // The vendored canonical persistent Composition has category 431 and no
+    // context — exactly the varier's decompose→reassemble scenario.
+    let comp: Value = serde_json::from_str(
+        &std::fs::read_to_string(format!(
+            "{CNF_CORPUS}/compositions/CANONICAL_JSON/persistent_minimal.en.v1__full.json"
+        ))
+        .expect("read persistent composition"),
+    )
+    .expect("parse composition");
+    assert_eq!(
+        comp.pointer("/category/defining_code/code_string"),
+        Some(&Value::String("431".to_owned())),
+        "fixture is persistent"
+    );
+    assert!(comp.get("context").is_none(), "fixture carries no context");
+
+    let wt = persistent_wt();
+    let flat = to_flat(&comp, &wt).expect("to_flat");
+    let rebuilt = from_flat(&to_map(&flat), &wt).expect("from_flat");
+    assert_eq!(
+        rebuilt.pointer("/category/defining_code/code_string"),
+        Some(&Value::String("431".to_owned())),
+        "category preserved as persistent"
+    );
+    assert!(
+        rebuilt.get("context").is_none(),
+        "no Event context is fabricated for a persistent Composition; got: {:?}",
+        rebuilt.get("context")
+    );
+    // The rebuilt Composition is still valid RM (context being optional).
+    serde_json::from_value::<openehr_rm::prelude::Composition>(rebuilt)
+        .expect("rebuilt deserialises as an RM Composition without a context");
+}
+
+#[test]
+fn persistent_composition_keeps_explicitly_supplied_context() {
+    // A persistent Composition WITH explicit context content (a participation) is
+    // valid (SPECRM-52) and must be preserved, not dropped.
+    let wt = persistent_wt();
+    let root = &wt.tree.id;
+    let mut flat = serde_json::Map::new();
+    flat.insert(format!("{root}/category|code"), Value::String("431".into()));
+    flat.insert(
+        format!("{root}/category|value"),
+        Value::String("persistent".into()),
+    );
+    flat.insert(
+        "ctx/participation_name:0".to_owned(),
+        Value::String("Dr Explicit".into()),
+    );
+    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    assert_eq!(
+        rebuilt.pointer("/category/defining_code/code_string"),
+        Some(&Value::String("431".to_owned()))
+    );
+    assert_eq!(
+        rebuilt
+            .pointer("/context/participations/0/performer/name")
+            .and_then(Value::as_str),
+        Some("Dr Explicit"),
+        "an explicitly supplied context is preserved on a persistent Composition: {rebuilt:?}"
+    );
+}
+
+#[test]
+fn event_composition_still_gets_a_context() {
+    // Regression guard: a non-persistent Composition still gets the mandatory
+    // Event context filled from the ctx defaults.
+    let wt = persistent_wt();
+    let root = &wt.tree.id;
+    let mut flat = serde_json::Map::new();
+    flat.insert(format!("{root}/category|code"), Value::String("433".into()));
+    flat.insert(
+        format!("{root}/category|value"),
+        Value::String("event".into()),
+    );
+    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    assert_eq!(
+        rebuilt.pointer("/category/defining_code/code_string"),
+        Some(&Value::String("433".to_owned()))
+    );
+    assert!(
+        rebuilt.pointer("/context/start_time/value").is_some(),
+        "an event Composition still carries a synthesised Event context: {rebuilt:?}"
+    );
+}

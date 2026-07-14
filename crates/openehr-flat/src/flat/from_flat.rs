@@ -87,11 +87,15 @@ pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, F
     // `build`'s per-node pass may have created `archetype_details` without the
     // template id; the root must carry it (self-describing composition).
     ensure_template_id(&mut comp, &wt.tree, &wt.template_id);
-    context::apply_ctx(flat, &mut comp);
+    // Resolve `category` BEFORE the context is built: `apply_ctx` inspects it to
+    // decide whether a persistent Composition should carry a synthesised Event
+    // context (RM ehr master05 §"Persistent Compositions may optionally have an
+    // Event context").
     if let Some(cat) = root_category(flat, root_id) {
         comp.entry("category".to_owned()).or_insert(cat);
     }
     ensure_category(&mut comp);
+    context::apply_ctx(flat, &mut comp);
     let mut value = Value::Object(comp);
     // Final structural pass: fill the RM-mandatory fields FLAT never surfaces
     // (INTERVAL_EVENT width/math_function, ACTIVITY action_archetype_id, event
