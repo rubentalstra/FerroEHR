@@ -269,6 +269,21 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       the before/after instrument. **Sequenced after item 28(b)/(c) lands —
       its agent is writing in openehr-flat now, and F7's fresh sibling
       routing lives in the same validation files.**
+- [ ] **32. `openehr_rm::validate` per-node residual (found closing item 31,
+      2026-07-14 — now the dominant validation cost).** With the walker's
+      template-static re-parsing gone (item 31) and the deep-subtree
+      deserialization pruned (item 30), passes 1+2 still cost ~11–13 ms of
+      the ~14.3 ms IPS debug validate_composition — dominated by
+      `openehr_rm::validate::validate_rm_value`'s per-node work: even
+      shallow-pruned, every one of ~1,498 nodes is typed-deserialized
+      (`serde_json::from_value::<T>`) to run its class invariants. Fix
+      direction: run the invariant checks against `&Value` directly (each
+      class's `*_impl.rs` invariants mostly read a handful of leaf fields),
+      or borrow-deserialize a minimal per-class view — never the full struct.
+      Semantics pinned: openehr-rm 186 + openehr-flat 156 + ECC
+      ArchetypeValidation; violation messages byte-identical; hand-written
+      `validate.rs`/`*_impl.rs` only, never `// @generated` files; the
+      item-15 harness is the before/after instrument.
 - [x] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
       rejected — publication-blocking).** All 130 errors at java L=1 were
       composition-create 422s; per-skeleton reproduction against a fresh
