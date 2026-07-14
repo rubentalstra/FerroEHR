@@ -71,6 +71,9 @@ services:
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
       EHRBASE_LOG_FORMAT: ${EHRBASE_LOG_FORMAT:-pretty}
+      # Benchmark parity (benchmarking.md §3.4 "Logging: equal, minimal"):
+      # scripts/benchmark.sh sets warn on BOTH SUTs; default stays info.
+      EHRBASE_LOG_FILTER: ${EHRBASE_LOG_FILTER:-info}
     volumes:
       - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
