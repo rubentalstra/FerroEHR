@@ -17,8 +17,9 @@ pub struct DbSettings {
     /// Upper bound of the connection pool.
     #[serde(default = "defaults::max_connections")]
     pub max_connections: u32,
-    /// Connections the pool keeps open when idle.
-    #[serde(default)]
+    /// Connections the pool keeps open when idle (avoids cold reopen +
+    /// `SET search_path` churn under variable load).
+    #[serde(default = "defaults::min_connections")]
     pub min_connections: u32,
     /// Seconds to wait for a free connection before failing.
     #[serde(default = "defaults::acquire_timeout_secs")]
@@ -27,7 +28,11 @@ pub struct DbSettings {
 
 mod defaults {
     pub(super) fn max_connections() -> u32 {
-        10
+        20
+    }
+
+    pub(super) fn min_connections() -> u32 {
+        2
     }
 
     pub(super) fn acquire_timeout_secs() -> u64 {
@@ -41,7 +46,7 @@ impl DbSettings {
         Self {
             url: url.into(),
             max_connections: defaults::max_connections(),
-            min_connections: 0,
+            min_connections: defaults::min_connections(),
             acquire_timeout_secs: defaults::acquire_timeout_secs(),
         }
     }
@@ -67,8 +72,10 @@ mod tests {
     #[test]
     fn defaults_applied() {
         let s = DbSettings::new("postgres://localhost/ehrbase");
-        assert_eq!(s.max_connections, 10);
-        assert_eq!(s.min_connections, 0);
+        // Deliberate P20 defaults: 20 max (10 hard-capped realistic write
+        // concurrency), 2 min (no cold reopen churn at idle).
+        assert_eq!(s.max_connections, 20);
+        assert_eq!(s.min_connections, 2);
         assert_eq!(s.acquire_timeout_secs, 30);
     }
 

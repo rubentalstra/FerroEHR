@@ -60,8 +60,13 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, committed.vo_id, Some(committed.tree))
-            .await
+        // The write response is metadata-only: `Committed` already carries
+        // every field of the version identity + the commit instant, and every
+        // consumer (the SM trait, TDD import, the REST adapter) uses only the
+        // uid/meta — a representation response re-reads at the protocol layer.
+        // Re-reading + reassembling the just-written document here was a whole
+        // extra pool acquisition + two SELECTs per create, discarded.
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// Retrieve a COMPOSITION by its versioned-object id, optionally at a specific
@@ -224,8 +229,8 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, vo_id, Some(committed.tree))
-            .await
+        // Metadata-only write response (see `create_composition`).
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a

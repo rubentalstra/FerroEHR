@@ -107,13 +107,13 @@
       spacing; `synchronous_commit` stays ON (clinical durability — never
       traded). Temporal-GiST maintenance cost quantified before any schema
       move. PG18 AIO (`io_method`) evaluated here.
-      - [x] T4a. Parity floor applied (2026-07-14): both benchmark SUT
-        databases + the local profiling stack run `shared_buffers=1GB`,
-        `max_wal_size=4GB`, `work_mem=16MB` (`BENCH_PG_*` env; §3.4 row
-        updated with the concrete values).
-      - [ ] T4b. Measured half at the T5 profiling round: PG18 `io_method`
-        evaluation (ours only — platform-inherent, documented), temporal-
-        GiST maintenance quantification.
+    - [x] T4a. Parity floor applied (2026-07-14): both benchmark SUT
+          databases + the local profiling stack run `shared_buffers=1GB`,
+          `max_wal_size=4GB`, `work_mem=16MB` (`BENCH_PG_*` env; §3.4 row
+          updated with the concrete values).
+    - [ ] T4b. Measured half at the T5 profiling round: PG18 `io_method`
+      evaluation (ours only — platform-inherent, documented), temporal-
+      GiST maintenance quantification.
 - [x] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
       c/uid/value` returns the OBJECT_VERSION_ID wire string (QUERY
       master03 identified-paths table); ECC AqlBasic case added; verified

@@ -55,6 +55,7 @@ pub(crate) struct AttestTarget {
 /// `(vo_id, tree)` must exist and belong to `ehr_id`, else
 /// [`ServiceError::NotFound`]. `attestation` is the already-completed full RM
 /// `ATTESTATION`.
+#[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
 pub(crate) async fn attest(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -63,6 +64,7 @@ pub(crate) async fn attest(
     expected: TreeId,
     attestation: &Value,
     contribution_id: Uuid,
+    time_committed: jiff::Timestamp,
 ) -> Result<Committed, ServiceError> {
     let target = crate::storage::version_repo::attestation_target(
         tx,
@@ -100,6 +102,9 @@ pub(crate) async fn attest(
         // contribution's outbox envelope as a change to the existing version.
         change_type: change_type::ATTESTATION.to_owned(),
         template_id: None,
+        // The contribution's commit-act time — a 666 attestation adds no new
+        // version, so this is the instant the attestation itself committed.
+        time_committed,
     })
 }
 
