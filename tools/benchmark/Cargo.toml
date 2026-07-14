@@ -18,6 +18,14 @@ path = "src/bin/bench.rs"
 # provably identical for both targets (design §5) — the core fairness guarantee.
 conformance = { path = "../conformance" }
 
+# Constraint-aware payload variation is done in FLAT space against each
+# template's WebTemplate (OPT → WebTemplate via `openehr-its`, then
+# `openehr-flat::to_flat`/`from_flat`), so every jittered leaf stays inside its
+# AOM constraint by construction (tools → crates dependency arrow, per
+# docs/architecture.md).
+openehr-flat = { path = "../../crates/openehr-flat" }
+openehr-its = { path = "../../crates/openehr-its" }
+
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

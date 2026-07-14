@@ -15,7 +15,6 @@
 //!   active window; `day` samples from the diurnal weight curve (register 00 §3
 //!   peaks ~08:00/14:00, bumps 07:00/15:00/23:00, night trough).
 
-use std::collections::HashMap;
 use std::time::Duration;
 
 use rand::RngExt;
@@ -32,6 +31,14 @@ use crate::{Action, BenchError, PlannedOp, Profile, TemplateKind};
 /// Spacing between the ops of a single event (a clinical event's requests
 /// arrive near-simultaneously, but ordered).
 const STEP_SPACING: Duration = Duration::from_millis(1);
+
+/// Render a composition via the constraint-aware path (templates are prepared
+/// once in [`Builder::new`], where `preflight` has already proven every
+/// committed template renderable, so a `Null` here would only follow a genuine
+/// render fault).
+fn render_composition(template: TemplateKind, params: &VaryParams) -> Value {
+    render::composition(template, params).unwrap_or(Value::Null)
+}
 
 /// Patient-scoped AQL (E5): CONTAINS OBSERVATION + `ehr_id` filter + ORDER BY +
 /// LIMIT — the `{{ehr_id}}` placeholder is substituted by the driver. Valid
@@ -81,22 +88,17 @@ struct Builder {
     warmup_s: f64,
     rng: StdRng,
     seed: u64,
-    skeletons: HashMap<TemplateKind, Value>,
     diurnal_cdf: Vec<f64>,
     ops: Vec<PlannedOp>,
 }
 
 impl Builder {
     fn new(spec: &WorkloadSpec, window: Duration, warmup: Duration) -> Result<Self, BenchError> {
-        // Preload the CKM-pack skeletons (the compositions the measured events
-        // create/update) so the hot render path is a map lookup + `vary`. The
-        // CKM lab-result contribution skeleton is read by `render::contribution`
-        // itself, so it need not live in this map, but loading the whole pack is
-        // cheap and keeps the set complete.
-        let mut skeletons = HashMap::new();
-        for tpl in crate::pack::all() {
-            skeletons.insert(tpl.kind, tpl.skeleton()?);
-        }
+        // Prepare every template once (WebTemplate build + faithfulness gate) so
+        // a template that cannot render a committed payload surfaces as a build
+        // error, never a silently-null payload in the hot loop. Renders
+        // themselves are a cached lookup + `to_flat`/jitter/`from_flat`.
+        render::preflight()?;
         // Validate the auxiliary fixtures once so a missing/corrupt file surfaces
         // as a build error rather than a silently-null payload in the hot loop.
         conformance::testdata::fixtures::read_from("ehr-status.valid", render::EHR_STATUS_FIXTURE)
@@ -113,7 +115,6 @@ impl Builder {
             warmup_s: warmup.as_secs_f64(),
             rng: StdRng::seed_from_u64(spec.seed),
             seed: spec.seed,
-            skeletons,
             diurnal_cdf: diurnal_cdf(),
             ops: Vec::new(),
         })
@@ -203,11 +204,11 @@ impl Builder {
             Step::ReadEhr => Action::ReadEhr,
             Step::CreateComposition { template, .. } => Action::CreateComposition {
                 template,
-                payload: self.render_composition(template, &params),
+                payload: render_composition(template, &params),
             },
             Step::UpdateComposition { template } => Action::UpdateComposition {
                 template,
-                payload: self.render_composition(template, &params),
+                payload: render_composition(template, &params),
             },
             Step::ReadLatest => Action::ReadLatestComposition,
             Step::ReadVersion => Action::ReadCompositionVersion,
@@ -236,13 +237,6 @@ impl Builder {
             Step::UploadOpt { template } => Action::UploadOpt { template },
             Step::ListTemplates => Action::ListTemplates,
         }
-    }
-
-    /// Render a composition from the cached skeleton (the hot path).
-    fn render_composition(&self, template: TemplateKind, params: &VaryParams) -> Value {
-        self.skeletons
-            .get(&template)
-            .map_or(Value::Null, |skeleton| render::vary(skeleton, params))
     }
 
     fn params(&self, patient: &Patient, at: Duration) -> VaryParams {
