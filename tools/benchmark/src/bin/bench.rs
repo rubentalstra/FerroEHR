@@ -880,8 +880,9 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             max_dispatch_lag_ms: outcome.max_dispatch_lag_ms,
         };
         eprintln!(
-            "bench: L={load_factor} → {:.1} req/s · p99 {p99_us} µs · error rate {:.3}% · {} requests · dispatch lag {} ms{}",
+            "bench: L={load_factor} → {:.1} req/s · p99 {} · error rate {:.3}% · {} requests · dispatch lag {} ms{}",
             step.rps,
+            report::fmt_latency_us(p99_us),
             step.error_rate * 100.0,
             step.requests,
             step.max_dispatch_lag_ms,
@@ -896,7 +897,8 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
         step_index += 1;
         if saturated {
             eprintln!(
-                "bench: SLO breached at L={load_factor} (p99 {p99_us} µs / error {:.3}%)",
+                "bench: SLO breached at L={load_factor} (p99 {} / error {:.3}%)",
+                report::fmt_latency_us(p99_us),
                 outcome.error_rate * 100.0
             );
             // Distinguish a saturated-but-alive SUT from a dead one: probe the
