@@ -216,6 +216,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       script). **DONE (bench binary; the harness default-steps env note
       stays as-is — the CLI default now carries the geometric ladder).**
 
+- [ ] **27. Knee runs name their own bottleneck (owner, 2026-07-14).** Pair
+      the bisector with the profiler: the knee runner (or the harness around
+      it) resets pg_stat_statements before the last-sustained and breached
+      steps and dumps the top statements + wait snapshot into the knee
+      artefacts, so every knee run identifies WHAT saturated, not just where.
+      Until automated: run scripts/profile.sh manually at the bisected knee
+      load after each optimization wave (the pre-optimization profile's
+      findings are all fixed — the bottleneck has moved and must be
+      re-measured before choosing among items 20/22/14/15).
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
