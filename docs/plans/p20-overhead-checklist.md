@@ -258,6 +258,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       After (b)/(c): regenerate the pack, re-verify all six commit on BOTH
       SUTs, re-run the java ladder for the honest pair.
 
+- [ ] **29. Startup ASCII banner (owner, 2026-07-14).** The server greets
+      with an ASCII-art banner on boot (like the reference implementation's
+      Spring banner): the EHRbase-RS wordmark, the current version
+      (`CARGO_PKG_VERSION`), maintainer credit **Ruben Talstra**, the
+      project URL, and the load-bearing pins (RM 1.2.0 / ITS-REST /
+      PostgreSQL 18) — followed by the existing structured startup logs.
+      Crate choice verified LIVE on crates.io (figlet-rs vs a hand-written
+      static banner — zero-dependency static is acceptable if the art is
+      generated once and committed).
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
