@@ -93,6 +93,23 @@ pub fn fmt_rate(rps: f64) -> String {
     format!("{rps:.1} req/s ({:.0} req/min)", rps * 60.0)
 }
 
+/// Format a latency measured in microseconds with the unit picked by
+/// magnitude — µs under a millisecond, ms under a second, else seconds
+/// (owner rule 2026-07-14: raw µs at the second scale is unreadable).
+/// The precision keeps ~3 significant digits at every scale.
+#[must_use]
+pub fn fmt_latency_us(us: u64) -> String {
+    #[allow(clippy::cast_precision_loss)] // latencies are far below 2^52 µs
+    let us_f = us as f64;
+    if us >= 1_000_000 {
+        format!("{:.2} s", us_f / 1_000_000.0)
+    } else if us >= 1_000 {
+        format!("{:.1} ms", us_f / 1_000.0)
+    } else {
+        format!("{us} µs")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
@@ -102,6 +119,15 @@ mod tests {
         ClassRecord, EnvironmentBlock, EventsBlock, ResourcesBlock, SutBlock, ThroughputBlock,
         WorkloadBlock,
     };
+
+    #[test]
+    fn latency_unit_follows_magnitude() {
+        assert_eq!(fmt_latency_us(873), "873 µs");
+        assert_eq!(fmt_latency_us(42_943), "42.9 ms");
+        assert_eq!(fmt_latency_us(999_999), "1000.0 ms");
+        assert_eq!(fmt_latency_us(1_048_063), "1.05 s");
+        assert_eq!(fmt_latency_us(2_928_639), "2.93 s");
+    }
 
     fn minimal_results() -> Results {
         let mut classes = BTreeMap::new();
