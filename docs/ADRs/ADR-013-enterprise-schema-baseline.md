@@ -106,7 +106,7 @@ expression indexes (the measure-first default — owner chose to wire now).
 The operational guidance below is the load-bearing distillate of the B7
 PostgreSQL-18 enterprise-practices research (web-sourced Opus fan-out, official
 PG docs corroborated). It is **deployment-layer** — the schema references it but
-cannot enforce it — and is what `docs/enterprise/deployment.md` cites. Section
+cannot enforce it — and is what `docs/design/helm-deployment.md` cites. Section
 numbers are preserved from the original dossier so existing cross-references
 (§3/§5/§6) stay meaningful.
 
