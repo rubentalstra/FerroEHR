@@ -9,7 +9,16 @@ breakdown + spec-area map).
 **Open items live in [`WORKLIST.md`](WORKLIST.md)** — one row per item,
 owner-mandated single tracker (2026-07-12).
 
-## Active work — W-11 benchmark rewrite (PRIO 1, owner 2026-07-13)
+## Active work — P20 optimization (owner go 2026-07-14)
+
+**W-11 closed 2026-07-14** (PRs #83/#85 merged) — the hospital-day benchmark
+instrument + honest comparison shipped; baseline to beat is recorded in
+`phase-20-optimization.md`. Active now: **P20** — profile-driven
+optimization (T1 profiling harness → AQL indexes → write-path statement
+budget → PG parity tuning → re-ladder), mission: flip the max-sustained
+row honestly.
+
+## Prior active work — W-11 benchmark rewrite (closed)
 
 **W-10 (conformance framework redesign) closed 2026-07-13** — re-derived
 baseline **368/333/0/35, CORE + STANDARD PASS** under the rewritten
