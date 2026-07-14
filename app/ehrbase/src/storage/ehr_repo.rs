@@ -146,6 +146,36 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: Uuid) -> Result<Option<boo
     .await?)
 }
 
+/// The two content-write pre-checks in ONE round trip: whether the EHR exists,
+/// and whether its current `EHR_STATUS` has `is_modifiable = true`. Returns
+/// `(exists, is_modifiable)` where `is_modifiable` is `None` when the EHR has no
+/// current `EHR_STATUS` (the caller treats that as modifiable so the guard never
+/// spuriously blocks) — identical to reading [`ehr_is_modifiable`] on its own.
+/// The concepts guarded are RM ehr master04 §EHR Creation (existence) and §EHR
+/// Active Status (`EHR_STATUS.is_modifiable`); collapsing the existence EXISTS
+/// and the `is_modifiable` root-node read into one statement is our own design —
+/// no openEHR spec governs the query shape.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn ehr_writability(
+    pool: &PgPool,
+    ehr_id: Uuid,
+) -> Result<(bool, Option<bool>), StorageError> {
+    let row = sqlx::query(
+        "SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1) AS ehr_exists, \
+         (SELECT (n.data->>'is_modifiable') = 'true' \
+            FROM vo_version v \
+            JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+            WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
+            AND v.branch_number = 0) AS is_modifiable",
+    )
+    .bind(ehr_id)
+    .fetch_one(pool)
+    .await?;
+    Ok((row.try_get("ehr_exists")?, row.try_get("is_modifiable")?))
+}
+
 /// Whether the EHR already has a LIVE folder hierarchy whose root carries the
 /// given `archetype_node_id` AND name — the LOCATABLE identity pair that
 /// distinguishes same-archetype siblings (RM common, paths: the name predicate
