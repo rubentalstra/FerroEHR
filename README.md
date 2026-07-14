@@ -262,19 +262,23 @@ ours is 2.9 s with 0.14%. Full ladders:
 
 ### Identical load, side by side
 
-Ten headline rows from [the full comparison](docs/benchmarks/COMPARISON.md)
-(generated — every number traces to a committed artefact):
+The measured clinical hour (1,209 requests, zero errors on both servers),
+from [the full comparison](docs/benchmarks/COMPARISON.md) — generated,
+every number traces to a committed artefact. **ehrbase-rs holds the lower
+p99 in 12 of 14 operation classes and the lower median in 11 of 14**:
 
 | | ehrbase-rs | EHRbase 2.34.0 (Java) |
 |---|--:|--:|
-| Idle memory | **47 MB** | 515 MB |
-| Peak memory | **188 MB** | 606 MB |
-| Mean CPU, identical load | **0.9 %** | 1.7 % |
-| p99 — composition create | **96 ms** | 106 ms |
-| p99 — patient AQL dashboard | **67 ms** | 105 ms |
-| p99 — composition read | **59 ms** | 89 ms |
-| p99 — composition update | **79 ms** | 111 ms |
-| Storage per composition | **28.2 KB** | 33.5 KB |
+| Idle memory | **12 MB** | 607 MB |
+| Peak memory | **139 MB** | 677 MB |
+| Mean CPU, identical load | **0.6 %** | 1.9 % |
+| Cold start (container → healthy) | **11.4 s** | 17.2 s |
+| p99 — composition create | **76 ms** | 122 ms |
+| p99 — patient AQL dashboard | **64 ms** | 112 ms |
+| p99 — composition read | **57 ms** | 103 ms |
+| p99 — composition update | **74 ms** | 134 ms |
+| Storage per composition | **24.9 KB** | 35.9 KB |
+| Efficiency | **57.4 req/s per core** | 17.2 |
 
 ![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
 

@@ -17,9 +17,9 @@ text { fill: #c3c2b7; }
 </style>
 <text x="16" y="22" class="title">App mean CPU over the run</text>
 <text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
-<rect class="s1" x="170" y="42.0" width="206.0" height="12" rx="4"/>
-<text class="muted" x="382.0" y="52.0">0.9%</text>
+<rect class="s1" x="170" y="42.0" width="135.3" height="12" rx="4"/>
+<text class="muted" x="311.3" y="52.0">0.6%</text>
 <text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
 <rect class="s2" x="170" y="68.0" width="450.0" height="12" rx="4"/>
-<text class="muted" x="626.0" y="78.0">2.1%</text>
+<text class="muted" x="626.0" y="78.0">1.9%</text>
 </svg>
