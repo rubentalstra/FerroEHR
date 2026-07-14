@@ -21,6 +21,10 @@ services:
       EHRBASE_DB_USER: ${EHRBASE_DB_USER:-ehrbase}
       EHRBASE_DB_PASSWORD: ${EHRBASE_DB_PASSWORD:-ehrbase}
       EHRBASE_DB_NAME: ${EHRBASE_DB_NAME:-ehrbase}
+    # pg_stat_statements is loaded so the P20 profiling harness
+    # (scripts/profile.sh) can attribute time per statement; negligible
+    # overhead, ships in the stock image.
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements"]
     volumes:
       - ehrbase-pgdata:/var/lib/postgresql
     ports:
