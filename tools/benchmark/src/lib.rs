@@ -239,6 +239,12 @@ pub struct PlannedOp {
     pub patient: usize,
     /// What to execute.
     pub action: Action,
+    /// The business transaction (clinical-event occurrence) this op is a step
+    /// of. Threaded through so the driver can count an event *completed* only
+    /// when every one of its steps succeeded — the steps of one occurrence are
+    /// dispatched as independent open-loop tasks, so completion cannot be
+    /// inferred at the op level (checklist item 25b).
+    pub event: crate::model::event::EventInstance,
 }
 
 /// The semantic operation of a [`PlannedOp`]. Payloads are pre-rendered by

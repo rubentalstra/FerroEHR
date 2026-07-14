@@ -43,6 +43,13 @@ pub struct KneeStep {
     pub p99_us: u64,
     /// Measured (post-warmup) requests at this step.
     pub requests: u64,
+    /// Completed clinical events (business transactions) per minute at this
+    /// step — the TPC-style throughput sustained at this load factor (checklist
+    /// item 25b). `#[serde(default)]` for pre-25b `knee.json` (renders as
+    /// unavailable). The ladder's stop condition stays req/latency-based; this
+    /// is a reported-alongside figure only.
+    #[serde(default)]
+    pub events_per_min: f64,
     /// Worst dispatcher lag behind the planned schedule (ms). Above
     /// [`GENERATOR_BOUND_LAG_MS`] the step is generator-bound: the load
     /// generator could not keep its own schedule, so the step bounds the
@@ -153,10 +160,20 @@ pub fn render_markdown(r: &KneeResults) -> String {
     match &r.knee {
         Some(step) => m.push_str(&format!(
             "**Knee: L = {} → {} at p99 {} µs** (the last sustainable step; \
-             SLO p99 ≤ 1 s, error ≤ 0.1%).\n\n",
+             SLO p99 ≤ 1 s, error ≤ 0.1%){}.\n\n",
             step.load_factor,
             super::fmt_rate(step.rps),
-            step.p99_us
+            step.p99_us,
+            // The business-transaction throughput sustained at the knee, when
+            // the data is available (a 25b-era run); the SLO stays req/latency.
+            if step.events_per_min > 0.0 {
+                format!(
+                    " — sustaining {:.1} clinical events/min",
+                    step.events_per_min
+                )
+            } else {
+                String::new()
+            }
         )),
         None => m.push_str(
             "**No sustainable step:** even the first ladder step breached the SLO. \
@@ -245,6 +262,7 @@ mod tests {
             error_rate: err,
             p99_us: p99,
             requests: reqs,
+            events_per_min: 0.0,
             max_dispatch_lag_ms: 0,
         }
     }
@@ -300,6 +318,21 @@ mod tests {
         assert!(md.contains("sustained"));
         assert!(md.contains("lower bound"));
         assert!(md.contains("charts/knee.svg"));
+    }
+
+    #[test]
+    fn knee_headline_shows_events_per_min_when_available() {
+        let mut r = results();
+        let mut knee = r.knee.take().expect("knee present");
+        knee.events_per_min = 42.5;
+        r.knee = Some(knee);
+        let md = render_markdown(&r);
+        assert!(
+            md.contains("sustaining 42.5 clinical events/min"),
+            "the sustained line shows the business-transaction throughput\n{md}"
+        );
+        // Absent (pre-25b) data stays silent — the base fixture has 0.0.
+        assert!(!render_markdown(&results()).contains("clinical events/min"));
     }
 
     #[test]

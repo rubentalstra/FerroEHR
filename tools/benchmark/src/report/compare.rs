@@ -7,8 +7,9 @@
 use std::collections::BTreeMap;
 
 use super::chart;
-use super::json::Results;
+use super::json::{EventClassRecord, Results};
 use super::knee::KneeResults;
+use crate::model::event::ClinicalEvent;
 
 /// A rendered comparison: the Markdown text and the SVG files it embeds
 /// (filename → content, written under `<out-dir>/charts/`).
@@ -92,6 +93,7 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     let mut charts = Vec::new();
     headline_charts(&mut md, &mut charts, a, b);
     knee_section(&mut md, &mut charts, knees);
+    events_section(&mut md, a, b);
 
     // Charts: p99 + p50 grouped bars over the classes both runs measured.
     let p99 = vec![
@@ -270,6 +272,75 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
     }
 }
 
+/// The clinical-transaction (business-transaction) throughput section: a
+/// side-by-side per-class attempted/completed/events-min table + the computed
+/// wins-ledger row for total events/min (checklist item 25b). Measured only,
+/// both directions; the workload is identical by construction.
+fn events_section(md: &mut String, a: &Results, b: &Results) {
+    md.push_str("## Clinical transactions (events)\n\n");
+    md.push_str(
+        "> The TPC-style business-transaction metric: a clinical event (admission, \
+         medication round, lab batch, discharge…) counts **completed** only when every \
+         one of its requests succeeded. Events/min beside the per-request req/s — both \
+         directions, same workload by construction.\n\n",
+    );
+    md.push_str(&format!(
+        "| Event | {a} attempted | {a} completed | {a} events/min | {b} attempted | {b} completed | {b} events/min |\n|---|--:|--:|--:|--:|--:|--:|\n",
+        a = a.sut.name,
+        b = b.sut.name
+    ));
+    let cell = |rec: Option<&EventClassRecord>| {
+        rec.map_or_else(
+            || ("—".to_owned(), "—".to_owned(), "—".to_owned()),
+            |c| {
+                (
+                    c.attempted.to_string(),
+                    c.completed.to_string(),
+                    format!("{:.1}", c.events_per_min),
+                )
+            },
+        )
+    };
+    for ev in ClinicalEvent::ALL {
+        let ar = a.events.classes.get(ev.key());
+        let br = b.events.classes.get(ev.key());
+        if ar.is_none() && br.is_none() {
+            continue;
+        }
+        let (aa, ac, am) = cell(ar);
+        let (ba, bc, bm) = cell(br);
+        md.push_str(&format!(
+            "| {} {} | {aa} | {ac} | {am} | {ba} | {bc} | {bm} |\n",
+            ev.key(),
+            ev.label(),
+        ));
+    }
+    md.push_str(&format!(
+        "| **total** | **{}** | **{}** | **{:.1}** | **{}** | **{}** | **{:.1}** |\n\n",
+        a.events.attempted,
+        a.events.completed,
+        a.events.events_per_min,
+        b.events.attempted,
+        b.events.completed,
+        b.events.events_per_min,
+    ));
+
+    // The wins-ledger row for total events/min (computed, both directions).
+    let (ae, be) = (a.events.events_per_min, b.events.events_per_min);
+    if ae > 0.0 || be > 0.0 {
+        let (winner, high, low) = if ae >= be {
+            (&a.sut.name, ae, be)
+        } else {
+            (&b.sut.name, be, ae)
+        };
+        md.push_str(&format!(
+            "**Higher total clinical-event throughput: {winner}** — {high:.1} vs {low:.1} \
+             events/min ({}).\n\n",
+            pct(low, high)
+        ));
+    }
+}
+
 /// The per-class percentile table; returns the computed win lists (p99).
 #[allow(clippy::type_complexity)]
 fn per_class_table(
@@ -421,6 +492,20 @@ mod tests {
                 rps: 2.0,
                 error_rate: 0.0,
             },
+            events: EventsBlock {
+                classes: BTreeMap::from([(
+                    "E2".to_owned(),
+                    EventClassRecord {
+                        label: "shift-vitals".to_owned(),
+                        attempted: 100,
+                        completed: 95,
+                        events_per_min: 1.6,
+                    },
+                )]),
+                attempted: 100,
+                completed: 95,
+                events_per_min: 1.6,
+            },
             resources: ResourcesBlock {
                 app: None,
                 db: None,
@@ -440,6 +525,7 @@ mod tests {
             error_rate: 0.0,
             p99_us: p99,
             requests: 1000,
+            events_per_min: 0.0,
             max_dispatch_lag_ms: 0,
         };
         KneeResults {
@@ -475,6 +561,26 @@ mod tests {
         assert!(c.markdown.contains("req/s"));
         assert!(!c.markdown.contains("different workload locks"));
         assert!(!c.markdown.contains("Maximum sustained throughput"));
+    }
+
+    #[test]
+    fn clinical_transactions_section_and_wins_row() {
+        let a = results("ehrbase-rs", 10_000);
+        let mut b = results("ehrbase-java", 40_000);
+        // Make the java SUT complete fewer events so the wins row resolves to us.
+        b.events.completed = 60;
+        b.events.events_per_min = 1.0;
+        b.events.classes.get_mut("E2").expect("E2").completed = 60;
+        b.events.classes.get_mut("E2").expect("E2").events_per_min = 1.0;
+        let c = render(&[a, b], &[]);
+        assert!(c.markdown.contains("## Clinical transactions (events)"));
+        assert!(c.markdown.contains("E2 shift-vitals"));
+        // The computed wins-ledger row for total events/min, in our favour.
+        assert!(
+            c.markdown
+                .contains("Higher total clinical-event throughput: ehrbase-rs")
+        );
+        assert!(c.markdown.contains("1.6 vs 1.0 events/min"));
     }
 
     #[test]

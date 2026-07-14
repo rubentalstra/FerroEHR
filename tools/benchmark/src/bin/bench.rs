@@ -35,8 +35,8 @@ use benchmark::drive::{self, DriveOutcome};
 use benchmark::measure::Recorder;
 use benchmark::model::{self, WorkloadSpec};
 use benchmark::report::json::{
-    ClassRecord, ContainerSummary, EnvironmentBlock, ResourcesBlock, Results, StorageBlock,
-    SutBlock, ThroughputBlock, WorkloadBlock,
+    ClassRecord, ContainerSummary, EnvironmentBlock, EventClassRecord, EventsBlock, ResourcesBlock,
+    Results, StorageBlock, SutBlock, ThroughputBlock, WorkloadBlock,
 };
 use benchmark::report::knee::{KneeResults, KneeStep};
 use benchmark::sample::{self, ContainerSeries, DbAccess, ResourceSampler};
@@ -603,6 +603,30 @@ fn build_results(
         .as_deref()
         .and_then(|name| summarize(name, idle, run_series));
 
+    // Clinical-event (business-transaction) block: per-class attempted/completed
+    // + completed-per-minute (computed in the lib against the run window).
+    let event_classes: BTreeMap<String, EventClassRecord> = outcome
+        .events
+        .iter()
+        .map(|e| {
+            (
+                e.key.to_owned(),
+                EventClassRecord {
+                    label: e.label.to_owned(),
+                    attempted: e.attempted,
+                    completed: e.completed,
+                    events_per_min: e.events_per_min,
+                },
+            )
+        })
+        .collect();
+    let events = EventsBlock {
+        classes: event_classes,
+        attempted: outcome.events_attempted,
+        completed: outcome.events_completed,
+        events_per_min: outcome.events_per_min,
+    };
+
     Results {
         sut: SutBlock {
             name: descriptor.name.clone(),
@@ -628,6 +652,7 @@ fn build_results(
             rps: outcome.rps,
             error_rate: outcome.error_rate,
         },
+        events,
         resources: ResourcesBlock {
             app,
             db,
@@ -756,6 +781,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             error_rate: outcome.error_rate,
             p99_us,
             requests: outcome.requests,
+            events_per_min: outcome.events_per_min,
             max_dispatch_lag_ms: outcome.max_dispatch_lag_ms,
         };
         eprintln!(

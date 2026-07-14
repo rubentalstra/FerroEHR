@@ -99,7 +99,8 @@ mod tests {
 
     use super::*;
     use crate::report::json::{
-        ClassRecord, EnvironmentBlock, ResourcesBlock, SutBlock, ThroughputBlock, WorkloadBlock,
+        ClassRecord, EnvironmentBlock, EventsBlock, ResourcesBlock, SutBlock, ThroughputBlock,
+        WorkloadBlock,
     };
 
     fn minimal_results() -> Results {
@@ -148,6 +149,7 @@ mod tests {
                 rps: 0.1,
                 error_rate: 0.0,
             },
+            events: EventsBlock::default(),
             resources: ResourcesBlock {
                 app: None,
                 db: None,
