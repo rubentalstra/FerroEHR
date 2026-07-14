@@ -17,6 +17,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL `SELECT c/uid/value` (and `c/uid`) on a COMPOSITION — or any
+  versioned-object root — now returns the server-assigned
+  `OBJECT_VERSION_ID`, version-correct under `LATEST_VERSION` and
+  `ALL_VERSIONS`. It previously returned `null` because the uid was
+  injected only on REST reads, never into stored data. (QUERY master03
+  lists `COMPOSITION.uid.value` as a normative identified path.)
 - Composition commits against an already-seen template no longer re-read the
   stored OPT from the database on every commit — the built WebTemplate cache
   is now consulted first (measured: 10,206 redundant reads in a 120 s load
@@ -26,6 +32,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Storage migration `0008`: a promoted `context_start timestamptz` column on
+  COMPOSITION root node rows (backfilled from stored data, partially
+  indexed), plus the fail-safe `ext.openehr_timestamp` conversion function.
+  The AQL engine reads the indexed column for
+  `ORDER BY`/`WHERE` on `c/context/start_time/value` — the measured
+  patient-dashboard hot path — instead of re-extracting JSONB per candidate
+  row; results are unchanged, including NULL placement and the verbatim
+  projected value.
 - Overload backpressure: the REST server now caps the number of API requests
   it handles concurrently and sheds the excess immediately with
   `503 Service Unavailable` + `Retry-After: 1` instead of queueing every

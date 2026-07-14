@@ -68,11 +68,16 @@
       anomaly surfaced F5/F6, its statement table surfaced the template-cache
       bypass (finding 5, fixed as the T3 first slice) and confirmed the AQL
       extraction as the #1 statement.)*
-- [ ] T2. **AQL hot-path indexes** (ADR-008 reserved exactly this): promoted
-      column or `IMMUTABLE`-expression btree for the dashboard ORDER-BY
-      shape (context start_time per versioned object), and whatever T1
-      shows for the CONTAINS + ehr_id join order. Target: patient/ward AQL
-      p99 back under upstream at 10k AND 100k.
+- [x] T2. **AQL hot-path indexes**: promoted column or `IMMUTABLE`-expression
+      btree for the dashboard ORDER-BY shape (context start_time per
+      versioned object), and whatever T1 shows for the CONTAINS + ehr_id
+      join order. Target: patient/ward AQL p99 back under upstream at 10k
+      AND 100k. *(Done 2026-07-14: promoted-leaf registry
+      (`storage/promoted.rs`) + `node.context_start` (migration 0008,
+      backfilled, partial `(ehr_id, context_start)` btree) + the AQL
+      column-substitution fast path; EXPLAIN-verified `Index Scan Backward
+      using idx_node_context_start`; the p99-vs-upstream target is measured
+      at T5's re-ladder.)*
 - [ ] T3. **Per-commit statement budget**: measure the write-path statement
       sequence (T1), then collapse it — validation reads cached per
       template, vo_version+audit+contribution round trips reduced (CTE
@@ -86,7 +91,9 @@
 - [ ] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
       c/uid/value` returns the OBJECT_VERSION_ID wire string (QUERY
       master03 identified-paths table); ECC AqlBasic case added; verified
-      live on the composed stack.
+      live on the composed stack. *(Engine fix DONE in T2 (synthesis from
+      vo_version, version-correct under ALL_VERSIONS, live-verified); the
+      ECC case is the open remainder.)*
 - [ ] T2c. **F5 — populated example generation**: the openehr-flat example
       builder emits optional content items (one instance each, bounded,
       recursion-guarded); the CKM pack examples regenerated from the
