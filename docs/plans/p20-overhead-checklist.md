@@ -146,12 +146,18 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
         profile filters `tower_http::trace`; confirm log level. → item 23.
       - **F15 (negative): our multi-row node INSERT is already right**
         (COPY only wins for very large docs).
-- [ ] **20. Pipelined hot write path** (from F7): collapse the remaining
+- [x] **20. Pipelined hot write path** (from F7): collapse the remaining
       independent statements per commit AND execute the commit sequence on a
       pipelined `tokio-postgres`/`deadpool-postgres` connection so the
       residual round trips flush together. Versioning semantics byte-equal
       (RM common master06); the signature-over-server-time ordering
       (audit→sign→vo_version) is the one hard sequential dependency.
+      **DONE 8c6c6099f** — the sqlx-only CTE fold reaches ~4 round trips per
+      create (upstream parity) when the signature has no DB dependency;
+      signing-on keeps the split; the close stays a separate ordered
+      statement (item 21's one-open-row indexes); the second-driver option
+      evaluated and skipped with recorded reasoning (residual = WAL fsync +
+      index maintenance, un-pipelinable).
 - [x] **21. `vo_version` GiST → btree redesign** (from F6, greenfield
       mandate): replace both `WITHOUT OVERLAPS` GiST EXCLUDE constraints
       with plain btree uniqueness + application-enforced non-overlap (the
