@@ -1,6 +1,6 @@
 # W-11 — `tools/benchmark` complete rewrite: the hospital-day stress instrument
 
-- Status: in-progress
+- Status: **done** (closed 2026-07-14, overnight autonomous run)
 - Started: 2026-07-13   Owner: Ruben (session: orchestrator)
 - Owner directive (2026-07-13, PRIO 1 after W-10): complete rewrite of
   `tools/benchmark` — "test the performance with real data, stress test it
@@ -118,8 +118,8 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       331 requests · 0 errors; the smoke pass caught two real instrument
       defects first (weak-ETag uid parsing; FOLDER payload missing the
       RM-mandatory archetype_node_id) — both fixed spec-cited.*
-- [ ] C2. `hour` profile vs ehrbase-rs at the 10k rung — the first real
-      committed baseline (latency + CPU/RSS + storage numbers).
+- [x] C2. `hour` profile vs ehrbase-rs at the 10k rung committed (O3: 1209
+      requests · 0 errors; 47/188 MB idle/peak, 0.9% CPU).
 - [x] C3. Upstream EHRbase Java runs the byte-identical workload cleanly —
       **331/331 requests · 0 errors on BOTH SUTs** (smoke @ 10k preview) —
       after four spec-verified driver/renderer tolerances (weak ETag parse,
@@ -151,15 +151,17 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       same-host preview; link to COMPARISON.md + the methodology) — the
       wording must survive the no-false-claims rule: charts show measured
       data, both directions, never an unqualified "faster than Java".
-- [ ] O6. D-phase docs: book benchmark page, blueprint touch-ups,
+- [x] O6. D-phase docs: book benchmark page, blueprint touch-ups,
       PROGRESS/WORKLIST rows, changelog verify → push; PR opened (merge
       when CI green, per the standing autonomous flow).
 
 ### D — Close
-- [ ] D1. Workspace gates; scripts/benchmark.sh entry point; CI smoke job.
-- [ ] D2. Docs: `docs/design/benchmarking.md` updated (workload section
-      superseded by the register), book page addition, changelog,
-      WORKLIST/PROGRESS/blueprint touch-ups; PR + merge.
+- [x] D1. Workspace gates; scripts/benchmark.sh entry point; manual
+      bench-smoke CI workflow (instrument self-test; CI never publishes
+      numbers).
+- [x] D2. Docs: benchmarking.md superseded-by-registers note, book
+      Benchmarks page, changelog entries (W-12 + example fixes),
+      WORKLIST/PROGRESS rows; PR + merge (O6).
 
 ## Real defect found by the CKM pack (triaged 2026-07-13, 4-way check)
 
