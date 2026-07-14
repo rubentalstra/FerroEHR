@@ -48,7 +48,7 @@ Wire seam (in `ehrbase-rest`, out of this crate's scope but named as a seam):
 `app/ehrbase-rest/src/system_log/{classify.rs (330), middleware.rs (356)}` —
 op-id → `AuditEvent` classification + the tower layer that emits through the
 `Platform` supertrait. Behavioural design record:
-`docs/enterprise/atna-audit.md` (a repo design doc — see G-8 on how it is cited).
+`docs/design/atna-audit.md` (a repo design doc — see G-8 on how it is cited).
 
 ---
 
@@ -96,7 +96,7 @@ already-correct.
 | **G-5** | `MSGID = "IHE+DICOM"` is the IHE ATNA application-defined value. | RFC 5424 §6.2.7 (app-defined) | low | **PORT NOTE (keep)** — `syslog.rs:38` |
 | **G-6** | Write-audit (`master07` §Versioning) is the RM `AUDIT_DETAILS` change-control record, **not** the ATNA system log — correctly implemented in the versioning path, not here. | BASE `master07-security.adoc` §Integrity | low | **already-correct** — document as a scope boundary in `mod.rs` (no code change) |
 | **G-7** | **Non-repudiation of EHR-Extract communication** (`master07` §Non-repudiation) has no coverage: `ObjectClass` has no `Extract` variant and SM-5 export/import is not classified/emitted. | BASE `master07-security.adoc` §Non-repudiation | **med** | **fix-in-rewrite / TODO(w3f-integrate)** — add an `Extract` object class (SM trait is FIXED; enum extension is a coordinated change) and classify SM-5 message ops; until then, PORT NOTE the gap |
-| **G-8** | Code comments justify behaviour by citing the **repo design doc** `docs/enterprise/atna-audit.md §N` (e.g. `message.rs:7` "golden vector … §3"; `codes.rs:29`; the §3 field-mapping references). The owner hard rule requires **spec** citations in code; an internal doc is neither the openEHR spec nor an ADR, but it is not the oracle. | owner rule (spec-adherence.md); `message.rs:7`, `codes.rs:29,199` | **med** | **fix-in-rewrite** — re-anchor each justification to the external standard section (DICOM PS3.15 §A.5.x / RFC 3881 §5.x), demoting `atna-audit.md` to a "see also" design pointer |
+| **G-8** | Code comments justify behaviour by citing the **repo design doc** `docs/design/atna-audit.md §N` (e.g. `message.rs:7` "golden vector … §3"; `codes.rs:29`; the §3 field-mapping references). The owner hard rule requires **spec** citations in code; an internal doc is neither the openEHR spec nor an ADR, but it is not the oracle. | owner rule (spec-adherence.md); `message.rs:7`, `codes.rs:29,199` | **med** | **fix-in-rewrite** — re-anchor each justification to the external standard section (DICOM PS3.15 §A.5.x / RFC 3881 §5.x), demoting `atna-audit.md` to a "see also" design pointer |
 | **G-9** | `src/telemetry/` is spec-silent observability infra, correctly separate from the audit trail. | flag: no openEHR spec governs this — our own design | low | **already-correct** — keep as sibling module; do not fold into `system_log` |
 | **G-10** | No `system_log` DB table: records are fire-and-forget to the ARR over syslog (the ATNA model). Schema is settled; nothing to change. | ATNA (ARR is the record store) | — | **already-correct** |
 
@@ -133,7 +133,7 @@ Design decisions (all re-grounds, no structural change):
 1. **Keep the file split** — one file per ATNA concern (schema / codes /
    transport / sender / config), each independently testable, all sub-700.
 2. **G-8 citation re-anchoring** — the only pervasive edit: replace every
-   `docs/enterprise/atna-audit.md §N` *justification* with the external
+   `docs/design/atna-audit.md §N` *justification* with the external
    standard section it derives from (DICOM PS3.15 §A.5.x, RFC 3881 §5.x, RFC
    5424 §6.2.x). `atna-audit.md` survives only as a non-normative "see also".
 3. **G-6 scope-boundary doc** — a one-paragraph `mod.rs` note stating the ATNA

@@ -7,7 +7,7 @@
   model is **retired**: there is no runtime mapping to the legacy CNF corpus
   anywhere in the framework.
 - **Related:** `docs/design/version-signing.md`,
-  `docs/enterprise/access-control.md`; the consolidated spec-gap surface is
+  `docs/design/access-control.md`; the consolidated spec-gap surface is
   `docs/blueprint/00-THE-BLUEPRINT.md` §2 (+ `blueprint/07-cnf.md`).
 
 ---
