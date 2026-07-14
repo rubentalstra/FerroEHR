@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cut a frozen documentation version onto the docs-dist orphan branch.
-# docs/plans/w1-docs-website.md §2c — "generate once, never rebuild".
+# docs/design/docs-website.md §2c — "generate once, never rebuild".
 #
 # Usage: scripts/cut-version.sh vX.Y.Z
 #
@@ -83,7 +83,12 @@ json.dump(m, open(path, "w"), indent=2)
 open(path, "a").write("\n")
 PY
 
-# 5. Commit + push docs-dist.
+# 5. Commit + push docs-dist. CI runners have no git identity configured —
+# without this the commit dies with `fatal: empty ident name` (v3.0.1 cut).
+if ! git -C "$WT" config user.email >/dev/null 2>&1; then
+  git -C "$WT" config user.name "github-actions[bot]"
+  git -C "$WT" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+fi
 log "committing + pushing docs-dist"
 git -C "$WT" add -A
 if git -C "$WT" diff --cached --quiet; then
