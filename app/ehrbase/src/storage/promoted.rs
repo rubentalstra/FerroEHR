@@ -62,7 +62,7 @@ pub struct PromotedLeaf {
 /// The registry. Extending it is: a migration (add the column + backfill +
 /// index) plus one entry here — no change to the write or read matching code.
 pub static PROMOTED_LEAVES: &[PromotedLeaf] = &[
-    // COMPOSITION.context.start_time.value → node.context_start (ehr/0008).
+    // COMPOSITION.context.start_time.value → node.context_start (ehr baseline).
     // COMPOSITION occurs only at num = 0, satisfying the module invariant.
     PromotedLeaf {
         rm_type: "COMPOSITION",

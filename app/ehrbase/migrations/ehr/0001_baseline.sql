@@ -160,6 +160,15 @@ CREATE TABLE template_store (
 COMMENT ON TABLE template_store IS 'Operational templates (OPT 1.4 XML). Dual identity: uuid id = the SM UUID handle (SM I_DEFINITION_ADL14); template_id = the ITS-REST wire address. Template versioning is not spec-required — replace-in-place.';
 COMMENT ON COLUMN template_store.id IS 'The SM OPT-by-UUID handle (req 5.1.1).';
 COMMENT ON COLUMN template_store.template_id IS 'The wire address (ITS-REST DEFINITION API + vo_version.template_id FK target).';
+-- Case-insensitive uniqueness of TEMPLATE_ID (BASE base_types master05
+-- §Composite Identifiers and Case: identifier equality — and thus uniqueness —
+-- is case-insensitive, so a case variant is the SAME template id and the
+-- upload endpoint rejects it as a duplicate, ITS-REST
+-- 409_template_already_exists). The exact-case UNIQUE above stays — it backs
+-- the vo_version.template_id foreign key; this functional unique index is the
+-- race-free case-insensitive guard.
+CREATE UNIQUE INDEX ux_template_store_template_id_ci
+    ON template_store (lower(template_id));
 
 -- ── vo_version ───────────────────────────────────────────────────────────────
 -- One row per version of a versioned object (COMPOSITION/EHR_STATUS/EHR_ACCESS/
@@ -365,6 +374,15 @@ CREATE TABLE node (
     -- canonical ITS-JSON encoding, so storage == API). lz4-compressed
     -- (storage choice; COMPRESSION precedes constraints).
     data        jsonb COMPRESSION lz4 NOT NULL,
+    -- Promoted EVENT_CONTEXT.start_time.value on the COMPOSITION root row
+    -- (num = 0); NULL elsewhere and for context-less persistent compositions.
+    -- Serves the AQL dashboard ORDER BY through the partial index below
+    -- instead of a per-candidate-row jsonb extraction (the measured hot path,
+    -- docs/plans/phase-20-optimization.md). Populated via
+    -- ext.openehr_timestamp; the (rm_type, path)→column registry is
+    -- app/ehrbase/src/storage/promoted.rs. Our own storage design — no
+    -- openEHR spec governs storage columns.
+    context_start timestamptz,
     CONSTRAINT pk_node PRIMARY KEY (vo_id, sys_version, num),
     -- num_cap >= num and parent above (pre-order) — the nested-set invariant
     -- (nested-set integrity — our own storage design). The root (num = 0,
@@ -394,32 +412,27 @@ CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
 CREATE INDEX idx_node_arch_subsume ON node (arch_entity, arch_concept text_pattern_ops, arch_major)
     WHERE arch_entity IS NOT NULL;
 CREATE INDEX idx_node_ehr ON node (ehr_id);
--- jsonb_ops (NOT jsonb_path_ops): $.** equality anchors need it (AQL engine
--- pre-filters — no spec governs indexing).
-CREATE INDEX idx_node_data_gin ON node USING gin (data jsonb_ops);
--- Magnitude expression index (SPECULATIVE, P20-repriced; realizes the QUERY
--- spec's DV_ORDERED ordering semantics as an index — the index itself is a
--- storage choice no spec governs).
--- Partial predicate: rm_type = 'ELEMENT'. ELEMENT is the sole leaf-bearing RM
--- structure node — every DV_ORDERED value lives in an ELEMENT.value — so it is
--- the smallest node set that can carry an ordered magnitude.
--- The P10 codec keeps a DV_ORDERED value INLINE inside its ELEMENT's fragment
--- (only structure types get their own node row), so the indexed expression is
--- the ELEMENT's value payload: ext.openehr_magnitude(data -> 'value') — real
--- magnitudes for every ordered leaf, NULL for non-ordered values (btree stores
--- them compactly). PERF(port): the AQL generator's ordering expression today is
--- ext.openehr_magnitude(jsonb_path_query_first(data, <jsonpath>)); for this
--- index to serve it, the generator's ELEMENT-value fast path must emit
--- ext.openehr_magnitude(data -> 'value') verbatim — wire + EXPLAIN-validate at
--- P20 (wired now per owner decision, repriced at P20).
-CREATE INDEX idx_node_magnitude ON node (ext.openehr_magnitude(data -> 'value'))
-    WHERE rm_type = 'ELEMENT';
+-- P20 NOTE: two speculative jsonb indexes were REMOVED here after the measured
+-- repricing (docs/plans/p20-overhead-checklist.md item 4): a gin(data
+-- jsonb_ops) index (the AQL engine emits no GIN-servable operator — CONTAINS
+-- is the nested-set interval join) and an ext.openehr_magnitude(data->'value')
+-- expression index (the generator never emits that expression verbatim). Both
+-- were per-node-row write amplification inside the held commit transaction —
+-- ~34 rows for a populated vital-signs composition, hundreds for an IPS.
+-- Measured ordering hot paths are served by promoted columns instead:
+-- The dashboard ORDER-BY partial index over the promoted column: the COMPOSITION
+-- roots of one EHR ordered by context start-time (the AQL generator emits
+-- rm_type + ehr_id filters, never num = 0 — COMPOSITION occurs only at the
+-- root, so the predicate is exactly what the query proves).
+CREATE INDEX idx_node_context_start ON node (ehr_id, context_start)
+    WHERE rm_type = 'COMPOSITION';
 
 COMMENT ON TABLE node IS 'Decomposed versioned-object content: one row per RM structure node, per version (our own storage design — openEHR defines no SQL schema). Nested-set interval num..=num_cap makes CONTAINS an integer range join.';
 COMMENT ON COLUMN node.num IS 'Pre-order number within the versioned object (root = 0).';
 COMMENT ON COLUMN node.num_cap IS 'Max num in this node''s subtree: the subtree is num..=num_cap (AQL CONTAINS).';
 COMMENT ON COLUMN node.parent_num IS 'num of the parent structure node (root points at itself/0).';
 COMMENT ON COLUMN node.citem_num IS 'num of the nearest ancestor carrying an archetype id.';
+COMMENT ON COLUMN node.context_start IS 'Promoted EVENT_CONTEXT.start_time.value (timestamptz) on the COMPOSITION root (num = 0); NULL elsewhere and for context-less persistent compositions. Serves the AQL dashboard ORDER BY (our own storage design — no openEHR spec governs it; mapping in storage/promoted.rs).';
 COMMENT ON COLUMN node.arch_entity IS 'qualified_rm_entity of a full archetype HRID, lowercased for comparison (BASE base_types master05 §Archetype Identifiers); NULL on at/id-code nodes. Drives archetype-subsumption querying (master10 §Design-time Relationships).';
 COMMENT ON COLUMN node.arch_concept IS 'Full domain_concept (incl. specialisation segments, e.g. laboratory-glucose) of a full archetype HRID, lowercased (BASE base_types master05); a parent query matches a child via a `concept-%` prefix (master10 §Design-time Relationships).';
 COMMENT ON COLUMN node.arch_major IS 'Major version (.v major) of a full archetype HRID; the interface-reference major boundary is hard (AM master07 §Querying). NULL on at/id-code nodes.';

@@ -72,7 +72,7 @@ pub async fn write_nodes(
         // Each promoted value is bound through its kind's conversion so a
         // value the AQL query-time cast accepted yields the same stored value,
         // and non-castable text becomes NULL rather than failing the write
-        // (ext.openehr_timestamp, ext/0003).
+        // (ext.openehr_timestamp, ext baseline).
         for (i, leaf) in crate::storage::PROMOTED_LEAVES.iter().enumerate() {
             let raw = row.promoted.get(i).and_then(Clone::clone);
             match leaf.kind {
