@@ -297,7 +297,7 @@ helm install ehrbase-rs deploy/helm/ehrbase-rs \
   --set database.existingSecret=my-db-secret
 ```
 
-See the [deployment guide](docs/enterprise/deployment.md) for the production
+See the [deployment guide](docs/design/helm-deployment.md) for the production
 checklist: database role separation, TLS, backup and point-in-time recovery,
 and audit logging.
 
@@ -324,8 +324,8 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Deployment guide](docs/enterprise/deployment.md) | Production operations |
-| [Product roadmap](docs/enterprise/product-roadmap.md) | The capability matrix and what's next |
+| [Deployment guide](docs/design/helm-deployment.md) | Production operations |
+| [Product roadmap](ROADMAP.md) | Where the product goes next |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |
 

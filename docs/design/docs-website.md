@@ -481,7 +481,7 @@ L ≈ 3–5 pp).
 | Introduction | `README.md` (opener, "Why"), `docs/architecture.md` (layers) | newcomer to openEHR + product | M |
 | Getting started | `README.md` (quick start), `docker-compose.yml`, `docker/ehrbase.dev.toml`, `docs/design/container-images.md` | evaluator, first run | M |
 | Installation → Compose | `docker-compose.yml`, `docs/design/container-images.md` | operator | S |
-| Installation → Kubernetes/Helm | `docs/enterprise/deployment.md`, `deploy/helm/ehrbase-rs/` | platform engineer | M |
+| Installation → Kubernetes/Helm | `docs/design/helm-deployment.md`, `deploy/helm/ehrbase-rs/` | platform engineer | M |
 | Installation → From source | `README.md` (building), `rust-toolchain.toml` | contributor/operator | S |
 | Installation → Configuration reference | the **119 `EHRBASE_*`** keys (grep of `app/`,`docker/`), `docker/ehrbase.dev.toml` | operator | L |
 | Concepts → openEHR primer (RM, archetypes/templates, AQL, versioning) | `docs/architecture.md`, `README.md` | newcomer | M |
@@ -496,8 +496,8 @@ L ≈ 3–5 pp).
 | Beyond the core → Change events (AMQP) | `README.md`, ADR-014 (paraphrased, not linked) | integrator | S |
 | Beyond the core → FHIR connectors | `README.md`, ADR-016 (paraphrased) | integrator | S |
 | Beyond the core → S3 multimedia | `README.md`, ADR-017 (paraphrased) | operator | S |
-| Security & multi-tenancy | `docs/enterprise/access-control.md`, `docs/enterprise/atna-audit.md`, `README.md` (auth) | security engineer | L |
-| Operations | `docs/enterprise/deployment.md`, `docs/design/observability.md` | operator/SRE | L |
+| Security & multi-tenancy | `docs/design/access-control.md`, `docs/design/atna-audit.md`, `README.md` (auth) | security engineer | L |
+| Operations | `docs/design/helm-deployment.md`, `docs/design/observability.md` | operator/SRE | L |
 | Conformance | `docs/conformance/CONFORMANCE_REPORT.md`, `…_STATEMENT.md`, `…_CERTIFICATE.md`, `docs/design/conformance-framework.md` | procurement/evaluator | M |
 | Contributing | `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` | contributor | S |
 

@@ -13,8 +13,9 @@ fresh branch from develop, and **start the next phase immediately** without
 waiting for a "yes continue".
 
 **Why:** the owner wants uninterrupted autonomous progression through the
-roadmap (docs/enterprise/product-roadmap.md §3: E1 eventing → E2
-multi-tenancy → E3 FHIR connectors → E4 S3/SeaweedFS multimedia → E5 K8s).
+roadmap (now the root `ROADMAP.md` — the E1→E5 enterprise arc that
+originally motivated this has shipped; docs/enterprise/ was deleted
+2026-07-14).
 
 **Hard ordering rule (owner correction 2026-07-11, angry):** the sequence is
 strictly commit → push → **create PR → merge** → `git fetch` → checkout the

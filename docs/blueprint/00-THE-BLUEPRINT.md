@@ -39,7 +39,7 @@ framework (`tools/conformance`, 310 catalogued cases).
 Baseline conformance signal (re-derived 2026-07-13 by the **W-10 instrument
 rewrite** — spine-first case derivation, multi-SUT + BYO endpoint, edition
 ladder, per-SUT artefacts under `docs/conformance/<sut>/`;
-`docs/plans/w10-conformance-redesign.md`): ECC = **369 executions · 334
+the W-10 close (PR #82, `docs/PROGRESS.md`)): ECC = **369 executions · 334
 pass · 0 fail** (35 documented adjudication skips; ratcheted 2026-07-13 by ECC-TPL-017, the ADL 1.4 example→commit round-trip probe born from the W-11 CKM-pack defect); machine profile verdicts
 **CORE PASS · STANDARD PASS · OPTIONS OBTAINED**. Ancestor (B7-era
 instrument): 341 · 315 · 0 · 26 — every delta explained in the W-10 plan
