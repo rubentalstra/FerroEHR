@@ -17,9 +17,9 @@ text { fill: #c3c2b7; }
 </style>
 <text x="16" y="22" class="title">Max sustained req/s at the SLO</text>
 <text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
-<rect class="s1" x="170" y="42.0" width="113.0" height="12" rx="4"/>
-<text class="muted" x="289.0" y="52.0">161.4 req/s</text>
+<rect class="s1" x="170" y="42.0" width="150.5" height="12" rx="4"/>
+<text class="muted" x="326.5" y="52.0">319.7 req/s</text>
 <text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
 <rect class="s2" x="170" y="68.0" width="450.0" height="12" rx="4"/>
-<text class="muted" x="626.0" y="78.0">643.0 req/s</text>
+<text class="muted" x="626.0" y="78.0">956.0 req/s</text>
 </svg>
