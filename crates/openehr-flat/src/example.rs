@@ -635,29 +635,64 @@ fn input_range(input: &WebTemplateInput) -> Option<&WebTemplateRange> {
 
 // ── numeric picking (deterministic, range-clamped) ──────────────────────────────
 
-/// A decimal example value clamped into `range` (defaulting to `0.0`).
+/// A plausible, non-zero decimal example value within `range`.
+///
+/// An unconstrained magnitude gets a deterministic non-zero default
+/// ([`DEFAULT_DECIMAL`]); a range-constrained one is placed at the range
+/// **midpoint** when both bounds exist (honouring the open-bound `>`/`<`
+/// operators), and clamped toward the single stated bound otherwise. The result
+/// never lands on `0.0` when the range admits a non-zero value: a zero example
+/// magnitude is clinically unreal and defeats the multiplicative payload jitter
+/// the example skeletons feed. Deterministic (no randomness): the same range
+/// always yields the same value. The FLAT/STRUCTURED formats have no versioned
+/// openEHR spec of their own — this pick policy is our own design.
 fn pick_decimal(range: Option<&WebTemplateRange>) -> f64 {
-    let Some(r) = range else { return 0.0 };
-    let mut v = 0.0;
-    if let Some(min) = r.min.as_ref().and_then(Value::as_f64) {
+    /// The default when no numeric bound is stated (a plausible non-zero value).
+    const DEFAULT_DECIMAL: f64 = 10.0;
+    /// The step taken across an open (`>` / `<`) bound.
+    const STEP: f64 = 1.0;
+
+    let Some(r) = range else {
+        return DEFAULT_DECIMAL;
+    };
+    // Effective bounds, moved just inside an open (`>` / `<`) constraint.
+    let lo = r.min.as_ref().and_then(Value::as_f64).map(|min| {
         if r.min_op.as_deref() == Some(">") {
-            if v <= min {
-                v = min + 1.0;
-            }
-        } else if v < min {
-            v = min;
+            min + STEP
+        } else {
+            min
         }
-    }
-    if let Some(max) = r.max.as_ref().and_then(Value::as_f64) {
+    });
+    let hi = r.max.as_ref().and_then(Value::as_f64).map(|max| {
         if r.max_op.as_deref() == Some("<") {
-            if v >= max {
-                v = max - 1.0;
-            }
-        } else if v > max {
-            v = max;
+            max - STEP
+        } else {
+            max
         }
+    });
+    match (lo, hi) {
+        (Some(lo), Some(hi)) => {
+            let mid = f64::midpoint(lo, hi);
+            // A midpoint of 0.0 on a range symmetric about zero (e.g. [-5, 5])
+            // would land on the forbidden zero even though a non-zero value is
+            // in range — bias to the positive half instead.
+            if mid == 0.0 && hi > 0.0 {
+                hi / 2.0
+            } else {
+                mid
+            }
+        }
+        // Only a lower bound: sit at the floor, or the default when that is not
+        // above zero (so the pick stays non-zero and in range).
+        (Some(lo), None) => lo.max(DEFAULT_DECIMAL),
+        // Only an upper bound: sit at the ceiling, or the default when that is
+        // not below zero; a non-positive ceiling admits only a value below it.
+        (None, Some(hi)) => {
+            let v = hi.min(DEFAULT_DECIMAL);
+            if v == 0.0 { hi - STEP } else { v }
+        }
+        (None, None) => DEFAULT_DECIMAL,
     }
-    v
 }
 
 /// An integer example value clamped into `range` (defaulting to `0`).
@@ -909,5 +944,93 @@ mod tests {
         // Deterministic across calls.
         apply_output_uid(&mut input, &wt.template_id);
         assert_eq!(input.get("uid"), output.get("uid"));
+    }
+
+    fn range(
+        min: Option<f64>,
+        min_op: Option<&str>,
+        max: Option<f64>,
+        max_op: Option<&str>,
+    ) -> WebTemplateRange {
+        WebTemplateRange {
+            min_op: min_op.map(str::to_owned),
+            min: min.map(|m| json!(m)),
+            max_op: max_op.map(str::to_owned),
+            max: max.map(|m| json!(m)),
+        }
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)] // the picker returns exactly representable values
+    fn pick_decimal_is_non_zero_and_in_range() {
+        // Unconstrained: a plausible non-zero default, not 0.0.
+        assert_eq!(pick_decimal(None), 10.0);
+        // Both bounds present: the midpoint (never the min, never 0.0).
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), None, Some(10.0), None))),
+            5.0
+        );
+        assert_eq!(
+            pick_decimal(Some(&range(Some(60.0), None, Some(80.0), None))),
+            70.0
+        );
+        // A range symmetric about zero must not yield the forbidden 0.0.
+        let v = pick_decimal(Some(&range(Some(-5.0), None, Some(5.0), None)));
+        assert!(
+            v != 0.0 && (-5.0..=5.0).contains(&v),
+            "in range, non-zero: {v}"
+        );
+        // Only a lower bound: at the floor when it is above zero, else the default.
+        assert_eq!(
+            pick_decimal(Some(&range(Some(50.0), None, None, None))),
+            50.0
+        );
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), None, None, None))),
+            10.0
+        );
+        // Only an upper bound: below the ceiling, non-zero.
+        assert_eq!(
+            pick_decimal(Some(&range(None, None, Some(100.0), None))),
+            10.0
+        );
+        assert_eq!(pick_decimal(Some(&range(None, None, Some(4.0), None))), 4.0);
+        // Open bounds are honoured (`>` / `<` exclude the stated value).
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), Some(">"), None, None))),
+            10.0
+        );
+        let hi = pick_decimal(Some(&range(None, None, Some(1.0), Some("<"))));
+        assert!(hi < 1.0, "strictly below an open upper bound: {hi}");
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)] // a magnitude of exactly 0.0 is the value under test
+    fn pick_decimal_populated_magnitudes_are_non_zero() {
+        fn collect(v: &Value, out: &mut Vec<f64>) {
+            match v {
+                Value::Object(m) => {
+                    if m.get("_type").and_then(Value::as_str) == Some("DV_QUANTITY")
+                        && let Some(x) = m.get("magnitude").and_then(Value::as_f64)
+                    {
+                        out.push(x);
+                    }
+                    m.values().for_each(|c| collect(c, out));
+                }
+                Value::Array(a) => a.iter().for_each(|e| collect(e, out)),
+                _ => {}
+            }
+        }
+        // A populated example must not seed a zero-valued quantity magnitude
+        // (clinically unreal; defeats multiplicative jitter).
+        let wt = demo_vitals();
+        let comp = example_composition(&wt, DetailLevel::Medium);
+        let mut mags = Vec::new();
+        collect(&comp, &mut mags);
+        assert!(!mags.is_empty(), "Demo Vitals exposes DV_QUANTITY leaves");
+        assert!(
+            mags.iter().all(|m| *m != 0.0),
+            "no example magnitude is zero: {mags:?}"
+        );
     }
 }
