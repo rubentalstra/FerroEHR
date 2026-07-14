@@ -442,7 +442,7 @@ async fn drain_settle(client: &SutClient) {
     use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
     const CONSECUTIVE_FAST: u32 = 5;
     const FAST: Duration = Duration::from_millis(250);
-    const CAP: Duration = Duration::from_secs(180);
+    const CAP: Duration = Duration::from_mins(3);
     let started = std::time::Instant::now();
     let mut fast = 0u32;
     while fast < CONSECUTIVE_FAST {

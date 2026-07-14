@@ -1541,12 +1541,12 @@ fn measure_ips_validation_walk_cost() {
     let iters = 50;
     let t_rm = time_pass(iters, || {
         let mut v = Validator::default();
-        v.rm_invariant_pass(&comp, "");
+        v.rm_invariant_pass(&comp, &mut String::new());
         v.out.len()
     });
     let t_term = time_pass(iters, || {
         let mut v = Validator::default();
-        v.terminology_pass(&comp, "", None);
+        v.terminology_pass(&comp, &mut String::new(), None);
         v.out.len()
     });
     let t_both = time_pass(iters, || validate_rm_and_terminology(&comp).len());
@@ -1555,4 +1555,51 @@ fn measure_ips_validation_walk_cost() {
     eprintln!("  pass 1 rm_invariant_pass : {t_rm:>8.1} us/op");
     eprintln!("  pass 2 terminology_pass  : {t_term:>8.1} us/op");
     eprintln!("  combined (1+2)           : {t_both:>8.1} us/op");
+}
+
+/// P20 overhead checklist item 31 — MEASUREMENT (not a correctness gate):
+/// quantify the archetype-conformance **walk** (pass 3) over the populated IPS
+/// example against its OPT-built `WebTemplate`. Pass 3 is where item 31's
+/// per-node cost lives (per-visit `path::parse` of every constraint path, the
+/// per-visit `groups`/sibling-index rebuild, and the per-node path allocations)
+/// — the item-15 harness above only times the two template-independent passes.
+/// Times each pass and the full `validate_composition` so the before/after of
+/// the allocation-discipline rewrite is honest. Ignored by default (timing, not
+/// correctness); run:
+/// `cargo nextest run -p openehr-flat --run-ignored all \
+///   -E 'test(measure_ips_validation_full_cost)' --no-capture`.
+#[test]
+#[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
+fn measure_ips_validation_full_cost() {
+    let dir = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/benchmark/templates/ckm"
+    );
+    let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
+        .expect("read IPS OPT");
+    let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
+    let wt = crate::build_web_template(&opt).expect("build IPS WebTemplate");
+    let comp: Value = serde_json::from_str(
+        &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
+            .expect("read IPS example"),
+    )
+    .expect("parse IPS example");
+    let node_count = count_type_nodes(&comp);
+
+    // Warm up (allocator, branch predictors, the lazily-initialized bundle).
+    for _ in 0..5 {
+        std::hint::black_box(validate_composition(&comp, &wt).len());
+    }
+
+    // Public entry points only, so this harness compiles unchanged across the
+    // item-31 rewrite (the internal pass signatures change; these do not).
+    let iters = 50;
+    let t_rmterm = time_pass(iters, || validate_rm_and_terminology(&comp).len());
+    let t_walk = time_pass(iters, || validate_archetype_conformance(&comp, &wt).len());
+    let t_all = time_pass(iters, || validate_composition(&comp, &wt).len());
+
+    eprintln!("IPS full validation cost ({node_count} _type nodes, {iters} iters):");
+    eprintln!("  passes 1+2 rm+terminology      : {t_rmterm:>8.1} us/op");
+    eprintln!("  pass 3 walk (archetype conf.)  : {t_walk:>8.1} us/op");
+    eprintln!("  full validate_composition      : {t_all:>8.1} us/op");
 }

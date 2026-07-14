@@ -143,31 +143,43 @@ enum Binding {
 }
 
 impl Validator {
-    pub(super) fn terminology_pass(&mut self, v: &Value, path: &str, _parent_type: Option<&str>) {
+    // `path` is the single reusable running-path buffer pushed/popped per step
+    // (P20 item 31), mirroring [`super::Validator::rm_invariant_pass`]: a segment
+    // is appended before a coded-slot check or a recursion and truncated back
+    // after, so the full path string is materialized only when a violation is
+    // recorded.
+    pub(super) fn terminology_pass(
+        &mut self,
+        v: &Value,
+        path: &mut String,
+        _parent_type: Option<&str>,
+    ) {
+        use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
         let this_type = obj.get("_type").and_then(Value::as_str);
 
         // Slots fixed by the owning RM type.
         for (attr, binding) in slots_for(this_type) {
             if let Some(node) = obj.get(*attr) {
-                self.check_code(node, &format!("{path}/{attr}"), *binding);
+                let base = path.len();
+                let _ = write!(path, "/{attr}");
+                self.check_code(node, path, *binding);
+                path.truncate(base);
             }
         }
         // Slots that may appear on any node, independent of its `_type`:
         //   `null_flavour` (any LOCATABLE), `normal_status` (any DV_ORDERED).
         if let Some(nf) = obj.get("null_flavour") {
-            self.check_code(
-                nf,
-                &format!("{path}/null_flavour"),
-                Binding::Group(Group::NullFlavour),
-            );
+            let base = path.len();
+            let _ = write!(path, "/null_flavour");
+            self.check_code(nf, path, Binding::Group(Group::NullFlavour));
+            path.truncate(base);
         }
         if let Some(ns) = obj.get("normal_status") {
-            self.check_code(
-                ns,
-                &format!("{path}/normal_status"),
-                Binding::CodeSet(CodeSet::NormalStatuses),
-            );
+            let base = path.len();
+            let _ = write!(path, "/normal_status");
+            self.check_code(ns, path, Binding::CodeSet(CodeSet::NormalStatuses));
+            path.truncate(base);
         }
 
         for (k, val) in obj {
@@ -178,12 +190,18 @@ impl Validator {
                 Value::Array(a) => {
                     for (i, item) in a.iter().enumerate() {
                         if item.is_object() {
-                            self.terminology_pass(item, &format!("{path}/{k}[{i}]"), this_type);
+                            let base = path.len();
+                            let _ = write!(path, "/{k}[{i}]");
+                            self.terminology_pass(item, path, this_type);
+                            path.truncate(base);
                         }
                     }
                 }
                 Value::Object(_) => {
-                    self.terminology_pass(val, &format!("{path}/{k}"), this_type);
+                    let base = path.len();
+                    let _ = write!(path, "/{k}");
+                    self.terminology_pass(val, path, this_type);
+                    path.truncate(base);
                 }
                 _ => {}
             }
