@@ -193,8 +193,44 @@ pub fn overlay_series_chart(
     lines_chart(title, series, pick, fmt_y)
 }
 
+/// Estimated rendered width of `text` at the chart's 12px system font. SVG has
+/// no layout engine to ask, so a conservative (wide) per-character factor is
+/// used for every placement decision — over-estimating costs a few pixels of
+/// whitespace, under-estimating produces the overlap this exists to prevent.
+fn text_w(text: &str) -> f64 {
+    text.chars().count() as f64 * 7.2
+}
+
+/// One legend item's footprint: 10px chip + 6px gap + label.
+fn legend_item_w(label: &str) -> f64 {
+    16.0 + text_w(label)
+}
+
+/// Gap between legend items.
+const LEGEND_GAP: f64 = 20.0;
+
+/// Emit a legend row starting at `x`, chips at `chip_y` (labels baseline
+/// `chip_y + 9`), spaced by each label's measured width — never a fixed step.
+fn legend_row(s: &mut String, items: &[(&str, &str)], x: f64, chip_y: f64) {
+    let mut lx = x;
+    for (label, cls) in items {
+        s.push_str(&format!(
+            "<rect class=\"{cls}\" x=\"{lx:.1}\" y=\"{chip_y:.1}\" width=\"10\" height=\"10\" \
+             rx=\"2\"/>\n<text x=\"{:.1}\" y=\"{:.1}\">{}</text>\n",
+            lx + 16.0,
+            chip_y + 9.0,
+            esc(label)
+        ));
+        lx += legend_item_w(label) + LEGEND_GAP;
+    }
+}
+
 /// The shared line-chart body (one measure, one axis, ≤2 series with legend +
-/// end-of-line direct labels).
+/// end-of-line direct labels). Layout is collision-free by construction: the
+/// legend is right-aligned on the title band when the measured widths fit with
+/// clearance, else it drops to its own row (the chart grows); the right margin
+/// is sized to the longest direct label; two direct labels ending close
+/// together are pushed apart vertically.
 fn lines_chart(
     title: &str,
     series: Vec<(&str, &ContainerSummary, &str)>,
@@ -217,8 +253,28 @@ fn lines_chart(
         .iter()
         .flat_map(|(_, c, _)| c.series.iter().map(&pick))
         .fold(1.0_f64, f64::max);
-    let (x0, x1, y0, y1) = (64.0, 660.0, 40.0, 190.0);
-    let (width, height) = (760.0, 232.0);
+    let width = 760.0;
+    // Right margin fits the longest direct label (8px gap + label + 8px edge).
+    let label_margin = series
+        .iter()
+        .map(|(label, _, _)| text_w(label))
+        .fold(0.0_f64, f64::max)
+        + 16.0;
+    let x0 = 64.0;
+    let x1 = width - label_margin.max(24.0);
+    // Legend beside the title only when the measured widths leave ≥24px between
+    // the title's end and the right-aligned legend block; else its own row.
+    let legend_items: Vec<(&str, &str)> = series.iter().map(|(l, _, c)| (*l, *c)).collect();
+    let legend_w = legend_items
+        .iter()
+        .map(|(l, _)| legend_item_w(l))
+        .sum::<f64>()
+        + LEGEND_GAP * (legend_items.len().saturating_sub(1)) as f64;
+    let title_end = 16.0 + text_w(title) + 24.0;
+    let legend_inline = x1 - legend_w >= title_end;
+    let head_extra = if legend_inline { 0.0 } else { 22.0 };
+    let (y0, y1) = (40.0 + head_extra, 190.0 + head_extra);
+    let height = 232.0 + head_extra;
 
     let mut s = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {width} {height}\" \
@@ -229,10 +285,15 @@ fn lines_chart(
         "<text x=\"16\" y=\"22\" class=\"title\">{}</text>\n",
         esc(title)
     ));
+    if legend_inline {
+        legend_row(&mut s, &legend_items, x1 - legend_w, 14.0);
+    } else {
+        legend_row(&mut s, &legend_items, x0, 32.0);
+    }
     for frac in [0.0_f64, 0.5, 1.0] {
         let y = y1 - frac * (y1 - y0);
         s.push_str(&format!(
-            "<line class=\"grid\" x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\"/>\n\
+            "<line class=\"grid\" x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1:.1}\" y2=\"{y:.1}\"/>\n\
              <text class=\"muted\" x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"end\">{}</text>\n",
             x0 - 8.0,
             y + 4.0,
@@ -240,10 +301,14 @@ fn lines_chart(
         ));
     }
     s.push_str(&format!(
-        "<text class=\"muted\" x=\"{x1}\" y=\"{:.1}\" text-anchor=\"end\">{:.0} min</text>\n",
+        "<text class=\"muted\" x=\"{x1:.1}\" y=\"{:.1}\" text-anchor=\"end\">{:.0} min</text>\n",
         y1 + 18.0,
         t_max / 60_000.0
     ));
+    // Direct end-of-line labels: collected first, then pushed apart so two
+    // lines ending close together never overprint (12px font → 14px minimum
+    // separation), clamped to the plot band.
+    let mut direct: Vec<(f64, &str)> = Vec::new();
     for (label, c, cls) in &series {
         let pts: String = c
             .series
@@ -260,25 +325,22 @@ fn lines_chart(
         ));
         if let Some(last) = c.series.last() {
             let y = y1 - (pick(last) / y_max).min(1.0) * (y1 - y0);
-            s.push_str(&format!(
-                "<text x=\"{:.1}\" y=\"{y:.1}\">{}</text>\n",
-                x1 + 8.0,
-                esc(label)
-            ));
+            direct.push((y + 4.0, label));
         }
     }
-    // Legend (two series → always present).
-    let mut lx = x0;
-    for (label, _, cls) in &series {
+    direct.sort_by(|a, b| a.0.total_cmp(&b.0));
+    for i in 1..direct.len() {
+        if direct[i].0 - direct[i - 1].0 < 14.0 {
+            direct[i].0 = direct[i - 1].0 + 14.0;
+        }
+    }
+    for &(y, label) in &direct {
         s.push_str(&format!(
-            "<rect class=\"{cls}\" x=\"{lx}\" y=\"{:.1}\" width=\"10\" height=\"10\" rx=\"2\"/>\n\
-             <text x=\"{:.1}\" y=\"{:.1}\">{}</text>\n",
-            y0 - 24.0,
-            lx + 16.0,
-            y0 - 15.0,
+            "<text x=\"{:.1}\" y=\"{:.1}\">{}</text>\n",
+            x1 + 8.0,
+            y.min(y1 + 14.0),
             esc(label)
         ));
-        lx += 70.0;
     }
     s.push_str("</svg>\n");
     Some(s)
@@ -348,18 +410,15 @@ pub fn comparison_chart(title: &str, suts: &[(String, BTreeMap<String, u64>)]) -
         "<text x=\"16\" y=\"22\" class=\"title\">{} (log scale)</text>\n",
         esc(title)
     ));
-    // Legend: color follows the SUT, fixed slot order.
-    let mut lx = 170.0;
-    for (i, (name, _)) in suts.iter().take(2).enumerate() {
-        let cls = if i == 0 { "s1" } else { "s2" };
-        s.push_str(&format!(
-            "<rect class=\"{cls}\" x=\"{lx}\" y=\"30\" width=\"10\" height=\"10\" rx=\"2\"/>\n\
-             <text x=\"{:.1}\" y=\"39\">{}</text>\n",
-            lx + 16.0,
-            esc(name)
-        ));
-        lx += 150.0;
-    }
+    // Legend: color follows the SUT, fixed slot order; items spaced by each
+    // name's measured width (never a fixed step — SUT names are arbitrary).
+    let legend_items: Vec<(&str, &str)> = suts
+        .iter()
+        .take(2)
+        .enumerate()
+        .map(|(i, (name, _))| (name.as_str(), if i == 0 { "s1" } else { "s2" }))
+        .collect();
+    legend_row(&mut s, &legend_items, 170.0, 30.0);
     for d in gridlines(lo, hi) {
         let x = log_x(d, lo, hi, x0, x1);
         s.push_str(&format!(
@@ -592,6 +651,125 @@ mod tests {
         assert!(latency_chart(&BTreeMap::new()).is_empty());
         assert!(comparison_chart("t", &[]).is_empty());
         assert!(knee_chart(&[]).is_empty());
+    }
+
+    fn summary(name: &str, mem: &[u64]) -> ContainerSummary {
+        ContainerSummary {
+            name: name.to_owned(),
+            idle_rss: None,
+            peak_rss: mem.iter().copied().max().unwrap_or(0),
+            mean_cpu: 1.0,
+            series: mem
+                .iter()
+                .enumerate()
+                .map(|(i, m)| crate::sample::ResourceSample {
+                    t_ms: i as u64 * 1000,
+                    cpu_pct: 1.0,
+                    mem_bytes: *m,
+                })
+                .collect(),
+        }
+    }
+
+    /// Every `<rect …><text …>` legend pair and the title, as (x, estimated
+    /// end-x, y) extents parsed back out of the emitted SVG.
+    fn text_extents(svg: &str) -> Vec<(f64, f64, f64)> {
+        let mut out = Vec::new();
+        for line in svg.lines() {
+            let Some(tstart) = line.find("<text ") else {
+                continue;
+            };
+            let frag = &line[tstart..];
+            let attr = |name: &str| -> Option<f64> {
+                let key = format!("{name}=\"");
+                let s = frag.find(&key)? + key.len();
+                let e = frag[s..].find('"')? + s;
+                frag[s..e].parse().ok()
+            };
+            let (Some(x), Some(y)) = (attr("x"), attr("y")) else {
+                continue;
+            };
+            // Right-anchored texts extend LEFT of x — not band-collision
+            // candidates for this guard (axis labels).
+            if frag.contains("text-anchor=\"end\"") {
+                continue;
+            }
+            let content = frag
+                .split_once('>')
+                .and_then(|(_, rest)| rest.split_once('<'))
+                .map(|(c, _)| c)
+                .unwrap_or_default();
+            out.push((x, x + text_w(content), y));
+        }
+        out
+    }
+
+    /// The regression for the legend/title collisions: with a long title AND
+    /// long series names, nothing on the same text band may overlap, and the
+    /// two direct end-of-line labels of near-identical series stay ≥14px apart.
+    #[test]
+    fn lines_chart_layout_never_overlaps() {
+        let a = summary("ehrbase-rs-with-a-long-name", &[100_000_000; 20]);
+        let b = summary("ehrbase-java-2.34.0-upstream", &[100_500_000; 20]);
+        let entries = vec![
+            ("ehrbase-rs-with-a-long-name".to_owned(), a.clone()),
+            ("ehrbase-java-2.34.0-upstream".to_owned(), b.clone()),
+        ];
+        let svg = overlay_series_chart(
+            "App memory (RSS) over the run — a deliberately long title",
+            &entries,
+            |p| p.mem_bytes as f64,
+            |v| format!("{:.0} MB", v / 1_048_576.0),
+        )
+        .expect("chart renders");
+
+        // Same-band horizontal overlap check across every left-anchored text
+        // (title, legend labels, direct labels) + the legend chips.
+        let texts = text_extents(&svg);
+        assert!(texts.len() >= 5, "title + 2 legend + 2 direct labels");
+        for (i, a) in texts.iter().enumerate() {
+            for b in texts.iter().skip(i + 1) {
+                let same_band = (a.2 - b.2).abs() < 12.0;
+                let h_overlap = a.0 < b.1 && b.0 < a.1;
+                assert!(
+                    !(same_band && h_overlap),
+                    "text overlap: ({:?}) vs ({:?}) in\n{svg}",
+                    a,
+                    b
+                );
+            }
+        }
+
+        // Direct labels of near-identical series are pushed ≥14px apart. They
+        // are the texts at the plot's right edge — the maximal x among all
+        // left-anchored texts.
+        let max_x = texts.iter().map(|(x, _, _)| *x).fold(0.0_f64, f64::max);
+        let direct: Vec<f64> = texts
+            .iter()
+            .filter(|(x, _, _)| (*x - max_x).abs() < 0.5)
+            .map(|(_, _, y)| *y)
+            .collect();
+        assert_eq!(direct.len(), 2, "both direct labels present");
+        assert!(
+            (direct[0] - direct[1]).abs() >= 14.0,
+            "direct labels separated: {direct:?}"
+        );
+    }
+
+    /// Short title + short names still fit on one band (the legend stays
+    /// inline, the chart does not grow).
+    #[test]
+    fn lines_chart_inline_legend_when_it_fits() {
+        let entries = vec![
+            ("app".to_owned(), summary("app", &[1_000; 5])),
+            ("db".to_owned(), summary("db", &[2_000; 5])),
+        ];
+        let svg = overlay_series_chart("CPU", &entries, |p| p.cpu_pct, |v| format!("{v:.0}%"))
+            .expect("chart renders");
+        assert!(
+            svg.contains("viewBox=\"0 0 760 232\""),
+            "no extra legend row for a short title: {svg}"
+        );
     }
 
     #[test]
