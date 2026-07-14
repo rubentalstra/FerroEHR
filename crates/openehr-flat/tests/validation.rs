@@ -379,6 +379,85 @@ fn inverted_dv_interval_surfaces_limits_consistent() {
     );
 }
 
+// ── name-differentiated same-archetype-id siblings (real OPT) ─────────────────
+//
+// The neurologist OPT fills `openEHR-EHR-OBSERVATION.sensorum_status.v2` twice
+// under one SECTION, differentiated by `name`: one unqualified sibling ('Общее
+// состояние', its inner `items` closed to `at0004`) and one name-qualified
+// ('Нервно-психический статус', inner `items` closed to at0013/at0086/at0041).
+// A composition carrying BOTH instances with the discriminating names is valid;
+// the fix routes each instance to its own overlay so neither is checked against
+// the other's closed-world set (RM common `master03-archetyped_package.adoc`
+// §"The `LOCATABLE` class"; AOM 1.4 `master04-constraint_model_package.adoc`
+// §`node_id`).
+
+/// A `DV_CODED_TEXT` `ELEMENT` (a leaf under an `ITEM_TREE`).
+fn coded_element(node_id: &str, name: &str, code: &str) -> Value {
+    serde_json::json!({
+        "_type": "ELEMENT", "archetype_node_id": node_id,
+        "name": {"_type": "DV_TEXT", "value": name},
+        "value": {"_type": "DV_CODED_TEXT", "value": name,
+                  "defining_code": {"_type": "CODE_PHRASE", "code_string": code,
+                                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"}}}
+    })
+}
+
+/// A `sensorum_status.v2` OBSERVATION with the given runtime `name` and the given
+/// leaves under its single `at0002` event's `ITEM_TREE`.
+fn sensorum(name: &str, items: &[Value]) -> Value {
+    serde_json::json!({
+        "_type": "OBSERVATION",
+        "archetype_node_id": "openEHR-EHR-OBSERVATION.sensorum_status.v2",
+        "name": {"_type": "DV_TEXT", "value": name},
+        "data": {"_type": "HISTORY", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "Event Series"},
+            "origin": {"_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00"},
+            "events": [{"_type": "POINT_EVENT", "archetype_node_id": "at0002",
+                "name": {"_type": "DV_TEXT", "value": "Произвольное событие"},
+                "time": {"_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00"},
+                "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0003",
+                    "name": {"_type": "DV_TEXT", "value": "Дерево"},
+                    "items": items}}]}
+    })
+}
+
+#[test]
+fn neurologist_both_sensorum_siblings_validate_clean() {
+    let wts = web_templates();
+    let wt = wts
+        .get("openEHR-EHR-COMPOSITION.t_neurologist_examination(1-17)_lanit.v1")
+        .expect("neurologist WebTemplate");
+    let comp = serde_json::json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.t_neurologist_examination.v1",
+        "name": {"_type": "DV_TEXT", "value": "Neurologist"},
+        "content": [{
+            "_type": "SECTION",
+            "archetype_node_id": "openEHR-EHR-SECTION.adhoc.v1",
+            "name": {"_type": "DV_TEXT", "value": "Общий осмотр"},
+            "items": [
+                sensorum("Общее состояние", &[coded_element("at0004", "Общее состояние", "at0005")]),
+                sensorum(
+                    "Нервно-психический статус",
+                    &[
+                        coded_element("at0013", "Уровень сознания", "at0014"),
+                        coded_element("at0041", "Нервно-психический статус", "at0042"),
+                    ],
+                ),
+            ]
+        }]
+    });
+    let unexpected: Vec<ValidationMessage> = openehr_flat::validate_composition(&comp, wt)
+        .into_iter()
+        .filter(|m| m.kind == ValidationKind::Unexpected)
+        .collect();
+    assert!(
+        unexpected.is_empty(),
+        "both name-differentiated sensorum_status instances must validate against \
+         their own overlay (no Unexpected), got {unexpected:?}"
+    );
+}
+
 // ── a WebTemplate node builder sanity check (paths line up) ───────────────────
 
 #[test]
