@@ -16,10 +16,12 @@ use std::fmt::Write as _;
 use sea_query::{Alias, Expr, ExprTrait as _, Order, Query};
 
 use crate::aql::error::{AqlError, SqlError};
-use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, VersionField};
+use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, Source, VersionField};
 use crate::db::iden::Node;
+use crate::storage::{PROMOTED_LEAVES, PromotedKind};
 
 use super::expr::{as_text, call, cast, col, extract_base, order_coercion};
+use super::from::is_vo_root_type;
 use super::{Builder, ValueMode};
 
 impl Builder<'_> {
@@ -66,6 +68,16 @@ impl Builder<'_> {
         leaf: &LeafPath,
         mode: ValueMode,
     ) -> Result<Expr, AqlError> {
+        // The server-assigned OBJECT_VERSION_ID (`uid[/value]`) is synthesized
+        // from the joined `vo_version`, not stored in the fragment (F6).
+        if let Some(expr) = self.version_uid_expr(leaf, mode) {
+            return Ok(expr);
+        }
+        // A registered promoted leaf reads its indexed `node` column instead of
+        // the correlated subtree extraction (P20 fast path).
+        if let Some(expr) = self.promoted_leaf_expr(leaf, mode) {
+            return Ok(expr);
+        }
         let src = self.source_node(leaf.source.0)?;
         let jp = fragment_jsonpath(leaf);
 
@@ -98,6 +110,107 @@ impl Builder<'_> {
         sub.expr(coerce_value(base, mode, leaf));
         sub.limit(1);
         Ok(Expr::from(sub))
+    }
+
+    /// The server-assigned `OBJECT_VERSION_ID` for a `uid` / `uid/value` path on
+    /// a versioned-object-root variable (F6). The uid is assigned at commit and
+    /// is **not** persisted in the canonical fragment (the REST read path injects
+    /// it — `service::ehr::meta::with_uid`), so an AQL jsonb extraction finds
+    /// nothing; QUERY master03 §Identified paths lists `COMPOSITION.uid.value` as
+    /// normative, so it is synthesized here from the already-joined `vo_version`
+    /// via the same law as the wire id (RM common master06 §Version
+    /// Identification): `vo_id::creating_system_id::version_tree_id`. `None`
+    /// (fall through to the stored fragment) for a contained object's own `uid`,
+    /// any predicate on the path, or a source with no versioned-object root.
+    fn version_uid_expr(&mut self, leaf: &LeafPath, mode: ValueMode) -> Option<Expr> {
+        // Only a direct `uid[/value]` — no structure hop, no path predicate.
+        if !leaf.anchor.is_empty()
+            || leaf.root_predicate.is_some()
+            || leaf.fragment.iter().any(|s| s.predicate.is_some())
+        {
+            return None;
+        }
+        // The source must be a versioned-object root: only there does the server
+        // assign the OBJECT_VERSION_ID (a contained OBSERVATION's `uid` is its
+        // own stored value, if any).
+        let Source::Rm(r) = &self.ir.sources[leaf.source.0] else {
+            return None;
+        };
+        if r.rm_type.is_empty() || !r.rm_type.names().iter().all(|t| is_vo_root_type(t)) {
+            return None;
+        }
+        let voa = self.vo_alias.get(&leaf.source.0).cloned()?;
+        let names: Vec<&str> = leaf.fragment.iter().map(|s| s.name.as_str()).collect();
+        let aud = self.ensure_audit(&voa);
+        let uid = version_field_expr(&voa, &aud, VersionField::Uid, &self.ctx.system_id);
+        match names.as_slice() {
+            // `uid/value` → the OBJECT_VERSION_ID string (projected → JSON string
+            // via the caller's `to_jsonb`; compared/ordered as text).
+            ["uid", "value"] => Some(uid),
+            // `uid` → the whole OBJECT_VERSION_ID object, only as a projected
+            // cell; a non-projection use falls through (not a normative shape).
+            ["uid"] if matches!(mode, ValueMode::Projection) => Some(call(
+                "jsonb_build_object",
+                vec![
+                    Expr::val("_type"),
+                    Expr::val("OBJECT_VERSION_ID"),
+                    Expr::val("value"),
+                    uid,
+                ],
+            )),
+            _ => None,
+        }
+    }
+
+    /// The promoted-leaf fast path (P20; `docs/plans/phase-20-optimization.md`):
+    /// when `leaf` addresses a registered promoted leaf on its versioned-object
+    /// root and the requested `mode` matches the column's kind, read
+    /// `node.<column>` (indexed) instead of lowering the correlated subtree
+    /// extraction + coercion. `None` (fall through to the general lowering) for
+    /// every non-promoted leaf, a projection / raw-numeric read, any predicate
+    /// along the path (a column cannot honor one), or a coercion mismatch. No
+    /// openEHR spec governs the lowering — our own design
+    /// (`crate::storage::promoted`).
+    fn promoted_leaf_expr(&self, leaf: &LeafPath, mode: ValueMode) -> Option<Expr> {
+        let ValueMode::Value(coercion) = mode else {
+            return None;
+        };
+        // The source must be an RM versioned-object root bound to a single
+        // rm_type, so its node rows are exactly the `num = 0` root the column
+        // is populated on.
+        let Source::Rm(r) = &self.ir.sources[leaf.source.0] else {
+            return None;
+        };
+        if !r.rm_type.is_singleton() {
+            return None;
+        }
+        let rm_type = r.rm_type.names().first()?.as_str();
+        // A promoted column carries no predicate context, so any predicate on the
+        // path rules the substitution out.
+        if leaf.root_predicate.is_some()
+            || leaf.anchor.iter().any(|s| s.predicate.is_some())
+            || leaf.fragment.iter().any(|s| s.predicate.is_some())
+        {
+            return None;
+        }
+        // Flattened attribute path: anchor hops then fragment names.
+        let path: Vec<&str> = leaf
+            .anchor
+            .iter()
+            .map(|s| s.attribute.as_str())
+            .chain(leaf.fragment.iter().map(|s| s.name.as_str()))
+            .collect();
+        let entry = PROMOTED_LEAVES
+            .iter()
+            .find(|p| p.rm_type == rm_type && p.path == path.as_slice())?;
+        let compatible = match entry.kind {
+            PromotedKind::Timestamp => coercion == Coercion::Temporal,
+        };
+        if !compatible {
+            return None;
+        }
+        let alias = self.node_alias.get(&leaf.source.0)?;
+        Some(col(alias, entry.column))
     }
 
     /// Resolve a leaf's source to a node alias present in the FROM.

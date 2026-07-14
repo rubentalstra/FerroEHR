@@ -612,6 +612,48 @@ async fn latest_versus_all_versions() {
         30.0,
         "latest magnitude is 30"
     );
+
+    // F6: the synthesized `c/uid/value` is version-correct under both scopes.
+    // LATEST → the current (v3) OBJECT_VERSION_ID.
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(current),
+        "LATEST c/uid/value is the current version id"
+    );
+
+    // ALL_VERSIONS → one distinct id per version (trees 1/2/3), all on this vo.
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let mut uids: Vec<String> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("uid").to_owned())
+        .collect();
+    uids.sort();
+    assert_eq!(uids.len(), 3, "one uid per version: {uids:?}");
+    assert!(
+        uids.iter().all(|u| u.starts_with(&format!("{vo_id}::"))),
+        "every uid is on this versioned object: {uids:?}"
+    );
+    let mut trees: Vec<&str> = uids
+        .iter()
+        .map(|u| u.rsplit("::").next().unwrap())
+        .collect();
+    trees.sort_unstable();
+    assert_eq!(trees, vec!["1", "2", "3"], "version trees 1/2/3: {uids:?}");
+    assert!(
+        uids.contains(&ovid) && uids.contains(&current),
+        "the v1 and v3 endpoints are present: {uids:?}"
+    );
 }
 
 /// The query-population gate, mandated by the SM `I_QUERY_SERVICE` interface for
@@ -1012,5 +1054,155 @@ async fn scalar_functions_execute() {
     assert!(
         tz.contains(':') && (tz.starts_with('+') || tz.starts_with('-')),
         "±hh:mm: {tz}"
+    );
+}
+
+// ── P20 promoted context_start ORDER BY + F6 uid synthesis ───────────────────
+
+/// An event COMPOSITION with an explicit `context.start_time`.
+fn composition_at(name: &str, magnitude: f64, start_time: &str) -> Value {
+    let mut c = composition(name, magnitude);
+    c["context"]["start_time"] = json!({ "_type": "DV_DATE_TIME", "value": start_time });
+    c
+}
+
+/// A persistent COMPOSITION with no `context` (RM ehr master03
+/// §COMPOSITION.context [0..1]) — its promoted `context_start` is NULL.
+fn composition_persistent(name: &str, magnitude: f64) -> Value {
+    let mut c = composition(name, magnitude);
+    if let Some(obj) = c.as_object_mut() {
+        obj.remove("context");
+    }
+    c["category"] = json!({
+        "_type": "DV_CODED_TEXT",
+        "value": "persistent",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": "431"
+        }
+    });
+    c
+}
+
+async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name: &str) -> String {
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(body, "249", None))
+        .await
+        .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+}
+
+/// P20 + F6, end to end against real PG 18: the patient-dashboard shape orders
+/// by the promoted `node.context_start` column (verified byte-equal to the
+/// pre-promotion correlated-subquery ordering in both directions, including the
+/// NULL-context row), and `c/uid/value` returns the exact server-assigned
+/// OBJECT_VERSION_ID (F6) — never null.
+#[tokio::test]
+async fn dashboard_context_start_ordering_and_uid() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_dashboard").await;
+    let svc = EhrbaseService::new(pool);
+    let ehr_id = create_ehr(&svc).await;
+
+    // Distinct start times, seeded out of chronological order so ORDER BY (not
+    // insertion order) drives the result.
+    let uid_mid = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("mid", 1.0, "2021-06-15T12:00:00Z"),
+        "mid",
+    )
+    .await;
+    let _uid_old = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("old", 2.0, "2020-01-01T00:00:00Z"),
+        "old",
+    )
+    .await;
+    let uid_new = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("new", 3.0, "2022-12-31T23:59:59Z"),
+        "new",
+    )
+    .await;
+    // A persistent composition → NULL context_start.
+    let _uid_persist = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_persistent("persist", 4.0),
+        "persist",
+    )
+    .await;
+
+    // ── DESC: NULLS FIRST (PG default for DESC), then newest→oldest. This is the
+    // identical ordering the pre-promotion `(… )::timestamptz DESC` subquery
+    // produced (a NULL sub-select and a NULL column sort identically). ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value, c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value DESC",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    for row in rows(&r) {
+        assert!(
+            row[0].as_str().is_some(),
+            "F6: c/uid/value must be a non-null OBJECT_VERSION_ID: {row:?}"
+        );
+    }
+    let names_desc: Vec<&str> = rows(&r)
+        .iter()
+        .map(|row| row[1].as_str().expect("name"))
+        .collect();
+    assert_eq!(
+        names_desc,
+        vec!["persist", "new", "mid", "old"],
+        "DESC: NULL context first, then newest→oldest"
+    );
+
+    // ── ASC: oldest→newest, NULLS LAST (PG default for ASC). ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value ASC",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let names_asc: Vec<&str> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("name"))
+        .collect();
+    assert_eq!(
+        names_asc,
+        vec!["old", "mid", "new", "persist"],
+        "ASC: oldest→newest, NULL context last"
+    );
+
+    // ── F6: the synthesized uid equals the OBJECT_VERSION_ID create returned. ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/name/value = 'new'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(uid_new),
+        "c/uid/value == the created OBJECT_VERSION_ID"
+    );
+
+    // ── F6: `c/uid` returns the OBJECT_VERSION_ID object for a specific row. ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value = 'mid'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!({ "_type": "OBJECT_VERSION_ID", "value": uid_mid }),
+        "c/uid is the OBJECT_VERSION_ID object"
     );
 }

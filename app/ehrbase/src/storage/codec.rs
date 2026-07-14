@@ -89,6 +89,12 @@ fn walk(
     } else {
         citem
     };
+    // Promoted-leaf capture (P20, our own storage design — no openEHR spec
+    // governs it): read the hot leaves off the node's *pre-pruning* JSON (the
+    // value may sit inside an about-to-be-split structure child, e.g.
+    // `EVENT_CONTEXT`), aligned to `PROMOTED_LEAVES`. Populated only on a
+    // versioned-object root (`num == 0`); every other row carries all-`None`.
+    let promoted = crate::storage::promoted::extract(num, &rm_type, &json);
     rows.push(NodeRow {
         num,
         num_cap: num,
@@ -102,6 +108,7 @@ fn walk(
         name,
         path: path.to_owned(),
         data: Value::Null,
+        promoted,
     });
 
     if let Value::Object(map) = &mut json {
