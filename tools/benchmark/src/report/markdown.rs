@@ -89,8 +89,8 @@ fn throughput(m: &mut String, r: &Results) {
     let t = &r.throughput;
     m.push_str("## 3. Throughput\n\n");
     m.push_str(&format!(
-        "Sustained **{:.1} req/s** over a {:.0} s window ({} measured requests, error rate {:.3}%). The knee/saturation series (register 01 §3) is the multi-run publication step.\n\n",
-        t.rps, t.window_s, t.requests, t.error_rate * 100.0
+        "Sustained **{}** over a {:.0} s window ({} measured requests, error rate {:.3}%). The knee/saturation series (register 01 §3) is the multi-run publication step.\n\n",
+        super::fmt_rate(t.rps), t.window_s, t.requests, t.error_rate * 100.0
     ));
 }
 

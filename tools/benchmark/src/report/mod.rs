@@ -84,6 +84,15 @@ pub fn from_results_file(path: &Path) -> Result<Results, BenchError> {
     Ok(results)
 }
 
+/// Format a sustained rate for prose/tables: requests per second with the
+/// per-minute equivalent beside it — the same measurement in the unit most
+/// readers reason in (owner rule: both units on every published throughput
+/// figure; checklist item 25a).
+#[must_use]
+pub fn fmt_rate(rps: f64) -> String {
+    format!("{rps:.1} req/s ({:.0} req/min)", rps * 60.0)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
