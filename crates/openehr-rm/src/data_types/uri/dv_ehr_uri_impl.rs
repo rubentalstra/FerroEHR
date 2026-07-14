@@ -14,18 +14,24 @@ fn scheme(value: &str) -> Option<&str> {
     value.split_once(':').map(|(s, _)| s)
 }
 
+/// The `Scheme_valid` + `Value_valid` core over the projected input — one
+/// source for the typed impl and the value-level fast path (`validate::fast`).
+pub(crate) fn push_dv_ehr_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
+    if !scheme(value).is_some_and(|s| s.eq_ignore_ascii_case("ehr")) {
+        out.push(InvariantViolation::here(
+            "Invariant Scheme_valid failed on type DV_EHR_URI",
+        ));
+    }
+    if value.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Value_valid failed on type DV_EHR_URI",
+        ));
+    }
+}
+
 impl Validate for DvEhrUri {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if !scheme(&self.value).is_some_and(|s| s.eq_ignore_ascii_case("ehr")) {
-            out.push(InvariantViolation::here(
-                "Invariant Scheme_valid failed on type DV_EHR_URI",
-            ));
-        }
-        if self.value.is_empty() {
-            out.push(InvariantViolation::here(
-                "Invariant Value_valid failed on type DV_EHR_URI",
-            ));
-        }
+        push_dv_ehr_uri_invariants(&self.value, out);
     }
 }
 

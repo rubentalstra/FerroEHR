@@ -40,6 +40,8 @@ use serde_json::Value;
 
 pub use openehr_base::validate::{InvariantViolation, Validate};
 
+mod fast;
+
 /// Build an archie-style class-invariant violation:
 /// `"Invariant <name> failed on type <RM_TYPE>"` — the exact message the
 /// reference implementation's `RMObjectValidator` emits for every invariant
@@ -107,6 +109,36 @@ pub(crate) fn push_archetype_node_id_valid(
 ) {
     if archetype_node_id.is_empty() {
         out.push(invariant_failed("Archetype_node_id_valid", rm_type));
+    }
+}
+
+/// The shared ENTRY-root invariants (archie `Is_archetypeRoot` on every
+/// concrete ENTRY subtype + inherited LOCATABLE `Archetype_node_id_valid`):
+/// an ENTRY is an archetype root, so `archetype_details` must be present.
+/// One core for the typed `Validate` impls and the value-level fast path.
+pub(crate) fn push_entry_root_invariants(
+    out: &mut Vec<InvariantViolation>,
+    rm_type: &str,
+    has_archetype_details: bool,
+    archetype_node_id: &str,
+) {
+    if !has_archetype_details {
+        out.push(invariant_failed("Is_archetypeRoot", rm_type));
+    }
+    push_archetype_node_id_valid(out, rm_type, archetype_node_id);
+}
+
+/// The temporal `Value_valid` invariant (see the ISO-8601 module notes above:
+/// archie enforces well-formedness structurally; our string-valued model
+/// expresses it as an explicit class invariant). One core for the typed
+/// impls and the value-level fast path.
+pub(crate) fn push_temporal_value_valid(
+    out: &mut Vec<InvariantViolation>,
+    rm_type: &str,
+    valid: bool,
+) {
+    if !valid {
+        out.push(invariant_failed("Value_valid", rm_type));
     }
 }
 
@@ -445,6 +477,34 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// (returns without appending). The composition validator (P15) calls this per
 /// node and prefixes the absolute RM path onto each [`InvariantViolation`].
 ///
+/// Two tiers (PERF: the RM-invariant pass visits every `_type` node of a
+/// commit, ~1.5k for a populated composition, so the per-node cost is
+/// load-bearing — measured via `openehr-flat`'s
+/// `measure_ips_validation_walk_cost` harness):
+///
+/// 1. the **fast path** ([`fast`]) verifies structural conformance directly
+///    against the live JSON node using the generated static RM model and runs
+///    the class invariants through the same `pub(crate)` cores the typed
+///    impls call — no deserialization, no allocation, byte-identical output;
+/// 2. anything the fast path cannot vouch for falls back to the authoritative
+///    **typed dispatch** below ([`validate_rm_value_typed`]), which
+///    deserializes into the concrete RM type (surfacing `does not conform to
+///    RM type …` for a structural mismatch) and runs the typed invariants.
+pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+    let Some(ty) = value.get("_type").and_then(Value::as_str) else {
+        return;
+    };
+    if fast::try_validate(ty, value, out) {
+        return;
+    }
+    validate_rm_value_typed(ty, value, out);
+}
+
+/// The typed dispatch tier of [`validate_rm_value`]: deserialize the node into
+/// its concrete RM type and run that type's `Validate` impl. Authoritative for
+/// every node (the fast path may only *skip* it when its result is provably
+/// identical); also the oracle the fast-path equivalence tests compare against.
+///
 /// Coverage is the set of concrete `openehr-rm` / `openehr-base` types that
 /// carry a non-terminology class invariant (the ones with a `*_impl.rs`
 /// sibling). `DV_INTERVAL` is dispatched with a `DvOrdered` element type so
@@ -455,7 +515,7 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// `serde_json::Value` as the element type — enough for their own (non-child)
 /// invariants.
 #[allow(clippy::too_many_lines)] // a flat _type → run::<T> dispatch table
-pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+pub(crate) fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     use openehr_base::base_types::identification::archetype_id::ArchetypeId;
     use openehr_base::base_types::identification::internet_id::InternetId;
     use openehr_base::base_types::identification::iso_oid::IsoOid;
@@ -512,9 +572,6 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     use crate::data_types::uri::dv_uri::DvUriData;
     use crate::integration::generic_entry::GenericEntry;
 
-    let Some(ty) = value.get("_type").and_then(Value::as_str) else {
-        return;
-    };
     match ty {
         // data_types
         "CODE_PHRASE" => run::<CodePhrase>(value, out),

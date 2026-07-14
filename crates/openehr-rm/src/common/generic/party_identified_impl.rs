@@ -7,18 +7,37 @@
 use crate::common::generic::party_identified::PartyIdentifiedData;
 use crate::validate::{InvariantViolation, Validate};
 
+/// The `Basic_validity` / `Name_valid` core over the projected inputs — one
+/// source for the typed impls (`PARTY_IDENTIFIED` here, `PARTY_RELATED` which
+/// inherits both) and the value-level fast path (`validate::fast`).
+pub(crate) fn push_party_identified_invariants(
+    rm_type: &str,
+    name: Option<&str>,
+    has_identifiers: bool,
+    has_external_ref: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if name.is_none() && !has_identifiers && !has_external_ref {
+        out.push(InvariantViolation::here(format!(
+            "Invariant Basic_validity failed on type {rm_type}"
+        )));
+    }
+    if name.is_some_and(str::is_empty) {
+        out.push(InvariantViolation::here(format!(
+            "Invariant Name_valid failed on type {rm_type}"
+        )));
+    }
+}
+
 impl Validate for PartyIdentifiedData {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.name.is_none() && self.identifiers.is_empty() && self.external_ref.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Basic_validity failed on type PARTY_IDENTIFIED",
-            ));
-        }
-        if self.name.as_deref().is_some_and(str::is_empty) {
-            out.push(InvariantViolation::here(
-                "Invariant Name_valid failed on type PARTY_IDENTIFIED",
-            ));
-        }
+        push_party_identified_invariants(
+            "PARTY_IDENTIFIED",
+            self.name.as_deref(),
+            !self.identifiers.is_empty(),
+            self.external_ref.is_some(),
+            out,
+        );
     }
 }
 

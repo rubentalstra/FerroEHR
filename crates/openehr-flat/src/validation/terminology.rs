@@ -156,7 +156,20 @@ impl Validator {
     ) {
         use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
-        let this_type = obj.get("_type").and_then(Value::as_str);
+        // One projection pass over the entries collects the fields every node
+        // is probed for, so the unconditional probes below pay no hashed map
+        // lookup (P20 item 32); only a `_type`-matched slot still `get`s.
+        let mut this_type = None;
+        let mut null_flavour = None;
+        let mut normal_status = None;
+        for (k, val) in obj {
+            match k.as_str() {
+                "_type" => this_type = val.as_str(),
+                "null_flavour" => null_flavour = Some(val),
+                "normal_status" => normal_status = Some(val),
+                _ => {}
+            }
+        }
 
         // Slots fixed by the owning RM type.
         for (attr, binding) in slots_for(this_type) {
@@ -169,13 +182,13 @@ impl Validator {
         }
         // Slots that may appear on any node, independent of its `_type`:
         //   `null_flavour` (any LOCATABLE), `normal_status` (any DV_ORDERED).
-        if let Some(nf) = obj.get("null_flavour") {
+        if let Some(nf) = null_flavour {
             let base = path.len();
             let _ = write!(path, "/null_flavour");
             self.check_code(nf, path, Binding::Group(Group::NullFlavour));
             path.truncate(base);
         }
-        if let Some(ns) = obj.get("normal_status") {
+        if let Some(ns) = normal_status {
             let base = path.len();
             let _ = write!(path, "/normal_status");
             self.check_code(ns, path, Binding::CodeSet(CodeSet::NormalStatuses));

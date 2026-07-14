@@ -269,7 +269,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       the before/after instrument. **Sequenced after item 28(b)/(c) lands —
       its agent is writing in openehr-flat now, and F7's fresh sibling
       routing lives in the same validation files.**
-- [ ] **32. `openehr_rm::validate` per-node residual (found closing item 31,
+- [x] **32. `openehr_rm::validate` per-node residual (found closing item 31,
       2026-07-14 — now the dominant validation cost).** With the walker's
       template-static re-parsing gone (item 31) and the deep-subtree
       deserialization pruned (item 30), passes 1+2 still cost ~11–13 ms of
@@ -284,6 +284,24 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       ArchetypeValidation; violation messages byte-identical; hand-written
       `validate.rs`/`*_impl.rs` only, never `// @generated` files; the
       item-15 harness is the before/after instrument.
+      *(Done 2026-07-14: two-tier dispatch in `openehr-rm/src/validate/fast.rs`
+      — a vouch-or-fall-back fast path checks structural conformance directly
+      on `&Value` against the generated static RM model (`crate::model`, so the
+      field tables regenerate with the spec) and runs the class invariants via
+      shared `pub(crate)` cores the typed `Validate` impls now also call (one
+      source per message, byte-identical by construction); anything unmodelled
+      (DV_INTERVAL/REFERENCE_RANGE/DV_MULTIMEDIA/FEEDER_AUDIT/periodic
+      HISTORY/…) falls back to the authoritative typed dispatch. Per-node map
+      hashing removed on the hot path (single entry-iteration in the checker +
+      linear-scan field access); the flat-side pass-1/2 walkers project their
+      per-node probes in one iteration too. Equivalence pinned by corpus tests
+      (10,957 corpus nodes, 9,523 fast-handled, + 2,856 per-key mutations —
+      fast output == typed output on every one) + an IPS fast-coverage
+      regression guard. Measured (IPS, 1,508 nodes, 50 iters, debug, idle
+      host): passes 1+2 11–13 ms → **3.94 ms** (pass 1 ~8–9.5 → 3.16, pass 2
+      ~1.5–3.5 → 0.72); full validate_composition ~14.3 → **5.95 ms** (pass-3
+      walk unchanged ~1.9–2.1). openehr-rm 194 (186+8 new), flat 156,
+      ehrbase 506, clippy/fmt clean.)*
 - [x] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
       rejected — publication-blocking).** All 130 errors at java L=1 were
       composition-create 422s; per-skeleton reproduction against a fresh

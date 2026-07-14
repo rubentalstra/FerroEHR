@@ -35,14 +35,32 @@ impl<T> History<T> {
     }
 }
 
+/// The non-periodic HISTORY invariant core (`Events_valid` + inherited
+/// `Archetype_node_id_valid`) over the projected inputs — one source for the
+/// typed impl and the value-level fast path (`validate::fast`, which declines
+/// periodic histories so `Period_consistency` always runs typed).
+pub(crate) fn push_history_basic_invariants(
+    events_empty: bool,
+    has_summary: bool,
+    archetype_node_id: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if events_empty && !has_summary {
+        out.push(InvariantViolation::here(
+            "Invariant Events_valid failed on type HISTORY",
+        ));
+    }
+    push_archetype_node_id_valid(out, "HISTORY", archetype_node_id);
+}
+
 impl<T> Validate for History<T> {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.events.is_empty() && self.summary.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Events_valid failed on type HISTORY",
-            ));
-        }
-        push_archetype_node_id_valid(out, "HISTORY", &self.archetype_node_id);
+        push_history_basic_invariants(
+            self.events.is_empty(),
+            self.summary.is_some(),
+            &self.archetype_node_id,
+            out,
+        );
 
         // Period_consistency: every event offset is a whole multiple of period.
         if let Some(period) = self.period.as_ref()

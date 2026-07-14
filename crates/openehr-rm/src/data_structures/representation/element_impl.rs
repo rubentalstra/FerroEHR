@@ -13,21 +13,39 @@
 use crate::data_structures::representation::element::Element;
 use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
 
+/// The ELEMENT invariant core over the projected presence flags — one source
+/// for the typed impl and the value-level fast path (`validate::fast`).
+pub(crate) fn push_element_invariants(
+    has_value: bool,
+    has_null_flavour: bool,
+    has_null_reason: bool,
+    archetype_node_id: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    // Inv_null_flavour_indicated: exactly one of value / null_flavour.
+    if has_value == has_null_flavour {
+        out.push(InvariantViolation::here(
+            "Invariant Inv_null_flavour_indicated failed on type ELEMENT",
+        ));
+    }
+    // Inv_null_reason_valid: a null reason only applies when value is absent.
+    if has_null_reason && has_value {
+        out.push(InvariantViolation::here(
+            "Invariant Inv_null_reason_valid failed on type ELEMENT",
+        ));
+    }
+    push_archetype_node_id_valid(out, "ELEMENT", archetype_node_id);
+}
+
 impl Validate for Element {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        // Inv_null_flavour_indicated: exactly one of value / null_flavour.
-        if self.value.is_some() == self.null_flavour.is_some() {
-            out.push(InvariantViolation::here(
-                "Invariant Inv_null_flavour_indicated failed on type ELEMENT",
-            ));
-        }
-        // Inv_null_reason_valid: a null reason only applies when value is absent.
-        if self.null_reason.is_some() && self.value.is_some() {
-            out.push(InvariantViolation::here(
-                "Invariant Inv_null_reason_valid failed on type ELEMENT",
-            ));
-        }
-        push_archetype_node_id_valid(out, "ELEMENT", &self.archetype_node_id);
+        push_element_invariants(
+            self.value.is_some(),
+            self.null_flavour.is_some(),
+            self.null_reason.is_some(),
+            &self.archetype_node_id,
+            out,
+        );
     }
 }
 

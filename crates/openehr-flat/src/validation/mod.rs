@@ -310,7 +310,32 @@ impl Validator {
     fn rm_invariant_pass(&mut self, v: &Value, path: &mut String) {
         use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
-        if obj.contains_key("_type") {
+        // One projection pass over the node's entries collects every field the
+        // per-node checks below read, so none of them pays a hashed map lookup
+        // (P20 item 32 — this runs for every node of every commit; the only
+        // remaining per-node gets are gated behind a matching `_type`).
+        let mut has_type = false;
+        let mut ty: Option<&str> = None;
+        let mut node_id: Option<&str> = None;
+        let mut has_archetype_details = false;
+        let mut mappings_empty = false;
+        let mut reference_ranges_empty = false;
+        for (k, val) in obj {
+            match k.as_str() {
+                "_type" => {
+                    has_type = true;
+                    ty = val.as_str();
+                }
+                "archetype_node_id" => node_id = val.as_str(),
+                "archetype_details" => has_archetype_details = !val.is_null(),
+                "mappings" => mappings_empty = val.as_array().is_some_and(Vec::is_empty),
+                "other_reference_ranges" => {
+                    reference_ranges_empty = val.as_array().is_some_and(Vec::is_empty);
+                }
+                _ => {}
+            }
+        }
+        if has_type {
             let mut inv = Vec::new();
             validate_rm_value(v, &mut inv);
             for iv in inv {
@@ -322,9 +347,9 @@ impl Validator {
                 self.push(p, iv.message, ValidationKind::Invariant);
             }
         }
-        self.check_archetyped_valid(obj, path);
-        self.check_nonempty_lists(obj, path);
-        self.check_data_structure_shapes(obj, path);
+        self.check_archetyped_valid(node_id, has_archetype_details, path);
+        self.check_nonempty_lists(obj, ty, mappings_empty, reference_ranges_empty, path);
+        self.check_data_structure_shapes(obj, ty, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -367,15 +392,20 @@ impl Validator {
     /// 2026-07-11); the CNF fixtures win over a prose reading that would reject
     /// them (`.claude/rules/spec-adherence.md`). The COMPOSITION root arm stays
     /// separately enforced (`composition_impl.rs` `Is_archetype_root`).
-    fn check_archetyped_valid(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
-        let Some(node_id) = obj.get("archetype_node_id").and_then(Value::as_str) else {
+    fn check_archetyped_valid(
+        &mut self,
+        node_id: Option<&str>,
+        has_archetype_details: bool,
+        path: &str,
+    ) {
+        let Some(node_id) = node_id else {
             return;
         };
         let is_term_code = node_id
             .strip_prefix("at")
             .or_else(|| node_id.strip_prefix("id"))
             .is_some_and(|rest| rest.chars().next().is_some_and(|c| c.is_ascii_digit()));
-        if is_term_code && obj.get("archetype_details").is_some_and(|d| !d.is_null()) {
+        if is_term_code && has_archetype_details {
             self.push(
                 norm_path(path),
                 format!(
@@ -398,7 +428,14 @@ impl Validator {
     /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
     ///   ENTRY subtype);
     /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
-    fn check_nonempty_lists(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+    fn check_nonempty_lists(
+        &mut self,
+        obj: &serde_json::Map<String, Value>,
+        ty: Option<&str>,
+        mappings_empty: bool,
+        reference_ranges_empty: bool,
+        path: &str,
+    ) {
         const RULES: &[(&str, &str, &str)] = &[
             ("COMPOSITION", "content", "Content_valid"),
             ("EVENT_CONTEXT", "participations", "Participations_validity"),
@@ -440,15 +477,15 @@ impl Validator {
         // `DV_TEXT.Mappings_valid` and `DV_ORDERED.Other_reference_ranges_validity`
         // (`dv_text.adoc` / `dv_ordered.adoc`) — no other RM attribute shares
         // these names.
-        for (attr, invariant) in [
-            ("mappings", "Mappings_valid"),
-            ("other_reference_ranges", "Other_reference_ranges_validity"),
+        for (attr, invariant, is_empty) in [
+            ("mappings", "Mappings_valid", mappings_empty),
+            (
+                "other_reference_ranges",
+                "Other_reference_ranges_validity",
+                reference_ranges_empty,
+            ),
         ] {
-            if obj
-                .get(attr)
-                .and_then(Value::as_array)
-                .is_some_and(Vec::is_empty)
-            {
+            if is_empty {
                 self.push(
                     norm_path(path),
                     format!(
@@ -459,7 +496,7 @@ impl Validator {
                 );
             }
         }
-        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+        let Some(ty) = ty else {
             return;
         };
         for (rule_ty, attr, invariant) in RULES {
@@ -492,8 +529,13 @@ impl Validator {
     ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
     ///   else" (RM `data_structures` master06; `history.adoc` generic
     ///   parameter) — the monomorphized runtime type cannot see `T`.
-    fn check_data_structure_shapes(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
-        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+    fn check_data_structure_shapes(
+        &mut self,
+        obj: &serde_json::Map<String, Value>,
+        ty: Option<&str>,
+        path: &str,
+    ) {
+        let Some(ty) = ty else {
             return;
         };
         if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
