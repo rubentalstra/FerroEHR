@@ -58,12 +58,16 @@
 
 ## Tasks
 
-- [ ] T1. **Profiling harness**: `pg_stat_statements` enabled in the compose
+- [x] T1. **Profiling harness**: `pg_stat_statements` enabled in the compose
       PG + a `scripts/profile.sh` that runs one capacity step (L=32/L=40)
       against the composed stack and dumps the top statements by total/mean
       time + `EXPLAIN (ANALYZE, BUFFERS)` for the AQL dashboard shapes —
       committed evidence file per run (`docs/benchmarks/profiles/`). Never
-      optimize without a before/after pair.
+      optimize without a before/after pair. *(Done 2026-07-14: harness
+      committed; first profile `20260714T070026Z-L32-10k.md` — its rows=0
+      anomaly surfaced F5/F6, its statement table surfaced the template-cache
+      bypass (finding 5, fixed as the T3 first slice) and confirmed the AQL
+      extraction as the #1 statement.)*
 - [ ] T2. **AQL hot-path indexes** (ADR-008 reserved exactly this): promoted
       column or `IMMUTABLE`-expression btree for the dashboard ORDER-BY
       shape (context start_time per versioned object), and whatever T1
