@@ -28,8 +28,9 @@ use conformance::harness::{AuthSlot, HttpRequest, HttpResponse, Method, Transpor
 use conformance::testdata::fixtures;
 use conformance::transport::SutClient;
 
-use crate::measure::Recorder;
+use crate::measure::{EventLedger, Recorder};
 use crate::model::Workload;
+use crate::model::event::EventInstance;
 use crate::{Action, BenchError, OpClass, PlannedOp, TemplateKind};
 
 /// How long a dependent op polls for a prerequisite id before it is recorded as
@@ -168,6 +169,33 @@ pub struct DriveOutcome {
     pub max_dispatch_lag_ms: u64,
     /// `template_id`s the SUT refused to provision, with the observed status.
     pub excluded_templates: Vec<String>,
+    /// Per event-class business-transaction tallies (attempted/completed), in
+    /// catalogue order — the TPC-style clinical-event metric (checklist item
+    /// 25b). An event counts *completed* only when every one of its steps
+    /// succeeded, warmup applied per event by its last step.
+    pub events: Vec<EventClassOutcome>,
+    /// Total attempted clinical events (business transactions) in the window.
+    pub events_attempted: u64,
+    /// Total completed clinical events in the window.
+    pub events_completed: u64,
+    /// Completed clinical events per minute over the window (the same window
+    /// denominator as `rps`, ×60 — friendly, comparable unit).
+    pub events_per_min: f64,
+}
+
+/// One event class's business-transaction tally, ready for the events block.
+#[derive(Debug, Clone)]
+pub struct EventClassOutcome {
+    /// Stable event key (`E1`..`E10`).
+    pub key: &'static str,
+    /// Human label ("admission", …).
+    pub label: &'static str,
+    /// Attempted occurrences (last step landed in the measurement window).
+    pub attempted: u64,
+    /// Completed occurrences (every step succeeded).
+    pub completed: u64,
+    /// Completed occurrences per minute (same window denominator as `rps`, ×60).
+    pub events_per_min: f64,
 }
 
 impl std::fmt::Debug for DriveOutcome {
@@ -179,6 +207,9 @@ impl std::fmt::Debug for DriveOutcome {
             .field("rps", &self.rps)
             .field("error_rate", &self.error_rate)
             .field("excluded_templates", &self.excluded_templates)
+            .field("events_attempted", &self.events_attempted)
+            .field("events_completed", &self.events_completed)
+            .field("events_per_min", &self.events_per_min)
             .finish_non_exhaustive()
     }
 }
@@ -190,6 +221,9 @@ struct Sample {
     planned: Duration,
     /// The completion offset from the run start, or `None` if the op errored.
     completion: Option<Duration>,
+    /// The business transaction (clinical-event occurrence) this step belongs
+    /// to — folded into the event ledger for the completed-per-minute metric.
+    event: EventInstance,
 }
 
 /// Provision every template the workload declares (both packs), from its
@@ -229,6 +263,10 @@ async fn provision_templates(
 /// [`BenchError`] only on a setup failure (a template that cannot be read).
 /// A SUT that *rejects* a provisioning upload is recorded in
 /// [`DriveOutcome::excluded_templates`], not raised.
+// A linear pipeline (provision → collector → dispatch loop → join → tally) whose
+// steps read best in sequence; splitting it would scatter the shared channel,
+// recorder, and ledger across helpers.
+#[allow(clippy::too_many_lines)]
 pub async fn drive(
     client: &SutClient,
     workload: &Workload,
@@ -238,17 +276,23 @@ pub async fn drive(
 
     let (excluded_kinds, failures) = provision_templates(client, &workload.provisioning).await?;
 
-    // The collector owns the recorder and folds samples in on a single task, so
-    // the recorder needs no interior mutability under the concurrent dispatch.
+    // The collector owns the recorder + the event ledger and folds samples in on
+    // a single task, so neither needs interior mutability under the concurrent
+    // dispatch. The ledger shares the recorder's warmup floor (applied per event
+    // by its last step, symmetric with the per-request discard).
+    let mut ledger = EventLedger::new();
+    ledger.set_warmup(workload.warmup);
     let (tx, mut rx) = mpsc::unbounded_channel::<Sample>();
     let collector = tokio::spawn(async move {
         while let Some(sample) = rx.recv().await {
+            let ok = sample.completion.is_some();
             match sample.completion {
                 Some(completion) => recorder.record(sample.class, sample.planned, completion),
                 None => recorder.error(sample.class),
             }
+            ledger.observe(sample.event, ok);
         }
-        recorder
+        (recorder, ledger)
     });
 
     // Dispatch in planned order (defensively sorted). Each op runs in its own
@@ -286,19 +330,21 @@ pub async fn drive(
         let tx = tx.clone();
         tasks.spawn(async move {
             let planned = op.at;
+            let event = op.event;
             let ok = execute_op(&client, &runtime, &op).await;
             let completion = ok.then(|| run_start.elapsed());
             let _ = tx.send(Sample {
                 class: op.class,
                 planned,
                 completion,
+                event,
             });
         });
     }
     drop(tx);
     while tasks.join_next().await.is_some() {}
 
-    let recorder = collector
+    let (recorder, ledger) = collector
         .await
         .map_err(|e| BenchError::Unexpected(format!("recorder collector task: {e}")))?;
 
@@ -335,6 +381,31 @@ pub async fn drive(
         0.0
     };
 
+    // Clinical-event (business-transaction) tallies: per class in catalogue
+    // order + totals + completed-per-minute over the same window denominator.
+    let per_min = |completed: u64| {
+        if window_s > 0.0 {
+            completed as f64 / window_s * 60.0
+        } else {
+            0.0
+        }
+    };
+    let mut events = Vec::new();
+    let mut events_attempted = 0u64;
+    let mut events_completed = 0u64;
+    for (class, summary) in ledger.summaries() {
+        events_attempted += summary.attempted;
+        events_completed += summary.completed;
+        events.push(EventClassOutcome {
+            key: class.key(),
+            label: class.label(),
+            attempted: summary.attempted,
+            completed: summary.completed,
+            events_per_min: per_min(summary.completed),
+        });
+    }
+    let events_per_min = per_min(events_completed);
+
     Ok(DriveOutcome {
         recorder,
         window_s,
@@ -344,6 +415,10 @@ pub async fn drive(
         error_rate,
         max_dispatch_lag_ms: u64::try_from(max_dispatch_lag.as_millis()).unwrap_or(u64::MAX),
         excluded_templates,
+        events,
+        events_attempted,
+        events_completed,
+        events_per_min,
     })
 }
 

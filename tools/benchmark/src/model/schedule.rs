@@ -23,7 +23,7 @@ use rand::rngs::StdRng;
 use serde_json::Value;
 
 use crate::model::WorkloadSpec;
-use crate::model::event::{self, ClinicalEvent, Step};
+use crate::model::event::{self, ClinicalEvent, EventInstance, Step};
 use crate::model::ward::{Patient, Role, Ward};
 use crate::render::{self, VaryParams};
 use crate::{Action, BenchError, PlannedOp, Profile, TemplateKind};
@@ -90,6 +90,11 @@ struct Builder {
     seed: u64,
     diurnal_cdf: Vec<f64>,
     ops: Vec<PlannedOp>,
+    /// Monotonic id assigned to each emitted clinical-event occurrence, so the
+    /// driver's event ledger can key completion per business transaction
+    /// (checklist item 25b). Deterministic: patients/events/occurrences are
+    /// iterated in a fixed order.
+    next_event_id: u64,
 }
 
 impl Builder {
@@ -117,6 +122,7 @@ impl Builder {
             seed: spec.seed,
             diurnal_cdf: diurnal_cdf(),
             ops: Vec::new(),
+            next_event_id: 0,
         })
     }
 
@@ -180,6 +186,19 @@ impl Builder {
             }
             _ => {}
         }
+        // One business-transaction occurrence: a schedule-unique id, the step
+        // count (completion denominator), and the LAST step's planned time (the
+        // warmup-boundary discriminator for the whole transaction).
+        let id = self.next_event_id;
+        self.next_event_id += 1;
+        let step_count = u32::try_from(steps.len()).unwrap_or(u32::MAX);
+        let boundary_at = base + STEP_SPACING * step_count.saturating_sub(1);
+        let instance = EventInstance {
+            class: event,
+            id,
+            steps: step_count,
+            boundary_at,
+        };
         for (i, step) in steps.into_iter().enumerate() {
             let at = base + STEP_SPACING * u32::try_from(i).unwrap_or(u32::MAX);
             let action = self.render_action(patient, step, at);
@@ -188,6 +207,7 @@ impl Builder {
                 class: step.op_class(),
                 patient: patient.index,
                 action,
+                event: instance,
             });
         }
     }
@@ -513,6 +533,51 @@ mod tests {
         assert!(
             (0.65..=0.75).contains(&frac),
             "read fraction {frac:.3} outside 70±5% (reads={reads}, writes={writes})"
+        );
+    }
+
+    #[test]
+    fn ops_carry_consistent_event_instances() {
+        let ops = build(&spec(Profile::Hour, 24, 13));
+        // Group every op by its event-instance id.
+        let mut by_instance: BTreeMap<u64, Vec<&PlannedOp>> = BTreeMap::new();
+        for op in &ops {
+            by_instance.entry(op.event.id).or_default().push(op);
+        }
+        for (id, steps) in &by_instance {
+            let first = steps[0].event;
+            // Every step of an occurrence shares the same tag.
+            for op in steps {
+                assert_eq!(op.event.id, *id);
+                assert_eq!(op.event.class, first.class);
+                assert_eq!(op.event.steps, first.steps);
+                assert_eq!(op.event.boundary_at, first.boundary_at);
+            }
+            // The declared step count matches the ops actually emitted, and the
+            // boundary is the last step's planned time (max `at`).
+            let count = u32::try_from(steps.len()).unwrap_or(u32::MAX);
+            assert_eq!(first.steps, count, "instance {id} step-count mismatch");
+            let last_at = steps.iter().map(|o| o.at).max().expect("non-empty");
+            assert_eq!(first.boundary_at, last_at, "instance {id} boundary");
+        }
+    }
+
+    #[test]
+    fn event_instance_ids_are_unique_per_occurrence() {
+        // A deterministic build assigns a distinct id to each emitted occurrence;
+        // ids never collide across patients/events.
+        let ops = build(&spec(Profile::Hour, 32, 21));
+        let mut seen_pairs = std::collections::HashSet::new();
+        for op in &ops {
+            // (id, at) within an instance repeats per step; (id) maps to exactly
+            // one class — so a class change under one id would be a bug.
+            seen_pairs.insert((op.event.id, op.event.class));
+        }
+        let distinct_ids: std::collections::HashSet<u64> = ops.iter().map(|o| o.event.id).collect();
+        assert_eq!(
+            seen_pairs.len(),
+            distinct_ids.len(),
+            "each event id maps to exactly one class"
         );
     }
 

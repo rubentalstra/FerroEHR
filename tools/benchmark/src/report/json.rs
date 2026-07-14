@@ -26,6 +26,11 @@ pub struct Results {
     pub classes: BTreeMap<String, ClassRecord>,
     /// Sustained throughput over the measurement window.
     pub throughput: ThroughputBlock,
+    /// Clinical-event (business-transaction) throughput: TPC-style events/min
+    /// beside the per-request req/s (checklist item 25b). `#[serde(default)]`
+    /// so a pre-25b `results.json` still deserializes (empty events block).
+    #[serde(default)]
+    pub events: EventsBlock,
     /// Container resource series + cold start (absent fields = unavailable).
     pub resources: ResourcesBlock,
     /// Database on-disk footprint (`None` = unavailable, e.g. a BYO SUT).
@@ -196,6 +201,37 @@ pub struct ThroughputBlock {
     pub error_rate: f64,
 }
 
+/// Clinical-event (business-transaction) throughput (checklist item 25b). A
+/// clinical event (admission, medication round, lab batch, discharge…) is a
+/// multi-request business transaction; it is *completed* only when every one of
+/// its steps succeeded within the measured window (warmup applied per event by
+/// its last step — symmetric with the per-request warmup discard). The TPC-style
+/// events/min analogue of the per-request req/s.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct EventsBlock {
+    /// Per event class, keyed by the stable event key (`E1`..`E10`).
+    pub classes: BTreeMap<String, EventClassRecord>,
+    /// Total attempted occurrences over the window.
+    pub attempted: u64,
+    /// Total completed occurrences over the window.
+    pub completed: u64,
+    /// Completed clinical events per minute (same window denominator as req/s).
+    pub events_per_min: f64,
+}
+
+/// One event class's business-transaction tally (register 01 §6 `events.<E>`).
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct EventClassRecord {
+    /// The human label ("admission", …).
+    pub label: String,
+    /// Attempted occurrences (last step landed in the measurement window).
+    pub attempted: u64,
+    /// Completed occurrences (every step succeeded).
+    pub completed: u64,
+    /// Completed occurrences per minute (same window denominator as req/s).
+    pub events_per_min: f64,
+}
+
 /// Container resource series + cold start (register 01 §6 `resources`).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ResourcesBlock {
@@ -323,6 +359,20 @@ mod tests {
                 rps: 0.83,
                 error_rate: 0.0,
             },
+            events: EventsBlock {
+                classes: BTreeMap::from([(
+                    "E2".to_owned(),
+                    EventClassRecord {
+                        label: "shift-vitals".to_owned(),
+                        attempted: 20,
+                        completed: 19,
+                        events_per_min: 9.5,
+                    },
+                )]),
+                attempted: 20,
+                completed: 19,
+                events_per_min: 9.5,
+            },
             resources: ResourcesBlock {
                 app: None,
                 db: None,
@@ -343,6 +393,21 @@ mod tests {
         assert_eq!(back.workload.seed, 42);
         assert_eq!(back.classes["ehr-create"].p99_us, 9000);
         assert_eq!(back.resources.cold_start_ms, Some(4200));
+        // The clinical-event (business-transaction) block survives the round trip.
+        assert_eq!(back.events.completed, 19);
+        assert_eq!(back.events.classes["E2"].label, "shift-vitals");
+        assert!((back.events.events_per_min - 9.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn events_default_when_absent_from_json() {
+        // A pre-25b results.json (no `events` key) still deserializes: the
+        // #[serde(default)] events block is empty, not an error.
+        let mut v = serde_json::to_value(sample_results()).expect("to value");
+        v.as_object_mut().expect("object").remove("events");
+        let back: Results = serde_json::from_value(v).expect("deserialize without events");
+        assert_eq!(back.events.attempted, 0);
+        assert!(back.events.classes.is_empty());
     }
 
     #[test]

@@ -6,6 +6,7 @@
 //! an excluded template) is stated in the limitations section, not hidden.
 
 use crate::OpClass;
+use crate::model::event::ClinicalEvent;
 use crate::report::json::{ContainerSummary, Results};
 
 /// Render `REPORT.md` for one run.
@@ -91,6 +92,44 @@ fn throughput(m: &mut String, r: &Results) {
     m.push_str(&format!(
         "Sustained **{}** over a {:.0} s window ({} measured requests, error rate {:.3}%). The knee/saturation series (register 01 §3) is the multi-run publication step.\n\n",
         super::fmt_rate(t.rps), t.window_s, t.requests, t.error_rate * 100.0
+    ));
+    events_table(m, r);
+}
+
+/// The TPC-style clinical-transaction table: a clinical event is a
+/// multi-request business transaction, *completed* only when every one of its
+/// steps succeeded within the measured window (checklist item 25b). Classes are
+/// listed in catalogue order; a class with no occurrences is omitted.
+fn events_table(m: &mut String, r: &Results) {
+    m.push_str("### Clinical transactions (events)\n\n");
+    m.push_str(
+        "A clinical event (admission, medication round, lab batch, discharge…) is a \
+         multi-request business transaction, counted **completed** only when every one \
+         of its steps succeeded within the measured window (warmup applied per event by \
+         its last step — symmetric with the per-request warmup discard). The TPC-style \
+         events/min analogue of the req/s above.\n\n",
+    );
+    if r.events.classes.is_empty() {
+        m.push_str("_No clinical-event data recorded for this run._\n\n");
+        return;
+    }
+    m.push_str("| Event | attempted | completed | events/min |\n|---|--:|--:|--:|\n");
+    for ev in ClinicalEvent::ALL {
+        let Some(rec) = r.events.classes.get(ev.key()) else {
+            continue;
+        };
+        m.push_str(&format!(
+            "| {} {} | {} | {} | {:.1} |\n",
+            ev.key(),
+            rec.label,
+            rec.attempted,
+            rec.completed,
+            rec.events_per_min
+        ));
+    }
+    m.push_str(&format!(
+        "| **total** | **{}** | **{}** | **{:.1}** |\n\n",
+        r.events.attempted, r.events.completed, r.events.events_per_min
     ));
 }
 
@@ -231,10 +270,11 @@ mod tests {
 
     use super::*;
     use crate::report::json::{
-        ClassRecord, ContainerSummary, EnvironmentBlock, ResourceSample, ResourcesBlock,
-        StorageBlock, SutBlock, ThroughputBlock, WorkloadBlock,
+        ClassRecord, ContainerSummary, EnvironmentBlock, EventClassRecord, EventsBlock,
+        ResourceSample, ResourcesBlock, StorageBlock, SutBlock, ThroughputBlock, WorkloadBlock,
     };
 
+    #[allow(clippy::too_many_lines)] // a test fixture builder — one full Results literal.
     fn results(with_resources: bool, excluded: Vec<String>) -> Results {
         let mut classes = BTreeMap::new();
         classes.insert(
@@ -304,6 +344,31 @@ mod tests {
                 rps: 12.5,
                 error_rate: 0.0196,
             },
+            events: EventsBlock {
+                classes: BTreeMap::from([
+                    (
+                        "E2".to_owned(),
+                        EventClassRecord {
+                            label: "shift-vitals".to_owned(),
+                            attempted: 30,
+                            completed: 28,
+                            events_per_min: 0.47,
+                        },
+                    ),
+                    (
+                        "E4".to_owned(),
+                        EventClassRecord {
+                            label: "lab-results".to_owned(),
+                            attempted: 10,
+                            completed: 10,
+                            events_per_min: 0.17,
+                        },
+                    ),
+                ]),
+                attempted: 40,
+                completed: 38,
+                events_per_min: 0.63,
+            },
             resources,
             storage: if with_resources {
                 Some(StorageBlock::new(1_000_000_000, 10_000))
@@ -335,6 +400,26 @@ mod tests {
         assert!(md.contains("req/s per app CPU-core"));
         assert!(md.contains("/composition"));
         assert!(md.contains("4200 ms"));
+    }
+
+    #[test]
+    fn clinical_transactions_table_renders() {
+        let md = render(&results(true, Vec::new()));
+        // The events subsection, both classes (catalogue order), and the total.
+        assert!(md.contains("### Clinical transactions (events)"));
+        let e2 = md.find("E2 shift-vitals").expect("E2 row present");
+        let e4 = md.find("E4 lab-results").expect("E4 row present");
+        assert!(e2 < e4, "events rendered in catalogue order");
+        assert!(md.contains("| E4 lab-results | 10 | 10 | 0.2 |"));
+        assert!(md.contains("| **total** | **40** | **38** | **0.6** |"));
+    }
+
+    #[test]
+    fn clinical_transactions_table_states_absence_honestly() {
+        let mut r = results(true, Vec::new());
+        r.events = EventsBlock::default();
+        let md = render(&r);
+        assert!(md.contains("_No clinical-event data recorded for this run._"));
     }
 
     #[test]

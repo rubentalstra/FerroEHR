@@ -11,10 +11,34 @@
 //! E7 updates) has existing state — the register's E6 assumes a directory
 //! exists and E7 assumes a composition of the updated template exists.
 
+use std::time::Duration;
+
 use crate::{OpClass, TemplateKind};
 
 /// Probability that a medication round (E3) is followed by a correction PUT.
 pub const MED_CORRECTION_PROB: f64 = 0.05;
+
+/// One occurrence of a [`ClinicalEvent`] as a business transaction (checklist
+/// item 25b — the TPC-style unit). The occurrence's steps are dispatched as
+/// independent open-loop tasks (see [`crate::drive`]), so this tag is threaded
+/// through every [`crate::PlannedOp`] of the occurrence and the event ledger
+/// keys on [`EventInstance::id`], counting the occurrence *completed* only when
+/// every one of its [`EventInstance::steps`] succeeded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EventInstance {
+    /// The event class (the per-class reporting key).
+    pub class: ClinicalEvent,
+    /// A schedule-unique occurrence id (assigned in emit order; the ledger's key).
+    pub id: u64,
+    /// The number of steps (requests) the occurrence dispatches — the
+    /// completion denominator (every step must succeed).
+    pub steps: u32,
+    /// The planned send offset of the occurrence's LAST step. Warmup discard is
+    /// applied to the whole transaction by this final step (register 01 §1),
+    /// symmetric with the per-request warmup floor: an occurrence straddling the
+    /// boundary is measured iff its last step lands in the measurement window.
+    pub boundary_at: Duration,
+}
 
 /// Probability that a care-plan review (E6) is followed by a directory update.
 pub const DIR_UPDATE_PROB: f64 = 0.10;
@@ -82,8 +106,10 @@ impl Step {
     }
 }
 
-/// A clinical event (register 00 §2, `E1..E10`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// A clinical event (register 00 §2, `E1..E10`). The derived `Ord` follows the
+/// catalogue declaration order (E1..E10), so a `BTreeMap` keyed on it reports in
+/// catalogue order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ClinicalEvent {
     /// E1 — admission (turnover only).
     Admission,
@@ -148,6 +174,23 @@ impl ClinicalEvent {
             ClinicalEvent::WardDashboard => "E8",
             ClinicalEvent::Discharge => "E9",
             ClinicalEvent::Provisioning => "E10",
+        }
+    }
+
+    /// A stable human label for the event class (report/comparison tables).
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            ClinicalEvent::Admission => "admission",
+            ClinicalEvent::ShiftVitals => "shift-vitals",
+            ClinicalEvent::MedicationRound => "medication-round",
+            ClinicalEvent::LabResults => "lab-results",
+            ClinicalEvent::ChartReview => "chart-review",
+            ClinicalEvent::CarePlan => "care-plan",
+            ClinicalEvent::DocCorrection => "doc-correction",
+            ClinicalEvent::WardDashboard => "ward-dashboard",
+            ClinicalEvent::Discharge => "discharge",
+            ClinicalEvent::Provisioning => "provisioning",
         }
     }
 
