@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Composition commits against an already-seen template no longer re-read the
+  stored OPT from the database on every commit — the built WebTemplate cache
+  is now consulted first (measured: 10,206 redundant reads in a 120 s load
+  window, the #2 database statement by total time). Deleting a template now
+  also evicts it from that cache, so a commit racing a delete gets the
+  correct `422` ("template not known") instead of a foreign-key `500`.
+
 ### Added
 
 - Overload backpressure: the REST server now caps the number of API requests
