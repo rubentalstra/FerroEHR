@@ -736,6 +736,13 @@ fn archetype_predicate_subsumption_sql() {
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
 
 /// G-01: OR-containment under an EHR lowers to a disjunction of correlated
+
+/// Anchor-probe EXISTS count: total EXISTS minus the population gates
+/// (`qgv…` aliases, item 24) — the gates are not containment anchors.
+fn anchor_exists(sql: &str) -> usize {
+    sql.matches("EXISTS(SELECT").count() - sql.matches("AS \"qgv").count()
+}
+
 /// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
 /// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
 /// FROM tree; it must now build.
@@ -747,9 +754,9 @@ fn or_contains_under_ehr_lowers_to_disjunctive_exists() {
           OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
     assert_eq!(
-        sql.matches("EXISTS").count(),
+        anchor_exists(&sql),
         2,
-        "one EXISTS per OR branch: {sql}"
+        "one anchor EXISTS per OR branch: {sql}"
     );
     assert!(sql.contains(" OR "), "the branches are OR-combined: {sql}");
 }
@@ -764,7 +771,7 @@ fn or_contains_under_vo_interval_anchors_each_branch() {
          (OBSERVATION o[openEHR-EHR-OBSERVATION.lab.v1] \
           OR OBSERVATION o1[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
-    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+    assert_eq!(anchor_exists(&sql), 2, "{sql}");
     assert!(sql.contains(" OR "), "{sql}");
     assert!(
         sql.contains("BETWEEN"),
@@ -784,9 +791,9 @@ fn nested_and_or_contains_tree_builds() {
               AND OBSERVATION o3[openEHR-EHR-OBSERVATION.bp.v1]))",
     );
     assert_eq!(
-        sql.matches("EXISTS").count(),
+        anchor_exists(&sql),
         3,
-        "one EXISTS per operand: {sql}"
+        "one anchor EXISTS per operand: {sql}"
     );
     assert!(sql.contains(" OR ") && sql.contains(" AND "), "{sql}");
 }
@@ -803,7 +810,7 @@ fn not_contains_compound_operand_builds() {
           OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
     assert!(sql.contains("NOT"), "the exclusion is negated: {sql}");
-    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+    assert_eq!(anchor_exists(&sql), 2, "{sql}");
 }
 
 /// G-12: a mixed-type (`Raw`) leaf compared to a numeric literal extracts
@@ -987,4 +994,92 @@ fn contained_object_uid_is_not_synthesized() {
         sql.contains("jsonb_path_query_first"),
         "the observation uid is read from its stored fragment: {sql}"
     );
+}
+
+// ── item 24: typed EHR-id predicate + single correlated population gate ─────
+
+/// `e/ehr_id/value = '<uuid>'` lowers to a uuid-typed comparison on `ehr.id`
+/// (index-served; value-based equality = the case-insensitive identifier
+/// semantics of BASE base_types master05 §Composite Identifiers and Case),
+/// never the index-blind text-cast-both-sides form.
+#[test]
+fn ehr_id_equality_is_uuid_typed() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE e/ehr_id/value = '11111111-2222-4333-8444-555555555555'",
+    );
+    assert!(
+        sql.contains("CAST($") && sql.contains("AS uuid)"),
+        "uuid-typed RHS expected: {sql}"
+    );
+    assert!(
+        !sql.contains(r#"CAST("e0"."id" AS text) ="#),
+        "the text-cast equality must be gone: {sql}"
+    );
+}
+
+/// A non-uuid literal can equal no EHR id: `=` lowers to constant FALSE and
+/// `!=` to constant TRUE — no scan, no cast error.
+#[test]
+fn ehr_id_equality_with_a_non_uuid_literal_is_constant() {
+    let sql = build_sql("SELECT e/ehr_id/value FROM EHR e WHERE e/ehr_id/value = 'not-a-uuid'");
+    assert!(
+        sql.contains("FALSE") || sql.contains("$"),
+        "constant lowering: {sql}"
+    );
+    assert!(
+        !sql.contains("AS uuid)"),
+        "no uuid cast for a non-uuid literal: {sql}"
+    );
+}
+
+/// Ordering comparisons on the EHR id stay textual (uuid byte order is not
+/// text order; QUERY master03 defines string comparison) — the typed fast
+/// path fires for equality only.
+#[test]
+fn ehr_id_ordering_stays_textual() {
+    let sql = build_sql(
+        "SELECT e/ehr_id/value FROM EHR e \
+         WHERE e/ehr_id/value > '11111111-2222-4333-8444-555555555555'",
+    );
+    assert!(
+        sql.contains(r#"CAST("e0"."id" AS text)"#),
+        "ordering keeps the text form: {sql}"
+    );
+}
+
+/// The population gate (SM `I_QUERY_SERVICE`: full-population queries run over
+/// `is_queryable = true` EHRs) is emitted ONCE per join-connected component —
+/// a VO root linked to its EHR alias is covered by the alias's gate — and as a
+/// correlated `EXISTS` probe, not a full-population `IN` materialization.
+#[test]
+fn population_gate_is_single_and_correlated() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE e/ehr_id/value = '11111111-2222-4333-8444-555555555555' \
+         ORDER BY c/context/start_time/value DESC LIMIT 20",
+    );
+    // The gate's alias family is qgv/qgn; is_queryable itself binds as $n.
+    assert_eq!(
+        sql.matches("AS \"qgv").count(),
+        1,
+        "exactly one population gate: {sql}"
+    );
+    assert!(
+        sql.contains("EXISTS(SELECT") && sql.contains("\"qgv0\".\"ehr_id\" = \"e0\".\"id\""),
+        "correlated EXISTS form: {sql}"
+    );
+}
+
+/// A bare VO source with no EHR variable still gets its own gate (nothing else
+/// covers it).
+#[test]
+fn unlinked_vo_root_keeps_its_own_gate() {
+    let sql = build_sql("SELECT c/uid/value FROM COMPOSITION c");
+    assert_eq!(
+        sql.matches("AS \"qgv").count(),
+        1,
+        "the bare root is gated: {sql}"
+    );
+    assert!(sql.contains("EXISTS(SELECT"), "correlated gate: {sql}");
 }
