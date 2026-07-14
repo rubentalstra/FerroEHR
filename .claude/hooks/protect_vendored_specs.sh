@@ -65,7 +65,10 @@ esac
 # Content guard: block edits to any existing file carrying an @generated
 # marker in its head (the generated spec crates and any future generated
 # output, wherever it lives).
-if [ -f "$path" ] && head -c 400 "$path" 2>/dev/null | grep -q '@generated'; then
+# Anchored to a real generated-file marker line (`// @generated` / `-- @generated`
+# at line start) — prose that merely MENTIONS @generated must not trip this
+# (a hand-written file describing the convention hit the substring form).
+if [ -f "$path" ] && head -n 10 "$path" 2>/dev/null | grep -qE '^(//|--) @generated'; then
   block "'$path' carries an @generated marker — it is produced by openehr-codegen. Change the emitter (crates/openehr-codegen/src/emit.rs or the *_impl.rs sibling) and run /regen-codegen; never hand-edit generated output."
 fi
 
