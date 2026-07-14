@@ -17,6 +17,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The server now prints an ASCII-art startup banner to stdout before the
+  structured startup logs: the `EHRbase-rs` wordmark, the running version, the
+  maintainer credit (Ruben Talstra), the project URL, and the load-bearing
+  spec/platform pins (openEHR RM 1.2.0 · ITS-REST 1.0.3 · AQL 1.1 ·
+  PostgreSQL 18). The banner is suppressed under JSON logging
+  (`EHRBASE_LOG_FORMAT=json`) so machine log consumers see only structured
+  lines.
 - AQL queries are now planned once and cached: a repeated ad-hoc or stored
   query text reuses its lowered plan instead of re-parsing and re-analysing on
   every execution, while per-request parameter values, `fetch`/`offset`
