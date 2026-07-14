@@ -735,13 +735,13 @@ fn archetype_predicate_subsumption_sql() {
 
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
 
-/// G-01: OR-containment under an EHR lowers to a disjunction of correlated
-
 /// Anchor-probe EXISTS count: total EXISTS minus the population gates
 /// (`qgv…` aliases, item 24) — the gates are not containment anchors.
 fn anchor_exists(sql: &str) -> usize {
     sql.matches("EXISTS(SELECT").count() - sql.matches("AS \"qgv").count()
 }
+
+/// G-01: OR-containment under an EHR lowers to a disjunction of correlated
 
 /// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
 /// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
@@ -1000,7 +1000,7 @@ fn contained_object_uid_is_not_synthesized() {
 
 /// `e/ehr_id/value = '<uuid>'` lowers to a uuid-typed comparison on `ehr.id`
 /// (index-served; value-based equality = the case-insensitive identifier
-/// semantics of BASE base_types master05 §Composite Identifiers and Case),
+/// semantics of BASE `base_types` master05 §Composite Identifiers and Case),
 /// never the index-blind text-cast-both-sides form.
 #[test]
 fn ehr_id_equality_is_uuid_typed() {
@@ -1024,7 +1024,7 @@ fn ehr_id_equality_is_uuid_typed() {
 fn ehr_id_equality_with_a_non_uuid_literal_is_constant() {
     let sql = build_sql("SELECT e/ehr_id/value FROM EHR e WHERE e/ehr_id/value = 'not-a-uuid'");
     assert!(
-        sql.contains("FALSE") || sql.contains("$"),
+        sql.contains("FALSE") || sql.contains('$'),
         "constant lowering: {sql}"
     );
     assert!(
