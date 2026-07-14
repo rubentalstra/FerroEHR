@@ -5,13 +5,19 @@
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use crate::validate::{InvariantViolation, Validate};
 
+/// The `Id_valid` core over the projected input — one source for the typed
+/// impl and the value-level fast path (`validate::fast`).
+pub(crate) fn push_dv_identifier_invariants(id: &str, out: &mut Vec<InvariantViolation>) {
+    if id.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Id_valid failed on type DV_IDENTIFIER",
+        ));
+    }
+}
+
 impl Validate for DvIdentifier {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.id.is_empty() {
-            out.push(InvariantViolation::here(
-                "Invariant Id_valid failed on type DV_IDENTIFIER",
-            ));
-        }
+        push_dv_identifier_invariants(&self.id, out);
     }
 }
 

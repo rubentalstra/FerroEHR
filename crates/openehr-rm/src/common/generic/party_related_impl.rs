@@ -7,21 +7,19 @@
 //! relationship code belongs to the openEHR "subject relationship" group) is
 //! terminology-bound — deferred to the composition validator + `openehr-term`.
 
+use crate::common::generic::party_identified_impl::push_party_identified_invariants;
 use crate::common::generic::party_related::PartyRelated;
 use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for PartyRelated {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.name.is_none() && self.identifiers.is_empty() && self.external_ref.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Basic_validity failed on type PARTY_RELATED",
-            ));
-        }
-        if self.name.as_deref().is_some_and(str::is_empty) {
-            out.push(InvariantViolation::here(
-                "Invariant Name_valid failed on type PARTY_RELATED",
-            ));
-        }
+        push_party_identified_invariants(
+            "PARTY_RELATED",
+            self.name.as_deref(),
+            !self.identifiers.is_empty(),
+            self.external_ref.is_some(),
+            out,
+        );
     }
 }
 
