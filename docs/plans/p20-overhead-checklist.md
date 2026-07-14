@@ -165,6 +165,20 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
 - [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
       pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
       applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
+- [ ] **24. AQL ehr_id predicate is text-cast + duplicated is_queryable
+      guards (LIVE evidence, owner-captured server logs during T5 L=16: the
+      patient-dashboard query runs 1.0–1.3 s under load DESPITE the promoted
+      ORDER BY)**: the generator lowers `e/ehr_id/value = '…'` as
+      `CAST(e0.id AS text) = CAST($n AS text)` — index-blind on `ehr.id`, so
+      the join stays unbounded instead of driving the `(ehr_id,
+      context_start)` index backward scan. Emit a typed `= $n::uuid`
+      comparison when the literal parses as a uuid (a non-uuid literal can
+      match no row → constant false). Additionally the EHR-STATUS
+      `is_queryable` guard subselect is emitted TWICE (once against
+      `n1.ehr_id`, once against `e0.id`) and each scans every current
+      EHR_STATUS row per query — dedupe to one guard and give it an
+      index-served shape. Generator work (orchestrator) queued behind the
+      in-flight item-9 agent to avoid a file collision.
 - [ ] **23. Bench-profile tracing filter** (from F14): confirm the composed
       server's log level; filter `tower_http::trace` spans out of the
       benchmark profile if enabled.
