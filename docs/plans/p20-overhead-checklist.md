@@ -194,7 +194,14 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       seconds` (+ any new knobs from 7/13); changelog entries per
       user-visible change (auth cache done; pool defaults, nodelay when they
       land).
-- [ ] **19. The honest gate** — full ECC zero-drift run after the batch +
+      *(Done 2026-07-14: ECC 370·335·0 CORE+STANDARD PASS (4cf79bbe0); the
+      v5 pair measured — rs 262.2 req/s (L=26, p99 195 ms) vs upstream
+      160.5 (L=16), committed f77ac7cfc; README/COMPARISON/roadmap/plan
+      pages rewritten numbers-first per the publication mandate; the java
+      clean-start re-probe was started for symmetry and STOPPED by owner
+      order — the v5 pair stands as published, with the post-storm-rung
+      caveat recorded in the pair commit.)*
+- [x] **19. The honest gate** — full ECC zero-drift run after the batch +
       the T5 fine re-ladder (both SUTs, populated valid workload) → README/
       COMPARISON refreshed with whatever the numbers say. No number is
       claimed from this checklist without it. *(ECC half done 2026-07-14:

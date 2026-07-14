@@ -34,12 +34,13 @@ fully-populated clinical workload. Tracker:
 `docs/plans/p20-overhead-checklist.md` (32 receipts).
 
 - [x] Write-path folding (~4 statements/commit), plan cache, index diet,
-  admission/pool parity, validation-cost rewrites (items 30/31: RM-invariant
-  pass ~2.9×, archetype walk ~2.4×) — knee moved **161.9 → 396.9 req/s**.
-- [ ] Item 32 — RM-invariant per-node residual (in flight).
-- [ ] The definitive two-SUT knee pair on the instrument-clean benchmark
-  (shared 6/6 payload set; runs on a fresh branch after the v3.0.1 cut) —
-  fills the head-to-head max-sustained row with measured data.
+  admission/pool parity, validation-cost rewrites (items 30/31/32:
+  RM-invariant pass against the generated RM model with typed fallback,
+  pre-parsed constraint paths — full IPS validation 47 → ~6 ms).
+- [x] **The definitive two-SUT knee pair, measured (2026-07-14):
+  ehrbase-rs 262 req/s vs upstream 161 req/s (1.63×) at the p99 ≤ 1 s SLO
+  on fully-populated documents — the max-sustained row is flipped.**
+  Five instrument defects found and fixed en route (both directions).
 - [ ] Group-commit A/B (item 22), knee-run bottleneck profiling (item 27),
   ECC zero-drift close (item 19).
 
