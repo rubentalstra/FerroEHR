@@ -169,6 +169,7 @@ A single environment-only key (no file, no nesting group behind it).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `EHRBASE_QUERY__TIMEOUT_MS` | integer (ms) | unset (no per-query cap) | Per-query execution budget. `0` or unset disables it; when positive, an AQL query that exceeds the budget returns `408 Request Timeout`. |
+| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` | integer | `256` | Maximum number of distinct AQL query plans held in the in-memory plan cache. A repeated query text reuses its lowered plan instead of re-parsing on every execution (parameter values, `fetch`/`offset` paging, and EHR scope still bind per request); queries that resolve terminology are never cached. `0` disables the cache. Cache activity is reported by the `aql_plan_cache_events_total` metric. |
 
 ## Telemetry and logging
 

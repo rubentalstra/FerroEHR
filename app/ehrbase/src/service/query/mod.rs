@@ -10,6 +10,11 @@
 //!   assembly (`result_set.adoc`) + parameter substitution, isolated so the
 //!   SM-vs-ITS-REST shape divergences (the `RESULT_SET.id` MUST, G-05-03q) live
 //!   in one spec-cited place.
+//! - [`plan_cache`] — the bounded cache of lowered AQL plans keyed on query
+//!   text (P20; no openEHR spec governs it — our own performance design).
 
 mod execute;
+mod plan_cache;
 mod result_set;
+
+pub use plan_cache::{PlanCache, PlanCacheStats};
