@@ -191,6 +191,19 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       COMPARISON refreshed with whatever the numbers say. No number is
       claimed from this checklist without it.
 
+## Considered and deferred
+
+- **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
+  single-node setup, YES-later for scale-out.** Everything cacheable is
+  in-process moka today (WebTemplates, verified credentials, ehr_access,
+  the AQL plan cache) — an in-process hit is sub-µs vs ~0.2–1 ms for a
+  network cache GET, and the measured bottleneck is the PG write path,
+  which a cache tier cannot help. It becomes the right design at
+  multi-instance scale-out (Stage 2): shared verified-credential cache,
+  distributed rate limiting, and — the genuinely safe win — caching
+  immutable version reads (a committed OBJECT_VERSION_ID never changes, so
+  composition-by-version-id caching is invalidation-free by construction).
+
 ## Verified NOT a problem (don't re-chase)
 
 - JSON body parsed exactly once for JSON commits (`negotiate.rs:222`).
