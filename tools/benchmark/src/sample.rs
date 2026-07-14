@@ -257,7 +257,7 @@ pub async fn probe_storage(db: &DbAccess) -> Option<u64> {
 /// (and each rung's writes) accumulates dead tuples and analyze debt, and
 /// autovacuum's threshold then fires DURING a later window — a multi-minute,
 /// multi-core VACUUM/ANALYZE of the jsonb-heavy `node` table was observed
-/// saturating PostgreSQL mid-rung (2026-07-14: the `L=16` rung breached the SLO
+/// saturating the database engine mid-rung (2026-07-14: the `L=16` rung breached the SLO
 /// while `last_autovacuum` on 1.19M `node` rows landed inside its window; the
 /// first post-vacuum rung ran clean at 73 ms p99). Running `VACUUM ANALYZE`
 /// deterministically after seeding and in each inter-rung drain moves that
