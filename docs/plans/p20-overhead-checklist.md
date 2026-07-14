@@ -43,7 +43,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       the uid from `Committed`; read back only when representation is
       requested. **DONE ec1528bb7** (create = one pool acquisition end to
       end; `Committed` carries `time_committed`).
-- [ ] **4. GIN index write amplification** — `idx_node_data_gin` (jsonb_ops,
+- [x] **4. GIN index write amplification** — `idx_node_data_gin` (jsonb_ops,
       `0001_baseline.sql:399`) tokenizes EVERY node fragment on EVERY commit:
       ~34–43 rows (vital-signs) to ~160–400 (IPS) GIN insertions per commit,
       plus the `ext.openehr_magnitude` expression index (`:415`) per row, plus
@@ -51,16 +51,21 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       load). The AQL engine queries via nested-set + promoted columns; verify
       the SQL generator actually emits any GIN-served predicate, then drop the
       GIN (and narrow/drop the magnitude expression index) via migration;
-      ECC zero-drift gates it. *(dispatched to a worker)*
+      ECC zero-drift gates it. **DONE 8d9d48027** (usage proof: zero
+      GIN-servable operators emitted; both indexes removed from the baseline
+      directly per the pre-production rule; 0007/0008/ext-0003 folded in).
 - [x] **5. Dead reassemble when signing is off** — `apply_change` computes
       `served = reassemble(&rows)` (`versioning/change.rs:374,463`) to feed
       the signer, which early-returns when `EHRBASE_SIGNING_ENABLED=false` —
       a full O(N) rebuild + clone built and discarded per commit under the
       benchmark config. Gate the reassemble on `signer.enabled()`.
       **DONE ec1528bb7.**
-- [ ] **6. Temporal GiST EXCLUDE probes on `vo_version`** per insert
+- [x] **6. Temporal GiST EXCLUDE probes on `vo_version`** per insert
       (`0001_baseline.sql:252,258`; measured 1.6 s INSERT under load).
       Quantify (T4b) before any move; ADR-008 names the unique-index fallback.
+      **DONE via item 21 (7f39c0fe2)** — removal chosen over quantification
+      per the research finding (upstream pays plain btree; GiST exclusion
+      serializes concurrent inserts).
 - [x] **7. sqlx pool config** — `test_before_acquire` left at default true
       (+1 liveness round trip × every acquisition) and `min_connections = 0`
       (cold reopen + `SET search_path` churn). `db/pool.rs:22-34`,
@@ -147,13 +152,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       residual round trips flush together. Versioning semantics byte-equal
       (RM common master06); the signature-over-server-time ordering
       (audit→sign→vo_version) is the one hard sequential dependency.
-- [ ] **21. `vo_version` GiST → btree redesign** (from F6, greenfield
+- [x] **21. `vo_version` GiST → btree redesign** (from F6, greenfield
       mandate): replace both `WITHOUT OVERLAPS` GiST EXCLUDE constraints
       with plain btree uniqueness + application-enforced non-overlap (the
       tx already closes the prior version and inserts the next atomically);
       add an invariant test proving no overlap can be committed. Migration
       re-authors the constraint set; ECC zero-drift + the versioning oracle
-      gate it.
+      gate it. **DONE 7f39c0fe2** (constraints removed from the baseline;
+      one-open-row-per-lineage partial btrees + close-then-insert at one
+      now() + the archive-load overlap audit carry the master06 invariant;
+      burst-update invariant test added; 490/490).
 - [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
       pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
       applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
