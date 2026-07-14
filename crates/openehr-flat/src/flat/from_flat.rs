@@ -389,7 +389,9 @@ fn place_rec(
 /// `LOCATABLE.name` is `DV_TEXT` or `DV_CODED_TEXT`), else a plain `DV_TEXT`.
 fn name_value(display: &str, coded: Option<&CodedName>) -> Value {
     match coded {
-        Some(CodedName { terminology, code }) => json!({
+        Some(CodedName {
+            terminology, code, ..
+        }) => json!({
             "_type": "DV_CODED_TEXT",
             "value": display,
             "defining_code": {
@@ -696,6 +698,7 @@ mod tests {
         let coded = CodedName {
             terminology: "local".to_owned(),
             code: "at0007".to_owned(),
+            incoherent: false,
         };
         assert_eq!(
             name_value("Global exclusion of adverse reactions", Some(&coded)),
