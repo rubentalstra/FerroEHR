@@ -49,15 +49,46 @@ use ir::{
 /// * [`AqlError::Analysis`] — an unknown class/variable, an unresolvable
 ///   attribute, a type mismatch, or an unbound parameter.
 pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
+    let ir = lower_query(query)?;
+    check_params(&ir, params)?;
+    Ok(ir)
+}
+
+/// Analyse and lower `query` into a typed [`QueryIr`], recording every
+/// referenced `$parameter` name in [`QueryIr::params`] — **without** checking
+/// that those parameters are supplied.
+///
+/// This is the request-independent half of [`plan`]: the IR is a pure,
+/// deterministic function of the query AST (no parameter *value*, paging
+/// window, EHR scope, or system id is baked in — those bind at SQL-build time,
+/// [`build_sql`]). That purity is what lets the query service cache the lowered
+/// IR keyed on the query text ([`crate::service::query`] plan cache); the
+/// per-request [`check_params`] then runs against the caller's [`Params`].
+///
+/// # Errors
+///
+/// [`AqlError::Feature`] / [`AqlError::Analysis`] as [`plan`], minus the
+/// unbound-parameter check (which is [`check_params`]).
+pub fn lower_query(query: &SelectQuery) -> Result<QueryIr, AqlError> {
     let mut ir = lower::lower(query)?;
-    let referenced = collect_params(&ir);
-    for name in &referenced {
+    ir.params = collect_params(&ir);
+    Ok(ir)
+}
+
+/// Validate that every `$parameter` referenced by `ir` (in [`QueryIr::params`],
+/// populated by [`lower_query`]) is bound in `params`.
+///
+/// # Errors
+///
+/// [`AqlError::Analysis`] with [`AnalysisError::UnboundParameter`] for the first
+/// referenced parameter with no supplied binding.
+pub fn check_params(ir: &QueryIr, params: &Params) -> Result<(), AqlError> {
+    for name in &ir.params {
         if !params.contains(name) {
             return Err(AnalysisError::UnboundParameter(name.clone()).into());
         }
     }
-    ir.params = referenced;
-    Ok(ir)
+    Ok(())
 }
 
 /// Collect every `$parameter` name referenced anywhere in the IR (sorted, unique).

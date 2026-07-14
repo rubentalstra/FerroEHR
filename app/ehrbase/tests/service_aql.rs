@@ -1206,3 +1206,103 @@ async fn dashboard_context_start_ordering_and_uid() {
         "c/uid is the OBJECT_VERSION_ID object"
     );
 }
+
+/// The AQL plan cache (P20) is transparent: a repeated query text reuses the
+/// lowered plan (a cache hit) yet returns byte-identical results, and the
+/// per-request parameter values + paging window still bind correctly on top of
+/// the shared plan. No openEHR spec governs the cache — our own performance
+/// design — so this asserts behaviour equivalence, not a spec clause.
+#[tokio::test]
+async fn plan_cache_reuses_plan_and_binds_per_request() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("aql_plan_cache").await);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 80.0).await;
+    create_comp(&svc, &ehr_id, "BP", 100.0).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+
+    // The RESULT_SET content that must be identical across runs (the `meta.id`
+    // and `meta._created` are volatile by design and excluded).
+    let content = |r: &Value| json!({ "columns": r["columns"], "rows": r["rows"] });
+
+    // ── Same query twice → cache miss then hit, identical results. ──────────
+    let count_q = "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c";
+    let before = svc.plan_cache().stats();
+    let r1 = run_aql(&svc, count_q, ehr_scope(&ehr_id)).await;
+    let after_first = svc.plan_cache().stats();
+    assert_eq!(after_first.misses, before.misses + 1, "first run is a miss");
+    assert_eq!(after_first.hits, before.hits, "first run is not a hit");
+
+    let r2 = run_aql(&svc, count_q, ehr_scope(&ehr_id)).await;
+    let after_second = svc.plan_cache().stats();
+    assert_eq!(
+        after_second.hits,
+        after_first.hits + 1,
+        "the repeat query is served from the plan cache (no re-parse)"
+    );
+    assert_eq!(after_second.misses, after_first.misses, "no new miss");
+    assert_eq!(
+        content(&r1),
+        content(&r2),
+        "cached plan yields identical results"
+    );
+    assert_eq!(rows(&r1)[0][0], json!(3), "3 compositions in scope");
+
+    // ── $parameter values bind per request on top of the cached plan. ───────
+    let min_q = format!(
+        "SELECT o/{MAG_PATH} AS m FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] \
+         WHERE o/{MAG_PATH} > $min ORDER BY o/{MAG_PATH}"
+    );
+    let mut low_scope = ehr_scope(&ehr_id);
+    low_scope.parameters = BTreeMap::from([("min".to_owned(), json!(90))]);
+    let res_low = run_aql(&svc, &min_q, low_scope).await;
+    let stats_after_low = svc.plan_cache().stats();
+
+    let mut high_scope = ehr_scope(&ehr_id);
+    high_scope.parameters = BTreeMap::from([("min".to_owned(), json!(110))]);
+    let res_high = run_aql(&svc, &min_q, high_scope).await;
+    let stats_after_high = svc.plan_cache().stats();
+    assert_eq!(
+        stats_after_high.hits,
+        stats_after_low.hits + 1,
+        "the second parameterised run reuses the cached plan"
+    );
+    let mags = |r: &Value| {
+        rows(r)
+            .iter()
+            .map(|row| row[0].as_f64().expect("magnitude"))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(mags(&res_low), vec![100.0, 120.0], "$min=90 keeps 100,120");
+    assert_eq!(
+        mags(&res_high),
+        vec![120.0],
+        "$min=110 keeps only 120 — the bound value varies on the shared plan"
+    );
+
+    // ── REST `fetch` paging binds per request on top of the cached plan. ────
+    let page_q = format!(
+        "SELECT o/{MAG_PATH} FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] ORDER BY o/{MAG_PATH}"
+    );
+    let mut req_fetch_one = ehr_scope(&ehr_id);
+    req_fetch_one.fetch = Some(1);
+    let page_one = run_aql(&svc, &page_q, req_fetch_one).await;
+    let stats_one = svc.plan_cache().stats();
+
+    let mut req_fetch_two = ehr_scope(&ehr_id);
+    req_fetch_two.fetch = Some(2);
+    let page_two = run_aql(&svc, &page_q, req_fetch_two).await;
+    let stats_two = svc.plan_cache().stats();
+    assert_eq!(
+        stats_two.hits,
+        stats_one.hits + 1,
+        "the second paged run reuses the cached plan"
+    );
+    assert_eq!(rows(&page_one).len(), 1, "fetch=1 returns one row");
+    assert_eq!(
+        rows(&page_two).len(),
+        2,
+        "fetch=2 returns two rows from the same plan"
+    );
+}
