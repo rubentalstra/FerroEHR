@@ -1,6 +1,6 @@
 # Benchmark report — ehrbase-rs 3.0.0
 
-> Generated from `results.json` (never hand-typed). Workload **smoke** · scale **10k** · ward **20** · load factor **1** · seed `2953956094`. Latencies are microseconds, coordinated-omission-corrected against planned send times. Methodology: `docs/design/benchmarking.md`; workload: `docs/design/benchmark/00-workload-model.md`.
+> Generated from `results.json` (never hand-typed). Workload **hour** · scale **10k** · ward **20** · load factor **1** · seed `2953956094`. Latencies are microseconds, coordinated-omission-corrected against planned send times. Methodology: `docs/design/benchmarking.md`; workload: `docs/design/benchmark/00-workload-model.md`.
 
 ## 1. Environment
 
@@ -10,10 +10,10 @@
 |---|---|
 | SUT | ehrbase-rs 3.0.0 (ours) |
 | Base URL | http://localhost:8080/ehrbase/rest/openehr/v1 |
-| Run start | 2026-07-13T19:40:51.401599Z |
+| Run start | 2026-07-14T00:39:23.458873Z |
 | Load-gen host | 8 logical CPUs, 16384 MiB RAM |
-| Harness rev | 327554d09 |
-| Workload lock | `afa48bd156dc31d9e22d9ac8e4a7f9425f717480b04c28d746d28ae9a9fbec26` |
+| Harness rev | 24bc076ce |
+| Workload lock | `9e9aff7ce5a3a06bd800540a343a4fe7df146dbfa7ff0fe5b7b48e8ba6075724` |
 
 > A report with a different load-generator line is not directly comparable.
 
@@ -23,20 +23,20 @@ p50 / p90 / p99 / p99.9 / max latency (µs) and error count per class. Raw HdrHi
 
 | Class | count | errors | p50 | p90 | p99 | p99.9 | max |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| ehr-create | 2 | 0 | 21775 | 46943 | 46943 | 46943 | 46943 |
-| ehr-read | 2 | 0 | 64831 | 72767 | 72767 | 72767 | 72767 |
-| comp-create-small | 90 | 0 | 32191 | 54559 | 78655 | 78655 | 78655 |
-| comp-create-large | 4 | 0 | 50559 | 87615 | 87615 | 87615 | 87615 |
-| comp-update | 28 | 0 | 45055 | 79103 | 80959 | 80959 | 80959 |
-| comp-read-latest | 66 | 0 | 26095 | 37887 | 47935 | 47935 | 47935 |
-| comp-read-version | 22 | 0 | 25471 | 37855 | 47583 | 47583 | 47583 |
-| contribution-commit | 22 | 0 | 34495 | 45087 | 63903 | 63903 | 63903 |
-| aql-patient | 22 | 0 | 37535 | 52031 | 58143 | 58143 | 58143 |
-| aql-ward | 22 | 0 | 32159 | 56799 | 72959 | 72959 | 72959 |
-| dir-read | 22 | 0 | 21247 | 31791 | 33279 | 33279 | 33279 |
-| dir-update | 5 | 0 | 45983 | 75839 | 75839 | 75839 | 75839 |
-| history-read | 22 | 0 | 26815 | 34463 | 35295 | 35295 | 35295 |
-| status-update | 2 | 0 | 41119 | 49727 | 49727 | 49727 | 49727 |
+| ehr-create | 2 | 0 | 58367 | 61375 | 61375 | 61375 | 61375 |
+| ehr-read | 2 | 0 | 127231 | 129983 | 129983 | 129983 | 129983 |
+| comp-create-small | 213 | 0 | 38303 | 69247 | 95615 | 135167 | 135167 |
+| comp-create-large | 4 | 0 | 81279 | 142591 | 142591 | 142591 | 142591 |
+| comp-update | 27 | 0 | 44831 | 72383 | 79359 | 79359 | 79359 |
+| comp-read-latest | 501 | 0 | 25439 | 42591 | 59167 | 64063 | 64063 |
+| comp-read-version | 167 | 0 | 26207 | 40991 | 58079 | 59295 | 59295 |
+| contribution-commit | 40 | 0 | 37535 | 75903 | 90175 | 90175 | 90175 |
+| aql-patient | 167 | 0 | 39103 | 57503 | 66751 | 69951 | 69951 |
+| aql-ward | 14 | 0 | 50303 | 70143 | 78399 | 78399 | 78399 |
+| dir-read | 43 | 0 | 26927 | 46495 | 65727 | 65727 | 65727 |
+| dir-update | 6 | 0 | 37151 | 131327 | 131327 | 131327 | 131327 |
+| history-read | 21 | 0 | 22143 | 44927 | 48703 | 48703 | 48703 |
+| status-update | 2 | 0 | 54975 | 80255 | 80255 | 80255 | 80255 |
 | opt-upload | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tpl-list | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
@@ -48,25 +48,25 @@ p50 / p90 / p99 / p99.9 / max latency (µs) and error count per class. Raw HdrHi
 
 ## 3. Throughput
 
-Sustained **2.8 req/s** over a 120 s window (331 measured requests, error rate 0.000%). The knee/saturation series (register 01 §3) is the multi-run publication step.
+Sustained **0.3 req/s** over a 3600 s window (1209 measured requests, error rate 0.000%). The knee/saturation series (register 01 §3) is the multi-run publication step.
 
 ## 4. Resource efficiency
 
 | Container | mean CPU | peak RSS | idle RSS |
 |---|--:|--:|--:|
-| ehrbase-rs-ehrbase-1 | 5.5% | 121.6 MiB | 54.0 MiB |
-| ehrbase-rs-ehrbase-postgres-1 | 4.5% | 284.3 MiB | 197.7 MiB |
+| ehrbase-rs-ehrbase-1 | 0.9% | 187.8 MiB | 47.1 MiB |
+| ehrbase-rs-ehrbase-postgres-1 | 1.4% | 287.7 MiB | 198.4 MiB |
 
-- **50.3 req/s per app CPU-core** (2.8 req/s ÷ 0.05 cores).
-- **21.6 req/s per GB peak app RSS** (2.8 req/s ÷ 0.128 GB).
+- **36.9 req/s per app CPU-core** (0.3 req/s ÷ 0.01 cores).
+- **1.7 req/s per GB peak app RSS** (0.3 req/s ÷ 0.197 GB).
 
 ## 5. Storage footprint
 
-Database on-disk size **268.9 MiB** over **10000** compositions = **27.5 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
+Database on-disk size **269.2 MiB** over **10000** compositions = **27.6 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
 
 ## 6. Cold start
 
-Compose-up → first successful HTTP answer: **11531 ms** (11.5 s).
+Compose-up → first successful HTTP answer: **11403 ms** (11.4 s).
 
 ## 7. Limitations
 
@@ -77,5 +77,5 @@ Compose-up → first successful HTTP answer: **11531 ms** (11.5 s).
 ## 8. Reproduce it
 
 ```bash
-cargo run -q -p benchmark --bin bench -- run --sut ehrbase-rs --base-url http://localhost:8080/ehrbase/rest/openehr/v1 --profile smoke --scale 10k --ward-size 20 --load-factor 1 --seed 2953956094
+cargo run -q -p benchmark --bin bench -- run --sut ehrbase-rs --base-url http://localhost:8080/ehrbase/rest/openehr/v1 --profile hour --scale 10k --ward-size 20 --load-factor 1 --seed 2953956094
 ```
