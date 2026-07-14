@@ -14,9 +14,9 @@
 | Edition policy | pinned (development) |
 | Spec versions | RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-13T15:05:02.514176Z |
+| Run started | 2026-07-13T22:05:39.896663Z |
 
-**368 case×format executions · 333 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
+**369 case×format executions · 334 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
 
 ## 2. Per-area matrix
 
@@ -27,7 +27,7 @@
 | COM — COMPOSITION | 32 | 39 | 0 | 0 | 0 | 0 |
 | CTB — CONTRIBUTION (change sets) | 31 | 26 | 0 | 0 | 5 | 0 |
 | DIR — DIRECTORY (FOLDER) | 37 | 37 | 0 | 0 | 0 | 0 |
-| TPL — Template / OPT provisioning | 16 | 12 | 0 | 0 | 4 | 0 |
+| TPL — Template / OPT provisioning | 17 | 13 | 0 | 0 | 4 | 0 |
 | SQR — Stored-query provisioning | 7 | 5 | 0 | 0 | 2 | 0 |
 | QRY — AQL execution | 24 | 23 | 0 | 0 | 1 | 0 |
 | VAL — Content / archetype validation | 119 | 119 | 0 | 0 | 0 | 0 |
@@ -45,7 +45,7 @@ Cases grouped by capability; the evidence classification folds a transport error
 | Capability | Passed | Failed | Errored | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|--:|---|
 | Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | 0 | pass |
-| Adl14OptProvisioning | 11 | 0 | 0 | 4 | 0 | pass |
+| Adl14OptProvisioning | 12 | 0 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | 0 | pass |
 | CompositionOps | 35 | 0 | 0 | 0 | 0 | pass |
@@ -79,7 +79,7 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 | Capability | Passed | Failed | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|---|
 | Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | pass |
-| Adl14OptProvisioning | 11 | 0 | 4 | 0 | pass |
+| Adl14OptProvisioning | 12 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
 | CompositionOps | 35 | 0 | 0 | 0 | pass |
@@ -93,7 +93,7 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 | Capability | Passed | Failed | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|---|
 | Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | pass |
-| Adl14OptProvisioning | 11 | 0 | 4 | 0 | pass |
+| Adl14OptProvisioning | 12 | 0 | 4 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | pass |
 | CompositionOps | 35 | 0 | 0 | 0 | pass |
@@ -150,11 +150,11 @@ _No failures in this run._
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged | 1 |
 | NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:64685 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:58915 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — the digest cases prove the Signing capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64685 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64685 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64685 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58915 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58915 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58915 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 | all 11 C/loaded_db goldens are dialect-routed or require id-substitution/binds | 1 |
 | master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
 | master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (register 02 G-2 edition probe). | 2 |
@@ -295,6 +295,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 
 - **ECC-EHR-012** Create EHR — reject invalid EHR_STATUS data sets — data-set class 2 (master06 §Test Data Sets, invalid EHR_STATUS shapes); no single master06 test case enumerates class 2
 - **ECC-EHR-013** Create anonymous (subject-less) EHR — extension: Anonymous EHRs non-functional capability (master03-profiles §Non-Functional); doubles as class 1.b default-EHR_STATUS coverage; no master06 functional test case
+- **ECC-TPL-017** Example COMPOSITION round-trips (ADL 1.4 example → commit) — CNF master04/master15 define no example-generation/commit case; the ITS-REST example operation is non-normative. ECC-derived: asserts the operation's own committable-`required` contract end-to-end (upload OPT → GET example → commit 201).
 - **ECC-SQR-001** Store stored query — valid — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-valid (master05:54, A.3.a)
 - **ECC-SQR-007** Store stored query — invalid — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-invalid (master05:67, A.3.b)
 - **ECC-SQR-006** Store stored query — bad formalism — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-bad_formalism (master05:80, A.3.c)
@@ -545,6 +546,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 | ECC-TPL-008 | Adl14OptProvisioning | json | 1/1 | — | PASS |
 | ECC-TPL-010 | Adl14OptProvisioning | json | 1/1 | — | PASS |
 | ECC-TPL-003 | Adl14OptProvisioning | json | 1/1 | — | PASS |
+| ECC-TPL-017 | Adl14OptProvisioning | json | 1/1 | — | PASS |
 | ECC-TPL-014 | Adl14OptProvisioning | json | 0/0 | — | skipped |
 | ECC-TPL-015 | Adl14OptProvisioning | json | 0/0 | — | skipped |
 | ECC-TPL-016 | Adl14OptProvisioning | json | 0/0 | — | skipped |
@@ -774,7 +776,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 
 ## 12. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:64685`
+- Server: `http://127.0.0.1:58915`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):

@@ -23,9 +23,16 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 clap = { workspace = true }
 jiff = { workspace = true }
-tokio = { workspace = true }
+# `process` (docker stats / docker exec / psql sampling in sample.rs) is not in
+# the workspace default tokio feature set; enable it here on top of the shared pin.
+tokio = { workspace = true, features = ["process"] }
 hdrhistogram = { workspace = true }
 sysinfo = { workspace = true }
+# Concurrency-safe per-patient runtime table for the open-loop driver (drive.rs).
+dashmap = { workspace = true }
+rand = { workspace = true }
+base64 = { workspace = true }
+sha2 = { workspace = true }
 
 [lints]
 workspace = true

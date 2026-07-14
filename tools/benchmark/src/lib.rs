@@ -1,40 +1,39 @@
-//! Honest benchmark harness — ehrbase-rs vs. `EHRbase` (Java).
+//! The hospital-day stress instrument (W-11 rewrite).
 //!
-//! Implements `docs/design/benchmarking.md`: a defensible, reproducible
-//! performance + resource comparison at the openEHR REST surface, built as the
-//! point-by-point antidote to "trust me bro" benchmark fakery. Every number in
-//! a published report is reproducible from committed scripts against pinned
-//! images, or it does not ship.
+//! Implements the pre-registered workload of
+//! `docs/design/benchmark/00-workload-model.md` and the measurement set of
+//! `docs/design/benchmark/01-measurement.md`, on the fairness methodology of
+//! `docs/design/benchmarking.md` (identical client via the conformance
+//! transport, coordinated-omission correction, symmetric warmup, published
+//! raw data, "where the other side wins").
 //!
-//! The load-bearing fairness guarantees, encoded here rather than asserted:
-//! - **Identical client** ([`target`] drives both SUTs through the conformance
-//!   crate's `SutClient` — the same code path for ehrbase-rs and `EHRbase` Java).
-//! - **Coordinated-omission correction** ([`measure`]) so a stalled server
-//!   cannot hide its tail latency.
-//! - **Pre-registered workload** ([`workload`], W1–W13 from the CNF fixture
-//!   corpus, hashed into a `workload.lock`) — frozen before the first measured
-//!   run so results cannot be tuned to win.
-//! - **Warmup discarded** and **≥N runs with reported variance** ([`driver`]),
-//!   applied symmetrically to both servers (the JVM is not handicapped).
+//! Shape: a deterministic generator ([`model`]) turns a ward of patients and
+//! a clinical day into an **open-loop arrival schedule** of [`PlannedOp`]s;
+//! [`render`] produces seeded instance payloads over the vendored fixture
+//! skeletons; the driver ([`drive`]) dispatches at planned times against any
+//! SUT (the conformance `SutClient` — the provably-ECC-identical client),
+//! resolving per-patient runtime ids; [`measure`] records per-class
+//! `HdrHistogram`s against *planned* send times so a stalled SUT cannot hide
+//! its tail; [`sample`] captures container CPU/RSS, cold start, and storage
+//! footprint; [`report`] emits `results.json` + `REPORT.md` — generated,
+//! never hand-typed.
 //!
-//! The report ([`report`]) is generated from the run — never hand-typed — and
-//! carries a mandatory "where `EHRbase` wins" section and a full methodology-
-//! limitations block.
-//!
-//! Two pedantic lints are allowed crate-wide as they fight this crate's nature,
-//! not any defect: `format_push_string` (the report builder appends `format!`
-//! to a `String` — the natural idiom) and `cast_precision_loss` (metric math
-//! casts request counts / microsecond latencies to `f64`; sub-millisecond loss
-//! on such magnitudes is irrelevant to a throughput or `CoV` figure).
+//! Two pedantic lints are allowed crate-wide as they fight this crate's
+//! nature, not any defect: `format_push_string` (the report builder appends
+//! `format!` to a `String`) and `cast_precision_loss` (metric math casts
+//! counts/latencies to `f64`; the loss is irrelevant at these magnitudes).
 #![allow(clippy::format_push_string, clippy::cast_precision_loss)]
 
-pub mod driver;
-pub mod host;
+pub mod drive;
 pub mod measure;
+pub mod model;
+pub mod pack;
+pub mod render;
 pub mod report;
+pub mod sample;
 pub mod seed;
-pub mod target;
-pub mod workload;
+
+use std::time::Duration;
 
 /// A harness error.
 #[derive(Debug, thiserror::Error)]
@@ -45,7 +44,251 @@ pub enum BenchError {
     /// A fixture could not be read.
     #[error("fixture: {0}")]
     Fixture(String),
-    /// The SUT returned an unexpected response during setup.
+    /// The SUT returned an unexpected response during setup/seeding.
     #[error("unexpected: {0}")]
     Unexpected(String),
+    /// Artefact/sampler I/O.
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
+    /// JSON (de)serialization of an artefact.
+    #[error("json: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
+/// The latency-histogram operation classes (register 01 §1). One histogram
+/// per class; the class names are the stable keys in `results.json`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum OpClass {
+    EhrCreate,
+    EhrRead,
+    CompCreateSmall,
+    CompCreateLarge,
+    CompUpdate,
+    CompReadLatest,
+    CompReadVersion,
+    ContributionCommit,
+    AqlPatient,
+    AqlWard,
+    DirRead,
+    DirUpdate,
+    HistoryRead,
+    StatusUpdate,
+    OptUpload,
+    TplList,
+}
+
+impl OpClass {
+    /// Every class, in report order.
+    pub const ALL: [OpClass; 16] = [
+        OpClass::EhrCreate,
+        OpClass::EhrRead,
+        OpClass::CompCreateSmall,
+        OpClass::CompCreateLarge,
+        OpClass::CompUpdate,
+        OpClass::CompReadLatest,
+        OpClass::CompReadVersion,
+        OpClass::ContributionCommit,
+        OpClass::AqlPatient,
+        OpClass::AqlWard,
+        OpClass::DirRead,
+        OpClass::DirUpdate,
+        OpClass::HistoryRead,
+        OpClass::StatusUpdate,
+        OpClass::OptUpload,
+        OpClass::TplList,
+    ];
+
+    /// The stable `results.json` key.
+    #[must_use]
+    pub fn key(self) -> &'static str {
+        match self {
+            OpClass::EhrCreate => "ehr-create",
+            OpClass::EhrRead => "ehr-read",
+            OpClass::CompCreateSmall => "comp-create-small",
+            OpClass::CompCreateLarge => "comp-create-large",
+            OpClass::CompUpdate => "comp-update",
+            OpClass::CompReadLatest => "comp-read-latest",
+            OpClass::CompReadVersion => "comp-read-version",
+            OpClass::ContributionCommit => "contribution-commit",
+            OpClass::AqlPatient => "aql-patient",
+            OpClass::AqlWard => "aql-ward",
+            OpClass::DirRead => "dir-read",
+            OpClass::DirUpdate => "dir-update",
+            OpClass::HistoryRead => "history-read",
+            OpClass::StatusUpdate => "status-update",
+            OpClass::OptUpload => "opt-upload",
+            OpClass::TplList => "tpl-list",
+        }
+    }
+
+    /// Whether the class is a read (the 70:30 budget check).
+    #[must_use]
+    pub fn is_read(self) -> bool {
+        matches!(
+            self,
+            OpClass::EhrRead
+                | OpClass::CompReadLatest
+                | OpClass::CompReadVersion
+                | OpClass::AqlPatient
+                | OpClass::AqlWard
+                | OpClass::DirRead
+                | OpClass::HistoryRead
+                | OpClass::TplList
+        )
+    }
+}
+
+/// A run profile (register 00 §3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Profile {
+    /// CI/self-test: fixed small event count, steady rates, ~2 min.
+    Smoke,
+    /// The standard measured run: steady state at daily-mean rates.
+    Hour,
+    /// The realism profile: a compressed day with the diurnal curve.
+    Day,
+}
+
+impl Profile {
+    /// Stable name (CLI value + artefact field).
+    #[must_use]
+    pub fn key(self) -> &'static str {
+        match self {
+            Profile::Smoke => "smoke",
+            Profile::Hour => "hour",
+            Profile::Day => "day",
+        }
+    }
+}
+
+/// A scale-ladder rung (register 00 §5): pre-seeded compositions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Scale {
+    Empty,
+    TenK,
+    HundredK,
+    OneM,
+}
+
+impl Scale {
+    /// The number of compositions the seeder provisions.
+    #[must_use]
+    pub fn compositions(self) -> u64 {
+        match self {
+            Scale::Empty => 0,
+            Scale::TenK => 10_000,
+            Scale::HundredK => 100_000,
+            Scale::OneM => 1_000_000,
+        }
+    }
+
+    /// Stable name (CLI value + artefact field).
+    #[must_use]
+    pub fn key(self) -> &'static str {
+        match self {
+            Scale::Empty => "empty",
+            Scale::TenK => "10k",
+            Scale::HundredK => "100k",
+            Scale::OneM => "1m",
+        }
+    }
+}
+
+/// The template a payload is rendered from (register 00 §4). Two packs: the
+/// retained ECC-corpus fixtures ([`Vitals`](TemplateKind::Vitals)/
+/// [`Nested`](TemplateKind::Nested)/[`Persistent`](TemplateKind::Persistent),
+/// keyed to the fixtures the ECC suite provisions) and the official openEHR CKM
+/// pack (`Ckm*`, sourced from the vendored [`crate::pack`] — `templates/ckm/`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TemplateKind {
+    /// Small/hot-path event composition (vitals-class) — ECC corpus fixture.
+    Vitals,
+    /// Large, deeply nested event composition — ECC corpus fixture.
+    Nested,
+    /// Persistent composition (care plan / directory class) — ECC corpus
+    /// fixture; retained for the persistent/directory structure.
+    Persistent,
+    /// Official CKM **Vital signs** template (E2 shift observations; small,
+    /// hot-path event composition). Sourced from the vendored CKM pack
+    /// ([`crate::pack`]), not the ECC corpus.
+    CkmVitalSigns,
+    /// Official CKM **Generic lab test result** template (E4 lab-result
+    /// contribution batches).
+    CkmLabResult,
+    /// Official CKM **Medication order** template (E3 medication rounds).
+    CkmMedicationOrder,
+    /// Official CKM **International Patient Summary** template (E1 admission
+    /// assessment / E9 discharge summary; large, deeply nested — the
+    /// deep-stress payload).
+    CkmSummary,
+    /// Official CKM **Clinical synopsis** template (E7 documentation
+    /// corrections; the per-patient correction target seeded at admission).
+    CkmSynopsis,
+}
+
+/// One scheduled operation: dispatched at `at` (offset from the measurement
+/// window start — the *planned* send time coordinated-omission correction
+/// measures against), on behalf of ward patient `patient`.
+#[derive(Debug, Clone)]
+pub struct PlannedOp {
+    /// Planned send offset from the window start.
+    pub at: Duration,
+    /// The latency class the sample is recorded under.
+    pub class: OpClass,
+    /// Ward patient index (the driver resolves ids per patient).
+    pub patient: usize,
+    /// What to execute.
+    pub action: Action,
+}
+
+/// The semantic operation of a [`PlannedOp`]. Payloads are pre-rendered by
+/// [`render`] at schedule build time (deterministic); runtime identifiers
+/// (`ehr_id`, composition object/version uids) are resolved by the driver
+/// from its per-patient table at dispatch. AQL query strings carry the
+/// `{{ehr_id}}` placeholder the driver substitutes.
+#[derive(Debug, Clone)]
+pub enum Action {
+    /// `POST /ehr` — registers the patient's `ehr_id` (with an `EHR_STATUS`
+    /// carrying the generated subject id).
+    CreateEhr { status: serde_json::Value },
+    /// `GET /ehr/{ehr_id}`.
+    ReadEhr,
+    /// `POST …/composition` with a rendered canonical-JSON body.
+    CreateComposition {
+        template: TemplateKind,
+        payload: serde_json::Value,
+    },
+    /// `PUT …/composition/{object}` (If-Match latest) — a new version of the
+    /// patient's most recent composition of `template`.
+    UpdateComposition {
+        template: TemplateKind,
+        payload: serde_json::Value,
+    },
+    /// `GET …/composition/{object}` (latest) of a previously created one.
+    ReadLatestComposition,
+    /// `GET …/composition/{ovid}` — a specific earlier version.
+    ReadCompositionVersion,
+    /// `POST …/contribution` — a rendered multi-version batch of `template`
+    /// compositions (the `template` is recorded so an excluded CKM template
+    /// skips its contribution ops at dispatch rather than erroring silently).
+    CommitContribution {
+        template: TemplateKind,
+        payload: serde_json::Value,
+    },
+    /// Patient-scoped AQL (`{{ehr_id}}` substituted at dispatch).
+    AqlPatient { query: String },
+    /// Ward-population AQL (no patient filter).
+    AqlWard { query: String },
+    /// `GET /ehr/{ehr_id}/directory`.
+    ReadDirectory,
+    /// Create-or-update the patient's directory (versioned FOLDER write).
+    UpdateDirectory { payload: serde_json::Value },
+    /// `GET …/versioned_composition/{uid}/revision_history`.
+    ReadRevisionHistory,
+    /// `PUT /ehr/{ehr_id}/ehr_status` (If-Match latest).
+    UpdateStatus { payload: serde_json::Value },
+    /// OPT upload (provisioning; outside the measured mix).
+    UploadOpt { template: TemplateKind },
+    /// `GET /definition/template/adl1.4`.
+    ListTemplates,
 }

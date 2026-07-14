@@ -10,12 +10,24 @@
 //!
 //! **Layer order** (innermost → outermost, over the nested API): authentication ·
 //! ATNA audit (SM System Log, wraps auth so it observes auth rejections) · HTTP
-//! metrics · root span. The whole tree is then wrapped in the shared
-//! `tower-http` request stack (request-id, tracing, CORS, body limit, timeout,
-//! compression). The System Options `OPTIONS` endpoint is mounted **above** the
-//! CORS layer — `CorsLayer` treats every `OPTIONS` as a CORS preflight and would
-//! short-circuit a conformance probe — so it lives on the outer router with the
-//! CORS-wrapped application as its fallback service.
+//! metrics · root span · **overload shedding** (bounded in-flight concurrency +
+//! load shed; the API subtree's outermost layer, so a shed request is rejected
+//! before auth, audit, or reading the request body — [`crate::overload`]). The
+//! whole tree is then wrapped in the shared `tower-http` request stack
+//! (request-id, tracing, CORS, body limit, timeout, compression), so a shed
+//! `503` still carries a request id and is traced. The System Options `OPTIONS`
+//! endpoint is mounted **above** the CORS layer — `CorsLayer` treats every
+//! `OPTIONS` as a CORS preflight and would short-circuit a conformance probe —
+//! so it lives on the outer router with the CORS-wrapped application as its
+//! fallback service.
+//!
+//! **Overload shedding is scoped to the API subtree only** (the openEHR API +
+//! its extensions, nested under the base path): the public operational
+//! endpoints — `/rest/status`, health, SMART discovery, and the management
+//! surface — are siblings, so they are never shed and an operator can always
+//! probe an overloaded server. The bound is `cfg.max_in_flight` (default 1024);
+//! `0` installs no layer. No openEHR spec governs server overload — our own
+//! design (RFC 9110 §15.6.4).
 //!
 //! `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 //! before routing); see [`crate::serve_with`].
@@ -104,6 +116,16 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     let api = api
         .layer(axum::middleware::from_fn(management::http_metrics))
         .layer(axum::middleware::from_fn(management::root_span));
+
+    // ── Ingress overload protection (the API subtree's outermost layer) ──────
+    // Bounded in-flight concurrency + load shedding: beyond `cfg.max_in_flight`
+    // concurrent API requests the server sheds the excess immediately as
+    // `503 Service Unavailable` + `Retry-After` rather than queueing them until
+    // it runs out of memory. Being outermost on this subtree, a shed request
+    // never reaches auth, audit, or the request body; scoped here so the public
+    // status/health/discovery/management endpoints are never shed. No openEHR
+    // spec governs server overload — our own design (RFC 9110 §15.6.4).
+    let api = crate::overload::shed_layer(api, cfg.max_in_flight);
 
     // ── The public, pre-auth surface (status/health + SMART discovery) ───────
     // The SMART `/.well-known/smart-configuration` document is served pre-auth

@@ -1,6 +1,17 @@
 # Benchmarking ehrbase-rs vs. EHRbase (Java) — an honest methodology
 
-- **Status:** designed, ready to implement (2026-07-07)
+> **W-11 (2026-07-13):** implemented, with one change of workload shape —
+> the abstract W1–W13 operation list (§2.1) is **superseded** by the
+> modelled hospital-day clinical workload of
+> `docs/design/benchmark/00-workload-model.md` (official CKM templates,
+> ward simulation, diurnal profiles) and the measurement set of
+> `docs/design/benchmark/01-measurement.md`. Everything else in this
+> document — the fairness controls (§0/§3), the run protocol (§4), the
+> report contract (§7), CI cadence (§8) — remains law and is implemented
+> by `tools/benchmark` (`scripts/benchmark.sh`).
+
+- **Status:** implemented (W-11, 2026-07-13); workload superseded by the
+  benchmark registers — originally designed 2026-07-07
 - **Owner:** —
 - **Purpose:** produce a **defensible, reproducible** performance and resource
   comparison between this project (`ehrbase-rs`) and the reference

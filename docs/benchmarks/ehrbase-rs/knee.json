@@ -1,0 +1,54 @@
+{
+  "sut": {
+    "name": "ehrbase-rs",
+    "kind": "ours",
+    "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+    "product_label": "ehrbase-rs 3.0.0",
+    "image_digests": {},
+    "versions": {}
+  },
+  "scale": "10k",
+  "steps": [
+    {
+      "load_factor": 1.0,
+      "rps": 10.075,
+      "error_rate": 0.0,
+      "p99_us": 49535,
+      "requests": 1209,
+      "max_dispatch_lag_ms": 7
+    },
+    {
+      "load_factor": 4.0,
+      "rps": 40.19166666666667,
+      "error_rate": 0.0,
+      "p99_us": 33535,
+      "requests": 4823,
+      "max_dispatch_lag_ms": 11
+    },
+    {
+      "load_factor": 16.0,
+      "rps": 161.39166666666668,
+      "error_rate": 0.0,
+      "p99_us": 33951,
+      "requests": 19367,
+      "max_dispatch_lag_ms": 63
+    },
+    {
+      "load_factor": 64.0,
+      "rps": 615.9583333333334,
+      "error_rate": 0.04216719148881028,
+      "p99_us": 2330623,
+      "requests": 73915,
+      "max_dispatch_lag_ms": 128
+    }
+  ],
+  "knee": {
+    "load_factor": 16.0,
+    "rps": 161.39166666666668,
+    "error_rate": 0.0,
+    "p99_us": 33951,
+    "requests": 19367,
+    "max_dispatch_lag_ms": 63
+  },
+  "sut_died": false
+}

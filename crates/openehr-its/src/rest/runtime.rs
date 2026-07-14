@@ -47,6 +47,13 @@ pub enum ApiError {
     NotAcceptable(String),
     #[error("not implemented")]
     NotImplemented,
+    /// The server is temporarily unable to handle the request. Used by the
+    /// application's ingress overload-shedding layer (RFC 9110 §15.6.4 —
+    /// `503 Service Unavailable` is the status for a server that is
+    /// temporarily overloaded). No openEHR spec governs server overload
+    /// semantics — this is our own design/extension.
+    #[error("service unavailable: {0}")]
+    ServiceUnavailable(String),
     #[error("internal error: {0}")]
     Internal(String),
 }
@@ -68,6 +75,7 @@ impl ApiError {
             ApiError::UnsupportedMediaType(_) => StatusCode::UNSUPPORTED_MEDIA_TYPE,
             ApiError::NotAcceptable(_) => StatusCode::NOT_ACCEPTABLE,
             ApiError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
+            ApiError::ServiceUnavailable(_) => StatusCode::SERVICE_UNAVAILABLE,
             ApiError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }

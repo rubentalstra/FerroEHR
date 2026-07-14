@@ -1,0 +1,30 @@
+name: Benchmark smoke
+
+# Manual-only: benchmark numbers from shared CI runners are never published
+# (docs/design/benchmarking.md §8); this job only proves the instrument runs
+# end-to-end (smoke profile, empty rung) against the composed server.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bench-smoke:
+    name: bench smoke (instrument self-test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.96.1
+      - uses: Swatinem/rust-cache@v2
+      - name: Run the smoke profile against the composed stack
+        run: BENCH_PROFILE=smoke BENCH_SCALE=empty bash scripts/benchmark.sh
+      - name: Artefacts parse
+        run: python3 -c "import json; json.load(open('docs/benchmarks/ehrbase-rs/results.json'))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-smoke-artefacts
+          path: docs/benchmarks/ehrbase-rs/

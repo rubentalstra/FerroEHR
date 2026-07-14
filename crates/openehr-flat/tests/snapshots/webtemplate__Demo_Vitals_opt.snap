@@ -760,7 +760,7 @@ expression: wt
             "list": [
               {
                 "value": "433",
-                "label": "433"
+                "label": "event"
               }
             ],
             "terminology": "openehr"
