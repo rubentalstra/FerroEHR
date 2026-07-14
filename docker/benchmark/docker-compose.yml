@@ -18,6 +18,18 @@ services:
   # ── ehrbase-rs (this project) ───────────────────────────────────────────────
   ehrbase-rs-db:
     image: ${EHRBASE_RS_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:develop}
+    # PG tuning parity (benchmarking.md §3.4): the identical settings are passed
+    # to BOTH SUTs' databases below — container-default shared_buffers (128MB)
+    # and max_wal_size (1GB) throttle a write-heavy benchmark with buffer
+    # eviction + constant checkpoints, so both sides get the same sane floor.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     environment:
       POSTGRES_PASSWORD: postgres
       EHRBASE_DB_PASSWORD: ehrbase
@@ -47,6 +59,17 @@ services:
   # ── EHRbase (Java, the reference implementation) ────────────────────────────
   ehrbase-java-db:
     image: ${EHRBASE_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+    # Identical PG tuning to ehrbase-rs-db above (benchmarking.md §3.4 — same
+    # DB settings both sides; the PG major difference 16 vs 18 is each SUT's
+    # own shipped platform and is recorded in the report's environment block).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

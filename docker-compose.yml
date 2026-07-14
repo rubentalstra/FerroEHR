@@ -24,7 +24,19 @@ services:
     # pg_stat_statements is loaded so the P20 profiling harness
     # (scripts/profile.sh) can attribute time per statement; negligible
     # overhead, ships in the stock image.
-    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements"]
+    # The same PG tuning floor the benchmark parity compose applies to BOTH
+    # SUTs (docker/benchmark/docker-compose.yml, benchmarking.md §3.4), so
+    # local profiling (scripts/profile.sh) measures the tuned configuration.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     volumes:
       - ehrbase-pgdata:/var/lib/postgresql
     ports:

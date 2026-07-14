@@ -155,7 +155,7 @@ A committed parity table; every asymmetry is either eliminated or justified:
 | Signing | **off** for the throughput runs (or on for both) | version signing is our feature; benchmarking with it on-for-us/absent-for-them is unfair — measure both configurations and label them |
 | JVM heap / GC | EHRbase default + one tuned variant | report both; do not hobble the JVM with a tiny heap |
 | Logging | equal, minimal (warn) | logging at debug skews everything |
-| PG `shared_buffers`/`work_mem` | equal, documented | same DB tuning both sides |
+| PG `shared_buffers`/`work_mem` | equal, documented | same DB tuning both sides. Concretely (P20 T4, `docker/benchmark/docker-compose.yml`): both SUT databases run `shared_buffers=1GB` (`BENCH_PG_SHARED_BUFFERS`), `max_wal_size=4GB` (`BENCH_PG_MAX_WAL_SIZE`), `work_mem=16MB` (`BENCH_PG_WORK_MEM`) — the container defaults (128MB/1GB/4MB) throttle a write-heavy benchmark with buffer eviction and constant checkpoints. The PG major (16 vs 18) is each SUT's own shipped platform, recorded in the environment block. `synchronous_commit` stays ON both sides (clinical durability — never traded for a number). |
 | Template cache | on both (`moka` / Caffeine) | equal |
 
 ### 3.5 Storage-footprint measurement
