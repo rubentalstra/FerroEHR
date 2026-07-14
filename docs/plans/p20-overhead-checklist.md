@@ -191,6 +191,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       COMPARISON refreshed with whatever the numbers say. No number is
       claimed from this checklist without it.
 
+- [ ] **25. Benchmark reporting: RPS + TPM (owner, 2026-07-14).** Not a
+      rewrite — a reporting addition. (a) Dual-unit display: every published
+      throughput figure shows requests/minute beside requests/second (same
+      measurement, friendlier unit). (b) The true TPC-style metric:
+      **clinical events completed per minute** — an event (admission, med
+      round, lab batch, discharge…) is a multi-request business transaction;
+      the driver counts an event completed only when ALL its steps
+      succeeded, and REPORT/COMPARISON/knee tables carry events/min per
+      class + total alongside req/s.
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
