@@ -28,4 +28,5 @@
   - [SMART App Launch](smart-app-launch.md)
 - [Operations](operations.md)
 - [Conformance](conformance.md)
+- [Benchmarks](benchmarks.md)
 - [Contributing](contributing.md)
