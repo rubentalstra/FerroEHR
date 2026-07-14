@@ -25,6 +25,10 @@ fn base_options(settings: &DbSettings) -> PgPoolOptions {
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
         .acquire_timeout(Duration::from_secs(settings.acquire_timeout_secs))
+        // No liveness ping per checkout: the default `test_before_acquire`
+        // adds one round trip to EVERY acquisition; a broken connection is
+        // detected by its first real statement and retried by the pool.
+        .test_before_acquire(false)
         .after_connect(|conn, _meta| {
             Box::pin(async move {
                 sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;

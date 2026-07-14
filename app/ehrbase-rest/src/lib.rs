@@ -204,6 +204,7 @@ pub async fn serve_full<S: Platform>(
 async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
     use std::net::SocketAddr;
 
+    use axum::serve::ListenerExt as _;
     use tower::Layer;
     use tower_http::normalize_path::NormalizePathLayer;
 
@@ -213,6 +214,14 @@ async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
     let make = axum::ServiceExt::<axum::extract::Request>::into_make_service_with_connect_info::<
         SocketAddr,
     >(app);
+    // `TCP_NODELAY` on every accepted socket: small responses (the
+    // `204`/minimal write acknowledgements the API is full of) must not sit
+    // in Nagle's buffer waiting for an ACK — worth tens of milliseconds of
+    // tail latency per small response on some stacks. A failed setsockopt is
+    // not fatal — the connection is served regardless.
+    let listener = listener.tap_io(|io: &mut tokio::net::TcpStream| {
+        let _ = io.set_nodelay(true);
+    });
     axum::serve(listener, make)
         .with_graceful_shutdown(shutdown_signal())
         .await?;

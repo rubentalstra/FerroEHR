@@ -26,6 +26,7 @@ use crate::versioning::{Kind, SigningCtx, integrity};
 /// The outcome of a versioned-object write: the object id, the new version's
 /// tree id, and the provenance carried into the event-outbox envelope.
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_field_names)] // `time_committed` is the master06 domain term, not a suffix echo
 pub(crate) struct Committed {
     pub(crate) vo_id: Uuid,
     /// The per-vo storage commit ordinal of the written row (the node /
@@ -41,6 +42,10 @@ pub(crate) struct Committed {
     /// The OPT `template_id` a COMPOSITION was committed against (`None`
     /// otherwise).
     pub(crate) template_id: Option<String>,
+    /// The server-computed commit instant (the audit `time_committed`,
+    /// master06 §Committal) — the write response's `Last-Modified`, carried
+    /// here so the service layer never re-reads the row it just wrote.
+    pub(crate) time_committed: jiff::Timestamp,
 }
 
 /// One change applied within a CONTRIBUTION (the openEHR change-set unit).
@@ -370,8 +375,16 @@ async fn apply_change(
             let rows = decompose(canonical)?;
             let vo_id = Uuid::now_v7();
             // Sign the exact data that will be served on read (reassembled from
-            // the stored nodes) so the digest recomputes at read time.
-            let served = reassemble(&rows)?;
+            // the stored nodes) so the digest recomputes at read time. The
+            // reassemble is a full O(nodes) tree rebuild — only performed when
+            // a signature will actually be computed (signing enabled and no
+            // client-supplied signature short-circuit); with signing off the
+            // rebuilt document was discarded on every commit.
+            let served = if ctx.signer.enabled() {
+                reassemble(&rows)?
+            } else {
+                Value::Null
+            };
             let signature = integrity::sign_version(
                 ctx,
                 audit,
@@ -431,6 +444,7 @@ async fn apply_change(
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id,
+                time_committed,
             })
         }
         Change::Modify {
@@ -460,7 +474,13 @@ async fn apply_change(
                 crate::storage::version_repo::close_ordinal_at_now(tx, vo_id, close_ordinal)
                     .await?;
             }
-            let served = reassemble(&rows)?;
+            // See the create arm: the reassemble only pays when a signature
+            // will be computed.
+            let served = if ctx.signer.enabled() {
+                reassemble(&rows)?
+            } else {
+                Value::Null
+            };
             let signature = integrity::sign_version(
                 ctx,
                 audit,
@@ -513,6 +533,7 @@ async fn apply_change(
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id,
+                time_committed,
             })
         }
         Change::Delete {
@@ -570,6 +591,7 @@ async fn apply_change(
                 kind,
                 change_type: audit.change_type.clone(),
                 template_id: None,
+                time_committed,
             })
         }
     }
@@ -785,6 +807,7 @@ pub(crate) async fn commit_contribution(
                 item.expected,
                 &full,
                 contribution_id,
+                contribution_time,
             )
             .await?,
         );

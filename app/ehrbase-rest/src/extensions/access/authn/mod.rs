@@ -134,7 +134,7 @@ impl std::fmt::Debug for Authenticator {
             .field("enabled", &self.config.enabled)
             .field("basic", &self.config.basic.is_some())
             .field("oidc", &self.jwt.is_some())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 

@@ -45,6 +45,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Basic-auth verification no longer re-runs the Argon2 password hash on
+  every request: verified credentials are cached (as a SHA-256 digest,
+  never plaintext) for `EHRBASE_REST_AUTH__VERIFIED_CACHE_TTL_SECONDS`
+  (default 60 s; `0` disables), and cache misses hash on a background
+  thread. At load this removes roughly a full CPU core of per-request
+  hashing.
+- Composition create/update responses are built from the commit result
+  instead of re-reading the just-written document from the database — one
+  connection acquisition and two queries fewer per write; when version
+  signing is disabled the server also no longer rebuilds the full document
+  it would only have signed. Response bodies and headers are unchanged.
+- Connection-pool defaults changed: `EHRBASE_DB_MAX_CONNECTIONS` 10 → 20,
+  `EHRBASE_DB_MIN_CONNECTIONS` 0 → 2, and the per-checkout liveness ping is
+  disabled (a broken connection is detected by its first statement).
+  `TCP_NODELAY` is now set on accepted sockets, removing Nagle-induced
+  latency on small responses.
 - Composition commits make fewer database round trips: the audit and
   contribution rows are written in one statement, and the create-path EHR
   existence + modifiability gates are one read instead of two. Error
