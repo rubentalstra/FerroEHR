@@ -17,8 +17,8 @@
 --   * node.data holds the node's CANONICAL openEHR JSON fragment verbatim
 --     (structure children pruned) — no alias compaction, no synthetic
 --     fields; fragments average ~360 B (spike), well under TOAST;
---   * one temporal `vo_version` table (per-lineage GiST EXCLUDE non-overlap,
---     needs btree_gist — created by the bootstrap) instead of current/history
+--   * one temporal `vo_version` table (per-lineage non-overlap held by
+--     construction — see the P20 NOTE at the table) instead of current/history
 --     pairs; the version tree (trunk + branches, RM common master06) lives in
 --     explicit trunk/branch columns; the current (latest trunk) version is
 --     the upper_inf ∧ branch_number = 0 partial index;
@@ -255,23 +255,24 @@ CREATE TABLE vo_version (
         'AGENT', 'GROUP', 'ORGANISATION', 'PERSON', 'ROLE', 'PARTY_RELATIONSHIP'
     )),
     CONSTRAINT ck_vo_version_lifecycle_state CHECK (lifecycle_state IN ('532', '553', '523', '800', '801')),
-    -- Temporal non-overlap per lineage (btree_gist from the bootstrap).
-    -- Trunk lineage: at most one valid trunk version at any instant.
-    CONSTRAINT ex_vo_version_trunk_no_overlap
-        EXCLUDE USING gist (vo_id WITH =, sys_period WITH &&)
-        WHERE (branch_number = 0),
-    -- Branch lineage: per {creating system, fork point, branch} — versions on
-    -- one branch supersede each other; distinct branches (or the same branch
-    -- numbers created by different systems) coexist.
-    CONSTRAINT ex_vo_version_branch_no_overlap
-        EXCLUDE USING gist (
-            vo_id WITH =,
-            creating_system_id WITH =,
-            trunk_version WITH =,
-            branch_number WITH =,
-            sys_period WITH &&
-        )
-        WHERE (branch_number > 0),
+    -- P20 NOTE: two GiST EXCLUDE (temporal non-overlap) constraints were
+    -- REMOVED here after measurement (docs/plans/p20-overhead-checklist.md
+    -- item 21): GiST exclusion inserts serialize under concurrency and were a
+    -- prime "everything slows together" contributor on the write path (the
+    -- reference implementation's version table pays a plain btree PK). The
+    -- non-overlap INVARIANT (master06: one valid version per lineage at any
+    -- instant) is unchanged and enforced by construction instead:
+    --   * the partial unique btrees below admit at most ONE open row per
+    --     lineage (trunk / each branch);
+    --   * every regular write closes the open row and inserts the successor
+    --     in one transaction at the same `now()` (half-open ranges meet
+    --     exactly — no overlap possible), serialized per vo by the advisory
+    --     lock;
+    --   * the admin archive load — the only path writing explicit historical
+    --     periods — runs a per-EHR overlap audit after loading and fails the
+    --     record on a violation.
+    -- No openEHR spec governs the enforcement mechanism — our own design;
+    -- the semantics stay master06.
     CONSTRAINT fk_vo_version_contribution FOREIGN KEY (contribution_id) REFERENCES contribution (id),
     CONSTRAINT fk_vo_version_audit FOREIGN KEY (audit_id) REFERENCES audit (id),
     CONSTRAINT fk_vo_version_template FOREIGN KEY (template_id) REFERENCES template_store (template_id),
@@ -290,7 +291,7 @@ CREATE INDEX idx_vo_version_contribution ON vo_version (contribution_id);
 CREATE INDEX idx_vo_version_audit ON vo_version (audit_id);
 CREATE INDEX idx_vo_version_template ON vo_version (template_id) WHERE template_id IS NOT NULL;
 
-COMMENT ON TABLE vo_version IS 'One temporal row per version of a versioned object (RM common master06 version tree). Non-overlap holds per lineage (trunk / each branch, ex_vo_version_*); ALL_VERSIONS = unfiltered, LATEST_VERSION (latest trunk) = uq_vo_version_current.';
+COMMENT ON TABLE vo_version IS 'One temporal row per version of a versioned object (RM common master06 version tree). Non-overlap holds per lineage by construction (one open row per lineage via the partial unique indexes; close-then-insert at one now() per write; load-path overlap audit); ALL_VERSIONS = unfiltered, LATEST_VERSION (latest trunk) = uq_vo_version_current.';
 COMMENT ON COLUMN vo_version.sys_version IS 'Opaque per-vo commit ordinal (1..n across trunk AND branch commits) — the node/vo_attestation FK key and AQL join key. NOT the wire version number: the VERSION_TREE_ID lives in trunk_version/branch_number/branch_version.';
 COMMENT ON COLUMN vo_version.trunk_version IS 'VERSION_TREE_ID first part. For a trunk row this is the wire version number; for a branch row the trunk version the branch forks from.';
 COMMENT ON COLUMN vo_version.branch_number IS 'VERSION_TREE_ID second part; 0 = trunk row, >= 1 = branch (numbered per fork point, RM common master06 §Version tree).';
