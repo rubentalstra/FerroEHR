@@ -83,22 +83,54 @@
       template, vo_version+audit+contribution round trips reduced (CTE
       pipeline / batched statements), subject sync only on EHR_STATUS
       change. Targets from T1 numbers, not intuition.
+      - [x] T3a. Template re-read eliminated (2026-07-14): `web_template_for`
+        consulted `template_store` BEFORE the WebTemplate cache — 10,206
+        redundant reads/120 s (the #2 statement). Now cache-first; template
+        delete evicts (422 instead of an FK 500 for a racing commit).
+      - [ ] T3b. Round-trip collapse from the T1 profile's remaining
+        sequence (per commit: BEGIN, EHR EXISTS, advisory lock, 2×
+        version-tree reads (~19k+20k calls/window), audit INSERT,
+        contribution INSERT, vo_version INSERT, node INSERT,
+        event_outbox INSERT): merge the audit+contribution+vo_version
+        round trips (CTE pipeline / one multi-statement), fold the EXISTS
+        into an existing read. Versioning semantics (RM common master06)
+        must be byte-identical — orchestrator-reviewed.
 - [ ] T4. **PG tuning as config parity** (both SUTs identically, documented
       in the parity table): `shared_buffers`, `max_wal_size`, checkpoint
       spacing; `synchronous_commit` stays ON (clinical durability — never
       traded). Temporal-GiST maintenance cost quantified before any schema
       move. PG18 AIO (`io_method`) evaluated here.
-- [ ] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
+- [x] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
       c/uid/value` returns the OBJECT_VERSION_ID wire string (QUERY
       master03 identified-paths table); ECC AqlBasic case added; verified
-      live on the composed stack. *(Engine fix DONE in T2 (synthesis from
-      vo_version, version-correct under ALL_VERSIONS, live-verified); the
-      ECC case is the open remainder.)*
-- [ ] T2c. **F5 — populated example generation**: the openehr-flat example
+      live on the composed stack. *(Done 2026-07-14: engine synthesis from
+      vo_version (version-correct under ALL_VERSIONS, live-verified) +
+      **ECC-QRY-025** — the spine case asserted only the projected column
+      path, the new case pins the projected CELL against the committed
+      OBJECT_VERSION_ID.)*
+- [x] T2c. **F5 — populated example generation**: the openehr-flat example
       builder emits optional content items (one instance each, bounded,
       recursion-guarded); the CKM pack examples regenerated from the
       composed server; each commits clean and `CONTAINS OBSERVATION`
-      matches; snapshot deltas reviewed honestly.
+      matches; snapshot deltas reviewed honestly. *(Done 2026-07-14:
+      `medium` redesigned as the fully-populated single-instance
+      committable level with constraint-aware leaves — temporal patterns,
+      C_DURATION allowed fields, media-type code lists, container
+      cardinality caps; `complete` = medium + second occurrences. All six
+      CKM skeletons regenerated at medium, all commit 201, dashboard AQL
+      returns rows. The corpus-wide committability guard now covers
+      Required AND Medium across 40+ templates.)*
+- [x] T2d. **F7 — validator name-blind sibling admission** (found by the
+      widened F5 corpus guard; a server-side false-rejection conformance
+      defect): templates reusing one archetype under a container with
+      name-differentiated siblings had instances routed to the wrong
+      sibling overlay and their children rejected as Unexpected. Routing
+      now implements name-based differentiation (RM common master03
+      §LOCATABLE; AOM 1.4 master04 §node_id; BASE master11 §Name-based
+      Predicate): name-qualified siblings match strictly, the unqualified
+      sibling admits the residual, cross-contamination still rejected.
+      Reproduced + pinned on the vendored neurologist-examination template
+      (three synthetic routing tests + the real-fixture test).
 - [ ] T5. **Re-ladder + publish**: identical fine ladder both SUTs, hour
       profiles at 10k/100k re-run **with the F5-fixed populated workload**,
       README + COMPARISON refreshed with whatever the numbers say (the
@@ -106,6 +138,18 @@
       supersede them explicitly, both directions). Exit: the saturation row
       flips, or the honest residual gap is recorded with the next
       bottleneck named. Full ECC zero-drift run at close.
+
+## State (2026-07-14, after the first optimization wave)
+
+Committed on `claude/p20-optimization`: T1 (harness + first profile), T2/T2b/
+T2c/T2d (promoted `context_start` + AQL fast path, uid projection + ECC-QRY-025,
+populated examples + regenerated CKM pack, the F7 validator routing fix), T3a
+(template-cache read eliminated). **Next, in order:** (1) full ECC run —
+zero-drift gate + the new case live (baseline ratchets to include
+ECC-QRY-025); (2) T3b round-trip collapse; (3) T4 PG parity tuning; (4) T5
+re-ladder with the now-populated workload — the ONLY honest source of new
+published numbers (all pre-F5 numbers measured empty CKM payloads and are
+superseded, both directions: heavier real payloads may LOWER both knees).
 
 ## Superseded original scope (2026-07 draft, kept as input)
 
