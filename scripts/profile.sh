@@ -20,7 +20,7 @@ export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export EHRBASE_SIGNING_ENABLED=false
 
 PSQL() { docker exec ehrbase-rs-ehrbase-postgres-1 psql -U ehrbase -d ehrbase -Atc "$1"; }
-PSQLF() { docker exec ehrbase-rs-ehrbase-postgres-1 psql -U ehrbase -d ehrbase -c "$1"; }
+PSQLF() { docker exec ehrbase-rs-ehrbase-postgres-1 psql -U postgres -d ehrbase -c "$1"; }
 
 echo "==> composing stack"
 docker compose down -v >/dev/null 2>&1 || true
@@ -39,8 +39,9 @@ cargo run -q -p benchmark --bin bench -- seed --sut ehrbase-rs --scale "$SCALE" 
   --auth basic:ehrbase:ehrbase --admin-auth basic:ehrbase-admin:ehrbase
 
 echo "==> resetting pg_stat_statements"
-PSQL "CREATE EXTENSION IF NOT EXISTS pg_stat_statements" >/dev/null
-PSQL "SELECT pg_stat_statements_reset()" >/dev/null
+# Extension creation needs the superuser (dev compose: postgres/postgres).
+docker exec ehrbase-rs-ehrbase-postgres-1 psql -U postgres -d ehrbase -Atc "CREATE EXTENSION IF NOT EXISTS pg_stat_statements" >/dev/null
+docker exec ehrbase-rs-ehrbase-postgres-1 psql -U postgres -d ehrbase -Atc "SELECT pg_stat_statements_reset()" >/dev/null
 
 echo "==> driving one capacity step L=${L} (${WINDOW}s)"
 cargo run -q -p benchmark --bin bench -- knee --sut ehrbase-rs --scale "$SCALE" --no-seed \
