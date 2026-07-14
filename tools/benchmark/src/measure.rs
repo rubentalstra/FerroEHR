@@ -1,201 +1,311 @@
-//! Latency measurement with **coordinated-omission correction** (design §0, §4.3).
+//! Per-class latency recording with coordinated-omission correction
+//! (`docs/design/benchmark/01-measurement.md` §1).
 //!
-//! A naive benchmark records only the service time of requests that actually
-//! completed, so a server that stalls for a second hides that second from its
-//! tail — the single most common way a latency chart lies. In a closed-loop
-//! driver we know the *intended* send cadence, so when a request is delayed we
-//! also record the "virtual" latencies of the requests that *would* have been
-//! sent during the stall. [`LatencyRecorder::record_corrected`] implements the
-//! standard `HdrHistogram` correction; [`LatencyRecorder::record`] is the plain
-//! path for open-loop use where the interval is not fixed.
+//! One [`hdrhistogram::Histogram`] per [`OpClass`] at µs resolution / 3
+//! significant digits. Latency is measured against the operation's **planned**
+//! send time, never its actual send time: a saturated SUT that delays a send
+//! cannot flatter its tail. Both the planned send and the actual completion are
+//! offsets from the run-window start; a sample whose planned send falls inside
+//! the warmup floor is discarded. Errors are counted per class and excluded
+//! from the latency distribution.
 
+use std::collections::BTreeMap;
+use std::time::Duration;
+
+use base64::Engine;
 use hdrhistogram::Histogram;
+use hdrhistogram::serialization::{Serializer, V2Serializer};
 
-/// A latency histogram in microseconds, 3 significant figures (≈0.1% error),
-/// range 1 µs … 60 s.
+use crate::OpClass;
+
+/// Histogram significant figures (register 01 §1 — 3 sig-digits).
+const SIGFIG: u8 = 3;
+
+/// The recordable ceiling in microseconds (6 h). Samples above are saturated to
+/// this bound rather than dropped, so a pathological tail is still visible.
+const MAX_RECORD_US: u64 = 6 * 3_600 * 1_000_000;
+
+/// Summary statistics for one operation class, as emitted into `results.json`
+/// (`docs/design/benchmark/01-measurement.md` §6 `classes` entry). Latencies
+/// are microseconds; `histogram_b64` is the base64 of the `HdrHistogram` V2
+/// serialization (the raw distribution, for offline re-analysis).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ClassSummary {
+    /// Measured (non-warmup, non-error) sample count.
+    pub count: u64,
+    /// Errors observed for this class (excluded from the distribution).
+    pub errors: u64,
+    /// 50th percentile latency (µs).
+    pub p50_us: u64,
+    /// 90th percentile latency (µs).
+    pub p90_us: u64,
+    /// 99th percentile latency (µs).
+    pub p99_us: u64,
+    /// 99.9th percentile latency (µs).
+    pub p999_us: u64,
+    /// Maximum recorded latency (µs).
+    pub max_us: u64,
+    /// Base64 of the `HdrHistogram` V2 serialization.
+    pub histogram_b64: String,
+}
+
+/// The latency + error recorder. One histogram per [`OpClass`], created on
+/// first use; the warmup floor is applied at [`Recorder::record`] time.
 #[derive(Debug)]
-pub struct LatencyRecorder {
-    hist: Histogram<u64>,
+pub struct Recorder {
+    hists: BTreeMap<OpClass, Histogram<u64>>,
+    /// A merged histogram over every measured sample (all classes), so an
+    /// overall percentile is a direct read rather than a max-of-class-p99s
+    /// approximation — the capacity/knee series (register 01 §3) reads its p99
+    /// from here.
+    overall: Histogram<u64>,
+    errors: BTreeMap<OpClass, u64>,
+    warmup: Duration,
 }
 
-impl LatencyRecorder {
-    /// A recorder covering 1 µs … 60 s at 3 significant figures.
-    #[must_use]
-    // parameters are compile-time-valid constants; construction is infallible,
-    // so the expect neither fails nor warrants a `# Panics` section.
-    #[allow(clippy::expect_used, clippy::missing_panics_doc)]
-    pub fn new() -> Self {
-        let hist = Histogram::new_with_bounds(1, 60_000_000, 3)
-            .expect("histogram bounds 1µs..60s @ 3 sigfig are compile-time valid");
-        Self { hist }
-    }
-
-    /// Record one observed latency (open-loop / plain path).
-    pub fn record(&mut self, latency_us: u64) {
-        // saturating_record clamps to the top bucket instead of erroring on an
-        // out-of-range value — a 60 s+ request is pinned at the ceiling, never
-        // dropped (dropping the worst sample is exactly the omission we avoid).
-        self.hist.saturating_record(latency_us);
-    }
-
-    /// Record one observed latency **and** the coordinated-omission correction:
-    /// if `latency_us` exceeds the `expected_interval_us` at which requests were
-    /// meant to be issued, the recorder fills in the virtual latencies of the
-    /// requests that could not be sent during the stall (design §4.3).
-    pub fn record_corrected(&mut self, latency_us: u64, expected_interval_us: u64) {
-        // Clamp to the histogram ceiling so the correction cannot fail on an
-        // out-of-range value (a 60 s+ request is pinned at the top bucket,
-        // never dropped — dropping the worst sample is the omission we avoid).
-        let value = latency_us.min(60_000_000);
-        if expected_interval_us == 0 {
-            self.hist.saturating_record(value);
-        } else {
-            // record_correct only errors on an out-of-range value, which we
-            // clamped above; the interval fills the coordinated-omission gap.
-            let _ = self.hist.record_correct(value, expected_interval_us);
-        }
-    }
-
-    /// The number of recorded samples (including corrected virtual ones).
-    #[must_use]
-    pub fn len(&self) -> u64 {
-        self.hist.len()
-    }
-
-    /// Whether nothing has been recorded.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.hist.is_empty()
-    }
-
-    /// The value (µs) at a percentile in `[0, 100]`.
-    #[must_use]
-    pub fn percentile(&self, quantile: f64) -> u64 {
-        self.hist.value_at_percentile(quantile)
-    }
-
-    /// The maximum recorded latency (µs).
-    #[must_use]
-    pub fn max(&self) -> u64 {
-        self.hist.max()
-    }
-
-    /// The mean latency (µs).
-    #[must_use]
-    pub fn mean(&self) -> f64 {
-        self.hist.mean()
-    }
-
-    /// The canonical percentile summary used throughout the report.
-    #[must_use]
-    pub fn summary(&self) -> LatencySummary {
-        LatencySummary {
-            count: self.len(),
-            p50_us: self.percentile(50.0),
-            p90_us: self.percentile(90.0),
-            p99_us: self.percentile(99.0),
-            p999_us: self.percentile(99.9),
-            max_us: self.max(),
-            mean_us: self.mean(),
-        }
-    }
-
-    /// Merge another recorder into this one (for aggregating across runs).
-    ///
-    /// # Errors
-    /// Returns an error string if the histograms are incompatible.
-    pub fn merge(&mut self, other: &LatencyRecorder) -> Result<(), String> {
-        self.hist.add(&other.hist).map_err(|e| e.to_string())
-    }
-}
-
-impl Default for LatencyRecorder {
+impl Default for Recorder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// A percentile summary (all latencies in microseconds) — the shape reported
-/// for every scenario, always in full (design §0: never a cherry-picked
-/// percentile).
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub struct LatencySummary {
-    /// Number of samples (incl. coordinated-omission corrections).
-    pub count: u64,
-    /// Median.
-    pub p50_us: u64,
-    /// 90th percentile.
-    pub p90_us: u64,
-    /// 99th percentile.
-    pub p99_us: u64,
-    /// 99.9th percentile.
-    pub p999_us: u64,
-    /// Maximum observed.
-    pub max_us: u64,
-    /// Arithmetic mean (reported only alongside the distribution).
-    pub mean_us: f64,
+/// Build a histogram over the fixed µs bounds. The bounds are compile-time
+/// constants known valid (`1 <= low`, `high >= 2*low`, `sigfig <= 5`), so the
+/// error arm is unreachable.
+fn make_hist() -> Histogram<u64> {
+    match Histogram::new_with_bounds(1, MAX_RECORD_US, SIGFIG) {
+        Ok(h) => h,
+        Err(_) => unreachable!("histogram bounds (1, {MAX_RECORD_US}, {SIGFIG}) are valid"),
+    }
 }
 
-/// The coefficient of variation (stddev / mean) of a set of per-run values —
-/// the inter-run stability signal (design §4.4). Returns `None` for < 2 values
-/// or a zero mean. A value above ~0.10 flags a "high variance" result.
-#[must_use]
-pub fn coefficient_of_variation(values: &[f64]) -> Option<f64> {
-    if values.len() < 2 {
-        return None;
+impl Recorder {
+    /// A fresh recorder with a zero warmup floor.
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            hists: BTreeMap::new(),
+            overall: make_hist(),
+            errors: BTreeMap::new(),
+            warmup: Duration::ZERO,
+        }
     }
-    let n = values.len() as f64;
-    let mean = values.iter().sum::<f64>() / n;
-    if mean == 0.0 {
-        return None;
+
+    /// Set the warmup floor: samples whose planned send is `< warmup` are
+    /// discarded by [`Recorder::record`].
+    pub fn set_warmup(&mut self, warmup: Duration) {
+        self.warmup = warmup;
     }
-    let var = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / (n - 1.0);
-    Some(var.sqrt() / mean)
+
+    /// Record one completed operation. `planned_send` and `actual_completion`
+    /// are both offsets from the run-window start; the recorded latency is the
+    /// coordinated-omission-corrected `actual_completion - planned_send`. A
+    /// sample whose `planned_send` is inside the warmup floor is discarded.
+    pub fn record(&mut self, class: OpClass, planned_send: Duration, actual_completion: Duration) {
+        if planned_send < self.warmup {
+            return;
+        }
+        let latency = actual_completion.saturating_sub(planned_send);
+        // Clamp to at least 1 µs (the histogram's low bound); a sub-µs or
+        // zero latency still counts as a real, fast sample.
+        let micros = u64::try_from(latency.as_micros())
+            .unwrap_or(u64::MAX)
+            .max(1);
+        self.hists
+            .entry(class)
+            .or_insert_with(make_hist)
+            .saturating_record(micros);
+        self.overall.saturating_record(micros);
+    }
+
+    /// Record an error for a class (excluded from the latency distribution).
+    /// Warmup filtering for errors is the caller's responsibility — it holds
+    /// the planned-send time; the counter is unconditional here.
+    pub fn error(&mut self, class: OpClass) {
+        *self.errors.entry(class).or_insert(0) += 1;
+    }
+
+    /// Per-class summaries, keyed by [`OpClass::key`], for every class in report
+    /// order (classes with no samples appear with zeroed statistics).
+    #[must_use]
+    pub fn summaries(&self) -> BTreeMap<&'static str, ClassSummary> {
+        let mut out = BTreeMap::new();
+        for class in OpClass::ALL {
+            let errors = self.errors.get(&class).copied().unwrap_or(0);
+            let summary = match self.hists.get(&class) {
+                Some(hist) => ClassSummary {
+                    count: hist.len(),
+                    errors,
+                    p50_us: hist.value_at_quantile(0.50),
+                    p90_us: hist.value_at_quantile(0.90),
+                    p99_us: hist.value_at_quantile(0.99),
+                    p999_us: hist.value_at_quantile(0.999),
+                    max_us: hist.max(),
+                    histogram_b64: serialize_hist(hist),
+                },
+                None => ClassSummary {
+                    count: 0,
+                    errors,
+                    p50_us: 0,
+                    p90_us: 0,
+                    p99_us: 0,
+                    p999_us: 0,
+                    max_us: 0,
+                    histogram_b64: String::new(),
+                },
+            };
+            out.insert(class.key(), summary);
+        }
+        out
+    }
+
+    /// Total measured (non-warmup, non-error) samples across all classes.
+    #[must_use]
+    pub fn total_measured(&self) -> u64 {
+        self.hists.values().map(hdrhistogram::Histogram::len).sum()
+    }
+
+    /// Total errors across all classes.
+    #[must_use]
+    pub fn total_errors(&self) -> u64 {
+        self.errors.values().sum()
+    }
+
+    /// The 99th-percentile latency (µs) across **all** measured classes, read
+    /// from the merged overall histogram — the capacity/knee series' SLO probe
+    /// (register 01 §3). Zero when nothing measured.
+    #[must_use]
+    pub fn overall_p99_us(&self) -> u64 {
+        self.overall.value_at_quantile(0.99)
+    }
+}
+
+/// Serialize a histogram to base64 of its `HdrHistogram` V2 form. On the
+/// (writer-only) serialization failure the entry degrades to an empty string
+/// rather than aborting the run.
+fn serialize_hist(hist: &Histogram<u64>) -> String {
+    let mut buf = Vec::new();
+    if V2Serializer::new().serialize(hist, &mut buf).is_ok() {
+        base64::engine::general_purpose::STANDARD.encode(&buf)
+    } else {
+        String::new()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hdrhistogram::serialization::Deserializer;
 
-    #[test]
-    fn records_and_reports_percentiles() {
-        let mut r = LatencyRecorder::new();
-        for v in 1..=1000 {
-            r.record(v);
-        }
-        assert_eq!(r.len(), 1000);
-        // p50 of 1..=1000 is ~500 (within the 3-sigfig bucket width).
-        let p50 = r.percentile(50.0);
-        assert!((490..=510).contains(&p50), "p50 was {p50}");
-        assert!(r.percentile(99.0) >= 990);
+    fn ms(n: u64) -> Duration {
+        Duration::from_millis(n)
     }
 
     #[test]
-    fn coordinated_omission_inflates_the_tail() {
-        // One 1 s stall at a 1 ms intended cadence must surface as a long tail,
-        // not a single sample: the correction adds the ~999 virtual requests.
-        let mut plain = LatencyRecorder::new();
-        let mut corrected = LatencyRecorder::new();
-        for _ in 0..999 {
-            plain.record(1_000);
-            corrected.record_corrected(1_000, 1_000);
-        }
-        plain.record(1_000_000);
-        corrected.record_corrected(1_000_000, 1_000);
-
-        // The plain histogram's p99 hides the stall; the corrected one exposes it.
-        assert!(plain.percentile(99.0) < 10_000, "plain p99 hid the stall");
+    fn co_correction_measures_against_planned_send() {
+        let mut r = Recorder::new();
+        // Planned at 1000 ms, actually completed at 1200 ms → 200 ms latency,
+        // regardless of when the send truly went out.
+        r.record(OpClass::EhrRead, ms(1000), ms(1200));
+        let s = &r.summaries()["ehr-read"];
+        assert_eq!(s.count, 1);
+        // 200 ms = 200_000 µs (within 3-sig-fig tolerance).
         assert!(
-            corrected.percentile(99.0) > 100_000,
-            "corrected p99 must expose the stall"
+            (199_000..=201_000).contains(&s.p50_us),
+            "p50 {} not ~200ms",
+            s.p50_us
         );
-        assert!(corrected.len() > plain.len());
     }
 
     #[test]
-    fn cov_flags_variance() {
-        assert!(coefficient_of_variation(&[100.0, 100.0, 100.0]).unwrap() < 0.01);
-        assert!(coefficient_of_variation(&[50.0, 100.0, 150.0]).unwrap() > 0.2);
-        assert!(coefficient_of_variation(&[1.0]).is_none());
+    fn warmup_samples_are_discarded() {
+        let mut r = Recorder::new();
+        r.set_warmup(ms(500));
+        r.record(OpClass::EhrRead, ms(100), ms(150)); // planned in warmup → dropped
+        r.record(OpClass::EhrRead, ms(600), ms(650)); // measured
+        assert_eq!(r.total_measured(), 1);
+        assert_eq!(r.summaries()["ehr-read"].count, 1);
+    }
+
+    #[test]
+    fn percentile_buckets_are_correct() {
+        let mut r = Recorder::new();
+        // 100 samples: 99 at 10 ms, 1 at 1000 ms → p50≈10ms, max≈1000ms.
+        for _ in 0..99 {
+            r.record(OpClass::CompCreateSmall, ms(0), ms(10));
+        }
+        r.record(OpClass::CompCreateSmall, ms(0), ms(1000));
+        let s = &r.summaries()["comp-create-small"];
+        assert_eq!(s.count, 100);
+        assert!((9_000..=11_000).contains(&s.p50_us), "p50 {}", s.p50_us);
+        assert!(s.max_us >= 990_000, "max {}", s.max_us);
+    }
+
+    #[test]
+    fn errors_counted_and_excluded() {
+        let mut r = Recorder::new();
+        r.record(OpClass::AqlWard, ms(0), ms(5));
+        r.error(OpClass::AqlWard);
+        r.error(OpClass::AqlWard);
+        let s = &r.summaries()["aql-ward"];
+        assert_eq!(s.count, 1);
+        assert_eq!(s.errors, 2);
+        assert_eq!(r.total_errors(), 2);
+    }
+
+    #[test]
+    fn histogram_b64_round_trips() {
+        let mut r = Recorder::new();
+        for i in 1..=50u64 {
+            r.record(OpClass::CompReadLatest, ms(0), ms(i));
+        }
+        let s = &r.summaries()["comp-read-latest"];
+        assert!(!s.histogram_b64.is_empty());
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(&s.histogram_b64)
+            .expect("valid base64");
+        let restored: Histogram<u64> = Deserializer::new()
+            .deserialize(&mut std::io::Cursor::new(bytes))
+            .expect("valid V2 histogram");
+        assert_eq!(restored.len(), 50);
+    }
+
+    #[test]
+    fn overall_p99_merges_every_class() {
+        let mut r = Recorder::new();
+        // 80 fast samples across two classes at 10 ms + 20 slow at 2 s (100
+        // total): each fast class's own p99 is 10 ms, but the *merged* p99 (the
+        // 99th of 100) lands on the 2 s tail — the merge is what the knee reads.
+        for _ in 0..40 {
+            r.record(OpClass::CompReadLatest, ms(0), ms(10));
+        }
+        for _ in 0..40 {
+            r.record(OpClass::AqlWard, ms(0), ms(10));
+        }
+        for _ in 0..20 {
+            r.record(OpClass::CompCreateLarge, ms(0), ms(2000));
+        }
+        // Each fast class alone stays at 10 ms.
+        assert!(r.summaries()["comp-read-latest"].p99_us <= 11_000);
+        let p99 = r.overall_p99_us();
+        assert!(
+            p99 >= 1_900_000,
+            "overall p99 {p99} µs should reflect the merged 2 s tail"
+        );
+    }
+
+    #[test]
+    fn overall_p99_is_zero_when_empty() {
+        let r = Recorder::new();
+        assert_eq!(r.overall_p99_us(), 0);
+    }
+
+    #[test]
+    fn empty_classes_summarize_to_zero() {
+        let r = Recorder::new();
+        let s = r.summaries();
+        assert_eq!(s.len(), OpClass::ALL.len());
+        assert_eq!(s["opt-upload"].count, 0);
+        assert!(s["opt-upload"].histogram_b64.is_empty());
     }
 }

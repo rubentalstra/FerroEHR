@@ -344,13 +344,15 @@ fn emit_code_phrase(node: &WebTemplateNode, base: &str, out: &mut Map<String, Va
 }
 
 /// The `(code, value, terminology)` for an example coded value: the first entry
-/// of the input's coded list, else a placeholder local code.
+/// of the input's coded list, else a placeholder local code. The list labels
+/// already carry the display text — term definitions, then the TERM 3.1.0
+/// rubric for `openehr` codes (`webtemplate::inputs::coded_value`).
 fn coded_example(input: Option<&WebTemplateInput>) -> (String, String, String) {
     match input {
         Some(i) if !i.list.is_empty() => {
             let cv = &i.list[0];
-            let value = cv.label.clone().unwrap_or_else(|| cv.value.clone());
             let terminology = i.terminology.clone().unwrap_or_else(|| "local".to_owned());
+            let value = cv.label.clone().unwrap_or_else(|| cv.value.clone());
             (cv.value.clone(), value, terminology)
         }
         Some(i) => (

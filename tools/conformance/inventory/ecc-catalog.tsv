@@ -363,3 +363,4 @@ ECC-ADM-011	ADM	active	adm/export-ehrs	Admin export EHRs (dump/load)
 ECC-ADM-012	ADM	active	adm/archive-ehrs	Admin archive EHRs
 ECC-ADM-013	ADM	active	adm/physical-party-delete	Admin physical party delete
 ECC-ADM-014	ADM	active	adm/archive-parties	Admin archive parties
+ECC-TPL-017	TPL	active	tpl/adl14-example-roundtrip	Example COMPOSITION round-trips (ADL 1.4 example → commit)

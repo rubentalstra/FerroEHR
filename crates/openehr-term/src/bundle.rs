@@ -1,8 +1,8 @@
 //! openEHR terminology loader + lookup API (TERM 3.1.0).
 //!
-//! Hand-written; preserved across `openehr-codegen` regeneration (it is not a
-//! `// @generated` file, so `write_crate` keeps it and `lib.rs` auto-declares
-//! `pub mod bundle;`).
+//! Hand-written; preserved across `openehr-codegen` regeneration (it carries
+//! no generated-file marker, so `write_crate` keeps it and `lib.rs`
+//! auto-declares `pub mod bundle;`).
 //!
 //! The vendored terminology XML in `assets/` is compile-time-embedded with
 //! `include_str!` (no runtime file I/O) and parsed once into the generated TERM
@@ -256,6 +256,31 @@ impl OpenehrTerminology {
         let &ci = b.group_codes.get(group_id)?.get(code)?;
         let concept = b.terminology.vocabularies.get(gi)?.concepts.get(ci)?;
         Some(concept.rubric.as_str())
+    }
+
+    /// The rubric (display text) of concept `code` in language `lang`,
+    /// searched across every group — openEHR terminology concept codes are
+    /// globally unique integers, so the first match is the concept. `None`
+    /// if the language or code is unknown. This is a *display* helper (e.g.
+    /// filling `DV_CODED_TEXT.value`, which is the displayable text of the
+    /// defining code — RM data_types §DV_CODED_TEXT); validation keeps using
+    /// the group-scoped [`Self::rubric`]/[`Self::is_valid_code`].
+    #[must_use]
+    pub fn concept_rubric(&self, code: &str, lang: &str) -> Option<&str> {
+        let b = self.languages.get(lang)?;
+        for (group_id, codes) in &b.group_codes {
+            if let Some(&ci) = codes.get(code)
+                && let Some(&gi) = b.group_by_id.get(group_id)
+                && let Some(concept) = b
+                    .terminology
+                    .vocabularies
+                    .get(gi)
+                    .and_then(|v| v.concepts.get(ci))
+            {
+                return Some(concept.rubric.as_str());
+            }
+        }
+        None
     }
 
     /// Whether `code` is a valid concept in `group_id` (language-independent).

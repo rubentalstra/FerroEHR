@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.0.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-13T15:05:02.514176Z
+- **Run date:** 2026-07-13T22:05:39.896663Z
 
 ## System Under Test (SUT)
 
@@ -17,7 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-13T15:05:02.514176Z |
+| Date | 2026-07-13T22:05:39.896663Z |
 
 ## Scope of Test
 
@@ -168,6 +168,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.get_opt-retrieve_specific_version (master04 §get_opt) | ECC-TPL-008 — Get OPT — retrieve specific version | pass | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.get_opts-retrieve_all (master04 §get_opts) | ECC-TPL-010 — List OPTs — retrieve all | pass | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts (master04 §get_opts) | ECC-TPL-003 — List OPTs — retrieve all no OPTs | pass | — |
+| Template / OPT provisioning | Adl14OptProvisioning | GET /definition/template/adl1.4/{template_id}/example → POST /ehr/{ehr_id}/composition | ECC-TPL-017 — Example COMPOSITION round-trips (ADL 1.4 example → commit) | pass | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_existing (master04 §delete_opt) | ECC-TPL-014 — Delete OPT — delete existing | skipped | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_latest_version (master04 §delete_opt) | ECC-TPL-015 — Delete OPT — delete latest version | skipped | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_specific_version (master04 §delete_opt) | ECC-TPL-016 — Delete OPT — delete specific version | skipped | — |

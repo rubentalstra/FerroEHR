@@ -1411,7 +1411,7 @@ expression: wt
             "list": [
               {
                 "value": "431",
-                "label": "431"
+                "label": "persistent"
               }
             ],
             "terminology": "openehr"

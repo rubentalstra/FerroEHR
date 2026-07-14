@@ -1,0 +1,62 @@
+{
+  "sut": {
+    "name": "ehrbase-java",
+    "kind": "foreign",
+    "base_url": "http://localhost:8091/ehrbase/rest/openehr/v1",
+    "product_label": "EHRbase upstream",
+    "image_digests": {},
+    "versions": {}
+  },
+  "scale": "10k",
+  "steps": [
+    {
+      "load_factor": 1.0,
+      "rps": 10.075,
+      "error_rate": 0.0,
+      "p99_us": 70527,
+      "requests": 1209,
+      "max_dispatch_lag_ms": 14
+    },
+    {
+      "load_factor": 4.0,
+      "rps": 40.19166666666667,
+      "error_rate": 0.0,
+      "p99_us": 40127,
+      "requests": 4823,
+      "max_dispatch_lag_ms": 12
+    },
+    {
+      "load_factor": 16.0,
+      "rps": 161.39166666666668,
+      "error_rate": 0.0,
+      "p99_us": 27103,
+      "requests": 19367,
+      "max_dispatch_lag_ms": 25
+    },
+    {
+      "load_factor": 64.0,
+      "rps": 642.9583333333334,
+      "error_rate": 0.00018142000025917144,
+      "p99_us": 46783,
+      "requests": 77155,
+      "max_dispatch_lag_ms": 61
+    },
+    {
+      "load_factor": 128.0,
+      "rps": 1268.825,
+      "error_rate": 0.0031817735441421976,
+      "p99_us": 758783,
+      "requests": 152259,
+      "max_dispatch_lag_ms": 17
+    }
+  ],
+  "knee": {
+    "load_factor": 64.0,
+    "rps": 642.9583333333334,
+    "error_rate": 0.00018142000025917144,
+    "p99_us": 46783,
+    "requests": 77155,
+    "max_dispatch_lag_ms": 61
+  },
+  "sut_died": false
+}

@@ -93,6 +93,6 @@ SM spec at `specs/openehr/SM/`. The remaining design docs:
   `ehrbase-java/`, …): `CONFORMANCE_REPORT.md`, `CONFORMANCE_STATEMENT.md`,
   `CONFORMANCE_CERTIFICATE.md`, `results.json`, badges; the SUT-independent
   `CATALOG.md` at the root. Current (ehrbase-rs, W-10 re-derived baseline):
-  **368 executed · 333 passed · 0 failed · 35 adjudicated skips — CORE PASS /
-  STANDARD PASS**.
+  **369 executed · 334 passed · 0 failed · 35 adjudicated skips — CORE PASS /
+  STANDARD PASS** (ratcheted by ECC-TPL-017, the example round-trip case).
 - `benchmarks/` — `REPORT.md` + `results.json` from the benchmark harness.

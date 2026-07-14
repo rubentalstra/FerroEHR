@@ -231,6 +231,45 @@ the [report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md), the
 are computed by the runner — never hand-asserted — and the badges at the top
 of this page are generated from real runs.
 
+## Measured against EHRbase (Java)
+
+The built-in benchmark drives a **simulated hospital day** — admissions,
+shift vitals, medication rounds, lab-result contributions, clinician chart
+reviews with AQL, corrections, discharges, built on official openEHR CKM
+templates — **byte-identically against both servers** and publishes whatever
+it measures, in both directions. The numbers below are from the committed
+hour-profile run pair (identical 1,209-request clinical hour at the
+10k-composition rung, zero errors on both servers; single run on one shared
+host — a preview, not the publication protocol).
+
+![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
+
+![p99 latency per operation class](docs/benchmarks/charts/comparison-p99.svg)
+
+![Memory over the identical run](docs/benchmarks/charts/comparison-rss-series.svg)
+
+Highlights from [the full comparison](docs/benchmarks/COMPARISON.md)
+(generated — every number traces to a committed `results.json`):
+
+| Measured (hour profile @ 10k) | ehrbase-rs | EHRbase 2.34.0 (Java) |
+|---|--:|--:|
+| Idle memory (app) | **47 MB** | 515 MB |
+| Peak memory (app) | **188 MB** | 606 MB |
+| Mean CPU, identical load | **0.9 %** | 1.7 % |
+| p99 — composition create | **96 ms** | 106 ms |
+| p99 — patient AQL dashboard | **67 ms** | 105 ms |
+| p99 — composition read (latest) | **59 ms** | 89 ms |
+| p99 — composition update | **79 ms** | 111 ms |
+| Storage per composition | **28.2 KB** | 33.5 KB |
+| Saturation knee (write ramp) | 161 req/s | **643 req/s** |
+
+Where the other side wins is printed too — that last row is upstream's, kept
+in plain sight (it is the current optimization target, with the profiling
+data committed alongside). Reproduce everything with
+`scripts/benchmark.sh`; the methodology (pre-registered workload, identical
+client, coordinated-omission-corrected latency, fairness/config-parity
+table) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
+
 ## Deployment
 
 ```shell
