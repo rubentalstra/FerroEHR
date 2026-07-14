@@ -99,6 +99,7 @@ fn config(fhir_enabled: bool) -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         fhir: FhirConfig {
             enabled: fhir_enabled,

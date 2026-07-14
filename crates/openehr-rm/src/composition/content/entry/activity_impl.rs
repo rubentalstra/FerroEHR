@@ -7,14 +7,24 @@
 use crate::composition::content::entry::activity::Activity;
 use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
 
+/// The ACTIVITY invariant core over the projected inputs — one source for the
+/// typed impl and the value-level fast path (`validate::fast`).
+pub(crate) fn push_activity_invariants(
+    action_archetype_id: &str,
+    archetype_node_id: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if action_archetype_id.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Action_archetype_id_valid failed on type ACTIVITY",
+        ));
+    }
+    push_archetype_node_id_valid(out, "ACTIVITY", archetype_node_id);
+}
+
 impl Validate for Activity {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.action_archetype_id.is_empty() {
-            out.push(InvariantViolation::here(
-                "Invariant Action_archetype_id_valid failed on type ACTIVITY",
-            ));
-        }
-        push_archetype_node_id_valid(out, "ACTIVITY", &self.archetype_node_id);
+        push_activity_invariants(&self.action_archetype_id, &self.archetype_node_id, out);
     }
 }
 

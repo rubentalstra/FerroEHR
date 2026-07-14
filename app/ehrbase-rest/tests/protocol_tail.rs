@@ -41,6 +41,7 @@ fn config() -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         admin: ehrbase_rest::AdminConfig::default(),
         terminology: ehrbase_rest::TerminologyConfig::default(),

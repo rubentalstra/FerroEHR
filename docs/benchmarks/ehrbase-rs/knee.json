@@ -10,45 +10,59 @@
   "scale": "10k",
   "steps": [
     {
-      "load_factor": 16.0,
-      "rps": 161.96666666666667,
-      "error_rate": 0.0,
-      "p99_us": 23903,
-      "requests": 19436,
-      "max_dispatch_lag_ms": 11
-    },
-    {
-      "load_factor": 24.0,
-      "rps": 236.48333333333332,
-      "error_rate": 0.00007047216349541931,
-      "p99_us": 150655,
-      "requests": 28378,
-      "max_dispatch_lag_ms": 22
-    },
-    {
       "load_factor": 32.0,
-      "rps": 319.69166666666666,
-      "error_rate": 0.000052130848429558194,
-      "p99_us": 131327,
-      "requests": 38363,
-      "max_dispatch_lag_ms": 126
+      "rps": 318.2583333333333,
+      "error_rate": 0.0004972520282648522,
+      "p99_us": 788479,
+      "requests": 38191,
+      "events_per_min": 7876.000000000001,
+      "max_dispatch_lag_ms": 14
     },
     {
       "load_factor": 40.0,
-      "rps": 398.675,
-      "error_rate": 0.002335620294872062,
-      "p99_us": 891903,
-      "requests": 47841,
-      "max_dispatch_lag_ms": 15
+      "rps": 396.90833333333336,
+      "error_rate": 0.00010496704034933031,
+      "p99_us": 174463,
+      "requests": 47629,
+      "events_per_min": 9832.0,
+      "max_dispatch_lag_ms": 14
+    },
+    {
+      "load_factor": 42.0,
+      "rps": 415.93333333333334,
+      "error_rate": 0.024088847176599405,
+      "p99_us": 2660351,
+      "requests": 49912,
+      "events_per_min": 10287.5,
+      "max_dispatch_lag_ms": 54
+    },
+    {
+      "load_factor": 44.0,
+      "rps": 448.025,
+      "error_rate": 0.011727725593279534,
+      "p99_us": 1887231,
+      "requests": 53763,
+      "events_per_min": 11090.0,
+      "max_dispatch_lag_ms": 63
+    },
+    {
+      "load_factor": 48.0,
+      "rps": 453.73333333333335,
+      "error_rate": 0.0398871451243167,
+      "p99_us": 3489791,
+      "requests": 54448,
+      "events_per_min": 11187.5,
+      "max_dispatch_lag_ms": 54
     }
   ],
   "knee": {
-    "load_factor": 32.0,
-    "rps": 319.69166666666666,
-    "error_rate": 0.000052130848429558194,
-    "p99_us": 131327,
-    "requests": 38363,
-    "max_dispatch_lag_ms": 126
+    "load_factor": 40.0,
+    "rps": 396.90833333333336,
+    "error_rate": 0.00010496704034933031,
+    "p99_us": 174463,
+    "requests": 47629,
+    "events_per_min": 9832.0,
+    "max_dispatch_lag_ms": 14
   },
   "sut_died": false
 }

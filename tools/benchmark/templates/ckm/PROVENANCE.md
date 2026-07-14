@@ -15,14 +15,26 @@ Each file is CKM's own OPT export for the cited template, verbatim.
 
 ## Example skeletons (`*.example.json`)
 
-Generated 2026-07-13 from the vendored OPTs by the ehrbase-rs server's own
-example generator (`GET /definition/template/adl1.4/{template_id}/example`,
-composed local stack) and committed so every benchmarked SUT receives
+Generated from the vendored OPTs by the ehrbase-rs server's own example
+generator (`GET /definition/template/adl1.4/{template_id}/example`, composed
+local stack) and committed so every benchmarked SUT receives
 **byte-identical** request payloads (fairness: the skeleton is a committed
-artefact, never fetched per-SUT at run time). Each WIRED skeleton was
-verified to commit (`POST …/composition` → 201) against the composed
-server. Regenerate by re-running the upload + example fetch against a
-composed stack after re-vendoring the OPTs.
+artefact, never fetched per-SUT at run time). Each skeleton was verified to
+commit (`POST …/composition` → 201) against the composed server. Regenerate
+by re-running the upload + example fetch against a composed stack after
+re-vendoring the OPTs.
+
+**Regenerated 2026-07-14 at `detail_level=medium`** (the P20 F5 finding,
+`docs/plans/phase-20-optimization.md`): the original 2026-07-13 skeletons
+were fetched at the default `required` level, and for 5 of the 6 templates —
+whose content chains are entirely optional — that produced **empty**
+compositions (no `content`), so the whole W-11 workload committed empty
+documents and the dashboard AQL measured zero-row result sets. `medium` is
+now the fully-populated single-instance committable form; all six skeletons
+carry content, all commit-verified 201, and the patient-dashboard AQL
+(`CONTAINS OBSERVATION`) returns rows against them. Benchmark numbers
+published before this regeneration measured the empty-payload workload and
+are superseded by the P20 T5 re-run.
 
 | slug | template_id | wired | commit-verified |
 |---|---|---|---|

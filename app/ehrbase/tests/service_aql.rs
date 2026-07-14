@@ -472,6 +472,88 @@ async fn aql_acceptance_set() {
     );
 }
 
+/// P20 overhead checklist item 14 — the whole-object result-assembly N+1 fix.
+///
+/// A dashboard-sized multi-row whole-COMPOSITION projection must reassemble
+/// **every** row's composition byte-identically to a direct
+/// `get_composition_latest`. The executor now collects one subtree anchor per
+/// whole-object cell across the whole page and loads them in a SINGLE statement
+/// (`storage::node_repo::read_subtrees_canonical`) instead of one follow-up
+/// SELECT per candidate row. No countable per-statement seam exists in the
+/// harness (no `pg_stat_statements`), so equivalence over a realistic page — plus
+/// the mixed scalar+whole-object columns and the duplicate-anchor projection
+/// below — is the oracle; correctness is byte-identical, the shape change is the
+/// batched loader documented on that function.
+#[tokio::test]
+async fn whole_object_projection_batches_over_a_multi_row_page() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_batch_wholeobj").await;
+    let svc = EhrbaseService::new(pool);
+    let ehr_id = create_ehr(&svc).await;
+
+    // A page of distinct compositions in one EHR — each its own versioned
+    // object, so the page projects N distinct subtree anchors in one batch.
+    let mut expected: BTreeMap<String, Value> = BTreeMap::new();
+    for i in 0..8 {
+        let name = format!("comp-{i}");
+        let ovid = create_comp(&svc, &ehr_id, &name, f64::from(i) + 10.0).await;
+        let vo_id = ovid.split("::").next().unwrap();
+        let mut body = svc
+            .get_composition_latest(
+                ehr_id.parse().expect("ehr uuid"),
+                vo_id.parse().expect("vo uuid"),
+            )
+            .await
+            .expect("get_composition_latest");
+        // The AQL projection reassembles the stored canonical JSON (no injected
+        // uid); drop the service-injected uid for the comparison.
+        body.as_object_mut().unwrap().remove("uid");
+        expected.insert(name, body);
+    }
+
+    // Mixed scalar (`c/name/value`) + whole-object (`c`) columns across the page:
+    // exercises the by-position fill of the batched whole-object cells.
+    let r = run_aql(
+        &svc,
+        "SELECT c/name/value, c FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), expected.len(), "all compositions returned");
+    for row in rows(&r) {
+        let name = row[0].as_str().expect("name cell");
+        let whole = &row[1];
+        assert_eq!(
+            whole,
+            expected
+                .get(name)
+                .unwrap_or_else(|| panic!("unexpected row {name}")),
+            "batched whole-object reassembly equals get_composition_latest for {name}"
+        );
+    }
+
+    // Two whole-object columns projecting the SAME object per row: the loader
+    // de-duplicates the anchor and fills both cells from the one reassembly.
+    let r = run_aql(
+        &svc,
+        "SELECT c, c FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), expected.len(), "all compositions returned");
+    for row in rows(&r) {
+        assert_eq!(row[0], row[1], "duplicate whole-object columns are equal");
+        let name = row[0]["name"]["value"].as_str().expect("name in body");
+        assert_eq!(
+            &row[0],
+            expected
+                .get(name)
+                .unwrap_or_else(|| panic!("unexpected row {name}")),
+            "de-duplicated whole-object reassembly equals get_composition_latest for {name}"
+        );
+    }
+}
+
 /// Archetype-specialisation subsumption (W-3b T2): a query naming a **parent**
 /// archetype matches data created with any **specialisation child**, bounded to
 /// the same qualified RM entity and major version.
@@ -611,6 +693,48 @@ async fn latest_versus_all_versions() {
         rows(&r)[0][0].as_f64().unwrap(),
         30.0,
         "latest magnitude is 30"
+    );
+
+    // F6: the synthesized `c/uid/value` is version-correct under both scopes.
+    // LATEST → the current (v3) OBJECT_VERSION_ID.
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(current),
+        "LATEST c/uid/value is the current version id"
+    );
+
+    // ALL_VERSIONS → one distinct id per version (trees 1/2/3), all on this vo.
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS VERSION v[ALL_VERSIONS] CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let mut uids: Vec<String> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("uid").to_owned())
+        .collect();
+    uids.sort();
+    assert_eq!(uids.len(), 3, "one uid per version: {uids:?}");
+    assert!(
+        uids.iter().all(|u| u.starts_with(&format!("{vo_id}::"))),
+        "every uid is on this versioned object: {uids:?}"
+    );
+    let mut trees: Vec<&str> = uids
+        .iter()
+        .map(|u| u.rsplit("::").next().unwrap())
+        .collect();
+    trees.sort_unstable();
+    assert_eq!(trees, vec!["1", "2", "3"], "version trees 1/2/3: {uids:?}");
+    assert!(
+        uids.contains(&ovid) && uids.contains(&current),
+        "the v1 and v3 endpoints are present: {uids:?}"
     );
 }
 
@@ -1012,5 +1136,255 @@ async fn scalar_functions_execute() {
     assert!(
         tz.contains(':') && (tz.starts_with('+') || tz.starts_with('-')),
         "±hh:mm: {tz}"
+    );
+}
+
+// ── P20 promoted context_start ORDER BY + F6 uid synthesis ───────────────────
+
+/// An event COMPOSITION with an explicit `context.start_time`.
+fn composition_at(name: &str, magnitude: f64, start_time: &str) -> Value {
+    let mut c = composition(name, magnitude);
+    c["context"]["start_time"] = json!({ "_type": "DV_DATE_TIME", "value": start_time });
+    c
+}
+
+/// A persistent COMPOSITION with no `context` (RM ehr master03
+/// §COMPOSITION.context [0..1]) — its promoted `context_start` is NULL.
+fn composition_persistent(name: &str, magnitude: f64) -> Value {
+    let mut c = composition(name, magnitude);
+    if let Some(obj) = c.as_object_mut() {
+        obj.remove("context");
+    }
+    c["category"] = json!({
+        "_type": "DV_CODED_TEXT",
+        "value": "persistent",
+        "defining_code": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+            "code_string": "431"
+        }
+    });
+    c
+}
+
+async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name: &str) -> String {
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(body, "249", None))
+        .await
+        .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+}
+
+/// P20 + F6, end to end against real PG 18: the patient-dashboard shape orders
+/// by the promoted `node.context_start` column (verified byte-equal to the
+/// pre-promotion correlated-subquery ordering in both directions, including the
+/// NULL-context row), and `c/uid/value` returns the exact server-assigned
+/// OBJECT_VERSION_ID (F6) — never null.
+#[tokio::test]
+async fn dashboard_context_start_ordering_and_uid() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_dashboard").await;
+    let svc = EhrbaseService::new(pool);
+    let ehr_id = create_ehr(&svc).await;
+
+    // Distinct start times, seeded out of chronological order so ORDER BY (not
+    // insertion order) drives the result.
+    let uid_mid = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("mid", 1.0, "2021-06-15T12:00:00Z"),
+        "mid",
+    )
+    .await;
+    let _uid_old = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("old", 2.0, "2020-01-01T00:00:00Z"),
+        "old",
+    )
+    .await;
+    let uid_new = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_at("new", 3.0, "2022-12-31T23:59:59Z"),
+        "new",
+    )
+    .await;
+    // A persistent composition → NULL context_start.
+    let _uid_persist = create_comp_body(
+        &svc,
+        &ehr_id,
+        composition_persistent("persist", 4.0),
+        "persist",
+    )
+    .await;
+
+    // ── DESC: NULLS FIRST (PG default for DESC), then newest→oldest. This is the
+    // identical ordering the pre-promotion `(… )::timestamptz DESC` subquery
+    // produced (a NULL sub-select and a NULL column sort identically). ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value, c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value DESC",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    for row in rows(&r) {
+        assert!(
+            row[0].as_str().is_some(),
+            "F6: c/uid/value must be a non-null OBJECT_VERSION_ID: {row:?}"
+        );
+    }
+    let names_desc: Vec<&str> = rows(&r)
+        .iter()
+        .map(|row| row[1].as_str().expect("name"))
+        .collect();
+    assert_eq!(
+        names_desc,
+        vec!["persist", "new", "mid", "old"],
+        "DESC: NULL context first, then newest→oldest"
+    );
+
+    // ── ASC: oldest→newest, NULLS LAST (PG default for ASC). ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value ASC",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    let names_asc: Vec<&str> = rows(&r)
+        .iter()
+        .map(|row| row[0].as_str().expect("name"))
+        .collect();
+    assert_eq!(
+        names_asc,
+        vec!["old", "mid", "new", "persist"],
+        "ASC: oldest→newest, NULL context last"
+    );
+
+    // ── F6: the synthesized uid equals the OBJECT_VERSION_ID create returned. ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/name/value = 'new'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!(uid_new),
+        "c/uid/value == the created OBJECT_VERSION_ID"
+    );
+
+    // ── F6: `c/uid` returns the OBJECT_VERSION_ID object for a specific row. ──
+    let r = run_aql(
+        &svc,
+        "SELECT c/uid FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value = 'mid'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&r)[0][0],
+        json!({ "_type": "OBJECT_VERSION_ID", "value": uid_mid }),
+        "c/uid is the OBJECT_VERSION_ID object"
+    );
+}
+
+/// The AQL plan cache (P20) is transparent: a repeated query text reuses the
+/// lowered plan (a cache hit) yet returns byte-identical results, and the
+/// per-request parameter values + paging window still bind correctly on top of
+/// the shared plan. No openEHR spec governs the cache — our own performance
+/// design — so this asserts behaviour equivalence, not a spec clause.
+#[tokio::test]
+async fn plan_cache_reuses_plan_and_binds_per_request() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("aql_plan_cache").await);
+
+    let ehr_id = create_ehr(&svc).await;
+    create_comp(&svc, &ehr_id, "BP", 80.0).await;
+    create_comp(&svc, &ehr_id, "BP", 100.0).await;
+    create_comp(&svc, &ehr_id, "BP", 120.0).await;
+
+    // The RESULT_SET content that must be identical across runs (the `meta.id`
+    // and `meta._created` are volatile by design and excluded).
+    let content = |r: &Value| json!({ "columns": r["columns"], "rows": r["rows"] });
+
+    // ── Same query twice → cache miss then hit, identical results. ──────────
+    let count_q = "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c";
+    let before = svc.plan_cache().stats();
+    let r1 = run_aql(&svc, count_q, ehr_scope(&ehr_id)).await;
+    let after_first = svc.plan_cache().stats();
+    assert_eq!(after_first.misses, before.misses + 1, "first run is a miss");
+    assert_eq!(after_first.hits, before.hits, "first run is not a hit");
+
+    let r2 = run_aql(&svc, count_q, ehr_scope(&ehr_id)).await;
+    let after_second = svc.plan_cache().stats();
+    assert_eq!(
+        after_second.hits,
+        after_first.hits + 1,
+        "the repeat query is served from the plan cache (no re-parse)"
+    );
+    assert_eq!(after_second.misses, after_first.misses, "no new miss");
+    assert_eq!(
+        content(&r1),
+        content(&r2),
+        "cached plan yields identical results"
+    );
+    assert_eq!(rows(&r1)[0][0], json!(3), "3 compositions in scope");
+
+    // ── $parameter values bind per request on top of the cached plan. ───────
+    let min_q = format!(
+        "SELECT o/{MAG_PATH} AS m FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] \
+         WHERE o/{MAG_PATH} > $min ORDER BY o/{MAG_PATH}"
+    );
+    let mut low_scope = ehr_scope(&ehr_id);
+    low_scope.parameters = BTreeMap::from([("min".to_owned(), json!(90))]);
+    let res_low = run_aql(&svc, &min_q, low_scope).await;
+    let stats_after_low = svc.plan_cache().stats();
+
+    let mut high_scope = ehr_scope(&ehr_id);
+    high_scope.parameters = BTreeMap::from([("min".to_owned(), json!(110))]);
+    let res_high = run_aql(&svc, &min_q, high_scope).await;
+    let stats_after_high = svc.plan_cache().stats();
+    assert_eq!(
+        stats_after_high.hits,
+        stats_after_low.hits + 1,
+        "the second parameterised run reuses the cached plan"
+    );
+    let mags = |r: &Value| {
+        rows(r)
+            .iter()
+            .map(|row| row[0].as_f64().expect("magnitude"))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(mags(&res_low), vec![100.0, 120.0], "$min=90 keeps 100,120");
+    assert_eq!(
+        mags(&res_high),
+        vec![120.0],
+        "$min=110 keeps only 120 — the bound value varies on the shared plan"
+    );
+
+    // ── REST `fetch` paging binds per request on top of the cached plan. ────
+    let page_q = format!(
+        "SELECT o/{MAG_PATH} FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] ORDER BY o/{MAG_PATH}"
+    );
+    let mut req_fetch_one = ehr_scope(&ehr_id);
+    req_fetch_one.fetch = Some(1);
+    let page_one = run_aql(&svc, &page_q, req_fetch_one).await;
+    let stats_one = svc.plan_cache().stats();
+
+    let mut req_fetch_two = ehr_scope(&ehr_id);
+    req_fetch_two.fetch = Some(2);
+    let page_two = run_aql(&svc, &page_q, req_fetch_two).await;
+    let stats_two = svc.plan_cache().stats();
+    assert_eq!(
+        stats_two.hits,
+        stats_one.hits + 1,
+        "the second paged run reuses the cached plan"
+    );
+    assert_eq!(rows(&page_one).len(), 1, "fetch=1 returns one row");
+    assert_eq!(
+        rows(&page_two).len(),
+        2,
+        "fetch=2 returns two rows from the same plan"
     );
 }

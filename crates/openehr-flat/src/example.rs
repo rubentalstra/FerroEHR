@@ -8,10 +8,15 @@
 //! * [`Required`](DetailLevel::Required) — only the mandatory skeleton (nodes on
 //!   a fully-mandatory chain, plus whatever a min-cardinality forces). Intended
 //!   to be committable as-is.
-//! * [`Medium`](DetailLevel::Medium) — mandatory + one level of optional
-//!   elements (a single occurrence of each, the first alternative of any choice).
-//! * [`Complete`](DetailLevel::Complete) — one of every node (all optional
-//!   branches; not necessarily committable).
+//! * [`Medium`](DetailLevel::Medium) — the fully-populated single-instance
+//!   document: every optional branch descended to its leaves, one occurrence of
+//!   each node, the first alternative of any choice. Intended to be committable
+//!   as-is. (A former cut at "one level of optional elements" produced *empty*
+//!   `content` for the common template shape whose whole content chain is
+//!   optional — a populated example is the level's entire point.)
+//! * [`Complete`](DetailLevel::Complete) — everything `medium` emits, plus a
+//!   second occurrence of each repeating node (demonstrating repetition); not
+//!   necessarily committable.
 //!
 //! The set of populated leaves is monotonic across the levels
 //! (`required ⊆ medium ⊆ complete`).
@@ -49,8 +54,6 @@ use crate::webtemplate::{
 
 /// Fixed example instants used for the RM temporal leaves (deterministic).
 const EXAMPLE_DATE_TIME: &str = "2022-02-03T04:05:06Z";
-const EXAMPLE_DATE: &str = "2022-02-03";
-const EXAMPLE_TIME: &str = "04:05:06";
 const EXAMPLE_DURATION: &str = "PT1H";
 
 /// The level of detail for a generated example (`detail_level` query parameter).
@@ -58,9 +61,11 @@ const EXAMPLE_DURATION: &str = "PT1H";
 pub enum DetailLevel {
     /// Mandatory skeleton only; intended to be committable without adjustment.
     Required,
-    /// Mandatory + optional leaf elements (one occurrence, first choice).
+    /// Fully populated, one occurrence of every node (first alternative of any
+    /// choice); intended to be committable without adjustment.
     Medium,
-    /// One of every node; not expected to be committable.
+    /// `Medium` plus a second occurrence of each repeating node; not expected
+    /// to be committable.
     Complete,
 }
 
@@ -176,21 +181,66 @@ fn walk(
     let groups = child_groups(node);
     let mut emitted = false;
     let mut included: Vec<&str> = Vec::new();
+    // Materialised instances per container cardinality (`max != -1`), so the
+    // populated levels never overrun a container's upper bound — an *optional*
+    // child is skipped once its cardinality is full (a mandatory one still
+    // materialises; a template whose mandatory children alone exceed the bound
+    // is contradictory and the validator's job to report).
+    let mut card_counts = vec![0usize; node.cardinalities.len()];
+    let card_idx = |child: &WebTemplateNode| {
+        node.cardinalities
+            .iter()
+            .position(|c| c.max != -1 && child.aql_path.starts_with(c.path.as_str()))
+    };
 
     for child in &groups {
         let child_opt = opt_depth + usize::from(is_optional(child));
         let include = match level {
             DetailLevel::Required => child_opt == 0,
-            DetailLevel::Medium => child_opt <= 1,
-            DetailLevel::Complete => true,
+            DetailLevel::Medium | DetailLevel::Complete => true,
         };
         if include {
+            // An OPTIONAL node whose coded-name constraint is display/rubric-
+            // incoherent (see `CodedName::incoherent`) is omitted: no instance
+            // form of it is accepted by every conforming consumer, and an
+            // example exists to be committable everywhere. A MANDATORY one is
+            // still emitted in our spec-faithful form.
+            if is_optional(child) && child.name_coded.as_ref().is_some_and(|cn| cn.incoherent) {
+                continue;
+            }
+            let ci = card_idx(child);
+            let card_full = |counts: &[usize]| {
+                ci.is_some_and(|i| {
+                    counts[i] >= usize::try_from(node.cardinalities[i].max).unwrap_or(usize::MAX)
+                })
+            };
+            if is_optional(child) && card_full(&card_counts) {
+                continue;
+            }
             included.push(child.aql_path.as_str());
             let child_prefix = format!("{prefix}/{}", seg_for(child));
             // A mandatory child must materialise even when all of *its* children
             // are optional (else the mandatory node would go missing).
             let child_force = !is_optional(child);
-            emitted |= walk(child, &child_prefix, child_opt, level, child_force, out);
+            let child_emitted = walk(child, &child_prefix, child_opt, level, child_force, out);
+            emitted |= child_emitted;
+            if child_emitted && let Some(i) = ci {
+                card_counts[i] += 1;
+            }
+            // `Complete` demonstrates repetition: a second occurrence of any
+            // repeating node that materialised (cardinality permitting).
+            if level == DetailLevel::Complete
+                && child_emitted
+                && is_repeating(child)
+                && !card_full(&card_counts)
+            {
+                let second_prefix = format!("{prefix}/{}:1", child.id);
+                let second_emitted = walk(child, &second_prefix, child_opt, level, false, out);
+                emitted |= second_emitted;
+                if second_emitted && let Some(i) = ci {
+                    card_counts[i] += 1;
+                }
+            }
         }
     }
 
@@ -240,11 +290,16 @@ fn is_optional(node: &WebTemplateNode) -> bool {
     node.min.unwrap_or(0) < 1
 }
 
+/// Whether a node may occur more than once (Better's `isRepeating`).
+fn is_repeating(node: &WebTemplateNode) -> bool {
+    node.max == -1 || node.max > 1
+}
+
 /// The flat path segment for a node: `id:0` for a repeating node (Better's
 /// `isRepeating`: `max == -1 || max > 1`), else the bare `id` — matching
 /// [`to_flat`](crate::to_flat) so the example round-trips.
 fn seg_for(node: &WebTemplateNode) -> String {
-    if node.max == -1 || node.max > 1 {
+    if is_repeating(node) {
         format!("{}:0", node.id)
     } else {
         node.id.clone()
@@ -282,14 +337,28 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         "DV_ORDINAL" => emit_ordinal(node, base, out, false),
         "DV_SCALE" => emit_ordinal(node, base, out, true),
         "DV_BOOLEAN" => put(out, base, "", json!(example_boolean(node))),
-        "DV_DATE_TIME" => put(out, base, "", json!(EXAMPLE_DATE_TIME)),
-        "DV_DATE" => put(out, base, "", json!(EXAMPLE_DATE)),
-        "DV_TIME" => put(out, base, "", json!(EXAMPLE_TIME)),
-        "DV_DURATION" => put(out, base, "", json!(EXAMPLE_DURATION)),
+        "DV_DATE_TIME" | "DV_DATE" | "DV_TIME" => {
+            put(out, base, "", json!(example_temporal(node, rm)));
+        }
+        "DV_DURATION" => put(out, base, "", json!(example_duration(node))),
         "DV_IDENTIFIER" => put(out, base, "id", json!("example-id")),
         "DV_MULTIMEDIA" => {
             put(out, base, "", json!("http://example.org/media"));
-            put(out, base, "mediatype", json!("text/plain"));
+            // Honour a `C_CODE_PHRASE` list on `media_type` (captured in
+            // `code_lists` — the constraint the validator enforces).
+            let media = node
+                .code_lists
+                .iter()
+                .find(|cl| cl.attr == "media_type")
+                .and_then(|cl| cl.codes.first())
+                .map_or("text/plain", String::as_str);
+            put(out, base, "mediatype", json!(media));
+            // A plausible non-zero size. The RM invariant is `size >= 0`
+            // (RM data_types §DV_MULTIMEDIA `Size_valid`), so 0 is valid —
+            // but a referenced resource of zero bytes is unreal, and the
+            // reference implementation's known `size > 0` quirk rejects it
+            // (the DV_MULTIMEDIA PORT NOTE); a realistic example avoids both.
+            put(out, base, "size", json!(1024));
         }
         "DV_PARSABLE" => {
             put(out, base, "", json!("example"));
@@ -432,6 +501,123 @@ fn emit_ordinal(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>
     }
 }
 
+/// A deterministic temporal example honouring the leaf's AOM 1.4 temporal
+/// pattern (`yyyy-??-XX` etc.: literal = mandatory, `??` = optional/kept,
+/// `XX` = prohibited/omitted — mirroring the validator's presence-only
+/// judgement) and the `timezone_validity` constraint (`1003` = the designator
+/// must be absent; the fixed example instants already carry `Z` for the rest).
+fn example_temporal(node: &WebTemplateNode, rm: &str) -> String {
+    let pattern = node
+        .inputs
+        .first()
+        .and_then(|i| i.validation.as_ref())
+        .and_then(|v| v.pattern.as_deref());
+    let (pat_date, pat_time) = match pattern {
+        Some(p) if p.contains('T') => {
+            let (d, t) = p.split_once('T').unwrap_or((p, ""));
+            (d, t)
+        }
+        Some(p) if p.contains(':') => ("", p),
+        Some(p) => (p, ""),
+        None => ("", ""),
+    };
+    // Date segments: year always; month/day kept unless the pattern prohibits
+    // them (an omitted month forces the day off — ISO 8601 partial precision
+    // truncates right-to-left).
+    let date_full = ["2022", "02", "03"];
+    let date = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, '-').collect()
+        };
+        let mut out = String::from(date_full[0]);
+        for (i, part) in date_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push('-');
+            out.push_str(part);
+        }
+        out
+    };
+    let time_full = ["04", "05", "06"];
+    let time = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, ':').collect()
+        };
+        let mut out = String::from(time_full[0]);
+        for (i, part) in time_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push(':');
+            out.push_str(part);
+        }
+        out
+    };
+    let tz = if node.tz_validity == Some(1003) {
+        ""
+    } else {
+        "Z"
+    };
+    match rm {
+        "DV_DATE" => date(pat_date),
+        "DV_TIME" => format!("{}{tz}", time(pat_time)),
+        // DV_DATE_TIME: a time part prohibited outright (pattern `…TXX:…`)
+        // truncates to the date.
+        _ => {
+            if pat_time.starts_with("XX") {
+                date(pat_date)
+            } else {
+                format!("{}T{}{tz}", date(pat_date), time(pat_time))
+            }
+        }
+    }
+}
+
+/// A deterministic duration example honouring the `C_DURATION` allowed-fields
+/// pattern (encoded by the builder as which per-field inputs exist — mirroring
+/// the validator) and the ISO duration range: the range minimum when one is
+/// declared, else one unit of the first allowed field, else `PT1H`.
+fn example_duration(node: &WebTemplateNode) -> String {
+    if let Some(range) = node.duration_range.as_ref()
+        && let Some(min) = range.min.as_ref().and_then(Value::as_str)
+    {
+        // An INCLUSIVE minimum is itself a valid pick; an exclusive one
+        // (`> PT0S` — BASE Interval lower_included = false) falls through to
+        // the one-unit-of-first-allowed-field pick, which is strictly above
+        // a zero minimum (the only exclusive-minimum shape in the corpus;
+        // a non-zero exclusive minimum would need min+1 — extend when one
+        // appears rather than guessing).
+        if range.min_op.as_deref() != Some(">") {
+            return min.to_owned();
+        }
+    }
+    let iso = [
+        ("year", "P1Y"),
+        ("month", "P1M"),
+        ("week", "P1W"),
+        ("day", "P1D"),
+        ("hour", "PT1H"),
+        ("minute", "PT1M"),
+        ("second", "PT1S"),
+    ];
+    let allowed: Vec<&str> = node
+        .inputs
+        .iter()
+        .filter_map(|i| i.suffix.as_deref())
+        .collect();
+    if allowed.is_empty() || allowed.len() >= 7 {
+        return EXAMPLE_DURATION.to_owned();
+    }
+    iso.iter()
+        .find(|(field, _)| allowed.contains(field))
+        .map_or_else(|| EXAMPLE_DURATION.to_owned(), |(_, v)| (*v).to_owned())
+}
+
 /// A deterministic boolean example: `false` when the archetype allows only
 /// `false`, else `true`.
 fn example_boolean(node: &WebTemplateNode) -> bool {
@@ -468,29 +654,64 @@ fn input_range(input: &WebTemplateInput) -> Option<&WebTemplateRange> {
 
 // ── numeric picking (deterministic, range-clamped) ──────────────────────────────
 
-/// A decimal example value clamped into `range` (defaulting to `0.0`).
+/// A plausible, non-zero decimal example value within `range`.
+///
+/// An unconstrained magnitude gets a deterministic non-zero default
+/// ([`DEFAULT_DECIMAL`]); a range-constrained one is placed at the range
+/// **midpoint** when both bounds exist (honouring the open-bound `>`/`<`
+/// operators), and clamped toward the single stated bound otherwise. The result
+/// never lands on `0.0` when the range admits a non-zero value: a zero example
+/// magnitude is clinically unreal and defeats the multiplicative payload jitter
+/// the example skeletons feed. Deterministic (no randomness): the same range
+/// always yields the same value. The FLAT/STRUCTURED formats have no versioned
+/// openEHR spec of their own — this pick policy is our own design.
 fn pick_decimal(range: Option<&WebTemplateRange>) -> f64 {
-    let Some(r) = range else { return 0.0 };
-    let mut v = 0.0;
-    if let Some(min) = r.min.as_ref().and_then(Value::as_f64) {
+    /// The default when no numeric bound is stated (a plausible non-zero value).
+    const DEFAULT_DECIMAL: f64 = 10.0;
+    /// The step taken across an open (`>` / `<`) bound.
+    const STEP: f64 = 1.0;
+
+    let Some(r) = range else {
+        return DEFAULT_DECIMAL;
+    };
+    // Effective bounds, moved just inside an open (`>` / `<`) constraint.
+    let lo = r.min.as_ref().and_then(Value::as_f64).map(|min| {
         if r.min_op.as_deref() == Some(">") {
-            if v <= min {
-                v = min + 1.0;
-            }
-        } else if v < min {
-            v = min;
+            min + STEP
+        } else {
+            min
         }
-    }
-    if let Some(max) = r.max.as_ref().and_then(Value::as_f64) {
+    });
+    let hi = r.max.as_ref().and_then(Value::as_f64).map(|max| {
         if r.max_op.as_deref() == Some("<") {
-            if v >= max {
-                v = max - 1.0;
-            }
-        } else if v > max {
-            v = max;
+            max - STEP
+        } else {
+            max
         }
+    });
+    match (lo, hi) {
+        (Some(lo), Some(hi)) => {
+            let mid = f64::midpoint(lo, hi);
+            // A midpoint of 0.0 on a range symmetric about zero (e.g. [-5, 5])
+            // would land on the forbidden zero even though a non-zero value is
+            // in range — bias to the positive half instead.
+            if mid == 0.0 && hi > 0.0 {
+                hi / 2.0
+            } else {
+                mid
+            }
+        }
+        // Only a lower bound: sit at the floor, or the default when that is not
+        // above zero (so the pick stays non-zero and in range).
+        (Some(lo), None) => lo.max(DEFAULT_DECIMAL),
+        // Only an upper bound: sit at the ceiling, or the default when that is
+        // not below zero; a non-positive ceiling admits only a value below it.
+        (None, Some(hi)) => {
+            let v = hi.min(DEFAULT_DECIMAL);
+            if v == 0.0 { hi - STEP } else { v }
+        }
+        (None, None) => DEFAULT_DECIMAL,
     }
-    v
 }
 
 /// An integer example value clamped into `range` (defaulting to `0`).
@@ -673,6 +894,35 @@ mod tests {
     }
 
     #[test]
+    fn medium_populates_optional_content() {
+        // The level's whole point: a template whose content chain is entirely
+        // optional still yields a populated document at `medium` (the empty
+        // `required` skeleton is the committable *minimum*, not the example).
+        let wt = demo_vitals();
+        let comp = example_composition(&wt, DetailLevel::Medium);
+        let content = comp.get("content").and_then(Value::as_array);
+        assert!(
+            content.is_some_and(|c| !c.is_empty()),
+            "medium example carries content entries"
+        );
+        assert!(
+            leaf_count(&comp) > leaf_count(&example_composition(&wt, DetailLevel::Required)),
+            "medium populates strictly more leaves than required"
+        );
+    }
+
+    #[test]
+    fn complete_demonstrates_repetition() {
+        let wt = demo_vitals();
+        let medium = example_composition(&wt, DetailLevel::Medium);
+        let complete = example_composition(&wt, DetailLevel::Complete);
+        assert!(
+            leaf_count(&complete) > leaf_count(&medium),
+            "complete adds second occurrences of repeating nodes"
+        );
+    }
+
+    #[test]
     fn levels_are_monotonic() {
         let wt = demo_vitals();
         let required = leaf_count(&example_composition(&wt, DetailLevel::Required));
@@ -713,5 +963,93 @@ mod tests {
         // Deterministic across calls.
         apply_output_uid(&mut input, &wt.template_id);
         assert_eq!(input.get("uid"), output.get("uid"));
+    }
+
+    fn range(
+        min: Option<f64>,
+        min_op: Option<&str>,
+        max: Option<f64>,
+        max_op: Option<&str>,
+    ) -> WebTemplateRange {
+        WebTemplateRange {
+            min_op: min_op.map(str::to_owned),
+            min: min.map(|m| json!(m)),
+            max_op: max_op.map(str::to_owned),
+            max: max.map(|m| json!(m)),
+        }
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)] // the picker returns exactly representable values
+    fn pick_decimal_is_non_zero_and_in_range() {
+        // Unconstrained: a plausible non-zero default, not 0.0.
+        assert_eq!(pick_decimal(None), 10.0);
+        // Both bounds present: the midpoint (never the min, never 0.0).
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), None, Some(10.0), None))),
+            5.0
+        );
+        assert_eq!(
+            pick_decimal(Some(&range(Some(60.0), None, Some(80.0), None))),
+            70.0
+        );
+        // A range symmetric about zero must not yield the forbidden 0.0.
+        let v = pick_decimal(Some(&range(Some(-5.0), None, Some(5.0), None)));
+        assert!(
+            v != 0.0 && (-5.0..=5.0).contains(&v),
+            "in range, non-zero: {v}"
+        );
+        // Only a lower bound: at the floor when it is above zero, else the default.
+        assert_eq!(
+            pick_decimal(Some(&range(Some(50.0), None, None, None))),
+            50.0
+        );
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), None, None, None))),
+            10.0
+        );
+        // Only an upper bound: below the ceiling, non-zero.
+        assert_eq!(
+            pick_decimal(Some(&range(None, None, Some(100.0), None))),
+            10.0
+        );
+        assert_eq!(pick_decimal(Some(&range(None, None, Some(4.0), None))), 4.0);
+        // Open bounds are honoured (`>` / `<` exclude the stated value).
+        assert_eq!(
+            pick_decimal(Some(&range(Some(0.0), Some(">"), None, None))),
+            10.0
+        );
+        let hi = pick_decimal(Some(&range(None, None, Some(1.0), Some("<"))));
+        assert!(hi < 1.0, "strictly below an open upper bound: {hi}");
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)] // a magnitude of exactly 0.0 is the value under test
+    fn pick_decimal_populated_magnitudes_are_non_zero() {
+        fn collect(v: &Value, out: &mut Vec<f64>) {
+            match v {
+                Value::Object(m) => {
+                    if m.get("_type").and_then(Value::as_str) == Some("DV_QUANTITY")
+                        && let Some(x) = m.get("magnitude").and_then(Value::as_f64)
+                    {
+                        out.push(x);
+                    }
+                    m.values().for_each(|c| collect(c, out));
+                }
+                Value::Array(a) => a.iter().for_each(|e| collect(e, out)),
+                _ => {}
+            }
+        }
+        // A populated example must not seed a zero-valued quantity magnitude
+        // (clinically unreal; defeats multiplicative jitter).
+        let wt = demo_vitals();
+        let comp = example_composition(&wt, DetailLevel::Medium);
+        let mut mags = Vec::new();
+        collect(&comp, &mut mags);
+        assert!(!mags.is_empty(), "Demo Vitals exposes DV_QUANTITY leaves");
+        assert!(
+            mags.iter().all(|m| *m != 0.0),
+            "no example magnitude is zero: {mags:?}"
+        );
     }
 }

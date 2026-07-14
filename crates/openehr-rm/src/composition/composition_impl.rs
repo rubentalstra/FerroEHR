@@ -16,14 +16,28 @@
 use crate::composition::composition::Composition;
 use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
 
+/// The COMPOSITION invariant core over the projected inputs — one source for
+/// the typed impl and the value-level fast path (`validate::fast`).
+pub(crate) fn push_composition_invariants(
+    has_archetype_details: bool,
+    archetype_node_id: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if !has_archetype_details {
+        out.push(InvariantViolation::here(
+            "Invariant Is_archetype_root failed on type COMPOSITION",
+        ));
+    }
+    push_archetype_node_id_valid(out, "COMPOSITION", archetype_node_id);
+}
+
 impl Validate for Composition {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.archetype_details.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Is_archetype_root failed on type COMPOSITION",
-            ));
-        }
-        push_archetype_node_id_valid(out, "COMPOSITION", &self.archetype_node_id);
+        push_composition_invariants(
+            self.archetype_details.is_some(),
+            &self.archetype_node_id,
+            out,
+        );
     }
 }
 

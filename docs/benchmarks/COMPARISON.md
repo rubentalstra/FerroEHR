@@ -4,10 +4,10 @@
 
 ## Runs
 
-| | Product | Profile | Scale | Ward | Requests | req/s | Error rate |
-|---|---|---|---|--:|--:|--:|--:|
-| **ehrbase-rs** | ehrbase-rs 3.0.0 | hour | 100k | 20 | 1209 | 0.3 | 0.000% |
-| **ehrbase-java** | EHRbase upstream | hour | 100k | 20 | 1209 | 0.3 | 0.000% |
+| | Product | Profile | Scale | Ward | Requests | req/s | req/min | Error rate |
+|---|---|---|---|--:|--:|--:|--:|--:|
+| **ehrbase-rs** | ehrbase-rs 3.0.0 | hour | 100k | 20 | 1209 | 0.3 | 20 | 0.000% |
+| **ehrbase-java** | EHRbase upstream | hour | 100k | 20 | 1209 | 0.3 | 20 | 0.000% |
 
 ## Throughput
 
@@ -34,16 +34,13 @@
 | **ehrbase-rs** | 35.7 | 1.4 |
 | **ehrbase-java** | 16.3 | 0.5 |
 
-## Maximum sustained throughput (knee)
+## Clinical transactions (events)
 
-> The last sustainable step on the load-factor ladder (p99 ≤ 1 s, error ≤ 0.1%), per SUT — the honest capacity signal, not peak req/s. Each SUT's own `KNEE.md` carries the full ladder and the single-run/same-host lower-bound caveat.
+> The TPC-style business-transaction metric: a clinical event (admission, medication round, lab batch, discharge…) counts **completed** only when every one of its requests succeeded. Events/min beside the per-request req/s — both directions, same workload by construction.
 
-| | Knee L | Sustained req/s | p99 at knee (µs) |
-|---|--:|--:|--:|
-| **ehrbase-rs** | 32 | 319.7 | 131327 |
-| **ehrbase-java** | 96 | 956.0 | 496639 |
-
-![Max sustained req/s at the SLO](charts/comparison-knee.svg)
+| Event | ehrbase-rs attempted | ehrbase-rs completed | ehrbase-rs events/min | ehrbase-java attempted | ehrbase-java completed | ehrbase-java events/min |
+|---|--:|--:|--:|--:|--:|--:|
+| **total** | **0** | **0** | **0.0** | **0** | **0** | **0.0** |
 
 ## Latency — p99 per operation class
 

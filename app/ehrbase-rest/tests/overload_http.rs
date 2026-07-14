@@ -47,6 +47,7 @@ fn config(max_in_flight: usize) -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         ..RestConfig::default()
     }

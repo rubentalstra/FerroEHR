@@ -20,7 +20,7 @@
   in §2/§3 below; we replicate the *behaviour and the external wire contract*,
   fix its documented defects, and implement natively (ADR-006/008 discipline:
   prior art, not an oracle).
-- **Related docs:** `docs/enterprise/atna-audit.md` (the integration pattern this
+- **Related docs:** `docs/design/atna-audit.md` (the integration pattern this
   design copies: leaf crate + tower/dispatch hook + data-driven table +
   total-coverage guard); the pre-v2 enterprise archaeology lives in the
   read-only `reference/v1` git ref (v0.32.0).

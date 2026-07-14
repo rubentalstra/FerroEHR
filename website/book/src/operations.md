@@ -120,7 +120,10 @@ patient is possible only through the
   are the platform's job. `EHRBASE_LOG_FORMAT` (`auto`/`json`/`pretty`) and
   `EHRBASE_LOG_FILTER` (or `RUST_LOG`, default `info,ehrbase=info`) control
   them, and the level can be changed at runtime through the `loggers` endpoint
-  below.
+  below. On boot the server prints a one-time ASCII banner (version, maintainer,
+  project URL, and spec pins) to stdout ahead of the logs; it is suppressed
+  under `EHRBASE_LOG_FORMAT=json` so machine log consumers see only structured
+  lines.
 - **Traces** export to any OpenTelemetry collector (Tempo, Jaeger, and so on)
   over OTLP — but only when you configure an endpoint; with none set, the
   tracing layer is not installed at all (zero overhead). Root spans are named

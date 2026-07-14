@@ -61,6 +61,7 @@ jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 openidconnect = { workspace = true }
 moka = { workspace = true }
+sha2 = { workspace = true }
 
 # Authorization (RBAC + ABAC), folded in from the former ehrbase-authz crate
 # (ADR-011): the embedded Cedar policy engine, the v1-compatible remote-PDP

@@ -20,6 +20,7 @@ mod subject_proxy;
 mod terminology;
 mod validity;
 
+pub use query::{PlanCache, PlanCacheStats};
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 pub use terminology::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, FhirTerminologyProvider,
@@ -91,6 +92,20 @@ pub struct EhrbaseService {
     /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
     /// Invalidated on every `EHR_ACCESS` commit.
     pub(in crate::service) ehr_access: ehr::EhrAccessCache,
+    /// Bounded cache of lowered AQL plans keyed on the query text (P20). Shared
+    /// across service clones (moka-backed). No openEHR spec governs it — our
+    /// own performance design.
+    pub(crate) plan_cache: PlanCache,
+    /// Whether the transactional event outbox is written on every commit. The
+    /// outbox feeds the eventing extensions (AMQP publisher + FHIR outbound
+    /// emitter) — no openEHR spec governs eventing (our own extension). When no
+    /// consumer is configured the per-commit `event_outbox` INSERT (and its
+    /// envelope serialization) is pure overhead, so the binary gates it on
+    /// whether any consumer is configured on (`main.rs`:
+    /// `events.enabled || fhir_outbound.enabled`). Defaults to `true` in
+    /// [`Self::new`] so a bare service (tests, embeddings) never silently drops
+    /// an event; the binary sets the real gate via [`Self::with_outbox_enabled`].
+    outbox_enabled: bool,
 }
 
 impl EhrbaseService {
@@ -109,6 +124,8 @@ impl EhrbaseService {
             subject_proxy_fhir: None,
             tenant_cache: TenantCache::default(),
             ehr_access: ehr::EhrAccessCache::default(),
+            plan_cache: PlanCache::default(),
+            outbox_enabled: true,
         }
     }
 
@@ -118,6 +135,12 @@ impl EhrbaseService {
     /// byte-identical to the configured `system_id`).
     pub(crate) fn effective_system_id(&self) -> String {
         ehrbase_sm::tenant::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
+    }
+
+    /// The AQL plan cache (P20), for observability. No openEHR spec governs it.
+    #[must_use]
+    pub fn plan_cache(&self) -> &PlanCache {
+        &self.plan_cache
     }
 
     /// Override the openEHR system id (identifies this CDR in versions/audit).
@@ -172,6 +195,26 @@ impl EhrbaseService {
         self
     }
 
+    /// Set whether the transactional event outbox is written on commit. The
+    /// binary calls this with `events.enabled || fhir_outbound.enabled` so the
+    /// `event_outbox` INSERT is skipped when no consumer will ever read it. The
+    /// gate reflects whether the eventing subsystem is *configured on* (a
+    /// boot-time flag), not whether subscribers currently exist — so commits
+    /// made while eventing is enabled are always recorded, even with zero bound
+    /// subscribers (at-least-once replay). No openEHR spec governs eventing —
+    /// our own extension.
+    #[must_use]
+    pub fn with_outbox_enabled(mut self, enabled: bool) -> Self {
+        self.outbox_enabled = enabled;
+        self
+    }
+
+    /// Whether the transactional event outbox is written on commit (see
+    /// [`Self::with_outbox_enabled`]).
+    pub(crate) fn outbox_enabled(&self) -> bool {
+        self.outbox_enabled
+    }
+
     /// The configured version [`Signer`] (used for read-time verification).
     pub(crate) fn signer(&self) -> &Signer {
         &self.signer
@@ -184,6 +227,7 @@ impl EhrbaseService {
             system_id: self.effective_system_id(),
             signer: &self.signer,
             multimedia: self.multimedia.as_deref(),
+            outbox_enabled: self.outbox_enabled,
         }
     }
 }

@@ -82,6 +82,38 @@ pub(crate) fn select_children_matched<'a>(
     strict
 }
 
+/// Select the children matching an **unqualified** identity segment (one with an
+/// `archetype_node_id` but no `name/value` conjunct) that shares its
+/// `archetype_node_id` with one or more *name-qualified* sibling constraints,
+/// excluding the instances those siblings claim.
+///
+/// This is the residual/catch-all arm of name-based sibling differentiation
+/// (RM common `master03-archetyped_package.adoc` §"The `LOCATABLE` class": a
+/// runtime `name` distinguishes sibling nodes that share an `archetype_node_id`;
+/// AOM 1.4 `master04-constraint_model_package.adoc` §`node_id` — node ids
+/// "guarantee sibling node unique identification", which templates realise for
+/// repeated same-archetype fills via a fixed `name/value` `C_STRING` on all but
+/// one sibling). The unqualified sibling carries no name constraint, so its
+/// `LOCATABLE.name` is unconstrained (redefinable at runtime, master03 §"The
+/// `LOCATABLE` class" L35); it therefore admits every instance of the shared
+/// `archetype_node_id` **except** those whose `name/value` matches a
+/// name-qualified sibling — those belong to that sibling, never here.
+pub(crate) fn select_children_excluding_names<'a>(
+    container: &'a Value,
+    seg: &PathSegment,
+    excluded_names: &[String],
+) -> Vec<&'a Value> {
+    select_children(container, seg)
+        .into_iter()
+        .filter(|node| {
+            node.get("name")
+                .and_then(|n| n.get("value"))
+                .and_then(Value::as_str)
+                .is_none_or(|name| !excluded_names.iter().any(|e| e == name))
+        })
+        .collect()
+}
+
 /// Resolve the RM value(s) a full relative path reaches from `rm` (an empty
 /// segment list resolves to `rm` itself).
 pub(crate) fn resolve<'a>(rm: &'a Value, segs: &[PathSegment]) -> Vec<&'a Value> {

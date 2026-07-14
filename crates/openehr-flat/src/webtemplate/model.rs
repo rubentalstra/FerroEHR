@@ -80,6 +80,31 @@ fn serialize_root<S: Serializer>(node: &WebTemplateNode, s: S) -> Result<S::Ok, 
     value.serialize(s)
 }
 
+/// The `defining_code` a node whose runtime `name` is constrained as a
+/// `DV_CODED_TEXT` must carry — the constrained terminology + code the
+/// composition builder stamps so the instance name is a coded name, not a
+/// plain `DV_TEXT` (RM common `master03-archetyped_package.adoc` §"The
+/// `LOCATABLE` class" — a `LOCATABLE.name` is `DV_TEXT` *or* `DV_CODED_TEXT`;
+/// AOM 1.4 `master04-constraint_model_package.adoc` — a `C_ATTRIBUTE` on `name`
+/// constrains the whole coded name). The display value is the node's
+/// [`WebTemplateNode::name`].
+#[derive(Debug, Clone)]
+pub struct CodedName {
+    /// The `defining_code` terminology id (e.g. `local`, `openehr`).
+    pub terminology: String,
+    /// The `defining_code` code string (an `atNNNN` / openEHR code).
+    pub code: String,
+    /// Whether the constraint is display/rubric-**incoherent**: the template
+    /// fixes a `name/value` that equals NO listed code's archetype rubric, so
+    /// any conforming instance pairs a display value with a code whose rubric
+    /// says something else. Spec-legal on our reading (a name constraint may
+    /// rename; RM common master03 §LOCATABLE), but the reference
+    /// implementation enforces value ≡ local-code rubric and rejects every
+    /// form of such a node (verified empirically) — the example generator
+    /// omits OPTIONAL incoherent nodes so a shared payload exists.
+    pub incoherent: bool,
+}
+
 /// One node of the web-template tree.
 ///
 /// `@JsonInclude(NON_NULL)`; collection members are `NON_EMPTY`. `id` is the
@@ -214,6 +239,22 @@ pub struct WebTemplateNode {
     /// The RM name-constraint code, when the node is name-constrained.
     #[serde(skip)]
     pub name_code: Option<String>,
+    /// When the node's runtime `name` is constrained as a `DV_CODED_TEXT`, the
+    /// `(terminology, code)` the composition builder stamps as the coded name's
+    /// `defining_code` (the display value is [`Self::name`]). `None` for a plain
+    /// `DV_TEXT` name. Build-time only (`#[serde(skip)]`); see [`CodedName`].
+    #[serde(skip)]
+    pub name_coded: Option<CodedName>,
+
+    /// Pre-parsed archetype-conformance walk plan (P20 item 31): the constraint
+    /// paths and sibling groups this node's validation walk needs, parsed ONCE at
+    /// build time ([`crate::build_web_template`] calls `prepare_walk`) instead of
+    /// re-parsing every constraint path on every instance-node visit. A hand-built
+    /// node with no plan is handled by the walk building the plan on the fly.
+    /// Validation-only (`#[serde(skip)]`) — no openEHR spec governs the
+    /// WebTemplate model (our own design/extension).
+    #[serde(skip)]
+    pub(crate) walk: Option<Box<crate::validation::NodeWalk>>,
 }
 
 impl WebTemplateNode {
@@ -250,6 +291,8 @@ impl WebTemplateNode {
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
+            name_coded: None,
+            walk: None,
         }
     }
 

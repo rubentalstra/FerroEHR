@@ -50,6 +50,13 @@ pub struct NodeRow {
     pub path: String,
     /// The node's canonical JSON fragment, structure children pruned.
     pub data: Value,
+    /// The raw promoted-leaf text for this row, aligned to
+    /// [`crate::storage::PROMOTED_LEAVES`] (entry `i` ↔ index `i`); `Some` only
+    /// on a versioned-object root whose leaf is present, `None` elsewhere.
+    /// [`crate::storage::node_repo::write_nodes`] converts and writes each into
+    /// its promoted column. No openEHR spec governs promoted columns — our own
+    /// storage design (`docs/architecture.md` §Storage).
+    pub promoted: Vec<Option<String>>,
 }
 
 /// The lean read row: only the columns [`crate::storage::reassemble`] and the

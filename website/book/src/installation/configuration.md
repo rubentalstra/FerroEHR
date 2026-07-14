@@ -153,8 +153,8 @@ Prefix `EHRBASE_DB_`, no nesting, environment-only (no config file).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `EHRBASE_DB_URL` | URL | none (**required**) | PostgreSQL connection URL, `postgres://user:pass@host:port/db`. `DATABASE_URL` is accepted as a fallback. |
-| `EHRBASE_DB_MAX_CONNECTIONS` | integer | `10` | Upper bound of the connection pool. |
-| `EHRBASE_DB_MIN_CONNECTIONS` | integer | `0` | Idle connections the pool keeps open. |
+| `EHRBASE_DB_MAX_CONNECTIONS` | integer | `20` | Upper bound of the connection pool. Size to your PostgreSQL `max_connections` budget; write-heavy deployments benefit from 50+. |
+| `EHRBASE_DB_MIN_CONNECTIONS` | integer | `2` | Idle connections the pool keeps open (avoids cold connection churn under variable load). |
 | `EHRBASE_DB_ACQUIRE_TIMEOUT_SECS` | integer (s) | `30` | Wait for a free connection before failing. |
 
 > [!NOTE]
@@ -169,6 +169,7 @@ A single environment-only key (no file, no nesting group behind it).
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `EHRBASE_QUERY__TIMEOUT_MS` | integer (ms) | unset (no per-query cap) | Per-query execution budget. `0` or unset disables it; when positive, an AQL query that exceeds the budget returns `408 Request Timeout`. |
+| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` | integer | `256` | Maximum number of distinct AQL query plans held in the in-memory plan cache. A repeated query text reuses its lowered plan instead of re-parsing on every execution (parameter values, `fetch`/`offset` paging, and EHR scope still bind per request); queries that resolve terminology are never cached. `0` disables the cache. Cache activity is reported by the `aql_plan_cache_events_total` metric. |
 
 ## Telemetry and logging
 

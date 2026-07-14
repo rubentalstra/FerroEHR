@@ -5,16 +5,16 @@
 //! archie's own `Instruction.Activities_valid` is `ignored`.
 
 use crate::composition::content::entry::instruction::Instruction;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
 
 impl Validate for Instruction {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.archetype_details.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Is_archetypeRoot failed on type INSTRUCTION",
-            ));
-        }
-        push_archetype_node_id_valid(out, "INSTRUCTION", &self.archetype_node_id);
+        push_entry_root_invariants(
+            out,
+            "INSTRUCTION",
+            self.archetype_details.is_some(),
+            &self.archetype_node_id,
+        );
     }
 }
 

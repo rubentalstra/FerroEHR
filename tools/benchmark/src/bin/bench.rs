@@ -35,8 +35,8 @@ use benchmark::drive::{self, DriveOutcome};
 use benchmark::measure::Recorder;
 use benchmark::model::{self, WorkloadSpec};
 use benchmark::report::json::{
-    ClassRecord, ContainerSummary, EnvironmentBlock, ResourcesBlock, Results, StorageBlock,
-    SutBlock, ThroughputBlock, WorkloadBlock,
+    ClassRecord, ContainerSummary, EnvironmentBlock, EventClassRecord, EventsBlock, ResourcesBlock,
+    Results, StorageBlock, SutBlock, ThroughputBlock, WorkloadBlock,
 };
 use benchmark::report::knee::{KneeResults, KneeStep};
 use benchmark::sample::{self, ContainerSeries, DbAccess, ResourceSampler};
@@ -90,6 +90,17 @@ struct CompareArgs {
     out: PathBuf,
 }
 
+/// The next knee-refinement probe: the integer midpoint of `(lo, hi)`, or
+/// `None` when no refinement budget remains or the gap admits no distinct
+/// integer step (item 26 — precise knees on a geometric ladder).
+fn bisect_step(lo: f64, hi: f64, budget: u32) -> Option<f64> {
+    if budget == 0 {
+        return None;
+    }
+    let mid = f64::midpoint(lo, hi).round();
+    (mid > lo && mid < hi).then_some(mid)
+}
+
 #[derive(Debug, Parser)]
 struct KneeArgs {
     /// The target class (mirrors `bench run`).
@@ -135,8 +146,14 @@ struct KneeArgs {
     #[arg(long)]
     no_seed: bool,
     /// The ascending load-factor ladder (comma list).
-    #[arg(long, default_value = "1,2,4,8,16,32", value_delimiter = ',')]
+    #[arg(long, default_value = "1,2,4,8,16,32,64,128", value_delimiter = ',')]
     steps: Vec<f64>,
+    /// Knee refinement: after the first SLO breach, bisect between the last
+    /// sustained and the breached load factor up to this many extra steps, so
+    /// the knee is precise regardless of where it falls on the geometric
+    /// ladder (`0` disables refinement).
+    #[arg(long, default_value_t = 3)]
+    bisections: u32,
     /// The fixed per-step measurement window (seconds).
     #[arg(long, default_value_t = 120)]
     step_window: u64,
@@ -412,6 +429,42 @@ async fn sut_answers(client: &SutClient) -> bool {
     client.send(req).await.is_ok()
 }
 
+/// Wait for the SUT to drain its in-flight backlog between ladder steps. A
+/// breached step leaves hundreds of admitted requests still queued on the
+/// server (each may wait out the SUT's full DB-pool acquire timeout), so the
+/// next rung would open against the previous rung's storm and measure the
+/// backlog, not the offered load — the non-monotone L=48-worse-than-L=64
+/// artefact. Probe with a cheap read until several consecutive answers come
+/// back fast AND successful (a load-shed 503 answers fast — only a 2xx proves
+/// a request flowed through the whole admission + DB path), capped so a SUT
+/// that never settles cannot stall the ladder forever.
+async fn drain_settle(client: &SutClient) {
+    use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
+    const CONSECUTIVE_FAST: u32 = 5;
+    const FAST: Duration = Duration::from_millis(250);
+    const CAP: Duration = Duration::from_mins(3);
+    let started = std::time::Instant::now();
+    let mut fast = 0u32;
+    while fast < CONSECUTIVE_FAST {
+        if started.elapsed() > CAP {
+            eprintln!(
+                "bench: drain cap reached ({}s) — proceeding with the SUT still busy",
+                CAP.as_secs()
+            );
+            return;
+        }
+        let probe_started = std::time::Instant::now();
+        let req = HttpRequest::new(Method::Get, "/definition/template/adl1.4")
+            .with_auth(AuthSlot::Regular);
+        let settled = match client.send(req).await {
+            Ok(resp) => (200..300).contains(&resp.status) && probe_started.elapsed() < FAST,
+            Err(_) => false,
+        };
+        fast = if settled { fast + 1 } else { 0 };
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
 fn sut_kind_label(kind: SutKind) -> &'static str {
     match kind {
         SutKind::Ours => "ours",
@@ -603,6 +656,30 @@ fn build_results(
         .as_deref()
         .and_then(|name| summarize(name, idle, run_series));
 
+    // Clinical-event (business-transaction) block: per-class attempted/completed
+    // + completed-per-minute (computed in the lib against the run window).
+    let event_classes: BTreeMap<String, EventClassRecord> = outcome
+        .events
+        .iter()
+        .map(|e| {
+            (
+                e.key.to_owned(),
+                EventClassRecord {
+                    label: e.label.to_owned(),
+                    attempted: e.attempted,
+                    completed: e.completed,
+                    events_per_min: e.events_per_min,
+                },
+            )
+        })
+        .collect();
+    let events = EventsBlock {
+        classes: event_classes,
+        attempted: outcome.events_attempted,
+        completed: outcome.events_completed,
+        events_per_min: outcome.events_per_min,
+    };
+
     Results {
         sut: SutBlock {
             name: descriptor.name.clone(),
@@ -628,6 +705,7 @@ fn build_results(
             rps: outcome.rps,
             error_rate: outcome.error_rate,
         },
+        events,
         resources: ResourcesBlock {
             app,
             db,
@@ -720,7 +798,17 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
     let mut steps_out: Vec<KneeStep> = Vec::new();
     let mut knee: Option<KneeStep> = None;
     let mut sut_died = false;
-    for (step_index, load_factor) in ladder.into_iter().enumerate() {
+    let mut queue: std::collections::VecDeque<f64> = ladder.into_iter().collect();
+    let mut bisections_left = args.bisections;
+    let mut last_breached: Option<f64> = None;
+    let mut step_index: usize = 0;
+    while let Some(load_factor) = queue.pop_front() {
+        // Let the previous rung's in-flight backlog drain before opening the
+        // next window (see drain_settle) — the first rung starts clean.
+        if step_index > 0 {
+            eprintln!("bench: draining the SUT before L={load_factor} …");
+            drain_settle(&transport).await;
+        }
         let spec = WorkloadSpec {
             profile: Profile::Hour,
             ward_size: args.ward_size,
@@ -756,6 +844,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             error_rate: outcome.error_rate,
             p99_us,
             requests: outcome.requests,
+            events_per_min: outcome.events_per_min,
             max_dispatch_lag_ms: outcome.max_dispatch_lag_ms,
         };
         eprintln!(
@@ -772,9 +861,10 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
         );
         let saturated = report::knee::ladder_should_stop(p99_us, outcome.error_rate);
         steps_out.push(step.clone());
+        step_index += 1;
         if saturated {
             eprintln!(
-                "bench: SLO breached at L={load_factor} (p99 {p99_us} µs / error {:.3}%) — ladder stops",
+                "bench: SLO breached at L={load_factor} (p99 {p99_us} µs / error {:.3}%)",
                 outcome.error_rate * 100.0
             );
             // Distinguish a saturated-but-alive SUT from a dead one: probe the
@@ -786,11 +876,42 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
                 eprintln!(
                     "bench: SUT no longer answers after L={load_factor} — it DIED under load                      (recorded as a finding); ladder aborts"
                 );
+                break;
             }
-            break;
+            last_breached = Some(load_factor);
+            // Refinement: every planned step above this breach would breach
+            // too — replace the remaining ladder with a midpoint probe between
+            // the last sustained step and this breach (item 26).
+            queue.clear();
+            let lo = knee.as_ref().map_or(0.0, |k| k.load_factor);
+            if let Some(mid) = bisect_step(lo, load_factor, bisections_left) {
+                bisections_left -= 1;
+                eprintln!("bench: refining the knee — next L={mid}");
+                queue.push_back(mid);
+            } else {
+                eprintln!("bench: ladder stops");
+                break;
+            }
+            continue;
         }
         knee = Some(step);
+        // A sustained refinement step: probe upward toward the known breach.
+        if let Some(hi) = last_breached
+            && queue.is_empty()
+        {
+            if let Some(mid) = bisect_step(load_factor, hi, bisections_left) {
+                bisections_left -= 1;
+                eprintln!("bench: refining the knee — next L={mid}");
+                queue.push_back(mid);
+            } else {
+                eprintln!("bench: ladder stops");
+                break;
+            }
+        }
     }
+    // Execution order interleaves refinement probes after the breach; the
+    // artefacts read best in load order.
+    steps_out.sort_by(|a, b| a.load_factor.total_cmp(&b.load_factor));
 
     let results = KneeResults {
         sut: SutBlock {
@@ -962,11 +1083,30 @@ mod tests {
             panic!("expected knee");
         };
         assert_eq!(Scale::from(args.scale), Scale::TenK);
-        assert_eq!(args.steps, vec![1.0, 2.0, 4.0, 8.0, 16.0, 32.0]);
+        // Item 26: geometric to 128 so every SUT traces a real curve.
+        assert_eq!(
+            args.steps,
+            vec![1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0]
+        );
+        assert_eq!(args.bisections, 3);
         assert_eq!(args.step_window, 120);
         assert_eq!(args.warmup, 15);
         assert_eq!(args.ward_size, 20);
         assert_eq!(args.seed, DEFAULT_SEED);
+    }
+
+    #[test]
+    fn bisect_step_refines_until_budget_or_resolution() {
+        // Integer midpoint between sustained and breached.
+        assert_eq!(super::bisect_step(16.0, 32.0, 3), Some(24.0));
+        assert_eq!(super::bisect_step(16.0, 24.0, 2), Some(20.0));
+        // No budget → no probe.
+        assert_eq!(super::bisect_step(16.0, 32.0, 0), None);
+        // Adjacent integers admit no distinct midpoint.
+        assert_eq!(super::bisect_step(16.0, 17.0, 3), None);
+        // A breach at the FIRST rung bisects down toward zero (lo = 0).
+        assert_eq!(super::bisect_step(0.0, 2.0, 3), Some(1.0));
+        assert_eq!(super::bisect_step(0.0, 1.0, 3), None);
     }
 
     #[test]

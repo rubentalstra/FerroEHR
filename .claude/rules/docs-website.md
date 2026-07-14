@@ -10,7 +10,7 @@ paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scrip
 
 The public site — https://rubentalstra.github.io/ehrbase-rs/ — is built from
 `website/` by `.github/workflows/docs.yml` and deployed to GitHub Pages.
-Design authority: `docs/plans/w1-docs-website.md` (§2 layout/URLs, §3 look &
+Design authority: `docs/design/docs-website.md` (§2 layout/URLs, §3 look &
 feel, §4 content map).
 
 ## Layout & URLs
@@ -56,7 +56,7 @@ The `/phase-done` checklist enforces it at phase close.
 
 Pinned in `docs.yml` `env` (mdBook, mdbook-mermaid, mdbook-toc, mdbook-lint,
 lychee, Swagger UI). Bump only after live-verifying the new version and
-update the pins + `docs/plans/w1-docs-website.md` §1 together.
+update the pins + `docs/design/docs-website.md` §1 together.
 
 ## Local preview
 

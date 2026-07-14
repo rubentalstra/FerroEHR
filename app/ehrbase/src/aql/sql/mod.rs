@@ -172,9 +172,20 @@ struct Builder<'a> {
     /// The `EHR_STATUS` root-node alias joined for an EHR source's `ehr_status`
     /// path (keyed by EHR source id; joined once, lazily, on first use).
     ehr_status_node: HashMap<usize, String>,
+    /// The `vo_version` alias each versioned-object-root RM source opened
+    /// (keyed by source id). Used to synthesize the server-assigned
+    /// `OBJECT_VERSION_ID` for a `uid[/value]` path on a VO-root variable
+    /// (RM common master06 §Version Identification), which is not stored in the
+    /// canonical fragment.
+    vo_alias: HashMap<usize, String>,
     version_vo: HashMap<usize, String>,
     /// Node aliases that root a VO group (targets of the REST `ehr_id` filter).
     group_roots: Vec<String>,
+    /// The subset of `group_roots` whose rows are join-linked to a bound EHR
+    /// alias (`node.ehr_id = e.id`) — the population gate on the EHR alias
+    /// already covers them, so gating the root again would be a duplicate
+    /// full-population subquery per query (checklist item 24).
+    roots_linked_to_ehr: std::collections::HashSet<String>,
     /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
     /// the source of the touched `template_id` for the ABAC scope collection.
     group_vos: Vec<String>,
@@ -193,8 +204,10 @@ impl<'a> Builder<'a> {
             audit_alias: HashMap::new(),
             ehr_alias: HashMap::new(),
             ehr_status_node: HashMap::new(),
+            vo_alias: HashMap::new(),
             version_vo: HashMap::new(),
             group_roots: Vec::new(),
+            roots_linked_to_ehr: std::collections::HashSet::new(),
             group_vos: Vec::new(),
             sub_ctr: 0,
         }

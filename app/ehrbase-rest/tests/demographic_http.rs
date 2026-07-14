@@ -130,6 +130,7 @@ fn config() -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
     }
 }

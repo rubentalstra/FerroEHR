@@ -11,7 +11,7 @@ The historical phase files (00–16, s2-01..05, sm-01..03) were pruned
 were pruned 2026-07-11 — their content lives in git history + `docs/PROGRESS.md`.
 What remains is the *live* pointer and the *future* work:
 
-- **`../blueprint/00-THE-BLUEPRINT.md` is the roadmap.** The blueprint (in
+- **The root `ROADMAP.md` is the product roadmap; `../blueprint/00-THE-BLUEPRINT.md` is the spec-compliance ledger.** The blueprint (in
   `docs/blueprint/`) is the single source of truth for where the project is
   going and why; these phase files are the task-level execution record under
   it. Read the blueprint first.

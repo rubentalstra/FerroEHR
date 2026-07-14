@@ -16,7 +16,12 @@ use crate::model::WorkloadSpec;
 use crate::model::event::{ClinicalEvent, DIR_UPDATE_PROB, MED_CORRECTION_PROB};
 
 /// A schema marker so the lock changes if the hashing scheme itself changes.
-const LOCK_SCHEME: &str = "benchmark-workload-lock-v1";
+// v2 (payload-generator semantics change): variation became constraint-aware —
+// numeric/temporal leaves are now jittered in FLAT space inside each leaf's AOM
+// constraint (and reassembled via `from_flat`), rather than by a raw-JSON walk.
+// The generated payload bytes therefore differ from a v1 run, so the lock must
+// too — a run before and after this change must never be conflated.
+const LOCK_SCHEME: &str = "benchmark-workload-lock-v2";
 
 /// Compute the workload lock. `window`/`warmup` are the derived profile timings;
 /// `template_sources` is the ordered list of template-source identifiers the run

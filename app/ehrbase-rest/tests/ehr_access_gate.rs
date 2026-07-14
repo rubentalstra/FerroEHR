@@ -73,6 +73,7 @@ fn rest_config(auth_enabled: bool) -> RestConfig {
             }),
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         swagger_ui: false,
         ..RestConfig::default()

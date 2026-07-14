@@ -135,8 +135,17 @@ pub(crate) async fn commit_import(
     ehr_id: Uuid,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
+    outbox_enabled: bool,
 ) -> Result<Uuid, ServiceError> {
-    commit_import_scoped(tx, Some(ehr_id), import_audit, containers, false).await
+    commit_import_scoped(
+        tx,
+        Some(ehr_id),
+        import_audit,
+        containers,
+        false,
+        outbox_enabled,
+    )
+    .await
 }
 
 /// Land demographics-chapter parties into the demographic repository under their
@@ -147,6 +156,7 @@ pub(crate) async fn commit_demographic_import(
     tx: &mut PgConnection,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
+    outbox_enabled: bool,
 ) -> Result<(), ServiceError> {
     if containers.is_empty() {
         return Ok(());
@@ -161,7 +171,7 @@ pub(crate) async fn commit_demographic_import(
     if fresh.is_empty() {
         return Ok(());
     }
-    commit_import_scoped(tx, None, import_audit, fresh, true).await?;
+    commit_import_scoped(tx, None, import_audit, fresh, true, outbox_enabled).await?;
     Ok(())
 }
 
@@ -178,6 +188,7 @@ async fn commit_import_scoped(
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
     skip_existing: bool,
+    outbox_enabled: bool,
 ) -> Result<Uuid, ServiceError> {
     // One local instant anchors the whole import's temporal chain.
     let base = jiff::Timestamp::now();
@@ -335,7 +346,7 @@ async fn commit_import_scoped(
             }
         }
     }
-    if !outbox_versions.is_empty() {
+    if outbox_enabled && !outbox_versions.is_empty() {
         crate::storage::version_repo::write_outbox(
             tx,
             contribution_id,

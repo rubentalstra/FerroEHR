@@ -10,15 +10,12 @@ use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::validate::{
     InvariantViolation, Validate, is_valid_iso_duration, push_dv_amount_invariants,
+    push_temporal_value_valid,
 };
 
 impl Validate for DvDuration {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if !is_valid_iso_duration(&self.value) {
-            out.push(InvariantViolation::here(
-                "Invariant Value_valid failed on type DV_DURATION",
-            ));
-        }
+        push_temporal_value_valid(out, "DV_DURATION", is_valid_iso_duration(&self.value));
         push_dv_amount_invariants(
             out,
             "DV_DURATION",

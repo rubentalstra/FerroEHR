@@ -100,6 +100,7 @@ fn rest_config() -> RestConfig {
                 jwks_json: None,
             }),
             admin_scope: None,
+            ..AuthConfig::default()
         },
         swagger_ui: false,
         ..RestConfig::default()

@@ -657,6 +657,28 @@ impl EhrbaseService {
             .await?;
         }
 
+        // Lineage keys mirror the removed EXCLUDE constraints exactly: trunk
+        // rows are one lineage per vo_id; branch rows are per
+        // {vo, creating system, fork point, branch number}.
+        // The archive is the ONLY path writing explicit historical
+        // `sys_period` bounds, so it carries the per-lineage temporal
+        // non-overlap invariant check the regular write path holds by
+        // construction (RM common master06: one valid version per lineage at
+        // any instant; the enforcement mechanism is our own design — the
+        // baseline's P20 NOTE). A corrupted or hand-crafted archive with
+        // overlapping validity fails the whole record before commit.
+        let overlap: bool = sqlx::query_scalar(
+            "SELECT EXISTS (                  SELECT 1 FROM vo_version a                  JOIN vo_version b ON a.vo_id = b.vo_id                      AND a.branch_number = b.branch_number                      AND (a.branch_number = 0                           OR (a.creating_system_id = b.creating_system_id                               AND a.trunk_version = b.trunk_version))                      AND a.sys_version < b.sys_version                      AND a.sys_period && b.sys_period                  WHERE a.ehr_id = $1)",
+        )
+        .bind(ehr_id)
+        .fetch_one(&mut *tx)
+        .await?;
+        if overlap {
+            return Err(ServiceError::Unprocessable(format!(
+                "archive for EHR {ehr_id} carries overlapping version validity periods"
+            )));
+        }
+
         tx.commit().await?;
         Ok(())
     }

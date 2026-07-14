@@ -503,18 +503,33 @@ fn check_duration(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     }
     if let Some(range) = &wt.duration_range {
         let secs = duration_seconds(&fields);
+        // Bound inclusivity follows the AOM interval flags carried in the
+        // range ops (BASE foundation_types Interval — an exclusive `> PT0S`
+        // rejects PT0S).
         let min_ok = range
             .min
             .as_ref()
             .and_then(Value::as_str)
             .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
-            .is_none_or(|b| secs >= b);
+            .is_none_or(|b| {
+                if range.min_op.as_deref() == Some(">") {
+                    secs > b
+                } else {
+                    secs >= b
+                }
+            });
         let max_ok = range
             .max
             .as_ref()
             .and_then(Value::as_str)
             .and_then(|b| duration_fields(b).map(|f| duration_seconds(&f)))
-            .is_none_or(|b| secs <= b);
+            .is_none_or(|b| {
+                if range.max_op.as_deref() == Some("<") {
+                    secs < b
+                } else {
+                    secs <= b
+                }
+            });
         if !min_ok || !max_ok {
             v.push(
                 &wt.aql_path,

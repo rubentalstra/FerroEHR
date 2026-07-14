@@ -11,16 +11,16 @@
 //! invariant.
 
 use crate::composition::content::entry::observation::Observation;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
 
 impl Validate for Observation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.archetype_details.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Is_archetypeRoot failed on type OBSERVATION",
-            ));
-        }
-        push_archetype_node_id_valid(out, "OBSERVATION", &self.archetype_node_id);
+        push_entry_root_invariants(
+            out,
+            "OBSERVATION",
+            self.archetype_details.is_some(),
+            &self.archetype_node_id,
+        );
     }
 }
 

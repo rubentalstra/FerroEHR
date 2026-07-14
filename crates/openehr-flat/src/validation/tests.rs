@@ -1348,3 +1348,258 @@ fn data_structure_shapes_are_enforced() {
         "a HISTORY mixing event data types must be rejected, got {msgs:?}"
     );
 }
+
+// ── name-differentiated same-archetype-id siblings ──────────────────────────────
+//
+// A template may fill the same archetype twice under one container, the two
+// fills differentiated by their runtime `name` (RM common
+// `master03-archetyped_package.adoc` §"The `LOCATABLE` class" L33-35: a `name`
+// distinguishes sibling nodes that share an `archetype_node_id`; AOM 1.4
+// `master04-constraint_model_package.adoc` §`node_id` L41: node ids "guarantee
+// sibling node unique identification"). Templates realise this by putting a
+// fixed `name/value` `C_STRING` on all-but-one sibling, so one sibling stays
+// *unqualified* (its `name` unconstrained). Each instance must be routed to
+// exactly the sibling whose name it matches, and the unqualified sibling must
+// admit only the instances no name-qualified sibling claims — otherwise the
+// unqualified sibling (matched by `archetype_node_id` alone) captures a
+// name-qualified sibling's instance and rejects it against the wrong overlay.
+
+/// Two same-archetype siblings under `items`, one unqualified (name "A", inner
+/// `items` closed to `at0004`) and one name-qualified ('B', inner `items` closed
+/// to `at0013`).
+fn name_diff_parent() -> WebTemplateNode {
+    let mut root = node("CLUSTER", "");
+    let sib_a = {
+        let mut n = node("CLUSTER", "/items[openEHR-EHR-CLUSTER.c.v1]");
+        n.name = Some("A".to_owned());
+        n.min = Some(0);
+        n.max = 1;
+        n.closed_attributes = vec![WebTemplateClosedAttribute {
+            path: "/items[openEHR-EHR-CLUSTER.c.v1]/items".to_owned(),
+            allowed_ids: vec!["at0004".to_owned()],
+            slots: vec![],
+        }];
+        n
+    };
+    let sib_b = {
+        let mut n = node("CLUSTER", "/items[openEHR-EHR-CLUSTER.c.v1,'B']");
+        n.name = Some("B".to_owned());
+        n.min = Some(0);
+        n.max = 1;
+        n.closed_attributes = vec![WebTemplateClosedAttribute {
+            path: "/items[openEHR-EHR-CLUSTER.c.v1,'B']/items".to_owned(),
+            allowed_ids: vec!["at0013".to_owned()],
+            slots: vec![],
+        }];
+        n
+    };
+    root.children = vec![sib_a, sib_b];
+    root
+}
+
+/// A same-archetype CLUSTER instance with `name` and a single at-coded child.
+fn c_instance(name: &str, child_id: &str) -> Value {
+    json!({
+        "_type": "CLUSTER", "archetype_node_id": "openEHR-EHR-CLUSTER.c.v1",
+        "name": {"_type": "DV_TEXT", "value": name},
+        "items": [{"_type": "ELEMENT", "archetype_node_id": child_id,
+                   "name": {"_type": "DV_TEXT", "value": "leaf"},
+                   "value": {"_type": "DV_TEXT", "value": "v"}}]
+    })
+}
+
+fn unexpected_of(msgs: &[ValidationMessage]) -> Vec<&ValidationMessage> {
+    msgs.iter()
+        .filter(|m| m.kind == ValidationKind::Unexpected)
+        .collect()
+}
+
+#[test]
+fn name_diff_siblings_route_each_instance_to_its_own_overlay() {
+    let root = name_diff_parent();
+    // Both instances present, each carrying its own overlay's child.
+    let inst = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("A", "at0004"), c_instance("B", "at0013")]
+    });
+    let msgs = walk_only(&inst, &root);
+    assert!(
+        unexpected_of(&msgs).is_empty(),
+        "both name-differentiated siblings should validate against their own \
+         overlay, got {msgs:?}"
+    );
+}
+
+#[test]
+fn name_qualified_siblings_child_in_unqualified_instance_is_unexpected() {
+    let root = name_diff_parent();
+    // `at0013` belongs to sibling 'B' only; inside the instance named "A" it must
+    // still be Unexpected (true rejections preserved).
+    let inst = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("A", "at0013")]
+    });
+    let msgs = walk_only(&inst, &root);
+    assert!(
+        unexpected_of(&msgs)
+            .iter()
+            .any(|m| m.message.contains("at0013")),
+        "at0013 in the unqualified sibling's instance must be Unexpected, got {msgs:?}"
+    );
+}
+
+#[test]
+fn unqualified_sibling_admits_a_runtime_named_residual_instance() {
+    let root = name_diff_parent();
+    // An instance whose name matches NO name-qualified sibling ("other") routes
+    // to the unqualified (residual) sibling — its `name` being unconstrained,
+    // master03 §"The `LOCATABLE` class" L35. Its own overlay child (`at0004`)
+    // therefore validates clean…
+    let ok = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("other", "at0004")]
+    });
+    assert!(
+        unexpected_of(&walk_only(&ok, &root)).is_empty(),
+        "a residual-named instance must validate against the unqualified overlay"
+    );
+    // …but a child that overlay forbids (`at0013`) is still Unexpected there.
+    let bad = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("other", "at0013")]
+    });
+    assert!(
+        unexpected_of(&walk_only(&bad, &root))
+            .iter()
+            .any(|m| m.message.contains("at0013")),
+        "the residual instance is still closed-world checked against the \
+         unqualified overlay"
+    );
+}
+
+// ── P20 item 15: validation-walk cost measurement (not a gate) ──────────────────
+
+/// Count the `_type`-bearing nodes reachable in `v` (the units both
+/// template-independent passes visit).
+fn count_type_nodes(v: &Value) -> usize {
+    match v {
+        Value::Object(obj) => {
+            let self_count = usize::from(obj.contains_key("_type"));
+            self_count
+                + obj
+                    .iter()
+                    .filter(|(k, _)| !k.starts_with('_'))
+                    .map(|(_, val)| count_type_nodes(val))
+                    .sum::<usize>()
+        }
+        Value::Array(a) => a.iter().map(count_type_nodes).sum(),
+        _ => 0,
+    }
+}
+
+/// Time `iters` runs of `f`, returning microseconds per run.
+fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
+    let start = std::time::Instant::now();
+    let mut sink = 0usize;
+    for _ in 0..iters {
+        sink = sink.wrapping_add(f());
+    }
+    std::hint::black_box(sink);
+    start.elapsed().as_secs_f64() * 1e6 / f64::from(iters)
+}
+
+/// P20 overhead checklist item 15 — MEASUREMENT (not a correctness gate):
+/// quantify the pre-tx template-independent validation walk over the populated
+/// IPS example (~1.5k `_type` nodes). The RM-invariant and terminology passes
+/// each traverse the whole instance independently; this splits and times them so
+/// the P20 synthesis can weigh a single-traversal fusion against the DB-bound
+/// write path (~9–11 PG round trips + multi-second node/version INSERTs under
+/// load per the checklist). Ignored by default (timing, not correctness); run:
+/// `cargo nextest run -p openehr-flat --run-ignored all \
+///   -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
+#[test]
+#[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
+fn measure_ips_validation_walk_cost() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
+    );
+    let comp: Value =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
+            .expect("parse IPS example");
+    let node_count = count_type_nodes(&comp);
+
+    // Warm up (allocator, branch predictors, the lazily-initialized bundle).
+    for _ in 0..5 {
+        std::hint::black_box(validate_rm_and_terminology(&comp).len());
+    }
+
+    let iters = 50;
+    let t_rm = time_pass(iters, || {
+        let mut v = Validator::default();
+        v.rm_invariant_pass(&comp, &mut String::new());
+        v.out.len()
+    });
+    let t_term = time_pass(iters, || {
+        let mut v = Validator::default();
+        v.terminology_pass(&comp, &mut String::new(), None);
+        v.out.len()
+    });
+    let t_both = time_pass(iters, || validate_rm_and_terminology(&comp).len());
+
+    eprintln!("IPS validation walk cost ({node_count} _type nodes, {iters} iters):");
+    eprintln!("  pass 1 rm_invariant_pass : {t_rm:>8.1} us/op");
+    eprintln!("  pass 2 terminology_pass  : {t_term:>8.1} us/op");
+    eprintln!("  combined (1+2)           : {t_both:>8.1} us/op");
+}
+
+/// P20 overhead checklist item 31 — MEASUREMENT (not a correctness gate):
+/// quantify the archetype-conformance **walk** (pass 3) over the populated IPS
+/// example against its OPT-built `WebTemplate`. Pass 3 is where item 31's
+/// per-node cost lives (per-visit `path::parse` of every constraint path, the
+/// per-visit `groups`/sibling-index rebuild, and the per-node path allocations)
+/// — the item-15 harness above only times the two template-independent passes.
+/// Times each pass and the full `validate_composition` so the before/after of
+/// the allocation-discipline rewrite is honest. Ignored by default (timing, not
+/// correctness); run:
+/// `cargo nextest run -p openehr-flat --run-ignored all \
+///   -E 'test(measure_ips_validation_full_cost)' --no-capture`.
+#[test]
+#[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
+fn measure_ips_validation_full_cost() {
+    let dir = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/benchmark/templates/ckm"
+    );
+    let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
+        .expect("read IPS OPT");
+    let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
+    let wt = crate::build_web_template(&opt).expect("build IPS WebTemplate");
+    let comp: Value = serde_json::from_str(
+        &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
+            .expect("read IPS example"),
+    )
+    .expect("parse IPS example");
+    let node_count = count_type_nodes(&comp);
+
+    // Warm up (allocator, branch predictors, the lazily-initialized bundle).
+    for _ in 0..5 {
+        std::hint::black_box(validate_composition(&comp, &wt).len());
+    }
+
+    // Public entry points only, so this harness compiles unchanged across the
+    // item-31 rewrite (the internal pass signatures change; these do not).
+    let iters = 50;
+    let t_rmterm = time_pass(iters, || validate_rm_and_terminology(&comp).len());
+    let t_walk = time_pass(iters, || validate_archetype_conformance(&comp, &wt).len());
+    let t_all = time_pass(iters, || validate_composition(&comp, &wt).len());
+
+    eprintln!("IPS full validation cost ({node_count} _type nodes, {iters} iters):");
+    eprintln!("  passes 1+2 rm+terminology      : {t_rmterm:>8.1} us/op");
+    eprintln!("  pass 3 walk (archetype conf.)  : {t_walk:>8.1} us/op");
+    eprintln!("  full validate_composition      : {t_all:>8.1} us/op");
+}

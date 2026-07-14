@@ -89,20 +89,17 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .fetch_one(&pool)
         .await
         .expect("ehr bookkeeping");
-    // Single squashed baseline per schema. ext: 0001_openehr_functions (functions + roles +
-    // grants) + 0002_tenant_context (the ext.current_tenant_id() session
-    // context, appended for E2). ehr: 0001_baseline (19 tables + named
-    // constraints, comments, roles/grants, and the spec-compliance
-    // fixes) + 0002_event_outbox (the contribution-outbox eventing extension
-    // table) + 0003_event_subscription (the event-filter
-    // subscription store, E1 task 4) + 0004_multitenancy (the multi-tenancy extension's `tenant`
-    // registry + tenant_id scoping + RLS FORCE, appended for E2 task 2) +
-    // 0005_fhir_mapping (the FHIR-connector mapping store — our own extension, appended for
-    // E3 task 2) + 0006_fhir_outbound_cursor (the outbound-emitter extension's
-    // delivery cursor, appended for E3 tasks 4/5) + 0007_template_id_ci_unique
-    // (case-insensitive TEMPLATE_ID uniqueness — BASE base_types master05
-    // §Composite Identifiers and Case, appended for W-3f G-T04).
-    assert_eq!((applied_ext, applied_ehr), (2, 7));
+    // Single squashed baseline per schema, plus one file per own-extension
+    // table set (pre-production rule: schema changes edit the baseline
+    // directly — ALTER-style additions fold in; the P20 folds brought
+    // context_start, the case-insensitive TEMPLATE_ID unique, and
+    // ext.openehr_timestamp into the baselines and removed the speculative
+    // GIN + magnitude indexes). ext: 0001_openehr_functions (functions incl.
+    // openehr_timestamp + roles + grants) + 0002_tenant_context. ehr:
+    // 0001_baseline (all core tables) + 0002_event_outbox +
+    // 0003_event_subscription + 0004_multitenancy + 0005_fhir_mapping +
+    // 0006_fhir_outbound_cursor.
+    assert_eq!((applied_ext, applied_ehr), (2, 6));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -306,6 +303,8 @@ async fn node_codec_round_trips_through_the_database() {
             name: r.get("name"),
             path: r.get("path"),
             data: r.get("data"),
+            // Promoted-leaf columns are query-only and unused by `reassemble`.
+            promoted: Vec::new(),
         })
         .collect();
 

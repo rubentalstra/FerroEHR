@@ -14,22 +14,35 @@
 use crate::data_types::text::dv_text::DvText;
 use crate::validate::{InvariantViolation, Validate};
 
+/// The `Valid_value` / `Formatting_valid` core over the projected inputs —
+/// one source for the typed impl and the value-level fast path
+/// (`validate::fast`). `ty` is `DV_TEXT` or `DV_CODED_TEXT` (which inherits
+/// both invariants).
+pub(crate) fn push_dv_text_invariants(
+    ty: &str,
+    value: &str,
+    formatting: Option<&str>,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if value.is_empty() {
+        out.push(InvariantViolation::here(format!(
+            "Invariant Valid_value failed on type {ty} (value must be non-empty)"
+        )));
+    }
+    if formatting.is_some_and(str::is_empty) {
+        out.push(InvariantViolation::here(format!(
+            "Invariant Formatting_valid failed on type {ty}"
+        )));
+    }
+}
+
 impl Validate for DvText {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         let (ty, value, formatting) = match self {
             DvText::DvText(t) => ("DV_TEXT", &t.value, t.formatting.as_deref()),
             DvText::DvCodedText(t) => ("DV_CODED_TEXT", &t.value, t.formatting.as_deref()),
         };
-        if value.is_empty() {
-            out.push(InvariantViolation::here(format!(
-                "Invariant Valid_value failed on type {ty} (value must be non-empty)"
-            )));
-        }
-        if formatting.is_some_and(str::is_empty) {
-            out.push(InvariantViolation::here(format!(
-                "Invariant Formatting_valid failed on type {ty}"
-            )));
-        }
+        push_dv_text_invariants(ty, value, formatting, out);
     }
 }
 

@@ -44,12 +44,16 @@
 //! archie, toward reporting only confident violations.
 
 mod leaf;
+mod plan;
 mod subtype;
 mod terminology;
 
 use indexmap::IndexMap;
 use openehr_rm::validate::validate_rm_value;
 use serde_json::Value;
+
+pub(crate) use plan::NodeWalk;
+pub(crate) use plan::prepare_walk;
 
 use crate::path;
 use crate::webtemplate::{WebTemplate, WebTemplateArchetypeSlot, WebTemplateNode};
@@ -106,10 +110,12 @@ pub enum ValidationKind {
 #[must_use]
 pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<ValidationMessage> {
     let mut v = Validator::default();
+    // One reusable path buffer across passes 1 and 2 (each leaves it empty).
+    let mut path = String::new();
     // Pass 1: RM class invariants over the whole instance (compaction-independent).
-    v.rm_invariant_pass(composition, "");
+    v.rm_invariant_pass(composition, &mut path);
     // Pass 2: RM-mandated openEHR terminology.
-    v.terminology_pass(composition, "", None);
+    v.terminology_pass(composition, &mut path, None);
     // Pass 3: archetype conformance guided by the WebTemplate tree.
     v.walk(composition, &wt.tree);
     v.out
@@ -124,8 +130,9 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
 #[must_use]
 pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage> {
     let mut v = Validator::default();
-    v.rm_invariant_pass(composition, "");
-    v.terminology_pass(composition, "", None);
+    let mut path = String::new();
+    v.rm_invariant_pass(composition, &mut path);
+    v.terminology_pass(composition, &mut path, None);
     v.out
 }
 
@@ -253,35 +260,22 @@ fn find_node_by_flat_path<'a>(wt: &'a WebTemplate, path: &str) -> Option<&'a Web
     Some(node)
 }
 
-/// The set of identity `(attribute, archetype_node_id)` pairs that appear in
-/// more than one distinct sibling path (relative to `parent_aql`) — i.e. the
-/// template distinguishes same-id siblings by name, so the name fallback in
-/// [`path::select_children_matched`] must stay off for them.
-fn identity_ambiguity<'a>(
-    paths: impl Iterator<Item = &'a str>,
-    parent_aql: &str,
-) -> std::collections::HashSet<(String, String)> {
-    let mut seen: std::collections::HashMap<(String, String), u32> =
-        std::collections::HashMap::new();
-    for p in paths {
-        let Some(rel) = p.strip_prefix(parent_aql) else {
-            continue;
-        };
-        let segments = path::parse(rel);
-        let Some(id_seg) = segments.iter().rfind(|s| !s.predicate.is_empty()) else {
-            continue;
-        };
-        if let Some(id) = &id_seg.predicate.archetype_node_id {
-            *seen
-                .entry((id_seg.attribute.clone(), id.clone()))
-                .or_default() += 1;
-        }
-    }
-    seen.into_iter()
-        .filter(|(_, n)| *n > 1)
-        .map(|(k, _)| k)
-        .collect()
-}
+/// Name-based routing for same-archetype-id sibling constraints.
+///
+/// Maps each identity `(attribute, archetype_node_id)` that the template repeats
+/// across more than one distinct sibling path (relative to `parent_aql`) — i.e.
+/// the template differentiates same-`archetype_node_id` siblings by their
+/// runtime `name` (RM common `master03-archetyped_package.adoc` §"The
+/// `LOCATABLE` class" L33-35; AOM 1.4 `master04-constraint_model_package.adoc`
+/// §`node_id` L41) — to the set of explicit `name/value` `C_STRING` constraints
+/// its *name-qualified* siblings carry.
+///
+/// A present key marks the identity as name-differentiated, which routing uses
+/// two ways ([`select_group_children`]): a name-qualified sibling
+/// matches strictly (id + name, no id-only fallback), and the one *unqualified*
+/// sibling (whose `name` is unconstrained) admits every same-id instance
+/// **except** those bearing a name a name-qualified sibling claims.
+pub(crate) type SiblingNameIndex = std::collections::HashMap<(String, String), Vec<String>>;
 
 #[derive(Default)]
 struct Validator {
@@ -308,9 +302,40 @@ impl Validator {
 
     // ── Pass 1: RM class invariants over the whole instance ───────────────────
 
-    fn rm_invariant_pass(&mut self, v: &Value, path: &str) {
+    // `path` is a single reusable buffer pushed/popped per recursion step (P20
+    // item 31): a node's running RM instance path is appended before descending
+    // and truncated back after, so the full path string is materialized only
+    // when a violation is actually recorded — not `format!`-allocated afresh at
+    // every one of the ~1.5k nodes an IPS commit visits.
+    fn rm_invariant_pass(&mut self, v: &Value, path: &mut String) {
+        use std::fmt::Write as _;
         let Some(obj) = v.as_object() else { return };
-        if obj.contains_key("_type") {
+        // One projection pass over the node's entries collects every field the
+        // per-node checks below read, so none of them pays a hashed map lookup
+        // (P20 item 32 — this runs for every node of every commit; the only
+        // remaining per-node gets are gated behind a matching `_type`).
+        let mut has_type = false;
+        let mut ty: Option<&str> = None;
+        let mut node_id: Option<&str> = None;
+        let mut has_archetype_details = false;
+        let mut mappings_empty = false;
+        let mut reference_ranges_empty = false;
+        for (k, val) in obj {
+            match k.as_str() {
+                "_type" => {
+                    has_type = true;
+                    ty = val.as_str();
+                }
+                "archetype_node_id" => node_id = val.as_str(),
+                "archetype_details" => has_archetype_details = !val.is_null(),
+                "mappings" => mappings_empty = val.as_array().is_some_and(Vec::is_empty),
+                "other_reference_ranges" => {
+                    reference_ranges_empty = val.as_array().is_some_and(Vec::is_empty);
+                }
+                _ => {}
+            }
+        }
+        if has_type {
             let mut inv = Vec::new();
             validate_rm_value(v, &mut inv);
             for iv in inv {
@@ -322,9 +347,9 @@ impl Validator {
                 self.push(p, iv.message, ValidationKind::Invariant);
             }
         }
-        self.check_archetyped_valid(obj, path);
-        self.check_nonempty_lists(obj, path);
-        self.check_data_structure_shapes(obj, path);
+        self.check_archetyped_valid(node_id, has_archetype_details, path);
+        self.check_nonempty_lists(obj, ty, mappings_empty, reference_ranges_empty, path);
+        self.check_data_structure_shapes(obj, ty, path);
         for (k, val) in obj {
             if k.starts_with('_') {
                 continue;
@@ -333,11 +358,19 @@ impl Validator {
                 Value::Array(a) => {
                     for (i, item) in a.iter().enumerate() {
                         if item.is_object() {
-                            self.rm_invariant_pass(item, &format!("{path}/{k}[{i}]"));
+                            let base = path.len();
+                            let _ = write!(path, "/{k}[{i}]");
+                            self.rm_invariant_pass(item, path);
+                            path.truncate(base);
                         }
                     }
                 }
-                Value::Object(_) => self.rm_invariant_pass(val, &format!("{path}/{k}")),
+                Value::Object(_) => {
+                    let base = path.len();
+                    let _ = write!(path, "/{k}");
+                    self.rm_invariant_pass(val, path);
+                    path.truncate(base);
+                }
                 _ => {}
             }
         }
@@ -359,15 +392,20 @@ impl Validator {
     /// 2026-07-11); the CNF fixtures win over a prose reading that would reject
     /// them (`.claude/rules/spec-adherence.md`). The COMPOSITION root arm stays
     /// separately enforced (`composition_impl.rs` `Is_archetype_root`).
-    fn check_archetyped_valid(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
-        let Some(node_id) = obj.get("archetype_node_id").and_then(Value::as_str) else {
+    fn check_archetyped_valid(
+        &mut self,
+        node_id: Option<&str>,
+        has_archetype_details: bool,
+        path: &str,
+    ) {
+        let Some(node_id) = node_id else {
             return;
         };
         let is_term_code = node_id
             .strip_prefix("at")
             .or_else(|| node_id.strip_prefix("id"))
             .is_some_and(|rest| rest.chars().next().is_some_and(|c| c.is_ascii_digit()));
-        if is_term_code && obj.get("archetype_details").is_some_and(|d| !d.is_null()) {
+        if is_term_code && has_archetype_details {
             self.push(
                 norm_path(path),
                 format!(
@@ -390,7 +428,14 @@ impl Validator {
     /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
     ///   ENTRY subtype);
     /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
-    fn check_nonempty_lists(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
+    fn check_nonempty_lists(
+        &mut self,
+        obj: &serde_json::Map<String, Value>,
+        ty: Option<&str>,
+        mappings_empty: bool,
+        reference_ranges_empty: bool,
+        path: &str,
+    ) {
         const RULES: &[(&str, &str, &str)] = &[
             ("COMPOSITION", "content", "Content_valid"),
             ("EVENT_CONTEXT", "participations", "Participations_validity"),
@@ -432,15 +477,15 @@ impl Validator {
         // `DV_TEXT.Mappings_valid` and `DV_ORDERED.Other_reference_ranges_validity`
         // (`dv_text.adoc` / `dv_ordered.adoc`) — no other RM attribute shares
         // these names.
-        for (attr, invariant) in [
-            ("mappings", "Mappings_valid"),
-            ("other_reference_ranges", "Other_reference_ranges_validity"),
+        for (attr, invariant, is_empty) in [
+            ("mappings", "Mappings_valid", mappings_empty),
+            (
+                "other_reference_ranges",
+                "Other_reference_ranges_validity",
+                reference_ranges_empty,
+            ),
         ] {
-            if obj
-                .get(attr)
-                .and_then(Value::as_array)
-                .is_some_and(Vec::is_empty)
-            {
+            if is_empty {
                 self.push(
                     norm_path(path),
                     format!(
@@ -451,7 +496,7 @@ impl Validator {
                 );
             }
         }
-        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+        let Some(ty) = ty else {
             return;
         };
         for (rule_ty, attr, invariant) in RULES {
@@ -484,8 +529,13 @@ impl Validator {
     ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
     ///   else" (RM `data_structures` master06; `history.adoc` generic
     ///   parameter) — the monomorphized runtime type cannot see `T`.
-    fn check_data_structure_shapes(&mut self, obj: &serde_json::Map<String, Value>, path: &str) {
-        let Some(ty) = obj.get("_type").and_then(Value::as_str) else {
+    fn check_data_structure_shapes(
+        &mut self,
+        obj: &serde_json::Map<String, Value>,
+        ty: Option<&str>,
+        path: &str,
+    ) {
+        let Some(ty) = ty else {
             return;
         };
         if ty == "CLUSTER" && obj.get("items").and_then(Value::as_array).is_none() {
@@ -548,29 +598,27 @@ impl Validator {
             leaf::check_inputs(self, instance, wt);
         }
 
-        // Group children by aql path: multiple children sharing a path are a
-        // polymorphic type choice (the instance matches whichever alternative it
-        // conforms to), so they must be resolved together — never each flagged.
-        let mut groups: IndexMap<&str, Vec<&WebTemplateNode>> = IndexMap::new();
-        for child in &wt.children {
-            groups
-                .entry(child.aql_path.as_str())
-                .or_default()
-                .push(child);
-        }
-        // An identity (attribute, archetype_node_id) claimed by more than one
-        // distinct child path means the template disambiguates same-id siblings
-        // by name — the name fallback must stay off for those (see
-        // `path::select_children_matched`).
-        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
-        for group in groups.values() {
-            self.check_group(instance, wt, group, &ambiguous);
+        // The archetype-conformance walk is driven by the node's pre-parsed
+        // [`NodeWalk`] (P20 item 31): child sibling groups (polymorphic type
+        // choices resolved together, never each flagged), the name-routing index,
+        // and the parsed constraint paths, all computed ONCE at build time. A
+        // hand-built node with no cached plan builds one on the fly (identical
+        // result), so every check reads exactly one code path.
+        let built;
+        let plan: &NodeWalk = if let Some(p) = &wt.walk {
+            p
+        } else {
+            built = NodeWalk::build(wt);
+            &built
+        };
+        for group in &plan.child_groups {
+            self.check_group(instance, wt, group, &plan.child_names);
         }
 
-        self.check_cardinalities(instance, wt);
-        self.check_existence(instance, wt);
-        self.check_slots(instance, wt);
-        self.check_closure(instance, wt);
+        self.check_cardinalities(instance, wt, plan);
+        self.check_existence(instance, wt, plan);
+        self.check_slots(instance, plan);
+        self.check_closure(instance, wt, plan);
     }
 
     /// Closed-archetype walk (F-07-05 + F-07-10). Under each constrained
@@ -588,12 +636,11 @@ impl Validator {
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
     /// and lands only behind the ECC zero-drift gate.
-    fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode) {
-        for ca in &wt.closed_attributes {
-            let Some(rel) = ca.path.strip_prefix(&wt.aql_path) else {
+    fn check_closure(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
+        for (ca, segs) in wt.closed_attributes.iter().zip(&plan.closed) {
+            let Some(segments) = segs else {
                 continue;
             };
-            let segments = path::parse(rel);
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
@@ -674,40 +721,23 @@ impl Validator {
     /// same-path slot alternatives allow. An abstract recorded type
     /// (`ITEM_STRUCTURE`, `EVENT`) admits every concrete subtype via
     /// [`subtype::conforms`].
-    fn check_slots(&mut self, instance: &Value, wt: &WebTemplateNode) {
-        let mut groups: IndexMap<&str, Vec<&str>> = IndexMap::new();
-        for slot in &wt.slots {
-            groups
-                .entry(slot.path.as_str())
-                .or_default()
-                .push(slot.rm_type.as_str());
-        }
-        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
-        for (path, allowed) in groups {
-            let Some(rel) = path.strip_prefix(&wt.aql_path) else {
-                continue;
-            };
-            let segments = path::parse(rel);
-            let Some((last, intermediate)) = segments.split_last() else {
+    fn check_slots(&mut self, instance: &Value, plan: &NodeWalk) {
+        for sg in &plan.slot_groups {
+            let Some((last, intermediate)) = sg.segments.split_last() else {
                 continue;
             };
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
-                for node in {
-                    let fallback_ok = last.predicate.archetype_node_id.as_ref().is_none_or(|id| {
-                        !ambiguous.contains(&(last.attribute.clone(), id.clone()))
-                    });
-                    path::select_children_matched(container, last, fallback_ok)
-                } {
+                for node in select_group_children(container, last, &plan.slot_names) {
                     let Some(it) = node.get("_type").and_then(Value::as_str) else {
                         continue;
                     };
-                    if !allowed.iter().any(|a| subtype::conforms(it, a)) {
+                    if !sg.allowed.iter().any(|a| subtype::conforms(it, a)) {
                         self.push(
-                            path,
+                            &sg.path,
                             format!(
                                 "class {it} not allowed: the slot is constrained to [{}]",
-                                allowed.join(", ")
+                                sg.allowed.join(", ")
                             ),
                             ValidationKind::WrongType,
                         );
@@ -725,20 +755,19 @@ impl Validator {
     /// this fills the gap for plain structural attributes the occurrence check
     /// deliberately skips. Only the lower bound (mandatory presence) is enforced;
     /// the upper bound is governed by RM single-valuedness / cardinality.
-    fn check_existence(&mut self, instance: &Value, wt: &WebTemplateNode) {
+    fn check_existence(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
         // Existence is a lower-bound (mandatory-presence) constraint — relaxed
         // away for a `553|incomplete|` commit (master06 §"Incomplete Content").
         if self.relax_lower_bounds {
             return;
         }
-        for ex in &wt.existence {
+        for (ex, segs) in wt.existence.iter().zip(&plan.existence) {
             if ex.min < 1 {
                 continue;
             }
-            let Some(rel) = ex.path.strip_prefix(&wt.aql_path) else {
+            let Some(segments) = segs else {
                 continue;
             };
-            let segments = path::parse(rel);
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
@@ -767,18 +796,23 @@ impl Validator {
         &mut self,
         parent: &Value,
         wt_parent: &WebTemplateNode,
-        group: &[&WebTemplateNode],
-        ambiguous: &std::collections::HashSet<(String, String)>,
+        group: &plan::ChildGroup,
+        names: &SiblingNameIndex,
     ) {
-        let first = group[0];
-        let Some(rel) = first.aql_path.strip_prefix(&wt_parent.aql_path) else {
-            // Not a path descendant of the parent (unexpected) — skip.
-            return;
-        };
-        let segments = path::parse(rel);
+        // Segments were parsed once at build time (P20 item 31); an empty slice
+        // means the child path is not a strict extension of the parent's (or
+        // equals it) — the pre-item-31 `strip_prefix … else return` /
+        // `segments.is_empty()` early-outs, both preserved here.
+        let segments = &group.segments;
         if segments.is_empty() {
             return;
         }
+        let members: Vec<&WebTemplateNode> = group
+            .members
+            .iter()
+            .map(|&i| &wt_parent.children[i])
+            .collect();
+        let first = members[0];
         // The identity segment is the last one carrying a predicate; if none
         // carries one, the last segment (a plain single-valued attribute).
         let identity_idx = segments
@@ -805,30 +839,30 @@ impl Validator {
         // invariant). `in_context` nodes are supplied structurally.
         let occ_applies = id_seg.predicate.archetype_node_id.is_some()
             && id_seg.attribute != "ism_transition"
-            && !group.iter().any(|c| c.in_context == Some(true));
-        let group_min = group.iter().filter_map(|c| c.min).min().unwrap_or(0).max(0);
-        let group_max = if group.iter().any(|c| c.max == -1) {
+            && !members.iter().any(|c| c.in_context == Some(true));
+        let group_min = members
+            .iter()
+            .filter_map(|c| c.min)
+            .min()
+            .unwrap_or(0)
+            .max(0);
+        let group_max = if members.iter().any(|c| c.max == -1) {
             -1
         } else {
-            group.iter().map(|c| c.max).max().unwrap_or(-1)
+            members.iter().map(|c| c.max).max().unwrap_or(-1)
         };
 
-        let fallback_ok = id_seg
-            .predicate
-            .archetype_node_id
-            .as_ref()
-            .is_none_or(|id| !ambiguous.contains(&(id_seg.attribute.clone(), id.clone())));
         for container in &containers {
-            let matched = path::select_children_matched(container, id_seg, fallback_ok);
+            let matched = select_group_children(container, id_seg, names);
             if occ_applies {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
             for node in matched {
                 for target in path::navigate(&[node], trailing) {
-                    if group.len() == 1 {
+                    if members.len() == 1 {
                         self.walk(target, first);
                     } else {
-                        self.visit_choice(target, group);
+                        self.visit_choice(target, &members);
                     }
                 }
             }
@@ -906,12 +940,11 @@ impl Validator {
     /// to `min`/`max`. Iterates [`WebTemplateNode::card_all`] — the full AOM 1.4
     /// §cardinality set (`0..1`/`1..1`/`1..*` included), a superset of the
     /// Better-filtered serialized `cardinalities`.
-    fn check_cardinalities(&mut self, instance: &Value, wt: &WebTemplateNode) {
-        for card in &wt.card_all {
-            let Some(rel) = card.path.strip_prefix(&wt.aql_path) else {
+    fn check_cardinalities(&mut self, instance: &Value, wt: &WebTemplateNode, plan: &NodeWalk) {
+        for (card, segs) in wt.card_all.iter().zip(&plan.cardinalities) {
+            let Some(segments) = segs else {
                 continue;
             };
-            let segments = path::parse(rel);
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
@@ -970,6 +1003,45 @@ impl Validator {
 // (`parse` / `navigate` / `select_children`). Only the checks below —
 // attribute-presence for the existence rule and RM instance-path
 // normalisation — are validation-specific.
+
+/// Select the instance children a WebTemplate sibling group claims from
+/// `container`, applying the name discriminator for same-`archetype_node_id`
+/// siblings so an instance is routed to exactly the sibling whose name
+/// constraint it satisfies (RM common `master03-archetyped_package.adoc`
+/// §"The `LOCATABLE` class": the runtime `name` distinguishes sibling nodes
+/// that share an `archetype_node_id`; BASE
+/// `architecture_overview/master11-paths.adoc` §"Using a Name-based Predicate").
+///
+/// `names` is the [`SiblingNameIndex`] computed once per parent from the sibling
+/// paths. Three cases on the group's identity segment `id_seg`:
+///
+/// * **name-qualified, name-differentiated** (`Some` name, identity in `names`):
+///   strict `(archetype_node_id, name)` match with the id-only fallback OFF —
+///   the sibling set relies on the name, so widening to id-only would claim a
+///   sibling's instances.
+/// * **unqualified, name-differentiated** (no name, identity in `names`): match
+///   by `archetype_node_id` minus the instances the name-qualified siblings
+///   claim ([`path::select_children_excluding_names`]) — the residual arm.
+/// * **not name-differentiated** (identity absent from `names`): strict match
+///   with the id-only fallback ON, tolerating a runtime-renamed instance when
+///   the archetype does not constrain the name (master03 §"The `LOCATABLE`
+///   class" L35).
+fn select_group_children<'a>(
+    container: &'a Value,
+    id_seg: &openehr_rm::paths::PathSegment,
+    names: &SiblingNameIndex,
+) -> Vec<&'a Value> {
+    let claimed = id_seg
+        .predicate
+        .archetype_node_id
+        .as_ref()
+        .and_then(|id| names.get(&(id_seg.attribute.clone(), id.clone())));
+    match (id_seg.predicate.name_value.as_ref(), claimed) {
+        (Some(_), Some(_)) => path::select_children_matched(container, id_seg, false),
+        (None, Some(claimed)) => path::select_children_excluding_names(container, id_seg, claimed),
+        (_, None) => path::select_children_matched(container, id_seg, true),
+    }
+}
 
 /// The instance child objects directly under `attr` (array elements or a single
 /// object), skipping non-object values — the sibling set for closed-world.

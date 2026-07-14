@@ -32,10 +32,11 @@ impl EhrbaseService {
         ehr_id: Uuid,
         composition: Value,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_ehr_exists(ehr_id).await?;
-        // is_modifiable = False forbids content writes; a COMPOSITION is EHR
-        // content (RM ehr master04 §EHR Active Status).
-        self.ensure_content_writable(ehr_id).await?;
+        // The EHR-existence (404) and content-writability (409) gates in one
+        // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR Creation
+        // / §EHR Active Status). Same errors, same order as the separate
+        // `ensure_ehr_exists` + `ensure_content_writable` checks.
+        self.ensure_ehr_content_writable(ehr_id).await?;
         // A direct create carries no lifecycle_state → always 532|complete| →
         // full-strictness validation (`incomplete = false`).
         self.validate_composition_for_commit(&composition, false)
@@ -59,8 +60,13 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, committed.vo_id, Some(committed.tree))
-            .await
+        // The write response is metadata-only: `Committed` already carries
+        // every field of the version identity + the commit instant, and every
+        // consumer (the SM trait, TDD import, the REST adapter) uses only the
+        // uid/meta — a representation response re-reads at the protocol layer.
+        // Re-reading + reassembling the just-written document here was a whole
+        // extra pool acquisition + two SELECTs per create, discarded.
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// Retrieve a COMPOSITION by its versioned-object id, optionally at a specific
@@ -223,8 +229,8 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_composition(ehr_id, vo_id, Some(committed.tree))
-            .await
+        // Metadata-only write response (see `create_composition`).
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a
@@ -338,6 +344,31 @@ impl EhrbaseService {
         } else {
             Err(ServiceError::NotFound(format!("EHR {ehr_id}")))
         }
+    }
+
+    /// The combined EHR-existence + content-writability content-write gate in
+    /// ONE round trip — equivalent to [`Self::ensure_ehr_exists`] followed by
+    /// [`Self::ensure_content_writable`] (a missing EHR → 404 *before* the
+    /// non-modifiable 409, unchanged order), but a single
+    /// [`crate::storage::ehr_repo::ehr_writability`] read instead of two pool
+    /// round trips. The guarded concepts are RM ehr master04 §EHR Creation
+    /// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
+    /// openEHR spec governs the query shape (our own design).
+    pub(in crate::service) async fn ensure_ehr_content_writable(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<(), ServiceError> {
+        let (exists, is_modifiable) =
+            crate::storage::ehr_repo::ehr_writability(&self.pool, ehr_id).await?;
+        if !exists {
+            return Err(ServiceError::NotFound(format!("EHR {ehr_id}")));
+        }
+        // `None` (no current EHR_STATUS) is treated as modifiable, so the guard
+        // never spuriously blocks — identical to `ensure_content_writable`.
+        if is_modifiable == Some(false) {
+            return Err(Self::not_modifiable_error(ehr_id));
+        }
+        Ok(())
     }
 }
 

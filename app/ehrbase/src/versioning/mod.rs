@@ -159,6 +159,11 @@ pub(crate) struct SigningCtx<'a> {
     /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body
     /// is decomposed and signed.
     pub(crate) multimedia: Option<&'a crate::extensions::multimedia::MultimediaEngine>,
+    /// Whether to write the transactional event outbox on this commit. `false`
+    /// when no eventing consumer is configured, so the per-commit `event_outbox`
+    /// INSERT + envelope serialization is skipped entirely. No openEHR spec
+    /// governs eventing — our own extension.
+    pub(crate) outbox_enabled: bool,
 }
 
 /// The cross-area hooks the CONTRIBUTION commit orchestration

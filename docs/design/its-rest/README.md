@@ -63,5 +63,5 @@ the crate implements). Template: verified current state (file:line), cited
 | Formats — simplified (STABLE) | [formats.md](formats.md) | `crates/openehr-flat` + the SDT media types in `overview/negotiate.rs` |
 | SMART App Launch (DEVELOPMENT) | [smart.md](smart.md) | **greenfield** — integrates with `app/ehrbase-rest/src/access/` (OAuth2/OIDC) |
 
-Open gaps execute through `docs/plans/rest-crate-rewrite.md` (W-3e) — a gap
+Open gaps were executed by W-3e (merged PR #76) — a gap
 lives in code or a re-verified cited PORT NOTE, never only in this folder.

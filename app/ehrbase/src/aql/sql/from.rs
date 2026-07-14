@@ -210,8 +210,10 @@ impl Builder<'_> {
             self.push_scope(&voa, &r.scope)?;
             self.group_roots.push(node.clone());
             self.group_vos.push(voa.clone());
+            self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
                 self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
+                self.roots_linked_to_ehr.insert(node.clone());
             }
             Ok(VoGroup { node, vo: voa })
         }
@@ -355,28 +357,38 @@ impl Builder<'_> {
         if !self.ctx.ehr_ids.is_empty() {
             return;
         }
+        // One gate per join-connected component (item 24): a VO root linked to
+        // an EHR alias (`node.ehr_id = e.id`) is covered by that alias's gate —
+        // gating both emitted the full-population subquery twice per query.
         for root in self.group_roots.clone() {
-            let sub = self.queryable_ehr_subquery();
-            self.q.and_where(col(&root, "ehr_id").in_subquery(sub));
+            if self.roots_linked_to_ehr.contains(&root) {
+                continue;
+            }
+            let gate = self.queryable_gate(col(&root, "ehr_id"));
+            self.q.and_where(gate);
         }
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-            let sub = self.queryable_ehr_subquery();
-            self.q.and_where(col(&alias, "id").in_subquery(sub));
+            let gate = self.queryable_gate(col(&alias, "id"));
+            self.q.and_where(gate);
         }
     }
 
-    /// `SELECT ehr_id FROM vo_version JOIN node(num = 0) …` — the EHR ids whose
-    /// current (`upper_inf`) `EHR_STATUS` has `is_queryable = true`.
-    /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline in
-    /// the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
+    /// The population gate as a **correlated** `EXISTS` probe: the EHR id under
+    /// test equates into the subquery (`qgv.ehr_id = <target>`), so the planner
+    /// answers it per candidate row through `idx_vo_version_ehr` instead of
+    /// materializing every queryable EHR id per query (the uncorrelated `IN`
+    /// form scanned all current `EHR_STATUS` roots each execution — item 24).
+    /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline
+    /// in the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
     /// (`num = 0`; children are pruned but scalars stay).
-    fn queryable_ehr_subquery(&mut self) -> SelectStatement {
+    fn queryable_gate(&mut self, target: Expr) -> Expr {
         let sv = format!("qgv{}", self.next_ctr());
         let sn = format!("qgn{}", self.next_ctr());
         let mut sub = Query::select();
-        sub.expr(col(&sv, "ehr_id"));
+        sub.expr(Expr::val(1));
         sub.from_as(VoVersion::Table, Alias::new(sv.as_str()));
         sub.from_as(Node::Table, Alias::new(sn.as_str()));
+        sub.and_where(col(&sv, "ehr_id").eq(target));
         sub.and_where(col(&sn, "vo_id").eq(col(&sv, "vo_id")));
         sub.and_where(col(&sn, "sys_version").eq(col(&sv, "sys_version")));
         sub.and_where(col(&sn, "num").eq(Expr::val(0)));
@@ -390,7 +402,7 @@ impl Builder<'_> {
                 .binary(BinOper::Custom("->>"), Expr::val("is_queryable"))
                 .eq(Expr::val("true")),
         );
-        sub
+        Expr::exists(sub)
     }
 
     /// Join the EHR's current `EHR_STATUS` versioned-object root node for an EHR
@@ -500,6 +512,6 @@ impl Builder<'_> {
 
 /// The VO-root RM types the store versions independently (RM common master06
 /// versioned objects; the store's `vo_version.kind` discriminants).
-fn is_vo_root_type(t: &str) -> bool {
+pub(super) fn is_vo_root_type(t: &str) -> bool {
     matches!(t, "COMPOSITION" | "EHR_STATUS" | "EHR_ACCESS" | "FOLDER")
 }

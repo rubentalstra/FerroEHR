@@ -307,6 +307,58 @@ async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row
 }
 
 #[tokio::test]
+async fn outbox_disabled_writes_no_rows() {
+    // With no eventing consumer configured (`with_outbox_enabled(false)`), the
+    // per-commit `event_outbox` INSERT is skipped entirely — no consumer will
+    // ever read it. No openEHR spec governs eventing (our own extension).
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("events_disabled").await;
+    let svc = EhrbaseService::new(pool.clone()).with_outbox_enabled(false);
+
+    // EHR creation, a direct composition commit, and a CONTRIBUTION commit —
+    // none writes an outbox row.
+    let ehr = create_ehr(&svc).await;
+    assert_eq!(total_count(&pool).await, 0, "EHR creation writes none");
+
+    svc.create_composition(ehr, uv(composition("v1"), "249"))
+        .await
+        .expect("create_composition");
+    assert_eq!(
+        total_count(&pool).await,
+        0,
+        "composition commit writes none"
+    );
+
+    let contribution = json!({
+        "_type": "CONTRIBUTION",
+        "versions": [{
+            "_type": "ORIGINAL_VERSION",
+            "commit_audit": {
+                "change_type": { "_type": "DV_CODED_TEXT", "value": "creation",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249" } },
+                "committer": committer("author")
+            },
+            "lifecycle_state": { "_type": "DV_CODED_TEXT", "value": "complete",
+                "defining_code": { "_type": "CODE_PHRASE",
+                    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                    "code_string": "532" } },
+            "data": composition("c1")
+        }],
+        "audit": { "committer": committer("author") }
+    });
+    svc.create_ehr_contribution(ehr, contribution)
+        .await
+        .expect("create_ehr_contribution");
+    assert_eq!(
+        total_count(&pool).await,
+        0,
+        "CONTRIBUTION commit writes none when the outbox is disabled"
+    );
+}
+
+#[tokio::test]
 async fn rolled_back_commit_writes_no_outbox_row() {
     let pg = Pg::start().await;
     let pool = pg.migrated_pool("events_rollback").await;

@@ -101,6 +101,7 @@ fn rest_config() -> RestConfig {
             }),
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         ..RestConfig::default()
     }

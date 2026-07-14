@@ -112,9 +112,17 @@ impl EhrbaseService {
             ));
         }
         let audit = self.audit(change_type::CREATION, "EHR Extract import");
-        commit_import(&mut tx, ehr_id, &audit, containers).await?;
-        commit_demographic_import(&mut tx, &audit, parties).await?;
+        let outbox_enabled = self.outbox_enabled();
+        let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
+        commit_import(&mut tx, ehr_id, &audit, containers, outbox_enabled).await?;
+        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
         tx.commit().await.map_err(ServiceError::from)?;
+        // An imported EHR_ACCESS version changes the EHR's access policy — evict
+        // the cached settings the access gate consults (RM ehr master04 §EHR
+        // Access; the settings are change-controlled).
+        if touches_ehr_access {
+            self.invalidate_ehr_access(ehr_id).await;
+        }
         // A completed import is audited for non-repudiation (an inbound Extract
         // communication landing new local versions → `EventActionCode::Create`).
         self.emit_extract_audit(ehr_id, EventActionCode::Create);
@@ -159,9 +167,17 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await.map_err(ServiceError::from)?;
         let audit = self.audit(change_type::CREATION, "EHR Extract import");
-        commit_import(&mut tx, an_ehr_id, &audit, containers).await?;
-        commit_demographic_import(&mut tx, &audit, parties).await?;
+        let outbox_enabled = self.outbox_enabled();
+        let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
+        commit_import(&mut tx, an_ehr_id, &audit, containers, outbox_enabled).await?;
+        commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
         tx.commit().await.map_err(ServiceError::from)?;
+        // An imported EHR_ACCESS version changes the EHR's access policy — evict
+        // the cached settings the access gate consults (RM ehr master04 §EHR
+        // Access; the settings are change-controlled).
+        if touches_ehr_access {
+            self.invalidate_ehr_access(an_ehr_id).await;
+        }
         // A completed import is audited for non-repudiation (an inbound Extract
         // communication landing new local versions → `EventActionCode::Create`).
         self.emit_extract_audit(an_ehr_id, EventActionCode::Create);

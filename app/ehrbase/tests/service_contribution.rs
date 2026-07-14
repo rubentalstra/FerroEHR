@@ -944,3 +944,141 @@ async fn contribution_supplied_uid() {
         .expect_err("duplicate uid rejected");
     assert!(dup.message.contains("already in use"), "got {dup:?}");
 }
+
+/// The combined EHR-existence + content-writability create gate
+/// (`ensure_ehr_content_writable`) preserves the pre-fold error surface after
+/// the two separate pool reads were collapsed into one `ehr_writability` round
+/// trip: an unknown EHR still maps to `VersionedObjectDoesNotExist` (404, never
+/// a DB error or a conflict), and a deactivated EHR (`EHR_STATUS.is_modifiable =
+/// false`) still maps to a conflict (409) — RM ehr master04 §EHR Creation /
+/// §EHR Active Status.
+#[tokio::test]
+async fn create_composition_gate_error_surface_survives_the_writability_fold() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("writability_fold").await);
+
+    // (1) Unknown EHR → 404 VersionedObjectDoesNotExist (the existence signal of
+    // the folded query), never a conflict and never a driver error.
+    let ghost = "00000000-0000-7000-8000-0000000000fe"
+        .parse::<uuid::Uuid>()
+        .expect("uuid");
+    let missing = svc
+        .create_composition(ghost, uv(composition("obs"), "249", None))
+        .await
+        .expect_err("unknown EHR rejected");
+    assert_eq!(
+        missing.status,
+        CallStatusType::VersionedObjectDoesNotExist,
+        "unknown ehr_id → 404, got {missing:?}"
+    );
+
+    // A live, modifiable EHR accepts a composition (the fold does not falsely
+    // block — is_modifiable = None/true → writable).
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("modifiable EHR accepts a composition");
+
+    // (2) Deactivate the EHR (EHR_STATUS.is_modifiable = false) and retry: the
+    // content write is refused with a conflict (the modifiability signal of the
+    // folded query, checked after existence).
+    let status_uid = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("current EHR_STATUS")["uid"]["value"]
+        .as_str()
+        .expect("status uid")
+        .to_owned();
+    let deactivated = json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": { "_type": "PARTY_SELF" },
+        "is_queryable": true,
+        "is_modifiable": false
+    });
+    svc.replace_ehr_status(ehr_uuid, uv(deactivated, "251", Some(&status_uid)))
+        .await
+        .expect("EHR_STATUS deactivation");
+
+    let blocked = svc
+        .create_composition(ehr_uuid, uv(composition("obs2"), "249", None))
+        .await
+        .expect_err("non-modifiable EHR blocks content writes");
+    assert_eq!(
+        blocked.status,
+        CallStatusType::CompositionAlreadyExists,
+        "is_modifiable = false → 409 conflict, got {blocked:?}"
+    );
+    assert!(
+        blocked.message.contains("not modifiable"),
+        "got {blocked:?}"
+    );
+}
+
+/// The temporal non-overlap invariant survives the removal of the `GiST`
+/// EXCLUDE constraints (RM common master06 §Version tree: one valid version
+/// per lineage at any instant; the enforcement is now by construction —
+/// close-then-insert at one `now()` per write, one open row per lineage via
+/// the partial unique indexes). A burst of sequential updates must leave
+/// exactly one open trunk row and ZERO overlapping validity pairs — asserted
+/// with the same lineage-pair query the admin archive load audits with.
+#[tokio::test]
+async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("no_overlap_invariant").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let created = svc
+        .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("create");
+    let mut preceding = created;
+    for i in 0..8 {
+        preceding = svc
+            .update_composition(
+                ehr_uuid,
+                preceding
+                    .split("::")
+                    .next()
+                    .expect("vo id part")
+                    .parse()
+                    .expect("vo uuid"),
+                uv(composition(&format!("obs-v{i}")), "251", Some(&preceding)),
+            )
+            .await
+            .expect("update");
+    }
+
+    let open_trunk: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_version \
+         WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
+           AND branch_number = 0 AND upper_inf(sys_period)",
+    )
+    .bind(ehr_uuid)
+    .fetch_one(&pool)
+    .await
+    .expect("open-row count");
+    assert_eq!(open_trunk, 1, "exactly one open trunk row per composition");
+
+    let overlap: bool = sqlx::query_scalar(
+        "SELECT EXISTS ( \
+             SELECT 1 FROM vo_version a \
+             JOIN vo_version b ON a.vo_id = b.vo_id \
+                 AND a.branch_number = b.branch_number \
+                 AND (a.branch_number = 0 \
+                      OR (a.creating_system_id = b.creating_system_id \
+                          AND a.trunk_version = b.trunk_version)) \
+                 AND a.sys_version < b.sys_version \
+                 AND a.sys_period && b.sys_period \
+             WHERE a.ehr_id = $1)",
+    )
+    .bind(ehr_uuid)
+    .fetch_one(&pool)
+    .await
+    .expect("overlap audit");
+    assert!(!overlap, "no lineage carries overlapping validity periods");
+}

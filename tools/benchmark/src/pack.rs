@@ -66,12 +66,32 @@ impl CkmTemplate {
     }
 
     /// The stable `workload.lock` source descriptor for this template
-    /// (`ckm:<slug>|<template_id>|<example_file>` — carries the slug the lock
-    /// register calls for and enough to detect any re-vendoring).
+    /// (`ckm:<slug>|<template_id>|<example_file>|sha256:<skeleton-hash>`). The
+    /// skeleton **content hash** is part of the descriptor: the payload bytes
+    /// are workload model, so regenerating a skeleton (e.g. the P20 F5
+    /// empty→populated fix) shifts the lock and two runs with different
+    /// payloads can never be conflated as the same workload. Falls back to
+    /// `sha256:unreadable` if the file cannot be read (the run will fail later
+    /// with the real I/O error; the lock stays total).
     #[must_use]
     pub fn source_descriptor(&self) -> String {
+        use sha2::{Digest, Sha256};
+        let hash = std::fs::read(format!("{PACK_DIR}/{}", self.example_file)).map_or_else(
+            |_| "unreadable".to_owned(),
+            |bytes| {
+                let mut h = Sha256::new();
+                h.update(&bytes);
+                h.finalize()
+                    .iter()
+                    .fold(String::with_capacity(64), |mut out, b| {
+                        use std::fmt::Write as _;
+                        let _ = write!(out, "{b:02x}");
+                        out
+                    })
+            },
+        );
         format!(
-            "ckm:{}|{}|{}",
+            "ckm:{}|{}|{}|sha256:{hash}",
             self.slug, self.template_id, self.example_file
         )
     }
