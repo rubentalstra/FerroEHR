@@ -7,6 +7,17 @@ ships as "done" without its gate**: crate tests green, and the honest re-ladder
 (T5) is the only source of published numbers. Ranked by expected impact on the
 saturation knee.
 
+**Standing owner mandate (2026-07-14): this is a GREENFIELD setup.** Complete
+redesigns and rewrites are *preferred* over incremental patches wherever they
+remove overhead — up to and including a **total redesign of the table schema**
+(the `node`/`vo_version` decomposition itself, fragment granularity, the index
+set, partitioning) if the evidence points there. Nothing is deployed; there is
+no migration-compatibility debt. The only inviolables are the conformance
+gates (ECC zero-drift, RM common master06 versioning semantics, canonical
+data fidelity) and honesty (measured numbers only). When the research
+findings land, the synthesis evaluates schema-level redesign options
+explicitly — not just knob-turning.
+
 Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
 `ehrbase:ehrbase` (argon2id m=4096,t=2,p=1), tokio workers = num_cpus.
 
@@ -88,12 +99,64 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       each input's declared range, temporals truncated to the pattern);
       LOCK_SCHEME bumps to v2. *(worker in flight)* T5 re-ladder is blocked
       on this.
-- [ ] **17. Upstream/web research findings** — the second research agent
-      (sqlx pipelining vs deadpool, PG group commit/commit_delay with
-      synchronous_commit ON, WAL tuning, upstream EHRbase write path +
-      their PG image's baked-in tuning = possible parity gap, Spring
-      Security's auth caching). **Append its numbered findings here when it
-      returns; each becomes a checklist item.**
+- [x] **17. Upstream/web research findings — RETURNED 2026-07-14.** The
+      decisive ones (full report in the phase record):
+      - **F1 (negative): no PG parity gap.** Upstream ships stock
+        `postgres:16.2-alpine` — zero baked-in tuning (Dockerfile_postgres +
+        compose fetched verbatim). They beat us on an untuned DB; do not
+        chase server config as the explanation.
+      - **F2/F13 (negative): auth.** Upstream uses `NoOpPasswordEncoder`
+        (plaintext compare). Our argon2 cost is already amortized by the
+        verified-credential cache (item 1) — not the knee.
+      - **F3/F7 (structural, RANK 1): upstream commits in ~4 SQL round trips**
+        (contribution, audit, version, one jOOQ bulk node insert) vs our
+        ~9–11, and **sqlx does not pipeline** — every statement is a
+        serialized round trip while the tx holds its locks. Levers: keep
+        collapsing statements (T3b started), AND move the hot write path to
+        a pipelined `tokio-postgres`/`deadpool-postgres` connection
+        (CLAUDE.md reserved exactly this). → item 20.
+      - **F4/F6 (schema, RANK 2): our `vo_version` carries TWO GiST EXCLUDE
+        (WITHOUT OVERLAPS) constraints; upstream's version table is a plain
+        btree PK.** GiST exclusion inserts serialize under concurrency —
+        matches the measured 1.6 s vo_version INSERT under load. ADR-008
+        itself reserved the fallback: btree `UNIQUE (vo_id, sys_version)` +
+        app-enforced non-overlap. → item 21 (greenfield mandate applies).
+      - **F8 (RANK 3): our own per-commit extensions** — event_outbox INSERT
+        (+2 indexes) and the advisory lock (verify per-vo granularity). →
+        items 11/12 sharpened.
+      - **F10 (RANK 4): group commit** — `commit_delay`/`commit_siblings`
+        batch WAL fsyncs with `synchronous_commit` ON (durability intact);
+        modest gains; apply to BOTH SUTs. `wal_compression=on` candidate. →
+        item 22.
+      - **F11 (negative): PG18 AIO (`io_method`) is READ-only** — no effect
+        on the write knee; scope it to the AQL read path only.
+      - **F12: dynamic sea-query SQL defeats sqlx's per-connection statement
+        cache** (each unique AQL re-PREPAREs). Parameterize/canonicalize
+        generated SQL + the item-9 plan cache; read-side pipelining lands
+        here too.
+      - **F14 (minor): per-request tracing spans** — ensure the bench
+        profile filters `tower_http::trace`; confirm log level. → item 23.
+      - **F15 (negative): our multi-row node INSERT is already right**
+        (COPY only wins for very large docs).
+- [ ] **20. Pipelined hot write path** (from F7): collapse the remaining
+      independent statements per commit AND execute the commit sequence on a
+      pipelined `tokio-postgres`/`deadpool-postgres` connection so the
+      residual round trips flush together. Versioning semantics byte-equal
+      (RM common master06); the signature-over-server-time ordering
+      (audit→sign→vo_version) is the one hard sequential dependency.
+- [ ] **21. `vo_version` GiST → btree redesign** (from F6, greenfield
+      mandate): replace both `WITHOUT OVERLAPS` GiST EXCLUDE constraints
+      with plain btree uniqueness + application-enforced non-overlap (the
+      tx already closes the prior version and inserts the next atomically);
+      add an invariant test proving no overlap can be committed. Migration
+      re-authors the constraint set; ECC zero-drift + the versioning oracle
+      gate it.
+- [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
+      pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
+      applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
+- [ ] **23. Bench-profile tracing filter** (from F14): confirm the composed
+      server's log level; filter `tower_http::trace` spans out of the
+      benchmark profile if enabled.
 - [ ] **18. Docs owed by the fixes** — book config page: `verified_cache_ttl_
       seconds` (+ any new knobs from 7/13); changelog entries per
       user-visible change (auth cache done; pool defaults, nodelay when they
