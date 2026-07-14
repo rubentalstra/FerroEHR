@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-07-14
+
 ### Added
 
 - The server now prints an ASCII-art startup banner to stdout before the
@@ -464,5 +466,6 @@ but has not yet run in production.
 - Helm chart with security-hardened defaults (non-root, read-only rootfs,
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.1...HEAD
+[3.0.1]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/rubentalstra/ehrbase-rs/releases/tag/v3.0.0
