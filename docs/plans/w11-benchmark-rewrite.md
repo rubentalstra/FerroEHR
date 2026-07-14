@@ -141,10 +141,10 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       must now shed (503s → error-rate breach) instead of dying — if it
       still dies, record the finding loudly and continue (W-12 iterates
       later; never hide it).
-- [ ] O3. C2/C3 proper: `hour` profile @ 10k, ehrbase-rs then ehrbase-java
+- [x] O3. C2/C3 proper: `hour` profile @ 10k, ehrbase-rs then ehrbase-java
       (sequential, quiet host) → commit both results + regenerate
       COMPARISON.md with hour data + knees.
-- [ ] O4. If the night allows: 100k rung seed + hour, both SUTs → commit.
+- [~] O4. (deferred in favour of completing O5/O6 before morning; the 100k/1M ladder is the X1 publication step) If the night allows: 100k rung seed + hour, both SUTs → commit.
 - [ ] O5. Root README: a "Measured against EHRbase (Java)" section embedding
       committed comparison SVGs (relative paths; the charts live in
       docs/benchmarks/**) with the honest caveats line (single-run,
