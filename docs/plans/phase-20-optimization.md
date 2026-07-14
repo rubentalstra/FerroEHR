@@ -83,23 +83,30 @@
       template, vo_version+audit+contribution round trips reduced (CTE
       pipeline / batched statements), subject sync only on EHR_STATUS
       change. Targets from T1 numbers, not intuition.
-      - [x] T3a. Template re-read eliminated (2026-07-14): `web_template_for`
-        consulted `template_store` BEFORE the WebTemplate cache — 10,206
-        redundant reads/120 s (the #2 statement). Now cache-first; template
-        delete evicts (422 instead of an FK 500 for a racing commit).
-      - [ ] T3b. Round-trip collapse from the T1 profile's remaining
-        sequence (per commit: BEGIN, EHR EXISTS, advisory lock, 2×
-        version-tree reads (~19k+20k calls/window), audit INSERT,
-        contribution INSERT, vo_version INSERT, node INSERT,
-        event_outbox INSERT): merge the audit+contribution+vo_version
-        round trips (CTE pipeline / one multi-statement), fold the EXISTS
-        into an existing read. Versioning semantics (RM common master06)
-        must be byte-identical — orchestrator-reviewed.
+  - [x] T3a. Template re-read eliminated (2026-07-14): `web_template_for`
+          consulted `template_store` BEFORE the WebTemplate cache — 10,206
+          redundant reads/120 s (the #2 statement). Now cache-first; template
+          delete evicts (422 instead of an FK 500 for a racing commit).
+  - [ ] T3b. Round-trip collapse from the T1 profile's remaining
+          sequence (per commit: BEGIN, EHR EXISTS, advisory lock, 2×
+          version-tree reads (~19k+20k calls/window), audit INSERT,
+          contribution INSERT, vo_version INSERT, node INSERT,
+          event_outbox INSERT): merge the audit+contribution+vo_version
+          round trips (CTE pipeline / one multi-statement), fold the EXISTS
+          into an existing read. Versioning semantics (RM common master06)
+          must be byte-identical — orchestrator-reviewed.
 - [ ] T4. **PG tuning as config parity** (both SUTs identically, documented
       in the parity table): `shared_buffers`, `max_wal_size`, checkpoint
       spacing; `synchronous_commit` stays ON (clinical durability — never
       traded). Temporal-GiST maintenance cost quantified before any schema
       move. PG18 AIO (`io_method`) evaluated here.
+      - [x] T4a. Parity floor applied (2026-07-14): both benchmark SUT
+        databases + the local profiling stack run `shared_buffers=1GB`,
+        `max_wal_size=4GB`, `work_mem=16MB` (`BENCH_PG_*` env; §3.4 row
+        updated with the concrete values).
+      - [ ] T4b. Measured half at the T5 profiling round: PG18 `io_method`
+        evaluation (ours only — platform-inherent, documented), temporal-
+        GiST maintenance quantification.
 - [x] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
       c/uid/value` returns the OBJECT_VERSION_ID wire string (QUERY
       master03 identified-paths table); ECC AqlBasic case added; verified
@@ -144,12 +151,14 @@
 Committed on `claude/p20-optimization`: T1 (harness + first profile), T2/T2b/
 T2c/T2d (promoted `context_start` + AQL fast path, uid projection + ECC-QRY-025,
 populated examples + regenerated CKM pack, the F7 validator routing fix), T3a
-(template-cache read eliminated). **Next, in order:** (1) full ECC run —
-zero-drift gate + the new case live (baseline ratchets to include
-ECC-QRY-025); (2) T3b round-trip collapse; (3) T4 PG parity tuning; (4) T5
-re-ladder with the now-populated workload — the ONLY honest source of new
-published numbers (all pre-F5 numbers measured empty CKM payloads and are
-superseded, both directions: heavier real payloads may LOWER both knees).
+(template-cache read eliminated), T4a (PG parity floor both SUTs), and the
+**ECC baseline ratcheted to 370 · 335 · 0** (CORE PASS · STANDARD PASS ·
+OPTIONS OBTAINED; the only delta is ECC-QRY-025 passing live — zero drift).
+**Next, in order:** (1) T3b round-trip collapse (in flight); (2) T4b measured
+half; (3) T5 re-ladder with the now-populated workload — the ONLY honest
+source of new published numbers (all pre-F5 numbers measured empty CKM
+payloads and are superseded, both directions: heavier real payloads may LOWER
+both knees).
 
 ## Superseded original scope (2026-07 draft, kept as input)
 
