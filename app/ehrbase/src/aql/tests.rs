@@ -861,3 +861,130 @@ fn min_max_over_numeric_leaf_is_numeric() {
         "MAX over a numeric leaf casts to numeric: {sql}"
     );
 }
+
+// ── P20: promoted context_start fast path + F6 uid synthesis ─────────────────
+
+/// The patient-dashboard shape orders by the promoted `node.context_start`
+/// column, not the correlated `EVENT_CONTEXT` extraction + `::timestamptz` cast
+/// (P20; docs/plans/phase-20-optimization.md).
+#[test]
+fn dashboard_order_by_uses_context_start_column() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value DESC",
+    );
+    assert!(
+        sql.contains(r#""context_start" DESC"#),
+        "ORDER BY reads the promoted column: {sql}"
+    );
+    // The ordering no longer casts an extracted EVENT_CONTEXT value to timestamptz.
+    assert!(
+        !sql.contains("timestamptz"),
+        "no per-row ::timestamptz cast for the ordering: {sql}"
+    );
+}
+
+/// The same context start-time leaf in a temporal WHERE comparison also reads
+/// the promoted column (the fast path lives in the shared value lowering, so it
+/// covers ORDER BY, WHERE, and aggregation uniformly).
+#[test]
+fn where_temporal_compare_uses_context_start_column() {
+    let sql = build_sql(
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/start_time/value > '2021-01-01T00:00:00Z'",
+    );
+    assert!(
+        sql.contains(r#""context_start""#),
+        "WHERE comparison reads the promoted column: {sql}"
+    );
+}
+
+/// A near-miss must fall back to the general lowering: a temporal leaf on an
+/// OBSERVATION (not a promoted type) still extracts through the subtree.
+#[test]
+fn non_promoted_temporal_leaf_falls_back_to_subquery() {
+    let sql = build_sql(
+        "SELECT o/name/value \
+         FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1] \
+         ORDER BY o/data[at0001]/events[at0006]/time/value DESC",
+    );
+    assert!(
+        !sql.contains("context_start"),
+        "OBSERVATION time is not the promoted composition leaf: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first") && sql.contains("timestamptz"),
+        "the general temporal lowering (extraction + ::timestamptz) is used: {sql}"
+    );
+}
+
+/// A near-miss on the promoted type but a different path (`end_time`, not the
+/// registered `start_time`) also falls back — the match is path-exact.
+#[test]
+fn other_composition_context_path_falls_back() {
+    let sql = build_sql(
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/end_time/value DESC",
+    );
+    assert!(
+        !sql.contains("context_start"),
+        "only the registered context/start_time/value promotes: {sql}"
+    );
+}
+
+/// Projection of the context start-time reads the canonical JSON fragment, not
+/// the timestamptz column — the fast path is comparison/ordering only, so the
+/// `RESULT_SET` cell keeps the verbatim `DV_DATE_TIME` value.
+#[test]
+fn projection_of_context_start_time_is_not_promoted() {
+    let sql = build_sql("SELECT c/context/start_time/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        !sql.contains("context_start"),
+        "projection must extract the canonical value, not the timestamptz column: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first"),
+        "projection extracts the leaf from the fragment: {sql}"
+    );
+}
+
+/// F6: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
+/// from the joined `vo_version` (RM common master06 §Version Identification) —
+/// it is not stored in the fragment.
+#[test]
+fn composition_uid_value_is_synthesized_from_vo_version() {
+    let sql = build_sql("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("creating_system_id"),
+        "uid/value is composed from vo_version columns: {sql}"
+    );
+}
+
+/// F6: `c/uid` yields the `OBJECT_VERSION_ID` object cell.
+#[test]
+fn composition_uid_object_is_built() {
+    let sql = build_sql("SELECT c/uid FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("jsonb_build_object"),
+        "uid projects the OBJECT_VERSION_ID object: {sql}"
+    );
+    assert!(
+        sql.contains("creating_system_id"),
+        "the object's value is the synthesized version id: {sql}"
+    );
+}
+
+/// F6: a contained object's own `uid` is NOT synthesized — only a
+/// versioned-object root gets a server-assigned `OBJECT_VERSION_ID`; the
+/// OBSERVATION's uid falls through to the stored fragment.
+#[test]
+fn contained_object_uid_is_not_synthesized() {
+    let sql = build_sql(
+        "SELECT o/uid/value \
+         FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1]",
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first"),
+        "the observation uid is read from its stored fragment: {sql}"
+    );
+}

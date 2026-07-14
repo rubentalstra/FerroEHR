@@ -210,6 +210,7 @@ impl Builder<'_> {
             self.push_scope(&voa, &r.scope)?;
             self.group_roots.push(node.clone());
             self.group_vos.push(voa.clone());
+            self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
                 self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
             }
@@ -500,6 +501,6 @@ impl Builder<'_> {
 
 /// The VO-root RM types the store versions independently (RM common master06
 /// versioned objects; the store's `vo_version.kind` discriminants).
-fn is_vo_root_type(t: &str) -> bool {
+pub(super) fn is_vo_root_type(t: &str) -> bool {
     matches!(t, "COMPOSITION" | "EHR_STATUS" | "EHR_ACCESS" | "FOLDER")
 }

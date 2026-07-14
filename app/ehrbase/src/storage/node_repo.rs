@@ -39,10 +39,20 @@ pub async fn write_nodes(
     if rows.is_empty() {
         return Ok(());
     }
-    let mut qb = QueryBuilder::new(
+    // Base content columns + the promoted-leaf columns, generated from the
+    // shared registry so adding a promoted column is a migration + one registry
+    // entry, never an edit here (our own storage design — no openEHR spec
+    // governs promoted columns; see `crate::storage::promoted`).
+    let mut header = String::from(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
-         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data) ",
+         rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data",
     );
+    for leaf in crate::storage::PROMOTED_LEAVES {
+        header.push_str(", ");
+        header.push_str(leaf.column);
+    }
+    header.push_str(") ");
+    let mut qb = QueryBuilder::new(header);
     qb.push_values(rows, |mut b, row| {
         b.push_bind(vo_id)
             .push_bind(sys_version)
@@ -59,6 +69,20 @@ pub async fn write_nodes(
             .push_bind(&row.name)
             .push_bind(&row.path)
             .push_bind(&row.data);
+        // Each promoted value is bound through its kind's conversion so a
+        // value the AQL query-time cast accepted yields the same stored value,
+        // and non-castable text becomes NULL rather than failing the write
+        // (ext.openehr_timestamp, ext/0003).
+        for (i, leaf) in crate::storage::PROMOTED_LEAVES.iter().enumerate() {
+            let raw = row.promoted.get(i).and_then(Clone::clone);
+            match leaf.kind {
+                crate::storage::PromotedKind::Timestamp => {
+                    b.push("ext.openehr_timestamp(")
+                        .push_bind_unseparated(raw)
+                        .push_unseparated(")");
+                }
+            }
+        }
     });
     qb.build().execute(&mut *tx).await?;
     Ok(())

@@ -101,8 +101,12 @@ async fn migrations_apply_cleanly_and_idempotently() {
     // E3 task 2) + 0006_fhir_outbound_cursor (the outbound-emitter extension's
     // delivery cursor, appended for E3 tasks 4/5) + 0007_template_id_ci_unique
     // (case-insensitive TEMPLATE_ID uniqueness — BASE base_types master05
-    // §Composite Identifiers and Case, appended for W-3f G-T04).
-    assert_eq!((applied_ext, applied_ehr), (2, 7));
+    // §Composite Identifiers and Case, appended for W-3f G-T04) +
+    // 0008_context_start (the promoted node.context_start column + backfill +
+    // partial index for the AQL dashboard ORDER BY, P20). ext gains
+    // 0003_openehr_timestamp (the fail-safe ISO-8601 → timestamptz used to
+    // populate promoted timestamp columns, P20).
+    assert_eq!((applied_ext, applied_ehr), (3, 8));
 
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT table_name FROM information_schema.tables \
@@ -306,6 +310,8 @@ async fn node_codec_round_trips_through_the_database() {
             name: r.get("name"),
             path: r.get("path"),
             data: r.get("data"),
+            // Promoted-leaf columns are query-only and unused by `reassemble`.
+            promoted: Vec::new(),
         })
         .collect();
 

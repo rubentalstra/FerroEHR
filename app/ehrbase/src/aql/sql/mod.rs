@@ -172,6 +172,12 @@ struct Builder<'a> {
     /// The `EHR_STATUS` root-node alias joined for an EHR source's `ehr_status`
     /// path (keyed by EHR source id; joined once, lazily, on first use).
     ehr_status_node: HashMap<usize, String>,
+    /// The `vo_version` alias each versioned-object-root RM source opened
+    /// (keyed by source id). Used to synthesize the server-assigned
+    /// `OBJECT_VERSION_ID` for a `uid[/value]` path on a VO-root variable
+    /// (RM common master06 §Version Identification), which is not stored in the
+    /// canonical fragment.
+    vo_alias: HashMap<usize, String>,
     version_vo: HashMap<usize, String>,
     /// Node aliases that root a VO group (targets of the REST `ehr_id` filter).
     group_roots: Vec<String>,
@@ -193,6 +199,7 @@ impl<'a> Builder<'a> {
             audit_alias: HashMap::new(),
             ehr_alias: HashMap::new(),
             ehr_status_node: HashMap::new(),
+            vo_alias: HashMap::new(),
             version_vo: HashMap::new(),
             group_roots: Vec::new(),
             group_vos: Vec::new(),
