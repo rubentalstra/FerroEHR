@@ -181,7 +181,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       in-flight item-9 agent to avoid a file collision. **DONE 9ffd16abd**
       (uuid-typed equality = BASE master05 identifier semantics; one
       correlated EXISTS gate per join-connected component).
-- [ ] **23. Bench-profile tracing filter** (from F14): confirm the composed
+- [x] **23. Bench-profile tracing filter** *(DONE — warn on both SUTs via the harness; current pair ran info=info, still parity)* (from F14): confirm the composed
       server's log level; filter `tower_http::trace` spans out of the
       benchmark profile if enabled.
 - [x] **18. Docs owed by the fixes** — book config page: `verified_cache_ttl_
