@@ -118,6 +118,13 @@ impl EhrbaseService {
             )));
         }
 
+        // No `WebTemplate`-cache invalidation is needed on the create path: this
+        // insert is create-only (`ON CONFLICT DO NOTHING` never overwrites), and
+        // `web_template_for` only caches a *successful* build, so no stale or
+        // negative entry can pre-exist for a freshly stored template_id. The
+        // cache is invalidated only where a template's lifetime ends — the delete
+        // path (`service/definition/adl14.rs::opt_delete`). No openEHR spec
+        // governs the cache; this is our own design.
         self.get_template_meta(&template_id).await
     }
 
