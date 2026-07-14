@@ -47,9 +47,10 @@ use openehr_its::opt14::{
 
 use super::inputs::{self, Labels};
 use super::model::{
-    WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
-    WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateExistence, WebTemplateInput,
-    WebTemplateInputType, WebTemplateNode, WebTemplateSlot, WebTemplateStructuralStub,
+    CodedName, WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue,
+    WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodeList, WebTemplateExistence,
+    WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateSlot,
+    WebTemplateStructuralStub,
 };
 
 const CURRENT_VERSION: &str = "2.3";
@@ -218,7 +219,7 @@ pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crat
 
     let root_arch_id = opt.definition.archetype_id.value.clone();
     let root_co = CObject::CArchetypeRoot(opt.definition.clone());
-    let mut tree = build_node(&ctx, None, &root_co, "", &root_arch_id);
+    let mut tree = build_node(&ctx, None, &root_co, "", &root_arch_id, None);
     tree = compact(tree, 1).unwrap_or(tree_placeholder());
     super::id::build_ids(&mut tree);
 
@@ -249,6 +250,7 @@ fn build_node(
     co: &CObject,
     parent_path: &str,
     parent_arch_id: &str,
+    group: Option<&str>,
 ) -> WebTemplateNode {
     // A C_ARCHETYPE_ROOT switches the ontology scope to its own archetype.
     let node_arch_id = match co {
@@ -256,7 +258,7 @@ fn build_node(
         _ => parent_arch_id,
     };
     let mut node = create_node(ctx, attr_name, co, parent_path, node_arch_id);
-    build_children(ctx, co, &mut node, node_arch_id);
+    build_children(ctx, co, &mut node, node_arch_id, group);
     node
 }
 
@@ -288,12 +290,21 @@ fn create_node(
     node.max = max;
 
     let name_code = object_node_id(co);
-    if let Some(nc) = &name_constraint {
+    // A `DV_CODED_TEXT` name constraint (RM common master03 §LOCATABLE — the
+    // name is `DV_TEXT` *or* `DV_CODED_TEXT`) fixes both the display value and
+    // the `defining_code` the composition builder must stamp; it takes
+    // precedence over the plain `name/value` and node-rubric name.
+    let coded_name = coded_name_constraint(co, ctx, arch_id, name_constraint.as_deref());
+    if let Some((value, coded)) = coded_name {
+        node.name = Some(value.clone());
+        node.localized_name = Some(value);
+        node.name_coded = Some(coded);
+    } else if let Some(nc) = &name_constraint {
         node.name = Some(nc.clone());
         node.localized_name = Some(nc.clone());
     } else if !name_code.is_empty() {
         node.name = ctx.text(arch_id, name_code, &ctx.default_language);
-        node.localized_name = node.name.clone();
+        node.localized_name.clone_from(&node.name);
         for lang in &ctx.languages {
             if let Some(r) = ctx.rubric(arch_id, lang, name_code) {
                 if let Some(t) = &r.text {
@@ -317,7 +328,13 @@ fn create_node(
     node
 }
 
-fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: &str) {
+fn build_children(
+    ctx: &Ctx,
+    co: &CObject,
+    node: &mut WebTemplateNode,
+    arch_id: &str,
+    group: Option<&str>,
+) {
     let is_data_value = node.rm_type.starts_with("DV_");
     let recurse_attrs = !is_data_value || node.rm_type.starts_with("DV_INTERVAL");
 
@@ -328,6 +345,11 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
             if attr_name == "name" {
                 continue; // Better SKIP_PATHS.
             }
+            // The openEHR terminology group a child's coded value binds to, fixed
+            // by (this node's RM type, the attribute) — used to resolve rubrics
+            // from the correct group (SPECPR-51 code collisions; see
+            // `inputs::openehr_group`).
+            let child_group = inputs::openehr_group(&node.rm_type, attr_name);
             for child_co in inputs::attribute_children(attr) {
                 if matches!(
                     child_co,
@@ -341,6 +363,7 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
                     child_co,
                     &node.aql_path,
                     arch_id,
+                    child_group,
                 ));
             }
         }
@@ -348,7 +371,7 @@ fn build_children(ctx: &Ctx, co: &CObject, node: &mut WebTemplateNode, arch_id: 
 
     if children.is_empty() && has_inputs(&node.rm_type) {
         let labels = ArchetypeLabels { ctx, arch_id };
-        let (built, ptypes) = inputs::build_inputs(&node.rm_type, co, &labels);
+        let (built, ptypes) = inputs::build_inputs(&node.rm_type, co, &labels, group);
         node.inputs = built;
         node.proportion_types = ptypes;
         capture_leaf_constraints(co, node);
@@ -683,6 +706,7 @@ fn copy_values(from: &WebTemplateNode, to: &mut WebTemplateNode) {
     }
     to.node_id.clone_from(&from.node_id);
     to.name_code.clone_from(&from.name_code);
+    to.name_coded.clone_from(&from.name_coded);
 
     let to_is_dv = to.rm_type.starts_with("DV_");
     if to.min.is_none()
@@ -1279,6 +1303,58 @@ fn name_constraint(co: &CObject) -> Option<String> {
         }
     }
     None
+}
+
+/// The `DV_CODED_TEXT` name constraint on `co`'s `name` attribute, when the
+/// template constrains the runtime `LOCATABLE.name` as a coded text: the display
+/// value plus the `defining_code` `(terminology, code)` the composition builder
+/// must stamp. Returns `None` for an unconstrained name or a plain `DV_TEXT`
+/// name constraint. Spec: RM common `master03-archetyped_package.adoc` §"The
+/// `LOCATABLE` class" (name is `DV_TEXT` or `DV_CODED_TEXT`); AOM 1.4
+/// `master04-constraint_model_package.adoc` (a `C_ATTRIBUTE` on `name`
+/// constrains the whole coded name — `defining_code` + optional `value`).
+///
+/// `explicit` is the fixed `name/value` `C_STRING` value (from
+/// [`name_constraint`]) when the template also narrows the coded name's text.
+/// The code is chosen as the `code_list` member whose archetype rubric equals
+/// `explicit` (so a name-differentiated sibling keeps its intended code), else
+/// the sole member of a single-code list, else the first candidate. The display
+/// value is `explicit` when present, else the chosen code's archetype rubric.
+fn coded_name_constraint(
+    co: &CObject,
+    ctx: &Ctx,
+    arch_id: &str,
+    explicit: Option<&str>,
+) -> Option<(String, CodedName)> {
+    let name_child =
+        inputs::attr_children(co, "name").find(|c| object_rm_type(c) == "DV_CODED_TEXT")?;
+    let code_phrase = inputs::attr_children(name_child, "defining_code").find_map(|c| match c {
+        CObject::CCodePhrase(cp) => Some(cp),
+        _ => None,
+    })?;
+    let (first, rest) = code_phrase.code_list.split_first()?;
+    let terminology = code_phrase
+        .terminology_id
+        .as_ref()
+        .map(|t| t.value.clone())
+        .filter(|t| !t.is_empty())
+        .unwrap_or_else(|| "local".to_owned());
+    // Prefer the candidate code whose archetype rubric equals the fixed name
+    // value, so a same-`archetype_node_id` sibling differentiated by a renamed
+    // `name/value` keeps a code consistent with that value.
+    let code = explicit
+        .and_then(|v| {
+            std::iter::once(first)
+                .chain(rest)
+                .find(|c| ctx.text(arch_id, c, &ctx.default_language).as_deref() == Some(v))
+                .cloned()
+        })
+        .unwrap_or_else(|| first.clone());
+    let value = explicit
+        .map(str::to_owned)
+        .or_else(|| ctx.text(arch_id, &code, &ctx.default_language))
+        .unwrap_or_else(|| code.clone());
+    Some((value, CodedName { terminology, code }))
 }
 
 fn build_path(
