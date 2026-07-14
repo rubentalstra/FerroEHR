@@ -245,7 +245,17 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       sensitive: the ECC ArchetypeValidation set + the openehr-flat
       validation suites gate it; hand-written validate.rs (spec-behaviour
       sibling), never the generated files.
-- [ ] **31. FLAT walker per-node overhead (owner, 2026-07-14 — the residual
+      *(Done 2026-07-14: `validation/plan.rs` — `NodeWalk` caches each node's
+      parsed relative constraint segments + child/slot sibling-name indices,
+      built once by `prepare_walk` in `build_web_template` (fallback build for
+      hand-made test nodes, one code path); passes 1+2 get an incremental
+      push/pop path buffer materialized only on a recorded violation. Measured
+      (IPS, 1,508 nodes, 50 iters, debug): pass-3 walk 4883.6 → ~2025 µs
+      (~2.4×, ~2.9 ms/commit); full validate_composition 16.2 → ~14.3 ms.
+      Passes 1+2 flat — their residual is `openehr_rm::validate` per-node work
+      (item 30's crate), reported honestly. Messages byte-identical:
+      openehr-flat 156, benchmark 107, ehrbase 506, clippy/fmt clean.)*
+- [x] **31. FLAT walker per-node overhead (owner, 2026-07-14 — the residual
       after item 30).** With the RM-invariant pass's per-node deserialization
       removed (item 30), the remaining validation CPU is the openehr-flat
       walker's own per-node checks and path-string formatting (per-node

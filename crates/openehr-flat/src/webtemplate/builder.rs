@@ -222,6 +222,10 @@ pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crat
     let mut tree = build_node(&ctx, None, &root_co, "", &root_arch_id, None);
     tree = compact(tree, 1).unwrap_or(tree_placeholder());
     super::id::build_ids(&mut tree);
+    // Parse the archetype-conformance walk's template-static constraint paths
+    // ONCE now, so the validation walk never re-parses them per instance-node
+    // visit (P20 item 31).
+    crate::validation::prepare_walk(&mut tree);
 
     Ok(WebTemplate {
         template_id,

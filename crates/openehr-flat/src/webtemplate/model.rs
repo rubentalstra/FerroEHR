@@ -245,6 +245,16 @@ pub struct WebTemplateNode {
     /// `DV_TEXT` name. Build-time only (`#[serde(skip)]`); see [`CodedName`].
     #[serde(skip)]
     pub name_coded: Option<CodedName>,
+
+    /// Pre-parsed archetype-conformance walk plan (P20 item 31): the constraint
+    /// paths and sibling groups this node's validation walk needs, parsed ONCE at
+    /// build time ([`crate::build_web_template`] calls `prepare_walk`) instead of
+    /// re-parsing every constraint path on every instance-node visit. A hand-built
+    /// node with no plan is handled by the walk building the plan on the fly.
+    /// Validation-only (`#[serde(skip)]`) — no openEHR spec governs the
+    /// WebTemplate model (our own design/extension).
+    #[serde(skip)]
+    pub(crate) walk: Option<Box<crate::validation::NodeWalk>>,
 }
 
 impl WebTemplateNode {
@@ -282,6 +292,7 @@ impl WebTemplateNode {
             alt_json_id: None,
             name_code: None,
             name_coded: None,
+            walk: None,
         }
     }
 
