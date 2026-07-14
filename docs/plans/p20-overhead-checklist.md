@@ -75,7 +75,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
 - [x] **8. TCP_NODELAY unset** on accepted sockets (`lib.rs:204-217`) — Nagle
       can add up to ~40 ms on small (204/minimal) responses. Set nodelay.
       **DONE ec1528bb7** (`ListenerExt::tap_io`).
-- [ ] **9. AQL parse/plan cache absent** — every ad-hoc query re-parses
+- [x] **9. AQL parse/plan cache absent** *(DONE 32347c781 — IR cached on the exact query text, params/paging/scope bind post-cache, terminology-expanding queries never cached so no TTL; F12: sea-query already binds everything, prepared statements reuse)* — every ad-hoc query re-parses
       (logos+chumsky), re-types, re-lowers to SQL
       (`service/query/execute.rs:81`). Fix: bounded moka `aql text → lowered
       SQL/IR` cache.
