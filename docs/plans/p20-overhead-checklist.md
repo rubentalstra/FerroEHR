@@ -245,6 +245,20 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       sensitive: the ECC ArchetypeValidation set + the openehr-flat
       validation suites gate it; hand-written validate.rs (spec-behaviour
       sibling), never the generated files.
+- [ ] **31. FLAT walker per-node overhead (owner, 2026-07-14 — the residual
+      after item 30).** With the RM-invariant pass's per-node deserialization
+      removed (item 30), the remaining validation CPU is the openehr-flat
+      walker's own per-node checks and path-string formatting (per-node
+      `format!` path assembly, repeated segment parsing, per-check
+      allocations). Rewrite the walk for allocation discipline: build paths
+      incrementally (push/pop a single buffer, not format-per-node),
+      pre-parse constraint paths once per WebTemplate (cacheable on the
+      already-cached WebTemplate), and hoist per-node invariant lookups.
+      Violation message text/paths stay byte-identical (the 151-test suite +
+      ECC ArchetypeValidation pin them); the item-15 measurement harness is
+      the before/after instrument. **Sequenced after item 28(b)/(c) lands —
+      its agent is writing in openehr-flat now, and F7's fresh sibling
+      routing lives in the same validation files.**
 - [ ] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
       rejected — publication-blocking).** All 130 errors at java L=1 were
       composition-create 422s; per-skeleton reproduction against a fresh
