@@ -197,7 +197,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
 - [ ] **19. The honest gate** — full ECC zero-drift run after the batch +
       the T5 fine re-ladder (both SUTs, populated valid workload) → README/
       COMPARISON refreshed with whatever the numbers say. No number is
-      claimed from this checklist without it.
+      claimed from this checklist without it. *(ECC half done 2026-07-14:
+      370·335·0, CORE+STANDARD PASS, committed pre-merge — 4cf79bbe0. The
+      pair half is the v4 run in flight.)*
+      **Publication mandate (owner, 2026-07-14, verbatim intent):** when the
+      pair lands, rewrite ALL the comparison-facing markdown — root README
+      (regenerate every SVG it embeds, incl. the new two-SUT knee/overlay
+      curves), COMPARISON.md, the benchmark KNEE/REPORT pages, the website
+      book pages — as an *appealing read*: the big measured numbers lead,
+      short proper statements around them, no walls of text smothering the
+      results. Both directions still published; fairness register stays.
 
 - [x] **25. Benchmark reporting: RPS + TPM (owner, 2026-07-14).** Not a
       rewrite — a reporting addition. (a) Dual-unit display: every published
