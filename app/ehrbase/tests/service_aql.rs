@@ -472,6 +472,88 @@ async fn aql_acceptance_set() {
     );
 }
 
+/// P20 overhead checklist item 14 — the whole-object result-assembly N+1 fix.
+///
+/// A dashboard-sized multi-row whole-COMPOSITION projection must reassemble
+/// **every** row's composition byte-identically to a direct
+/// `get_composition_latest`. The executor now collects one subtree anchor per
+/// whole-object cell across the whole page and loads them in a SINGLE statement
+/// (`storage::node_repo::read_subtrees_canonical`) instead of one follow-up
+/// SELECT per candidate row. No countable per-statement seam exists in the
+/// harness (no `pg_stat_statements`), so equivalence over a realistic page — plus
+/// the mixed scalar+whole-object columns and the duplicate-anchor projection
+/// below — is the oracle; correctness is byte-identical, the shape change is the
+/// batched loader documented on that function.
+#[tokio::test]
+async fn whole_object_projection_batches_over_a_multi_row_page() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_batch_wholeobj").await;
+    let svc = EhrbaseService::new(pool);
+    let ehr_id = create_ehr(&svc).await;
+
+    // A page of distinct compositions in one EHR — each its own versioned
+    // object, so the page projects N distinct subtree anchors in one batch.
+    let mut expected: BTreeMap<String, Value> = BTreeMap::new();
+    for i in 0..8 {
+        let name = format!("comp-{i}");
+        let ovid = create_comp(&svc, &ehr_id, &name, f64::from(i) + 10.0).await;
+        let vo_id = ovid.split("::").next().unwrap();
+        let mut body = svc
+            .get_composition_latest(
+                ehr_id.parse().expect("ehr uuid"),
+                vo_id.parse().expect("vo uuid"),
+            )
+            .await
+            .expect("get_composition_latest");
+        // The AQL projection reassembles the stored canonical JSON (no injected
+        // uid); drop the service-injected uid for the comparison.
+        body.as_object_mut().unwrap().remove("uid");
+        expected.insert(name, body);
+    }
+
+    // Mixed scalar (`c/name/value`) + whole-object (`c`) columns across the page:
+    // exercises the by-position fill of the batched whole-object cells.
+    let r = run_aql(
+        &svc,
+        "SELECT c/name/value, c FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), expected.len(), "all compositions returned");
+    for row in rows(&r) {
+        let name = row[0].as_str().expect("name cell");
+        let whole = &row[1];
+        assert_eq!(
+            whole,
+            expected
+                .get(name)
+                .unwrap_or_else(|| panic!("unexpected row {name}")),
+            "batched whole-object reassembly equals get_composition_latest for {name}"
+        );
+    }
+
+    // Two whole-object columns projecting the SAME object per row: the loader
+    // de-duplicates the anchor and fills both cells from the one reassembly.
+    let r = run_aql(
+        &svc,
+        "SELECT c, c FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&r).len(), expected.len(), "all compositions returned");
+    for row in rows(&r) {
+        assert_eq!(row[0], row[1], "duplicate whole-object columns are equal");
+        let name = row[0]["name"]["value"].as_str().expect("name in body");
+        assert_eq!(
+            &row[0],
+            expected
+                .get(name)
+                .unwrap_or_else(|| panic!("unexpected row {name}")),
+            "de-duplicated whole-object reassembly equals get_composition_latest for {name}"
+        );
+    }
+}
+
 /// Archetype-specialisation subsumption (W-3b T2): a query naming a **parent**
 /// archetype matches data created with any **specialisation child**, bounded to
 /// the same qualified RM entity and major version.

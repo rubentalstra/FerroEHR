@@ -7,6 +7,8 @@
 //! service layer (G-S2) and the latter was duplicated between the version read
 //! path and the dump/load export (G-S1) — both now funnel here.
 
+use std::collections::HashMap;
+
 use serde_json::Value;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
@@ -143,57 +145,129 @@ pub async fn read_version_canonical(
     reassemble(&rows)
 }
 
-/// Reassemble one structure object from a node **subtree** `[num, num_cap]` of a
-/// stored version, re-based so the anchor node (`num`) becomes the fragment root
-/// (the codec requires `num == 0` and an empty path at the root). Reads the lean
-/// [`ReadRow`] shape and reassembles through the shared codec — the whole-object
-/// cell reload the AQL engine needs for a CONTAINS-anchored node. An empty
-/// subtree reassembles to [`Value::Null`].
+/// One whole-object cell's subtree locator: the `[num, num_cap]` interval of a
+/// stored version. The AQL executor collects one per whole-object cell across a
+/// whole `RESULT_SET` page so [`read_subtrees_canonical`] can load them all in a
+/// single round trip. No openEHR spec governs the `node` store — our own
+/// decomposed design (`docs/architecture.md` §Storage).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SubtreeAnchor {
+    /// The versioned object id.
+    pub vo_id: Uuid,
+    /// The stored version number.
+    pub sys_version: i32,
+    /// The anchor node's pre-order number (subtree lower bound).
+    pub num: i32,
+    /// The anchor node's `num_cap` (subtree upper bound).
+    pub num_cap: i32,
+}
+
+/// Reassemble every distinct subtree in `anchors` in **one** statement,
+/// returning a map from anchor to its canonical JSON. Each anchor's subtree is
+/// re-based so the anchor node becomes the fragment root (the codec requires
+/// `num == 0` and an empty path at the root).
+///
+/// This closes the AQL result-assembly N+1 — a P-row whole-object projection
+/// page (e.g. `SELECT c FROM EHR e CONTAINS COMPOSITION c` on a dashboard)
+/// previously issued P separate subtree SELECTs, one per candidate row (P20
+/// overhead checklist item 14). The rows of every anchor's subtree are now
+/// fetched by a single `unnest`-array join over the anchors, tagged by anchor
+/// index, then reassembled per anchor in memory.
+///
+/// Anchors are de-duplicated: a page may project the same version more than once
+/// (repeated rows, or two whole-object columns), and each distinct subtree is
+/// reassembled exactly once. An anchor with no stored nodes (a logical delete —
+/// data Void, RM common master06 §Logical Deletion) is **absent** from the map;
+/// the caller treats a miss as [`Value::Null`], its empty-subtree result.
 ///
 /// # Errors
-/// Returns [`StorageError`] on a driver/reassembly failure.
-pub async fn read_subtree_canonical(
+/// Returns [`StorageError`] on a driver failure, or if any anchor's fetched rows
+/// do not reassemble into one tree.
+pub async fn read_subtrees_canonical(
     pool: &PgPool,
-    vo_id: Uuid,
-    sys_version: i32,
-    num: i32,
-    num_cap: i32,
-) -> Result<Value, StorageError> {
-    let rows = sqlx::query(
-        "SELECT num, num_cap, parent_num, path, data \
-         FROM node WHERE vo_id = $1 AND sys_version = $2 AND num BETWEEN $3 AND $4 ORDER BY num",
-    )
-    .bind(vo_id)
-    .bind(sys_version)
-    .bind(num)
-    .bind(num_cap)
-    .fetch_all(pool)
-    .await?;
-    if rows.is_empty() {
-        return Ok(Value::Null);
+    anchors: &[SubtreeAnchor],
+) -> Result<HashMap<SubtreeAnchor, Value>, StorageError> {
+    if anchors.is_empty() {
+        return Ok(HashMap::new());
     }
 
-    // The anchor is the lowest-num row (the queried `num`); its path is the
-    // prefix to strip so descendants re-root at it.
-    let base_path: String = rows
-        .first()
-        .and_then(|r| r.try_get::<String, _>("path").ok())
-        .unwrap_or_default();
-
-    let mut read_rows = Vec::with_capacity(rows.len());
-    for r in &rows {
-        let path: String = r.try_get("path")?;
-        let rebased = path.strip_prefix(&base_path).unwrap_or(&path).to_owned();
-        read_rows.push(ReadRow {
-            num: r.try_get::<i32, _>("num")? - num,
-            num_cap: r.try_get::<i32, _>("num_cap")? - num,
-            // parent_num is not used by `reassemble`; re-root it.
-            parent_num: 0,
-            path: rebased,
-            data: r.try_get("data")?,
+    // De-duplicate, preserving one entry per distinct anchor; the position in
+    // `distinct` is the `idx` tag bound into the query and joined back below.
+    let mut distinct: Vec<SubtreeAnchor> = Vec::new();
+    let mut seen: HashMap<SubtreeAnchor, usize> = HashMap::new();
+    for anchor in anchors {
+        seen.entry(*anchor).or_insert_with(|| {
+            distinct.push(*anchor);
+            distinct.len() - 1
         });
     }
-    reassemble(&read_rows)
+
+    let idx: Vec<i32> = (0..distinct.len())
+        .map(|i| i32::try_from(i).unwrap_or(i32::MAX))
+        .collect();
+    let vo_ids: Vec<Uuid> = distinct.iter().map(|a| a.vo_id).collect();
+    let sys_versions: Vec<i32> = distinct.iter().map(|a| a.sys_version).collect();
+    let anums: Vec<i32> = distinct.iter().map(|a| a.num).collect();
+    let acaps: Vec<i32> = distinct.iter().map(|a| a.num_cap).collect();
+
+    // One interval join: each anchor row contributes its subtree's node rows,
+    // tagged by `idx`. `num BETWEEN anum AND acap` is the nested-set containment
+    // predicate the single-row read also uses, now driven by the anchor set.
+    let db_rows = sqlx::query(
+        "SELECT a.idx, n.num, n.path, n.data \
+         FROM unnest($1::int[], $2::uuid[], $3::int[], $4::int[], $5::int[]) \
+              AS a(idx, vo_id, sys_version, anum, acap) \
+         JOIN node n \
+           ON n.vo_id = a.vo_id AND n.sys_version = a.sys_version \
+              AND n.num BETWEEN a.anum AND a.acap",
+    )
+    .bind(&idx)
+    .bind(&vo_ids)
+    .bind(&sys_versions)
+    .bind(&anums)
+    .bind(&acaps)
+    .fetch_all(pool)
+    .await?;
+
+    // Bucket the returned node rows by anchor index.
+    let mut grouped: HashMap<i32, Vec<(i32, String, Value)>> = HashMap::new();
+    for row in db_rows {
+        let group_idx: i32 = row.try_get("idx")?;
+        grouped.entry(group_idx).or_default().push((
+            row.try_get("num")?,
+            row.try_get("path")?,
+            row.try_get("data")?,
+        ));
+    }
+
+    let mut out: HashMap<SubtreeAnchor, Value> = HashMap::with_capacity(distinct.len());
+    for (group_idx, mut nodes) in grouped {
+        // The anchor is the lowest-`num` row (the queried `num`); its path is the
+        // prefix to strip so descendants re-root at it (the anchor-relative
+        // `num`/`path` rebasing the reassembly codec requires).
+        nodes.sort_by_key(|(num, _, _)| *num);
+        let anchor = distinct[usize::try_from(group_idx).unwrap_or_default()];
+        let base_path = nodes
+            .first()
+            .map(|(_, path, _)| path.clone())
+            .unwrap_or_default();
+        let read_rows: Vec<ReadRow> = nodes
+            .into_iter()
+            .map(|(num, path, data)| {
+                let rebased = path.strip_prefix(&base_path).unwrap_or(&path).to_owned();
+                ReadRow {
+                    num: num - anchor.num,
+                    // num_cap/parent_num are unused by `reassemble`; re-root them.
+                    num_cap: 0,
+                    parent_num: 0,
+                    path: rebased,
+                    data,
+                }
+            })
+            .collect();
+        out.insert(anchor, reassemble(&read_rows)?);
+    }
+    Ok(out)
 }
 
 /// The root node fragment (`num = 0`) of the FIRST stored content version of
