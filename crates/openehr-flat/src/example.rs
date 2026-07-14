@@ -200,6 +200,14 @@ fn walk(
             DetailLevel::Medium | DetailLevel::Complete => true,
         };
         if include {
+            // An OPTIONAL node whose coded-name constraint is display/rubric-
+            // incoherent (see `CodedName::incoherent`) is omitted: no instance
+            // form of it is accepted by every conforming consumer, and an
+            // example exists to be committable everywhere. A MANDATORY one is
+            // still emitted in our spec-faithful form.
+            if is_optional(child) && child.name_coded.as_ref().is_some_and(|cn| cn.incoherent) {
+                continue;
+            }
             let ci = card_idx(child);
             let card_full = |counts: &[usize]| {
                 ci.is_some_and(|i| {
@@ -575,13 +583,18 @@ fn example_temporal(node: &WebTemplateNode, rm: &str) -> String {
 /// the validator) and the ISO duration range: the range minimum when one is
 /// declared, else one unit of the first allowed field, else `PT1H`.
 fn example_duration(node: &WebTemplateNode) -> String {
-    if let Some(min) = node
-        .duration_range
-        .as_ref()
-        .and_then(|r| r.min.as_ref())
-        .and_then(Value::as_str)
+    if let Some(range) = node.duration_range.as_ref()
+        && let Some(min) = range.min.as_ref().and_then(Value::as_str)
     {
-        return min.to_owned();
+        // An INCLUSIVE minimum is itself a valid pick; an exclusive one
+        // (`> PT0S` — BASE Interval lower_included = false) falls through to
+        // the one-unit-of-first-allowed-field pick, which is strictly above
+        // a zero minimum (the only exclusive-minimum shape in the corpus;
+        // a non-zero exclusive minimum would need min+1 — extend when one
+        // appears rather than guessing).
+        if range.min_op.as_deref() != Some(">") {
+            return min.to_owned();
+        }
     }
     let iso = [
         ("year", "P1Y"),

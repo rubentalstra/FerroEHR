@@ -818,10 +818,19 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
             range.upper.clone()
         };
         if min.is_some() || max.is_some() {
+            // Inclusivity comes from the AOM interval flags (BASE
+            // foundation_types Interval: lower_included/upper_included) —
+            // an exclusive bound (`> PT0S`) must not degrade to `>=`.
+            let min_strict = range.lower_included == Some(false);
+            let max_strict = range.upper_included == Some(false);
             node.duration_range = Some(super::model::WebTemplateRange {
-                min_op: min.as_ref().map(|_| ">=".to_owned()),
+                min_op: min
+                    .as_ref()
+                    .map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
                 min: min.map(serde_json::Value::String),
-                max_op: max.as_ref().map(|_| "<=".to_owned()),
+                max_op: max
+                    .as_ref()
+                    .map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
                 max: max.map(serde_json::Value::String),
             });
         }
@@ -1342,19 +1351,29 @@ fn coded_name_constraint(
     // Prefer the candidate code whose archetype rubric equals the fixed name
     // value, so a same-`archetype_node_id` sibling differentiated by a renamed
     // `name/value` keeps a code consistent with that value.
-    let code = explicit
-        .and_then(|v| {
-            std::iter::once(first)
-                .chain(rest)
-                .find(|c| ctx.text(arch_id, c, &ctx.default_language).as_deref() == Some(v))
-                .cloned()
-        })
-        .unwrap_or_else(|| first.clone());
+    let matched = explicit.and_then(|v| {
+        std::iter::once(first)
+            .chain(rest)
+            .find(|c| ctx.text(arch_id, c, &ctx.default_language).as_deref() == Some(v))
+            .cloned()
+    });
+    // A fixed value with NO rubric-matching candidate (and more than one
+    // candidate to choose from) is display/rubric-incoherent — see
+    // [`CodedName::incoherent`].
+    let incoherent = explicit.is_some() && matched.is_none() && !rest.is_empty();
+    let code = matched.unwrap_or_else(|| first.clone());
     let value = explicit
         .map(str::to_owned)
         .or_else(|| ctx.text(arch_id, &code, &ctx.default_language))
         .unwrap_or_else(|| code.clone());
-    Some((value, CodedName { terminology, code }))
+    Some((
+        value,
+        CodedName {
+            terminology,
+            code,
+            incoherent,
+        },
+    ))
 }
 
 fn build_path(

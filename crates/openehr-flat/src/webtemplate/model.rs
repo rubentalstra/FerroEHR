@@ -94,6 +94,15 @@ pub struct CodedName {
     pub terminology: String,
     /// The `defining_code` code string (an `atNNNN` / openEHR code).
     pub code: String,
+    /// Whether the constraint is display/rubric-**incoherent**: the template
+    /// fixes a `name/value` that equals NO listed code's archetype rubric, so
+    /// any conforming instance pairs a display value with a code whose rubric
+    /// says something else. Spec-legal on our reading (a name constraint may
+    /// rename; RM common master03 §LOCATABLE), but the reference
+    /// implementation enforces value ≡ local-code rubric and rejects every
+    /// form of such a node (verified empirically) — the example generator
+    /// omits OPTIONAL incoherent nodes so a shared payload exists.
+    pub incoherent: bool,
 }
 
 /// One node of the web-template tree.
