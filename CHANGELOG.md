@@ -43,6 +43,14 @@ workflow refuses a tag that has no matching section here.
   also evicts it from that cache, so a commit racing a delete gets the
   correct `422` ("template not known") instead of a foreign-key `500`.
 
+### Changed
+
+- Composition commits make fewer database round trips: the audit and
+  contribution rows are written in one statement, and the create-path EHR
+  existence + modifiability gates are one read instead of two. Error
+  behaviour is unchanged (a missing EHR is still `404` before a
+  non-modifiable `409`).
+
 ### Added
 
 - Storage migration `0008`: a promoted `context_start timestamptz` column on

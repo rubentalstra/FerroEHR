@@ -87,14 +87,21 @@
           consulted `template_store` BEFORE the WebTemplate cache — 10,206
           redundant reads/120 s (the #2 statement). Now cache-first; template
           delete evicts (422 instead of an FK 500 for a racing commit).
-  - [ ] T3b. Round-trip collapse from the T1 profile's remaining
+  - [x] T3b. Round-trip collapse from the T1 profile's remaining
           sequence (per commit: BEGIN, EHR EXISTS, advisory lock, 2×
           version-tree reads (~19k+20k calls/window), audit INSERT,
           contribution INSERT, vo_version INSERT, node INSERT,
           event_outbox INSERT): merge the audit+contribution+vo_version
           round trips (CTE pipeline / one multi-statement), fold the EXISTS
           into an existing read. Versioning semantics (RM common master06)
-          must be byte-identical — orchestrator-reviewed.
+          must be byte-identical — orchestrator-reviewed. *(Done
+          2026-07-14: audit+contribution merged into one CTE; the create-path
+          existence+is_modifiable gates folded into one read (404-before-409
+          preserved, new error-surface test). Net per create: 3→2 pool
+          acquisitions, 5→4 in-tx statements. vo_version deliberately NOT
+          merged — the signature is computed over the server-returned
+          time_committed (master06); version-tree reads left (also serve the
+          read path). 492/492 incl. the versioning oracle.)*
 - [ ] T4. **PG tuning as config parity** (both SUTs identically, documented
       in the parity table): `shared_buffers`, `max_wal_size`, checkpoint
       spacing; `synchronous_commit` stays ON (clinical durability — never
