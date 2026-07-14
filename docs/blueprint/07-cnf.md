@@ -122,7 +122,7 @@ what a platform must demonstrably pass and how the demonstration is produced.
 ## Current implementation state (verified, not assumed)
 
 > **W-10 refresh (2026-07-13).** The instrument was **rethought from the spec
-> up and rewritten** (`docs/plans/w10-conformance-redesign.md`): spine-first
+> up and rewritten** (W-10, PR #82 — close recorded in `docs/PROGRESS.md`): spine-first
 > case derivation from the schedule registers (`docs/design/conformance/`),
 > multi-SUT from day one (ehrbase-rs compose · upstream EHRbase Java ·
 > BYO-endpoint by URL), a spec-edition ladder (`auto` starts at the highest
