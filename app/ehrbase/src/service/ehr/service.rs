@@ -86,6 +86,11 @@ impl EhrbaseService {
         self.sync_ehr_subject(&mut tx, ehr_id, &status).await?;
         tx.commit().await?;
 
+        // The EHR is created with the settings-less default EHR_ACCESS
+        // (default-open); seed the access cache so the first EHR-scoped request
+        // is a hit, not a DB miss (the access gate runs on every such request).
+        self.prewarm_ehr_access_open(ehr_id).await;
+
         self.ehr_summary(ehr_id).await
     }
 

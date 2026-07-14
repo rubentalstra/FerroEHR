@@ -6,10 +6,18 @@
 //!
 //! Loading: defaults ← optional TOML file (`EHRBASE_EVENTS_CONFIG`) ←
 //! `EHRBASE_EVENTS_`-prefixed environment (nested keys use `__`). Publishing is
-//! **off by default**: with [`EventsConfig::enabled`] `false` the
-//! binary never spawns the publisher and the outbox simply accumulates (and is
-//! not drained) — the commit path always writes the rows regardless, so turning
-//! eventing on later loses nothing already committed.
+//! **off by default**: with [`EventsConfig::enabled`] `false` the binary never
+//! spawns the publisher.
+//!
+//! The commit path only writes `event_outbox` rows when an outbox consumer is
+//! configured on (this publisher OR the FHIR outbound emitter —
+//! `EhrbaseService::with_outbox_enabled`, wired from
+//! `events.enabled || fhir_outbound.enabled` in `main.rs`); with every consumer
+//! off the per-commit INSERT is pure overhead and is skipped. Consequence: the
+//! outbox records commits made **while a consumer is enabled** (at-least-once,
+//! even with zero bound subscribers — the gate is the boot-time config, not the
+//! current subscriber set); commits made while eventing was off are not
+//! back-filled when it is later enabled.
 
 use figment::Figment;
 use figment::providers::{Env, Format, Serialized, Toml};

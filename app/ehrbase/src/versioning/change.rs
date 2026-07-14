@@ -641,14 +641,16 @@ pub(crate) async fn create(
         },
     )
     .await?;
-    crate::storage::version_repo::write_outbox(
-        tx,
-        contribution_id,
-        ehr_id,
-        time_committed,
-        vec![committed.envelope_entry()],
-    )
-    .await?;
+    if ctx.outbox_enabled {
+        crate::storage::version_repo::write_outbox(
+            tx,
+            contribution_id,
+            ehr_id,
+            time_committed,
+            vec![committed.envelope_entry()],
+        )
+        .await?;
+    }
     Ok(committed)
 }
 
@@ -688,14 +690,16 @@ pub(crate) async fn update(
         },
     )
     .await?;
-    crate::storage::version_repo::write_outbox(
-        tx,
-        contribution_id,
-        ehr_id,
-        time_committed,
-        vec![committed.envelope_entry()],
-    )
-    .await?;
+    if ctx.outbox_enabled {
+        crate::storage::version_repo::write_outbox(
+            tx,
+            contribution_id,
+            ehr_id,
+            time_committed,
+            vec![committed.envelope_entry()],
+        )
+        .await?;
+    }
     Ok(committed)
 }
 
@@ -728,14 +732,16 @@ pub(crate) async fn delete(
         },
     )
     .await?;
-    crate::storage::version_repo::write_outbox(
-        tx,
-        contribution_id,
-        ehr_id,
-        time_committed,
-        vec![committed.envelope_entry()],
-    )
-    .await?;
+    if ctx.outbox_enabled {
+        crate::storage::version_repo::write_outbox(
+            tx,
+            contribution_id,
+            ehr_id,
+            time_committed,
+            vec![committed.envelope_entry()],
+        )
+        .await?;
+    }
     Ok(committed)
 }
 
@@ -812,15 +818,19 @@ pub(crate) async fn commit_contribution(
             .await?,
         );
     }
-    // One PHI-free outbox event for the whole CONTRIBUTION (same transaction).
-    let versions = committed.iter().map(Committed::envelope_entry).collect();
-    crate::storage::version_repo::write_outbox(
-        tx,
-        contribution_id,
-        ehr_id,
-        contribution_time,
-        versions,
-    )
-    .await?;
+    // One PHI-free outbox event for the whole CONTRIBUTION (same transaction),
+    // skipped entirely — including the envelope collection — when no eventing
+    // consumer is configured (our own extension; no openEHR spec governs it).
+    if ctx.outbox_enabled {
+        let versions = committed.iter().map(Committed::envelope_entry).collect();
+        crate::storage::version_repo::write_outbox(
+            tx,
+            contribution_id,
+            ehr_id,
+            contribution_time,
+            versions,
+        )
+        .await?;
+    }
     Ok((contribution_id, committed))
 }

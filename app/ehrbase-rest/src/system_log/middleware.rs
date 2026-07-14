@@ -32,10 +32,16 @@
 //!
 //! # Authentication records
 //!
-//! Successful authentications additionally emit a login ("Application Activity",
-//! DICOM `EventID` 110100) record unless the deployment suppresses them; auth
-//! rejections (401/403) always emit a failure record (401 → caller `UNKNOWN`) —
-//! security surveillance of failed access is the point of ATNA.
+//! A genuine authentication additionally emits a login ("Application Activity",
+//! DICOM `EventID` 110100) record unless the deployment suppresses them
+//! (`suppress_login_events`, default on). "Genuine" is a real authentication
+//! *event*, not every authenticated request: the auth layer marks it
+//! ([`FreshAuthentication`]) only on a Basic verified-credential cache miss —
+//! where the credentials were actually checked. A cache hit continues an
+//! established session, and a Bearer request authenticated out of band at the
+//! OIDC provider, so neither mints a per-request login record. Auth rejections
+//! (401/403) always emit a failure record (401 → caller `UNKNOWN`) — security
+//! surveillance of failed access is the point of ATNA.
 //!
 //! Emission is non-blocking: `SystemLog::emit` is a `try_send` onto a bounded
 //! queue, so the request path never blocks on auditing. Under `fail_mode=closed`
@@ -52,7 +58,7 @@ use http::StatusCode;
 
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
 
-use crate::extensions::access::authn::Principal;
+use crate::extensions::access::authn::{FreshAuthentication, Principal};
 use crate::state::AppState;
 use crate::system_log::classify::audit_for;
 
@@ -103,6 +109,10 @@ pub async fn middleware<S: Platform>(
     let op = resp.extensions().get::<AuditOpId>().copied();
     let principal = resp.extensions().get::<Principal>().cloned();
     let object = resp.extensions().get::<AuditObject>().cloned();
+    // Set by the auth layer only when THIS request performed a genuine
+    // authentication (a Basic verified-cache miss) — the hook for the login
+    // record, which marks authentication events, not individual requests.
+    let fresh_auth = resp.extensions().get::<FreshAuthentication>().is_some();
 
     let mut op_rejected = false;
 
@@ -127,8 +137,13 @@ pub async fn middleware<S: Platform>(
     }
 
     // 2) The authentication record. Rejections (401 unauthenticated, 403
-    //    forbidden) are ALWAYS audited; the successful-login "Application
-    //    Activity" record is gated by `suppress_login_events`.
+    //    forbidden) are ALWAYS audited. The successful-login "Application
+    //    Activity" record fires only on a GENUINE authentication event
+    //    (`fresh_auth` — a Basic verified-cache miss where credentials were
+    //    actually checked), not on every authenticated request: an ATNA login
+    //    record marks an authentication, and a cache hit / Bearer request
+    //    continues an event that already occurred. It is additionally gated by
+    //    `suppress_login_events` (default on).
     if status == 401 || status == 403 {
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
@@ -138,7 +153,7 @@ pub async fn middleware<S: Platform>(
         // 401 → no principal (caller UNKNOWN); 403 → the authenticated caller.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
         let _ = state.backend().emit(event);
-    } else if principal.is_some() && !state.backend().suppress_login_events() {
+    } else if fresh_auth && !state.backend().suppress_login_events() {
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
             ObjectClass::ApplicationActivity,
