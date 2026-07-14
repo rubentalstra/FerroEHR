@@ -235,16 +235,26 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       archie's `size > 0` quirk); spec-valid on our side, but examples now
       carry a plausible non-zero size anyway (realism + sidesteps the
       quirk). DONE.
-      (b) **name typed `DV_CODED_TEXT` emitted as `DV_TEXT`**
-      (eprescription: `…medication_course_summary… items[at0002 and
-      name/value='Date discontinued']/name`) — the template constrains that
-      node's NAME as a coded text; our from_flat/example name stamping emits
-      a plain DV_TEXT. Likely OURS — fix the name-constraint typing in
-      openehr-flat (spec: AOM 1.4 name constraints), regenerate the pack.
-      (c) **gp-data-set: `data[at0001]/items[at0002] 0 occurrences, must be
-      1..1`** under the 'Explicit exclusion' EVALUATION — our generator
-      omitted a mandatory child our own validator did not flag; adjudicate
-      which side reads the OPT correctly, fix accordingly.
+      (b) **coded names on name-differentiated siblings — OURS** (the full
+      upstream logs sharpen this): eprescription and gp-data-set both
+      differentiate `at0002` sibling ELEMENTs by NAME ('Date written' vs
+      'Date discontinued'; 'Global exclusion of adverse reactions' vs
+      'Global exclusion statement') with the name constrained as
+      `DV_CODED_TEXT`; our generator/from_flat stamps plain `DV_TEXT`
+      names, so archie cannot route the sibling at all ("RmObject … not in
+      template") and the 'missing 1..1 occurrence' is the SAME defect (the
+      unrouted sibling). Fix the name-constraint typing (emit the coded
+      name with its code) in openehr-flat — the generator-side twin of F7's
+      validator fix. Spec: AOM 1.4 name constraints (`master04`), RM common
+      master03 §LOCATABLE.
+      (c) **ISM state rubric — OURS**: gp-data-set immunisation ACTION's
+      `ism_transition/current_state` carries value 'complete' where the
+      openEHR terminology rubric for the state is 'completed' — adjudicate
+      against the vendored TERM 3.1.0 assets and fix the pairing.
+      Context for publication: upstream is archie/RM 1.1.0-era (the
+      VERSIONS.md divergence note) — vintage-quirk rejections like (a) are
+      framed with that version context in the fairness register, never as
+      bare defects.
       After (b)/(c): regenerate the pack, re-verify all six commit on BOTH
       SUTs, re-run the java ladder for the honest pair.
 
