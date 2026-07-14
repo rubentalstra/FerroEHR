@@ -205,6 +205,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       (25b — all-steps-success completion rule, warmup by the last step's
       planned send, wins-ledger row).**
 
+- [ ] **26. Knee ladder: geometric base + auto-bisection (owner,
+      2026-07-14).** The default ladder becomes geometric from L=1
+      (1,2,4,8,16,32,64,128) so EVERY SUT traces a real curve on the overlay
+      chart (upstream produced a single breached point — no line), and the
+      knee runner auto-bisects after the first breach (midpoints between the
+      last sustained and the breached step, up to N refinement steps) so the
+      knee is precise regardless of where it falls. Script default changes
+      only after the in-flight run completes (never edit a running shell
+      script).
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
