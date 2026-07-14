@@ -225,11 +225,22 @@ async fn commit_emits_reverse_mapped_fhir_resource() {
         "subject reconstructed with strip_prefix re-applied"
     );
 
-    // The emitter advanced its cursor past the processed rows.
-    let cursor: i64 = sqlx::query_scalar("SELECT last_seq FROM ehr.fhir_outbound_cursor")
-        .fetch_one(&pool)
-        .await
-        .expect("cursor read");
+    // The emitter advances its cursor AFTER a successful publish (at-least-once
+    // ordering: a crash in between redelivers, never loses). Delivery of the
+    // message therefore precedes the cursor write — poll with a bounded
+    // deadline instead of reading immediately (the instrumented coverage build
+    // on shared CI runners widened that gap enough to flake a one-shot read).
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+    let cursor: i64 = loop {
+        let cursor: i64 = sqlx::query_scalar("SELECT last_seq FROM ehr.fhir_outbound_cursor")
+            .fetch_one(&pool)
+            .await
+            .expect("cursor read");
+        if cursor > 0 || tokio::time::Instant::now() >= deadline {
+            break cursor;
+        }
+        tokio::time::sleep(Duration::from_millis(200)).await;
+    };
     assert!(cursor > 0, "cursor advanced past the emitted rows");
 
     handle.shutdown(Duration::from_secs(3)).await;
