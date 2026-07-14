@@ -1,5 +1,5 @@
 //! RM-level validation glue (hand-written spec behaviour; preserved
-//! across `openehr-codegen` regeneration — it is not a `// @generated` file, so
+//! across `openehr-codegen` regeneration — the generator does not emit or overwrite it, so
 //! the generator's `declare_hand_written_modules` keeps it and `lib.rs`
 //! auto-declares `pub mod validate;`).
 //!
@@ -340,31 +340,104 @@ pub(crate) fn is_valid_iso_duration(s: &str) -> bool {
 
 // ── the _type → Validate dispatcher ──────────────────────────────────────────
 
+/// Record a typed-deserialize failure as a validation violation.
+///
+/// A node that does not deserialize into its declared concrete RM type is NOT
+/// "caught by the codec/schema layer" on the commit path: the node codec stores
+/// the raw canonical-JSON fragment verbatim (no openEHR spec governs the storage
+/// mechanics — our own storage design) and the ITS-JSON schema is not enforced
+/// at commit, so a missing mandatory attribute (e.g. `COMPOSITION.composer [1]`)
+/// or a wrong nested type (e.g. an `EHR_STATUS.subject` that is not `PARTY_SELF`)
+/// reaches here and nowhere else. Per ITS-REST `422_COMPOSITION.yaml` ("converts,
+/// but does not validate") this is a validation failure — surface it. (The valid
+/// corpus deserializes cleanly at every node, so this never rejects a valid
+/// input; if it ever did, that would expose a codegen field-optionality bug to
+/// fix in the emitter — see docs/plans/s2-phase-04-cnf-hardening.md.)
+fn record_type_mismatch(value: &Value, err: &serde_json::Error, out: &mut Vec<InvariantViolation>) {
+    let ty = value
+        .get("_type")
+        .and_then(Value::as_str)
+        .unwrap_or("<unknown>");
+    out.push(InvariantViolation::here(format!(
+        "does not conform to RM type {ty}: {err}"
+    )));
+}
+
 fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantViolation>) {
-    match serde_json::from_value::<T>(value.clone()) {
+    match T::deserialize(value) {
         Ok(v) => v.validate_invariants(out),
-        // A node that does not deserialize into its declared concrete RM type is
-        // NOT "caught by the codec/schema layer" on the commit path: the node
-        // codec stores the raw canonical-JSON fragment verbatim (no openEHR spec
-        // governs the storage mechanics — our own storage design) and the ITS-JSON
-        // schema is not enforced at commit, so a missing mandatory attribute
-        // (e.g. `COMPOSITION.composer [1]`) or a wrong nested type (e.g. an
-        // `EHR_STATUS.subject` that is not `PARTY_SELF`) reaches here and nowhere
-        // else. Per ITS-REST `422_COMPOSITION.yaml` ("converts, but does not
-        // validate") this is a validation failure — surface it. (The valid corpus
-        // deserializes cleanly at every node, so this never rejects a valid input;
-        // if it ever did, that would expose a codegen field-optionality bug to fix
-        // in the emitter — see docs/plans/s2-phase-04-cnf-hardening.md.)
-        Err(e) => {
-            let ty = value
-                .get("_type")
-                .and_then(Value::as_str)
-                .unwrap_or("<unknown>");
-            out.push(InvariantViolation::here(format!(
-                "does not conform to RM type {ty}: {e}"
-            )));
-        }
+        Err(e) => record_type_mismatch(value, &e, out),
     }
+}
+
+/// Like [`run`], but deserialize `T` from a copy of `value` whose nested
+/// RM-node child collections have been emptied ([`prune_child_nodes`]).
+///
+/// PERF(port): the RM-invariant pass ([`validate_rm_value`]) is called once per
+/// `_type` node while the composition validator recurses the live JSON tree, so
+/// deserializing each node's *whole* subtree (as `T::deserialize` does for a
+/// concrete container type) re-parses every descendant once per ancestor —
+/// O(Σ subtree sizes) for overlapping subtrees (measured ~47 ms of pure CPU for
+/// a populated International Patient Summary, `crates/openehr-flat/src/validation/
+/// tests.rs::measure_ips_validation_walk_cost`). This shallow variant is used for
+/// the LOCATABLE structural containers whose own class invariants inspect only
+/// scalar / single-object attributes (never a child collection): with the child
+/// arrays emptied, each node deserializes only its own immediate shape, so the
+/// pass is O(total nodes) instead of O(Σ subtree sizes). The node's own
+/// single-valued attributes are KEPT (only collections are emptied), so its
+/// mandatory-attribute presence and single-object type conformance are still
+/// enforced on deserialize — the missing-mandatory-attribute rejection
+/// (`422_COMPOSITION`, e.g. a dropped `COMPOSITION.composer [1]`) and every class
+/// invariant result are unchanged (the valid corpus + the openehr-flat
+/// validation suite verify this). Types whose own invariants DO read a child
+/// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
+/// deserialize.
+///
+/// PORT NOTE: emptying a child *collection* here means a malformation *inside*
+/// an array element is no longer reported at this ancestor's path — it is
+/// reported at that element's own recursion step instead (each collection member
+/// is a separate `_type` node the composition validator visits and dispatches).
+/// For array-element types the dispatcher does not cover (embedded non-LOCATABLE
+/// helpers such as `LINK` / `PARTICIPATION`, which carry no class invariant), a
+/// structural malformation that the full ancestor deserialize used to surface is
+/// no longer surfaced. This narrows only the redundant ancestor-cascade reporting
+/// on already-invalid input; the valid path and every test-pinned rejection are
+/// byte-identical, and the ITS-JSON schema gate remains the exhaustive
+/// structural oracle where one is required (this pass is the RM class-invariant
+/// check, not a schema validator — `422_COMPOSITION.yaml`).
+fn run_shallow<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantViolation>) {
+    match T::deserialize(&prune_child_nodes(value)) {
+        Ok(v) => v.validate_invariants(out),
+        Err(e) => record_type_mismatch(value, &e, out),
+    }
+}
+
+/// A shallow copy of an RM node with every nested RM-node **collection** emptied,
+/// recursing through single-valued nested nodes (which are kept, so the node's
+/// own mandatory single attributes stay enforced on deserialize). Scalar arrays
+/// (e.g. `DV_MULTIMEDIA.data` octets) are kept as-is. See [`run_shallow`] for why
+/// this is sound for the structural container types.
+fn prune_child_nodes(value: &Value) -> Value {
+    let Value::Object(map) = value else {
+        return value.clone();
+    };
+    let mut out = serde_json::Map::with_capacity(map.len());
+    for (key, child) in map {
+        let pruned = match child {
+            // An array of RM nodes: the children are recursed into (and fully
+            // validated) individually by the composition validator, so this
+            // node's own invariants never need them — drop them.
+            Value::Array(items) if items.iter().any(Value::is_object) => Value::Array(Vec::new()),
+            // A single nested node: keep it (its presence is a structural
+            // constraint this node's deserialize must still enforce), but recurse
+            // to empty ITS child collections.
+            Value::Object(_) => prune_child_nodes(child),
+            // Scalars and scalar arrays: keep verbatim.
+            other => other.clone(),
+        };
+        out.insert(key.clone(), pruned);
+    }
+    Value::Object(out)
 }
 
 /// Run the RM class invariants for a single canonical-JSON node, dispatching on
@@ -476,12 +549,15 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
                 run::<DvInterval<Value>>(value, out);
             }
         }
-        // data_structures
+        // data_structures. HISTORY and ITEM_TABLE keep the full deserialize —
+        // their own invariants read a child collection (`events` / `rows`); the
+        // rest are structural containers with scalar-only invariants, so they
+        // deserialize shallowly (see `run_shallow`).
         "ELEMENT" => run::<Element>(value, out),
-        "CLUSTER" => run::<Cluster>(value, out),
+        "CLUSTER" => run_shallow::<Cluster>(value, out),
         "HISTORY" => run::<History<Value>>(value, out),
-        "POINT_EVENT" => run::<PointEvent<Value>>(value, out),
-        "INTERVAL_EVENT" => run::<IntervalEvent<Value>>(value, out),
+        "POINT_EVENT" => run_shallow::<PointEvent<Value>>(value, out),
+        "INTERVAL_EVENT" => run_shallow::<IntervalEvent<Value>>(value, out),
         "ITEM_TABLE" => run::<ItemTable>(value, out),
         // common
         "PARTY_IDENTIFIED" => run::<PartyIdentifiedData>(value, out),
@@ -490,21 +566,22 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         "ATTESTATION" => run::<Attestation>(value, out),
         "FEEDER_AUDIT_DETAILS" => run::<FeederAuditDetails>(value, out),
         "ARCHETYPED" => run::<Archetyped>(value, out),
-        // ehr / composition
-        "COMPOSITION" => run::<Composition>(value, out),
-        "EVENT_CONTEXT" => run::<EventContext>(value, out),
-        "ACTIVITY" => run::<Activity>(value, out),
+        // ehr / composition — structural containers (scalar-only invariants),
+        // deserialized shallowly (see `run_shallow`). GENERIC_ENTRY's `data:
+        // ITEM [1..1]` is a single-valued node, so `run_shallow` keeps it and
+        // still enforces its presence.
+        "COMPOSITION" => run_shallow::<Composition>(value, out),
+        "EVENT_CONTEXT" => run_shallow::<EventContext>(value, out),
+        "ACTIVITY" => run_shallow::<Activity>(value, out),
         "INSTRUCTION_DETAILS" => run::<InstructionDetails>(value, out),
-        "OBSERVATION" => run::<Observation>(value, out),
-        "INSTRUCTION" => run::<Instruction>(value, out),
-        "ACTION" => run::<Action>(value, out),
-        "EVALUATION" => run::<Evaluation>(value, out),
-        "ADMIN_ENTRY" => run::<AdminEntry>(value, out),
-        // Integration package (RM integration master02): GENERIC_ENTRY carries
-        // only `data: ITEM` (1..1) — the typed deserialize enforces it.
-        "GENERIC_ENTRY" => run::<GenericEntry>(value, out),
-        "SECTION" => run::<Section>(value, out),
-        "FOLDER" => run::<Folder>(value, out),
+        "OBSERVATION" => run_shallow::<Observation>(value, out),
+        "INSTRUCTION" => run_shallow::<Instruction>(value, out),
+        "ACTION" => run_shallow::<Action>(value, out),
+        "EVALUATION" => run_shallow::<Evaluation>(value, out),
+        "ADMIN_ENTRY" => run_shallow::<AdminEntry>(value, out),
+        "GENERIC_ENTRY" => run_shallow::<GenericEntry>(value, out),
+        "SECTION" => run_shallow::<Section>(value, out),
+        "FOLDER" => run_shallow::<Folder>(value, out),
         "ITEM_TAG" => run::<ItemTag>(value, out),
         // base identification
         "OBJECT_REF" => run::<ObjectRefData>(value, out),
