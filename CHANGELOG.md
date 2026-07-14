@@ -56,6 +56,14 @@ workflow refuses a tag that has no matching section here.
   connection acquisition and two queries fewer per write; when version
   signing is disabled the server also no longer rebuilds the full document
   it would only have signed. Response bodies and headers are unchanged.
+- Storage: the version table's two GiST exclusion constraints and two
+  speculative JSONB indexes on the node table (a GIN over every fragment and
+  a magnitude expression index — no query the engine generates could use
+  either) were removed; version-validity non-overlap is unchanged and held
+  by construction (one open row per lineage via unique indexes, atomic
+  close-then-insert writes, and an overlap audit on archive load). This
+  removes the dominant per-commit index-maintenance and lock-contention
+  costs on the write path.
 - Connection-pool defaults changed: `EHRBASE_DB_MAX_CONNECTIONS` 10 → 20,
   `EHRBASE_DB_MIN_CONNECTIONS` 0 → 2, and the per-checkout liveness ping is
   disabled (a broken connection is detected by its first statement).

@@ -1016,3 +1016,69 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         "got {blocked:?}"
     );
 }
+
+/// The temporal non-overlap invariant survives the removal of the `GiST`
+/// EXCLUDE constraints (RM common master06 §Version tree: one valid version
+/// per lineage at any instant; the enforcement is now by construction —
+/// close-then-insert at one `now()` per write, one open row per lineage via
+/// the partial unique indexes). A burst of sequential updates must leave
+/// exactly one open trunk row and ZERO overlapping validity pairs — asserted
+/// with the same lineage-pair query the admin archive load audits with.
+#[tokio::test]
+async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("no_overlap_invariant").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let created = svc
+        .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("create");
+    let mut preceding = created;
+    for i in 0..8 {
+        preceding = svc
+            .update_composition(
+                ehr_uuid,
+                preceding
+                    .split("::")
+                    .next()
+                    .expect("vo id part")
+                    .parse()
+                    .expect("vo uuid"),
+                uv(composition(&format!("obs-v{i}")), "251", Some(&preceding)),
+            )
+            .await
+            .expect("update");
+    }
+
+    let open_trunk: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_version \
+         WHERE ehr_id = $1 AND kind = 'COMPOSITION' \
+           AND branch_number = 0 AND upper_inf(sys_period)",
+    )
+    .bind(ehr_uuid)
+    .fetch_one(&pool)
+    .await
+    .expect("open-row count");
+    assert_eq!(open_trunk, 1, "exactly one open trunk row per composition");
+
+    let overlap: bool = sqlx::query_scalar(
+        "SELECT EXISTS ( \
+             SELECT 1 FROM vo_version a \
+             JOIN vo_version b ON a.vo_id = b.vo_id \
+                 AND a.branch_number = b.branch_number \
+                 AND (a.branch_number = 0 \
+                      OR (a.creating_system_id = b.creating_system_id \
+                          AND a.trunk_version = b.trunk_version)) \
+                 AND a.sys_version < b.sys_version \
+                 AND a.sys_period && b.sys_period \
+             WHERE a.ehr_id = $1)",
+    )
+    .bind(ehr_uuid)
+    .fetch_one(&pool)
+    .await
+    .expect("overlap audit");
+    assert!(!overlap, "no lineage carries overlapping validity periods");
+}
