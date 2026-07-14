@@ -8,10 +8,15 @@
 //! * [`Required`](DetailLevel::Required) — only the mandatory skeleton (nodes on
 //!   a fully-mandatory chain, plus whatever a min-cardinality forces). Intended
 //!   to be committable as-is.
-//! * [`Medium`](DetailLevel::Medium) — mandatory + one level of optional
-//!   elements (a single occurrence of each, the first alternative of any choice).
-//! * [`Complete`](DetailLevel::Complete) — one of every node (all optional
-//!   branches; not necessarily committable).
+//! * [`Medium`](DetailLevel::Medium) — the fully-populated single-instance
+//!   document: every optional branch descended to its leaves, one occurrence of
+//!   each node, the first alternative of any choice. Intended to be committable
+//!   as-is. (A former cut at "one level of optional elements" produced *empty*
+//!   `content` for the common template shape whose whole content chain is
+//!   optional — a populated example is the level's entire point.)
+//! * [`Complete`](DetailLevel::Complete) — everything `medium` emits, plus a
+//!   second occurrence of each repeating node (demonstrating repetition); not
+//!   necessarily committable.
 //!
 //! The set of populated leaves is monotonic across the levels
 //! (`required ⊆ medium ⊆ complete`).
@@ -58,9 +63,11 @@ const EXAMPLE_DURATION: &str = "PT1H";
 pub enum DetailLevel {
     /// Mandatory skeleton only; intended to be committable without adjustment.
     Required,
-    /// Mandatory + optional leaf elements (one occurrence, first choice).
+    /// Fully populated, one occurrence of every node (first alternative of any
+    /// choice); intended to be committable without adjustment.
     Medium,
-    /// One of every node; not expected to be committable.
+    /// `Medium` plus a second occurrence of each repeating node; not expected
+    /// to be committable.
     Complete,
 }
 
@@ -181,8 +188,7 @@ fn walk(
         let child_opt = opt_depth + usize::from(is_optional(child));
         let include = match level {
             DetailLevel::Required => child_opt == 0,
-            DetailLevel::Medium => child_opt <= 1,
-            DetailLevel::Complete => true,
+            DetailLevel::Medium | DetailLevel::Complete => true,
         };
         if include {
             included.push(child.aql_path.as_str());
@@ -190,7 +196,14 @@ fn walk(
             // A mandatory child must materialise even when all of *its* children
             // are optional (else the mandatory node would go missing).
             let child_force = !is_optional(child);
-            emitted |= walk(child, &child_prefix, child_opt, level, child_force, out);
+            let child_emitted = walk(child, &child_prefix, child_opt, level, child_force, out);
+            emitted |= child_emitted;
+            // `Complete` demonstrates repetition: a second occurrence of any
+            // repeating node that materialised.
+            if level == DetailLevel::Complete && child_emitted && is_repeating(child) {
+                let second_prefix = format!("{prefix}/{}:1", child.id);
+                emitted |= walk(child, &second_prefix, child_opt, level, false, out);
+            }
         }
     }
 
@@ -240,11 +253,16 @@ fn is_optional(node: &WebTemplateNode) -> bool {
     node.min.unwrap_or(0) < 1
 }
 
+/// Whether a node may occur more than once (Better's `isRepeating`).
+fn is_repeating(node: &WebTemplateNode) -> bool {
+    node.max == -1 || node.max > 1
+}
+
 /// The flat path segment for a node: `id:0` for a repeating node (Better's
 /// `isRepeating`: `max == -1 || max > 1`), else the bare `id` — matching
 /// [`to_flat`](crate::to_flat) so the example round-trips.
 fn seg_for(node: &WebTemplateNode) -> String {
-    if node.max == -1 || node.max > 1 {
+    if is_repeating(node) {
         format!("{}:0", node.id)
     } else {
         node.id.clone()
@@ -669,6 +687,35 @@ mod tests {
                 .and_then(Value::as_str),
             Some(wt.template_id.as_str()),
             "self-describing template id"
+        );
+    }
+
+    #[test]
+    fn medium_populates_optional_content() {
+        // The level's whole point: a template whose content chain is entirely
+        // optional still yields a populated document at `medium` (the empty
+        // `required` skeleton is the committable *minimum*, not the example).
+        let wt = demo_vitals();
+        let comp = example_composition(&wt, DetailLevel::Medium);
+        let content = comp.get("content").and_then(Value::as_array);
+        assert!(
+            content.is_some_and(|c| !c.is_empty()),
+            "medium example carries content entries"
+        );
+        assert!(
+            leaf_count(&comp) > leaf_count(&example_composition(&wt, DetailLevel::Required)),
+            "medium populates strictly more leaves than required"
+        );
+    }
+
+    #[test]
+    fn complete_demonstrates_repetition() {
+        let wt = demo_vitals();
+        let medium = example_composition(&wt, DetailLevel::Medium);
+        let complete = example_composition(&wt, DetailLevel::Complete);
+        assert!(
+            leaf_count(&complete) > leaf_count(&medium),
+            "complete adds second occurrences of repeating nodes"
         );
     }
 
