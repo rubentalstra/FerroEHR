@@ -145,7 +145,7 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
       (sequential, quiet host) → commit both results + regenerate
       COMPARISON.md with hour data + knees.
 - [~] O4. (deferred in favour of completing O5/O6 before morning; the 100k/1M ladder is the X1 publication step) If the night allows: 100k rung seed + hour, both SUTs → commit.
-- [ ] O5. Root README: a "Measured against EHRbase (Java)" section embedding
+- [x] O5. Root README: a "Measured against EHRbase (Java)" section embedding
       committed comparison SVGs (relative paths; the charts live in
       docs/benchmarks/**) with the honest caveats line (single-run,
       same-host preview; link to COMPARISON.md + the methodology) — the
