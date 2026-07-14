@@ -259,7 +259,7 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       the before/after instrument. **Sequenced after item 28(b)/(c) lands —
       its agent is writing in openehr-flat now, and F7's fresh sibling
       routing lives in the same validation files.**
-- [ ] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
+- [x] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
       rejected — publication-blocking).** All 130 errors at java L=1 were
       composition-create 422s; per-skeleton reproduction against a fresh
       upstream stack names three classes:
@@ -289,7 +289,11 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       framed with that version context in the fairness register, never as
       bare defects.
       After (b)/(c): regenerate the pack, re-verify all six commit on BOTH
-      SUTs, re-run the java ladder for the honest pair.
+      SUTs, re-run the java ladder for the honest pair. **DONE — 6/6 on
+      both (rs 201, upstream 204); plus the duration-bound inclusivity
+      chain fixed end to end and the incoherent-coded-name omission rule
+      (empirically adjudicated: upstream rejects the template's own fixed
+      coded name in every form).**
 
 - [x] **29. Startup ASCII banner (owner, 2026-07-14).** The server greets
       with an ASCII-art banner on boot (like the reference implementation's
