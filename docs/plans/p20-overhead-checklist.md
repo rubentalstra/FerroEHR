@@ -79,16 +79,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       (logos+chumsky), re-types, re-lowers to SQL
       (`service/query/execute.rs:81`). Fix: bounded moka `aql text → lowered
       SQL/IR` cache.
-- [ ] **10. ATNA audit double event** — 2 events (op + login "Application
+- [x] **10. ATNA audit double event** *(DONE 4ed4ea2a8 — login record only on a genuine authentication: a verified-credential cache miss)* — 2 events (op + login "Application
       Activity") built per successful request when auditing is on
       (`system_log/middleware.rs:113-149`); one atomic check when off (bench
       = off, so not a bench factor). Consider suppressing the per-request
       login event by default.
-- [ ] **11. `ehr_access::enforce` cold misses** — per-EHR settings cache
+- [x] **11. `ehr_access::enforce` cold misses** *(DONE 4ed4ea2a8 — create pre-warms default-open; import paths now evict — a latent security gap closed)* — per-EHR settings cache
       misses hit the DB once per new EHR (`extensions/access/ehr_access.rs:
       201-218`); hospital-day creates many EHRs. Consider negative-caching
       default-open EHRs at creation.
-- [ ] **12. event_outbox INSERT per commit** regardless of subscribers
+- [x] **12. event_outbox INSERT per commit** *(DONE 4ed4ea2a8 — boot-time consumer gate; at-least-once preserved for enabled-but-idle; book-page note owed at PR)* regardless of subscribers
       (`versioning/change.rs:622,669`). Gate on eventing-enabled.
 - [x] **13. Default `max_connections = 10`** (prod foot-gun; bench overrides
       to 50) — raise the default + document sizing (`db/settings.rs:29-31`).
