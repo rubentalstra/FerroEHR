@@ -42,11 +42,45 @@ pub(crate) trait Labels {
     fn term_bindings(&self, code: &str) -> IndexMap<String, WebTemplateBindingCodedValue>;
 }
 
-/// Build the `inputs` (and `proportion_types`) for a leaf node.
+/// The openEHR terminology *group* an `openehr`-terminology coded RM attribute
+/// binds to, when the owning RM type fixes one (the `has_code_for_group_id` RM
+/// invariants). Used to resolve a code's display rubric from the **correct**
+/// group: openEHR concept codes are *not* globally unique across groups (TERM
+/// 3.1.0 carries the SPECPR-51 defect — code `532` is `complete` in
+/// `version_lifecycle_state` but `completed` in `instruction_states`; `253` and
+/// `523` collide likewise), so a group-agnostic lookup can pick the wrong
+/// rubric. Spec: the RM invariant tables under
+/// `docs/specs/openehr/RM/docs/UML/classes/` (`ism_transition`, `composition`,
+/// `event_context`, `participation`, `event`, `term_mapping`, `audit_details`,
+/// `attestation`, `party_related`).
+pub(crate) fn openehr_group(owning_rm_type: &str, attr: &str) -> Option<&'static str> {
+    match (owning_rm_type, attr) {
+        ("ISM_TRANSITION", "current_state") => Some("instruction_states"),
+        ("ISM_TRANSITION", "transition") => Some("instruction_transitions"),
+        ("COMPOSITION", "category") => Some("composition_category"),
+        ("EVENT_CONTEXT", "setting") => Some("setting"),
+        ("PARTICIPATION", "function") => Some("participation_function"),
+        ("PARTICIPATION", "mode") => Some("participation_mode"),
+        ("EVENT" | "POINT_EVENT" | "INTERVAL_EVENT", "math_function") => {
+            Some("event_math_function")
+        }
+        ("TERM_MAPPING", "purpose") => Some("term_mapping_purpose"),
+        ("AUDIT_DETAILS", "change_type") => Some("audit_change_type"),
+        ("ATTESTATION", "reason") => Some("attestation_reason"),
+        ("PARTY_RELATED", "relationship") => Some("subject_relationship"),
+        _ => None,
+    }
+}
+
+/// Build the `inputs` (and `proportion_types`) for a leaf node. `group` is the
+/// openEHR terminology group the node's coded value binds to (see
+/// [`openehr_group`]), used only to resolve `openehr`-terminology rubrics from
+/// the correct group.
 pub(crate) fn build_inputs(
     rm_type: &str,
     co: &CObject,
     labels: &dyn Labels,
+    group: Option<&str>,
 ) -> (Vec<WebTemplateInput>, Vec<String>) {
     // Strip any generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`).
     let base = rm_type.split('<').next().unwrap_or(rm_type);
@@ -55,7 +89,7 @@ pub(crate) fn build_inputs(
         "DV_TEXT" | "DV_MULTIMEDIA" | "DV_URI" | "DV_EHR_URI" => {
             vec![text_input(primitive_under(co, "value"), None)]
         }
-        "DV_CODED_TEXT" | "DV_STATE" | "CODE_PHRASE" => coded_text_inputs(co, labels),
+        "DV_CODED_TEXT" | "DV_STATE" | "CODE_PHRASE" => coded_text_inputs(co, labels, group),
         "DV_QUANTITY" => quantity_inputs(co, labels),
         "DV_COUNT" => vec![count_input(co)],
         "DV_PROPORTION" => proportion_inputs(co, &mut proportion_types),
@@ -106,7 +140,11 @@ fn text_input(cstring: Option<&CPrimitive>, suffix: Option<&str>) -> WebTemplate
 
 // ── DV_CODED_TEXT ────────────────────────────────────────────────────────────
 
-fn coded_text_inputs(co: &CObject, labels: &dyn Labels) -> Vec<WebTemplateInput> {
+fn coded_text_inputs(
+    co: &CObject,
+    labels: &dyn Labels,
+    group: Option<&str>,
+) -> Vec<WebTemplateInput> {
     // The node's own CObject may be a CODE_PHRASE, else look under `defining_code`.
     let code_phrases: Vec<&CObject> = match co {
         CObject::CCodePhrase(_) | CObject::CCodeReference(_) => vec![co],
@@ -121,7 +159,7 @@ fn coded_text_inputs(co: &CObject, labels: &dyn Labels) -> Vec<WebTemplateInput>
         }
         Some(CObject::CCodePhrase(cp)) => {
             let terminology = cp.terminology_id.as_ref().map(|t| t.value.clone());
-            let codes = coded_values(terminology.as_deref(), &cp.code_list, labels);
+            let codes = coded_values(terminology.as_deref(), &cp.code_list, labels, group);
             if codes.is_empty() {
                 inputs.extend(external_terminology_inputs(terminology.as_deref()));
             } else {
@@ -175,12 +213,13 @@ fn coded_values(
     terminology: Option<&str>,
     codes: &[String],
     labels: &dyn Labels,
+    group: Option<&str>,
 ) -> Vec<WebTemplateCodedValue> {
     let term = terminology.unwrap_or("local");
     codes
         .iter()
         .map(|code| {
-            let mut cv = coded_value(term, code, labels);
+            let mut cv = coded_value(term, code, labels, group);
             // Per-coded-value external term bindings (Better
             // `CodePhraseWebTemplateInputBuilder.ConvertToWebTemplateCodedValueFunction`):
             // the coded-text path adds them; ordinals/scales do not.
@@ -190,20 +229,34 @@ fn coded_values(
         .collect()
 }
 
-fn coded_value(terminology: &str, code: &str, labels: &dyn Labels) -> WebTemplateCodedValue {
+fn coded_value(
+    terminology: &str,
+    code: &str,
+    labels: &dyn Labels,
+    group: Option<&str>,
+) -> WebTemplateCodedValue {
     // Label resolution order: the artefact's own term definitions, then — for
     // `openehr`-terminology codes, which no archetype defines — the TERM 3.1.0
     // rubric (`433` → `event`); the bare code is the last resort (the Better
     // fallback). `DV_CODED_TEXT.value` is the displayable text of the defining
     // code (RM data_types §DV_CODED_TEXT), so a code-as-label leaks wrong
     // instance data out of every consumer that renders from the list.
+    //
+    // For an `openehr`-terminology code whose owning RM attribute fixes a
+    // terminology group (`group`), resolve the rubric from **that** group —
+    // openEHR concept codes are not globally unique (SPECPR-51: `532` is
+    // `complete` in `version_lifecycle_state` but `completed` in
+    // `instruction_states`), so the group-scoped lookup is the authoritative
+    // rubric where the group is known; the group-agnostic search is the fallback.
     let label = labels
         .text(terminology, code)
         .or_else(|| {
             (terminology == "openehr")
                 .then(|| {
-                    openehr_term::bundle::openehr()
-                        .concept_rubric(code, "en")
+                    let bundle = openehr_term::bundle::openehr();
+                    group
+                        .and_then(|g| bundle.rubric(g, code, "en"))
+                        .or_else(|| bundle.concept_rubric(code, "en"))
                         .map(str::to_owned)
                 })
                 .flatten()
@@ -269,7 +322,7 @@ fn ordinal_input(co: &CObject, labels: &dyn Labels, scale: bool) -> WebTemplateI
         for entry in &ord.list {
             let dc = &entry.symbol.defining_code;
             let term = &dc.terminology_id.value;
-            let mut cv = coded_value(term, &dc.code_string, labels);
+            let mut cv = coded_value(term, &dc.code_string, labels, None);
             // The label should be the ordinal symbol rubric; prefer the symbol value.
             if !entry.symbol.value.is_empty() {
                 cv.label = Some(entry.symbol.value.clone());
@@ -605,3 +658,37 @@ macro_rules! iv_bounds {
 iv_bounds!(iv_bounds_date, openehr_its::opt14::Intervalofdate);
 iv_bounds!(iv_bounds_datetime, openehr_its::opt14::Intervalofdatetime);
 iv_bounds!(iv_bounds_time, openehr_its::opt14::Intervaloftime);
+
+#[cfg(test)]
+mod tests {
+    use super::openehr_group;
+
+    #[test]
+    fn openehr_group_maps_coded_rm_slots_to_their_group() {
+        // The RM `has_code_for_group_id` slots (RM invariant tables under
+        // docs/specs/openehr/RM/docs/UML/classes/): each maps to exactly one
+        // openEHR terminology group so rubrics resolve unambiguously despite
+        // SPECPR-51 cross-group code collisions.
+        assert_eq!(
+            openehr_group("ISM_TRANSITION", "current_state"),
+            Some("instruction_states")
+        );
+        assert_eq!(
+            openehr_group("ISM_TRANSITION", "transition"),
+            Some("instruction_transitions")
+        );
+        assert_eq!(
+            openehr_group("COMPOSITION", "category"),
+            Some("composition_category")
+        );
+        assert_eq!(openehr_group("EVENT_CONTEXT", "setting"), Some("setting"));
+        assert_eq!(
+            openehr_group("POINT_EVENT", "math_function"),
+            Some("event_math_function")
+        );
+        // Unmapped: a plain attribute, or an attribute on a type that fixes no
+        // group, has no group hint (rubric falls back to the global search).
+        assert_eq!(openehr_group("ELEMENT", "value"), None);
+        assert_eq!(openehr_group("ISM_TRANSITION", "careflow_step"), None);
+    }
+}

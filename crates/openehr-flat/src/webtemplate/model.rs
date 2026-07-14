@@ -80,6 +80,22 @@ fn serialize_root<S: Serializer>(node: &WebTemplateNode, s: S) -> Result<S::Ok, 
     value.serialize(s)
 }
 
+/// The `defining_code` a node whose runtime `name` is constrained as a
+/// `DV_CODED_TEXT` must carry — the constrained terminology + code the
+/// composition builder stamps so the instance name is a coded name, not a
+/// plain `DV_TEXT` (RM common `master03-archetyped_package.adoc` §"The
+/// `LOCATABLE` class" — a `LOCATABLE.name` is `DV_TEXT` *or* `DV_CODED_TEXT`;
+/// AOM 1.4 `master04-constraint_model_package.adoc` — a `C_ATTRIBUTE` on `name`
+/// constrains the whole coded name). The display value is the node's
+/// [`WebTemplateNode::name`].
+#[derive(Debug, Clone)]
+pub struct CodedName {
+    /// The `defining_code` terminology id (e.g. `local`, `openehr`).
+    pub terminology: String,
+    /// The `defining_code` code string (an `atNNNN` / openEHR code).
+    pub code: String,
+}
+
 /// One node of the web-template tree.
 ///
 /// `@JsonInclude(NON_NULL)`; collection members are `NON_EMPTY`. `id` is the
@@ -214,6 +230,12 @@ pub struct WebTemplateNode {
     /// The RM name-constraint code, when the node is name-constrained.
     #[serde(skip)]
     pub name_code: Option<String>,
+    /// When the node's runtime `name` is constrained as a `DV_CODED_TEXT`, the
+    /// `(terminology, code)` the composition builder stamps as the coded name's
+    /// `defining_code` (the display value is [`Self::name`]). `None` for a plain
+    /// `DV_TEXT` name. Build-time only (`#[serde(skip)]`); see [`CodedName`].
+    #[serde(skip)]
+    pub name_coded: Option<CodedName>,
 }
 
 impl WebTemplateNode {
@@ -250,6 +272,7 @@ impl WebTemplateNode {
             full_id: String::new(),
             alt_json_id: None,
             name_code: None,
+            name_coded: None,
         }
     }
 
