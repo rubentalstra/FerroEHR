@@ -92,11 +92,11 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       (`versioning/change.rs:622,669`). Gate on eventing-enabled.
 - [x] **13. Default `max_connections = 10`** (prod foot-gun; bench overrides
       to 50) — raise the default + document sizing (`db/settings.rs:29-31`).
-- [ ] **14. AQL per-row subtree reload** — `read_subtree_canonical` is one
+- [x] **14. AQL per-row subtree reload** *(DONE — one unnest-array interval join per page; byte-identical oracle test)* — `read_subtree_canonical` is one
       SELECT per candidate row when a CONTAINS-anchored cell reloads
       (`storage/node_repo.rs:155-197`). Batch it / project via promoted
       columns.
-- [ ] **15. Validation walk cost is load-bearing but heavy** — RM-invariant +
+- [x] **15. Validation walk cost is load-bearing but heavy** *(MEASURED — the deliverable: RM-invariant pass ~109 ms/IPS-commit vs terminology ~3.5 ms; prescribed fusions already satisfied/immaterial; the real hotspot became item 30)* — RM-invariant +
       terminology passes visit every `_type` node pre-tx (~1.5k visits for
       IPS). Keep (conformance), but re-measure after 1–8; candidates: fuse
       walks, skip terminology pass for nodes without coded values.
@@ -226,6 +226,19 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       findings are all fixed — the bottleneck has moved and must be
       re-measured before choosing among items 20/22/14/15).
 
+- [ ] **30. RM-invariant pass: per-node deep-clone + typed re-deserialization
+      (~109 ms CPU per IPS commit — the largest known remaining per-commit
+      cost; measured by item 15).** `openehr_rm::validate::run`
+      (crates/openehr-rm/src/validate.rs:343) runs
+      `serde_json::from_value::<T>(value.clone())` PER NODE on the live
+      tree — every one of ~1,498 invariant calls deep-clones and fully
+      typed-deserializes that node's whole subtree (overlapping subtrees →
+      O(Σ subtree sizes) blowup). Fix direction: deserialize the typed tree
+      ONCE at the root and validate in one pass, or run invariants against
+      &Value without per-node full deserialization. Invariant-semantics-
+      sensitive: the ECC ArchetypeValidation set + the openehr-flat
+      validation suites gate it; hand-written validate.rs (spec-behaviour
+      sibling), never the generated files.
 - [ ] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
       rejected — publication-blocking).** All 130 errors at java L=1 were
       composition-create 422s; per-skeleton reproduction against a fresh
