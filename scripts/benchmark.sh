@@ -160,12 +160,17 @@ wait_healthy() {
 COLD_MS=""
 if [ "$manage_compose" = "1" ]; then
   echo "==> Starting $SUT services"
-  T0=$(now_ms)
+  # Cold-start fairness: the image BUILD is excluded from the measured window.
+  # The pre-fix instrument stamped T0 before `up --build`, charging the whole
+  # ehrbase-rs docker image build (~90 s) to its cold start while upstream
+  # timed only a prebuilt-image start — both sides now measure container
+  # start → healthy on an already-built image.
   if [ "$SUT" = "ehrbase-rs" ] && [ "${SKIP_BUILD:-0}" != "1" ]; then
-    compose up -d --build "${CORE_SERVICES[@]}"
-  else
-    compose up -d "${CORE_SERVICES[@]}"
+    echo "==> Building the ehrbase-rs image (excluded from cold-start timing)"
+    compose build "${CORE_SERVICES[@]}"
   fi
+  T0=$(now_ms)
+  compose up -d "${CORE_SERVICES[@]}"
   echo "==> Waiting for $APP_SERVICE to become healthy"
   wait_healthy
   T1=$(now_ms)
