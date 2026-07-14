@@ -11,6 +11,11 @@ name: ehrbase-rs
 services:
   ehrbase-postgres:
     image: ${EHRBASE_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:local}
+    # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
+    # memory under load (parallel workers error `could not resize shared
+    # memory segment … No space left on device`); benchmark runs share this
+    # floor with the upstream stack (docker/benchmark/docker-compose.yml).
+    shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     build:
       context: ./docker/postgres
       dockerfile: Dockerfile
