@@ -16,10 +16,10 @@ text { fill: #c3c2b7; }
 }
 </style>
 <text x="16" y="22" class="title">p50 latency per operation class (log scale)</text>
-<rect class="s1" x="170" y="30" width="10" height="10" rx="2"/>
-<text x="186.0" y="39">ehrbase-rs</text>
-<rect class="s2" x="320" y="30" width="10" height="10" rx="2"/>
-<text x="336.0" y="39">ehrbase-java</text>
+<rect class="s1" x="170.0" y="30.0" width="10" height="10" rx="2"/>
+<text x="186.0" y="39.0">ehrbase-rs</text>
+<rect class="s2" x="278.0" y="30.0" width="10" height="10" rx="2"/>
+<text x="294.0" y="39.0">ehrbase-java</text>
 <line class="grid" x1="170.0" y1="58" x2="170.0" y2="542.0"/>
 <text class="muted" x="170.0" y="558.0" text-anchor="middle">10.0ms</text>
 <line class="grid" x1="237.7" y1="58" x2="237.7" y2="542.0"/>
