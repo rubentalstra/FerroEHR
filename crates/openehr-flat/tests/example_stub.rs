@@ -169,13 +169,13 @@ fn unconstrained_structural_attribute_keeps_the_any_placeholder() {
     );
 }
 
-/// Broad guard: the committable (`Required`) example of every vendored template
-/// produces no "unexpected node" — the synthesised RM-mandatory structural
-/// attributes conform across the whole corpus. `Required` is the level the
-/// generator contracts to be committable (`Complete` is documented as "not
-/// necessarily committable", so is not asserted here).
+/// Broad guard: the committable levels (`Required` and `Medium`) of every
+/// vendored template produce no "unexpected node" — the synthesised
+/// RM-mandatory structural attributes conform across the whole corpus at the
+/// mandatory skeleton *and* with every optional branch populated. (`Complete`
+/// is documented as "not necessarily committable", so is not asserted here.)
 #[test]
-fn required_example_of_every_fixture_has_no_unexpected_node() {
+fn committable_example_of_every_fixture_has_no_unexpected_node() {
     let mut opts = Vec::new();
     for sub in ["sdk", "better"] {
         collect_opts(&fixtures_dir().join(sub), &mut opts);
@@ -197,12 +197,14 @@ fn required_example_of_every_fixture_has_no_unexpected_node() {
         let Ok(wt) = build_web_template(&opt) else {
             continue;
         };
-        let comp = example_composition(&wt, DetailLevel::Required);
-        let errs = unexpected(&comp, &wt);
-        assert!(
-            errs.is_empty(),
-            "{path:?} @ Required produced unexpected nodes: {errs:?}"
-        );
+        for level in [DetailLevel::Required, DetailLevel::Medium] {
+            let comp = example_composition(&wt, level);
+            let errs = unexpected(&comp, &wt);
+            assert!(
+                errs.is_empty(),
+                "{path:?} @ {level:?} produced unexpected nodes: {errs:?}"
+            );
+        }
         checked += 1;
     }
     assert!(checked > 40, "checked {checked} templates");
