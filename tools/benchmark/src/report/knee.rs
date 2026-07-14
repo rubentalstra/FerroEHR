@@ -152,9 +152,11 @@ pub fn render_markdown(r: &KneeResults) -> String {
 
     match &r.knee {
         Some(step) => m.push_str(&format!(
-            "**Knee: L = {} → {:.1} req/s at p99 {} µs** (the last sustainable step; \
+            "**Knee: L = {} → {} at p99 {} µs** (the last sustainable step; \
              SLO p99 ≤ 1 s, error ≤ 0.1%).\n\n",
-            step.load_factor, step.rps, step.p99_us
+            step.load_factor,
+            super::fmt_rate(step.rps),
+            step.p99_us
         )),
         None => m.push_str(
             "**No sustainable step:** even the first ladder step breached the SLO. \

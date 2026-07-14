@@ -65,10 +65,10 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     let b = &results[1];
 
     md.push_str("## Runs\n\n");
-    md.push_str("| | Product | Profile | Scale | Ward | Requests | req/s | Error rate |\n|---|---|---|---|--:|--:|--:|--:|\n");
+    md.push_str("| | Product | Profile | Scale | Ward | Requests | req/s | req/min | Error rate |\n|---|---|---|---|--:|--:|--:|--:|--:|\n");
     for r in [a, b] {
         md.push_str(&format!(
-            "| **{}** | {} | {} | {} | {} | {} | {:.1} | {:.3}% |\n",
+            "| **{}** | {} | {} | {} | {} | {} | {:.1} | {:.0} | {:.3}% |\n",
             r.sut.name,
             r.sut.product_label,
             r.workload.profile,
@@ -76,6 +76,7 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
             r.workload.ward_size,
             r.throughput.requests,
             r.throughput.rps,
+            r.throughput.rps * 60.0,
             r.throughput.error_rate * 100.0
         ));
     }
@@ -238,14 +239,20 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
          own `KNEE.md` carries the full ladder and the single-run/same-host \
          lower-bound caveat.\n\n",
     );
-    md.push_str("| | Knee L | Sustained req/s | p99 at knee (µs) |\n|---|--:|--:|--:|\n");
+    md.push_str(
+        "| | Knee L | Sustained req/s | Sustained req/min | p99 at knee (µs) |\n|---|--:|--:|--:|--:|\n",
+    );
     for k in [a, b] {
         match &k.knee {
             Some(step) => md.push_str(&format!(
-                "| **{}** | {} | {:.1} | {} |\n",
-                k.sut.name, step.load_factor, step.rps, step.p99_us
+                "| **{}** | {} | {:.1} | {:.0} | {} |\n",
+                k.sut.name,
+                step.load_factor,
+                step.rps,
+                step.rps * 60.0,
+                step.p99_us
             )),
-            None => md.push_str(&format!("| **{}** | — | — | — |\n", k.sut.name)),
+            None => md.push_str(&format!("| **{}** | — | — | — | — |\n", k.sut.name)),
         }
     }
     md.push('\n');
