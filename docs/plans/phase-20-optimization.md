@@ -33,6 +33,28 @@
 4. Upstream survives ~3× higher offered write load at ~3.8× our knee
    latency — their per-commit path is cheaper; ours does more per write
    (RM validation depth, temporal constraints).
+5. **(T1 profile, 2026-07-14)** `template_store` content is re-read from PG
+   on **every** composition commit (10,206 calls / 120 s window, #2
+   statement by total time) — the validation path bypasses the template
+   cache. → T3 first slice.
+6. **F5 — the W-11 workload committed empty compositions (found via the T1
+   profile's rows=0 anomaly).** 5 of 6 vendored CKM example skeletons
+   (`tools/benchmark/templates/ckm/*.example.json`) have **no `content`**:
+   the `/example` generator emits only mandatory nodes, and the CKM
+   templates' content items are optional. Every ward-sim CKM write was an
+   empty COMPOSITION and every patient-dashboard AQL measured a zero-row
+   result set. The published W-11 comparison stays *fair* (both SUTs got
+   byte-identical payloads) but not *realistic* — the numbers MUST be
+   re-measured at T5 with populated documents, and README/COMPARISON/book
+   refreshed from whatever the honest re-run says. Fix: the openehr-flat
+   example builder populates optional content (bounded), pack regenerated.
+7. **F6 — `SELECT c/uid/value` returns null (normative AQL defect).**
+   QUERY master03 (identified-paths table) lists `COMPOSITION.uid.value` →
+   `/uid/value`; our engine extracts from the stored fragment, but the
+   OBJECT_VERSION_ID is injected only at the REST read path
+   (`service/ehr/meta.rs`), never stored. Verified live: CONTAINS chains
+   are correct (the zero rows were F5's data absence); only uid paths
+   resolve null. Folded into T2 (same seam); ECC case follows.
 
 ## Tasks
 
@@ -57,11 +79,22 @@
       spacing; `synchronous_commit` stays ON (clinical durability — never
       traded). Temporal-GiST maintenance cost quantified before any schema
       move. PG18 AIO (`io_method`) evaluated here.
+- [ ] T2b. **F6 — uid projection** (folded into T2, same seam): `SELECT
+      c/uid/value` returns the OBJECT_VERSION_ID wire string (QUERY
+      master03 identified-paths table); ECC AqlBasic case added; verified
+      live on the composed stack.
+- [ ] T2c. **F5 — populated example generation**: the openehr-flat example
+      builder emits optional content items (one instance each, bounded,
+      recursion-guarded); the CKM pack examples regenerated from the
+      composed server; each commits clean and `CONTAINS OBSERVATION`
+      matches; snapshot deltas reviewed honestly.
 - [ ] T5. **Re-ladder + publish**: identical fine ladder both SUTs, hour
-      profiles at 10k/100k re-run, README + COMPARISON refreshed with
-      whatever the numbers say. Exit: the saturation row flips, or the
-      honest residual gap is recorded with the next bottleneck named.
-      Full ECC zero-drift run at close.
+      profiles at 10k/100k re-run **with the F5-fixed populated workload**,
+      README + COMPARISON refreshed with whatever the numbers say (the
+      pre-F5 numbers measured empty CKM writes and zero-row dashboards —
+      supersede them explicitly, both directions). Exit: the saturation row
+      flips, or the honest residual gap is recorded with the next
+      bottleneck named. Full ECC zero-drift run at close.
 
 ## Superseded original scope (2026-07 draft, kept as input)
 
