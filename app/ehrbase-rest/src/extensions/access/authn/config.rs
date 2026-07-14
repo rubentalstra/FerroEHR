@@ -26,6 +26,17 @@ pub struct AuthConfig {
     /// Basic-auth user store (username → Argon2 PHC hash). Absent → Basic disabled.
     #[serde(default)]
     pub basic: Option<BasicConfig>,
+    /// Verified Basic-credential cache TTL in seconds (`0` disables the cache).
+    /// Argon2 verification costs tens of milliseconds of CPU **per call by
+    /// design**; re-running it on every request of a busy client turns the
+    /// KDF's work factor into a self-inflicted throughput ceiling. A credential
+    /// that has verified successfully is therefore remembered — as a SHA-256
+    /// digest of the presented header, never plaintext — and re-verified only
+    /// after the TTL (which bounds credential-revocation lag exactly like a
+    /// session lifetime). No openEHR spec governs authentication mechanics
+    /// (ITS-REST leaves the scheme open) — our own design.
+    #[serde(default = "default_verified_cache_ttl")]
+    pub verified_cache_ttl_seconds: u64,
     /// OAuth2/OIDC bearer validation. Absent → bearer disabled.
     #[serde(default)]
     pub oidc: Option<OidcConfig>,
@@ -45,8 +56,15 @@ impl Default for AuthConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            verified_cache_ttl_seconds: default_verified_cache_ttl(),
         }
     }
+}
+
+/// 60 s: long enough that a busy client pays the KDF once a minute instead of
+/// per request, short enough that a revoked credential dies within a minute.
+fn default_verified_cache_ttl() -> u64 {
+    60
 }
 
 impl AuthConfig {

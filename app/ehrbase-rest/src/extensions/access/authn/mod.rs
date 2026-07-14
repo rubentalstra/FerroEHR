@@ -115,6 +115,17 @@ impl AuthError {
 pub struct Authenticator {
     config: AuthConfig,
     jwt: Option<JwtValidator>,
+    /// Verified Basic-credential cache: SHA-256 of the presented
+    /// `Authorization` header → the verified [`Principal`]. An entry exists
+    /// only after a successful Argon2 verification; the TTL
+    /// ([`config::AuthConfig::verified_cache_ttl_seconds`]) bounds revocation
+    /// lag. `None` when the TTL is `0` (cache disabled). Argon2 verification
+    /// is tens of milliseconds of CPU per call by design — without this, a
+    /// busy client's request rate is capped by the KDF's work factor.
+    verified: Option<moka::future::Cache<[u8; 32], Principal>>,
+    /// KDF verifications actually performed (cache misses) — a test seam and
+    /// a cheap operational signal.
+    kdf_verifications: std::sync::atomic::AtomicU64,
 }
 
 impl std::fmt::Debug for Authenticator {
@@ -154,7 +165,20 @@ impl Authenticator {
             Some(oidc) => Some(JwtValidator::with_role_claims(oidc, role_claims)?),
             None => None,
         };
-        Ok(Arc::new(Self { config, jwt }))
+        let verified = (config.verified_cache_ttl_seconds > 0).then(|| {
+            moka::future::Cache::builder()
+                .max_capacity(1024)
+                .time_to_live(std::time::Duration::from_secs(
+                    config.verified_cache_ttl_seconds,
+                ))
+                .build()
+        });
+        Ok(Arc::new(Self {
+            config,
+            jwt,
+            verified,
+            kdf_verifications: std::sync::atomic::AtomicU64::new(0),
+        }))
     }
 
     pub(crate) fn enabled(&self) -> bool {
@@ -204,7 +228,32 @@ impl Authenticator {
                     .basic
                     .as_ref()
                     .ok_or(AuthError::InvalidCredentials)?;
-                basic::verify(auth, cfg)
+                // Verified-credential cache: key = SHA-256 of the presented
+                // header (never the plaintext). A hit skips the KDF entirely;
+                // a miss runs Argon2 on the blocking pool so the async workers
+                // are never parked on CPU-bound hashing.
+                let key: [u8; 32] = {
+                    use sha2::Digest as _;
+                    sha2::Sha256::digest(auth.as_bytes()).into()
+                };
+                if let Some(cache) = &self.verified
+                    && let Some(principal) = cache.get(&key).await
+                {
+                    return Ok(principal);
+                }
+                self.kdf_verifications
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let principal = {
+                    let auth = auth.clone();
+                    let cfg = cfg.clone();
+                    tokio::task::spawn_blocking(move || basic::verify(&auth, &cfg))
+                        .await
+                        .map_err(|_| AuthError::InvalidCredentials)??
+                };
+                if let Some(cache) = &self.verified {
+                    cache.insert(key, principal.clone()).await;
+                }
+                Ok(principal)
             }
             "bearer" => {
                 let validator = self.jwt.as_ref().ok_or(AuthError::InvalidCredentials)?;
@@ -375,6 +424,7 @@ mod tests {
             }),
             oidc: None,
             admin_scope: Some("ehrbase:admin".to_owned()),
+            ..AuthConfig::default()
         })
         .unwrap()
     }
@@ -391,6 +441,7 @@ mod tests {
                 jwks_json: None,
             }),
             admin_scope: None,
+            ..AuthConfig::default()
         })
         .unwrap()
     }
@@ -399,6 +450,59 @@ mod tests {
         let mut h = http::HeaderMap::new();
         h.insert(header::AUTHORIZATION, HeaderValue::from_str(auth).unwrap());
         h
+    }
+
+    #[tokio::test]
+    async fn verified_credential_cache_skips_the_kdf_on_a_hit() {
+        let auth = basic_only();
+        let h = headers("Basic YWxpY2U6cHc="); // alice:pw
+        auth.authenticate(&h).await.expect("first verifies");
+        auth.authenticate(&h).await.expect("second hits the cache");
+        assert_eq!(
+            auth.kdf_verifications
+                .load(std::sync::atomic::Ordering::Relaxed),
+            1,
+            "one KDF verification for two requests with the same credential"
+        );
+
+        // A different credential is a different key — it must NOT hit the
+        // cached entry, and the wrong password still fails.
+        let bad = headers("Basic YWxpY2U6d3Jvbmc="); // alice:wrong
+        auth.authenticate(&bad).await.expect_err("wrong password");
+        assert_eq!(
+            auth.kdf_verifications
+                .load(std::sync::atomic::Ordering::Relaxed),
+            2,
+            "the wrong credential paid its own (failed) verification"
+        );
+    }
+
+    #[tokio::test]
+    async fn verified_cache_ttl_zero_disables_caching() {
+        let mut cfg = AuthConfig {
+            enabled: true,
+            basic: Some(BasicConfig {
+                users: vec![BasicUser {
+                    username: "alice".to_owned(),
+                    password_hash: Redacted(hash("pw")),
+                    roles: vec!["USER".to_owned()],
+                }],
+            }),
+            oidc: None,
+            admin_scope: None,
+            ..AuthConfig::default()
+        };
+        cfg.verified_cache_ttl_seconds = 0;
+        let auth = Authenticator::new(cfg).unwrap();
+        let h = headers("Basic YWxpY2U6cHc=");
+        auth.authenticate(&h).await.expect("ok");
+        auth.authenticate(&h).await.expect("ok");
+        assert_eq!(
+            auth.kdf_verifications
+                .load(std::sync::atomic::Ordering::Relaxed),
+            2,
+            "TTL 0 verifies every request"
+        );
     }
 
     #[tokio::test]

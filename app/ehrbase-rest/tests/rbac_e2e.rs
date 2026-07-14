@@ -73,6 +73,7 @@ fn rest_config() -> RestConfig {
                 jwks_json: None,
             }),
             admin_scope: None,
+            ..AuthConfig::default()
         },
         swagger_ui: false,
         // The admin group must be reachable so the RBAC gate is what decides
