@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The composition validator no longer falsely rejects templates that use the
+  same archetype more than once under one container, differentiated by name:
+  each instance is now routed to the sibling constraint whose name it
+  satisfies, instead of being checked against the first same-archetype
+  sibling's overlay. Cross-contaminated content (a child from one overlay
+  placed in the other-named instance) is still rejected.
+- Template example generation (`GET …/example`) at `detail_level=medium` and
+  `complete` no longer produces an empty composition for templates whose
+  content is entirely optional: `medium` now returns a fully-populated
+  single-instance committable example (honouring temporal patterns,
+  C_DURATION field patterns, media-type code lists, and container
+  cardinality bounds), and `complete` additionally demonstrates a second
+  occurrence of repeating nodes. `required` (the default) is unchanged.
 - AQL `SELECT c/uid/value` (and `c/uid`) on a COMPOSITION — or any
   versioned-object root — now returns the server-assigned
   `OBJECT_VERSION_ID`, version-correct under `LATEST_VERSION` and
