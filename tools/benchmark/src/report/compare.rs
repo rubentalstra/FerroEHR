@@ -242,19 +242,20 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
          lower-bound caveat.\n\n",
     );
     md.push_str(
-        "| | Knee L | Sustained req/s | Sustained req/min | p99 at knee (µs) |\n|---|--:|--:|--:|--:|\n",
+        "| | Knee L | Sustained req/s | Sustained req/min | Clinical events/min | p99 at knee |\n|---|--:|--:|--:|--:|--:|\n",
     );
     for k in [a, b] {
         match &k.knee {
             Some(step) => md.push_str(&format!(
-                "| **{}** | {} | {:.1} | {:.0} | {} |\n",
+                "| **{}** | {} | {:.1} | {:.0} | {:.0} | {} |\n",
                 k.sut.name,
                 step.load_factor,
                 step.rps,
                 step.rps * 60.0,
-                step.p99_us
+                step.events_per_min,
+                crate::report::fmt_latency_us(step.p99_us)
             )),
-            None => md.push_str(&format!("| **{}** | — | — | — | — |\n", k.sut.name)),
+            None => md.push_str(&format!("| **{}** | — | — | — | — | — |\n", k.sut.name)),
         }
     }
     md.push('\n');

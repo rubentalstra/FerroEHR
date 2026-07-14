@@ -133,7 +133,7 @@ openEHR defines the *language*, not its execution. These are our design
 - **Scope gates** (`sql.rs`): the SM `I_QUERY_SERVICE` population gate
   (`is_queryable`, cited to `SM/docs/UML/classes/i_query_service.adoc`) and the
   multi-`ehr_id` scope are spec-grounded; the ABAC `subject_scope` gate cites the
-  internal `docs/enterprise/access-control.md` (Stage-2 enterprise, our own
+  internal `docs/design/access-control.md` (Stage-2 enterprise, our own
   extension — flagged, **G-13**).
 
 ---
@@ -154,7 +154,7 @@ openEHR defines the *language*, not its execution. These are our design
 | **G-10** | Node-predicate `OR` (`OrNodePredicate`) and `MATCHES CONTAINED_REGEX` (`RegexNodePredicate`) rejected (`analyze.rs`). Regex has no prose semantics (D-3); node-`OR` is a grammar extra beyond the 5 prose forms. | LOW | **PORT NOTE** (keep regex; decide node-`OR` in rewrite) |
 | **G-11** | Whole-object cells reassembled by a per-cell follow-up query (`exec.rs:160`, `reassemble_subtree`). PERF only. | LOW | **PERF(port) → P20** (single-query jsonb aggregation) |
 | **G-12** | `Coercion::Raw` (mixed/unknown leaf type set) documented in `ir.rs:405` as "guarded runtime dispatch (numeric for numbers, text otherwise)", but `coerce_value`/`coerce_rhs` treat `Raw` as **plain text** (`sql.rs:1195,1215`). Numbers in a mixed leaf compare/sort lexically → wrong ordering. Doc and impl disagree. | MED | **fix-in-rewrite** (implement the dispatch, or correct the doc + IR comment) |
-| **G-13** | ABAC `subject_scope` gate (`sql.rs`, `SqlCtx.subject_scope`) cites the internal `docs/enterprise/access-control.md` — a Stage-2 enterprise concern present in Stage-1 code. Own-design extension; flag, don't cite an ADR. | INFO | **PORT NOTE** (flag as our own extension; the population/`ehr_id` gates are spec-grounded and stay) |
+| **G-13** | ABAC `subject_scope` gate (`sql.rs`, `SqlCtx.subject_scope`) cites the internal `docs/design/access-control.md` — a Stage-2 enterprise concern present in Stage-1 code. Own-design extension; flag, don't cite an ADR. | INFO | **PORT NOTE** (flag as our own extension; the population/`ehr_id` gates are spec-grounded and stay) |
 
 Counts by disposition: **fix-in-rewrite 3** (G-01, G-08, G-12) · **re-verify 1**
 (G-02) · **delete 1** (G-03) · **PORT NOTE 7** (G-04, G-05, G-06, G-07, G-09,

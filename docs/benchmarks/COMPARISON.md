@@ -34,6 +34,17 @@
 | **ehrbase-rs** | 35.7 | 1.4 |
 | **ehrbase-java** | 16.3 | 0.5 |
 
+## Maximum sustained throughput (knee)
+
+> The last sustainable step on the load-factor ladder (p99 ≤ 1 s, error ≤ 0.1%), per SUT — the honest capacity signal, not peak req/s. Each SUT's own `KNEE.md` carries the full ladder and the single-run/same-host lower-bound caveat.
+
+| | Knee L | Sustained req/s | Sustained req/min | Clinical events/min | p99 at knee |
+|---|--:|--:|--:|--:|--:|
+| **ehrbase-rs** | 26 | 262.2 | 15733 | 6498 | 195.1 ms |
+| **ehrbase-java** | 16 | 160.5 | 9632 | 3981 | 31.6 ms |
+
+![Max sustained req/s at the SLO](charts/comparison-knee.svg)
+
 ## Clinical transactions (events)
 
 > The TPC-style business-transaction metric: a clinical event (admission, medication round, lab batch, discharge…) counts **completed** only when every one of its requests succeeded. Events/min beside the per-request req/s — both directions, same workload by construction.

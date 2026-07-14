@@ -18,6 +18,12 @@ first session's mid-edit files into its own commit.
 **How to apply:**
 - Never `git add -A`/`git commit -a` — stage explicit paths only, and re-check
   `git branch --show-current` immediately before committing.
+- **Explicit `git add <paths>` is NOT enough** (bitten 3× on 2026-07-14):
+  another session/agent may have pre-staged its own files, and a plain
+  `git commit` sweeps the whole index. Commit with an explicit pathspec —
+  `git commit -m "…" -- <paths>` — which commits ONLY those paths regardless
+  of what else sits staged; or run `git diff --cached --name-only` first and
+  unstage strangers.
 - Scope cargo gates to the crates you touched (`-p`), not `--workspace` — the
   other session may have a broken crate in flight (e.g. `ehrbase-conformance`).
 - For multi-file subagent work, use worktree isolation and merge branches back.

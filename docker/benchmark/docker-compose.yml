@@ -22,6 +22,12 @@ services:
     # to BOTH SUTs' databases below — container-default shared_buffers (128MB)
     # and max_wal_size (1GB) throttle a write-heavy benchmark with buffer
     # eviction + constant checkpoints, so both sides get the same sane floor.
+    # shm parity: Docker's default 64MB /dev/shm starves PostgreSQL's dynamic
+    # shared memory (parallel workers erroring `could not resize shared memory
+    # segment … No space left on device` — observed 5× on the upstream stack
+    # 2026-07-14, twice inside measured windows). Both SUT databases get the
+    # same 1GB floor.
+    shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     command:
       - postgres
       - -c
@@ -69,6 +75,9 @@ services:
     # Identical PG tuning to ehrbase-rs-db above (benchmarking.md §3.4 — same
     # DB settings both sides; the PG major difference 16 vs 18 is each SUT's
     # own shipped platform and is recorded in the report's environment block).
+    # shm parity — see ehrbase-rs-db above (this stack is where the 64MB
+    # default was caught erroring mid-window).
+    shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     command:
       - postgres
       - -c

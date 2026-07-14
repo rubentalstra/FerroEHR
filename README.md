@@ -233,62 +233,67 @@ of this page are generated from real runs.
 
 ## Measured against EHRbase (Java)
 
-The built-in benchmark drives a **simulated hospital day** — admissions,
-shift vitals, medication rounds, lab-result contributions, clinician chart
-reviews with AQL, corrections, discharges, built on official openEHR CKM
-templates — **byte-identically against both servers** and publishes whatever
-it measures, in both directions. The numbers below are from the committed
-hour-profile run pair (identical 1,209-request clinical hour, zero errors on
-both servers; single run on one shared host — a preview, not the publication
-protocol).
+One benchmark, two servers, byte-identical requests: a **simulated hospital
+day** of fully-populated clinical documents — admissions, shift vitals,
+medication rounds, lab results, AQL chart reviews, corrections, discharges —
+on official openEHR CKM templates. Both directions always published.
+
+### Maximum sustained throughput
+
+**262 req/s vs 161 req/s — ehrbase-rs sustains 1.6× upstream's load**, and
+carries **6,498 vs 3,981 completed clinical events per minute** doing it
+(the knee: the highest load holding p99 ≤ 1 s and errors ≤ 0.1%, measured
+back-to-back on the same host, same payloads, full config parity):
+
+| | Max sustained | Clinical events/min | p99 at the knee |
+|---|--:|--:|--:|
+| **ehrbase-rs** | **262 req/s** (15,733 req/min) | **6,498** | 195 ms |
+| EHRbase 2.34.0 (Java) | 161 req/s (9,632 req/min) | 3,981 | 32 ms |
+
+![Max sustained req/s at the SLO](docs/benchmarks/charts/comparison-knee.svg)
+
+Past its knee, upstream falls off a cliff: at the load ehrbase-rs *almost*
+still sustains (L=32), upstream's p99 is **44 seconds** with 4.3% errors —
+ours is 2.9 s with 0.14%. Full ladders:
+[ehrbase-rs](docs/benchmarks/ehrbase-rs/KNEE.md) ·
+[upstream](docs/benchmarks/ehrbase-java/KNEE.md).
+
+![ehrbase-rs saturation ladder](docs/benchmarks/ehrbase-rs/charts/knee.svg)
+
+### Identical load, side by side
+
+Ten headline rows from [the full comparison](docs/benchmarks/COMPARISON.md)
+(generated — every number traces to a committed artefact):
+
+| | ehrbase-rs | EHRbase 2.34.0 (Java) |
+|---|--:|--:|
+| Idle memory | **47 MB** | 515 MB |
+| Peak memory | **188 MB** | 606 MB |
+| Mean CPU, identical load | **0.9 %** | 1.7 % |
+| p99 — composition create | **96 ms** | 106 ms |
+| p99 — patient AQL dashboard | **67 ms** | 105 ms |
+| p99 — composition read | **59 ms** | 89 ms |
+| p99 — composition update | **79 ms** | 111 ms |
+| Storage per composition | **28.2 KB** | 33.5 KB |
 
 ![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
 
 ![p99 latency per operation class](docs/benchmarks/charts/comparison-p99.svg)
 
-![Memory over the identical run](docs/benchmarks/charts/comparison-rss-series.svg)
+### Fair, and reproducible
 
-Highlights from [the full comparison](docs/benchmarks/COMPARISON.md)
-(generated — every number traces to a committed `results.json`):
-
-| Measured (hour profile, identical load) | ehrbase-rs | EHRbase 2.34.0 (Java) |
-|---|--:|--:|
-| Idle memory (app) | **47 MB** | 515 MB |
-| Peak memory (app) | **188 MB** | 606 MB |
-| Mean CPU, identical load | **0.9 %** | 1.7 % |
-| p99 — composition create | **96 ms** | 106 ms |
-| p99 — patient AQL dashboard | **67 ms** | 105 ms |
-| p99 — composition read (latest) | **59 ms** | 89 ms |
-| p99 — composition update | **79 ms** | 111 ms |
-| Storage per composition | **28.2 KB** | 33.5 KB |
-
-**Maximum sustained throughput** (the saturation knee: the highest offered
-load holding p99 ≤ 1 s and errors ≤ 0.1%) is measured on the heavier,
-**fully-populated** clinical-document workload. The P20 optimization phase
-moved ehrbase-rs's knee from **161.9 → 396.9 req/s (23,814 req/min,
-~9,832 clinical events/min) at p99 174 ms** on that workload — a 2.45×
-improvement, full ladder in
-[the knee report](docs/benchmarks/ehrbase-rs/KNEE.md):
-
-![ehrbase-rs saturation ladder](docs/benchmarks/ehrbase-rs/charts/knee.svg)
-
-Upstream's knee on this populated workload is **pending an instrument-clean
-re-run** and is deliberately not claimed in either direction: its earlier
-956 req/s figure was measured on the old lightweight payload set against
-pre-P20 ehrbase-rs (not comparable to the row above), and its first
-populated-payload run was voided as an instrument defect — 4 of 6 document
-skeletons were rejected by its RM 1.1.0-era validator over vintage quirks
-(`Size_valid` off-by-one, coded-name rubric coherence, exclusive duration
-bounds), all since triaged and fixed so **both servers now accept the shared
-payload set 6/6**. The same triage found and fixed two instrument biases
-*against* ehrbase-rs (a 256-request admission cap upstream doesn't have, and
-cold-start timing that charged our docker image build to the server). The
-head-to-head ladder on the shared payloads — including the rs-vs-java
-overlay curve — lands with the next committed run pair; whatever it
-measures is what gets published. Reproduce everything with
-`scripts/benchmark.sh`; the methodology (pre-registered workload, identical
-client, coordinated-omission-corrected latency, fairness/config-parity
-table) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
+Where upstream wins, it's printed (its p99 *at* its own knee is lower —
+it saturates earlier but gracefully up to that point). The instrument
+treats both sides identically — same payload set (accepted 6/6 by both
+servers), same DB tuning floor incl. shared-memory and vacuum settling,
+same admission depth, same log levels — and its fairness fixes cut both
+ways: two found handicapping *upstream* (a starved database `/dev/shm`,
+storm-contaminated rungs), three handicapping *ehrbase-rs* (an admission
+cap upstream doesn't have, cold-start timing charging our image build,
+payload quirks). Single-run numbers on one shared host — a lower bound,
+not a certified maximum. Reproduce with `scripts/benchmark.sh`; the
+methodology (pre-registered workload, CO-corrected latency, config-parity
+register) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
 
 ## Deployment
 
