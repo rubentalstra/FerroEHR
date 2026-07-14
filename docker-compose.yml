@@ -62,6 +62,11 @@ services:
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
       EHRBASE_DB_MAX_CONNECTIONS: ${EHRBASE_DB_MAX_CONNECTIONS:-10}
+      # In-flight admission cap (503 load shed past it; 0 disables). The
+      # benchmark harness raises it so overload manifests as queueing latency —
+      # the same failure mode as upstream's Tomcat admission window — instead
+      # of shed errors tripping the SLO's error-rate arm (see scripts/benchmark.sh).
+      EHRBASE_REST_MAX_IN_FLIGHT: ${EHRBASE_REST_MAX_IN_FLIGHT:-256}
       # Version-signing toggle pass-through (the benchmark harness disables it
       # for throughput parity — upstream has no signing; see scripts/benchmark.sh).
       EHRBASE_SIGNING_ENABLED: ${EHRBASE_SIGNING_ENABLED:-true}

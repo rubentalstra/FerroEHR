@@ -141,6 +141,7 @@ mod tests {
                 mem_mib: 8000,
                 harness_sha: "x".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: std::collections::BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {
