@@ -261,11 +261,13 @@ Highlights from [the full comparison](docs/benchmarks/COMPARISON.md)
 | p99 — composition read (latest) | **59 ms** | 89 ms |
 | p99 — composition update | **79 ms** | 111 ms |
 | Storage per composition | **28.2 KB** | 33.5 KB |
-| Saturation knee (write ramp) | 161 req/s | **643 req/s** |
+| Saturation knee — max sustained (p99 ≤ 1 s) | 320 req/s | **956 req/s** |
+| p99 latency *at* the knee | **131 ms** | 497 ms |
 
-Where the other side wins is printed too — that last row is upstream's, kept
-in plain sight (it is the current optimization target, with the profiling
-data committed alongside). Reproduce everything with
+Where the other side wins is printed too — the saturation row is
+upstream's, kept in plain sight (it is the current optimization target,
+with the profiling data committed alongside; ours holds a 3.8× lower p99
+at its knee). Reproduce everything with
 `scripts/benchmark.sh`; the methodology (pre-registered workload, identical
 client, coordinated-omission-corrected latency, fairness/config-parity
 table) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
