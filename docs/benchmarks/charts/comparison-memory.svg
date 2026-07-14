@@ -17,9 +17,9 @@ text { fill: #c3c2b7; }
 </style>
 <text x="16" y="22" class="title">App peak memory (RSS)</text>
 <text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
-<rect class="s1" x="170" y="42.0" width="139.4" height="12" rx="4"/>
-<text class="muted" x="315.4" y="52.0">188 MB</text>
+<rect class="s1" x="170" y="42.0" width="169.1" height="12" rx="4"/>
+<text class="muted" x="345.1" y="52.0">255 MB</text>
 <text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
 <rect class="s2" x="170" y="68.0" width="450.0" height="12" rx="4"/>
-<text class="muted" x="626.0" y="78.0">606 MB</text>
+<text class="muted" x="626.0" y="78.0">678 MB</text>
 </svg>
