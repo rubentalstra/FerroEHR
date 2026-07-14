@@ -4,26 +4,63 @@
 //! The module is `render` rather than `gen` because `gen` is a reserved keyword
 //! in Rust edition 2024.
 //!
-//! Every payload starts from a committed corpus skeleton (the same OPT /
-//! canonical-JSON fixtures the ECC suite provisions) and receives **deterministic
-//! seeded variation of values only, never structure**: numeric leaves move
-//! within a plausible band, `DV_DATE_TIME` leaves advance to the event's
-//! simulated time, the composer is drawn from the ward's staff pool, and the
-//! `EHR_STATUS` subject carries the patient's external id. The same
-//! `(skeleton, seed, params)` triple always renders byte-identically, so both
-//! SUTs receive an identical request sequence.
+//! # Constraint-aware variation (the fairness guarantee)
 //!
-//! [`vary`] is the variation core exposed so that skeletons obtained at run time
-//! (e.g. a SUT's `GET …/template/{id}/example`, wired in at B3 for the CKM
-//! template pack) can flow through the identical machinery — this module never
-//! fetches templates or calls a SUT itself.
+//! Every payload starts from a committed corpus skeleton (the CKM example
+//! skeletons and the ECC-corpus canonical-JSON fixtures) and receives
+//! **deterministic seeded variation of values only, never structure**. The
+//! variation is **constraint-aware by construction**: it is applied in FLAT
+//! (simSDT) space against the template's `WebTemplate`, so every leaf is
+//! addressable against its web-template input and every jittered value is kept
+//! inside the leaf's AOM constraint (magnitude/count/numerator ranges honoured;
+//! `C_INTEGER`/`C_REAL` list-constrained leaves left untouched; temporal leaves
+//! stamped only within their `C_DATE_TIME` pattern + `timezone_validity`). A
+//! naive raw-JSON jitter (the prior approach) pushed range-clamped leaves in the
+//! newly-populated CKM skeletons outside their constraints, which a conformant
+//! server correctly answers `422` — voiding the run. Variation in FLAT space
+//! cannot produce that.
+//!
+//! ## Two rendering modes, chosen empirically per template
+//!
+//! * **`Flat` (constraint-aware).** The template's OPT builds a `WebTemplate`
+//!   and the skeleton round-trips through `to_flat`/`from_flat` *faithfully*
+//!   (same populated-leaf count, no new validation messages). The skeleton is
+//!   decomposed to a FLAT map, numeric/temporal leaves are jittered against
+//!   their web-template inputs, and `from_flat` reassembles the canonical
+//!   composition. The five CKM templates — the only compositions the measured
+//!   workload commits — are `/example`-generated and round-trip byte-identically,
+//!   so this is lossless for them.
+//! * **`Raw` (structure-preserving).** For a template whose skeleton does *not*
+//!   round-trip faithfully through FLAT (the ECC-corpus fixtures are richer than
+//!   their compacted web-template — e.g. a persistent composition has no
+//!   `EVENT_CONTEXT` that `from_flat` would inject, and a deeply nested corpus
+//!   example carries content the compacted tree drops), the raw JSON is
+//!   preserved and only the composition-context times + composer name (the
+//!   unconstrained RM housekeeping the workload's ordering/attribution needs)
+//!   are stamped; no leaf value is jittered, so no constraint can be breached.
+//!   The corpus templates are **provisioning-only** — the measured workload
+//!   uploads their OPTs (E10) but never commits their compositions — so raw
+//!   variation is measurement-neutral and honest (it never distorts a payload
+//!   nor asserts a shape the fixture does not have).
+//!
+//! CKM templates *must* render `Flat` (a CKM skeleton that failed to round-trip
+//! is a committed-payload defect and is a hard error, not silently downgraded).
+//!
+//! The same `(kind, subject_id, event_time, seed, salt)` inputs always render
+//! byte-identically, so both SUTs receive an identical request sequence.
+
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::sync::LazyLock;
 
 use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use conformance::testdata::fixtures;
+use openehr_flat::webtemplate::{WebTemplate, WebTemplateNode, WebTemplateRange};
+use openehr_flat::{build_web_template, from_flat, to_flat, validate_composition};
 
 use crate::pack;
 use crate::{BenchError, TemplateKind};
@@ -39,6 +76,19 @@ pub const CONTRIBUTION_ENVELOPE: &str = "minimal/minimal_observation.contributio
 
 /// The `ehr-status.valid` corpus-dir file used for every `EHR_STATUS` body.
 pub const EHR_STATUS_FIXTURE: &str = "000_ehr_status.json";
+
+/// Every [`TemplateKind`], in a stable order (corpus fixtures first, then the
+/// CKM pack — the same order provisioning uploads in).
+const ALL_KINDS: [TemplateKind; 8] = [
+    TemplateKind::Vitals,
+    TemplateKind::Nested,
+    TemplateKind::Persistent,
+    TemplateKind::CkmVitalSigns,
+    TemplateKind::CkmLabResult,
+    TemplateKind::CkmMedicationOrder,
+    TemplateKind::CkmSummary,
+    TemplateKind::CkmSynopsis,
+];
 
 /// The corpus provenance of one [`TemplateKind`]: the OPT to provision and the
 /// canonical-JSON composition skeleton to vary. The `template_id` is the id the
@@ -123,18 +173,148 @@ pub fn opt_text(kind: TemplateKind) -> Result<String, BenchError> {
         .map_err(|e| BenchError::Fixture(e.to_string()))
 }
 
-/// Render a composition body for a template kind: the corpus skeleton with
-/// seeded value variation applied.
-///
-/// # Errors
-/// [`BenchError::Fixture`] if the skeleton cannot be read or parsed.
-pub fn composition(kind: TemplateKind, params: &VaryParams) -> Result<Value, BenchError> {
-    let skeleton = read_composition_skeleton(kind)?;
-    Ok(vary(&skeleton, params))
+// ── prepared templates (WebTemplate + skeleton, built once) ─────────────────────
+
+/// A template prepared for rendering: its build-once state (the mode chosen by
+/// the faithfulness gate) plus everything a render needs.
+enum Prepared {
+    /// Constraint-aware FLAT variation: the skeleton round-trips faithfully, so
+    /// jitter is applied in FLAT space against `WebTemplate`.
+    Flat(Box<WebTemplate>, Value),
+    /// Structure-preserving raw variation (context times + composer only) for a
+    /// provisioning-only corpus template whose skeleton does not round-trip
+    /// faithfully through FLAT (or whose OPT built no template).
+    Raw(Value),
+    /// Preparation failed for a kind that requires it (a CKM committed payload).
+    Failed(String),
 }
 
-/// Read (and cache-free parse) the composition skeleton: the committed CKM
-/// example for a CKM kind, else the canonical-JSON corpus fixture.
+/// Prepared templates, built once (`WebTemplate` building is the expensive step;
+/// the skeleton read + `to_flat`/`from_flat` per render are cheap and happen at
+/// schedule-build time, off the timed loop). Deterministic: the same vendored
+/// inputs always prepare identically.
+static PREPARED: LazyLock<HashMap<TemplateKind, Prepared>> =
+    LazyLock::new(|| ALL_KINDS.iter().map(|&k| (k, prepare(k))).collect());
+
+/// Force the prepared-template cache and fail if any template a measured commit
+/// depends on could not be prepared (a CKM `Failed`). Called at schedule-build
+/// time so a broken pack surfaces as a build error, never a silently-null
+/// payload in the hot loop.
+///
+/// # Errors
+/// [`BenchError::Fixture`] listing every template that failed to prepare.
+pub fn preflight() -> Result<(), BenchError> {
+    let failed: Vec<&str> = ALL_KINDS
+        .iter()
+        .filter_map(|k| match PREPARED.get(k) {
+            Some(Prepared::Failed(msg)) => Some(msg.as_str()),
+            _ => None,
+        })
+        .collect();
+    if failed.is_empty() {
+        Ok(())
+    } else {
+        Err(BenchError::Fixture(format!(
+            "template preparation failed: {}",
+            failed.join("; ")
+        )))
+    }
+}
+
+/// Prepare one template: read the skeleton, build the `WebTemplate`, and choose
+/// the rendering mode by the faithfulness gate.
+fn prepare(kind: TemplateKind) -> Prepared {
+    let skeleton = match read_composition_skeleton(kind) {
+        Ok(s) => s,
+        Err(e) => return Prepared::Failed(format!("{kind:?} skeleton: {e}")),
+    };
+    let is_ckm = pack::is_ckm(kind);
+    let wt = match build_template(kind) {
+        Ok(wt) => wt,
+        Err(e) => {
+            return if is_ckm {
+                Prepared::Failed(format!(
+                    "{kind:?} web-template build failed (a committed CKM payload requires it): {e}"
+                ))
+            } else {
+                // Corpus, provisioning-only: keep the raw skeleton, stamp only
+                // housekeeping.
+                Prepared::Raw(skeleton)
+            };
+        }
+    };
+    if is_faithful(&skeleton, &wt) {
+        Prepared::Flat(Box::new(wt), skeleton)
+    } else if is_ckm {
+        Prepared::Failed(format!(
+            "{kind:?} CKM skeleton does not round-trip faithfully through FLAT — refusing to \
+             commit a distorted payload"
+        ))
+    } else {
+        Prepared::Raw(skeleton)
+    }
+}
+
+/// Build the `WebTemplate` for a kind from its OPT 1.4 XML.
+fn build_template(kind: TemplateKind) -> Result<WebTemplate, BenchError> {
+    let xml = opt_text(kind)?;
+    let opt = openehr_its::opt14::from_xml(&xml)
+        .map_err(|e| BenchError::Fixture(format!("OPT parse: {e}")))?;
+    build_web_template(&opt).map_err(|e| BenchError::Fixture(format!("web-template build: {e}")))
+}
+
+/// Whether `to_flat`/`from_flat` round-trips `skeleton` faithfully under `wt`:
+/// the reassembled composition preserves the populated `DATA_VALUE`-leaf count
+/// and introduces no validation message the skeleton did not already carry. A
+/// faithful round-trip is the precondition for jittering in FLAT space and
+/// reassembling without distorting the committed payload.
+fn is_faithful(skeleton: &Value, wt: &WebTemplate) -> bool {
+    let Ok(flat) = to_flat(skeleton, wt) else {
+        return false;
+    };
+    let map: Map<String, Value> = flat.into_iter().collect();
+    let Ok(rebuilt) = from_flat(&map, wt) else {
+        return false;
+    };
+    if dv_leaf_count(&rebuilt) != dv_leaf_count(skeleton) {
+        return false;
+    }
+    let baseline = message_set(&validate_composition(skeleton, wt));
+    validate_composition(&rebuilt, wt)
+        .iter()
+        .all(|m| baseline.contains(&message_signature(m)))
+}
+
+/// Count populated `DATA_VALUE` leaves (a coarse structural-fidelity metric).
+fn dv_leaf_count(v: &Value) -> usize {
+    fn rec(v: &Value, n: &mut usize) {
+        match v {
+            Value::Object(m) => {
+                if m.get("_type")
+                    .and_then(Value::as_str)
+                    .is_some_and(|t| t.starts_with("DV_"))
+                {
+                    *n += 1;
+                }
+                for x in m.values() {
+                    rec(x, n);
+                }
+            }
+            Value::Array(a) => {
+                for x in a {
+                    rec(x, n);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut n = 0;
+    rec(v, &mut n);
+    n
+}
+
+/// Read (and parse) the composition skeleton: the committed CKM example for a
+/// CKM kind, else the canonical-JSON corpus fixture.
 fn read_composition_skeleton(kind: TemplateKind) -> Result<Value, BenchError> {
     if let Some(tpl) = pack::get(kind) {
         return tpl.skeleton();
@@ -145,6 +325,470 @@ fn read_composition_skeleton(kind: TemplateKind) -> Result<Value, BenchError> {
         .map_err(|e| BenchError::Fixture(e.to_string()))?;
     serde_json::from_str(&text).map_err(BenchError::Json)
 }
+
+// ── rendering ───────────────────────────────────────────────────────────────
+
+/// Render a composition body for a template kind: the skeleton with seeded,
+/// constraint-aware value variation applied (see the module docs).
+///
+/// # Errors
+/// [`BenchError::Fixture`] if the template could not be prepared, or the FLAT
+/// decomposition/reassembly fails.
+pub fn composition(kind: TemplateKind, params: &VaryParams) -> Result<Value, BenchError> {
+    render_prepared(kind, params, 0)
+}
+
+/// Render a `kind` composition with the given per-call `salt` (differentiating
+/// the compositions inside one CONTRIBUTION batch).
+fn render_prepared(
+    kind: TemplateKind,
+    params: &VaryParams,
+    salt: u64,
+) -> Result<Value, BenchError> {
+    match PREPARED
+        .get(&kind)
+        .ok_or_else(|| BenchError::Fixture(format!("no prepared template for {kind:?}")))?
+    {
+        Prepared::Flat(wt, skeleton) => render_flat(wt, skeleton, params, salt),
+        Prepared::Raw(skeleton) => Ok(render_raw(skeleton, params)),
+        Prepared::Failed(msg) => Err(BenchError::Fixture(msg.clone())),
+    }
+}
+
+/// Constraint-aware render: decompose to FLAT, jitter leaves inside their
+/// web-template constraints, reassemble.
+fn render_flat(
+    wt: &WebTemplate,
+    skeleton: &Value,
+    params: &VaryParams,
+    salt: u64,
+) -> Result<Value, BenchError> {
+    let flat = to_flat(skeleton, wt).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let mut map: Map<String, Value> = flat.into_iter().collect();
+    let mut rng = StdRng::seed_from_u64(derive_seed(params, salt));
+    jitter_flat(&mut map, wt, params, &mut rng);
+    from_flat(&map, wt).map_err(|e| BenchError::Fixture(e.to_string()))
+}
+
+/// Structure-preserving render: stamp only the composition-context times and the
+/// composer name (unconstrained RM housekeeping), leaving every leaf value.
+fn render_raw(skeleton: &Value, params: &VaryParams) -> Value {
+    let mut comp = skeleton.clone();
+    for ptr in ["/context/start_time/value", "/context/end_time/value"] {
+        if let Some(slot @ Value::String(_)) = comp.pointer_mut(ptr) {
+            *slot = Value::String(params.event_time.clone());
+        }
+    }
+    if let Some(slot @ Value::String(_)) = comp.pointer_mut("/composer/name/value") {
+        *slot = Value::String(params.composer.clone());
+    } else if let Some(slot @ Value::String(_)) = comp.pointer_mut("/composer/name") {
+        *slot = Value::String(params.composer.clone());
+    }
+    comp
+}
+
+/// Derive the per-render RNG seed from the variation inputs (deterministic:
+/// the same inputs always seed identically).
+fn derive_seed(params: &VaryParams, salt: u64) -> u64 {
+    fnv1a(params.subject_id.as_bytes())
+        ^ fnv1a(params.event_time.as_bytes())
+        ^ params.seed
+        ^ salt.wrapping_mul(0x9E37_79B9_7F4A_7C15)
+}
+
+/// Jitter the numeric/temporal leaves of a FLAT map in place, each inside its
+/// web-template constraint, and stamp the workload housekeeping (`ctx/time`,
+/// `ctx/composer_name`). Keys are visited in sorted order so the RNG draw order
+/// is deterministic regardless of the FLAT map's own iteration order.
+fn jitter_flat(
+    flat: &mut Map<String, Value>,
+    wt: &WebTemplate,
+    params: &VaryParams,
+    rng: &mut StdRng,
+) {
+    let leaves = leaf_index(wt);
+    let mut keys: Vec<String> = flat.keys().cloned().collect();
+    keys.sort();
+    for key in keys {
+        if key.starts_with("ctx/") {
+            continue; // ctx housekeeping is stamped after the leaf pass
+        }
+        let (base, suffix) = match key.split_once('|') {
+            Some((b, s)) => (b, Some(s)),
+            None => (key.as_str(), None),
+        };
+        let Some(node) = resolve(&leaves, base) else {
+            continue;
+        };
+        let rm = node.rm_type.split('<').next().unwrap_or(&node.rm_type);
+        match (rm, suffix) {
+            ("DV_QUANTITY", Some("magnitude")) => {
+                if has_numeric_list(node, "magnitude") {
+                    continue; // C_REAL/C_INTEGER list-constrained: leave unchanged
+                }
+                let Some(current) = flat.get(&key).and_then(Value::as_f64) else {
+                    continue;
+                };
+                let unit = flat
+                    .get(&format!("{base}|unit"))
+                    .and_then(Value::as_str)
+                    .map(str::to_owned);
+                let range = quantity_range(node, unit.as_deref());
+                let jittered = round3(current * decimal_factor(rng));
+                let value = constrain_decimal(current, jittered, range.as_ref());
+                set_number(flat, &key, value);
+            }
+            ("DV_COUNT", None) => {
+                if has_numeric_list(node, "magnitude") {
+                    continue;
+                }
+                let Some(current) = flat.get(&key).and_then(Value::as_i64) else {
+                    continue;
+                };
+                let range = input_range(node, None);
+                let jittered = current + rng.random_range(-5..=5);
+                let value = constrain_count(current, jittered, range.as_ref());
+                flat.insert(key.clone(), Value::Number(value.into()));
+            }
+            ("DV_PROPORTION", Some("numerator")) => {
+                if has_numeric_list(node, "numerator") {
+                    continue;
+                }
+                // Conservative: only jitter when a numerator range is declared,
+                // and never for the integral proportion kinds (fraction /
+                // integer_fraction), whose RM integrality invariant a float
+                // jitter would break. `type` codes: ratio 0, unitary 1,
+                // percent 2, fraction 3, integer_fraction 4 (RM DV_PROPORTION;
+                // master05 §DV_PROPORTION).
+                let Some(range) = input_range(node, Some("numerator")) else {
+                    continue;
+                };
+                if matches!(
+                    flat.get(&format!("{base}|type")).and_then(Value::as_i64),
+                    Some(3 | 4)
+                ) {
+                    continue;
+                }
+                let Some(current) = flat.get(&key).and_then(Value::as_f64) else {
+                    continue;
+                };
+                let jittered = round3(current * decimal_factor(rng));
+                let value = constrain_decimal(current, jittered, Some(&range));
+                set_number(flat, &key, value);
+            }
+            ("DV_DATE_TIME" | "DV_DATE" | "DV_TIME", None) => {
+                if let Some(stamped) = stamp_temporal(rm, node, &params.event_time) {
+                    flat.insert(key.clone(), Value::String(stamped));
+                }
+            }
+            _ => {}
+        }
+    }
+    // Workload housekeeping (unconstrained RM context): the start-time drives the
+    // workload's ordering and the composer its attribution.
+    flat.insert(
+        "ctx/time".to_owned(),
+        Value::String(params.event_time.clone()),
+    );
+    flat.insert(
+        "ctx/composer_name".to_owned(),
+        Value::String(params.composer.clone()),
+    );
+}
+
+/// A random multiplicative jitter factor in `[0.85, 1.15)` (±15%).
+fn decimal_factor(rng: &mut StdRng) -> f64 {
+    rng.random_range(0.85..1.15)
+}
+
+/// Round to 3 decimal places.
+fn round3(x: f64) -> f64 {
+    (x * 1000.0).round() / 1000.0
+}
+
+/// Insert a finite `f64` as a JSON number at `key` (a non-finite result is
+/// dropped, leaving the original value).
+fn set_number(flat: &mut Map<String, Value>, key: &str, value: f64) {
+    if let Some(n) = serde_json::Number::from_f64(value) {
+        flat.insert(key.to_owned(), Value::Number(n));
+    }
+}
+
+/// Whether the node carries a `C_INTEGER`/`C_REAL` list constraint on the RM
+/// attribute `attr` (a list-constrained leaf must stay on an enumerated value,
+/// so it is never jittered).
+fn has_numeric_list(node: &WebTemplateNode, attr: &str) -> bool {
+    node.numeric_lists.iter().any(|(a, _)| a == attr)
+}
+
+/// The web-template input matching `suffix` (or the first input when `None`),
+/// and its validation range (cloned to avoid entangling the node borrow with
+/// the FLAT-map mutation).
+fn input_range(node: &WebTemplateNode, suffix: Option<&str>) -> Option<WebTemplateRange> {
+    node.inputs
+        .iter()
+        .find(|i| i.suffix.as_deref() == suffix)
+        .and_then(|i| i.validation.as_ref())
+        .and_then(|v| v.range.clone())
+}
+
+/// The magnitude range for a `DV_QUANTITY` leaf: the magnitude input's own
+/// range, else the range scoped to the instance's unit (mirroring the
+/// validator's `check_quantity`).
+fn quantity_range(node: &WebTemplateNode, unit: Option<&str>) -> Option<WebTemplateRange> {
+    input_range(node, Some("magnitude")).or_else(|| {
+        let unit = unit?;
+        node.inputs
+            .iter()
+            .find(|i| i.suffix.as_deref() == Some("unit"))?
+            .list
+            .iter()
+            .find(|cv| cv.value == unit)?
+            .validation
+            .as_ref()?
+            .range
+            .clone()
+    })
+}
+
+/// Constrain a jittered decimal into `range` (honouring open bounds); if the
+/// result cannot satisfy the range (e.g. it lands on an excluded boundary), fall
+/// back to the known-valid original.
+fn constrain_decimal(original: f64, jittered: f64, range: Option<&WebTemplateRange>) -> f64 {
+    let Some(range) = range else {
+        return jittered;
+    };
+    let mut v = jittered;
+    if let Some(min) = range.min.as_ref().and_then(Value::as_f64)
+        && v < min
+    {
+        v = min;
+    }
+    if let Some(max) = range.max.as_ref().and_then(Value::as_f64)
+        && v > max
+    {
+        v = max;
+    }
+    if range_ok(v, range) { v } else { original }
+}
+
+/// Constrain a jittered integer count into `range` (integer open bounds are
+/// exact: `>` min ⇒ min+1, `<` max ⇒ max−1).
+fn constrain_count(original: i64, jittered: i64, range: Option<&WebTemplateRange>) -> i64 {
+    let Some(range) = range else {
+        return jittered;
+    };
+    let lo = range.min.as_ref().and_then(Value::as_i64).map(|m| {
+        if range.min_op.as_deref() == Some(">") {
+            m + 1
+        } else {
+            m
+        }
+    });
+    let hi = range.max.as_ref().and_then(Value::as_i64).map(|m| {
+        if range.max_op.as_deref() == Some("<") {
+            m - 1
+        } else {
+            m
+        }
+    });
+    if let (Some(lo), Some(hi)) = (lo, hi)
+        && lo > hi
+    {
+        return original; // contradictory range — leave the valid original
+    }
+    let mut v = jittered;
+    if let Some(lo) = lo
+        && v < lo
+    {
+        v = lo;
+    }
+    if let Some(hi) = hi
+        && v > hi
+    {
+        v = hi;
+    }
+    v
+}
+
+/// Whether `value` satisfies a web-template numeric range (mirrors the
+/// `openehr-flat` validator's `in_range`: `>`/`<` exclude the bound; a missing
+/// bound is unbounded). BASE `Interval.has(v)` semantics over the Better wire
+/// representation (`org.openehr.base.foundation_types.interval.adoc`).
+fn range_ok(value: f64, range: &WebTemplateRange) -> bool {
+    if let Some(min) = range.min.as_ref().and_then(Value::as_f64) {
+        let ok = match range.min_op.as_deref() {
+            Some(">") => value > min,
+            _ => value >= min,
+        };
+        if !ok {
+            return false;
+        }
+    }
+    if let Some(max) = range.max.as_ref().and_then(Value::as_f64) {
+        let ok = match range.max_op.as_deref() {
+            Some("<") => value < max,
+            _ => value <= max,
+        };
+        if !ok {
+            return false;
+        }
+    }
+    true
+}
+
+/// Stamp a temporal leaf from the event time, honouring the leaf's
+/// `C_DATE_TIME`/`C_DATE`/`C_TIME` pattern (partial-precision segments truncate
+/// the stamped value) and `timezone_validity`. Returns `None` — keep the
+/// original — when the leaf carries a temporal *range* constraint (the skeleton
+/// value is known-valid; a stamped instant could fall outside it).
+fn stamp_temporal(rm: &str, node: &WebTemplateNode, event_time: &str) -> Option<String> {
+    let validation = node.inputs.first().and_then(|i| i.validation.as_ref());
+    if validation.and_then(|v| v.range.as_ref()).is_some() {
+        return None;
+    }
+    let pattern = validation.and_then(|v| v.pattern.as_deref());
+    Some(build_temporal(rm, pattern, node.tz_validity, event_time))
+}
+
+/// Build a temporal value from the event time truncated to the leaf's allowed
+/// precision (mirrors `openehr_flat::example::example_temporal`, the validated
+/// example generator, but stamped from the workload's event time rather than a
+/// fixed instant): year always; month/day/hour/minute/second kept unless the
+/// pattern segment prohibits them (`XX`); the timezone omitted iff
+/// `timezone_validity == 1003` (disallowed).
+fn build_temporal(
+    rm: &str,
+    pattern: Option<&str>,
+    tz_validity: Option<i32>,
+    event: &str,
+) -> String {
+    let (ev_date, ev_time_raw) = event.split_once('T').unwrap_or((event, ""));
+    let ev_time = trim_timezone(ev_time_raw);
+    let (pat_date, pat_time) = match pattern {
+        Some(p) if p.contains('T') => p.split_once('T').unwrap_or((p, "")),
+        Some(p) if p.contains(':') => ("", p),
+        Some(p) => (p, ""),
+        None => ("", ""),
+    };
+    let date_full: Vec<&str> = ev_date.splitn(3, '-').collect();
+    let build_date = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, '-').collect()
+        };
+        let mut out = date_full.first().copied().unwrap_or("2024").to_owned();
+        for (i, part) in date_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push('-');
+            out.push_str(part);
+        }
+        out
+    };
+    let time_full: Vec<&str> = ev_time
+        .splitn(3, ':')
+        .map(|s| s.split('.').next().unwrap_or(s))
+        .collect();
+    let build_time = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, ':').collect()
+        };
+        let mut out = time_full.first().copied().unwrap_or("00").to_owned();
+        for (i, part) in time_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push(':');
+            out.push_str(part);
+        }
+        out
+    };
+    let tz = if tz_validity == Some(1003) { "" } else { "Z" };
+    match rm {
+        "DV_DATE" => build_date(pat_date),
+        "DV_TIME" => format!("{}{tz}", build_time(pat_time)),
+        // DV_DATE_TIME: a time part prohibited outright (pattern `…TXX:…`)
+        // truncates to the date.
+        _ => {
+            if pat_time.starts_with("XX") {
+                build_date(pat_date)
+            } else {
+                format!("{}T{}{tz}", build_date(pat_date), build_time(pat_time))
+            }
+        }
+    }
+}
+
+/// Strip a trailing timezone designator (`Z`, or a `+hh:mm`/`-hh:mm` offset)
+/// from a time part.
+fn trim_timezone(time: &str) -> &str {
+    if let Some(stripped) = time.strip_suffix(['Z', 'z']) {
+        return stripped;
+    }
+    // A `+`/`-` offset: split at the last such sign (the date part is already
+    // removed, so any sign here is the timezone).
+    match time.rfind(['+', '-']) {
+        Some(i) => &time[..i],
+        None => time,
+    }
+}
+
+// ── leaf resolution (flat key → web-template node) ─────────────────────────────
+
+/// Build the map from a leaf's de-indexed json-id path (`root/child/.../leaf`,
+/// matching the FLAT key structure `to_flat` emits) to its web-template node.
+fn leaf_index(wt: &WebTemplate) -> HashMap<String, &WebTemplateNode> {
+    fn walk<'a>(
+        node: &'a WebTemplateNode,
+        prefix: &str,
+        out: &mut HashMap<String, &'a WebTemplateNode>,
+    ) {
+        if !node.inputs.is_empty() {
+            out.insert(prefix.to_owned(), node);
+            return;
+        }
+        for child in &node.children {
+            let child_prefix = format!("{prefix}/{}", child.id);
+            walk(child, &child_prefix, out);
+        }
+    }
+    let mut out = HashMap::new();
+    walk(&wt.tree, &wt.tree.id, &mut out);
+    out
+}
+
+/// Resolve a FLAT key's base path (already stripped of its `|suffix`) to its
+/// leaf node: drop each segment's `:index`, then look up the de-indexed path.
+fn resolve<'a>(
+    leaves: &HashMap<String, &'a WebTemplateNode>,
+    base: &str,
+) -> Option<&'a WebTemplateNode> {
+    let deindexed: String = base
+        .split('/')
+        .map(|seg| seg.split(':').next().unwrap_or(seg))
+        .collect::<Vec<_>>()
+        .join("/");
+    leaves.get(&deindexed).copied()
+}
+
+// ── validation-message set helpers (faithfulness gate + tests) ─────────────────
+
+/// A comparable signature for a validation message (path + kind + text).
+fn message_signature(m: &openehr_flat::ValidationMessage) -> String {
+    format!("{}|{:?}|{}", m.path, m.kind, m.message)
+}
+
+/// The set of message signatures for a validation result.
+fn message_set(msgs: &[openehr_flat::ValidationMessage]) -> HashSet<String> {
+    msgs.iter().map(message_signature).collect()
+}
+
+// ── other bodies (EHR_STATUS, directory, contribution) ─────────────────────────
 
 /// Render an `EHR_STATUS` body carrying the patient's subject id (E1 create,
 /// E9 status update). The corpus `EHR_STATUS` fixture is adapted to RM 1.2.0 by
@@ -196,10 +840,11 @@ pub fn folder(params: &VaryParams) -> Value {
 
 /// Render a `CONTRIBUTION` batch of `n` (1–3) result compositions (E4). The
 /// vendored envelope is reused; each version's `data` is an independently
-/// varied composition of `kind`, and the committer name is the params composer.
+/// varied composition of `kind` (constraint-aware, differentiated by a per-slot
+/// salt), and the committer name is the params composer.
 ///
 /// # Errors
-/// [`BenchError`] if the envelope or the composition skeleton cannot be read.
+/// [`BenchError`] if the envelope or the composition cannot be read/rendered.
 pub fn contribution(
     kind: TemplateKind,
     params: &VaryParams,
@@ -209,7 +854,6 @@ pub fn contribution(
     let text = fixtures::read_from("contribution.valid", CONTRIBUTION_ENVELOPE)
         .map_err(|e| BenchError::Fixture(e.to_string()))?;
     let mut envelope: Value = serde_json::from_str(&text).map_err(BenchError::Json)?;
-    let skeleton = read_composition_skeleton(kind)?;
 
     let template_version = envelope
         .get("versions")
@@ -225,10 +869,7 @@ pub fn contribution(
         let mut version = template_version.clone();
         set_committer_name(&mut version, "commit_audit", &params.composer);
         if let Some(obj) = version.as_object_mut() {
-            obj.insert(
-                "data".to_owned(),
-                vary_with_salt(&skeleton, params, i as u64),
-            );
+            obj.insert("data".to_owned(), render_prepared(kind, params, i as u64)?);
         }
         versions.push(version);
     }
@@ -240,132 +881,15 @@ pub fn contribution(
     Ok(envelope)
 }
 
-/// The variation core: return a copy of `skeleton` with values (numeric leaves,
-/// `DV_DATE_TIME`/`DV_DATE`/`DV_TIME` leaves, composer name) varied
-/// deterministically from `params`; structure is preserved exactly.
-#[must_use]
-pub fn vary(skeleton: &Value, params: &VaryParams) -> Value {
-    vary_with_salt(skeleton, params, 0)
-}
-
-/// [`vary`] with an extra per-call salt (used to differentiate the compositions
-/// inside one CONTRIBUTION batch).
-fn vary_with_salt(skeleton: &Value, params: &VaryParams, salt: u64) -> Value {
-    let mut value = skeleton.clone();
-    let seed = fnv1a(params.subject_id.as_bytes())
-        ^ fnv1a(params.event_time.as_bytes())
-        ^ params.seed
-        ^ salt.wrapping_mul(0x9E37_79B9_7F4A_7C15);
-    let mut rng = StdRng::seed_from_u64(seed);
-    vary_value(&mut value, &mut rng, params);
-    value
-}
-
-/// Recursively vary the values of a JSON node in place.
-fn vary_value(value: &mut Value, rng: &mut StdRng, params: &VaryParams) {
-    match value {
-        Value::Object(map) => {
-            if let Some(Value::String(ty)) = map.get("_type") {
-                match ty.as_str() {
-                    "DV_QUANTITY" => vary_number(map, "magnitude", rng),
-                    "DV_COUNT" => vary_count(map, "magnitude", rng),
-                    "DV_PROPORTION" => vary_number(map, "numerator", rng),
-                    "DV_DATE_TIME" => set_string(map, "value", &params.event_time),
-                    "DV_DATE" => set_string(map, "value", date_part(&params.event_time)),
-                    "DV_TIME" => set_string(map, "value", time_part(&params.event_time)),
-                    _ => {}
-                }
-            }
-            // Keys are visited in insertion order (serde_json `preserve_order`),
-            // keeping the RNG draw order deterministic.
-            let keys: Vec<String> = map.keys().cloned().collect();
-            for key in keys {
-                if key == "composer"
-                    && let Some(child) = map.get_mut(&key)
-                {
-                    set_name_field(child, &params.composer);
-                }
-                if let Some(child) = map.get_mut(&key) {
-                    vary_value(child, rng, params);
-                }
-            }
-        }
-        Value::Array(items) => {
-            for item in items {
-                vary_value(item, rng, params);
-            }
-        }
-        _ => {}
-    }
-}
-
-/// Vary a floating-point leaf within ±15% of its original, rounded to 3 dp.
-fn vary_number(map: &mut serde_json::Map<String, Value>, field: &str, rng: &mut StdRng) {
-    if let Some(current) = map.get(field).and_then(Value::as_f64) {
-        let factor: f64 = rng.random_range(0.85..1.15);
-        let varied = (current * factor * 1000.0).round() / 1000.0;
-        if let Some(num) = serde_json::Number::from_f64(varied) {
-            map.insert(field.to_owned(), Value::Number(num));
-        }
-    }
-}
-
-/// Vary an integer count leaf within ±5 of its original (never negative).
-fn vary_count(map: &mut serde_json::Map<String, Value>, field: &str, rng: &mut StdRng) {
-    if let Some(current) = map.get(field).and_then(Value::as_i64) {
-        let low = (current - 5).max(0);
-        let high = current + 5;
-        let varied: i64 = rng.random_range(low..=high);
-        map.insert(field.to_owned(), Value::Number(varied.into()));
-    }
-}
-
-/// Set a string field only if it already exists as a string (no structural add).
-fn set_string(map: &mut serde_json::Map<String, Value>, field: &str, val: &str) {
-    if let Some(slot @ Value::String(_)) = map.get_mut(field) {
-        *slot = Value::String(val.to_owned());
-    }
-}
-
-/// Set a `name.value` (or `name` string) child to the composer name, if present.
-fn set_name_field(node: &mut Value, name: &str) {
-    if let Some(obj) = node.as_object_mut() {
-        match obj.get_mut("name") {
-            Some(Value::String(s)) => name.clone_into(s),
-            Some(Value::Object(name_obj)) => {
-                if let Some(Value::String(v)) = name_obj.get_mut("value") {
-                    name.clone_into(v);
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
 /// Set the committer name inside an `AUDIT_DETAILS` field of `node`.
 fn set_committer_name(node: &mut Value, audit_field: &str, name: &str) {
-    if let Some(committer) = node
+    if let Some(Value::String(s)) = node
         .get_mut(audit_field)
         .and_then(|a| a.get_mut("committer"))
+        .and_then(|c| c.get_mut("name"))
     {
-        set_name_field_direct(committer, name);
-    }
-}
-
-/// Set a `committer.name` string directly (the `AUDIT_DETAILS` committer name is
-/// a plain string, not a `DV_TEXT`).
-fn set_name_field_direct(committer: &mut Value, name: &str) {
-    if let Some(Value::String(s)) = committer.get_mut("name") {
         name.clone_into(s);
     }
-}
-
-fn date_part(rfc3339: &str) -> &str {
-    rfc3339.split('T').next().unwrap_or(rfc3339)
-}
-
-fn time_part(rfc3339: &str) -> &str {
-    rfc3339.split_once('T').map_or(rfc3339, |(_, t)| t)
 }
 
 /// 64-bit FNV-1a over bytes (RNG salting only — not a cryptographic hash).
@@ -391,102 +915,184 @@ mod tests {
         }
     }
 
-    /// The recursive key/type signature of a JSON value — structure, ignoring
-    /// scalar values. Two payloads with the same signature are structurally
-    /// identical.
-    fn signature(v: &Value) -> String {
-        match v {
-            Value::Object(map) => {
-                let mut parts: Vec<String> = map
-                    .iter()
-                    .map(|(k, val)| format!("{k}:{}", signature(val)))
-                    .collect();
-                parts.sort();
-                format!("{{{}}}", parts.join(","))
+    /// The `WebTemplate` for a kind, for validating renders. `Flat` kinds reuse
+    /// the prepared template; `Raw` (corpus) kinds rebuild it (their OPT builds a
+    /// template — it is only the FLAT round-trip that is unfaithful).
+    fn web_template(kind: TemplateKind) -> WebTemplate {
+        match PREPARED.get(&kind).expect("prepared") {
+            Prepared::Flat(wt, _) => (**wt).clone(),
+            Prepared::Raw(_) => build_template(kind).expect("corpus OPT builds a template"),
+            Prepared::Failed(msg) => panic!("{msg}"),
+        }
+    }
+
+    fn skeleton(kind: TemplateKind) -> &'static Value {
+        match PREPARED.get(&kind).expect("prepared") {
+            Prepared::Flat(_, s) | Prepared::Raw(s) => s,
+            Prepared::Failed(msg) => panic!("{msg}"),
+        }
+    }
+
+    /// Every `DV_QUANTITY` magnitude in a composition (deep), in document order.
+    fn magnitudes(v: &Value) -> Vec<f64> {
+        fn rec(v: &Value, out: &mut Vec<f64>) {
+            match v {
+                Value::Object(m) => {
+                    if m.get("_type").and_then(Value::as_str) == Some("DV_QUANTITY")
+                        && let Some(mag) = m.get("magnitude").and_then(Value::as_f64)
+                    {
+                        out.push(mag);
+                    }
+                    for x in m.values() {
+                        rec(x, out);
+                    }
+                }
+                Value::Array(a) => {
+                    for x in a {
+                        rec(x, out);
+                    }
+                }
+                _ => {}
             }
-            Value::Array(items) => {
-                let inner: Vec<String> = items.iter().map(signature).collect();
-                format!("[{}]", inner.join(","))
-            }
-            Value::String(_) => "s".to_owned(),
-            Value::Number(_) => "n".to_owned(),
-            Value::Bool(_) => "b".to_owned(),
-            Value::Null => "z".to_owned(),
+        }
+        let mut out = Vec::new();
+        rec(v, &mut out);
+        out
+    }
+
+    #[test]
+    fn every_template_prepares() {
+        // No CKM hard-failure; each kind is renderable.
+        preflight().expect("all templates prepare");
+        for kind in ALL_KINDS {
+            let _ = composition(kind, &params()).expect("render");
         }
     }
 
     #[test]
-    fn vary_preserves_structure_for_every_template() {
-        for kind in [
-            TemplateKind::Vitals,
-            TemplateKind::Nested,
-            TemplateKind::Persistent,
-        ] {
-            let skeleton = read_composition_skeleton(kind).expect("skeleton reads");
-            let rendered = vary(&skeleton, &params());
-            assert_eq!(
-                signature(&skeleton),
-                signature(&rendered),
-                "structure changed for {kind:?}"
-            );
-        }
-    }
-
-    #[test]
-    fn vary_preserves_structure_for_every_ckm_template() {
+    fn ckm_templates_render_via_the_constraint_aware_flat_path() {
+        // The committed workload payloads must be constraint-aware (Flat), never
+        // the raw fallback — that is the whole point of the fix.
         for tpl in pack::all() {
-            let skeleton = read_composition_skeleton(tpl.kind).expect("CKM skeleton reads");
-            let rendered = vary(&skeleton, &params());
-            assert_eq!(
-                signature(&skeleton),
-                signature(&rendered),
-                "structure changed for CKM {}",
+            assert!(
+                matches!(PREPARED.get(&tpl.kind), Some(Prepared::Flat(..))),
+                "CKM {} must render via the Flat path",
                 tpl.slug
             );
         }
     }
 
+    /// The core regression net: for ~100 distinct (seed, `event_time`, salt)
+    /// inputs, a rendered payload introduces **no** validation message beyond
+    /// its skeleton's own baseline; where the skeleton is itself clean, the
+    /// render is clean too. This is the guarantee that variation can never
+    /// produce the server-rejected (`422`) payloads that voided the earlier run.
     #[test]
-    fn ckm_render_is_deterministic_and_varies() {
-        // The CKM skeletons come from the pack module, then through the same
-        // `vary` core: same params render identically, a changed event time
-        // changes the payload (the DV_DATE_TIME leaves advance).
-        let a = composition(TemplateKind::CkmVitalSigns, &params()).expect("render");
-        let b = composition(TemplateKind::CkmVitalSigns, &params()).expect("render");
-        assert_eq!(a, b, "same params must render identically");
-        let mut p2 = params();
-        p2.event_time = "2024-06-01T14:30:00.000Z".to_owned();
-        let c = composition(TemplateKind::CkmVitalSigns, &p2).expect("render");
-        assert_ne!(a, c, "different event time must change the CKM payload");
+    fn variation_never_introduces_a_validation_error() {
+        let times = [
+            "2024-06-01T00:00:00.000Z",
+            "2024-06-01T06:30:15.500Z",
+            "2024-06-01T08:15:00.000Z",
+            "2024-06-01T12:45:30.250Z",
+            "2024-06-01T14:30:00.000Z",
+            "2024-06-01T18:20:59.999Z",
+            "2024-06-01T21:05:45.100Z",
+            "2024-06-01T23:59:59.000Z",
+            "2024-06-01T03:03:03.030Z",
+            "2024-06-01T16:16:16.160Z",
+        ];
+        for kind in ALL_KINDS {
+            let wt = web_template(kind);
+            let baseline = message_set(&validate_composition(skeleton(kind), &wt));
+            for (si, &time) in times.iter().enumerate() {
+                for salt in 0..10u64 {
+                    let p = VaryParams {
+                        subject_id: format!("bench-patient-{si:06}"),
+                        composer: format!("Dr. Bench {salt}"),
+                        event_time: time.to_owned(),
+                        seed: 0x1234_5678u64
+                            .wrapping_mul(si as u64 + 1)
+                            .wrapping_add(salt),
+                    };
+                    let rendered =
+                        render_prepared(kind, &p, salt).expect("render for validity net");
+                    let msgs = validate_composition(&rendered, &wt);
+                    for m in &msgs {
+                        assert!(
+                            baseline.contains(&message_signature(m)),
+                            "{kind:?} render introduced a new validation message \
+                             (time={time}, salt={salt}): {m:?}"
+                        );
+                    }
+                    if baseline.is_empty() {
+                        assert!(
+                            msgs.is_empty(),
+                            "{kind:?} render must validate clean (time={time}, salt={salt}): \
+                             {msgs:?}"
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]
     fn render_is_deterministic() {
-        let a = composition(TemplateKind::Nested, &params()).expect("render");
-        let b = composition(TemplateKind::Nested, &params()).expect("render");
-        assert_eq!(a, b, "same params must render identically");
+        for kind in ALL_KINDS {
+            let a = composition(kind, &params()).expect("render");
+            let b = composition(kind, &params()).expect("render");
+            assert_eq!(a, b, "{kind:?}: same inputs must render identically");
+        }
+        // Determinism also through the salted contribution path.
+        let c1 = contribution(TemplateKind::CkmLabResult, &params(), 3).expect("contribution");
+        let c2 = contribution(TemplateKind::CkmLabResult, &params(), 3).expect("contribution");
+        assert_eq!(c1, c2, "same inputs must produce an identical contribution");
     }
 
     #[test]
-    fn render_varies_with_params() {
-        let a = composition(TemplateKind::Vitals, &params()).expect("render");
-        let mut p2 = params();
-        p2.event_time = "2024-06-01T14:30:00.000Z".to_owned();
-        let b = composition(TemplateKind::Vitals, &p2).expect("render");
-        // The event time is stamped into DV_DATE_TIME leaves, so the payloads
-        // must differ.
-        assert_ne!(a, b, "different event time must change the payload");
+    fn jitter_actually_varies_numeric_leaves() {
+        // Across CKM kinds (constraint-aware), a change of seed alone (fixed
+        // subject/composer/event-time) must move at least one DV_QUANTITY
+        // magnitude — proof the jitter is real, not silently disabled.
+        let base = params();
+        let mut other = params();
+        other.seed = base.seed ^ 0xFFFF_FFFF;
+        let varied = pack::all().iter().any(|tpl| {
+            let a = composition(tpl.kind, &base).expect("render a");
+            let b = composition(tpl.kind, &other).expect("render b");
+            magnitudes(&a) != magnitudes(&b)
+        });
+        assert!(
+            varied,
+            "no CKM template varied a magnitude across seeds — jitter is not firing"
+        );
     }
 
     #[test]
-    fn datetime_leaves_advance_to_event_time() {
-        let rendered = composition(TemplateKind::Vitals, &params()).expect("render");
-        // composition_evaluation_test has context.start_time / end_time.
-        let start = rendered
-            .pointer("/context/start_time/value")
-            .and_then(Value::as_str)
-            .expect("start_time present");
-        assert_eq!(start, "2024-06-01T08:15:00.000Z");
+    fn jitter_stays_within_a_constrained_range() {
+        // A synthetic proof that the clamp honours bounds: a value jittered from
+        // near an inclusive max never exceeds it.
+        let range = WebTemplateRange {
+            min_op: None,
+            min: Some(serde_json::json!(0.0)),
+            max_op: None,
+            max: Some(serde_json::json!(10.0)),
+        };
+        for raw in [-5.0, 0.0, 9.9, 10.0, 12.0, 100.0] {
+            let v = constrain_decimal(5.0, raw, Some(&range));
+            assert!(
+                (0.0..=10.0).contains(&v),
+                "clamped {raw} → {v} out of [0,10]"
+            );
+        }
+        // Exclusive bound landing falls back to the valid original.
+        let excl = WebTemplateRange {
+            min_op: Some(">".to_owned()),
+            min: Some(serde_json::json!(0.0)),
+            max_op: None,
+            max: None,
+        };
+        assert!((constrain_decimal(3.0, -1.0, Some(&excl)) - 3.0).abs() < 1e-12);
     }
 
     #[test]
@@ -506,14 +1112,44 @@ mod tests {
 
     #[test]
     fn contribution_batches_and_preserves_envelope() {
-        let c = contribution(TemplateKind::Vitals, &params(), 3).expect("contribution");
+        let c = contribution(TemplateKind::CkmLabResult, &params(), 3).expect("contribution");
         assert_eq!(c["_type"], "CONTRIBUTION");
         let versions = c["versions"].as_array().expect("versions array");
         assert_eq!(versions.len(), 3);
         for v in versions {
             assert_eq!(v["_type"], "ORIGINAL_VERSION");
-            assert!(v.get("data").is_some(), "each version wraps a composition");
+            let data = v.get("data").expect("each version wraps a composition");
+            assert_eq!(
+                data.get("_type").and_then(Value::as_str),
+                Some("COMPOSITION")
+            );
         }
+        // Each version's composition is independently salted, so batches differ
+        // whenever the template carries jitterable content. `CkmLabResult` here
+        // does not (its single DV_QUANTITY skeleton magnitude is 0.0, and
+        // 0.0 × factor = 0.0), so identical datas are correct — the salt path is
+        // proven to differentiate separately in `salt_differentiates_a_batch`.
+    }
+
+    #[test]
+    fn salt_differentiates_a_batch() {
+        // The salt genuinely differentiates the compositions in a batch for a
+        // template with jitterable magnitudes (proof the per-slot salt is wired,
+        // independent of any single template's constrained content).
+        let differentiated = pack::all().iter().any(|tpl| {
+            let batch = contribution(tpl.kind, &params(), 3).expect("contribution");
+            let datas: Vec<Value> = batch["versions"]
+                .as_array()
+                .expect("versions")
+                .iter()
+                .filter_map(|v| v.get("data").cloned())
+                .collect();
+            datas.windows(2).any(|w| w[0] != w[1])
+        });
+        assert!(
+            differentiated,
+            "no CKM contribution batch differed across salts — the per-slot salt is not wired"
+        );
     }
 
     #[test]

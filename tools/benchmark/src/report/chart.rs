@@ -733,9 +733,7 @@ mod tests {
                 let h_overlap = a.0 < b.1 && b.0 < a.1;
                 assert!(
                     !(same_band && h_overlap),
-                    "text overlap: ({:?}) vs ({:?}) in\n{svg}",
-                    a,
-                    b
+                    "text overlap: ({a:?}) vs ({b:?}) in\n{svg}"
                 );
             }
         }
