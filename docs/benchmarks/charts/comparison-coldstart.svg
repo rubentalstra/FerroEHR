@@ -17,9 +17,9 @@ text { fill: #c3c2b7; }
 </style>
 <text x="16" y="22" class="title">Cold start (compose-up → first answer)</text>
 <text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
-<rect class="s1" x="170" y="42.0" width="441.6" height="12" rx="4"/>
-<text class="muted" x="617.6" y="52.0">11403 ms</text>
+<rect class="s1" x="170" y="42.0" width="450.0" height="12" rx="4"/>
+<text class="muted" x="626.0" y="52.0">109984 ms</text>
 <text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
-<rect class="s2" x="170" y="68.0" width="450.0" height="12" rx="4"/>
-<text class="muted" x="626.0" y="78.0">11621 ms</text>
+<rect class="s2" x="170" y="68.0" width="72.3" height="12" rx="4"/>
+<text class="muted" x="248.3" y="78.0">17678 ms</text>
 </svg>
