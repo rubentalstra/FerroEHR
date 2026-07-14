@@ -81,6 +81,15 @@ async fn healthcheck(url: &str) -> anyhow::Result<()> {
 async fn serve() -> anyhow::Result<()> {
     // Load configuration first (telemetry init needs the log/otel config).
     let telemetry_config = TelemetryConfig::load().context("loading telemetry configuration")?;
+
+    // Greet with the ASCII banner on stdout BEFORE telemetry/log init, so the
+    // structured formatter never mangles the art. Skipped under `json` logging
+    // (EHRBASE_LOG_FORMAT=json) — machine log consumers want one JSON object per
+    // line, not decorative art; every other mode (auto/pretty) prints it.
+    if telemetry_config.log.format != ehrbase::telemetry::LogFormat::Json {
+        ehrbase::banner::print();
+    }
+
     let rest_config = ehrbase_rest::RestConfig::load().context("loading REST configuration")?;
     let management_config = ManagementConfig::load().context("loading management configuration")?;
     let audit_config = AuditConfig::load().context("loading ATNA audit configuration")?;

@@ -258,15 +258,22 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       After (b)/(c): regenerate the pack, re-verify all six commit on BOTH
       SUTs, re-run the java ladder for the honest pair.
 
-- [ ] **29. Startup ASCII banner (owner, 2026-07-14).** The server greets
+- [x] **29. Startup ASCII banner (owner, 2026-07-14).** The server greets
       with an ASCII-art banner on boot (like the reference implementation's
-      Spring banner): the EHRbase-RS wordmark, the current version
+      Spring banner): the EHRbase-rs wordmark, the current version
       (`CARGO_PKG_VERSION`), maintainer credit **Ruben Talstra**, the
       project URL, and the load-bearing pins (RM 1.2.0 / ITS-REST /
       PostgreSQL 18) — followed by the existing structured startup logs.
       Crate choice verified LIVE on crates.io (figlet-rs vs a hand-written
       static banner — zero-dependency static is acceptable if the art is
-      generated once and committed).
+      generated once and committed). **DONE** — hand-committed zero-dependency
+      static banner in `app/ehrbase/src/banner.rs` (FIGlet "standard" wordmark
+      vendored once; live check: figlet-rs 1.0.0 Apache-2.0 2026-03-12 vs
+      text_to_ascii_art 0.1.10 MIT stale 2024 — no runtime dep taken for a
+      fixed string). Printed by `main.rs::serve()` on stdout before telemetry
+      init; suppressed under `EHRBASE_LOG_FORMAT=json`. Pins on their own lines
+      (list), `rs` lowercased in the wordmark per owner. 3 unit tests
+      (`test(banner)`) green.
 
 ## Considered and deferred
 
