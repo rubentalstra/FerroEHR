@@ -2,6 +2,16 @@
 
 - Status: in-progress (W-5 executed: the stale plan below-the-fold is
   replaced by this measurement-driven one; owner go 2026-07-14)
+- **MISSION OUTCOME (2026-07-14, the v5 instrument-clean pair,
+  `claude/p20-final-pair`): the max-sustained row is FLIPPED — ehrbase-rs
+  262.2 req/s (L=26, p99 195 ms) vs upstream 160.5 req/s (L=16), 1.63×, on
+  the fully-populated hospital-day workload under full config parity.**
+  The 956-vs-320 baseline below was the W-11 lightweight-payload preview —
+  superseded: the workload moved to fully-populated documents (item 28,
+  both servers accept it 6/6) and five instrument defects were fixed
+  (admission-cap tail-trim, missing drain, host storms, mid-window
+  autovacuum, DB shm starvation — the last two hurting upstream). Execution
+  record: `p20-overhead-checklist.md` (32 items).
 - Mission (owner): **beat upstream EHRbase on max sustained throughput
   too** — the one benchmark row we lose. Honest baseline to beat
   (identical fine ladder, 10k rung, single-host preview, W-11):

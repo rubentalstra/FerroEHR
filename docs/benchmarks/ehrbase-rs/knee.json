@@ -3,66 +3,102 @@
     "name": "ehrbase-rs",
     "kind": "ours",
     "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
-    "product_label": "ehrbase-rs 3.0.0",
+    "product_label": "ehrbase-rs 3.0.1",
     "image_digests": {},
     "versions": {}
   },
   "scale": "10k",
   "steps": [
     {
+      "load_factor": 1.0,
+      "rps": 10.075,
+      "error_rate": 0.0,
+      "p99_us": 72575,
+      "requests": 1209,
+      "events_per_min": 250.00000000000003,
+      "max_dispatch_lag_ms": 12
+    },
+    {
+      "load_factor": 2.0,
+      "rps": 20.133333333333333,
+      "error_rate": 0.0,
+      "p99_us": 42687,
+      "requests": 2416,
+      "events_per_min": 498.5,
+      "max_dispatch_lag_ms": 40
+    },
+    {
+      "load_factor": 4.0,
+      "rps": 40.141666666666666,
+      "error_rate": 0.0,
+      "p99_us": 34015,
+      "requests": 4817,
+      "events_per_min": 993.0,
+      "max_dispatch_lag_ms": 12
+    },
+    {
+      "load_factor": 8.0,
+      "rps": 80.525,
+      "error_rate": 0.0,
+      "p99_us": 36351,
+      "requests": 9663,
+      "events_per_min": 1993.0,
+      "max_dispatch_lag_ms": 14
+    },
+    {
+      "load_factor": 16.0,
+      "rps": 160.525,
+      "error_rate": 0.00005191029900332226,
+      "p99_us": 55871,
+      "requests": 19263,
+      "events_per_min": 3980.9999999999995,
+      "max_dispatch_lag_ms": 23
+    },
+    {
+      "load_factor": 24.0,
+      "rps": 239.28333333333333,
+      "error_rate": 0.00020891364902506963,
+      "p99_us": 834559,
+      "requests": 28714,
+      "events_per_min": 5925.0,
+      "max_dispatch_lag_ms": 87
+    },
+    {
+      "load_factor": 26.0,
+      "rps": 262.21666666666664,
+      "error_rate": 0.00006355662895640016,
+      "p99_us": 195071,
+      "requests": 31466,
+      "events_per_min": 6497.5,
+      "max_dispatch_lag_ms": 15
+    },
+    {
+      "load_factor": 28.0,
+      "rps": 275.05833333333334,
+      "error_rate": 0.0018446836821095923,
+      "p99_us": 2568191,
+      "requests": 33007,
+      "events_per_min": 6795.5,
+      "max_dispatch_lag_ms": 137
+    },
+    {
       "load_factor": 32.0,
-      "rps": 318.2583333333333,
-      "error_rate": 0.0004972520282648522,
-      "p99_us": 788479,
-      "requests": 38191,
-      "events_per_min": 7876.000000000001,
-      "max_dispatch_lag_ms": 14
-    },
-    {
-      "load_factor": 40.0,
-      "rps": 396.90833333333336,
-      "error_rate": 0.00010496704034933031,
-      "p99_us": 174463,
-      "requests": 47629,
-      "events_per_min": 9832.0,
-      "max_dispatch_lag_ms": 14
-    },
-    {
-      "load_factor": 42.0,
-      "rps": 415.93333333333334,
-      "error_rate": 0.024088847176599405,
-      "p99_us": 2660351,
-      "requests": 49912,
-      "events_per_min": 10287.5,
-      "max_dispatch_lag_ms": 54
-    },
-    {
-      "load_factor": 44.0,
-      "rps": 448.025,
-      "error_rate": 0.011727725593279534,
-      "p99_us": 1887231,
-      "requests": 53763,
-      "events_per_min": 11090.0,
-      "max_dispatch_lag_ms": 63
-    },
-    {
-      "load_factor": 48.0,
-      "rps": 453.73333333333335,
-      "error_rate": 0.0398871451243167,
-      "p99_us": 3489791,
-      "requests": 54448,
-      "events_per_min": 11187.5,
-      "max_dispatch_lag_ms": 54
+      "rps": 315.7583333333333,
+      "error_rate": 0.0013704767677832539,
+      "p99_us": 2928639,
+      "requests": 37891,
+      "events_per_min": 7815.0,
+      "max_dispatch_lag_ms": 18
     }
   ],
   "knee": {
-    "load_factor": 40.0,
-    "rps": 396.90833333333336,
-    "error_rate": 0.00010496704034933031,
-    "p99_us": 174463,
-    "requests": 47629,
-    "events_per_min": 9832.0,
-    "max_dispatch_lag_ms": 14
+    "load_factor": 26.0,
+    "rps": 262.21666666666664,
+    "error_rate": 0.00006355662895640016,
+    "p99_us": 195071,
+    "requests": 31466,
+    "events_per_min": 6497.5,
+    "max_dispatch_lag_ms": 15
   },
   "sut_died": false
 }

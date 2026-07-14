@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The benchmark instrument measures both comparison stacks under a fairer,
+  more deterministic protocol: the databases get a 1 GB `/dev/shm` floor
+  (Docker's 64 MB default starved PostgreSQL's parallel workers mid-run),
+  maintenance debt is settled with `VACUUM ANALYZE` after seeding and
+  between ladder rungs (autovacuum no longer lands inside measured
+  windows), the ladder drains in-flight backlog between rungs, and the
+  measured cold start no longer includes building the ehrbase-rs container
+  image. Ladder output prints latencies in magnitude-appropriate units
+  (µs/ms/s), and the generated comparison page reports clinical events per
+  minute beside request rates.
+
 ## [3.0.1] - 2026-07-14
 
 ### Added

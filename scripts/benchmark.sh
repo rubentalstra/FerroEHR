@@ -194,6 +194,9 @@ if [ -n "${BENCH_KNEE:-}" ]; then
   [ -n "${BENCH_KNEE_STEPS:-}" ] && kargs+=(--steps "$BENCH_KNEE_STEPS")
   [ -n "${BENCH_STEP_WINDOW:-}" ] && kargs+=(--step-window "$BENCH_STEP_WINDOW")
   [ -n "${BENCH_WARMUP:-}" ] && kargs+=(--warmup "$BENCH_WARMUP")
+  # Clean-start probes: 0 stops the ladder at the first breach instead of
+  # bisecting into the breached rung's wake (long-tail SUTs carry the storm).
+  [ -n "${BENCH_BISECTIONS:-}" ] && kargs+=(--bisections "$BENCH_BISECTIONS")
   # Exit code is the CLI's: 0 ok · 2 runner/SUT error.
   cargo run -q -p benchmark --bin bench -- "${kargs[@]}"
 else
