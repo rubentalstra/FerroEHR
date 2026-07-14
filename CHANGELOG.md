@@ -116,6 +116,16 @@ workflow refuses a tag that has no matching section here.
   constantly). Importing an `EHR_ACCESS` version into an existing EHR now
   evicts that cache entry, so the access decision reflects the imported
   policy immediately.
+- Composition validation is substantially faster with identical outcomes:
+  the RM-invariant pass validates each node directly against the
+  spec-generated Reference Model instead of deserializing every node into
+  its typed struct (falling back to the typed path for anything it cannot
+  vouch for), the archetype-constraint walk reuses constraint paths parsed
+  once per cached WebTemplate instead of re-parsing them on every node
+  visit, and validation error messages are byte-for-byte unchanged
+  (equivalence is pinned by tests across the full corpus). Measured
+  end-to-end: a fully populated International Patient Summary validates in
+  well under half its previous time.
 
 ### Added
 
