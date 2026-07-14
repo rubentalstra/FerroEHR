@@ -253,15 +253,30 @@ fn find_node_by_flat_path<'a>(wt: &'a WebTemplate, path: &str) -> Option<&'a Web
     Some(node)
 }
 
-/// The set of identity `(attribute, archetype_node_id)` pairs that appear in
-/// more than one distinct sibling path (relative to `parent_aql`) — i.e. the
-/// template distinguishes same-id siblings by name, so the name fallback in
-/// [`path::select_children_matched`] must stay off for them.
-fn identity_ambiguity<'a>(
+/// Name-based routing for same-archetype-id sibling constraints.
+///
+/// Maps each identity `(attribute, archetype_node_id)` that the template repeats
+/// across more than one distinct sibling path (relative to `parent_aql`) — i.e.
+/// the template differentiates same-`archetype_node_id` siblings by their
+/// runtime `name` (RM common `master03-archetyped_package.adoc` §"The
+/// `LOCATABLE` class" L33-35; AOM 1.4 `master04-constraint_model_package.adoc`
+/// §`node_id` L41) — to the set of explicit `name/value` `C_STRING` constraints
+/// its *name-qualified* siblings carry.
+///
+/// A present key marks the identity as name-differentiated, which routing uses
+/// two ways ([`select_group_children`]): a name-qualified sibling
+/// matches strictly (id + name, no id-only fallback), and the one *unqualified*
+/// sibling (whose `name` is unconstrained) admits every same-id instance
+/// **except** those bearing a name a name-qualified sibling claims.
+type SiblingNameIndex = std::collections::HashMap<(String, String), Vec<String>>;
+
+fn sibling_name_index<'a>(
     paths: impl Iterator<Item = &'a str>,
     parent_aql: &str,
-) -> std::collections::HashSet<(String, String)> {
-    let mut seen: std::collections::HashMap<(String, String), u32> =
+) -> SiblingNameIndex {
+    // Per identity: how many distinct sibling paths carry it, and the explicit
+    // `name/value` constraints among them.
+    let mut acc: std::collections::HashMap<(String, String), (u32, Vec<String>)> =
         std::collections::HashMap::new();
     for p in paths {
         let Some(rel) = p.strip_prefix(parent_aql) else {
@@ -271,15 +286,22 @@ fn identity_ambiguity<'a>(
         let Some(id_seg) = segments.iter().rfind(|s| !s.predicate.is_empty()) else {
             continue;
         };
-        if let Some(id) = &id_seg.predicate.archetype_node_id {
-            *seen
-                .entry((id_seg.attribute.clone(), id.clone()))
-                .or_default() += 1;
+        let Some(id) = &id_seg.predicate.archetype_node_id else {
+            continue;
+        };
+        let entry = acc
+            .entry((id_seg.attribute.clone(), id.clone()))
+            .or_default();
+        entry.0 += 1;
+        if let Some(name) = &id_seg.predicate.name_value
+            && !entry.1.contains(name)
+        {
+            entry.1.push(name.clone());
         }
     }
-    seen.into_iter()
-        .filter(|(_, n)| *n > 1)
-        .map(|(k, _)| k)
+    acc.into_iter()
+        .filter(|(_, (count, _))| *count > 1)
+        .map(|(k, (_, names))| (k, names))
         .collect()
 }
 
@@ -558,13 +580,13 @@ impl Validator {
                 .or_default()
                 .push(child);
         }
-        // An identity (attribute, archetype_node_id) claimed by more than one
-        // distinct child path means the template disambiguates same-id siblings
-        // by name — the name fallback must stay off for those (see
-        // `path::select_children_matched`).
-        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
+        // An identity (attribute, archetype_node_id) carried by more than one
+        // distinct child path means the template differentiates same-id siblings
+        // by name; the index routes each instance to the sibling whose name
+        // constraint it satisfies (see `select_group_children`).
+        let names = sibling_name_index(groups.keys().copied(), &wt.aql_path);
         for group in groups.values() {
-            self.check_group(instance, wt, group, &ambiguous);
+            self.check_group(instance, wt, group, &names);
         }
 
         self.check_cardinalities(instance, wt);
@@ -682,7 +704,7 @@ impl Validator {
                 .or_default()
                 .push(slot.rm_type.as_str());
         }
-        let ambiguous = identity_ambiguity(groups.keys().copied(), &wt.aql_path);
+        let names = sibling_name_index(groups.keys().copied(), &wt.aql_path);
         for (path, allowed) in groups {
             let Some(rel) = path.strip_prefix(&wt.aql_path) else {
                 continue;
@@ -693,12 +715,7 @@ impl Validator {
             };
             let containers = path::navigate(&[instance], intermediate);
             for container in &containers {
-                for node in {
-                    let fallback_ok = last.predicate.archetype_node_id.as_ref().is_none_or(|id| {
-                        !ambiguous.contains(&(last.attribute.clone(), id.clone()))
-                    });
-                    path::select_children_matched(container, last, fallback_ok)
-                } {
+                for node in select_group_children(container, last, &names) {
                     let Some(it) = node.get("_type").and_then(Value::as_str) else {
                         continue;
                     };
@@ -768,7 +785,7 @@ impl Validator {
         parent: &Value,
         wt_parent: &WebTemplateNode,
         group: &[&WebTemplateNode],
-        ambiguous: &std::collections::HashSet<(String, String)>,
+        names: &SiblingNameIndex,
     ) {
         let first = group[0];
         let Some(rel) = first.aql_path.strip_prefix(&wt_parent.aql_path) else {
@@ -813,13 +830,8 @@ impl Validator {
             group.iter().map(|c| c.max).max().unwrap_or(-1)
         };
 
-        let fallback_ok = id_seg
-            .predicate
-            .archetype_node_id
-            .as_ref()
-            .is_none_or(|id| !ambiguous.contains(&(id_seg.attribute.clone(), id.clone())));
         for container in &containers {
-            let matched = path::select_children_matched(container, id_seg, fallback_ok);
+            let matched = select_group_children(container, id_seg, names);
             if occ_applies {
                 self.emit_occurrences(&first.aql_path, group_min, group_max, matched.len());
             }
@@ -970,6 +982,45 @@ impl Validator {
 // (`parse` / `navigate` / `select_children`). Only the checks below —
 // attribute-presence for the existence rule and RM instance-path
 // normalisation — are validation-specific.
+
+/// Select the instance children a WebTemplate sibling group claims from
+/// `container`, applying the name discriminator for same-`archetype_node_id`
+/// siblings so an instance is routed to exactly the sibling whose name
+/// constraint it satisfies (RM common `master03-archetyped_package.adoc`
+/// §"The `LOCATABLE` class": the runtime `name` distinguishes sibling nodes
+/// that share an `archetype_node_id`; BASE
+/// `architecture_overview/master11-paths.adoc` §"Using a Name-based Predicate").
+///
+/// `names` is the [`SiblingNameIndex`] computed once per parent from the sibling
+/// paths. Three cases on the group's identity segment `id_seg`:
+///
+/// * **name-qualified, name-differentiated** (`Some` name, identity in `names`):
+///   strict `(archetype_node_id, name)` match with the id-only fallback OFF —
+///   the sibling set relies on the name, so widening to id-only would claim a
+///   sibling's instances.
+/// * **unqualified, name-differentiated** (no name, identity in `names`): match
+///   by `archetype_node_id` minus the instances the name-qualified siblings
+///   claim ([`path::select_children_excluding_names`]) — the residual arm.
+/// * **not name-differentiated** (identity absent from `names`): strict match
+///   with the id-only fallback ON, tolerating a runtime-renamed instance when
+///   the archetype does not constrain the name (master03 §"The `LOCATABLE`
+///   class" L35).
+fn select_group_children<'a>(
+    container: &'a Value,
+    id_seg: &openehr_rm::paths::PathSegment,
+    names: &SiblingNameIndex,
+) -> Vec<&'a Value> {
+    let claimed = id_seg
+        .predicate
+        .archetype_node_id
+        .as_ref()
+        .and_then(|id| names.get(&(id_seg.attribute.clone(), id.clone())));
+    match (id_seg.predicate.name_value.as_ref(), claimed) {
+        (Some(_), Some(_)) => path::select_children_matched(container, id_seg, false),
+        (None, Some(claimed)) => path::select_children_excluding_names(container, id_seg, claimed),
+        (_, None) => path::select_children_matched(container, id_seg, true),
+    }
+}
 
 /// The instance child objects directly under `attr` (array elements or a single
 /// object), skipping non-object values — the sibling set for closed-world.

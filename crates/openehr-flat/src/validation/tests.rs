@@ -1348,3 +1348,135 @@ fn data_structure_shapes_are_enforced() {
         "a HISTORY mixing event data types must be rejected, got {msgs:?}"
     );
 }
+
+// ── name-differentiated same-archetype-id siblings ──────────────────────────────
+//
+// A template may fill the same archetype twice under one container, the two
+// fills differentiated by their runtime `name` (RM common
+// `master03-archetyped_package.adoc` §"The `LOCATABLE` class" L33-35: a `name`
+// distinguishes sibling nodes that share an `archetype_node_id`; AOM 1.4
+// `master04-constraint_model_package.adoc` §`node_id` L41: node ids "guarantee
+// sibling node unique identification"). Templates realise this by putting a
+// fixed `name/value` `C_STRING` on all-but-one sibling, so one sibling stays
+// *unqualified* (its `name` unconstrained). Each instance must be routed to
+// exactly the sibling whose name it matches, and the unqualified sibling must
+// admit only the instances no name-qualified sibling claims — otherwise the
+// unqualified sibling (matched by `archetype_node_id` alone) captures a
+// name-qualified sibling's instance and rejects it against the wrong overlay.
+
+/// Two same-archetype siblings under `items`, one unqualified (name "A", inner
+/// `items` closed to `at0004`) and one name-qualified ('B', inner `items` closed
+/// to `at0013`).
+fn name_diff_parent() -> WebTemplateNode {
+    let mut root = node("CLUSTER", "");
+    let sib_a = {
+        let mut n = node("CLUSTER", "/items[openEHR-EHR-CLUSTER.c.v1]");
+        n.name = Some("A".to_owned());
+        n.min = Some(0);
+        n.max = 1;
+        n.closed_attributes = vec![WebTemplateClosedAttribute {
+            path: "/items[openEHR-EHR-CLUSTER.c.v1]/items".to_owned(),
+            allowed_ids: vec!["at0004".to_owned()],
+            slots: vec![],
+        }];
+        n
+    };
+    let sib_b = {
+        let mut n = node("CLUSTER", "/items[openEHR-EHR-CLUSTER.c.v1,'B']");
+        n.name = Some("B".to_owned());
+        n.min = Some(0);
+        n.max = 1;
+        n.closed_attributes = vec![WebTemplateClosedAttribute {
+            path: "/items[openEHR-EHR-CLUSTER.c.v1,'B']/items".to_owned(),
+            allowed_ids: vec!["at0013".to_owned()],
+            slots: vec![],
+        }];
+        n
+    };
+    root.children = vec![sib_a, sib_b];
+    root
+}
+
+/// A same-archetype CLUSTER instance with `name` and a single at-coded child.
+fn c_instance(name: &str, child_id: &str) -> Value {
+    json!({
+        "_type": "CLUSTER", "archetype_node_id": "openEHR-EHR-CLUSTER.c.v1",
+        "name": {"_type": "DV_TEXT", "value": name},
+        "items": [{"_type": "ELEMENT", "archetype_node_id": child_id,
+                   "name": {"_type": "DV_TEXT", "value": "leaf"},
+                   "value": {"_type": "DV_TEXT", "value": "v"}}]
+    })
+}
+
+fn unexpected_of(msgs: &[ValidationMessage]) -> Vec<&ValidationMessage> {
+    msgs.iter()
+        .filter(|m| m.kind == ValidationKind::Unexpected)
+        .collect()
+}
+
+#[test]
+fn name_diff_siblings_route_each_instance_to_its_own_overlay() {
+    let root = name_diff_parent();
+    // Both instances present, each carrying its own overlay's child.
+    let inst = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("A", "at0004"), c_instance("B", "at0013")]
+    });
+    let msgs = walk_only(&inst, &root);
+    assert!(
+        unexpected_of(&msgs).is_empty(),
+        "both name-differentiated siblings should validate against their own \
+         overlay, got {msgs:?}"
+    );
+}
+
+#[test]
+fn name_qualified_siblings_child_in_unqualified_instance_is_unexpected() {
+    let root = name_diff_parent();
+    // `at0013` belongs to sibling 'B' only; inside the instance named "A" it must
+    // still be Unexpected (true rejections preserved).
+    let inst = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("A", "at0013")]
+    });
+    let msgs = walk_only(&inst, &root);
+    assert!(
+        unexpected_of(&msgs)
+            .iter()
+            .any(|m| m.message.contains("at0013")),
+        "at0013 in the unqualified sibling's instance must be Unexpected, got {msgs:?}"
+    );
+}
+
+#[test]
+fn unqualified_sibling_admits_a_runtime_named_residual_instance() {
+    let root = name_diff_parent();
+    // An instance whose name matches NO name-qualified sibling ("other") routes
+    // to the unqualified (residual) sibling — its `name` being unconstrained,
+    // master03 §"The `LOCATABLE` class" L35. Its own overlay child (`at0004`)
+    // therefore validates clean…
+    let ok = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("other", "at0004")]
+    });
+    assert!(
+        unexpected_of(&walk_only(&ok, &root)).is_empty(),
+        "a residual-named instance must validate against the unqualified overlay"
+    );
+    // …but a child that overlay forbids (`at0013`) is still Unexpected there.
+    let bad = json!({
+        "_type": "CLUSTER", "archetype_node_id": "x",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "items": [c_instance("other", "at0013")]
+    });
+    assert!(
+        unexpected_of(&walk_only(&bad, &root))
+            .iter()
+            .any(|m| m.message.contains("at0013")),
+        "the residual instance is still closed-world checked against the \
+         unqualified overlay"
+    );
+}
