@@ -26,9 +26,11 @@
   asserts the `UNAUDITED` allowlist is **empty**. Object ids for operations whose
   envelope carries no `ResourceMeta` (template id, qualified stored-query name,
   demographic party uid) are derived generically from the request path. Auth
-  failures (401/403) are always audited; `suppress_login_events` gates only the
-  successful-login record, which is otherwise emitted *alongside* the operation
-  record. All §6/§8.5 tests green (insta golden vector + per-action/class
+  failures (401/403) are always audited; the successful-login record is emitted
+  only on a genuine authentication event (a Basic verified-credential cache
+  miss — not on every authenticated request; a cache hit or a Bearer request
+  mints none) and is additionally gated by `suppress_login_events` (default
+  on). All §6/§8.5 tests green (insta golden vector + per-action/class
   snapshots, total-coverage guard, UDP e2e over the axum app incl.
   template/demographic records, TLS framing round-trip, fail-open/fail-closed).
   Query execution uses the "Patient Record" (110110) EventID family with
@@ -156,8 +158,9 @@ No IPF, no JVM. Three small pieces, all in safe Rust:
 
 Suggested layout (Stage 2): a dedicated **`ehrbase-audit`** crate (model +
 syslog client + table), with the middleware wired in `ehrbase-rest` and the
-participant-object resolution provided by the `ehrbase` service layer. Login
-events (Basic auth) are audited as "Application Activity" unless suppressed.
+participant-object resolution provided by the `ehrbase` service layer. A
+genuine authentication (a Basic verified-credential cache miss — not every
+authenticated request) is audited as "Application Activity" unless suppressed.
 
 ## 5. Configuration (Rust-native)
 

@@ -342,3 +342,47 @@ async fn terminology_expand_fhir_merges_expansion_codes() {
     // Both the parent and the nested child code are in the flattened expansion.
     assert_eq!(got, vec!["child".to_owned(), "member".to_owned()]);
 }
+
+/// A query whose `matches` operand resolves through the terminology service
+/// (master03 §TERMINOLOGY) is **never** served from the P20 plan cache: the
+/// expansion may change between executions, so the plan is not a pure function
+/// of the query text. Running the same terminology query twice therefore never
+/// produces a cache hit — it re-parses and re-expands each time. No openEHR spec
+/// governs the cache; this asserts the semantics-preserving bypass.
+#[tokio::test]
+async fn terminology_query_is_never_cached() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_no_cache").await);
+    let ehr = create_ehr(&svc).await;
+    create_coded(&svc, &ehr, "in-group", "openehr", "249").await;
+
+    let aql = format!(
+        "SELECT c/name/value \
+         FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] \
+         WHERE o/{CODE_PATH} matches TERMINOLOGY('expand', 'openehr', 'audit_change_type')"
+    );
+
+    let before = svc.plan_cache().stats();
+    let first = names(&run_aql(&svc, &aql).await);
+    let second = names(&run_aql(&svc, &aql).await);
+    let after = svc.plan_cache().stats();
+
+    assert_eq!(
+        first,
+        vec!["in-group".to_owned()],
+        "expansion resolved once"
+    );
+    assert_eq!(
+        first, second,
+        "and identically on the re-expanded second run"
+    );
+    assert_eq!(
+        after.hits, before.hits,
+        "a terminology query is re-expanded every execution — never a cache hit"
+    );
+    assert_eq!(
+        after.misses,
+        before.misses + 2,
+        "both terminology executions miss the plan cache"
+    );
+}

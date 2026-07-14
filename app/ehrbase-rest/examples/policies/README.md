@@ -1,7 +1,7 @@
 # Example Cedar policies
 
 Illustrative embedded-Cedar policies for the ehrbase-rs ABAC layer
-(`docs/enterprise/access-control.md` §5.6). Point `abac.cedar.policy_dir` at a
+(`docs/design/access-control.md` §5.6). Point `abac.cedar.policy_dir` at a
 copy of this directory (or your own) to try the embedded engine.
 
 `consent.cedar` reproduces the *shape* of EHRbase v1's external consent checks

@@ -9,7 +9,7 @@
 //! the warmup floor is discarded. Errors are counted per class and excluded
 //! from the latency distribution.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::time::Duration;
 
 use base64::Engine;
@@ -17,6 +17,7 @@ use hdrhistogram::Histogram;
 use hdrhistogram::serialization::{Serializer, V2Serializer};
 
 use crate::OpClass;
+use crate::model::event::{ClinicalEvent, EventInstance};
 
 /// Histogram significant figures (register 01 §1 — 3 sig-digits).
 const SIGFIG: u8 = 3;
@@ -180,6 +181,91 @@ impl Recorder {
     }
 }
 
+/// Per event-class business-transaction tally (checklist item 25b): a clinical
+/// event is *attempted* if its last step landed in the measurement window, and
+/// *completed* only if every one of its steps succeeded.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EventSummary {
+    /// Occurrences whose last step landed in the measurement window.
+    pub attempted: u64,
+    /// Occurrences where every step succeeded.
+    pub completed: u64,
+}
+
+/// The per-occurrence progress of one clinical-event business transaction.
+#[derive(Debug)]
+struct InstanceState {
+    class: ClinicalEvent,
+    boundary_at: Duration,
+    steps: u32,
+    ok: u32,
+}
+
+/// Accumulates clinical-event (business-transaction) completion across the
+/// open-loop dispatch (checklist item 25b). The steps of one occurrence run in
+/// separate tasks and arrive as independent samples, so completion is tracked
+/// per occurrence keyed by its schedule-unique [`EventInstance::id`]: the
+/// occurrence is *completed* only when every one of its
+/// [`EventInstance::steps`] succeeded (a step that errored or was never
+/// dispatched — an excluded template — leaves `ok < steps`). The warmup floor
+/// is applied per occurrence by its LAST step's planned send
+/// ([`EventInstance::boundary_at`]), symmetric with the per-request warmup
+/// discard in [`Recorder::record`].
+#[derive(Debug, Default)]
+pub struct EventLedger {
+    instances: HashMap<u64, InstanceState>,
+    warmup: Duration,
+}
+
+impl EventLedger {
+    /// A fresh ledger with a zero warmup floor.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the warmup floor: an occurrence whose last step's planned send is
+    /// `< warmup` is discarded whole by [`EventLedger::summaries`].
+    pub fn set_warmup(&mut self, warmup: Duration) {
+        self.warmup = warmup;
+    }
+
+    /// Fold one step's outcome into its occurrence. `ok` is whether the step was
+    /// a measured success (expected status); an errored or missing step keeps
+    /// the occurrence short of completion.
+    pub fn observe(&mut self, event: EventInstance, ok: bool) {
+        let st = self.instances.entry(event.id).or_insert(InstanceState {
+            class: event.class,
+            boundary_at: event.boundary_at,
+            steps: event.steps,
+            ok: 0,
+        });
+        if ok {
+            st.ok += 1;
+        }
+    }
+
+    /// Per event-class attempted/completed tallies, applying the warmup rule.
+    /// An occurrence whose last step is inside the warmup floor is discarded;
+    /// otherwise it is attempted, and completed iff every step succeeded.
+    /// Keyed in catalogue order (the derived [`ClinicalEvent`] `Ord`).
+    #[must_use]
+    pub fn summaries(&self) -> BTreeMap<ClinicalEvent, EventSummary> {
+        let mut out: BTreeMap<ClinicalEvent, EventSummary> = BTreeMap::new();
+        for st in self.instances.values() {
+            if st.boundary_at < self.warmup {
+                continue;
+            }
+            let entry = out.entry(st.class).or_default();
+            entry.attempted += 1;
+            if st.ok == st.steps {
+                entry.completed += 1;
+            }
+        }
+        out
+    }
+}
+
 /// Serialize a histogram to base64 of its `HdrHistogram` V2 form. On the
 /// (writer-only) serialization failure the entry degrades to an empty string
 /// rather than aborting the run.
@@ -307,5 +393,91 @@ mod tests {
         assert_eq!(s.len(), OpClass::ALL.len());
         assert_eq!(s["opt-upload"].count, 0);
         assert!(s["opt-upload"].histogram_b64.is_empty());
+    }
+
+    // ── EventLedger (business-transaction completion, checklist item 25b) ──────
+
+    fn instance(id: u64, class: ClinicalEvent, steps: u32, boundary: Duration) -> EventInstance {
+        EventInstance {
+            class,
+            id,
+            steps,
+            boundary_at: boundary,
+        }
+    }
+
+    #[test]
+    fn event_completes_only_when_every_step_succeeds() {
+        let mut l = EventLedger::new();
+        let ev = instance(1, ClinicalEvent::Admission, 3, ms(500));
+        // Three steps of one occurrence, all succeed → the occurrence completes.
+        l.observe(ev, true);
+        l.observe(ev, true);
+        l.observe(ev, true);
+        let s = l.summaries();
+        let a = s[&ClinicalEvent::Admission];
+        assert_eq!(a.attempted, 1);
+        assert_eq!(a.completed, 1);
+    }
+
+    #[test]
+    fn any_step_failure_leaves_the_event_incomplete() {
+        let mut l = EventLedger::new();
+        let ev = instance(1, ClinicalEvent::ChartReview, 3, ms(500));
+        l.observe(ev, true);
+        l.observe(ev, false); // one failed step
+        l.observe(ev, true);
+        let s = l.summaries();
+        let c = s[&ClinicalEvent::ChartReview];
+        assert_eq!(c.attempted, 1, "still attempted");
+        assert_eq!(c.completed, 0, "a failed step blocks completion");
+    }
+
+    #[test]
+    fn a_missing_step_blocks_completion() {
+        // An excluded template drops a step at dispatch (never observed), so the
+        // occurrence can never reach ok == steps.
+        let mut l = EventLedger::new();
+        let ev = instance(1, ClinicalEvent::Discharge, 2, ms(500));
+        l.observe(ev, true); // only one of the two steps ever arrives
+        let s = l.summaries();
+        let d = s[&ClinicalEvent::Discharge];
+        assert_eq!(d.attempted, 1);
+        assert_eq!(d.completed, 0);
+    }
+
+    #[test]
+    fn warmup_discards_an_event_by_its_last_step() {
+        let mut l = EventLedger::new();
+        l.set_warmup(ms(500));
+        // Occurrence 1: last step at 400 ms (< warmup) → discarded whole, even
+        // though its steps succeeded.
+        let boot = instance(1, ClinicalEvent::Admission, 2, ms(400));
+        l.observe(boot, true);
+        l.observe(boot, true);
+        // Occurrence 2: last step at 600 ms (≥ warmup) → measured + completed.
+        let measured = instance(2, ClinicalEvent::Admission, 2, ms(600));
+        l.observe(measured, true);
+        l.observe(measured, true);
+        let s = l.summaries();
+        let a = s[&ClinicalEvent::Admission];
+        assert_eq!(
+            a.attempted, 1,
+            "only the post-warmup occurrence is attempted"
+        );
+        assert_eq!(a.completed, 1);
+    }
+
+    #[test]
+    fn ledger_tallies_are_per_class() {
+        let mut l = EventLedger::new();
+        let vitals = instance(1, ClinicalEvent::ShiftVitals, 1, ms(100));
+        let meds = instance(2, ClinicalEvent::MedicationRound, 1, ms(100));
+        l.observe(vitals, true);
+        l.observe(meds, false);
+        let s = l.summaries();
+        assert_eq!(s[&ClinicalEvent::ShiftVitals].completed, 1);
+        assert_eq!(s[&ClinicalEvent::MedicationRound].attempted, 1);
+        assert_eq!(s[&ClinicalEvent::MedicationRound].completed, 0);
     }
 }

@@ -7,8 +7,9 @@
 use std::collections::BTreeMap;
 
 use super::chart;
-use super::json::Results;
+use super::json::{EventClassRecord, Results};
 use super::knee::KneeResults;
+use crate::model::event::ClinicalEvent;
 
 /// A rendered comparison: the Markdown text and the SVG files it embeds
 /// (filename → content, written under `<out-dir>/charts/`).
@@ -65,10 +66,10 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     let b = &results[1];
 
     md.push_str("## Runs\n\n");
-    md.push_str("| | Product | Profile | Scale | Ward | Requests | req/s | Error rate |\n|---|---|---|---|--:|--:|--:|--:|\n");
+    md.push_str("| | Product | Profile | Scale | Ward | Requests | req/s | req/min | Error rate |\n|---|---|---|---|--:|--:|--:|--:|--:|\n");
     for r in [a, b] {
         md.push_str(&format!(
-            "| **{}** | {} | {} | {} | {} | {} | {:.1} | {:.3}% |\n",
+            "| **{}** | {} | {} | {} | {} | {} | {:.1} | {:.0} | {:.3}% |\n",
             r.sut.name,
             r.sut.product_label,
             r.workload.profile,
@@ -76,6 +77,7 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
             r.workload.ward_size,
             r.throughput.requests,
             r.throughput.rps,
+            r.throughput.rps * 60.0,
             r.throughput.error_rate * 100.0
         ));
     }
@@ -91,6 +93,7 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     let mut charts = Vec::new();
     headline_charts(&mut md, &mut charts, a, b);
     knee_section(&mut md, &mut charts, knees);
+    events_section(&mut md, a, b);
 
     // Charts: p99 + p50 grouped bars over the classes both runs measured.
     let p99 = vec![
@@ -238,14 +241,20 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
          own `KNEE.md` carries the full ladder and the single-run/same-host \
          lower-bound caveat.\n\n",
     );
-    md.push_str("| | Knee L | Sustained req/s | p99 at knee (µs) |\n|---|--:|--:|--:|\n");
+    md.push_str(
+        "| | Knee L | Sustained req/s | Sustained req/min | p99 at knee (µs) |\n|---|--:|--:|--:|--:|\n",
+    );
     for k in [a, b] {
         match &k.knee {
             Some(step) => md.push_str(&format!(
-                "| **{}** | {} | {:.1} | {} |\n",
-                k.sut.name, step.load_factor, step.rps, step.p99_us
+                "| **{}** | {} | {:.1} | {:.0} | {} |\n",
+                k.sut.name,
+                step.load_factor,
+                step.rps,
+                step.rps * 60.0,
+                step.p99_us
             )),
-            None => md.push_str(&format!("| **{}** | — | — | — |\n", k.sut.name)),
+            None => md.push_str(&format!("| **{}** | — | — | — | — |\n", k.sut.name)),
         }
     }
     md.push('\n');
@@ -260,6 +269,75 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
     if !chart.is_empty() {
         charts.push(("comparison-knee.svg".to_owned(), chart));
         md.push_str("![Max sustained req/s at the SLO](charts/comparison-knee.svg)\n\n");
+    }
+}
+
+/// The clinical-transaction (business-transaction) throughput section: a
+/// side-by-side per-class attempted/completed/events-min table + the computed
+/// wins-ledger row for total events/min (checklist item 25b). Measured only,
+/// both directions; the workload is identical by construction.
+fn events_section(md: &mut String, a: &Results, b: &Results) {
+    md.push_str("## Clinical transactions (events)\n\n");
+    md.push_str(
+        "> The TPC-style business-transaction metric: a clinical event (admission, \
+         medication round, lab batch, discharge…) counts **completed** only when every \
+         one of its requests succeeded. Events/min beside the per-request req/s — both \
+         directions, same workload by construction.\n\n",
+    );
+    md.push_str(&format!(
+        "| Event | {a} attempted | {a} completed | {a} events/min | {b} attempted | {b} completed | {b} events/min |\n|---|--:|--:|--:|--:|--:|--:|\n",
+        a = a.sut.name,
+        b = b.sut.name
+    ));
+    let cell = |rec: Option<&EventClassRecord>| {
+        rec.map_or_else(
+            || ("—".to_owned(), "—".to_owned(), "—".to_owned()),
+            |c| {
+                (
+                    c.attempted.to_string(),
+                    c.completed.to_string(),
+                    format!("{:.1}", c.events_per_min),
+                )
+            },
+        )
+    };
+    for ev in ClinicalEvent::ALL {
+        let ar = a.events.classes.get(ev.key());
+        let br = b.events.classes.get(ev.key());
+        if ar.is_none() && br.is_none() {
+            continue;
+        }
+        let (aa, ac, am) = cell(ar);
+        let (ba, bc, bm) = cell(br);
+        md.push_str(&format!(
+            "| {} {} | {aa} | {ac} | {am} | {ba} | {bc} | {bm} |\n",
+            ev.key(),
+            ev.label(),
+        ));
+    }
+    md.push_str(&format!(
+        "| **total** | **{}** | **{}** | **{:.1}** | **{}** | **{}** | **{:.1}** |\n\n",
+        a.events.attempted,
+        a.events.completed,
+        a.events.events_per_min,
+        b.events.attempted,
+        b.events.completed,
+        b.events.events_per_min,
+    ));
+
+    // The wins-ledger row for total events/min (computed, both directions).
+    let (ae, be) = (a.events.events_per_min, b.events.events_per_min);
+    if ae > 0.0 || be > 0.0 {
+        let (winner, high, low) = if ae >= be {
+            (&a.sut.name, ae, be)
+        } else {
+            (&b.sut.name, be, ae)
+        };
+        md.push_str(&format!(
+            "**Higher total clinical-event throughput: {winner}** — {high:.1} vs {low:.1} \
+             events/min ({}).\n\n",
+            pct(low, high)
+        ));
     }
 }
 
@@ -406,6 +484,7 @@ mod tests {
                 mem_mib: 8000,
                 harness_sha: "x".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: std::collections::BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {
@@ -413,6 +492,20 @@ mod tests {
                 requests: 1000,
                 rps: 2.0,
                 error_rate: 0.0,
+            },
+            events: EventsBlock {
+                classes: BTreeMap::from([(
+                    "E2".to_owned(),
+                    EventClassRecord {
+                        label: "shift-vitals".to_owned(),
+                        attempted: 100,
+                        completed: 95,
+                        events_per_min: 1.6,
+                    },
+                )]),
+                attempted: 100,
+                completed: 95,
+                events_per_min: 1.6,
             },
             resources: ResourcesBlock {
                 app: None,
@@ -433,6 +526,7 @@ mod tests {
             error_rate: 0.0,
             p99_us: p99,
             requests: 1000,
+            events_per_min: 0.0,
             max_dispatch_lag_ms: 0,
         };
         KneeResults {
@@ -468,6 +562,26 @@ mod tests {
         assert!(c.markdown.contains("req/s"));
         assert!(!c.markdown.contains("different workload locks"));
         assert!(!c.markdown.contains("Maximum sustained throughput"));
+    }
+
+    #[test]
+    fn clinical_transactions_section_and_wins_row() {
+        let a = results("ehrbase-rs", 10_000);
+        let mut b = results("ehrbase-java", 40_000);
+        // Make the java SUT complete fewer events so the wins row resolves to us.
+        b.events.completed = 60;
+        b.events.events_per_min = 1.0;
+        b.events.classes.get_mut("E2").expect("E2").completed = 60;
+        b.events.classes.get_mut("E2").expect("E2").events_per_min = 1.0;
+        let c = render(&[a, b], &[]);
+        assert!(c.markdown.contains("## Clinical transactions (events)"));
+        assert!(c.markdown.contains("E2 shift-vitals"));
+        // The computed wins-ledger row for total events/min, in our favour.
+        assert!(
+            c.markdown
+                .contains("Higher total clinical-event throughput: ehrbase-rs")
+        );
+        assert!(c.markdown.contains("1.6 vs 1.0 events/min"));
     }
 
     #[test]

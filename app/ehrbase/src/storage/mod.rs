@@ -15,6 +15,9 @@
 //! - [`is_structure_type`] / [`is_versioned_root_type`] / [`archetype_parts`] —
 //!   the decomposition granularity, delegated to the BMM-generated RM model
 //!   (`structure`).
+//! - [`PROMOTED_LEAVES`] — the promoted-leaf registry (`promoted`): the shared
+//!   `(rm_type, path) → node column` mapping the write codec and the AQL read
+//!   lowering both consult, so a hot leaf reads an indexed column.
 //! - [`node_repo`] — `node`-table writes + the single node→canonical reload.
 //! - [`version_repo`] — `vo_version`/`audit`/`contribution`/`vo_attestation`
 //!   row I/O, the folder-membership and event-outbox writes, and the version
@@ -35,10 +38,12 @@ mod structure;
 
 pub mod ehr_repo;
 pub mod node_repo;
+pub mod promoted;
 pub mod tag_repo;
 pub mod version_repo;
 
 pub use codec::{decompose, reassemble};
 pub use error::StorageError;
+pub use promoted::{PROMOTED_LEAVES, PromotedKind, PromotedLeaf};
 pub use row::{NodeContent, NodeRow, ReadRow};
 pub use structure::{archetype_parts, is_structure_type, is_versioned_root_type};

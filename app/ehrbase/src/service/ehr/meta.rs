@@ -68,6 +68,27 @@ impl EhrbaseService {
         object_version_id(vo_id, creating_system_id, version)
     }
 
+    /// A metadata-only [`ServiceResponse`] for a write, built entirely from the
+    /// commit result — the version identity and the server commit instant are
+    /// already in [`Committed`](crate::versioning::Committed), so the write
+    /// path never re-reads the row it just wrote (a representation response
+    /// re-reads at the protocol layer). The body is `Value::Null` by contract:
+    /// every write consumer uses only the metadata.
+    pub(in crate::service) fn committed_response(
+        &self,
+        ehr_id: uuid::Uuid,
+        committed: &crate::versioning::Committed,
+    ) -> ServiceResponse {
+        let meta = self.version_meta(
+            ehr_id,
+            committed.vo_id,
+            &committed.creating_system_id,
+            committed.tree,
+            committed.time_committed,
+        );
+        ServiceResponse::new(serde_json::Value::Null, meta)
+    }
+
     /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
     /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and its
     /// commit time (the `Last-Modified`).

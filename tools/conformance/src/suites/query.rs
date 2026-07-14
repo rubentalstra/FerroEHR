@@ -100,6 +100,22 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("POST /ehr/{ehr_id}/composition; POST /query/aql"),
             run_adhoc_loaded_db,
         ),
+        // ── ECC-original: the projected uid VALUE (not just the column shape) ──
+        case(
+            "qry/uid-projection-value",
+            "AQL uid projection — c/uid/value returns the version id",
+            Capability::AqlBasic,
+            "AQL 1.1 master03-syntax §Identified paths (COMPOSITION.uid.value → /uid/value); \
+             RM common master06 §Version identification (OBJECT_VERSION_ID); \
+             ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query 200_QUERY.yaml RESULT_SET",
+            ScheduleTrace::EccOriginal(
+                "schedule stub (master11 is TBD); the loaded-db case asserts only the projected \
+                 column path — this case asserts the projected CELL equals the committed \
+                 OBJECT_VERSION_ID (a null cell was a real, otherwise-invisible engine defect)",
+            ),
+            Binding::Rest("POST /ehr/{ehr_id}/composition; POST /query/aql"),
+            run_uid_projection_value,
+        ),
         // ── ECC-original: invalid queries must be rejected ─────────────────────
         case(
             "qry/corpus-invalid",
@@ -224,6 +240,11 @@ mod result_set {
             .and_then(|c| c.get("path"))
             .and_then(Value::as_str)
     }
+
+    /// One projected cell (`rows[row][col]`), `None` when absent.
+    pub fn cell(body: &Value, row: usize, col: usize) -> Option<&Value> {
+        body.get("rows")?.as_array()?.get(row)?.as_array()?.get(col)
+    }
 }
 
 // ── master11 real cases (concretizing xx flows) ───────────────────────────────
@@ -330,6 +351,50 @@ fn run_adhoc_loaded_db<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 // ── ECC-original cases ────────────────────────────────────────────────────────
+
+/// The projected `c/uid/value` CELL equals the committed version's
+/// `OBJECT_VERSION_ID` (AQL 1.1 master03 lists `COMPOSITION.uid.value` →
+/// `/uid/value` as a normative identified path). The loaded-db spine case
+/// asserts only the column path — a server that projects `null` for every uid
+/// passes it, which was a real engine defect this case pins.
+fn run_uid_projection_value<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        support::ensure_opt(ctx, "template.valid", "nested/nested.opt").await?;
+        let comp = compositions_by_name("nested.en.v1__full.json")?;
+        let commit = ctx
+            .send(
+                HttpRequest::post(format!("/ehr/{ehr_id}/composition"))
+                    .json_body(&comp)?
+                    .header("accept", "application/json")
+                    .header("prefer", "return=representation"),
+            )
+            .await?;
+        assert::status(&commit, 201)?;
+        let committed_uid = commit
+            .json()?
+            .pointer("/uid/value")
+            .and_then(serde_json::Value::as_str)
+            .map(ToOwned::to_owned)
+            .ok_or_else(|| {
+                CaseError::Assertion("committed composition body carries no /uid/value".to_owned())
+            })?;
+
+        let aql = format!(
+            "SELECT c/uid/value FROM EHR e[ehr_id/value='{ehr_id}'] CONTAINS COMPOSITION c"
+        );
+        let resp = adhoc(ctx, &aql).await?;
+        assert::status(&resp, 200)?;
+        let body = resp.json()?;
+        match result_set::cell(&body, 0, 0).and_then(serde_json::Value::as_str) {
+            Some(projected) if projected == committed_uid => Ok(DataSetReport::SINGLE),
+            other => Err(CaseError::Assertion(format!(
+                "projected c/uid/value cell is {other:?}, expected the committed \
+                 OBJECT_VERSION_ID '{committed_uid}'"
+            ))),
+        }
+    })
+}
 
 /// Every vendored invalid query must be rejected (`4xx`, ITS-REST
 /// `400_QUERY.yaml`). A `2xx` for a malformed query is the finding.

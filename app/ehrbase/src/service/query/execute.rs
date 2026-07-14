@@ -8,7 +8,7 @@
 //! `fetch`/`offset` that collides with an AQL `LIMIT`/`OFFSET`/`TOP` is a `400`;
 //! otherwise the AQL clause wins when present, else the REST parameter.
 
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
@@ -20,7 +20,7 @@ use ehrbase_sm::{AqlQueryRequest, QueryOutcome, QueryService, SmError};
 use openehr_query::parser::parse_str;
 
 use super::result_set::{build_params, result_set_json, substitute_params};
-use crate::aql::{self, AqlError, ExecError, SqlCtx};
+use crate::aql::{self, AqlError, ExecError, Params, QueryIr, SqlCtx};
 use crate::service::EhrbaseService;
 use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
 
@@ -78,27 +78,17 @@ impl EhrbaseService {
         request: &AqlQueryRequest,
     ) -> Result<QueryOutcome, SmError> {
         let plan_start = Instant::now();
-        let mut ast = match parse_str(aql) {
-            Ok(ast) => ast,
-            Err(e) => {
-                count_query("analysis_error");
-                return Err(SmError::precondition(format!("invalid AQL: {e}")));
-            }
-        };
-        // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
-        // used in a `matches` operand through the terminology-service seam and
-        // merge the codes into the value list, before planning
-        // (QUERY master03 lines 756–759), via `aql::expand_matches`.
-        if let Err(e) = aql::expand_matches(&mut ast, self).await {
-            count_query(plan_outcome(&e));
-            return Err(map_plan_error(e));
-        }
         let params = build_params(request);
-        let ir = match aql::plan(&ast, &params) {
+        // Parse + terminology-expand + lower to the typed IR, reusing a cached
+        // plan when the query text has been seen (P20 plan cache). The IR is a
+        // pure function of the query text; the parameter *values*, paging, and
+        // scope all bind downstream, so a cached plan serves every caller of the
+        // same text correctly.
+        let ir = match self.plan_query(aql, &params).await {
             Ok(ir) => ir,
-            Err(e) => {
-                count_query(plan_outcome(&e));
-                return Err(map_plan_error(e));
+            Err(PlanFailure { outcome, error }) => {
+                count_query(outcome);
+                return Err(error);
             }
         };
         record_phase("plan", plan_start);
@@ -175,6 +165,46 @@ impl EhrbaseService {
         }
         count_query("ok");
         Ok(outcome)
+    }
+
+    /// Parse, terminology-expand, and lower `aql` into a typed [`QueryIr`],
+    /// reusing a cached plan on a repeat of the same query text (P20 plan
+    /// cache). `params` is validated present against the (cached or fresh) plan
+    /// on every call — the values themselves bind later at SQL-build time, so
+    /// the cached plan is independent of them.
+    ///
+    /// A plan whose `matches` operands were resolved through the terminology
+    /// service (`aql::expand_matches` reported an expansion) is **not** cached:
+    /// the resolution may differ on a later execution (QUERY master03
+    /// §TERMINOLOGY), so such a query always re-parses and re-expands.
+    async fn plan_query(&self, aql: &str, params: &Params) -> Result<Arc<QueryIr>, PlanFailure> {
+        // Cache hit: the plan is request-independent, but the caller's bindings
+        // still must satisfy it.
+        if let Some(ir) = self.plan_cache.get(aql).await {
+            aql::check_params(&ir, params).map_err(PlanFailure::plan)?;
+            return Ok(ir);
+        }
+        // Miss: full parse → terminology expansion → lowering.
+        let mut ast = parse_str(aql).map_err(|e| PlanFailure {
+            outcome: "analysis_error",
+            error: SmError::precondition(format!("invalid AQL: {e}")),
+        })?;
+        // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
+        // used in a `matches` operand through the terminology-service seam and
+        // merge the codes into the value list, before planning
+        // (QUERY master03 lines 756–759).
+        let expanded = aql::expand_matches(&mut ast, self)
+            .await
+            .map_err(PlanFailure::plan)?;
+        let ir = Arc::new(aql::lower_query(&ast).map_err(PlanFailure::plan)?);
+        // Cache only terminology-free plans (a resolved expansion may change).
+        if !expanded {
+            self.plan_cache
+                .insert(aql.to_owned(), Arc::clone(&ir))
+                .await;
+        }
+        aql::check_params(&ir, params).map_err(PlanFailure::plan)?;
+        Ok(ir)
     }
 
     /// Resolve the request's `ehr_ids` (string form) into the scoped `Uuid` set
@@ -257,6 +287,26 @@ fn exec_outcome(e: &AqlError) -> &'static str {
         AqlError::Feature(_) => "feature_rejected",
         AqlError::Analysis(_) | AqlError::Sql(_) => "analysis_error",
         AqlError::Exec(_) => "exec_error",
+    }
+}
+
+/// A planning failure carrying both the ITS-REST-mapped error and the
+/// `aql_queries_total{outcome}` label to record for it — so [`EhrbaseService::plan_query`]
+/// can fail from several points (parse, terminology expansion, lowering,
+/// parameter binding) and the caller counts + returns uniformly.
+struct PlanFailure {
+    outcome: &'static str,
+    error: SmError,
+}
+
+impl PlanFailure {
+    /// A failure from terminology expansion, lowering, or parameter binding —
+    /// classified by [`plan_outcome`] and mapped by [`map_plan_error`].
+    fn plan(e: AqlError) -> Self {
+        Self {
+            outcome: plan_outcome(&e),
+            error: map_plan_error(e),
+        }
     }
 }
 

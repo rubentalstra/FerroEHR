@@ -23,7 +23,7 @@ use super::sub::{Entry, FlatView, parse_key};
 use super::{context, graph, rmattr};
 use crate::FlatError;
 use crate::path;
-use crate::webtemplate::{WebTemplate, WebTemplateNode};
+use crate::webtemplate::{CodedName, WebTemplate, WebTemplateNode};
 
 /// Map a (possibly abstract/generic) web-template rm type to the concrete RM
 /// type to instantiate. `EVENT` is abstract → default `POINT_EVENT`.
@@ -87,11 +87,15 @@ pub fn from_flat(flat: &Map<String, Value>, wt: &WebTemplate) -> Result<Value, F
     // `build`'s per-node pass may have created `archetype_details` without the
     // template id; the root must carry it (self-describing composition).
     ensure_template_id(&mut comp, &wt.tree, &wt.template_id);
-    context::apply_ctx(flat, &mut comp);
+    // Resolve `category` BEFORE the context is built: `apply_ctx` inspects it to
+    // decide whether a persistent Composition should carry a synthesised Event
+    // context (RM ehr master05 §"Persistent Compositions may optionally have an
+    // Event context").
     if let Some(cat) = root_category(flat, root_id) {
         comp.entry("category".to_owned()).or_insert(cat);
     }
     ensure_category(&mut comp);
+    context::apply_ctx(flat, &mut comp);
     let mut value = Value::Object(comp);
     // Final structural pass: fill the RM-mandatory fields FLAT never surfaces
     // (INTERVAL_EVENT width/math_function, ACTIVITY action_archetype_id, event
@@ -319,7 +323,13 @@ fn place_rec(
             arr.push(el);
         } else {
             // Wrap: the remaining path (e.g. `/value`) lives inside a new element.
-            let mut el = new_struct(seg, rel.get(i + 1), child.name.as_deref(), time);
+            let mut el = new_struct(
+                seg,
+                rel.get(i + 1),
+                child.name.as_deref(),
+                child.name_coded.as_ref(),
+                time,
+            );
             if let Value::Object(m) = &mut el {
                 place(m, &rel[i + 1..], child_value, child, time, elem_attrs);
             }
@@ -341,7 +351,7 @@ fn place_rec(
         let idx = if let Some(p) = pos {
             p
         } else {
-            arr.push(new_struct(seg, rel.get(i + 1), None, time));
+            arr.push(new_struct(seg, rel.get(i + 1), None, None, time));
             arr.len() - 1
         };
         if let Some(Value::Object(m)) = arr.get_mut(idx) {
@@ -365,11 +375,32 @@ fn place_rec(
     if !cur.contains_key(&seg.attribute) {
         cur.insert(
             seg.attribute.clone(),
-            new_struct(seg, rel.get(i + 1), None, time),
+            new_struct(seg, rel.get(i + 1), None, None, time),
         );
     }
     if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
         place_rec(m, rel, i + 1, id_idx, child_value, child, time, elem_attrs);
+    }
+}
+
+/// The `name` value for a locatable node: a `DV_CODED_TEXT` carrying the
+/// template's constrained `defining_code` when the name is coded (RM common
+/// `master03-archetyped_package.adoc` §"The `LOCATABLE` class" — a
+/// `LOCATABLE.name` is `DV_TEXT` or `DV_CODED_TEXT`), else a plain `DV_TEXT`.
+fn name_value(display: &str, coded: Option<&CodedName>) -> Value {
+    match coded {
+        Some(CodedName {
+            terminology, code, ..
+        }) => json!({
+            "_type": "DV_CODED_TEXT",
+            "value": display,
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": {"_type": "TERMINOLOGY_ID", "value": terminology},
+                "code_string": code,
+            },
+        }),
+        None => json!({"_type": "DV_TEXT", "value": display}),
     }
 }
 
@@ -379,14 +410,15 @@ fn new_struct(
     seg: &PathSegment,
     next: Option<&PathSegment>,
     name: Option<&str>,
+    coded_name: Option<&CodedName>,
     time: &Value,
 ) -> Value {
     let rm_type = infer_type(&seg.attribute, next.map(|s| s.attribute.as_str()));
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
     o.insert("_type".into(), json!(rm_type));
-    let display = name.or(node_id).unwrap_or(rm_type).to_owned();
-    o.insert("name".into(), json!({"_type": "DV_TEXT", "value": display}));
+    let display = name.or(node_id).unwrap_or(rm_type);
+    o.insert("name".into(), name_value(display, coded_name));
     if let Some(nid) = node_id {
         o.insert("archetype_node_id".into(), json!(nid));
     }
@@ -449,10 +481,10 @@ fn finish_identity(
     obj.entry("name".to_owned()).or_insert_with(|| {
         let text = node
             .name
-            .clone()
-            .or_else(|| node.node_id.clone())
-            .unwrap_or_else(|| rm_type.to_owned());
-        json!({"_type": "DV_TEXT", "value": text})
+            .as_deref()
+            .or(node.node_id.as_deref())
+            .unwrap_or(rm_type);
+        name_value(text, node.name_coded.as_ref())
     });
     // Mandatory time/origin on structural container nodes that survive as
     // web-template nodes (e.g. a repeating EVENT, or a HISTORY).
@@ -653,5 +685,40 @@ fn ensure_template_id(comp: &mut Map<String, Value>, root: &WebTemplateNode, tem
     if let Value::Object(ad) = ad {
         ad.entry("template_id".to_owned())
             .or_insert_with(|| json!({"_type": "TEMPLATE_ID", "value": template_id}));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CodedName, name_value};
+    use serde_json::json;
+
+    #[test]
+    fn name_value_stamps_dv_coded_text_when_coded() {
+        let coded = CodedName {
+            terminology: "local".to_owned(),
+            code: "at0007".to_owned(),
+            incoherent: false,
+        };
+        assert_eq!(
+            name_value("Global exclusion of adverse reactions", Some(&coded)),
+            json!({
+                "_type": "DV_CODED_TEXT",
+                "value": "Global exclusion of adverse reactions",
+                "defining_code": {
+                    "_type": "CODE_PHRASE",
+                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+                    "code_string": "at0007",
+                },
+            })
+        );
+    }
+
+    #[test]
+    fn name_value_stamps_plain_dv_text_when_uncoded() {
+        assert_eq!(
+            name_value("Systolic", None),
+            json!({"_type": "DV_TEXT", "value": "Systolic"})
+        );
     }
 }

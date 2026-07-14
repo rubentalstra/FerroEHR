@@ -70,6 +70,7 @@ fn config(admin_enabled: bool) -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         admin: AdminConfig {
             enabled: admin_enabled,

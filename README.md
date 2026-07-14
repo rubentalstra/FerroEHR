@@ -238,9 +238,9 @@ shift vitals, medication rounds, lab-result contributions, clinician chart
 reviews with AQL, corrections, discharges, built on official openEHR CKM
 templates — **byte-identically against both servers** and publishes whatever
 it measures, in both directions. The numbers below are from the committed
-hour-profile run pair (identical 1,209-request clinical hour at the
-10k-composition rung, zero errors on both servers; single run on one shared
-host — a preview, not the publication protocol).
+hour-profile run pair (identical 1,209-request clinical hour, zero errors on
+both servers; single run on one shared host — a preview, not the publication
+protocol).
 
 ![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
 
@@ -251,7 +251,7 @@ host — a preview, not the publication protocol).
 Highlights from [the full comparison](docs/benchmarks/COMPARISON.md)
 (generated — every number traces to a committed `results.json`):
 
-| Measured (hour profile @ 10k) | ehrbase-rs | EHRbase 2.34.0 (Java) |
+| Measured (hour profile, identical load) | ehrbase-rs | EHRbase 2.34.0 (Java) |
 |---|--:|--:|
 | Idle memory (app) | **47 MB** | 515 MB |
 | Peak memory (app) | **188 MB** | 606 MB |
@@ -261,13 +261,31 @@ Highlights from [the full comparison](docs/benchmarks/COMPARISON.md)
 | p99 — composition read (latest) | **59 ms** | 89 ms |
 | p99 — composition update | **79 ms** | 111 ms |
 | Storage per composition | **28.2 KB** | 33.5 KB |
-| Saturation knee — max sustained (p99 ≤ 1 s) | 320 req/s | **956 req/s** |
-| p99 latency *at* the knee | **131 ms** | 497 ms |
 
-Where the other side wins is printed too — the saturation row is
-upstream's, kept in plain sight (it is the current optimization target,
-with the profiling data committed alongside; ours holds a 3.8× lower p99
-at its knee). Reproduce everything with
+**Maximum sustained throughput** (the saturation knee: the highest offered
+load holding p99 ≤ 1 s and errors ≤ 0.1%) is measured on the heavier,
+**fully-populated** clinical-document workload. The P20 optimization phase
+moved ehrbase-rs's knee from **161.9 → 396.9 req/s (23,814 req/min,
+~9,832 clinical events/min) at p99 174 ms** on that workload — a 2.45×
+improvement, full ladder in
+[the knee report](docs/benchmarks/ehrbase-rs/KNEE.md):
+
+![ehrbase-rs saturation ladder](docs/benchmarks/ehrbase-rs/charts/knee.svg)
+
+Upstream's knee on this populated workload is **pending an instrument-clean
+re-run** and is deliberately not claimed in either direction: its earlier
+956 req/s figure was measured on the old lightweight payload set against
+pre-P20 ehrbase-rs (not comparable to the row above), and its first
+populated-payload run was voided as an instrument defect — 4 of 6 document
+skeletons were rejected by its RM 1.1.0-era validator over vintage quirks
+(`Size_valid` off-by-one, coded-name rubric coherence, exclusive duration
+bounds), all since triaged and fixed so **both servers now accept the shared
+payload set 6/6**. The same triage found and fixed two instrument biases
+*against* ehrbase-rs (a 256-request admission cap upstream doesn't have, and
+cold-start timing that charged our docker image build to the server). The
+head-to-head ladder on the shared payloads — including the rs-vs-java
+overlay curve — lands with the next committed run pair; whatever it
+measures is what gets published. Reproduce everything with
 `scripts/benchmark.sh`; the methodology (pre-registered workload, identical
 client, coordinated-omission-corrected latency, fairness/config-parity
 table) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
@@ -279,7 +297,7 @@ helm install ehrbase-rs deploy/helm/ehrbase-rs \
   --set database.existingSecret=my-db-secret
 ```
 
-See the [deployment guide](docs/enterprise/deployment.md) for the production
+See the [deployment guide](docs/design/helm-deployment.md) for the production
 checklist: database role separation, TLS, backup and point-in-time recovery,
 and audit logging.
 
@@ -306,8 +324,8 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Deployment guide](docs/enterprise/deployment.md) | Production operations |
-| [Product roadmap](docs/enterprise/product-roadmap.md) | The capability matrix and what's next |
+| [Deployment guide](docs/design/helm-deployment.md) | Production operations |
+| [Product roadmap](ROADMAP.md) | Where the product goes next |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |
 

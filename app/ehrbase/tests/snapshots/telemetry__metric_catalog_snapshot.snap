@@ -1,5 +1,5 @@
 ---
-source: crates/ehrbase/tests/telemetry.rs
+source: app/ehrbase/tests/telemetry.rs
 expression: "lines.join(\"\\n\")"
 ---
 http_server_request_duration_seconds histogram buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
@@ -12,6 +12,7 @@ db_pool_acquire_duration_seconds histogram buckets=[0.0001, 0.00025, 0.0005, 0.0
 db_transactions_total counter
 aql_queries_total counter
 aql_query_duration_seconds histogram buckets=[0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0]
+aql_plan_cache_events_total counter
 compositions_committed_total counter
 validation_failures_total counter
 webtemplate_cache_events_total counter

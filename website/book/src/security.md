@@ -35,6 +35,15 @@ each by the presence of its configuration block:
   The server validates the token's signature, issuer, and (optionally)
   audience.
 
+Successfully verified Basic credentials are cached for
+`EHRBASE_REST_AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
+the cache) so a busy client pays the deliberately-expensive Argon2
+verification once per TTL instead of on every request. The cache stores only
+a SHA-256 digest of the presented credential — never a plaintext password —
+and an entry exists only after a successful verification; the TTL bounds how
+long a revoked credential can still authenticate, exactly like a session
+lifetime.
+
 The OIDC settings:
 
 | Environment variable | Default | Meaning |

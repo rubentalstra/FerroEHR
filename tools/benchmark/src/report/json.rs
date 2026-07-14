@@ -26,6 +26,11 @@ pub struct Results {
     pub classes: BTreeMap<String, ClassRecord>,
     /// Sustained throughput over the measurement window.
     pub throughput: ThroughputBlock,
+    /// Clinical-event (business-transaction) throughput: TPC-style events/min
+    /// beside the per-request req/s (checklist item 25b). `#[serde(default)]`
+    /// so a pre-25b `results.json` still deserializes (empty events block).
+    #[serde(default)]
+    pub events: EventsBlock,
     /// Container resource series + cold start (absent fields = unavailable).
     pub resources: ResourcesBlock,
     /// Database on-disk footprint (`None` = unavailable, e.g. a BYO SUT).
@@ -86,6 +91,12 @@ pub struct EnvironmentBlock {
     pub harness_sha: String,
     /// ISO-8601 run start.
     pub started: String,
+    /// The config-parity knobs the harness applied to the SUT stacks (DB pool
+    /// ceiling, in-flight admission cap, signing, log level), captured from
+    /// the environment so every published number carries the configuration it
+    /// was measured under. Absent in pre-P20 artefacts.
+    #[serde(default)]
+    pub sut_config: BTreeMap<String, String>,
 }
 
 impl EnvironmentBlock {
@@ -120,8 +131,27 @@ impl EnvironmentBlock {
             mem_mib,
             harness_sha: harness_sha(),
             started: jiff::Timestamp::now().to_string(),
+            sut_config: sut_config(),
         }
     }
+}
+
+/// The config-parity knobs `scripts/benchmark.sh` exports for the SUT stacks,
+/// recorded verbatim when present so the artefact says what it measured.
+fn sut_config() -> BTreeMap<String, String> {
+    [
+        "BENCH_DB_POOL",
+        "EHRBASE_REST_MAX_IN_FLIGHT",
+        "EHRBASE_SIGNING_ENABLED",
+        "EHRBASE_LOG_FILTER",
+        "LOGGING_LEVEL_ROOT",
+        "BENCH_PG_SHARED_BUFFERS",
+        "BENCH_PG_MAX_WAL_SIZE",
+        "BENCH_PG_WORK_MEM",
+    ]
+    .into_iter()
+    .filter_map(|k| std::env::var(k).ok().map(|v| (k.to_owned(), v)))
+    .collect()
 }
 
 /// The harness git SHA from the environment, else `git rev-parse`, else
@@ -194,6 +224,37 @@ pub struct ThroughputBlock {
     pub rps: f64,
     /// Error rate over `requests + errors`.
     pub error_rate: f64,
+}
+
+/// Clinical-event (business-transaction) throughput (checklist item 25b). A
+/// clinical event (admission, medication round, lab batch, discharge…) is a
+/// multi-request business transaction; it is *completed* only when every one of
+/// its steps succeeded within the measured window (warmup applied per event by
+/// its last step — symmetric with the per-request warmup discard). The TPC-style
+/// events/min analogue of the per-request req/s.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct EventsBlock {
+    /// Per event class, keyed by the stable event key (`E1`..`E10`).
+    pub classes: BTreeMap<String, EventClassRecord>,
+    /// Total attempted occurrences over the window.
+    pub attempted: u64,
+    /// Total completed occurrences over the window.
+    pub completed: u64,
+    /// Completed clinical events per minute (same window denominator as req/s).
+    pub events_per_min: f64,
+}
+
+/// One event class's business-transaction tally (register 01 §6 `events.<E>`).
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct EventClassRecord {
+    /// The human label ("admission", …).
+    pub label: String,
+    /// Attempted occurrences (last step landed in the measurement window).
+    pub attempted: u64,
+    /// Completed occurrences (every step succeeded).
+    pub completed: u64,
+    /// Completed occurrences per minute (same window denominator as req/s).
+    pub events_per_min: f64,
 }
 
 /// Container resource series + cold start (register 01 §6 `resources`).
@@ -315,6 +376,7 @@ mod tests {
                 mem_mib: 16000,
                 harness_sha: "deadbeef".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {
@@ -322,6 +384,20 @@ mod tests {
                 requests: 100,
                 rps: 0.83,
                 error_rate: 0.0,
+            },
+            events: EventsBlock {
+                classes: BTreeMap::from([(
+                    "E2".to_owned(),
+                    EventClassRecord {
+                        label: "shift-vitals".to_owned(),
+                        attempted: 20,
+                        completed: 19,
+                        events_per_min: 9.5,
+                    },
+                )]),
+                attempted: 20,
+                completed: 19,
+                events_per_min: 9.5,
             },
             resources: ResourcesBlock {
                 app: None,
@@ -343,6 +419,21 @@ mod tests {
         assert_eq!(back.workload.seed, 42);
         assert_eq!(back.classes["ehr-create"].p99_us, 9000);
         assert_eq!(back.resources.cold_start_ms, Some(4200));
+        // The clinical-event (business-transaction) block survives the round trip.
+        assert_eq!(back.events.completed, 19);
+        assert_eq!(back.events.classes["E2"].label, "shift-vitals");
+        assert!((back.events.events_per_min - 9.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn events_default_when_absent_from_json() {
+        // A pre-25b results.json (no `events` key) still deserializes: the
+        // #[serde(default)] events block is empty, not an error.
+        let mut v = serde_json::to_value(sample_results()).expect("to value");
+        v.as_object_mut().expect("object").remove("events");
+        let back: Results = serde_json::from_value(v).expect("deserialize without events");
+        assert_eq!(back.events.attempted, 0);
+        assert!(back.events.classes.is_empty());
     }
 
     #[test]

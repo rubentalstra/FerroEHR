@@ -735,6 +735,12 @@ fn archetype_predicate_subsumption_sql() {
 
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
 
+/// Anchor-probe EXISTS count: total EXISTS minus the population gates
+/// (`qgv…` aliases, item 24) — the gates are not containment anchors.
+fn anchor_exists(sql: &str) -> usize {
+    sql.matches("EXISTS(SELECT").count() - sql.matches("AS \"qgv").count()
+}
+
 /// G-01: OR-containment under an EHR lowers to a disjunction of correlated
 /// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
 /// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
@@ -747,9 +753,9 @@ fn or_contains_under_ehr_lowers_to_disjunctive_exists() {
           OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
     assert_eq!(
-        sql.matches("EXISTS").count(),
+        anchor_exists(&sql),
         2,
-        "one EXISTS per OR branch: {sql}"
+        "one anchor EXISTS per OR branch: {sql}"
     );
     assert!(sql.contains(" OR "), "the branches are OR-combined: {sql}");
 }
@@ -764,7 +770,7 @@ fn or_contains_under_vo_interval_anchors_each_branch() {
          (OBSERVATION o[openEHR-EHR-OBSERVATION.lab.v1] \
           OR OBSERVATION o1[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
-    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+    assert_eq!(anchor_exists(&sql), 2, "{sql}");
     assert!(sql.contains(" OR "), "{sql}");
     assert!(
         sql.contains("BETWEEN"),
@@ -784,9 +790,9 @@ fn nested_and_or_contains_tree_builds() {
               AND OBSERVATION o3[openEHR-EHR-OBSERVATION.bp.v1]))",
     );
     assert_eq!(
-        sql.matches("EXISTS").count(),
+        anchor_exists(&sql),
         3,
-        "one EXISTS per operand: {sql}"
+        "one anchor EXISTS per operand: {sql}"
     );
     assert!(sql.contains(" OR ") && sql.contains(" AND "), "{sql}");
 }
@@ -803,7 +809,7 @@ fn not_contains_compound_operand_builds() {
           OR OBSERVATION o2[openEHR-EHR-OBSERVATION.glucose.v1])",
     );
     assert!(sql.contains("NOT"), "the exclusion is negated: {sql}");
-    assert_eq!(sql.matches("EXISTS").count(), 2, "{sql}");
+    assert_eq!(anchor_exists(&sql), 2, "{sql}");
 }
 
 /// G-12: a mixed-type (`Raw`) leaf compared to a numeric literal extracts
@@ -860,4 +866,219 @@ fn min_max_over_numeric_leaf_is_numeric() {
         sql.contains("numeric"),
         "MAX over a numeric leaf casts to numeric: {sql}"
     );
+}
+
+// ── P20: promoted context_start fast path + F6 uid synthesis ─────────────────
+
+/// The patient-dashboard shape orders by the promoted `node.context_start`
+/// column, not the correlated `EVENT_CONTEXT` extraction + `::timestamptz` cast
+/// (P20; docs/plans/phase-20-optimization.md).
+#[test]
+fn dashboard_order_by_uses_context_start_column() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/start_time/value DESC",
+    );
+    assert!(
+        sql.contains(r#""context_start" DESC"#),
+        "ORDER BY reads the promoted column: {sql}"
+    );
+    // The ordering no longer casts an extracted EVENT_CONTEXT value to timestamptz.
+    assert!(
+        !sql.contains("timestamptz"),
+        "no per-row ::timestamptz cast for the ordering: {sql}"
+    );
+}
+
+/// The same context start-time leaf in a temporal WHERE comparison also reads
+/// the promoted column (the fast path lives in the shared value lowering, so it
+/// covers ORDER BY, WHERE, and aggregation uniformly).
+#[test]
+fn where_temporal_compare_uses_context_start_column() {
+    let sql = build_sql(
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/start_time/value > '2021-01-01T00:00:00Z'",
+    );
+    assert!(
+        sql.contains(r#""context_start""#),
+        "WHERE comparison reads the promoted column: {sql}"
+    );
+}
+
+/// A near-miss must fall back to the general lowering: a temporal leaf on an
+/// OBSERVATION (not a promoted type) still extracts through the subtree.
+#[test]
+fn non_promoted_temporal_leaf_falls_back_to_subquery() {
+    let sql = build_sql(
+        "SELECT o/name/value \
+         FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1] \
+         ORDER BY o/data[at0001]/events[at0006]/time/value DESC",
+    );
+    assert!(
+        !sql.contains("context_start"),
+        "OBSERVATION time is not the promoted composition leaf: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first") && sql.contains("timestamptz"),
+        "the general temporal lowering (extraction + ::timestamptz) is used: {sql}"
+    );
+}
+
+/// A near-miss on the promoted type but a different path (`end_time`, not the
+/// registered `start_time`) also falls back — the match is path-exact.
+#[test]
+fn other_composition_context_path_falls_back() {
+    let sql = build_sql(
+        "SELECT c/name/value FROM EHR e CONTAINS COMPOSITION c \
+         ORDER BY c/context/end_time/value DESC",
+    );
+    assert!(
+        !sql.contains("context_start"),
+        "only the registered context/start_time/value promotes: {sql}"
+    );
+}
+
+/// Projection of the context start-time reads the canonical JSON fragment, not
+/// the timestamptz column — the fast path is comparison/ordering only, so the
+/// `RESULT_SET` cell keeps the verbatim `DV_DATE_TIME` value.
+#[test]
+fn projection_of_context_start_time_is_not_promoted() {
+    let sql = build_sql("SELECT c/context/start_time/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        !sql.contains("context_start"),
+        "projection must extract the canonical value, not the timestamptz column: {sql}"
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first"),
+        "projection extracts the leaf from the fragment: {sql}"
+    );
+}
+
+/// F6: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
+/// from the joined `vo_version` (RM common master06 §Version Identification) —
+/// it is not stored in the fragment.
+#[test]
+fn composition_uid_value_is_synthesized_from_vo_version() {
+    let sql = build_sql("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("creating_system_id"),
+        "uid/value is composed from vo_version columns: {sql}"
+    );
+}
+
+/// F6: `c/uid` yields the `OBJECT_VERSION_ID` object cell.
+#[test]
+fn composition_uid_object_is_built() {
+    let sql = build_sql("SELECT c/uid FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        sql.contains("jsonb_build_object"),
+        "uid projects the OBJECT_VERSION_ID object: {sql}"
+    );
+    assert!(
+        sql.contains("creating_system_id"),
+        "the object's value is the synthesized version id: {sql}"
+    );
+}
+
+/// F6: a contained object's own `uid` is NOT synthesized — only a
+/// versioned-object root gets a server-assigned `OBJECT_VERSION_ID`; the
+/// OBSERVATION's uid falls through to the stored fragment.
+#[test]
+fn contained_object_uid_is_not_synthesized() {
+    let sql = build_sql(
+        "SELECT o/uid/value \
+         FROM EHR e CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.bp.v1]",
+    );
+    assert!(
+        sql.contains("jsonb_path_query_first"),
+        "the observation uid is read from its stored fragment: {sql}"
+    );
+}
+
+// ── item 24: typed EHR-id predicate + single correlated population gate ─────
+
+/// `e/ehr_id/value = '<uuid>'` lowers to a uuid-typed comparison on `ehr.id`
+/// (index-served; value-based equality = the case-insensitive identifier
+/// semantics of BASE `base_types` master05 §Composite Identifiers and Case),
+/// never the index-blind text-cast-both-sides form.
+#[test]
+fn ehr_id_equality_is_uuid_typed() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE e/ehr_id/value = '11111111-2222-4333-8444-555555555555'",
+    );
+    assert!(
+        sql.contains("CAST($") && sql.contains("AS uuid)"),
+        "uuid-typed RHS expected: {sql}"
+    );
+    assert!(
+        !sql.contains(r#"CAST("e0"."id" AS text) ="#),
+        "the text-cast equality must be gone: {sql}"
+    );
+}
+
+/// A non-uuid literal can equal no EHR id: `=` lowers to constant FALSE and
+/// `!=` to constant TRUE — no scan, no cast error.
+#[test]
+fn ehr_id_equality_with_a_non_uuid_literal_is_constant() {
+    let sql = build_sql("SELECT e/ehr_id/value FROM EHR e WHERE e/ehr_id/value = 'not-a-uuid'");
+    assert!(
+        sql.contains("FALSE") || sql.contains('$'),
+        "constant lowering: {sql}"
+    );
+    assert!(
+        !sql.contains("AS uuid)"),
+        "no uuid cast for a non-uuid literal: {sql}"
+    );
+}
+
+/// Ordering comparisons on the EHR id stay textual (uuid byte order is not
+/// text order; QUERY master03 defines string comparison) — the typed fast
+/// path fires for equality only.
+#[test]
+fn ehr_id_ordering_stays_textual() {
+    let sql = build_sql(
+        "SELECT e/ehr_id/value FROM EHR e \
+         WHERE e/ehr_id/value > '11111111-2222-4333-8444-555555555555'",
+    );
+    assert!(
+        sql.contains(r#"CAST("e0"."id" AS text)"#),
+        "ordering keeps the text form: {sql}"
+    );
+}
+
+/// The population gate (SM `I_QUERY_SERVICE`: full-population queries run over
+/// `is_queryable = true` EHRs) is emitted ONCE per join-connected component —
+/// a VO root linked to its EHR alias is covered by the alias's gate — and as a
+/// correlated `EXISTS` probe, not a full-population `IN` materialization.
+#[test]
+fn population_gate_is_single_and_correlated() {
+    let sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE e/ehr_id/value = '11111111-2222-4333-8444-555555555555' \
+         ORDER BY c/context/start_time/value DESC LIMIT 20",
+    );
+    // The gate's alias family is qgv/qgn; is_queryable itself binds as $n.
+    assert_eq!(
+        sql.matches("AS \"qgv").count(),
+        1,
+        "exactly one population gate: {sql}"
+    );
+    assert!(
+        sql.contains("EXISTS(SELECT") && sql.contains("\"qgv0\".\"ehr_id\" = \"e0\".\"id\""),
+        "correlated EXISTS form: {sql}"
+    );
+}
+
+/// A bare VO source with no EHR variable still gets its own gate (nothing else
+/// covers it).
+#[test]
+fn unlinked_vo_root_keeps_its_own_gate() {
+    let sql = build_sql("SELECT c/uid/value FROM COMPOSITION c");
+    assert_eq!(
+        sql.matches("AS \"qgv").count(),
+        1,
+        "the bare root is gated: {sql}"
+    );
+    assert!(sql.contains("EXISTS(SELECT"), "correlated gate: {sql}");
 }

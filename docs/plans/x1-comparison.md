@@ -245,7 +245,7 @@ and must be stated on the page.
   `docs/conformance/`). For the comparison page we go one step better:
   **generated markdown fragments + static SVG charts, checked in and
   drift-gated**, following the `scripts/assemble-oas.sh --check` pattern
-  from W1 (§5a of `docs/plans/w1-docs-website.md`) — regenerate from the
+  from W1 (§5a of `docs/design/docs-website.md`) — regenerate from the
   committed `results.json` artifacts and `git diff --exit-code` in CI, so
   the page can never silently disagree with the raw data.
 - mdBook's built-in `{{#include}}` link-preprocessor inlines the generated

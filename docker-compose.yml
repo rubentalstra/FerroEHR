@@ -21,6 +21,22 @@ services:
       EHRBASE_DB_USER: ${EHRBASE_DB_USER:-ehrbase}
       EHRBASE_DB_PASSWORD: ${EHRBASE_DB_PASSWORD:-ehrbase}
       EHRBASE_DB_NAME: ${EHRBASE_DB_NAME:-ehrbase}
+    # pg_stat_statements is loaded so the P20 profiling harness
+    # (scripts/profile.sh) can attribute time per statement; negligible
+    # overhead, ships in the stock image.
+    # The same PG tuning floor the benchmark parity compose applies to BOTH
+    # SUTs (docker/benchmark/docker-compose.yml, benchmarking.md §3.4), so
+    # local profiling (scripts/profile.sh) measures the tuned configuration.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     volumes:
       - ehrbase-pgdata:/var/lib/postgresql
     ports:
@@ -46,6 +62,11 @@ services:
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
       EHRBASE_DB_MAX_CONNECTIONS: ${EHRBASE_DB_MAX_CONNECTIONS:-10}
+      # In-flight admission cap (503 load shed past it; 0 disables). The
+      # benchmark harness raises it so overload manifests as queueing latency —
+      # the same failure mode as upstream's Tomcat admission window — instead
+      # of shed errors tripping the SLO's error-rate arm (see scripts/benchmark.sh).
+      EHRBASE_REST_MAX_IN_FLIGHT: ${EHRBASE_REST_MAX_IN_FLIGHT:-256}
       # Version-signing toggle pass-through (the benchmark harness disables it
       # for throughput parity — upstream has no signing; see scripts/benchmark.sh).
       EHRBASE_SIGNING_ENABLED: ${EHRBASE_SIGNING_ENABLED:-true}
@@ -55,6 +76,9 @@ services:
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
       EHRBASE_LOG_FORMAT: ${EHRBASE_LOG_FORMAT:-pretty}
+      # Benchmark parity (benchmarking.md §3.4 "Logging: equal, minimal"):
+      # scripts/benchmark.sh sets warn on BOTH SUTs; default stays info.
+      EHRBASE_LOG_FILTER: ${EHRBASE_LOG_FILTER:-info}
     volumes:
       - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:

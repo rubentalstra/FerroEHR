@@ -233,17 +233,33 @@ impl EhrbaseService {
     /// Unparseable UUID → `400`.
     pub(super) async fn opt_delete(&self, an_opt_id: &str) -> Result<(), ServiceError> {
         let id = parse_opt_uuid(an_opt_id)?;
-        let deleted = sqlx::query("DELETE FROM template_store WHERE id = $1")
-            .bind(id)
-            .execute(&self.pool)
-            .await?
-            .rows_affected();
-        if deleted == 0 {
+        // `RETURNING template_id` gives us the wire id of the deleted row so we
+        // can drop its derived-runtime (`WebTemplate`) cache entry in the same
+        // operation. Absent row → `None` → 404, exactly as the prior
+        // `rows_affected() == 0` check reported.
+        let deleted_template_id: Option<String> =
+            sqlx::query_scalar("DELETE FROM template_store WHERE id = $1 RETURNING template_id")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
+        let Some(template_id) = deleted_template_id else {
             return Err(ServiceError::sm(
                 CallStatusType::TemplateDoesNotExist,
                 format!("OPT {an_opt_id}"),
             ));
-        }
+        };
+        // Delete is the only mutation that ends a stored template's lifetime
+        // (uploads are create-only — `store_template`'s `ON CONFLICT DO NOTHING`
+        // never overwrites, and `web_template_for` never caches a negative
+        // result), so this is the single cache-invalidation point. Key on the
+        // identity-canonical form so a case variant of the id is evicted too
+        // (BASE master05 §Composite Identifiers and Case). No openEHR spec
+        // governs the cache; cross-instance eviction (a delete on node A does
+        // not evict node B's in-memory cache) is out of scope for this
+        // single-node optimisation — our own design.
+        self.web_templates
+            .invalidate(&crate::templates::identity::canonical_key(&template_id))
+            .await;
         Ok(())
     }
 

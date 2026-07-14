@@ -99,6 +99,13 @@ pub trait TerminologyExpander: Send + Sync {
 /// `expand` `TERMINOLOGY()` operands are left untouched (the planner rejects
 /// them).
 ///
+/// Returns `true` when at least one terminology operand was resolved and
+/// spliced into the AST — i.e. the lowered plan now embeds a terminology
+/// resolution that may differ on a later execution, so the query service must
+/// **not** cache it (`crate::service::query` plan cache). Returns `false` for a
+/// query with no terminology operand (a pure function of the query text, safe
+/// to cache).
+///
 /// # Errors
 ///
 /// Propagates the [`TerminologyExpander::expand`] error for the first operand
@@ -106,16 +113,16 @@ pub trait TerminologyExpander: Send + Sync {
 pub async fn expand_matches(
     query: &mut SelectQuery,
     expander: &(impl TerminologyExpander + ?Sized),
-) -> Result<(), AqlError> {
+) -> Result<bool, AqlError> {
     let Some(where_) = query.where_.as_ref() else {
-        return Ok(());
+        return Ok(false);
     };
 
     // Pass 1 (sync): collect the distinct terminology requests.
     let mut requests: BTreeSet<Request> = BTreeSet::new();
     collect(where_, &mut requests);
     if requests.is_empty() {
-        return Ok(());
+        return Ok(false);
     }
 
     // Resolve each request exactly once (async, off the sync borrow).
@@ -135,7 +142,7 @@ pub async fn expand_matches(
     if let Some(where_) = query.where_.as_mut() {
         rewrite(where_, &resolved);
     }
-    Ok(())
+    Ok(true)
 }
 
 /// One distinct terminology-service request found in the `WHERE` clause.
@@ -351,9 +358,13 @@ mod tests {
              matches TERMINOLOGY('expand', 'openehr', 'audit_change_type')",
         )
         .expect("parse");
-        expand_matches(&mut q, &Fixed(vec!["249".into(), "250".into()]))
+        let expanded = expand_matches(&mut q, &Fixed(vec!["249".into(), "250".into()]))
             .await
             .expect("expand");
+        assert!(
+            expanded,
+            "a resolved terminology operand must report expansion (the plan is then uncacheable)"
+        );
         assert_eq!(matches_values(&q), vec!["249".to_owned(), "250".to_owned()]);
     }
 
@@ -385,9 +396,13 @@ mod tests {
              WHERE c/category/defining_code/code_string matches {'249', '250'}";
         let mut q = parse_str(src).expect("parse");
         let before = q.clone();
-        expand_matches(&mut q, &Fixed(vec!["ignored".into()]))
+        let expanded = expand_matches(&mut q, &Fixed(vec!["ignored".into()]))
             .await
             .expect("no-op");
+        assert!(
+            !expanded,
+            "a query with no terminology operand must report no expansion (cacheable)"
+        );
         assert_eq!(
             q, before,
             "a query with no expand operand must be untouched"

@@ -32,6 +32,7 @@
 //!   own config gate.
 
 pub mod aql;
+pub mod banner;
 pub mod db;
 pub mod extensions;
 pub mod service;

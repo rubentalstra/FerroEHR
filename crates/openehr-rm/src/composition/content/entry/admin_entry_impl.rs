@@ -4,16 +4,16 @@
 //! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.
 
 use crate::composition::content::entry::admin_entry::AdminEntry;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
 
 impl Validate for AdminEntry {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.archetype_details.is_none() {
-            out.push(InvariantViolation::here(
-                "Invariant Is_archetypeRoot failed on type ADMIN_ENTRY",
-            ));
-        }
-        push_archetype_node_id_valid(out, "ADMIN_ENTRY", &self.archetype_node_id);
+        push_entry_root_invariants(
+            out,
+            "ADMIN_ENTRY",
+            self.archetype_details.is_some(),
+            &self.archetype_node_id,
+        );
     }
 }
 

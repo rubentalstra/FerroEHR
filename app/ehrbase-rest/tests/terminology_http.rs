@@ -153,6 +153,7 @@ fn config(terminology_enabled: bool) -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         admin: AdminConfig::default(),
         terminology: TerminologyConfig {

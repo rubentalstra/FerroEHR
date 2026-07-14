@@ -84,13 +84,23 @@ pub fn from_results_file(path: &Path) -> Result<Results, BenchError> {
     Ok(results)
 }
 
+/// Format a sustained rate for prose/tables: requests per second with the
+/// per-minute equivalent beside it — the same measurement in the unit most
+/// readers reason in (owner rule: both units on every published throughput
+/// figure; checklist item 25a).
+#[must_use]
+pub fn fmt_rate(rps: f64) -> String {
+    format!("{rps:.1} req/s ({:.0} req/min)", rps * 60.0)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
     use crate::report::json::{
-        ClassRecord, EnvironmentBlock, ResourcesBlock, SutBlock, ThroughputBlock, WorkloadBlock,
+        ClassRecord, EnvironmentBlock, EventsBlock, ResourcesBlock, SutBlock, ThroughputBlock,
+        WorkloadBlock,
     };
 
     fn minimal_results() -> Results {
@@ -131,6 +141,7 @@ mod tests {
                 mem_mib: 8000,
                 harness_sha: "x".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: std::collections::BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {
@@ -139,6 +150,7 @@ mod tests {
                 rps: 0.1,
                 error_rate: 0.0,
             },
+            events: EventsBlock::default(),
             resources: ResourcesBlock {
                 app: None,
                 db: None,

@@ -190,6 +190,21 @@ fn ctx_get<'a>(flat: &'a Map<String, Value>, name: &str) -> Option<&'a Value> {
     flat.get(&format!("ctx/{name}"))
 }
 
+/// Whether the FLAT input carries explicit Event-context *content* — a
+/// participation, location, health-care facility, or an end-time — beyond the
+/// always-emitted `ctx/time` + `ctx/setting` defaults. Used to decide whether a
+/// persistent Composition (which need carry no context; RM ehr
+/// `master05-composition_package.adoc` §"Persistent Compositions") should still
+/// get a context built because the caller genuinely supplied one.
+fn has_explicit_context_content(flat: &Map<String, Value>) -> bool {
+    flat.keys().any(|k| {
+        k == "ctx/end_time"
+            || k == "ctx/location"
+            || k.starts_with("ctx/health_care_facility")
+            || k.starts_with("ctx/participation_")
+    })
+}
+
 /// The composer `external_ref.id` OBJECT_ID. A `ctx/id_scheme` makes it a
 /// `GENERIC_ID` (the scheme-bearing id, `app_context.adoc` `id_scheme`);
 /// without one it is a `HIER_OBJECT_ID` (no scheme) — so a HIER_OBJECT_ID
@@ -252,42 +267,64 @@ pub(crate) fn apply_ctx(flat: &Map<String, Value>, comp: &mut Map<String, Value>
         comp.insert("composer".to_owned(), composer);
     }
 
-    // context — merge the mandatory context fields into any context the tree
-    // already produced (archetyped `other_context`), or create a fresh one.
-    let ctx = comp
-        .entry("context".to_owned())
-        .or_insert_with(|| json!({"_type": "EVENT_CONTEXT"}));
-    if let Value::Object(ctx) = ctx {
-        ctx.entry("_type".to_owned())
-            .or_insert_with(|| json!("EVENT_CONTEXT"));
-        // `EVENT_CONTEXT.start_time`: the `ctx/time` value, or — when unset —
-        // the current time (`SM/.../app_context.adoc` `time`: "If not specified
-        // current time will be used"), never the epoch. A round-trip always
-        // carries `ctx/time` (emit_ctx emits it), so `now()` only materialises
-        // for a client FLAT that omits it, and never destabilises `flat ⇄ flat`.
-        let time = ctx_get(flat, "time")
-            .cloned()
-            .unwrap_or_else(|| json!(jiff::Timestamp::now().to_string()));
-        ctx.entry("start_time".to_owned())
-            .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": time}));
-        if let Some(end) = ctx_get(flat, "end_time") {
-            ctx.entry("end_time".to_owned())
-                .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": end}));
-        }
-        ctx.entry("setting".to_owned())
-            .or_insert_with(|| setting_from_ctx(flat));
-        if let Some(loc) = ctx_get(flat, "location") {
-            ctx.entry("location".to_owned())
-                .or_insert_with(|| loc.clone());
-        }
-        if let Some(hcf) = health_care_facility_from_ctx(flat) {
-            ctx.entry("health_care_facility".to_owned())
-                .or_insert_with(|| hcf);
-        }
-        let parts = participations_from_ctx(flat);
-        if !parts.is_empty() {
-            ctx.entry("participations".to_owned())
-                .or_insert_with(|| Value::Array(parts));
+    // context — `COMPOSITION.context` is optional (0..1;
+    // `RM/.../ehr/composition.adoc` §Attributes). A `431|persistent|`
+    // Composition idiomatically carries NO Event context — "Persistent
+    // Compositions may optionally have an Event context. In openEHR releases up
+    // to 1.0.3, Persistent Compositions had no Event context. This was relaxed in
+    // subsequent releases…" (RM ehr `master05-composition_package.adoc`
+    // §"Persistent Compositions"; the pre-1.0.4 invariant forbidding it was
+    // removed by SPECRM-52). So a persistent Composition WITH a context is valid,
+    // but we must not *fabricate* a default one where the source carried none.
+    // We therefore synthesise the context for an event/episodic/other-category
+    // Composition (context is expected there), and for a persistent Composition
+    // only when it already has an archetyped `other_context` or the FLAT carries
+    // explicit context content (participations / location / facility / end_time)
+    // — never merely the always-emitted `ctx/time` + `ctx/setting` defaults.
+    let persistent = comp
+        .get("category")
+        .and_then(|c| c.pointer("/defining_code/code_string"))
+        .and_then(Value::as_str)
+        == Some("431");
+    let synthesize_context =
+        !persistent || comp.contains_key("context") || has_explicit_context_content(flat);
+    if synthesize_context {
+        let ctx = comp
+            .entry("context".to_owned())
+            .or_insert_with(|| json!({"_type": "EVENT_CONTEXT"}));
+        if let Value::Object(ctx) = ctx {
+            ctx.entry("_type".to_owned())
+                .or_insert_with(|| json!("EVENT_CONTEXT"));
+            // `EVENT_CONTEXT.start_time`: the `ctx/time` value, or — when unset —
+            // the current time (`SM/.../app_context.adoc` `time`: "If not
+            // specified current time will be used"), never the epoch. A
+            // round-trip always carries `ctx/time` (emit_ctx emits it), so
+            // `now()` only materialises for a client FLAT that omits it, and
+            // never destabilises `flat ⇄ flat`.
+            let time = ctx_get(flat, "time")
+                .cloned()
+                .unwrap_or_else(|| json!(jiff::Timestamp::now().to_string()));
+            ctx.entry("start_time".to_owned())
+                .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": time}));
+            if let Some(end) = ctx_get(flat, "end_time") {
+                ctx.entry("end_time".to_owned())
+                    .or_insert_with(|| json!({"_type": "DV_DATE_TIME", "value": end}));
+            }
+            ctx.entry("setting".to_owned())
+                .or_insert_with(|| setting_from_ctx(flat));
+            if let Some(loc) = ctx_get(flat, "location") {
+                ctx.entry("location".to_owned())
+                    .or_insert_with(|| loc.clone());
+            }
+            if let Some(hcf) = health_care_facility_from_ctx(flat) {
+                ctx.entry("health_care_facility".to_owned())
+                    .or_insert_with(|| hcf);
+            }
+            let parts = participations_from_ctx(flat);
+            if !parts.is_empty() {
+                ctx.entry("participations".to_owned())
+                    .or_insert_with(|| Value::Array(parts));
+            }
         }
     }
 

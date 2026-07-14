@@ -18,6 +18,18 @@ services:
   # ── ehrbase-rs (this project) ───────────────────────────────────────────────
   ehrbase-rs-db:
     image: ${EHRBASE_RS_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:develop}
+    # PG tuning parity (benchmarking.md §3.4): the identical settings are passed
+    # to BOTH SUTs' databases below — container-default shared_buffers (128MB)
+    # and max_wal_size (1GB) throttle a write-heavy benchmark with buffer
+    # eviction + constant checkpoints, so both sides get the same sane floor.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     environment:
       POSTGRES_PASSWORD: postgres
       EHRBASE_DB_PASSWORD: ehrbase
@@ -37,6 +49,13 @@ services:
     environment:
       EHRBASE_DB_URL: postgres://ehrbase:ehrbase@ehrbase-rs-db:5432/ehrbase
       EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
+      # Pool parity with the upstream stack's HikariCP ceiling below — this
+      # forward was missing, silently pinning published-image runs to the
+      # app default (20) while upstream got BENCH_DB_POOL.
+      EHRBASE_DB_MAX_CONNECTIONS: ${BENCH_DB_POOL:-10}
+      # Admission parity (see scripts/benchmark.sh): raised so overload fails
+      # as queueing latency like upstream's Tomcat window, not shed 503s.
+      EHRBASE_REST_MAX_IN_FLIGHT: ${BENCH_RS_MAX_IN_FLIGHT:-2048}
     volumes:
       - ../ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
@@ -47,6 +66,17 @@ services:
   # ── EHRbase (Java, the reference implementation) ────────────────────────────
   ehrbase-java-db:
     image: ${EHRBASE_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+    # Identical PG tuning to ehrbase-rs-db above (benchmarking.md §3.4 — same
+    # DB settings both sides; the PG major difference 16 vs 18 is each SUT's
+    # own shipped platform and is recorded in the report's environment block).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -84,6 +114,9 @@ services:
       SECURITY_AUTHADMINPASSWORD: ehrbase
       # Allow template overwrite so repeat runs are idempotent.
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "true"
+      # Logging parity (benchmarking.md §3.4): warn during measured runs,
+      # matching the ehrbase-rs side's EHRBASE_LOG_FILTER.
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
       # HikariCP pool ceiling — raised in lockstep with ehrbase-rs's
       # EHRBASE_DB_MAX_CONNECTIONS (config parity; both default 10).
       SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: ${BENCH_DB_POOL:-10}
