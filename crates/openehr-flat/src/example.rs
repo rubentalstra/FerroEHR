@@ -54,8 +54,6 @@ use crate::webtemplate::{
 
 /// Fixed example instants used for the RM temporal leaves (deterministic).
 const EXAMPLE_DATE_TIME: &str = "2022-02-03T04:05:06Z";
-const EXAMPLE_DATE: &str = "2022-02-03";
-const EXAMPLE_TIME: &str = "04:05:06";
 const EXAMPLE_DURATION: &str = "PT1H";
 
 /// The level of detail for a generated example (`detail_level` query parameter).
@@ -183,6 +181,17 @@ fn walk(
     let groups = child_groups(node);
     let mut emitted = false;
     let mut included: Vec<&str> = Vec::new();
+    // Materialised instances per container cardinality (`max != -1`), so the
+    // populated levels never overrun a container's upper bound — an *optional*
+    // child is skipped once its cardinality is full (a mandatory one still
+    // materialises; a template whose mandatory children alone exceed the bound
+    // is contradictory and the validator's job to report).
+    let mut card_counts = vec![0usize; node.cardinalities.len()];
+    let card_idx = |child: &WebTemplateNode| {
+        node.cardinalities
+            .iter()
+            .position(|c| c.max != -1 && child.aql_path.starts_with(c.path.as_str()))
+    };
 
     for child in &groups {
         let child_opt = opt_depth + usize::from(is_optional(child));
@@ -191,6 +200,15 @@ fn walk(
             DetailLevel::Medium | DetailLevel::Complete => true,
         };
         if include {
+            let ci = card_idx(child);
+            let card_full = |counts: &[usize]| {
+                ci.is_some_and(|i| {
+                    counts[i] >= usize::try_from(node.cardinalities[i].max).unwrap_or(usize::MAX)
+                })
+            };
+            if is_optional(child) && card_full(&card_counts) {
+                continue;
+            }
             included.push(child.aql_path.as_str());
             let child_prefix = format!("{prefix}/{}", seg_for(child));
             // A mandatory child must materialise even when all of *its* children
@@ -198,11 +216,22 @@ fn walk(
             let child_force = !is_optional(child);
             let child_emitted = walk(child, &child_prefix, child_opt, level, child_force, out);
             emitted |= child_emitted;
+            if child_emitted && let Some(i) = ci {
+                card_counts[i] += 1;
+            }
             // `Complete` demonstrates repetition: a second occurrence of any
-            // repeating node that materialised.
-            if level == DetailLevel::Complete && child_emitted && is_repeating(child) {
+            // repeating node that materialised (cardinality permitting).
+            if level == DetailLevel::Complete
+                && child_emitted
+                && is_repeating(child)
+                && !card_full(&card_counts)
+            {
                 let second_prefix = format!("{prefix}/{}:1", child.id);
-                emitted |= walk(child, &second_prefix, child_opt, level, false, out);
+                let second_emitted = walk(child, &second_prefix, child_opt, level, false, out);
+                emitted |= second_emitted;
+                if second_emitted && let Some(i) = ci {
+                    card_counts[i] += 1;
+                }
             }
         }
     }
@@ -300,14 +329,22 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         "DV_ORDINAL" => emit_ordinal(node, base, out, false),
         "DV_SCALE" => emit_ordinal(node, base, out, true),
         "DV_BOOLEAN" => put(out, base, "", json!(example_boolean(node))),
-        "DV_DATE_TIME" => put(out, base, "", json!(EXAMPLE_DATE_TIME)),
-        "DV_DATE" => put(out, base, "", json!(EXAMPLE_DATE)),
-        "DV_TIME" => put(out, base, "", json!(EXAMPLE_TIME)),
-        "DV_DURATION" => put(out, base, "", json!(EXAMPLE_DURATION)),
+        "DV_DATE_TIME" | "DV_DATE" | "DV_TIME" => {
+            put(out, base, "", json!(example_temporal(node, rm)));
+        }
+        "DV_DURATION" => put(out, base, "", json!(example_duration(node))),
         "DV_IDENTIFIER" => put(out, base, "id", json!("example-id")),
         "DV_MULTIMEDIA" => {
             put(out, base, "", json!("http://example.org/media"));
-            put(out, base, "mediatype", json!("text/plain"));
+            // Honour a `C_CODE_PHRASE` list on `media_type` (captured in
+            // `code_lists` — the constraint the validator enforces).
+            let media = node
+                .code_lists
+                .iter()
+                .find(|cl| cl.attr == "media_type")
+                .and_then(|cl| cl.codes.first())
+                .map_or("text/plain", String::as_str);
+            put(out, base, "mediatype", json!(media));
         }
         "DV_PARSABLE" => {
             put(out, base, "", json!("example"));
@@ -448,6 +485,118 @@ fn emit_ordinal(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>
         put(out, base, "code", json!("at0000"));
         put(out, base, "value", json!("Example"));
     }
+}
+
+/// A deterministic temporal example honouring the leaf's AOM 1.4 temporal
+/// pattern (`yyyy-??-XX` etc.: literal = mandatory, `??` = optional/kept,
+/// `XX` = prohibited/omitted — mirroring the validator's presence-only
+/// judgement) and the `timezone_validity` constraint (`1003` = the designator
+/// must be absent; the fixed example instants already carry `Z` for the rest).
+fn example_temporal(node: &WebTemplateNode, rm: &str) -> String {
+    let pattern = node
+        .inputs
+        .first()
+        .and_then(|i| i.validation.as_ref())
+        .and_then(|v| v.pattern.as_deref());
+    let (pat_date, pat_time) = match pattern {
+        Some(p) if p.contains('T') => {
+            let (d, t) = p.split_once('T').unwrap_or((p, ""));
+            (d, t)
+        }
+        Some(p) if p.contains(':') => ("", p),
+        Some(p) => (p, ""),
+        None => ("", ""),
+    };
+    // Date segments: year always; month/day kept unless the pattern prohibits
+    // them (an omitted month forces the day off — ISO 8601 partial precision
+    // truncates right-to-left).
+    let date_full = ["2022", "02", "03"];
+    let date = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, '-').collect()
+        };
+        let mut out = String::from(date_full[0]);
+        for (i, part) in date_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push('-');
+            out.push_str(part);
+        }
+        out
+    };
+    let time_full = ["04", "05", "06"];
+    let time = |pat: &str| -> String {
+        let segs: Vec<&str> = if pat.is_empty() {
+            Vec::new()
+        } else {
+            pat.splitn(3, ':').collect()
+        };
+        let mut out = String::from(time_full[0]);
+        for (i, part) in time_full.iter().enumerate().skip(1) {
+            if segs.get(i).is_some_and(|s| *s == "XX") {
+                break;
+            }
+            out.push(':');
+            out.push_str(part);
+        }
+        out
+    };
+    let tz = if node.tz_validity == Some(1003) {
+        ""
+    } else {
+        "Z"
+    };
+    match rm {
+        "DV_DATE" => date(pat_date),
+        "DV_TIME" => format!("{}{tz}", time(pat_time)),
+        // DV_DATE_TIME: a time part prohibited outright (pattern `…TXX:…`)
+        // truncates to the date.
+        _ => {
+            if pat_time.starts_with("XX") {
+                date(pat_date)
+            } else {
+                format!("{}T{}{tz}", date(pat_date), time(pat_time))
+            }
+        }
+    }
+}
+
+/// A deterministic duration example honouring the `C_DURATION` allowed-fields
+/// pattern (encoded by the builder as which per-field inputs exist — mirroring
+/// the validator) and the ISO duration range: the range minimum when one is
+/// declared, else one unit of the first allowed field, else `PT1H`.
+fn example_duration(node: &WebTemplateNode) -> String {
+    if let Some(min) = node
+        .duration_range
+        .as_ref()
+        .and_then(|r| r.min.as_ref())
+        .and_then(Value::as_str)
+    {
+        return min.to_owned();
+    }
+    let iso = [
+        ("year", "P1Y"),
+        ("month", "P1M"),
+        ("week", "P1W"),
+        ("day", "P1D"),
+        ("hour", "PT1H"),
+        ("minute", "PT1M"),
+        ("second", "PT1S"),
+    ];
+    let allowed: Vec<&str> = node
+        .inputs
+        .iter()
+        .filter_map(|i| i.suffix.as_deref())
+        .collect();
+    if allowed.is_empty() || allowed.len() >= 7 {
+        return EXAMPLE_DURATION.to_owned();
+    }
+    iso.iter()
+        .find(|(field, _)| allowed.contains(field))
+        .map_or_else(|| EXAMPLE_DURATION.to_owned(), |(_, v)| (*v).to_owned())
 }
 
 /// A deterministic boolean example: `false` when the archetype allows only
