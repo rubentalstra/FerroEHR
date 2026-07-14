@@ -462,6 +462,139 @@ async fn canonical_xml_carries_the_signature() {
     assert!(xml.contains("signature"), "expected a <signature> element");
 }
 
+/// A service with server-side signing DISABLED — the common high-throughput
+/// config (P20 checklist item 20). With signing off the `audit → sign → version`
+/// dependency vanishes, so the commit path folds `audit`, `contribution` and
+/// `vo_version` into one statement; this test proves the folded path preserves
+/// the RM common master06 versioning semantics byte-for-byte and stores no
+/// signature.
+fn signing_disabled(pool: PgPool) -> EhrbaseService {
+    let config = SigningConfig {
+        enabled: false,
+        mode: Mode::Digest,
+        key_path: None,
+        key_passphrase: None,
+        verify_on_read: VerifyOnRead::Off,
+    };
+    let signer = Signer::from_config(&config).expect("disabled signer");
+    EhrbaseService::new(pool).with_signer(Arc::new(signer))
+}
+
+#[tokio::test]
+async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("signing_off_fold").await;
+    let svc = signing_disabled(pool.clone());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+
+    // CREATE → the folded path: audit + contribution + vo_version in one CTE.
+    let ovid_v1 = svc
+        .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
+        .await
+        .expect("create_composition");
+    let (vo_uuid, v1) = version_components(&ovid_v1);
+    assert_eq!(v1, "1", "first version is trunk 1 (master06 §Version tree)");
+
+    // The served ORIGINAL_VERSION round-trips: uid stable, no signature, and the
+    // server-computed commit instant present (master06 §Committal m3).
+    let ov1 = svc
+        .composition_original_version(ehr_uuid, ovid_v1.parse().expect("ovid"))
+        .await
+        .expect("v1 original version");
+    assert_eq!(ov1["uid"]["value"], ovid_v1);
+    assert!(
+        ov1.get("signature").and_then(Value::as_str).is_none(),
+        "signing off → no VERSION.signature on the served version"
+    );
+    assert!(
+        ov1["commit_audit"]["time_committed"]["value"]
+            .as_str()
+            .is_some(),
+        "commit_audit.time_committed is the server-computed instant"
+    );
+
+    // UPDATE → the folded path with a prior lineage-tip close (v1 → v2).
+    let ovid_v2 = svc
+        .update_composition(
+            ehr_uuid,
+            vo_uuid,
+            uv(composition("v2"), "251", Some(&ovid_v1)),
+        )
+        .await
+        .expect("update_composition");
+    let (_, v2) = version_components(&ovid_v2);
+    assert_eq!(v2, "2", "second trunk version");
+    let latest = svc
+        .get_composition_latest(ehr_uuid, vo_uuid)
+        .await
+        .expect("latest");
+    assert_eq!(uid(&latest), ovid_v2, "current version is v2");
+
+    // Exactly one open trunk row (v1 closed, v2 open) and neither is signed —
+    // the folded write honours the one-open-row-per-lineage invariant.
+    let rows = sqlx::query(
+        "SELECT sys_version, signature, upper_inf(sys_period) AS open \
+         FROM vo_version WHERE vo_id = $1 AND kind = 'COMPOSITION' ORDER BY sys_version",
+    )
+    .bind(vo_uuid)
+    .fetch_all(&pool)
+    .await
+    .expect("select vo_version");
+    assert_eq!(rows.len(), 2, "two composition versions stored");
+    let open: Vec<bool> = rows.iter().map(|r| r.try_get("open").unwrap()).collect();
+    assert_eq!(
+        open,
+        vec![false, true],
+        "v1 superseded, v2 open (master06 §Version tree)"
+    );
+    for row in &rows {
+        let sig: Option<String> = row.try_get("signature").unwrap();
+        assert!(sig.is_none(), "signing off → vo_version.signature is NULL");
+    }
+
+    // DELETE → folded path (523|deleted|, no node rows); the current version
+    // then resolves to an empty body (204, F-02-01), never 404.
+    svc.delete_composition(ehr_uuid, ovid_v2.parse().expect("ovid"))
+        .await
+        .expect("delete_composition");
+    let deleted = svc
+        .get_composition_latest(ehr_uuid, vo_uuid)
+        .await
+        .expect("deleted get");
+    assert_eq!(
+        deleted,
+        Value::Null,
+        "a deleted current version reads empty"
+    );
+
+    // A multi-change CONTRIBUTION also folds each change (commit_version_into).
+    let contribution_uid = svc
+        .commit_contribution(
+            ehr_uuid,
+            vec![uv(composition("Via contribution"), "249", None)],
+            contribution_audit("249", "Dr. Contribution"),
+        )
+        .await
+        .expect("commit_contribution");
+    let contribution = svc
+        .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
+        .await
+        .expect("get_contribution");
+    let c_ovid = contribution["versions"][0]["id"]["value"]
+        .as_str()
+        .expect("contribution version uid")
+        .to_owned();
+    let c_ov = svc
+        .composition_original_version(ehr_uuid, c_ovid.parse().expect("ovid"))
+        .await
+        .expect("contribution version");
+    assert!(
+        c_ov.get("signature").and_then(Value::as_str).is_none(),
+        "signing off → contribution version is unsigned"
+    );
+}
+
 #[tokio::test]
 async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // M2 (RM common master06 §"Distributed Versioning"): the OBJECT_VERSION_ID's

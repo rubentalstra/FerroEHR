@@ -16,7 +16,7 @@ use sqlx::PgConnection;
 use uuid::Uuid;
 
 use crate::service::ServiceError;
-use crate::storage::{decompose, reassemble};
+use crate::storage::{NodeRow, decompose, reassemble};
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
@@ -324,10 +324,54 @@ async fn next_version(
     })
 }
 
+/// How the enclosing CONTRIBUTION is supplied to [`apply_change`].
+enum ContributionCtx {
+    /// A standalone single-object write (create/update/delete): the CONTRIBUTION
+    /// is created in the same commit, sharing the version's `commit_audit` (a
+    /// direct write is one CONTRIBUTION of one change — master06 §Committal).
+    New,
+    /// A change within a multi-change CONTRIBUTION already opened by
+    /// [`commit_contribution`]; the version's own `commit_audit` is written here,
+    /// referencing this existing `contribution_id`.
+    Existing(Uuid),
+}
+
+/// A [`Change`] resolved to the concrete `vo_version` placement + content — the
+/// output of the per-arm decision (offload, lifecycle, decompose, version-tree
+/// placement) and the input to the shared write ([`commit_resolved`]).
+struct ResolvedWrite {
+    kind: Kind,
+    vo_id: Uuid,
+    ehr_id: Option<Uuid>,
+    /// The per-vo storage commit ordinal.
+    ordinal: i32,
+    tree: TreeId,
+    /// The `version_lifecycle_state` code (master06 §Version Lifecycle).
+    lifecycle: String,
+    /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
+    preceding_uid: Option<String>,
+    other_input_version_uids: Vec<String>,
+    template_id: Option<String>,
+    /// The lineage tip storage ordinal to supersede at `now()` — `None` for a
+    /// first version or a FORK (master06 §Version tree).
+    close_ordinal: Option<i32>,
+    /// A client-supplied `UPDATE_VERSION.signature`, stored verbatim (master06
+    /// §Digital Signature); `None` on the direct endpoints.
+    client_signature: Option<String>,
+    /// The decomposed node rows (empty for a logical delete — data Void).
+    rows: Vec<NodeRow>,
+    /// `UPDATE_VERSION.attestations` committed with this version.
+    attestations: Vec<Value>,
+    /// A newly created FOLDER hierarchy that joins `EHR.folders` (create only).
+    is_first_folder: bool,
+}
+
 /// The core write path shared by single-object writes and CONTRIBUTION commits:
-/// apply one [`Change`] under an already-open contribution + version audit,
-/// signing the assembled `ORIGINAL_VERSION` (RM common master06 §Digital
-/// Signature) and rejecting an illegal lifecycle transition (G-01).
+/// resolve one [`Change`] to its version-tree placement + content and commit it
+/// under the supplied [`ContributionCtx`], signing the assembled
+/// `ORIGINAL_VERSION` (RM common master06 §Digital Signature) and rejecting an
+/// illegal lifecycle transition (G-01). Returns the [`Committed`] outcome and the
+/// enclosing `contribution_id` (for the caller's event-outbox envelope).
 ///
 /// The cross-area pre/post-commit hooks the legacy path ran inline here now
 /// belong to other layers and run around this write, driven by the CONTRIBUTION
@@ -340,19 +384,17 @@ async fn next_version(
 ///   after an `EHR_STATUS` version;
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
 ///   concern, not a storage write.
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)] // the three change arms + commit context
+#[allow(clippy::too_many_lines)] // the three change arms building the resolved write
 async fn apply_change(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
-    contribution_id: Uuid,
-    audit_id: Uuid,
+    contribution: ContributionCtx,
     audit: &AuditInput,
-    time_committed: jiff::Timestamp,
     ctx: &SigningCtx<'_>,
     committer_fallback: &Value,
     change: Change,
-) -> Result<Committed, ServiceError> {
-    match change {
+) -> Result<(Committed, Uuid), ServiceError> {
+    let resolved = match change {
         Change::Create {
             kind,
             mut canonical,
@@ -373,79 +415,22 @@ async fn apply_change(
             // G-01: a first version can only be `complete`/`incomplete`.
             validate_transition(None, &lifecycle)?;
             let rows = decompose(canonical)?;
-            let vo_id = Uuid::now_v7();
-            // Sign the exact data that will be served on read (reassembled from
-            // the stored nodes) so the digest recomputes at read time. The
-            // reassemble is a full O(nodes) tree rebuild — only performed when
-            // a signature will actually be computed (signing enabled and no
-            // client-supplied signature short-circuit); with signing off the
-            // rebuilt document was discarded on every commit.
-            let served = if ctx.signer.enabled() {
-                reassemble(&rows)?
-            } else {
-                Value::Null
-            };
-            let signature = integrity::sign_version(
-                ctx,
-                audit,
-                time_committed,
-                vo_id,
-                TreeId::trunk(1),
-                None,
-                contribution_id,
-                &lifecycle,
-                &served,
-                signature,
-            )?;
-            crate::storage::version_repo::insert_vo_version(
-                tx,
-                &NewVersionRow {
-                    vo_id,
-                    kind,
-                    ehr_id,
-                    ordinal: 1,
-                    tree: TreeId::trunk(1),
-                    lifecycle_state: &lifecycle,
-                    creating_system_id: &ctx.system_id,
-                    preceding_version_uid: None,
-                    other_input_version_uids: &[],
-                    contribution_id,
-                    audit_id,
-                    template_id: template_id.as_deref(),
-                    signature: signature.as_deref(),
-                }
-                .row(),
-            )
-            .await?;
-            crate::storage::node_repo::write_nodes(tx, vo_id, 1, ehr_id, &rows).await?;
-            // A newly created FOLDER hierarchy joins `EHR.folders` as a new
-            // member (RM ehr master04 §Folders). Recorded only on CREATION.
-            if kind == Kind::Folder
-                && let Some(ehr_id) = ehr_id
-            {
-                crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, vo_id).await?;
-            }
-            attestation::insert_accompanying_attestations(
-                tx,
-                vo_id,
-                1,
-                contribution_id,
-                &ctx.system_id,
-                committer_fallback,
-                time_committed,
-                &attestations,
-            )
-            .await?;
-            Ok(Committed {
-                vo_id,
-                sys_version: 1,
-                tree: TreeId::trunk(1),
-                creating_system_id: ctx.system_id.clone(),
+            ResolvedWrite {
                 kind,
-                change_type: audit.change_type.clone(),
+                vo_id: Uuid::now_v7(),
+                ehr_id,
+                ordinal: 1,
+                tree: TreeId::trunk(1),
+                lifecycle,
+                preceding_uid: None,
+                other_input_version_uids: Vec::new(),
                 template_id,
-                time_committed,
-            })
+                close_ordinal: None,
+                client_signature: signature,
+                rows,
+                attestations,
+                is_first_folder: kind == Kind::Folder && ehr_id.is_some(),
+            }
         }
         Change::Modify {
             vo_id,
@@ -470,71 +455,22 @@ async fn apply_change(
             // G-01: the transition from the preceding version's state must be
             // legal (master06 §Version Lifecycle state machine).
             validate_transition(Some(&next.preceding_lifecycle), &lifecycle)?;
-            if let Some(close_ordinal) = next.close_ordinal {
-                crate::storage::version_repo::close_ordinal_at_now(tx, vo_id, close_ordinal)
-                    .await?;
-            }
-            // See the create arm: the reassemble only pays when a signature
-            // will be computed.
-            let served = if ctx.signer.enabled() {
-                reassemble(&rows)?
-            } else {
-                Value::Null
-            };
-            let signature = integrity::sign_version(
-                ctx,
-                audit,
-                time_committed,
-                vo_id,
-                next.tree,
-                Some(&next.preceding_uid),
-                contribution_id,
-                &lifecycle,
-                &served,
-                signature,
-            )?;
-            crate::storage::version_repo::insert_vo_version(
-                tx,
-                &NewVersionRow {
-                    vo_id,
-                    kind,
-                    ehr_id,
-                    ordinal: next.ordinal,
-                    tree: next.tree,
-                    lifecycle_state: &lifecycle,
-                    creating_system_id: &ctx.system_id,
-                    preceding_version_uid: Some(&next.preceding_uid),
-                    other_input_version_uids: &other_input_version_uids,
-                    contribution_id,
-                    audit_id,
-                    template_id: template_id.as_deref(),
-                    signature: signature.as_deref(),
-                }
-                .row(),
-            )
-            .await?;
-            crate::storage::node_repo::write_nodes(tx, vo_id, next.ordinal, ehr_id, &rows).await?;
-            attestation::insert_accompanying_attestations(
-                tx,
-                vo_id,
-                next.ordinal,
-                contribution_id,
-                &ctx.system_id,
-                committer_fallback,
-                time_committed,
-                &attestations,
-            )
-            .await?;
-            Ok(Committed {
-                vo_id,
-                sys_version: next.ordinal,
-                tree: next.tree,
-                creating_system_id: ctx.system_id.clone(),
+            ResolvedWrite {
                 kind,
-                change_type: audit.change_type.clone(),
+                vo_id,
+                ehr_id,
+                ordinal: next.ordinal,
+                tree: next.tree,
+                lifecycle,
+                preceding_uid: Some(next.preceding_uid),
+                other_input_version_uids,
                 template_id,
-                time_committed,
-            })
+                close_ordinal: next.close_ordinal,
+                client_signature: signature,
+                rows,
+                attestations,
+                is_first_folder: false,
+            }
         }
         Change::Delete {
             vo_id,
@@ -543,71 +479,229 @@ async fn apply_change(
             signature,
         } => {
             let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
-            if let Some(close_ordinal) = next.close_ordinal {
-                crate::storage::version_repo::close_ordinal_at_now(tx, vo_id, close_ordinal)
-                    .await?;
-            }
             // A deleted version carries no data — its `ORIGINAL_VERSION.data` is
             // Void (master06 §Logical Deletion); the signature is over the
             // data-less version wrapper. Logical deletion is permitted from any
             // live state, so no transition check runs here.
-            let signature = integrity::sign_version(
-                ctx,
-                audit,
-                time_committed,
-                vo_id,
-                next.tree,
-                Some(&next.preceding_uid),
-                contribution_id,
-                lifecycle::state::DELETED,
-                &Value::Null,
-                signature,
-            )?;
-            crate::storage::version_repo::insert_vo_version(
-                tx,
-                &NewVersionRow {
-                    vo_id,
-                    kind,
-                    ehr_id,
-                    ordinal: next.ordinal,
-                    tree: next.tree,
-                    lifecycle_state: lifecycle::state::DELETED,
-                    creating_system_id: &ctx.system_id,
-                    preceding_version_uid: Some(&next.preceding_uid),
-                    other_input_version_uids: &[],
-                    contribution_id,
-                    audit_id,
-                    template_id: None,
-                    signature: signature.as_deref(),
-                }
-                .row(),
-            )
-            .await?;
-            Ok(Committed {
-                vo_id,
-                sys_version: next.ordinal,
-                tree: next.tree,
-                creating_system_id: ctx.system_id.clone(),
+            ResolvedWrite {
                 kind,
-                change_type: audit.change_type.clone(),
+                vo_id,
+                ehr_id,
+                ordinal: next.ordinal,
+                tree: next.tree,
+                lifecycle: lifecycle::state::DELETED.to_owned(),
+                preceding_uid: Some(next.preceding_uid),
+                other_input_version_uids: Vec::new(),
                 template_id: None,
-                time_committed,
-            })
+                close_ordinal: next.close_ordinal,
+                client_signature: signature,
+                rows: Vec::new(),
+                attestations: Vec::new(),
+                is_first_folder: false,
+            }
         }
-    }
+    };
+    commit_resolved(tx, ctx, audit, contribution, committer_fallback, resolved).await
 }
 
-/// Insert an `audit` row + its enclosing `contribution`, returning
-/// `(contribution_id, audit_id, time_committed)` — the version `commit_audit`'s
-/// server-computed time (master06 §Committal: `time_committed` "computed on the
-/// server", S-22). One round trip (the storage layer merges the two inserts —
-/// [`crate::storage::version_repo::write_contribution`]).
-async fn write_contribution(
+/// Commit a [`ResolvedWrite`] — close the superseded lineage tip, write the
+/// `audit` (+ `contribution` for a standalone write) and the `vo_version` row,
+/// then the node rows, folder membership and accompanying attestations.
+///
+/// The `audit → sign → version` ordering is the one hard sequential dependency
+/// in the commit (master06 §Digital Signature): the digest is computed over the
+/// assembled `ORIGINAL_VERSION`, which embeds the server-returned
+/// `time_committed` and `contribution_id`. So when the server signs (signing
+/// enabled, no client signature) the audit (and contribution) is written first,
+/// the signature computed, then the version row carries it. When the signature
+/// is **pre-known** — signing disabled, or a client supplied a verbatim
+/// signature — no value has to round-trip back first, so the audit, contribution
+/// and `vo_version` collapse into ONE data-modifying CTE
+/// ([`crate::storage::version_repo::commit_new_version`] /
+/// [`commit_version_into`](crate::storage::version_repo::commit_version_into)).
+/// The lineage-tip close stays a separate prior statement in both paths (the
+/// one-open-row-per-lineage partial unique indexes need it visible before the
+/// insert). Both paths write byte-identical rows; only the statement grouping
+/// differs. No openEHR spec governs statement batching — our own design.
+#[allow(clippy::too_many_lines)] // the fold/split branch + the shared commit tail
+async fn commit_resolved(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ctx: &SigningCtx<'_>,
     audit: &AuditInput,
-) -> Result<(Uuid, Uuid, jiff::Timestamp), ServiceError> {
-    Ok(crate::storage::version_repo::write_contribution(tx, ehr_id, &audit.row(), None).await?)
+    contribution: ContributionCtx,
+    committer_fallback: &Value,
+    r: ResolvedWrite,
+) -> Result<(Committed, Uuid), ServiceError> {
+    let audit_row = audit.row();
+    let (trunk_version, branch_number, branch_version) = r.tree.columns();
+
+    // Close the superseded lineage tip FIRST, as its own statement, before any
+    // path inserts the new version: the one-open-row-per-lineage partial unique
+    // indexes (`uq_vo_version_current` / `uq_vo_version_branch_current`) require
+    // the old open row to be gone before the new open row is inserted, and a
+    // data-modifying CTE could not guarantee that ordering within one statement.
+    // Close-then-insert stays ordered (master06 §Version tree); `now()` is the
+    // transaction timestamp, so the boundary instant is identical either way.
+    if let Some(close_ordinal) = r.close_ordinal {
+        crate::storage::version_repo::close_ordinal_at_now(tx, r.vo_id, close_ordinal).await?;
+    }
+
+    // The signature is pre-known — needs no server-returned `time_committed` —
+    // exactly when the server will not sign it: signing disabled, or a
+    // client-supplied signature stored verbatim (master06 §Digital Signature).
+    let sig_preknown = r.client_signature.is_some() || !ctx.signer.enabled();
+
+    let (contribution_id, time_committed) = if sig_preknown {
+        // The resolved signature is exactly the client-supplied value (or `None`
+        // when signing is off and none was supplied): `sign_version` would
+        // return the same without touching the DB. Then audit + contribution +
+        // vo_version collapse into ONE CTE (the tip close already ran above).
+        let signature = r.client_signature.clone();
+        let folded = crate::storage::version_repo::FoldedVersion {
+            vo_id: r.vo_id,
+            kind: r.kind.as_str(),
+            ehr_id: r.ehr_id,
+            sys_version: r.ordinal,
+            trunk_version,
+            branch_number,
+            branch_version,
+            lifecycle_state: &r.lifecycle,
+            creating_system_id: &ctx.system_id,
+            preceding_version_uid: r.preceding_uid.as_deref(),
+            other_input_version_uids: &r.other_input_version_uids,
+            template_id: r.template_id.as_deref(),
+            signature: signature.as_deref(),
+        };
+        match contribution {
+            ContributionCtx::New => {
+                let (cid, _aid, tc) =
+                    crate::storage::version_repo::commit_new_version(tx, &audit_row, None, &folded)
+                        .await?;
+                (cid, tc)
+            }
+            ContributionCtx::Existing(cid) => {
+                let (_aid, tc) =
+                    crate::storage::version_repo::commit_version_into(tx, &audit_row, cid, &folded)
+                        .await?;
+                (cid, tc)
+            }
+        }
+    } else {
+        // Signing path: audit (+ contribution) first, so the signature can be
+        // computed over the returned `time_committed` + `contribution_id`; then
+        // the vo_version row carries it.
+        let (cid, aid, tc) = match contribution {
+            ContributionCtx::New => {
+                crate::storage::version_repo::write_contribution(tx, r.ehr_id, &audit_row, None)
+                    .await?
+            }
+            ContributionCtx::Existing(cid) => {
+                let (aid, tc) = crate::storage::version_repo::insert_audit(tx, &audit_row).await?;
+                (cid, aid, tc)
+            }
+        };
+        // A logically deleted version has no nodes → the signed form is Void
+        // (master06 §Logical Deletion); a content version signs the reassembled
+        // served bytes so the digest recomputes at read time. Only reassemble
+        // when a signature will actually be computed (signing is enabled on this
+        // branch — item 5).
+        let served = if r.rows.is_empty() {
+            Value::Null
+        } else {
+            reassemble(&r.rows)?
+        };
+        let signature = integrity::sign_version(
+            ctx,
+            audit,
+            tc,
+            r.vo_id,
+            r.tree,
+            r.preceding_uid.as_deref(),
+            cid,
+            &r.lifecycle,
+            &served,
+            r.client_signature,
+        )?;
+        crate::storage::version_repo::insert_vo_version(
+            tx,
+            &NewVersionRow {
+                vo_id: r.vo_id,
+                kind: r.kind,
+                ehr_id: r.ehr_id,
+                ordinal: r.ordinal,
+                tree: r.tree,
+                lifecycle_state: &r.lifecycle,
+                creating_system_id: &ctx.system_id,
+                preceding_version_uid: r.preceding_uid.as_deref(),
+                other_input_version_uids: &r.other_input_version_uids,
+                contribution_id: cid,
+                audit_id: aid,
+                template_id: r.template_id.as_deref(),
+                signature: signature.as_deref(),
+            }
+            .row(),
+        )
+        .await?;
+        (cid, tc)
+    };
+
+    // The shared commit tail: node rows, folder membership, attestations.
+    crate::storage::node_repo::write_nodes(tx, r.vo_id, r.ordinal, r.ehr_id, &r.rows).await?;
+    // A newly created FOLDER hierarchy joins `EHR.folders` as a new member (RM
+    // ehr master04 §Folders). Recorded only on CREATION.
+    if r.is_first_folder
+        && let Some(ehr_id) = r.ehr_id
+    {
+        crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, r.vo_id).await?;
+    }
+    attestation::insert_accompanying_attestations(
+        tx,
+        r.vo_id,
+        r.ordinal,
+        contribution_id,
+        &ctx.system_id,
+        committer_fallback,
+        time_committed,
+        &r.attestations,
+    )
+    .await?;
+
+    Ok((
+        Committed {
+            vo_id: r.vo_id,
+            sys_version: r.ordinal,
+            tree: r.tree,
+            creating_system_id: ctx.system_id.clone(),
+            kind: r.kind,
+            change_type: audit.change_type.clone(),
+            template_id: r.template_id,
+            time_committed,
+        },
+        contribution_id,
+    ))
+}
+
+/// Write the one PHI-free event-outbox row a single-object commit announces,
+/// when eventing is enabled (our own extension; no openEHR spec governs it — the
+/// row is skipped entirely, envelope included, when no consumer is configured).
+async fn write_single_outbox(
+    tx: &mut PgConnection,
+    ctx: &SigningCtx<'_>,
+    contribution_id: Uuid,
+    ehr_id: Option<Uuid>,
+    committed: &Committed,
+) -> Result<(), ServiceError> {
+    if ctx.outbox_enabled {
+        crate::storage::version_repo::write_outbox(
+            tx,
+            contribution_id,
+            ehr_id,
+            committed.time_committed,
+            vec![committed.envelope_entry()],
+        )
+        .await?;
+    }
+    Ok(())
 }
 
 /// Create the first version of a new versioned object under its own
@@ -621,14 +715,11 @@ pub(crate) async fn create(
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    let committed = apply_change(
+    let (committed, contribution_id) = apply_change(
         tx,
         ehr_id,
-        contribution_id,
-        audit_id,
+        ContributionCtx::New,
         audit,
-        time_committed,
         ctx,
         &audit.committer,
         Change::Create {
@@ -641,16 +732,7 @@ pub(crate) async fn create(
         },
     )
     .await?;
-    if ctx.outbox_enabled {
-        crate::storage::version_repo::write_outbox(
-            tx,
-            contribution_id,
-            ehr_id,
-            time_committed,
-            vec![committed.envelope_entry()],
-        )
-        .await?;
-    }
+    write_single_outbox(tx, ctx, contribution_id, ehr_id, &committed).await?;
     Ok(committed)
 }
 
@@ -667,14 +749,11 @@ pub(crate) async fn update(
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    let committed = apply_change(
+    let (committed, contribution_id) = apply_change(
         tx,
         ehr_id,
-        contribution_id,
-        audit_id,
+        ContributionCtx::New,
         audit,
-        time_committed,
         ctx,
         &audit.committer,
         Change::Modify {
@@ -690,16 +769,7 @@ pub(crate) async fn update(
         },
     )
     .await?;
-    if ctx.outbox_enabled {
-        crate::storage::version_repo::write_outbox(
-            tx,
-            contribution_id,
-            ehr_id,
-            time_committed,
-            vec![committed.envelope_entry()],
-        )
-        .await?;
-    }
+    write_single_outbox(tx, ctx, contribution_id, ehr_id, &committed).await?;
     Ok(committed)
 }
 
@@ -714,14 +784,11 @@ pub(crate) async fn delete(
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
 ) -> Result<Committed, ServiceError> {
-    let (contribution_id, audit_id, time_committed) = write_contribution(tx, ehr_id, audit).await?;
-    let committed = apply_change(
+    let (committed, contribution_id) = apply_change(
         tx,
         ehr_id,
-        contribution_id,
-        audit_id,
+        ContributionCtx::New,
         audit,
-        time_committed,
         ctx,
         &audit.committer,
         Change::Delete {
@@ -732,16 +799,7 @@ pub(crate) async fn delete(
         },
     )
     .await?;
-    if ctx.outbox_enabled {
-        crate::storage::version_repo::write_outbox(
-            tx,
-            contribution_id,
-            ehr_id,
-            time_committed,
-            vec![committed.envelope_entry()],
-        )
-        .await?;
-    }
+    write_single_outbox(tx, ctx, contribution_id, ehr_id, &committed).await?;
     Ok(committed)
 }
 
@@ -778,22 +836,21 @@ pub(crate) async fn commit_contribution(
     let committer_fallback = &contribution_audit.committer;
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
-        let (audit_id, time_committed) =
-            crate::storage::version_repo::insert_audit(tx, &version_audit.row()).await?;
-        committed.push(
-            apply_change(
-                tx,
-                ehr_id,
-                contribution_id,
-                audit_id,
-                &version_audit,
-                time_committed,
-                ctx,
-                committer_fallback,
-                change,
-            )
-            .await?,
-        );
+        // Each change writes its own `commit_audit` + `vo_version` under the
+        // shared contribution (folded into one CTE when the signature is
+        // pre-known; the split signing path writes the audit first). The
+        // returned `contribution_id` equals the one opened above.
+        let (change_committed, _cid) = apply_change(
+            tx,
+            ehr_id,
+            ContributionCtx::Existing(contribution_id),
+            &version_audit,
+            ctx,
+            committer_fallback,
+            change,
+        )
+        .await?;
+        committed.push(change_committed);
     }
     // Standalone 666 attestations of existing versions (no new version) —
     // completed with the contribution's commit-act time.

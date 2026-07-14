@@ -506,6 +506,182 @@ pub async fn close_ordinal_at_now(
     Ok(())
 }
 
+// ── folded version commit (one statement when the signature is pre-known) ─────
+
+/// The `vo_version` columns for a **folded** commit — every column
+/// [`insert_vo_version`] writes EXCEPT `contribution_id`/`audit_id`, which come
+/// from the same statement's `contribution`/`audit` CTEs. The versioning layer
+/// builds this only when the `VERSION.signature` is already known without the
+/// server-returned `time_committed` (signing disabled, or a client-supplied
+/// signature — RM common master06 §Digital Signature), so no value has to
+/// round-trip back before the version row is written.
+///
+/// A superseded lineage tip is closed by the caller in a **separate, prior**
+/// statement ([`close_ordinal_at_now`]) — never folded into this insert: the
+/// one-open-row-per-lineage partial unique indexes (`uq_vo_version_current` /
+/// `uq_vo_version_branch_current`) require the old open row to be gone before
+/// the new one is inserted, and data-modifying CTEs in one statement share a
+/// snapshot with undefined ordering, so a fold could momentarily hold two open
+/// rows for the lineage. Close-then-insert stays ordered (master06 §Version tree).
+#[derive(Debug)]
+pub struct FoldedVersion<'a> {
+    pub vo_id: Uuid,
+    pub kind: &'a str,
+    pub ehr_id: Option<Uuid>,
+    pub sys_version: i32,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub lifecycle_state: &'a str,
+    pub creating_system_id: &'a str,
+    pub preceding_version_uid: Option<&'a str>,
+    pub other_input_version_uids: &'a [String],
+    pub template_id: Option<&'a str>,
+    pub signature: Option<&'a str>,
+}
+
+/// A **standalone** folded commit: `audit` + `contribution` + `vo_version` in
+/// ONE data-modifying CTE, returning `(contribution_id, audit_id,
+/// time_committed)`. The single audit row serves both the CONTRIBUTION and the
+/// version's `commit_audit` (a direct write is one CONTRIBUTION of one change —
+/// master06 §Committal and Audits). `time_committed` is the server-computed
+/// commit instant (master06 §Committal m3).
+///
+/// This is the round-trip-collapsed equivalent of [`write_contribution`] +
+/// [`insert_vo_version`]: the rows written and the values returned are
+/// byte-identical (the version's `sys_period` opens at the one `now()` =
+/// transaction timestamp, exactly as the separate statement did), and everything
+/// still runs inside the caller's transaction so any failure rolls the whole set
+/// back. It is used only when the `VERSION.signature` is pre-known
+/// ([`FoldedVersion`]); the signing path keeps the split so the signature can be
+/// computed over the returned `time_committed`. Any lineage-tip close is a
+/// separate prior statement (see [`FoldedVersion`]). No openEHR spec governs
+/// statement batching — our own design.
+///
+/// # Errors
+/// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid
+/// (the `contribution` CTE inserts nothing → NULL `contribution_id`), else
+/// [`StorageError::Database`] on a driver/insert failure.
+pub async fn commit_new_version(
+    tx: &mut PgConnection,
+    audit: &AuditRow<'_>,
+    supplied: Option<Uuid>,
+    v: &FoldedVersion<'_>,
+) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
+    let other_input = optional_json_array(v.other_input_version_uids);
+    let row = sqlx::query(
+        "WITH a AS ( \
+             INSERT INTO audit (system_id, change_type, description, committer) \
+             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+         ), c AS ( \
+             INSERT INTO contribution (id, ehr_id, audit_id) \
+             SELECT COALESCE($5, uuidv7()), $6, a.id FROM a \
+             ON CONFLICT (id) DO NOTHING \
+             RETURNING id \
+         ), v AS ( \
+             INSERT INTO vo_version \
+               (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+                sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                other_input_version_uids, contribution_id, audit_id, template_id, signature) \
+             SELECT $7, $8, $6, $9, $10, $11, $12, tstzrange(now(), NULL, '[)'), \
+                    $13, $14, $15, $16::jsonb, c.id, a.id, $17, $18 \
+             FROM a, c \
+             RETURNING 1 \
+         ) \
+         SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
+         FROM a LEFT JOIN c ON true",
+    )
+    .bind(audit.system_id)
+    .bind(audit.change_type)
+    .bind(audit.description)
+    .bind(audit.committer)
+    .bind(supplied)
+    .bind(v.ehr_id)
+    .bind(v.vo_id)
+    .bind(v.kind)
+    .bind(v.sys_version)
+    .bind(v.trunk_version)
+    .bind(v.branch_number)
+    .bind(v.branch_version)
+    .bind(v.lifecycle_state)
+    .bind(v.creating_system_id)
+    .bind(v.preceding_version_uid)
+    .bind(other_input)
+    .bind(v.template_id)
+    .bind(v.signature)
+    .fetch_one(&mut *tx)
+    .await?;
+    let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
+    let contribution_id = contribution_id.ok_or(StorageError::ContributionUidInUse(supplied))?;
+    let audit_id: Uuid = row.try_get("audit_id")?;
+    let time_committed = row
+        .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+        .to_jiff();
+    Ok((contribution_id, audit_id, time_committed))
+}
+
+/// A folded commit WITHIN an already-opened CONTRIBUTION: the version's own
+/// `commit_audit` + `vo_version` in ONE data-modifying CTE, referencing the
+/// pre-existing `contribution_id`. Returns `(audit_id, time_committed)`. The
+/// CONTRIBUTION and its own audit were written earlier in the same transaction
+/// ([`write_contribution`]); each change carries its own `commit_audit`
+/// (master06 §Committal and Audits). Byte-identical to [`insert_audit`] +
+/// [`insert_vo_version`]; used only when the `VERSION.signature` is pre-known
+/// ([`FoldedVersion`]). Any lineage-tip close is a separate prior statement. No
+/// openEHR spec governs statement batching — our own design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver/insert failure.
+pub async fn commit_version_into(
+    tx: &mut PgConnection,
+    audit: &AuditRow<'_>,
+    contribution_id: Uuid,
+    v: &FoldedVersion<'_>,
+) -> Result<(Uuid, jiff::Timestamp), StorageError> {
+    let other_input = optional_json_array(v.other_input_version_uids);
+    let row = sqlx::query(
+        "WITH a AS ( \
+             INSERT INTO audit (system_id, change_type, description, committer) \
+             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+         ), v AS ( \
+             INSERT INTO vo_version \
+               (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
+                sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
+                other_input_version_uids, contribution_id, audit_id, template_id, signature) \
+             SELECT $5, $6, $7, $8, $9, $10, $11, tstzrange(now(), NULL, '[)'), \
+                    $12, $13, $14, $15::jsonb, $16, a.id, $17, $18 \
+             FROM a \
+             RETURNING 1 \
+         ) \
+         SELECT a.id AS audit_id, a.time_committed FROM a",
+    )
+    .bind(audit.system_id)
+    .bind(audit.change_type)
+    .bind(audit.description)
+    .bind(audit.committer)
+    .bind(v.vo_id)
+    .bind(v.kind)
+    .bind(v.ehr_id)
+    .bind(v.sys_version)
+    .bind(v.trunk_version)
+    .bind(v.branch_number)
+    .bind(v.branch_version)
+    .bind(v.lifecycle_state)
+    .bind(v.creating_system_id)
+    .bind(v.preceding_version_uid)
+    .bind(other_input)
+    .bind(contribution_id)
+    .bind(v.template_id)
+    .bind(v.signature)
+    .fetch_one(&mut *tx)
+    .await?;
+    let audit_id: Uuid = row.try_get("audit_id")?;
+    let time_committed = row
+        .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+        .to_jiff();
+    Ok((audit_id, time_committed))
+}
+
 /// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an explicit
 /// instant (the import base time). The trunk lineage is `branch_number = 0`; a
 /// branch lineage is one `(creating_system_id, trunk_version, branch_number)`.
