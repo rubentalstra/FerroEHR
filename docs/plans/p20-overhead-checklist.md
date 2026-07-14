@@ -226,6 +226,28 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       findings are all fixed — the bottleneck has moved and must be
       re-measured before choosing among items 20/22/14/15).
 
+- [ ] **28. Upstream-422 triage (the final java run: 4/6 populated skeletons
+      rejected — publication-blocking).** All 130 errors at java L=1 were
+      composition-create 422s; per-skeleton reproduction against a fresh
+      upstream stack names three classes:
+      (a) **`DV_MULTIMEDIA` `Size_valid` on size=0** (IPS, ereferral) — the
+      spec says `size >= 0` (our DV_MULTIMEDIA PORT NOTE already records
+      archie's `size > 0` quirk); spec-valid on our side, but examples now
+      carry a plausible non-zero size anyway (realism + sidesteps the
+      quirk). DONE.
+      (b) **name typed `DV_CODED_TEXT` emitted as `DV_TEXT`**
+      (eprescription: `…medication_course_summary… items[at0002 and
+      name/value='Date discontinued']/name`) — the template constrains that
+      node's NAME as a coded text; our from_flat/example name stamping emits
+      a plain DV_TEXT. Likely OURS — fix the name-constraint typing in
+      openehr-flat (spec: AOM 1.4 name constraints), regenerate the pack.
+      (c) **gp-data-set: `data[at0001]/items[at0002] 0 occurrences, must be
+      1..1`** under the 'Explicit exclusion' EVALUATION — our generator
+      omitted a mandatory child our own validator did not flag; adjudicate
+      which side reads the OPT correctly, fix accordingly.
+      After (b)/(c): regenerate the pack, re-verify all six commit on BOTH
+      SUTs, re-run the java ladder for the honest pair.
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
