@@ -1,22 +1,22 @@
-# Maximum sustained throughput (knee) — ehrbase-rs 3.0.1
+# Maximum sustained throughput (knee) — EHRbase upstream
 
 > Generated from `knee.json` (never hand-typed). Scale **10k**. The `hour` rate shape is driven at an ascending load-factor ladder on short fixed windows; the ladder stops at the first step past the SLO (p99 > 1 s) or the 0.1% error-rate flag. Method: `docs/design/benchmark/01-measurement.md` §3, `docs/design/benchmarking.md` §2.2.
 
-**Knee: L = 26 → 262.2 req/s (15733 req/min) at p99 195071 µs** (the last sustainable step; SLO p99 ≤ 1 s, error ≤ 0.1%) — sustaining 6497.5 clinical events/min.
+**Knee: L = 16 → 160.5 req/s (9632 req/min) at p99 31583 µs** (the last sustainable step; SLO p99 ≤ 1 s, error ≤ 0.1%) — sustaining 3981.0 clinical events/min.
 
 ## Ladder
 
 | L | req/s | error rate | p99 (µs) | requests | dispatch lag (ms) | verdict |
 |--:|--:|--:|--:|--:|--:|---|
-| 1 | 10.1 | 0.000% | 72575 | 1209 | 12 | sustained |
-| 2 | 20.1 | 0.000% | 42687 | 2416 | 40 | sustained |
-| 4 | 40.1 | 0.000% | 34015 | 4817 | 12 | sustained |
-| 8 | 80.5 | 0.000% | 36351 | 9663 | 14 | sustained |
-| 16 | 160.5 | 0.005% | 55871 | 19263 | 23 | sustained |
-| 24 | 239.3 | 0.021% | 834559 | 28714 | 87 | sustained |
-| 26 | 262.2 | 0.006% | 195071 | 31466 | 15 | sustained |
-| 28 | 275.1 | 0.184% | 2568191 | 33007 | 137 | SLO breached |
-| 32 | 315.8 | 0.137% | 2928639 | 37891 | 18 | SLO breached |
+| 1 | 10.1 | 0.000% | 102335 | 1209 | 12 | sustained |
+| 2 | 20.1 | 0.000% | 41119 | 2416 | 14 | sustained |
+| 4 | 40.1 | 0.000% | 119295 | 4817 | 23 | sustained |
+| 8 | 80.5 | 0.000% | 142335 | 9663 | 24 | sustained |
+| 16 | 160.5 | 0.005% | 31583 | 19263 | 36 | sustained |
+| 18 | 179.0 | 1.985% | 25116671 | 21482 | 20 | SLO breached |
+| 20 | 192.1 | 1.790% | 11968511 | 23049 | 271 | SLO breached |
+| 24 | 215.7 | 9.868% | 43778047 | 25886 | 90 | SLO breached |
+| 32 | 302.7 | 4.262% | 44072959 | 36326 | 62 | SLO breached |
 
 ![Knee — sustained req/s vs p99 latency](charts/knee.svg)
 
