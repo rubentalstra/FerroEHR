@@ -114,6 +114,14 @@ async fn serve() -> anyhow::Result<()> {
     // unconditionally-on-enabled and never fail boot on the broker.
     let events_config = ehrbase::extensions::events::EventsConfig::load()
         .context("loading eventing configuration")?;
+    // The FHIR outbound emitter is the second event-outbox consumer; load its
+    // config now (used again below to spawn it) so the transactional outbox
+    // write can be gated on whether ANY consumer is configured on. No consumer
+    // configured ⇒ the per-commit `event_outbox` INSERT is pure overhead and is
+    // skipped (our own extension; no openEHR spec governs eventing).
+    let fhir_outbound_config = ehrbase::extensions::fhir::FhirOutboundConfig::load()
+        .context("loading FHIR outbound configuration")?;
+    let outbox_enabled = events_config.enabled || fhir_outbound_config.enabled;
     let events_handle = if events_config.enabled {
         tracing::info!(exchange = %events_config.exchange, "contribution-outbox eventing enabled");
         Some(ehrbase::extensions::events::start(
@@ -171,7 +179,9 @@ async fn serve() -> anyhow::Result<()> {
     // it realizes the SM `SystemLog` component the REST audit layer emits
     // through (the system_log module).
     let audit_enabled = audit_sender.is_some();
-    let mut service = EhrbaseService::new(pool.clone()).with_signer(signer);
+    let mut service = EhrbaseService::new(pool.clone())
+        .with_signer(signer)
+        .with_outbox_enabled(outbox_enabled);
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
     }
@@ -230,8 +240,6 @@ async fn serve() -> anyhow::Result<()> {
     // it walks committed outbox rows, reverse-maps matching COMPOSITIONs, and
     // publishes the FHIR resources to the broker — carrying PHI by design, hence
     // its own explicit gate (a separate switch from the REST FHIR connector).
-    let fhir_outbound_config = ehrbase::extensions::fhir::FhirOutboundConfig::load()
-        .context("loading FHIR outbound configuration")?;
     let fhir_outbound_handle = if fhir_outbound_config.enabled {
         tracing::info!(
             exchange = %fhir_outbound_config.exchange,

@@ -86,6 +86,29 @@ pub enum AuthMethod {
     Bearer,
 }
 
+/// A successful authentication: the [`Principal`] plus whether THIS request
+/// performed a genuine credential verification (an actual authentication event,
+/// not a continuation of an established one). It is `true` only for a Basic
+/// verified-credential cache **miss** — the KDF actually ran, so the caller
+/// authenticated here and now. A cache hit (the same credential re-presented
+/// within the TTL) is a continuing session, and a Bearer request is federated
+/// (the authentication event happened out of band at the OIDC provider), so
+/// both are `false`. Used solely to decide whether to emit an IHE ATNA
+/// login/"Application Activity" record, which marks authentication events, not
+/// individual requests.
+#[derive(Debug, Clone)]
+pub(crate) struct Authenticated {
+    pub(crate) principal: Principal,
+    pub(crate) fresh: bool,
+}
+
+/// Response-extension marker set by [`middleware`] when a request carried a
+/// genuine authentication event (see [`Authenticated::fresh`]). The outermost
+/// ATNA audit layer reads it to emit the login record only on real
+/// authentications rather than on every authenticated request.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct FreshAuthentication;
+
 /// An authentication failure.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AuthError {
@@ -209,7 +232,7 @@ impl Authenticator {
     pub(crate) async fn authenticate(
         &self,
         headers: &http::HeaderMap,
-    ) -> Result<Principal, AuthError> {
+    ) -> Result<Authenticated, AuthError> {
         let auth = headers
             .get(header::AUTHORIZATION)
             .ok_or(AuthError::MissingCredentials)?;
@@ -239,7 +262,12 @@ impl Authenticator {
                 if let Some(cache) = &self.verified
                     && let Some(principal) = cache.get(&key).await
                 {
-                    return Ok(principal);
+                    // A cache hit is a continuing session, not a new
+                    // authentication event.
+                    return Ok(Authenticated {
+                        principal,
+                        fresh: false,
+                    });
                 }
                 self.kdf_verifications
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -253,7 +281,11 @@ impl Authenticator {
                 if let Some(cache) = &self.verified {
                     cache.insert(key, principal.clone()).await;
                 }
-                Ok(principal)
+                // The KDF actually ran: this request is a genuine authentication.
+                Ok(Authenticated {
+                    principal,
+                    fresh: true,
+                })
             }
             "bearer" => {
                 let validator = self.jwt.as_ref().ok_or(AuthError::InvalidCredentials)?;
@@ -262,7 +294,15 @@ impl Authenticator {
                     .map_err(|_| AuthError::InvalidCredentials)?
                     .trim_start_matches(|c: char| !c.is_whitespace())
                     .trim();
-                validator.validate(token).await
+                // Federated: the authentication event happened at the OIDC
+                // provider, so a per-request login record is never minted here.
+                validator
+                    .validate(token)
+                    .await
+                    .map(|principal| Authenticated {
+                        principal,
+                        fresh: false,
+                    })
             }
             _ => Err(AuthError::InvalidCredentials),
         }
@@ -298,7 +338,7 @@ pub(crate) async fn middleware(
     }
 
     match auth.authenticate(req.headers()).await {
-        Ok(principal) => {
+        Ok(Authenticated { principal, fresh }) => {
             // RBAC gate (§5.2): resolve the matched operation's class and gate it
             // against the caller's roles. `None` authz handle = auth-only.
             if let Some(rbac) = layer.authz.as_deref().and_then(AuthzHandle::rbac) {
@@ -330,6 +370,11 @@ pub(crate) async fn middleware(
             // Republish onto the response so the outer ATNA audit layer — which
             // cannot observe request-extension mutations — can attribute events.
             resp.extensions_mut().insert(for_audit);
+            // Mark a genuine authentication event so the ATNA layer emits the
+            // login record only then, not on every authenticated request.
+            if fresh {
+                resp.extensions_mut().insert(FreshAuthentication);
+            }
             resp
         }
         Err(e) => {
@@ -456,8 +501,13 @@ mod tests {
     async fn verified_credential_cache_skips_the_kdf_on_a_hit() {
         let auth = basic_only();
         let h = headers("Basic YWxpY2U6cHc="); // alice:pw
-        auth.authenticate(&h).await.expect("first verifies");
-        auth.authenticate(&h).await.expect("second hits the cache");
+        let first = auth.authenticate(&h).await.expect("first verifies");
+        let second = auth.authenticate(&h).await.expect("second hits the cache");
+        assert!(first.fresh, "the KDF ran → a genuine authentication event");
+        assert!(
+            !second.fresh,
+            "a cache hit is a continuing session, not a new authentication"
+        );
         assert_eq!(
             auth.kdf_verifications
                 .load(std::sync::atomic::Ordering::Relaxed),
@@ -522,7 +572,11 @@ mod tests {
             .authenticate(&headers("Basic YWxpY2U6cHc="))
             .await
             .expect("ok");
-        assert_eq!(p.subject, "alice");
+        assert_eq!(p.principal.subject, "alice");
+        assert!(
+            p.fresh,
+            "a first Basic verification is a genuine authentication"
+        );
     }
 
     // The old placeholder `authorize_admin`/`is_admin_path` path-string gate was

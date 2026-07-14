@@ -359,14 +359,14 @@ impl AccessGuard {
                 if !self.authenticator.enabled() {
                     return Ok(());
                 }
-                let principal = self
+                let authenticated = self
                     .authenticator
                     .authenticate(headers)
                     .await
                     .map_err(|_| unauthorized(&self.authenticator))?;
                 if self.level == AccessLevel::AdminOnly
                     && let Some(scope) = self.authenticator.admin_scope()
-                    && !principal.scopes.iter().any(|s| s == scope)
+                    && !authenticated.principal.scopes.iter().any(|s| s == scope)
                 {
                     return Err(forbidden(scope));
                 }

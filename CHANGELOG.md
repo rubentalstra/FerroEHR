@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- AQL queries are now planned once and cached: a repeated ad-hoc or stored
+  query text reuses its lowered plan instead of re-parsing and re-analysing on
+  every execution, while per-request parameter values, `fetch`/`offset`
+  paging, and EHR scope still bind independently. Queries that resolve
+  terminology (`matches TERMINOLOGY(…)`) are never cached, so their expansion
+  is always current. New configuration knob
+  `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` (default `256`; `0` disables the cache)
+  bounds how many distinct plans are held, and a new `aql_plan_cache_events_total`
+  metric (`event` = `hit`/`miss`) reports cache activity.
+
 ### Fixed
 
 - The composition validator no longer falsely rejects templates that use the
@@ -74,6 +86,29 @@ workflow refuses a tag that has no matching section here.
   existence + modifiability gates are one read instead of two. Error
   behaviour is unchanged (a missing EHR is still `404` before a
   non-modifiable `409`).
+- The transactional event outbox is no longer written on every commit when no
+  eventing consumer is configured. The per-commit `event_outbox` row (and its
+  envelope serialization) is now written only when the AMQP publisher
+  (`EHRBASE_EVENTS_ENABLED`) or the FHIR outbound emitter
+  (`EHRBASE_FHIR_OUTBOUND_ENABLED`) is enabled. Consequence: the outbox
+  records commits made while a consumer is enabled (at-least-once, even with
+  zero bound subscribers — the gate is the boot-time config, not the current
+  subscriber set); commits made while every consumer was off are not
+  back-filled if eventing is later enabled.
+- IHE ATNA login ("Application Activity") records now mark genuine
+  authentication events rather than every authenticated request. A login
+  record is emitted only when the request actually verified credentials (a
+  Basic verified-credential cache miss); a cache hit continues an established
+  session and a Bearer request authenticated out of band at the OIDC provider,
+  so neither mints a per-request login record. Rejections (401/403) are still
+  always audited, and login records remain off by default
+  (`EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS`, default `true`).
+- Per-EHR `EHR_ACCESS` access-settings are cached as default-open at EHR
+  creation, so the access gate's first check on a freshly created EHR no
+  longer costs a database lookup (a hospital-day workload creates EHRs
+  constantly). Importing an `EHR_ACCESS` version into an existing EHR now
+  evicts that cache entry, so the access decision reflects the imported
+  policy immediately.
 
 ### Added
 

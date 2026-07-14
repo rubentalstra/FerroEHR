@@ -30,6 +30,16 @@ impl EhrbaseService {
         self.ehr_access.invalidate(ehr_id).await;
     }
 
+    /// Pre-warm the `EHR_ACCESS` cache for a just-created EHR as default-open
+    /// (`None`). Every EHR is created with the settings-less
+    /// [`super::default_ehr_access`] (there is no direct `EHR_ACCESS` write —
+    /// RM ehr master04 §EHR Access), so a fresh EHR is unconditionally
+    /// default-open; seeding that entry saves the first-access DB miss. A later
+    /// `EHR_ACCESS` commit evicts it through [`Self::invalidate_ehr_access`].
+    pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: Uuid) {
+        self.ehr_access.insert(ehr_id, None).await;
+    }
+
     /// Read + parse the EHR's current `EHR_ACCESS` scheme settings from storage
     /// (the cache-miss path). `None` when the EHR has no `EHR_ACCESS`, its
     /// settings are absent, or they belong to another scheme — all default-open.
@@ -184,8 +194,26 @@ impl EhrAccessCache {
             .await
     }
 
+    /// Seed the cache with a value for `ehr_id` without a DB read — the
+    /// pre-warm path. `try_get_with` already negative-caches a default-open
+    /// (`None`) result on the first miss, but the *first* access to a
+    /// freshly-created EHR would still pay one DB round trip (the
+    /// `current_vo` + `read_current` lookup) to discover it is default-open.
+    /// A workload that creates EHRs constantly (a hospital day) pays that miss
+    /// per new EHR; seeding the known-default-open entry at creation turns the
+    /// first access into a hit. Any later `EHR_ACCESS` commit evicts this entry
+    /// via [`Self::invalidate`], so a subsequently-restricted EHR is re-read.
+    pub(in crate::service) async fn insert(
+        &self,
+        ehr_id: Uuid,
+        settings: Option<EhrAccessSettings>,
+    ) {
+        self.inner.insert(ehr_id, Arc::new(settings)).await;
+    }
+
     /// Drop the cached settings for `ehr_id` — called on every `EHR_ACCESS`
-    /// commit so the next read reflects the new version.
+    /// commit so the next read reflects the new version (evicts a positive OR a
+    /// pre-warmed default-open negative entry alike).
     pub(in crate::service) async fn invalidate(&self, ehr_id: Uuid) {
         self.inner.invalidate(&ehr_id).await;
     }
