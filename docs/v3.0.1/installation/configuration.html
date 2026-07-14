@@ -1,0 +1,695 @@
+<!DOCTYPE HTML>
+<html lang="en" class="rust sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Configuration reference - EHRbase-rs Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="User documentation for EHRbase-rs, a pure-Rust openEHR Clinical Data Repository.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/custom-edad5151.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "rust";
+            const default_dark_theme = "coal";
+            window.path_to_searchindex_js = "../searchindex-a4044070.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a3149d71.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('rust')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">EHRbase-rs Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/ehrbase-rs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/rubentalstra/ehrbase-rs/edit/develop/website/book/src/installation/configuration.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="configuration-reference"><a class="header" href="#configuration-reference">Configuration reference</a></h1>
+<p>EHRbase-rs is configured entirely through <code>EHRBASE_*</code> environment variables,
+optionally backed by TOML files for values that do not fit cleanly in env (a
+Basic-auth user store, a full OIDC block, ABAC policies, and so on). This
+chapter is the complete reference: how configuration loads, the two naming
+conventions you must know, and a table per area listing every key with its
+type, default, and meaning. Everything here is drawn from the server’s own
+configuration code.</p>
+<ul>
+<li><a href="#how-configuration-loads">How configuration loads</a></li>
+<li><a href="#server-rest">Server (REST)</a>
+<ul>
+<li><a href="#system-identity-options-conformance-manifest">System identity (<code>OPTIONS</code> conformance manifest)</a></li>
+<li><a href="#smart-app-launch">SMART App Launch</a></li>
+</ul>
+</li>
+<li><a href="#authentication">Authentication</a></li>
+<li><a href="#authorization-rbac--abac">Authorization (RBAC + ABAC)</a></li>
+<li><a href="#database">Database</a></li>
+<li><a href="#query-execution">Query execution</a></li>
+<li><a href="#telemetry-and-logging">Telemetry and logging</a></li>
+<li><a href="#management-surface">Management surface</a></li>
+<li><a href="#version-signing">Version signing</a></li>
+<li><a href="#system-log-atna-auditing">System log (ATNA auditing)</a></li>
+<li><a href="#change-events-amqp-outbox">Change events (AMQP outbox)</a></li>
+<li><a href="#fhir-outbound-emitter">FHIR outbound emitter</a></li>
+<li><a href="#s3-multimedia-externalization">S3 multimedia externalization</a></li>
+<li><a href="#external-terminology-validation">External terminology validation</a></li>
+<li><a href="#subject-proxy-fhir-frames">Subject Proxy (FHIR frames)</a></li>
+<li><a href="#process--cli">Process / CLI</a></li>
+<li><a href="#what-belongs-in-a-mounted-file">What belongs in a mounted file</a></li>
+</ul>
+<h2 id="how-configuration-loads"><a class="header" href="#how-configuration-loads">How configuration loads</a></h2>
+<p>There is no single global configuration object. The server is composed of
+independent modules, each of which loads its own settings from three layers, in
+increasing precedence:</p>
+<ol>
+<li><strong>Built-in defaults</strong> (the values in the tables below),</li>
+<li>an <strong>optional TOML file</strong> for that module (pointed at by an
+<code>EHRBASE_&lt;AREA&gt;_CONFIG</code> variable), then</li>
+<li><strong><code>EHRBASE_&lt;AREA&gt;_</code>-prefixed environment variables</strong>, which win.</li>
+</ol>
+<p>The development Compose stack, for example, points <code>EHRBASE_REST_CONFIG</code> at
+<code>docker/ehrbase.dev.toml</code> to supply the Basic-auth user store (which env cannot
+carry as a list), while everything else stays on defaults or env overrides.</p>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><strong>Two naming conventions.</strong> Most modules use a <strong>double underscore</strong> (<code>__</code>) to
+separate nested fields — <code>EHRBASE_REST_AUTH__ENABLED</code> maps to <code>auth.enabled</code>.
+There are two exceptions:</p>
+<ul>
+<li><strong>Telemetry</strong> is flat: <code>EHRBASE_OTEL_*</code> and <code>EHRBASE_LOG_*</code> have no nesting.</li>
+<li><strong>Management</strong> uses a <strong>single</strong> underscore for its one nested group:
+<code>EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH</code>, not <code>__</code>.</li>
+</ul>
+<p>Getting the separator wrong is the most common configuration mistake.</p>
+</blockquote>
+<p>Enum values are case-sensitive on the wire. Where a column lists
+<code>enum{a,b,c}</code>, use exactly those lowercase (or <code>snake_case</code>) tokens. Secret
+values (<code>EHRBASE_SIGNING_KEY_PASSPHRASE</code>, <code>EHRBASE_REST_AUTH__OIDC__HMAC_SECRET</code>,
+Basic-auth password hashes) are redacted from the management <code>/env</code> endpoint and
+from logs.</p>
+<h2 id="server-rest"><a class="header" href="#server-rest">Server (REST)</a></h2>
+<p>Prefix <code>EHRBASE_REST_</code>, separator <code>__</code>, optional file <code>EHRBASE_REST_CONFIG</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_REST_CONFIG</code></td><td>path</td><td>none</td><td>Path to the REST TOML config file (loaded before env).</td></tr>
+<tr><td><code>EHRBASE_REST_BIND</code></td><td>socket address</td><td><code>0.0.0.0:8080</code></td><td>Address the API listener binds.</td></tr>
+<tr><td><code>EHRBASE_REST_BASE_PATH</code></td><td>string</td><td><code>/ehrbase/rest/openehr/v1</code></td><td>Base path all API routes hang off.</td></tr>
+<tr><td><code>EHRBASE_REST_MAX_IN_FLIGHT</code></td><td>integer</td><td><code>256</code></td><td>Maximum API requests handled <strong>concurrently</strong> (not per second) before the server sheds load; raise it for high-throughput deployments. Requests beyond the cap are rejected immediately with <code>503 Service Unavailable</code> + <code>Retry-After: 1</code> (shed, never queued), so offered load beyond backend capacity cannot exhaust server memory. The <code>/status</code>, health, and discovery endpoints are never limited. <code>0</code> disables shedding.</td></tr>
+<tr><td><code>EHRBASE_REST_SWAGGER_UI</code></td><td>boolean</td><td><code>true</code></td><td>Serve Swagger UI + the OpenAPI JSON. Consider off in production.</td></tr>
+<tr><td><code>EHRBASE_REST_CORS_PERMISSIVE</code></td><td>boolean</td><td><code>false</code></td><td>Enable a permissive (development) CORS policy.</td></tr>
+<tr><td><code>EHRBASE_REST_ADMIN__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Mount the ADMIN API group (routes 404 when off).</td></tr>
+<tr><td><code>EHRBASE_REST_TERMINOLOGY__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Mount the terminology extension API group.</td></tr>
+<tr><td><code>EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Mount the event-subscription admin extension API.</td></tr>
+<tr><td><code>EHRBASE_REST_FHIR__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Mount the FHIR R4 inbound/façade routes.</td></tr>
+<tr><td><code>EHRBASE_REST_TENANCY__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Activate multi-tenancy (tenant middleware + row-level scoping).</td></tr>
+<tr><td><code>EHRBASE_REST_TENANCY__CLAIM</code></td><td>string</td><td><code>tenant</code></td><td>JWT-claim path carrying the tenant key.</td></tr>
+<tr><td><code>EHRBASE_REST_TENANCY__HEADER</code></td><td>string</td><td>none</td><td>Dev-only request-header tenant override. Leave unset in production — a client header must not select a tenant.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="system-identity-options-conformance-manifest"><a class="header" href="#system-identity-options-conformance-manifest">System identity (<code>OPTIONS</code> conformance manifest)</a></h3>
+<p>Nested under <code>EHRBASE_REST_SYSTEM__</code> (part of the REST config). These fields
+are reported by the conformance manifest served on <code>OPTIONS</code> at the API base
+path (and at <code>/</code>); the endpoint list in that manifest is not configurable —
+it always reflects the actually mounted API groups.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_REST_SYSTEM__SOLUTION</code></td><td>string</td><td><code>EHRbase-RS</code></td><td>Product name reported.</td></tr>
+<tr><td><code>EHRBASE_REST_SYSTEM__SOLUTION_VERSION</code></td><td>string</td><td>the build’s version</td><td>Product version reported.</td></tr>
+<tr><td><code>EHRBASE_REST_SYSTEM__VENDOR</code></td><td>string</td><td><code>EHRbase-RS project</code></td><td>Providing organisation.</td></tr>
+<tr><td><code>EHRBASE_REST_SYSTEM__RESTAPI_SPECS_VERSION</code></td><td>string</td><td>the tested spec identity</td><td>The openEHR REST API edition reported (defaults to the development-edition identity the build is tested against).</td></tr>
+<tr><td><code>EHRBASE_REST_SYSTEM__CONFORMANCE_PROFILE</code></td><td>string</td><td>the last machine-computed verdict</td><td>Advertised conformance profile.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="smart-app-launch"><a class="header" href="#smart-app-launch">SMART App Launch</a></h3>
+<p>Nested under <code>EHRBASE_REST_SMART__</code> (part of the REST config). Off by
+default; when off, the discovery document is not served and the scope gate is
+inert. See <a href="../smart-app-launch.html">SMART App Launch</a> for what each piece
+does.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_REST_SMART__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Master SMART switch.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__PLATFORM_BASE_URL</code></td><td>string</td><td>none (REST root)</td><td>Base the <code>/.well-known/smart-configuration</code> document hangs off.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__EHR_ID_CLAIM</code></td><td>string</td><td><code>ehrId</code></td><td>Token claim carrying the launch context’s EHR id.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__PATIENT_CLAIM</code></td><td>string</td><td><code>patient</code></td><td>Fallback launch-context claim.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__REQUIRE_SMART_SCOPES</code></td><td>boolean</td><td><code>false</code></td><td>Fail-closed: deny Bearer tokens with no matching SMART scope on scope-governed operations.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__EPISODE__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Advertise + accept episode launch context (experimental, advisory).</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__LAUNCH_BASE64_JSON</code></td><td>boolean</td><td><code>false</code></td><td>Advertise the base64-JSON launch-parameter capability (experimental).</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__ISSUER</code></td><td>URL</td><td>none (falls back to the OIDC issuer)</td><td>Advertised token issuer.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__JWKS_URI</code></td><td>URL</td><td>none</td><td>Advertised JWKS URL.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised OAuth2 authorization endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised OAuth2 token endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__REGISTRATION_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised client-registration endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__INTROSPECTION_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised introspection endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__REVOCATION_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised revocation endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__MANAGEMENT_ENDPOINT</code></td><td>URL</td><td>none</td><td>Advertised user-management endpoint.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED</code></td><td>list</td><td><code>[]</code></td><td>Advertised client auth methods.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED</code></td><td>list</td><td><code>[]</code></td><td>Advertised grant types (<code>implicit</code>/password are rejected at boot).</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED</code></td><td>list</td><td><code>[]</code></td><td>Advertised response types.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED</code></td><td>list</td><td><code>[]</code></td><td>Advertised PKCE methods.</td></tr>
+<tr><td><code>EHRBASE_REST_SMART__ENDPOINTS__SCOPES_SUPPORTED</code></td><td>list</td><td><code>[]</code> (built-in default list)</td><td>Advertised scopes; empty = the defaults the server enforces.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="authentication"><a class="header" href="#authentication">Authentication</a></h2>
+<p>Nested under <code>EHRBASE_REST_AUTH__</code> (part of the REST config). The Basic-auth
+user store is a list and is realistically supplied via the mounted TOML file;
+the env forms are shown for completeness.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_REST_AUTH__ENABLED</code></td><td>boolean</td><td><code>true</code></td><td>Master auth switch. <code>false</code> = all requests pass unauthenticated (development only).</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__ADMIN_SCOPE</code></td><td>string</td><td>none</td><td>Deprecated back-compat scope→role alias; still consulted by the management admin gate.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__BASIC__USERS</code></td><td>list of <code>{username, password_hash, roles}</code></td><td>none (Basic off)</td><td>Basic-auth user store. Passwords are Argon2 PHC hashes; per-user <code>roles</code> default to <code>["USER"]</code>. Set via TOML.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__OIDC__ISSUER</code></td><td>URL</td><td>none (bearer off)</td><td>Expected token issuer (<code>iss</code>); also the OIDC discovery base.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__OIDC__AUDIENCES</code></td><td>list</td><td><code>[]</code> (not checked)</td><td>Accepted <code>aud</code> values.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__OIDC__ALGORITHMS</code></td><td>list</td><td><code>["RS256"]</code></td><td>Accepted JWT signature algorithms.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__OIDC__HMAC_SECRET</code></td><td>string (secret)</td><td>none</td><td>Symmetric HS256 secret (development/test). Prefer JWKS/discovery in production.</td></tr>
+<tr><td><code>EHRBASE_REST_AUTH__OIDC__JWKS_JSON</code></td><td>string (JSON)</td><td>none</td><td>Static JWKS document; preferred over discovery when present.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="authorization-rbac--abac"><a class="header" href="#authorization-rbac--abac">Authorization (RBAC + ABAC)</a></h2>
+<p>Prefix <code>EHRBASE_AUTHZ_</code>, separator <code>__</code>, optional file <code>EHRBASE_AUTHZ_CONFIG</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_AUTHZ_CONFIG</code></td><td>path</td><td>none</td><td>Path to the authz TOML config file.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_RBAC__ENABLED</code></td><td>boolean</td><td><code>true</code></td><td>Coarse role gate (active only when auth is enabled).</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_RBAC__ADMIN_ROLE</code></td><td>string</td><td><code>ADMIN</code></td><td>Role required for admin-class operations.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_RBAC__USER_ROLE</code></td><td>string</td><td><code>USER</code></td><td>Baseline clinical role.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_RBAC__ROLE_CLAIMS</code></td><td>list</td><td><code>["realm_access.roles","scope"]</code></td><td>JWT claim paths mined for roles.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS</code></td><td>enum{admin_only,private,public}</td><td><code>admin_only</code></td><td>Access level for the management surface.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Master ABAC (attribute-based) switch.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__ENGINE</code></td><td>enum{cedar,remote}</td><td><code>cedar</code></td><td>Policy engine: embedded Cedar or a remote decision point.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__ORGANIZATION_CLAIM</code></td><td>string</td><td><code>organization_id</code></td><td>JWT claim carrying the caller’s organization.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__PATIENT_CLAIM</code></td><td>string</td><td><code>patient_id</code></td><td>JWT claim carrying the patient id (blank disables the subject gate).</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__CEDAR__POLICY_DIR</code></td><td>path</td><td>none</td><td>Directory of <code>*.cedar</code> policy files (required for the <code>cedar</code> engine).</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__CEDAR__RELOAD_SECS</code></td><td>integer</td><td>none</td><td>Optional Cedar hot-reload interval (seconds).</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__REMOTE__SERVER</code></td><td>URL</td><td>none</td><td>Remote decision-point base URL (required for the <code>remote</code> engine).</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__REMOTE__CONNECT_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>2000</code></td><td>Remote-PDP connect timeout.</td></tr>
+<tr><td><code>EHRBASE_AUTHZ_ABAC__REMOTE__REQUEST_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>5000</code></td><td>Remote-PDP request timeout.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="database"><a class="header" href="#database">Database</a></h2>
+<p>Prefix <code>EHRBASE_DB_</code>, no nesting, environment-only (no config file).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_DB_URL</code></td><td>URL</td><td>none (<strong>required</strong>)</td><td>PostgreSQL connection URL, <code>postgres://user:pass@host:port/db</code>. <code>DATABASE_URL</code> is accepted as a fallback.</td></tr>
+<tr><td><code>EHRBASE_DB_MAX_CONNECTIONS</code></td><td>integer</td><td><code>20</code></td><td>Upper bound of the connection pool. Size to your PostgreSQL <code>max_connections</code> budget; write-heavy deployments benefit from 50+.</td></tr>
+<tr><td><code>EHRBASE_DB_MIN_CONNECTIONS</code></td><td>integer</td><td><code>2</code></td><td>Idle connections the pool keeps open (avoids cold connection churn under variable load).</td></tr>
+<tr><td><code>EHRBASE_DB_ACQUIRE_TIMEOUT_SECS</code></td><td>integer (s)</td><td><code>30</code></td><td>Wait for a free connection before failing.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-note">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
+<p><code>EHRBASE_DB_NAME</code>, <code>EHRBASE_DB_USER</code>, and <code>EHRBASE_DB_PASSWORD</code> are <strong>not</strong>
+read by the server — they configure the PostgreSQL init image. The server
+takes a single <code>EHRBASE_DB_URL</code>.</p>
+</blockquote>
+<h2 id="query-execution"><a class="header" href="#query-execution">Query execution</a></h2>
+<p>A single environment-only key (no file, no nesting group behind it).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_QUERY__TIMEOUT_MS</code></td><td>integer (ms)</td><td>unset (no per-query cap)</td><td>Per-query execution budget. <code>0</code> or unset disables it; when positive, an AQL query that exceeds the budget returns <code>408 Request Timeout</code>.</td></tr>
+<tr><td><code>EHRBASE_QUERY__PLAN_CACHE_CAPACITY</code></td><td>integer</td><td><code>256</code></td><td>Maximum number of distinct AQL query plans held in the in-memory plan cache. A repeated query text reuses its lowered plan instead of re-parsing on every execution (parameter values, <code>fetch</code>/<code>offset</code> paging, and EHR scope still bind per request); queries that resolve terminology are never cached. <code>0</code> disables the cache. Cache activity is reported by the <code>aql_plan_cache_events_total</code> metric.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="telemetry-and-logging"><a class="header" href="#telemetry-and-logging">Telemetry and logging</a></h2>
+<p>Prefixes <code>EHRBASE_OTEL_</code> and <code>EHRBASE_LOG_</code>. <strong>Flat</strong> (no <code>__</code> nesting),
+environment-only.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_OTEL_OTLP_ENDPOINT</code></td><td>URL</td><td>none</td><td>OTLP/gRPC collector endpoint. <strong>Unset = the OTel layer is not installed</strong> (zero overhead).</td></tr>
+<tr><td><code>EHRBASE_OTEL_SERVICE_NAME</code></td><td>string</td><td><code>ehrbase</code></td><td><code>service.name</code> resource attribute.</td></tr>
+<tr><td><code>EHRBASE_OTEL_ENVIRONMENT</code></td><td>string</td><td><code>dev</code></td><td><code>deployment.environment</code> resource attribute.</td></tr>
+<tr><td><code>EHRBASE_OTEL_TRACES_SAMPLE_RATIO</code></td><td>float</td><td><code>1.0</code></td><td>Head-sampling ratio.</td></tr>
+<tr><td><code>EHRBASE_OTEL_METRICS_PUSH</code></td><td>boolean</td><td><code>false</code></td><td>Also push metrics over OTLP (alongside Prometheus pull).</td></tr>
+<tr><td><code>EHRBASE_LOG_FORMAT</code></td><td>enum{auto,json,pretty}</td><td><code>auto</code></td><td>Log rendering. <code>json</code> for cluster log collectors; <code>auto</code> picks JSON when stdout is not a TTY.</td></tr>
+<tr><td><code>EHRBASE_LOG_FILTER</code></td><td>string</td><td><code>info,ehrbase=info</code></td><td>Log-filter directives (<code>RUST_LOG</code> is the fallback when unset).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="management-surface"><a class="header" href="#management-surface">Management surface</a></h2>
+<p>Prefix <code>EHRBASE_MANAGEMENT_</code>, <strong>single-underscore</strong> nesting for endpoints,
+optional file <code>EHRBASE_MANAGEMENT_CONFIG</code>. Off in the bare binary; the Helm
+chart turns it on for probes.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_MANAGEMENT_CONFIG</code></td><td>path</td><td>none</td><td>Path to the management TOML config file.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Master switch; off = no management routes mounted.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_BASE_PATH</code></td><td>string</td><td><code>/management</code></td><td>Base path for the management endpoints.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_PORT</code></td><td>integer (u16)</td><td>none</td><td>Serve management on its own listener/port instead of the main API listener.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ACCESS_DEFAULT</code></td><td>enum{off,admin_only,private,public}</td><td><code>admin_only</code></td><td>Global default access level (a per-endpoint level wins).</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_PROBES_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Mount the public <code>/health/liveness</code> + <code>/health/readiness</code> probes.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/health</code>.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_INFO</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/info</code>.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_METRICS</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/metrics</code>.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/prometheus</code>.</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_ENV</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/env</code> (redacted config).</td></tr>
+<tr><td><code>EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS</code></td><td>enum{off,admin_only,private,public}</td><td><code>off</code></td><td>Access level of <code>/management/loggers</code> (runtime log control).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="version-signing"><a class="header" href="#version-signing">Version signing</a></h2>
+<p>Prefix <code>EHRBASE_SIGNING_</code>, separator <code>__</code>, optional file
+<code>EHRBASE_SIGNING_CONFIG</code>. On by default in <code>digest</code> mode.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_SIGNING_CONFIG</code></td><td>path</td><td>none</td><td>Path to the signing TOML config file.</td></tr>
+<tr><td><code>EHRBASE_SIGNING_ENABLED</code></td><td>boolean</td><td><code>true</code></td><td>Server-side signing of committed versions.</td></tr>
+<tr><td><code>EHRBASE_SIGNING_MODE</code></td><td>enum{digest,pgp}</td><td><code>digest</code></td><td>SHA-256 integrity digest, or an OpenPGP detached signature.</td></tr>
+<tr><td><code>EHRBASE_SIGNING_KEY_PATH</code></td><td>path</td><td>none</td><td>Armored RFC 4880 secret key (required for <code>pgp</code>).</td></tr>
+<tr><td><code>EHRBASE_SIGNING_KEY_PASSPHRASE</code></td><td>string (secret)</td><td>none</td><td>Key passphrase (kept in memory, never serialized).</td></tr>
+<tr><td><code>EHRBASE_SIGNING_VERIFY_ON_READ</code></td><td>enum{off,warn,strict}</td><td><code>off</code></td><td>Read-time recompute-and-compare policy.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p><code>pgp</code> mode <strong>fails closed at boot</strong> if the key is missing or unusable — the
+server will not start. Verify the key and passphrase before switching modes.</p>
+</blockquote>
+<h2 id="system-log-atna-auditing"><a class="header" href="#system-log-atna-auditing">System log (ATNA auditing)</a></h2>
+<p>Prefix <code>EHRBASE_ATNA_</code>, separator <code>__</code>, optional file <code>EHRBASE_ATNA_CONFIG</code>.
+Off by default.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_ATNA_CONFIG</code></td><td>path</td><td>none</td><td>Path to the ATNA TOML config file.</td></tr>
+<tr><td><code>EHRBASE_ATNA_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Master ATNA audit switch.</td></tr>
+<tr><td><code>EHRBASE_ATNA_ENTERPRISE_SITE_ID</code></td><td>string</td><td>none</td><td>Enterprise/site id (<code>AuditEnterpriseSiteID</code>).</td></tr>
+<tr><td><code>EHRBASE_ATNA_REPOSITORY_HOST</code></td><td>string</td><td><code>localhost</code></td><td>Audit Record Repository (ARR) host.</td></tr>
+<tr><td><code>EHRBASE_ATNA_REPOSITORY_PORT</code></td><td>integer (u16)</td><td><code>514</code></td><td>ARR port (514 UDP / 6514 TLS typical).</td></tr>
+<tr><td><code>EHRBASE_ATNA_TRANSPORT</code></td><td>enum{udp,tls}</td><td><code>udp</code></td><td>Syslog transport to the ARR. Use <code>tls</code> for PHI-adjacent audit.</td></tr>
+<tr><td><code>EHRBASE_ATNA_SOURCE_ID</code></td><td>string</td><td><code>ehrbase</code></td><td>Audit source id.</td></tr>
+<tr><td><code>EHRBASE_ATNA_VALUE_IF_MISSING</code></td><td>string</td><td><code>UNKNOWN</code></td><td>Fill value for empty mandatory fields.</td></tr>
+<tr><td><code>EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS</code></td><td>boolean</td><td><code>true</code></td><td>Skip auth/login activity events.</td></tr>
+<tr><td><code>EHRBASE_ATNA_FAIL_MODE</code></td><td>enum{open,closed}</td><td><code>open</code></td><td>On undeliverable audit: succeed and meter (<code>open</code>) or reject with 503 (<code>closed</code>).</td></tr>
+<tr><td><code>EHRBASE_ATNA_RESOLVE_SUBJECT</code></td><td>boolean</td><td><code>false</code></td><td>Enrich the patient participant via a subject lookup.</td></tr>
+<tr><td><code>EHRBASE_ATNA_QUEUE_CAPACITY</code></td><td>integer</td><td><code>1024</code></td><td>Bounded audit queue capacity.</td></tr>
+<tr><td><code>EHRBASE_ATNA_SERVER_HOST</code></td><td>string</td><td>none</td><td>This node’s advertised address (<code>NetworkAccessPointID</code>).</td></tr>
+<tr><td><code>EHRBASE_ATNA_TLS_CA_PATH</code></td><td>path</td><td>none</td><td>PEM CA file to trust for TLS transport.</td></tr>
+<tr><td><code>EHRBASE_ATNA_TLS_IDENTITY_CERT_PATH</code></td><td>path</td><td>none</td><td>Client-certificate PEM for mutual TLS.</td></tr>
+<tr><td><code>EHRBASE_ATNA_TLS_IDENTITY_KEY_PATH</code></td><td>path</td><td>none</td><td>Client-key PEM for mutual TLS.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="change-events-amqp-outbox"><a class="header" href="#change-events-amqp-outbox">Change events (AMQP outbox)</a></h2>
+<p>Prefix <code>EHRBASE_EVENTS_</code>, separator <code>__</code>, optional file <code>EHRBASE_EVENTS_CONFIG</code>.
+Off by default. Envelopes are PHI-free by design.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_EVENTS_CONFIG</code></td><td>path</td><td>none</td><td>Path to the events TOML config file.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Spawn the outbox publisher.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_URL</code></td><td>AMQP URL</td><td><code>amqp://guest:guest@localhost:5672/%2f</code></td><td>RabbitMQ broker URL.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_EXCHANGE</code></td><td>string</td><td><code>ehrbase.events</code></td><td>Topic exchange for PHI-free event envelopes.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_TLS</code></td><td>boolean</td><td><code>false</code></td><td>Upgrade an <code>amqp://</code> URL to <code>amqps://</code>.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_BATCH_SIZE</code></td><td>integer</td><td><code>128</code></td><td>Outbox rows drained per poll.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_POLL_INTERVAL_MS</code></td><td>integer (ms)</td><td><code>1000</code></td><td>Poll interval when the outbox is idle.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_RETENTION_DAYS</code></td><td>integer (days)</td><td><code>7</code></td><td>Published-row retention window.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_PRUNE_INTERVAL_SECS</code></td><td>integer (s)</td><td><code>3600</code></td><td>Retention-prune cadence.</td></tr>
+<tr><td><code>EHRBASE_EVENTS_PUBLISH_MAX_RETRIES</code></td><td>integer</td><td><code>3</code></td><td>Per-row publish retries before backing off.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="fhir-outbound-emitter"><a class="header" href="#fhir-outbound-emitter">FHIR outbound emitter</a></h2>
+<p>Prefix <code>EHRBASE_FHIR_OUTBOUND_</code>, separator <code>__</code>, optional file
+<code>EHRBASE_FHIR_OUTBOUND_CONFIG</code>. Off by default.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_CONFIG</code></td><td>path</td><td>none</td><td>Path to the FHIR-outbound TOML config file.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Enable the FHIR resource emitter.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_URL</code></td><td>AMQP URL</td><td><code>amqp://guest:guest@localhost:5672/%2f</code></td><td>Broker URL.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_EXCHANGE</code></td><td>string</td><td><code>ehrbase.fhir</code></td><td>Topic exchange (separate from events, for PHI isolation).</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_TLS</code></td><td>boolean</td><td><code>false</code></td><td>Upgrade an <code>amqp://</code> URL to <code>amqps://</code>.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_BATCH_SIZE</code></td><td>integer</td><td><code>128</code></td><td>Outbox rows scanned per poll.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_POLL_INTERVAL_MS</code></td><td>integer (ms)</td><td><code>1000</code></td><td>Poll interval when idle.</td></tr>
+<tr><td><code>EHRBASE_FHIR_OUTBOUND_PUBLISH_MAX_RETRIES</code></td><td>integer</td><td><code>3</code></td><td>Per-message publish retries before backing off.</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p>This stream carries <strong>PHI</strong> — the mapped FHIR resource. It is a deliberately
+separate switch and exchange from the PHI-free change-event stream so broker
+access control can isolate it. Enable it only against a TLS, access-controlled
+broker.</p>
+</blockquote>
+<h2 id="s3-multimedia-externalization"><a class="header" href="#s3-multimedia-externalization">S3 multimedia externalization</a></h2>
+<p>Prefix <code>EHRBASE_MULTIMEDIA_</code>, separator <code>__</code>, optional file
+<code>EHRBASE_MULTIMEDIA_CONFIG</code>. Off by default (blobs stay inline, byte-identical).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_MULTIMEDIA_CONFIG</code></td><td>path</td><td>none</td><td>Path to the multimedia TOML config file.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Externalize large multimedia data to an object store.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_THRESHOLD_BYTES</code></td><td>integer (bytes)</td><td><code>262144</code> (256 KiB)</td><td>Decoded size strictly above which data is offloaded.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_ENDPOINT</code></td><td>URL</td><td>none</td><td>S3-compatible endpoint. None = AWS default resolution.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_BUCKET</code></td><td>string</td><td><code>openehr-multimedia</code></td><td>Target bucket.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_REGION</code></td><td>string</td><td><code>us-east-1</code></td><td>AWS region (required even for non-AWS endpoints).</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_ACCESS_KEY_ID</code></td><td>string</td><td>none</td><td>S3 access key id (none + no secret = anonymous).</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY</code></td><td>string (secret)</td><td>none</td><td>S3 secret access key.</td></tr>
+<tr><td><code>EHRBASE_MULTIMEDIA_ALLOW_HTTP</code></td><td>boolean</td><td><code>false</code></td><td>Allow plain-HTTP endpoints — development/test only.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="external-terminology-validation"><a class="header" href="#external-terminology-validation">External terminology validation</a></h2>
+<p>Prefix <code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_</code>, separator <code>__</code>, optional file
+<code>EHRBASE_VALIDATION_CONFIG</code>. Off by default (the in-process openEHR bundle is
+used). Providers are a map keyed by a provider name (below shown as <code>&lt;NAME&gt;</code>,
+conventionally <code>default</code>).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_VALIDATION_CONFIG</code></td><td>path</td><td>none</td><td>Path to the terminology-validation TOML config file.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED</code></td><td>boolean</td><td><code>false</code></td><td>Activate external terminology validation.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR</code></td><td>boolean</td><td><code>false</code></td><td>On TS/connectivity error, reject (fail-closed) vs accept (fail-open).</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__TYPE</code></td><td>enum{fhir}</td><td><code>fhir</code></td><td>Provider kind (FHIR R4).</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__URL</code></td><td>URL</td><td>none (required)</td><td>FHIR R4 base URL of the terminology server.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__OPERATION</code></td><td>enum{validate_code,expand}</td><td><code>validate_code</code></td><td>Value-set membership operation.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__CONNECT_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>2000</code></td><td>Per-provider connect timeout.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__REQUEST_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>10000</code></td><td>Per-provider request timeout.</td></tr>
+<tr><td><code>EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__&lt;NAME&gt;__OAUTH2_CLIENT</code></td><td>string</td><td>none</td><td>Name of an OAuth2 client-credentials client for the provider.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="subject-proxy-fhir-frames"><a class="header" href="#subject-proxy-fhir-frames">Subject Proxy (FHIR frames)</a></h2>
+<p>Prefix <code>EHRBASE_SUBJECT_PROXY_</code>, separator <code>__</code>, optional file
+<code>EHRBASE_SUBJECT_PROXY_CONFIG</code>. Empty by default — no external FHIR system is
+reachable until one is named here (fail-closed). Systems are a map keyed by
+the name subject-proxy frames use as their <code>system_id</code> (shown as <code>&lt;NAME&gt;</code>).
+See <a href="../beyond-core/subject-proxy.html">Subject Proxy</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_SUBJECT_PROXY_CONFIG</code></td><td>path</td><td>none</td><td>Path to the subject-proxy TOML config file.</td></tr>
+<tr><td><code>EHRBASE_SUBJECT_PROXY__SYSTEMS__&lt;NAME&gt;__BASE_URL</code></td><td>URL</td><td>none (required per system)</td><td>FHIR R4 base URL of the named system.</td></tr>
+<tr><td><code>EHRBASE_SUBJECT_PROXY__SYSTEMS__&lt;NAME&gt;__CONNECT_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>2000</code></td><td>Per-system connect timeout.</td></tr>
+<tr><td><code>EHRBASE_SUBJECT_PROXY__SYSTEMS__&lt;NAME&gt;__REQUEST_TIMEOUT_MS</code></td><td>integer (ms)</td><td><code>10000</code></td><td>Per-system request timeout.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="process--cli"><a class="header" href="#process--cli">Process / CLI</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Key</th><th>Type</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EHRBASE_HEALTHCHECK_URL</code></td><td>URL</td><td><code>http://127.0.0.1:8080/ehrbase/rest/status</code></td><td>Target URL for the binary’s <code>healthcheck</code> subcommand (container <code>HEALTHCHECK</code> and Kubernetes exec probes).</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="what-belongs-in-a-mounted-file"><a class="header" href="#what-belongs-in-a-mounted-file">What belongs in a mounted file</a></h2>
+<p>Env variables cannot carry lists or nested structures cleanly. Put these in the
+module’s TOML file (via <code>EHRBASE_&lt;AREA&gt;_CONFIG</code>, or the Helm chart’s
+<code>config.files</code>) instead:</p>
+<ul>
+<li>the Basic-auth <strong>user store</strong> (<code>[[auth.basic.users]]</code>),</li>
+<li>a full <strong>OIDC</strong> block with multiple audiences/algorithms,</li>
+<li><strong>RBAC</strong> role-claim lists and <strong>ABAC</strong> (Cedar) policies,</li>
+<li>the external <strong>terminology</strong> provider map,</li>
+<li><strong>ATNA</strong> TLS certificate paths and the <strong>PGP</strong> signing key.</li>
+</ul>
+<p>See <code>docker/ehrbase.dev.toml</code> in the repository for a worked example of the
+REST config file (bind address, CORS, admin, and the Basic-auth users).</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../installation/from-source.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../concepts/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../installation/from-source.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../concepts/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../theme/mermaid-eefea253.min.js"></script>
+        <script src="../theme/mermaid-init-ccf746f1.js"></script>
+        <script src="../theme/version-picker-6e23f84c.js"></script>
+
+
+
+    </div>
+    </body>
+</html>
