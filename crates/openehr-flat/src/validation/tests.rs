@@ -1480,3 +1480,79 @@ fn unqualified_sibling_admits_a_runtime_named_residual_instance() {
          unqualified overlay"
     );
 }
+
+// ── P20 item 15: validation-walk cost measurement (not a gate) ──────────────────
+
+/// Count the `_type`-bearing nodes reachable in `v` (the units both
+/// template-independent passes visit).
+fn count_type_nodes(v: &Value) -> usize {
+    match v {
+        Value::Object(obj) => {
+            let self_count = usize::from(obj.contains_key("_type"));
+            self_count
+                + obj
+                    .iter()
+                    .filter(|(k, _)| !k.starts_with('_'))
+                    .map(|(_, val)| count_type_nodes(val))
+                    .sum::<usize>()
+        }
+        Value::Array(a) => a.iter().map(count_type_nodes).sum(),
+        _ => 0,
+    }
+}
+
+/// Time `iters` runs of `f`, returning microseconds per run.
+fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
+    let start = std::time::Instant::now();
+    let mut sink = 0usize;
+    for _ in 0..iters {
+        sink = sink.wrapping_add(f());
+    }
+    std::hint::black_box(sink);
+    start.elapsed().as_secs_f64() * 1e6 / f64::from(iters)
+}
+
+/// P20 overhead checklist item 15 — MEASUREMENT (not a correctness gate):
+/// quantify the pre-tx template-independent validation walk over the populated
+/// IPS example (~1.5k `_type` nodes). The RM-invariant and terminology passes
+/// each traverse the whole instance independently; this splits and times them so
+/// the P20 synthesis can weigh a single-traversal fusion against the DB-bound
+/// write path (~9–11 PG round trips + multi-second node/version INSERTs under
+/// load per the checklist). Ignored by default (timing, not correctness); run:
+/// `cargo nextest run -p openehr-flat --run-ignored all \
+///   -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
+#[test]
+#[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
+fn measure_ips_validation_walk_cost() {
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
+    );
+    let comp: Value =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
+            .expect("parse IPS example");
+    let node_count = count_type_nodes(&comp);
+
+    // Warm up (allocator, branch predictors, the lazily-initialized bundle).
+    for _ in 0..5 {
+        std::hint::black_box(validate_rm_and_terminology(&comp).len());
+    }
+
+    let iters = 50;
+    let t_rm = time_pass(iters, || {
+        let mut v = Validator::default();
+        v.rm_invariant_pass(&comp, "");
+        v.out.len()
+    });
+    let t_term = time_pass(iters, || {
+        let mut v = Validator::default();
+        v.terminology_pass(&comp, "", None);
+        v.out.len()
+    });
+    let t_both = time_pass(iters, || validate_rm_and_terminology(&comp).len());
+
+    eprintln!("IPS validation walk cost ({node_count} _type nodes, {iters} iters):");
+    eprintln!("  pass 1 rm_invariant_pass : {t_rm:>8.1} us/op");
+    eprintln!("  pass 2 terminology_pass  : {t_term:>8.1} us/op");
+    eprintln!("  combined (1+2)           : {t_both:>8.1} us/op");
+}

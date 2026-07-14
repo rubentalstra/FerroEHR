@@ -13,6 +13,7 @@ use uuid::Uuid;
 use super::error::{AqlError, ExecError};
 use super::ir::{Params, QueryIr};
 use super::sql::{CellKind, ColumnSpec, SqlCtx};
+use crate::storage::node_repo::SubtreeAnchor;
 
 /// One `RESULT_SET` column's metadata (`schemas/query/ResultSetColumn`).
 ///
@@ -75,13 +76,50 @@ pub async fn execute(
         })
         .collect();
 
-    let mut out_rows = Vec::with_capacity(rows.len());
-    for row in &rows {
+    // Assemble the cells. Scalar cells read their JSON straight off the result
+    // row; whole-object cells contribute a subtree anchor that is batch-loaded in
+    // ONE round trip after the scan — never one follow-up SELECT per candidate
+    // row (fixes the AQL result-assembly N+1, P20 overhead checklist item 14).
+    let mut out_rows: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
+    let mut anchors: Vec<SubtreeAnchor> = Vec::new();
+    // The whole-object cells to fill once the batch load resolves, by position.
+    let mut pending: Vec<(usize, usize, SubtreeAnchor)> = Vec::new();
+
+    for (ri, row) in rows.iter().enumerate() {
         let mut cells = Vec::with_capacity(prepared.columns.len());
-        for spec in &prepared.columns {
-            cells.push(read_cell(pool, row, spec).await?);
+        for (ci, spec) in prepared.columns.iter().enumerate() {
+            match spec.kind {
+                CellKind::Scalar => {
+                    let v: Option<Value> = row
+                        .try_get(spec.sql_cols[0].as_str())
+                        .map_err(ExecError::from)?;
+                    cells.push(v.unwrap_or(Value::Null));
+                }
+                CellKind::WholeObject => {
+                    // A null vo-id locator (an outer-joined absent object) is a
+                    // Null cell with nothing to load.
+                    if let Some(anchor) = whole_object_anchor(row, spec)? {
+                        anchors.push(anchor);
+                        pending.push((ri, ci, anchor));
+                    }
+                    // Placeholder; a genuine value replaces it after the batch,
+                    // and an empty subtree (logical delete) correctly stays Null.
+                    cells.push(Value::Null);
+                }
+            }
         }
         out_rows.push(cells);
+    }
+
+    if !anchors.is_empty() {
+        let subtrees = crate::storage::node_repo::read_subtrees_canonical(pool, &anchors)
+            .await
+            .map_err(ExecError::from)?;
+        for (ri, ci, anchor) in pending {
+            if let Some(value) = subtrees.get(&anchor) {
+                out_rows[ri][ci] = value.clone();
+            }
+        }
     }
 
     Ok(QueryResult {
@@ -139,48 +177,33 @@ pub async fn collect_scope(
     })
 }
 
-/// Read one cell for `spec` from a result `row`.
-async fn read_cell(
-    pool: &PgPool,
+/// Extract the [`SubtreeAnchor`] for a [`CellKind::WholeObject`] cell from its
+/// four locator columns (`vo_id`, `sys_version`, `num`, `num_cap`). Returns
+/// `None` when the `vo_id` locator is SQL NULL (an outer-joined absent object) —
+/// the cell is then a JSON `null` with no subtree to load.
+fn whole_object_anchor(
     row: &sqlx::postgres::PgRow,
     spec: &ColumnSpec,
-) -> Result<Value, AqlError> {
-    match spec.kind {
-        CellKind::Scalar => {
-            let v: Option<Value> = row
-                .try_get(spec.sql_cols[0].as_str())
-                .map_err(ExecError::from)?;
-            Ok(v.unwrap_or(Value::Null))
-        }
-        CellKind::WholeObject => {
-            let vo_id: Option<Uuid> = row
-                .try_get(spec.sql_cols[0].as_str())
-                .map_err(ExecError::from)?;
-            let Some(vo_id) = vo_id else {
-                return Ok(Value::Null);
-            };
-            let sys_version: i32 = row
-                .try_get(spec.sql_cols[1].as_str())
-                .map_err(ExecError::from)?;
-            let num: i32 = row
-                .try_get(spec.sql_cols[2].as_str())
-                .map_err(ExecError::from)?;
-            let num_cap: i32 = row
-                .try_get(spec.sql_cols[3].as_str())
-                .map_err(ExecError::from)?;
-            // PERF(port): one follow-up query per whole-object cell (correct
-            // first); a single-query jsonb aggregation is a P20 optimization.
-            // The subtree SELECT + path rebasing lives in the storage codec
-            // (register 02); the engine supplies only the four locators.
-            Ok(crate::storage::node_repo::read_subtree_canonical(
-                pool,
-                vo_id,
-                sys_version,
-                num,
-                num_cap,
-            )
-            .await
-            .map_err(ExecError::from)?)
-        }
-    }
+) -> Result<Option<SubtreeAnchor>, AqlError> {
+    let vo_id: Option<Uuid> = row
+        .try_get(spec.sql_cols[0].as_str())
+        .map_err(ExecError::from)?;
+    let Some(vo_id) = vo_id else {
+        return Ok(None);
+    };
+    let sys_version: i32 = row
+        .try_get(spec.sql_cols[1].as_str())
+        .map_err(ExecError::from)?;
+    let num: i32 = row
+        .try_get(spec.sql_cols[2].as_str())
+        .map_err(ExecError::from)?;
+    let num_cap: i32 = row
+        .try_get(spec.sql_cols[3].as_str())
+        .map_err(ExecError::from)?;
+    Ok(Some(SubtreeAnchor {
+        vo_id,
+        sys_version,
+        num,
+        num_cap,
+    }))
 }
