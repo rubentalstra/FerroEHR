@@ -55,6 +55,9 @@ fn environment(m: &mut String, r: &Results) {
             m.push_str(&format!("| Image `{k}` | `{v}` |\n"));
         }
     }
+    for (k, v) in &e.sut_config {
+        m.push_str(&format!("| Config `{k}` | `{v}` |\n"));
+    }
     m.push_str("\n> A report with a different load-generator line is not directly comparable.\n\n");
 }
 
@@ -336,6 +339,7 @@ mod tests {
                 mem_mib: 16000,
                 harness_sha: "abc".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: std::collections::BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {

@@ -48,6 +48,14 @@ OUT="${BENCH_OUT:-docs/benchmarks}"
 # Pool parity: exported for both compose files (see the env docs above).
 export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
+# Admission parity: ehrbase-rs ships a 256-request in-flight load-shed cap
+# (503 past it) as its production overload guard. Upstream's Tomcat admits up
+# to 8192 connections and QUEUES the excess, so its overload manifests as
+# latency while ours would manifest as shed errors tripping the SLO's
+# error-rate arm on bursts the server could absorb. Benchmark runs raise the
+# cap so both SUTs fail the same way (queueing latency); the value is recorded
+# in the report environment block.
+export EHRBASE_REST_MAX_IN_FLIGHT="${BENCH_RS_MAX_IN_FLIGHT:-2048}"
 # Signing parity (benchmarking.md §3.4): version signing is an ehrbase-rs
 # extension upstream does not perform — running it on-for-us/absent-for-them
 # is an unfair self-handicap in throughput comparisons. OFF for benchmark

@@ -91,6 +91,12 @@ pub struct EnvironmentBlock {
     pub harness_sha: String,
     /// ISO-8601 run start.
     pub started: String,
+    /// The config-parity knobs the harness applied to the SUT stacks (DB pool
+    /// ceiling, in-flight admission cap, signing, log level), captured from
+    /// the environment so every published number carries the configuration it
+    /// was measured under. Absent in pre-P20 artefacts.
+    #[serde(default)]
+    pub sut_config: BTreeMap<String, String>,
 }
 
 impl EnvironmentBlock {
@@ -125,8 +131,27 @@ impl EnvironmentBlock {
             mem_mib,
             harness_sha: harness_sha(),
             started: jiff::Timestamp::now().to_string(),
+            sut_config: sut_config(),
         }
     }
+}
+
+/// The config-parity knobs `scripts/benchmark.sh` exports for the SUT stacks,
+/// recorded verbatim when present so the artefact says what it measured.
+fn sut_config() -> BTreeMap<String, String> {
+    [
+        "BENCH_DB_POOL",
+        "EHRBASE_REST_MAX_IN_FLIGHT",
+        "EHRBASE_SIGNING_ENABLED",
+        "EHRBASE_LOG_FILTER",
+        "LOGGING_LEVEL_ROOT",
+        "BENCH_PG_SHARED_BUFFERS",
+        "BENCH_PG_MAX_WAL_SIZE",
+        "BENCH_PG_WORK_MEM",
+    ]
+    .into_iter()
+    .filter_map(|k| std::env::var(k).ok().map(|v| (k.to_owned(), v)))
+    .collect()
 }
 
 /// The harness git SHA from the environment, else `git rev-parse`, else
@@ -351,6 +376,7 @@ mod tests {
                 mem_mib: 16000,
                 harness_sha: "deadbeef".to_owned(),
                 started: "2026-07-13T00:00:00Z".to_owned(),
+                sut_config: BTreeMap::new(),
             },
             classes,
             throughput: ThroughputBlock {

@@ -429,6 +429,42 @@ async fn sut_answers(client: &SutClient) -> bool {
     client.send(req).await.is_ok()
 }
 
+/// Wait for the SUT to drain its in-flight backlog between ladder steps. A
+/// breached step leaves hundreds of admitted requests still queued on the
+/// server (each may wait out the SUT's full DB-pool acquire timeout), so the
+/// next rung would open against the previous rung's storm and measure the
+/// backlog, not the offered load — the non-monotone L=48-worse-than-L=64
+/// artefact. Probe with a cheap read until several consecutive answers come
+/// back fast AND successful (a load-shed 503 answers fast — only a 2xx proves
+/// a request flowed through the whole admission + DB path), capped so a SUT
+/// that never settles cannot stall the ladder forever.
+async fn drain_settle(client: &SutClient) {
+    use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
+    const CONSECUTIVE_FAST: u32 = 5;
+    const FAST: Duration = Duration::from_millis(250);
+    const CAP: Duration = Duration::from_secs(180);
+    let started = std::time::Instant::now();
+    let mut fast = 0u32;
+    while fast < CONSECUTIVE_FAST {
+        if started.elapsed() > CAP {
+            eprintln!(
+                "bench: drain cap reached ({}s) — proceeding with the SUT still busy",
+                CAP.as_secs()
+            );
+            return;
+        }
+        let probe_started = std::time::Instant::now();
+        let req = HttpRequest::new(Method::Get, "/definition/template/adl1.4")
+            .with_auth(AuthSlot::Regular);
+        let settled = match client.send(req).await {
+            Ok(resp) => (200..300).contains(&resp.status) && probe_started.elapsed() < FAST,
+            Err(_) => false,
+        };
+        fast = if settled { fast + 1 } else { 0 };
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
 fn sut_kind_label(kind: SutKind) -> &'static str {
     match kind {
         SutKind::Ours => "ours",
@@ -767,6 +803,12 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
     let mut last_breached: Option<f64> = None;
     let mut step_index: usize = 0;
     while let Some(load_factor) = queue.pop_front() {
+        // Let the previous rung's in-flight backlog drain before opening the
+        // next window (see drain_settle) — the first rung starts clean.
+        if step_index > 0 {
+            eprintln!("bench: draining the SUT before L={load_factor} …");
+            drain_settle(&transport).await;
+        }
         let spec = WorkloadSpec {
             profile: Profile::Hour,
             ward_size: args.ward_size,

@@ -49,6 +49,13 @@ services:
     environment:
       EHRBASE_DB_URL: postgres://ehrbase:ehrbase@ehrbase-rs-db:5432/ehrbase
       EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
+      # Pool parity with the upstream stack's HikariCP ceiling below — this
+      # forward was missing, silently pinning published-image runs to the
+      # app default (20) while upstream got BENCH_DB_POOL.
+      EHRBASE_DB_MAX_CONNECTIONS: ${BENCH_DB_POOL:-10}
+      # Admission parity (see scripts/benchmark.sh): raised so overload fails
+      # as queueing latency like upstream's Tomcat window, not shed 503s.
+      EHRBASE_REST_MAX_IN_FLIGHT: ${BENCH_RS_MAX_IN_FLIGHT:-2048}
     volumes:
       - ../ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
