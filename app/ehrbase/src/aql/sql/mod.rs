@@ -181,6 +181,11 @@ struct Builder<'a> {
     version_vo: HashMap<usize, String>,
     /// Node aliases that root a VO group (targets of the REST `ehr_id` filter).
     group_roots: Vec<String>,
+    /// The subset of `group_roots` whose rows are join-linked to a bound EHR
+    /// alias (`node.ehr_id = e.id`) — the population gate on the EHR alias
+    /// already covers them, so gating the root again would be a duplicate
+    /// full-population subquery per query (checklist item 24).
+    roots_linked_to_ehr: std::collections::HashSet<String>,
     /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
     /// the source of the touched `template_id` for the ABAC scope collection.
     group_vos: Vec<String>,
@@ -202,6 +207,7 @@ impl<'a> Builder<'a> {
             vo_alias: HashMap::new(),
             version_vo: HashMap::new(),
             group_roots: Vec::new(),
+            roots_linked_to_ehr: std::collections::HashSet::new(),
             group_vos: Vec::new(),
             sub_ctr: 0,
         }

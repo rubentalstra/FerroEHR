@@ -9,11 +9,12 @@
 
 use sea_query::{Expr, ExprTrait as _};
 
-use crate::aql::error::AqlError;
+use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{
-    ArchetypeConstraint, Bind, Coercion, Expr as IrExpr, LikePattern, NameConstraint,
-    NodeConstraint, Operand, ScalarFn, StdPredicate, TypedLit,
+    ArchetypeConstraint, Bind, Coercion, EhrField, Expr as IrExpr, LikePattern, NameConstraint,
+    NodeConstraint, Operand, PathTarget, ScalarFn, StdPredicate, TypedLit,
 };
+use openehr_query::lexer::CompOp;
 
 use super::expr::{aql_like_to_sql, archetype_predicate, as_text, binoper, cast, col, jsonb_path};
 use super::value::{coerce_rhs, jsonpath};
@@ -42,6 +43,16 @@ impl Builder<'_> {
                 rhs,
                 coercion,
             } => {
+                // Typed EHR-id equality (item 24): `e/ehr_id/value = <uuid>` as
+                // a uuid comparison on `ehr.id` instead of a text-cast on both
+                // sides (which blinded the btree on `ehr.id` and left the join
+                // unbounded). uuid equality is value-based — case-insensitive —
+                // which is also the identifier-equality semantics (BASE
+                // base_types master05 §Composite Identifiers and Case); a
+                // literal that is not a uuid can match no EHR (constant).
+                if let Some(expr) = self.ehr_id_typed_compare(lhs, *op, rhs)? {
+                    return Ok(expr);
+                }
                 // G-12: a mixed-type (`Raw`) leaf compared to a numeric literal
                 // is compared numerically (with a NULL-guard); otherwise the Raw
                 // set falls through to text, exactly as every other Text leaf
@@ -99,6 +110,62 @@ impl Builder<'_> {
                 Ok(lhs.is_in(members))
             }
         }
+    }
+
+    /// The typed EHR-id comparison fast path (item 24): fires only for
+    /// `Eq`/`Ne` between an `EHR.ehr_id/value` path and a string literal or
+    /// parameter. Returns `None` (fall through to the generic text lowering)
+    /// for every other shape — ordering comparisons stay textual (uuid byte
+    /// order differs from text order, and the spec defines string comparison).
+    fn ehr_id_typed_compare(
+        &mut self,
+        lhs: &Operand,
+        op: CompOp,
+        rhs: &Operand,
+    ) -> Result<Option<Expr>, AqlError> {
+        if !matches!(op, CompOp::Eq | CompOp::Ne) {
+            return Ok(None);
+        }
+        let (path, other, flipped) = match (lhs, rhs) {
+            (Operand::Path(t), o) if Self::is_ehr_id_target(t) => (t, o, false),
+            (o, Operand::Path(t)) if Self::is_ehr_id_target(t) => (t, o, true),
+            _ => return Ok(None),
+        };
+        let _ = flipped; // equality/inequality are symmetric
+        let raw = match other {
+            Operand::Literal(TypedLit::String(sv)) => sv.clone(),
+            Operand::Param(p) => self.param_str(p)?,
+            _ => return Ok(None),
+        };
+        let PathTarget::Ehr { source, .. } = path else {
+            return Ok(None);
+        };
+        let alias = self
+            .ehr_alias
+            .get(&source.0)
+            .cloned()
+            .ok_or_else(|| SqlError::Unsupported("EHR path without a bound EHR".to_owned()))?;
+        Ok(Some(match raw.parse::<uuid::Uuid>() {
+            Ok(u) => {
+                let rhs_uuid = cast(Expr::val(u.to_string()), "uuid");
+                col(&alias, "id").binary(binoper(op), rhs_uuid)
+            }
+            // Not a uuid → it can equal no EHR id: `=` is constant false,
+            // `!=` constant true.
+            Err(_) => Expr::val(matches!(op, CompOp::Ne)),
+        }))
+    }
+
+    /// Whether a path target addresses the EHR id (`e/ehr_id/value` or the
+    /// bare `e/ehr_id`).
+    fn is_ehr_id_target(t: &PathTarget) -> bool {
+        matches!(
+            t,
+            PathTarget::Ehr {
+                field: EhrField::EhrId | EhrField::Whole,
+                ..
+            }
+        )
     }
 
     /// Render a whitelisted scalar function call (QUERY master03 §Functions) to
