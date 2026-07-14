@@ -49,6 +49,37 @@ impl EhrbaseService {
         &self,
         template_id: &str,
     ) -> Result<Arc<WebTemplate>, ServiceError> {
+        // Key the cache on the identity-canonical form so a case variant resolves
+        // to the single entry for the same template (G-T04).
+        let key = identity::canonical_key(template_id);
+
+        // Fast path: a built WebTemplate is already resident — serve it without
+        // touching `template_store`. This is the hot commit path: composition
+        // validation calls `web_template_for` once per commit, and once a
+        // template is warm every subsequent commit is a pure in-memory hit (no
+        // per-commit OPT read). No openEHR spec governs this cache — S-09 blesses
+        // a compiled near-runtime form; the caching mechanics are our own design.
+        if let Some(wt) = self.web_templates.get(&key).await {
+            metrics::counter!(
+                crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
+                "event" => "hit",
+            )
+            .increment(1);
+            return Ok(wt);
+        }
+        metrics::counter!(
+            crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
+            "event" => "miss",
+        )
+        .increment(1);
+
+        // Miss: load the stored OPT XML (the one store read, amortised across
+        // every future commit for this template), mapping an unknown template to
+        // the commit-path 422 (G-T08). The expensive WebTemplate build is
+        // single-flighted by `get_or_build` (one build per key under contention);
+        // the XML load itself is not de-duplicated across a burst of concurrent
+        // *first* commits of a never-seen template — an accepted, bounded cost,
+        // since templates are provisioned before use and warm on the first hit.
         let xml = match self.get_template_xml(template_id).await {
             Ok(xml) => xml,
             Err(ServiceError::NotFound(_)) => {
@@ -58,21 +89,6 @@ impl EhrbaseService {
             }
             Err(e) => return Err(e),
         };
-        // Key the cache on the identity-canonical form so a case variant does not
-        // build (and store) a second entry for the same template (G-T04).
-        let key = identity::canonical_key(template_id);
-        // Record cache hit/miss (§1.2 webtemplate_cache_events_total). The peek is
-        // approximate under concurrency; good enough for a rate metric.
-        let event = if self.web_templates.contains(&key) {
-            "hit"
-        } else {
-            "miss"
-        };
-        metrics::counter!(
-            crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
-            "event" => event,
-        )
-        .increment(1);
 
         self.web_templates
             .get_or_build(&key, || {

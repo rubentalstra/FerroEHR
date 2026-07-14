@@ -30,7 +30,10 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbSettings};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, SmError};
+use ehrbase_sm::{
+    CallStatusType, DefinitionAdapter, DefinitionAdl14Service, EhrCompositionService, EhrService,
+    SmError,
+};
 use ehrbase_sm::{UpdateAudit, UpdateVersion};
 
 struct Pg {
@@ -387,5 +390,144 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
         composition_versions(&pool).await,
         1,
         "the wrong incomplete commit persisted nothing"
+    );
+}
+
+// ── WebTemplate cache: per-commit store-read elimination + invalidation ──────
+// The commit path validates each COMPOSITION against its operational template's
+// derived-runtime `WebTemplate`, resolved through `web_template_for`. That seam
+// is cache-first: once a template is warm, subsequent commits are served from
+// the in-memory `WebTemplate` cache and never re-read `template_store` (P20 T3 —
+// the profiled per-commit OPT read). No openEHR spec governs the cache; S-09
+// blesses a compiled near-runtime form, the caching is our own design.
+
+/// A second commit against an already-warm template is served from the cached
+/// `WebTemplate` and does **not** re-read `template_store`. Proof by probe: after
+/// warming the cache with one commit, the stored OPT content is corrupted in
+/// place; a second commit still succeeds, which is only possible if the resolver
+/// never re-read the (now-broken) stored content. (The `vo_version.template_id`
+/// FK forbids deleting the referenced row, so the probe corrupts content rather
+/// than deleting — `UPDATE` is not a supported template mutation, only a probe.)
+#[tokio::test]
+async fn warm_template_is_served_from_cache_without_a_store_read() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("tpl_cache_hit").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    let desc = svc
+        .template_adl14_upload(fixture(IPS_OPT))
+        .await
+        .expect("upload IPS OPT");
+    let template_id = desc["template_id"]
+        .as_str()
+        .expect("template_id")
+        .to_owned();
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
+
+    // First commit warms the cache (web_template_for: miss → build → cache).
+    svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .await
+        .expect("first valid composition warms the cache");
+
+    // Poison the stored OPT content: any later *store read* on the commit path
+    // would build a broken WebTemplate and fail.
+    let poisoned =
+        sqlx::query("UPDATE template_store SET content = $1 WHERE lower(template_id) = lower($2)")
+            .bind("<not-an-operational-template/>")
+            .bind(&template_id)
+            .execute(&pool)
+            .await
+            .expect("poison the stored OPT content")
+            .rows_affected();
+    assert_eq!(poisoned, 1, "exactly the one template row was poisoned");
+
+    // Second commit against the same warm template still succeeds — served from
+    // the cached WebTemplate, never re-reading the poisoned store content.
+    svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .await
+        .expect("second commit is served from the warm cache, not the poisoned store");
+
+    assert_eq!(
+        composition_versions(&pool).await,
+        2,
+        "both compositions persisted"
+    );
+}
+
+/// Deleting a template through the SM `delete_opt` path invalidates its cached
+/// `WebTemplate`. Proof: warm the cache via the example endpoint (no committed
+/// composition, so no `vo_version` FK reference blocks the delete), delete the
+/// OPT, then commit against it. With invalidation the resolver misses, re-reads
+/// the store, finds nothing, and returns the clean "template not known" 422.
+/// Were the entry NOT invalidated, the stale WebTemplate would validate the
+/// commit and the `vo_version.template_id` FK would then fail with a database
+/// error — a different, wrong outcome. Asserting the 422 proves eviction.
+#[tokio::test]
+async fn deleting_a_template_invalidates_its_web_template_cache() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("tpl_cache_invalidate").await;
+    let svc = EhrbaseService::new(pool.clone());
+
+    let desc = svc
+        .template_adl14_upload(fixture(IPS_OPT))
+        .await
+        .expect("upload IPS OPT");
+    let template_id = desc["template_id"]
+        .as_str()
+        .expect("template_id")
+        .to_owned();
+
+    // Warm the WebTemplate cache without committing a composition (the example
+    // endpoint builds and caches the same WebTemplate the commit path uses).
+    let example = svc
+        .template_adl14_example(template_id.clone(), Some("required".to_owned()), None)
+        .await
+        .expect("example warms the cache");
+    assert_eq!(
+        example.get("_type").and_then(Value::as_str),
+        Some("COMPOSITION"),
+        "example is a COMPOSITION"
+    );
+
+    // Delete the OPT through the real SM path (opt_delete), which invalidates
+    // the cache entry.
+    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, ehrbase_sm::Page::all())
+        .await
+        .expect("list opts")
+        .into_iter()
+        .next()
+        .expect("one stored OPT uuid");
+    DefinitionAdl14Service::delete_opt(&svc, opt_uuid)
+        .await
+        .expect("delete opt");
+
+    // A commit against the now-deleted template resolves to the clean
+    // "template not known" 422 — only reachable if the stale WebTemplate was
+    // evicted (otherwise the FK would fail with a database error instead).
+    let ehr_uuid = svc.create_ehr(None).await.expect("create_ehr");
+    let err = svc
+        .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
+        .await
+        .expect_err("commit against a deleted template is rejected");
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "expected content_invalid (422) for the deleted template, got {err:?}"
+    );
+    assert!(
+        err.message.contains("not known"),
+        "422 names the cause: {}",
+        err.message
+    );
+    assert_eq!(
+        composition_versions(&pool).await,
+        0,
+        "nothing persisted against the deleted template"
     );
 }

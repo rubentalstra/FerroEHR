@@ -44,12 +44,14 @@ impl WebTemplateCache {
             .await
     }
 
-    /// Whether `template_id` is currently cached. Used by callers to report a
-    /// cache hit/miss metric around [`Self::get_or_build`]; approximate under
-    /// concurrency (a peek, not a lock).
+    /// The cached template for `template_id` **without** building it — the fast
+    /// path for callers that must avoid the backing-store round-trip on a hit
+    /// (e.g. the per-commit validation path). Counts as an access for the
+    /// cache's recency policy, so hot templates stay resident. Returns `None`
+    /// on a miss; the caller then loads + [`get_or_build`](Self::get_or_build)s.
     #[must_use]
-    pub fn contains(&self, template_id: &str) -> bool {
-        self.inner.contains_key(template_id)
+    pub async fn get(&self, template_id: &str) -> Option<Arc<WebTemplate>> {
+        self.inner.get(template_id).await
     }
 
     /// Drop the cached entry for `template_id` (e.g. on template replacement).
@@ -117,6 +119,25 @@ mod tests {
             builds.load(Ordering::SeqCst),
             2,
             "invalidation should rebuild"
+        );
+    }
+
+    #[tokio::test]
+    async fn get_is_a_nonbuilding_peek() {
+        let cache = super::WebTemplateCache::default();
+        // Miss: `get` returns `None` and never builds.
+        assert!(cache.get("t1").await.is_none(), "cold `get` is a miss");
+        // After a build, `get` serves the cached entry without rebuilding.
+        let _ = cache
+            .get_or_build("t1", || Ok(stub_template("t1")))
+            .await
+            .expect("build");
+        assert!(cache.get("t1").await.is_some(), "warm `get` is a hit");
+        // Invalidation makes `get` miss again.
+        cache.invalidate("t1").await;
+        assert!(
+            cache.get("t1").await.is_none(),
+            "`get` misses after invalidation"
         );
     }
 }
