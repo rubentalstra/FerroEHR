@@ -742,7 +742,6 @@ fn anchor_exists(sql: &str) -> usize {
 }
 
 /// G-01: OR-containment under an EHR lowers to a disjunction of correlated
-
 /// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
 /// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
 /// FROM tree; it must now build.
