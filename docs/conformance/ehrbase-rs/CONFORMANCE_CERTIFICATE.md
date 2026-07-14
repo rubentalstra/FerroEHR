@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.0.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-13T22:05:39.896663Z
+- **Run date:** 2026-07-14T08:35:59.415177Z
 
 ## System Under Test (SUT)
 
@@ -17,7 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-13T22:05:39.896663Z |
+| Date | 2026-07-14T08:35:59.415177Z |
 
 ## Scope of Test
 
@@ -184,6 +184,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-002 — Execute ad-hoc AQL query — empty db | pass | — |
 | AQL execution | AqlBasic | PUT /definition/query/{name}/{version}; GET /query/{name} | ECC-QRY-003 — Execute stored AQL query — empty db | pass | — |
 | AQL execution | AqlBasic | POST /ehr/{ehr_id}/composition; POST /query/aql | ECC-QRY-004 — Execute ad-hoc AQL query — loaded db | pass | — |
+| AQL execution | AqlBasic | POST /ehr/{ehr_id}/composition; POST /query/aql | ECC-QRY-025 — AQL uid projection — c/uid/value returns the version id | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-005 — AQL corpus — invalid queries rejected | pass | — |
 | AQL execution | AqlAdvanced | POST /query/aql | ECC-QRY-014 — AQL advanced — ORDER BY + LIMIT/OFFSET | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-006 — AQL corpus — A empty db | pass | — |
