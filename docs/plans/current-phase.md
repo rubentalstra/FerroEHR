@@ -18,12 +18,13 @@ measured numbers only**). The working tracker is
 per item); the phase plan is
 [`phase-20-optimization.md`](phase-20-optimization.md).
 
-State (2026-07-14): checklist items 1–18, 20–21, 23–26, 28–31 done —
-measured ehrbase-rs knee moved **161.9 → 396.9 req/s (p99 174 ms)** on the
-fully-populated workload. Open: 19 (ECC zero-drift close + publication),
-22 (group-commit A/B), 27 (knee profiler), 32 (RM-invariant per-node
-residual, in flight). The definitive two-SUT knee pair runs on a fresh
-branch after the v3.0.1 cut (owner ordering, 2026-07-14).
+State (2026-07-14): checklist items 1–18, 20–21, 23–26, 28–32 done; v3.0.1
+released. **The definitive instrument-clean pair is measured (v5,
+`claude/p20-final-pair`): ehrbase-rs 262.2 req/s (L=26, p99 195 ms) vs
+upstream 160.5 req/s (L=16) on the fully-populated workload — the
+max-sustained row is flipped, 1.63×.** ECC zero-drift receipt committed
+(370·335·0, CORE+STANDARD PASS). Open: the item-19 publication rewrite
+(in flight), 22 (group-commit A/B), 27 (knee profiler automation).
 
 ## Then, in order
 
