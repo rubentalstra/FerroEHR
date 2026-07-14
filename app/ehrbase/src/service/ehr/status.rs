@@ -247,12 +247,21 @@ impl EhrbaseService {
         if self.ehr_is_modifiable(ehr_id).await? {
             Ok(())
         } else {
-            Err(ServiceError::Conflict(format!(
-                "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
-                 contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
-                 Status). Set EHR_STATUS.is_modifiable = true to reactivate it."
-            )))
+            Err(Self::not_modifiable_error(ehr_id))
         }
+    }
+
+    /// The `409 Conflict` for a content write to a deactivated EHR
+    /// (`EHR_STATUS.is_modifiable = false`) — see [`Self::ensure_content_writable`]
+    /// for the PORT NOTE on the status-code choice. Shared with the combined
+    /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
+    /// single-sourced.
+    pub(in crate::service) fn not_modifiable_error(ehr_id: Uuid) -> ServiceError {
+        ServiceError::Conflict(format!(
+            "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
+             contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
+             Status). Set EHR_STATUS.is_modifiable = true to reactivate it."
+        ))
     }
 
     /// Keep the EHR's promoted subject columns (`ehr.subject_id` /

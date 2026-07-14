@@ -944,3 +944,75 @@ async fn contribution_supplied_uid() {
         .expect_err("duplicate uid rejected");
     assert!(dup.message.contains("already in use"), "got {dup:?}");
 }
+
+/// The combined EHR-existence + content-writability create gate
+/// (`ensure_ehr_content_writable`) preserves the pre-fold error surface after
+/// the two separate pool reads were collapsed into one `ehr_writability` round
+/// trip: an unknown EHR still maps to `VersionedObjectDoesNotExist` (404, never
+/// a DB error or a conflict), and a deactivated EHR (`EHR_STATUS.is_modifiable =
+/// false`) still maps to a conflict (409) — RM ehr master04 §EHR Creation /
+/// §EHR Active Status.
+#[tokio::test]
+async fn create_composition_gate_error_surface_survives_the_writability_fold() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("writability_fold").await);
+
+    // (1) Unknown EHR → 404 VersionedObjectDoesNotExist (the existence signal of
+    // the folded query), never a conflict and never a driver error.
+    let ghost = "00000000-0000-7000-8000-0000000000fe"
+        .parse::<uuid::Uuid>()
+        .expect("uuid");
+    let missing = svc
+        .create_composition(ghost, uv(composition("obs"), "249", None))
+        .await
+        .expect_err("unknown EHR rejected");
+    assert_eq!(
+        missing.status,
+        CallStatusType::VersionedObjectDoesNotExist,
+        "unknown ehr_id → 404, got {missing:?}"
+    );
+
+    // A live, modifiable EHR accepts a composition (the fold does not falsely
+    // block — is_modifiable = None/true → writable).
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("modifiable EHR accepts a composition");
+
+    // (2) Deactivate the EHR (EHR_STATUS.is_modifiable = false) and retry: the
+    // content write is refused with a conflict (the modifiability signal of the
+    // folded query, checked after existence).
+    let status_uid = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("current EHR_STATUS")["uid"]["value"]
+        .as_str()
+        .expect("status uid")
+        .to_owned();
+    let deactivated = json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": { "_type": "PARTY_SELF" },
+        "is_queryable": true,
+        "is_modifiable": false
+    });
+    svc.replace_ehr_status(ehr_uuid, uv(deactivated, "251", Some(&status_uid)))
+        .await
+        .expect("EHR_STATUS deactivation");
+
+    let blocked = svc
+        .create_composition(ehr_uuid, uv(composition("obs2"), "249", None))
+        .await
+        .expect_err("non-modifiable EHR blocks content writes");
+    assert_eq!(
+        blocked.status,
+        CallStatusType::CompositionAlreadyExists,
+        "is_modifiable = false → 409 conflict, got {blocked:?}"
+    );
+    assert!(
+        blocked.message.contains("not modifiable"),
+        "got {blocked:?}"
+    );
+}

@@ -264,19 +264,63 @@ pub async fn insert_contribution_with_id(
     inserted.ok_or(StorageError::ContributionUidInUse(supplied))
 }
 
-/// Insert an `audit` row and its enclosing `contribution`, returning the
-/// contribution id, the audit id, and the audit's `time_committed` (for the
-/// version's `commit_audit`, which is signed).
+/// Insert an `audit` row and its enclosing `contribution` in ONE round trip via
+/// a data-modifying CTE, returning `(contribution_id, audit_id, time_committed)`.
+/// The `contribution` references the just-inserted `audit`; `time_committed` is
+/// the server-computed commit instant (master06 §Committal m3) the version's
+/// `commit_audit` is signed against. A client-supplied CONTRIBUTION uid is
+/// honoured (`supplied`); a duplicate id is a [`StorageError::ContributionUidInUse`]
+/// conflict, never an overwrite (ITS-REST `contribution_create`).
+///
+/// The audit → contribution insert is a dependent chain (the CONTRIBUTION and
+/// its `AUDIT_DETAILS` commit together — master06 §Committal and Audits); merging
+/// the two statements into one CTE is a round-trip optimisation only — the rows
+/// written and the values returned are byte-identical to two separate inserts,
+/// and both still run inside the caller's transaction so a conflict (or any
+/// later failure) rolls back the orphan audit row. No openEHR spec governs
+/// statement batching — our own design.
+///
+/// On a `supplied`-uid conflict the `contribution` CTE inserts nothing (`ON
+/// CONFLICT DO NOTHING`), so the outer `LEFT JOIN` yields a NULL
+/// `contribution_id` → [`StorageError::ContributionUidInUse`]; the audit CTE has
+/// already run but is discarded when the transaction unwinds.
 ///
 /// # Errors
-/// Returns [`StorageError`] on a driver/insert failure.
+/// Returns [`StorageError::ContributionUidInUse`] on a duplicate supplied uid,
+/// else [`StorageError::Database`] on a driver/insert failure.
 pub async fn write_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     audit: &AuditRow<'_>,
+    supplied: Option<Uuid>,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
-    let (audit_id, time_committed) = insert_audit(tx, audit).await?;
-    let contribution_id = insert_contribution(tx, ehr_id, audit_id).await?;
+    let row = sqlx::query(
+        "WITH a AS ( \
+             INSERT INTO audit (system_id, change_type, description, committer) \
+             VALUES ($1, $2, $3, $4) RETURNING id, time_committed \
+         ), c AS ( \
+             INSERT INTO contribution (id, ehr_id, audit_id) \
+             SELECT COALESCE($5, uuidv7()), $6, a.id FROM a \
+             ON CONFLICT (id) DO NOTHING \
+             RETURNING id \
+         ) \
+         SELECT a.id AS audit_id, a.time_committed, c.id AS contribution_id \
+         FROM a LEFT JOIN c ON true",
+    )
+    .bind(audit.system_id)
+    .bind(audit.change_type)
+    .bind(audit.description)
+    .bind(audit.committer)
+    .bind(supplied)
+    .bind(ehr_id)
+    .fetch_one(&mut *tx)
+    .await?;
+    let contribution_id: Option<Uuid> = row.try_get("contribution_id")?;
+    let contribution_id = contribution_id.ok_or(StorageError::ContributionUidInUse(supplied))?;
+    let audit_id: Uuid = row.try_get("audit_id")?;
+    let time_committed = row
+        .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+        .to_jiff();
     Ok((contribution_id, audit_id, time_committed))
 }
 

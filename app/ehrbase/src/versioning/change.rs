@@ -578,17 +578,14 @@ async fn apply_change(
 /// Insert an `audit` row + its enclosing `contribution`, returning
 /// `(contribution_id, audit_id, time_committed)` — the version `commit_audit`'s
 /// server-computed time (master06 §Committal: `time_committed` "computed on the
-/// server", S-22).
+/// server", S-22). One round trip (the storage layer merges the two inserts —
+/// [`crate::storage::version_repo::write_contribution`]).
 async fn write_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     audit: &AuditInput,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), ServiceError> {
-    let (audit_id, time_committed) =
-        crate::storage::version_repo::insert_audit(tx, &audit.row()).await?;
-    let contribution_id =
-        crate::storage::version_repo::insert_contribution(tx, ehr_id, audit_id).await?;
-    Ok((contribution_id, audit_id, time_committed))
+    Ok(crate::storage::version_repo::write_contribution(tx, ehr_id, &audit.row(), None).await?)
 }
 
 /// Create the first version of a new versioned object under its own
@@ -740,15 +737,16 @@ pub(crate) async fn commit_contribution(
     attests: Vec<PendingAttest>,
     ctx: &SigningCtx<'_>,
 ) -> Result<(Uuid, Vec<Committed>), ServiceError> {
-    let (contribution_audit_id, contribution_time) =
-        crate::storage::version_repo::insert_audit(tx, &contribution_audit.row()).await?;
-    let contribution_id = crate::storage::version_repo::insert_contribution_with_id(
-        tx,
-        ehr_id,
-        contribution_audit_id,
-        supplied_uid,
-    )
-    .await?;
+    // The CONTRIBUTION's own audit + contribution rows in one round trip (the
+    // per-version `commit_audit`s are inserted per change below).
+    let (contribution_id, _contribution_audit_id, contribution_time) =
+        crate::storage::version_repo::write_contribution(
+            tx,
+            ehr_id,
+            &contribution_audit.row(),
+            supplied_uid,
+        )
+        .await?;
     let committer_fallback = &contribution_audit.committer;
     let mut committed = Vec::with_capacity(changes.len() + attests.len());
     for (version_audit, change) in changes {
