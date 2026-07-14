@@ -144,7 +144,13 @@ ladder: empty / 10k / 100k / 1M compositions, seeded deterministically.
 - [x] O3. C2/C3 proper: `hour` profile @ 10k, ehrbase-rs then ehrbase-java
       (sequential, quiet host) → commit both results + regenerate
       COMPARISON.md with hour data + knees.
-- [~] O4. (deferred in favour of completing O5/O6 before morning; the 100k/1M ladder is the X1 publication step) If the night allows: 100k rung seed + hour, both SUTs → commit.
+- [x] O4. 100k rung committed (identical clean clinical hour both SUTs):
+      memory 106/255 MB vs 640/678 MB, CPU 0.9% vs 2.1%, writes/reads still
+      ours (creates 87 vs 118 ms, updates 78 vs 141 ms), **both AQL classes
+      flip to upstream at scale** (patient 184 vs 126 ms, ward 155 vs
+      83 ms) — the AQL plan degradation is now scale-resolved P20 evidence
+      (indexes for the dashboard shape). Storage 25.1 vs 31.8 KB/comp.
+      1M stays the X1 publication step. If the night allows: 100k rung seed + hour, both SUTs → commit.
 - [x] O5. Root README: a "Measured against EHRbase (Java)" section embedding
       committed comparison SVGs (relative paths; the charts live in
       docs/benchmarks/**) with the honest caveats line (single-run,
