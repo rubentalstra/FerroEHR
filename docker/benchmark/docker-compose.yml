@@ -107,6 +107,9 @@ services:
       SECURITY_AUTHADMINPASSWORD: ehrbase
       # Allow template overwrite so repeat runs are idempotent.
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "true"
+      # Logging parity (benchmarking.md §3.4): warn during measured runs,
+      # matching the ehrbase-rs side's EHRBASE_LOG_FILTER.
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
       # HikariCP pool ceiling — raised in lockstep with ehrbase-rs's
       # EHRBASE_DB_MAX_CONNECTIONS (config parity; both default 10).
       SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: ${BENCH_DB_POOL:-10}

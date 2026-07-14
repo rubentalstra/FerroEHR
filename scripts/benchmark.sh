@@ -55,6 +55,11 @@ export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
 if [ "${BENCH_SIGNING:-0}" != "1" ]; then
   export EHRBASE_SIGNING_ENABLED=false
 fi
+# Logging parity (benchmarking.md §3.4 "Logging: equal, minimal (warn)"): both
+# SUTs run at warn during measured runs — per-request info spans/logs are
+# measurable overhead at high RPS and neither side may pay them asymmetrically.
+export EHRBASE_LOG_FILTER="${BENCH_RS_LOG_FILTER:-warn}"
+export LOGGING_LEVEL_ROOT="${BENCH_JAVA_LOG_LEVEL:-WARN}"
 WARD_SIZE="${BENCH_WARD_SIZE:-20}"
 LOAD_FACTOR="${BENCH_LOAD_FACTOR:-1.0}"
 
