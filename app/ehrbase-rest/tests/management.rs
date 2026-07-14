@@ -45,6 +45,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
         }),
         oidc: None,
         admin_scope: admin_scope.map(str::to_owned),
+        ..AuthConfig::default()
     }
 }
 

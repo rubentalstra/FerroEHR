@@ -65,6 +65,7 @@ fn config(enabled: bool) -> RestConfig {
                 jwks_json: None,
             }),
             admin_scope: Some("ehrbase:admin".to_owned()),
+            ..AuthConfig::default()
         },
         // The admin group must be reachable here: `admin_route_reachable_without_rbac`
         // asserts the dispatcher's 501 (StubBackend), not the config gate's 404.

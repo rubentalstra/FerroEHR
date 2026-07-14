@@ -136,6 +136,7 @@ fn config(enabled: bool) -> RestConfig {
             basic: None,
             oidc: None,
             admin_scope: None,
+            ..AuthConfig::default()
         },
         tenancy: TenancyConfig {
             enabled,
