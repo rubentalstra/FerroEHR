@@ -213,6 +213,15 @@ impl Builder<'_> {
             self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
                 self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
+                // Mirror the EHR link onto the version spine: `vo_version.
+                // ehr_id` carries the same value by construction (a versioned
+                // object belongs to exactly one EHR — RM ehr master04 §EHR),
+                // and the explicit predicate lets the planner drive
+                // `idx_vo_version_ehr` instead of scanning every current
+                // version in the store (buffers then scale with the EHR's own
+                // content, not the corpus). No openEHR spec governs plan
+                // shaping — our own storage design.
+                self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
             Ok(VoGroup { node, vo: voa })
@@ -301,6 +310,10 @@ impl Builder<'_> {
                 sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                 sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
                 sub.and_where(col(alias, "ehr_id").eq(col(e, "id")));
+                // Same version-spine mirror as the FROM path (see above):
+                // lets the planner bound the EXISTS by the EHR instead of the
+                // corpus. Identical semantics by construction.
+                sub.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 match scope {
                     VersionScope::Latest => {
                         sub.and_where(call("upper_inf", vec![col(&voa, "sys_period")]));
