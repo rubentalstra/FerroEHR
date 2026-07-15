@@ -168,9 +168,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       one-open-row-per-lineage partial btrees + close-then-insert at one
       now() + the archive-load overlap audit carry the master06 invariant;
       burst-update invariant test added; 490/490).
-- [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
+- [x] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
       pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
       applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
+      *(Closed 2026-07-15 as a VERIFIED NON-WIN — item-35 DB hunt,
+      `docs/plans/p20-hunt2-db.md`: at bench concurrency `commit_delay`
+      1000–2000 µs is a wash (best throughput slightly DOWN, 2091 → ~1970
+      commits/s — concurrency already amortizes the fsync), and
+      `wal_compression=on` is a 2.4× REGRESSION (2091 → 880). The BENCH_PG
+      floor keeps commit_delay=0 and wal_compression=off. Directional
+      numbers — Docker disk, shared host — but the direction is decisive.)*
 - [x] **24. AQL ehr_id predicate is text-cast + duplicated is_queryable
       guards (LIVE evidence, owner-captured server logs during T5 L=16: the
       patient-dashboard query runs 1.0–1.3 s under load DESPITE the promoted
