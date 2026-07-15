@@ -74,15 +74,16 @@ pub(crate) const STARTER_RESOURCES: &[&str] =
 /// [`guarded_dispatch`] → [`dispatch`]. No openEHR spec governs FHIR interop —
 /// our own extension.
 pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
-    OpenApiRouter::new().routes(routes!(
-        fhir_ingest,
-        fhir_search,
-        fhir_mapping_list,
-        fhir_mapping_create,
-        fhir_mapping_get,
-        fhir_mapping_update,
-        fhir_mapping_delete,
-    ))
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(fhir_ingest, fhir_search))
+        .routes(routes!(fhir_mapping_list, fhir_mapping_create))
+        .routes(routes!(
+            fhir_mapping_get,
+            fhir_mapping_update,
+            fhir_mapping_delete
+        ))
 }
 
 /// Inbound connector: commit a FHIR R4 resource as an openEHR COMPOSITION. Only
