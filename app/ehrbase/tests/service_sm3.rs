@@ -18,7 +18,7 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{CallStatusType, SmError, UpdateVersion};
 use ehrbase_sm::{DemographicService, EhrIndexService, PartyRelationshipService};
@@ -56,7 +56,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -75,6 +75,19 @@ fn ovid(v: &Value) -> &str {
 /// The bare versioned-object UUID from an `OBJECT_VERSION_ID`.
 fn vo_uuid(v: &Value) -> String {
     ovid(v).split("::").next().expect("vo uuid").to_owned()
+}
+
+/// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
+/// probes MUST anchor their reference instant on this server clock — the same
+/// clock that stamps `vo_version.sys_period` — never on the test-process wall
+/// clock: a client/DB clock skew under parallel-load testcontainers would race
+/// the at-time read against the version validity intervals.
+async fn db_now(pool: &PgPool) -> jiff::Timestamp {
+    sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
+        .fetch_one(pool)
+        .await
+        .expect("db now()")
+        .to_jiff()
 }
 
 fn party_ref(id: &str) -> Value {
@@ -205,7 +218,8 @@ async fn relationship_sm_calls_round_trip() {
 #[tokio::test]
 async fn relationship_lifecycle_end_to_end() {
     let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_life").await);
+    let pool = pg.migrated_pool("sm3_rel_life").await;
+    let svc = EhrbaseService::new(pool.clone());
 
     let src = "11111111-1111-4111-8111-111111111111";
     let tgt = "22222222-2222-4222-8222-222222222222";
@@ -241,8 +255,14 @@ async fn relationship_lifecycle_end_to_end() {
         .expect("get by ovid");
     assert_eq!(ovid(&by_ovid.body), ovid_v1);
 
-    // time-travel: capture a time inside v1, then update
-    let t_v1 = jiff::Timestamp::now();
+    // time-travel: capture a time inside v1 FROM THE DB CLOCK, then update. The
+    // reference instant MUST come from the server clock (the clock that stamps
+    // `vo_version.sys_period`), never the test-process wall clock — a client/DB
+    // clock skew under parallel-load testcontainers races the at-time read
+    // against the version validity intervals (a real flake this fixes).
+    let t_v1 = db_now(&pool).await;
+    // A short gap so v2's commit transaction timestamp is strictly greater than
+    // t_v1 even at microsecond resolution (both are now on the DB clock).
     tokio::time::sleep(std::time::Duration::from_millis(15)).await;
 
     // update (If-Match = current OVID) → v2

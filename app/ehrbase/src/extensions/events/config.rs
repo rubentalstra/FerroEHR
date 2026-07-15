@@ -1,26 +1,16 @@
-//! Eventing configuration ([`EventsConfig`]) — a `figment`-loaded serde struct,
-//! matching the `AuditConfig`/`ExternalTerminologyConfig` pattern.
+//! The `[events]` section — contribution-outbox eventing configuration.
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-01). Gate: `EHRBASE_EVENTS_ENABLED` (default off).
-//!
-//! Loading: defaults ← optional TOML file (`EHRBASE_EVENTS_CONFIG`) ←
-//! `EHRBASE_EVENTS_`-prefixed environment (nested keys use `__`). Publishing is
+//! **No openEHR spec governs this — our own design/extension.** A field of the
+//! one config tree ([`crate::config::EhrbaseConfig`],
+//! `docs/design/configuration.md` §3.13); no loader of its own. Publishing is
 //! **off by default**: with [`EventsConfig::enabled`] `false` the binary never
 //! spawns the publisher.
 //!
 //! The commit path only writes `event_outbox` rows when an outbox consumer is
-//! configured on (this publisher OR the FHIR outbound emitter —
-//! `EhrbaseService::with_outbox_enabled`, wired from
-//! `events.enabled || fhir_outbound.enabled` in `main.rs`); with every consumer
-//! off the per-commit INSERT is pure overhead and is skipped. Consequence: the
-//! outbox records commits made **while a consumer is enabled** (at-least-once,
-//! even with zero bound subscribers — the gate is the boot-time config, not the
-//! current subscriber set); commits made while eventing was off are not
-//! back-filled when it is later enabled.
+//! configured on (this publisher OR the FHIR outbound emitter), gated in
+//! `main.rs` from `events.enabled || fhir.outbound.enabled`.
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
+use ehrbase_sm::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
@@ -35,120 +25,66 @@ const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
 const DEFAULT_RETENTION_DAYS: i64 = 7;
 /// Default retention-prune cadence (seconds).
 const DEFAULT_PRUNE_INTERVAL_SECS: u64 = 3_600;
-/// Default per-row publish retry count (on top of the first attempt) before the
-/// drainer backs off and leaves the row pending.
+/// Default per-row publish retry count before the drainer backs off.
 const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
 
-/// Contribution-outbox eventing configuration (`[events]`) — our own extension. Every
-/// field has a default, so an all-defaults [`EventsConfig`] is valid (eventing
-/// is off unless `enabled`).
+/// Contribution-outbox eventing configuration (`[events]`) — our own extension.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct EventsConfig {
-    /// Master switch (`EHRBASE_EVENTS_ENABLED`). Off by default.
-    #[serde(default)]
+    /// Master switch. Off by default; also (with `fhir.outbound.enabled`) gates
+    /// the per-commit outbox INSERT.
     pub enabled: bool,
-    /// AMQP broker URL (`EHRBASE_EVENTS_URL`), e.g.
-    /// `amqp://user:pass@host:5672/%2f` (or `amqps://…` for TLS).
-    #[serde(default = "defaults::url")]
-    pub url: String,
-    /// Topic exchange to publish to (`EHRBASE_EVENTS_EXCHANGE`) — the eventing extension's own setting.
-    #[serde(default = "defaults::exchange")]
+    /// AMQP broker URL (credentials redacted from every rendering).
+    pub url: SecretUrl,
+    /// Topic exchange to publish to (the PHI-free envelope stream).
     pub exchange: String,
-    /// Use TLS (`EHRBASE_EVENTS_TLS`): when `true` an `amqp://` URL is upgraded
-    /// to `amqps://` (an already-`amqps://` URL is TLS regardless).
-    #[serde(default)]
+    /// Use TLS: when `true` an `amqp://` URL is upgraded to `amqps://` (an
+    /// already-`amqps://` URL is TLS regardless).
     pub tls: bool,
-    /// Rows drained per poll (`EHRBASE_EVENTS_BATCH_SIZE`).
-    #[serde(default = "defaults::batch_size")]
+    /// Rows drained per poll.
     pub batch_size: i64,
-    /// Poll interval when idle (`EHRBASE_EVENTS_POLL_INTERVAL_MS`).
-    #[serde(default = "defaults::poll_interval_ms")]
+    /// Poll interval when idle (ms).
     pub poll_interval_ms: u64,
-    /// Published-row retention window in days (`EHRBASE_EVENTS_RETENTION_DAYS`);
-    /// The eventing extension's own retention setting.
-    #[serde(default = "defaults::retention_days")]
+    /// Published-row retention window in days.
     pub retention_days: i64,
-    /// Retention-prune cadence in seconds (`EHRBASE_EVENTS_PRUNE_INTERVAL_SECS`).
-    #[serde(default = "defaults::prune_interval_secs")]
+    /// Retention-prune cadence in seconds.
     pub prune_interval_secs: u64,
-    /// Per-row publish retry count before backing off
-    /// (`EHRBASE_EVENTS_PUBLISH_MAX_RETRIES`).
-    #[serde(default = "defaults::publish_max_retries")]
+    /// Per-row publish retry count before backing off.
     pub publish_max_retries: usize,
+    /// Mount the `/admin/event_subscription` CRUD routes (was the REST
+    /// `EventSubscriptionConfig` toggle; regrouped here per P-8).
+    pub admin_api: bool,
 }
 
 impl Default for EventsConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            url: defaults::url(),
-            exchange: defaults::exchange(),
+            url: SecretUrl::new(DEFAULT_URL),
+            exchange: DEFAULT_EXCHANGE.to_owned(),
             tls: false,
-            batch_size: defaults::batch_size(),
-            poll_interval_ms: defaults::poll_interval_ms(),
-            retention_days: defaults::retention_days(),
-            prune_interval_secs: defaults::prune_interval_secs(),
-            publish_max_retries: defaults::publish_max_retries(),
+            batch_size: DEFAULT_BATCH_SIZE,
+            poll_interval_ms: DEFAULT_POLL_INTERVAL_MS,
+            retention_days: DEFAULT_RETENTION_DAYS,
+            prune_interval_secs: DEFAULT_PRUNE_INTERVAL_SECS,
+            publish_max_retries: DEFAULT_PUBLISH_MAX_RETRIES,
+            admin_api: false,
         }
     }
 }
 
 impl EventsConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_EVENTS_CONFIG`), then `EHRBASE_EVENTS_`-prefixed environment
-    /// variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(EventsConfig::default()));
-        if let Ok(path) = std::env::var("EHRBASE_EVENTS_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_EVENTS_").split("__"))
-            .extract()
-    }
-
     /// The effective broker URL, upgraded to `amqps://` when [`Self::tls`] is set
     /// and the URL is a plain `amqp://`.
     #[must_use]
     pub fn effective_url(&self) -> String {
-        if self.tls && self.url.starts_with("amqp://") {
-            self.url.replacen("amqp://", "amqps://", 1)
+        let url = self.url.expose();
+        if self.tls && url.starts_with("amqp://") {
+            url.replacen("amqp://", "amqps://", 1)
         } else {
-            self.url.clone()
+            url.to_owned()
         }
-    }
-}
-
-mod defaults {
-    use super::{
-        DEFAULT_BATCH_SIZE, DEFAULT_EXCHANGE, DEFAULT_POLL_INTERVAL_MS,
-        DEFAULT_PRUNE_INTERVAL_SECS, DEFAULT_PUBLISH_MAX_RETRIES, DEFAULT_RETENTION_DAYS,
-        DEFAULT_URL,
-    };
-
-    pub(super) fn url() -> String {
-        DEFAULT_URL.to_owned()
-    }
-    pub(super) fn exchange() -> String {
-        DEFAULT_EXCHANGE.to_owned()
-    }
-    pub(super) const fn batch_size() -> i64 {
-        DEFAULT_BATCH_SIZE
-    }
-    pub(super) const fn poll_interval_ms() -> u64 {
-        DEFAULT_POLL_INTERVAL_MS
-    }
-    pub(super) const fn retention_days() -> i64 {
-        DEFAULT_RETENTION_DAYS
-    }
-    pub(super) const fn prune_interval_secs() -> u64 {
-        DEFAULT_PRUNE_INTERVAL_SECS
-    }
-    pub(super) const fn publish_max_retries() -> usize {
-        DEFAULT_PUBLISH_MAX_RETRIES
     }
 }
 
@@ -160,16 +96,17 @@ mod tests {
     fn defaults_are_off_and_sane() {
         let c = EventsConfig::default();
         assert!(!c.enabled);
+        assert!(!c.admin_api);
         assert_eq!(c.exchange, "ehrbase.events");
         assert_eq!(c.retention_days, 7);
-        assert!(c.url.starts_with("amqp://"));
+        assert!(c.url.expose().starts_with("amqp://"));
     }
 
     #[test]
     fn tls_upgrades_amqp_scheme() {
         let c = EventsConfig {
             tls: true,
-            url: "amqp://guest:guest@host:5672/%2f".to_owned(),
+            url: SecretUrl::new("amqp://guest:guest@host:5672/%2f"),
             ..EventsConfig::default()
         };
         assert_eq!(c.effective_url(), "amqps://guest:guest@host:5672/%2f");
@@ -179,7 +116,7 @@ mod tests {
     fn tls_leaves_amqps_untouched() {
         let c = EventsConfig {
             tls: true,
-            url: "amqps://host:5671/%2f".to_owned(),
+            url: SecretUrl::new("amqps://host:5671/%2f"),
             ..EventsConfig::default()
         };
         assert_eq!(c.effective_url(), "amqps://host:5671/%2f");

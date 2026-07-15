@@ -550,7 +550,7 @@ fn attr_single(attr: &Attr) -> Option<&str> {
 /// SMART is off by default and produces zero wire drift when disabled
 /// (`crate::smart::config::SmartConfig`), so the gate below is inert unless an
 /// operator opts in via `EHRBASE_REST_SMART__ENABLED` (the `smart` field on
-/// `crate::config::RestConfig`).
+/// `crate::config::AppConfig`).
 fn smart_config<S: Platform>(state: &AppState<S>) -> Option<&SmartConfig> {
     let cfg = &state.config().smart;
     cfg.enabled.then_some(cfg)

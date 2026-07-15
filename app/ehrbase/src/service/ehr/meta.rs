@@ -151,24 +151,55 @@ impl EhrbaseService {
 
     /// The current version metadata of an EHR-owned object of `kind` (the latest
     /// `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or `None`.
+    ///
+    /// Resolved and read in ONE metadata-only `vo_version`⋈`audit` statement
+    /// (`current_version_meta_by_kind`): the `409`/`412` path needs only the
+    /// full `OBJECT_VERSION_ID` + commit instant, never the reassembled document
+    /// or the attestations, so this avoids the node reassembly + attestation read
+    /// the full version read pays. The full-`OBJECT_VERSION_ID` `If-Match`
+    /// compare (ITS-REST overview §Concurrency control) is unchanged — the
+    /// emitted `ETag` is still `object_id::creating_system_id::version_tree_id`.
     pub(in crate::service) async fn latest_version_meta(
         &self,
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        let Some((vo_id, _)) = self.current_vo(ehr_id, kind).await? else {
-            return Ok(None);
-        };
-        let Some(read) = crate::versioning::read_current(&self.pool, vo_id).await? else {
-            return Ok(None);
-        };
-        Ok(Some(self.version_meta(
+        Ok(self
+            .latest_version_meta_with_vo(ehr_id, kind)
+            .await?
+            .map(|(_, m)| m))
+    }
+
+    /// The current version's `vo_id` **and** its [`ResourceMeta`] for an
+    /// EHR-owned object of `kind`, resolved and read in the same ONE
+    /// metadata-only `vo_version`⋈`audit` statement `latest_version_meta` uses.
+    /// Threading the `vo_id` back to the caller lets a following write skip
+    /// re-resolving `(ehr_id, kind) → vo_id`, so the `If-Match` pre-read and the
+    /// write share one `current_vo` resolution. The full-`OBJECT_VERSION_ID`
+    /// compare (ITS-REST overview §Concurrency control) is unchanged.
+    pub(in crate::service) async fn latest_version_meta_with_vo(
+        &self,
+        ehr_id: Uuid,
+        kind: Kind,
+    ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
+        let Some(m) = crate::storage::version_repo::current_version_meta_by_kind(
+            &self.pool,
             ehr_id,
-            vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
-        )))
+            kind.as_str(),
+        )
+        .await?
+        else {
+            return Ok(None);
+        };
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
+        let meta = self.version_meta(
+            ehr_id,
+            m.vo_id,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
+        );
+        Ok(Some((m.vo_id, meta)))
     }
 
     /// Build an [`AuditInput`] for a direct (single-object) write: the effective

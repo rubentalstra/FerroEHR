@@ -227,9 +227,25 @@ impl Builder<'_> {
     pub(super) fn build_order_by(&mut self) -> Result<(), AqlError> {
         for key in self.ir.order_by.clone() {
             let OrderKey { path, ascending } = key;
+            let order = if ascending { Order::Asc } else { Order::Desc };
+            // ORDER BY `e/ehr_id[/value]` sorts by the raw `ehr.id` uuid column,
+            // not the `CAST(id AS text)` the projection reads: a UUID's canonical
+            // text form is fixed-length lowercase hex (BASE base_types master05
+            // §Basic Types — Uuid), so lexical text order and the uuid binary
+            // order coincide — the row sequence is byte-identical while the raw
+            // column is index-served instead of forcing a per-row cast. The text
+            // cast stays in the projection path.
+            if let PathTarget::Ehr {
+                source,
+                field: EhrField::EhrId | EhrField::Whole,
+            } = &path
+                && let Some(alias) = self.ehr_alias.get(&source.0).cloned()
+            {
+                self.q.order_by_expr(col(&alias, "id"), order);
+                continue;
+            }
             let coercion = order_coercion(&path);
             let expr = self.value_expr(&path, ValueMode::Value(coercion))?;
-            let order = if ascending { Order::Asc } else { Order::Desc };
             self.q.order_by_expr(expr, order);
         }
         Ok(())

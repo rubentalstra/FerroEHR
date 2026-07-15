@@ -56,25 +56,31 @@ impl EhrbaseService {
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
-    /// Update an EHR's `EHR_STATUS`, returning the new version. `if_match` is the
-    /// `OBJECT_VERSION_ID` (or bare version) the client believes is current.
+    /// Update an EHR's `EHR_STATUS`, returning the new version's metadata. `vo_id`
+    /// is the `EHR_STATUS` versioned object (resolved once by the caller's
+    /// `If-Match` meta pre-read, so the `current_vo` JOIN is not re-run here);
+    /// `if_match` is the `OBJECT_VERSION_ID` (or bare version) the client believes
+    /// is current.
+    ///
+    /// The response is metadata-only, built from the commit's own
+    /// [`Committed`](crate::versioning::Committed) (the written version identity +
+    /// commit instant, RM common master06 §Committal) — the write path never
+    /// re-reads the row it just wrote. Every caller uses only the `uid`
+    /// (`version_uid(…)`); a `Prefer: return=representation` body is read back at
+    /// the protocol layer, matching the COMPOSITION/DIRECTORY write paths.
     pub(in crate::service) async fn status_update(
         &self,
         ehr_id: Uuid,
+        vo_id: Uuid,
         body: Value,
         if_match: &str,
     ) -> Result<ServiceResponse, ServiceError> {
         super::validate_ehr_status(&body)?;
-
-        let (vo_id, _) = self
-            .current_vo(ehr_id, Kind::EhrStatus)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         let expected = expected_from_if_match(if_match);
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
-        update(
+        let committed = update(
             &mut tx,
             Some(ehr_id),
             vo_id,
@@ -86,14 +92,12 @@ impl EhrbaseService {
             &self.signing_ctx(),
         )
         .await?;
-        // Keep the promoted subject columns in sync (the subject may have changed).
+        // Keep the promoted subject columns in sync (the subject may have changed);
+        // the is_queryable promotion (Fix B) rides this same UPDATE.
         self.sync_ehr_subject(&mut tx, ehr_id, &body).await?;
         tx.commit().await?;
 
-        let read = read_current(&self.pool, vo_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        Ok(self.version_response(ehr_id, vo_id, read))
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// Apply a single in-place mutation to the current `EHR_STATUS` root and
@@ -114,7 +118,17 @@ impl EhrbaseService {
         ehr_id: Uuid,
         mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = self.status_at(ehr_id, None).await?;
+        // Resolve the current EHR_STATUS versioned object once and read its body;
+        // the resolved `vo_id` threads into `status_update` so its commit skips a
+        // second `current_vo` resolution.
+        let (vo_id, _) = self
+            .current_vo(ehr_id, Kind::EhrStatus)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let read = read_current(&self.pool, vo_id)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let current = self.version_response(ehr_id, vo_id, read);
         let preceding = current
             .meta
             .as_ref()
@@ -127,7 +141,7 @@ impl EhrbaseService {
             map.remove("uid");
             mutate(map);
         }
-        self.status_update(ehr_id, body, &preceding).await
+        self.status_update(ehr_id, vo_id, body, &preceding).await
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
@@ -207,16 +221,31 @@ impl EhrbaseService {
         self.latest_version_meta(ehr_id, Kind::EhrStatus).await
     }
 
-    /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true` (RM ehr
-    /// `EHR_STATUS.is_modifiable`, 1..1 Boolean). Read inline from the `EHR_STATUS`
-    /// root node's canonical `data` fragment (`num = 0`); an EHR with no current
-    /// `EHR_STATUS` (should not occur) is treated as modifiable so the guard
-    /// never spuriously blocks.
+    /// The current `EHR_STATUS` versioned-object id **and** its version metadata,
+    /// resolved and read in ONE metadata-only statement (no node reassembly). The
+    /// `PUT …/ehr_status` pre-read: it supplies both the full-`OBJECT_VERSION_ID`
+    /// the `If-Match` compare needs (ITS-REST overview §Concurrency control) and
+    /// the `vo_id` threaded into [`Self::status_update`], so the update path
+    /// resolves the versioned object exactly once. `None` when the EHR has no
+    /// current `EHR_STATUS`.
+    pub(in crate::service) async fn ehr_status_meta_with_vo(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
+        self.latest_version_meta_with_vo(ehr_id, Kind::EhrStatus)
+            .await
+    }
+
+    /// Whether the EHR is modifiable (RM ehr `EHR_STATUS.is_modifiable`, 1..1
+    /// Boolean, RM ehr master04 §EHR Active Status). Read from the promoted
+    /// `ehr.is_modifiable` column, kept in lockstep with the current `EHR_STATUS`
+    /// by [`Self::sync_ehr_subject`] and the import/archive-load backfill; a
+    /// missing EHR (`None`) is treated as modifiable so the guard never
+    /// spuriously blocks.
     ///
-    /// The `is_modifiable` root-node read is a storage seam
+    /// The column read is a storage seam
     /// ([`crate::storage::ehr_repo::ehr_is_modifiable`]; no openEHR spec governs
-    /// the SQL — our own design). `None` (no current `EHR_STATUS`) → modifiable,
-    /// so the guard never spuriously blocks.
+    /// the promoted column — our own storage design).
     async fn ehr_is_modifiable(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
         Ok(
             crate::storage::ehr_repo::ehr_is_modifiable(&self.pool, ehr_id)
@@ -288,37 +317,70 @@ impl EhrbaseService {
         ehr_id: Uuid,
         canonical: &Value,
     ) -> Result<(), ServiceError> {
-        let subject_id = canonical
-            .pointer("/subject/external_ref/id/value")
-            .and_then(Value::as_str);
-        let namespace = canonical
-            .pointer("/subject/external_ref/namespace")
-            .and_then(Value::as_str);
-        // Only a complete (id, namespace) pair identifies a subject.
-        let (subject_id, namespace) = match (subject_id, namespace) {
-            (Some(id), Some(ns)) => (Some(id), Some(ns)),
-            _ => (None, None),
-        };
-        sqlx::query("UPDATE ehr SET subject_id = $2, subject_namespace = $3 WHERE id = $1")
-            .bind(ehr_id)
-            .bind(subject_id)
-            .bind(namespace)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| {
-                if let sqlx::Error::Database(db) = &e
-                    && db.constraint() == Some("uq_ehr_subject")
-                {
-                    return ServiceError::Conflict(format!(
-                        "an EHR already exists for subject {}@{}",
-                        subject_id.unwrap_or("?"),
-                        namespace.unwrap_or("?"),
-                    ));
-                }
-                ServiceError::Database(e)
-            })?;
+        // The same promoted-column extraction the EHR-create path folds into its
+        // initial INSERT (single-sourced so both promote identical values). The
+        // is_modifiable sync (the content-write guard, RM ehr master04 §EHR
+        // Active Status) rides this same UPDATE — zero extra statements.
+        let (subject_id, namespace, is_queryable, is_modifiable) = ehr_promoted_columns(canonical);
+        sqlx::query(
+            "UPDATE ehr SET subject_id = $2, subject_namespace = $3, is_queryable = $4, \
+             is_modifiable = $5 WHERE id = $1",
+        )
+        .bind(ehr_id)
+        .bind(subject_id)
+        .bind(namespace)
+        .bind(is_queryable)
+        .bind(is_modifiable)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(db) = &e
+                && db.constraint() == Some("uq_ehr_subject")
+            {
+                return ServiceError::Conflict(format!(
+                    "an EHR already exists for subject {}@{}",
+                    subject_id.unwrap_or("?"),
+                    namespace.unwrap_or("?"),
+                ));
+            }
+            ServiceError::Database(e)
+        })?;
         Ok(())
     }
+}
+
+/// Extract the promoted `ehr`-table columns from an `EHR_STATUS` canonical
+/// value: the subject `(id, namespace)` — only a COMPLETE `external_ref` pair
+/// identifies a subject (RM ehr master04 §EHR Status; an anonymous `PARTY_SELF`
+/// yields `(None, None)`) — and the two 1..1 Boolean status flags `is_queryable`
+/// (RM ehr master04 §EHR Status) and `is_modifiable` (RM ehr master04 §EHR
+/// Active Status), each defaulting to `true` (matching the column default and
+/// the default `EHR_STATUS` when a raw path omits them). Shared by the
+/// EHR-create path's folded INSERT and the update/contribution
+/// [`EhrbaseService::sync_ehr_subject`] hook so both promote identical values.
+/// No openEHR spec governs the promoted columns — our own storage design.
+pub(in crate::service) fn ehr_promoted_columns(
+    canonical: &Value,
+) -> (Option<&str>, Option<&str>, bool, bool) {
+    let subject_id = canonical
+        .pointer("/subject/external_ref/id/value")
+        .and_then(Value::as_str);
+    let namespace = canonical
+        .pointer("/subject/external_ref/namespace")
+        .and_then(Value::as_str);
+    let (subject_id, namespace) = match (subject_id, namespace) {
+        (Some(id), Some(ns)) => (Some(id), Some(ns)),
+        _ => (None, None),
+    };
+    let is_queryable = canonical
+        .pointer("/is_queryable")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let is_modifiable = canonical
+        .pointer("/is_modifiable")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    (subject_id, namespace, is_queryable, is_modifiable)
 }
 
 #[async_trait::async_trait]
@@ -427,14 +489,21 @@ impl EhrStatusService for EhrbaseService {
         // the aggregate of the five discrete SM mutators above (formal
         // equivalence, `master02-overview.adoc` §Interface Calls). The optimistic
         // `preceding_version_uid` rides in UpdateVersion; a mismatch → 412.
-        let latest = self.ehr_status_meta(an_ehr_id).await?;
-        ensure_if_match(a_status.preceding_version_uid.as_ref(), latest.as_ref())?;
+        //
+        // The `If-Match` meta pre-read also yields the `vo_id`, threaded into the
+        // write so the versioned object is resolved once (no second `current_vo`).
+        // No current EHR_STATUS ⇒ NotFound (404), the same outcome the prior
+        // `current_vo`-inside-the-write path produced.
+        let Some((vo_id, latest)) = self.ehr_status_meta_with_vo(an_ehr_id).await? else {
+            return Err(ServiceError::NotFound(format!("EHR_STATUS for EHR {an_ehr_id}")).into());
+        };
+        ensure_if_match(a_status.preceding_version_uid.as_ref(), Some(&latest))?;
         let if_match = a_status
             .preceding_version_uid
             .map(|o| o.value)
             .unwrap_or_default();
         version_uid(
-            self.status_update(an_ehr_id, a_status.data, &if_match)
+            self.status_update(an_ehr_id, vo_id, a_status.data, &if_match)
                 .await?,
         )
     }

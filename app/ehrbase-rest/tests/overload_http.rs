@@ -24,8 +24,8 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 
-use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase_rest::{AppConfig, ServerConfig};
 
 mod common;
 use common::{Hooks, Mock};
@@ -36,12 +36,15 @@ const BASE: &str = "/ehrbase/rest/openehr/v1";
 const EHR: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
 /// Auth-disabled config with an explicit in-flight cap.
-fn config(max_in_flight: usize) -> RestConfig {
-    RestConfig {
-        bind: "127.0.0.1:0".to_owned(),
-        base_path: BASE.to_owned(),
-        max_in_flight,
-        swagger_ui: false,
+fn config(max_in_flight: usize) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            bind: "127.0.0.1:0".to_owned(),
+            base_path: BASE.to_owned(),
+            max_in_flight,
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false,
             basic: None,
@@ -49,7 +52,7 @@ fn config(max_in_flight: usize) -> RestConfig {
             admin_scope: None,
             ..AuthConfig::default()
         },
-        ..RestConfig::default()
+        ..Default::default()
     }
 }
 

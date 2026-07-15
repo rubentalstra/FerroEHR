@@ -29,6 +29,8 @@ use axum::routing::get;
 use http::{HeaderMap, StatusCode, header};
 use metrics_exporter_prometheus::PrometheusHandle;
 use serde_json::Value;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 
 use crate::extensions::access::authn::Authenticator;
 use crate::overview::error::RestError;
@@ -233,8 +235,42 @@ pub fn router(state: ManagementState) -> Router {
     router.with_state(state)
 }
 
+// ── OpenAPI document (the full management surface, documented unconditionally) ─
+
+/// The management surface's `OpenAPI` document — every management operation,
+/// documented **unconditionally** (the document describes the product surface;
+/// the live [`router`] mounts only the opted-in endpoints). Built natively with
+/// `utoipa-axum` so each operation's route + `OpenAPI` path come from the one
+/// `#[utoipa::path]` handler; only the `OpenApi` half is kept here (the mounted,
+/// access-gated router is built by [`router`]).
+///
+/// No openEHR spec governs the management surface — our own operational design.
+#[must_use]
+pub fn openapi() -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<ManagementState>::new()
+        .routes(routes!(aggregate_health))
+        .routes(routes!(liveness))
+        .routes(routes!(readiness))
+        .routes(routes!(info_view))
+        .routes(routes!(prometheus_text))
+        .routes(routes!(metrics_list))
+        .routes(routes!(metrics_detail))
+        .routes(routes!(env_view))
+        .routes(routes!(loggers_get, loggers_post, loggers_reset))
+        .into_openapi()
+}
+
 // ── Handlers ────────────────────────────────────────────────────────────────
 
+/// Aggregate health (all registered indicators). 200 when UP/DEGRADED, 503 when
+/// DOWN. Access-level gated.
+#[utoipa::path(
+    get, path = "/management/health", tag = "management",
+    responses(
+        (status = 200, description = "Aggregate health UP or DEGRADED.", body = serde_json::Value),
+        (status = 503, description = "Aggregate health DOWN.", body = serde_json::Value)
+    )
+)]
 async fn aggregate_health(State(s): State<ManagementState>) -> Response {
     health::aggregate(s.health).await
 }
@@ -243,20 +279,48 @@ async fn aggregate_health(State(s): State<ManagementState>) -> Response {
 // implements `Handler` for async functions; the `unused_async` allow records
 // that the work is synchronous and the async is the framework contract.
 
+/// Kubernetes-style liveness probe (public when probes are enabled).
+#[utoipa::path(
+    get, path = "/management/health/liveness", tag = "management",
+    responses((status = 200, description = "Process alive.", body = serde_json::Value))
+)]
 #[allow(clippy::unused_async)]
 async fn liveness() -> Response {
     health::liveness()
 }
 
+/// Kubernetes-style readiness probe (public when probes are enabled). 503 when
+/// not ready.
+#[utoipa::path(
+    get, path = "/management/health/readiness", tag = "management",
+    responses(
+        (status = 200, description = "Ready to serve.", body = serde_json::Value),
+        (status = 503, description = "Not ready.", body = serde_json::Value)
+    )
+)]
 async fn readiness(State(s): State<ManagementState>) -> Response {
     health::readiness(s.health).await
 }
 
+/// Build/spec provenance (`/info`): version, git, spec pins. Access-level gated.
+#[utoipa::path(
+    get, path = "/management/info", tag = "management",
+    responses((status = 200, description = "Build + spec provenance.", body = serde_json::Value))
+)]
 #[allow(clippy::unused_async)]
 async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
     info::info(s.build_info)
 }
 
+/// Prometheus text exposition. 503 when the recorder is not installed.
+/// Access-level gated.
+#[utoipa::path(
+    get, path = "/management/prometheus", tag = "management",
+    responses(
+        (status = 200, description = "Prometheus exposition text.", content_type = "text/plain"),
+        (status = 503, description = "Metrics recorder not installed.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn prometheus_text(State(s): State<ManagementState>) -> Response {
     match &s.prometheus {
@@ -265,6 +329,15 @@ async fn prometheus_text(State(s): State<ManagementState>) -> Response {
     }
 }
 
+/// Actuator-style JSON list of known metric names. 503 when the recorder is not
+/// installed. Access-level gated.
+#[utoipa::path(
+    get, path = "/management/metrics", tag = "management",
+    responses(
+        (status = 200, description = "Known metric names.", body = serde_json::Value),
+        (status = 503, description = "Metrics recorder not installed.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn metrics_list(State(s): State<ManagementState>) -> Response {
     match &s.prometheus {
@@ -273,6 +346,16 @@ async fn metrics_list(State(s): State<ManagementState>) -> Response {
     }
 }
 
+/// Actuator-style JSON detail for one metric. 404 when the metric is unknown,
+/// 503 when the recorder is not installed. Access-level gated.
+#[utoipa::path(
+    get, path = "/management/metrics/{name}", tag = "management",
+    params(("name" = String, Path, description = "The metric name.")),
+    responses(
+        (status = 200, description = "The metric's current value(s).", body = serde_json::Value),
+        (status = 404, description = "Unknown metric.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) -> Response {
     match &s.prometheus {
@@ -281,11 +364,25 @@ async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) ->
     }
 }
 
+/// The redacted effective-configuration snapshot (`/env`). Access-level gated.
+#[utoipa::path(
+    get, path = "/management/env", tag = "management",
+    responses((status = 200, description = "Redacted effective configuration.", body = serde_json::Value))
+)]
 #[allow(clippy::unused_async)]
 async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
     env::env(&s.env_snapshot)
 }
 
+/// The effective log-filter directives + boot filter. 503 when no reloadable
+/// filter is installed. Access-level gated.
+#[utoipa::path(
+    get, path = "/management/loggers", tag = "management",
+    responses(
+        (status = 200, description = "Effective + boot log filter.", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn loggers_get(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
@@ -294,6 +391,18 @@ async fn loggers_get(State(s): State<ManagementState>) -> Response {
     }
 }
 
+/// Swap the live log filter. Body: `{"filter": "ehrbase=debug,sqlx=warn"}`. 400
+/// on a parse error, 503 when no reloadable filter is installed. Access-level
+/// gated.
+#[utoipa::path(
+    post, path = "/management/loggers", tag = "management",
+    request_body(content = serde_json::Value, description = "`{\"filter\": \"<env-filter directives>\"}`"),
+    responses(
+        (status = 200, description = "Filter applied.", body = serde_json::Value),
+        (status = 400, description = "Malformed filter directives.", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn loggers_post(
     State(s): State<ManagementState>,
@@ -305,6 +414,15 @@ async fn loggers_post(
     }
 }
 
+/// Reset the log filter to the boot filter. 503 when no reloadable filter is
+/// installed. Access-level gated.
+#[utoipa::path(
+    delete, path = "/management/loggers", tag = "management",
+    responses(
+        (status = 200, description = "Filter reset to boot value.", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+    )
+)]
 #[allow(clippy::unused_async)]
 async fn loggers_reset(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {

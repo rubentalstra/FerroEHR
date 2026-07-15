@@ -22,6 +22,8 @@ use crate::versioning::{
     components, expected_from_if_match, parse_uid_based_id, parse_version_uid,
 };
 
+use super::party::CurrentParty;
+
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
 fn tags_response(tags: Vec<Value>) -> ServiceResponse {
     ServiceResponse::plain(Value::Array(tags))
@@ -254,10 +256,16 @@ impl DemographicService for EhrbaseService {
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
-        let current = self.party_current_meta(kind, vo_id).await?;
-        ensure_full_ovid_if_match(Some(&if_match), current.as_ref())?;
+        // Resolve the current version ONCE (lean, kind-checked): the same handle
+        // serves the `If-Match` `ETag` compare here and the service write gate —
+        // the dispatcher no longer resolves and the service again (RSJ).
+        let current = self.party_current(kind, vo_id).await?;
+        let meta = current.as_ref().map(CurrentParty::resource_meta);
+        ensure_full_ovid_if_match(Some(&if_match), meta.as_ref())?;
         let expected = expected_from_if_match(&if_match);
-        Ok(self.update_party(kind, vo_id, body, expected).await?)
+        let current =
+            current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        Ok(self.commit_party_update(current, body, expected).await?)
     }
 
     async fn party_delete(
@@ -273,13 +281,17 @@ impl DemographicService for EhrbaseService {
         // concurrency comes from `If-Match` when supplied, else the path OVID,
         // else `None` (delete the current version unconditionally).
         let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
-        let current = self.party_current_meta(kind, vo_id).await?;
-        ensure_full_ovid_if_match(if_match.as_deref(), current.as_ref())?;
+        // One lean resolve shared by the `If-Match` compare and the delete gate.
+        let current = self.party_current(kind, vo_id).await?;
+        let meta = current.as_ref().map(CurrentParty::resource_meta);
+        ensure_full_ovid_if_match(if_match.as_deref(), meta.as_ref())?;
         let expected = if_match
             .as_deref()
             .and_then(expected_from_if_match)
             .or(path_version);
-        Ok(self.delete_party(kind, vo_id, expected).await?)
+        let current =
+            current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        Ok(self.commit_party_delete(current, expected).await?)
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────

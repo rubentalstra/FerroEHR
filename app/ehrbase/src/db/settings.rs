@@ -1,67 +1,64 @@
-use figment::{Figment, providers::Env};
-use serde::Deserialize;
+//! The `[db]` section — `PostgreSQL` connection settings.
+//!
+//! No openEHR spec governs persistence — our own design
+//! (`docs/design/configuration.md` §3.2). No loader of its own: this struct is
+//! a field of the one config tree ([`crate::config::EhrbaseConfig`]), assembled
+//! once at boot. The DSN is a [`SecretUrl`]: its embedded credentials are
+//! redacted from every rendering (`Debug`, `/management/env`, `config check`).
 
-use crate::db::DbError;
+use ehrbase_sm::SecretUrl;
+use serde::{Deserialize, Serialize};
 
-/// Connection settings for the application `PostgreSQL` database (no openEHR
-/// spec governs persistence — our own design).
-///
-/// Loaded from the environment: `EHRBASE_DB_URL`, `EHRBASE_DB_MAX_CONNECTIONS`,
-/// `EHRBASE_DB_MIN_CONNECTIONS`, `EHRBASE_DB_ACQUIRE_TIMEOUT_SECS`; a bare
-/// `DATABASE_URL` is accepted as a fallback for the URL. This covers only the
-/// database connection; full server configuration is assembled elsewhere.
-#[derive(Debug, Clone, Deserialize)]
-pub struct DbSettings {
-    /// `PostgreSQL` connection URL (`postgres://user:pass@host:port/db`).
-    pub url: String,
+/// The zero-config dev DSN (matches the compose dev stack). Production MUST
+/// override it (`docs/design/configuration.md` §3.16 checklist).
+pub const DEFAULT_URL: &str = "postgres://ehrbase:ehrbase@localhost:5432/ehrbase";
+
+/// Connection settings for the application `PostgreSQL` database.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct DbConfig {
+    /// `PostgreSQL` connection DSN (`postgres://user:pass@host:port/db`).
+    /// Credentials are redacted from every rendering ([`SecretUrl`]).
+    pub url: SecretUrl,
     /// Upper bound of the connection pool.
-    #[serde(default = "defaults::max_connections")]
     pub max_connections: u32,
     /// Connections the pool keeps open when idle (avoids cold reopen +
     /// `SET search_path` churn under variable load).
-    #[serde(default = "defaults::min_connections")]
     pub min_connections: u32,
     /// Seconds to wait for a free connection before failing.
-    #[serde(default = "defaults::acquire_timeout_secs")]
     pub acquire_timeout_secs: u64,
 }
 
-mod defaults {
-    pub(super) fn max_connections() -> u32 {
-        20
-    }
-
-    pub(super) fn min_connections() -> u32 {
-        2
-    }
-
-    pub(super) fn acquire_timeout_secs() -> u64 {
-        30
+impl Default for DbConfig {
+    fn default() -> Self {
+        Self {
+            url: SecretUrl::new(DEFAULT_URL),
+            // Deliberate P20 defaults: 20 max (10 hard-capped realistic write
+            // concurrency ×2), 2 min (no cold reopen churn at idle).
+            max_connections: 20,
+            min_connections: 2,
+            acquire_timeout_secs: 30,
+        }
     }
 }
 
-impl DbSettings {
+impl DbConfig {
     /// Settings for `url` with defaults for everything else.
+    #[must_use]
     pub fn new(url: impl Into<String>) -> Self {
         Self {
-            url: url.into(),
-            max_connections: defaults::max_connections(),
-            min_connections: defaults::min_connections(),
-            acquire_timeout_secs: defaults::acquire_timeout_secs(),
+            url: SecretUrl::new(url.into()),
+            ..Self::default()
         }
     }
 
-    /// Load settings from the process environment.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`DbError::Config`] when no database URL is set or a value
-    /// cannot be parsed (e.g. a non-numeric `EHRBASE_DB_MAX_CONNECTIONS`).
-    pub fn from_env() -> Result<Self, DbError> {
-        let figment = Figment::new()
-            .merge(Env::prefixed("EHRBASE_DB_"))
-            .join(Env::raw().only(&["DATABASE_URL"]).map(|_| "url".into()));
-        figment.extract().map_err(|e| DbError::Config(Box::new(e)))
+    /// Whether the DSN is the built-in dev default (no operator override). The
+    /// boot path logs a prominent warning in this case
+    /// (`docs/design/configuration.md` §3.16) so a production deployment never
+    /// silently runs against the dev database.
+    #[must_use]
+    pub fn is_dev_default(&self) -> bool {
+        self.url.expose() == DEFAULT_URL
     }
 }
 
@@ -71,28 +68,16 @@ mod tests {
 
     #[test]
     fn defaults_applied() {
-        let s = DbSettings::new("postgres://localhost/ehrbase");
-        // Deliberate P20 defaults: 20 max (10 hard-capped realistic write
-        // concurrency), 2 min (no cold reopen churn at idle).
+        let s = DbConfig::new("postgres://localhost/ehrbase");
+        assert_eq!(s.url.expose(), "postgres://localhost/ehrbase");
         assert_eq!(s.max_connections, 20);
         assert_eq!(s.min_connections, 2);
         assert_eq!(s.acquire_timeout_secs, 30);
+        assert!(!s.is_dev_default());
     }
 
     #[test]
-    #[allow(clippy::result_large_err)] // figment::Jail's closure signature
-    fn from_env_reads_prefixed_vars_and_database_url_fallback() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("DATABASE_URL", "postgres://fallback/db");
-            let s = DbSettings::from_env().expect("settings");
-            assert_eq!(s.url, "postgres://fallback/db");
-
-            jail.set_env("EHRBASE_DB_URL", "postgres://primary/db");
-            jail.set_env("EHRBASE_DB_MAX_CONNECTIONS", "3");
-            let s = DbSettings::from_env().expect("settings");
-            assert_eq!(s.url, "postgres://primary/db");
-            assert_eq!(s.max_connections, 3);
-            Ok(())
-        });
+    fn default_url_is_the_dev_dsn() {
+        assert!(DbConfig::default().is_dev_default());
     }
 }

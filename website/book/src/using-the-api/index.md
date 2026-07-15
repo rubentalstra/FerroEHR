@@ -22,7 +22,7 @@ All clinical API routes hang off a configurable base path, which defaults to:
 
 Every path in these chapters is relative to that base. So "`POST /ehr`" means
 `POST http://your-host:8080/ehrbase/rest/openehr/v1/ehr`. The base path is set
-with `EHRBASE_REST_BASE_PATH` (see the
+with `EHRBASE__SERVER__BASE_PATH` (see the
 [configuration reference](../installation/configuration.md)).
 
 The public, unauthenticated status probe lives just outside the base path at
@@ -34,7 +34,7 @@ server's **conformance manifest**: the product name and version, the openEHR
 REST API edition it implements, its conformance profile, and the endpoint
 groups actually mounted in this deployment — useful for capability discovery
 before you call anything else. The identity fields are configurable
-(`EHRBASE_REST_SYSTEM__*`, see the
+(`EHRBASE__SERVER__IDENTITY__*`, see the
 [configuration reference](../installation/configuration.md)); the endpoint
 list always reflects reality.
 

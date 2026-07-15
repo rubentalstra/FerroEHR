@@ -617,6 +617,14 @@ impl EhrbaseService {
             insert_version(&mut tx, ehr_id, v).await?;
         }
 
+        // The load re-decomposed the EHR_STATUS versions directly (the export
+        // record carries subject columns but not the status flags). Backfill the
+        // promoted `ehr.is_queryable` / `is_modifiable` from the stored current
+        // status so the AQL full-population gate and the content-write guard
+        // match the loaded state (RM ehr master04 §EHR Status / §EHR Active
+        // Status; SM I_QUERY_SERVICE — full population = queryable EHRs).
+        crate::storage::ehr_repo::sync_status_flags(&mut tx, ehr_id).await?;
+
         // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
         // Class Directory_in_folders: folders.item(1) = directory).
         for f in &record.folder_ranks {

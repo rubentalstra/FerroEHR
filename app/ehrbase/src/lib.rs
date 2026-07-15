@@ -33,6 +33,7 @@
 
 pub mod aql;
 pub mod banner;
+pub mod config;
 pub mod db;
 pub mod extensions;
 pub mod service;

@@ -101,16 +101,17 @@ metadata:
     app.kubernetes.io/part-of: ehrbase-rs
 type: Opaque
 stringData:
-  EHRBASE_REST_AUTH__OIDC__HMAC_SECRET: "dev-hmac-secret"
-  EHRBASE_SIGNING_KEY_PASSPHRASE: "dev-passphrase"
-  EHRBASE_EVENTS_URL: "amqps://user:pass@rabbitmq:5671/%2f"
-  EHRBASE_FHIR_OUTBOUND_URL: "amqps://user:pass@rabbitmq:5671/%2f"
-  EHRBASE_MULTIMEDIA_ACCESS_KEY_ID: "AKIAEXAMPLE"
-  EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY: "s3-secret"
+  EHRBASE__AUTH__OIDC__HMAC_SECRET: "dev-hmac-secret"
+  EHRBASE__SIGNING__KEY_PASSPHRASE: "dev-passphrase"
+  EHRBASE__EVENTS__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE__FHIR__OUTBOUND__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE__MULTIMEDIA__ACCESS_KEY_ID: "AKIAEXAMPLE"
+  EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY: "s3-secret"
 ---
 # Source: ehrbase-rs/templates/secret.yaml
-# Mounted config files (TOML/PEM) at /etc/ehrbase — the Basic-auth user store,
-# full OIDC/ABAC/terminology blocks, ATNA PEMs, the PGP key, etc.
+# Mounted config files (TOML/PEM) at /etc/ehrbase — file-shaped material an
+# in-TOML `*_path`/`*_file` key points at: the PGP key, Cedar/ABAC policies,
+# ATNA PEMs, a JWKS blob. Mounted alongside ehrbase.toml.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -124,12 +125,6 @@ metadata:
     app.kubernetes.io/part-of: ehrbase-rs
 type: Opaque
 stringData:
-  rest.toml: |
-    [[auth.basic.users]]
-    username = "clinician"
-    password_hash = "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
-    roles = ["USER"]
-    
   signing.asc: |
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     (dev placeholder)
@@ -148,97 +143,141 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 data:
-  # ── Database pool (non-secret; the DSN itself is in the Secret) ──────────────
-  EHRBASE_DB_MAX_CONNECTIONS: "10"
-  EHRBASE_DB_MIN_CONNECTIONS: "0"
-  EHRBASE_DB_ACQUIRE_TIMEOUT_SECS: "30"
-
-  # ── REST surface (extension groups OFF by default) ──────────────────────────
-  EHRBASE_REST_BIND: "0.0.0.0:8080"
-  EHRBASE_REST_BASE_PATH: "/ehrbase/rest/openehr/v1"
-  EHRBASE_REST_SWAGGER_UI: "true"
-  EHRBASE_REST_CORS_PERMISSIVE: "false"
-  EHRBASE_REST_ADMIN__ENABLED: "true"
-  EHRBASE_REST_TERMINOLOGY__ENABLED: "true"
-  EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED: "true"
-  EHRBASE_REST_FHIR__ENABLED: "true"
-
-  # ── Multi-tenancy (OFF by default) ──────────────────────────────────────────
-  EHRBASE_REST_TENANCY__ENABLED: "true"
-  EHRBASE_REST_TENANCY__CLAIM: "realm_access.tenant"
-  EHRBASE_REST_TENANCY__HEADER: "X-EHRbase-Tenant"
-
-  # ── Authentication (Basic + OAuth2/OIDC; enabled by default) ────────────────
-  EHRBASE_REST_AUTH__ENABLED: "true"
-  EHRBASE_REST_AUTH__ADMIN_SCOPE: "ADMIN"
-  EHRBASE_REST_AUTH__OIDC__ISSUER: "https://keycloak.example.com/realms/ehrbase"
-  EHRBASE_REST_AUTH__OIDC__AUDIENCES: "ehrbase"
-
-  # ── Authorization: coarse RBAC (on by default) + ABAC (off) ─────────────────
-  EHRBASE_AUTHZ_RBAC__ENABLED: "true"
-  EHRBASE_AUTHZ_RBAC__ADMIN_ROLE: "ADMIN"
-  EHRBASE_AUTHZ_RBAC__USER_ROLE: "USER"
-  EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS: "admin_only"
-  EHRBASE_AUTHZ_ABAC__ENABLED: "true"
-
-  # ── Management / observability surface ──────────────────────────────────────
-  EHRBASE_MANAGEMENT_ENABLED: "true"
-  EHRBASE_MANAGEMENT_BASE_PATH: "/management"
-  EHRBASE_MANAGEMENT_PORT: "9100"
-  EHRBASE_MANAGEMENT_ACCESS_DEFAULT: "admin_only"
-  EHRBASE_MANAGEMENT_PROBES_ENABLED: "true"
-  EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH: "private"
-  EHRBASE_MANAGEMENT_ENDPOINTS_INFO: "admin_only"
-  EHRBASE_MANAGEMENT_ENDPOINTS_METRICS: "admin_only"
-  EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS: "public"
-  EHRBASE_MANAGEMENT_ENDPOINTS_ENV: "admin_only"
-  EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS: "admin_only"
-
-  # ── Telemetry / logging ─────────────────────────────────────────────────────
-  EHRBASE_LOG_FORMAT: "json"
-  EHRBASE_LOG_FILTER: "info,ehrbase=debug"
-  EHRBASE_OTEL_OTLP_ENDPOINT: "http://otel-collector:4317"
-  EHRBASE_OTEL_SERVICE_NAME: "ehrbase-rs"
-  EHRBASE_OTEL_ENVIRONMENT: "production"
-  EHRBASE_OTEL_TRACES_SAMPLE_RATIO: "0.1"
-  EHRBASE_OTEL_METRICS_PUSH: "true"
-
-  # ── Version signing (enabled/digest by default) ─────────────────────────────
-  EHRBASE_SIGNING_ENABLED: "true"
-  EHRBASE_SIGNING_MODE: "pgp"
-  EHRBASE_SIGNING_VERIFY_ON_READ: "strict"
-  EHRBASE_SIGNING_KEY_PATH: "/etc/ehrbase/signing.asc"
-
-  # ── ATNA system log (OFF by default) ────────────────────────────────────────
-  EHRBASE_ATNA_ENABLED: "true"
-  EHRBASE_ATNA_TRANSPORT: "tls"
-  EHRBASE_ATNA_FAIL_MODE: "closed"
-  EHRBASE_ATNA_REPOSITORY_HOST: "arr.example.com"
-  EHRBASE_ATNA_REPOSITORY_PORT: "6514"
-  EHRBASE_ATNA_SOURCE_ID: "ehrbase-prod"
-  EHRBASE_ATNA_ENTERPRISE_SITE_ID: "site-1"
-
-  # ── Contribution-outbox eventing → AMQP (OFF; PHI-free envelopes) ───────────
-  EHRBASE_EVENTS_ENABLED: "true"
-  EHRBASE_EVENTS_EXCHANGE: "ehrbase.events"
-  EHRBASE_EVENTS_TLS: "true"
-
-  # ── FHIR OUTBOUND emitter → AMQP (OFF; PHI-bearing stream) ──────────────────
-  EHRBASE_FHIR_OUTBOUND_ENABLED: "true"
-  EHRBASE_FHIR_OUTBOUND_EXCHANGE: "ehrbase.fhir"
-  EHRBASE_FHIR_OUTBOUND_TLS: "true"
-
-  # ── DV_MULTIMEDIA externalization → S3 (OFF; PHI blobs) ─────────────────────
-  EHRBASE_MULTIMEDIA_ENABLED: "true"
-  EHRBASE_MULTIMEDIA_BUCKET: "openehr-multimedia"
-  EHRBASE_MULTIMEDIA_REGION: "eu-west-1"
-  EHRBASE_MULTIMEDIA_ALLOW_HTTP: "false"
-  EHRBASE_MULTIMEDIA_THRESHOLD_BYTES: "262144"
-  EHRBASE_MULTIMEDIA_ENDPOINT: "https://s3.example.com"
-
-  # ── External terminology validation (OFF by default) ────────────────────────
-  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED: "true"
-  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR: "false"
+  # The whole server configuration as one ehrbase.toml, mounted at
+  # /etc/ehrbase/ehrbase.toml (config search-order position 4). Rendered from
+  # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
+  # here — they are injected as EHRBASE_* env from the Secret and override the file.
+  ehrbase.toml: |
+    [admin]
+      enabled = true
+    
+    [atna]
+      enabled = true
+      enterprise_site_id = "site-1"
+      fail_mode = "closed"
+      repository_host = "arr.example.com"
+      repository_port = 6514.0
+      source_id = "ehrbase-prod"
+      transport = "tls"
+    
+    [auth]
+      enabled = true
+      [auth.basic]
+    
+        [[auth.basic.users]]
+          password_hash = "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
+          roles = ["USER"]
+          username = "clinician"
+      [auth.oidc]
+        algorithms = ["RS256"]
+        audiences = ["ehrbase"]
+        issuer = "https://keycloak.example.com/realms/ehrbase"
+    
+    [authz]
+      [authz.abac]
+        enabled = true
+        engine = "cedar"
+        organization_claim = "organization_id"
+        patient_claim = "patient_id"
+        [authz.abac.cedar]
+          policy_dir = "/etc/ehrbase"
+      [authz.rbac]
+        admin_role = "ADMIN"
+        enabled = true
+        management_access = "admin_only"
+        user_role = "USER"
+    
+    [db]
+      acquire_timeout_secs = 30.0
+      max_connections = 10.0
+      min_connections = 0.0
+    
+    [events]
+      enabled = true
+      exchange = "ehrbase.events"
+      tls = true
+    
+    [fhir]
+      api_enabled = true
+      [fhir.outbound]
+        enabled = true
+        exchange = "ehrbase.fhir"
+        tls = true
+    
+    [log]
+      filter = "info,ehrbase=debug"
+      format = "json"
+    
+    [management]
+      access_default = "admin_only"
+      base_path = "/management"
+      enabled = true
+      port = 9100.0
+      probes_enabled = true
+      [management.endpoints]
+        env = "admin_only"
+        health = "private"
+        info = "admin_only"
+        loggers = "admin_only"
+        metrics = "admin_only"
+        prometheus = "public"
+    
+    [multimedia]
+      allow_http = false
+      bucket = "openehr-multimedia"
+      enabled = true
+      endpoint = "https://s3.example.com"
+      region = "eu-west-1"
+      threshold_bytes = 262144.0
+    
+    [query]
+      plan_cache_capacity = 256.0
+      timeout_ms = 30000.0
+    
+    [server]
+      base_path = "/ehrbase/rest/openehr/v1"
+      bind = "0.0.0.0:8080"
+      cors_permissive = false
+      swagger_ui = true
+    
+    [signing]
+      enabled = true
+      key_path = "/etc/ehrbase/signing.asc"
+      mode = "pgp"
+      verify_on_read = "strict"
+    
+    [smart]
+      ehr_id_claim = "ehrId"
+      enabled = true
+      patient_claim = "patient"
+    
+    [subject_proxy]
+      [subject_proxy.systems]
+        [subject_proxy.systems.pas]
+          base_url = "https://pas.example.com/fhir"
+    
+    [telemetry]
+      environment = "production"
+      metrics_push = true
+      otlp_endpoint = "http://otel-collector:4317"
+      service_name = "ehrbase-rs"
+      traces_sample_ratio = 0.1
+    
+    [tenancy]
+      claim = "realm_access.tenant"
+      enabled = true
+      header = "X-EHRbase-Tenant"
+    
+    [terminology]
+      api_enabled = true
+      [terminology.external]
+        enabled = true
+        fail_on_error = false
+        [terminology.external.providers]
+          [terminology.external.providers.default]
+            operation = "validate_code"
+            type = "fhir"
+            url = "https://tx.example.com/fhir"
 ---
 # Source: ehrbase-rs/templates/service.yaml
 apiVersion: v1
@@ -287,8 +326,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll pods when the non-secret config changes.
-        checksum/config: 206341529c713c57e44dace164c2a3af4865404e117c43e8e982cc2f7166c124
+        # Roll pods when the rendered ehrbase.toml changes.
+        checksum/config: f106c18afbf5d007a90948cc1c5ee78c872c1edbbf3c416e46ea0bfed8bce9a6
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -329,50 +368,46 @@ spec:
             - name: management
               containerPort: 9100
               protocol: TCP
-          # The DSN comes from an existing Secret (preferred) or the chart Secret.
+          # Only SECRET config is env; the rest is the mounted ehrbase.toml.
+          # The DSN comes from an existing Secret (preferred) or the chart Secret;
+          # the env layer overrides the file, so each secret here wins over any
+          # matching TOML key.
           env:
-            - name: EHRBASE_DB_URL
+            - name: EHRBASE__DB__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-db
-                  key: EHRBASE_DB_URL
-            - name: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
+                  key: EHRBASE__DB__URL
+            - name: EHRBASE__AUTH__OIDC__HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
-            - name: EHRBASE_SIGNING_KEY_PASSPHRASE
+                  key: EHRBASE__AUTH__OIDC__HMAC_SECRET
+            - name: EHRBASE__SIGNING__KEY_PASSPHRASE
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_SIGNING_KEY_PASSPHRASE
-            - name: EHRBASE_EVENTS_URL
+                  key: EHRBASE__SIGNING__KEY_PASSPHRASE
+            - name: EHRBASE__EVENTS__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_EVENTS_URL
-            - name: EHRBASE_FHIR_OUTBOUND_URL
+                  key: EHRBASE__EVENTS__URL
+            - name: EHRBASE__FHIR__OUTBOUND__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_FHIR_OUTBOUND_URL
-            - name: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
+                  key: EHRBASE__FHIR__OUTBOUND__URL
+            - name: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
-            - name: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
+                  key: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
+            - name: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
-            - name: EHRBASE_REST_CONFIG
-              value: /etc/ehrbase/rest.toml
-            - name: EHRBASE_SIGNING_KEY_PATH
-              value: /etc/ehrbase/signing.asc
-          envFrom:
-            - configMapRef:
-                name: ehrbase-rs
+                  key: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
           livenessProbe:
             httpGet:
               path: /management/health/liveness
@@ -408,6 +443,7 @@ spec:
             # readOnlyRootFilesystem=true → give the process a writable scratch dir.
             - name: tmp
               mountPath: /tmp
+            # ehrbase.toml (+ any config.files) mounted read-only at /etc/ehrbase.
             - name: config
               mountPath: /etc/ehrbase
               readOnly: true
@@ -415,8 +451,15 @@ spec:
         - name: tmp
           emptyDir: {}
         - name: config
-          secret:
-            secretName: ehrbase-rs-config
+          projected:
+            sources:
+              - configMap:
+                  name: ehrbase-rs
+                  items:
+                    - key: ehrbase.toml
+                      path: ehrbase.toml
+              - secret:
+                  name: ehrbase-rs-config
 ---
 # Source: ehrbase-rs/templates/hpa.yaml
 apiVersion: autoscaling/v2

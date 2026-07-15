@@ -23,9 +23,9 @@ use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::AuthConfig;
-use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, Redacted};
+use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser};
+use ehrbase_rest::{AppConfig, ServerConfig};
 
 mod common;
 use common::{Hooks, Mock};
@@ -50,17 +50,19 @@ fn hash_pw(pw: &str) -> String {
 fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
-        password_hash: Redacted(hash_pw("pw")),
+        password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }
 
 /// A config with Basic auth on (or off) and no OIDC. The four users cover the
 /// `user:`/`role:` matching cases.
-fn rest_config(auth_enabled: bool) -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+fn rest_config(auth_enabled: bool) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: auth_enabled,
             basic: Some(BasicConfig {
@@ -75,8 +77,7 @@ fn rest_config(auth_enabled: bool) -> RestConfig {
             admin_scope: None,
             ..AuthConfig::default()
         },
-        swagger_ui: false,
-        ..RestConfig::default()
+        ..Default::default()
     }
 }
 

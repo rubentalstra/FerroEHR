@@ -25,8 +25,8 @@
 //! from [`config::AuthzConfig`].
 //!
 //! ## Module map (§4.1)
-//! - [`config`] — the `figment` [`config::AuthzConfig`] (`EHRBASE_AUTHZ_`
-//!   prefix) + boot validation.
+//! - [`config`] — the [`config::AuthzConfig`] serde struct (the `[authz]`
+//!   section of the one server config tree) + boot validation.
 //! - [`roles`] — the role model, JWT-claim role extraction, and the RBAC gate
 //!   decision.
 //! - [`classify`] — `operation_id → OperationClass` / `ResourceKind` /

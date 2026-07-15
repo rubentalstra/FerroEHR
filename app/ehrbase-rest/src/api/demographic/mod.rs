@@ -41,16 +41,20 @@ use ehrbase_sm::{CallStatusType, PartyKind, ResourceMeta, ServiceResponse, SmErr
 
 mod contribution;
 mod dispatch;
+mod openapi_routes;
 mod party;
 mod relationship;
 mod tags;
 mod versioned_party;
 
 // The two symbols `app/ehrbase-rest/src/api/mod.rs` mounts: the group
-// dispatcher (`demographic::dispatch`) and the extension route table
-// (`demographic::RELATIONSHIP_ROUTES`).
+// dispatcher (`demographic::dispatch`) and the native `utoipa-axum` router for
+// the own-design PARTY_RELATIONSHIP extension (`demographic::relationship_routes`,
+// which single-sources those routes + their OpenAPI paths and dispatches back
+// through the group dispatcher).
 pub(crate) use dispatch::dispatch;
-pub(crate) use relationship::RELATIONSHIP_ROUTES;
+pub(crate) use openapi_routes::routes;
+pub(crate) use relationship::relationship_routes;
 
 /// Map an operation id to `(PartyKind, action)` where `action` is the suffix
 /// after the kind prefix (e.g. `person_tags_update` → `(Person, "tags_update")`).

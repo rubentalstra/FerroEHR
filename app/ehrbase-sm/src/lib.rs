@@ -26,9 +26,12 @@
 //! with `PORT NOTE`s. Chapter registers: `docs/design/sm-platform/`.
 
 pub mod common;
+pub mod config;
 pub mod extensions;
 pub mod platform;
 pub mod services;
+
+pub use config::{REDACTED, Secret, SecretUrl};
 
 /// Multi-tenancy request context — physically an extension
 /// ([`extensions::tenant`]; no openEHR spec governs tenancy), re-exported at

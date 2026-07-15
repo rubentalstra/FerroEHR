@@ -27,7 +27,7 @@
 //!   in the abstract SM `i_admin_service.adoc` — a recorded spec-internal
 //!   inconsistency.
 //!
-//! The group is config-gated (`RestConfig::admin.enabled`, default false): when
+//! The group is config-gated (`AppConfig::admin.enabled`, default false): when
 //! disabled every admin route answers `404` without touching the backend.
 
 use axum::response::{IntoResponse, Response};

@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::storage::{ehr_repo, version_repo};
-use crate::versioning::{Change, Kind, change_type, commit_contribution};
+use crate::versioning::{Change, Kind, TreeId, change_type, commit_contribution};
 
 use super::status_for_subject;
 
@@ -41,14 +41,42 @@ impl EhrbaseService {
 
         // EHR.system_id is recorded at creation, immutable thereafter (arch
         // master06 §System Identity — a stored value, not the live config).
-        if !ehr_repo::insert_ehr(&mut tx, ehr_id, &self.effective_system_id()).await? {
-            return Err(ServiceError::Conflict(format!(
-                "EHR {ehr_id} already exists"
-            )));
-        }
+        // `time_created` (arch master06 §The EHR) comes back from the INSERT so
+        // the create response is built without a follow-up `ehr` header read. The
+        // promoted subject / is_queryable columns are set in this same INSERT
+        // (the values are known from the incoming EHR_STATUS), so the create path
+        // never runs the separate `sync_ehr_subject` UPDATE the update/
+        // contribution paths use. A subject already owned by another EHR is a
+        // distinct 409 (RM ehr master04 §EHR Status; ITS-REST `409_EHR.yaml`).
+        let (subject_id, subject_namespace, is_queryable, is_modifiable) =
+            super::status::ehr_promoted_columns(&status);
+        let time_created = match ehr_repo::insert_ehr(
+            &mut tx,
+            ehr_id,
+            &self.effective_system_id(),
+            subject_id,
+            subject_namespace,
+            is_queryable,
+            is_modifiable,
+        )
+        .await
+        {
+            Ok(Some(t)) => t,
+            Ok(None) => {
+                return Err(ServiceError::Conflict(format!(
+                    "EHR {ehr_id} already exists"
+                )));
+            }
+            Err(crate::storage::StorageError::SubjectInUse(id, ns)) => {
+                return Err(ServiceError::Conflict(format!(
+                    "an EHR already exists for subject {id}@{ns}"
+                )));
+            }
+            Err(e) => return Err(e.into()),
+        };
 
         let audit = self.audit(change_type::CREATION, "EHR creation");
-        commit_contribution(
+        let (_contribution_id, committed) = commit_contribution(
             &mut tx,
             Some(ehr_id),
             None,
@@ -81,9 +109,9 @@ impl EhrbaseService {
             &self.signing_ctx(),
         )
         .await?;
-        // Keep the promoted subject columns in sync with the committed EHR_STATUS
-        // (one EHR per subject — RM ehr master04 §EHR Status; the sync hook).
-        self.sync_ehr_subject(&mut tx, ehr_id, &status).await?;
+        // The promoted subject / is_queryable columns were set in the initial
+        // `insert_ehr` (folded, no separate UPDATE) — one EHR per subject (RM ehr
+        // master04 §EHR Status).
         tx.commit().await?;
 
         // The EHR is created with the settings-less default EHR_ACCESS
@@ -91,7 +119,66 @@ impl EhrbaseService {
         // is a hit, not a DB miss (the access gate runs on every such request).
         self.prewarm_ehr_access_open(ehr_id).await;
 
-        self.ehr_summary(ehr_id).await
+        // Build the RM `EHR` wire body straight from the commit results — the
+        // status/access version identities are already in `Committed`,
+        // `time_created` came back from the row INSERT, and a fresh EHR indexes
+        // no folder hierarchy — so the create path never re-reads via
+        // `ehr_summary` (its five header/version/folder reads). The body is
+        // byte-identical to `ehr_summary` for a new EHR (pinned by a test);
+        // it is stashed so `ehr_created_object` serves a
+        // `Prefer: return=representation` response without a re-read.
+        let body = self.ehr_object_from_committed(ehr_id, time_created, &committed);
+        self.created_ehr_repr.insert(ehr_id, body.clone()).await;
+        let meta = ResourceMeta::new(ehr_id.to_string(), ehr_id.to_string())
+            .with_last_modified(time_created);
+        Ok(ServiceResponse::new(body, meta))
+    }
+
+    /// Assemble the RM `EHR` wire body for a just-created EHR straight from the
+    /// CONTRIBUTION commit results — no storage reads. The status/access version
+    /// identities come from the [`Committed`](crate::versioning::Committed) rows
+    /// (`EHR_STATUS` then `EHR_ACCESS`, RM ehr master04 §EHR Creation), the
+    /// status ref carries its `OBJECT_VERSION_ID` (the stored per-version
+    /// `creating_system_id`, master06 §Distributed Versioning), and a fresh EHR
+    /// has no `directory`/`folders` (RM ehr master04 §Folders, 0..1). Byte-
+    /// identical to [`Self::ehr_summary`] for a newly created EHR (pinned by a
+    /// test); the key order mirrors `ehr_summary`.
+    fn ehr_object_from_committed(
+        &self,
+        ehr_id: Uuid,
+        time_created: jiff::Timestamp,
+        committed: &[crate::versioning::Committed],
+    ) -> Value {
+        let status_ref = committed
+            .iter()
+            .find(|c| c.kind == Kind::EhrStatus)
+            .map(|c| {
+                json!({
+                    "_type": "OBJECT_REF",
+                    "namespace": "local",
+                    "type": "VERSIONED_EHR_STATUS",
+                    "id": {
+                        "_type": "OBJECT_VERSION_ID",
+                        "value": self.object_version_id(c.vo_id, &c.creating_system_id, c.tree)
+                    }
+                })
+            });
+        let mut body = json!({
+            "_type": "EHR",
+            "system_id": { "_type": "HIER_OBJECT_ID", "value": self.effective_system_id() },
+            "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
+            "ehr_status": status_ref,
+            "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
+        });
+        if let Some(access) = committed.iter().find(|c| c.kind == Kind::EhrAccess) {
+            body["ehr_access"] = json!({
+                "_type": "OBJECT_REF",
+                "namespace": "local",
+                "type": "VERSIONED_EHR_ACCESS",
+                "id": { "_type": "HIER_OBJECT_ID", "value": access.vo_id.to_string() }
+            });
+        }
+        body
     }
 
     /// Find an EHR by the subject its current `EHR_STATUS` names (external ref
@@ -129,16 +216,25 @@ impl EhrbaseService {
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
 
-        let (status_vo, status_version) = self
-            .current_vo(ehr_id, Kind::EhrStatus)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        // The uid uses the stored per-version creating_system_id (master06
-        // §Distributed Versioning), stable across a `with_system_id` change.
-        let (t, b, v) = status_version.columns();
-        let status_csid =
-            version_repo::version_creating_system_id(&self.pool, status_vo, t, b, v).await?;
-        let status_ovid = self.object_version_id(status_vo, &status_csid, status_version);
+        // The current EHR_STATUS version identity in ONE metadata-only statement:
+        // its vo_id, VERSION_TREE_ID ints, and the stored per-version
+        // creating_system_id (master06 §Distributed Versioning, stable across a
+        // `with_system_id` change) — folding the prior `current_vo` +
+        // `version_creating_system_id` two-read pair.
+        let status = version_repo::current_version_meta_by_kind(
+            &self.pool,
+            ehr_id,
+            Kind::EhrStatus.as_str(),
+        )
+        .await?
+        .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let status_version = TreeId::from_columns(
+            status.trunk_version,
+            status.branch_number,
+            status.branch_version,
+        );
+        let status_ovid =
+            self.object_version_id(status.vo_id, &status.creating_system_id, status_version);
 
         let mut body = json!({
             "_type": "EHR",
@@ -349,6 +445,17 @@ impl EhrService for EhrbaseService {
 
     async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.ehr_summary(an_ehr_id).await?.body)
+    }
+
+    async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+        // Serve the create-time representation from the stash the commit path
+        // populated (built from `Committed`, no re-read); a popped entry cannot
+        // be reused. Fall back to a full read when the entry has been evicted
+        // (short TTL) or the EHR was created off this path (import/clone).
+        if let Some(body) = self.created_ehr_repr.remove(&an_ehr_id).await {
+            return Ok(body);
+        }
+        self.ehr_object(an_ehr_id).await
     }
 
     async fn ehr_object_for_subject(

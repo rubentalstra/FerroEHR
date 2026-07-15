@@ -3,4 +3,4 @@
 # app-role DSN from an existing Secret. Used as the "default" golden render.
 database:
   existingSecret: ehrbase-db
-  existingSecretKey: EHRBASE_DB_URL
+  existingSecretKey: EHRBASE__DB__URL

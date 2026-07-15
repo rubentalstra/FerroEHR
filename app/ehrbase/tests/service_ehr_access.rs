@@ -14,7 +14,7 @@
 //! (`docs/design/ehr-access-scheme.md`).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
 use ehrbase_sm::{DefaultAccess, EhrAccessAdapter, EhrService};
 use serde_json::{Value, json};
@@ -55,7 +55,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));

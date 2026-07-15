@@ -22,10 +22,13 @@ services:
     environment:
       # Bootstrap superuser (postgres) — dev default; override in production.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      # App role/database created by the init script (dev defaults).
-      EHRBASE_DB_USER: ${EHRBASE_DB_USER:-ehrbase}
-      EHRBASE_DB_PASSWORD: ${EHRBASE_DB_PASSWORD:-ehrbase}
-      EHRBASE_DB_NAME: ${EHRBASE_DB_NAME:-ehrbase}
+      # App role/database created by the init script (dev defaults). These
+      # configure the DB *container*, not the server binary — the PG_INIT_
+      # prefix keeps them out of the server's reserved EHRBASE_ namespace (the
+      # strict boot-time env sweep would otherwise reject them).
+      PG_INIT_USER: ${PG_INIT_USER:-ehrbase}
+      PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ehrbase}
+      PG_INIT_DB: ${PG_INIT_DB:-ehrbase}
     # pg_stat_statements is loaded so the P20 profiling harness
     # (scripts/profile.sh) can attribute time per statement; negligible
     # overhead, ships in the stock image.
@@ -47,7 +50,7 @@ services:
     ports:
       - "${EHRBASE_DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${EHRBASE_DB_USER:-ehrbase} -d ${EHRBASE_DB_NAME:-ehrbase}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ehrbase} -d ${PG_INIT_DB:-ehrbase}"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -62,29 +65,32 @@ services:
       ehrbase-postgres:
         condition: service_healthy
     environment:
-      EHRBASE_DB_URL: postgres://${EHRBASE_DB_USER:-ehrbase}:${EHRBASE_DB_PASSWORD:-ehrbase}@ehrbase-postgres:5432/${EHRBASE_DB_NAME:-ehrbase}
+      # EHRBASE_ env overrides use the mechanical `__` mapping (TOML path,
+      # upper-cased, `__` between segments); they layer on top of the mounted
+      # ehrbase.dev.toml (env beats file).
+      EHRBASE__DB__URL: postgres://${PG_INIT_USER:-ehrbase}:${PG_INIT_PASSWORD:-ehrbase}@ehrbase-postgres:5432/${PG_INIT_DB:-ehrbase}
       # Connection-pool ceiling; the benchmark harness raises it in lockstep
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
-      EHRBASE_DB_MAX_CONNECTIONS: ${EHRBASE_DB_MAX_CONNECTIONS:-10}
+      EHRBASE__DB__MAX_CONNECTIONS: ${EHRBASE__DB__MAX_CONNECTIONS:-10}
       # In-flight admission cap (503 load shed past it; 0 disables). The
       # benchmark harness raises it so overload manifests as queueing latency —
       # the same failure mode as upstream's Tomcat admission window — instead
       # of shed errors tripping the SLO's error-rate arm (see scripts/benchmark.sh).
-      EHRBASE_REST_MAX_IN_FLIGHT: ${EHRBASE_REST_MAX_IN_FLIGHT:-256}
+      EHRBASE__SERVER__MAX_IN_FLIGHT: ${EHRBASE__SERVER__MAX_IN_FLIGHT:-256}
       # Version-signing toggle pass-through (the benchmark harness disables it
       # for throughput parity — upstream has no signing; see scripts/benchmark.sh).
-      EHRBASE_SIGNING_ENABLED: ${EHRBASE_SIGNING_ENABLED:-true}
-      # Dev config mounted below: enables Basic auth with the ehrbase/ehrbase user.
-      EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
+      EHRBASE__SIGNING__ENABLED: ${EHRBASE__SIGNING__ENABLED:-true}
       # Dev quickstart: human-readable colored logs in `docker compose logs`.
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
-      EHRBASE_LOG_FORMAT: ${EHRBASE_LOG_FORMAT:-pretty}
+      EHRBASE__LOG__FORMAT: ${EHRBASE__LOG__FORMAT:-pretty}
       # Benchmark parity (benchmarking.md §3.4 "Logging: equal, minimal"):
       # scripts/benchmark.sh sets warn on BOTH SUTs; default stays info.
-      EHRBASE_LOG_FILTER: ${EHRBASE_LOG_FILTER:-info}
+      EHRBASE__LOG__FILTER: ${EHRBASE__LOG__FILTER:-info}
     volumes:
+      # Auto-discovered at config search-order position 4 (no pointer needed).
+      # Enables Basic auth with the ehrbase/ehrbase user.
       - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
       - "${EHRBASE_PORT:-8080}:8080"
@@ -97,13 +103,14 @@ services:
 
   # SeaweedFS S3 gateway for DV_MULTIMEDIA externalization (ADR-017) —
   # DEV/TEST ONLY. Externalization is OFF by default, so the app does NOT depend
-  # on this. To try it, enable it and point the app at the gateway:
-  #   EHRBASE_MULTIMEDIA_ENABLED=true
-  #   EHRBASE_MULTIMEDIA_ENDPOINT=http://seaweedfs:8333
-  #   EHRBASE_MULTIMEDIA_BUCKET=openehr-multimedia
-  #   EHRBASE_MULTIMEDIA_ALLOW_HTTP=true          # dev only; prod S3 is HTTPS
+  # on this. To try it, enable it and point the app at the gateway (or set the
+  # equivalent [multimedia] keys in ehrbase.dev.toml):
+  #   EHRBASE__MULTIMEDIA__ENABLED=true
+  #   EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
+  #   EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia
+  #   EHRBASE__MULTIMEDIA__ALLOW_HTTP=true          # dev only; prod S3 is HTTPS
   # With no AWS keys the gateway runs in unauthenticated "allow-all" mode
-  # (dev/test only). In production point EHRBASE_MULTIMEDIA_* at a real,
+  # (dev/test only). In production point EHRBASE__MULTIMEDIA__* at a real,
   # credentialed, HTTPS S3 endpoint (AWS S3 / MinIO / etc.) instead of this.
   seaweedfs:
     image: chrislusf/seaweedfs:latest
@@ -121,8 +128,9 @@ services:
 
   # Keycloak for OAuth2/OIDC bearer auth (the "ehrbase" realm is imported from
   # docker/keycloak/import). The app defaults to Basic auth (see ehrbase.dev.toml),
-  # so it does NOT depend on Keycloak; point EHRBASE_REST_AUTH__OIDC__* (or a TOML
-  # [auth.oidc] block) at http://localhost:8081/auth/realms/ehrbase to use it.
+  # so it does NOT depend on Keycloak; add an [auth.oidc] block to ehrbase.dev.toml
+  # (or set EHRBASE__AUTH__OIDC__* env) pointing issuer at
+  # http://localhost:8081/auth/realms/ehrbase to use it.
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.4
     command: ["start-dev", "--import-realm"]

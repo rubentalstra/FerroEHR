@@ -66,8 +66,8 @@ reachable on. When management.port is set the surface runs on its own listener;
 otherwise it shares the main API port.
 */}}
 {{- define "ehrbase-rs.managementPort" -}}
-{{- if .Values.management.port }}
-{{- .Values.management.port }}
+{{- if .Values.config.management.port }}
+{{- .Values.config.management.port }}
 {{- else }}
 {{- 8080 }}
 {{- end }}
@@ -93,7 +93,7 @@ when there is at least one secret value to carry).
 */}}
 {{- define "ehrbase-rs.hasChartSecret" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url }}
-{{- if or $inlineDb .Values.auth.oidc.hmacSecret .Values.signing.pgp.keyPassphrase .Values.events.url .Values.fhirOutbound.url .Values.multimedia.accessKeyId .Values.multimedia.secretAccessKey -}}
+{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey -}}
 true
 {{- end -}}
 {{- end }}

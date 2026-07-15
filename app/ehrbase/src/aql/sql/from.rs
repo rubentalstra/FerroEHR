@@ -14,7 +14,7 @@
 //! §Containment — boolean `AND`/`OR`, `NOT`).
 
 use sea_query::extension::postgres::PgExpr as _;
-use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Query, SelectStatement};
+use sea_query::{Alias, Expr, ExprTrait as _, Query, SelectStatement};
 
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{
@@ -213,6 +213,15 @@ impl Builder<'_> {
             self.vo_alias.insert(sid, voa.clone());
             if let Some(e) = ehr {
                 self.q.and_where(col(&node, "ehr_id").eq(col(e, "id")));
+                // Mirror the EHR link onto the version spine: `vo_version.
+                // ehr_id` carries the same value by construction (a versioned
+                // object belongs to exactly one EHR — RM ehr master04 §EHR),
+                // and the explicit predicate lets the planner drive
+                // `idx_vo_version_ehr` instead of scanning every current
+                // version in the store (buffers then scale with the EHR's own
+                // content, not the corpus). No openEHR spec governs plan
+                // shaping — our own storage design.
+                self.q.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 self.roots_linked_to_ehr.insert(node.clone());
             }
             Ok(VoGroup { node, vo: voa })
@@ -301,6 +310,10 @@ impl Builder<'_> {
                 sub.and_where(col(alias, "vo_id").eq(col(&voa, "vo_id")));
                 sub.and_where(col(alias, "sys_version").eq(col(&voa, "sys_version")));
                 sub.and_where(col(alias, "ehr_id").eq(col(e, "id")));
+                // Same version-spine mirror as the FROM path (see above):
+                // lets the planner bound the EXISTS by the EHR instead of the
+                // corpus. Identical semantics by construction.
+                sub.and_where(col(&voa, "ehr_id").eq(col(e, "id")));
                 match scope {
                     VersionScope::Latest => {
                         sub.and_where(call("upper_inf", vec![col(&voa, "sys_period")]));
@@ -359,50 +372,36 @@ impl Builder<'_> {
         }
         // One gate per join-connected component (item 24): a VO root linked to
         // an EHR alias (`node.ehr_id = e.id`) is covered by that alias's gate —
-        // gating both emitted the full-population subquery twice per query.
+        // gating both would filter the same EHR twice.
         for root in self.group_roots.clone() {
             if self.roots_linked_to_ehr.contains(&root) {
                 continue;
             }
-            let gate = self.queryable_gate(col(&root, "ehr_id"));
-            self.q.and_where(gate);
+            self.gate_vo_root(&root);
         }
+        // An EHR source already has its `ehr` row in the FROM — filter its
+        // promoted `is_queryable` column directly.
         for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
-            let gate = self.queryable_gate(col(&alias, "id"));
-            self.q.and_where(gate);
+            self.q.and_where(col(&alias, "is_queryable").eq(true));
         }
     }
 
-    /// The population gate as a **correlated** `EXISTS` probe: the EHR id under
-    /// test equates into the subquery (`qgv.ehr_id = <target>`), so the planner
-    /// answers it per candidate row through `idx_vo_version_ehr` instead of
-    /// materializing every queryable EHR id per query (the uncorrelated `IN`
-    /// form scanned all current `EHR_STATUS` roots each execution — item 24).
-    /// `is_queryable` is a scalar attribute of `EHR_STATUS`, so it lives inline
-    /// in the `EHR_STATUS` **root** node's verbatim canonical `data` fragment
-    /// (`num = 0`; children are pruned but scalars stay).
-    fn queryable_gate(&mut self, target: Expr) -> Expr {
-        let sv = format!("qgv{}", self.next_ctr());
-        let sn = format!("qgn{}", self.next_ctr());
-        let mut sub = Query::select();
-        sub.expr(Expr::val(1));
-        sub.from_as(VoVersion::Table, Alias::new(sv.as_str()));
-        sub.from_as(Node::Table, Alias::new(sn.as_str()));
-        sub.and_where(col(&sv, "ehr_id").eq(target));
-        sub.and_where(col(&sn, "vo_id").eq(col(&sv, "vo_id")));
-        sub.and_where(col(&sn, "sys_version").eq(col(&sv, "sys_version")));
-        sub.and_where(col(&sn, "num").eq(Expr::val(0)));
-        sub.and_where(col(&sv, "kind").eq(Expr::val("EHR_STATUS")));
-        // Current = the latest TRUNK version (branches coexist with the trunk;
-        // RM common master06 latest_trunk_version).
-        sub.and_where(call("upper_inf", vec![col(&sv, "sys_period")]));
-        sub.and_where(col(&sv, "branch_number").eq(Expr::val(0)));
-        sub.and_where(
-            col(&sn, "data")
-                .binary(BinOper::Custom("->>"), Expr::val("is_queryable"))
-                .eq(Expr::val("true")),
-        );
-        Expr::exists(sub)
+    /// Gate an unlinked versioned-object root (no bound EHR alias covers it):
+    /// join the owning `ehr` row on the node's `ehr_id` and filter the promoted
+    /// [`is_queryable`](crate::db::iden::Ehr::IsQueryable) column. The flag is a
+    /// scalar attribute of the current `EHR_STATUS` (RM ehr master04 §EHR Status,
+    /// `EHR_STATUS.is_queryable` 1..1 Boolean), promoted onto the `ehr` row and
+    /// kept in lockstep by the status write path, so the gate is a boolean-column
+    /// filter over a PK join instead of a per-query `EXISTS` that index-scanned
+    /// every current `EHR_STATUS` root (item 33). SM `I_QUERY_SERVICE`: a
+    /// full-population query runs over "all EHRs whose status has the
+    /// `is_queryable` flag set to `True`" (`i_query_service.adoc`). No openEHR
+    /// spec governs the join mechanics — our own storage design.
+    fn gate_vo_root(&mut self, root: &str) {
+        let alias = format!("qg{}", self.next_ctr());
+        self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
+        self.q.and_where(col(&alias, "id").eq(col(root, "ehr_id")));
+        self.q.and_where(col(&alias, "is_queryable").eq(true));
     }
 
     /// Join the EHR's current `EHR_STATUS` versioned-object root node for an EHR

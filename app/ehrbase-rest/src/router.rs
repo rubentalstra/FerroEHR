@@ -72,9 +72,10 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     let cfg = state.config().clone();
     let observability = state.observability().clone();
     let rest_root = cfg
+        .server
         .base_path
         .strip_suffix("/openehr/v1")
-        .unwrap_or(&cfg.base_path)
+        .unwrap_or(&cfg.server.base_path)
         .to_owned();
 
     // ── The generated ITS-REST surface, gated by authentication ──────────────
@@ -125,37 +126,11 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // never reaches auth, audit, or the request body; scoped here so the public
     // status/health/discovery/management endpoints are never shed. No openEHR
     // spec governs server overload — our own design (RFC 9110 §15.6.4).
-    let api = crate::overload::shed_layer(api, cfg.max_in_flight);
+    let api = crate::overload::shed_layer(api, cfg.server.max_in_flight);
 
-    // ── The public, pre-auth surface (status/health + SMART discovery) ───────
-    // The SMART `/.well-known/smart-configuration` document is served pre-auth
-    // (SMART master04 §Service Discovery) and is config-gated: an empty router
-    // when SMART is disabled, so the merge is a no-op and the path is absent.
-    let fhir_base = cfg
-        .fhir
-        .enabled
-        .then(|| format!("{}/fhir/r4", cfg.base_path));
-    let discovery = smart::discovery::router::<S>(
-        &cfg.smart,
-        &cfg.base_path,
-        fhir_base.as_deref(),
-        cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str()),
-        &rest_root,
-    );
+    let inner = mount_public_surface::<S>(&cfg, api, &rest_root);
 
-    let mut inner = Router::new()
-        .nest(&cfg.base_path, api)
-        .merge(status::router(&rest_root))
-        .merge(discovery);
-
-    if cfg.swagger_ui {
-        inner = inner.merge(openapi::swagger_router(
-            &cfg.swagger_ui_path(),
-            &cfg.openapi_json_path(),
-        ));
-    }
-
-    let cors = if cfg.cors_permissive {
+    let cors = if cfg.server.cors_permissive {
         CorsLayer::very_permissive()
     } else {
         CorsLayer::new()
@@ -186,7 +161,8 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // ── System Options and Conformance — `OPTIONS`, above the CORS layer ─────
     // The manifest advertises the **live** mounted-group set (System API G-1):
     // the four always-on standardised groups plus `/admin` when its group is
-    // enabled. Its identity/conformance fields come from `cfg.system` (G-2/G-6).
+    // enabled. Its identity/conformance fields come from `cfg.server.identity`
+    // (G-2/G-6).
     let mut endpoints = vec![
         "/ehr".to_owned(),
         "/definition".to_owned(),
@@ -196,7 +172,10 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     if cfg.admin.enabled {
         endpoints.push("/admin".to_owned());
     }
-    let manifest = Arc::new(system::SystemManifest::new(cfg.system.clone(), endpoints));
+    let manifest = Arc::new(system::SystemManifest::new(
+        cfg.server.identity.clone(),
+        endpoints,
+    ));
 
     // Mount at the API base-path root (System API G-3) and keep a bare-`/` alias
     // for naive root probes; every other request falls through to the
@@ -204,7 +183,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // a preflight; real per-resource CORS preflights are on sub-paths and reach
     // the CORS layer via the fallback.
     let app: Router = Router::new()
-        .route(&cfg.base_path, system::route(manifest.clone()))
+        .route(&cfg.server.base_path, system::route(manifest.clone()))
         .route("/", system::route(manifest))
         .fallback_service(inner);
 
@@ -219,6 +198,32 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     } else {
         app
     }
+}
+
+/// Mount the public, pre-auth surface around the API tree: status/health,
+/// the config-gated SMART `/.well-known/smart-configuration` document (served
+/// pre-auth, SMART master04 §Service Discovery; an empty router when SMART is
+/// disabled, so the merge is a no-op and the path is absent), and the
+/// config-gated Swagger UI + `OpenAPI` documents.
+fn mount_public_surface<S: Platform>(
+    cfg: &crate::config::AppConfig,
+    api: Router<AppState<S>>,
+    rest_root: &str,
+) -> Router<AppState<S>> {
+    // The SMART discovery document rebuilds itself from the request state (the
+    // openEHR/FHIR base URLs + OIDC issuer come from configuration), so the
+    // router only needs the config + REST root to decide the mount + path.
+    let discovery = smart::discovery::router::<S>(&cfg.smart, rest_root);
+
+    let mut inner = Router::new()
+        .nest(&cfg.server.base_path, api)
+        .merge(status::router(rest_root))
+        .merge(discovery);
+
+    if cfg.server.swagger_ui {
+        inner = inner.merge(openapi::swagger_router::<S>(cfg));
+    }
+    inner
 }
 
 /// Build the standalone management router (separate-port mode). The binary

@@ -117,12 +117,12 @@ patient is possible only through the
 
 - **Logs** go to stdout — JSON when not attached to a terminal, pretty on a
   TTY — each line stamped with the trace and span id. Shipping and rotation
-  are the platform's job. `EHRBASE_LOG_FORMAT` (`auto`/`json`/`pretty`) and
-  `EHRBASE_LOG_FILTER` (or `RUST_LOG`, default `info,ehrbase=info`) control
+  are the platform's job. `EHRBASE__LOG__FORMAT` (`auto`/`json`/`pretty`) and
+  `EHRBASE__LOG__FILTER` (or `RUST_LOG`, default `info,ehrbase=info`) control
   them, and the level can be changed at runtime through the `loggers` endpoint
   below. On boot the server prints a one-time ASCII banner (version, maintainer,
   project URL, and spec pins) to stdout ahead of the logs; it is suppressed
-  under `EHRBASE_LOG_FORMAT=json` so machine log consumers see only structured
+  under `EHRBASE__LOG__FORMAT=json` so machine log consumers see only structured
   lines.
 - **Traces** export to any OpenTelemetry collector (Tempo, Jaeger, and so on)
   over OTLP — but only when you configure an endpoint; with none set, the
@@ -138,11 +138,11 @@ The telemetry environment variables:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_OTEL_OTLP_ENDPOINT` | unset (layer not installed) | OTLP collector endpoint |
-| `EHRBASE_OTEL_SERVICE_NAME` | `ehrbase` | reported service name |
-| `EHRBASE_OTEL_ENVIRONMENT` | `dev` | reported deployment environment |
-| `EHRBASE_OTEL_TRACES_SAMPLE_RATIO` | `1.0` | head sampling ratio (start at `0.1` in production) |
-| `EHRBASE_OTEL_METRICS_PUSH` | `false` | also push metrics over OTLP |
+| `EHRBASE__TELEMETRY__OTLP_ENDPOINT` | unset (layer not installed) | OTLP collector endpoint |
+| `EHRBASE__TELEMETRY__SERVICE_NAME` | `ehrbase` | reported service name |
+| `EHRBASE__TELEMETRY__ENVIRONMENT` | `dev` | reported deployment environment |
+| `EHRBASE__TELEMETRY__TRACES_SAMPLE_RATIO` | `1.0` | head sampling ratio (start at `0.1` in production) |
+| `EHRBASE__TELEMETRY__METRICS_PUSH` | `false` | also push metrics over OTLP |
 
 > [!TIP]
 > A single-container dev stack (`grafana/otel-lgtm`, bundling an OTLP
@@ -156,7 +156,7 @@ The telemetry environment variables:
 Normal openEHR deletes are *logical* — history is retained. The admin API is
 the exception: **physical, irreversible** removal, for legal erasure requests
 and test-data cleanup. It is mounted only when
-`EHRBASE_REST_ADMIN__ENABLED=true` (otherwise its routes are plain `404`s)
+`EHRBASE__ADMIN__ENABLED=true` (otherwise its routes are plain `404`s)
 and is classed under admin authorization (the `ADMIN` role).
 
 - `DELETE {base}/admin/ehr/{ehr_id}` — physically delete one EHR and
@@ -182,11 +182,11 @@ PHI.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_MANAGEMENT_ENABLED` | `false` | enable the management surface |
-| `EHRBASE_MANAGEMENT_BASE_PATH` | `/management` | base path for the surface |
-| `EHRBASE_MANAGEMENT_PORT` | unset (main listener) | serve management on its own port |
-| `EHRBASE_MANAGEMENT_ACCESS_DEFAULT` | `admin_only` | default access level |
-| `EHRBASE_MANAGEMENT_PROBES_ENABLED` | `false` | expose the liveness/readiness probes as public |
+| `EHRBASE__MANAGEMENT__ENABLED` | `false` | enable the management surface |
+| `EHRBASE__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
+| `EHRBASE__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
+| `EHRBASE__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
+| `EHRBASE__MANAGEMENT__PROBES_ENABLED` | `false` | expose the liveness/readiness probes as public |
 
 The probe and ops endpoints:
 

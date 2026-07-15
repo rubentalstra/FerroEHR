@@ -18,7 +18,7 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{CallStatusType, DemographicService, PartyKind, SmError, UpdateVersion};
 
@@ -54,7 +54,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -76,6 +76,19 @@ fn vo_uuid(v: &Value) -> String {
     ovid(v).split("::").next().expect("vo uuid").to_owned()
 }
 
+/// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
+/// probes MUST anchor their reference instant on this server clock — the same
+/// clock that stamps `vo_version.sys_period` — never on the test-process wall
+/// clock: a client/DB clock skew under parallel-load testcontainers would race
+/// the at-time read against the version validity intervals.
+async fn db_now(pool: &PgPool) -> jiff::Timestamp {
+    sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
+        .fetch_one(pool)
+        .await
+        .expect("db now()")
+        .to_jiff()
+}
+
 fn person(name: &str) -> Value {
     json!({
         "_type": "PERSON",
@@ -93,6 +106,30 @@ fn person(name: &str) -> Value {
                     "_type": "ELEMENT",
                     "archetype_node_id": "at0003",
                     "name": { "_type": "DV_TEXT", "value": "family" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
+fn organisation(name: &str) -> Value {
+    json!({
+        "_type": "ORGANISATION",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "org name" },
                     "value": { "_type": "DV_TEXT", "value": name }
                 }]
             }
@@ -233,7 +270,8 @@ async fn party_sm_calls_round_trip() {
 #[tokio::test]
 async fn person_lifecycle_end_to_end() {
     let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_person").await);
+    let pool = pg.migrated_pool("demographic_person").await;
+    let svc = EhrbaseService::new(pool.clone());
 
     // create → v1
     let created = svc
@@ -264,8 +302,14 @@ async fn person_lifecycle_end_to_end() {
         .expect("get by ovid");
     assert_eq!(ovid(&by_ovid.body), ovid_v1);
 
-    // time-travel: capture a time inside v1, then update to v2
-    let t_v1 = jiff::Timestamp::now();
+    // time-travel: capture a time inside v1 FROM THE DB CLOCK, then update to
+    // v2. The reference instant MUST come from the server clock (the clock that
+    // stamps `vo_version.sys_period`), never the test-process wall clock — a
+    // client/DB clock skew under parallel-load testcontainers races the at-time
+    // read against the version validity intervals (a real flake this fixes).
+    let t_v1 = db_now(&pool).await;
+    // A short gap so v2's commit transaction timestamp is strictly greater than
+    // t_v1 even at microsecond resolution (both are now on the DB clock).
     tokio::time::sleep(std::time::Duration::from_millis(15)).await;
 
     // update (If-Match = current OVID) → v2
@@ -350,6 +394,74 @@ async fn person_lifecycle_end_to_end() {
         .await
         .expect("get after delete");
     assert!(after.is_empty(), "deleted current read is 204 (Null body)");
+}
+
+/// P20-item-34 party write-path fix: the create/update representation is now
+/// built **from the commit result** (never a post-commit re-read). It must be
+/// byte-identical to a fresh read — the served body is
+/// `inject_uid(reassemble(decompose(body)))` and the node codec round-trips
+/// losslessly (RM common master06 §Committal: the written version identity +
+/// content). Mirrors the EHR/DIRECTORY `write_responses_match_a_fresh_read`
+/// gate; covers PERSON and the ORGANISATION sibling (same path, keyed by
+/// `PartyKind`).
+#[tokio::test]
+async fn party_write_responses_match_a_fresh_read() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("party_writeresp").await);
+
+    // create → the built-from-commit body equals a fresh read.
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"))
+        .await
+        .expect("create person");
+    let ovid_v1 = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+    let fresh = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get person");
+    assert_eq!(
+        created.body, fresh.body,
+        "create body built from the commit must equal a fresh read"
+    );
+    assert_eq!(
+        created.meta.as_ref().expect("create meta").uid,
+        fresh.meta.as_ref().expect("read meta").uid,
+        "create uid == fresh read uid"
+    );
+
+    // update → the built-from-commit body equals a fresh read.
+    let updated = svc
+        .party_update(PartyKind::Person, vo.clone(), ovid_v1, person("Jane Roe"))
+        .await
+        .expect("update person");
+    let fresh_v2 = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get person v2");
+    assert_eq!(
+        updated.body, fresh_v2.body,
+        "update body built from the commit must equal a fresh read"
+    );
+    assert_eq!(
+        updated.meta.as_ref().expect("update meta").uid,
+        fresh_v2.meta.as_ref().expect("read meta").uid,
+    );
+
+    // ORGANISATION sibling — the same create path keyed by PartyKind.
+    let created_org = svc
+        .party_create(PartyKind::Organisation, organisation("Acme"))
+        .await
+        .expect("create organisation");
+    let vo_org = vo_uuid(&created_org.body);
+    let fresh_org = svc
+        .party_get(PartyKind::Organisation, vo_org, None)
+        .await
+        .expect("get organisation");
+    assert_eq!(
+        created_org.body, fresh_org.body,
+        "organisation create body built from the commit must equal a fresh read"
+    );
 }
 
 /// The versioned-party delete shape the DEM ECC cases drive (ECC-DEM-005/006 …):
