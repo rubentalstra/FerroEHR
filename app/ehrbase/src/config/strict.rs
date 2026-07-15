@@ -4,15 +4,17 @@
 
 use std::collections::HashMap;
 
-use super::alias::{self, ALLOWLIST, DIES, SECTIONS};
+use super::alias::{ALLOWLIST, SECTIONS};
 use super::loader::ConfigError;
 
 /// Sweep the reserved `EHRBASE_` namespace: every such variable must be an
-/// allowlisted non-config name, a known-section key, or a registered alias —
-/// anything else is a boot error (with a did-you-mean), which is what makes a
-/// set-but-never-read variable (the historical C-3/C-5 defect class) impossible.
-/// Deeper key typos inside a known section are caught at deserialize by
-/// `deny_unknown_fields`.
+/// allowlisted non-config name or a known-section uniform key — anything else
+/// is a boot error (with a did-you-mean), which is what makes a
+/// set-but-never-read variable (the historical C-3/C-5 defect class)
+/// impossible. There is no legacy remapping (greenfield, owner ruling
+/// 2026-07-15): a pre-redesign spelling fails here with the exact uniform
+/// suggestion. Deeper key typos inside a known section are caught at
+/// deserialize by `deny_unknown_fields`.
 #[must_use]
 pub fn strict_env(env: &HashMap<String, String>) -> Vec<ConfigError> {
     let mut errors = Vec::new();
@@ -20,23 +22,42 @@ pub fn strict_env(env: &HashMap<String, String>) -> Vec<ConfigError> {
         if !key.starts_with("EHRBASE_") || ALLOWLIST.contains(&key.as_str()) {
             continue;
         }
-        if let Some((_, msg)) = DIES.iter().find(|(d, _)| *d == key) {
-            errors.push(ConfigError::dies(key, msg));
+        // Canonical uniform form: `EHRBASE__<SECTION>__<TAIL>` — every segment
+        // boundary, including after the prefix, is `__`. The leading section
+        // must be one of the known eighteen. `EHRBASE__SERVER__BIND` → `server`.
+        if let Some(tail) = key.strip_prefix("EHRBASE__") {
+            let section = tail
+                .split("__")
+                .next()
+                .unwrap_or_default()
+                .to_ascii_lowercase();
+            if section.is_empty() || !SECTIONS.contains(&section.as_str()) {
+                errors.push(ConfigError::unknown_env(
+                    key,
+                    did_you_mean(&section, SECTIONS),
+                ));
+            }
             continue;
         }
-        // A legacy alias is handled (warned + remapped) by the assembler.
-        if alias::resolve_alias(key).is_some() {
-            continue;
-        }
-        // New-form variable: the leading section must be one of the known
-        // eighteen. `EHRBASE_SERVER__BIND` → section `server`.
+        // `EHRBASE_` but not `EHRBASE__`, and not allowlisted: a near-miss for
+        // the uniform grammar (including every pre-redesign legacy spelling —
+        // there is no alias layer, greenfield). Repair the spelling
+        // mechanically: (a) insert the missing prefix separator; if the first
+        // `__`-segment then names a known section, suggest that verbatim;
+        // (b) else, for a flat legacy tail (`DB_MAX_CONNECTIONS`), match the
+        // leading word against the known sections and double that boundary
+        // too. Otherwise fall back to a section did-you-mean.
         let tail = key.strip_prefix("EHRBASE_").unwrap_or_default();
-        let section = tail
-            .split("__")
-            .next()
-            .unwrap_or_default()
-            .to_ascii_lowercase();
-        if section.is_empty() || !SECTIONS.contains(&section.as_str()) {
+        let first = tail.split("__").next().unwrap_or_default();
+        let section = first.to_ascii_lowercase();
+        if SECTIONS.contains(&section.as_str()) {
+            errors.push(ConfigError::near_miss_env(key, &format!("EHRBASE__{tail}")));
+        } else if let Some(flat) = SECTIONS.iter().find_map(|s| {
+            tail.strip_prefix(&format!("{}_", s.to_ascii_uppercase()))
+                .map(|rest| format!("EHRBASE__{}__{rest}", s.to_ascii_uppercase()))
+        }) {
+            errors.push(ConfigError::near_miss_env(key, &flat));
+        } else {
             errors.push(ConfigError::unknown_env(
                 key,
                 did_you_mean(&section, SECTIONS),
@@ -102,7 +123,8 @@ mod tests {
         assert_eq!(damerau_levenshtein("signing", "signing"), 0);
         assert_eq!(damerau_levenshtein("signin", "signing"), 1);
         assert_eq!(damerau_levenshtein("signign", "signing"), 1); // transposition
-        assert_eq!(damerau_levenshtein("telemetry", "db"), 8);
+        // "telemetry" (9) → "db" (2): 2 substitutions + 7 deletions = 9.
+        assert_eq!(damerau_levenshtein("telemetry", "db"), 9);
     }
 
     #[test]
@@ -113,12 +135,13 @@ mod tests {
     }
 
     #[test]
-    fn sweep_flags_unknown_and_dies_and_passes_known() {
+    fn sweep_flags_unknown_and_legacy_and_passes_known() {
         let mut env = HashMap::new();
-        env.insert("EHRBASE_SERVER__BIND".to_owned(), "0.0.0.0:9".to_owned());
-        env.insert("EHRBASE_SIGNIN__ENABLED".to_owned(), "true".to_owned());
+        env.insert("EHRBASE__SERVER__BIND".to_owned(), "0.0.0.0:9".to_owned());
+        env.insert("EHRBASE__SIGNIN__ENABLED".to_owned(), "true".to_owned());
+        // Pre-redesign spellings are NOT aliased (greenfield) — both fail:
         env.insert("EHRBASE_SIGNING_CONFIG".to_owned(), "/x.toml".to_owned());
-        env.insert("EHRBASE_DB_MAX_CONNECTIONS".to_owned(), "5".to_owned()); // legacy alias, ok
+        env.insert("EHRBASE_DB_MAX_CONNECTIONS".to_owned(), "5".to_owned());
         env.insert("EHRBASE_CONFIG".to_owned(), "/e.toml".to_owned()); // allowlisted
         let errs = strict_env(&env);
         let joined = errs
@@ -126,9 +149,25 @@ mod tests {
             .map(ToString::to_string)
             .collect::<Vec<_>>()
             .join("\n");
-        assert!(joined.contains("EHRBASE_SIGNIN__ENABLED"), "{joined}");
+        assert!(joined.contains("EHRBASE__SIGNIN__ENABLED"), "{joined}");
         assert!(joined.contains("signing"), "did-you-mean: {joined}");
         assert!(joined.contains("EHRBASE_SIGNING_CONFIG"), "{joined}");
-        assert_eq!(errs.len(), 2, "only the typo + the dies var: {joined}");
+        assert!(joined.contains("EHRBASE_DB_MAX_CONNECTIONS"), "{joined}");
+        assert_eq!(errs.len(), 3, "the typo + both legacy spellings: {joined}");
+    }
+
+    #[test]
+    fn near_miss_prefix_is_flagged_with_uniform_spelling() {
+        let mut env = HashMap::new();
+        // Right section, old single-`_` prefix → near-miss.
+        env.insert("EHRBASE_DB__URL".to_owned(), "postgres://x".to_owned());
+        let errs = strict_env(&env);
+        let joined = errs
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(errs.len(), 1, "{joined}");
+        assert!(joined.contains("EHRBASE__DB__URL"), "suggestion: {joined}");
     }
 }

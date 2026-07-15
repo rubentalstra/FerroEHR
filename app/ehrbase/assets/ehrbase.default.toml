@@ -6,9 +6,10 @@
 # `#?` are optional/derived/secret and are shown commented for reference.
 # Lines marked `# PROD:` MUST be reviewed before a production deployment.
 #
-# Env overrides use `EHRBASE_` + the TOML path, `__` between levels, e.g.
-# `[db] max_connections` ⇔ EHRBASE_DB__MAX_CONNECTIONS. `--set key=value` wins
-# over env. `DATABASE_URL` and `RUST_LOG` are recognized (lower-priority) aliases.
+# Env overrides use `EHRBASE` + the TOML path, `__` between every segment
+# (including after the prefix), e.g. `[db] max_connections` ⇔
+# EHRBASE__DB__MAX_CONNECTIONS. `--set key=value` wins over env. `DATABASE_URL`
+# and `RUST_LOG` are recognized (lower-priority) aliases.
 
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
 [server]

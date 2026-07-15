@@ -1,7 +1,7 @@
 //! The one loader (§5.1–5.4): file discovery + the pure `config`-crate
-//! assembly (defaults < file < env < `--set`) with the strict passes, alias
-//! remapping, error enrichment, and `*_file` secret resolution. No openEHR spec
-//! governs configuration — our own design.
+//! assembly (defaults < file < env < `--set`) with the strict passes, the two
+//! conventional aliases, error enrichment, and `*_file` secret resolution.
+//! No openEHR spec governs configuration — our own design.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -10,7 +10,7 @@ use config::{Config, Environment, File, FileFormat};
 use ehrbase_sm::Secret;
 
 use super::EhrbaseConfig;
-use super::alias::{self, CONVENTIONAL, LIST_KEYS};
+use super::alias::{CONVENTIONAL, LIST_KEYS};
 use super::strict;
 
 /// One configuration error, rendered as a single human line.
@@ -33,23 +33,26 @@ impl ConfigError {
         Self::new(message)
     }
 
-    /// A retired variable that now dies with a migration message.
-    #[must_use]
-    pub fn dies(var: &str, msg: &str) -> Self {
-        Self::new(format!("`{var}` is no longer supported: {msg}"))
-    }
-
     /// An unknown variable in the reserved `EHRBASE_` namespace.
     #[must_use]
     pub fn unknown_env(var: &str, suggestion: Option<String>) -> Self {
         let hint = suggestion.map_or_else(String::new, |s| {
             format!(
-                " — did you mean the `{s}` section (EHRBASE_{}__…)?",
+                " — did you mean the `{s}` section (EHRBASE__{}__…)?",
                 s.to_ascii_uppercase()
             )
         });
         Self::new(format!(
             "unknown configuration environment variable `{var}`{hint}"
+        ))
+    }
+
+    /// A near-miss in the reserved `EHRBASE_` namespace: the right section but
+    /// the old single-`_` prefix. Suggest the exact uniform spelling.
+    #[must_use]
+    pub fn near_miss_env(var: &str, uniform: &str) -> Self {
+        Self::new(format!(
+            "unknown configuration environment variable `{var}` — did you mean `{uniform}`?"
         ))
     }
 }
@@ -129,20 +132,12 @@ pub fn assemble(
         None => None,
     };
 
-    // Alias sweep (§5.7): warn once per set legacy var (this runs once per boot,
-    // so the warning is once-per-boot-per-alias, not per read), and remap the
-    // value onto its new key. New forms win because the real-env source is
-    // layered after this one.
+    // The two permanent conventional aliases (§P-3: DATABASE_URL, RUST_LOG) —
+    // layered BELOW the canonical source so an `EHRBASE__` form always wins.
+    // There is no legacy remapping (greenfield, owner ruling 2026-07-15):
+    // pre-redesign spellings fail the strict sweep above with the exact
+    // uniform suggestion.
     let mut alias_map: HashMap<String, String> = HashMap::new();
-    for (key, value) in env {
-        if let Some(new) = alias::resolve_alias(key) {
-            tracing::warn!(
-                "environment variable {key} is deprecated; use {new} (aliases are removed in a \
-                 future release — see the migration table in the configuration docs)"
-            );
-            alias_map.entry(new).or_insert_with(|| value.clone());
-        }
-    }
     for (external, canonical) in CONVENTIONAL {
         if let Some(value) = env.get(*external) {
             alias_map
@@ -151,15 +146,12 @@ pub fn assemble(
         }
     }
 
-    // The canonical (new-form) EHRBASE_ variables — excluding allowlist, dies,
-    // and legacy-alias names (those feed `alias_map`).
+    // The canonical (uniform-grammar) `EHRBASE__…` variables. Allowlisted
+    // infra names never carry the double prefix, so the prefix check alone
+    // selects the canonical set.
     let mut real_map: HashMap<String, String> = HashMap::new();
     for (key, value) in env {
-        if !key.starts_with("EHRBASE_")
-            || alias::ALLOWLIST.contains(&key.as_str())
-            || alias::DIES.iter().any(|(d, _)| d == key)
-            || alias::resolve_alias(key).is_some()
-        {
+        if !key.starts_with("EHRBASE__") {
             continue;
         }
         real_map.insert(key.clone(), value.clone());

@@ -91,14 +91,14 @@ environment variable:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_FHIR__API_ENABLED` | `false` | enable inbound ingest, the read façade, and the mapping API |
-| `EHRBASE_FHIR__OUTBOUND__ENABLED` | `false` | enable outbound emission to AMQP |
-| `EHRBASE_FHIR__OUTBOUND__URL` | `amqp://guest:guest@localhost:5672/%2f` | outbound broker URL |
-| `EHRBASE_FHIR__OUTBOUND__EXCHANGE` | `ehrbase.fhir` | outbound topic exchange (kept distinct from the event stream) |
-| `EHRBASE_FHIR__OUTBOUND__TLS` | `false` | upgrade an `amqp://` URL to `amqps://` |
-| `EHRBASE_FHIR__OUTBOUND__BATCH_SIZE` | `128` | commits drained per cycle |
-| `EHRBASE_FHIR__OUTBOUND__POLL_INTERVAL_MS` | `1000` | poll interval while idle |
-| `EHRBASE_FHIR__OUTBOUND__PUBLISH_MAX_RETRIES` | `3` | retries per message |
+| `EHRBASE__FHIR__API_ENABLED` | `false` | enable inbound ingest, the read façade, and the mapping API |
+| `EHRBASE__FHIR__OUTBOUND__ENABLED` | `false` | enable outbound emission to AMQP |
+| `EHRBASE__FHIR__OUTBOUND__URL` | `amqp://guest:guest@localhost:5672/%2f` | outbound broker URL |
+| `EHRBASE__FHIR__OUTBOUND__EXCHANGE` | `ehrbase.fhir` | outbound topic exchange (kept distinct from the event stream) |
+| `EHRBASE__FHIR__OUTBOUND__TLS` | `false` | upgrade an `amqp://` URL to `amqps://` |
+| `EHRBASE__FHIR__OUTBOUND__BATCH_SIZE` | `128` | commits drained per cycle |
+| `EHRBASE__FHIR__OUTBOUND__POLL_INTERVAL_MS` | `1000` | poll interval while idle |
+| `EHRBASE__FHIR__OUTBOUND__PUBLISH_MAX_RETRIES` | `3` | retries per message |
 
 When the inbound switch is off, the `/fhir/r4/*` and `/admin/fhir_mapping`
 routes answer `404` without touching the backend. When the outbound switch is

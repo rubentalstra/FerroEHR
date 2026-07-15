@@ -69,9 +69,9 @@ shown), so you can retune without editing it:
 | `EHRBASE_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
 | `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ehrbase` | App role, password, and database created by the DB image's init script. |
 | `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
-| `EHRBASE_LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+| `EHRBASE__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
 
-The server container itself is passed `EHRBASE_DB__URL` (assembled from the
+The server container itself is passed `EHRBASE__DB__URL` (assembled from the
 DB variables); its `ehrbase.toml` is the mounted `docker/ehrbase.dev.toml`,
 auto-discovered at `/etc/ehrbase/ehrbase.toml`. Any other `EHRBASE_*` setting
 from the [configuration reference](configuration.md) can be added under the
@@ -84,10 +84,10 @@ on — the server defaults to Basic auth and inline multimedia, so neither is
 required:
 
 - **`seaweedfs`** — an S3 gateway for large `DV_MULTIMEDIA` externalization
-  (development/test only). To try it, set `EHRBASE_MULTIMEDIA__ENABLED=true`,
-  `EHRBASE_MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
-  `EHRBASE_MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
-  `EHRBASE_MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
+  (development/test only). To try it, set `EHRBASE__MULTIMEDIA__ENABLED=true`,
+  `EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
+  `EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
+  `EHRBASE__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
   settings at a real, credentialed, HTTPS S3 endpoint instead.
 - **`keycloak`** — an OIDC provider with a preloaded `ehrbase` realm, on port
   8081. To use bearer auth instead of Basic, point the auth OIDC settings at

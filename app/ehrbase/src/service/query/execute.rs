@@ -119,7 +119,7 @@ impl EhrbaseService {
         };
 
         let exec_start = Instant::now();
-        // Query-level execution budget (`EHRBASE_QUERY__TIMEOUT_MS`, our own
+        // Query-level execution budget (`EHRBASE__QUERY__TIMEOUT_MS`, our own
         // operational extension — no openEHR spec governs a query timeout): when
         // set, the DB execution is bounded so an over-long query is reported as
         // `408 Request Timeout` rather than hanging until the global request

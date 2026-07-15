@@ -3,7 +3,7 @@
 # as the "all-features" golden render and to exercise every template branch.
 database:
   existingSecret: ehrbase-db
-  existingSecretKey: EHRBASE_DB__URL
+  existingSecretKey: EHRBASE__DB__URL
 
 secrets:
   authOidcHmacSecret: dev-hmac-secret

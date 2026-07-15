@@ -19,9 +19,9 @@ until you opt in.
 Turn it on and tell the server where your authorization server lives:
 
 ```bash
-export EHRBASE_SMART__ENABLED=true
-export EHRBASE_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT=https://as.example/auth
-export EHRBASE_SMART__ENDPOINTS__TOKEN_ENDPOINT=https://as.example/token
+export EHRBASE__SMART__ENABLED=true
+export EHRBASE__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT=https://as.example/auth
+export EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT=https://as.example/token
 ```
 
 SMART scopes ride only **Bearer** tokens, so pair this with OIDC bearer
@@ -30,31 +30,31 @@ If SMART is enabled without any bearer mechanism, the server logs a warning at
 boot: it can serve discovery, but the scope gate will never see a scope.
 
 The full key set lives in the `[smart]` section of `ehrbase.toml`; each key
-can be overridden with the shown `EHRBASE_SMART__*` environment variable (`__`
+can be overridden with the shown `EHRBASE__SMART__*` environment variable (`__`
 separates nested fields):
 
 | Key | Default | Meaning |
 |---|---|---|
-| `EHRBASE_SMART__ENABLED` | `false` | Master switch. Off = no discovery document (404) and an inert scope gate. |
-| `EHRBASE_SMART__PLATFORM_BASE_URL` | unset | Base the discovery document hangs off. Unset = the REST root (`/ehrbase/rest`). A leading path is honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`). |
-| `EHRBASE_SMART__EHR_ID_CLAIM` | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
-| `EHRBASE_SMART__PATIENT_CLAIM` | `patient` | Fallback launch-context claim when the EHR-id claim is absent. |
-| `EHRBASE_SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch — see [Advisory vs required](#advisory-vs-required) below. |
-| `EHRBASE_SMART__EPISODE__ENABLED` | `false` | Advertise + accept episode launch context (experimental; advisory only, no episode filtering). |
-| `EHRBASE_SMART__LAUNCH_BASE64_JSON` | `false` | Advertise the base64-JSON launch-parameter capability (experimental; consumed by the app, not the CDR). |
-| `EHRBASE_SMART__ENDPOINTS__ISSUER` | unset | Advertised token issuer. Unset = falls back to the configured OIDC bearer issuer. |
-| `EHRBASE_SMART__ENDPOINTS__JWKS_URI` | unset | Advertised `jwks_uri`. |
-| `EHRBASE_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | unset | Advertised OAuth2 authorization endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__TOKEN_ENDPOINT` | unset | Advertised OAuth2 token endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | unset | Advertised dynamic-client registration endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | unset | Advertised token introspection endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__REVOCATION_ENDPOINT` | unset | Advertised token revocation endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | unset | Advertised user management endpoint. |
-| `EHRBASE_SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | `[]` | Advertised client auth methods (e.g. `client_secret_basic`, `private_key_jwt`). |
-| `EHRBASE_SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | `[]` | Advertised grant types. `implicit` and the password grant are deprecated in SMART and **rejected at boot**. |
-| `EHRBASE_SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | `[]` | Advertised response types (e.g. `code`). |
-| `EHRBASE_SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | `[]` | Advertised PKCE methods (e.g. `S256`). |
-| `EHRBASE_SMART__ENDPOINTS__SCOPES_SUPPORTED` | `[]` | Advertised scopes. Empty = a default list reflecting what the CDR enforces. |
+| `EHRBASE__SMART__ENABLED` | `false` | Master switch. Off = no discovery document (404) and an inert scope gate. |
+| `EHRBASE__SMART__PLATFORM_BASE_URL` | unset | Base the discovery document hangs off. Unset = the REST root (`/ehrbase/rest`). A leading path is honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`). |
+| `EHRBASE__SMART__EHR_ID_CLAIM` | `ehrId` | Token claim carrying the launch context's openEHR EHR id. |
+| `EHRBASE__SMART__PATIENT_CLAIM` | `patient` | Fallback launch-context claim when the EHR-id claim is absent. |
+| `EHRBASE__SMART__REQUIRE_SMART_SCOPES` | `false` | Fail-closed switch — see [Advisory vs required](#advisory-vs-required) below. |
+| `EHRBASE__SMART__EPISODE__ENABLED` | `false` | Advertise + accept episode launch context (experimental; advisory only, no episode filtering). |
+| `EHRBASE__SMART__LAUNCH_BASE64_JSON` | `false` | Advertise the base64-JSON launch-parameter capability (experimental; consumed by the app, not the CDR). |
+| `EHRBASE__SMART__ENDPOINTS__ISSUER` | unset | Advertised token issuer. Unset = falls back to the configured OIDC bearer issuer. |
+| `EHRBASE__SMART__ENDPOINTS__JWKS_URI` | unset | Advertised `jwks_uri`. |
+| `EHRBASE__SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | unset | Advertised OAuth2 authorization endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT` | unset | Advertised OAuth2 token endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | unset | Advertised dynamic-client registration endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | unset | Advertised token introspection endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__REVOCATION_ENDPOINT` | unset | Advertised token revocation endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | unset | Advertised user management endpoint. |
+| `EHRBASE__SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | `[]` | Advertised client auth methods (e.g. `client_secret_basic`, `private_key_jwt`). |
+| `EHRBASE__SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | `[]` | Advertised grant types. `implicit` and the password grant are deprecated in SMART and **rejected at boot**. |
+| `EHRBASE__SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | `[]` | Advertised response types (e.g. `code`). |
+| `EHRBASE__SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | `[]` | Advertised PKCE methods (e.g. `S256`). |
+| `EHRBASE__SMART__ENDPOINTS__SCOPES_SUPPORTED` | `[]` | Advertised scopes. Empty = a default list reflecting what the CDR enforces. |
 
 Every unset optional endpoint is simply omitted from the discovery document —
 the server advertises your values verbatim and validates none of them beyond

@@ -205,7 +205,7 @@ pub fn load(
         tracing::warn!(
             url = crate::db::DEFAULT_URL,
             "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
-             supplied. Set db.url (or EHRBASE_DB__URL / DATABASE_URL) for any non-dev \
+             supplied. Set db.url (or EHRBASE__DB__URL / DATABASE_URL) for any non-dev \
              deployment — production MUST override it.",
             crate::db::DEFAULT_URL,
         );
@@ -279,14 +279,14 @@ mod tests {
         // env overrides file.
         let c = assemble_ok(
             Some(file.path()),
-            &env(&[("EHRBASE_DB__MAX_CONNECTIONS", "9")]),
+            &env(&[("EHRBASE__DB__MAX_CONNECTIONS", "9")]),
             &[],
         );
         assert_eq!(c.db.max_connections, 9);
         // --set overrides env.
         let c = assemble_ok(
             Some(file.path()),
-            &env(&[("EHRBASE_DB__MAX_CONNECTIONS", "9")]),
+            &env(&[("EHRBASE__DB__MAX_CONNECTIONS", "9")]),
             &[("db.max_connections".to_owned(), "11".to_owned())],
         );
         assert_eq!(c.db.max_connections, 11);
@@ -297,12 +297,12 @@ mod tests {
         // DATABASE_URL alone binds db.url.
         let c = assemble_ok(None, &env(&[("DATABASE_URL", "postgres://a@h/x")]), &[]);
         assert_eq!(c.db.url.expose(), "postgres://a@h/x");
-        // EHRBASE_DB__URL wins over DATABASE_URL.
+        // EHRBASE__DB__URL wins over DATABASE_URL.
         let c = assemble_ok(
             None,
             &env(&[
                 ("DATABASE_URL", "postgres://a@h/x"),
-                ("EHRBASE_DB__URL", "postgres://b@h/y"),
+                ("EHRBASE__DB__URL", "postgres://b@h/y"),
             ]),
             &[],
         );
@@ -316,11 +316,11 @@ mod tests {
         let c = assemble_ok(
             None,
             &env(&[
-                ("EHRBASE_SERVER__MAX_IN_FLIGHT", "64"),
-                ("EHRBASE_AUTH__OIDC__ISSUER", "https://idp"),
-                ("EHRBASE_AUTH__OIDC__AUDIENCES", "ehrbase,other"),
+                ("EHRBASE__SERVER__MAX_IN_FLIGHT", "64"),
+                ("EHRBASE__AUTH__OIDC__ISSUER", "https://idp"),
+                ("EHRBASE__AUTH__OIDC__AUDIENCES", "ehrbase,other"),
                 (
-                    "EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL",
+                    "EHRBASE__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL",
                     "https://pas/r4",
                 ),
             ]),
@@ -343,20 +343,48 @@ mod tests {
 
     #[test]
     fn unknown_env_var_is_a_boot_error_with_suggestion() {
-        let err = assemble(None, &env(&[("EHRBASE_SIGNIN__ENABLED", "true")]), &[])
+        let err = assemble(None, &env(&[("EHRBASE__SIGNIN__ENABLED", "true")]), &[])
             .expect_err("unknown var");
         let msg = err.to_string();
-        assert!(msg.contains("EHRBASE_SIGNIN__ENABLED"), "{msg}");
+        assert!(msg.contains("EHRBASE__SIGNIN__ENABLED"), "{msg}");
         assert!(msg.contains("signing"), "did-you-mean missing: {msg}");
     }
 
     #[test]
-    fn retired_config_pointer_dies_with_message() {
-        let err =
-            assemble(None, &env(&[("EHRBASE_SIGNING_CONFIG", "/x.toml")]), &[]).expect_err("dies");
+    fn near_miss_prefix_suggests_the_uniform_spelling() {
+        // The old mixed form (single `_` after the prefix) no longer binds; the
+        // sweep names the exact uniform spelling.
+        let err = assemble(None, &env(&[("EHRBASE_DB__URL", "postgres://x")]), &[])
+            .expect_err("near-miss");
+        let msg = err.to_string();
+        assert!(msg.contains("EHRBASE_DB__URL"), "{msg}");
+        assert!(
+            msg.contains("EHRBASE__DB__URL"),
+            "suggestion missing: {msg}"
+        );
+    }
+
+    #[test]
+    fn ehrbase_config_pointer_stays_accepted() {
+        // `EHRBASE_CONFIG` is a file pointer, not a config key — it keeps its
+        // single-`_` spelling and must never be flagged by the strict sweep.
+        let c = assemble_ok(
+            None,
+            &env(&[("EHRBASE_CONFIG", "/etc/ehrbase/ehrbase.toml")]),
+            &[],
+        );
+        assert_eq!(json(&c), json(&EhrbaseConfig::default()));
+    }
+
+    #[test]
+    fn retired_config_pointer_is_a_boot_error() {
+        // The per-subsystem `*_CONFIG` file pointers are gone (greenfield —
+        // no legacy special-casing): the spelling fails as an unknown
+        // reserved-namespace variable.
+        let err = assemble(None, &env(&[("EHRBASE_SIGNING_CONFIG", "/x.toml")]), &[])
+            .expect_err("retired pointer must fail");
         let msg = err.to_string();
         assert!(msg.contains("EHRBASE_SIGNING_CONFIG"), "{msg}");
-        assert!(msg.contains("no longer supported"), "{msg}");
     }
 
     #[test]
@@ -366,23 +394,17 @@ mod tests {
         assert!(err.to_string().contains("max_conections"), "{err}");
     }
 
-    // ── 4. Aliases ──────────────────────────────────────────────────────────
+    // ── 4. No legacy (greenfield, owner ruling 2026-07-15) ──────────────────
 
     #[test]
-    fn legacy_alias_binds_and_new_form_wins() {
-        // Old single-underscore form binds.
-        let c = assemble_ok(None, &env(&[("EHRBASE_DB_MAX_CONNECTIONS", "7")]), &[]);
-        assert_eq!(c.db.max_connections, 7);
-        // New form beats the legacy alias when both are set.
-        let c = assemble_ok(
-            None,
-            &env(&[
-                ("EHRBASE_DB_MAX_CONNECTIONS", "7"),
-                ("EHRBASE_DB__MAX_CONNECTIONS", "42"),
-            ]),
-            &[],
-        );
-        assert_eq!(c.db.max_connections, 42);
+    fn legacy_spellings_are_boot_errors_with_the_uniform_suggestion() {
+        // A pre-redesign spelling is never silently honoured or remapped —
+        // it fails at boot naming the exact uniform replacement.
+        let err = assemble(None, &env(&[("EHRBASE_DB_MAX_CONNECTIONS", "7")]), &[])
+            .expect_err("legacy spelling must fail");
+        let msg = err.to_string();
+        assert!(msg.contains("EHRBASE_DB_MAX_CONNECTIONS"), "{msg}");
+        assert!(msg.contains("EHRBASE__DB__MAX_CONNECTIONS"), "{msg}");
     }
 
     // ── 5. Secrets ──────────────────────────────────────────────────────────
