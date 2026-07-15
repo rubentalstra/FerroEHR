@@ -60,7 +60,12 @@ impl EhrbaseService {
         .await?;
         tx.commit().await?;
 
-        self.directory_at(ehr_id, committed.vo_id).await
+        // The write response is metadata-only: `Committed` already carries the
+        // written version identity + the commit instant (RM common master06
+        // §Committal), so the create path never re-reads the row it just wrote —
+        // a representation response re-reads at the protocol layer. This mirrors
+        // the COMPOSITION create path.
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// The EHR's directory FOLDER (current, or at an instant when `at` is given),
@@ -142,21 +147,22 @@ impl EhrbaseService {
             .is_some_and(|r| r.ehr_id == Some(ehr_id)))
     }
 
-    /// Update the EHR's directory. `expected` (from `If-Match`) enforces
-    /// optimistic concurrency.
+    /// Update the EHR's directory. `vo_id` is the directory-slot versioned object
+    /// (resolved once by the caller's `If-Match` meta pre-read, so the JOIN is not
+    /// re-run here); `expected` (from `If-Match`) enforces optimistic concurrency.
     pub(in crate::service) async fn update_directory(
         &self,
         ehr_id: Uuid,
+        vo_id: Uuid,
         folder: Value,
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let vo_id = self.directory_vo(ehr_id).await?;
         validate_folder(&folder)?;
         self.ensure_content_writable(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "DIRECTORY update");
-        update(
+        let committed = update(
             &mut tx,
             Some(ehr_id),
             vo_id,
@@ -170,7 +176,8 @@ impl EhrbaseService {
         .await?;
         tx.commit().await?;
 
-        self.directory_at(ehr_id, vo_id).await
+        // Metadata-only write response from `Committed` (see `create_directory`).
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// Logically delete the EHR's directory. `204_because_deleted` declares no
@@ -178,9 +185,9 @@ impl EhrbaseService {
     pub(in crate::service) async fn delete_directory_at(
         &self,
         ehr_id: Uuid,
+        vo_id: Uuid,
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let vo_id = self.directory_vo(ehr_id).await?;
         self.ensure_content_writable(ehr_id).await?;
 
         let mut tx = self.pool.begin().await?;
@@ -207,19 +214,27 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<ehrbase_sm::ResourceMeta>, ServiceError> {
+        Ok(self.directory_meta_with_vo(ehr_id).await?.map(|(_, m)| m))
+    }
+
+    /// The directory-slot versioned-object id **and** its current version
+    /// metadata, resolved in the two reads the `If-Match`/`412` path needs: the
+    /// `ehr_folder`⋈`vo_version` slot resolution, then the metadata-only current
+    /// version read ([`Self::current_version_meta_by_vo`] — no node reassembly,
+    /// no attestation read). Threading the `vo_id` back to the caller lets the
+    /// inner write skip re-running the slot JOIN. `None` when the EHR indexes no
+    /// directory hierarchy.
+    pub(in crate::service) async fn directory_meta_with_vo(
+        &self,
+        ehr_id: Uuid,
+    ) -> Result<Option<(Uuid, ehrbase_sm::ResourceMeta)>, ServiceError> {
         let Some(vo_id) = self.directory_vo_opt(ehr_id).await? else {
             return Ok(None);
         };
-        let Some(read) = read_current(&self.pool, vo_id).await? else {
+        let Some(meta) = self.current_version_meta_by_vo(ehr_id, vo_id).await? else {
             return Ok(None);
         };
-        Ok(Some(self.version_meta(
-            ehr_id,
-            vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
-        )))
+        Ok(Some((vo_id, meta)))
     }
 
     /// The versioned-object id of the EHR's directory — `EHR.directory` (=
@@ -244,25 +259,6 @@ impl EhrbaseService {
         self.directory_vo_opt(ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))
-    }
-
-    /// Load the current directory FOLDER (by vo id) with its `uid` set and the
-    /// version metadata — the create/update response.
-    async fn directory_at(
-        &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
-    ) -> Result<ServiceResponse, ServiceError> {
-        let read = read_current(&self.pool, vo_id)
-            .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
-        if read.deleted() {
-            return Err(ServiceError::NotFound(format!(
-                "directory for EHR {ehr_id} is deleted"
-            )));
-        }
-        Ok(self.version_response(ehr_id, vo_id, read))
     }
 }
 
@@ -399,15 +395,21 @@ impl EhrDirectoryService for EhrbaseService {
         an_ehr_id: Uuid,
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
-        let latest = self.directory_meta(an_ehr_id).await?;
-        ensure_if_match(a_dir_struct.preceding_version_uid.as_ref(), latest.as_ref())?;
+        // Resolve the directory-slot vo_id + its current version metadata ONCE
+        // (the `If-Match` pre-read); a missing directory is `NotFound` (the same
+        // error the inner write's slot resolution produced). The vo_id is
+        // threaded into the write so the slot JOIN is not re-run.
+        let Some((vo_id, latest)) = self.directory_meta_with_vo(an_ehr_id).await? else {
+            return Err(ServiceError::NotFound(format!("directory for EHR {an_ehr_id}")).into());
+        };
+        ensure_if_match(a_dir_struct.preceding_version_uid.as_ref(), Some(&latest))?;
         let expected = a_dir_struct
             .preceding_version_uid
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_directory(an_ehr_id, a_dir_struct.data, expected)
+            self.update_directory(an_ehr_id, vo_id, a_dir_struct.data, expected)
                 .await?,
         )
     }
@@ -417,13 +419,15 @@ impl EhrDirectoryService for EhrbaseService {
         an_ehr_id: Uuid,
         preceding_version_uid: Option<ObjectVersionId>,
     ) -> Result<(), SmError> {
-        let latest = self.directory_meta(an_ehr_id).await?;
-        ensure_if_match(preceding_version_uid.as_ref(), latest.as_ref())?;
+        let Some((vo_id, latest)) = self.directory_meta_with_vo(an_ehr_id).await? else {
+            return Err(ServiceError::NotFound(format!("directory for EHR {an_ehr_id}")).into());
+        };
+        ensure_if_match(preceding_version_uid.as_ref(), Some(&latest))?;
         let expected = preceding_version_uid
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
-        self.delete_directory_at(an_ehr_id, expected).await?;
+        self.delete_directory_at(an_ehr_id, vo_id, expected).await?;
         Ok(())
     }
 

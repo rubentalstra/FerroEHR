@@ -106,6 +106,15 @@ pub struct EhrbaseService {
     /// [`Self::new`] so a bare service (tests, embeddings) never silently drops
     /// an event; the binary sets the real gate via [`Self::with_outbox_enabled`].
     outbox_enabled: bool,
+    /// Short-lived stash of a just-created EHR's RM `EHR` wire body, built from
+    /// the commit results at creation and popped by the `ehr_created_object`
+    /// adapter seam so a `Prefer: return=representation` create response is
+    /// served without re-reading the EHR (the header + status/access version +
+    /// folder reads `ehr_summary` would repeat). Bounded + short TTL; an evicted
+    /// or absent entry falls back to a full read, so it is invalidation-free by
+    /// construction (an EHR's identity at creation is immutable). No openEHR spec
+    /// governs it — our own performance design.
+    pub(in crate::service) created_ehr_repr: moka::future::Cache<Uuid, Value>,
 }
 
 impl EhrbaseService {
@@ -126,6 +135,10 @@ impl EhrbaseService {
             ehr_access: ehr::EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
             outbox_enabled: true,
+            created_ehr_repr: moka::future::Cache::builder()
+                .max_capacity(4096)
+                .time_to_live(std::time::Duration::from_secs(30))
+                .build(),
         }
     }
 
