@@ -45,7 +45,7 @@ migration_count() {
   # Query as the bootstrap superuser (peer auth over the container's unix
   # socket maps the postgres OS user to the postgres role).
   docker compose exec -T ehrbase-postgres \
-    psql -U postgres -d "${EHRBASE_DB_NAME:-ehrbase}" -tAc \
+    psql -U postgres -d "${PG_INIT_DB:-ehrbase}" -tAc \
     "SELECT count(*) FROM ehr._sqlx_migrations" | tr -d '[:space:]'
 }
 

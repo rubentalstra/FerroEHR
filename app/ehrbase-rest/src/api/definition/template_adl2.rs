@@ -79,7 +79,7 @@ pub(super) async fn upload<S: Platform>(
     let hrid = hrid.as_str();
     let location = format!(
         "{}/definition/template/adl2/{hrid}",
-        state.config().base_path
+        state.config().server.base_path
     );
     // 201_Template_adl2_upload: body per `Prefer` — representation → the OPT
     // source (text/plain); identifier → `{template_id}` (JSON); missing/minimal

@@ -31,6 +31,15 @@ pub enum StorageError {
     #[error("CONTRIBUTION uid {0:?} is already in use")]
     ContributionUidInUse(Option<Uuid>),
 
+    /// The EHR row insert violated the one-EHR-per-subject unique index
+    /// (`uq_ehr_subject`) — another EHR already names this subject
+    /// `(id, namespace)` (RM ehr master04 §EHR Status: the subject 0..1
+    /// identifies the EHR). Carries `(subject_id, namespace)` so the service
+    /// layer can build the ITS-REST `409_EHR` body. Distinct from a duplicate
+    /// EHR-id conflict (that surfaces as an absent `RETURNING` row).
+    #[error("an EHR already exists for subject {0}@{1}")]
+    SubjectInUse(String, String),
+
     /// A driver/pool/query error from `sqlx`.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),

@@ -65,7 +65,7 @@ pub(crate) use object_version_id::{
     parse_tree_id, parse_uid_based_id, parse_version_uid,
 };
 pub(crate) use revision_history::{
-    VersionRead, object_kind, original_version, read_current, read_version,
+    VersionRead, demographic_current, object_kind, original_version, read_current, read_version,
     read_version_by_ordinal, revision_history, version_at, versioned_object,
 };
 

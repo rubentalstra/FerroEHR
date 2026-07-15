@@ -10,7 +10,7 @@
 //! subsumes the other. Design record: `docs/enterprise/product-roadmap.md` §2.1
 //! and the classification register `docs/design/its-rest/extensions.md`.
 //!
-//! Two surfaces, both config-gated (`RestConfig::fhir.enabled`, default
+//! Two surfaces, both config-gated (`AppConfig::fhir_api_enabled`, default
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
 //! without touching the backend.
 //!
@@ -41,10 +41,13 @@
 //! so this is our own surface, excluded from the ITS-REST drift check.
 
 use axum::Json;
+use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use http::header::{CONTENT_TYPE, HeaderValue};
 use serde_json::{Value, json};
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 use uuid::Uuid;
 
 use ehrbase_sm::Platform;
@@ -52,7 +55,7 @@ use ehrbase_sm::ServiceResponse;
 use ehrbase_sm::SmError;
 use openehr_its::rest::runtime::ApiError;
 
-use crate::api::{BoxResponse, RequestParts};
+use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::negotiate;
 use crate::overview::error::RestError;
 use crate::state::AppState;
@@ -65,33 +68,140 @@ const FHIR_JSON: &str = "application/fhir+json";
 pub(crate) const STARTER_RESOURCES: &[&str] =
     &["Patient", "Observation", "Condition", "DocumentReference"];
 
-/// The FHIR-connector routes — our own extension (no ITS-REST contract), mounted
-/// alongside the generated `ROUTES`. Group-relative paths (nested under the
-/// configured `base_path`).
-pub(crate) const FHIR_ROUTES: &[(&str, &str, &str)] = &[
-    // Inbound: accept a FHIR R4 resource of {resource_type} and commit it.
-    ("POST", "/fhir/r4/{resource_type}", "fhir_ingest"),
-    // Read façade: patient-scoped searchset Bundle of reverse-mapped resources.
-    ("GET", "/fhir/r4/{resource_type}", "fhir_search"),
-    // Mapping-store CRUD (mapping-as-data).
-    ("GET", "/admin/fhir_mapping", "fhir_mapping_list"),
-    ("POST", "/admin/fhir_mapping", "fhir_mapping_create"),
-    (
-        "GET",
-        "/admin/fhir_mapping/{mapping_id}",
-        "fhir_mapping_get",
+/// The FHIR-connector routes as a native `utoipa-axum` router (group-relative
+/// paths; nested under `base_path`). The inbound/façade routes live under
+/// `/fhir/r4`, the mapping store under `/admin`. Served through
+/// [`guarded_dispatch`] → [`dispatch`]. No openEHR spec governs FHIR interop —
+/// our own extension.
+pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(fhir_ingest, fhir_search))
+        .routes(routes!(fhir_mapping_list, fhir_mapping_create))
+        .routes(routes!(
+            fhir_mapping_get,
+            fhir_mapping_update,
+            fhir_mapping_delete
+        ))
+}
+
+/// Inbound connector: commit a FHIR R4 resource as an openEHR COMPOSITION. Only
+/// the starter set (Patient, Observation, Condition, `DocumentReference`) is
+/// supported; anything else is 501. Responses are `application/fhir+json`.
+#[utoipa::path(
+    post, path = "/fhir/r4/{resource_type}", tag = "fhir",
+    params(("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only).")),
+    request_body(content = serde_json::Value, description = "A FHIR R4 resource (JSON)."),
+    responses(
+        (status = 201, description = "Committed as a COMPOSITION (informational OperationOutcome + ETag/Location).", content_type = "application/fhir+json"),
+        (status = 422, description = "Mapped COMPOSITION failed validation (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
+    )
+)]
+pub(crate) async fn fhir_ingest<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_ingest", parts, dispatch::<S>).await
+}
+
+/// Read façade: a patient-scoped FHIR searchset Bundle of reverse-mapped
+/// resources. `patient` is mandatory. Responses are `application/fhir+json`.
+#[utoipa::path(
+    get, path = "/fhir/r4/{resource_type}", tag = "fhir",
+    params(
+        ("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only)."),
+        ("patient" = String, Query, description = "The patient scope (EHR subject or id) — required."),
+        ("_count" = Option<i64>, Query, description = "Optional page size.")
     ),
-    (
-        "PUT",
-        "/admin/fhir_mapping/{mapping_id}",
-        "fhir_mapping_update",
-    ),
-    (
-        "DELETE",
-        "/admin/fhir_mapping/{mapping_id}",
-        "fhir_mapping_delete",
-    ),
-];
+    responses(
+        (status = 200, description = "A FHIR searchset Bundle.", content_type = "application/fhir+json"),
+        (status = 400, description = "Missing `patient` scope (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
+    )
+)]
+pub(crate) async fn fhir_search<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_search", parts, dispatch::<S>).await
+}
+
+/// List the FHIR mapping artefacts (mapping-as-data).
+#[utoipa::path(
+    get, path = "/admin/fhir_mapping", tag = "fhir",
+    responses((status = 200, description = "The mapping records.", body = serde_json::Value))
+)]
+pub(crate) async fn fhir_mapping_list<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_mapping_list", parts, dispatch::<S>).await
+}
+
+/// Create a FHIR mapping artefact.
+#[utoipa::path(
+    post, path = "/admin/fhir_mapping", tag = "fhir",
+    request_body(content = serde_json::Value, description = "The mapping definition."),
+    responses((status = 201, description = "Created.", body = serde_json::Value))
+)]
+pub(crate) async fn fhir_mapping_create<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_mapping_create", parts, dispatch::<S>).await
+}
+
+/// Read one FHIR mapping artefact by id. 404 when absent.
+#[utoipa::path(
+    get, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
+    params(("mapping_id" = String, Path, description = "The mapping UUID.")),
+    responses(
+        (status = 200, description = "The mapping record.", body = serde_json::Value),
+        (status = 404, description = "Not found.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn fhir_mapping_get<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_mapping_get", parts, dispatch::<S>).await
+}
+
+/// Update one FHIR mapping artefact.
+#[utoipa::path(
+    put, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
+    params(("mapping_id" = String, Path, description = "The mapping UUID.")),
+    request_body(content = serde_json::Value, description = "The updated mapping definition."),
+    responses((status = 200, description = "Updated.", body = serde_json::Value))
+)]
+pub(crate) async fn fhir_mapping_update<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_mapping_update", parts, dispatch::<S>).await
+}
+
+/// Delete one FHIR mapping artefact.
+#[utoipa::path(
+    delete, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
+    params(("mapping_id" = String, Path, description = "The mapping UUID.")),
+    responses((status = 204, description = "Deleted."))
+)]
+pub(crate) async fn fhir_mapping_delete<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "fhir_mapping_delete", parts, dispatch::<S>).await
+}
 
 pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
@@ -104,7 +214,7 @@ pub(crate) fn dispatch<S: Platform>(
 async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestParts) -> Response {
     // Config gate: opt-in. When disabled every route answers 404 (as an
     // `OperationOutcome`) without consulting the backend.
-    if !state.config().fhir.enabled {
+    if !state.config().fhir_api_enabled {
         return operation_outcome(
             StatusCode::NOT_FOUND,
             "not-supported",
@@ -265,7 +375,7 @@ fn ingest_created<S: Platform>(state: &AppState<S>, resp: &ServiceResponse) -> R
     if let Some(meta) = &resp.meta {
         negotiate::set_resource_headers(
             &mut out,
-            &state.config().base_path,
+            &state.config().server.base_path,
             Some("composition"),
             meta,
         );

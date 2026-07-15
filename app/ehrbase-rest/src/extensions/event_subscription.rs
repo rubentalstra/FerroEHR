@@ -16,59 +16,115 @@
 //! `Skip`s it) and no ATNA audit-table entry (subscriptions are configuration,
 //! not PHI access) — the fallbacks apply automatically.
 //!
-//! The group is config-gated (`RestConfig::event_subscription.enabled`, default
+//! The group is config-gated (`AppConfig::events_admin_api`, default
 //! `false`): when disabled every route answers `404` without touching the
 //! backend.
 
+use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 use uuid::Uuid;
 
 use openehr_its::rest::runtime::ApiError;
 
-use crate::api::{BoxResponse, RequestParts};
+use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
 use ehrbase_sm::Platform;
 
 use crate::negotiate;
 use crate::state::AppState;
 
-/// The event-subscription extension routes — our own extension (no
-/// ITS-REST contract), mounted alongside the generated `ROUTES`. Group-relative
-/// paths (nested under the configured `base_path`).
-pub(crate) const EVENT_SUBSCRIPTION_ROUTES: &[(&str, &str, &str)] = &[
-    // List every subscription.
-    (
-        "GET",
-        "/admin/event_subscription",
-        "event_subscription_list",
-    ),
-    // Create a subscription (body: {name, kind?, change_type?, template_id?,
-    // archetype?, enabled?}); 201 with the stored record.
-    (
-        "POST",
-        "/admin/event_subscription",
-        "event_subscription_create",
-    ),
-    // Read one subscription by id.
-    (
-        "GET",
-        "/admin/event_subscription/{subscription_id}",
-        "event_subscription_get",
-    ),
-    // Replace one subscription's predicates + enabled.
-    (
-        "PUT",
-        "/admin/event_subscription/{subscription_id}",
-        "event_subscription_update",
-    ),
-    // Delete one subscription.
-    (
-        "DELETE",
-        "/admin/event_subscription/{subscription_id}",
-        "event_subscription_delete",
-    ),
-];
+/// The event-subscription extension routes as a native `utoipa-axum` router
+/// (group-relative paths; nested under `base_path`), mounted under `/admin`
+/// (the coarse RBAC gate classes it `Admin`). Served through [`guarded_dispatch`]
+/// → [`dispatch`]. No openEHR spec governs eventing — our own extension.
+pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(event_subscription_list, event_subscription_create))
+        .routes(routes!(
+            event_subscription_get,
+            event_subscription_update,
+            event_subscription_delete
+        ))
+}
+
+/// List every event subscription.
+#[utoipa::path(
+    get, path = "/admin/event_subscription", tag = "event-subscription",
+    responses((status = 200, description = "The subscription records.", body = serde_json::Value))
+)]
+pub(crate) async fn event_subscription_list<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "event_subscription_list", parts, dispatch::<S>).await
+}
+
+/// Create a subscription. Body: `{name, kind?, change_type?, template_id?,
+/// archetype?, enabled?}`.
+#[utoipa::path(
+    post, path = "/admin/event_subscription", tag = "event-subscription",
+    request_body(content = serde_json::Value, description = "The subscription definition."),
+    responses((status = 201, description = "Created.", body = serde_json::Value))
+)]
+pub(crate) async fn event_subscription_create<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "event_subscription_create", parts, dispatch::<S>).await
+}
+
+/// Read one subscription by id. 404 when absent.
+#[utoipa::path(
+    get, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
+    params(("subscription_id" = String, Path, description = "The subscription UUID.")),
+    responses(
+        (status = 200, description = "The subscription record.", body = serde_json::Value),
+        (status = 404, description = "Not found.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn event_subscription_get<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "event_subscription_get", parts, dispatch::<S>).await
+}
+
+/// Replace one subscription's predicates + enabled flag.
+#[utoipa::path(
+    put, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
+    params(("subscription_id" = String, Path, description = "The subscription UUID.")),
+    request_body(content = serde_json::Value, description = "The updated subscription definition."),
+    responses((status = 200, description = "Updated.", body = serde_json::Value))
+)]
+pub(crate) async fn event_subscription_update<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "event_subscription_update", parts, dispatch::<S>).await
+}
+
+/// Delete one subscription.
+#[utoipa::path(
+    delete, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
+    params(("subscription_id" = String, Path, description = "The subscription UUID.")),
+    responses((status = 204, description = "Deleted."))
+)]
+pub(crate) async fn event_subscription_delete<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "event_subscription_delete", parts, dispatch::<S>).await
+}
 
 pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
@@ -89,7 +145,7 @@ async fn run<S: Platform>(
 ) -> Result<Response, RestError> {
     // Config gate: the group is opt-in. When disabled every route answers 404
     // (as if unmounted) without consulting the backend.
-    if !state.config().event_subscription.enabled {
+    if !state.config().events_admin_api {
         return Err(RestError(ApiError::NotFound(
             "event subscription API is disabled".to_owned(),
         )));

@@ -34,7 +34,7 @@ pub(super) async fn run<S: Platform>(
     let q = parts.query.as_deref();
     let ok = StatusCode::OK;
     // The configured base path, for building `Location` URLs.
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "ehr_get_by_subject" => {
@@ -90,7 +90,10 @@ async fn ehr_write_response<S: Platform>(
 ) -> Result<Response, RestError> {
     let ehr_id_str = ehr_id.to_string();
     let body = if negotiate::prefers_representation(h) {
-        state.backend().ehr_object(ehr_id).await?
+        // `ehr_created_object` serves the just-committed EHR body from the
+        // create-time stash (built from the commit results), avoiding the
+        // `ehr_summary` re-read; it falls back to a full read on a stash miss.
+        state.backend().ehr_created_object(ehr_id).await?
     } else {
         Value::Null
     };

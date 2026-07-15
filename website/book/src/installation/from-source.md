@@ -51,7 +51,7 @@ The binary is configured entirely through `EHRBASE_*` environment variables
 database URL:
 
 ```shell
-export EHRBASE_DB_URL='postgres://ehrbase:ehrbase@localhost:5432/ehrbase'
+export EHRBASE__DB__URL='postgres://ehrbase:ehrbase@localhost:5432/ehrbase'
 target/release/ehrbase
 ```
 

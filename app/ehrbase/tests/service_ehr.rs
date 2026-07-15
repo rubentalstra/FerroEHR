@@ -20,7 +20,7 @@ use testcontainers_modules::postgres::Postgres;
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{
     CallStatusType, DefinitionAdapter, EhrCompositionService, EhrContributionService,
@@ -60,7 +60,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -1931,5 +1931,110 @@ async fn directory_versioned_and_has_version() {
     assert!(
         versioned["time_created"]["value"].is_string(),
         "VERSIONED_OBJECT.time_created must be present, got {versioned}"
+    );
+}
+
+/// The P20-item-33 write-path fixes must not change the wire: a write response
+/// built from the CONTRIBUTION commit results (never a post-commit re-read) has
+/// to be identical to what a fresh read yields.
+///
+/// - Fix E: the EHR create representation is assembled from the commit `Committed`
+///   rows (`ehr_created_object`, from the create-time stash) and MUST be
+///   byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
+/// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
+///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
+///   master06 §Committal: the written version identity).
+/// - Item 34: the EHR_STATUS update response `OBJECT_VERSION_ID`
+///   (`committed_response`, replacing the discarded post-commit reassembly) MUST
+///   equal a fresh read's `uid`, and the mutation MUST persist (the folded
+///   subject/is_queryable sync rides the write's UPDATE).
+#[tokio::test]
+async fn write_responses_match_a_fresh_read() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("writeresp").await);
+
+    // Fix E — built-from-commit EHR body == fresh ehr_summary read.
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+    let built = svc
+        .ehr_created_object(ehr_uuid)
+        .await
+        .expect("ehr_created_object (built from commit, stash)");
+    let fresh = svc
+        .ehr_object(ehr_uuid)
+        .await
+        .expect("ehr_object (fresh read)");
+    assert_eq!(
+        built, fresh,
+        "the EHR body built from the commit results must equal a fresh ehr_summary read"
+    );
+
+    // Fix D — directory create response uid == fresh read uid.
+    let dir_v1 = svc
+        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await
+        .expect("directory_create");
+    let got_v1 = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("dir get v1");
+    assert_eq!(
+        got_v1["uid"]["value"], dir_v1,
+        "the create ETag (committed_response) must equal the stored version uid"
+    );
+
+    // Fix D — directory update response uid == fresh read uid.
+    let mut folder_v2 = folder("root");
+    folder_v2["name"]["value"] = json!("root2");
+    let dir_v2 = svc
+        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
+        .await
+        .expect("directory_update");
+    let got_v2 = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("dir get v2");
+    assert_eq!(
+        got_v2["uid"]["value"], dir_v2,
+        "the update ETag (committed_response) must equal the stored version uid"
+    );
+    assert!(dir_v2.ends_with("::2"), "update yields trunk version 2");
+
+    // Item 34 — EHR_STATUS update response uid (committed_response, no
+    // post-commit reassembly) == fresh read uid, and the `is_queryable` mutation
+    // persists (the folded subject/is_queryable sync rode the write's UPDATE).
+    let status_v1 = svc
+        .get_ehr_status(ehr_uuid)
+        .await
+        .expect("get_ehr_status v1");
+    let status_uid_v1 = status_v1["uid"]["value"]
+        .as_str()
+        .expect("status uid v1")
+        .to_owned();
+    let mut status_body = status_v1.clone();
+    status_body
+        .as_object_mut()
+        .expect("status object")
+        .remove("uid");
+    status_body["is_queryable"] = json!(false);
+    let status_uid_v2 = svc
+        .replace_ehr_status(ehr_uuid, uv(status_body, "251", Some(&status_uid_v1)))
+        .await
+        .expect("replace_ehr_status");
+    assert!(
+        status_uid_v2.ends_with("::2"),
+        "status update yields trunk version 2"
+    );
+    let fresh_status = svc
+        .get_ehr_status(ehr_uuid)
+        .await
+        .expect("get_ehr_status v2");
+    assert_eq!(
+        fresh_status["uid"]["value"], status_uid_v2,
+        "the status update ETag (committed_response) must equal the stored version uid"
+    );
+    assert_eq!(
+        fresh_status["is_queryable"],
+        json!(false),
+        "the EHR_STATUS mutation persisted through the folded write"
     );
 }

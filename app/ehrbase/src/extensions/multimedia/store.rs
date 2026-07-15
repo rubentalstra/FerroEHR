@@ -61,7 +61,7 @@ impl BlobStore {
             (Some(id), Some(secret)) => {
                 builder = builder
                     .with_access_key_id(id)
-                    .with_secret_access_key(secret);
+                    .with_secret_access_key(secret.expose());
             }
             // No credentials → run unsigned/anonymous (dev SeaweedFS).
             _ => builder = builder.with_skip_signature(true),

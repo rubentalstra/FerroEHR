@@ -53,10 +53,10 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
 /// verdict, updated at each conformance re-baseline
 /// (`docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
-/// MUST NOT out-claim that verdict. `crate::config::RestConfig` embeds a
-/// `SystemOptionsConfig` (bound from the `EHRBASE_REST_SYSTEM__*` env keys), so
-/// an operator MAY override any identity field while the defaults stay
-/// measured.
+/// MUST NOT out-claim that verdict. [`crate::config::ServerConfig`] carries a
+/// `SystemOptionsConfig` as its `identity` field (the `[server.identity]`
+/// section of the one config tree), so an operator MAY override any identity
+/// field while the defaults stay measured.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
 pub struct SystemOptionsConfig {

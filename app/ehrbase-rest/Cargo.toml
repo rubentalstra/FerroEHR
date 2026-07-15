@@ -40,8 +40,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 indexmap = { workspace = true }
 
-# Config, errors, observability, time.
-figment = { workspace = true }
+# Config, errors, observability, time. (Configuration is one root tree owned by
+# the `ehrbase` binary — `docs/design/configuration.md`; this crate defines the
+# adapter's config slice as plain serde structs, with no loader of its own.)
 thiserror = { workspace = true }
 tracing = { workspace = true }
 jiff = { workspace = true }
@@ -65,14 +66,17 @@ sha2 = { workspace = true }
 
 # Authorization (RBAC + ABAC), folded in from the former ehrbase-authz crate
 # (ADR-011): the embedded Cedar policy engine, the v1-compatible remote-PDP
-# HTTP client, and the hot-reload policy swap. (`serde`/`serde_json`/`figment`/
+# HTTP client, and the hot-reload policy swap. (`serde`/`serde_json`/
 # `thiserror`/`tracing`/`metrics`/`async-trait`/`tokio` are already deps above.)
 cedar-policy = { workspace = true }
 reqwest = { workspace = true }
 arc-swap = { workspace = true }
 
 # OpenAPI / Swagger UI (a drift-check against the vendored OAS, not the source).
+# utoipa-axum single-sources each extension operation's route + OpenAPI path
+# metadata (OpenApiRouter + routes!()); utoipa-swagger-ui serves the UI shell.
 utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]
@@ -82,7 +86,6 @@ axum = { workspace = true }
 http = { workspace = true }
 http-body-util = { workspace = true }
 serde_json = { workspace = true }
-figment = { workspace = true, features = ["test"] }
 jsonwebtoken = { workspace = true }
 argon2 = { workspace = true }
 base64 = { workspace = true }

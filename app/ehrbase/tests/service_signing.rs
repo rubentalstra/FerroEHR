@@ -12,7 +12,7 @@
 
 use std::sync::Arc;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::versioning::signature::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
 use ehrbase_sm::{
@@ -61,7 +61,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -375,6 +375,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         mode: Mode::Digest,
         key_path: None,
         key_passphrase: None,
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Strict,
     };
     let signer = Signer::from_config(&config).expect("strict signer");
@@ -474,6 +475,7 @@ fn signing_disabled(pool: PgPool) -> EhrbaseService {
         mode: Mode::Digest,
         key_path: None,
         key_passphrase: None,
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Off,
     };
     let signer = Signer::from_config(&config).expect("disabled signer");

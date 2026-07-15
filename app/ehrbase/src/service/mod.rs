@@ -20,11 +20,11 @@ mod subject_proxy;
 mod terminology;
 mod validity;
 
-pub use query::{PlanCache, PlanCacheStats};
+pub use query::{PlanCache, PlanCacheStats, QueryConfig};
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 pub use terminology::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, FhirTerminologyProvider,
-    ProviderKind,
+    ProviderKind, TerminologyConfig,
 };
 
 use std::collections::HashMap;
@@ -96,6 +96,11 @@ pub struct EhrbaseService {
     /// across service clones (moka-backed). No openEHR spec governs it — our
     /// own performance design.
     pub(crate) plan_cache: PlanCache,
+    /// Per-query DB execution budget (`[query].timeout_ms`); `None` disables it
+    /// (the global request timeout is then the only guard). On overrun the query
+    /// is reported as `408`. No openEHR spec governs a query timeout — our own
+    /// extension.
+    query_timeout: Option<std::time::Duration>,
     /// Whether the transactional event outbox is written on every commit. The
     /// outbox feeds the eventing extensions (AMQP publisher + FHIR outbound
     /// emitter) — no openEHR spec governs eventing (our own extension). When no
@@ -106,6 +111,15 @@ pub struct EhrbaseService {
     /// [`Self::new`] so a bare service (tests, embeddings) never silently drops
     /// an event; the binary sets the real gate via [`Self::with_outbox_enabled`].
     outbox_enabled: bool,
+    /// Short-lived stash of a just-created EHR's RM `EHR` wire body, built from
+    /// the commit results at creation and popped by the `ehr_created_object`
+    /// adapter seam so a `Prefer: return=representation` create response is
+    /// served without re-reading the EHR (the header + status/access version +
+    /// folder reads `ehr_summary` would repeat). Bounded + short TTL; an evicted
+    /// or absent entry falls back to a full read, so it is invalidation-free by
+    /// construction (an EHR's identity at creation is immutable). No openEHR spec
+    /// governs it — our own performance design.
+    pub(in crate::service) created_ehr_repr: moka::future::Cache<Uuid, Value>,
 }
 
 impl EhrbaseService {
@@ -125,7 +139,12 @@ impl EhrbaseService {
             tenant_cache: TenantCache::default(),
             ehr_access: ehr::EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
+            query_timeout: None,
             outbox_enabled: true,
+            created_ehr_repr: moka::future::Cache::builder()
+                .max_capacity(4096)
+                .time_to_live(std::time::Duration::from_secs(30))
+                .build(),
         }
     }
 
@@ -213,6 +232,16 @@ impl EhrbaseService {
     /// [`Self::with_outbox_enabled`]).
     pub(crate) fn outbox_enabled(&self) -> bool {
         self.outbox_enabled
+    }
+
+    /// Apply the `[query]` tuning knobs — the plan-cache capacity and the
+    /// per-query execution budget (`crate::service::query::QueryConfig`). No
+    /// openEHR spec governs these — our own operational extension.
+    #[must_use]
+    pub fn with_query_config(mut self, query: &crate::service::query::QueryConfig) -> Self {
+        self.plan_cache = crate::service::query::PlanCache::new(query.plan_cache_capacity);
+        self.query_timeout = query.timeout();
+        self
     }
 
     /// The configured version [`Signer`] (used for read-time verification).

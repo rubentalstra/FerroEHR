@@ -85,7 +85,7 @@ pub(super) async fn store<S: Platform>(
         Some(version) => {
             let location = format!(
                 "{}/definition/query/{name}/{version}",
-                state.config().base_path
+                state.config().server.base_path
             );
             Ok(negotiate::empty_with_location(StatusCode::OK, &location))
         }
@@ -141,7 +141,7 @@ pub(super) async fn version_store<S: Platform>(
         .await?;
     let location = format!(
         "{}/definition/query/{name}/{version}",
-        state.config().base_path
+        state.config().server.base_path
     );
     Ok(negotiate::empty_with_location(StatusCode::OK, &location))
 }

@@ -168,9 +168,16 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       one-open-row-per-lineage partial btrees + close-then-insert at one
       now() + the archive-load overlap audit carry the master06 invariant;
       burst-update invariant test added; 490/490).
-- [ ] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
+- [x] **22. Group-commit tuning A/B** (from F10): `commit_delay` ≈ ½ ×
       pg_test_fsync flush time, `commit_siblings`, `wal_compression=on` —
       applied to BOTH SUTs, measured, `synchronous_commit` stays ON.
+      *(Closed 2026-07-15 as a VERIFIED NON-WIN — item-35 DB hunt,
+      `docs/plans/p20-hunt2-db.md`: at bench concurrency `commit_delay`
+      1000–2000 µs is a wash (best throughput slightly DOWN, 2091 → ~1970
+      commits/s — concurrency already amortizes the fsync), and
+      `wal_compression=on` is a 2.4× REGRESSION (2091 → 880). The BENCH_PG
+      floor keeps commit_delay=0 and wal_compression=off. Directional
+      numbers — Docker disk, shared host — but the direction is decisive.)*
 - [x] **24. AQL ehr_id predicate is text-cast + duplicated is_queryable
       guards (LIVE evidence, owner-captured server logs during T5 L=16: the
       patient-dashboard query runs 1.0–1.3 s under load DESPITE the promoted
@@ -370,6 +377,58 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       init; suppressed under `EHRBASE_LOG_FORMAT=json`. Pins on their own lines
       (list), `rs` lowercased in the wordmark per owner. 3 unit tests
       (`test(banner)`) green.
+
+- [ ] **33. The rows upstream still wins (owner PRIO, 2026-07-15 — "find
+      every hot path, map it, design the best possible solution").** The
+      fresh same-load hour (a07279607) leaves upstream ahead on exactly
+      three rows: **dir-update p99 124 ms vs 84 ms** (also p50 38.3 vs
+      34.1), **ehr-create p99 67 ms vs 55 ms** (p50 ~tied), and the
+      **aql-ward median 36.8 ms vs 28.2 ms** (its p99 we win 76 vs 101).
+      Plus upstream's lower p99-at-its-own-knee (32 ms at L=16 vs our
+      195 ms at L=26 — different loads, noted). Two investigation agents
+      map the full request paths (REST → service → storage → SQL →
+      statement count/plans), root-cause each gap against upstream's
+      approach as prior art, and deliver redesign proposals; complete
+      rewrites preferred where they pay (greenfield mandate). Verification:
+      per-class p99/p50 from a fresh hour pair after the fixes.
+
+- [ ] **34. The exhaustive endpoint sweep (owner PRIO, 2026-07-15 — "go
+      through ALL paths, find everything, not only a few high ones").**
+      Item 33 proved the method: statement-count probing found 6–10 wasted
+      round trips per op on paths the benchmark happened to expose
+      (discarded post-commit re-reads, double-built summaries, repeated
+      slot JOINs, meta overfetch, per-read attestation SELECTs). Now apply
+      it to the WHOLE ITS-REST surface (~96 operations incl. demographic,
+      contribution, query/stored-query, template/definition, admin, tags,
+      versioned-object reads, EhrScape) plus the extension APIs: one probe
+      harness drives every operation once against testcontainers PG18 with
+      the sqlx tracing counter, producing an op → round-trips table;
+      every outlier vs the minimal-necessary count gets the established
+      treatments (committed_response, lean meta reads, threaded vo_ids,
+      folded/lateral reads) or a redesign. Exit: the full table committed
+      (before/after), no op paying discarded or duplicate statements.
+
+- [ ] **35. The second full hunt (owner PRIO, 2026-07-15 — "go through
+      everything again, there is way more to be found").** With round trips
+      lean (items 33/34), the next strata, each measured before touched:
+      (a) **per-statement cost** — EXPLAIN (ANALYZE, BUFFERS) every
+      statement the lean paths still run at the 10k shape; kill seq scans,
+      re-check the post-Fix-B plan set, size the folded-CTE commit's own
+      plan; (b) **app CPU/alloc under load** — the item-27 profiler at the
+      new knee: flamegraph the serving path (canonical JSON encode/decode,
+      REST negotiation, axum extract, node codec, uuid/text conversions),
+      find the top allocation sites; (c) **protocol/driver** — re-price
+      pipelining + prepared-statement reuse at the NEW statement counts
+      (item 20 skipped it at ~4 round trips; the calculus may differ now),
+      sqlx statement-cache sizing, pool acquire behaviour at the knee;
+      (d) **PG config** — item 22's group-commit A/B (commit_delay/
+      commit_siblings, wal_compression) executed on the new write path;
+      (e) **the re-sweep** — the item-34 probe over all ~100 ops again:
+      confirm no regressions, rank the new worst offenders, mine the read
+      family (get-at-time/versioned-object reads) that waves 1–3 only
+      grazed. Exit: each stratum either yields a measured fix or a recorded
+      verified-not-a-problem entry; verification = ECC zero-drift + the
+      fresh hour pair + a knee re-ladder.
 
 ## Considered and deferred
 

@@ -45,9 +45,10 @@ This starts two core services:
   (there is no shell in the image).
 
 The server's development configuration is mounted read-only from
-`docker/ehrbase.dev.toml` and pointed at by `EHRBASE_REST_CONFIG`. That file
-enables Basic auth with the throwaway users `ehrbase` / `ehrbase` and
-`ehrbase-admin` / `ehrbase`, and turns on permissive CORS — development only.
+`docker/ehrbase.dev.toml` to `/etc/ehrbase/ehrbase.toml`, where the server
+auto-discovers it. That file enables Basic auth with the throwaway users
+`ehrbase` / `ehrbase` and `ehrbase-admin` / `ehrbase`, and turns on permissive
+CORS — development only.
 
 > [!WARNING]
 > PostgreSQL 18's official image stores data in a major-version subdirectory,
@@ -66,14 +67,15 @@ shown), so you can retune without editing it:
 | `EHRBASE_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ehrbase-rs-postgres:local` | Database image to run. |
 | `EHRBASE_PORT` | `8080` | Host port mapped to the server. |
 | `EHRBASE_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
-| `EHRBASE_DB_USER` / `EHRBASE_DB_PASSWORD` / `EHRBASE_DB_NAME` | `ehrbase` | App role, password, and database created by the DB image's init script. |
+| `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ehrbase` | App role, password, and database created by the DB image's init script. |
 | `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
-| `EHRBASE_LOG_FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+| `EHRBASE__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
 
-The server container itself is passed `EHRBASE_DB_URL` (assembled from the
-DB variables) and `EHRBASE_REST_CONFIG`. Any other `EHRBASE_*` setting from the
-[configuration reference](configuration.md) can be added under the `ehrbase`
-service's `environment:` block.
+The server container itself is passed `EHRBASE__DB__URL` (assembled from the
+DB variables); its `ehrbase.toml` is the mounted `docker/ehrbase.dev.toml`,
+auto-discovered at `/etc/ehrbase/ehrbase.toml`. Any other `EHRBASE_*` setting
+from the [configuration reference](configuration.md) can be added under the
+`ehrbase` service's `environment:` block.
 
 ## Optional services
 
@@ -82,10 +84,10 @@ on — the server defaults to Basic auth and inline multimedia, so neither is
 required:
 
 - **`seaweedfs`** — an S3 gateway for large `DV_MULTIMEDIA` externalization
-  (development/test only). To try it, set `EHRBASE_MULTIMEDIA_ENABLED=true`,
-  `EHRBASE_MULTIMEDIA_ENDPOINT=http://seaweedfs:8333`,
-  `EHRBASE_MULTIMEDIA_BUCKET=openehr-multimedia`, and (dev only)
-  `EHRBASE_MULTIMEDIA_ALLOW_HTTP=true`. In production, point the multimedia
+  (development/test only). To try it, set `EHRBASE__MULTIMEDIA__ENABLED=true`,
+  `EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
+  `EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
+  `EHRBASE__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
   settings at a real, credentialed, HTTPS S3 endpoint instead.
 - **`keycloak`** — an OIDC provider with a preloaded `ehrbase` realm, on port
   8081. To use bearer auth instead of Basic, point the auth OIDC settings at

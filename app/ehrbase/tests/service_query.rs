@@ -22,9 +22,9 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use tower::ServiceExt;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::RestConfig;
+use ehrbase_rest::AppConfig;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";
@@ -61,7 +61,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -73,7 +73,7 @@ impl Pg {
 
 /// The router backed by the DB service, with authentication disabled.
 fn app(pool: PgPool) -> Router {
-    let mut config = RestConfig::default();
+    let mut config = AppConfig::default();
     config.auth.enabled = false;
     ehrbase_rest::build_with(config, std::sync::Arc::new(EhrbaseService::new(pool)))
         .expect("router builds")

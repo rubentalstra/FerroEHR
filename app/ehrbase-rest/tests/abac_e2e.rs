@@ -18,12 +18,12 @@ use async_trait::async_trait;
 use axum::Router;
 use axum::body::Body;
 use ehrbase_rest::access::authn::AuthConfig;
-use ehrbase_rest::access::authn::config::{OidcConfig, Redacted};
+use ehrbase_rest::access::authn::config::OidcConfig;
 use ehrbase_rest::access::authz::AuthzConfig;
 use ehrbase_rest::access::authz::engine::{AuthzError, PolicyEngine};
 use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
 use ehrbase_rest::{
-    AuthzHandle, AuthzResolvers, Observability, ResolveError, RestConfig, build_full,
+    AppConfig, AuthzHandle, AuthzResolvers, Observability, ResolveError, ServerConfig, build_full,
 };
 use ehrbase_sm::EventOutcome;
 use http::{Request, StatusCode};
@@ -85,10 +85,12 @@ impl PolicyEngine for PermitAll {
 
 // ── config + app assembly ─────────────────────────────────────────────────────
 
-fn rest_config() -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+fn rest_config() -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: true,
             basic: None,
@@ -96,14 +98,14 @@ fn rest_config() -> RestConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(Redacted(HMAC_SECRET.to_owned())),
+                hmac_secret: Some(ehrbase_sm::Secret::new(HMAC_SECRET.to_owned())),
                 jwks_json: None,
+                ..OidcConfig::default()
             }),
             admin_scope: None,
             ..AuthConfig::default()
         },
-        swagger_ui: false,
-        ..RestConfig::default()
+        ..Default::default()
     }
 }
 
@@ -130,7 +132,7 @@ fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.abac.enabled = abac_enabled;
     let engine: Option<Arc<dyn PolicyEngine>> = abac_enabled.then(|| Arc::new(PermitAll) as _);
-    AuthzHandle::build(&cfg, &rest_config().base_path, engine, resolvers()).map(Arc::new)
+    AuthzHandle::build(&cfg, &rest_config().server.base_path, engine, resolvers()).map(Arc::new)
 }
 
 fn app(abac_enabled: bool, audit: Option<AuditSink>) -> Router {

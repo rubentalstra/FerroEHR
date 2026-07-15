@@ -17,9 +17,9 @@ use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
 use ehrbase_rest::access::authn::AuthConfig;
-use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
+use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, OidcConfig};
 use ehrbase_rest::access::authz::AuthzConfig;
-use ehrbase_rest::{AdminConfig, AuthzHandle, RestConfig};
+use ehrbase_rest::{AdminConfig, AppConfig, AuthzHandle, ServerConfig};
 
 mod common;
 use common::AuditSink;
@@ -47,15 +47,17 @@ fn hash_pw(pw: &str) -> String {
 fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
-        password_hash: Redacted(hash_pw("pw")),
+        password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }
 
-fn rest_config() -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+fn rest_config() -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {
@@ -69,25 +71,25 @@ fn rest_config() -> RestConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(Redacted(HMAC_SECRET.to_owned())),
+                hmac_secret: Some(ehrbase_sm::Secret::new(HMAC_SECRET.to_owned())),
                 jwks_json: None,
+                ..OidcConfig::default()
             }),
             admin_scope: None,
             ..AuthConfig::default()
         },
-        swagger_ui: false,
         // The admin group must be reachable so the RBAC gate is what decides
         // access (the admin tests assert 403 for USER / 501 for ADMIN at the
         // dispatcher, not the config gate's 404).
         admin: AdminConfig { enabled: true },
-        ..RestConfig::default()
+        ..Default::default()
     }
 }
 
 fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     let mut cfg = AuthzConfig::default();
     cfg.rbac.enabled = enabled;
-    AuthzHandle::from_config(&cfg, &rest_config().base_path).map(Arc::new)
+    AuthzHandle::from_config(&cfg, &rest_config().server.base_path).map(Arc::new)
 }
 
 fn app(rbac_enabled: bool, audit: Option<AuditSink>) -> Router {

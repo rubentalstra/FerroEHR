@@ -173,31 +173,44 @@ impl EhrbaseService {
     }
 
     /// Commit a new version of a COMPOSITION. `expected` (from `If-Match`)
-    /// enforces optimistic concurrency.
+    /// enforces optimistic concurrency. `current` is the trait layer's ONE
+    /// merged pre-read (`current_composition_meta`): the ownership gate is
+    /// already applied by the caller, and it carries the lifecycle, the stored
+    /// template root fragment, and the EHR's `is_modifiable` flag — so this write
+    /// runs no further pre-read (the former `If-Match` meta read, modify
+    /// pre-read, and `is_modifiable` side-SELECT are one statement now).
     pub(in crate::service) async fn update_composition(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
         composition: Value,
         expected: Option<TreeId>,
+        current: crate::storage::version_repo::CurrentCompositionMeta,
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = read_current(&self.pool, vo_id)
-            .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        if current.deleted() {
+        // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
+        // and the content-write guard are checked from the threaded pre-read.
+        if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::NotFound(format!(
                 "COMPOSITION {vo_id} is deleted"
             )));
         }
-        self.ensure_content_writable(ehr_id).await?;
+        // is_modifiable = False forbids content writes (RM ehr master04 §EHR
+        // Active Status) — folded from the standalone `ensure_content_writable`
+        // side-SELECT into the merged pre-read; the 409 outcome and its ordering
+        // (after the deleted 404, before the template 422) are unchanged.
+        if !current.is_modifiable {
+            return Err(Self::not_modifiable_error(ehr_id));
+        }
         // Reject an update whose body declares a *different* template than the
         // stored composition it supersedes (CNF master07
         // `update_composition-wrong_template`) — a semantic 422, not 400/412.
-        if let (Some(stored), Some(incoming)) = (
-            composition_template_id(&current.canonical),
-            composition_template_id(&composition),
-        ) && stored != incoming
+        let stored_template = current
+            .root_data
+            .as_ref()
+            .and_then(|d| composition_template_id(d));
+        if let (Some(stored), Some(incoming)) =
+            (stored_template, composition_template_id(&composition))
+            && stored != incoming
         {
             return Err(ServiceError::Unprocessable(format!(
                 "update COMPOSITION references template {incoming}, but the stored \
@@ -240,18 +253,23 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        let Some(read) = read_current(&self.pool, vo_id)
-            .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+        // Lean `vo_version`⋈`audit` read scoped to the EHR: the `ETag`/`If-Match`
+        // compare needs only the full `OBJECT_VERSION_ID` + commit instant (RM
+        // common master06 §Version Identification / §Committal), never the
+        // reassembled document the full `read_current` pays.
+        let Some(m) =
+            crate::storage::version_repo::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
+                .await?
         else {
             return Ok(None);
         };
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
         Ok(Some(self.version_meta(
             ehr_id,
             vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
         )))
     }
 
@@ -291,20 +309,34 @@ impl EhrbaseService {
         vo_id: Uuid,
         expected: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = read_current(&self.pool, vo_id)
+        // Lean delete pre-read: the pre-checks need only the owning EHR, the
+        // lifecycle (already-deleted → 400, F-02-05), and the current
+        // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) — not
+        // a full node reassembly (the deleted version stores no nodes anyway).
+        let current = crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|m| m.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        if read.deleted() {
+        if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::BadRequest(format!(
                 "COMPOSITION {vo_id} is already deleted"
             )));
         }
-        self.ensure_content_writable(ehr_id).await?;
-        if read.tree != expected {
+        // is_modifiable = False forbids content writes (RM ehr master04 §EHR
+        // Active Status) — folded from the standalone `ensure_content_writable`
+        // side-SELECT into the pre-read; the 409 outcome and its ordering (after
+        // the already-deleted 400, before the stale-precondition 409) unchanged.
+        if !current.is_modifiable {
+            return Err(Self::not_modifiable_error(ehr_id));
+        }
+        let current_tree = TreeId::from_columns(
+            current.trunk_version,
+            current.branch_number,
+            current.branch_version,
+        );
+        if current_tree != expected {
             return Err(ServiceError::Conflict(format!(
-                "preceding_version_uid names version {expected}, latest is {}",
-                read.tree
+                "preceding_version_uid names version {expected}, latest is {current_tree}"
             )));
         }
 
@@ -457,18 +489,53 @@ impl EhrCompositionService for EhrbaseService {
         a_versioned_object_uid: Uuid,
         a_comp: UpdateVersion,
     ) -> Result<String, SmError> {
-        let latest = self
-            .composition_current_meta(an_ehr_id, a_versioned_object_uid)
-            .await?;
-        super::ensure_if_match(a_comp.preceding_version_uid.as_ref(), latest.as_ref())?;
+        // ONE merged pre-read for the whole write pre-check: the owning EHR
+        // (ownership → 404), the full-`OBJECT_VERSION_ID` `If-Match` identity,
+        // the lifecycle, the stored template root fragment, and the EHR's
+        // `is_modifiable` flag — threaded into the inner write so it re-reads
+        // nothing. A foreign/unknown id → 404 (the same outcome the prior
+        // scoped `If-Match` meta read + inner ownership filter produced; a
+        // stale `If-Match` never leaks a 412 for an id that is not this EHR's).
+        let Some(current) = crate::storage::version_repo::current_composition_meta(
+            &self.pool,
+            a_versioned_object_uid,
+        )
+        .await
+        .map_err(ServiceError::from)?
+        .filter(|m| m.ehr_id == Some(an_ehr_id)) else {
+            return Err(
+                ServiceError::NotFound(format!("COMPOSITION {a_versioned_object_uid}")).into(),
+            );
+        };
+        // The full-`OBJECT_VERSION_ID` `If-Match` compare (F-02-08), built from
+        // the same merged read (ITS-REST overview §Concurrency control).
+        let tree = TreeId::from_columns(
+            current.trunk_version,
+            current.branch_number,
+            current.branch_version,
+        );
+        let latest = self.version_meta(
+            an_ehr_id,
+            a_versioned_object_uid,
+            &current.creating_system_id,
+            tree,
+            current.time_committed,
+        );
+        super::ensure_if_match(a_comp.preceding_version_uid.as_ref(), Some(&latest))?;
         let expected = a_comp
             .preceding_version_uid
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_composition(an_ehr_id, a_versioned_object_uid, a_comp.data, expected)
-                .await?,
+            self.update_composition(
+                an_ehr_id,
+                a_versioned_object_uid,
+                a_comp.data,
+                expected,
+                current,
+            )
+            .await?,
         )
     }
 

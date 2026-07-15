@@ -22,7 +22,7 @@ spec:
     - ports:
         - port: http
           protocol: TCP
-        {{- if and .Values.management.enabled .Values.management.port }}
+        {{- if and .Values.config.management.enabled .Values.config.management.port }}
         - port: management
           protocol: TCP
         {{- end }}

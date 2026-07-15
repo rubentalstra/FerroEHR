@@ -33,7 +33,7 @@ use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::multimedia::{BlobStore, MultimediaConfig, MultimediaEngine};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::MultimediaAdapter;
@@ -77,7 +77,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -129,6 +129,7 @@ impl Seaweed {
             region: "us-east-1".to_owned(),
             access_key_id: None,
             secret_access_key: None,
+            secret_access_key_file: None,
             allow_http: true,
         }
     }

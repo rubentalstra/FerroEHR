@@ -9,11 +9,11 @@
 //! is why this config lives beside the interface realization in
 //! `service/terminology/`.
 //!
-//! Loaded from defaults ← optional TOML file (`EHRBASE_VALIDATION_CONFIG`) ←
-//! `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_`-prefixed environment (nested keys
-//! use `__`, e.g. `..._PROVIDERS__DEFAULT__URL`) — the same env grammar the
-//! Docker compose recipe in `docs/design/terminology-server-integration.md` §3
-//! writes.
+//! This is the `[terminology]` section of the one config tree
+//! ([`crate::config::EhrbaseConfig`], `docs/design/configuration.md` §3.15); no
+//! loader of its own. [`TerminologyConfig`] groups the extension-API toggle
+//! (`api_enabled`) with the external-server validation config
+//! ([`ExternalTerminologyConfig`], under `[terminology.external]`).
 //!
 //! Provider selection is **openEHR-bundle-by-default, FHIR opt-in**: with
 //! [`ExternalTerminologyConfig::enabled`] `false` (the default) no remote
@@ -23,8 +23,6 @@
 
 use std::collections::BTreeMap;
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
 use serde::{Deserialize, Serialize};
 
 use ehrbase_sm::SmError;
@@ -39,11 +37,24 @@ const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
 /// when several are configured.
 const DEFAULT_PROVIDER_NAME: &str = "default";
 
-/// External-terminology validation configuration (`[validation.external_terminology]`).
+/// The `[terminology]` section: the extension-API toggle + external-server
+/// validation config.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct TerminologyConfig {
+    /// Mount the terminology extension API (SM `I_TERMINOLOGY_SERVICE`). Off by
+    /// default — the routes answer `404` unless enabled.
+    pub api_enabled: bool,
+    /// External terminology-server validation (`[terminology.external]`).
+    pub external: ExternalTerminologyConfig,
+}
+
+/// External-terminology validation configuration (`[terminology.external]`).
 ///
 /// Defaults are the off state: `enabled = false`, `fail_on_error = false`, no
 /// providers.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct ExternalTerminologyConfig {
     /// Whether external-terminology validation is active. When `false` (the
     /// default), no remote provider is built.
@@ -85,6 +96,7 @@ pub enum FhirOperation {
 
 /// Configuration for a single FHIR R4 terminology-server provider.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FhirProviderConfig {
     /// Server kind (`type = "fhir"`).
     #[serde(rename = "type", default)]
@@ -124,23 +136,6 @@ const fn default_request_timeout_ms() -> u64 {
 }
 
 impl ExternalTerminologyConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_VALIDATION_CONFIG`), then
-    /// `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_`-prefixed environment variables
-    /// (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(Self::default()));
-        if let Ok(path) = std::env::var("EHRBASE_VALIDATION_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_").split("__"))
-            .extract()
-    }
-
     /// Build the named provider, or `None` when external terminology is disabled
     /// or no provider carries that name.
     ///
@@ -197,45 +192,33 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::result_large_err)] // figment::Jail closure signature
-    fn env_builds_a_provider() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED", "true");
-            jail.set_env(
-                "EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__DEFAULT__TYPE",
-                "fhir",
-            );
-            jail.set_env(
-                "EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__DEFAULT__URL",
-                "http://terminology:8090/fhir",
-            );
-            let c = ExternalTerminologyConfig::load().expect("load");
-            assert!(c.enabled);
-            let cfg = c.providers.get("default").expect("default provider");
-            assert_eq!(cfg.kind, ProviderKind::Fhir);
-            assert_eq!(cfg.url, "http://terminology:8090/fhir");
-            assert_eq!(cfg.operation, FhirOperation::ValidateCode);
-            assert_eq!(cfg.connect_timeout_ms, DEFAULT_CONNECT_TIMEOUT_MS);
-            // Selection materialises the provider.
-            assert!(c.default_provider().expect("selected").is_ok());
-            Ok(())
-        });
-    }
-
-    #[test]
-    #[allow(clippy::result_large_err)] // figment::Jail closure signature
-    fn disabled_config_selects_nothing_even_with_a_provider() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env(
-                "EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__DEFAULT__URL",
-                "http://terminology:8090/fhir",
-            );
-            let c = ExternalTerminologyConfig::load().expect("load");
-            assert!(!c.enabled);
-            assert!(c.provider("default").is_none());
-            assert!(c.default_provider().is_none());
-            Ok(())
-        });
+    fn a_configured_provider_materialises() {
+        let mut providers = BTreeMap::new();
+        providers.insert(
+            "default".to_owned(),
+            FhirProviderConfig {
+                kind: ProviderKind::Fhir,
+                url: "http://terminology:8090/fhir".to_owned(),
+                operation: FhirOperation::ValidateCode,
+                connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
+                request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
+                oauth2_client: None,
+            },
+        );
+        let enabled = ExternalTerminologyConfig {
+            enabled: true,
+            fail_on_error: false,
+            providers: providers.clone(),
+        };
+        assert!(enabled.default_provider().expect("selected").is_ok());
+        // Disabled selects nothing even with a provider present.
+        let disabled = ExternalTerminologyConfig {
+            enabled: false,
+            fail_on_error: false,
+            providers,
+        };
+        assert!(disabled.provider("default").is_none());
+        assert!(disabled.default_provider().is_none());
     }
 
     #[test]

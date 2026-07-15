@@ -21,9 +21,9 @@ use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::RestConfig;
+use ehrbase_rest::AppConfig;
 use ehrbase_rest::access::authn::AuthConfig;
-use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, Redacted};
+use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser};
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
 use http::{Request, StatusCode};
 use serde_json::json;
@@ -86,16 +86,14 @@ fn hash_pw(pw: &str) -> String {
         .to_string()
 }
 
-fn rest_config() -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+fn rest_config() -> AppConfig {
+    AppConfig {
         auth: AuthConfig {
             enabled: true,
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: Redacted(hash_pw("pw")),
+                    password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),
@@ -103,7 +101,7 @@ fn rest_config() -> RestConfig {
             admin_scope: None,
             ..AuthConfig::default()
         },
-        ..RestConfig::default()
+        ..Default::default()
     }
 }
 

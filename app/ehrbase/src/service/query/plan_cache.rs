@@ -31,7 +31,6 @@
 //!   window, rather than a TTL that could serve a stale expansion.
 
 use std::sync::Arc;
-use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use moka::future::Cache;
@@ -40,20 +39,12 @@ use crate::aql::QueryIr;
 use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 
 /// The default maximum number of distinct query plans held. Bounded so a churn
-/// of one-off ad-hoc queries cannot grow the cache without limit.
+/// of one-off ad-hoc queries cannot grow the cache without limit. The effective
+/// capacity comes from `[query].plan_cache_capacity`
+/// (`crate::service::query::QueryConfig`), applied when the binary builds the
+/// service; a bare service (tests/embeddings) uses this default. No openEHR
+/// spec governs this — our own tuning knob.
 const DEFAULT_CAPACITY: u64 = 256;
-
-/// The configured plan-cache capacity, read once from
-/// `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` (a plain integer). Unset or unparseable
-/// → [`DEFAULT_CAPACITY`]; `0` disables the cache (every lookup misses and the
-/// full parse→lower path runs). No openEHR spec governs this — our own tuning
-/// knob.
-static CONFIGURED_CAPACITY: LazyLock<u64> = LazyLock::new(|| {
-    std::env::var("EHRBASE_QUERY__PLAN_CACHE_CAPACITY")
-        .ok()
-        .and_then(|v| v.trim().parse::<u64>().ok())
-        .unwrap_or(DEFAULT_CAPACITY)
-});
 
 /// A point-in-time view of the plan cache's activity, for observability and
 /// tests (`entries` is `moka`'s eventually-consistent estimate).
@@ -92,7 +83,7 @@ impl std::fmt::Debug for PlanCache {
 
 impl Default for PlanCache {
     fn default() -> Self {
-        Self::new(*CONFIGURED_CAPACITY)
+        Self::new(DEFAULT_CAPACITY)
     }
 }
 

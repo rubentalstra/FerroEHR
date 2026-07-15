@@ -257,7 +257,7 @@ mod tests {
 //   (`SmError::precondition`). (`Request.md` §About the ehr_id parameter.)
 //
 // - query-execution timeout → `408` (`responses/408_Query.yaml`): the executor
-//   bounds the DB execution by the `EHRBASE_QUERY__TIMEOUT_MS` budget and, on
+//   bounds the DB execution by the `EHRBASE__QUERY__TIMEOUT_MS` budget and, on
 //   overrun, raises the timeout-tagged `SmError` that `sm_api_error`/
 //   `RestError::into_response` render as `408 Request Timeout`
 //   (`Requests_and_responses.md` §HTTP status codes, row `408`). With the budget

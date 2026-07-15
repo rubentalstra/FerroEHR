@@ -15,38 +15,110 @@
 //! extension it carries no ABAC resource kind (the generic PEP `Skip`s it) and
 //! no ATNA audit-table entry — the fallbacks apply automatically.
 //!
-//! The group is config-gated (`RestConfig::tenancy.enabled`, default `false`):
+//! The group is config-gated (`AppConfig::tenancy.enabled`, default `false`):
 //! when disabled every route answers `404` without touching the backend, so a
 //! single-tenant deployment never exposes tenant administration.
 
+use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 use uuid::Uuid;
 
 use openehr_its::rest::runtime::ApiError;
 
-use crate::api::{BoxResponse, RequestParts};
+use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
 use ehrbase_sm::Platform;
 
 use crate::negotiate;
 use crate::state::AppState;
 
-/// The tenant admin extension routes — our own extension (no ITS-REST
-/// contract), mounted alongside the generated `ROUTES`. Group-relative paths
-/// (nested under the configured `base_path`).
-pub(crate) const TENANT_ROUTES: &[(&str, &str, &str)] = &[
-    // List every tenant.
-    ("GET", "/admin/tenant", "tenant_list"),
-    // Create a tenant (body: {name, system_id}); 201 with the stored record.
-    ("POST", "/admin/tenant", "tenant_create"),
-    // Read one tenant by id.
-    ("GET", "/admin/tenant/{tenant_id}", "tenant_get"),
-    // Update one tenant's name/system_id.
-    ("PUT", "/admin/tenant/{tenant_id}", "tenant_update"),
-    // Delete one tenant (only when empty and not the reserved default).
-    ("DELETE", "/admin/tenant/{tenant_id}", "tenant_delete"),
-];
+/// The tenant admin extension routes as a native `utoipa-axum` router
+/// (group-relative paths; nested under `base_path`), mounted under `/admin`
+/// (the coarse RBAC gate classes it `Admin`). Served through [`guarded_dispatch`]
+/// → [`dispatch`]. No openEHR spec governs multi-tenancy — our own extension.
+pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(tenant_list, tenant_create))
+        .routes(routes!(tenant_get, tenant_update, tenant_delete))
+}
+
+/// List every tenant.
+#[utoipa::path(
+    get, path = "/admin/tenant", tag = "tenancy",
+    responses((status = 200, description = "The tenant records.", body = serde_json::Value))
+)]
+pub(crate) async fn tenant_list<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_list", parts, dispatch::<S>).await
+}
+
+/// Create a tenant. Body: `{name, system_id}`.
+#[utoipa::path(
+    post, path = "/admin/tenant", tag = "tenancy",
+    request_body(content = serde_json::Value, description = "The tenant definition."),
+    responses((status = 201, description = "Created.", body = serde_json::Value))
+)]
+pub(crate) async fn tenant_create<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_create", parts, dispatch::<S>).await
+}
+
+/// Read one tenant by id. 404 when absent.
+#[utoipa::path(
+    get, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
+    params(("tenant_id" = String, Path, description = "The tenant UUID.")),
+    responses(
+        (status = 200, description = "The tenant record.", body = serde_json::Value),
+        (status = 404, description = "Not found.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn tenant_get<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_get", parts, dispatch::<S>).await
+}
+
+/// Update one tenant's name/`system_id`.
+#[utoipa::path(
+    put, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
+    params(("tenant_id" = String, Path, description = "The tenant UUID.")),
+    request_body(content = serde_json::Value, description = "The updated tenant definition."),
+    responses((status = 200, description = "Updated.", body = serde_json::Value))
+)]
+pub(crate) async fn tenant_update<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_update", parts, dispatch::<S>).await
+}
+
+/// Delete one tenant (only when empty and not the reserved default).
+#[utoipa::path(
+    delete, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
+    params(("tenant_id" = String, Path, description = "The tenant UUID.")),
+    responses((status = 204, description = "Deleted."))
+)]
+pub(crate) async fn tenant_delete<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "tenant_delete", parts, dispatch::<S>).await
+}
 
 pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,

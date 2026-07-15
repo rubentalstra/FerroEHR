@@ -1,32 +1,20 @@
-//! FHIR **outbound** emitter configuration ([`FhirOutboundConfig`]) — a
-//! `figment`-loaded serde struct, mirroring
-//! [`EventsConfig`](crate::extensions::events::EventsConfig).
+//! The `[fhir]` section — the FHIR connector (inbound façade + outbound
+//! emitter, `docs/design/configuration.md` §3.14).
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-03; no openEHR outbound/FHIR transport exists). Gate:
-//! `EHRBASE_FHIR_OUTBOUND_ENABLED` (default off).
+//! **No openEHR spec governs this — our own design/extension.** Fields of the
+//! one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own.
+//! The inbound API façade and the outbound emitter are **independent switches**
+//! ([`FhirConfig::api_enabled`] vs [`FhirOutboundConfig::enabled`]).
 //!
-//! Loading: defaults ← optional TOML file (`EHRBASE_FHIR_OUTBOUND_CONFIG`) ←
-//! `EHRBASE_FHIR_OUTBOUND_`-prefixed environment (nested keys use `__`).
-//!
-//! PORT NOTE: the outbound emitter lives in `ehrbase`
-//! (the binary/platform crate), NOT in `ehrbase-rest`'s `FhirConfig` — it is a
-//! broker + DB **background** concern (a drainer wired like the outbox
-//! publisher), and `ehrbase-rest` is the protocol adapter only
-//! (no broker/DB work). So the REST `FhirConfig.enabled` gate (the
-//! inbound/façade surface) and this emitter config are independent switches.
-//!
-//! PHI NOTE: unlike the PHI-free event envelopes, the outbound
-//! emitter's payload IS the mapped FHIR **resource**, so it carries clinical
-//! content by design. It is therefore off by default behind its own explicit
-//! [`enabled`](Self::enabled) flag, and publishes to a SEPARATE
-//! [`exchange`](Self::exchange) (default `ehrbase.fhir`, distinct from the events
-//! exchange) so broker-level access control can restrict the PHI-bearing stream
-//! independently of the PHI-free envelope stream. Turning it on is an explicit,
+//! PHI NOTE: unlike the PHI-free event envelopes, the outbound emitter's
+//! payload IS the mapped FHIR **resource**, so it carries clinical content by
+//! design. It is off by default behind its own explicit flag, and publishes to
+//! a SEPARATE [`exchange`](FhirOutboundConfig::exchange) (default `ehrbase.fhir`,
+//! distinct from the events exchange) so broker-level access control can
+//! restrict the PHI-bearing stream independently. Turning it on is an explicit,
 //! audited deployment decision.
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
+use ehrbase_sm::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
@@ -40,37 +28,36 @@ const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
 /// Default per-message publish retry count before the emitter backs off.
 const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
 
-/// FHIR outbound emitter configuration (`[fhir_outbound]`) — our own extension
-/// 4a). Every field has a default, so an all-defaults value is valid (the
-/// emitter is off unless `enabled`).
+/// The `[fhir]` section: the inbound API façade toggle + the outbound emitter.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct FhirConfig {
+    /// Mount the `/fhir/r4/*` inbound routes + the `/admin/fhir_mapping` CRUD.
+    /// Off by default — the routes answer `404` unless enabled.
+    pub api_enabled: bool,
+    /// The outbound (PHI-bearing) FHIR emitter.
+    pub outbound: FhirOutboundConfig,
+}
+
+/// FHIR outbound emitter configuration (`[fhir.outbound]`) — our own extension.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct FhirOutboundConfig {
-    /// Master switch (`EHRBASE_FHIR_OUTBOUND_ENABLED`). Off by default — this
-    /// stream carries PHI (the mapped FHIR resource), so enabling it is an
-    /// explicit deployment decision (see the module PHI note).
-    #[serde(default)]
+    /// Master switch. Off by default — this stream carries PHI (the mapped FHIR
+    /// resource), so enabling it is an explicit deployment decision.
     pub enabled: bool,
-    /// AMQP broker URL (`EHRBASE_FHIR_OUTBOUND_URL`).
-    #[serde(default = "defaults::url")]
-    pub url: String,
-    /// Topic exchange to publish FHIR resources to
-    /// (`EHRBASE_FHIR_OUTBOUND_EXCHANGE`); default `ehrbase.fhir`, distinct from
-    /// the events exchange for PHI isolation (module PHI note).
-    #[serde(default = "defaults::exchange")]
+    /// AMQP broker URL (credentials redacted from every rendering).
+    pub url: SecretUrl,
+    /// Topic exchange to publish FHIR resources to; default `ehrbase.fhir`,
+    /// distinct from the events exchange for PHI isolation.
     pub exchange: String,
-    /// Use TLS (`EHRBASE_FHIR_OUTBOUND_TLS`): upgrades an `amqp://` URL to
-    /// `amqps://`.
-    #[serde(default)]
+    /// Use TLS: upgrades an `amqp://` URL to `amqps://`.
     pub tls: bool,
-    /// Outbox rows scanned per poll (`EHRBASE_FHIR_OUTBOUND_BATCH_SIZE`).
-    #[serde(default = "defaults::batch_size")]
+    /// Outbox rows scanned per poll.
     pub batch_size: i64,
-    /// Poll interval when idle (`EHRBASE_FHIR_OUTBOUND_POLL_INTERVAL_MS`).
-    #[serde(default = "defaults::poll_interval_ms")]
+    /// Poll interval when idle (ms).
     pub poll_interval_ms: u64,
-    /// Per-message publish retry count before backing off
-    /// (`EHRBASE_FHIR_OUTBOUND_PUBLISH_MAX_RETRIES`).
-    #[serde(default = "defaults::publish_max_retries")]
+    /// Per-message publish retry count before backing off.
     pub publish_max_retries: usize,
 }
 
@@ -78,65 +65,27 @@ impl Default for FhirOutboundConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            url: defaults::url(),
-            exchange: defaults::exchange(),
+            url: SecretUrl::new(DEFAULT_URL),
+            exchange: DEFAULT_EXCHANGE.to_owned(),
             tls: false,
-            batch_size: defaults::batch_size(),
-            poll_interval_ms: defaults::poll_interval_ms(),
-            publish_max_retries: defaults::publish_max_retries(),
+            batch_size: DEFAULT_BATCH_SIZE,
+            poll_interval_ms: DEFAULT_POLL_INTERVAL_MS,
+            publish_max_retries: DEFAULT_PUBLISH_MAX_RETRIES,
         }
     }
 }
 
 impl FhirOutboundConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_FHIR_OUTBOUND_CONFIG`), then `EHRBASE_FHIR_OUTBOUND_`-prefixed
-    /// environment variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(FhirOutboundConfig::default()));
-        if let Ok(path) = std::env::var("EHRBASE_FHIR_OUTBOUND_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_FHIR_OUTBOUND_").split("__"))
-            .extract()
-    }
-
     /// The effective broker URL, upgraded to `amqps://` when [`Self::tls`] is set
     /// and the URL is a plain `amqp://`.
     #[must_use]
     pub fn effective_url(&self) -> String {
-        if self.tls && self.url.starts_with("amqp://") {
-            self.url.replacen("amqp://", "amqps://", 1)
+        let url = self.url.expose();
+        if self.tls && url.starts_with("amqp://") {
+            url.replacen("amqp://", "amqps://", 1)
         } else {
-            self.url.clone()
+            url.to_owned()
         }
-    }
-}
-
-mod defaults {
-    use super::{
-        DEFAULT_BATCH_SIZE, DEFAULT_EXCHANGE, DEFAULT_POLL_INTERVAL_MS,
-        DEFAULT_PUBLISH_MAX_RETRIES, DEFAULT_URL,
-    };
-
-    pub(super) fn url() -> String {
-        DEFAULT_URL.to_owned()
-    }
-    pub(super) fn exchange() -> String {
-        DEFAULT_EXCHANGE.to_owned()
-    }
-    pub(super) const fn batch_size() -> i64 {
-        DEFAULT_BATCH_SIZE
-    }
-    pub(super) const fn poll_interval_ms() -> u64 {
-        DEFAULT_POLL_INTERVAL_MS
-    }
-    pub(super) const fn publish_max_retries() -> usize {
-        DEFAULT_PUBLISH_MAX_RETRIES
     }
 }
 
@@ -146,20 +95,18 @@ mod tests {
 
     #[test]
     fn defaults_are_off_and_use_a_separate_exchange() {
-        let c = FhirOutboundConfig::default();
-        assert!(!c.enabled, "off by default (PHI stream)");
-        assert_eq!(
-            c.exchange, "ehrbase.fhir",
-            "separate from the events exchange"
-        );
-        assert!(c.url.starts_with("amqp://"));
+        let c = FhirConfig::default();
+        assert!(!c.api_enabled);
+        assert!(!c.outbound.enabled, "off by default (PHI stream)");
+        assert_eq!(c.outbound.exchange, "ehrbase.fhir");
+        assert!(c.outbound.url.expose().starts_with("amqp://"));
     }
 
     #[test]
     fn tls_upgrades_amqp_scheme() {
         let c = FhirOutboundConfig {
             tls: true,
-            url: "amqp://guest:guest@host:5672/%2f".to_owned(),
+            url: SecretUrl::new("amqp://guest:guest@host:5672/%2f"),
             ..FhirOutboundConfig::default()
         };
         assert_eq!(c.effective_url(), "amqps://guest:guest@host:5672/%2f");

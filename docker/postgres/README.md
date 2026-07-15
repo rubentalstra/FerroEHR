@@ -41,12 +41,14 @@ only).
 | Env var | Default | Meaning |
 |---|---|---|
 | `POSTGRES_PASSWORD` | *(required by the base image)* | bootstrap **superuser** (`postgres`) password |
-| `EHRBASE_DB_USER` | `ehrbase` | app login role created by the init script |
-| `EHRBASE_DB_PASSWORD` | `ehrbase` | app role password (**dev default — override in production**) |
-| `EHRBASE_DB_NAME` | `ehrbase` | app database created by the init script |
+| `PG_INIT_USER` | `ehrbase` | app login role created by the init script |
+| `PG_INIT_PASSWORD` | `ehrbase` | app role password (**dev default — override in production**) |
+| `PG_INIT_DB` | `ehrbase` | app database created by the init script |
 
-The app then connects with, e.g.,
-`EHRBASE_DB_URL=postgres://ehrbase:ehrbase@<host>:5432/ehrbase`.
+These `PG_INIT_*` vars configure this DB container; they are intentionally
+outside the server's reserved `EHRBASE_` namespace (the server rejects unknown
+`EHRBASE_*` vars at boot). The app then connects with, e.g.,
+`EHRBASE__DB__URL=postgres://ehrbase:ehrbase@<host>:5432/ehrbase`.
 
 Init scripts only run on first initialisation (empty volume). To re-provision,
 remove the data volume (`docker compose down -v`).

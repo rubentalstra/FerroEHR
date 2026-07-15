@@ -20,7 +20,7 @@ pointing at it:
 
 ```shell
 kubectl -n ehrbase create secret generic ehrbase-db \
-  --from-literal=EHRBASE_DB_URL='postgres://ehrbase_app:***@pg-host:5432/ehrbase?sslmode=verify-full'
+  --from-literal=EHRBASE__DB__URL='postgres://ehrbase_app:***@pg-host:5432/ehrbase?sslmode=verify-full'
 
 helm install ehrbase-rs deploy/helm/ehrbase-rs -n ehrbase \
   --set database.existingSecret=ehrbase-db \

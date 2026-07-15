@@ -37,63 +37,172 @@
 //! precondition to `versioned_object_does_not_exist` (→ `404`), so no new SM
 //! `CALL_STATUS_TYPE` is needed.
 //!
-//! The group is config-gated (`RestConfig::terminology.enabled`, default
+//! The group is config-gated (`AppConfig::terminology_api_enabled`, default
 //! `false`): when disabled every terminology route answers `404` without
 //! touching the backend.
 
+use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use serde_json::json;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 
 use openehr_its::rest::runtime::ApiError;
 
-use crate::api::{BoxResponse, RequestParts};
+use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
 use ehrbase_sm::Platform;
 
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-/// The terminology extension routes — our own extension (no ITS-REST contract;
-/// §7), mounted alongside the generated `ROUTES` and served by [`dispatch`].
-/// Group-relative paths (nested under the configured `base_path`).
-pub(crate) const TERMINOLOGY_ROUTES: &[(&str, &str, &str)] = &[
-    // `get_terminology_ids` — the identifiers of every terminology this server
-    // knows.
-    ("GET", "/terminology", "terminology_ids"),
-    // `get_terminology_description` — descriptor for one terminology
-    // (`Pre_has_terminology`; also the existence check for `has_terminology`).
-    (
-        "GET",
-        "/terminology/{terminology_id}",
-        "terminology_description",
+/// The terminology extension routes as a native `utoipa-axum` router: each
+/// `#[utoipa::path]` handler single-sources its route and its `OpenAPI` path.
+/// Group-relative paths (nested under the configured `base_path`); every
+/// operation is served through [`guarded_dispatch`] → [`dispatch`], so the
+/// wire behaviour is identical to the generated groups' `mount` adapter.
+pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(terminology_ids))
+        .routes(routes!(terminology_description))
+        .routes(routes!(terminology_get_term))
+        .routes(routes!(terminology_subsumes))
+        .routes(routes!(terminology_value_set))
+        .routes(routes!(terminology_value_set_validate))
+}
+
+// ── Handlers (SM `I_TERMINOLOGY_SERVICE` semantics; our own wire shape) ───────
+// Every handler snapshots the request into `RequestParts` (identical to the
+// generated-group adapter) and runs it through the shared guarded dispatch, so
+// the EHR_ACCESS gate, ABAC PEP, and ATNA audit tagging apply uniformly.
+
+/// Every terminology id the server knows (`get_terminology_ids`). Body:
+/// `{"terminology_ids": [..]}`.
+#[utoipa::path(
+    get, path = "/terminology", tag = "terminology",
+    responses((status = 200, description = "The known terminology ids.", body = serde_json::Value))
+)]
+pub(crate) async fn terminology_ids<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "terminology_ids", parts, dispatch::<S>).await
+}
+
+/// One terminology's descriptor (`get_terminology_description`; also the
+/// `has_terminology` existence check). 404 when unknown.
+#[utoipa::path(
+    get, path = "/terminology/{terminology_id}", tag = "terminology",
+    params(("terminology_id" = String, Path, description = "The terminology id.")),
+    responses(
+        (status = 200, description = "The terminology descriptor.", body = serde_json::Value),
+        (status = 404, description = "Unknown terminology.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn terminology_description<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "terminology_description", parts, dispatch::<S>).await
+}
+
+/// A term definition (`get_term`). Optional `at_date`. 404 when unknown.
+#[utoipa::path(
+    get, path = "/terminology/{terminology_id}/term/{code}", tag = "terminology",
+    params(
+        ("terminology_id" = String, Path, description = "The terminology id."),
+        ("code" = String, Path, description = "The term code."),
+        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date.")
     ),
-    // `get_term` — a term definition (lookup); optional `?at_date=`.
-    (
-        "GET",
-        "/terminology/{terminology_id}/term/{code}",
-        "terminology_get_term",
+    responses(
+        (status = 200, description = "The term extract.", body = serde_json::Value),
+        (status = 404, description = "Unknown terminology or code.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn terminology_get_term<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "terminology_get_term", parts, dispatch::<S>).await
+}
+
+/// Strict subsumption test (`subsumes`). Body: `{"subsumes": bool}`. 400 when a
+/// required query parameter is missing.
+#[utoipa::path(
+    get, path = "/terminology/{terminology_id}/subsumes", tag = "terminology",
+    params(
+        ("terminology_id" = String, Path, description = "The terminology id."),
+        ("ref_code" = String, Query, description = "The reference (ancestor-candidate) code."),
+        ("candidate" = String, Query, description = "The candidate (descendant) code.")
     ),
-    // `subsumes` — strict subsumption test; `?ref_code=&candidate=`.
-    (
-        "GET",
-        "/terminology/{terminology_id}/subsumes",
-        "terminology_subsumes",
+    responses(
+        (status = 200, description = "The subsumption result.", body = serde_json::Value),
+        (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn terminology_subsumes<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "terminology_subsumes", parts, dispatch::<S>).await
+}
+
+/// A value set's extract (`get_value_set`; also the `has_value_set` existence
+/// check). 404 when unknown.
+#[utoipa::path(
+    get, path = "/terminology/{terminology_id}/value_set/{value_set_id}", tag = "terminology",
+    params(
+        ("terminology_id" = String, Path, description = "The terminology id."),
+        ("value_set_id" = String, Path, description = "The value set id.")
     ),
-    // `get_value_set` — the value set's extract (expand;
-    // `Pre_has_value_set`, also the existence check for `has_value_set`).
-    (
-        "GET",
-        "/terminology/{terminology_id}/value_set/{value_set_id}",
-        "terminology_value_set",
+    responses(
+        (status = 200, description = "The value set extract.", body = serde_json::Value),
+        (status = 404, description = "Unknown terminology or value set.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn terminology_value_set<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "terminology_value_set", parts, dispatch::<S>).await
+}
+
+/// Value-set membership test (`value_set_validate`). Body: `{"valid": bool}`.
+/// 400 when `candidate_code` is missing.
+#[utoipa::path(
+    get, path = "/terminology/{terminology_id}/value_set/{value_set_id}/validate", tag = "terminology",
+    params(
+        ("terminology_id" = String, Path, description = "The terminology id."),
+        ("value_set_id" = String, Path, description = "The value set id."),
+        ("candidate_code" = String, Query, description = "The candidate code to test for membership."),
+        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date.")
     ),
-    // `value_set_validate` — membership test; `?candidate_code=&at_date=`.
-    (
-        "GET",
-        "/terminology/{terminology_id}/value_set/{value_set_id}/validate",
+    responses(
+        (status = 200, description = "The membership result.", body = serde_json::Value),
+        (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn terminology_value_set_validate<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "terminology_value_set_validate",
-    ),
-];
+        parts,
+        dispatch::<S>,
+    )
+    .await
+}
 
 pub(crate) fn dispatch<S: Platform>(
     state: AppState<S>,
@@ -114,7 +223,7 @@ async fn run<S: Platform>(
 ) -> Result<Response, RestError> {
     // Config gate: the terminology extension is opt-in. When disabled every
     // route answers 404 (as if unmounted) without consulting the backend.
-    if !state.config().terminology.enabled {
+    if !state.config().terminology_api_enabled {
         return Err(RestError(ApiError::NotFound(
             "terminology API is disabled".to_owned(),
         )));

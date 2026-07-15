@@ -393,12 +393,19 @@ pub trait FhirConnectorAdapter: Send + Sync {
 #[async_trait]
 pub trait ContributionAdapter: Send + Sync {
     /// `POST …/ehr/{ehr_id}/contribution` — commit a wire CONTRIBUTION
-    /// atomically. Returns the stored `CONTRIBUTION` body with its resource
-    /// metadata (the contribution uid for the `201` `ETag`/`Location`).
+    /// atomically. Always returns the contribution uid in the resource metadata
+    /// (the `201` `ETag`/`Location`). The `representation` flag mirrors the wire
+    /// `Prefer` (`return=representation` vs `return=minimal`): when `true` the
+    /// stored `CONTRIBUTION` body is assembled into the response; when `false`
+    /// the body is left empty (`Value::Null`) and the post-commit read is
+    /// skipped entirely — a `return=minimal` response is headers-only, so
+    /// building the composite body would be pure waste (ITS-REST
+    /// `Requests_and_responses` §Representation details negotiation).
     async fn ehr_contribution_commit(
         &self,
         an_ehr_id: Uuid,
         a_contribution: Value,
+        representation: bool,
     ) -> Result<ServiceResponse, SmError>;
 }
 

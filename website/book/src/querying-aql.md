@@ -197,7 +197,7 @@ parameters to page through large result sets. When you ask for more than the
 server will return in one response, page with `offset`.
 
 Operators can also cap how long any single query may run: set
-`EHRBASE_QUERY__TIMEOUT_MS` to a per-query execution budget in milliseconds
+`EHRBASE__QUERY__TIMEOUT_MS` to a per-query execution budget in milliseconds
 (unset or `0` = no per-query cap). A query that exceeds the budget returns
 **408 Request Timeout** — narrow the query (add archetype constraints, an
 `ehr_id` scope, or a `WHERE` filter) rather than retrying unchanged.
