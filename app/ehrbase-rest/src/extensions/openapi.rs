@@ -1,12 +1,18 @@
-//! `OpenAPI` documents + Swagger UI (discoverability).
+//! `OpenAPI` document + Swagger UI (discoverability).
 //!
 //! No openEHR spec governs an OAS-serving endpoint; this is our own surface.
-//! What it exposes is the authoritative contract itself: the **vendored
-//! development-edition** ITS-REST `OpenAPI` bundles
-//! (`openehr_its::rest::VENDORED_OAS` — openEHR `specifications-ITS-REST`
-//! `master` @ `e8a093e9…`, the same pinned tree `emit-rest` generates the
-//! served routes from). Serving Swagger for that tree keeps the documented
-//! API and the implemented contract one identity, not two.
+//! What the Swagger UI exposes here is **our own `ehrbase-rest` endpoints
+//! only** — the composed extension-surface document
+//! ([`crate::extensions::openapi_extensions::ExtensionsApiDoc`]): the
+//! operational + extension endpoints this server serves (status/health, the
+//! management surface, SMART discovery, the `OpenAPI` endpoints, and the
+//! terminology / `PARTY_RELATIONSHIP` / event-subscription / multi-tenancy /
+//! FHIR-connector extensions). No openEHR spec governs those — our own design.
+//!
+//! The vendored ITS-REST `OpenAPI` bundles (`openehr_its::rest::VENDORED_OAS`)
+//! are **not** served through this selector: they are the standardised
+//! contract, authoritative in their own right, and this UI is deliberately
+//! scoped to what is unique to this server.
 //!
 //! The UI assets are served through [`utoipa_swagger_ui::serve`] directly
 //! rather than [`utoipa_swagger_ui::SwaggerUi`]'s router: the router answers
@@ -26,55 +32,24 @@ use ehrbase_sm::Platform;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::{Config, SwaggerFile, Url};
 
+use crate::extensions::openapi_extensions::ExtensionsApiDoc;
 use crate::state::AppState;
 
-/// The identity document: API metadata + the contract provenance. The
-/// `version` mirrors the tested contract identity
-/// [`crate::extensions::provenance::ITS_REST`] (`development@e8a093e`).
-/// (`utoipa`'s `info` attribute takes a string literal, so this cannot
-/// reference the const directly; keep the two in sync on a spec-pin bump.)
-#[derive(OpenApi)]
-#[openapi(info(
-    title = "EHRbase-RS — openEHR ITS-REST",
-    version = "development@e8a093e",
-    description = "openEHR-spec-conformant CDR. The API-group documents in the \
-                   spec selector are the vendored development-edition ITS-REST \
-                   OpenAPI bundles (master @ e8a093e9) — the authoritative \
-                   contract the server's routes are generated from."
-))]
-#[derive(Debug)]
-pub struct ApiDoc;
-
-/// Build the docs router: the Swagger UI (loop-free), the identity JSON, and
-/// one route per vendored API-group bundle (served verbatim as YAML).
+/// Build the docs router: the Swagger UI (loop-free) and the single
+/// `ehrbase-rest` extension-surface `OpenAPI` JSON document. No vendored
+/// bundles are served here.
 pub(crate) fn swagger_router<S: Platform>(ui_path: &str, json_path: &str) -> Router<AppState<S>> {
-    // `json_path` is `{rest_root}/api-docs/openapi.json`; the group bundles
-    // live beside it.
-    let api_docs_root = json_path
-        .rsplit_once('/')
-        .map_or("/api-docs", |(dir, _)| dir)
-        .to_owned();
+    // One selector entry: our own composed extension-surface document.
+    let urls: Vec<Url<'static>> = vec![Url::new("ehrbase-rest", json_path.to_owned().leak())];
 
-    let mut router = Router::new();
-
-    // The vendored contract, one URL per API group + the identity doc.
-    let mut urls: Vec<Url<'static>> = Vec::new();
-    for (group, yaml) in openehr_its::rest::VENDORED_OAS {
-        let route = format!("{api_docs_root}/openehr-{group}.openapi.yaml");
-        urls.push(Url::new(group, route.clone().leak()));
-        router = router.route(
-            &route,
-            get(|| async { ([(header::CONTENT_TYPE, "application/yaml")], *yaml) }),
-        );
-    }
-    urls.push(Url::new("identity", json_path.to_owned().leak()));
-    let identity = serde_json::to_string(&ApiDoc::openapi()).unwrap_or_else(|_| "{}".to_owned());
-    router = router.route(
+    let document =
+        serde_json::to_string(&ExtensionsApiDoc::openapi()).unwrap_or_else(|_| "{}".to_owned());
+    let router = Router::new().route(
         json_path,
         get(move || async move {
             (
                 [(header::CONTENT_TYPE, "application/json")],
-                identity.clone(),
+                document.clone(),
             )
         }),
     );
