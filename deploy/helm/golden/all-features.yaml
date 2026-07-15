@@ -101,12 +101,12 @@ metadata:
     app.kubernetes.io/part-of: ehrbase-rs
 type: Opaque
 stringData:
-  EHRBASE_AUTH__OIDC__HMAC_SECRET: "dev-hmac-secret"
-  EHRBASE_SIGNING__KEY_PASSPHRASE: "dev-passphrase"
-  EHRBASE_EVENTS__URL: "amqps://user:pass@rabbitmq:5671/%2f"
-  EHRBASE_FHIR__OUTBOUND__URL: "amqps://user:pass@rabbitmq:5671/%2f"
-  EHRBASE_MULTIMEDIA__ACCESS_KEY_ID: "AKIAEXAMPLE"
-  EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY: "s3-secret"
+  EHRBASE__AUTH__OIDC__HMAC_SECRET: "dev-hmac-secret"
+  EHRBASE__SIGNING__KEY_PASSPHRASE: "dev-passphrase"
+  EHRBASE__EVENTS__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE__FHIR__OUTBOUND__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  EHRBASE__MULTIMEDIA__ACCESS_KEY_ID: "AKIAEXAMPLE"
+  EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY: "s3-secret"
 ---
 # Source: ehrbase-rs/templates/secret.yaml
 # Mounted config files (TOML/PEM) at /etc/ehrbase — file-shaped material an
@@ -373,41 +373,41 @@ spec:
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
           env:
-            - name: EHRBASE_DB__URL
+            - name: EHRBASE__DB__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-db
-                  key: EHRBASE_DB__URL
-            - name: EHRBASE_AUTH__OIDC__HMAC_SECRET
+                  key: EHRBASE__DB__URL
+            - name: EHRBASE__AUTH__OIDC__HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_AUTH__OIDC__HMAC_SECRET
-            - name: EHRBASE_SIGNING__KEY_PASSPHRASE
+                  key: EHRBASE__AUTH__OIDC__HMAC_SECRET
+            - name: EHRBASE__SIGNING__KEY_PASSPHRASE
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_SIGNING__KEY_PASSPHRASE
-            - name: EHRBASE_EVENTS__URL
+                  key: EHRBASE__SIGNING__KEY_PASSPHRASE
+            - name: EHRBASE__EVENTS__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_EVENTS__URL
-            - name: EHRBASE_FHIR__OUTBOUND__URL
+                  key: EHRBASE__EVENTS__URL
+            - name: EHRBASE__FHIR__OUTBOUND__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_FHIR__OUTBOUND__URL
-            - name: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
+                  key: EHRBASE__FHIR__OUTBOUND__URL
+            - name: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
-            - name: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
+                  key: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
+            - name: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-rs-env
-                  key: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
+                  key: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
           livenessProbe:
             httpGet:
               path: /management/health/liveness

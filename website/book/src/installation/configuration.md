@@ -40,26 +40,27 @@ highest:
 3. **`EHRBASE_*` environment variables** — override individual keys.
 4. **`--set key=value` CLI flags** (repeatable) — win over everything.
 
-Two grandfathered aliases sit *below* their `EHRBASE_` forms within layer 3:
+Two permanent conventional aliases sit *below* their `EHRBASE_` forms within layer 3:
 `DATABASE_URL` → `db.url` and `RUST_LOG` → `log.filter`. Nothing else has a
 non-`EHRBASE_` name.
 
 ### The environment-variable mapping
 
-Every key has one mechanical env spelling: **`EHRBASE_` + the TOML path,
-upper-cased, with a double underscore (`__`) between path segments.** A single
-underscore only ever appears *inside* a key word.
+Every key has one mechanical env spelling: **`EHRBASE` + the TOML path,
+upper-cased, with a double underscore (`__`) between every segment — including
+after the `EHRBASE` prefix.** A single underscore only ever appears *inside* a
+key word.
 
 | TOML | Environment variable |
 |---|---|
-| `[db] max_connections = 20` | `EHRBASE_DB__MAX_CONNECTIONS=20` |
-| `[auth.oidc] issuer = "…"` | `EHRBASE_AUTH__OIDC__ISSUER=…` |
-| `[management.endpoints] env = "off"` | `EHRBASE_MANAGEMENT__ENDPOINTS__ENV=off` |
-| `[terminology.external.providers.default] url = "…"` | `EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…` |
+| `[db] max_connections = 20` | `EHRBASE__DB__MAX_CONNECTIONS=20` |
+| `[auth.oidc] issuer = "…"` | `EHRBASE__AUTH__OIDC__ISSUER=…` |
+| `[management.endpoints] env = "off"` | `EHRBASE__MANAGEMENT__ENDPOINTS__ENV=off` |
+| `[terminology.external.providers.default] url = "…"` | `EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…` |
 
 Scalars are typed automatically (bool / int / float, else string).
 **List-typed keys take comma-separated values**
-(`EHRBASE_AUTH__OIDC__AUDIENCES=ehrbase,other`). Arrays of tables — the
+(`EHRBASE__AUTH__OIDC__AUDIENCES=ehrbase,other`). Arrays of tables — the
 Basic-auth user store — are **file-only**.
 
 > [!NOTE]
@@ -440,7 +441,7 @@ base_url = "https://pas.example.com/fhir"
 ```
 
 The env form for a named system is
-`EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
+`EHRBASE__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
 
 ## Process / CLI
 
@@ -471,7 +472,7 @@ a prominent warning naming the two ways out — add `[[auth.basic.users]]` /
 
 For production, set at least:
 
-- **`db.url`** — the real DSN, via `EHRBASE_DB__URL` (from a secret) or a
+- **`db.url`** — the real DSN, via `EHRBASE__DB__URL` (from a secret) or a
   `*_file`-mounted value, never inline in a world-readable file.
 - **an auth mechanism** — a Basic user store and/or `[auth.oidc]`.
 - **`log.format = "json"`** for cluster log collectors.
@@ -498,43 +499,43 @@ See `docker/ehrbase.dev.toml` in the repository for a worked dev example
 
 The pre-redesign layout used ~14 independent loaders, several env-name
 grammars, and nine `EHRBASE_*_CONFIG` file pointers. Every old server variable
-is **aliased for one transition release** (honoured with a boot-time
-deprecation warning, then removed), except where noted. The alias-removal
-target is the second minor release after this one.
+now **fails at boot** with the exact uniform replacement suggested — there is
+no legacy alias layer (greenfield: nothing was deployed to migrate). The table
+below maps every old spelling to its replacement.
 
 | Old variable | New key (env form) | Fate |
 |---|---|---|
-| `EHRBASE_DB_URL` | `db.url` (`EHRBASE_DB__URL`) | alias |
+| `EHRBASE_DB_URL` | `db.url` (`EHRBASE__DB__URL`) | **boot error** — use the new spelling |
 | `DATABASE_URL` | `db.url` | kept permanently |
-| `EHRBASE_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`EHRBASE_DB__*`) | alias |
-| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.*` (`EHRBASE_LOG__*`) | alias |
+| `EHRBASE_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`EHRBASE__DB__*`) | **boot error** — use the new spelling |
+| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.*` (`EHRBASE__LOG__*`) | **boot error** — use the new spelling |
 | `RUST_LOG` | `log.filter` | kept permanently |
-| `EHRBASE_OTEL_*` | `telemetry.*` | alias |
+| `EHRBASE_OTEL_*` | `telemetry.*` | **boot error** — use the new spelling |
 | `EHRBASE_REST_CONFIG` | `--config` / `EHRBASE_CONFIG` + `ehrbase.toml` | **removed** — merge the file into `ehrbase.toml` |
-| `EHRBASE_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`EHRBASE_SERVER__*`) | alias |
-| `EHRBASE_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`EHRBASE_SERVER__MAX_IN_FLIGHT`) | alias |
-| `EHRBASE_REST_SYSTEM__*` | `server.identity.*` | alias |
-| `EHRBASE_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`EHRBASE_AUTH__*`) | alias |
-| `EHRBASE_REST_AUTH__OIDC__*` | `auth.oidc.*` (`EHRBASE_AUTH__OIDC__*`) | alias |
+| `EHRBASE_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`EHRBASE__SERVER__*`) | **boot error** — use the new spelling |
+| `EHRBASE_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`EHRBASE__SERVER__MAX_IN_FLIGHT`) | **boot error** — use the new spelling |
+| `EHRBASE_REST_SYSTEM__*` | `server.identity.*` | **boot error** — use the new spelling |
+| `EHRBASE_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`EHRBASE__AUTH__*`) | **boot error** — use the new spelling |
+| `EHRBASE_REST_AUTH__OIDC__*` | `auth.oidc.*` (`EHRBASE__AUTH__OIDC__*`) | **boot error** — use the new spelling |
 | `EHRBASE_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **removed** — set in the file |
 | `EHRBASE_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`) | **removed** |
-| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` | alias |
-| `EHRBASE_REST_TENANCY__*` | `tenancy.*` | alias |
-| `EHRBASE_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | alias |
-| `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | alias |
-| `EHRBASE_REST_FHIR__ENABLED` | `fhir.api_enabled` | alias |
-| `EHRBASE_REST_SMART__*` | `smart.*` (`EHRBASE_SMART__*`) | alias |
-| `EHRBASE_MANAGEMENT_*` | `management.*` (`EHRBASE_MANAGEMENT__*`) | alias |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`EHRBASE_MANAGEMENT__ENDPOINTS__<EP>`) | alias |
-| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`EHRBASE_AUTHZ__…`) | alias |
-| `EHRBASE_ATNA_<KEY>` | `atna.<key>` (`EHRBASE_ATNA__<KEY>`) | alias |
-| `EHRBASE_SIGNING_<KEY>` | `signing.<key>` (`EHRBASE_SIGNING__<KEY>`) | alias |
-| `EHRBASE_EVENTS_<KEY>` | `events.<key>` (`EHRBASE_EVENTS__<KEY>`) | alias |
-| `EHRBASE_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`EHRBASE_FHIR__OUTBOUND__<KEY>`) | alias |
-| `EHRBASE_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`EHRBASE_MULTIMEDIA__<KEY>`) | alias |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | alias |
-| `EHRBASE_SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
-| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
+| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` | **boot error** — use the new spelling |
+| `EHRBASE_REST_TENANCY__*` | `tenancy.*` | **boot error** — use the new spelling |
+| `EHRBASE_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | **boot error** — use the new spelling |
+| `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | **boot error** — use the new spelling |
+| `EHRBASE_REST_FHIR__ENABLED` | `fhir.api_enabled` | **boot error** — use the new spelling |
+| `EHRBASE_REST_SMART__*` | `smart.*` (`EHRBASE__SMART__*`) | **boot error** — use the new spelling |
+| `EHRBASE_MANAGEMENT_*` | `management.*` (`EHRBASE__MANAGEMENT__*`) | **boot error** — use the new spelling |
+| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`EHRBASE__MANAGEMENT__ENDPOINTS__<EP>`) | **boot error** — use the new spelling |
+| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`EHRBASE__AUTHZ__…`) | **boot error** — use the new spelling |
+| `EHRBASE_ATNA_<KEY>` | `atna.<key>` (`EHRBASE__ATNA__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_SIGNING_<KEY>` | `signing.<key>` (`EHRBASE__SIGNING__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_EVENTS_<KEY>` | `events.<key>` (`EHRBASE__EVENTS__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`EHRBASE__FHIR__OUTBOUND__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`EHRBASE__MULTIMEDIA__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | **boot error** — use the new spelling |
+| `EHRBASE__SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
+| `EHRBASE__QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
 | the nine `EHRBASE_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ehrbase.toml` under its `[section]` |
 
 The `PostgreSQL init` container variables `EHRBASE_DB_USER` / `_PASSWORD` /

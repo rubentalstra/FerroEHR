@@ -160,7 +160,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         tracing::warn!(
             url = ehrbase::db::DEFAULT_URL,
             "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
-             supplied. Set db.url (EHRBASE_DB__URL / DATABASE_URL) for any non-dev deployment — \
+             supplied. Set db.url (EHRBASE__DB__URL / DATABASE_URL) for any non-dev deployment — \
              production MUST override it.",
             ehrbase::db::DEFAULT_URL,
         );

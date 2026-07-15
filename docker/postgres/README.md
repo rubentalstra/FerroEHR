@@ -48,7 +48,7 @@ only).
 These `PG_INIT_*` vars configure this DB container; they are intentionally
 outside the server's reserved `EHRBASE_` namespace (the server rejects unknown
 `EHRBASE_*` vars at boot). The app then connects with, e.g.,
-`EHRBASE_DB__URL=postgres://ehrbase:ehrbase@<host>:5432/ehrbase`.
+`EHRBASE__DB__URL=postgres://ehrbase:ehrbase@<host>:5432/ehrbase`.
 
 Init scripts only run on first initialisation (empty volume). To re-provision,
 remove the data volume (`docker compose down -v`).

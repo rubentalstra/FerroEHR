@@ -85,7 +85,7 @@ the usual AMQP topic wildcards to select what you care about — for example
 (change type 523), or `#` for everything.
 
 The server can also manage subscriptions for you. When the event-subscription
-admin API is enabled (`EHRBASE_EVENTS__ADMIN_API`), each enabled
+admin API is enabled (`EHRBASE__EVENTS__ADMIN_API`), each enabled
 subscription row causes the server to declare and bind a durable queue named
 `<exchange>.<name>` (for the default exchange, `ehrbase.events.<name>`) with a
 binding key built from the subscription's `kind` / `change_type` / `template_id`
@@ -94,25 +94,25 @@ predicates (a wildcard for any predicate left unset).
 ## Enabling it
 
 Publishing is off by default. These keys live in the `[events]` section of
-`ehrbase.toml`; each can be overridden with the shown `EHRBASE_EVENTS__*`
+`ehrbase.toml`; each can be overridden with the shown `EHRBASE__EVENTS__*`
 environment variable, with `__` separating nested keys:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_EVENTS__ENABLED` | `false` | master switch |
-| `EHRBASE_EVENTS__URL` | `amqp://guest:guest@localhost:5672/%2f` | broker connection URL |
-| `EHRBASE_EVENTS__EXCHANGE` | `ehrbase.events` | topic exchange name (also the queue-name prefix) |
-| `EHRBASE_EVENTS__TLS` | `false` | when true, upgrades an `amqp://` URL to `amqps://` |
-| `EHRBASE_EVENTS__BATCH_SIZE` | `128` | rows drained per cycle |
-| `EHRBASE_EVENTS__POLL_INTERVAL_MS` | `1000` | poll interval while the outbox is idle |
-| `EHRBASE_EVENTS__PUBLISH_MAX_RETRIES` | `3` | retries per message before the batch stops |
-| `EHRBASE_EVENTS__RETENTION_DAYS` | `7` | how long published rows are kept |
-| `EHRBASE_EVENTS__PRUNE_INTERVAL_SECS` | `3600` | how often published rows are pruned |
+| `EHRBASE__EVENTS__ENABLED` | `false` | master switch |
+| `EHRBASE__EVENTS__URL` | `amqp://guest:guest@localhost:5672/%2f` | broker connection URL |
+| `EHRBASE__EVENTS__EXCHANGE` | `ehrbase.events` | topic exchange name (also the queue-name prefix) |
+| `EHRBASE__EVENTS__TLS` | `false` | when true, upgrades an `amqp://` URL to `amqps://` |
+| `EHRBASE__EVENTS__BATCH_SIZE` | `128` | rows drained per cycle |
+| `EHRBASE__EVENTS__POLL_INTERVAL_MS` | `1000` | poll interval while the outbox is idle |
+| `EHRBASE__EVENTS__PUBLISH_MAX_RETRIES` | `3` | retries per message before the batch stops |
+| `EHRBASE__EVENTS__RETENTION_DAYS` | `7` | how long published rows are kept |
+| `EHRBASE__EVENTS__PRUNE_INTERVAL_SECS` | `3600` | how often published rows are pruned |
 
 > [!WARNING]
 > The broker URL carries credentials, so keep it in a secret, not a plain
 > environment file. For anything beyond a local broker, use a TLS connection
-> (`EHRBASE_EVENTS__TLS=true` or an `amqps://` URL). The commit path never blocks
+> (`EHRBASE__EVENTS__TLS=true` or an `amqps://` URL). The commit path never blocks
 > on the broker — if it is down, events buffer in the outbox and drain when it
 > recovers.
 

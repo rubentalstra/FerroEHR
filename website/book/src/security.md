@@ -20,7 +20,7 @@ environment variable shown below.
 
 ## Authentication
 
-Authentication is on by default (`EHRBASE_AUTH__ENABLED=true`). Setting
+Authentication is on by default (`EHRBASE__AUTH__ENABLED=true`). Setting
 it to `false` lets all requests through unauthenticated — a development-only
 mode.
 
@@ -37,7 +37,7 @@ each by the presence of its configuration block:
   audience.
 
 Successfully verified Basic credentials are cached for
-`EHRBASE_AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
+`EHRBASE__AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
 the cache) so a busy client pays the deliberately-expensive Argon2
 verification once per TTL instead of on every request. The cache stores only
 a SHA-256 digest of the presented credential — never a plaintext password —
@@ -49,11 +49,11 @@ The OIDC settings:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base |
-| `EHRBASE_AUTH__OIDC__AUDIENCES` | empty (not checked) | accepted `aud` values |
-| `EHRBASE_AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
-| `EHRBASE_AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret (development/testing) |
-| `EHRBASE_AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
+| `EHRBASE__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base |
+| `EHRBASE__AUTH__OIDC__AUDIENCES` | empty (not checked) | accepted `aud` values |
+| `EHRBASE__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
+| `EHRBASE__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret (development/testing) |
+| `EHRBASE__AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
 
 There is no separate JWKS or discovery URL to set: the server discovers the
 JWKS URI from the issuer's `.well-known/openid-configuration` unless you supply
@@ -64,8 +64,8 @@ a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
 > rest:
 >
 > ```bash
-> export EHRBASE_AUTH__OIDC__ISSUER=https://keycloak.example/realms/ehrbase
-> export EHRBASE_AUTH__OIDC__AUDIENCES=ehrbase-api
+> export EHRBASE__AUTH__OIDC__ISSUER=https://keycloak.example/realms/ehrbase
+> export EHRBASE__AUTH__OIDC__AUDIENCES=ehrbase-api
 > ```
 >
 > The same pattern works for Active Directory or any standards-compliant
@@ -142,11 +142,11 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
-| `EHRBASE_AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
-| `EHRBASE_AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
-| `EHRBASE_AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
-| `EHRBASE_AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
+| `EHRBASE__AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
+| `EHRBASE__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
+| `EHRBASE__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
+| `EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
+| `EHRBASE__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
 Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the
 Keycloak `realm_access.roles` array plus the space-separated `scope` claim —
@@ -162,15 +162,15 @@ point is consulted per clinical operation with resolved attributes.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_AUTHZ__ABAC__ENABLED` | `false` | master ABAC switch |
-| `EHRBASE_AUTHZ__ABAC__ENGINE` | `cedar` | `cedar` (embedded) or `remote` (external PDP) |
-| `EHRBASE_AUTHZ__ABAC__ORGANIZATION_CLAIM` | `organization_id` | JWT claim for the organisation attribute |
-| `EHRBASE_AUTHZ__ABAC__PATIENT_CLAIM` | `patient_id` | JWT claim for the patient attribute (enables the subject gate) |
-| `EHRBASE_AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `.cedar` policy files |
-| `EHRBASE_AUTHZ__ABAC__CEDAR__RELOAD_SECS` | off | optional policy hot-reload interval |
-| `EHRBASE_AUTHZ__ABAC__REMOTE__SERVER` | — (required for `remote`) | PDP base URL (must end with `/`) |
-| `EHRBASE_AUTHZ__ABAC__REMOTE__CONNECT_TIMEOUT_MS` | `2000` | PDP connect timeout |
-| `EHRBASE_AUTHZ__ABAC__REMOTE__REQUEST_TIMEOUT_MS` | `5000` | PDP request timeout |
+| `EHRBASE__AUTHZ__ABAC__ENABLED` | `false` | master ABAC switch |
+| `EHRBASE__AUTHZ__ABAC__ENGINE` | `cedar` | `cedar` (embedded) or `remote` (external PDP) |
+| `EHRBASE__AUTHZ__ABAC__ORGANIZATION_CLAIM` | `organization_id` | JWT claim for the organisation attribute |
+| `EHRBASE__AUTHZ__ABAC__PATIENT_CLAIM` | `patient_id` | JWT claim for the patient attribute (enables the subject gate) |
+| `EHRBASE__AUTHZ__ABAC__CEDAR__POLICY_DIR` | — (required for `cedar`) | directory of `.cedar` policy files |
+| `EHRBASE__AUTHZ__ABAC__CEDAR__RELOAD_SECS` | off | optional policy hot-reload interval |
+| `EHRBASE__AUTHZ__ABAC__REMOTE__SERVER` | — (required for `remote`) | PDP base URL (must end with `/`) |
+| `EHRBASE__AUTHZ__ABAC__REMOTE__CONNECT_TIMEOUT_MS` | `2000` | PDP connect timeout |
+| `EHRBASE__AUTHZ__ABAC__REMOTE__REQUEST_TIMEOUT_MS` | `5000` | PDP request timeout |
 
 Two engines sit behind one interface. **Cedar** is the embedded default:
 policies live in `.cedar` files, are schema-validated at boot (an invalid
@@ -193,9 +193,9 @@ server behaves byte-for-byte as a single-tenant system.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_TENANCY__ENABLED` | `false` | enable multi-tenancy |
-| `EHRBASE_TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
-| `EHRBASE_TENANCY__HEADER` | unset | a development header override for the tenant |
+| `EHRBASE__TENANCY__ENABLED` | `false` | enable multi-tenancy |
+| `EHRBASE__TENANCY__CLAIM` | `tenant` | the JWT claim (a dotted path) carrying the tenant key |
+| `EHRBASE__TENANCY__HEADER` | unset | a development header override for the tenant |
 
 A request's tenant is resolved from the configured JWT claim (a dotted path
 such as `realm_access.tenant` is walked through nested objects). Isolation is
@@ -204,7 +204,7 @@ tenant scopes the connection so a query can only ever see its own tenant's
 rows.
 
 > [!WARNING]
-> Leave `EHRBASE_TENANCY__HEADER` unset in production — a client-supplied
+> Leave `EHRBASE__TENANCY__HEADER` unset in production — a client-supplied
 > header must never be able to select a tenant; the tenant must come from the
 > authenticated token. Isolation is also fail-safe by design: an absent or
 > unresolvable tenant runs unscoped against a reserved default rather than
@@ -226,23 +226,23 @@ trail alongside the REST activity.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `EHRBASE_ATNA__ENABLED` | `false` | master switch |
-| `EHRBASE_ATNA__REPOSITORY_HOST` | `localhost` | audit repository host |
-| `EHRBASE_ATNA__REPOSITORY_PORT` | `514` | audit repository port |
-| `EHRBASE_ATNA__TRANSPORT` | `udp` | `udp` or `tls` |
-| `EHRBASE_ATNA__ENTERPRISE_SITE_ID` | unset | enterprise/site identifier |
-| `EHRBASE_ATNA__SOURCE_ID` | `ehrbase` | audit source identifier |
-| `EHRBASE_ATNA__VALUE_IF_MISSING` | `UNKNOWN` | fill for an empty mandatory field |
-| `EHRBASE_ATNA__SUPPRESS_LOGIN_EVENTS` | `true` | skip the successful-login records |
-| `EHRBASE_ATNA__FAIL_MODE` | `open` | `open` (drop and continue) or `closed` (reject auditable ops if undeliverable) |
-| `EHRBASE_ATNA__RESOLVE_SUBJECT` | `false` | enrich the patient identifier from stored data |
-| `EHRBASE_ATNA__QUEUE_CAPACITY` | `1024` | bounded in-memory audit queue |
-| `EHRBASE_ATNA__SERVER_HOST` | unset | this node's advertised network address |
-| `EHRBASE_ATNA__TLS_CA_PATH` | unset | PEM of the repository CA (TLS) |
-| `EHRBASE_ATNA__TLS_IDENTITY_CERT_PATH` | unset | client certificate PEM (mutual TLS) |
-| `EHRBASE_ATNA__TLS_IDENTITY_KEY_PATH` | unset | client key PEM (mutual TLS) |
+| `EHRBASE__ATNA__ENABLED` | `false` | master switch |
+| `EHRBASE__ATNA__REPOSITORY_HOST` | `localhost` | audit repository host |
+| `EHRBASE__ATNA__REPOSITORY_PORT` | `514` | audit repository port |
+| `EHRBASE__ATNA__TRANSPORT` | `udp` | `udp` or `tls` |
+| `EHRBASE__ATNA__ENTERPRISE_SITE_ID` | unset | enterprise/site identifier |
+| `EHRBASE__ATNA__SOURCE_ID` | `ehrbase` | audit source identifier |
+| `EHRBASE__ATNA__VALUE_IF_MISSING` | `UNKNOWN` | fill for an empty mandatory field |
+| `EHRBASE__ATNA__SUPPRESS_LOGIN_EVENTS` | `true` | skip the successful-login records |
+| `EHRBASE__ATNA__FAIL_MODE` | `open` | `open` (drop and continue) or `closed` (reject auditable ops if undeliverable) |
+| `EHRBASE__ATNA__RESOLVE_SUBJECT` | `false` | enrich the patient identifier from stored data |
+| `EHRBASE__ATNA__QUEUE_CAPACITY` | `1024` | bounded in-memory audit queue |
+| `EHRBASE__ATNA__SERVER_HOST` | unset | this node's advertised network address |
+| `EHRBASE__ATNA__TLS_CA_PATH` | unset | PEM of the repository CA (TLS) |
+| `EHRBASE__ATNA__TLS_IDENTITY_CERT_PATH` | unset | client certificate PEM (mutual TLS) |
+| `EHRBASE__ATNA__TLS_IDENTITY_KEY_PATH` | unset | client key PEM (mutual TLS) |
 
-For PHI-adjacent audit, use `EHRBASE_ATNA__TRANSPORT=tls` with a CA (and, where
+For PHI-adjacent audit, use `EHRBASE__ATNA__TRANSPORT=tls` with a CA (and, where
 the repository requires it, a client certificate and key for mutual TLS). The
 `fail_mode` choice is a policy decision: `open` never blocks a clinical
 request when the repository is down (records are dropped and metered), while

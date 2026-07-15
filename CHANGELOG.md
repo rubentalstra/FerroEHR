@@ -34,12 +34,15 @@ workflow refuses a tag that has no matching section here.
   `[multimedia]`, `[atna]`, `[subject_proxy]`), discovered from `--config`,
   `EHRBASE_CONFIG`, `./ehrbase.toml`, or `/etc/ehrbase/ehrbase.toml`. Every
   `EHRBASE_*` environment variable is now a mechanical per-key override:
-  `EHRBASE_` + the TOML path, upper-cased, with `__` between path segments
-  (e.g. `EHRBASE_DB__MAX_CONNECTIONS`, `EHRBASE_AUTH__OIDC__ISSUER`). This
+  `EHRBASE` + the TOML path, upper-cased, with `__` between every segment
+  including after the prefix
+  (e.g. `EHRBASE__DB__MAX_CONNECTIONS`, `EHRBASE__AUTH__OIDC__ISSUER`). This
   replaces the previous ~14 independent per-subsystem loaders and their
-  several env-name grammars. Every old variable is aliased for this release
-  (honoured with a boot-time deprecation warning; removed in a later release);
-  `DATABASE_URL` and `RUST_LOG` remain permanent aliases. New `ehrbase config
+  several env-name grammars. **Old spellings are not aliased** (greenfield —
+  nothing is deployed to migrate): a pre-redesign variable fails at boot with
+  the exact uniform replacement suggested (e.g. `EHRBASE_DB_MAX_CONNECTIONS`
+  → "did you mean `EHRBASE__DB__MAX_CONNECTIONS`?"). `DATABASE_URL` and
+  `RUST_LOG` remain permanent conventional aliases. New `ehrbase config
   default` prints an annotated template and `ehrbase config check` validates a
   config (and prints the effective, secret-redacted result) without a
   database. The compose stack, Helm chart, and docs all move to the new file +
@@ -64,7 +67,7 @@ workflow refuses a tag that has no matching section here.
   did-you-mean suggestion (and the `file:line` for a file key) — previously a
   typo'd TOML key or `EHRBASE_*` variable was silently ignored, so a
   not-applied security setting could pass unnoticed.
-- The documented `EHRBASE_SUBJECT_PROXY__SYSTEMS__<name>__BASE_URL` env form
+- The documented `EHRBASE__SUBJECT_PROXY__SYSTEMS__<name>__BASE_URL` env form
   now actually binds — the old loader stripped the prefix such that this
   spelling was dead, so subject-proxy systems could only be set via a file.
 - Unparseable `[query]` values (`query.plan_cache_capacity`, `query.timeout_ms`)

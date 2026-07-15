@@ -30,9 +30,11 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
   `ehrbase::config::load`. Subsystem constructors take the typed section by
   value/ref — never read the environment themselves (no `std::env::var`, no
   `LazyLock` env reads).
-- **One env grammar (P-4).** `EHRBASE_` + the TOML path, `__` between levels,
-  single `_` only inside a key word. This is mechanical and reversible; never
-  add a bespoke env mapping. List-typed keys are comma-separated and registered
+- **One env grammar (P-4).** `EHRBASE` + the TOML path, `__` between *every*
+  segment boundary — including after the `EHRBASE` prefix
+  (`EHRBASE__DB__MAX_CONNECTIONS`, `EHRBASE__AUTH__OIDC__ISSUER`) — with single
+  `_` only inside a key word. This is mechanical and reversible; never add a
+  bespoke env mapping. List-typed keys are comma-separated and registered
   in `alias::LIST_KEYS`. `DATABASE_URL`/`RUST_LOG` are the only non-`EHRBASE_`
   names, and they sit *below* their `EHRBASE_` forms.
 - **Strict by default (P-5).** Unknown keys (file and the `EHRBASE_` env
@@ -53,8 +55,10 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
    deny_unknown_fields)]`, `Default` is the source of truth).
 2. If you add/rename a key, update the annotated template
    `app/ehrbase/assets/ehrbase.default.toml` **in the same change** — the
-   template-sync tests (`config::tests`) fail otherwise — and add the old→new
-   `alias`/`dies` entry in `config::alias` for any rename.
+   template-sync tests (`config::tests`) fail otherwise. There is NO legacy
+   alias layer (greenfield, owner ruling 2026-07-15): renamed/removed keys
+   simply fail at boot via the strict sweep's did-you-mean; never add a
+   remapping table.
 3. If the change is user-visible, update
    `website/book/src/installation/configuration.md`, the Helm `values.yaml`
    `config:` block + golden renders (`deploy/helm/validate.sh --update`), and

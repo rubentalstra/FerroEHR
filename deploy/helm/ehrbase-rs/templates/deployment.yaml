@@ -61,7 +61,7 @@ spec:
           {{- if or (eq (include "ehrbase-rs.hasChartSecret" .) "true") .Values.database.existingSecret .Values.extraEnv }}
           env:
             {{- if or .Values.database.existingSecret .Values.database.url }}
-            - name: EHRBASE_DB__URL
+            - name: EHRBASE__DB__URL
               valueFrom:
                 secretKeyRef:
                   {{- if .Values.database.existingSecret }}
@@ -69,50 +69,50 @@ spec:
                   key: {{ .Values.database.existingSecretKey }}
                   {{- else }}
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_DB__URL
+                  key: EHRBASE__DB__URL
                   {{- end }}
             {{- end }}
             {{- if .Values.secrets.authOidcHmacSecret }}
-            - name: EHRBASE_AUTH__OIDC__HMAC_SECRET
+            - name: EHRBASE__AUTH__OIDC__HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_AUTH__OIDC__HMAC_SECRET
+                  key: EHRBASE__AUTH__OIDC__HMAC_SECRET
             {{- end }}
             {{- if .Values.secrets.signingKeyPassphrase }}
-            - name: EHRBASE_SIGNING__KEY_PASSPHRASE
+            - name: EHRBASE__SIGNING__KEY_PASSPHRASE
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_SIGNING__KEY_PASSPHRASE
+                  key: EHRBASE__SIGNING__KEY_PASSPHRASE
             {{- end }}
             {{- if .Values.secrets.eventsUrl }}
-            - name: EHRBASE_EVENTS__URL
+            - name: EHRBASE__EVENTS__URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_EVENTS__URL
+                  key: EHRBASE__EVENTS__URL
             {{- end }}
             {{- if .Values.secrets.fhirOutboundUrl }}
-            - name: EHRBASE_FHIR__OUTBOUND__URL
+            - name: EHRBASE__FHIR__OUTBOUND__URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_FHIR__OUTBOUND__URL
+                  key: EHRBASE__FHIR__OUTBOUND__URL
             {{- end }}
             {{- if .Values.secrets.multimediaAccessKeyId }}
-            - name: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
+            - name: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
+                  key: EHRBASE__MULTIMEDIA__ACCESS_KEY_ID
             {{- end }}
             {{- if .Values.secrets.multimediaSecretAccessKey }}
-            - name: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
+            - name: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
+                  key: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}

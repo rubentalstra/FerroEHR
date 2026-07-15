@@ -152,16 +152,16 @@ Not runtime config (out of scope for the redesign, listed for completeness):
   within layer 3: `DATABASE_URL` → `db.url` (12-factor convention, kept from
   `db/settings.rs:63`) and `RUST_LOG` → `log.filter` (kept from
   `telemetry/config.rs:124-129`). Nothing else gets a non-`EHRBASE_` name.
-- **P-4 — One mechanical env mapping.** `EHRBASE_` + the TOML path upper-cased
-  with `__` (double underscore) between path segments; single `_` only ever
-  appears *inside* a key word:
+- **P-4 — One mechanical env mapping.** `EHRBASE` + the TOML path upper-cased,
+  with `__` (double underscore) between *every* segment boundary — including
+  after the `EHRBASE` prefix; single `_` only ever appears *inside* a key word:
 
   ```
-  [db] max_connections = 20        ⇔  EHRBASE_DB__MAX_CONNECTIONS=20
-  [auth.oidc] issuer = "…"         ⇔  EHRBASE_AUTH__OIDC__ISSUER=…
-  [management.endpoints] env="off" ⇔  EHRBASE_MANAGEMENT__ENDPOINTS__ENV=off
+  [db] max_connections = 20        ⇔  EHRBASE__DB__MAX_CONNECTIONS=20
+  [auth.oidc] issuer = "…"         ⇔  EHRBASE__AUTH__OIDC__ISSUER=…
+  [management.endpoints] env="off" ⇔  EHRBASE__MANAGEMENT__ENDPOINTS__ENV=off
   [terminology.external.providers.default] url = "…"
-                                   ⇔  EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…
+                                   ⇔  EHRBASE__TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…
   ```
 
   Why `__` and not single `_`: with single `_` the mapping is not a bijection —
@@ -519,19 +519,19 @@ inline in a world-readable file.
 ## 4. The complete old→new mapping
 
 Legend — **alias**: honoured for one transition release with a boot-time
-`warn` deprecation (then removed); **dies**: hard boot error naming the
+**boot error** naming the exact uniform replacement (no legacy alias layer — greenfield, owner ruling 2026-07-15); **dies**: hard boot error naming the
 replacement (the var is in the reserved `EHRBASE_` namespace, so the strict
 env sweep of §5.3 catches it); **unchanged**: not runtime server config,
 untouched.
 
 | Old | New key (env form per P-4) | Fate |
 |---|---|---|
-| `EHRBASE_DB_URL` | `db.url` (`EHRBASE_DB__URL`) | alias |
+| `EHRBASE_DB_URL` | `db.url` (`EHRBASE__DB__URL`) | alias |
 | `DATABASE_URL` | `db.url` | kept permanently (P-3) |
 | `EHRBASE_DB_MAX_CONNECTIONS` | `db.max_connections` | alias |
 | `EHRBASE_DB_MIN_CONNECTIONS` | `db.min_connections` | alias |
 | `EHRBASE_DB_ACQUIRE_TIMEOUT_SECS` | `db.acquire_timeout_secs` | alias |
-| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.format` / `log.filter` (`EHRBASE_LOG__*`) | alias |
+| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.format` / `log.filter` (`EHRBASE__LOG__*`) | alias |
 | `RUST_LOG` | `log.filter` | kept permanently (P-3) |
 | `EHRBASE_OTEL_OTLP_ENDPOINT` | `telemetry.otlp_endpoint` | alias |
 | `EHRBASE_OTEL_SERVICE_NAME` | `telemetry.service_name` | alias |
@@ -539,45 +539,45 @@ untouched.
 | `EHRBASE_OTEL_TRACES_SAMPLE_RATIO` | `telemetry.traces_sample_ratio` | alias |
 | `EHRBASE_OTEL_METRICS_PUSH` | `telemetry.metrics_push` | alias |
 | `EHRBASE_REST_CONFIG` | `--config` / `EHRBASE_CONFIG` | **dies** (pointed message: "merge into ehrbase.toml; see the migration guide") |
-| `EHRBASE_REST_BIND` | `server.bind` (`EHRBASE_SERVER__BIND`) | alias |
+| `EHRBASE_REST_BIND` | `server.bind` (`EHRBASE__SERVER__BIND`) | alias |
 | `EHRBASE_REST_BASE_PATH` | `server.base_path` | alias |
 | `EHRBASE_REST_MAX_IN_FLIGHT` | `server.max_in_flight` | alias |
 | `EHRBASE_REST_SWAGGER_UI` | `server.swagger_ui` | alias |
 | `EHRBASE_REST_CORS_PERMISSIVE` | `server.cors_permissive` | alias |
 | `EHRBASE_REST_SYSTEM__*` (5 keys) | `server.identity.*` | alias |
-| `EHRBASE_REST_AUTH__ENABLED` | `auth.enabled` (`EHRBASE_AUTH__ENABLED`) | alias |
+| `EHRBASE_REST_AUTH__ENABLED` | `auth.enabled` (`EHRBASE__AUTH__ENABLED`) | alias |
 | `EHRBASE_REST_AUTH__VERIFIED_CACHE_TTL_SECONDS` | `auth.verified_cache_ttl_seconds` | alias |
 | `EHRBASE_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **dies** (was never realistically env-settable; the book already says "set via TOML") |
-| `EHRBASE_REST_AUTH__OIDC__ISSUER/AUDIENCES/ALGORITHMS/HMAC_SECRET/JWKS_JSON` | `auth.oidc.*` (`EHRBASE_AUTH__OIDC__*`) | alias |
+| `EHRBASE_REST_AUTH__OIDC__ISSUER/AUDIENCES/ALGORITHMS/HMAC_SECRET/JWKS_JSON` | `auth.oidc.*` (`EHRBASE__AUTH__OIDC__*`) | alias |
 | `EHRBASE_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`, `authn/config.rs:43-49`) | **dies** |
-| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` (`EHRBASE_ADMIN__ENABLED`) | alias |
-| `EHRBASE_REST_TENANCY__ENABLED/CLAIM/HEADER` | `tenancy.*` (`EHRBASE_TENANCY__*`) | alias |
+| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` (`EHRBASE__ADMIN__ENABLED`) | alias |
+| `EHRBASE_REST_TENANCY__ENABLED/CLAIM/HEADER` | `tenancy.*` (`EHRBASE__TENANCY__*`) | alias |
 | `EHRBASE_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | alias |
 | `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | alias |
 | `EHRBASE_REST_FHIR__ENABLED` | `fhir.api_enabled` | alias |
-| `EHRBASE_REST_SMART__*` (all ~21 keys) | `smart.*` (`EHRBASE_SMART__*`, same tails) | alias |
+| `EHRBASE_REST_SMART__*` (all ~21 keys) | `smart.*` (`EHRBASE__SMART__*`, same tails) | alias |
 | `EHRBASE_MANAGEMENT_CONFIG` | — | **dies** |
-| `EHRBASE_MANAGEMENT_ENABLED/BASE_PATH/PORT/ACCESS_DEFAULT/PROBES_ENABLED` | `management.*` (`EHRBASE_MANAGEMENT__*`) | alias |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` (6 keys) | `management.endpoints.<ep>` (`EHRBASE_MANAGEMENT__ENDPOINTS__<EP>`) | alias |
+| `EHRBASE_MANAGEMENT_ENABLED/BASE_PATH/PORT/ACCESS_DEFAULT/PROBES_ENABLED` | `management.*` (`EHRBASE__MANAGEMENT__*`) | alias |
+| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` (6 keys) | `management.endpoints.<ep>` (`EHRBASE__MANAGEMENT__ENDPOINTS__<EP>`) | alias |
 | `EHRBASE_AUTHZ_CONFIG` | — | **dies** |
-| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` (all) | `authz.rbac.*` / `authz.abac.*` (same tails, `EHRBASE_AUTHZ__…`) | alias |
+| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` (all) | `authz.rbac.*` / `authz.abac.*` (same tails, `EHRBASE__AUTHZ__…`) | alias |
 | `EHRBASE_ATNA_CONFIG` | — | **dies** |
-| `EHRBASE_ATNA_<KEY>` (15 keys) | `atna.<key>` (`EHRBASE_ATNA__<KEY>`) | alias |
+| `EHRBASE_ATNA_<KEY>` (15 keys) | `atna.<key>` (`EHRBASE__ATNA__<KEY>`) | alias |
 | `EHRBASE_SIGNING_CONFIG` | — | **dies** |
-| `EHRBASE_SIGNING_ENABLED/MODE/KEY_PATH/KEY_PASSPHRASE/VERIFY_ON_READ` | `signing.*` (`EHRBASE_SIGNING__*`) | alias |
+| `EHRBASE_SIGNING_ENABLED/MODE/KEY_PATH/KEY_PASSPHRASE/VERIFY_ON_READ` | `signing.*` (`EHRBASE__SIGNING__*`) | alias |
 | `EHRBASE_EVENTS_CONFIG` | — | **dies** |
-| `EHRBASE_EVENTS_<KEY>` (9 keys) | `events.<key>` (`EHRBASE_EVENTS__<KEY>`) | alias |
+| `EHRBASE_EVENTS_<KEY>` (9 keys) | `events.<key>` (`EHRBASE__EVENTS__<KEY>`) | alias |
 | `EHRBASE_FHIR_OUTBOUND_CONFIG` | — | **dies** |
-| `EHRBASE_FHIR_OUTBOUND_<KEY>` (7 keys) | `fhir.outbound.<key>` (`EHRBASE_FHIR__OUTBOUND__<KEY>`) | alias |
+| `EHRBASE_FHIR_OUTBOUND_<KEY>` (7 keys) | `fhir.outbound.<key>` (`EHRBASE__FHIR__OUTBOUND__<KEY>`) | alias |
 | `EHRBASE_MULTIMEDIA_CONFIG` | — | **dies** |
-| `EHRBASE_MULTIMEDIA_<KEY>` (8 keys) | `multimedia.<key>` (`EHRBASE_MULTIMEDIA__<KEY>`) | alias |
+| `EHRBASE_MULTIMEDIA_<KEY>` (8 keys) | `multimedia.<key>` (`EHRBASE__MULTIMEDIA__<KEY>`) | alias |
 | `EHRBASE_VALIDATION_CONFIG` | — | **dies** |
 | `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED/FAIL_ON_ERROR` | `terminology.external.*` | alias |
 | `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<N>__<K>` | `terminology.external.providers.<n>.<k>` | alias |
 | `EHRBASE_SUBJECT_PROXY_CONFIG` | — | **dies** |
-| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<N>__<K>` (the documented-but-broken form, C-3) | `subject_proxy.systems.<n>.<k>` — same spelling, now actually binding | **dies as alias** (it never worked; the new mechanical mapping gives it meaning for the first time — call it out in the changelog) |
-| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` | `query.plan_cache_capacity` (`EHRBASE_QUERY__PLAN_CACHE_CAPACITY` — same spelling, now strict-parsed) | alias-in-place (spelling already matches P-4; the *behaviour* change — parse errors become boot errors — is the migration note) |
-| `EHRBASE_QUERY__TIMEOUT_MS` | `query.timeout_ms` — same spelling, strict-parsed | alias-in-place |
+| `EHRBASE__SUBJECT_PROXY__SYSTEMS__<N>__<K>` (the documented-but-broken form, C-3) | `subject_proxy.systems.<n>.<k>` — same spelling, now actually binding | **dies as alias** (it never worked; the new mechanical mapping gives it meaning for the first time — call it out in the changelog) |
+| `EHRBASE__QUERY__PLAN_CACHE_CAPACITY` | `query.plan_cache_capacity` (`EHRBASE__QUERY__PLAN_CACHE_CAPACITY` — same spelling, now strict-parsed) | alias-in-place (spelling already matches P-4; the *behaviour* change — parse errors become boot errors — is the migration note) |
+| `EHRBASE__QUERY__TIMEOUT_MS` | `query.timeout_ms` — same spelling, strict-parsed | alias-in-place |
 | `EHRBASE_HEALTHCHECK_URL` | unchanged (a `healthcheck`-subcommand arg, not server config — `main.rs:48`) | unchanged |
 | `EHRBASE_GIT_SHA` / `EHRBASE_BUILD_EPOCH` / `EHRBASE_RUSTC` | build-time only (`build.rs`) | unchanged |
 | compose-level `EHRBASE_IMAGE`, `EHRBASE_POSTGRES_IMAGE`, `EHRBASE_PORT`, `EHRBASE_DB_PORT`, `EHRBASE_S3_PORT` | deployment parameterization | unchanged |
@@ -894,7 +894,7 @@ reference; (6) the production checklist (§3.16). Cross-page sweeps:
 
 `CHANGELOG.md` `[Unreleased]`: **Changed** — configuration is now one
 `ehrbase.toml` + mechanically-mapped `EHRBASE_*` env overrides; every old var
-aliased for this release with boot warnings (table in the book). **Removed** —
+rejected at boot with the exact uniform suggestion (no alias layer — greenfield; table in the book). **Removed** —
 the nine per-subsystem `EHRBASE_*_CONFIG` file pointers,
 `EHRBASE_REST_AUTH__ADMIN_SCOPE`. **Fixed** — unknown/misspelled config now
 rejected at boot (was silently ignored); the documented

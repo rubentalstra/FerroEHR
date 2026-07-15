@@ -241,11 +241,11 @@ spec:
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
           env:
-            - name: EHRBASE_DB__URL
+            - name: EHRBASE__DB__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-db
-                  key: EHRBASE_DB__URL
+                  key: EHRBASE__DB__URL
           livenessProbe:
             httpGet:
               path: /management/health/liveness

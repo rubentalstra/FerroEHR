@@ -3,8 +3,8 @@
 //! No openEHR spec governs these tuning knobs — our own operational extension
 //! (`docs/design/configuration.md` §3.12). A field of the one config tree
 //! ([`crate::config::EhrbaseConfig`]); no loader of its own. These replace the
-//! two former raw-env reads (`EHRBASE_QUERY__PLAN_CACHE_CAPACITY` /
-//! `EHRBASE_QUERY__TIMEOUT_MS`) whose parse failures were silently swallowed —
+//! two former raw-env reads (`EHRBASE__QUERY__PLAN_CACHE_CAPACITY` /
+//! `EHRBASE__QUERY__TIMEOUT_MS`) whose parse failures were silently swallowed —
 //! they are now ordinary typed fields, so a bad value is a boot error like
 //! everywhere else.
 
