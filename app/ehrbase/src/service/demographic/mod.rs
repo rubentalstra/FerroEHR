@@ -56,8 +56,8 @@ use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::{
-    AuditInput, CommitEnv, Kind, TreeId, VersionRead, object_kind, object_version_id, read_current,
-    read_version, version_at,
+    AuditInput, CommitEnv, Committed, Kind, TreeId, VersionRead, object_kind, object_version_id,
+    read_current, read_version, version_at,
 };
 
 pub(crate) mod api;
@@ -376,6 +376,35 @@ impl EhrbaseService {
         .with_last_modified(read.time_committed);
         ServiceResponse::new(
             inject_uid(read.canonical, vo_id, &read.creating_system_id, read.tree),
+            meta,
+        )
+    }
+
+    /// The party create/update representation built **from the commit result**,
+    /// never a post-commit re-read: the served body is the just-written
+    /// `canonical` with the `uid` injected, and the identity + commit instant
+    /// come straight from [`Committed`](crate::versioning::Committed) (RM common
+    /// master06 §Committal — the written version identity). Byte-identical to a
+    /// fresh [`read_party`](EhrbaseService::read_party): the served form is
+    /// `inject_uid(reassemble(decompose(canonical)))`, and the node codec
+    /// round-trips `canonical` losslessly (pinned by a test). The caller passes
+    /// the pre-write `canonical`; the multimedia-externalization fallback (where
+    /// the stored form is offloaded and the in-memory body would diverge) stays
+    /// in [`EhrbaseService::create_party`] / `commit_party_update`.
+    fn party_committed_response(canonical: Value, committed: &Committed) -> ServiceResponse {
+        let vo_id = committed.vo_id;
+        let meta = ResourceMeta::new(
+            String::new(),
+            object_version_id(vo_id, &committed.creating_system_id, committed.tree),
+        )
+        .with_last_modified(committed.time_committed);
+        ServiceResponse::new(
+            inject_uid(
+                canonical,
+                vo_id,
+                &committed.creating_system_id,
+                committed.tree,
+            ),
             meta,
         )
     }

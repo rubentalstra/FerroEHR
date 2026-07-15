@@ -159,6 +159,44 @@ pub(crate) async fn object_kind(
         .and_then(|kind| Kind::from_type(&kind)))
 }
 
+/// The lean current-version handle for a demographic (ehr-less) versioned
+/// object: its kind-checked identity ([`Kind`] + `VERSION_TREE_ID` +
+/// `creating_system_id`, the `ETag`/`If-Match` parts), commit instant, and
+/// lifecycle-derived `deleted` flag — from ONE `vo_version`⋈`audit` read, with
+/// no node reassembly or attestation load. The wire seam uses this both for the
+/// `If-Match` `ETag` and the not-deleted write gate without the full
+/// [`read_current`] node read (RM common master06 §Version Identification /
+/// §Logical Deletion).
+#[derive(Debug, Clone)]
+pub(crate) struct DemographicCurrent {
+    pub(crate) kind: Kind,
+    pub(crate) tree: TreeId,
+    pub(crate) creating_system_id: String,
+    pub(crate) time_committed: jiff::Timestamp,
+    pub(crate) deleted: bool,
+}
+
+/// Resolve the current trunk version of a demographic object, or `None` if it
+/// has no current version (or the stored kind is unrecognized).
+pub(crate) async fn demographic_current(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+) -> Result<Option<DemographicCurrent>, ServiceError> {
+    let Some(m) = crate::storage::version_repo::current_demographic_meta(pool, vo_id).await? else {
+        return Ok(None);
+    };
+    let Some(kind) = Kind::from_type(&m.kind) else {
+        return Ok(None);
+    };
+    Ok(Some(DemographicCurrent {
+        kind,
+        tree: TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version),
+        creating_system_id: m.creating_system_id,
+        time_committed: m.time_committed,
+        deleted: m.lifecycle_state == lifecycle::state::DELETED,
+    }))
+}
+
 /// The `REVISION_HISTORY` of a versioned object: one item per version, each with
 /// its version id and the `AUDIT_DETAILS` of the change that produced it plus
 /// any attestations of that revision (RM common master04 §Revision History:
