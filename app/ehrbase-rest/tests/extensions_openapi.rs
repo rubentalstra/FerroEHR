@@ -126,6 +126,52 @@ async fn every_documented_path_routes() {
     assert!(checked >= 40, "drove only {checked} documented operations");
 }
 
+// ── Test 3: every spec-selector family document is non-empty ──────────────────
+
+/// Every family the Swagger spec-selector offers must serve a non-empty
+/// document — the path-prefix criterion (standard ITS-REST groups) and the
+/// tag criterion (server extensions) must each match at least one operation on
+/// a fully-enabled server.
+#[tokio::test]
+async fn every_family_document_is_non_empty() {
+    let app = full_app();
+    // The family slugs offered by `FAMILIES` in `extensions::openapi` (private
+    // there; the selector URLs are the stable public contract).
+    for slug in [
+        "ehr",
+        "query",
+        "definition",
+        "demographic",
+        "admin",
+        "management",
+        "terminology",
+        "relationships",
+        "events",
+        "tenancy",
+        "fhir",
+        "smart",
+    ] {
+        let uri = format!("/ehrbase/rest/api-docs/ehrbase-{slug}.openapi.json");
+        let resp = app
+            .clone()
+            .oneshot(get(&uri))
+            .await
+            .expect("family response");
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "family {slug} must serve ({uri})"
+        );
+        let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+        let v: Value = serde_json::from_slice(&bytes).expect("family json");
+        let paths = v["paths"].as_object().expect("paths object");
+        assert!(
+            !paths.is_empty(),
+            "family {slug} document has no paths (its selector criterion matched nothing)"
+        );
+    }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 fn is_method(key: &str) -> bool {

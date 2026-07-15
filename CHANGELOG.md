@@ -15,6 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The served OpenAPI documents now categorize operations the way the
+  official ITS-REST reference documents do: standard-group operations are
+  tagged by resource (EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION,
+  ITEM_TAG; PERSON, AGENT, GROUP, ORGANISATION, ROLE, VERSIONED_PARTY;
+  ADL 1.4, ADL 2, Query) instead of one flat tag per API group, and the
+  Swagger UI spec selector offers one document per API family — the five
+  standardised openEHR groups and the seven server-extension families —
+  plus the complete composed surface, all filtered from the server's own
+  generated document.
+
+### Fixed
+
+- Duplicate-template-id fixture resolution in the validation corpus test is
+  now deterministic (sorted path order) instead of OS-dependent `read_dir`
+  order, fixing a Linux-only CI failure.
+
 ## [3.0.2] - 2026-07-15
 
 ### Changed

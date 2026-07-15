@@ -65,7 +65,7 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 /// Retrieve an EHR by subject (`GET /ehr`).
 #[utoipa::path(
-    get, path = "/ehr", tag = "ehr",
+    get, path = "/ehr", tag = "EHR",
     responses(
         (status = 200, description = "The EHR.", body = serde_json::Value),
         (status = 404, description = "Not found.", body = serde_json::Value)
@@ -87,7 +87,7 @@ pub(crate) async fn ehr_get_by_subject<S: Platform>(
 
 /// Create a new EHR (`POST /ehr`).
 #[utoipa::path(
-    post, path = "/ehr", tag = "ehr",
+    post, path = "/ehr", tag = "EHR",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn ehr_create<S: Platform>(
@@ -106,7 +106,7 @@ pub(crate) async fn ehr_create<S: Platform>(
 
 /// Retrieve an EHR by id (`GET /ehr/{ehr_id}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}", tag = "EHR",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The EHR.", body = serde_json::Value),
@@ -129,7 +129,7 @@ pub(crate) async fn ehr_get_by_id<S: Platform>(
 
 /// Create an EHR with a client-supplied id (`PUT /ehr/{ehr_id}`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}", tag = "ehr",
+    put, path = "/ehr/{ehr_id}", tag = "EHR",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Created/updated.", body = serde_json::Value))
 )]
@@ -152,7 +152,7 @@ pub(crate) async fn ehr_create_with_id<S: Platform>(
 /// Retrieve an `EHR_STATUS` at a version id
 /// (`GET /ehr/{ehr_id}/ehr_status/{version_uid}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/ehr_status/{version_uid}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/ehr_status/{version_uid}", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("version_uid" = String, Path, description = "The version uid.")
@@ -179,7 +179,7 @@ pub(crate) async fn ehr_status_get_by_version_id<S: Platform>(
 /// Retrieve the `EHR_STATUS` at a point in time
 /// (`GET /ehr/{ehr_id}/ehr_status`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/ehr_status", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The EHR_STATUS.", body = serde_json::Value),
@@ -202,7 +202,7 @@ pub(crate) async fn ehr_status_get_at_time<S: Platform>(
 
 /// Update the `EHR_STATUS` (`PUT /ehr/{ehr_id}/ehr_status`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}/ehr_status", tag = "ehr",
+    put, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -225,7 +225,7 @@ pub(crate) async fn ehr_status_update<S: Platform>(
 /// Retrieve the `VERSIONED_EHR_STATUS` container
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/versioned_ehr_status", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/versioned_ehr_status", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The VERSIONED_EHR_STATUS.", body = serde_json::Value),
@@ -249,7 +249,7 @@ pub(crate) async fn versioned_ehr_status_get<S: Platform>(
 /// Retrieve the `EHR_STATUS` revision history
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/versioned_ehr_status/revision_history", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/versioned_ehr_status/revision_history", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The revision history.", body = serde_json::Value),
@@ -273,7 +273,7 @@ pub(crate) async fn versioned_ehr_status_revision_history<S: Platform>(
 /// Retrieve an `EHR_STATUS` version at a point in time
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/version`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/versioned_ehr_status/version", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/versioned_ehr_status/version", tag = "EHR_STATUS",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The EHR_STATUS version.", body = serde_json::Value),
@@ -297,7 +297,7 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time<S: Platform>(
 /// Retrieve an `EHR_STATUS` version by id
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}", tag = "EHR_STATUS",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("version_uid" = String, Path, description = "The version uid.")
@@ -325,7 +325,7 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id<S: Platform>(
 
 /// Create a COMPOSITION (`POST /ehr/{ehr_id}/composition`).
 #[utoipa::path(
-    post, path = "/ehr/{ehr_id}/composition", tag = "ehr",
+    post, path = "/ehr/{ehr_id}/composition", tag = "COMPOSITION",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
@@ -346,7 +346,7 @@ pub(crate) async fn composition_create<S: Platform>(
 /// Retrieve a COMPOSITION
 /// (`GET /ehr/{ehr_id}/composition/{uid_based_id}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid.")
@@ -373,7 +373,7 @@ pub(crate) async fn composition_get<S: Platform>(
 /// Update a COMPOSITION
 /// (`PUT /ehr/{ehr_id}/composition/{uid_based_id}`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "ehr",
+    put, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid.")
@@ -397,7 +397,7 @@ pub(crate) async fn composition_update<S: Platform>(
 /// Delete a COMPOSITION
 /// (`DELETE /ehr/{ehr_id}/composition/{uid_based_id}`).
 #[utoipa::path(
-    delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "ehr",
+    delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid.")
@@ -423,7 +423,7 @@ pub(crate) async fn composition_delete<S: Platform>(
 /// Retrieve the `VERSIONED_COMPOSITION` container
 /// (`GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}", tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
@@ -452,7 +452,7 @@ pub(crate) async fn versioned_composition_get<S: Platform>(
 #[utoipa::path(
     get,
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history",
-    tag = "ehr",
+    tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
@@ -481,7 +481,7 @@ pub(crate) async fn versioned_composition_revision_history<S: Platform>(
 #[utoipa::path(
     get,
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version",
-    tag = "ehr",
+    tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
@@ -510,7 +510,7 @@ pub(crate) async fn versioned_composition_version_get_at_time<S: Platform>(
 #[utoipa::path(
     get,
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
-    tag = "ehr",
+    tag = "COMPOSITION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("versioned_object_uid" = String, Path, description = "The versioned object uid."),
@@ -540,7 +540,7 @@ pub(crate) async fn versioned_composition_version_get_by_id<S: Platform>(
 /// Retrieve the directory (FOLDER) at a point in time
 /// (`GET /ehr/{ehr_id}/directory`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/directory", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The DIRECTORY.", body = serde_json::Value),
@@ -563,7 +563,7 @@ pub(crate) async fn directory_get_at_time<S: Platform>(
 
 /// Update the directory (FOLDER) (`PUT /ehr/{ehr_id}/directory`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}/directory", tag = "ehr",
+    put, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -583,7 +583,7 @@ pub(crate) async fn directory_update<S: Platform>(
 
 /// Create the directory (FOLDER) (`POST /ehr/{ehr_id}/directory`).
 #[utoipa::path(
-    post, path = "/ehr/{ehr_id}/directory", tag = "ehr",
+    post, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
@@ -603,7 +603,7 @@ pub(crate) async fn directory_create<S: Platform>(
 
 /// Delete the directory (FOLDER) (`DELETE /ehr/{ehr_id}/directory`).
 #[utoipa::path(
-    delete, path = "/ehr/{ehr_id}/directory", tag = "ehr",
+    delete, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -624,7 +624,7 @@ pub(crate) async fn directory_delete<S: Platform>(
 /// Retrieve the directory (FOLDER) by version id
 /// (`GET /ehr/{ehr_id}/directory/{version_uid}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/directory/{version_uid}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/directory/{version_uid}", tag = "DIRECTORY",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("version_uid" = String, Path, description = "The version uid.")
@@ -652,7 +652,7 @@ pub(crate) async fn directory_get_by_version_id<S: Platform>(
 
 /// Create a CONTRIBUTION (`POST /ehr/{ehr_id}/contribution`).
 #[utoipa::path(
-    post, path = "/ehr/{ehr_id}/contribution", tag = "ehr",
+    post, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
@@ -673,7 +673,7 @@ pub(crate) async fn contribution_create<S: Platform>(
 /// Retrieve a CONTRIBUTION
 /// (`GET /ehr/{ehr_id}/contribution/{contribution_uid}`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/contribution/{contribution_uid}", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/contribution/{contribution_uid}", tag = "CONTRIBUTION",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("contribution_uid" = String, Path, description = "The contribution uid.")
@@ -701,7 +701,7 @@ pub(crate) async fn contribution_get<S: Platform>(
 
 /// Retrieve the EHR-level item tags (`GET /ehr/{ehr_id}/tags`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/tags", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/tags", tag = "ITEM_TAG",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses(
         (status = 200, description = "The item tags.", body = serde_json::Value),
@@ -725,7 +725,7 @@ pub(crate) async fn ehr_tags_get<S: Platform>(
 /// Retrieve a COMPOSITION's item tags
 /// (`GET /ehr/{ehr_id}/composition/{uid_based_id}/tags`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid.")
@@ -752,7 +752,7 @@ pub(crate) async fn composition_tags_get<S: Platform>(
 /// Replace a COMPOSITION's item tags
 /// (`PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ehr",
+    put, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid.")
@@ -776,7 +776,7 @@ pub(crate) async fn composition_tags_update<S: Platform>(
 /// Delete a COMPOSITION item tag by key
 /// (`DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
-    delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}", tag = "ehr",
+    delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The composition uid."),
@@ -801,7 +801,7 @@ pub(crate) async fn composition_tags_delete<S: Platform>(
 /// Retrieve an `EHR_STATUS`'s item tags
 /// (`GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`).
 #[utoipa::path(
-    get, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ehr",
+    get, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The EHR_STATUS uid.")
@@ -828,7 +828,7 @@ pub(crate) async fn ehr_status_tags_get<S: Platform>(
 /// Replace an `EHR_STATUS`'s item tags
 /// (`PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags`).
 #[utoipa::path(
-    put, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ehr",
+    put, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The EHR_STATUS uid.")
@@ -852,7 +852,7 @@ pub(crate) async fn ehr_status_tags_update<S: Platform>(
 /// Delete an `EHR_STATUS` item tag by key
 /// (`DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
-    delete, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}", tag = "ehr",
+    delete, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("uid_based_id" = String, Path, description = "The EHR_STATUS uid."),
