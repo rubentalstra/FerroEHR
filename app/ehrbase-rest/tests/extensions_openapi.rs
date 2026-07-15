@@ -1,0 +1,245 @@
+//! Tests for the generated extension-surface `OpenAPI` document
+//! ([`ExtensionsApiDoc`]) and its consistency with the live router.
+//!
+//! No openEHR spec governs the extension surface — our own operational +
+//! extension design. These tests assert (1) the document is non-empty, (2)
+//! every documented path actually routes on a fully-enabled server (a `404`
+//! would mean the path is documented but not mounted; an auth `401` never
+//! occurs here because auth is disabled), and (3) a set of representative
+//! extension paths are present so the document cannot silently shrink.
+
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+use std::sync::{Arc, OnceLock};
+
+use axum::Router;
+use axum::body::Body;
+use http::{Request, StatusCode};
+use http_body_util::BodyExt;
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use serde_json::Value;
+use tower::ServiceExt;
+use utoipa::OpenApi;
+
+use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase_rest::extensions::openapi_extensions::ExtensionsApiDoc;
+use ehrbase_rest::management::{
+    AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, LogReload, ManagementConfig,
+    Observability,
+};
+use ehrbase_rest::{AdminConfig, AppConfig, ServerConfig, SmartConfig, TenancyConfig};
+
+mod common;
+use common::Mock;
+
+const BASE: &str = "/ehrbase/rest/openehr/v1";
+
+/// The known HTTP methods a documented path item may carry (everything else on
+/// a path-item object — `parameters`, `summary`, … — is metadata, not an op).
+const HTTP_METHODS: &[&str] = &[
+    "get", "put", "post", "delete", "patch", "head", "options", "trace",
+];
+
+// ── Test 1: the document is non-empty and covers the extension surface ────────
+
+#[test]
+fn extensions_doc_is_non_empty() {
+    let doc = serde_json::to_value(ExtensionsApiDoc::openapi()).expect("serialise doc");
+    let paths = doc["paths"].as_object().expect("paths object");
+    assert!(!paths.is_empty(), "the extension document has no paths");
+
+    // A floor on coverage so the document cannot silently shrink below the
+    // surface enumerated from the router.
+    let op_count: usize = paths
+        .values()
+        .map(|item| {
+            item.as_object()
+                .map_or(0, |o| o.keys().filter(|k| is_method(k)).count())
+        })
+        .sum();
+    assert!(
+        op_count >= 40,
+        "expected the extension surface to document >= 40 operations, found {op_count}"
+    );
+
+    // Representative paths from each documented extension group must be present.
+    for expected in [
+        "/ehrbase/rest/status",
+        "/management/info",
+        "/ehrbase/rest/.well-known/smart-configuration",
+        "/ehrbase/rest/api-docs/openapi.json",
+        "/ehrbase/rest/openehr/v1/terminology",
+        "/ehrbase/rest/openehr/v1/demographic/party_relationship",
+        "/ehrbase/rest/openehr/v1/admin/event_subscription",
+        "/ehrbase/rest/openehr/v1/admin/tenant",
+        "/ehrbase/rest/openehr/v1/fhir/r4/{resource_type}",
+    ] {
+        assert!(
+            paths.contains_key(expected),
+            "extension document is missing the path {expected}"
+        );
+    }
+}
+
+// ── Test 2: every documented path routes on a fully-enabled server ────────────
+
+#[tokio::test]
+async fn every_documented_path_routes() {
+    let app = full_app();
+
+    // Warm the HTTP metrics so `/management/metrics/{name}` has a real metric to
+    // resolve (an unknown metric legitimately 404s — that would be a false
+    // negative for a routing check).
+    let _ = app
+        .clone()
+        .oneshot(get(&format!(
+            "{BASE}/ehr/00000000-0000-0000-0000-000000000000"
+        )))
+        .await
+        .expect("warmup response");
+    let metric_name = first_metric_name(&app).await;
+
+    let doc = serde_json::to_value(ExtensionsApiDoc::openapi()).expect("serialise doc");
+    let paths = doc["paths"].as_object().expect("paths object");
+
+    let mut checked = 0usize;
+    for (template, item) in paths {
+        let item = item.as_object().expect("path item object");
+        for method in item.keys().filter(|k| is_method(k)) {
+            let concrete = concretize(template, &metric_name);
+            let req = Request::builder()
+                .method(method.to_uppercase().as_str())
+                .uri(&concrete)
+                .body(Body::empty())
+                .expect("request");
+            let status = app.clone().oneshot(req).await.expect("response").status();
+            assert_ne!(
+                status,
+                StatusCode::NOT_FOUND,
+                "documented op {} {template} (driven as {concrete}) is not mounted (404)",
+                method.to_uppercase()
+            );
+            checked += 1;
+        }
+    }
+    assert!(checked >= 40, "drove only {checked} documented operations");
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+fn is_method(key: &str) -> bool {
+    HTTP_METHODS.contains(&key)
+}
+
+/// Substitute `{param}` template segments with a value that routes: the real
+/// metric name for `{name}` (so `/management/metrics/{name}` resolves), any
+/// non-empty token otherwise (malformed uuids yield `400`, never a routing
+/// `404`).
+fn concretize(template: &str, metric_name: &str) -> String {
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(open) = rest.find('{') {
+        out.push_str(&rest[..open]);
+        let close = rest[open..].find('}').expect("closing brace") + open;
+        let param = &rest[open + 1..close];
+        out.push_str(if param == "name" { metric_name } else { "x" });
+        rest = &rest[close + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+fn get(uri: &str) -> Request<Body> {
+    Request::builder()
+        .method("GET")
+        .uri(uri)
+        .body(Body::empty())
+        .expect("request")
+}
+
+/// The first metric name the management list endpoint reports (after warmup).
+async fn first_metric_name(app: &Router) -> String {
+    let resp = app
+        .clone()
+        .oneshot(get("/management/metrics"))
+        .await
+        .expect("metrics list response");
+    assert_eq!(
+        resp.status(),
+        StatusCode::OK,
+        "metrics list must be mounted"
+    );
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    let v: Value = serde_json::from_slice(&bytes).expect("metrics json");
+    let names = v["names"].as_array().expect("names array");
+    assert!(!names.is_empty(), "no metrics available after warmup");
+    names[0].as_str().expect("metric name").to_owned()
+}
+
+/// The global Prometheus recorder (install-once per test process).
+fn recorder() -> &'static PrometheusHandle {
+    static HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
+    HANDLE.get_or_init(|| {
+        PrometheusBuilder::new()
+            .install_recorder()
+            .expect("install recorder")
+    })
+}
+
+/// A no-op reloadable-filter handle so `/management/loggers` mounts.
+fn log_reload() -> LogReload {
+    LogReload::new(
+        "info",
+        Arc::new(|| "info".to_owned()),
+        Arc::new(|_f: &str| Ok(())),
+    )
+}
+
+/// A server with auth off and every extension surface enabled, so every
+/// documented path is mounted.
+fn full_app() -> Router {
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: true,
+            ..Default::default()
+        },
+        auth: AuthConfig {
+            enabled: false,
+            ..AuthConfig::default()
+        },
+        admin: AdminConfig { enabled: true },
+        tenancy: TenancyConfig {
+            enabled: true,
+            ..TenancyConfig::default()
+        },
+        smart: SmartConfig {
+            enabled: true,
+            ..SmartConfig::default()
+        },
+        fhir_api_enabled: true,
+        terminology_api_enabled: true,
+        events_admin_api: true,
+    };
+    let public = EndpointLevels {
+        health: AccessLevel::Public,
+        info: AccessLevel::Public,
+        metrics: AccessLevel::Public,
+        prometheus: AccessLevel::Public,
+        env: AccessLevel::Public,
+        loggers: AccessLevel::Public,
+    };
+    let observability = Observability {
+        management: ManagementConfig {
+            enabled: true,
+            probes_enabled: true,
+            endpoints: public,
+            ..ManagementConfig::default()
+        },
+        prometheus: Some(recorder().clone()),
+        log_reload: Some(log_reload()),
+        health: HealthRegistry::default(),
+        build_info: BuildInfo::current(),
+        ..Observability::default()
+    };
+    ehrbase_rest::build_full(config, Arc::new(Mock::new()), None, observability).expect("build")
+}
