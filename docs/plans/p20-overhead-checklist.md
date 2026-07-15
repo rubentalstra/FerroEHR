@@ -371,6 +371,20 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       (list), `rs` lowercased in the wordmark per owner. 3 unit tests
       (`test(banner)`) green.
 
+- [ ] **33. The rows upstream still wins (owner PRIO, 2026-07-15 — "find
+      every hot path, map it, design the best possible solution").** The
+      fresh same-load hour (a07279607) leaves upstream ahead on exactly
+      three rows: **dir-update p99 124 ms vs 84 ms** (also p50 38.3 vs
+      34.1), **ehr-create p99 67 ms vs 55 ms** (p50 ~tied), and the
+      **aql-ward median 36.8 ms vs 28.2 ms** (its p99 we win 76 vs 101).
+      Plus upstream's lower p99-at-its-own-knee (32 ms at L=16 vs our
+      195 ms at L=26 — different loads, noted). Two investigation agents
+      map the full request paths (REST → service → storage → SQL →
+      statement count/plans), root-cause each gap against upstream's
+      approach as prior art, and deliver redesign proposals; complete
+      rewrites preferred where they pay (greenfield mandate). Verification:
+      per-class p99/p50 from a fresh hour pair after the fixes.
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
