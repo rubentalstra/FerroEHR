@@ -21,6 +21,12 @@ ignore = [
   # path uses quick-xml 0.41 (fixed). Re-check on the next object_store release.
   { id = "RUSTSEC-2026-0194", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
   { id = "RUSTSEC-2026-0195", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
+  # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
+  # utoipa-axum 0.2.0 (the LATEST release of the official utoipa axum
+  # bindings; no paste-free release exists). Compile-time-only token pasting,
+  # no runtime code, no attack surface. Re-check on the next utoipa-axum
+  # release. https://rustsec.org/advisories/RUSTSEC-2024-0436
+  { id = "RUSTSEC-2024-0436", reason = "compile-time proc-macro via utoipa-axum 0.2.0 (latest); no runtime surface" },
 ]
 
 [licenses]

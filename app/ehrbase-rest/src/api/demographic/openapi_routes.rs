@@ -74,7 +74,7 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 /// Create an `AGENT`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/agent", tag = "demographic",
+    post, path = "/demographic/agent", tag = "AGENT",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn agent_create<S: Platform>(
@@ -87,7 +87,7 @@ pub(crate) async fn agent_create<S: Platform>(
 
 /// Read an `AGENT` by uid-based id. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/agent/{uid_based_id}", tag = "demographic",
+    get, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The AGENT (RM canonical JSON).", body = serde_json::Value),
@@ -104,7 +104,7 @@ pub(crate) async fn agent_get<S: Platform>(
 
 /// Update an `AGENT` (If-Match required). 200 with the updated resource.
 #[utoipa::path(
-    put, path = "/demographic/agent/{uid_based_id}", tag = "demographic",
+    put, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -118,7 +118,7 @@ pub(crate) async fn agent_update<S: Platform>(
 
 /// Delete an `AGENT` (If-Match required).
 #[utoipa::path(
-    delete, path = "/demographic/agent/{uid_based_id}", tag = "demographic",
+    delete, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -134,7 +134,7 @@ pub(crate) async fn agent_delete<S: Platform>(
 
 /// Create a `GROUP`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/group", tag = "demographic",
+    post, path = "/demographic/group", tag = "GROUP",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn group_create<S: Platform>(
@@ -147,7 +147,7 @@ pub(crate) async fn group_create<S: Platform>(
 
 /// Read a `GROUP` by uid-based id. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/group/{uid_based_id}", tag = "demographic",
+    get, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The GROUP (RM canonical JSON).", body = serde_json::Value),
@@ -164,7 +164,7 @@ pub(crate) async fn group_get<S: Platform>(
 
 /// Update a `GROUP` (If-Match required). 200 with the updated resource.
 #[utoipa::path(
-    put, path = "/demographic/group/{uid_based_id}", tag = "demographic",
+    put, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -178,7 +178,7 @@ pub(crate) async fn group_update<S: Platform>(
 
 /// Delete a `GROUP` (If-Match required).
 #[utoipa::path(
-    delete, path = "/demographic/group/{uid_based_id}", tag = "demographic",
+    delete, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -194,7 +194,7 @@ pub(crate) async fn group_delete<S: Platform>(
 
 /// Create an `ORGANISATION`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/organisation", tag = "demographic",
+    post, path = "/demographic/organisation", tag = "ORGANISATION",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn organisation_create<S: Platform>(
@@ -207,7 +207,7 @@ pub(crate) async fn organisation_create<S: Platform>(
 
 /// Read an `ORGANISATION` by uid-based id. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/organisation/{uid_based_id}", tag = "demographic",
+    get, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ORGANISATION (RM canonical JSON).", body = serde_json::Value),
@@ -224,7 +224,7 @@ pub(crate) async fn organisation_get<S: Platform>(
 
 /// Update an `ORGANISATION` (If-Match required). 200 with the updated resource.
 #[utoipa::path(
-    put, path = "/demographic/organisation/{uid_based_id}", tag = "demographic",
+    put, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -238,7 +238,7 @@ pub(crate) async fn organisation_update<S: Platform>(
 
 /// Delete an `ORGANISATION` (If-Match required).
 #[utoipa::path(
-    delete, path = "/demographic/organisation/{uid_based_id}", tag = "demographic",
+    delete, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -254,7 +254,7 @@ pub(crate) async fn organisation_delete<S: Platform>(
 
 /// Create a `PERSON`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/person", tag = "demographic",
+    post, path = "/demographic/person", tag = "PERSON",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn person_create<S: Platform>(
@@ -267,7 +267,7 @@ pub(crate) async fn person_create<S: Platform>(
 
 /// Read a `PERSON` by uid-based id. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/person/{uid_based_id}", tag = "demographic",
+    get, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The PERSON (RM canonical JSON).", body = serde_json::Value),
@@ -284,7 +284,7 @@ pub(crate) async fn person_get<S: Platform>(
 
 /// Update a `PERSON` (If-Match required). 200 with the updated resource.
 #[utoipa::path(
-    put, path = "/demographic/person/{uid_based_id}", tag = "demographic",
+    put, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -298,7 +298,7 @@ pub(crate) async fn person_update<S: Platform>(
 
 /// Delete a `PERSON` (If-Match required).
 #[utoipa::path(
-    delete, path = "/demographic/person/{uid_based_id}", tag = "demographic",
+    delete, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -314,7 +314,7 @@ pub(crate) async fn person_delete<S: Platform>(
 
 /// Create a `ROLE`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/role", tag = "demographic",
+    post, path = "/demographic/role", tag = "ROLE",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn role_create<S: Platform>(
@@ -327,7 +327,7 @@ pub(crate) async fn role_create<S: Platform>(
 
 /// Read a `ROLE` by uid-based id. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/role/{uid_based_id}", tag = "demographic",
+    get, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ROLE (RM canonical JSON).", body = serde_json::Value),
@@ -344,7 +344,7 @@ pub(crate) async fn role_get<S: Platform>(
 
 /// Update a `ROLE` (If-Match required). 200 with the updated resource.
 #[utoipa::path(
-    put, path = "/demographic/role/{uid_based_id}", tag = "demographic",
+    put, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -358,7 +358,7 @@ pub(crate) async fn role_update<S: Platform>(
 
 /// Delete a `ROLE` (If-Match required).
 #[utoipa::path(
-    delete, path = "/demographic/role/{uid_based_id}", tag = "demographic",
+    delete, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -374,7 +374,7 @@ pub(crate) async fn role_delete<S: Platform>(
 
 /// Read the `VERSIONED_PARTY` container. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/versioned_party/{versioned_object_uid}", tag = "demographic",
+    get, path = "/demographic/versioned_party/{versioned_object_uid}", tag = "VERSIONED_PARTY",
     params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
     responses(
         (status = 200, description = "The VERSIONED_PARTY (RM canonical JSON).", body = serde_json::Value),
@@ -391,7 +391,7 @@ pub(crate) async fn versioned_party_get<S: Platform>(
 
 /// The party's `REVISION_HISTORY`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/versioned_party/{versioned_object_uid}/revision_history", tag = "demographic",
+    get, path = "/demographic/versioned_party/{versioned_object_uid}/revision_history", tag = "VERSIONED_PARTY",
     params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
     responses(
         (status = 200, description = "The REVISION_HISTORY (RM canonical JSON).", body = serde_json::Value),
@@ -414,7 +414,7 @@ pub(crate) async fn versioned_party_revision_history<S: Platform>(
 
 /// The party VERSION at a point in time (`?version_at_time=`). 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/versioned_party/{versioned_object_uid}/version", tag = "demographic",
+    get, path = "/demographic/versioned_party/{versioned_object_uid}/version", tag = "VERSIONED_PARTY",
     params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
     responses(
         (status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value),
@@ -437,7 +437,7 @@ pub(crate) async fn versioned_party_version_get_at_time<S: Platform>(
 
 /// A specific party VERSION by version uid. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/versioned_party/{versioned_object_uid}/version/{version_uid}", tag = "demographic",
+    get, path = "/demographic/versioned_party/{versioned_object_uid}/version/{version_uid}", tag = "VERSIONED_PARTY",
     params(
         ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
         ("version_uid" = String, Path, description = "The OBJECT_VERSION_ID.")
@@ -465,7 +465,7 @@ pub(crate) async fn versioned_party_version_get_by_id<S: Platform>(
 
 /// Create a demographic `CONTRIBUTION`. 201 with the created resource.
 #[utoipa::path(
-    post, path = "/demographic/contribution", tag = "demographic",
+    post, path = "/demographic/contribution", tag = "CONTRIBUTION",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
 pub(crate) async fn contribution_create<S: Platform>(
@@ -478,7 +478,7 @@ pub(crate) async fn contribution_create<S: Platform>(
 
 /// Read a demographic `CONTRIBUTION` by uid. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/contribution/{contribution_uid}", tag = "demographic",
+    get, path = "/demographic/contribution/{contribution_uid}", tag = "CONTRIBUTION",
     params(("contribution_uid" = String, Path, description = "The CONTRIBUTION uid.")),
     responses(
         (status = 200, description = "The CONTRIBUTION (RM canonical JSON).", body = serde_json::Value),
@@ -497,7 +497,7 @@ pub(crate) async fn contribution_get<S: Platform>(
 
 /// List every `ITEM_TAG` known to the demographic surface. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/tags", tag = "demographic",
+    get, path = "/demographic/tags", tag = "ITEM_TAG",
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
         (status = 404, description = "Not found.", body = serde_json::Value)
@@ -513,7 +513,7 @@ pub(crate) async fn demographic_tags_get<S: Platform>(
 
 /// Read an `AGENT`'s `ITEM_TAGs`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/agent/{uid_based_id}/tags", tag = "demographic",
+    get, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
@@ -530,7 +530,7 @@ pub(crate) async fn agent_tags_get<S: Platform>(
 
 /// Upsert an `AGENT`'s `ITEM_TAGs`. 200 with the stored tags.
 #[utoipa::path(
-    put, path = "/demographic/agent/{uid_based_id}/tags", tag = "demographic",
+    put, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -544,7 +544,7 @@ pub(crate) async fn agent_tags_update<S: Platform>(
 
 /// Delete one `ITEM_TAG` from an `AGENT` by key.
 #[utoipa::path(
-    delete, path = "/demographic/agent/{uid_based_id}/tags/{key}", tag = "demographic",
+    delete, path = "/demographic/agent/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path, description = "The party uid-based id."),
         ("key" = String, Path, description = "The ITEM_TAG key.")
@@ -561,7 +561,7 @@ pub(crate) async fn agent_tags_delete<S: Platform>(
 
 /// Read a `GROUP`'s `ITEM_TAGs`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/group/{uid_based_id}/tags", tag = "demographic",
+    get, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
@@ -578,7 +578,7 @@ pub(crate) async fn group_tags_get<S: Platform>(
 
 /// Upsert a `GROUP`'s `ITEM_TAGs`. 200 with the stored tags.
 #[utoipa::path(
-    put, path = "/demographic/group/{uid_based_id}/tags", tag = "demographic",
+    put, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -592,7 +592,7 @@ pub(crate) async fn group_tags_update<S: Platform>(
 
 /// Delete one `ITEM_TAG` from a `GROUP` by key.
 #[utoipa::path(
-    delete, path = "/demographic/group/{uid_based_id}/tags/{key}", tag = "demographic",
+    delete, path = "/demographic/group/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path, description = "The party uid-based id."),
         ("key" = String, Path, description = "The ITEM_TAG key.")
@@ -609,7 +609,7 @@ pub(crate) async fn group_tags_delete<S: Platform>(
 
 /// Read an `ORGANISATION`'s `ITEM_TAGs`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/organisation/{uid_based_id}/tags", tag = "demographic",
+    get, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
@@ -626,7 +626,7 @@ pub(crate) async fn organisation_tags_get<S: Platform>(
 
 /// Upsert an `ORGANISATION`'s `ITEM_TAGs`. 200 with the stored tags.
 #[utoipa::path(
-    put, path = "/demographic/organisation/{uid_based_id}/tags", tag = "demographic",
+    put, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -646,7 +646,7 @@ pub(crate) async fn organisation_tags_update<S: Platform>(
 
 /// Delete one `ITEM_TAG` from an `ORGANISATION` by key.
 #[utoipa::path(
-    delete, path = "/demographic/organisation/{uid_based_id}/tags/{key}", tag = "demographic",
+    delete, path = "/demographic/organisation/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path, description = "The party uid-based id."),
         ("key" = String, Path, description = "The ITEM_TAG key.")
@@ -669,7 +669,7 @@ pub(crate) async fn organisation_tags_delete<S: Platform>(
 
 /// Read a `PERSON`'s `ITEM_TAGs`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/person/{uid_based_id}/tags", tag = "demographic",
+    get, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
@@ -686,7 +686,7 @@ pub(crate) async fn person_tags_get<S: Platform>(
 
 /// Upsert a `PERSON`'s `ITEM_TAGs`. 200 with the stored tags.
 #[utoipa::path(
-    put, path = "/demographic/person/{uid_based_id}/tags", tag = "demographic",
+    put, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -700,7 +700,7 @@ pub(crate) async fn person_tags_update<S: Platform>(
 
 /// Delete one `ITEM_TAG` from a `PERSON` by key.
 #[utoipa::path(
-    delete, path = "/demographic/person/{uid_based_id}/tags/{key}", tag = "demographic",
+    delete, path = "/demographic/person/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path, description = "The party uid-based id."),
         ("key" = String, Path, description = "The ITEM_TAG key.")
@@ -717,7 +717,7 @@ pub(crate) async fn person_tags_delete<S: Platform>(
 
 /// Read a `ROLE`'s `ITEM_TAGs`. 404 when absent.
 #[utoipa::path(
-    get, path = "/demographic/role/{uid_based_id}/tags", tag = "demographic",
+    get, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses(
         (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
@@ -734,7 +734,7 @@ pub(crate) async fn role_tags_get<S: Platform>(
 
 /// Upsert a `ROLE`'s `ITEM_TAGs`. 200 with the stored tags.
 #[utoipa::path(
-    put, path = "/demographic/role/{uid_based_id}/tags", tag = "demographic",
+    put, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
@@ -748,7 +748,7 @@ pub(crate) async fn role_tags_update<S: Platform>(
 
 /// Delete one `ITEM_TAG` from a `ROLE` by key.
 #[utoipa::path(
-    delete, path = "/demographic/role/{uid_based_id}/tags/{key}", tag = "demographic",
+    delete, path = "/demographic/role/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
         ("uid_based_id" = String, Path, description = "The party uid-based id."),
         ("key" = String, Path, description = "The ITEM_TAG key.")
