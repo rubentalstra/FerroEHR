@@ -11,8 +11,11 @@
 //! segment; because there is no wire contract, the generated party `*Params`
 //! structs are reused by analogy.
 
+use axum::extract::State;
 use axum::response::Response;
 use http::StatusCode;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 
 use openehr_its::rest::generated::demographic::{
     AgentCreateParams, AgentGetParams, AgentUpdateParams, VersionedPartyGetParams,
@@ -21,57 +24,200 @@ use openehr_its::rest::generated::demographic::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::PartyRelationship;
 
-use crate::api::RequestParts;
+use crate::api::{RequestParts, guarded_dispatch};
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
 use ehrbase_sm::{Platform, ServiceResponse};
 
-/// The `PARTY_RELATIONSHIP` extension route table — **no ITS-REST contract**
-/// (see the module docs); mounted alongside the generated demographic `ROUTES`
-/// and served by the same group [`dispatch`](super::dispatch).
-pub(crate) const RELATIONSHIP_ROUTES: &[(&str, &str, &str)] = &[
-    (
-        "POST",
-        "/demographic/party_relationship",
+/// The `PARTY_RELATIONSHIP` extension routes as a native `utoipa-axum` router —
+/// **no ITS-REST contract** (see the module docs), realizing SM
+/// `I_PARTY_RELATIONSHIP` with our own wire. Group-relative paths (nested under
+/// `base_path`); every operation runs through [`guarded_dispatch`] with the
+/// demographic group [`dispatch`](super::dispatch), which routes relationship
+/// ops back into [`run`] — so the wire behaviour is identical to the former
+/// table-driven mount.
+pub(crate) fn relationship_routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+    OpenApiRouter::new().routes(routes!(
+        party_relationship_create,
+        party_relationship_get,
+        party_relationship_update,
+        party_relationship_delete,
+        versioned_party_relationship_get,
+        party_relationship_revision_history,
+        party_relationship_version_get_at_time,
+        party_relationship_version_get_by_id,
+    ))
+}
+
+// ── Handlers (our own wire; no ITS-REST operation governs these) ──────────────
+// Each snapshots the request and runs it through the demographic group
+// dispatcher (`super::dispatch`), which routes relationship ops into [`run`].
+
+/// Create a `PARTY_RELATIONSHIP` (RM canonical JSON body). 201 with the created
+/// resource; ETag/Location headers.
+#[utoipa::path(
+    post, path = "/demographic/party_relationship", tag = "demographic-relationship",
+    request_body(content = serde_json::Value, description = "An RM PARTY_RELATIONSHIP (canonical JSON)."),
+    responses((status = 201, description = "Created.", body = serde_json::Value))
+)]
+pub(crate) async fn party_relationship_create<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_create",
-    ),
-    (
-        "GET",
-        "/demographic/party_relationship/{uid_based_id}",
-        "party_relationship_get",
-    ),
-    (
-        "PUT",
-        "/demographic/party_relationship/{uid_based_id}",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// Read a `PARTY_RELATIONSHIP` by uid-based id. 404 when absent.
+#[utoipa::path(
+    get, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
+    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
+    responses(
+        (status = 200, description = "The relationship (RM canonical JSON).", body = serde_json::Value),
+        (status = 404, description = "Not found.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn party_relationship_get<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "party_relationship_get", parts, super::dispatch::<S>).await
+}
+
+/// Update a `PARTY_RELATIONSHIP` (If-Match required; RM canonical JSON body).
+#[utoipa::path(
+    put, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
+    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
+    request_body(content = serde_json::Value, description = "The updated RM PARTY_RELATIONSHIP (canonical JSON)."),
+    responses((status = 200, description = "Updated.", body = serde_json::Value))
+)]
+pub(crate) async fn party_relationship_update<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_update",
-    ),
-    (
-        "DELETE",
-        "/demographic/party_relationship/{uid_based_id}",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// Delete a `PARTY_RELATIONSHIP` (If-Match required).
+#[utoipa::path(
+    delete, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
+    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
+    responses((status = 204, description = "Deleted."))
+)]
+pub(crate) async fn party_relationship_delete<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_delete",
-    ),
-    (
-        "GET",
-        "/demographic/versioned_party_relationship/{versioned_object_uid}",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// Read the `VERSIONED_PARTY_RELATIONSHIP` container.
+#[utoipa::path(
+    get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}", tag = "demographic-relationship",
+    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
+    responses((status = 200, description = "The VERSIONED_PARTY_RELATIONSHIP (RM canonical JSON).", body = serde_json::Value))
+)]
+pub(crate) async fn versioned_party_relationship_get<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "versioned_party_relationship_get",
-    ),
-    (
-        "GET",
-        "/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// The relationship's `REVISION_HISTORY`.
+#[utoipa::path(
+    get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history", tag = "demographic-relationship",
+    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
+    responses((status = 200, description = "The REVISION_HISTORY (RM canonical JSON).", body = serde_json::Value))
+)]
+pub(crate) async fn party_relationship_revision_history<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_revision_history",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// The relationship VERSION at a point in time (`?version_at_time=`).
+#[utoipa::path(
+    get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version", tag = "demographic-relationship",
+    params(
+        ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
+        ("version_at_time" = Option<String>, Query, description = "Optional ISO-8601 instant; latest when omitted.")
     ),
-    (
-        "GET",
-        "/demographic/versioned_party_relationship/{versioned_object_uid}/version",
+    responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
+)]
+pub(crate) async fn party_relationship_version_get_at_time<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_version_get_at_time",
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
+
+/// A specific relationship VERSION by version uid.
+#[utoipa::path(
+    get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}", tag = "demographic-relationship",
+    params(
+        ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
+        ("version_uid" = String, Path, description = "The OBJECT_VERSION_ID.")
     ),
-    (
-        "GET",
-        "/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}",
+    responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
+)]
+pub(crate) async fn party_relationship_version_get_by_id<S: Platform>(
+    State(state): State<AppState<S>>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
         "party_relationship_version_get_by_id",
-    ),
-];
+        parts,
+        super::dispatch::<S>,
+    )
+    .await
+}
 
 /// `PARTY_RELATIONSHIP` operations — same envelope/header rules as the party
 /// routes, one fixed `party_relationship` segment (our own wire; no ITS-REST

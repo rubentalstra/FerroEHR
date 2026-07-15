@@ -1,5 +1,5 @@
 //! Tests for the generated extension-surface `OpenAPI` document
-//! ([`ExtensionsApiDoc`]) and its consistency with the live router.
+//! ([`extensions_document`]) and its consistency with the live router.
 //!
 //! No openEHR spec governs the extension surface — our own operational +
 //! extension design. These tests assert (1) the document is non-empty, (2)
@@ -19,10 +19,9 @@ use http_body_util::BodyExt;
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use serde_json::Value;
 use tower::ServiceExt;
-use utoipa::OpenApi;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::extensions::openapi_extensions::ExtensionsApiDoc;
+use ehrbase_rest::extensions::openapi::extensions_document;
 use ehrbase_rest::management::{
     AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, LogReload, ManagementConfig,
     Observability,
@@ -44,7 +43,8 @@ const HTTP_METHODS: &[&str] = &[
 
 #[test]
 fn extensions_doc_is_non_empty() {
-    let doc = serde_json::to_value(ExtensionsApiDoc::openapi()).expect("serialise doc");
+    let doc =
+        serde_json::to_value(extensions_document::<Mock>(&app_config())).expect("serialise doc");
     let paths = doc["paths"].as_object().expect("paths object");
     assert!(!paths.is_empty(), "the extension document has no paths");
 
@@ -99,7 +99,8 @@ async fn every_documented_path_routes() {
         .expect("warmup response");
     let metric_name = first_metric_name(&app).await;
 
-    let doc = serde_json::to_value(ExtensionsApiDoc::openapi()).expect("serialise doc");
+    let doc =
+        serde_json::to_value(extensions_document::<Mock>(&app_config())).expect("serialise doc");
     let paths = doc["paths"].as_object().expect("paths object");
 
     let mut checked = 0usize;
@@ -195,10 +196,12 @@ fn log_reload() -> LogReload {
     )
 }
 
-/// A server with auth off and every extension surface enabled, so every
-/// documented path is mounted.
-fn full_app() -> Router {
-    let config = AppConfig {
+/// The `AppConfig` used by both the served document and [`full_app`], so the
+/// documented paths and the mounted routes are derived from one config (same
+/// base path). Auth off + every surface enabled, so every documented path is
+/// mounted.
+fn app_config() -> AppConfig {
+    AppConfig {
         server: ServerConfig {
             swagger_ui: true,
             ..Default::default()
@@ -219,7 +222,13 @@ fn full_app() -> Router {
         fhir_api_enabled: true,
         terminology_api_enabled: true,
         events_admin_api: true,
-    };
+    }
+}
+
+/// A server with auth off and every extension surface enabled, so every
+/// documented path is mounted.
+fn full_app() -> Router {
+    let config = app_config();
     let public = EndpointLevels {
         health: AccessLevel::Public,
         info: AccessLevel::Public,

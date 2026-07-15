@@ -35,7 +35,6 @@ pub mod event_subscription;
 pub mod fhir;
 pub mod management;
 pub mod openapi;
-pub mod openapi_extensions;
 pub mod tenant_routes;
 pub mod terminology;
 

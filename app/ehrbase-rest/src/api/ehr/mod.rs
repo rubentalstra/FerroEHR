@@ -34,8 +34,11 @@ pub mod directory;
 pub mod dispatch;
 pub mod ehr_resource;
 pub mod ehr_status;
+pub mod openapi_routes;
 pub mod versioned_composition;
 pub mod versioned_ehr_status;
+
+pub(crate) use openapi_routes::routes;
 
 // COMPOSITION create/get/update negotiate the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam; the

@@ -210,16 +210,10 @@ fn mount_public_surface<S: Platform>(
     api: Router<AppState<S>>,
     rest_root: &str,
 ) -> Router<AppState<S>> {
-    let fhir_base = cfg
-        .fhir_api_enabled
-        .then(|| format!("{}/fhir/r4", cfg.server.base_path));
-    let discovery = smart::discovery::router::<S>(
-        &cfg.smart,
-        &cfg.server.base_path,
-        fhir_base.as_deref(),
-        cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str()),
-        rest_root,
-    );
+    // The SMART discovery document rebuilds itself from the request state (the
+    // openEHR/FHIR base URLs + OIDC issuer come from configuration), so the
+    // router only needs the config + REST root to decide the mount + path.
+    let discovery = smart::discovery::router::<S>(&cfg.smart, rest_root);
 
     let mut inner = Router::new()
         .nest(&cfg.server.base_path, api)
@@ -227,10 +221,7 @@ fn mount_public_surface<S: Platform>(
         .merge(discovery);
 
     if cfg.server.swagger_ui {
-        inner = inner.merge(openapi::swagger_router(
-            &cfg.server.swagger_ui_path(),
-            &cfg.server.openapi_json_path(),
-        ));
+        inner = inner.merge(openapi::swagger_router::<S>(cfg));
     }
     inner
 }

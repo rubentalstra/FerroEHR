@@ -73,7 +73,10 @@ reqwest = { workspace = true }
 arc-swap = { workspace = true }
 
 # OpenAPI / Swagger UI (a drift-check against the vendored OAS, not the source).
+# utoipa-axum single-sources each extension operation's route + OpenAPI path
+# metadata (OpenApiRouter + routes!()); utoipa-swagger-ui serves the UI shell.
 utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]

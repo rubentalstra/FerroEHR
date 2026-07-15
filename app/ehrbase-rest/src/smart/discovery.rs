@@ -17,9 +17,12 @@
 use std::collections::BTreeMap;
 
 use axum::Router;
+use axum::extract::State;
 use axum::response::Json;
 use axum::routing::get;
 use serde::Serialize;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_axum::routes;
 
 use crate::state::AppState;
 use ehrbase_sm::Platform;
@@ -230,35 +233,52 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
 ///
 /// Mount it in `crate::router` beside `overview::status::router` — **outside**
 /// the auth layer (the document is unauthenticated, master04).
-pub fn router<S: Platform>(
-    cfg: &SmartConfig,
-    openehr_base_url: &str,
-    fhir_base_url: Option<&str>,
-    issuer_fallback: Option<&str>,
-    rest_root: &str,
-) -> Router<AppState<S>> {
+pub fn router<S: Platform>(cfg: &SmartConfig, rest_root: &str) -> Router<AppState<S>> {
     // Mounted from `crate::router`: merged beside `status::router(&rest_root)`,
     // OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document,
-    // master04 §Service Discovery), with `openehr_base_url = &cfg.base_path`,
-    // `fhir_base_url = cfg.fhir.enabled.then(|| "{base_path}/fhir/r4")`,
-    // `issuer_fallback = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str())`, and
-    // `rest_root` = the `/ehrbase/rest` root. Disabled → an empty router (a no-op
-    // merge), so the path is absent (`404`).
+    // master04 §Service Discovery), with `rest_root` = the `/ehrbase/rest` root.
+    // Disabled → an empty router (a no-op merge), so the path is absent (`404`).
+    // The document is served by [`smart_configuration`], which rebuilds it from
+    // the request state (the derivation inputs — the openEHR/FHIR base URLs and
+    // the OIDC issuer fallback — all come from configuration).
     if !cfg.enabled {
         return Router::new();
     }
-    let doc = build_document(cfg, openehr_base_url, fhir_base_url, issuer_fallback);
     let path = discovery_path(cfg, rest_root);
-    // `axum::Json` sets `Content-Type: application/json` (R-02). The document is
-    // static per config, so it is built once and cloned per request (the handler
-    // must stay `Fn` — clone into the future, do not move the captured value out).
-    Router::new().route(
-        &path,
-        get(move || {
-            let doc = doc.clone();
-            async move { Json(doc) }
-        }),
-    )
+    Router::new().route(&path, get(smart_configuration::<S>))
+}
+
+/// The SMART App Launch service-discovery document (master04 §Service
+/// Discovery). Unauthenticated, `application/json` (R-02). Rebuilt from the
+/// request state per call (the document is a pure function of configuration).
+#[utoipa::path(
+    get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
+    responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))
+)]
+async fn smart_configuration<S: Platform>(
+    State(state): State<AppState<S>>,
+) -> Json<SmartConfiguration> {
+    let cfg = state.config();
+    // R-04/recommended: FHIR base advertised only when the connector is enabled.
+    let fhir_base = cfg
+        .fhir_api_enabled
+        .then(|| format!("{}/fhir/r4", cfg.server.base_path));
+    let issuer = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str());
+    Json(build_document(
+        &cfg.smart,
+        &cfg.server.base_path,
+        fhir_base.as_deref(),
+        issuer,
+    ))
+}
+
+/// The SMART discovery document's `OpenAPI` (path at the default REST root;
+/// config-gated: `EHRBASE_REST_SMART__ENABLED`). Served pre-auth. Spec:
+/// ITS-REST `smart_app_launch/master04`.
+pub(crate) fn openapi<S: Platform>() -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState<S>>::new()
+        .routes(routes!(smart_configuration))
+        .into_openapi()
 }
 
 #[cfg(test)]
