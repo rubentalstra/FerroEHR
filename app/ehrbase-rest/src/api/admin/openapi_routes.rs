@@ -29,7 +29,7 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 /// Physically delete every EHR named in the `ehr_id` query parameter.
 #[utoipa::path(
-    delete, path = "/admin/ehr/all", tag = "admin",
+    delete, path = "/admin/ehr/all", tag = "EHR",
     params(("ehr_id" = Vec<String>, Query, description = "The EHR ids to delete.")),
     responses((status = 204, description = "Deleted."))
 )]
@@ -49,7 +49,7 @@ pub(crate) async fn admin_ehr_delete_all<S: Platform>(
 
 /// Physically delete one EHR by id.
 #[utoipa::path(
-    delete, path = "/admin/ehr/{ehr_id}", tag = "admin",
+    delete, path = "/admin/ehr/{ehr_id}", tag = "EHR",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 204, description = "Deleted."))
 )]

@@ -46,7 +46,7 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 /// List every stored ADL 1.4 operational template.
 #[utoipa::path(
-    get, path = "/definition/template/adl1.4", tag = "definition",
+    get, path = "/definition/template/adl1.4", tag = "ADL1.4",
     responses((status = 200, description = "The template ids.", body = serde_json::Value))
 )]
 pub(crate) async fn definition_template_adl1_4_list<S: Platform>(
@@ -65,7 +65,7 @@ pub(crate) async fn definition_template_adl1_4_list<S: Platform>(
 
 /// Upload an ADL 1.4 operational template (OPT XML).
 #[utoipa::path(
-    post, path = "/definition/template/adl1.4", tag = "definition",
+    post, path = "/definition/template/adl1.4", tag = "ADL1.4",
     responses((status = 201, description = "Template stored.", body = serde_json::Value))
 )]
 pub(crate) async fn definition_template_adl1_4_upload<S: Platform>(
@@ -84,7 +84,7 @@ pub(crate) async fn definition_template_adl1_4_upload<S: Platform>(
 
 /// Retrieve one ADL 1.4 template by id.
 #[utoipa::path(
-    get, path = "/definition/template/adl1.4/{template_id}", tag = "definition",
+    get, path = "/definition/template/adl1.4/{template_id}", tag = "ADL1.4",
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (status = 200, description = "The template.", body = serde_json::Value),
@@ -107,7 +107,7 @@ pub(crate) async fn definition_template_adl1_4_get<S: Platform>(
 
 /// An example COMPOSITION for an ADL 1.4 template.
 #[utoipa::path(
-    get, path = "/definition/template/adl1.4/{template_id}/example", tag = "definition",
+    get, path = "/definition/template/adl1.4/{template_id}/example", tag = "ADL1.4",
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (status = 200, description = "An example COMPOSITION.", body = serde_json::Value),
@@ -130,7 +130,7 @@ pub(crate) async fn definition_template_adl1_4_example_get<S: Platform>(
 
 /// List every stored ADL 2 template.
 #[utoipa::path(
-    get, path = "/definition/template/adl2", tag = "definition",
+    get, path = "/definition/template/adl2", tag = "ADL2",
     responses((status = 200, description = "The template ids.", body = serde_json::Value))
 )]
 pub(crate) async fn definition_template_adl2_list<S: Platform>(
@@ -149,7 +149,7 @@ pub(crate) async fn definition_template_adl2_list<S: Platform>(
 
 /// Upload an ADL 2 template.
 #[utoipa::path(
-    post, path = "/definition/template/adl2", tag = "definition",
+    post, path = "/definition/template/adl2", tag = "ADL2",
     responses((status = 201, description = "Template stored.", body = serde_json::Value))
 )]
 pub(crate) async fn definition_template_adl2_upload<S: Platform>(
@@ -168,7 +168,7 @@ pub(crate) async fn definition_template_adl2_upload<S: Platform>(
 
 /// Retrieve one ADL 2 template by id.
 #[utoipa::path(
-    get, path = "/definition/template/adl2/{template_id}", tag = "definition",
+    get, path = "/definition/template/adl2/{template_id}", tag = "ADL2",
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (status = 200, description = "The template.", body = serde_json::Value),
@@ -191,7 +191,7 @@ pub(crate) async fn definition_template_adl2_get<S: Platform>(
 
 /// An example COMPOSITION for an ADL 2 template.
 #[utoipa::path(
-    get, path = "/definition/template/adl2/{template_id}/example", tag = "definition",
+    get, path = "/definition/template/adl2/{template_id}/example", tag = "ADL2",
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (status = 200, description = "An example COMPOSITION.", body = serde_json::Value),
@@ -214,7 +214,7 @@ pub(crate) async fn definition_template_adl2_example_get<S: Platform>(
 
 /// Retrieve one ADL 2 template at a specific version.
 #[utoipa::path(
-    get, path = "/definition/template/adl2/{template_id}/{version}", tag = "definition",
+    get, path = "/definition/template/adl2/{template_id}/{version}", tag = "ADL2",
     params(
         ("template_id" = String, Path, description = "The template id."),
         ("version" = String, Path, description = "The template version.")
@@ -240,7 +240,7 @@ pub(crate) async fn definition_template_adl2_version_get<S: Platform>(
 
 /// List the stored versions of a named stored query.
 #[utoipa::path(
-    get, path = "/definition/query/{qualified_query_name}", tag = "definition",
+    get, path = "/definition/query/{qualified_query_name}", tag = "Query",
     params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
     responses(
         (status = 200, description = "The stored query versions.", body = serde_json::Value),
@@ -257,7 +257,7 @@ pub(crate) async fn definition_query_list<S: Platform>(
 
 /// Store a named AQL query (auto-versioned).
 #[utoipa::path(
-    put, path = "/definition/query/{qualified_query_name}", tag = "definition",
+    put, path = "/definition/query/{qualified_query_name}", tag = "Query",
     params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
     responses((status = 200, description = "Stored.", body = serde_json::Value))
 )]
@@ -277,7 +277,7 @@ pub(crate) async fn definition_query_store_yaml<S: Platform>(
 
 /// Retrieve a named stored query at a specific version.
 #[utoipa::path(
-    get, path = "/definition/query/{qualified_query_name}/{version}", tag = "definition",
+    get, path = "/definition/query/{qualified_query_name}/{version}", tag = "Query",
     params(
         ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
         ("version" = String, Path, description = "The stored-query version.")
@@ -303,7 +303,7 @@ pub(crate) async fn definition_query_version_get<S: Platform>(
 
 /// Store a named AQL query at a specific version.
 #[utoipa::path(
-    put, path = "/definition/query/{qualified_query_name}/{version}", tag = "definition",
+    put, path = "/definition/query/{qualified_query_name}/{version}", tag = "Query",
     params(
         ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
         ("version" = String, Path, description = "The stored-query version.")
