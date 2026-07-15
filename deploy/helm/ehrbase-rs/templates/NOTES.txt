@@ -2,20 +2,23 @@ ehrbase-rs {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Nam
 
 A pure-Rust openEHR CDR (ITS-REST 1.0.3 + AQL 1.1). See docs/enterprise/deployment.md.
 
-API base path: {{ .Values.rest.basePath }}
+Configuration: one ehrbase.toml, rendered from .Values.config into a ConfigMap
+and mounted at /etc/ehrbase/ehrbase.toml. Secrets are injected as EHRBASE_* env.
+
+API base path: {{ .Values.config.server.base_path }}
 Service:       {{ include "ehrbase-rs.fullname" . }}:{{ .Values.service.port }} ({{ .Values.service.type }})
 
 Reach it locally:
   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "ehrbase-rs.fullname" . }} 8080:{{ .Values.service.port }}
-  curl -i http://127.0.0.1:8080{{ .Values.rest.basePath | trimSuffix "/openehr/v1" }}/status
+  curl -i http://127.0.0.1:8080{{ .Values.config.server.base_path | trimSuffix "/openehr/v1" }}/status
 
-{{ if .Values.management.enabled -}}
-Health probes (public):  {{ .Values.management.basePath }}/health/liveness | /health/readiness
+{{ if .Values.config.management.enabled -}}
+Health probes (public):  {{ .Values.config.management.base_path }}/health/liveness | /health/readiness
 {{ if .Values.metrics.enabled -}}
-Prometheus (public):     {{ .Values.management.basePath }}/prometheus  (scrape annotations added)
+Prometheus (public):     {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
 {{ end -}}
 {{ else -}}
-NOTE: management.enabled=false — HTTP probes are unavailable; probes.exec must be on.
+NOTE: config.management.enabled=false — HTTP probes are unavailable; probes.exec must be on.
 {{ end }}
 ────────────────────────────────────────────────────────────────────────────
 DATABASE / MIGRATIONS (ADR-013)
@@ -28,8 +31,9 @@ as the unprivileged app role.
   ⚠  DSN source: INLINE database.url (dev/test). For production set
      database.existingSecret and remove database.url from values.
 {{ else -}}
-  ✗  No database DSN configured. Set database.existingSecret (preferred) or
-     database.url. The pod will crash-loop until a DSN is provided.
+  ⚠  No DSN configured — the server falls back to the localhost dev DSN in
+     config.db and will crash-loop against a cluster. Set database.existingSecret
+     (preferred) or database.url.
 {{ end }}
 Migrations are append-only and MUST be applied by the `ehrbase_migrator` role,
 NOT the runtime app role. Either grant the runtime DSN the migrator role, or
@@ -44,27 +48,28 @@ SECURITY POSTURE
   readOnlyRootFilesystem:  {{ .Values.securityContext.readOnlyRootFilesystem }}
   seccompProfile:          {{ .Values.securityContext.seccompProfile.type }}
   NetworkPolicy:           {{ if .Values.networkPolicy.enabled }}default-deny-ingress (API port only){{ else }}DISABLED — enable networkPolicy for PHI workloads{{ end }}
-{{ if not .Values.auth.enabled }}
-  ⚠  auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
+{{ if not .Values.config.auth.enabled }}
+  ⚠  config.auth.enabled=false — ALL requests pass UNAUTHENTICATED. Dev only.
 {{ end -}}
-{{ if not (or .Values.auth.oidc.issuer .Values.config.files) }}
-  ⚠  auth.enabled={{ .Values.auth.enabled }} but no OIDC issuer and no mounted
-     config.files (Basic user store). With no mechanism, every request 401s —
-     configure auth.oidc.issuer or supply a Basic-auth store via config.files.
+{{ if not (or (dig "oidc" "issuer" "" .Values.config.auth) (dig "basic" "users" list .Values.config.auth) .Values.config.files) }}
+  ⚠  config.auth.enabled={{ .Values.config.auth.enabled }} but no OIDC issuer, no
+     Basic user store, and no mounted config.files. With no mechanism, every
+     request 401s — add config.auth.oidc.issuer, an [[auth.basic.users]] entry
+     under config.auth.basic.users, or supply material via config.files.
 {{ end -}}
-{{ if .Values.fhirOutbound.enabled }}
-  ⚠  fhirOutbound.enabled=true — this AMQP stream carries PHI (mapped FHIR
-     resources). Ensure the broker + exchange "{{ .Values.fhirOutbound.exchange }}" are access-controlled and TLS.
+{{ if .Values.config.fhir.outbound.enabled }}
+  ⚠  config.fhir.outbound.enabled=true — this AMQP stream carries PHI (mapped FHIR
+     resources). Ensure the broker + exchange "{{ .Values.config.fhir.outbound.exchange }}" are access-controlled and TLS.
 {{ end -}}
-{{ if and .Values.multimedia.enabled .Values.multimedia.allowHttp }}
-  ⚠  multimedia.allowHttp=true — plain-HTTP object store. Dev only; prod S3 is HTTPS.
+{{ if and .Values.config.multimedia.enabled .Values.config.multimedia.allow_http }}
+  ⚠  config.multimedia.allow_http=true — plain-HTTP object store. Dev only; prod S3 is HTTPS.
 {{ end }}
 Optional integrations currently ON:
-  admin API:        {{ .Values.rest.adminEnabled }}
-  multi-tenancy:    {{ .Values.tenancy.enabled }}
-  eventing (AMQP):  {{ .Values.events.enabled }}
-  FHIR inbound:     {{ .Values.rest.fhirEnabled }}
-  FHIR outbound:    {{ .Values.fhirOutbound.enabled }} (PHI)
-  S3 multimedia:    {{ .Values.multimedia.enabled }}
-  ATNA audit:       {{ .Values.atna.enabled }}
-  ext terminology:  {{ .Values.externalTerminology.enabled }}
+  admin API:        {{ .Values.config.admin.enabled }}
+  multi-tenancy:    {{ .Values.config.tenancy.enabled }}
+  eventing (AMQP):  {{ .Values.config.events.enabled }}
+  FHIR inbound:     {{ .Values.config.fhir.api_enabled }}
+  FHIR outbound:    {{ .Values.config.fhir.outbound.enabled }} (PHI)
+  S3 multimedia:    {{ .Values.config.multimedia.enabled }}
+  ATNA audit:       {{ .Values.config.atna.enabled }}
+  ext terminology:  {{ .Values.config.terminology.external.enabled }}

@@ -14,7 +14,6 @@ use ehrbase::versioning::signature::{
 };
 use pgp::composed::{ArmorOptions, KeyType, SecretKeyParamsBuilder, SignedSecretKey};
 use rand::rngs::OsRng;
-use secrecy::SecretString;
 
 /// A short openEHR-canonical-form-like string to sign in the tests.
 const CANONICAL: &str = r#"{"_type":"ORIGINAL_VERSION","uid":{"value":"a::b::1"}}"#;
@@ -50,7 +49,8 @@ fn pgp_signer(armored_key: &str, passphrase: Option<&str>) -> Result<Signer, Sig
         enabled: true,
         mode: Mode::Pgp,
         key_path: Some(temp_file(armored_key)),
-        key_passphrase: passphrase.map(SecretString::from),
+        key_passphrase: passphrase.map(ehrbase_sm::Secret::new),
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Strict,
     };
     Signer::from_config(&config)
@@ -109,6 +109,7 @@ fn boot_fails_when_key_path_missing() {
         mode: Mode::Pgp,
         key_path: None,
         key_passphrase: None,
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Off,
     };
     assert!(matches!(
@@ -146,6 +147,7 @@ fn boot_fails_on_missing_key_file() {
         mode: Mode::Pgp,
         key_path: Some(PathBuf::from("/nonexistent/ehrbase-signing/key.asc")),
         key_passphrase: None,
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Off,
     };
     assert!(matches!(
@@ -162,6 +164,7 @@ fn digest_mode_verify_matches_and_mismatches() {
         mode: Mode::Digest,
         key_path: None,
         key_passphrase: None,
+        key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Strict,
     };
     let signer = Signer::from_config(&config).expect("digest signer");

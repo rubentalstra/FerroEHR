@@ -15,7 +15,7 @@
 //! extension it carries no ABAC resource kind (the generic PEP `Skip`s it) and
 //! no ATNA audit-table entry — the fallbacks apply automatically.
 //!
-//! The group is config-gated (`RestConfig::tenancy.enabled`, default `false`):
+//! The group is config-gated (`AppConfig::tenancy.enabled`, default `false`):
 //! when disabled every route answers `404` without touching the backend, so a
 //! single-tenant deployment never exposes tenant administration.
 

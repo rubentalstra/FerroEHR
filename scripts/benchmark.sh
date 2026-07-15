@@ -32,7 +32,7 @@
 #   BENCH_OUT        artefact root            (default: docs/benchmarks;
 #                    the SUT name is appended by the CLI).
 #   BENCH_DB_POOL    connection-pool ceiling applied to BOTH stacks in
-#                    lockstep (ehrbase-rs EHRBASE_DB_MAX_CONNECTIONS /
+#                    lockstep (ehrbase-rs EHRBASE_DB__MAX_CONNECTIONS /
 #                    upstream HikariCP maximumPoolSize; default 50 — the
 #                    config-parity dominant tunable; each stack's own
 #                    PostgreSQL max_connections default of 100 covers it).
@@ -46,7 +46,7 @@ PROFILE="${BENCH_PROFILE:-smoke}"
 SCALE="${BENCH_SCALE:-empty}"
 OUT="${BENCH_OUT:-docs/benchmarks}"
 # Pool parity: exported for both compose files (see the env docs above).
-export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
+export EHRBASE_DB__MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
 # Admission parity: ehrbase-rs ships a 256-request in-flight load-shed cap
 # (503 past it) as its production overload guard. Upstream's Tomcat admits up
@@ -55,18 +55,18 @@ export BENCH_DB_POOL="${BENCH_DB_POOL:-50}"
 # error-rate arm on bursts the server could absorb. Benchmark runs raise the
 # cap so both SUTs fail the same way (queueing latency); the value is recorded
 # in the report environment block.
-export EHRBASE_REST_MAX_IN_FLIGHT="${BENCH_RS_MAX_IN_FLIGHT:-2048}"
+export EHRBASE_SERVER__MAX_IN_FLIGHT="${BENCH_RS_MAX_IN_FLIGHT:-2048}"
 # Signing parity (benchmarking.md §3.4): version signing is an ehrbase-rs
 # extension upstream does not perform — running it on-for-us/absent-for-them
 # is an unfair self-handicap in throughput comparisons. OFF for benchmark
 # runs, labeled in the report env; set BENCH_SIGNING=1 to measure with it.
 if [ "${BENCH_SIGNING:-0}" != "1" ]; then
-  export EHRBASE_SIGNING_ENABLED=false
+  export EHRBASE_SIGNING__ENABLED=false
 fi
 # Logging parity (benchmarking.md §3.4 "Logging: equal, minimal (warn)"): both
 # SUTs run at warn during measured runs — per-request info spans/logs are
 # measurable overhead at high RPS and neither side may pay them asymmetrically.
-export EHRBASE_LOG_FILTER="${BENCH_RS_LOG_FILTER:-warn}"
+export EHRBASE_LOG__FILTER="${BENCH_RS_LOG_FILTER:-warn}"
 export LOGGING_LEVEL_ROOT="${BENCH_JAVA_LOG_LEVEL:-WARN}"
 WARD_SIZE="${BENCH_WARD_SIZE:-20}"
 LOAD_FACTOR="${BENCH_LOAD_FACTOR:-1.0}"

@@ -72,7 +72,7 @@ impl JwtValidator {
         }
 
         let keys = if let Some(secret) = &cfg.hmac_secret {
-            KeySource::Hmac(DecodingKey::from_secret(secret.0.as_bytes()))
+            KeySource::Hmac(DecodingKey::from_secret(secret.expose().as_bytes()))
         } else if let Some(jwks_json) = &cfg.jwks_json {
             let set: JwkSet = serde_json::from_str(jwks_json)
                 .map_err(|e| format!("invalid oidc.jwks_json: {e}"))?;
@@ -247,8 +247,9 @@ mod tests {
                 issuer: ISSUER.to_owned(),
                 audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(super::super::config::Redacted(SECRET.to_owned())),
+                hmac_secret: Some(ehrbase_sm::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
+                ..OidcConfig::default()
             },
             default_role_claims(),
         )

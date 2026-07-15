@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ehrbase_sm::Platform;
 
-use crate::config::RestConfig;
+use crate::config::AppConfig;
 use crate::extensions::access::authz::AuthzHandle;
 use crate::extensions::management::Observability;
 
@@ -44,7 +44,7 @@ impl<S: Platform> Clone for AppState<S> {
 
 #[derive(Debug)]
 struct Inner<S: Platform> {
-    config: RestConfig,
+    config: AppConfig,
     backend: Arc<S>,
     /// The authorization handle (the RBAC gate), when access control is wired in
     /// (the binary supplies it); `None` restores authentication-only behaviour.
@@ -57,7 +57,7 @@ impl<S: Platform> AppState<S> {
     /// Construct state with a concrete service (the `ehrbase` application injects
     /// its DB-backed service here).
     #[must_use]
-    pub fn with_backend(config: RestConfig, backend: Arc<S>) -> Self {
+    pub fn with_backend(config: AppConfig, backend: Arc<S>) -> Self {
         Self::with_parts(config, backend, None, Observability::default())
     }
 
@@ -65,7 +65,7 @@ impl<S: Platform> AppState<S> {
     /// observability bundle.
     #[must_use]
     pub fn with_parts(
-        config: RestConfig,
+        config: AppConfig,
         backend: Arc<S>,
         authz: Option<Arc<AuthzHandle>>,
         observability: Observability,
@@ -82,7 +82,7 @@ impl<S: Platform> AppState<S> {
 
     /// The server configuration.
     #[must_use]
-    pub fn config(&self) -> &RestConfig {
+    pub fn config(&self) -> &AppConfig {
         &self.inner.config
     }
 

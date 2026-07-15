@@ -37,7 +37,7 @@
 //! precondition to `versioned_object_does_not_exist` (→ `404`), so no new SM
 //! `CALL_STATUS_TYPE` is needed.
 //!
-//! The group is config-gated (`RestConfig::terminology.enabled`, default
+//! The group is config-gated (`AppConfig::terminology_api_enabled`, default
 //! `false`): when disabled every terminology route answers `404` without
 //! touching the backend.
 
@@ -114,7 +114,7 @@ async fn run<S: Platform>(
 ) -> Result<Response, RestError> {
     // Config gate: the terminology extension is opt-in. When disabled every
     // route answers 404 (as if unmounted) without consulting the backend.
-    if !state.config().terminology.enabled {
+    if !state.config().terminology_api_enabled {
         return Err(RestError(ApiError::NotFound(
             "terminology API is disabled".to_owned(),
         )));

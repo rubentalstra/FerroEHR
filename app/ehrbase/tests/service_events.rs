@@ -24,7 +24,7 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::events::{EventError, EventPublisher, EventsConfig, start_with_publisher};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::{EhrCompositionService, EhrExtractService, EhrService, EhrStatusService};
@@ -64,7 +64,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));

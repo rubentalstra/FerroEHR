@@ -38,7 +38,9 @@ services:
       - work_mem=${BENCH_PG_WORK_MEM:-16MB}
     environment:
       POSTGRES_PASSWORD: postgres
-      EHRBASE_DB_PASSWORD: ehrbase
+      # DB-container app-role password (init script); outside the server's
+      # reserved EHRBASE_ namespace.
+      PG_INIT_PASSWORD: ehrbase
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -53,15 +55,17 @@ services:
       ehrbase-rs-db:
         condition: service_healthy
     environment:
-      EHRBASE_DB_URL: postgres://ehrbase:ehrbase@ehrbase-rs-db:5432/ehrbase
-      EHRBASE_REST_CONFIG: /etc/ehrbase/ehrbase.toml
+      # The mounted ehrbase.dev.toml is auto-discovered at
+      # /etc/ehrbase/ehrbase.toml (config search-order position 4); these
+      # EHRBASE_ env overrides use the mechanical `__` mapping and beat the file.
+      EHRBASE_DB__URL: postgres://ehrbase:ehrbase@ehrbase-rs-db:5432/ehrbase
       # Pool parity with the upstream stack's HikariCP ceiling below — this
       # forward was missing, silently pinning published-image runs to the
       # app default (20) while upstream got BENCH_DB_POOL.
-      EHRBASE_DB_MAX_CONNECTIONS: ${BENCH_DB_POOL:-10}
+      EHRBASE_DB__MAX_CONNECTIONS: ${BENCH_DB_POOL:-10}
       # Admission parity (see scripts/benchmark.sh): raised so overload fails
       # as queueing latency like upstream's Tomcat window, not shed 503s.
-      EHRBASE_REST_MAX_IN_FLIGHT: ${BENCH_RS_MAX_IN_FLIGHT:-2048}
+      EHRBASE_SERVER__MAX_IN_FLIGHT: ${BENCH_RS_MAX_IN_FLIGHT:-2048}
     volumes:
       - ../ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
@@ -124,10 +128,10 @@ services:
       # Allow template overwrite so repeat runs are idempotent.
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "true"
       # Logging parity (benchmarking.md §3.4): warn during measured runs,
-      # matching the ehrbase-rs side's EHRBASE_LOG_FILTER.
+      # matching the ehrbase-rs side's EHRBASE_LOG__FILTER.
       LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
       # HikariCP pool ceiling — raised in lockstep with ehrbase-rs's
-      # EHRBASE_DB_MAX_CONNECTIONS (config parity; both default 10).
+      # EHRBASE_DB__MAX_CONNECTIONS (config parity; both default 10).
       SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: ${BENCH_DB_POOL:-10}
     ports:
       - "8091:8080"

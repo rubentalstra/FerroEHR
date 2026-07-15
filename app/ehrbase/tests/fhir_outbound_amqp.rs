@@ -25,7 +25,7 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::fhir::{FhirOutboundConfig, start};
 use ehrbase::service::EhrbaseService;
 use ehrbase_sm::DefinitionAdapter;
@@ -46,7 +46,7 @@ async fn migrated_pool(pg: &ContainerAsync<Postgres>, name: &str) -> PgPool {
         .execute(&mut conn)
         .await
         .expect("create db");
-    let settings = DbSettings::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"));
+    let settings = DbConfig::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"));
     let pool = db::connect(&settings).await.expect("pool");
     db::run_migrations(&pool).await.expect("migrate");
     pool
@@ -98,7 +98,7 @@ fn observation() -> Value {
 fn outbound_config(url: String) -> FhirOutboundConfig {
     FhirOutboundConfig {
         enabled: true,
-        url,
+        url: ehrbase_sm::SecretUrl::new(url),
         exchange: EXCHANGE.to_owned(),
         poll_interval_ms: 50,
         publish_max_retries: 1,

@@ -86,7 +86,7 @@ pub(super) async fn run<S: Platform>(
     const VSEG: &str = "versioned_party_relationship";
     let h = &parts.headers;
     let q = parts.query.as_deref();
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "party_relationship_create" => {

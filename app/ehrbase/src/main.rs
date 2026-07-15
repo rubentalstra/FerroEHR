@@ -1,66 +1,122 @@
 //! `EHRbase` server binary.
 //!
 //! Boots the `ehrbase-rest` ITS-REST server backed by the DB-backed
-//! [`EhrbaseService`](ehrbase::service::EhrbaseService): initialises tracing,
-//! loads configuration (`figment`), connects the `PostgreSQL` pool, runs
-//! migrations, boots the ATNA audit sender, and serves. On shutdown the audit
-//! queue is drained before exit.
+//! [`EhrbaseService`](ehrbase::service::EhrbaseService): loads the one
+//! configuration tree ([`ehrbase::config`]), initialises tracing, connects the
+//! `PostgreSQL` pool, runs migrations, boots the ATNA audit sender, and serves.
+//! On shutdown the audit queue is drained before exit.
 
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
-use ehrbase::versioning::signature::{Signer, SigningConfig};
-use ehrbase_rest::access::authz::AuthzConfig;
-use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry, ManagementConfig};
+use ehrbase::versioning::signature::Signer;
+use ehrbase_rest::config::AppConfig;
+use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry};
 use ehrbase_rest::{AuthzHandle, Observability};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db;
 use ehrbase::service::EhrbaseService;
 use ehrbase::telemetry::{self, TelemetryConfig, indicators};
 
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// The default endpoint the `healthcheck` subcommand probes: the public,
-/// auth-exempt `/rest/status` route the server serves on its default bind.
+/// The default endpoint the `healthcheck` subcommand probes.
 const DEFAULT_HEALTHCHECK_URL: &str = "http://127.0.0.1:8080/ehrbase/rest/status";
 
 /// `EHRbase` server command-line interface.
 #[derive(Debug, Parser)]
 #[command(name = "ehrbase", version, about = "openEHR-conformant CDR server")]
 struct Cli {
+    /// Path to the config file (overrides the search order: `EHRBASE_CONFIG`,
+    /// `./ehrbase.toml`, `/etc/ehrbase/ehrbase.toml`).
+    #[arg(long, global = true)]
+    config: Option<PathBuf>,
+    /// Repeatable dotted-path override, highest precedence (e.g.
+    /// `--set db.max_connections=40`).
+    #[arg(long = "set", global = true, value_parser = parse_override)]
+    set: Vec<(String, String)>,
     #[command(subcommand)]
     command: Option<Command>,
 }
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Probe the running server's status endpoint; exit 0 on a 2xx response,
-    /// 1 otherwise. Used as the container `HEALTHCHECK` (works in a shell-less
-    /// distroless image) and by compose/Kubernetes probes.
+    /// Probe the running server's status endpoint; exit 0 on 2xx, 1 otherwise.
     Healthcheck {
         /// The status URL to probe.
         #[arg(long, env = "EHRBASE_HEALTHCHECK_URL", default_value = DEFAULT_HEALTHCHECK_URL)]
         url: String,
     },
+    /// Configuration utilities (validate / print the annotated default).
+    Config {
+        #[command(subcommand)]
+        cmd: ConfigCmd,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum ConfigCmd {
+    /// Validate the effective configuration (3-pass strict + semantic) and print
+    /// it, redacted; exit 0 when valid, 1 otherwise.
+    Check,
+    /// Emit the annotated default configuration template to stdout.
+    Default,
+}
+
+/// Parse a `--set key=value` pair.
+fn parse_override(raw: &str) -> Result<(String, String), String> {
+    raw.split_once('=')
+        .map(|(k, v)| (k.trim().to_owned(), v.to_owned()))
+        .ok_or_else(|| format!("expected key=value, got `{raw}`"))
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    match Cli::parse().command {
+    let cli = Cli::parse();
+    match cli.command {
         Some(Command::Healthcheck { url }) => healthcheck(&url).await,
-        None => serve().await,
+        Some(Command::Config { cmd }) => run_config(&cmd, cli.config.as_deref(), &cli.set),
+        None => serve(cli.config.as_deref(), &cli.set).await,
     }
 }
 
-/// Probe `url` and return `Ok(())` iff the response status is 2xx. An `Err`
-/// makes the process exit non-zero (via `anyhow`'s `Termination`), which is
-/// exactly the 0/1 contract a Docker `HEALTHCHECK` expects.
+/// `ehrbase config check` / `ehrbase config default`.
+fn run_config(
+    cmd: &ConfigCmd,
+    config: Option<&Path>,
+    set: &[(String, String)],
+) -> anyhow::Result<()> {
+    match cmd {
+        ConfigCmd::Default => {
+            print!("{}", ehrbase::config::DEFAULT_TEMPLATE);
+            Ok(())
+        }
+        ConfigCmd::Check => {
+            let cfg = ehrbase::config::load(config, set).map_err(|e| anyhow::anyhow!("{e}"))?;
+            cfg.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
+            let rendered = cfg.to_redacted_toml().map_err(|e| anyhow::anyhow!("{e}"))?;
+            println!("{rendered}");
+            if cfg.db.is_dev_default() {
+                eprintln!(
+                    "note: [db].url is the built-in DEVELOPMENT DEFAULT; set it for any \
+                     non-dev deployment."
+                );
+            }
+            eprintln!("configuration OK");
+            Ok(())
+        }
+    }
+}
+
+/// Probe `url`; `Ok(())` iff the response status is 2xx.
 async fn healthcheck(url: &str) -> anyhow::Result<()> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
@@ -76,72 +132,64 @@ async fn healthcheck(url: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Boot the server: telemetry, config, pool, migrations, audit, health, then serve.
+/// Boot the server: config, telemetry, pool, migrations, audit, health, serve.
 #[allow(clippy::too_many_lines)] // linear boot sequence; splitting it would obscure order
-async fn serve() -> anyhow::Result<()> {
-    // Load configuration first (telemetry init needs the log/otel config).
-    let telemetry_config = TelemetryConfig::load().context("loading telemetry configuration")?;
+async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> anyhow::Result<()> {
+    // One load + one aggregated validate (all errors at once), then distribute.
+    let config =
+        ehrbase::config::load(config_path, overrides).map_err(|e| anyhow::anyhow!("{e}"))?;
+    config.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
 
-    // Greet with the ASCII banner on stdout BEFORE telemetry/log init, so the
-    // structured formatter never mangles the art. Skipped under `json` logging
-    // (EHRBASE_LOG_FORMAT=json) — machine log consumers want one JSON object per
-    // line, not decorative art; every other mode (auto/pretty) prints it.
+    let telemetry_config = TelemetryConfig {
+        log: config.log.clone(),
+        otel: config.telemetry.clone(),
+    };
+
+    // ASCII banner before telemetry/log init (skipped under `json` logging).
     if telemetry_config.log.format != ehrbase::telemetry::LogFormat::Json {
         ehrbase::banner::print();
     }
 
-    let rest_config = ehrbase_rest::RestConfig::load().context("loading REST configuration")?;
-    let management_config = ManagementConfig::load().context("loading management configuration")?;
-    let audit_config = AuditConfig::load().context("loading ATNA audit configuration")?;
-    let authz_config = AuthzConfig::load().context("loading authorization configuration")?;
-    authz_config
-        .validate()
-        .context("validating authorization configuration")?;
-    let db_settings = DbSettings::from_env().context("loading database settings")?;
-
-    // Telemetry: install the subscriber (logs + optional OTLP spans), the
-    // Prometheus recorder, and (opt-in) the OTLP metrics push — before anything
-    // else emits spans/metrics.
     let build_info = BuildInfo::current();
     let mut telemetry =
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
-    let pool = db::connect(&db_settings)
+    // Review condition 1: announce the dev-default DSN prominently (never a
+    // silent production trap) — now that logging is up.
+    if config.db.is_dev_default() {
+        tracing::warn!(
+            url = ehrbase::db::DEFAULT_URL,
+            "[db].url is the built-in DEVELOPMENT DEFAULT ({}); no file/env/CLI value was \
+             supplied. Set db.url (EHRBASE_DB__URL / DATABASE_URL) for any non-dev deployment — \
+             production MUST override it.",
+            ehrbase::db::DEFAULT_URL,
+        );
+    }
+
+    let pool = db::connect(&config.db)
         .await
         .context("connecting to PostgreSQL")?;
     db::run_migrations(&pool)
         .await
         .context("applying migrations")?;
 
-    // Boot the ATNA audit sender (fail-open at boot: log and continue without
-    // auditing if the transport cannot be established, so the CDR still serves).
+    // ATNA audit (fail-open at boot).
+    let audit_config: AuditConfig = config.atna.clone();
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
-    // Contribution-outbox eventing: off by default. When enabled, the
-    // publisher drains the transactional outbox to the broker at-least-once; a
-    // broker that is down is tolerated (the outbox buffers), so we spawn it
-    // unconditionally-on-enabled and never fail boot on the broker.
-    let events_config = ehrbase::extensions::events::EventsConfig::load()
-        .context("loading eventing configuration")?;
-    // The FHIR outbound emitter is the second event-outbox consumer; load its
-    // config now (used again below to spawn it) so the transactional outbox
-    // write can be gated on whether ANY consumer is configured on. No consumer
-    // configured ⇒ the per-commit `event_outbox` INSERT is pure overhead and is
-    // skipped (our own extension; no openEHR spec governs eventing).
-    let fhir_outbound_config = ehrbase::extensions::fhir::FhirOutboundConfig::load()
-        .context("loading FHIR outbound configuration")?;
-    let outbox_enabled = events_config.enabled || fhir_outbound_config.enabled;
-    let events_handle = if events_config.enabled {
-        tracing::info!(exchange = %events_config.exchange, "contribution-outbox eventing enabled");
+    // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
+    let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
+    let events_handle = if config.events.enabled {
+        tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
         Some(ehrbase::extensions::events::start(
-            events_config,
+            config.events.clone(),
             pool.clone(),
         ))
     } else {
         None
     };
 
-    // Health indicators (DB ping + migrations-applied + audit-sender + events).
+    // Health indicators.
     let mut indicators: Vec<Arc<dyn HealthIndicator>> = vec![
         Arc::new(indicators::DbHealth::new(pool.clone())),
         Arc::new(indicators::MigrationsHealth::new(pool.clone())),
@@ -154,17 +202,13 @@ async fn serve() -> anyhow::Result<()> {
     }
     let health = HealthRegistry::new(indicators);
 
-    // Start the background gauge sampler over the pool.
     telemetry.start_samplers(pool.clone());
 
-    let env_snapshot = Arc::new(env_snapshot(
-        &rest_config,
-        &management_config,
-        &telemetry_config,
-        &db_settings,
-    ));
+    // `/management/env` reports the whole redacted config tree (secrets rendered
+    // `***` by construction — P-6), replacing the old ad-hoc snapshot.
+    let env_snapshot = Arc::new(serde_json::to_value(&config).unwrap_or(serde_json::Value::Null));
     let observability = Observability {
-        management: management_config,
+        management: config.management.clone(),
         prometheus: Some(telemetry.prometheus_handle()),
         log_reload: Some(telemetry.log_reload()),
         health,
@@ -172,37 +216,26 @@ async fn serve() -> anyhow::Result<()> {
         env_snapshot,
     };
 
-    // Version signing (RM common §"Digital Signature"; docs/design/version-signing.md).
-    // Fail-closed at boot: `pgp` mode without a loadable, usable key refuses to
-    // start (Signer::from_config performs the key load + a test signature).
-    let signing_config = SigningConfig::load().context("loading signing configuration")?;
+    // Version signing (fail-closed at boot for `pgp` without a usable key).
     let signer =
-        Arc::new(Signer::from_config(&signing_config).context("initialising the version signer")?);
+        Arc::new(Signer::from_config(&config.signing).context("initialising the version signer")?);
     tracing::info!(
         signing = signer.enabled(),
         verify_on_read = ?signer.verify_on_read(),
         "version signing configured"
     );
 
-    // The audit sender (when enabled) is injected into the platform service:
-    // it realizes the SM `SystemLog` component the REST audit layer emits
-    // through (the system_log module).
     let audit_enabled = audit_sender.is_some();
     let mut service = EhrbaseService::new(pool.clone())
         .with_signer(signer)
-        .with_outbox_enabled(outbox_enabled);
+        .with_outbox_enabled(outbox_enabled)
+        .with_query_config(&config.query);
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
     }
 
-    // Opt-in external FHIR terminology provider (B4): when a deployment
-    // configures one, wire it so AQL `TERMINOLOGY('expand', 'hl7.org/fhir/…',
-    // …)` resolves against it; otherwise AQL terminology expansion routes only
-    // to the in-process `openehr-term` bundle.
-    match ehrbase::service::ExternalTerminologyConfig::load()
-        .context("loading external-terminology configuration")?
-        .default_provider()
-    {
+    // Opt-in external FHIR terminology provider.
+    match config.terminology.external.default_provider() {
         Some(Ok(provider)) => {
             tracing::info!("external FHIR terminology provider configured");
             service = service.with_external_terminology(Arc::new(provider));
@@ -211,12 +244,9 @@ async fn serve() -> anyhow::Result<()> {
         None => {}
     }
 
-    // Opt-in Subject Proxy FHIR-frame executor: when a deployment configures FHIR
-    // systems (EHRBASE_SUBJECT_PROXY__SYSTEMS__…), an `API_CALL`/`fhir_get`
-    // DATA_FRAME retrieves from them (`I_DATA_BINDING`, `hl7_fhir_sample.adoc`);
-    // otherwise every FHIR frame is a typed rejection (fail-closed).
-    if let Some(fhir) = ehrbase::service::SubjectProxyConfig::load()
-        .context("loading subject-proxy configuration")?
+    // Opt-in Subject Proxy FHIR-frame executor (fail-closed).
+    if let Some(fhir) = config
+        .subject_proxy
         .build()
         .context("initialising the subject-proxy FHIR executor")?
     {
@@ -224,38 +254,29 @@ async fn serve() -> anyhow::Result<()> {
         service = service.with_subject_proxy(Arc::new(fhir));
     }
 
-    // Opt-in DV_MULTIMEDIA externalization: off by default (inline
-    // behaviour byte-identical). When enabled, large inline media is offloaded
-    // to S3-compatible object storage on commit and re-inlined on demand.
-    let multimedia_config = ehrbase::extensions::multimedia::MultimediaConfig::load()
-        .context("loading multimedia configuration")?;
+    // Opt-in DV_MULTIMEDIA externalization.
     if let Some(engine) =
-        ehrbase::extensions::multimedia::MultimediaEngine::from_config(&multimedia_config)
+        ehrbase::extensions::multimedia::MultimediaEngine::from_config(&config.multimedia)
             .context("initialising the multimedia object store")?
     {
         tracing::info!(
-            bucket = %multimedia_config.bucket,
-            threshold_bytes = multimedia_config.threshold_bytes,
-            "DV_MULTIMEDIA externalization enabled (S3-compatible object storage)"
+            bucket = %config.multimedia.bucket,
+            threshold_bytes = config.multimedia.threshold_bytes,
+            "DV_MULTIMEDIA externalization enabled"
         );
         service = service.with_multimedia(Arc::new(engine));
     }
 
-    // The service is now fully built; share it (the FHIR outbound emitter and the
-    // REST server both hold it).
     let service = Arc::new(service);
 
-    // FHIR outbound emitter: off by default. When enabled,
-    // it walks committed outbox rows, reverse-maps matching COMPOSITIONs, and
-    // publishes the FHIR resources to the broker — carrying PHI by design, hence
-    // its own explicit gate (a separate switch from the REST FHIR connector).
-    let fhir_outbound_handle = if fhir_outbound_config.enabled {
+    // FHIR outbound emitter (off by default; carries PHI).
+    let fhir_outbound_handle = if config.fhir.outbound.enabled {
         tracing::info!(
-            exchange = %fhir_outbound_config.exchange,
+            exchange = %config.fhir.outbound.exchange,
             "FHIR outbound emitter enabled (publishes clinical FHIR resources)"
         );
         Some(ehrbase::extensions::fhir::start(
-            fhir_outbound_config,
+            config.fhir.outbound.clone(),
             pool.clone(),
             service.clone(),
         ))
@@ -263,67 +284,52 @@ async fn serve() -> anyhow::Result<()> {
         None
     };
 
-    // Build the RBAC gate. Only wired when authentication is enabled (the gate
-    // runs after authentication); `from_config` yields `None` when RBAC is
-    // disabled, restoring authentication-only behaviour.
-    let authz = if rest_config.auth.enabled {
-        AuthzHandle::from_config(&authz_config, &rest_config.base_path).map(Arc::new)
+    // The RBAC gate — only wired when authentication is enabled.
+    let authz = if config.auth.enabled {
+        AuthzHandle::from_config(&config.authz, &config.server.base_path).map(Arc::new)
     } else {
         None
     };
 
+    // Assemble the REST adapter's runtime config view from the tree.
+    let app_config = AppConfig {
+        server: config.server.clone(),
+        auth: config.auth.clone(),
+        admin: config.admin.clone(),
+        tenancy: config.tenancy.clone(),
+        smart: config.smart.clone(),
+        fhir_api_enabled: config.fhir.api_enabled,
+        terminology_api_enabled: config.terminology.api_enabled,
+        events_admin_api: config.events.admin_api,
+    };
+
     tracing::info!(
-        bind = %rest_config.bind,
-        base_path = %rest_config.base_path,
+        bind = %app_config.server.bind,
+        base_path = %app_config.server.base_path,
         audit = audit_enabled,
         rbac = authz.is_some(),
         management = observability.management.enabled,
         "starting ehrbase"
     );
-    ehrbase_rest::serve_full(rest_config, service, authz, observability)
+    ehrbase_rest::serve_full(app_config, service, authz, observability)
         .await
         .context("serving ehrbase-rest")?;
 
-    // The server has stopped and dropped its audit-sender clone; drain the queue.
     if let Some(handle) = audit_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
-    // Stop the eventing publisher (a final best-effort drain; unpublished rows
-    // stay pending in the outbox and drain on next start — at-least-once).
     if let Some(handle) = events_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
-    // Stop the FHIR outbound emitter (rows past its cursor emit on next start —
-    // at-least-once).
     if let Some(handle) = fhir_outbound_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
-    // Flush OTel exporters + stop samplers on the same shutdown path.
     telemetry.shutdown().await;
     Ok(())
 }
 
-/// Compose the effective-configuration snapshot for `/management/env`. Secrets
-/// (auth hashes, HMAC/JWKS material) and the DB DSN credentials are masked by
-/// the management endpoint's redactor at render time; this only assembles the
-/// structured view.
-fn env_snapshot(
-    rest: &ehrbase_rest::RestConfig,
-    management: &ManagementConfig,
-    telemetry: &TelemetryConfig,
-    db: &DbSettings,
-) -> serde_json::Value {
-    serde_json::json!({
-        "rest": rest,
-        "management": management,
-        "telemetry": telemetry,
-        "db": { "url": db.url },
-    })
-}
-
-/// Start the audit subsystem from config, wiring the DB-backed subject resolver
-/// when `resolve_subject` is enabled. Returns `(None, None)` when auditing is
-/// disabled or fails to start (fail-open at boot).
+/// Start the audit subsystem from config. `(None, None)` when disabled or on a
+/// boot failure (fail-open).
 async fn start_audit(
     config: &AuditConfig,
     pool: &PgPool,
@@ -343,16 +349,13 @@ async fn start_audit(
     }
 }
 
-/// A background-only, indexed lookup of `ehr.subject_id` for the Patient-Number
-/// participant object. Keeps `ehrbase-audit` free of any DB dependency (the
-/// binary owns the pool and hands the sender this closure).
+/// A background-only indexed lookup of `ehr.subject_id` for the Patient-Number
+/// participant object.
 fn subject_resolver(pool: PgPool) -> SubjectResolver {
     Arc::new(move |ehr_id: String| {
         let pool = pool.clone();
         Box::pin(async move {
             let id = Uuid::parse_str(&ehr_id).ok()?;
-            // `subject_id` is the promoted EHR_STATUS subject.external_ref id
-            // (migrations/ehr/0001_schema.sql), indexed via the PK on `id`.
             sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
                 .bind(id)
                 .fetch_optional(&pool)

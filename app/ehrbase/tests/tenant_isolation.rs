@@ -20,7 +20,7 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
@@ -92,7 +92,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create database");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));

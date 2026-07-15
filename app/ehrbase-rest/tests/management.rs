@@ -10,11 +10,11 @@ use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::RestConfig;
-use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser, Redacted};
+use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase_rest::management::{
     AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, ManagementConfig, Observability,
 };
+use ehrbase_rest::{AppConfig, ServerConfig};
 
 mod common;
 use http::{Request, StatusCode, header};
@@ -39,7 +39,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
         basic: Some(BasicConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
-                password_hash: Redacted(hash("pw")),
+                password_hash: ehrbase_sm::Secret::new(hash("pw")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         }),
@@ -52,12 +52,13 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
 /// Build an app with the management surface enabled, one endpoint (`info`) set
 /// to `level`, and the given admin-scope configuration.
 fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
-    let config = RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: auth_config(admin_scope),
-        swagger_ui: false,
-        ..RestConfig::default()
+        ..Default::default()
     };
     let observability = Observability {
         management: ManagementConfig {
@@ -158,15 +159,16 @@ fn recorder() -> &'static PrometheusHandle {
 }
 
 fn app_with_metrics() -> Router {
-    let config = RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false, // exercise the API path without auth in this test
             ..AuthConfig::default()
         },
-        swagger_ui: false,
-        ..RestConfig::default()
+        ..Default::default()
     };
     let observability = Observability {
         management: ManagementConfig {
@@ -257,15 +259,16 @@ fn looks_like_id(value: &str) -> bool {
 #[tokio::test]
 async fn separate_port_mode_keeps_management_off_the_main_app() {
     // With `management.port` set, the main app must NOT mount /management…
-    let config = RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false,
             ..AuthConfig::default()
         },
-        swagger_ui: false,
-        ..RestConfig::default()
+        ..Default::default()
     };
     let observability = Observability {
         management: ManagementConfig {

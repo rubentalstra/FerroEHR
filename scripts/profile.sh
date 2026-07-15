@@ -16,8 +16,8 @@ OUT="docs/benchmarks/profiles/${STAMP}-L${L}-${SCALE}.md"
 mkdir -p docs/benchmarks/profiles
 
 # Pool/signing parity identical to the benchmark harness.
-export EHRBASE_DB_MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
-export EHRBASE_SIGNING_ENABLED=false
+export EHRBASE_DB__MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
+export EHRBASE_SIGNING__ENABLED=false
 
 PSQL() { docker exec ehrbase-rs-ehrbase-postgres-1 psql -U ehrbase -d ehrbase -Atc "$1"; }
 PSQLF() { docker exec ehrbase-rs-ehrbase-postgres-1 psql -U postgres -d ehrbase -c "$1"; }

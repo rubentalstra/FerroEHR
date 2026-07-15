@@ -25,10 +25,10 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use tower::ServiceExt;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{FhirConfig, RestConfig};
+use ehrbase_rest::{AppConfig, ServerConfig};
 use ehrbase_sm::DefinitionAdapter;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -75,7 +75,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));
@@ -90,20 +90,18 @@ fn fixture(rel: &str) -> String {
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"))
 }
 
-fn config(fhir_enabled: bool) -> RestConfig {
-    RestConfig {
-        base_path: BASE.to_owned(),
-        swagger_ui: false,
+fn config(fhir_enabled: bool) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            base_path: BASE.to_owned(),
+            swagger_ui: false,
+            ..ServerConfig::default()
+        },
         auth: AuthConfig {
             enabled: false,
-            basic: None,
-            oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
-        fhir: FhirConfig {
-            enabled: fhir_enabled,
-        },
+        fhir_api_enabled: fhir_enabled,
         ..Default::default()
     }
 }

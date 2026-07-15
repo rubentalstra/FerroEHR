@@ -44,7 +44,7 @@ pub(super) async fn run<S: Platform>(
     let ok = StatusCode::OK;
     let created = StatusCode::CREATED;
     let no_content = StatusCode::NO_CONTENT;
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "composition_create" => {

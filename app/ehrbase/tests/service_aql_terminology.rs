@@ -32,7 +32,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 use ehrbase_sm::{
@@ -78,7 +78,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create db");
-        let settings = DbSettings::new(format!(
+        let settings = DbConfig::new(format!(
             "postgres://postgres:postgres@{}:{}/{name}",
             self.host, self.port
         ));

@@ -73,71 +73,88 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 data:
-  # ── Database pool (non-secret; the DSN itself is in the Secret) ──────────────
-  EHRBASE_DB_MAX_CONNECTIONS: "10"
-  EHRBASE_DB_MIN_CONNECTIONS: "0"
-  EHRBASE_DB_ACQUIRE_TIMEOUT_SECS: "30"
-
-  # ── REST surface (extension groups OFF by default) ──────────────────────────
-  EHRBASE_REST_BIND: "0.0.0.0:8080"
-  EHRBASE_REST_BASE_PATH: "/ehrbase/rest/openehr/v1"
-  EHRBASE_REST_SWAGGER_UI: "true"
-  EHRBASE_REST_CORS_PERMISSIVE: "false"
-  EHRBASE_REST_ADMIN__ENABLED: "false"
-  EHRBASE_REST_TERMINOLOGY__ENABLED: "false"
-  EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED: "false"
-  EHRBASE_REST_FHIR__ENABLED: "false"
-
-  # ── Multi-tenancy (OFF by default) ──────────────────────────────────────────
-  EHRBASE_REST_TENANCY__ENABLED: "false"
-  EHRBASE_REST_TENANCY__CLAIM: "tenant"
-
-  # ── Authentication (Basic + OAuth2/OIDC; enabled by default) ────────────────
-  EHRBASE_REST_AUTH__ENABLED: "true"
-
-  # ── Authorization: coarse RBAC (on by default) + ABAC (off) ─────────────────
-  EHRBASE_AUTHZ_RBAC__ENABLED: "true"
-  EHRBASE_AUTHZ_RBAC__ADMIN_ROLE: "ADMIN"
-  EHRBASE_AUTHZ_RBAC__USER_ROLE: "USER"
-  EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS: "admin_only"
-  EHRBASE_AUTHZ_ABAC__ENABLED: "false"
-
-  # ── Management / observability surface ──────────────────────────────────────
-  EHRBASE_MANAGEMENT_ENABLED: "true"
-  EHRBASE_MANAGEMENT_BASE_PATH: "/management"
-  EHRBASE_MANAGEMENT_ACCESS_DEFAULT: "admin_only"
-  EHRBASE_MANAGEMENT_PROBES_ENABLED: "true"
-  EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH: "off"
-  EHRBASE_MANAGEMENT_ENDPOINTS_INFO: "off"
-  EHRBASE_MANAGEMENT_ENDPOINTS_METRICS: "off"
-  EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS: "off"
-  EHRBASE_MANAGEMENT_ENDPOINTS_ENV: "off"
-  EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS: "off"
-
-  # ── Telemetry / logging ─────────────────────────────────────────────────────
-  EHRBASE_LOG_FORMAT: "json"
-  EHRBASE_OTEL_METRICS_PUSH: "false"
-
-  # ── Version signing (enabled/digest by default) ─────────────────────────────
-  EHRBASE_SIGNING_ENABLED: "true"
-  EHRBASE_SIGNING_MODE: "digest"
-  EHRBASE_SIGNING_VERIFY_ON_READ: "off"
-
-  # ── ATNA system log (OFF by default) ────────────────────────────────────────
-  EHRBASE_ATNA_ENABLED: "false"
-
-  # ── Contribution-outbox eventing → AMQP (OFF; PHI-free envelopes) ───────────
-  EHRBASE_EVENTS_ENABLED: "false"
-
-  # ── FHIR OUTBOUND emitter → AMQP (OFF; PHI-bearing stream) ──────────────────
-  EHRBASE_FHIR_OUTBOUND_ENABLED: "false"
-
-  # ── DV_MULTIMEDIA externalization → S3 (OFF; PHI blobs) ─────────────────────
-  EHRBASE_MULTIMEDIA_ENABLED: "false"
-
-  # ── External terminology validation (OFF by default) ────────────────────────
-  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED: "false"
-  EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR: "false"
+  # The whole server configuration as one ehrbase.toml, mounted at
+  # /etc/ehrbase/ehrbase.toml (config search-order position 4). Rendered from
+  # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
+  # here — they are injected as EHRBASE_* env from the Secret and override the file.
+  ehrbase.toml: |
+    [admin]
+      enabled = false
+    
+    [atna]
+      enabled = false
+    
+    [auth]
+      enabled = true
+    
+    [authz]
+      [authz.abac]
+        enabled = false
+      [authz.rbac]
+        admin_role = "ADMIN"
+        enabled = true
+        management_access = "admin_only"
+        user_role = "USER"
+    
+    [db]
+      acquire_timeout_secs = 30.0
+      max_connections = 10.0
+      min_connections = 0.0
+    
+    [events]
+      enabled = false
+      exchange = "ehrbase.events"
+      tls = false
+    
+    [fhir]
+      api_enabled = false
+      [fhir.outbound]
+        enabled = false
+        exchange = "ehrbase.fhir"
+        tls = false
+    
+    [log]
+      format = "json"
+    
+    [management]
+      access_default = "admin_only"
+      base_path = "/management"
+      enabled = true
+      probes_enabled = true
+      [management.endpoints]
+        env = "off"
+        health = "off"
+        info = "off"
+        loggers = "off"
+        metrics = "off"
+        prometheus = "off"
+    
+    [multimedia]
+      allow_http = false
+      bucket = "openehr-multimedia"
+      enabled = false
+      region = "us-east-1"
+    
+    [server]
+      base_path = "/ehrbase/rest/openehr/v1"
+      bind = "0.0.0.0:8080"
+      cors_permissive = false
+      swagger_ui = true
+    
+    [signing]
+      enabled = true
+      mode = "digest"
+      verify_on_read = "off"
+    
+    [tenancy]
+      claim = "tenant"
+      enabled = false
+    
+    [terminology]
+      api_enabled = false
+      [terminology.external]
+        enabled = false
+        fail_on_error = false
 ---
 # Source: ehrbase-rs/templates/service.yaml
 apiVersion: v1
@@ -183,8 +200,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll pods when the non-secret config changes.
-        checksum/config: ecfd98843634aaa3ce855735e4c14bc2254d2b74a5fb318f45adbf0dae31ac5f
+        # Roll pods when the rendered ehrbase.toml changes.
+        checksum/config: 3f572465eefa86ef031e9152e68782e688a0d0e29f186b51b9510f73e3295677
       labels:
         app.kubernetes.io/name: ehrbase-rs
         app.kubernetes.io/instance: ehrbase-rs
@@ -219,20 +236,20 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # The DSN comes from an existing Secret (preferred) or the chart Secret.
+          # Only SECRET config is env; the rest is the mounted ehrbase.toml.
+          # The DSN comes from an existing Secret (preferred) or the chart Secret;
+          # the env layer overrides the file, so each secret here wins over any
+          # matching TOML key.
           env:
-            - name: EHRBASE_DB_URL
+            - name: EHRBASE_DB__URL
               valueFrom:
                 secretKeyRef:
                   name: ehrbase-db
-                  key: EHRBASE_DB_URL
-          envFrom:
-            - configMapRef:
-                name: ehrbase-rs
+                  key: EHRBASE_DB__URL
           livenessProbe:
             httpGet:
               path: /management/health/liveness
-              port: http
+              port: management
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 15
@@ -240,7 +257,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /management/health/readiness
-              port: http
+              port: management
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -248,7 +265,7 @@ spec:
           startupProbe:
             httpGet:
               path: /management/health/liveness
-              port: http
+              port: management
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
@@ -264,6 +281,18 @@ spec:
             # readOnlyRootFilesystem=true → give the process a writable scratch dir.
             - name: tmp
               mountPath: /tmp
+            # ehrbase.toml (+ any config.files) mounted read-only at /etc/ehrbase.
+            - name: config
+              mountPath: /etc/ehrbase
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
+        - name: config
+          projected:
+            sources:
+              - configMap:
+                  name: ehrbase-rs
+                  items:
+                    - key: ehrbase.toml
+                      path: ehrbase.toml

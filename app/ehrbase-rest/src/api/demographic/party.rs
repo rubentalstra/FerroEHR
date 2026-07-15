@@ -28,7 +28,7 @@ pub(super) async fn run<S: Platform>(
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
     let q = parts.query.as_deref();
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
     let seg = kind.segment();
 
     match action {

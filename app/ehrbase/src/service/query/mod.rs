@@ -13,8 +13,10 @@
 //! - [`plan_cache`] — the bounded cache of lowered AQL plans keyed on query
 //!   text (P20; no openEHR spec governs it — our own performance design).
 
+mod config;
 mod execute;
 mod plan_cache;
 mod result_set;
 
+pub use config::QueryConfig;
 pub use plan_cache::{PlanCache, PlanCacheStats};

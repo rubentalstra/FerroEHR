@@ -21,7 +21,7 @@ use http_body_util::BodyExt;
 use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AdminConfig, RestConfig};
+use ehrbase_rest::{AdminConfig, AppConfig, ServerConfig};
 use ehrbase_sm::SmError;
 
 mod common;
@@ -56,15 +56,16 @@ fn hooks(calls: Arc<AtomicUsize>) -> Hooks {
     }
 }
 
-fn config(admin_enabled: bool) -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
-        bind: "127.0.0.1:0".to_owned(),
-        base_path: BASE.to_owned(),
-        max_in_flight: 1024,
-        swagger_ui: false,
-        cors_permissive: false,
+fn config(admin_enabled: bool) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            bind: "127.0.0.1:0".to_owned(),
+            base_path: BASE.to_owned(),
+            max_in_flight: 1024,
+            swagger_ui: false,
+            cors_permissive: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false,
             basic: None,
@@ -75,10 +76,7 @@ fn config(admin_enabled: bool) -> RestConfig {
         admin: AdminConfig {
             enabled: admin_enabled,
         },
-        terminology: ehrbase_rest::TerminologyConfig::default(),
-        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
-        tenancy: ehrbase_rest::TenancyConfig::default(),
-        fhir: ehrbase_rest::FhirConfig::default(),
+        ..Default::default()
     }
 }
 

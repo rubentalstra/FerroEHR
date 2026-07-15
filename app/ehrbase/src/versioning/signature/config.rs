@@ -1,28 +1,24 @@
-//! Signing configuration ([`SigningConfig`]) — a `figment`-loaded serde struct.
+//! The `[signing]` section — VERSION signing configuration.
 //!
-//! No openEHR spec governs the configuration surface — our own design. Env keys
-//! are the `EHRBASE_SIGNING_`-prefixed set. Loading mirrors the other configs:
-//! serde defaults ← optional TOML file (`EHRBASE_SIGNING_CONFIG`) ←
-//! `EHRBASE_SIGNING_`-prefixed environment (nested keys via `__`).
+//! No openEHR spec governs the configuration surface — our own design. This is
+//! a field of the one config tree ([`crate::config::EhrbaseConfig`],
+//! `docs/design/configuration.md` §3.11); no loader of its own. The modes it
+//! selects are the spec-blessed ones (RM common
+//! `master06-change_control_package.adoc` §Digital Signature: `OpenPGP`
+//! signature or digest-only integrity check).
 //!
-//! The modes it selects are the spec-blessed ones (RM common
-//! `master06-change_control_package.adoc` §Digital Signature: `OpenPGP` signature
-//! or digest-only integrity check).
-//!
-//! `SigningConfig` intentionally does **not** derive `Serialize`: the
-//! passphrase is a [`secrecy::SecretString`] so it can never leak through a
-//! config snapshot (`/management/env`) or a `Debug` log.
+//! The passphrase is a shared [`ehrbase_sm::Secret`] so it can never leak
+//! through a config snapshot (`/management/env`) or a `Debug` log; it has a
+//! `*_file` sibling for file-based indirection, resolved by the loader.
 
 use std::path::PathBuf;
 
-use figment::Figment;
-use figment::providers::{Env, Format, Toml};
-use secrecy::SecretString;
-use serde::Deserialize;
+use ehrbase_sm::Secret;
+use serde::{Deserialize, Serialize};
 
 /// The signing mode: a data-integrity digest, or an `OpenPGP` (RFC 4880) digital
 /// signature (RM common master06 §Digital Signature).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
     /// `radix-64(SHA-256(canonical_form))` — a data-integrity check, no key
@@ -36,7 +32,7 @@ pub enum Mode {
 }
 
 /// Recompute-and-compare policy at read/reassembly time.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum VerifyOnRead {
     /// Serve the stored signature untouched (RM common master06 §Digital
@@ -51,72 +47,43 @@ pub enum VerifyOnRead {
 
 /// Version-signing configuration. Every field has a default, so an all-defaults
 /// value is valid: signing **on**, `digest` mode, verification off.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct SigningConfig {
-    /// Server-side signing of committed versions (`EHRBASE_SIGNING_ENABLED`).
-    /// Defaults **on** so the STANDARD "Signing" capability is demonstrably met.
-    #[serde(default = "defaults::enabled")]
+    /// Server-side signing of committed versions. Defaults **on** so the
+    /// STANDARD "Signing" capability is demonstrably met.
     pub enabled: bool,
-    /// Signing mode (`EHRBASE_SIGNING_MODE`): `digest` | `pgp`.
-    #[serde(default)]
+    /// Signing mode: `digest` | `pgp`.
     pub mode: Mode,
-    /// Armored RFC 4880 secret key (`EHRBASE_SIGNING_KEY_PATH`); required for
-    /// `pgp` mode.
-    #[serde(default)]
+    /// Armored RFC 4880 secret key; **required for `pgp` mode** (validated at
+    /// boot, fail-closed).
     pub key_path: Option<PathBuf>,
-    /// Key passphrase (`EHRBASE_SIGNING_KEY_PASSPHRASE`), kept in `secrecy` and
-    /// redacted from any config snapshot.
-    #[serde(default)]
-    pub key_passphrase: Option<SecretString>,
-    /// Read-time verification policy (`EHRBASE_SIGNING_VERIFY_ON_READ`):
-    /// `off` | `warn` | `strict`.
-    #[serde(default)]
+    /// Key passphrase, kept in [`ehrbase_sm::Secret`] and redacted from any
+    /// config snapshot.
+    pub key_passphrase: Option<Secret>,
+    /// File-based indirection for [`Self::key_passphrase`] (K8s/Docker secrets).
+    /// Exactly one of the pair may be set; the loader reads and trims the file.
+    pub key_passphrase_file: Option<PathBuf>,
+    /// Read-time verification policy: `off` | `warn` | `strict`.
     pub verify_on_read: VerifyOnRead,
 }
 
 impl Default for SigningConfig {
     fn default() -> Self {
         Self {
-            enabled: defaults::enabled(),
+            enabled: true,
             mode: Mode::default(),
             key_path: None,
             key_passphrase: None,
+            key_passphrase_file: None,
             verify_on_read: VerifyOnRead::default(),
         }
     }
 }
 
-impl SigningConfig {
-    /// Load configuration: serde defaults, then an optional TOML file (path in
-    /// `EHRBASE_SIGNING_CONFIG`), then `EHRBASE_SIGNING_`-prefixed environment
-    /// variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::new();
-        if let Ok(path) = std::env::var("EHRBASE_SIGNING_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_SIGNING_").split("__"))
-            .extract()
-    }
-}
-
-mod defaults {
-    pub(super) const fn enabled() -> bool {
-        true
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    #![allow(clippy::unwrap_used, clippy::result_large_err)]
-
     use super::*;
-    use figment::Jail;
-    use secrecy::ExposeSecret as _;
 
     #[test]
     fn defaults_sign_on_digest_verify_off() {
@@ -128,40 +95,9 @@ mod tests {
     }
 
     #[test]
-    fn env_overrides_apply() {
-        Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_SIGNING_ENABLED", "false");
-            jail.set_env("EHRBASE_SIGNING_MODE", "pgp");
-            jail.set_env("EHRBASE_SIGNING_KEY_PATH", "/etc/ehrbase/signing.asc");
-            jail.set_env("EHRBASE_SIGNING_KEY_PASSPHRASE", "s3cret");
-            jail.set_env("EHRBASE_SIGNING_VERIFY_ON_READ", "strict");
-            let c = SigningConfig::load().unwrap();
-            assert!(!c.enabled);
-            assert_eq!(c.mode, Mode::Pgp);
-            assert_eq!(
-                c.key_path.as_deref().unwrap().to_str().unwrap(),
-                "/etc/ehrbase/signing.asc"
-            );
-            assert_eq!(c.key_passphrase.unwrap().expose_secret(), "s3cret");
-            assert_eq!(c.verify_on_read, VerifyOnRead::Strict);
-            Ok(())
-        });
-    }
-
-    #[test]
-    fn empty_env_yields_defaults() {
-        Jail::expect_with(|_jail| {
-            let c = SigningConfig::load().unwrap();
-            assert!(c.enabled);
-            assert_eq!(c.mode, Mode::Digest);
-            Ok(())
-        });
-    }
-
-    #[test]
     fn debug_does_not_leak_passphrase() {
         let c = SigningConfig {
-            key_passphrase: Some(SecretString::from("top-secret-value")),
+            key_passphrase: Some(Secret::new("top-secret-value")),
             ..SigningConfig::default()
         };
         let dbg = format!("{c:?}");

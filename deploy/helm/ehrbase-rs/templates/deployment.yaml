@@ -14,12 +14,12 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll pods when the non-secret config changes.
+        # Roll pods when the rendered ehrbase.toml changes.
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ include "ehrbase-rs.managementPort" . | quote }}
-        prometheus.io/path: {{ printf "%s/prometheus" (.Values.management.basePath | trimSuffix "/") | quote }}
+        prometheus.io/path: {{ printf "%s/prometheus" (.Values.config.management.base_path | trimSuffix "/") | quote }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -49,14 +49,19 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-            {{- if and .Values.management.enabled .Values.management.port }}
+            {{- if and .Values.config.management.enabled .Values.config.management.port }}
             - name: management
-              containerPort: {{ .Values.management.port }}
+              containerPort: {{ .Values.config.management.port }}
               protocol: TCP
             {{- end }}
-          # The DSN comes from an existing Secret (preferred) or the chart Secret.
+          # Only SECRET config is env; the rest is the mounted ehrbase.toml.
+          # The DSN comes from an existing Secret (preferred) or the chart Secret;
+          # the env layer overrides the file, so each secret here wins over any
+          # matching TOML key.
+          {{- if or (eq (include "ehrbase-rs.hasChartSecret" .) "true") .Values.database.existingSecret .Values.extraEnv }}
           env:
-            - name: EHRBASE_DB_URL
+            {{- if or .Values.database.existingSecret .Values.database.url }}
+            - name: EHRBASE_DB__URL
               valueFrom:
                 secretKeyRef:
                   {{- if .Values.database.existingSecret }}
@@ -64,59 +69,59 @@ spec:
                   key: {{ .Values.database.existingSecretKey }}
                   {{- else }}
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_DB_URL
+                  key: EHRBASE_DB__URL
                   {{- end }}
-            {{- with .Values.auth.oidc.hmacSecret }}
-            {{- if . }}
-            - name: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ehrbase-rs.secretName" $ }}
-                  key: EHRBASE_REST_AUTH__OIDC__HMAC_SECRET
             {{- end }}
-            {{- end }}
-            {{- if .Values.signing.pgp.keyPassphrase }}
-            - name: EHRBASE_SIGNING_KEY_PASSPHRASE
+            {{- if .Values.secrets.authOidcHmacSecret }}
+            - name: EHRBASE_AUTH__OIDC__HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_SIGNING_KEY_PASSPHRASE
+                  key: EHRBASE_AUTH__OIDC__HMAC_SECRET
             {{- end }}
-            {{- if and .Values.events.enabled .Values.events.url }}
-            - name: EHRBASE_EVENTS_URL
+            {{- if .Values.secrets.signingKeyPassphrase }}
+            - name: EHRBASE_SIGNING__KEY_PASSPHRASE
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_EVENTS_URL
+                  key: EHRBASE_SIGNING__KEY_PASSPHRASE
             {{- end }}
-            {{- if and .Values.fhirOutbound.enabled .Values.fhirOutbound.url }}
-            - name: EHRBASE_FHIR_OUTBOUND_URL
+            {{- if .Values.secrets.eventsUrl }}
+            - name: EHRBASE_EVENTS__URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_FHIR_OUTBOUND_URL
+                  key: EHRBASE_EVENTS__URL
             {{- end }}
-            {{- if and .Values.multimedia.enabled .Values.multimedia.accessKeyId }}
-            - name: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
+            {{- if .Values.secrets.fhirOutboundUrl }}
+            - name: EHRBASE_FHIR__OUTBOUND__URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_MULTIMEDIA_ACCESS_KEY_ID
-            - name: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
+                  key: EHRBASE_FHIR__OUTBOUND__URL
+            {{- end }}
+            {{- if .Values.secrets.multimediaAccessKeyId }}
+            - name: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ehrbase-rs.secretName" . }}
-                  key: EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY
+                  key: EHRBASE_MULTIMEDIA__ACCESS_KEY_ID
+            {{- end }}
+            {{- if .Values.secrets.multimediaSecretAccessKey }}
+            - name: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ehrbase-rs.secretName" . }}
+                  key: EHRBASE_MULTIMEDIA__SECRET_ACCESS_KEY
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvFrom }}
           envFrom:
-            - configMapRef:
-                name: {{ include "ehrbase-rs.fullname" . }}
-            {{- with .Values.extraEnvFrom }}
             {{- toYaml . | nindent 12 }}
-            {{- end }}
+          {{- end }}
           {{- if .Values.probes.exec.enabled }}
           livenessProbe:
             exec:
@@ -140,28 +145,28 @@ spec:
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           {{- end }}
           {{- else }}
-          {{- if not (and .Values.management.enabled .Values.management.probesEnabled) }}
-          {{- fail "httpGet probes require management.enabled=true and management.probesEnabled=true; otherwise set probes.exec.enabled=true" }}
+          {{- if not (and .Values.config.management.enabled .Values.config.management.probes_enabled) }}
+          {{- fail "httpGet probes require config.management.enabled=true and config.management.probes_enabled=true; otherwise set probes.exec.enabled=true" }}
           {{- end }}
           livenessProbe:
             httpGet:
-              path: {{ printf "%s/health/liveness" (.Values.management.basePath | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.management.port) "") }}
+              path: {{ printf "%s/health/liveness" (.Values.config.management.base_path | trimSuffix "/") }}
+              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
             {{- with .Values.probes.liveness }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           readinessProbe:
             httpGet:
-              path: {{ printf "%s/health/readiness" (.Values.management.basePath | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.management.port) "") }}
+              path: {{ printf "%s/health/readiness" (.Values.config.management.base_path | trimSuffix "/") }}
+              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
             {{- with .Values.probes.readiness }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- if .Values.probes.startup.enabled }}
           startupProbe:
             httpGet:
-              path: {{ printf "%s/health/liveness" (.Values.management.basePath | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.management.port) "") }}
+              path: {{ printf "%s/health/liveness" (.Values.config.management.base_path | trimSuffix "/") }}
+              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
             initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
@@ -174,22 +179,28 @@ spec:
             # readOnlyRootFilesystem=true → give the process a writable scratch dir.
             - name: tmp
               mountPath: /tmp
-            {{- if .Values.config.files }}
+            # ehrbase.toml (+ any config.files) mounted read-only at /etc/ehrbase.
             - name: config
               mountPath: /etc/ehrbase
               readOnly: true
-            {{- end }}
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
-        {{- if .Values.config.files }}
         - name: config
-          secret:
-            secretName: {{ include "ehrbase-rs.configSecretName" . }}
-        {{- end }}
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "ehrbase-rs.fullname" . }}
+                  items:
+                    - key: ehrbase.toml
+                      path: ehrbase.toml
+              {{- if .Values.config.files }}
+              - secret:
+                  name: {{ include "ehrbase-rs.configSecretName" . }}
+              {{- end }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

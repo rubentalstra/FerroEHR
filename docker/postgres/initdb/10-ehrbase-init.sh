@@ -14,9 +14,12 @@
 #     `CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext` then no-ops.
 set -Eeuo pipefail
 
-APP_USER="${EHRBASE_DB_USER:-ehrbase}"
-APP_PASSWORD="${EHRBASE_DB_PASSWORD:-ehrbase}"   # dev default; override in prod
-APP_DB="${EHRBASE_DB_NAME:-ehrbase}"
+# PG_INIT_* configure the DB container's app role/database. They are
+# deliberately NOT in the server's reserved EHRBASE_ namespace (which the
+# server rejects unknown vars from at boot) — these belong to this init script.
+APP_USER="${PG_INIT_USER:-ehrbase}"
+APP_PASSWORD="${PG_INIT_PASSWORD:-ehrbase}"   # dev default; override in prod
+APP_DB="${PG_INIT_DB:-ehrbase}"
 
 # psql as the bootstrap superuser, ON_ERROR_STOP so a failure aborts init.
 psql_super() { psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" "$@"; }
