@@ -76,6 +76,19 @@ fn vo_uuid(v: &Value) -> String {
     ovid(v).split("::").next().expect("vo uuid").to_owned()
 }
 
+/// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
+/// probes MUST anchor their reference instant on this server clock — the same
+/// clock that stamps `vo_version.sys_period` — never on the test-process wall
+/// clock: a client/DB clock skew under parallel-load testcontainers would race
+/// the at-time read against the version validity intervals.
+async fn db_now(pool: &PgPool) -> jiff::Timestamp {
+    sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
+        .fetch_one(pool)
+        .await
+        .expect("db now()")
+        .to_jiff()
+}
+
 fn person(name: &str) -> Value {
     json!({
         "_type": "PERSON",
@@ -257,7 +270,8 @@ async fn party_sm_calls_round_trip() {
 #[tokio::test]
 async fn person_lifecycle_end_to_end() {
     let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_person").await);
+    let pool = pg.migrated_pool("demographic_person").await;
+    let svc = EhrbaseService::new(pool.clone());
 
     // create → v1
     let created = svc
@@ -288,8 +302,14 @@ async fn person_lifecycle_end_to_end() {
         .expect("get by ovid");
     assert_eq!(ovid(&by_ovid.body), ovid_v1);
 
-    // time-travel: capture a time inside v1, then update to v2
-    let t_v1 = jiff::Timestamp::now();
+    // time-travel: capture a time inside v1 FROM THE DB CLOCK, then update to
+    // v2. The reference instant MUST come from the server clock (the clock that
+    // stamps `vo_version.sys_period`), never the test-process wall clock — a
+    // client/DB clock skew under parallel-load testcontainers races the at-time
+    // read against the version validity intervals (a real flake this fixes).
+    let t_v1 = db_now(&pool).await;
+    // A short gap so v2's commit transaction timestamp is strictly greater than
+    // t_v1 even at microsecond resolution (both are now on the DB clock).
     tokio::time::sleep(std::time::Duration::from_millis(15)).await;
 
     // update (If-Match = current OVID) → v2

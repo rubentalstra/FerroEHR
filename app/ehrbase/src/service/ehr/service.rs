@@ -48,7 +48,7 @@ impl EhrbaseService {
         // never runs the separate `sync_ehr_subject` UPDATE the update/
         // contribution paths use. A subject already owned by another EHR is a
         // distinct 409 (RM ehr master04 §EHR Status; ITS-REST `409_EHR.yaml`).
-        let (subject_id, subject_namespace, is_queryable) =
+        let (subject_id, subject_namespace, is_queryable, is_modifiable) =
             super::status::ehr_promoted_columns(&status);
         let time_created = match ehr_repo::insert_ehr(
             &mut tx,
@@ -57,6 +57,7 @@ impl EhrbaseService {
             subject_id,
             subject_namespace,
             is_queryable,
+            is_modifiable,
         )
         .await
         {

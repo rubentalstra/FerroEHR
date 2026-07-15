@@ -163,8 +163,23 @@ impl ContributionAdapter for EhrbaseService {
         &self,
         an_ehr_id: Uuid,
         a_contribution: Value,
+        representation: bool,
     ) -> Result<ServiceResponse, SmError> {
-        self.create_ehr_contribution(an_ehr_id, a_contribution)
-            .await
+        if representation {
+            // `return=representation`: assemble the stored CONTRIBUTION body
+            // (audit + version OBJECT_REFs) for the response.
+            self.create_ehr_contribution(an_ehr_id, a_contribution)
+                .await
+        } else {
+            // `return=minimal`: the response is headers-only, so commit and
+            // return just the contribution uid (the `201` `ETag`/`Location`) —
+            // the post-commit composite re-read the representation path pays is
+            // pure waste here (RM common master06 §Committal — the commit itself
+            // yields the new CONTRIBUTION id).
+            let contribution_id =
+                commit_version_set(self, Some(an_ehr_id), &a_contribution, false).await?;
+            let meta = ResourceMeta::new(an_ehr_id.to_string(), contribution_id.to_string());
+            Ok(ServiceResponse::new(Value::Null, meta))
+        }
     }
 }
