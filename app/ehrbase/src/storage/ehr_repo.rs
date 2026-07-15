@@ -47,6 +47,35 @@ pub async fn insert_ehr(
     }
 }
 
+/// Refresh the promoted `ehr.is_queryable` column from the EHR's CURRENT
+/// `EHR_STATUS` root node (`num = 0`, latest trunk). Used by the paths that land
+/// `EHR_STATUS` versions WITHOUT the service's `sync_ehr_subject` hook — the EHR
+/// Extract import and the admin archive load — so the AQL full-population gate
+/// (SM `I_QUERY_SERVICE`, `i_query_service.adoc`: full population = EHRs whose
+/// status has `is_queryable = True`) reads a column that matches the stored
+/// status. Semantics: RM ehr master04 §EHR Status (`EHR_STATUS.is_queryable`,
+/// 1..1 Boolean). Falls back to `true` (the column default / the default
+/// `EHR_STATUS`) when the EHR has no current `EHR_STATUS`. No openEHR spec
+/// governs the promoted column — our own storage design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn sync_is_queryable(tx: &mut PgConnection, ehr_id: Uuid) -> Result<(), StorageError> {
+    sqlx::query(
+        "UPDATE ehr SET is_queryable = COALESCE((\
+           SELECT (n.data->>'is_queryable') = 'true' \
+           FROM vo_version v \
+           JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+           WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0), true) \
+         WHERE id = $1",
+    )
+    .bind(ehr_id)
+    .execute(&mut *tx)
+    .await?;
+    Ok(())
+}
+
 /// The id of the EHR whose promoted subject columns match `(subject_id,
 /// namespace)`, or `None`. Served from the unique `ehr.subject_*` columns (one
 /// EHR per subject — RM ehr master04 §EHR Status).

@@ -387,7 +387,16 @@ mod column_vocab {
                 "template_id",
             ],
         ),
-        ("ehr", &["id", "system_id", "time_created", "subject_id"]),
+        (
+            "ehr",
+            &[
+                "id",
+                "system_id",
+                "time_created",
+                "subject_id",
+                "is_queryable",
+            ],
+        ),
         (
             "audit",
             &[

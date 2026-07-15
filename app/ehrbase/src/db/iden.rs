@@ -19,6 +19,7 @@ pub enum Ehr {
     TimeCreated,
     SubjectId,
     SubjectNamespace,
+    IsQueryable,
 }
 
 /// `audit` — `AUDIT_DETAILS` of every committed change.
