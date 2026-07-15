@@ -46,9 +46,18 @@ fn opt_files(dir: &Path, out: &mut Vec<PathBuf>) {
 }
 
 /// `template_id` → `WebTemplate` for every parseable vendored OPT.
+///
+/// Several vendored fixtures share one template id (`Demo Vitals` has three
+/// variants), and `read_dir` order is OS-dependent — first-wins over an
+/// unspecified order made the winning variant differ between macOS and Linux
+/// (a CI-only corpus failure: Linux's order left a variant whose constraints
+/// flag the corpus node that the curation baseline accepts). Deterministic
+/// resolution: sorted paths, first wins — the ordering the `CLEAN_COMPOSITIONS`
+/// curation was verified against, identical on every OS.
 fn web_templates() -> HashMap<String, WebTemplate> {
     let mut opts = Vec::new();
     opt_files(&manifest_dir().join("tests/fixtures"), &mut opts);
+    opts.sort();
     let mut wts = HashMap::new();
     for p in &opts {
         let Ok(xml) = std::fs::read_to_string(p) else {
