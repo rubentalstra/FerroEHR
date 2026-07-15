@@ -33,7 +33,7 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 /// Execute an ad-hoc AQL query supplied in the `q` query parameter.
 #[utoipa::path(
-    get, path = "/query/aql", tag = "query",
+    get, path = "/query/aql", tag = "Query",
     responses((status = 200, description = "The RESULT_SET.", body = serde_json::Value))
 )]
 pub(crate) async fn query_execute_adhoc_query<S: Platform>(
@@ -52,7 +52,7 @@ pub(crate) async fn query_execute_adhoc_query<S: Platform>(
 
 /// Execute an ad-hoc AQL query supplied in the request body.
 #[utoipa::path(
-    post, path = "/query/aql", tag = "query",
+    post, path = "/query/aql", tag = "Query",
     responses((status = 200, description = "The RESULT_SET.", body = serde_json::Value))
 )]
 pub(crate) async fn query_execute_adhoc_query_body<S: Platform>(
@@ -71,7 +71,7 @@ pub(crate) async fn query_execute_adhoc_query_body<S: Platform>(
 
 /// Execute a named stored query (parameters in the query string).
 #[utoipa::path(
-    get, path = "/query/{qualified_query_name}", tag = "query",
+    get, path = "/query/{qualified_query_name}", tag = "Query",
     params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
     responses(
         (status = 200, description = "The RESULT_SET.", body = serde_json::Value),
@@ -94,7 +94,7 @@ pub(crate) async fn query_execute_stored_query<S: Platform>(
 
 /// Execute a named stored query (parameters in the request body).
 #[utoipa::path(
-    post, path = "/query/{qualified_query_name}", tag = "query",
+    post, path = "/query/{qualified_query_name}", tag = "Query",
     params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
     responses(
         (status = 200, description = "The RESULT_SET.", body = serde_json::Value),
@@ -117,7 +117,7 @@ pub(crate) async fn query_execute_stored_query_body<S: Platform>(
 
 /// Execute a named stored query at a specific version (query-string params).
 #[utoipa::path(
-    get, path = "/query/{qualified_query_name}/{version}", tag = "query",
+    get, path = "/query/{qualified_query_name}/{version}", tag = "Query",
     params(
         ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
         ("version" = String, Path, description = "The stored-query version.")
@@ -143,7 +143,7 @@ pub(crate) async fn query_execute_stored_query_version<S: Platform>(
 
 /// Execute a named stored query at a specific version (body params).
 #[utoipa::path(
-    post, path = "/query/{qualified_query_name}/{version}", tag = "query",
+    post, path = "/query/{qualified_query_name}/{version}", tag = "Query",
     params(
         ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
         ("version" = String, Path, description = "The stored-query version.")

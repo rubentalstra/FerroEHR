@@ -81,11 +81,23 @@ const SECURITY_SCHEME: &str = "openehr_auth";
                        (status/health, management, SMART discovery, the OpenAPI endpoints)."
     ),
     tags(
-        (name = "ehr", description = "EHR API — EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION, item tags (ITS-REST)."),
-        (name = "demographic", description = "Demographic API — PERSON/AGENT/GROUP/ORGANISATION/ROLE, versioned reads, contributions, tags (ITS-REST, DEVELOPMENT)."),
-        (name = "definition", description = "Definition API — ADL 1.4 / ADL 2 templates + stored AQL queries (ITS-REST)."),
-        (name = "query", description = "Query API — ad-hoc + stored AQL execution (ITS-REST)."),
-        (name = "admin", description = "Admin API — physical EHR delete (ITS-REST, DEVELOPMENT)."),
+        // ITS-REST resource tags (categorised exactly as the vendored group OAS
+        // documents do — one tag per RM resource, cross-referenced by path).
+        (name = "EHR", description = "Management of EHRs — create/retrieve; physical delete (Admin API)."),
+        (name = "EHR_STATUS", description = "Management of EHR_STATUS and its VERSIONED_EHR_STATUS reads."),
+        (name = "COMPOSITION", description = "Management of COMPOSITION and its VERSIONED_COMPOSITION reads."),
+        (name = "DIRECTORY", description = "Management of the directory (FOLDER) tree."),
+        (name = "CONTRIBUTION", description = "Management of CONTRIBUTION (EHR + demographic)."),
+        (name = "ITEM_TAG", description = "Management of ITEM_TAG sub-resources (EHR + demographic)."),
+        (name = "PERSON", description = "Management of the demographic PERSON (ITS-REST, DEVELOPMENT)."),
+        (name = "AGENT", description = "Management of the demographic AGENT (ITS-REST, DEVELOPMENT)."),
+        (name = "GROUP", description = "Management of the demographic GROUP (ITS-REST, DEVELOPMENT)."),
+        (name = "ORGANISATION", description = "Management of the demographic ORGANISATION (ITS-REST, DEVELOPMENT)."),
+        (name = "ROLE", description = "Management of the demographic ROLE (ITS-REST, DEVELOPMENT)."),
+        (name = "VERSIONED_PARTY", description = "Management of the VERSIONED_PARTY reads (ITS-REST, DEVELOPMENT)."),
+        (name = "ADL1.4", description = "Management of AOM/ADL 1.4 operational templates."),
+        (name = "ADL2", description = "Management of AOM2/ADL 2 templates."),
+        (name = "Query", description = "Ad-hoc + stored AQL execution and stored-query definitions (ITS-REST)."),
         (name = "status", description = "Public operational status + health (unauthenticated)."),
         (name = "smart", description = "SMART App Launch service discovery (config-gated: EHRBASE_REST_SMART__ENABLED)."),
         (name = "openapi", description = "`OpenAPI` document + Swagger UI discoverability (config-gated: EHRBASE_REST_SWAGGER_UI)."),
@@ -200,8 +212,11 @@ async fn openapi_json<S: Platform>(State(state): State<AppState<S>>) -> Response
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The Swagger UI (HTML). The vendored ITS-REST bundles and this extension
-/// document are offered in the UI's spec selector.
+/// The Swagger UI (HTML). The spec selector offers one document per API family
+/// — the standardised ITS-REST groups (`openEHR — …`, selected by resource
+/// path) and the server's own extensions (`EHRbase — …`, selected by tag) —
+/// each filtered from the one server-generated composed document, plus that
+/// complete document last. Nothing vendored is served.
 #[utoipa::path(
     get, path = "/ehrbase/rest/swagger-ui", tag = "openapi",
     responses((status = 200, description = "The Swagger UI index.", content_type = "text/html"))
@@ -220,17 +235,247 @@ fn meta_openapi<S: Platform>() -> utoipa::openapi::OpenApi {
         .into_openapi()
 }
 
+// ── The spec-selector families ────────────────────────────────────────────────
+
+/// How a spec-selector family picks its operations out of the one composed
+/// server document.
+///
+/// The standardised ITS-REST groups categorise by **resource path** (their
+/// operations carry per-resource tags — `EHR`/`EHR_STATUS`/`COMPOSITION`/…,
+/// exactly as the vendored group OAS documents tag them — so a shared tag no
+/// longer identifies a group; the base-path-relative path root does). The
+/// server's own extensions have no shared path root and are still identified by
+/// **tag**.
+enum Members {
+    /// Operations whose base-path-relative path starts with `include` (on a
+    /// segment boundary) and starts with none of `exclude`.
+    Path {
+        include: &'static str,
+        exclude: &'static [&'static str],
+    },
+    /// Operations carrying one of these tags.
+    Tags(&'static [&'static str]),
+}
+
+/// Every API family offered as its own selector document:
+/// `(selector name, url slug, membership criterion)`. ALL of them are filtered
+/// from the one server-generated composed document — nothing vendored is served
+/// (the vendored ITS-REST bundles are reference material for authoring our
+/// schemas, never a served artifact) — so each family document inherits the
+/// config-driven security scheme and can never drift from the router.
+const FAMILIES: &[(&str, &str, Members)] = &[
+    // The standardised ITS-REST groups (our generated wire), by resource path.
+    (
+        "openEHR — EHR",
+        "ehr",
+        Members::Path {
+            include: "/ehr",
+            exclude: &[],
+        },
+    ),
+    (
+        "openEHR — Query",
+        "query",
+        Members::Path {
+            include: "/query",
+            exclude: &[],
+        },
+    ),
+    (
+        "openEHR — Definition",
+        "definition",
+        Members::Path {
+            include: "/definition",
+            exclude: &[],
+        },
+    ),
+    (
+        "openEHR — Demographic",
+        "demographic",
+        Members::Path {
+            include: "/demographic",
+            // The own-design PARTY_RELATIONSHIP extension shares the /demographic
+            // root but is its own family (below).
+            exclude: &["/demographic/party_relationship"],
+        },
+    ),
+    (
+        "openEHR — Admin",
+        "admin",
+        Members::Path {
+            include: "/admin/ehr",
+            exclude: &[],
+        },
+    ),
+    // The server's own extension families, by tag.
+    (
+        "EHRbase — Status & Management",
+        "management",
+        Members::Tags(&["status", "management", "openapi"]),
+    ),
+    (
+        "EHRbase — Terminology",
+        "terminology",
+        Members::Tags(&["terminology"]),
+    ),
+    (
+        "EHRbase — Party Relationships",
+        "relationships",
+        Members::Tags(&["demographic-relationship"]),
+    ),
+    (
+        "EHRbase — Event Subscriptions",
+        "events",
+        Members::Tags(&["event-subscription"]),
+    ),
+    (
+        "EHRbase — Multi-tenancy",
+        "tenancy",
+        Members::Tags(&["tenancy"]),
+    ),
+    ("EHRbase — FHIR Connector", "fhir", Members::Tags(&["fhir"])),
+    (
+        "EHRbase — SMART Discovery",
+        "smart",
+        Members::Tags(&["smart"]),
+    ),
+];
+
+/// Whether `rel` equals `prefix` or continues past it on a path-segment boundary
+/// (so `/ehr` matches `/ehr` and `/ehr/{id}`, never a hypothetical `/ehrx`).
+fn on_segment_boundary(rel: &str, prefix: &str) -> bool {
+    rel == prefix
+        || rel
+            .strip_prefix(prefix)
+            .is_some_and(|tail| tail.starts_with('/'))
+}
+
+/// A copy of `doc` keeping only the paths whose base-path-relative form is under
+/// `include` (segment-boundary) and under none of `exclude`. Whole path items
+/// are kept or dropped — an ITS-REST resource path belongs entirely to one group.
+fn filter_by_path(
+    doc: &utoipa::openapi::OpenApi,
+    base_path: &str,
+    include: &str,
+    exclude: &[&str],
+) -> utoipa::openapi::OpenApi {
+    let mut out = doc.clone();
+    out.paths.paths.retain(|path, _| {
+        let Some(rel) = path.strip_prefix(base_path) else {
+            return false;
+        };
+        on_segment_boundary(rel, include) && !exclude.iter().any(|ex| on_segment_boundary(rel, ex))
+    });
+    prune_tags(&mut out);
+    out
+}
+
+/// A copy of `doc` keeping only the operations tagged with one of `tags`
+/// (paths whose every operation is filtered away are dropped entirely).
+fn filter_by_tags(doc: &utoipa::openapi::OpenApi, tags: &[&str]) -> utoipa::openapi::OpenApi {
+    let mut out = doc.clone();
+    out.paths.paths.retain(|_, item| {
+        for op in [
+            &mut item.get,
+            &mut item.put,
+            &mut item.post,
+            &mut item.delete,
+            &mut item.options,
+            &mut item.head,
+            &mut item.patch,
+            &mut item.trace,
+        ] {
+            if let Some(inner) = op
+                && !inner
+                    .tags
+                    .as_ref()
+                    .is_some_and(|t| t.iter().any(|t| tags.contains(&t.as_str())))
+            {
+                *op = None;
+            }
+        }
+        item.get.is_some()
+            || item.put.is_some()
+            || item.post.is_some()
+            || item.delete.is_some()
+            || item.options.is_some()
+            || item.head.is_some()
+            || item.patch.is_some()
+            || item.trace.is_some()
+    });
+    prune_tags(&mut out);
+    out
+}
+
+/// Drop tag declarations no retained operation carries, so a family document's
+/// tag list shows exactly the resource groups it contains.
+fn prune_tags(doc: &mut utoipa::openapi::OpenApi) {
+    let mut used = std::collections::BTreeSet::new();
+    for item in doc.paths.paths.values() {
+        for op in [
+            &item.get,
+            &item.put,
+            &item.post,
+            &item.delete,
+            &item.options,
+            &item.head,
+            &item.patch,
+            &item.trace,
+        ] {
+            if let Some(inner) = op
+                && let Some(tags) = &inner.tags
+            {
+                for t in tags {
+                    used.insert(t.clone());
+                }
+            }
+        }
+    }
+    if let Some(doc_tags) = &mut doc.tags {
+        doc_tags.retain(|t| used.contains(&t.name));
+    }
+}
+
+/// One filtered extension-family document as JSON.
+async fn family_json<S: Platform>(
+    State(state): State<AppState<S>>,
+    Path(family): Path<String>,
+) -> Response {
+    let Some((name, _, members)) = FAMILIES.iter().find(|(_, slug, _)| *slug == family) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let cfg = state.config();
+    let full = extensions_document::<S>(cfg);
+    let mut doc = match members {
+        Members::Path { include, exclude } => {
+            filter_by_path(&full, &cfg.server.base_path, include, exclude)
+        }
+        Members::Tags(tags) => filter_by_tags(&full, tags),
+    };
+    doc.info.title = (*name).to_owned();
+    let body = serde_json::to_string(&doc).unwrap_or_else(|_| "{}".to_owned());
+    ([(header::CONTENT_TYPE, "application/json")], body).into_response()
+}
+
 // ── The Swagger router (serving; kept on the loop-free `serve()` mechanism) ───
 
-/// Build the docs router: the Swagger UI (loop-free) and the single
-/// `ehrbase-rest` extension-surface document (our own natively generated OAS).
-/// Config paths come from [`AppConfig`]. No vendored OAS is served (owner rule).
+/// Build the docs router: the Swagger UI (loop-free), the complete
+/// `openapi.json`, and one filtered JSON document per API family — ALL
+/// server-generated (nothing vendored is served). Config paths come from
+/// [`AppConfig`].
 pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>> {
     let ui_path = cfg.server.swagger_ui_path();
     let json_path = cfg.server.openapi_json_path();
+    let api_docs_root = api_docs_root(&json_path);
 
-    // Our own extension-surface document (utoipa-composed, config-driven auth).
-    let router = Router::new().route(&json_path, get(openapi_json::<S>));
+    // The complete composed document (tooling + the selector's full entry).
+    let mut router = Router::new().route(&json_path, get(openapi_json::<S>));
+
+    // One filtered document per API family (standard groups + extensions).
+    router = router.route(
+        &format!("{api_docs_root}/ehrbase-{{family}}.openapi.json"),
+        get(family_json::<S>),
+    );
 
     // The UI itself: assets straight from the embedded dist. The bare mount path
     // serves index.html (serve() maps "" to it) — no redirect, no loop.
@@ -244,12 +489,31 @@ pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>
     )
 }
 
-/// The Swagger UI spec-selector config: a single `ehrbase-rest` entry (our
-/// composed document). The URL must outlive the server, so the derived path is
-/// leaked once at construction (the UI config requires `'static`).
+/// The `api-docs` directory the documents live under (the parent of the
+/// configured `openapi.json` path).
+fn api_docs_root(json_path: &str) -> String {
+    json_path
+        .rsplit_once('/')
+        .map_or("/api-docs", |(dir, _)| dir)
+        .to_owned()
+}
+
+/// The Swagger UI spec-selector config: one entry per API family — the
+/// standardised groups (`openEHR — …`) and the server extensions
+/// (`EHRbase — …`), every one filtered from the server's own generated
+/// document — with the complete composed document last. URLs must outlive the
+/// server, so the derived paths are leaked once at construction (the UI
+/// config requires `'static`).
 fn swagger_config(cfg: &AppConfig) -> Arc<Config<'static>> {
     let json_path = cfg.server.openapi_json_path();
-    let urls: Vec<Url<'static>> = vec![Url::new("ehrbase-rest", json_path.leak())];
+    let root = api_docs_root(&json_path);
+
+    let mut urls: Vec<Url<'static>> = Vec::new();
+    for (name, slug, _) in FAMILIES {
+        let url = format!("{root}/ehrbase-{slug}.openapi.json");
+        urls.push(Url::new(*name, url.leak()));
+    }
+    urls.push(Url::new("EHRbase — Complete surface", json_path.leak()));
     Arc::new(Config::new(urls))
 }
 
