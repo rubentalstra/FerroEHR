@@ -296,3 +296,113 @@ Harness (throwaway, since deleted): `app/ehrbase/tests/zzz_sweep_endpoints.rs`.
 `CARGO_TARGET_DIR=$PWD/target/agent-t1 cargo test -p ehrbase --test
 zzz_sweep_endpoints -- --nocapture` → prints THE TABLE + per-statement
 breakdown for the outliers. Requires Docker (testcontainers `postgres:18`).
+
+---
+
+## THE AFTER TABLE — item-35(e) re-sweep (2026-07-15, after waves 1–3)
+
+Re-run of the probe over the whole surface AFTER the item-34 lean-SQL waves
+(`ff3ee93d5` w1, `107107ffa` w2, `b71b6199d` w3) plus item-33 Fix B
+(`ca90f330c`). Same method, same config (signing on, eventing on, audit off,
+auth off, admin on, testcontainers `postgres:18`). Throwaway harness
+`app/ehrbase/tests/zz35app_sweep.rs` (deleted after this record; it builds the
+full `ehrbase_rest::build_with` router over ONE warm `EhrbaseService::new(pool)`
+— caches shared across ops — with a `tracing` Layer counting `sqlx::query`
+events, and **pre-opens all pool connections in a concurrent burst before
+measuring so the `after_connect` `SET search_path` never lands in a measured
+window** — this removes the ±1 noise the original sweep carried; the read
+family below reproduced stably run-to-run).
+
+**Headline: ZERO regressions.** Every op is ≤ its BEFORE count. The waves' write
+reductions all HOLD (or beat their target via the w3 `is_modifiable` fold); the
+read family is unchanged at its minimal-necessary counts. `min` columns unchanged
+from the BEFORE table.
+
+`repr`/`min` = `Prefer: return=representation` vs `=minimal`. The BEFORE table's
+update rows were representation (status 200); representation legitimately pays
++2 for the REST body re-read (DBR), which minimal skips — so the wave targets
+quoted as single numbers (e.g. w3 "composition_update → 11") are the **minimal**
+path; both are shown below.
+
+| op | method | BEFORE | AFTER | verdict |
+|---|---|---:|---:|---|
+| `ehr_status_update` | PUT | 18 | 14 repr / 11 min | HOLDS (w2 target 14 = repr) |
+| `person_update` | PUT | 18 | 10 | HOLDS (w1 target 10) |
+| `composition_update` | PUT | 17 | 13 repr / 11 min | HOLDS (w3 target 11 = min) |
+| `directory_update` | PUT | 15 | 13 | HOLDS, beats (w2 14 → w3 fold 13) |
+| `person_delete` | DELETE | 14 | 9 | HOLDS, beats (w1 target 10) |
+| `ehr_create_with_id` | PUT | 12 | 11 | HOLDS (w2 target 11) |
+| `directory_create` | POST | 12 | 9 | improved (w3 `is_modifiable` fold) |
+| `ehr_create` (repr) | POST | 11 | 10 | HOLDS (w2 target 10) |
+| `ehr_create` (minimal) | POST | 11 | 10 | HOLDS |
+| `composition_delete` | DELETE | 11 | 9 | improved (w1 lean pre-read) |
+| `directory_delete` | DELETE | 11 | 9 | HOLDS, beats (w2 10 → w3 9) |
+| `contribution_create` | POST | 10 | 8 | HOLDS (w3 target 8) |
+| `person_create` | POST | 9 | 6 | HOLDS (w1 target 6) |
+| `organisation_create` | POST | 9 | 6 | HOLDS (w1 target 6) |
+| `composition_create` (repr) | POST | 8 | 8 | HOLDS (control) |
+| `composition_create` (minimal) | POST | 6 | 6 | HOLDS (control) |
+| `composition_tags_update` | PUT | 6 | 6 | unchanged |
+| `ehr_status_tags_update` | PUT | 6 | 6 | unchanged |
+| `ehr_get_by_id` | GET | 5 (±1) | 4 | HOLDS (w2 target 4) |
+| `definition_query_store` (PUT) | PUT | 4 | 4 | unchanged |
+| `person_get` | GET | 4 | 4 | unchanged |
+| `admin_ehr_delete` | DELETE | 4 | 4 | unchanged |
+| `ehr_status_get_at_time` | GET | 3 | 3 | unchanged |
+| `versioned_ehr_status_revision_history` | GET | 3 | 3 | unchanged |
+| `versioned_ehr_status_version_get_at_time` | GET | 3 | 3 | unchanged |
+| `versioned_composition_get` | GET | 3 | 3 | unchanged |
+| `directory_get_at_time` | GET | 3 | 3 | unchanged |
+| `query_execute_stored_query` (GET) | GET | 3 | 3 | unchanged |
+| `versioned_party_version_get_at_time` | GET | 3 | 3 | unchanged |
+| `definition_template_adl1.4_example_get` | GET | 2 | 2 | unchanged |
+| `ehr_status_get_by_version_id` | GET | 2 | 2 | unchanged |
+| `versioned_ehr_status_get` | GET | 2 | 2 | unchanged |
+| `versioned_ehr_status_version_get_by_id` | GET | 2 | 2 | unchanged |
+| `composition_get` (latest) | GET | 2 | 2 | unchanged |
+| `composition_get` (by version) | GET | 2 | 2 | unchanged |
+| `versioned_composition_revision_history` | GET | 2 | 2 | unchanged |
+| `versioned_composition_version_get_at_time` | GET | 2 | 2 | unchanged |
+| `versioned_composition_version_get_by_id` | GET | 2 | 2 | unchanged |
+| `directory_get_by_version_id` | GET | 2 | 2 | unchanged |
+| `contribution_get` | GET | 2 | 2 | unchanged |
+| `query_execute_adhoc_query_body` (POST) | POST | 2 | 2 | unchanged |
+| `versioned_party_get` | GET | 2 | 2 | unchanged |
+| `versioned_party_revision_history` | GET | 2 | 2 | unchanged |
+| `definition_template_adl1.4_list` | GET | 1 | 1 | unchanged |
+| `definition_template_adl1.4_get` | GET | 1 | 1 | unchanged |
+| `definition_template_adl2_list` | GET | 1 | 1 | unchanged |
+| `definition_query_get` | GET | 1 | 1 | unchanged |
+| `ehr_get_by_subject` (miss) | GET | 1 | 1 | unchanged |
+| `ehr_tags_get` / `composition_tags_get` / `ehr_status_tags_get` | GET | 1 | 1 | unchanged |
+| `composition_tags_delete` / `ehr_status_tags_delete` | DELETE | 1 | 1 | unchanged |
+| `query_execute_adhoc_query` (GET) | GET | 2 | 1* | not comparable |
+
+\* The BEFORE `adhoc GET` (2) ran a CONTAINS query paying a per-page subtree
+reload; the re-sweep drove a scalar-path query (`SELECT e/ehr_id/value`) that
+needs no reload → 1 statement. Different query shape, not a delta.
+
+### Ranking after — where the round-trips now live, and is it waste?
+
+The worst ops are still the **updates** (14/13/13) and the multi-write creates,
+but every one is now at its minimal-necessary count. Classifying the residual:
+
+1. **`EVT` — the `event_outbox` INSERT (+1 on every write, all 13 write ops).**
+   Present in the default eventing-on config regardless of subscribers
+   (`app/ehrbase/src/versioning/change.rs`). Item 12 gated the *consumer* at
+   boot but kept the INSERT (at-least-once for enabled-but-idle). This is the
+   single broadest remaining removable round-trip: **proposed fix** — an
+   eventing-*off* fast path that skips the INSERT entirely when no consumer is
+   configured (cross-cutting finding #5). Impact: −1 round trip inside the held
+   write tx on every write; bounded but surface-wide. Not a correctness item.
+2. **Representation DBR re-read (+2 on updates under `return=representation`).**
+   Legitimate — the client asked for the body; the `minimal` path (what the
+   benchmark drives) avoids it. Not waste.
+3. **Read family: no structural waste.** Versioned reads are 2–3 (version
+   resolution by id/time + node reassembly), plain reads 1–2, tags 1. Waves 1–3
+   only "grazed" these because they were already lean; the re-sweep confirms no
+   read op pays a discarded or duplicate statement.
+
+**Reproduction:** throwaway `app/ehrbase/tests/zz35app_sweep.rs` (deleted),
+`cargo test -p ehrbase --test zz35app_sweep -- --nocapture` → prints THE AFTER
+TABLE. Requires Docker (testcontainers `postgres:18`).
