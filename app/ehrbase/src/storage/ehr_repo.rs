@@ -14,30 +14,63 @@ use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
 use crate::storage::StorageError;
+use crate::storage::version_repo::CurrentMeta;
 
-/// Insert the `ehr` root row (id + immutable `system_id`), no-op on a duplicate
-/// id. Returns `Some(time_created)` — the server-assigned `EHR.time_created`
-/// (arch-overview master06 §The EHR), captured via `RETURNING` so the create
-/// path can build the `EHR` wire body without a follow-up `ehr` header read —
-/// or `None` when the id already existed (the caller maps that to a 409).
-/// `EHR.system_id` is recorded at creation and immutable thereafter
-/// (arch-overview master06 §System Identity).
+/// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
+/// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable`) set
+/// in the SAME statement — the create path knows these from the incoming
+/// `EHR_STATUS` before the row is written, so it never needs the follow-up
+/// `UPDATE ehr SET subject_id …` the [`crate::service`] sync hook runs on the
+/// update/contribution paths. Returns `Some(time_created)` — the server-assigned
+/// `EHR.time_created` (arch-overview master06 §The EHR), captured via `RETURNING`
+/// so the create path can build the `EHR` wire body without a follow-up `ehr`
+/// header read — or `None` when the **id** already existed (`ON CONFLICT (id) DO
+/// NOTHING`; the caller maps that to a 409). `EHR.system_id` is recorded at
+/// creation and immutable thereafter (arch-overview master06 §System Identity).
+///
+/// The subject columns back the one-EHR-per-subject unique index
+/// (`uq_ehr_subject`, RM ehr master04 §EHR Status); a second EHR for the same
+/// subject violates that index — reported as [`StorageError::SubjectInUse`]
+/// (→ 409) distinctly from the id conflict. `is_queryable` backs the AQL
+/// full-population gate (SM `I_QUERY_SERVICE`). No openEHR spec governs the
+/// promoted columns — our own storage design.
 ///
 /// # Errors
-/// Returns [`StorageError::Database`] on a driver/insert failure.
+/// Returns [`StorageError::SubjectInUse`] on a subject-uniqueness violation,
+/// else [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_ehr(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     system_id: &str,
+    subject_id: Option<&str>,
+    subject_namespace: Option<&str>,
+    is_queryable: bool,
 ) -> Result<Option<jiff::Timestamp>, StorageError> {
     let row = sqlx::query(
-        "INSERT INTO ehr (id, system_id) VALUES ($1, $2) \
-         ON CONFLICT DO NOTHING RETURNING time_created",
+        "INSERT INTO ehr (id, system_id, subject_id, subject_namespace, is_queryable) \
+         VALUES ($1, $2, $3, $4, $5) \
+         ON CONFLICT (id) DO NOTHING RETURNING time_created",
     )
     .bind(ehr_id)
     .bind(system_id)
+    .bind(subject_id)
+    .bind(subject_namespace)
+    .bind(is_queryable)
     .fetch_optional(&mut *tx)
-    .await?;
+    .await
+    .map_err(|e| {
+        // A subject-uniqueness violation is NOT the `ON CONFLICT (id)` target, so
+        // it raises here; map it to the distinct subject-conflict error.
+        if let sqlx::Error::Database(db) = &e
+            && db.constraint() == Some("uq_ehr_subject")
+        {
+            return StorageError::SubjectInUse(
+                subject_id.unwrap_or_default().to_owned(),
+                subject_namespace.unwrap_or_default().to_owned(),
+            );
+        }
+        StorageError::Database(e)
+    })?;
     match row {
         Some(row) => Ok(Some(
             row.try_get::<jiff_sqlx::Timestamp, _>("time_created")?
@@ -164,6 +197,53 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: Uuid) -> Result<Option<Uuid>, S
     .bind(ehr_id)
     .fetch_optional(pool)
     .await?)
+}
+
+/// Resolve the EHR's directory slot **and** its current version metadata in ONE
+/// statement: the `ehr_folder`⋈`vo_version`⋈`audit` join, ordered live-first by
+/// `rank` (the same slot resolution [`directory_vo`] applies), projecting the
+/// current trunk version's `VERSION_TREE_ID` column ints + stored
+/// `creating_system_id` + audit `time_committed`. Folds the [`directory_vo`] slot
+/// lookup and the metadata-only current-version read into one round trip for the
+/// directory `If-Match`/`412` paths (`update`/`delete`). The
+/// full-`OBJECT_VERSION_ID` compare the caller builds from these columns is
+/// unchanged (ITS-REST overview §Concurrency control). `None` when the EHR
+/// indexes no folder hierarchy. No openEHR spec governs the `ehr_folder` schema —
+/// our own design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn directory_current_meta(
+    pool: &PgPool,
+    ehr_id: Uuid,
+) -> Result<Option<CurrentMeta>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+         v.creating_system_id, a.time_committed \
+         FROM ehr_folder f \
+         JOIN vo_version v ON v.vo_id = f.vo_id \
+           AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+         JOIN audit a ON a.id = v.audit_id \
+         WHERE f.ehr_id = $1 \
+         ORDER BY (v.lifecycle_state = '523'), f.rank \
+         LIMIT 1",
+    )
+    .bind(ehr_id)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CurrentMeta {
+        vo_id: row.try_get("vo_id")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+    }))
 }
 
 /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true`, read from

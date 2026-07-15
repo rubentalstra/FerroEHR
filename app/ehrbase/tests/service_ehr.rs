@@ -1944,6 +1944,10 @@ async fn directory_versioned_and_has_version() {
 /// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
 ///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
 ///   master06 §Committal: the written version identity).
+/// - Item 34: the EHR_STATUS update response `OBJECT_VERSION_ID`
+///   (`committed_response`, replacing the discarded post-commit reassembly) MUST
+///   equal a fresh read's `uid`, and the mutation MUST persist (the folded
+///   subject/is_queryable sync rides the write's UPDATE).
 #[tokio::test]
 async fn write_responses_match_a_fresh_read() {
     let pg = Pg::start().await;
@@ -1994,4 +1998,43 @@ async fn write_responses_match_a_fresh_read() {
         "the update ETag (committed_response) must equal the stored version uid"
     );
     assert!(dir_v2.ends_with("::2"), "update yields trunk version 2");
+
+    // Item 34 — EHR_STATUS update response uid (committed_response, no
+    // post-commit reassembly) == fresh read uid, and the `is_queryable` mutation
+    // persists (the folded subject/is_queryable sync rode the write's UPDATE).
+    let status_v1 = svc
+        .get_ehr_status(ehr_uuid)
+        .await
+        .expect("get_ehr_status v1");
+    let status_uid_v1 = status_v1["uid"]["value"]
+        .as_str()
+        .expect("status uid v1")
+        .to_owned();
+    let mut status_body = status_v1.clone();
+    status_body
+        .as_object_mut()
+        .expect("status object")
+        .remove("uid");
+    status_body["is_queryable"] = json!(false);
+    let status_uid_v2 = svc
+        .replace_ehr_status(ehr_uuid, uv(status_body, "251", Some(&status_uid_v1)))
+        .await
+        .expect("replace_ehr_status");
+    assert!(
+        status_uid_v2.ends_with("::2"),
+        "status update yields trunk version 2"
+    );
+    let fresh_status = svc
+        .get_ehr_status(ehr_uuid)
+        .await
+        .expect("get_ehr_status v2");
+    assert_eq!(
+        fresh_status["uid"]["value"], status_uid_v2,
+        "the status update ETag (committed_response) must equal the stored version uid"
+    );
+    assert_eq!(
+        fresh_status["is_queryable"],
+        json!(false),
+        "the EHR_STATUS mutation persisted through the folded write"
+    );
 }
