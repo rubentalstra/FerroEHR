@@ -16,9 +16,12 @@ use uuid::Uuid;
 use crate::storage::StorageError;
 
 /// Insert the `ehr` root row (id + immutable `system_id`), no-op on a duplicate
-/// id. Returns `true` when a row was inserted, `false` when the id already
-/// existed (the caller maps that to a 409). `EHR.system_id` is recorded at
-/// creation and immutable thereafter (arch-overview master06 §System Identity).
+/// id. Returns `Some(time_created)` — the server-assigned `EHR.time_created`
+/// (arch-overview master06 §The EHR), captured via `RETURNING` so the create
+/// path can build the `EHR` wire body without a follow-up `ehr` header read —
+/// or `None` when the id already existed (the caller maps that to a 409).
+/// `EHR.system_id` is recorded at creation and immutable thereafter
+/// (arch-overview master06 §System Identity).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
@@ -26,14 +29,22 @@ pub async fn insert_ehr(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     system_id: &str,
-) -> Result<bool, StorageError> {
-    let inserted =
-        sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-            .bind(ehr_id)
-            .bind(system_id)
-            .execute(&mut *tx)
-            .await?;
-    Ok(inserted.rows_affected() > 0)
+) -> Result<Option<jiff::Timestamp>, StorageError> {
+    let row = sqlx::query(
+        "INSERT INTO ehr (id, system_id) VALUES ($1, $2) \
+         ON CONFLICT DO NOTHING RETURNING time_created",
+    )
+    .bind(ehr_id)
+    .bind(system_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    match row {
+        Some(row) => Ok(Some(
+            row.try_get::<jiff_sqlx::Timestamp, _>("time_created")?
+                .to_jiff(),
+        )),
+        None => Ok(None),
+    }
 }
 
 /// The id of the EHR whose promoted subject columns match `(subject_id,

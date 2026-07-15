@@ -1933,3 +1933,65 @@ async fn directory_versioned_and_has_version() {
         "VERSIONED_OBJECT.time_created must be present, got {versioned}"
     );
 }
+
+/// The P20-item-33 write-path fixes must not change the wire: a write response
+/// built from the CONTRIBUTION commit results (never a post-commit re-read) has
+/// to be identical to what a fresh read yields.
+///
+/// - Fix E: the EHR create representation is assembled from the commit `Committed`
+///   rows (`ehr_created_object`, from the create-time stash) and MUST be
+///   byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
+/// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
+///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
+///   master06 §Committal: the written version identity).
+#[tokio::test]
+async fn write_responses_match_a_fresh_read() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("writeresp").await);
+
+    // Fix E — built-from-commit EHR body == fresh ehr_summary read.
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
+    let built = svc
+        .ehr_created_object(ehr_uuid)
+        .await
+        .expect("ehr_created_object (built from commit, stash)");
+    let fresh = svc
+        .ehr_object(ehr_uuid)
+        .await
+        .expect("ehr_object (fresh read)");
+    assert_eq!(
+        built, fresh,
+        "the EHR body built from the commit results must equal a fresh ehr_summary read"
+    );
+
+    // Fix D — directory create response uid == fresh read uid.
+    let dir_v1 = svc
+        .create_directory(ehr_uuid, uv(folder("root"), "249", None))
+        .await
+        .expect("directory_create");
+    let got_v1 = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("dir get v1");
+    assert_eq!(
+        got_v1["uid"]["value"], dir_v1,
+        "the create ETag (committed_response) must equal the stored version uid"
+    );
+
+    // Fix D — directory update response uid == fresh read uid.
+    let mut folder_v2 = folder("root");
+    folder_v2["name"]["value"] = json!("root2");
+    let dir_v2 = svc
+        .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
+        .await
+        .expect("directory_update");
+    let got_v2 = svc
+        .get_directory_at_time(ehr_uuid, None, None)
+        .await
+        .expect("dir get v2");
+    assert_eq!(
+        got_v2["uid"]["value"], dir_v2,
+        "the update ETag (committed_response) must equal the stored version uid"
+    );
+    assert!(dir_v2.ends_with("::2"), "update yields trunk version 2");
+}

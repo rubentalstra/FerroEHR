@@ -151,23 +151,59 @@ impl EhrbaseService {
 
     /// The current version metadata of an EHR-owned object of `kind` (the latest
     /// `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or `None`.
+    ///
+    /// Resolved and read in ONE metadata-only `vo_version`⋈`audit` statement
+    /// (`current_version_meta_by_kind`): the `409`/`412` path needs only the
+    /// full `OBJECT_VERSION_ID` + commit instant, never the reassembled document
+    /// or the attestations, so this avoids the node reassembly + attestation read
+    /// the full version read pays. The full-`OBJECT_VERSION_ID` `If-Match`
+    /// compare (ITS-REST overview §Concurrency control) is unchanged — the
+    /// emitted `ETag` is still `object_id::creating_system_id::version_tree_id`.
     pub(in crate::service) async fn latest_version_meta(
         &self,
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        let Some((vo_id, _)) = self.current_vo(ehr_id, kind).await? else {
+        let Some(m) = crate::storage::version_repo::current_version_meta_by_kind(
+            &self.pool,
+            ehr_id,
+            kind.as_str(),
+        )
+        .await?
+        else {
             return Ok(None);
         };
-        let Some(read) = crate::versioning::read_current(&self.pool, vo_id).await? else {
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
+        Ok(Some(self.version_meta(
+            ehr_id,
+            m.vo_id,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
+        )))
+    }
+
+    /// The current version metadata of an object addressed by its `vo_id` (the
+    /// directory-slot resolution already yields the id) — the metadata-only read
+    /// for a `412` `ETag`/`Location`, ONE `vo_version`⋈`audit` statement (no node
+    /// reassembly, no attestation read). The full-`OBJECT_VERSION_ID` `If-Match`
+    /// compare (ITS-REST overview §Concurrency control) is unchanged.
+    pub(in crate::service) async fn current_version_meta_by_vo(
+        &self,
+        ehr_id: Uuid,
+        vo_id: Uuid,
+    ) -> Result<Option<ResourceMeta>, ServiceError> {
+        let Some(m) = crate::storage::version_repo::current_version_meta(&self.pool, vo_id).await?
+        else {
             return Ok(None);
         };
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
         Ok(Some(self.version_meta(
             ehr_id,
             vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
         )))
     }
 
