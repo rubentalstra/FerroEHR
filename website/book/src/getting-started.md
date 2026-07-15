@@ -42,7 +42,7 @@ curl http://localhost:8080/ehrbase/rest/status
 
 All clinical API routes live under the base path
 `/ehrbase/rest/openehr/v1`. Interactive OpenAPI documentation is served at
-<http://localhost:8080/ehrbase/swagger-ui>, and the full endpoint reference is
+<http://localhost:8080/ehrbase/rest/swagger-ui>, and the full endpoint reference is
 published on the documentation site under `/ehrbase-rs/api/` (the **API** tab).
 
 ## 3. Create an EHR
@@ -149,7 +149,7 @@ feature set.
 
 ## 7. Explore the API interactively
 
-Open <http://localhost:8080/ehrbase/swagger-ui> to browse and try every
+Open <http://localhost:8080/ehrbase/rest/swagger-ui> to browse and try every
 endpoint from your browser, or read the static API reference on the
 documentation site (the **API** tab, under `/ehrbase-rs/api/`) for the complete
 contract.
