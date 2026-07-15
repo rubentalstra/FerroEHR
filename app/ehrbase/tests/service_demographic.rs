@@ -100,6 +100,30 @@ fn person(name: &str) -> Value {
     })
 }
 
+fn organisation(name: &str) -> Value {
+    json!({
+        "_type": "ORGANISATION",
+        "archetype_node_id": "openEHR-DEMOGRAPHIC-ORGANISATION.organisation.v1",
+        "name": { "_type": "DV_TEXT", "value": name },
+        "identities": [{
+            "_type": "PARTY_IDENTITY",
+            "archetype_node_id": "at0001",
+            "name": { "_type": "DV_TEXT", "value": "legal name" },
+            "details": {
+                "_type": "ITEM_TREE",
+                "archetype_node_id": "at0002",
+                "name": { "_type": "DV_TEXT", "value": "structure" },
+                "items": [{
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0003",
+                    "name": { "_type": "DV_TEXT", "value": "org name" },
+                    "value": { "_type": "DV_TEXT", "value": name }
+                }]
+            }
+        }]
+    })
+}
+
 fn role(name: &str) -> Value {
     json!({
         "_type": "ROLE",
@@ -350,6 +374,74 @@ async fn person_lifecycle_end_to_end() {
         .await
         .expect("get after delete");
     assert!(after.is_empty(), "deleted current read is 204 (Null body)");
+}
+
+/// P20-item-34 party write-path fix: the create/update representation is now
+/// built **from the commit result** (never a post-commit re-read). It must be
+/// byte-identical to a fresh read — the served body is
+/// `inject_uid(reassemble(decompose(body)))` and the node codec round-trips
+/// losslessly (RM common master06 §Committal: the written version identity +
+/// content). Mirrors the EHR/DIRECTORY `write_responses_match_a_fresh_read`
+/// gate; covers PERSON and the ORGANISATION sibling (same path, keyed by
+/// `PartyKind`).
+#[tokio::test]
+async fn party_write_responses_match_a_fresh_read() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("party_writeresp").await);
+
+    // create → the built-from-commit body equals a fresh read.
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"))
+        .await
+        .expect("create person");
+    let ovid_v1 = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+    let fresh = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get person");
+    assert_eq!(
+        created.body, fresh.body,
+        "create body built from the commit must equal a fresh read"
+    );
+    assert_eq!(
+        created.meta.as_ref().expect("create meta").uid,
+        fresh.meta.as_ref().expect("read meta").uid,
+        "create uid == fresh read uid"
+    );
+
+    // update → the built-from-commit body equals a fresh read.
+    let updated = svc
+        .party_update(PartyKind::Person, vo.clone(), ovid_v1, person("Jane Roe"))
+        .await
+        .expect("update person");
+    let fresh_v2 = svc
+        .party_get(PartyKind::Person, vo.clone(), None)
+        .await
+        .expect("get person v2");
+    assert_eq!(
+        updated.body, fresh_v2.body,
+        "update body built from the commit must equal a fresh read"
+    );
+    assert_eq!(
+        updated.meta.as_ref().expect("update meta").uid,
+        fresh_v2.meta.as_ref().expect("read meta").uid,
+    );
+
+    // ORGANISATION sibling — the same create path keyed by PartyKind.
+    let created_org = svc
+        .party_create(PartyKind::Organisation, organisation("Acme"))
+        .await
+        .expect("create organisation");
+    let vo_org = vo_uuid(&created_org.body);
+    let fresh_org = svc
+        .party_get(PartyKind::Organisation, vo_org, None)
+        .await
+        .expect("get organisation");
+    assert_eq!(
+        created_org.body, fresh_org.body,
+        "organisation create body built from the commit must equal a fresh read"
+    );
 }
 
 /// The versioned-party delete shape the DEM ECC cases drive (ECC-DEM-005/006 …):

@@ -181,11 +181,15 @@ impl EhrbaseService {
         composition: Value,
         expected: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = read_current(&self.pool, vo_id)
+        // Lean modify pre-read: the pre-checks need only the owning EHR
+        // (ownership → 404), the lifecycle (deleted → 404, RM common master06
+        // §Logical Deletion), and the stored `template_id` read from the small
+        // root node fragment — NOT a full node reassembly the write does not use.
+        let current = crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|m| m.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        if current.deleted() {
+        if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::NotFound(format!(
                 "COMPOSITION {vo_id} is deleted"
             )));
@@ -194,10 +198,13 @@ impl EhrbaseService {
         // Reject an update whose body declares a *different* template than the
         // stored composition it supersedes (CNF master07
         // `update_composition-wrong_template`) — a semantic 422, not 400/412.
-        if let (Some(stored), Some(incoming)) = (
-            composition_template_id(&current.canonical),
-            composition_template_id(&composition),
-        ) && stored != incoming
+        let stored_template = current
+            .root_data
+            .as_ref()
+            .and_then(|d| composition_template_id(d));
+        if let (Some(stored), Some(incoming)) =
+            (stored_template, composition_template_id(&composition))
+            && stored != incoming
         {
             return Err(ServiceError::Unprocessable(format!(
                 "update COMPOSITION references template {incoming}, but the stored \
@@ -240,18 +247,23 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        let Some(read) = read_current(&self.pool, vo_id)
-            .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+        // Lean `vo_version`⋈`audit` read scoped to the EHR: the `ETag`/`If-Match`
+        // compare needs only the full `OBJECT_VERSION_ID` + commit instant (RM
+        // common master06 §Version Identification / §Committal), never the
+        // reassembled document the full `read_current` pays.
+        let Some(m) =
+            crate::storage::version_repo::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
+                .await?
         else {
             return Ok(None);
         };
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
         Ok(Some(self.version_meta(
             ehr_id,
             vo_id,
-            &read.creating_system_id,
-            read.tree,
-            read.time_committed,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
         )))
     }
 
@@ -291,20 +303,28 @@ impl EhrbaseService {
         vo_id: Uuid,
         expected: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
-        let read = read_current(&self.pool, vo_id)
+        // Lean delete pre-read: the pre-checks need only the owning EHR, the
+        // lifecycle (already-deleted → 400, F-02-05), and the current
+        // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) — not
+        // a full node reassembly (the deleted version stores no nodes anyway).
+        let current = crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|m| m.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
-        if read.deleted() {
+        if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::BadRequest(format!(
                 "COMPOSITION {vo_id} is already deleted"
             )));
         }
         self.ensure_content_writable(ehr_id).await?;
-        if read.tree != expected {
+        let current_tree = TreeId::from_columns(
+            current.trunk_version,
+            current.branch_number,
+            current.branch_version,
+        );
+        if current_tree != expected {
             return Err(ServiceError::Conflict(format!(
-                "preceding_version_uid names version {expected}, latest is {}",
-                read.tree
+                "preceding_version_uid names version {expected}, latest is {current_tree}"
             )));
         }
 
