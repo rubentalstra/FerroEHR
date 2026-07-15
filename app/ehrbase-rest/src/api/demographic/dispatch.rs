@@ -1,8 +1,10 @@
 //! The demographic operation-id → handler match (the group dispatcher).
 //!
 //! `openehr_its::rest::generated::demographic::ROUTES` (from the vendored
-//! `demographic.openapi.yaml`) and the [`RELATIONSHIP_ROUTES`](super::RELATIONSHIP_ROUTES)
-//! extension table are both mounted onto this one dispatcher. It classifies the
+//! `demographic.openapi.yaml`, via the `mount` adapter) and the native
+//! `utoipa-axum` `PARTY_RELATIONSHIP` extension router
+//! ([`relationship_routes`](super::relationship_routes)) are both routed onto
+//! this one dispatcher. It classifies the
 //! operation id and forwards to the resource module: [`party`](super::party),
 //! [`tags`](super::tags), [`versioned_party`](super::versioned_party),
 //! [`contribution`](super::contribution), or [`relationship`](super::relationship).
