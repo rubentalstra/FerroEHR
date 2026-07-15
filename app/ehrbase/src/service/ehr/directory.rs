@@ -218,23 +218,29 @@ impl EhrbaseService {
     }
 
     /// The directory-slot versioned-object id **and** its current version
-    /// metadata, resolved in the two reads the `If-Match`/`412` path needs: the
-    /// `ehr_folder`⋈`vo_version` slot resolution, then the metadata-only current
-    /// version read ([`Self::current_version_meta_by_vo`] — no node reassembly,
-    /// no attestation read). Threading the `vo_id` back to the caller lets the
-    /// inner write skip re-running the slot JOIN. `None` when the EHR indexes no
-    /// directory hierarchy.
+    /// metadata, resolved and read in ONE `ehr_folder`⋈`vo_version`⋈`audit`
+    /// statement ([`crate::storage::ehr_repo::directory_current_meta`] — no node
+    /// reassembly, no attestation read). The slot JOIN and the metadata-only
+    /// current-version read are folded into a single round trip; threading the
+    /// `vo_id` back to the caller lets the inner write skip re-running the slot
+    /// JOIN. `None` when the EHR indexes no directory hierarchy.
     pub(in crate::service) async fn directory_meta_with_vo(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<(Uuid, ehrbase_sm::ResourceMeta)>, ServiceError> {
-        let Some(vo_id) = self.directory_vo_opt(ehr_id).await? else {
+        let Some(m) = crate::storage::ehr_repo::directory_current_meta(&self.pool, ehr_id).await?
+        else {
             return Ok(None);
         };
-        let Some(meta) = self.current_version_meta_by_vo(ehr_id, vo_id).await? else {
-            return Ok(None);
-        };
-        Ok(Some((vo_id, meta)))
+        let tree = TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version);
+        let meta = self.version_meta(
+            ehr_id,
+            m.vo_id,
+            &m.creating_system_id,
+            tree,
+            m.time_committed,
+        );
+        Ok(Some((m.vo_id, meta)))
     }
 
     /// The versioned-object id of the EHR's directory — `EHR.directory` (=
