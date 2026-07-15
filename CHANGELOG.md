@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- The Swagger UI works again: `…/rest/swagger-ui` previously entered an
+  infinite redirect loop (the UI's trailing-slash redirect fought the
+  server's path normalization) and its OpenAPI document was an empty stub.
+  The UI now loads directly, and its spec selector serves the authoritative
+  vendored ITS-REST contract — one document per API group (EHR, Query,
+  Definition, Demographic, Admin, System, Overview) — exactly the tree the
+  server's routes are generated from. The documentation's Swagger URL is
+  corrected to `/ehrbase/rest/swagger-ui`.
+
 ### Changed
 
 - The benchmark instrument measures both comparison stacks under a fairer,
