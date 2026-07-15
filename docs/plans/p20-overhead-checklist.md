@@ -385,6 +385,22 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       rewrites preferred where they pay (greenfield mandate). Verification:
       per-class p99/p50 from a fresh hour pair after the fixes.
 
+- [ ] **34. The exhaustive endpoint sweep (owner PRIO, 2026-07-15 — "go
+      through ALL paths, find everything, not only a few high ones").**
+      Item 33 proved the method: statement-count probing found 6–10 wasted
+      round trips per op on paths the benchmark happened to expose
+      (discarded post-commit re-reads, double-built summaries, repeated
+      slot JOINs, meta overfetch, per-read attestation SELECTs). Now apply
+      it to the WHOLE ITS-REST surface (~96 operations incl. demographic,
+      contribution, query/stored-query, template/definition, admin, tags,
+      versioned-object reads, EhrScape) plus the extension APIs: one probe
+      harness drives every operation once against testcontainers PG18 with
+      the sqlx tracing counter, producing an op → round-trips table;
+      every outlier vs the minimal-necessary count gets the established
+      treatments (committed_response, lean meta reads, threaded vo_ids,
+      folded/lateral reads) or a redesign. Exit: the full table committed
+      (before/after), no op paying discarded or duplicate statements.
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
