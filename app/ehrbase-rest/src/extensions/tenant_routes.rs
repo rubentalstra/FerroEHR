@@ -40,13 +40,11 @@ use crate::state::AppState;
 /// (the coarse RBAC gate classes it `Admin`). Served through [`guarded_dispatch`]
 /// → [`dispatch`]. No openEHR spec governs multi-tenancy — our own extension.
 pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
-    OpenApiRouter::new().routes(routes!(
-        tenant_list,
-        tenant_create,
-        tenant_get,
-        tenant_update,
-        tenant_delete,
-    ))
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(tenant_list, tenant_create))
+        .routes(routes!(tenant_get, tenant_update, tenant_delete))
 }
 
 /// List every tenant.

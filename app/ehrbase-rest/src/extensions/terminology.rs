@@ -63,14 +63,15 @@ use crate::{negotiate, params};
 /// operation is served through [`guarded_dispatch`] → [`dispatch`], so the
 /// wire behaviour is identical to the generated groups' `mount` adapter.
 pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
-    OpenApiRouter::new().routes(routes!(
-        terminology_ids,
-        terminology_description,
-        terminology_get_term,
-        terminology_subsumes,
-        terminology_value_set,
-        terminology_value_set_validate,
-    ))
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(terminology_ids))
+        .routes(routes!(terminology_description))
+        .routes(routes!(terminology_get_term))
+        .routes(routes!(terminology_subsumes))
+        .routes(routes!(terminology_value_set))
+        .routes(routes!(terminology_value_set_validate))
 }
 
 // ── Handlers (SM `I_TERMINOLOGY_SERVICE` semantics; our own wire shape) ───────

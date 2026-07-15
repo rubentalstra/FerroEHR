@@ -41,13 +41,15 @@ use crate::state::AppState;
 /// (the coarse RBAC gate classes it `Admin`). Served through [`guarded_dispatch`]
 /// → [`dispatch`]. No openEHR spec governs eventing — our own extension.
 pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
-    OpenApiRouter::new().routes(routes!(
-        event_subscription_list,
-        event_subscription_create,
-        event_subscription_get,
-        event_subscription_update,
-        event_subscription_delete,
-    ))
+    // One `routes!` per PATH (handlers in a single call must share the path;
+    // mixing paths panics at router build with "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(event_subscription_list, event_subscription_create))
+        .routes(routes!(
+            event_subscription_get,
+            event_subscription_update,
+            event_subscription_delete
+        ))
 }
 
 /// List every event subscription.

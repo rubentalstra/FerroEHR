@@ -38,16 +38,20 @@ use ehrbase_sm::{Platform, ServiceResponse};
 /// ops back into [`run`] — so the wire behaviour is identical to the former
 /// table-driven mount.
 pub(crate) fn relationship_routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
-    OpenApiRouter::new().routes(routes!(
-        party_relationship_create,
-        party_relationship_get,
-        party_relationship_update,
-        party_relationship_delete,
-        versioned_party_relationship_get,
-        party_relationship_revision_history,
-        party_relationship_version_get_at_time,
-        party_relationship_version_get_by_id,
-    ))
+    // One `routes!` per PATH (the macro composes one method-router — handlers
+    // in a single call must share the path; mixing paths panics at build with
+    // "Overlapping method route").
+    OpenApiRouter::new()
+        .routes(routes!(party_relationship_create))
+        .routes(routes!(
+            party_relationship_get,
+            party_relationship_update,
+            party_relationship_delete
+        ))
+        .routes(routes!(versioned_party_relationship_get))
+        .routes(routes!(party_relationship_revision_history))
+        .routes(routes!(party_relationship_version_get_at_time))
+        .routes(routes!(party_relationship_version_get_by_id))
 }
 
 // ── Handlers (our own wire; no ITS-REST operation governs these) ──────────────
