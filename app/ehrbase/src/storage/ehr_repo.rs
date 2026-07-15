@@ -17,8 +17,8 @@ use crate::storage::StorageError;
 use crate::storage::version_repo::CurrentMeta;
 
 /// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
-/// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable`) set
-/// in the SAME statement — the create path knows these from the incoming
+/// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /
+/// `is_modifiable`) set in the SAME statement — the create path knows these from the incoming
 /// `EHR_STATUS` before the row is written, so it never needs the follow-up
 /// `UPDATE ehr SET subject_id …` the [`crate::service`] sync hook runs on the
 /// update/contribution paths. Returns `Some(time_created)` — the server-assigned
@@ -32,8 +32,9 @@ use crate::storage::version_repo::CurrentMeta;
 /// (`uq_ehr_subject`, RM ehr master04 §EHR Status); a second EHR for the same
 /// subject violates that index — reported as [`StorageError::SubjectInUse`]
 /// (→ 409) distinctly from the id conflict. `is_queryable` backs the AQL
-/// full-population gate (SM `I_QUERY_SERVICE`). No openEHR spec governs the
-/// promoted columns — our own storage design.
+/// full-population gate (SM `I_QUERY_SERVICE`); `is_modifiable` backs the
+/// content-write guard (RM ehr master04 §EHR Active Status). No openEHR spec
+/// governs the promoted columns — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::SubjectInUse`] on a subject-uniqueness violation,
@@ -45,10 +46,12 @@ pub async fn insert_ehr(
     subject_id: Option<&str>,
     subject_namespace: Option<&str>,
     is_queryable: bool,
+    is_modifiable: bool,
 ) -> Result<Option<jiff::Timestamp>, StorageError> {
     let row = sqlx::query(
-        "INSERT INTO ehr (id, system_id, subject_id, subject_namespace, is_queryable) \
-         VALUES ($1, $2, $3, $4, $5) \
+        "INSERT INTO ehr (id, system_id, subject_id, subject_namespace, is_queryable, \
+         is_modifiable) \
+         VALUES ($1, $2, $3, $4, $5, $6) \
          ON CONFLICT (id) DO NOTHING RETURNING time_created",
     )
     .bind(ehr_id)
@@ -56,6 +59,7 @@ pub async fn insert_ehr(
     .bind(subject_id)
     .bind(subject_namespace)
     .bind(is_queryable)
+    .bind(is_modifiable)
     .fetch_optional(&mut *tx)
     .await
     .map_err(|e| {
@@ -80,28 +84,36 @@ pub async fn insert_ehr(
     }
 }
 
-/// Refresh the promoted `ehr.is_queryable` column from the EHR's CURRENT
-/// `EHR_STATUS` root node (`num = 0`, latest trunk). Used by the paths that land
-/// `EHR_STATUS` versions WITHOUT the service's `sync_ehr_subject` hook — the EHR
-/// Extract import and the admin archive load — so the AQL full-population gate
-/// (SM `I_QUERY_SERVICE`, `i_query_service.adoc`: full population = EHRs whose
-/// status has `is_queryable = True`) reads a column that matches the stored
-/// status. Semantics: RM ehr master04 §EHR Status (`EHR_STATUS.is_queryable`,
-/// 1..1 Boolean). Falls back to `true` (the column default / the default
-/// `EHR_STATUS`) when the EHR has no current `EHR_STATUS`. No openEHR spec
-/// governs the promoted column — our own storage design.
+/// Refresh the promoted `ehr` status-flag columns (`is_queryable` +
+/// `is_modifiable`) from the EHR's CURRENT `EHR_STATUS` root node (`num = 0`,
+/// latest trunk). Used by the paths that land `EHR_STATUS` versions WITHOUT the
+/// service's `sync_ehr_subject` hook — the EHR Extract import and the admin
+/// archive load — so both promoted flags match the stored status: the AQL
+/// full-population gate (SM `I_QUERY_SERVICE`, `i_query_service.adoc`: full
+/// population = EHRs whose status has `is_queryable = True`) and the
+/// content-write guard (RM ehr master04 §EHR Active Status:
+/// `EHR_STATUS.is_modifiable`) both read the column, not the node. Semantics: RM
+/// ehr master04 §EHR Status (`is_queryable`, 1..1 Boolean) / §EHR Active Status
+/// (`is_modifiable`, 1..1 Boolean). Each falls back to `true` (the column
+/// default / the default `EHR_STATUS`) when the EHR has no current `EHR_STATUS`.
+/// No openEHR spec governs the promoted columns — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn sync_is_queryable(tx: &mut PgConnection, ehr_id: Uuid) -> Result<(), StorageError> {
+pub async fn sync_status_flags(tx: &mut PgConnection, ehr_id: Uuid) -> Result<(), StorageError> {
     sqlx::query(
-        "UPDATE ehr SET is_queryable = COALESCE((\
-           SELECT (n.data->>'is_queryable') = 'true' \
+        "UPDATE ehr e SET \
+           is_queryable = COALESCE(s.is_queryable, true), \
+           is_modifiable = COALESCE(s.is_modifiable, true) \
+         FROM (SELECT $1::uuid AS id) k \
+         LEFT JOIN LATERAL (\
+           SELECT (n.data->>'is_queryable') = 'true' AS is_queryable, \
+                  (n.data->>'is_modifiable') = 'true' AS is_modifiable \
            FROM vo_version v \
            JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-           WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
-             AND upper_inf(v.sys_period) AND v.branch_number = 0), true) \
-         WHERE id = $1",
+           WHERE v.ehr_id = k.id AND v.kind = 'EHR_STATUS' \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0) s ON true \
+         WHERE e.id = k.id",
     )
     .bind(ehr_id)
     .execute(&mut *tx)
@@ -199,31 +211,35 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: Uuid) -> Result<Option<Uuid>, S
     .await?)
 }
 
-/// Resolve the EHR's directory slot **and** its current version metadata in ONE
-/// statement: the `ehr_folder`⋈`vo_version`⋈`audit` join, ordered live-first by
-/// `rank` (the same slot resolution [`directory_vo`] applies), projecting the
-/// current trunk version's `VERSION_TREE_ID` column ints + stored
-/// `creating_system_id` + audit `time_committed`. Folds the [`directory_vo`] slot
-/// lookup and the metadata-only current-version read into one round trip for the
-/// directory `If-Match`/`412` paths (`update`/`delete`). The
+/// Resolve the EHR's directory slot **and** its current version metadata **and**
+/// the EHR's `is_modifiable` content-write flag in ONE statement: the
+/// `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` join, ordered live-first by `rank`
+/// (the same slot resolution [`directory_vo`] applies), projecting the current
+/// trunk version's `VERSION_TREE_ID` column ints + stored `creating_system_id` +
+/// audit `time_committed`, plus the promoted `ehr.is_modifiable`. Folds the
+/// [`directory_vo`] slot lookup, the metadata-only current-version read, and the
+/// former standalone `is_modifiable` side-SELECT into one round trip for the
+/// directory `If-Match`/`412` write paths (`update`/`delete`). The
 /// full-`OBJECT_VERSION_ID` compare the caller builds from these columns is
-/// unchanged (ITS-REST overview §Concurrency control). `None` when the EHR
-/// indexes no folder hierarchy. No openEHR spec governs the `ehr_folder` schema —
-/// our own design.
+/// unchanged (ITS-REST overview §Concurrency control); the `is_modifiable` gate
+/// is RM ehr master04 §EHR Active Status. Returns `(meta, is_modifiable)`; `None`
+/// when the EHR indexes no folder hierarchy. No openEHR spec governs the
+/// `ehr_folder` schema — our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn directory_current_meta(
     pool: &PgPool,
     ehr_id: Uuid,
-) -> Result<Option<CurrentMeta>, StorageError> {
+) -> Result<Option<(CurrentMeta, bool)>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, a.time_committed \
+         v.creating_system_id, a.time_committed, e.is_modifiable \
          FROM ehr_folder f \
          JOIN vo_version v ON v.vo_id = f.vo_id \
            AND upper_inf(v.sys_period) AND v.branch_number = 0 \
          JOIN audit a ON a.id = v.audit_id \
+         JOIN ehr e ON e.id = f.ehr_id \
          WHERE f.ehr_id = $1 \
          ORDER BY (v.lifecycle_state = '523'), f.rank \
          LIMIT 1",
@@ -234,7 +250,7 @@ pub async fn directory_current_meta(
     else {
         return Ok(None);
     };
-    Ok(Some(CurrentMeta {
+    let meta = CurrentMeta {
         vo_id: row.try_get("vo_id")?,
         trunk_version: row.try_get("trunk_version")?,
         branch_number: row.try_get("branch_number")?,
@@ -243,38 +259,36 @@ pub async fn directory_current_meta(
         time_committed: row
             .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
             .to_jiff(),
-    }))
+    };
+    Ok(Some((meta, row.try_get("is_modifiable")?)))
 }
 
-/// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true`, read from
-/// the `EHR_STATUS` root node's canonical `data` fragment (`num = 0`, RM ehr
-/// `EHR_STATUS.is_modifiable`). `None` when the EHR has no current `EHR_STATUS`
-/// (the caller treats that as modifiable so the guard never spuriously blocks).
+/// Whether the EHR is modifiable, read from the promoted `ehr.is_modifiable`
+/// column (kept in lockstep with the current `EHR_STATUS.is_modifiable` by
+/// [`sync_status_flags`] and the service's `sync_ehr_subject` hook; RM ehr
+/// master04 §EHR Active Status). `None` when the EHR does not exist (the caller
+/// treats that as modifiable so the guard never spuriously blocks). No openEHR
+/// spec governs the promoted column — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: Uuid) -> Result<Option<bool>, StorageError> {
-    Ok(sqlx::query_scalar(
-        "SELECT (n.data->>'is_modifiable') = 'true' \
-         FROM vo_version v \
-         JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-         WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0",
+    Ok(
+        sqlx::query_scalar("SELECT is_modifiable FROM ehr WHERE id = $1")
+            .bind(ehr_id)
+            .fetch_optional(pool)
+            .await?,
     )
-    .bind(ehr_id)
-    .fetch_optional(pool)
-    .await?)
 }
 
 /// The two content-write pre-checks in ONE round trip: whether the EHR exists,
-/// and whether its current `EHR_STATUS` has `is_modifiable = true`. Returns
-/// `(exists, is_modifiable)` where `is_modifiable` is `None` when the EHR has no
-/// current `EHR_STATUS` (the caller treats that as modifiable so the guard never
-/// spuriously blocks) — identical to reading [`ehr_is_modifiable`] on its own.
-/// The concepts guarded are RM ehr master04 §EHR Creation (existence) and §EHR
-/// Active Status (`EHR_STATUS.is_modifiable`); collapsing the existence EXISTS
-/// and the `is_modifiable` root-node read into one statement is our own design —
-/// no openEHR spec governs the query shape.
+/// and whether it is modifiable. Reads the `ehr` row directly — a present row is
+/// the existence signal and carries the promoted `is_modifiable` column (synced
+/// with the current `EHR_STATUS` by [`sync_status_flags`] / `sync_ehr_subject`).
+/// Returns `(exists, is_modifiable)` where `is_modifiable` is `None` exactly when
+/// the EHR does not exist. The concepts guarded are RM ehr master04 §EHR
+/// Creation (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
+/// openEHR spec governs the promoted column — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -282,18 +296,12 @@ pub async fn ehr_writability(
     pool: &PgPool,
     ehr_id: Uuid,
 ) -> Result<(bool, Option<bool>), StorageError> {
-    let row = sqlx::query(
-        "SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1) AS ehr_exists, \
-         (SELECT (n.data->>'is_modifiable') = 'true' \
-            FROM vo_version v \
-            JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-            WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' AND upper_inf(v.sys_period) \
-            AND v.branch_number = 0) AS is_modifiable",
-    )
-    .bind(ehr_id)
-    .fetch_one(pool)
-    .await?;
-    Ok((row.try_get("ehr_exists")?, row.try_get("is_modifiable")?))
+    let is_modifiable: Option<bool> =
+        sqlx::query_scalar("SELECT is_modifiable FROM ehr WHERE id = $1")
+            .bind(ehr_id)
+            .fetch_optional(pool)
+            .await?;
+    Ok((is_modifiable.is_some(), is_modifiable))
 }
 
 /// Whether the EHR already has a LIVE folder hierarchy whose root carries the

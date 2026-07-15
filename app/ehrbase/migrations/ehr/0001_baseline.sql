@@ -84,6 +84,19 @@ CREATE TABLE ehr (
     -- false rows is pointless (almost every EHR is queryable). No openEHR spec
     -- governs the promoted column itself — our own storage design.
     is_queryable      boolean NOT NULL DEFAULT true,
+    -- Promoted copy of the current EHR_STATUS.is_modifiable flag (RM ehr master04
+    -- §EHR Active Status: EHR_STATUS.is_modifiable, 1..1 Boolean), kept in
+    -- lockstep with the current EHR_STATUS by the service on every status write
+    -- (status.rs sync_ehr_subject — the same UPDATE that syncs subject_* /
+    -- is_queryable) and backfilled on the import / archive-load paths. The
+    -- content-write guard — RM ehr master04 §EHR Active Status: is_modifiable
+    -- "is used to indicate whether the contents of an EHR are modifiable"; "an
+    -- EHR's 'contents' consist of everything other than the EHR_STATUS object" —
+    -- reads this column directly instead of probing the current EHR_STATUS root
+    -- node per content write. Default true = the default EHR_STATUS a fresh EHR
+    -- is created with (and an active EHR). No openEHR spec governs the promoted
+    -- column itself — our own storage design, symmetric with is_queryable.
+    is_modifiable     boolean NOT NULL DEFAULT true,
     CONSTRAINT pk_ehr PRIMARY KEY (id)
 );
 CREATE INDEX idx_ehr_time_created ON ehr (time_created DESC, id);
@@ -99,6 +112,7 @@ COMMENT ON COLUMN ehr.system_id IS 'The system that created this EHR, recorded a
 COMMENT ON COLUMN ehr.subject_id IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.id.value, synced by the service; backs the one-EHR-per-subject unique index (req 2.8).';
 COMMENT ON COLUMN ehr.subject_namespace IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.namespace (see subject_id).';
 COMMENT ON COLUMN ehr.is_queryable IS 'Promoted copy of the current EHR_STATUS.is_queryable (RM ehr master04 §EHR Status), synced by the service; backs the AQL full-population gate (SM I_QUERY_SERVICE, i_query_service.adoc). Our own storage design.';
+COMMENT ON COLUMN ehr.is_modifiable IS 'Promoted copy of the current EHR_STATUS.is_modifiable (RM ehr master04 §EHR Active Status), synced by the service; backs the content-write guard (a deactivated EHR refuses Composition/Folder/content-CONTRIBUTION writes). Our own storage design, symmetric with is_queryable.';
 
 -- ── audit ──────────────────────────────────────────────────────────────────
 -- AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS;

@@ -656,6 +656,11 @@ impl ContributionAdapter for Mock {
         &self,
         an_ehr_id: Uuid,
         a_contribution: Value,
+        // The mock returns a canned response; the minimal/representation
+        // distinction is exercised at the negotiate layer (write_json), which
+        // discards the body under `return=minimal`, so the flag is not routed
+        // into the stub.
+        _representation: bool,
     ) -> Result<ServiceResponse, SmError> {
         match &self.h.ehr_contribution_commit {
             Some(f) => f(an_ehr_id, a_contribution),

@@ -117,10 +117,11 @@ impl EhrbaseService {
         commit_import(&mut tx, ehr_id, &audit, containers, outbox_enabled).await?;
         commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
         // The clone landed the EHR_STATUS directly (not via the service's
-        // sync_ehr_subject hook), so backfill the promoted `ehr.is_queryable`
-        // from the stored current status to keep the AQL full-population gate
-        // consistent (RM ehr master04 §EHR Status; SM I_QUERY_SERVICE).
-        crate::storage::ehr_repo::sync_is_queryable(&mut tx, ehr_id).await?;
+        // sync_ehr_subject hook), so backfill the promoted `ehr.is_queryable` /
+        // `is_modifiable` from the stored current status to keep the AQL
+        // full-population gate and the content-write guard consistent (RM ehr
+        // master04 §EHR Status / §EHR Active Status; SM I_QUERY_SERVICE).
+        crate::storage::ehr_repo::sync_status_flags(&mut tx, ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
         // An imported EHR_ACCESS version changes the EHR's access policy — evict
         // the cached settings the access gate consults (RM ehr master04 §EHR
@@ -177,10 +178,11 @@ impl EhrbaseService {
         commit_import(&mut tx, an_ehr_id, &audit, containers, outbox_enabled).await?;
         commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
         // An imported EHR_STATUS version can change the current status
-        // (Copying Case 3 append); backfill the promoted `ehr.is_queryable`
-        // from the stored current status so the AQL full-population gate stays
-        // consistent (RM ehr master04 §EHR Status; SM I_QUERY_SERVICE).
-        crate::storage::ehr_repo::sync_is_queryable(&mut tx, an_ehr_id).await?;
+        // (Copying Case 3 append); backfill the promoted `ehr.is_queryable` /
+        // `is_modifiable` from the stored current status so the AQL
+        // full-population gate and the content-write guard stay consistent (RM
+        // ehr master04 §EHR Status / §EHR Active Status; SM I_QUERY_SERVICE).
+        crate::storage::ehr_repo::sync_status_flags(&mut tx, an_ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
         // An imported EHR_ACCESS version changes the EHR's access policy — evict
         // the cached settings the access gate consults (RM ehr master04 §EHR

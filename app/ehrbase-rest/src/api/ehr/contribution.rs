@@ -46,9 +46,13 @@ pub(super) async fn run<S: Platform>(
             // CONTRIBUTION audit (see the trait's PORT NOTE; RM common master06
             // §Committal m4).
             let body = negotiate::json_value(h, &parts.body)?;
+            // Under `return=minimal` the response is headers-only (ETag +
+            // Location), so the composite CONTRIBUTION body is not built and its
+            // post-commit re-read is skipped; `return=representation` assembles
+            // it (ITS-REST `Requests_and_responses` §Representation details).
             let resp = state
                 .backend()
-                .ehr_contribution_commit(ehr_id, body)
+                .ehr_contribution_commit(ehr_id, body, negotiate::prefers_representation(h))
                 .await?;
             // 201_CONTRIBUTION: ETag(contribution_uid) + Location; body per Prefer.
             Ok(negotiate::write_json(

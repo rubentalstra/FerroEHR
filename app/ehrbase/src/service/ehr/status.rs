@@ -236,16 +236,16 @@ impl EhrbaseService {
             .await
     }
 
-    /// Whether the EHR's current `EHR_STATUS` has `is_modifiable = true` (RM ehr
-    /// `EHR_STATUS.is_modifiable`, 1..1 Boolean). Read inline from the `EHR_STATUS`
-    /// root node's canonical `data` fragment (`num = 0`); an EHR with no current
-    /// `EHR_STATUS` (should not occur) is treated as modifiable so the guard
-    /// never spuriously blocks.
+    /// Whether the EHR is modifiable (RM ehr `EHR_STATUS.is_modifiable`, 1..1
+    /// Boolean, RM ehr master04 §EHR Active Status). Read from the promoted
+    /// `ehr.is_modifiable` column, kept in lockstep with the current `EHR_STATUS`
+    /// by [`Self::sync_ehr_subject`] and the import/archive-load backfill; a
+    /// missing EHR (`None`) is treated as modifiable so the guard never
+    /// spuriously blocks.
     ///
-    /// The `is_modifiable` root-node read is a storage seam
+    /// The column read is a storage seam
     /// ([`crate::storage::ehr_repo::ehr_is_modifiable`]; no openEHR spec governs
-    /// the SQL — our own design). `None` (no current `EHR_STATUS`) → modifiable,
-    /// so the guard never spuriously blocks.
+    /// the promoted column — our own storage design).
     async fn ehr_is_modifiable(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
         Ok(
             crate::storage::ehr_repo::ehr_is_modifiable(&self.pool, ehr_id)
@@ -318,16 +318,19 @@ impl EhrbaseService {
         canonical: &Value,
     ) -> Result<(), ServiceError> {
         // The same promoted-column extraction the EHR-create path folds into its
-        // initial INSERT (single-sourced so both promote identical values).
-        let (subject_id, namespace, is_queryable) = ehr_promoted_columns(canonical);
+        // initial INSERT (single-sourced so both promote identical values). The
+        // is_modifiable sync (the content-write guard, RM ehr master04 §EHR
+        // Active Status) rides this same UPDATE — zero extra statements.
+        let (subject_id, namespace, is_queryable, is_modifiable) = ehr_promoted_columns(canonical);
         sqlx::query(
-            "UPDATE ehr SET subject_id = $2, subject_namespace = $3, is_queryable = $4 \
-             WHERE id = $1",
+            "UPDATE ehr SET subject_id = $2, subject_namespace = $3, is_queryable = $4, \
+             is_modifiable = $5 WHERE id = $1",
         )
         .bind(ehr_id)
         .bind(subject_id)
         .bind(namespace)
         .bind(is_queryable)
+        .bind(is_modifiable)
         .execute(&mut *tx)
         .await
         .map_err(|e| {
@@ -349,15 +352,16 @@ impl EhrbaseService {
 /// Extract the promoted `ehr`-table columns from an `EHR_STATUS` canonical
 /// value: the subject `(id, namespace)` — only a COMPLETE `external_ref` pair
 /// identifies a subject (RM ehr master04 §EHR Status; an anonymous `PARTY_SELF`
-/// yields `(None, None)`) — and `is_queryable` (1..1 Boolean; default `true`,
-/// matching the column default and the default `EHR_STATUS` when a raw path omits
-/// it). Shared by the EHR-create path's folded INSERT and the
-/// update/contribution [`EhrbaseService::sync_ehr_subject`] hook so both promote
-/// identical values. No openEHR spec governs the promoted columns — our own
-/// storage design.
+/// yields `(None, None)`) — and the two 1..1 Boolean status flags `is_queryable`
+/// (RM ehr master04 §EHR Status) and `is_modifiable` (RM ehr master04 §EHR
+/// Active Status), each defaulting to `true` (matching the column default and
+/// the default `EHR_STATUS` when a raw path omits them). Shared by the
+/// EHR-create path's folded INSERT and the update/contribution
+/// [`EhrbaseService::sync_ehr_subject`] hook so both promote identical values.
+/// No openEHR spec governs the promoted columns — our own storage design.
 pub(in crate::service) fn ehr_promoted_columns(
     canonical: &Value,
-) -> (Option<&str>, Option<&str>, bool) {
+) -> (Option<&str>, Option<&str>, bool, bool) {
     let subject_id = canonical
         .pointer("/subject/external_ref/id/value")
         .and_then(Value::as_str);
@@ -372,7 +376,11 @@ pub(in crate::service) fn ehr_promoted_columns(
         .pointer("/is_queryable")
         .and_then(Value::as_bool)
         .unwrap_or(true);
-    (subject_id, namespace, is_queryable)
+    let is_modifiable = canonical
+        .pointer("/is_modifiable")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    (subject_id, namespace, is_queryable, is_modifiable)
 }
 
 #[async_trait::async_trait]

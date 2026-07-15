@@ -1692,15 +1692,26 @@ pub async fn current_version_meta_scoped(
 }
 
 /// The current trunk version of a COMPOSITION reduced to exactly what the
-/// modify/delete pre-checks need — its owning `ehr_id` (the ownership gate),
-/// `lifecycle_state` (the deleted gate, RM common master06 §Logical Deletion),
-/// the `VERSION_TREE_ID` column ints (the `preceding_version_uid` conflict
-/// compare on delete), and the **root node fragment** (`num = 0`, children
-/// pruned) from which the modify path reads the declared
-/// `archetype_details.template_id.value` — in ONE `vo_version` LEFT JOIN `node`
-/// statement, **without** reassembling every node the full [`read_current`]
-/// pays. `root_data` is `None` for a deleted current (a logical delete stores no
-/// node rows). `None` when the object has no current trunk version. No openEHR
+/// modify/delete pre-checks need, in ONE `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN
+/// `node`) statement — a single read that serves the whole write pre-check
+/// (folding the former separate `If-Match` meta read, modify pre-read, and
+/// `is_modifiable` side-SELECT):
+///
+/// - owning `ehr_id` (the ownership gate) + `lifecycle_state` (the deleted gate,
+///   RM common master06 §Logical Deletion);
+/// - the `VERSION_TREE_ID` column ints + the stored per-version
+///   `creating_system_id` + the audit `time_committed` — the full
+///   `OBJECT_VERSION_ID` + commit instant the `ETag`/`If-Match` compare needs
+///   (RM common master06 §Version Identification / §Committal);
+/// - the EHR's promoted `is_modifiable` flag (the content-write guard, RM ehr
+///   master04 §EHR Active Status) via the `ehr` join;
+/// - the **root node fragment** (`num = 0`, children pruned) from which the
+///   modify path reads the declared `archetype_details.template_id.value` —
+///   **without** reassembling every node the full [`read_current`] pays.
+///
+/// `root_data` is `None` for a deleted current (a logical delete stores no node
+/// rows). `None` when the object has no current trunk version (a COMPOSITION
+/// always owns an `ehr`, so the inner join never drops a live row). No openEHR
 /// spec governs the SQL — our own design.
 #[derive(Debug, Clone)]
 pub struct CurrentCompositionMeta {
@@ -1709,6 +1720,9 @@ pub struct CurrentCompositionMeta {
     pub trunk_version: i32,
     pub branch_number: i32,
     pub branch_version: i32,
+    pub creating_system_id: String,
+    pub time_committed: jiff::Timestamp,
+    pub is_modifiable: bool,
     pub root_data: Option<Value>,
 }
 
@@ -1722,8 +1736,11 @@ pub async fn current_composition_meta(
 ) -> Result<Option<CurrentCompositionMeta>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
-         v.branch_version, n.data AS root_data \
+         v.branch_version, v.creating_system_id, a.time_committed, e.is_modifiable, \
+         n.data AS root_data \
          FROM vo_version v \
+         JOIN audit a ON a.id = v.audit_id \
+         JOIN ehr e ON e.id = v.ehr_id \
          LEFT JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
          WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0",
     )
@@ -1739,6 +1756,11 @@ pub async fn current_composition_meta(
         trunk_version: row.try_get("trunk_version")?,
         branch_number: row.try_get("branch_number")?,
         branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+        is_modifiable: row.try_get("is_modifiable")?,
         root_data: row.try_get("root_data")?,
     }))
 }
