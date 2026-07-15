@@ -401,6 +401,28 @@ Bench context the estimates assume: pool=50, signing OFF, shed=256, Basic
       folded/lateral reads) or a redesign. Exit: the full table committed
       (before/after), no op paying discarded or duplicate statements.
 
+- [ ] **35. The second full hunt (owner PRIO, 2026-07-15 — "go through
+      everything again, there is way more to be found").** With round trips
+      lean (items 33/34), the next strata, each measured before touched:
+      (a) **per-statement cost** — EXPLAIN (ANALYZE, BUFFERS) every
+      statement the lean paths still run at the 10k shape; kill seq scans,
+      re-check the post-Fix-B plan set, size the folded-CTE commit's own
+      plan; (b) **app CPU/alloc under load** — the item-27 profiler at the
+      new knee: flamegraph the serving path (canonical JSON encode/decode,
+      REST negotiation, axum extract, node codec, uuid/text conversions),
+      find the top allocation sites; (c) **protocol/driver** — re-price
+      pipelining + prepared-statement reuse at the NEW statement counts
+      (item 20 skipped it at ~4 round trips; the calculus may differ now),
+      sqlx statement-cache sizing, pool acquire behaviour at the knee;
+      (d) **PG config** — item 22's group-commit A/B (commit_delay/
+      commit_siblings, wal_compression) executed on the new write path;
+      (e) **the re-sweep** — the item-34 probe over all ~100 ops again:
+      confirm no regressions, rank the new worst offenders, mine the read
+      family (get-at-time/versioned-object reads) that waves 1–3 only
+      grazed. Exit: each stratum either yields a measured fix or a recorded
+      verified-not-a-problem entry; verification = ECC zero-drift + the
+      fresh hour pair + a knee re-ladder.
+
 ## Considered and deferred
 
 - **Valkey/Redis cache tier (owner question 2026-07-14): NO for the
