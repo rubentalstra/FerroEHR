@@ -437,10 +437,7 @@ fn prune_tags(doc: &mut utoipa::openapi::OpenApi) {
 }
 
 /// One filtered extension-family document as JSON.
-async fn family_json<S: Platform>(
-    State(state): State<AppState<S>>,
-    Path(family): Path<String>,
-) -> Response {
+fn family_json<S: Platform>(state: &AppState<S>, family: &str) -> Response {
     let Some((name, _, members)) = FAMILIES.iter().find(|(_, slug, _)| *slug == family) else {
         return StatusCode::NOT_FOUND.into_response();
     };
@@ -452,7 +449,7 @@ async fn family_json<S: Platform>(
         }
         Members::Tags(tags) => filter_by_tags(&full, tags),
     };
-    doc.info.title = (*name).to_owned();
+    doc.info.title = (*name).to_string();
     let body = serde_json::to_string(&doc).unwrap_or_else(|_| "{}".to_owned());
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
@@ -472,10 +469,18 @@ pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>
     let mut router = Router::new().route(&json_path, get(openapi_json::<S>));
 
     // One filtered document per API family (standard groups + extensions).
-    router = router.route(
-        &format!("{api_docs_root}/ehrbase-{{family}}.openapi.json"),
-        get(family_json::<S>),
-    );
+    // One static route per family: axum path captures span a whole segment,
+    // so a `{family}` embedded inside the `ehrbase-….openapi.json` filename
+    // cannot be a route parameter.
+    for (_, slug, _) in FAMILIES {
+        router =
+            router.route(
+                &format!("{api_docs_root}/ehrbase-{slug}.openapi.json"),
+                get(move |State(state): State<AppState<S>>| async move {
+                    family_json::<S>(&state, slug)
+                }),
+            );
+    }
 
     // The UI itself: assets straight from the embedded dist. The bare mount path
     // serves index.html (serve() maps "" to it) — no redirect, no loop.
@@ -511,7 +516,7 @@ fn swagger_config(cfg: &AppConfig) -> Arc<Config<'static>> {
     let mut urls: Vec<Url<'static>> = Vec::new();
     for (name, slug, _) in FAMILIES {
         let url = format!("{root}/ehrbase-{slug}.openapi.json");
-        urls.push(Url::new(*name, url.leak()));
+        urls.push(Url::new(name, url.leak()));
     }
     urls.push(Url::new("EHRbase — Complete surface", json_path.leak()));
     Arc::new(Config::new(urls))
