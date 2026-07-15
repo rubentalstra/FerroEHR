@@ -16,7 +16,7 @@
 //! `Skip`s it) and no ATNA audit-table entry (subscriptions are configuration,
 //! not PHI access) — the fallbacks apply automatically.
 //!
-//! The group is config-gated (`RestConfig::event_subscription.enabled`, default
+//! The group is config-gated (`AppConfig::events_admin_api`, default
 //! `false`): when disabled every route answers `404` without touching the
 //! backend.
 
@@ -89,7 +89,7 @@ async fn run<S: Platform>(
 ) -> Result<Response, RestError> {
     // Config gate: the group is opt-in. When disabled every route answers 404
     // (as if unmounted) without consulting the backend.
-    if !state.config().event_subscription.enabled {
+    if !state.config().events_admin_api {
         return Err(RestError(ApiError::NotFound(
             "event subscription API is disabled".to_owned(),
         )));

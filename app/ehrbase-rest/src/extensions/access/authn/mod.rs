@@ -445,7 +445,7 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extensions::access::authn::config::{BasicConfig, BasicUser, OidcConfig, Redacted};
+    use crate::extensions::access::authn::config::{BasicConfig, BasicUser, OidcConfig};
     use argon2::password_hash::{PasswordHasher, SaltString};
     use argon2::{Argon2, password_hash::PasswordHash};
 
@@ -463,7 +463,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: Redacted(hash("pw")),
+                    password_hash: ehrbase_sm::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),
@@ -482,8 +482,9 @@ mod tests {
                 issuer: "https://issuer.example".to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(Redacted("secret".to_owned())),
+                hmac_secret: Some(ehrbase_sm::Secret::new("secret".to_owned())),
                 jwks_json: None,
+                ..OidcConfig::default()
             }),
             admin_scope: None,
             ..AuthConfig::default()
@@ -534,7 +535,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: Redacted(hash("pw")),
+                    password_hash: ehrbase_sm::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),

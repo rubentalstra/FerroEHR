@@ -35,7 +35,7 @@ pub(super) async fn run<S: Platform>(
     let q = parts.query.as_deref();
     let ok = StatusCode::OK;
     let no_content = StatusCode::NO_CONTENT;
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "ehr_status_get_by_version_id" => {

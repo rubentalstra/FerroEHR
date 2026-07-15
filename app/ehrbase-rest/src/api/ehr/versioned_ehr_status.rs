@@ -32,7 +32,7 @@ pub(super) async fn run<S: Platform>(
     let h = &parts.headers;
     let q = parts.query.as_deref();
     let ok = StatusCode::OK;
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "versioned_ehr_status_get" => {

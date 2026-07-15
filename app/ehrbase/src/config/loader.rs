@@ -1,0 +1,335 @@
+//! The one loader (§5.1–5.4): file discovery + the pure `config`-crate
+//! assembly (defaults < file < env < `--set`) with the strict passes, alias
+//! remapping, error enrichment, and `*_file` secret resolution. No openEHR spec
+//! governs configuration — our own design.
+
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+use config::{Config, Environment, File, FileFormat};
+use ehrbase_sm::Secret;
+
+use super::EhrbaseConfig;
+use super::alias::{self, CONVENTIONAL, LIST_KEYS};
+use super::strict;
+
+/// One configuration error, rendered as a single human line.
+#[derive(Debug, thiserror::Error)]
+#[error("{message}")]
+pub struct ConfigError {
+    message: String,
+}
+
+impl ConfigError {
+    fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
+
+    /// A semantic (cross-field) validation failure.
+    #[must_use]
+    pub fn semantic(message: String) -> Self {
+        Self::new(message)
+    }
+
+    /// A retired variable that now dies with a migration message.
+    #[must_use]
+    pub fn dies(var: &str, msg: &str) -> Self {
+        Self::new(format!("`{var}` is no longer supported: {msg}"))
+    }
+
+    /// An unknown variable in the reserved `EHRBASE_` namespace.
+    #[must_use]
+    pub fn unknown_env(var: &str, suggestion: Option<String>) -> Self {
+        let hint = suggestion.map_or_else(String::new, |s| {
+            format!(
+                " — did you mean the `{s}` section (EHRBASE_{}__…)?",
+                s.to_ascii_uppercase()
+            )
+        });
+        Self::new(format!(
+            "unknown configuration environment variable `{var}`{hint}"
+        ))
+    }
+}
+
+/// A non-empty batch of configuration errors, rendered as one block so an
+/// operator fixes everything in one iteration (§P-5).
+#[derive(Debug)]
+pub struct ConfigErrors(pub Vec<ConfigError>);
+
+impl std::fmt::Display for ConfigErrors {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{} configuration error(s):", self.0.len())?;
+        for e in &self.0 {
+            writeln!(f, "  - {e}")?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for ConfigErrors {}
+
+/// File discovery (§5.4): `--config` → `EHRBASE_CONFIG` → `./ehrbase.toml` →
+/// `/etc/ehrbase/ehrbase.toml`. An explicitly-pointed-at file must exist; the
+/// search-order files are optional.
+///
+/// # Errors
+/// [`ConfigErrors`] if an explicit path is missing/unreadable.
+pub fn discover_file(
+    cli_config: Option<&Path>,
+    env: &HashMap<String, String>,
+) -> Result<Option<PathBuf>, ConfigErrors> {
+    if let Some(path) = cli_config {
+        return require(path);
+    }
+    if let Some(path) = env.get("EHRBASE_CONFIG") {
+        return require(Path::new(path));
+    }
+    for candidate in ["./ehrbase.toml", "/etc/ehrbase/ehrbase.toml"] {
+        let path = Path::new(candidate);
+        if path.is_file() {
+            return Ok(Some(path.to_path_buf()));
+        }
+    }
+    Ok(None)
+}
+
+fn require(path: &Path) -> Result<Option<PathBuf>, ConfigErrors> {
+    if path.is_file() {
+        Ok(Some(path.to_path_buf()))
+    } else {
+        Err(ConfigErrors(vec![ConfigError::new(format!(
+            "config file not found or unreadable: {}",
+            path.display()
+        ))]))
+    }
+}
+
+/// The pure assembly seam (§5.1 point 3).
+pub fn assemble(
+    file: Option<&Path>,
+    env: &HashMap<String, String>,
+    overrides: &[(String, String)],
+) -> Result<EhrbaseConfig, ConfigErrors> {
+    let mut errors = strict::strict_env(env);
+
+    let file_content = match file {
+        Some(path) => match std::fs::read_to_string(path) {
+            Ok(content) => Some(content),
+            Err(e) => {
+                errors.push(ConfigError::new(format!(
+                    "reading config file {}: {e}",
+                    path.display()
+                )));
+                None
+            }
+        },
+        None => None,
+    };
+
+    // Alias sweep (§5.7): warn once per set legacy var (this runs once per boot,
+    // so the warning is once-per-boot-per-alias, not per read), and remap the
+    // value onto its new key. New forms win because the real-env source is
+    // layered after this one.
+    let mut alias_map: HashMap<String, String> = HashMap::new();
+    for (key, value) in env {
+        if let Some(new) = alias::resolve_alias(key) {
+            tracing::warn!(
+                "environment variable {key} is deprecated; use {new} (aliases are removed in a \
+                 future release — see the migration table in the configuration docs)"
+            );
+            alias_map.entry(new).or_insert_with(|| value.clone());
+        }
+    }
+    for (external, canonical) in CONVENTIONAL {
+        if let Some(value) = env.get(*external) {
+            alias_map
+                .entry((*canonical).to_owned())
+                .or_insert_with(|| value.clone());
+        }
+    }
+
+    // The canonical (new-form) EHRBASE_ variables — excluding allowlist, dies,
+    // and legacy-alias names (those feed `alias_map`).
+    let mut real_map: HashMap<String, String> = HashMap::new();
+    for (key, value) in env {
+        if !key.starts_with("EHRBASE_")
+            || alias::ALLOWLIST.contains(&key.as_str())
+            || alias::DIES.iter().any(|(d, _)| d == key)
+            || alias::resolve_alias(key).is_some()
+        {
+            continue;
+        }
+        real_map.insert(key.clone(), value.clone());
+    }
+
+    let mut builder = Config::builder();
+    if let Some(content) = &file_content {
+        builder = builder.add_source(File::from_str(content, FileFormat::Toml));
+    }
+    builder = builder.add_source(env_source(alias_map));
+    builder = builder.add_source(env_source(real_map));
+    for (key, value) in overrides {
+        // `set_override` consumes the builder; clone so a rejected key keeps
+        // the builder alive for the remaining overrides (errors aggregate —
+        // the strict pass reports them all at once).
+        match builder.clone().set_override(key.clone(), value.clone()) {
+            Ok(next) => builder = next,
+            Err(e) => errors.push(ConfigError::new(format!("--set {key}={value}: {e}"))),
+        }
+    }
+
+    let config = match builder.build() {
+        Ok(built) => match built.try_deserialize::<EhrbaseConfig>() {
+            Ok(config) => Some(config),
+            Err(e) => {
+                errors.push(enrich(&e.to_string(), file_content.as_deref()));
+                None
+            }
+        },
+        Err(e) => {
+            errors.push(ConfigError::new(format!("assembling configuration: {e}")));
+            None
+        }
+    };
+
+    let Some(mut config) = config else {
+        return Err(ConfigErrors(errors));
+    };
+
+    resolve_secret_files(&mut config, &mut errors);
+
+    if errors.is_empty() {
+        Ok(config)
+    } else {
+        Err(ConfigErrors(errors))
+    }
+}
+
+/// An `EHRBASE_`-prefixed environment source over an injected map (the hermetic
+/// seam, §5.1) with the `__` grammar, typed scalars, and comma-separated lists.
+fn env_source(map: HashMap<String, String>) -> Environment {
+    let mut env = Environment::with_prefix("EHRBASE")
+        .separator("__")
+        .try_parsing(true)
+        .list_separator(",")
+        .source(Some(map.into_iter().collect()));
+    for key in LIST_KEYS {
+        env = env.with_list_parse_key(key);
+    }
+    env
+}
+
+/// Enrich a `config`/serde deserialize error: surface the offending key with a
+/// did-you-mean (from serde's "expected one of" list) and, when the value came
+/// from the file, its line number.
+fn enrich(err: &str, file: Option<&str>) -> ConfigError {
+    let Some(field) = between(err, "unknown field `", "`") else {
+        return ConfigError::new(format!("invalid configuration: {err}"));
+    };
+    let candidates = expected_fields(err);
+    let refs: Vec<&str> = candidates.iter().map(String::as_str).collect();
+    let suggestion = strict::did_you_mean(&field, &refs);
+    let line = file.and_then(|c| find_key_line(c, &field));
+    let loc = line.map_or_else(String::new, |l| format!(" (line {l})"));
+    let hint = suggestion.map_or_else(String::new, |s| format!("; did you mean `{s}`?"));
+    ConfigError::new(format!("unknown configuration key `{field}`{loc}{hint}"))
+}
+
+/// The substring between `start` and the next `end`, if present.
+fn between(haystack: &str, start: &str, end: &str) -> Option<String> {
+    let rest = haystack.split_once(start)?.1;
+    rest.split_once(end).map(|(inner, _)| inner.to_owned())
+}
+
+/// The "expected one of `a`, `b`, …" candidate list from a serde error.
+fn expected_fields(err: &str) -> Vec<String> {
+    let Some(after) = err.split_once("expected one of ").map(|(_, r)| r) else {
+        return Vec::new();
+    };
+    after
+        .split(',')
+        .filter_map(|tok| between(tok, "`", "`"))
+        .collect()
+}
+
+/// The 1-based line in `content` where `key` is defined (a `key =` assignment or
+/// a `[..key..]` header), for `file:line` diagnostics.
+fn find_key_line(content: &str, key: &str) -> Option<usize> {
+    content.lines().enumerate().find_map(|(i, line)| {
+        let trimmed = line.trim_start();
+        let is_assign = trimmed
+            .strip_prefix(key)
+            .is_some_and(|r| r.trim_start().starts_with('='));
+        let is_header = trimmed.starts_with('[') && trimmed.contains(key);
+        (is_assign || is_header).then_some(i + 1)
+    })
+}
+
+/// Resolve every `*_file` sibling into its `Secret`/string field immediately
+/// after extraction (§5.6): read the file, trim a trailing newline, and reject
+/// when both the inline value and its `*_file` are set.
+fn resolve_secret_files(config: &mut EhrbaseConfig, errors: &mut Vec<ConfigError>) {
+    resolve_secret(
+        "signing.key_passphrase",
+        &mut config.signing.key_passphrase,
+        config.signing.key_passphrase_file.take(),
+        errors,
+    );
+    if let Some(oidc) = config.auth.oidc.as_mut() {
+        resolve_secret(
+            "auth.oidc.hmac_secret",
+            &mut oidc.hmac_secret,
+            oidc.hmac_secret_file.take(),
+            errors,
+        );
+        // jwks_json is a plain (non-secret) string blob.
+        if let Some(path) = oidc.jwks_json_file.take() {
+            if oidc.jwks_json.is_some() {
+                errors.push(ConfigError::new(
+                    "set only one of auth.oidc.jwks_json / auth.oidc.jwks_json_file".to_owned(),
+                ));
+            } else {
+                match read_trim(&path) {
+                    Ok(s) => oidc.jwks_json = Some(s),
+                    Err(e) => errors.push(e),
+                }
+            }
+        }
+    }
+    resolve_secret(
+        "multimedia.secret_access_key",
+        &mut config.multimedia.secret_access_key,
+        config.multimedia.secret_access_key_file.take(),
+        errors,
+    );
+}
+
+/// Read `path`'s contents (trailing newline trimmed) into `target` as a
+/// [`Secret`], unless `target` is already set (both-set is an error, §5.6).
+fn resolve_secret(
+    key: &str,
+    target: &mut Option<Secret>,
+    file: Option<PathBuf>,
+    errors: &mut Vec<ConfigError>,
+) {
+    let Some(path) = file else { return };
+    if target.is_some() {
+        errors.push(ConfigError::new(format!(
+            "set only one of {key} / {key}_file"
+        )));
+        return;
+    }
+    match read_trim(&path) {
+        Ok(secret) => *target = Some(Secret::new(secret)),
+        Err(e) => errors.push(e),
+    }
+}
+
+fn read_trim(path: &Path) -> Result<String, ConfigError> {
+    std::fs::read_to_string(path)
+        .map(|s| s.trim_end_matches(['\r', '\n']).to_owned())
+        .map_err(|e| ConfigError::new(format!("reading secret file {}: {e}", path.display())))
+}

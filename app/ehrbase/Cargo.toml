@@ -14,7 +14,7 @@ urlencoding.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
 clap.workspace = true
-figment.workspace = true
+config.workspace = true
 jiff.workspace = true
 reqwest.workspace = true
 tokio.workspace = true
@@ -53,6 +53,10 @@ quick-xml.workspace = true
 regex.workspace = true
 sqlx.workspace = true
 thiserror.workspace = true
+# One-config-tree loader (`config` module): serialize the effective config to
+# redacted TOML for `config check` / `/management/env`. No openEHR spec governs
+# configuration — our own design (`docs/design/configuration.md`).
+toml.workspace = true
 uuid.workspace = true
 
 # `signing` module (RM common §Digital Signature; ADR-011, moved from the former
@@ -89,7 +93,8 @@ ehrbase-rest = { path = "../ehrbase-rest" }
 ehrbase-sm = { path = "../ehrbase-sm" }
 
 [dev-dependencies]
-figment = { workspace = true, features = ["test"] }
+# Temp config files for the pure-loader (`config` module) tests.
+assert_fs.workspace = true
 # Hermetic FHIR terminology-server mock for the external-terminology provider
 # tests (B4): canned `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses
 # + fault injection (timeout, 5xx, malformed) — no network in CI.

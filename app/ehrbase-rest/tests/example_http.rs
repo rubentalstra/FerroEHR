@@ -25,8 +25,8 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::RestConfig;
 use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase_rest::{AppConfig, ServerConfig};
 use ehrbase_sm::{CallStatusType, SmError};
 use openehr_flat::{DetailLevel, ExampleType};
 
@@ -86,20 +86,16 @@ fn hooks() -> Hooks {
     }
 }
 
-fn config() -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
-        bind: "127.0.0.1:0".to_owned(),
-        base_path: BASE.to_owned(),
-        max_in_flight: 1024,
-        swagger_ui: false,
-        cors_permissive: false,
-        admin: ehrbase_rest::AdminConfig::default(),
-        terminology: ehrbase_rest::TerminologyConfig::default(),
-        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
-        tenancy: ehrbase_rest::TenancyConfig::default(),
-        fhir: ehrbase_rest::FhirConfig::default(),
+fn config() -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            bind: "127.0.0.1:0".to_owned(),
+            base_path: BASE.to_owned(),
+            max_in_flight: 1024,
+            swagger_ui: false,
+            cors_permissive: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false,
             basic: None,
@@ -107,6 +103,7 @@ fn config() -> RestConfig {
             admin_scope: None,
             ..AuthConfig::default()
         },
+        ..Default::default()
     }
 }
 

@@ -107,13 +107,14 @@ systems named here can ever be called, and a frame naming an unconfigured
 request. By default no system is configured and every FHIR frame is
 rejected.
 
-Prefix `EHRBASE_SUBJECT_PROXY_`, nested keys with `__`, optional TOML file
-via `EHRBASE_SUBJECT_PROXY_CONFIG`. Systems are a map keyed by the name
-frames use as `system_id` (shown as `<NAME>`):
+These keys live in the `[subject_proxy]` section of `ehrbase.toml`; each can
+be overridden with the shown `EHRBASE_SUBJECT_PROXY__*` environment variable,
+nested keys separated by `__`. (This env form now binds — before the
+configuration redesign it was documented but inert.) Systems are a map keyed
+by the name frames use as `system_id` (shown as `<NAME>`):
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `EHRBASE_SUBJECT_PROXY_CONFIG` | path | none | Path to a TOML file carrying the `[subject_proxy]` systems map. |
 | `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__BASE_URL` | URL | none (**required per system**) | FHIR R4 base URL; the frame's `query_text` (after `$subject_id` substitution) is resolved relative to it. |
 | `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-system TCP connect timeout. |
 | `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-system overall request timeout. |

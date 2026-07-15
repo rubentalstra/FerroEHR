@@ -5,20 +5,15 @@
 //! Off by default (`enabled = false`): a stock server serves no
 //! `/.well-known/smart-configuration` document and runs no SMART scope gate, so
 //! the wire is byte-identical to a non-SMART deployment — the same opt-in
-//! extension-group convention the ADMIN/terminology/FHIR groups follow
-//! (`crate::config` `AdminConfig`/`TerminologyConfig`).
+//! extension-group convention the ADMIN/terminology/FHIR groups follow.
 //!
-//! Environment binding (`EHRBASE_REST_SMART__*`, `__` = nesting): this struct
-//! is the `#[serde(default)] pub smart: SmartConfig` field on
-//! [`crate::config::RestConfig`] (alongside `terminology`/`fhir`), so the
-//! existing `Env::prefixed("EHRBASE_REST_").split("__")` figment chain in
-//! `RestConfig::load` picks it up with no extra code. The discovery router is
-//! mounted from it in [`crate::router`] and the scope gate reads it in
-//! [`crate::extensions::access::pep`]. [`SmartConfig::load`] is the equivalent
-//! standalone loader for tests and for the discovery router.
+//! This is the `[smart]` section of the one server configuration tree
+//! (`docs/design/configuration.md`); it carries **no loader of its own** — the
+//! whole tree is assembled once by `ehrbase::config` and this struct is
+//! deserialized as a field of it. The discovery router is mounted from it in
+//! [`crate::router`] and the scope gate reads it in
+//! [`crate::extensions::access::pep`].
 
-use figment::Figment;
-use figment::providers::{Env, Serialized};
 use serde::{Deserialize, Serialize};
 
 /// SMART App Launch resource-server configuration.
@@ -30,6 +25,7 @@ use serde::{Deserialize, Serialize};
 /// clients, or runs the `OAuth2` endpoints (those are Authorization-Server duties
 /// — recorded as PORT NOTEs in `docs/design/its-rest/smart.md` §6).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct SmartConfig {
     /// Master switch. When `false`, the discovery document is not served (404)
     /// and the scope gate is inert — a stock server is unchanged.
@@ -90,6 +86,7 @@ pub struct SmartConfig {
 
 /// Episode-context sub-config (master09 §Experimental: Episode Context).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct EpisodeConfig {
     /// Advertise + accept episode context. Advisory only (no filtering).
     #[serde(default)]
@@ -101,6 +98,7 @@ pub struct EpisodeConfig {
 /// Endpoints). Every field is operator-supplied; an unset optional endpoint is
 /// simply omitted from the document.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct SmartEndpoints {
     /// The token/OIDC `issuer`. When unset the discovery router falls back to
     /// the configured OIDC bearer issuer (`auth.oidc.issuer`).
@@ -165,21 +163,6 @@ impl Default for SmartConfig {
 }
 
 impl SmartConfig {
-    /// Standalone loader: defaults, then `EHRBASE_REST_SMART__` environment
-    /// variables (`__` = nesting, e.g. `EHRBASE_REST_SMART__EPISODE__ENABLED`).
-    /// Produces the same keys as adding this struct as a `smart` field on
-    /// `RestConfig` (where the shared TOML file + `EHRBASE_REST_` env are already
-    /// handled by `RestConfig::load` — the recommended integration path).
-    ///
-    /// # Errors
-    /// A [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        Figment::from(Serialized::defaults(SmartConfig::default()))
-            .merge(Env::prefixed("EHRBASE_REST_SMART__").split("__"))
-            .extract()
-    }
-
     /// Boot validation (master06 §Deprecated Flows): the CDR must never advertise
     /// the Implicit or Resource-Owner-Password grants. Returns the offending
     /// grant name.
@@ -251,54 +234,5 @@ mod tests {
 
         c.endpoints.grant_types_supported = vec!["PASSWORD".to_owned()];
         assert!(c.validate().is_err());
-    }
-
-    #[test]
-    #[allow(clippy::result_large_err)] // figment::Jail closure signature
-    fn env_binding_matches_nested_convention() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_REST_SMART__ENABLED", "true");
-            jail.set_env("EHRBASE_REST_SMART__EHR_ID_CLAIM", "openehr_ehr_id");
-            jail.set_env("EHRBASE_REST_SMART__REQUIRE_SMART_SCOPES", "true");
-            jail.set_env("EHRBASE_REST_SMART__EPISODE__ENABLED", "true");
-            jail.set_env("EHRBASE_REST_SMART__LAUNCH_BASE64_JSON", "true");
-            let c = SmartConfig::load().expect("load");
-            assert!(c.enabled);
-            assert_eq!(c.ehr_id_claim, "openehr_ehr_id");
-            assert!(c.require_smart_scopes);
-            assert!(c.episode.enabled);
-            assert!(c.launch_base64_json);
-            Ok(())
-        });
-    }
-
-    /// The nested form: proves that once `SmartConfig` is a `smart` field on
-    /// `RestConfig`, the existing `EHRBASE_REST_` figment chain binds it with no
-    /// extra code.
-    #[test]
-    #[allow(clippy::result_large_err)] // figment::Jail closure signature
-    fn nested_under_rest_prefix() {
-        #[derive(Debug, Default, Serialize, Deserialize)]
-        struct Wrapper {
-            #[serde(default)]
-            smart: SmartConfig,
-        }
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_REST_SMART__ENABLED", "true");
-            jail.set_env(
-                "EHRBASE_REST_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT",
-                "https://as.example/auth",
-            );
-            let w: Wrapper = Figment::from(Serialized::defaults(Wrapper::default()))
-                .merge(Env::prefixed("EHRBASE_REST_").split("__"))
-                .extract()
-                .expect("extract");
-            assert!(w.smart.enabled);
-            assert_eq!(
-                w.smart.endpoints.authorization_endpoint.as_deref(),
-                Some("https://as.example/auth")
-            );
-            Ok(())
-        });
     }
 }

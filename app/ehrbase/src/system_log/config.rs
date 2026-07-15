@@ -1,13 +1,9 @@
 //! Audit configuration ([`AuditConfig`]) — a `figment`-loaded serde struct.
 //!
-//! No openEHR spec governs configuration — the `EHRBASE_ATNA_`-prefixed env key
-//! set is our own design (the non-normative design record
-//! `docs/enterprise/atna-audit.md` tabulates it). Loading mirrors the
-//! `ehrbase-rest` `RestConfig` pattern: defaults ← optional TOML file
-//! (`EHRBASE_ATNA_CONFIG`) ← `EHRBASE_ATNA_`-prefixed environment.
+//! No openEHR spec governs configuration — our own design. This is the `[atna]`
+//! section of the one config tree ([`crate::config::EhrbaseConfig`],
+//! `docs/design/configuration.md` §3.15); no loader of its own.
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
 use serde::{Deserialize, Serialize};
 
 /// The syslog transport to the Audit Record Repository (ARR).
@@ -35,6 +31,7 @@ pub enum FailMode {
 /// ATNA audit configuration. Every field has a default, so an all-defaults
 /// [`AuditConfig`] is valid (auditing is off unless `enabled`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct AuditConfig {
     /// Master switch (`EHRBASE_ATNA_ENABLED`).
     #[serde(default)]
@@ -111,24 +108,6 @@ impl Default for AuditConfig {
     }
 }
 
-impl AuditConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_ATNA_CONFIG`), then `EHRBASE_ATNA_`-prefixed environment
-    /// variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(AuditConfig::default()));
-        if let Ok(path) = std::env::var("EHRBASE_ATNA_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_ATNA_").split("__"))
-            .extract()
-    }
-}
-
 mod defaults {
     pub(super) fn host() -> String {
         "localhost".to_owned()
@@ -163,24 +142,5 @@ mod tests {
         assert_eq!(c.value_if_missing, "UNKNOWN");
         assert!(c.suppress_login_events);
         assert_eq!(c.fail_mode, FailMode::Open);
-    }
-
-    #[test]
-    #[allow(clippy::result_large_err)]
-    fn env_overrides_apply() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_ATNA_ENABLED", "true");
-            jail.set_env("EHRBASE_ATNA_TRANSPORT", "tls");
-            jail.set_env("EHRBASE_ATNA_REPOSITORY_PORT", "6514");
-            jail.set_env("EHRBASE_ATNA_FAIL_MODE", "closed");
-            jail.set_env("EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS", "false");
-            let c = AuditConfig::load().expect("load");
-            assert!(c.enabled);
-            assert_eq!(c.transport, Transport::Tls);
-            assert_eq!(c.repository_port, 6514);
-            assert_eq!(c.fail_mode, FailMode::Closed);
-            assert!(!c.suppress_login_events);
-            Ok(())
-        });
     }
 }

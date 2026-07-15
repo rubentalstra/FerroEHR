@@ -1,6 +1,7 @@
-//! Authorization configuration ([`AuthzConfig`]) — a `figment`-loaded serde
-//! struct with its own `EHRBASE_AUTHZ_` prefix (mirroring the ATNA audit config
-//! precedent in `ehrbase::system_log`), §8 of
+//! Authorization configuration ([`AuthzConfig`]) — the `[authz]` section of the
+//! one server configuration tree (`docs/design/configuration.md`); it carries
+//! **no loader of its own** — the whole tree is assembled once by
+//! `ehrbase::config` and this struct is deserialized as a field of it. §8 of
 //! `docs/enterprise/access-control.md`.
 //!
 //! Authorization is spec-silent: no openEHR spec governs RBAC/ABAC (the SM
@@ -15,8 +16,6 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
 use serde::{Deserialize, Serialize};
 
 /// Management-surface access level — the `rbac.management_access` tri-state
@@ -35,6 +34,7 @@ pub enum ManagementAccess {
 
 /// The coarse role-based access-control settings (§5.2, §8).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct RbacConfig {
     /// Master switch; the coarse role gate is active only when auth is enabled
     /// (`EHRBASE_AUTHZ_RBAC__ENABLED`, default `true`). Disabling restores
@@ -107,6 +107,7 @@ impl AbacParam {
 /// A per-resource-kind policy binding (§5.5): the policy name appended to the
 /// remote PDP base URL, and which resolved parameters its request body carries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PolicyRule {
     /// The policy name (the path segment appended to `abac.remote.server`).
     pub name: String,
@@ -117,6 +118,7 @@ pub struct PolicyRule {
 
 /// The embedded-Cedar engine settings (§5.6).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct CedarConfig {
     /// Directory of `*.cedar` policy files (required when `engine = cedar`).
     #[serde(default)]
@@ -128,6 +130,7 @@ pub struct CedarConfig {
 
 /// The v1-compatible remote-PDP client settings (§5.5).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct RemoteConfig {
     /// The PDP base URL; the policy name is appended, so it must end with `/`
     /// (required when `engine = remote`).
@@ -156,6 +159,7 @@ impl Default for RemoteConfig {
 /// preserves today's authentication-plus-RBAC behaviour until an operator
 /// opts in.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct AbacConfig {
     /// Master ABAC switch (default `false`).
     #[serde(default)]
@@ -217,6 +221,7 @@ impl AbacConfig {
 /// Authorization configuration (§8): the coarse RBAC gate plus the opt-in ABAC
 /// policy layer.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct AuthzConfig {
     /// Role-based access control.
     #[serde(default)]
@@ -258,22 +263,6 @@ pub enum AuthzConfigError {
 }
 
 impl AuthzConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_AUTHZ_CONFIG`), then `EHRBASE_AUTHZ_`-prefixed environment
-    /// variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(AuthzConfig::default()));
-        if let Ok(path) = std::env::var("EHRBASE_AUTHZ_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_AUTHZ_").split("__"))
-            .extract()
-    }
-
     /// Validate the configuration at boot (§8). All defaults are valid.
     ///
     /// # Errors
@@ -570,20 +559,5 @@ mod tests {
         let c = AbacConfig::default();
         assert_eq!(c.remote.connect_timeout_ms, 2000);
         assert_eq!(c.remote.request_timeout_ms, 5000);
-    }
-
-    #[test]
-    #[allow(clippy::result_large_err)]
-    fn env_overrides_apply() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_AUTHZ_RBAC__ENABLED", "false");
-            jail.set_env("EHRBASE_AUTHZ_RBAC__ADMIN_ROLE", "root");
-            jail.set_env("EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS", "public");
-            let c = AuthzConfig::load().expect("load");
-            assert!(!c.rbac.enabled);
-            assert_eq!(c.rbac.admin_role, "root");
-            assert_eq!(c.rbac.management_access, ManagementAccess::Public);
-            Ok(())
-        });
     }
 }

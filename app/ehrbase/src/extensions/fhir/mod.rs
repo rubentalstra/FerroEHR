@@ -30,7 +30,7 @@ mod mapping;
 mod outbound;
 mod reverse;
 
-pub use config::FhirOutboundConfig;
+pub use config::{FhirConfig, FhirOutboundConfig};
 pub use outbound::{FhirOutboundHandle, start, start_with_publisher};
 
 use async_trait::async_trait;

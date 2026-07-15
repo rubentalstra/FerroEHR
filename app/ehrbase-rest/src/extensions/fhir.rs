@@ -10,7 +10,7 @@
 //! subsumes the other. Design record: `docs/enterprise/product-roadmap.md` §2.1
 //! and the classification register `docs/design/its-rest/extensions.md`.
 //!
-//! Two surfaces, both config-gated (`RestConfig::fhir.enabled`, default
+//! Two surfaces, both config-gated (`AppConfig::fhir_api_enabled`, default
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
 //! without touching the backend.
 //!
@@ -104,7 +104,7 @@ pub(crate) fn dispatch<S: Platform>(
 async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestParts) -> Response {
     // Config gate: opt-in. When disabled every route answers 404 (as an
     // `OperationOutcome`) without consulting the backend.
-    if !state.config().fhir.enabled {
+    if !state.config().fhir_api_enabled {
         return operation_outcome(
             StatusCode::NOT_FOUND,
             "not-supported",
@@ -265,7 +265,7 @@ fn ingest_created<S: Platform>(state: &AppState<S>, resp: &ServiceResponse) -> R
     if let Some(meta) = &resp.meta {
         negotiate::set_resource_headers(
             &mut out,
-            &state.config().base_path,
+            &state.config().server.base_path,
             Some("composition"),
             meta,
         );

@@ -60,9 +60,7 @@ pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine}
 // The native API lives in `ehrbase-sm`; re-exported here for the
 // server's public surface (test mocks, the binary) — no local shim module.
 pub use api::system::SystemOptionsConfig;
-pub use config::{
-    AdminConfig, EventSubscriptionConfig, FhirConfig, RestConfig, TenancyConfig, TerminologyConfig,
-};
+pub use config::{AdminConfig, AppConfig, ServerConfig, TenancyConfig};
 pub use ehrbase_sm::Platform;
 pub use ehrbase_sm::{
     AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
@@ -99,7 +97,7 @@ pub enum ServeError {
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
 pub fn build_with<S: Platform>(
-    config: RestConfig,
+    config: AppConfig,
     backend: std::sync::Arc<S>,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
@@ -118,10 +116,10 @@ pub fn build_with<S: Platform>(
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
 pub async fn serve_with<S: Platform>(
-    config: RestConfig,
+    config: AppConfig,
     backend: std::sync::Arc<S>,
 ) -> Result<(), ServeError> {
-    let bind = config.bind.clone();
+    let bind = config.server.bind.clone();
     let app = build_with(config, backend)?;
     run_server(app, &bind).await
 }
@@ -135,7 +133,7 @@ pub async fn serve_with<S: Platform>(
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
 pub fn build_full<S: Platform>(
-    config: RestConfig,
+    config: AppConfig,
     backend: std::sync::Arc<S>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
@@ -149,7 +147,7 @@ pub fn build_full<S: Platform>(
 /// authorization handle (default paths when none is wired) so Bearer role
 /// extraction matches the gate's configuration (§5.1).
 fn build_authenticator(
-    config: &RestConfig,
+    config: &AppConfig,
     authz: Option<&AuthzHandle>,
 ) -> Result<std::sync::Arc<Authenticator>, ServeError> {
     let role_claims =
@@ -166,13 +164,13 @@ fn build_authenticator(
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
 pub async fn serve_full<S: Platform>(
-    config: RestConfig,
+    config: AppConfig,
     backend: std::sync::Arc<S>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<(), ServeError> {
     let authenticator = build_authenticator(&config, authz.as_deref())?;
-    let bind = config.bind.clone();
+    let bind = config.server.bind.clone();
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
     let state = AppState::with_parts(config, backend, authz, observability);

@@ -8,7 +8,7 @@
 //! `fetch`/`offset` that collides with an AQL `LIMIT`/`OFFSET`/`TOP` is a `400`;
 //! otherwise the AQL clause wins when present, else the REST parameter.
 
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
@@ -125,7 +125,7 @@ impl EhrbaseService {
         // `408 Request Timeout` rather than hanging until the global request
         // timeout. Default off → zero drift.
         let exec = aql::execute(&self.pool, &ir, &params, &ctx);
-        let exec_result = match *QUERY_TIMEOUT {
+        let exec_result = match self.query_timeout {
             Some(budget) => match tokio::time::timeout(budget, exec).await {
                 Ok(inner) => inner,
                 Err(_elapsed) => {
@@ -234,20 +234,6 @@ impl EhrbaseService {
         Ok(ids)
     }
 }
-
-/// Per-query execution budget, read once from `EHRBASE_QUERY__TIMEOUT_MS`
-/// (milliseconds). Unset, unparseable, or `0` disables the budget (the default),
-/// so the only guard on an over-long query stays the global request timeout. A
-/// positive value bounds every AQL query's DB execution; on overrun the query is
-/// reported as `408 Request Timeout` (`Requests_and_responses.md` §HTTP status
-/// codes). No openEHR spec governs a query timeout — our own extension.
-static QUERY_TIMEOUT: LazyLock<Option<Duration>> = LazyLock::new(|| {
-    std::env::var("EHRBASE_QUERY__TIMEOUT_MS")
-        .ok()
-        .and_then(|v| v.trim().parse::<u64>().ok())
-        .filter(|ms| *ms > 0)
-        .map(Duration::from_millis)
-});
 
 /// The `408` query-execution-timeout error: an `exception` [`SmError`] whose
 /// message is prefixed with [`QUERY_TIMEOUT_TAG`] so the REST adapter renders it

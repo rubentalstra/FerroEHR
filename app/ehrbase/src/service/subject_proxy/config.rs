@@ -17,15 +17,15 @@
 //! whose `system_id` matches no configured system is a typed rejection, never
 //! an arbitrary outbound request.
 //!
-//! Loaded from defaults ← optional TOML file (`EHRBASE_SUBJECT_PROXY_CONFIG`) ←
-//! `EHRBASE_SUBJECT_PROXY_`-prefixed environment (nested keys use `__`, e.g.
-//! `EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`).
+//! This is the `[subject_proxy]` section of the one config tree
+//! ([`crate::config::EhrbaseConfig`], `docs/design/configuration.md` §3.15); no
+//! loader of its own. The env form `EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`
+//! now binds through the tree's mechanical mapping (fixing the historical
+//! documented-but-dead form).
 
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -42,14 +42,15 @@ const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
 /// Empty (the default) = no FHIR system is reachable; every FHIR frame is a
 /// typed rejection.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct SubjectProxyConfig {
     /// The reachable FHIR systems, keyed by the frame's `SYSTEM_CALL.system_id`.
-    #[serde(default)]
     pub systems: BTreeMap<String, SpFhirSystem>,
 }
 
 /// One configured FHIR system (`data_frame.adoc` `SYSTEM_CALL.system_id`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SpFhirSystem {
     /// FHIR R4 base URL, e.g. `https://fhir.example.org/r4` — the frame's
     /// `query_text` is resolved relative to this after `$subject_id`
@@ -72,22 +73,6 @@ const fn default_request_timeout_ms() -> u64 {
 }
 
 impl SubjectProxyConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_SUBJECT_PROXY_CONFIG`), then `EHRBASE_SUBJECT_PROXY_`-prefixed
-    /// environment variables (nested keys use `__`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(Self::default()));
-        if let Ok(path) = std::env::var("EHRBASE_SUBJECT_PROXY_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        fig.merge(Env::prefixed("EHRBASE_SUBJECT_PROXY_").split("__"))
-            .extract()
-    }
-
     /// Build the FHIR executor, or `None` when no systems are configured.
     ///
     /// # Errors

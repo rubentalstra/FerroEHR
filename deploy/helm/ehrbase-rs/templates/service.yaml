@@ -15,9 +15,9 @@ spec:
       port: {{ .Values.service.port }}
       targetPort: http
       protocol: TCP
-    {{- if and .Values.management.enabled .Values.management.port }}
+    {{- if and .Values.config.management.enabled .Values.config.management.port }}
     - name: management
-      port: {{ .Values.management.port }}
+      port: {{ .Values.config.management.port }}
       targetPort: management
       protocol: TCP
     {{- end }}

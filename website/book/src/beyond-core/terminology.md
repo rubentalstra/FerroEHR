@@ -18,7 +18,7 @@ whether a code is a member of a value set.
 You can also expose these lookups over a small read-only REST surface. It is an
 extension (not part of the openEHR ITS-REST contract) and is **off by default**;
 when disabled, every route returns `404` as if unmounted. Enable it with
-`EHRBASE_REST_TERMINOLOGY__ENABLED=true`, and it serves:
+`EHRBASE_TERMINOLOGY__API_ENABLED=true`, and it serves:
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -57,17 +57,18 @@ terminologies are still served by the in-process bundle.
 ### Enabling and configuring it
 
 External terminology is off by default; validation then uses only the
-in-process bundle. Configuration uses the
-`EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_` prefix, with `__` separating nested
-keys (providers are a map, so complex blocks are usually supplied through a
-mounted TOML file referenced by `EHRBASE_VALIDATION_CONFIG`):
+in-process bundle. These keys live in the `[terminology.external]` section of
+`ehrbase.toml` (providers are a map, so complex blocks are usually supplied in
+that TOML file); each can be overridden with the shown
+`EHRBASE_TERMINOLOGY__EXTERNAL__*` environment variable, with `__` separating
+nested keys:
 
 | Key | Meaning |
 |---|---|
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED` | master switch (default `false`) |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR` | on a server error: `true` rejects (fail-closed), `false` accepts (fail-open) |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4) |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__URL` | the FHIR base URL, e.g. `http://terminology:8090/fhir` |
+| `EHRBASE_TERMINOLOGY__EXTERNAL__ENABLED` | master switch (default `false`) |
+| `EHRBASE_TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR` | on a server error: `true` rejects (fail-closed), `false` accepts (fail-open) |
+| `EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4) |
+| `EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__URL` | the FHIR base URL, e.g. `http://terminology:8090/fhir` |
 
 A provider can carry per-provider OAuth2 client-credentials and mutual-TLS
 settings for servers that require them. A short worked example, pointing the CDR
@@ -77,9 +78,9 @@ at a HAPI FHIR container over Docker Compose:
 services:
   ehrbase:
     environment:
-      EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED: "true"
-      EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__DEFAULT__TYPE: "fhir"
-      EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__DEFAULT__URL: "http://terminology:8090/fhir"
+      EHRBASE_TERMINOLOGY__EXTERNAL__ENABLED: "true"
+      EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__TYPE: "fhir"
+      EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL: "http://terminology:8090/fhir"
 ```
 
 > [!TIP]

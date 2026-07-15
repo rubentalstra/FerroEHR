@@ -1,13 +1,16 @@
 //! Management-surface configuration (binding doc §3).
 //!
-//! Loaded with `figment` from `EHRBASE_MANAGEMENT_*` environment variables (and
-//! an optional TOML file), following the same layering the rest of the server
-//! uses. **Everything is off by default**: `management.enabled = false`, and
-//! every individual endpoint defaults to [`AccessLevel::Off`] (→ `404`). The
-//! surface only exists once a deployment opts each piece in explicitly.
+//! The `[management]` section of the one server configuration tree
+//! (`docs/design/configuration.md`); it carries **no loader of its own** — the
+//! whole tree is assembled once by `ehrbase::config` and this struct is
+//! deserialized as a field of it. **Everything is off by default**:
+//! `management.enabled = false`, and every individual endpoint defaults to
+//! [`AccessLevel::Off`] (→ `404`). The surface only exists once a deployment
+//! opts each piece in explicitly.
+//!
+//! No openEHR spec governs configuration or the management surface — our own
+//! design.
 
-use figment::Figment;
-use figment::providers::{Env, Format, Serialized, Toml};
 use serde::{Deserialize, Serialize};
 
 /// The access level of a single management endpoint. Maps onto the existing
@@ -38,6 +41,7 @@ impl AccessLevel {
 
 /// Per-endpoint access levels. Each defaults to [`AccessLevel::Off`].
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct EndpointLevels {
     /// `/management/health` (aggregate).
     #[serde(default)]
@@ -61,6 +65,7 @@ pub struct EndpointLevels {
 
 /// The management surface configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct ManagementConfig {
     /// Master switch. When `false`, no management routes are mounted at all.
     #[serde(default)]
@@ -102,36 +107,6 @@ impl Default for ManagementConfig {
 }
 
 impl ManagementConfig {
-    /// Load configuration: defaults, then an optional TOML file (path in
-    /// `EHRBASE_MANAGEMENT_CONFIG`), then `EHRBASE_MANAGEMENT_`-prefixed
-    /// environment variables. Nested endpoint levels use
-    /// `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` (e.g. `..._ENDPOINTS_PROMETHEUS`).
-    ///
-    /// # Errors
-    /// Returns a [`figment::Error`] if a value fails to parse.
-    #[allow(clippy::result_large_err)] // figment::Error is large by design
-    pub fn load() -> Result<Self, figment::Error> {
-        let mut fig = Figment::from(Serialized::defaults(ManagementConfig::default()));
-        if let Ok(path) = std::env::var("EHRBASE_MANAGEMENT_CONFIG") {
-            fig = fig.merge(Toml::file(path));
-        }
-        // No `.split`: multi-word scalar keys (`base_path`, `access_default`,
-        // `probes_enabled`) map 1:1 after lower-casing; only the `endpoints_*`
-        // family needs to become the nested `endpoints.<ep>` key.
-        // Env keys arrive upper-cased; lower-case before matching, and turn the
-        // `endpoints_<ep>` family into the nested `endpoints.<ep>` key (figment
-        // nests on `.`). Scalar keys (`base_path`, `access_default`, …) pass
-        // through and match their fields case-insensitively.
-        fig.merge(Env::prefixed("EHRBASE_MANAGEMENT_").map(|key| {
-            let lower = key.as_str().to_ascii_lowercase();
-            match lower.strip_prefix("endpoints_") {
-                Some(ep) => format!("endpoints.{ep}").into(),
-                None => lower.into(),
-            }
-        }))
-        .extract()
-    }
-
     /// The access level for the aggregate `/health` endpoint: its explicit
     /// per-endpoint level, or [`Self::access_default`] when left `Off` but the
     /// surface is otherwise enabled with probes.
@@ -165,29 +140,5 @@ mod tests {
         assert_eq!(c.access_default, AccessLevel::AdminOnly);
         assert_eq!(c.endpoints.prometheus, AccessLevel::Off);
         assert!(!c.probes_enabled);
-    }
-
-    #[test]
-    #[allow(clippy::result_large_err)]
-    fn env_overrides_including_nested_endpoints() {
-        figment::Jail::expect_with(|jail| {
-            jail.set_env("EHRBASE_MANAGEMENT_ENABLED", "true");
-            jail.set_env("EHRBASE_MANAGEMENT_BASE_PATH", "/mgmt");
-            jail.set_env("EHRBASE_MANAGEMENT_PORT", "9100");
-            jail.set_env("EHRBASE_MANAGEMENT_ACCESS_DEFAULT", "private");
-            jail.set_env("EHRBASE_MANAGEMENT_PROBES_ENABLED", "true");
-            jail.set_env("EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS", "public");
-            jail.set_env("EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS", "admin_only");
-            let c = ManagementConfig::load().expect("load");
-            assert!(c.enabled);
-            assert_eq!(c.base_path, "/mgmt");
-            assert_eq!(c.port, Some(9100));
-            assert_eq!(c.access_default, AccessLevel::Private);
-            assert!(c.probes_enabled);
-            assert_eq!(c.endpoints.prometheus, AccessLevel::Public);
-            assert_eq!(c.endpoints.loggers, AccessLevel::AdminOnly);
-            assert_eq!(c.endpoints.env, AccessLevel::Off);
-            Ok(())
-        });
     }
 }

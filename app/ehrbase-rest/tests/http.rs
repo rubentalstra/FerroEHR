@@ -16,10 +16,8 @@ use tower::ServiceExt;
 
 use std::sync::Arc;
 
-use ehrbase_rest::access::authn::config::{
-    AuthConfig, BasicConfig, BasicUser, OidcConfig, Redacted,
-};
-use ehrbase_rest::{AdminConfig, RestConfig};
+use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
+use ehrbase_rest::{AdminConfig, AppConfig, ServerConfig};
 
 mod common;
 
@@ -39,21 +37,22 @@ fn argon2_hash(pw: &str) -> String {
         .to_string()
 }
 
-fn config(enabled: bool) -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
-        bind: "127.0.0.1:0".to_owned(),
-        base_path: BASE.to_owned(),
-        max_in_flight: 1024,
-        swagger_ui: false,
-        cors_permissive: false,
+fn config(enabled: bool) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            bind: "127.0.0.1:0".to_owned(),
+            base_path: BASE.to_owned(),
+            max_in_flight: 1024,
+            swagger_ui: false,
+            cors_permissive: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled,
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: Redacted(argon2_hash("pw")),
+                    password_hash: ehrbase_sm::Secret::new(argon2_hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),
@@ -61,8 +60,9 @@ fn config(enabled: bool) -> RestConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(Redacted(SECRET.to_owned())),
+                hmac_secret: Some(ehrbase_sm::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
+                ..OidcConfig::default()
             }),
             admin_scope: Some("ehrbase:admin".to_owned()),
             ..AuthConfig::default()
@@ -70,10 +70,7 @@ fn config(enabled: bool) -> RestConfig {
         // The admin group must be reachable here: `admin_route_reachable_without_rbac`
         // asserts the dispatcher's 501 (StubBackend), not the config gate's 404.
         admin: AdminConfig { enabled: true },
-        terminology: ehrbase_rest::TerminologyConfig::default(),
-        event_subscription: ehrbase_rest::EventSubscriptionConfig::default(),
-        tenancy: ehrbase_rest::TenancyConfig::default(),
-        fhir: ehrbase_rest::FhirConfig::default(),
+        ..Default::default()
     }
 }
 

@@ -34,7 +34,7 @@ pub(super) async fn run<S: Platform>(
     let q = parts.query.as_deref();
     let ok = StatusCode::OK;
     // The configured base path, for building `Location` URLs.
-    let base = state.config().base_path.clone();
+    let base = state.config().server.base_path.clone();
 
     match op {
         "ehr_get_by_subject" => {

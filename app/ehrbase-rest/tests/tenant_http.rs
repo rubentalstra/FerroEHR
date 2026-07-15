@@ -21,7 +21,7 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{RestConfig, TenancyConfig};
+use ehrbase_rest::{AppConfig, ServerConfig, TenancyConfig};
 use ehrbase_sm::{CallStatusType, SmError};
 
 mod common;
@@ -125,12 +125,13 @@ fn hooks(store: Store) -> Hooks {
     }
 }
 
-fn config(enabled: bool) -> RestConfig {
-    RestConfig {
-        smart: ehrbase_rest::SmartConfig::default(),
-        system: ehrbase_rest::SystemOptionsConfig::default(),
-        base_path: BASE.to_owned(),
-        swagger_ui: false,
+fn config(enabled: bool) -> AppConfig {
+    AppConfig {
+        server: ServerConfig {
+            base_path: BASE.to_owned(),
+            swagger_ui: false,
+            ..Default::default()
+        },
         auth: AuthConfig {
             enabled: false,
             basic: None,

@@ -10,7 +10,7 @@
 
 use std::path::Path;
 
-use ehrbase::db::{self, DbSettings};
+use ehrbase::db::{self, DbConfig};
 use ehrbase::storage::{NodeRow, decompose, reassemble};
 use serde_json::Value;
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
@@ -51,7 +51,7 @@ impl Pg {
         }
     }
 
-    async fn create_database(&self, name: &str) -> DbSettings {
+    async fn create_database(&self, name: &str) -> DbConfig {
         let Self { host, port, .. } = self;
         let admin_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
         let mut conn = PgConnection::connect(&admin_url)
@@ -61,7 +61,7 @@ impl Pg {
             .execute(&mut conn)
             .await
             .expect("create database");
-        DbSettings::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"))
+        DbConfig::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"))
     }
 
     async fn migrated_pool(&self, name: &str) -> PgPool {

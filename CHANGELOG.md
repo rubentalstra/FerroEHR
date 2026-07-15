@@ -15,17 +15,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-### Fixed
-
-- The Swagger UI works again: `…/rest/swagger-ui` previously entered an
-  infinite redirect loop (the UI's trailing-slash redirect fought the
-  server's path normalization) and its OpenAPI document was an empty stub.
-  The UI now loads directly, and its spec selector serves the authoritative
-  vendored ITS-REST contract — one document per API group (EHR, Query,
-  Definition, Demographic, Admin, System, Overview) — exactly the tree the
-  server's routes are generated from. The documentation's Swagger URL is
-  corrected to `/ehrbase/rest/swagger-ui`.
-
 ### Changed
 
 - The benchmark instrument measures both comparison stacks under a fairer,
@@ -38,6 +27,56 @@ workflow refuses a tag that has no matching section here.
   image. Ladder output prints latencies in magnitude-appropriate units
   (µs/ms/s), and the generated comparison page reports clinical events per
   minute beside request rates.
+- **Configuration is now one `ehrbase.toml`.** The whole server is configured
+  by a single TOML file (sections `[server]`, `[db]`, `[log]`, `[telemetry]`,
+  `[auth]`, `[authz]`, `[admin]`, `[tenancy]`, `[smart]`, `[management]`,
+  `[signing]`, `[query]`, `[events]`, `[fhir]`, `[terminology]`,
+  `[multimedia]`, `[atna]`, `[subject_proxy]`), discovered from `--config`,
+  `EHRBASE_CONFIG`, `./ehrbase.toml`, or `/etc/ehrbase/ehrbase.toml`. Every
+  `EHRBASE_*` environment variable is now a mechanical per-key override:
+  `EHRBASE_` + the TOML path, upper-cased, with `__` between path segments
+  (e.g. `EHRBASE_DB__MAX_CONNECTIONS`, `EHRBASE_AUTH__OIDC__ISSUER`). This
+  replaces the previous ~14 independent per-subsystem loaders and their
+  several env-name grammars. Every old variable is aliased for this release
+  (honoured with a boot-time deprecation warning; removed in a later release);
+  `DATABASE_URL` and `RUST_LOG` remain permanent aliases. New `ehrbase config
+  default` prints an annotated template and `ehrbase config check` validates a
+  config (and prints the effective, secret-redacted result) without a
+  database. The compose stack, Helm chart, and docs all move to the new file +
+  spellings; the PostgreSQL-init container variables `EHRBASE_DB_USER` /
+  `_PASSWORD` / `_NAME` were renamed `PG_INIT_USER` / `_PASSWORD` / `_DB` so
+  they no longer collide with the server's reserved `EHRBASE_` namespace.
+
+### Removed
+
+- The nine per-subsystem `EHRBASE_*_CONFIG` file pointers
+  (`EHRBASE_REST_CONFIG`, `EHRBASE_AUTHZ_CONFIG`, `EHRBASE_ATNA_CONFIG`,
+  `EHRBASE_SIGNING_CONFIG`, `EHRBASE_EVENTS_CONFIG`,
+  `EHRBASE_FHIR_OUTBOUND_CONFIG`, `EHRBASE_MULTIMEDIA_CONFIG`,
+  `EHRBASE_VALIDATION_CONFIG`, `EHRBASE_MANAGEMENT_CONFIG`,
+  `EHRBASE_SUBJECT_PROXY_CONFIG`): merge each file's contents into the single
+  `ehrbase.toml` under its `[section]`.
+- `EHRBASE_REST_AUTH__ADMIN_SCOPE`: subsumed by `authz.rbac.admin_role`.
+
+### Fixed
+
+- Unknown or misspelled configuration is now rejected at boot with a
+  did-you-mean suggestion (and the `file:line` for a file key) — previously a
+  typo'd TOML key or `EHRBASE_*` variable was silently ignored, so a
+  not-applied security setting could pass unnoticed.
+- The documented `EHRBASE_SUBJECT_PROXY__SYSTEMS__<name>__BASE_URL` env form
+  now actually binds — the old loader stripped the prefix such that this
+  spelling was dead, so subject-proxy systems could only be set via a file.
+- Unparseable `[query]` values (`query.plan_cache_capacity`, `query.timeout_ms`)
+  now error at boot instead of silently falling back to defaults.
+- The Swagger UI works again: `…/rest/swagger-ui` previously entered an
+  infinite redirect loop (the UI's trailing-slash redirect fought the
+  server's path normalization) and its OpenAPI document was an empty stub.
+  The UI now loads directly, and its spec selector serves the authoritative
+  vendored ITS-REST contract — one document per API group (EHR, Query,
+  Definition, Demographic, Admin, System, Overview) — exactly the tree the
+  server's routes are generated from. The documentation's Swagger URL is
+  corrected to `/ehrbase/rest/swagger-ui`.
 
 ## [3.0.1] - 2026-07-14
 

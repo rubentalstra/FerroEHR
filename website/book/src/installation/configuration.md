@@ -1,362 +1,543 @@
 # Configuration reference
 
-EHRbase-rs is configured entirely through `EHRBASE_*` environment variables,
-optionally backed by TOML files for values that do not fit cleanly in env (a
-Basic-auth user store, a full OIDC block, ABAC policies, and so on). This
-chapter is the complete reference: how configuration loads, the two naming
-conventions you must know, and a table per area listing every key with its
-type, default, and meaning. Everything here is drawn from the server's own
-configuration code.
+EHRbase-rs is configured by **one file — `ehrbase.toml`** — whose sections
+cover the entire server, with `EHRBASE_*` environment variables (and repeatable
+`--set` flags) as per-key overrides on top. This chapter is the complete
+reference: the quickstart, how configuration loads and how env names map onto
+the file, a subsection per configuration area, the CLI tools that validate and
+scaffold a config, the production checklist, and — for upgraders — the old→new
+variable map.
 
 <!-- toc -->
 
+## Quickstart
+
+Generate an annotated template, edit it, and run:
+
+```bash
+# Write a fully-commented ehrbase.toml with every key at its default.
+ehrbase config default > ehrbase.toml
+
+# Edit it — at minimum set db.url and an auth mechanism (see the checklist below).
+$EDITOR ehrbase.toml
+
+# Validate without touching the database, then run.
+ehrbase config check --config ehrbase.toml
+ehrbase --config ehrbase.toml
+```
+
+A server started with **no file and no environment** still boots (see
+[Zero-config boot](#zero-config-boot-and-the-production-checklist)) — the file
+is optional, and every key has a default.
+
 ## How configuration loads
 
-There is no single global configuration object. The server is composed of
-independent modules, each of which loads its own settings from three layers, in
-increasing precedence:
+Configuration is assembled once at boot from four layers, lowest precedence to
+highest:
 
-1. **Built-in defaults** (the values in the tables below),
-2. an **optional TOML file** for that module (pointed at by an
-   `EHRBASE_<AREA>_CONFIG` variable), then
-3. **`EHRBASE_<AREA>_`-prefixed environment variables**, which win.
+1. **Built-in defaults** — the values in the tables below.
+2. **The config file** — `ehrbase.toml` (see [file discovery](#file-discovery)).
+3. **`EHRBASE_*` environment variables** — override individual keys.
+4. **`--set key=value` CLI flags** (repeatable) — win over everything.
 
-The development Compose stack, for example, points `EHRBASE_REST_CONFIG` at
-`docker/ehrbase.dev.toml` to supply the Basic-auth user store (which env cannot
-carry as a list), while everything else stays on defaults or env overrides.
+Two grandfathered aliases sit *below* their `EHRBASE_` forms within layer 3:
+`DATABASE_URL` → `db.url` and `RUST_LOG` → `log.filter`. Nothing else has a
+non-`EHRBASE_` name.
 
-> [!WARNING]
-> **Two naming conventions.** Most modules use a **double underscore** (`__`) to
-> separate nested fields — `EHRBASE_REST_AUTH__ENABLED` maps to `auth.enabled`.
-> There are two exceptions:
->
-> - **Telemetry** is flat: `EHRBASE_OTEL_*` and `EHRBASE_LOG_*` have no nesting.
-> - **Management** uses a **single** underscore for its one nested group:
->   `EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH`, not `__`.
->
-> Getting the separator wrong is the most common configuration mistake.
+### The environment-variable mapping
 
-Enum values are case-sensitive on the wire. Where a column lists
-`enum{a,b,c}`, use exactly those lowercase (or `snake_case`) tokens. Secret
-values (`EHRBASE_SIGNING_KEY_PASSPHRASE`, `EHRBASE_REST_AUTH__OIDC__HMAC_SECRET`,
-Basic-auth password hashes) are redacted from the management `/env` endpoint and
-from logs.
+Every key has one mechanical env spelling: **`EHRBASE_` + the TOML path,
+upper-cased, with a double underscore (`__`) between path segments.** A single
+underscore only ever appears *inside* a key word.
 
-## Server (REST)
+| TOML | Environment variable |
+|---|---|
+| `[db] max_connections = 20` | `EHRBASE_DB__MAX_CONNECTIONS=20` |
+| `[auth.oidc] issuer = "…"` | `EHRBASE_AUTH__OIDC__ISSUER=…` |
+| `[management.endpoints] env = "off"` | `EHRBASE_MANAGEMENT__ENDPOINTS__ENV=off` |
+| `[terminology.external.providers.default] url = "…"` | `EHRBASE_TERMINOLOGY__EXTERNAL__PROVIDERS__DEFAULT__URL=…` |
 
-Prefix `EHRBASE_REST_`, separator `__`, optional file `EHRBASE_REST_CONFIG`.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_REST_CONFIG` | path | none | Path to the REST TOML config file (loaded before env). |
-| `EHRBASE_REST_BIND` | socket address | `0.0.0.0:8080` | Address the API listener binds. |
-| `EHRBASE_REST_BASE_PATH` | string | `/ehrbase/rest/openehr/v1` | Base path all API routes hang off. |
-| `EHRBASE_REST_MAX_IN_FLIGHT` | integer | `256` | Maximum API requests handled **concurrently** (not per second) before the server sheds load; raise it for high-throughput deployments. Requests beyond the cap are rejected immediately with `503 Service Unavailable` + `Retry-After: 1` (shed, never queued), so offered load beyond backend capacity cannot exhaust server memory. The `/status`, health, and discovery endpoints are never limited. `0` disables shedding. |
-| `EHRBASE_REST_SWAGGER_UI` | boolean | `true` | Serve Swagger UI + the OpenAPI JSON. Consider off in production. |
-| `EHRBASE_REST_CORS_PERMISSIVE` | boolean | `false` | Enable a permissive (development) CORS policy. |
-| `EHRBASE_REST_ADMIN__ENABLED` | boolean | `false` | Mount the ADMIN API group (routes 404 when off). |
-| `EHRBASE_REST_TERMINOLOGY__ENABLED` | boolean | `false` | Mount the terminology extension API group. |
-| `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | boolean | `false` | Mount the event-subscription admin extension API. |
-| `EHRBASE_REST_FHIR__ENABLED` | boolean | `false` | Mount the FHIR R4 inbound/façade routes. |
-| `EHRBASE_REST_TENANCY__ENABLED` | boolean | `false` | Activate multi-tenancy (tenant middleware + row-level scoping). |
-| `EHRBASE_REST_TENANCY__CLAIM` | string | `tenant` | JWT-claim path carrying the tenant key. |
-| `EHRBASE_REST_TENANCY__HEADER` | string | none | Dev-only request-header tenant override. Leave unset in production — a client header must not select a tenant. |
-
-### System identity (`OPTIONS` conformance manifest)
-
-Nested under `EHRBASE_REST_SYSTEM__` (part of the REST config). These fields
-are reported by the conformance manifest served on `OPTIONS` at the API base
-path (and at `/`); the endpoint list in that manifest is not configurable —
-it always reflects the actually mounted API groups.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_REST_SYSTEM__SOLUTION` | string | `EHRbase-RS` | Product name reported. |
-| `EHRBASE_REST_SYSTEM__SOLUTION_VERSION` | string | the build's version | Product version reported. |
-| `EHRBASE_REST_SYSTEM__VENDOR` | string | `EHRbase-RS project` | Providing organisation. |
-| `EHRBASE_REST_SYSTEM__RESTAPI_SPECS_VERSION` | string | the tested spec identity | The openEHR REST API edition reported (defaults to the development-edition identity the build is tested against). |
-| `EHRBASE_REST_SYSTEM__CONFORMANCE_PROFILE` | string | the last machine-computed verdict | Advertised conformance profile. |
-
-### SMART App Launch
-
-Nested under `EHRBASE_REST_SMART__` (part of the REST config). Off by
-default; when off, the discovery document is not served and the scope gate is
-inert. See [SMART App Launch](../smart-app-launch.md) for what each piece
-does.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_REST_SMART__ENABLED` | boolean | `false` | Master SMART switch. |
-| `EHRBASE_REST_SMART__PLATFORM_BASE_URL` | string | none (REST root) | Base the `/.well-known/smart-configuration` document hangs off. |
-| `EHRBASE_REST_SMART__EHR_ID_CLAIM` | string | `ehrId` | Token claim carrying the launch context's EHR id. |
-| `EHRBASE_REST_SMART__PATIENT_CLAIM` | string | `patient` | Fallback launch-context claim. |
-| `EHRBASE_REST_SMART__REQUIRE_SMART_SCOPES` | boolean | `false` | Fail-closed: deny Bearer tokens with no matching SMART scope on scope-governed operations. |
-| `EHRBASE_REST_SMART__EPISODE__ENABLED` | boolean | `false` | Advertise + accept episode launch context (experimental, advisory). |
-| `EHRBASE_REST_SMART__LAUNCH_BASE64_JSON` | boolean | `false` | Advertise the base64-JSON launch-parameter capability (experimental). |
-| `EHRBASE_REST_SMART__ENDPOINTS__ISSUER` | URL | none (falls back to the OIDC issuer) | Advertised token issuer. |
-| `EHRBASE_REST_SMART__ENDPOINTS__JWKS_URI` | URL | none | Advertised JWKS URL. |
-| `EHRBASE_REST_SMART__ENDPOINTS__AUTHORIZATION_ENDPOINT` | URL | none | Advertised OAuth2 authorization endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT` | URL | none | Advertised OAuth2 token endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__REGISTRATION_ENDPOINT` | URL | none | Advertised client-registration endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__INTROSPECTION_ENDPOINT` | URL | none | Advertised introspection endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__REVOCATION_ENDPOINT` | URL | none | Advertised revocation endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__MANAGEMENT_ENDPOINT` | URL | none | Advertised user-management endpoint. |
-| `EHRBASE_REST_SMART__ENDPOINTS__TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED` | list | `[]` | Advertised client auth methods. |
-| `EHRBASE_REST_SMART__ENDPOINTS__GRANT_TYPES_SUPPORTED` | list | `[]` | Advertised grant types (`implicit`/password are rejected at boot). |
-| `EHRBASE_REST_SMART__ENDPOINTS__RESPONSE_TYPES_SUPPORTED` | list | `[]` | Advertised response types. |
-| `EHRBASE_REST_SMART__ENDPOINTS__CODE_CHALLENGE_METHODS_SUPPORTED` | list | `[]` | Advertised PKCE methods. |
-| `EHRBASE_REST_SMART__ENDPOINTS__SCOPES_SUPPORTED` | list | `[]` (built-in default list) | Advertised scopes; empty = the defaults the server enforces. |
-
-## Authentication
-
-Nested under `EHRBASE_REST_AUTH__` (part of the REST config). The Basic-auth
-user store is a list and is realistically supplied via the mounted TOML file;
-the env forms are shown for completeness.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_REST_AUTH__ENABLED` | boolean | `true` | Master auth switch. `false` = all requests pass unauthenticated (development only). |
-| `EHRBASE_REST_AUTH__ADMIN_SCOPE` | string | none | Deprecated back-compat scope→role alias; still consulted by the management admin gate. |
-| `EHRBASE_REST_AUTH__BASIC__USERS` | list of `{username, password_hash, roles}` | none (Basic off) | Basic-auth user store. Passwords are Argon2 PHC hashes; per-user `roles` default to `["USER"]`. Set via TOML. |
-| `EHRBASE_REST_AUTH__OIDC__ISSUER` | URL | none (bearer off) | Expected token issuer (`iss`); also the OIDC discovery base. |
-| `EHRBASE_REST_AUTH__OIDC__AUDIENCES` | list | `[]` (not checked) | Accepted `aud` values. |
-| `EHRBASE_REST_AUTH__OIDC__ALGORITHMS` | list | `["RS256"]` | Accepted JWT signature algorithms. |
-| `EHRBASE_REST_AUTH__OIDC__HMAC_SECRET` | string (secret) | none | Symmetric HS256 secret (development/test). Prefer JWKS/discovery in production. |
-| `EHRBASE_REST_AUTH__OIDC__JWKS_JSON` | string (JSON) | none | Static JWKS document; preferred over discovery when present. |
-
-## Authorization (RBAC + ABAC)
-
-Prefix `EHRBASE_AUTHZ_`, separator `__`, optional file `EHRBASE_AUTHZ_CONFIG`.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_AUTHZ_CONFIG` | path | none | Path to the authz TOML config file. |
-| `EHRBASE_AUTHZ_RBAC__ENABLED` | boolean | `true` | Coarse role gate (active only when auth is enabled). |
-| `EHRBASE_AUTHZ_RBAC__ADMIN_ROLE` | string | `ADMIN` | Role required for admin-class operations. |
-| `EHRBASE_AUTHZ_RBAC__USER_ROLE` | string | `USER` | Baseline clinical role. |
-| `EHRBASE_AUTHZ_RBAC__ROLE_CLAIMS` | list | `["realm_access.roles","scope"]` | JWT claim paths mined for roles. |
-| `EHRBASE_AUTHZ_RBAC__MANAGEMENT_ACCESS` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
-| `EHRBASE_AUTHZ_ABAC__ENABLED` | boolean | `false` | Master ABAC (attribute-based) switch. |
-| `EHRBASE_AUTHZ_ABAC__ENGINE` | enum{cedar,remote} | `cedar` | Policy engine: embedded Cedar or a remote decision point. |
-| `EHRBASE_AUTHZ_ABAC__ORGANIZATION_CLAIM` | string | `organization_id` | JWT claim carrying the caller's organization. |
-| `EHRBASE_AUTHZ_ABAC__PATIENT_CLAIM` | string | `patient_id` | JWT claim carrying the patient id (blank disables the subject gate). |
-| `EHRBASE_AUTHZ_ABAC__CEDAR__POLICY_DIR` | path | none | Directory of `*.cedar` policy files (required for the `cedar` engine). |
-| `EHRBASE_AUTHZ_ABAC__CEDAR__RELOAD_SECS` | integer | none | Optional Cedar hot-reload interval (seconds). |
-| `EHRBASE_AUTHZ_ABAC__REMOTE__SERVER` | URL | none | Remote decision-point base URL (required for the `remote` engine). |
-| `EHRBASE_AUTHZ_ABAC__REMOTE__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Remote-PDP connect timeout. |
-| `EHRBASE_AUTHZ_ABAC__REMOTE__REQUEST_TIMEOUT_MS` | integer (ms) | `5000` | Remote-PDP request timeout. |
-
-## Database
-
-Prefix `EHRBASE_DB_`, no nesting, environment-only (no config file).
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_DB_URL` | URL | none (**required**) | PostgreSQL connection URL, `postgres://user:pass@host:port/db`. `DATABASE_URL` is accepted as a fallback. |
-| `EHRBASE_DB_MAX_CONNECTIONS` | integer | `20` | Upper bound of the connection pool. Size to your PostgreSQL `max_connections` budget; write-heavy deployments benefit from 50+. |
-| `EHRBASE_DB_MIN_CONNECTIONS` | integer | `2` | Idle connections the pool keeps open (avoids cold connection churn under variable load). |
-| `EHRBASE_DB_ACQUIRE_TIMEOUT_SECS` | integer (s) | `30` | Wait for a free connection before failing. |
+Scalars are typed automatically (bool / int / float, else string).
+**List-typed keys take comma-separated values**
+(`EHRBASE_AUTH__OIDC__AUDIENCES=ehrbase,other`). Arrays of tables — the
+Basic-auth user store — are **file-only**.
 
 > [!NOTE]
-> `EHRBASE_DB_NAME`, `EHRBASE_DB_USER`, and `EHRBASE_DB_PASSWORD` are **not**
-> read by the server — they configure the PostgreSQL init image. The server
-> takes a single `EHRBASE_DB_URL`.
+> Enum values are lowercase / `snake_case` tokens, exactly as the tables show.
+> Secret-typed keys are redacted everywhere the config is rendered (the
+> `/management/env` snapshot, `ehrbase config check`, logs), and each has a
+> `*_file` sibling that reads the value from a file (for Kubernetes/Docker
+> secret mounts). Setting a secret and its `*_file` sibling at once is a boot
+> error.
 
-## Query execution
+### File discovery
 
-A single environment-only key (no file, no nesting group behind it).
+The first of these that exists is loaded (later layers still override its
+values):
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_QUERY__TIMEOUT_MS` | integer (ms) | unset (no per-query cap) | Per-query execution budget. `0` or unset disables it; when positive, an AQL query that exceeds the budget returns `408 Request Timeout`. |
-| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` | integer | `256` | Maximum number of distinct AQL query plans held in the in-memory plan cache. A repeated query text reuses its lowered plan instead of re-parsing on every execution (parameter values, `fetch`/`offset` paging, and EHR scope still bind per request); queries that resolve terminology are never cached. `0` disables the cache. Cache activity is reported by the `aql_plan_cache_events_total` metric. |
+1. `--config <path>` (fatal if missing/unreadable),
+2. `EHRBASE_CONFIG=<path>` (fatal if missing/unreadable),
+3. `./ehrbase.toml` (current directory),
+4. `/etc/ehrbase/ehrbase.toml`.
 
-## Telemetry and logging
+An explicitly pointed-at file (1–2) is fatal if absent; the search-order files
+(3–4) are simply skipped when absent (but fatal if present and unparseable).
 
-Prefixes `EHRBASE_OTEL_` and `EHRBASE_LOG_`. **Flat** (no `__` nesting),
-environment-only.
+### Strict validation
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_OTEL_OTLP_ENDPOINT` | URL | none | OTLP/gRPC collector endpoint. **Unset = the OTel layer is not installed** (zero overhead). |
-| `EHRBASE_OTEL_SERVICE_NAME` | string | `ehrbase` | `service.name` resource attribute. |
-| `EHRBASE_OTEL_ENVIRONMENT` | string | `dev` | `deployment.environment` resource attribute. |
-| `EHRBASE_OTEL_TRACES_SAMPLE_RATIO` | float | `1.0` | Head-sampling ratio. |
-| `EHRBASE_OTEL_METRICS_PUSH` | boolean | `false` | Also push metrics over OTLP (alongside Prometheus pull). |
-| `EHRBASE_LOG_FORMAT` | enum{auto,json,pretty} | `auto` | Log rendering. `json` for cluster log collectors; `auto` picks JSON when stdout is not a TTY. |
-| `EHRBASE_LOG_FILTER` | string | `info,ehrbase=info` | Log-filter directives (`RUST_LOG` is the fallback when unset). |
+Configuration is validated at boot (and by `ehrbase config check`), and the
+server refuses to start on any error:
 
-## Management surface
+- **Unknown keys are rejected** — in the file (with the offending `file:line`)
+  and in the `EHRBASE_` environment namespace — with a did-you-mean suggestion.
+  A misspelled security key can no longer be silently ignored.
+- **Type errors are boot errors**, naming the key, the expected type, and where
+  the bad value came from.
+- **Semantic errors are aggregated** — one pass reports every problem at once,
+  so a broken config is fixed in a single iteration.
 
-Prefix `EHRBASE_MANAGEMENT_`, **single-underscore** nesting for endpoints,
-optional file `EHRBASE_MANAGEMENT_CONFIG`. Off in the bare binary; the Helm
-chart turns it on for probes.
+## `[server]`
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_MANAGEMENT_CONFIG` | path | none | Path to the management TOML config file. |
-| `EHRBASE_MANAGEMENT_ENABLED` | boolean | `false` | Master switch; off = no management routes mounted. |
-| `EHRBASE_MANAGEMENT_BASE_PATH` | string | `/management` | Base path for the management endpoints. |
-| `EHRBASE_MANAGEMENT_PORT` | integer (u16) | none | Serve management on its own listener/port instead of the main API listener. |
-| `EHRBASE_MANAGEMENT_ACCESS_DEFAULT` | enum{off,admin_only,private,public} | `admin_only` | Global default access level (a per-endpoint level wins). |
-| `EHRBASE_MANAGEMENT_PROBES_ENABLED` | boolean | `false` | Mount the public `/health/liveness` + `/health/readiness` probes. |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH` | enum{off,admin_only,private,public} | `off` | Access level of `/management/health`. |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_INFO` | enum{off,admin_only,private,public} | `off` | Access level of `/management/info`. |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_METRICS` | enum{off,admin_only,private,public} | `off` | Access level of `/management/metrics`. |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS` | enum{off,admin_only,private,public} | `off` | Access level of `/management/prometheus`. |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_ENV` | enum{off,admin_only,private,public} | `off` | Access level of `/management/env` (redacted config). |
-| `EHRBASE_MANAGEMENT_ENDPOINTS_LOGGERS` | enum{off,admin_only,private,public} | `off` | Access level of `/management/loggers` (runtime log control). |
+The HTTP listener and REST surface.
 
-## Version signing
-
-Prefix `EHRBASE_SIGNING_`, separator `__`, optional file
-`EHRBASE_SIGNING_CONFIG`. On by default in `digest` mode.
+```toml
+[server]
+bind = "0.0.0.0:8080"
+base_path = "/ehrbase/rest/openehr/v1"
+max_in_flight = 256
+swagger_ui = true
+cors_permissive = false
+```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_SIGNING_CONFIG` | path | none | Path to the signing TOML config file. |
-| `EHRBASE_SIGNING_ENABLED` | boolean | `true` | Server-side signing of committed versions. |
-| `EHRBASE_SIGNING_MODE` | enum{digest,pgp} | `digest` | SHA-256 integrity digest, or an OpenPGP detached signature. |
-| `EHRBASE_SIGNING_KEY_PATH` | path | none | Armored RFC 4880 secret key (required for `pgp`). |
-| `EHRBASE_SIGNING_KEY_PASSPHRASE` | string (secret) | none | Key passphrase (kept in memory, never serialized). |
-| `EHRBASE_SIGNING_VERIFY_ON_READ` | enum{off,warn,strict} | `off` | Read-time recompute-and-compare policy. |
+| `bind` | string | `0.0.0.0:8080` | Socket address the API listener binds. |
+| `base_path` | string | `/ehrbase/rest/openehr/v1` | ITS-REST base path all API routes hang off. |
+| `max_in_flight` | int | `256` | Concurrent-request admission cap (not per second). Requests beyond it are shed immediately with `503` + `Retry-After` — never queued — so offered load beyond capacity cannot exhaust memory. Status/health/discovery routes are never limited. `0` disables shedding. |
+| `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON at the REST root. Consider `false` in production. |
+| `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
+
+### `[server.identity]`
+
+The `OPTIONS /` System-Options manifest identity. Defaults are measured, not
+asserted — the manifest never out-claims the last conformance verdict.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `solution` | string | `EHRbase-RS` | Product name. |
+| `solution_version` | string | build version | Product version. |
+| `vendor` | string | `EHRbase-RS project` | Providing organisation. |
+| `restapi_specs_version` | string | tested-contract identity | openEHR REST API edition the build is tested against. |
+| `conformance_profile` | string | last ECC verdict | Advertised conformance profile. |
+
+## `[db]`
+
+PostgreSQL connection.
+
+```toml
+[db]
+url = "postgres://ehrbase:ehrbase@localhost:5432/ehrbase"
+max_connections = 20
+min_connections = 2
+acquire_timeout_secs = 30
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `url` | secret URL | `postgres://ehrbase:ehrbase@localhost:5432/ehrbase` | Connection DSN. The default matches the compose dev stack; **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
+| `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
+| `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
+| `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
+
+## `[log]`
+
+```toml
+[log]
+format = "auto"
+filter = "info,ehrbase=info"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `format` | enum{auto,json,pretty} | `auto` | Stdout rendering; `auto` picks `json` when stdout is not a TTY (and suppresses the boot banner). |
+| `filter` | string | `info,ehrbase=info` | Boot `EnvFilter` directives; also the `/management/loggers` reset target. `RUST_LOG` is a recognized lower-priority alias. |
+
+## `[telemetry]`
+
+OpenTelemetry export. Unset `otlp_endpoint` ⇒ the OTel layer is not installed
+(zero overhead).
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `otlp_endpoint` | string | unset | OTLP/gRPC collector endpoint. |
+| `service_name` | string | `ehrbase` | `service.name` resource attribute. |
+| `environment` | string | `dev` | `deployment.environment` resource attribute. |
+| `traces_sample_ratio` | float | `1.0` | Head-sampling ratio (`0.1` is a common prod start). |
+| `metrics_push` | bool | `false` | Also push metrics over OTLP alongside the Prometheus pull surface. |
+
+## `[auth]`
+
+Authentication (Basic + OAuth2/OIDC bearer).
+
+```toml
+[auth]
+enabled = true
+verified_cache_ttl_seconds = 60
+
+[[auth.basic.users]]
+username = "clinician"
+password_hash = "$argon2id$v=19$..."   # Argon2 PHC hash, never plaintext
+roles = ["USER"]
+
+[auth.oidc]
+issuer = "https://keycloak.example.com/realms/ehrbase"
+audiences = ["ehrbase"]
+algorithms = ["RS256"]
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `true` | Master switch. `false` = all requests pass unauthenticated (dev only). With `true` and no mechanism configured, every API request 401s (fail-closed). |
+| `verified_cache_ttl_seconds` | int | `60` | Verified Basic-credential cache TTL (`0` disables); bounds Argon2 cost per busy client and revocation lag alike. |
+
+`[[auth.basic.users]]` — the Basic-auth user store (array of tables,
+**file-only**):
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `username` | string | required | Principal name. |
+| `password_hash` | secret | required | Argon2 PHC hash (`$argon2id$v=19$…`), never a plaintext password. |
+| `roles` | list of string | `["USER"]` | Roles granted (upper-cased on authentication). |
+
+`[auth.oidc]` — bearer validation (absent table ⇒ bearer disabled):
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `issuer` | string | required when present | Expected `iss`; also the OIDC discovery base. |
+| `audiences` | list of string | `[]` | Accepted `aud` (empty = not checked). |
+| `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. |
+| `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test). At most one of the pair. |
+| `jwks_json` / `jwks_json_file` | string / path | unset | Static JWKS document; preferred over discovery when present. |
+
+## `[authz]`
+
+RBAC + ABAC.
+
+`[authz.rbac]`:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `true` | Coarse role gate (active when auth is enabled). |
+| `admin_role` | string | `ADMIN` | Role required for admin-class operations. |
+| `user_role` | string | `USER` | Baseline clinical role. |
+| `role_claims` | list of string | `["realm_access.roles","scope"]` | JWT claim paths mined for roles. |
+| `management_access` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
+
+`[authz.abac]`:
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Master ABAC switch. |
+| `engine` | enum{cedar,remote} | `cedar` | Embedded Cedar or a remote decision point. |
+| `organization_claim` | string | `organization_id` | JWT claim carrying the caller's organization. |
+| `patient_claim` | string | `patient_id` | JWT claim carrying the patient id. |
+
+`[authz.abac.cedar]`: `policy_dir` (path — required when `engine=cedar` and ABAC
+on), `reload_secs` (int, unset — optional hot-reload interval).
+`[authz.abac.remote]`: `server` (string — required when `engine=remote`, must
+end `/`), `connect_timeout_ms` (int, `2000`), `request_timeout_ms` (int,
+`5000`).
+`[authz.abac.policy.<kind>]` (kind ∈ `ehr`, `ehr_status`, `composition`,
+`contribution`, `query`, `directory`): `name` (string), `parameters` (list of
+enum{organization,patient,template}).
+
+## `[admin]`
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Mount the ADMIN API (physical, irreversible delete). Off ⇒ routes are absent (404), never 403. |
+
+## `[tenancy]`
+
+Multi-tenancy.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Activate tenant middleware + row-level scoping. |
+| `claim` | string | `tenant` | JWT-claim path carrying the tenant key. |
+| `header` | string | unset | Dev-only request-header tenant override. Leave unset in production — a client header must not select a tenant. |
+
+## `[smart]`
+
+SMART App Launch. Off by default; when off the discovery document is not served
+and the scope gate is inert. See [SMART App Launch](../smart-app-launch.md).
+
+`[smart]`: `enabled` (bool, `false`), `platform_base_url` (string, unset ⇒ REST
+root), `ehr_id_claim` (string, `ehrId`), `patient_claim` (string, `patient`),
+`require_smart_scopes` (bool, `false`), `launch_base64_json` (bool, `false`).
+`[smart.episode]`: `enabled` (bool, `false`).
+`[smart.endpoints]`: `issuer`, `jwks_uri`, `authorization_endpoint`,
+`token_endpoint`, `registration_endpoint`, `introspection_endpoint`,
+`revocation_endpoint`, `management_endpoint` (all string, unset ⇒ omitted from
+the discovery document); `token_endpoint_auth_methods_supported`,
+`grant_types_supported`, `response_types_supported`,
+`code_challenge_methods_supported`, `scopes_supported` (all list of string,
+`[]`). Deprecated grant types (`implicit`/password) are rejected at boot.
+
+## `[management]`
+
+The management / observability surface. Off in the bare binary; the Helm chart
+turns it on for probes.
+
+```toml
+[management]
+enabled = false
+base_path = "/management"
+access_default = "admin_only"
+probes_enabled = false
+
+[management.endpoints]
+health = "off"
+info = "off"
+metrics = "off"
+prometheus = "off"
+env = "off"
+loggers = "off"
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Mount the management router. |
+| `base_path` | string | `/management` | Base path for the management endpoints. |
+| `port` | int | unset ⇒ share the main listener | Serve management on its own listener/port. Must differ from the `server.bind` port. |
+| `access_default` | enum{off,admin_only,private,public} | `admin_only` | Global default access level (a per-endpoint level wins). |
+| `probes_enabled` | bool | `false` | Mount the public `/health/liveness` + `/health/readiness` probes. |
+
+`[management.endpoints]` — `health`, `info`, `metrics`, `prometheus`, `env`,
+`loggers`, each enum{off,admin_only,private,public}, default `off`.
+
+## `[signing]`
+
+VERSION signing. On by default in `digest` mode.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `true` | Server-side signing of committed versions. |
+| `mode` | enum{digest,pgp} | `digest` | SHA-256 integrity digest, or an OpenPGP (RFC 4880) detached signature. |
+| `key_path` | path | unset | Armored secret key; **required for `pgp`**. |
+| `key_passphrase` / `key_passphrase_file` | secret / path | unset | Key passphrase. |
+| `verify_on_read` | enum{off,warn,strict} | `off` | Read-time recompute-and-compare policy. |
 
 > [!WARNING]
 > `pgp` mode **fails closed at boot** if the key is missing or unusable — the
 > server will not start. Verify the key and passphrase before switching modes.
 
-## System log (ATNA auditing)
+## `[query]`
 
-Prefix `EHRBASE_ATNA_`, separator `__`, optional file `EHRBASE_ATNA_CONFIG`.
-Off by default.
-
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_ATNA_CONFIG` | path | none | Path to the ATNA TOML config file. |
-| `EHRBASE_ATNA_ENABLED` | boolean | `false` | Master ATNA audit switch. |
-| `EHRBASE_ATNA_ENTERPRISE_SITE_ID` | string | none | Enterprise/site id (`AuditEnterpriseSiteID`). |
-| `EHRBASE_ATNA_REPOSITORY_HOST` | string | `localhost` | Audit Record Repository (ARR) host. |
-| `EHRBASE_ATNA_REPOSITORY_PORT` | integer (u16) | `514` | ARR port (514 UDP / 6514 TLS typical). |
-| `EHRBASE_ATNA_TRANSPORT` | enum{udp,tls} | `udp` | Syslog transport to the ARR. Use `tls` for PHI-adjacent audit. |
-| `EHRBASE_ATNA_SOURCE_ID` | string | `ehrbase` | Audit source id. |
-| `EHRBASE_ATNA_VALUE_IF_MISSING` | string | `UNKNOWN` | Fill value for empty mandatory fields. |
-| `EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS` | boolean | `true` | Skip auth/login activity events. |
-| `EHRBASE_ATNA_FAIL_MODE` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject with 503 (`closed`). |
-| `EHRBASE_ATNA_RESOLVE_SUBJECT` | boolean | `false` | Enrich the patient participant via a subject lookup. |
-| `EHRBASE_ATNA_QUEUE_CAPACITY` | integer | `1024` | Bounded audit queue capacity. |
-| `EHRBASE_ATNA_SERVER_HOST` | string | none | This node's advertised address (`NetworkAccessPointID`). |
-| `EHRBASE_ATNA_TLS_CA_PATH` | path | none | PEM CA file to trust for TLS transport. |
-| `EHRBASE_ATNA_TLS_IDENTITY_CERT_PATH` | path | none | Client-certificate PEM for mutual TLS. |
-| `EHRBASE_ATNA_TLS_IDENTITY_KEY_PATH` | path | none | Client-key PEM for mutual TLS. |
-
-## Change events (AMQP outbox)
-
-Prefix `EHRBASE_EVENTS_`, separator `__`, optional file `EHRBASE_EVENTS_CONFIG`.
-Off by default. Envelopes are PHI-free by design.
+AQL execution knobs.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_EVENTS_CONFIG` | path | none | Path to the events TOML config file. |
-| `EHRBASE_EVENTS_ENABLED` | boolean | `false` | Spawn the outbox publisher. |
-| `EHRBASE_EVENTS_URL` | AMQP URL | `amqp://guest:guest@localhost:5672/%2f` | RabbitMQ broker URL. |
-| `EHRBASE_EVENTS_EXCHANGE` | string | `ehrbase.events` | Topic exchange for PHI-free event envelopes. |
-| `EHRBASE_EVENTS_TLS` | boolean | `false` | Upgrade an `amqp://` URL to `amqps://`. |
-| `EHRBASE_EVENTS_BATCH_SIZE` | integer | `128` | Outbox rows drained per poll. |
-| `EHRBASE_EVENTS_POLL_INTERVAL_MS` | integer (ms) | `1000` | Poll interval when the outbox is idle. |
-| `EHRBASE_EVENTS_RETENTION_DAYS` | integer (days) | `7` | Published-row retention window. |
-| `EHRBASE_EVENTS_PRUNE_INTERVAL_SECS` | integer (s) | `3600` | Retention-prune cadence. |
-| `EHRBASE_EVENTS_PUBLISH_MAX_RETRIES` | integer | `3` | Per-row publish retries before backing off. |
+| `plan_cache_capacity` | int | `256` | Max distinct cached query plans; `0` disables the cache. Cache activity is reported by the `aql_plan_cache_events_total` metric. |
+| `timeout_ms` | int | `0` | Per-query DB execution budget; `0` disables (the global request timeout remains). Overrun returns `408`. |
 
-## FHIR outbound emitter
+## `[events]`
 
-Prefix `EHRBASE_FHIR_OUTBOUND_`, separator `__`, optional file
-`EHRBASE_FHIR_OUTBOUND_CONFIG`. Off by default.
+Contribution-outbox eventing → AMQP, plus its admin API. Off by default;
+envelopes are PHI-free by design.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_FHIR_OUTBOUND_CONFIG` | path | none | Path to the FHIR-outbound TOML config file. |
-| `EHRBASE_FHIR_OUTBOUND_ENABLED` | boolean | `false` | Enable the FHIR resource emitter. |
-| `EHRBASE_FHIR_OUTBOUND_URL` | AMQP URL | `amqp://guest:guest@localhost:5672/%2f` | Broker URL. |
-| `EHRBASE_FHIR_OUTBOUND_EXCHANGE` | string | `ehrbase.fhir` | Topic exchange (separate from events, for PHI isolation). |
-| `EHRBASE_FHIR_OUTBOUND_TLS` | boolean | `false` | Upgrade an `amqp://` URL to `amqps://`. |
-| `EHRBASE_FHIR_OUTBOUND_BATCH_SIZE` | integer | `128` | Outbox rows scanned per poll. |
-| `EHRBASE_FHIR_OUTBOUND_POLL_INTERVAL_MS` | integer (ms) | `1000` | Poll interval when idle. |
-| `EHRBASE_FHIR_OUTBOUND_PUBLISH_MAX_RETRIES` | integer | `3` | Per-message publish retries before backing off. |
+| `enabled` | bool | `false` | Spawn the outbox publisher (with `fhir.outbound.enabled`, gates the per-commit outbox INSERT). |
+| `url` | secret URL | `amqp://guest:guest@localhost:5672/%2f` | AMQP broker URL; credentials redacted from every rendering. |
+| `exchange` | string | `ehrbase.events` | Topic exchange (PHI-free envelope stream). |
+| `tls` | bool | `false` | Upgrade `amqp://` to `amqps://`. |
+| `batch_size` | int | `128` | Rows drained per poll. |
+| `poll_interval_ms` | int | `1000` | Idle poll interval. |
+| `retention_days` | int | `7` | Published-row retention window. |
+| `prune_interval_secs` | int | `3600` | Retention-prune cadence. |
+| `publish_max_retries` | int | `3` | Per-row publish retries before backing off. |
+| `admin_api` | bool | `false` | Mount the `/admin/event_subscription` CRUD routes. |
+
+## `[fhir]`
+
+The FHIR connector — an inbound façade and an independent outbound emitter.
+
+`[fhir]`: `api_enabled` (bool, `false`) — mount `/fhir/r4/*` +
+`/admin/fhir_mapping`.
+`[fhir.outbound]`: `enabled` (bool, `false`), `url` (secret URL, same AMQP
+default), `exchange` (string, `ehrbase.fhir` — deliberately distinct from the
+events exchange for PHI isolation), `tls` (bool, `false`), `batch_size` (int,
+`128`), `poll_interval_ms` (int, `1000`), `publish_max_retries` (int, `3`).
 
 > [!WARNING]
-> This stream carries **PHI** — the mapped FHIR resource. It is a deliberately
-> separate switch and exchange from the PHI-free change-event stream so broker
-> access control can isolate it. Enable it only against a TLS, access-controlled
-> broker.
+> The outbound stream carries **PHI** — the mapped FHIR resource. It is a
+> deliberately separate switch and exchange from the PHI-free change-event
+> stream so broker access control can isolate it. Enable it only against a TLS,
+> access-controlled broker.
 
-## S3 multimedia externalization
+## `[terminology]`
 
-Prefix `EHRBASE_MULTIMEDIA_`, separator `__`, optional file
-`EHRBASE_MULTIMEDIA_CONFIG`. Off by default (blobs stay inline, byte-identical).
+Terminology extension API and external FHIR-terminology validation.
 
-| Key | Type | Default | Description |
-|---|---|---|---|
-| `EHRBASE_MULTIMEDIA_CONFIG` | path | none | Path to the multimedia TOML config file. |
-| `EHRBASE_MULTIMEDIA_ENABLED` | boolean | `false` | Externalize large multimedia data to an object store. |
-| `EHRBASE_MULTIMEDIA_THRESHOLD_BYTES` | integer (bytes) | `262144` (256 KiB) | Decoded size strictly above which data is offloaded. |
-| `EHRBASE_MULTIMEDIA_ENDPOINT` | URL | none | S3-compatible endpoint. None = AWS default resolution. |
-| `EHRBASE_MULTIMEDIA_BUCKET` | string | `openehr-multimedia` | Target bucket. |
-| `EHRBASE_MULTIMEDIA_REGION` | string | `us-east-1` | AWS region (required even for non-AWS endpoints). |
-| `EHRBASE_MULTIMEDIA_ACCESS_KEY_ID` | string | none | S3 access key id (none + no secret = anonymous). |
-| `EHRBASE_MULTIMEDIA_SECRET_ACCESS_KEY` | string (secret) | none | S3 secret access key. |
-| `EHRBASE_MULTIMEDIA_ALLOW_HTTP` | boolean | `false` | Allow plain-HTTP endpoints — development/test only. |
+`[terminology]`: `api_enabled` (bool, `false`) — mount the terminology
+extension API.
+`[terminology.external]`: `enabled` (bool, `false`), `fail_on_error` (bool,
+`false` — on TS/connectivity error, reject vs accept).
+`[terminology.external.providers.<name>]` (conventionally `default`): `type`
+(enum{fhir}, `fhir`), `url` (string, required), `operation`
+(enum{validate_code,expand}, `validate_code`), `connect_timeout_ms` (int,
+`2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset).
 
-## External terminology validation
+## `[multimedia]`
 
-Prefix `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_`, separator `__`, optional file
-`EHRBASE_VALIDATION_CONFIG`. Off by default (the in-process openEHR bundle is
-used). Providers are a map keyed by a provider name (below shown as `<NAME>`,
-conventionally `default`).
+DV_MULTIMEDIA externalization → S3-compatible object store. Off by default
+(blobs stay inline, byte-identical).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_VALIDATION_CONFIG` | path | none | Path to the terminology-validation TOML config file. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_ENABLED` | boolean | `false` | Activate external terminology validation. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_FAIL_ON_ERROR` | boolean | `false` | On TS/connectivity error, reject (fail-closed) vs accept (fail-open). |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__TYPE` | enum{fhir} | `fhir` | Provider kind (FHIR R4). |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__URL` | URL | none (required) | FHIR R4 base URL of the terminology server. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__OPERATION` | enum{validate_code,expand} | `validate_code` | Value-set membership operation. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-provider connect timeout. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-provider request timeout. |
-| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_PROVIDERS__<NAME>__OAUTH2_CLIENT` | string | none | Name of an OAuth2 client-credentials client for the provider. |
+| `enabled` | bool | `false` | Externalize large multimedia data. |
+| `threshold_bytes` | int | `262144` (256 KiB) | Decoded size strictly above which data is offloaded. |
+| `endpoint` | string | unset ⇒ AWS default | S3-compatible endpoint. |
+| `bucket` | string | `openehr-multimedia` | Target bucket. |
+| `region` | string | `us-east-1` | AWS region (required even for non-AWS endpoints). |
+| `access_key_id` | string | unset | S3 access key id (unset + no secret = anonymous). |
+| `secret_access_key` / `secret_access_key_file` | secret / path | unset | S3 secret access key. |
+| `allow_http` | bool | `false` | Allow plain-HTTP endpoints — dev only; prod S3 is HTTPS. |
 
-## Subject Proxy (FHIR frames)
+## `[atna]`
 
-Prefix `EHRBASE_SUBJECT_PROXY_`, separator `__`, optional file
-`EHRBASE_SUBJECT_PROXY_CONFIG`. Empty by default — no external FHIR system is
-reachable until one is named here (fail-closed). Systems are a map keyed by
-the name subject-proxy frames use as their `system_id` (shown as `<NAME>`).
-See [Subject Proxy](../beyond-core/subject-proxy.md).
+IHE ATNA system log. Off by default.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_SUBJECT_PROXY_CONFIG` | path | none | Path to the subject-proxy TOML config file. |
-| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__BASE_URL` | URL | none (required per system) | FHIR R4 base URL of the named system. |
-| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__CONNECT_TIMEOUT_MS` | integer (ms) | `2000` | Per-system connect timeout. |
-| `EHRBASE_SUBJECT_PROXY__SYSTEMS__<NAME>__REQUEST_TIMEOUT_MS` | integer (ms) | `10000` | Per-system request timeout. |
+| `enabled` | bool | `false` | Master ATNA audit switch. |
+| `enterprise_site_id` | string | unset | `AuditEnterpriseSiteID`. |
+| `repository_host` | string | `localhost` | Audit Record Repository (ARR) host. |
+| `repository_port` | int | `514` | ARR port (514 UDP / 6514 TLS typical). |
+| `transport` | enum{udp,tls} | `udp` | Syslog transport. Use `tls` for PHI-adjacent audit. |
+| `source_id` | string | `ehrbase` | Audit source id. |
+| `value_if_missing` | string | `UNKNOWN` | Fill value for empty mandatory fields. |
+| `suppress_login_events` | bool | `true` | Skip auth/login activity events. |
+| `fail_mode` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject with 503 (`closed`). |
+| `resolve_subject` | bool | `false` | Enrich the patient participant via a subject lookup. |
+| `queue_capacity` | int | `1024` | Bounded audit queue capacity. |
+| `server_host` | string | unset | This node's advertised address (`NetworkAccessPointID`). |
+| `tls_ca_path` / `tls_identity_cert_path` / `tls_identity_key_path` | path | unset | PEM CA / client cert / client key for TLS transport. |
+
+## `[subject_proxy]`
+
+FHIR frames. Empty by default — no external FHIR system is reachable until one
+is named here (fail-closed). Systems are keyed by the name subject-proxy frames
+use as their `system_id`. See [Subject Proxy](../beyond-core/subject-proxy.md).
+
+`[subject_proxy.systems.<name>]`: `base_url` (string, required per system),
+`connect_timeout_ms` (int, `2000`), `request_timeout_ms` (int, `10000`).
+
+```toml
+[subject_proxy.systems.pas]
+base_url = "https://pas.example.com/fhir"
+```
+
+The env form for a named system is
+`EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`.
 
 ## Process / CLI
 
-| Key | Type | Default | Description |
+| Variable | Type | Default | Description |
 |---|---|---|---|
-| `EHRBASE_HEALTHCHECK_URL` | URL | `http://127.0.0.1:8080/ehrbase/rest/status` | Target URL for the binary's `healthcheck` subcommand (container `HEALTHCHECK` and Kubernetes exec probes). |
+| `EHRBASE_HEALTHCHECK_URL` | URL | `http://127.0.0.1:8080/ehrbase/rest/status` | Target URL for the binary's `healthcheck` subcommand (container `HEALTHCHECK` and Kubernetes exec probes). Not part of `ehrbase.toml`. |
 
-## What belongs in a mounted file
+## The `config` subcommands
 
-Env variables cannot carry lists or nested structures cleanly. Put these in the
-module's TOML file (via `EHRBASE_<AREA>_CONFIG`, or the Helm chart's
-`config.files`) instead:
+```
+ehrbase config default             # print the annotated default ehrbase.toml
+ehrbase config check [--config P]  # validate (file + env + --set), print the
+                                   #   effective config (secrets redacted) with
+                                   #   a provenance column; exit 0 on success, 1 on error
+```
 
-- the Basic-auth **user store** (`[[auth.basic.users]]`),
-- a full **OIDC** block with multiple audiences/algorithms,
-- **RBAC** role-claim lists and **ABAC** (Cedar) policies,
-- the external **terminology** provider map,
-- **ATNA** TLS certificate paths and the **PGP** signing key.
+`ehrbase config check` runs the exact same three validation passes as boot but
+touches no database — use it in CI and before a rollout.
 
-See `docker/ehrbase.dev.toml` in the repository for a worked example of the
-REST config file (bind address, CORS, admin, and the Basic-auth users).
+## Zero-config boot and the production checklist
+
+With no file and no environment, the server boots as: listener `0.0.0.0:8080`
+at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; auth
+**enabled with no mechanism ⇒ every API request 401s** (fail-closed; boot logs
+a prominent warning naming the two ways out — add `[[auth.basic.users]]` /
+`[auth.oidc]`, or set `auth.enabled = false` for dev); RBAC on; signing on
+(digest); log `auto`/`info`; **everything else off**.
+
+For production, set at least:
+
+- **`db.url`** — the real DSN, via `EHRBASE_DB__URL` (from a secret) or a
+  `*_file`-mounted value, never inline in a world-readable file.
+- **an auth mechanism** — a Basic user store and/or `[auth.oidc]`.
+- **`log.format = "json"`** for cluster log collectors.
+- **`server.cors_permissive`** stays `false`; **`server.swagger_ui`** per posture.
+- **`management.*`** per posture (a dedicated `port` is recommended so
+  `/management` is never reachable on the clinical listener).
+- **TLS everywhere a transport supports it** — `atna.transport = "tls"`,
+  `events.tls`, `fhir.outbound.tls`, HTTPS S3.
+- **real secrets via env or `*_file`**, never inline.
+
+## What belongs in a mounted file (vs env)
+
+Env cannot carry an array of tables, so the **Basic-auth user store**
+(`[[auth.basic.users]]`) is file-only. Genuinely file-shaped material — the
+**PGP signing key**, **Cedar/ABAC policies**, **ATNA TLS PEMs**, a **JWKS
+blob** — is referenced by an in-TOML `*_path` / `*_file` key pointing at a
+mounted path (e.g. the Helm chart's `config.files`). Everything else is a
+plain key you can set in the file or override with an `EHRBASE_*` env var.
+
+See `docker/ehrbase.dev.toml` in the repository for a worked dev example
+(server section, CORS, admin, and the Basic-auth users).
+
+## Migrating from 3.x environment variables
+
+The pre-redesign layout used ~14 independent loaders, several env-name
+grammars, and nine `EHRBASE_*_CONFIG` file pointers. Every old server variable
+is **aliased for one transition release** (honoured with a boot-time
+deprecation warning, then removed), except where noted. The alias-removal
+target is the second minor release after this one.
+
+| Old variable | New key (env form) | Fate |
+|---|---|---|
+| `EHRBASE_DB_URL` | `db.url` (`EHRBASE_DB__URL`) | alias |
+| `DATABASE_URL` | `db.url` | kept permanently |
+| `EHRBASE_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`EHRBASE_DB__*`) | alias |
+| `EHRBASE_LOG_FORMAT` / `EHRBASE_LOG_FILTER` | `log.*` (`EHRBASE_LOG__*`) | alias |
+| `RUST_LOG` | `log.filter` | kept permanently |
+| `EHRBASE_OTEL_*` | `telemetry.*` | alias |
+| `EHRBASE_REST_CONFIG` | `--config` / `EHRBASE_CONFIG` + `ehrbase.toml` | **removed** — merge the file into `ehrbase.toml` |
+| `EHRBASE_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`EHRBASE_SERVER__*`) | alias |
+| `EHRBASE_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`EHRBASE_SERVER__MAX_IN_FLIGHT`) | alias |
+| `EHRBASE_REST_SYSTEM__*` | `server.identity.*` | alias |
+| `EHRBASE_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`EHRBASE_AUTH__*`) | alias |
+| `EHRBASE_REST_AUTH__OIDC__*` | `auth.oidc.*` (`EHRBASE_AUTH__OIDC__*`) | alias |
+| `EHRBASE_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **removed** — set in the file |
+| `EHRBASE_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`) | **removed** |
+| `EHRBASE_REST_ADMIN__ENABLED` | `admin.enabled` | alias |
+| `EHRBASE_REST_TENANCY__*` | `tenancy.*` | alias |
+| `EHRBASE_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | alias |
+| `EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | alias |
+| `EHRBASE_REST_FHIR__ENABLED` | `fhir.api_enabled` | alias |
+| `EHRBASE_REST_SMART__*` | `smart.*` (`EHRBASE_SMART__*`) | alias |
+| `EHRBASE_MANAGEMENT_*` | `management.*` (`EHRBASE_MANAGEMENT__*`) | alias |
+| `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`EHRBASE_MANAGEMENT__ENDPOINTS__<EP>`) | alias |
+| `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`EHRBASE_AUTHZ__…`) | alias |
+| `EHRBASE_ATNA_<KEY>` | `atna.<key>` (`EHRBASE_ATNA__<KEY>`) | alias |
+| `EHRBASE_SIGNING_<KEY>` | `signing.<key>` (`EHRBASE_SIGNING__<KEY>`) | alias |
+| `EHRBASE_EVENTS_<KEY>` | `events.<key>` (`EHRBASE_EVENTS__<KEY>`) | alias |
+| `EHRBASE_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`EHRBASE_FHIR__OUTBOUND__<KEY>`) | alias |
+| `EHRBASE_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`EHRBASE_MULTIMEDIA__<KEY>`) | alias |
+| `EHRBASE_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | alias |
+| `EHRBASE_SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
+| `EHRBASE_QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
+| the nine `EHRBASE_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ehrbase.toml` under its `[section]` |
+
+The `PostgreSQL init` container variables `EHRBASE_DB_USER` / `_PASSWORD` /
+`_NAME` were renamed to `PG_INIT_USER` / `_PASSWORD` / `_DB` — they configure
+the database container, not the server, and no longer collide with the
+server's reserved `EHRBASE_` namespace.

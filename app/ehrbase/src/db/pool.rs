@@ -9,7 +9,7 @@ use std::time::Duration;
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
-use crate::db::{DbError, DbSettings};
+use crate::db::{DbConfig, DbError};
 
 /// Search path applied to every pooled connection: the application tables live
 /// in `ehr`, the AQL support functions and the `"C"`/`en_US` collations in
@@ -20,7 +20,7 @@ pub(crate) const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, publi
 /// The pool options common to both the plain and the tenant-scoped pool: the
 /// sizing/timeout from settings and the standard search path on every physical
 /// connection (so queries can use unqualified table names).
-fn base_options(settings: &DbSettings) -> PgPoolOptions {
+fn base_options(settings: &DbConfig) -> PgPoolOptions {
     PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
@@ -47,8 +47,10 @@ fn base_options(settings: &DbSettings) -> PgPoolOptions {
 /// # Errors
 ///
 /// Returns [`DbError`] if the database is unreachable or the URL is invalid.
-pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
-    let pool = base_options(settings).connect(&settings.url).await?;
+pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
+    let pool = base_options(settings)
+        .connect(settings.url.expose())
+        .await?;
     Ok(pool)
 }
 
@@ -74,7 +76,7 @@ pub async fn connect(settings: &DbSettings) -> Result<PgPool, DbError> {
 /// # Errors
 ///
 /// Returns [`DbError`] if the database is unreachable or the URL is invalid.
-pub async fn connect_tenant_scoped(settings: &DbSettings) -> Result<PgPool, DbError> {
+pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbError> {
     let pool = base_options(settings)
         .before_acquire(|conn, _meta| {
             Box::pin(async move {
@@ -87,7 +89,7 @@ pub async fn connect_tenant_scoped(settings: &DbSettings) -> Result<PgPool, DbEr
                 Ok(true)
             })
         })
-        .connect(&settings.url)
+        .connect(settings.url.expose())
         .await?;
     Ok(pool)
 }

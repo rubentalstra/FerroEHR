@@ -1,15 +1,22 @@
-# Dev-only server configuration, mounted into the app container by
-# docker-compose and pointed at via EHRBASE_REST_CONFIG.
+# Dev-only server configuration for the compose stack.
 #
-# The out-of-the-box AuthConfig has authentication ENABLED but no configured
+# Mounted into the app container at /etc/ehrbase/ehrbase.toml — the server's
+# config search order (position 4) discovers it automatically, so no
+# EHRBASE_CONFIG / --config pointer is needed. Env vars in docker-compose.yml
+# override individual keys on top of this file (layer 3 beats the file).
+#
+# The out-of-the-box auth posture has authentication ENABLED but no configured
 # mechanism, so every API request 401s until a user store is provided. This
-# file ships ONE Basic-auth user so the quickstart authenticates out of the box.
+# file ships two dev Basic-auth users so the quickstart authenticates out of
+# the box.
 #
 # DEV DEFAULTS — do NOT use in production. The credentials are:
-#   username: ehrbase
-#   password: ehrbase   (stored below only as its Argon2id PHC hash)
+#   username: ehrbase        password: ehrbase   (Argon2id PHC hash below)
+#   username: ehrbase-admin  password: ehrbase   (ADMIN + USER roles)
 
+[server]
 bind = "0.0.0.0:8080"
+# Permissive CORS — dev only. Production configures explicit origins.
 cors_permissive = true
 
 # Dev-only: expose the admin API (`DELETE /admin/...`) so the conformance

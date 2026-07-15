@@ -173,9 +173,8 @@ lapin = "4"                       # AMQP 0.9.1 client (RabbitMQ) — contributio
 # ── Errors & utilities ───────────────────────────────────────────────────────
 thiserror = "2"                    # v2 current
 anyhow = "1"                       # binaries only
-config = "0.15.25"                   # or figment
-figment = { version = "0.10", features = ["toml", "env"] }
-toml = "1"                         # standalone TOML parser (ECC upstream adjudication register, X1)
+config = "0.15.25"                   # the one server-config loader (W-13); figment removed
+toml = "1"                         # standalone TOML parser + `config check`/`/management/env` render
 dotenvy = "0.15"
 clap = { version = "4", features = ["derive", "env"] }
 parking_lot = "0.12"

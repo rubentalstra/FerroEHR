@@ -20,11 +20,11 @@ mod subject_proxy;
 mod terminology;
 mod validity;
 
-pub use query::{PlanCache, PlanCacheStats};
+pub use query::{PlanCache, PlanCacheStats, QueryConfig};
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 pub use terminology::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, FhirTerminologyProvider,
-    ProviderKind,
+    ProviderKind, TerminologyConfig,
 };
 
 use std::collections::HashMap;
@@ -96,6 +96,11 @@ pub struct EhrbaseService {
     /// across service clones (moka-backed). No openEHR spec governs it — our
     /// own performance design.
     pub(crate) plan_cache: PlanCache,
+    /// Per-query DB execution budget (`[query].timeout_ms`); `None` disables it
+    /// (the global request timeout is then the only guard). On overrun the query
+    /// is reported as `408`. No openEHR spec governs a query timeout — our own
+    /// extension.
+    query_timeout: Option<std::time::Duration>,
     /// Whether the transactional event outbox is written on every commit. The
     /// outbox feeds the eventing extensions (AMQP publisher + FHIR outbound
     /// emitter) — no openEHR spec governs eventing (our own extension). When no
@@ -134,6 +139,7 @@ impl EhrbaseService {
             tenant_cache: TenantCache::default(),
             ehr_access: ehr::EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
+            query_timeout: None,
             outbox_enabled: true,
             created_ehr_repr: moka::future::Cache::builder()
                 .max_capacity(4096)
@@ -226,6 +232,16 @@ impl EhrbaseService {
     /// [`Self::with_outbox_enabled`]).
     pub(crate) fn outbox_enabled(&self) -> bool {
         self.outbox_enabled
+    }
+
+    /// Apply the `[query]` tuning knobs — the plan-cache capacity and the
+    /// per-query execution budget (`crate::service::query::QueryConfig`). No
+    /// openEHR spec governs these — our own operational extension.
+    #[must_use]
+    pub fn with_query_config(mut self, query: &crate::service::query::QueryConfig) -> Self {
+        self.plan_cache = crate::service::query::PlanCache::new(query.plan_cache_capacity);
+        self.query_timeout = query.timeout();
+        self
     }
 
     /// The configured version [`Signer`] (used for read-time verification).

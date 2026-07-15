@@ -36,8 +36,8 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
         .find(|u| u.username == username)
         .ok_or(AuthError::InvalidCredentials)?;
 
-    let parsed =
-        PasswordHash::new(&user.password_hash.0).map_err(|_| AuthError::InvalidCredentials)?;
+    let parsed = PasswordHash::new(user.password_hash.expose())
+        .map_err(|_| AuthError::InvalidCredentials)?;
     Argon2::default()
         .verify_password(password.as_bytes(), &parsed)
         .map_err(|_| AuthError::InvalidCredentials)?;
@@ -93,7 +93,7 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extensions::access::authn::config::{BasicUser, Redacted};
+    use crate::extensions::access::authn::config::BasicUser;
     use argon2::password_hash::{PasswordHasher, SaltString};
 
     fn hash(pw: &str) -> String {
@@ -109,7 +109,7 @@ mod tests {
         BasicConfig {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
-                password_hash: Redacted(hash("s3cret")),
+                password_hash: ehrbase_sm::Secret::new(hash("s3cret")),
                 roles: vec!["user".to_owned()],
             }],
         }
@@ -167,7 +167,7 @@ mod tests {
         let cfg = BasicConfig {
             users: vec![BasicUser {
                 username: "root".to_owned(),
-                password_hash: Redacted(hash("s3cret")),
+                password_hash: ehrbase_sm::Secret::new(hash("s3cret")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         };

@@ -34,7 +34,9 @@ mod bundle;
 mod config;
 mod fhir;
 
-pub use config::{ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind};
+pub use config::{
+    ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind, TerminologyConfig,
+};
 pub use fhir::FhirTerminologyProvider;
 
 use std::collections::BTreeMap;
