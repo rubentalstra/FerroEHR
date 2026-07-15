@@ -785,6 +785,49 @@ async fn population_query_excludes_not_queryable_ehrs() {
     );
 }
 
+/// A directly-scoped query (`ehr_ids` supplied) is NOT population-gated: a
+/// non-queryable EHR's data is still returned when the caller names it in the
+/// scope set. Per `i_query_service.adoc` the `is_queryable` gate governs only
+/// the full-population case (no `ehr_ids`); an explicit scope targets specific
+/// EHRs regardless of the flag. Pins that flipping `is_queryable` off changes
+/// only the full-population result, never a scoped read.
+#[tokio::test]
+async fn scoped_query_bypasses_the_population_gate() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("aql_scoped_bypasses_gate").await;
+    let svc = EhrbaseService::new(pool);
+
+    let hidden = create_ehr(&svc).await;
+    create_comp(&svc, &hidden, "BP", 80.0).await;
+    set_not_queryable(&svc, &hidden).await;
+
+    // Full population (no ehr_id scope) excludes the non-queryable EHR …
+    let full = run_aql(
+        &svc,
+        "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c",
+        AqlQueryRequest::default(),
+    )
+    .await;
+    assert_eq!(
+        rows(&full)[0][0],
+        json!(0),
+        "the non-queryable EHR is excluded from the full-population count"
+    );
+
+    // … but a query scoped directly to it still returns its composition.
+    let scoped = run_aql(
+        &svc,
+        "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c",
+        ehr_scope(&hidden),
+    )
+    .await;
+    assert_eq!(
+        rows(&scoped)[0][0],
+        json!(1),
+        "the scoped query bypasses the is_queryable gate"
+    );
+}
+
 /// Multi-EHR scoping (`ehr_ids: List<UUID>`,
 /// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`): a query
 /// scoped to a *set* of EHRs must span exactly that set — no more, no fewer.

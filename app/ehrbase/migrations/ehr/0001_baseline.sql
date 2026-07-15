@@ -70,6 +70,20 @@ CREATE TABLE ehr (
     -- I_EHR_SERVICE.create_ehr-two_ehrs_same_patient).
     subject_id        text,
     subject_namespace text,
+    -- Promoted copy of the current EHR_STATUS.is_queryable flag (RM ehr master04
+    -- §EHR Status: EHR_STATUS.is_queryable, 1..1 Boolean), kept in lockstep with
+    -- the current EHR_STATUS by the service on every status write (status.rs
+    -- sync_ehr_subject) and backfilled on the import / archive-load paths. The
+    -- AQL full-population gate — SM I_QUERY_SERVICE.execute_ad_hoc_query /
+    -- execute_stored_query: with no ehr_ids supplied "a full population query
+    -- will be performed on all EHRs whose status has the is_queryable flag set
+    -- to True" (i_query_service.adoc) — filters this column directly instead of
+    -- probing every current EHR_STATUS root node per query. Default true = the
+    -- default EHR_STATUS a fresh EHR is created with. No index: the gate rides
+    -- the PK / ehr-id join under ORDER BY id LIMIT n, and a partial index on the
+    -- false rows is pointless (almost every EHR is queryable). No openEHR spec
+    -- governs the promoted column itself — our own storage design.
+    is_queryable      boolean NOT NULL DEFAULT true,
     CONSTRAINT pk_ehr PRIMARY KEY (id)
 );
 CREATE INDEX idx_ehr_time_created ON ehr (time_created DESC, id);
@@ -84,6 +98,7 @@ COMMENT ON TABLE ehr IS 'One row per EHR (RM ehr §"EHR object"). system_id/id/t
 COMMENT ON COLUMN ehr.system_id IS 'The system that created this EHR, recorded at creation, never mutated (req 2.1). A stored value, not the live service config.';
 COMMENT ON COLUMN ehr.subject_id IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.id.value, synced by the service; backs the one-EHR-per-subject unique index (req 2.8).';
 COMMENT ON COLUMN ehr.subject_namespace IS 'Denormalized copy of the current EHR_STATUS subject.external_ref.namespace (see subject_id).';
+COMMENT ON COLUMN ehr.is_queryable IS 'Promoted copy of the current EHR_STATUS.is_queryable (RM ehr master04 §EHR Status), synced by the service; backs the AQL full-population gate (SM I_QUERY_SERVICE, i_query_service.adoc). Our own storage design.';
 
 -- ── audit ──────────────────────────────────────────────────────────────────
 -- AUDIT_DETAILS of every committed change (RM common master06 §AUDIT_DETAILS;

@@ -299,24 +299,39 @@ impl EhrbaseService {
             (Some(id), Some(ns)) => (Some(id), Some(ns)),
             _ => (None, None),
         };
-        sqlx::query("UPDATE ehr SET subject_id = $2, subject_namespace = $3 WHERE id = $1")
-            .bind(ehr_id)
-            .bind(subject_id)
-            .bind(namespace)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| {
-                if let sqlx::Error::Database(db) = &e
-                    && db.constraint() == Some("uq_ehr_subject")
-                {
-                    return ServiceError::Conflict(format!(
-                        "an EHR already exists for subject {}@{}",
-                        subject_id.unwrap_or("?"),
-                        namespace.unwrap_or("?"),
-                    ));
-                }
-                ServiceError::Database(e)
-            })?;
+        // Promote the current EHR_STATUS.is_queryable (RM ehr master04 §EHR
+        // Status, 1..1 Boolean) alongside the subject, in the same UPDATE — it
+        // backs the AQL full-population gate (SM I_QUERY_SERVICE,
+        // i_query_service.adoc), which reads the `ehr` column instead of probing
+        // this node per query. `validate_ehr_status` has already required the
+        // flag present; default true if a raw path ever omits it, matching the
+        // column default and the default EHR_STATUS.
+        let is_queryable = canonical
+            .pointer("/is_queryable")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        sqlx::query(
+            "UPDATE ehr SET subject_id = $2, subject_namespace = $3, is_queryable = $4 \
+             WHERE id = $1",
+        )
+        .bind(ehr_id)
+        .bind(subject_id)
+        .bind(namespace)
+        .bind(is_queryable)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            if let sqlx::Error::Database(db) = &e
+                && db.constraint() == Some("uq_ehr_subject")
+            {
+                return ServiceError::Conflict(format!(
+                    "an EHR already exists for subject {}@{}",
+                    subject_id.unwrap_or("?"),
+                    namespace.unwrap_or("?"),
+                ));
+            }
+            ServiceError::Database(e)
+        })?;
         Ok(())
     }
 }

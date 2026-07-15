@@ -735,10 +735,11 @@ fn archetype_predicate_subsumption_sql() {
 
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
 
-/// Anchor-probe EXISTS count: total EXISTS minus the population gates
-/// (`qgv…` aliases, item 24) — the gates are not containment anchors.
+/// Anchor-probe `EXISTS` count. The population gate is no longer an `EXISTS`
+/// subquery (item 33: a direct `ehr.is_queryable` column filter over a join),
+/// so every remaining `EXISTS` is a containment anchor (OR / NOT CONTAINS).
 fn anchor_exists(sql: &str) -> usize {
-    sql.matches("EXISTS(SELECT").count() - sql.matches("AS \"qgv").count()
+    sql.matches("EXISTS(SELECT").count()
 }
 
 /// G-01: OR-containment under an EHR lowers to a disjunction of correlated
@@ -1047,38 +1048,72 @@ fn ehr_id_ordering_stays_textual() {
     );
 }
 
+/// ORDER BY `e/ehr_id/value` sorts by the raw `ehr.id` uuid column (index-served),
+/// not the `CAST(id AS text)` the projection reads — canonical UUID text order
+/// equals uuid binary order, so the sequence is identical (item 33; BASE
+/// `base_types` master05 §Basic Types — Uuid). The projected cell keeps its
+/// text form.
+#[test]
+fn order_by_ehr_id_uses_the_raw_uuid_column() {
+    let sql = build_sql("SELECT e/ehr_id/value FROM EHR e ORDER BY e/ehr_id/value DESC");
+    assert!(
+        sql.contains(r#"ORDER BY "e0"."id" DESC"#),
+        "ORDER BY sorts by the raw uuid column: {sql}"
+    );
+    assert!(
+        !sql.contains(r#"ORDER BY CAST("e0"."id" AS text)"#),
+        "the ORDER BY no longer casts the id to text: {sql}"
+    );
+    // The projected cell still renders the id as text (to_jsonb of the cast).
+    assert!(
+        sql.contains(r#"CAST("e0"."id" AS text)"#),
+        "the projection keeps the text cast: {sql}"
+    );
+}
+
 /// The population gate (SM `I_QUERY_SERVICE`: full-population queries run over
 /// `is_queryable = true` EHRs) is emitted ONCE per join-connected component —
 /// a VO root linked to its EHR alias is covered by the alias's gate — and as a
-/// correlated `EXISTS` probe, not a full-population `IN` materialization.
+/// direct `ehr.is_queryable` column filter (item 33), NOT a per-query `EXISTS`
+/// probe over every current `EHR_STATUS` root.
 #[test]
-fn population_gate_is_single_and_correlated() {
+fn population_gate_is_single_and_column_filtered() {
     let sql = build_sql(
         "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
          WHERE e/ehr_id/value = '11111111-2222-4333-8444-555555555555' \
          ORDER BY c/context/start_time/value DESC LIMIT 20",
     );
-    // The gate's alias family is qgv/qgn; is_queryable itself binds as $n.
+    // The COMPOSITION root is join-linked to the EHR alias, so exactly one gate
+    // is emitted, on the already-joined `ehr` row's promoted column (the boolean
+    // binds as a parameter).
     assert_eq!(
-        sql.matches("AS \"qgv").count(),
+        sql.matches(r#""e0"."is_queryable" = $"#).count(),
         1,
-        "exactly one population gate: {sql}"
+        "exactly one population gate on the EHR alias: {sql}"
     );
     assert!(
-        sql.contains("EXISTS(SELECT") && sql.contains("\"qgv0\".\"ehr_id\" = \"e0\".\"id\""),
-        "correlated EXISTS form: {sql}"
+        !sql.contains("AS \"qgv") && !sql.contains("EXISTS(SELECT"),
+        "the per-EHR_STATUS EXISTS gate is gone: {sql}"
     );
 }
 
 /// A bare VO source with no EHR variable still gets its own gate (nothing else
-/// covers it).
+/// covers it): the owning `ehr` row is joined on the node's `ehr_id` and its
+/// promoted `is_queryable` column is filtered.
 #[test]
 fn unlinked_vo_root_keeps_its_own_gate() {
     let sql = build_sql("SELECT c/uid/value FROM COMPOSITION c");
     assert_eq!(
-        sql.matches("AS \"qgv").count(),
+        sql.matches(r#""qg0"."is_queryable" = $"#).count(),
         1,
-        "the bare root is gated: {sql}"
+        "the bare root is gated on the joined ehr row: {sql}"
     );
-    assert!(sql.contains("EXISTS(SELECT"), "correlated gate: {sql}");
+    assert!(
+        sql.contains(r#""qg0"."id" = "n0"."ehr_id""#),
+        "the gate correlates the joined ehr row to the VO root's ehr_id: {sql}"
+    );
+    assert!(
+        !sql.contains("EXISTS(SELECT"),
+        "the gate is a join + column filter, not an EXISTS probe: {sql}"
+    );
 }
