@@ -9,7 +9,9 @@
 //! The `metrics` facade emits at the call sites; the recorder renders the
 //! exposition text served at `/management/prometheus`.
 
-use crate::system_log::sender::{METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT};
+use crate::system_log::sender::{
+    METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT, METRIC_SERIALIZE_FAILED,
+};
 use crate::telemetry::build_info::BuildInfo;
 use metrics_exporter_prometheus::{BuildError, Matcher, PrometheusBuilder, PrometheusHandle};
 
@@ -217,6 +219,10 @@ pub fn catalog() -> Vec<MetricSpec> {
         counter(METRIC_DROPPED, "ATNA audit records dropped"),
         counter(METRIC_SENT, "ATNA audit records sent to transport"),
         counter(METRIC_SEND_FAILED, "ATNA audit transport send failures"),
+        counter(
+            METRIC_SERIALIZE_FAILED,
+            "ATNA audit record serialization failures (record dropped)",
+        ),
         // Process / build / runtime.
         gauge(PROCESS_START_TIME, "Process start time (unix seconds)"),
         gauge(

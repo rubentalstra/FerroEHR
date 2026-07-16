@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Multi-tenant deployments now actually run on the tenant-scoped connection
+  pool: with `tenancy.enabled = true` every database connection carries the
+  request's tenant for the row-level-security policies. Previously the
+  binary always built the plain pool, so all requests fell through to the
+  default tenant regardless of configuration.
+- The demographic APIs (party and relationship writes) now honour the
+  `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal headers exactly
+  as the EHR APIs do — a caller-supplied committer, description, and
+  system id are merged into the stored version's audit.
 - Direct COMPOSITION create/update/delete now honour the ITS-REST committal
   headers (`openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*`): a
   caller-supplied committer, audit description, change type, lifecycle
