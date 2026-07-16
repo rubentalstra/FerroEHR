@@ -458,8 +458,61 @@ picks.** Recommendation: A.
 
 ## 5. Fix waves
 
-Filed after the probe pass; each wave lists its rows, the change, the gate
-receipts, and the re-measured numbers.
+Probe phase closed 2026-07-16 (P-1..P-7): 41 findings, all §1/§2/§3 rows
+receipted. Waves ordered by value ÷ risk; every fix carries its spec-triage
+line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
+
+**Wave 1 — error-track defects + free wins (no schema, no engine changes):**
+- [ ] F-12 reject malformed `If-Match` (ITS-REST §If-Match) — 400/412, tests.
+- [ ] F-13 central sqlx/SQLSTATE classifier at the storage bridge: 23xxx →
+      typed conflict (409), 40001/40P01 → conflict/retryable, `PoolTimedOut`
+      → 503 + Retry-After (W-12 contract), structured tracing at the bridge
+      (constraint + code), delete the per-call-site sniffing.
+- [ ] F-31 build OpenAPI + SMART documents once at router assembly (Arc).
+- [ ] F-32 FLAT/STRUCTURED conversion failure → 400/422, not 500.
+- [ ] F-34 CatchPanic + ATNA fail-closed emit the openEHR error body.
+- [ ] F-29 surface row-decode errors instead of `unwrap_or_default`.
+- [ ] F-20 count ATNA serialize-drops.
+
+**Wave 2 — the write-path redesign (the big rock; orchestrator-owned):**
+- [ ] F-1 signing redesign: assign `time_committed` app-side (RM common
+      master06 — server-computed; the Rust process is the server) so the
+      signature is pre-computable and `commit_new_version` folds WITH signing
+      on; kill the split path entirely.
+- [ ] F-2 collapse the update placement trio (lineage_tip + next_ordinal one
+      statement; evaluate folding close_ordinal).
+- [ ] F-24 contribution commit: batch pre-tx `require_kind` reads
+      (`= ANY($1)`), fold per-version in-tx reads.
+- [ ] F-3/F-5 pass consolidation: sign from the decompose product (no
+      re-assemble), thread the served form to representation responses.
+- [ ] F-4 batch the persistent-duplicate check (one query; PORT NOTE cites
+      the SEC-undecided status).
+
+**Wave 3 — read-path + N+1 + caches:**
+- [ ] F-7 EHR GET: one merged summary query (or concurrent reads).
+- [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
+- [ ] F-9 single-query composition read (version row + nodes join/CTE),
+      drop the redundant re-sort.
+- [ ] F-27 batch tag inserts; F-37 align relationship/demographic-contribution
+      writes with `committed_response`; F-28 minor extra-read trio.
+- [ ] F-26 push matching-list filters into SQL; F-38 fix double XML read;
+      F-21/F-33 tenant seam redesign (negative cache, targeted invalidation,
+      error ≠ unscoped); F-39 TTL cache on the FHIR terminology provider.
+- [ ] F-10 plan-cache for terminology queries (post-expansion keying).
+
+**Wave 4 — background/admin + instrument:**
+- [ ] F-19 FHIR outbound DLQ/skip-after-N (kill the poison-row block).
+- [ ] F-18 declare AMQP topology on connect/change only.
+- [ ] F-25 admin delete batching + indexed blob-reference GC.
+- [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
+- [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
+
+**Structural wave (gated on the owner's §4d decision):** option A dejank
+(trait-catalog consolidation + one-liner forwarding) or option B (merge +
+binary move). Sequenced LAST so it rebases onto the fixed code, not vice versa.
+
+**Close:** full workspace gates → instrumented knee re-run (names the ladder
+errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.
 
 ## 6. Exit criteria
 
