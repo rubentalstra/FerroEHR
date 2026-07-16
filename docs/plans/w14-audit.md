@@ -475,11 +475,39 @@ choice.
   `tests/*_http.rs` suite), rest binds to the concrete service forever, same
   build serialization as B. Honest, viable, expensive in test infrastructure.
 
-**Recommendation stands: A** — not because the spec says so (it doesn't care),
-but because B pays real build/test costs to delete nothing, while A deletes
-the actual jank and aligns the catalog closer to master02's component table.
-**Owner decision gate unchanged: A / B / B+C — nothing structural executes
-until the owner picks.**
+**OWNER RULING 2026-07-16: B+C.** Merge the seam away entirely — spec-legal
+per the master02 verdict above (conformance = ECC-tested call semantics, not
+code shape). Accepted costs, eyes open: the 28-impl DB-free Mock dies (the
+`*_http.rs` suite migrates to real-PG testcontainer fixtures) and platform
+edits recompile the rest crate.
+
+**B+C execution plan (the structural wave, sequenced after Wave 1 lands):**
+
+1. **`ehrbase` becomes a lib**: absorb `ehrbase-sm`'s non-trait content
+   (`SmError`/`CallStatusType`/`CallStatus`, the service types
+   (`UpdateVersion`, `Page`, …), config/Secret types, the ATNA event model)
+   as plain modules; **delete all 33 traits + `Platform`**; the ~225
+   forwarding trait-impl blocks are deleted and their inherent target methods
+   become the public API, organized to the SM 10-service component table
+   (master02 §Platform Model — the `service/<sm-chapter>/` layout already
+   matches; each module doc cites its SM chapter).
+2. **`ehrbase-rest` → depends on `ehrbase`**: `AppState<S: Platform>` becomes
+   concrete `AppState` over `Arc<EhrbaseService>`; every handler/generic
+   bound de-generified. `FhirTerminologyProvider`'s trait impl becomes an
+   internal provider seam inside `ehrbase`.
+3. **New tiny bin crate `app/ehrbase-server`** (main.rs + wiring only) —
+   required because a package cannot depend on a package that depends on it
+   (rest→ehrbase lib + binary→rest). Crate count stays 3; `ehrbase-sm` dir
+   deleted.
+4. **Test migration**: `tests/common/mod.rs` Mock deleted; the `*_http.rs`
+   suite re-targets a shared testcontainers PG18 fixture (one container per
+   test binary, per `testing.md`); assertions unchanged (no weakening).
+5. **Docs same-change**: `docs/architecture.md` (component map: traits →
+   concrete modules), root `CLAUDE.md` crate table, the three nested
+   `app/*/CLAUDE.md`s, changelog; decision recorded as ADR-014
+   (history only, never cited in code).
+6. Gates: full workspace clippy+nextest, ECC zero-drift (wire untouched —
+   any drift is a defect in the move).
 
 ## 5. Fix waves
 
@@ -535,9 +563,10 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 - [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
 
-**Structural wave (gated on the owner's §4d decision):** option A dejank
-(trait-catalog consolidation + one-liner forwarding) or option B (merge +
-binary move). Sequenced LAST so it rebases onto the fixed code, not vice versa.
+**Structural wave (owner-ruled 2026-07-16: B+C — see §4d plan):** delete the
+trait seam, absorb `ehrbase-sm` into the `ehrbase` lib, concrete `AppState`,
+new `ehrbase-server` bin, Mock → testcontainers. Sequenced after Wave 1 lands
+(same files in flight); Waves 2–4 apply to the new shape.
 
 **Close:** full workspace gates → instrumented knee re-run (names the ladder
 errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.
