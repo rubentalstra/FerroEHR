@@ -91,8 +91,8 @@ verdict; ☐ = unprobed.
 
 | # | Layer / concern | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| M-1 | guarded_dispatch spine cost (enforce + pre/post PEP per request) | `api/mod.rs` | ☐ | ☐ | |
-| M-2 | authn middleware (Basic/Bearer per request; argon2 cost on Basic!) | `router.rs:103-109` | ☐ | ☐ | |
+| M-1 | guarded_dispatch spine cost (enforce + pre/post PEP per request) | `api/mod.rs` | ◐ | ☐ | L probed → F-8/F-11 (§4b): near-zero ABAC-off; ABAC-on double-read = F-8 |
+| M-2 | authn middleware (Basic/Bearer per request; argon2 cost on Basic!) | `router.rs:103-109` | ◐ | ☐ | L probed → F-11 clean (verified-cred cache + JWKS cache); E pending P-3 |
 | M-3 | ATNA audit middleware (always installed, early-out if off) | `router.rs:113-116` | ☐ | ☐ | |
 | M-4 | tenant middleware (when enabled) | `router.rs:95-102` | ☐ | ☐ | |
 | M-5 | http_metrics + root_span | `router.rs:118-119` | ☐ | ☐ | |
@@ -108,7 +108,7 @@ verdict; ☐ = unprobed.
 |---|---|---|---|---|---|
 | EHR-1 | GET BP/ehr (by subject) | `:74` | ☐ | ☐ | |
 | EHR-2 | POST BP/ehr | `:93` | ☐ | ☐ | |
-| EHR-3 | GET BP/ehr/{ehr_id} | `:116` | ☐ | ☐ | seed: ehr-read p99 91 ms (n=2 — re-measure) |
+| EHR-3 | GET BP/ehr/{ehr_id} | `:116` | ◐ | ☐ | L probed → F-7 (§4b); seed: ehr-read p99 91 ms |
 | EHR-4 | PUT BP/ehr/{ehr_id} | `:136` | ☐ | ☐ | |
 | EHR-5 | GET …/ehr_status/{version_uid} | `:165` | ☐ | ☐ | |
 | EHR-6 | GET …/ehr_status (at time) | `:189` | ☐ | ☐ | |
@@ -118,15 +118,15 @@ verdict; ☐ = unprobed.
 | EHR-10 | GET …/versioned_ehr_status/version (at time) | `:283` | ☐ | ☐ | |
 | EHR-11 | GET …/versioned_ehr_status/version/{version_uid} | `:310` | ☐ | ☐ | |
 | EHR-12 | POST …/composition | `:332` | ◐ | ☐ | L probed → F-1/F-3/F-4/F-5 (§4a); seed: comp-create-large p99 128 ms, small 94 ms |
-| EHR-13 | GET …/composition/{uid_based_id} | `:359` | ☐ | ☐ | seed: comp-read-latest p99 74.6, max 147.6 |
+| EHR-13 | GET …/composition/{uid_based_id} | `:359` | ◐ | ☐ | L probed → F-8/F-9 (§4b); seed: comp-read-latest p99 74.6, max 147.6 |
 | EHR-14 | PUT …/composition/{uid_based_id} | `:383` | ◐ | ☐ | L probed → F-1/F-2/F-3/F-5 (§4a); seed: comp-update p99 81.5 |
 | EHR-15 | DELETE …/composition/{uid_based_id} | `:407` | ☐ | ☐ | |
 | EHR-16 | GET …/versioned_composition/{vo_uid} | `:436` | ☐ | ☐ | |
 | EHR-17 | GET …/versioned_composition/{vo_uid}/revision_history | `:465` | ☐ | ☐ | seed: history-read p99 33 ms |
 | EHR-18 | GET …/versioned_composition/{vo_uid}/version (at time) | `:494` | ☐ | ☐ | |
-| EHR-19 | GET …/versioned_composition/{vo_uid}/version/{version_uid} | `:524` | ☐ | ☐ | seed: comp-read-version p99 61.5, max 145 |
-| EHR-20 | GET …/directory (at time) | `:550` | ☐ | ☐ | seed: dir-read p99 49 ms |
-| EHR-21 | PUT …/directory | `:570` | ☐ | ☐ | seed: dir-update p99 90.6 ms |
+| EHR-19 | GET …/versioned_composition/{vo_uid}/version/{version_uid} | `:524` | ◐ | ☐ | L probed → F-9 (§4b); seed: comp-read-version p99 61.5, max 145 |
+| EHR-20 | GET …/directory (at time) | `:550` | ◐ | ☐ | L probed → F-11 clean, 3 RT (§4b); seed: dir-read p99 49 ms |
+| EHR-21 | PUT …/directory | `:570` | ◐ | ☐ | L probed → §4b dir-update note, F-1/F-2 apply; seed: dir-update p99 90.6 ms |
 | EHR-22 | POST …/directory | `:590` | ☐ | ☐ | |
 | EHR-23 | DELETE …/directory | `:610` | ☐ | ☐ | |
 | EHR-24 | GET …/directory/{version_uid} | `:637` | ☐ | ☐ | |
@@ -144,7 +144,7 @@ verdict; ☐ = unprobed.
 
 | # | Op | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| QRY-1 | GET BP/query/aql | `:39` | ☐ | ☐ | seed: aql-patient p99 65, aql-ward 39 |
+| QRY-1 | GET BP/query/aql | `:39` | ◐ | ☐ | L probed → F-10 (§4b); seed: aql-patient p99 65, aql-ward 39 |
 | QRY-2 | POST BP/query/aql | `:58` | ☐ | ☐ | |
 | QRY-3 | GET BP/query/{name} | `:81` | ☐ | ☐ | |
 | QRY-4 | POST BP/query/{name} | `:104` | ☐ | ☐ | |
@@ -319,7 +319,19 @@ One row per probed finding. Spec-triage column per owner rule 2:
 | F-5 | **Large-composition penalty = ~6–7 full passes over the node set per create**: decompose walk + num_cap reverse pass + reassemble-for-signing (the only super-linear term, sort) + 2 validation walks + canonical serialize + SHA-256 + O(N·cols) insert bind. Pass consolidation is the comp-create-large lever. | `codec.rs:38-45,52-155,176-236`, `composition_validate.rs:86,93-97`, `integrity.rs:51-70`, `node_repo.rs:58-89` | ☐ validation walks spec-mandated (AM/RM conformance); *number of passes* spec-silent | ☐ |
 | F-6 | CLEAN (partial): create/update under `Prefer: return=minimal` does **no** read-back (metadata-only response from memory — the old read-back already removed); create takes no advisory lock; no FOR UPDATE/SERIALIZABLE anywhere; `write_nodes` already one bulk statement. PERF marker at `composition.rs:281` sits on `template_of_version` (ABAC helper), NOT the create path — marker text to verify/reword. | `composition.rs:63-69,245-246`, `meta.rs:77-90` | n/a | note |
 
-### 4b. Read path / spine (probe P-2) — PENDING
+### 4b. Read path / dispatch spine (probe P-2, 2026-07-16 — GET composition/EHR/directory + AQL + authn/PEP traced)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-7 | **EHR GET runs 4 serial DB round-trips, and the created-EHR cache is never consulted on read**: `ehr_header` → `current_version_meta_by_kind(EHR_STATUS)` → `current_vo(EhrAccess)` → `live_folder_hierarchies`, each a sequential pool-acquire+query; `created_ehr_repr` (C-1) is popped only by the post-create representation path. This is the ehr-read p99 91 ms. Redesign: one merged query (or concurrent reads) for the whole EHR summary. | `service/ehr/service.rs:209-289,446-459`, `ehr_repo.rs:150,175`, `version_repo.rs:1524,1585` | ☐ EHR representation ITS-REST-governed; query shape spec-silent | ☐ |
+| F-8 | **ABAC-on composition GET pays a SECOND full composition reassembly**: `post_check` → `template_of_version` resolver does a whole 2-query read + reassemble just to learn the template id (the PERF-marked helper from F-6). Redesign: promote template_id to a version-row column (it is already known at commit). | `pep.rs:226-293,406-421`, `service/ehr/composition.rs:281-300` | ☐ spec-silent (authz out of band per SM) | ☐ |
+| F-9 | Composition read shape: 2 sequential round-trips (version row, then nodes) — mergeable to 1; `reassemble` re-sorts rows already `ORDER BY num` from SQL (O(N log N) redundant) and re-splits the materialized path string per row. | `version_repo.rs:947-983`, `node_repo.rs:96-121`, `codec.rs:176-236` | ☐ spec-silent | ☐ |
+| F-10 | AQL: terminology-expanded queries are **never plan-cached** (re-parse + re-expand + re-lower every call); `fetch_all` materializes the entire result page in memory (bounded only by paging); missing-id scan O(n·m). Whole-object projection already batched (1 subtree query per page — clean). | `execute.rs:180-236`, `exec.rs:56-129` | ☐ AQL semantics QUERY-governed; caching spec-silent | ☐ |
+| F-11 | CLEAN receipts: dispatch spine near-zero when ABAC/RBAC off (two Option checks); `ehr_access` enforce is a moka hit steady-state (miss pre-warmed at create, negative-cached); Basic auth argon2 behind SHA-256-keyed verified cache (TTL-gated), JWT remote JWKS moka 5 min single-flight; composition ETag needs no extra query; `expand_multimedia` no-ops unless flag+engine; deleted version short-circuits to 204 pre-reassembly; directory read = 3 RT with in-memory subtree select; directory update pre-read already one merged join; AQL param-regex once per query, rows moved (not cloned) into RESULT_SET; EHR-scoped work on composition reads: none. | probe P-2 trace | n/a | note |
+
+Directory-update note (EHR-21 seed 90.6 ms): the write decomposes + bulk-inserts
+the entire folder tree per update — inherent to whole-tree versioning; the F-1
+signing-fold and F-2 trio findings apply to its commit too (shared `update` path).
 
 ## 5. Fix waves
 
