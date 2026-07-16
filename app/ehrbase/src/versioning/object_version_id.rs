@@ -142,7 +142,7 @@ pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
 
 /// Why a version-id string was rejected. Converts into [`ApiError`] (`400`,
 /// path/header parameters), [`ServiceError`] (`422`, payload fields) and
-/// [`crate::service::SmError`] (`400`, SM catalog arguments) at each call site's
+/// [`crate::service::status::SmError`] (`400`, SM catalog arguments) at each call site's
 /// natural severity.
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum VersionIdError {
@@ -174,12 +174,12 @@ impl From<VersionIdError> for ServiceError {
     }
 }
 
-impl From<VersionIdError> for crate::service::SmError {
+impl From<VersionIdError> for crate::service::status::SmError {
     /// A malformed version id in an SM catalog argument is an argument-validity
     /// precondition failure (→ `400` at the wire, matching the
     /// [`From<VersionIdError> for ApiError`] `BadRequest` row).
     fn from(e: VersionIdError) -> Self {
-        crate::service::SmError::precondition(e.to_string())
+        crate::service::status::SmError::precondition(e.to_string())
     }
 }
 

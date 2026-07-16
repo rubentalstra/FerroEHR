@@ -41,7 +41,8 @@ pub use types::*;
 
 use regex::Regex;
 
-use crate::service::{CallStatusType, Page};
+use crate::service::status::CallStatusType;
+use crate::service::list::Page;
 
 use super::ServiceError;
 

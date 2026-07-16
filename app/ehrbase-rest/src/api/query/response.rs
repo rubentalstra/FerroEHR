@@ -25,7 +25,7 @@ use openehr_its::rest::runtime::ApiError;
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::{negotiate, params};
-use ehrbase::service::AqlQueryRequest;
+use ehrbase::service::query::request::AqlQueryRequest;
 
 /// The ABAC pre-filter derived from the request (`extensions::abac::query_pre`):
 /// the patient subject-scope id and the touched-attribute collection flag. Both

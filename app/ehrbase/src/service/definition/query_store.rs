@@ -13,7 +13,9 @@ use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
 
-use crate::service::{CallStatusType, Page, QueryDescriptor, SmError};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::list::Page;
+use crate::service::definition::types::QueryDescriptor;
 
 use super::{compile_pattern, page_bounds, paginate, parse_qualified_name, split_qualified};
 use crate::service::{EhrbaseService, ServiceError};

@@ -28,7 +28,7 @@ use crate::api::{RequestParts, guarded_dispatch};
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase::service::{ServiceResponse};
+use ehrbase::service::response::ServiceResponse;
 
 /// The `PARTY_RELATIONSHIP` extension routes as a native `utoipa-axum` router —
 /// **no ITS-REST contract** (see the module docs), realizing SM

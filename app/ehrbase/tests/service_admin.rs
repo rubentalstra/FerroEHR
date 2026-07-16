@@ -24,11 +24,11 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{
-    AdminArchive, AdminService, CallStatusType, DemographicService, EhrDirectoryService,
-    EhrService, EhrStatusService, ItemTagAdapter, PartyKind, PlatformService, SmError,
-};
-use ehrbase::service::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{AdminArchive, AdminService, DemographicService, EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter};
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::service::demographic::types::PartyKind;
+use ehrbase::service::platform_service::PlatformService;
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

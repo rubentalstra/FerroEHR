@@ -25,7 +25,8 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
-use crate::service::{DataFrameSample, FramePayload, VariableValue};
+use crate::service::subject_proxy::sample::{DataFrameSample, FramePayload};
+use crate::service::subject_proxy::value::VariableValue;
 
 /// Extract the typed [`VariableValue`] for (`frame_path`, `type_name`) from a
 /// frame sample. `Err` is an extraction/typing failure (reason text).
@@ -231,7 +232,7 @@ fn is_rm_family(value: &Value, family: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::service::Sample;
+    use crate::service::subject_proxy::sample::Sample;
     use serde_json::json;
 
     use super::*;

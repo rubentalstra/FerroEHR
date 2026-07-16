@@ -41,7 +41,7 @@ use std::collections::HashSet;
 
 use openehr_its::opt14::{CAttribute, CObject, Intervalofinteger, OperationalTemplate};
 
-use crate::service::CallStatusType;
+use crate::service::status::CallStatusType;
 
 use crate::service::ServiceError;
 

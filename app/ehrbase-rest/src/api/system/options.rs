@@ -25,7 +25,7 @@ use axum::routing::{MethodRouter, options};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use serde::Serialize;
 
-use crate::extensions::provenance;
+use ehrbase::telemetry::provenance;
 use crate::overview::negotiate;
 
 /// The HTTP methods this API surface supports — the `Allow` header the OAS
@@ -48,19 +48,16 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// profile (G-2) are not string literals baked into the handler.
 ///
 /// The defaults are the single shared provenance source
-/// ([`crate::extensions::provenance`]): `restapi_specs_version` quotes the
+/// ([`ehrbase::telemetry::provenance`]): `restapi_specs_version` quotes the
 /// tested-contract identity [`provenance::ITS_REST`] and `conformance_profile`
 /// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
 /// verdict, updated at each conformance re-baseline
 /// (`docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
-/// MUST NOT out-claim that verdict. [`crate::config::ServerConfig`] carries a
+/// MUST NOT out-claim that verdict. [`crate::config::server::ServerConfig`] carries a
 /// `SystemOptionsConfig` as its `identity` field (the `[server.identity]`
 /// section of the one config tree), so an operator MAY override any identity
 /// field while the defaults stay measured.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-
-use ehrbase::config::SystemOptionsConfig;
+use ehrbase::config::server::SystemOptionsConfig;
 
 
 

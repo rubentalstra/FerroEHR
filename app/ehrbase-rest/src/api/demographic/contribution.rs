@@ -13,7 +13,7 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase::service::{ServiceResponse};
+use ehrbase::service::response::ServiceResponse;
 
 /// The `contribution_*` operations.
 pub(super) async fn run(

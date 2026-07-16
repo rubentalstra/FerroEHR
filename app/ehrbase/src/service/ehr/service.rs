@@ -8,7 +8,10 @@
 //! and folder-membership SQL is a storage seam (G-10; no openEHR spec governs
 //! the schema — our own design).
 
-use crate::service::{EhrSummary, ResourceMeta, ServiceResponse, SmError, SubjectRef};
+use crate::service::ehr::handle::EhrSummary;
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::SmError;
+use crate::service::ehr_index::types::SubjectRef;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

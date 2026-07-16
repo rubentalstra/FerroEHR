@@ -30,7 +30,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{UpdateAudit, UpdateVersion};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -308,7 +308,7 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
         .export_ehrs(Uuid::now_v7())
         .await
         .expect_err("unknown EHR must fail");
-    assert_eq!(err.status, ehrbase::service::CallStatusType::EhrIdDoesNotExist);
+    assert_eq!(err.status, ehrbase::service::status::CallStatusType::EhrIdDoesNotExist);
 }
 
 /// A1 rm-ehr-extract: `EXTRACT_SPEC.extract_type` must come from the extract

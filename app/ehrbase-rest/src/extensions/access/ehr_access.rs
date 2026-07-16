@@ -47,7 +47,8 @@
 #![allow(clippy::result_large_err)]
 
 use axum::response::{IntoResponse, Response};
-use ehrbase::service::{AccessLevel, DefaultAccess, EhrAccessSettings, principal_matches};
+use ehrbase::service::ehr::access_types::{AccessLevel, principal_matches};
+use ehrbase::service::ehr::access_types::{DefaultAccess, EhrAccessSettings};
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 

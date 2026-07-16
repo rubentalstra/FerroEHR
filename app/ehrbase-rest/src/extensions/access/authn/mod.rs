@@ -31,7 +31,6 @@
 //! layer records it.
 
 mod basic;
-pub mod config;
 mod jwt;
 
 use std::sync::Arc;
@@ -47,7 +46,7 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::extensions::access::authz::AuthzHandle;
 use crate::overview::error::RestError;
-pub use config::AuthConfig;
+pub use ehrbase::config::auth::AuthConfig;
 use jwt::JwtValidator;
 
 /// The state the [`middleware`] runs on: the authenticator plus the optional
@@ -349,7 +348,7 @@ pub(crate) async fn middleware(
                 let class = rbac.class_for(req.method(), matched.as_deref());
                 if let RbacDecision::Deny(reason) = rbac.decide(class, &principal.roles) {
                     metrics::counter!(
-                        crate::extensions::management::AUTH_FAILURES,
+                        ehrbase::telemetry::prometheus::AUTH_FAILURES,
                         "mechanism" => mechanism_label(principal.method),
                         "status" => "403",
                     )
@@ -381,7 +380,7 @@ pub(crate) async fn middleware(
             let api = e.to_api_error();
             let status = api.status();
             metrics::counter!(
-                crate::extensions::management::AUTH_FAILURES,
+                ehrbase::telemetry::prometheus::AUTH_FAILURES,
                 "mechanism" => scheme_label(req.headers()),
                 "status" => if status == StatusCode::FORBIDDEN { "403" } else { "401" },
             )
@@ -463,7 +462,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase::config::Secret::new(hash("pw")),
+                    password_hash: ehrbase::config::secret::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),
@@ -482,7 +481,7 @@ mod tests {
                 issuer: "https://issuer.example".to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase::config::Secret::new("secret".to_owned())),
+                hmac_secret: Some(ehrbase::config::secret::Secret::new("secret".to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
@@ -535,7 +534,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase::config::Secret::new(hash("pw")),
+                    password_hash: ehrbase::config::secret::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),

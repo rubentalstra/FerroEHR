@@ -9,43 +9,25 @@
 //! [`crate::versioning`]; SQL row I/O lives in [`crate::storage`] (no openEHR
 //! spec governs the SQL — our own design); this layer orchestrates.
 
-mod admin;
-mod definition;
-mod demographic;
-mod ehr;
-mod ehr_index;
-mod message;
-mod query;
-mod subject_proxy;
-mod terminology;
-mod validity;
+pub mod admin;
+pub mod definition;
+pub mod demographic;
+pub mod ehr;
+pub mod ehr_index;
+pub mod message;
+pub mod query;
+pub mod subject_proxy;
+pub mod terminology;
+pub mod validity;
 
 pub mod committer;
 pub mod status;
+
+use status::SmError;
 pub mod list;
 pub mod version_update;
 pub mod platform_service;
 pub mod response;
-pub use status::*;
-pub use list::*;
-pub use version_update::*;
-pub use platform_service::*;
-pub use response::*;
-// Flat re-exports of the per-chapter service types (the former `ehrbase-sm`
-// catalog surface, W-14 B+C consolidation).
-pub use admin::types::*;
-pub use definition::types::*;
-pub use demographic::types::*;
-pub use ehr::access_types::*;
-pub use ehr::handle::*;
-pub use ehr_index::types::*;
-pub use query::request::*;
-pub use subject_proxy::binding::*;
-pub use subject_proxy::data_set::*;
-pub use subject_proxy::sample::*;
-pub use subject_proxy::value::*;
-pub use subject_proxy::variable::*;
-pub use terminology::types::*;
 
 pub use query::{PlanCache, PlanCacheStats, QueryConfig};
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
@@ -61,7 +43,7 @@ use crate::system_log::AuditSender;
 use crate::versioning::signature::Signer;
 use crate::versioning::{CommitEnv, Kind, SigningCtx};
 use async_trait::async_trait;
-use crate::extensions::TenantContext;
+use crate::extensions::tenant_context::TenantContext;
 use openehr_flat::WebTemplate;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
@@ -180,7 +162,7 @@ impl EhrbaseService {
     /// default (with tenancy off the task-local is never set and this is
     /// byte-identical to the configured `system_id`).
     pub(crate) fn effective_system_id(&self) -> String {
-        crate::extensions::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
+        crate::extensions::tenant_context::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
 
     /// The AQL plan cache (P20), for observability. No openEHR spec governs it.
@@ -440,8 +422,8 @@ impl ServiceError {
     /// `ApiError::from(ServiceError::sm(s, m))` and
     /// [`CallStatusType::api_error`] produce the same HTTP status.
     #[must_use]
-    pub fn sm(status: crate::service::CallStatusType, message: impl Into<String>) -> Self {
-        use crate::service::CallStatusType as S;
+    pub fn sm(status: crate::service::status::CallStatusType, message: impl Into<String>) -> Self {
+        use crate::service::status::CallStatusType as S;
         let m = message.into();
         match status {
             // `success` is not an error; constructing it is a server bug.
@@ -489,12 +471,12 @@ impl ServiceError {
     }
 }
 
-impl From<ServiceError> for crate::service::SmError {
+impl From<ServiceError> for crate::service::status::SmError {
     /// Map a service failure onto the SM native `CALL_STATUS_TYPE` error the
     /// catalog traits return. This is the mirror of the
     /// [`From<ServiceError> for ApiError`] table above, expressed in SM status
     /// terms — the protocol adapter (`ehrbase-rest`) then maps the status back
-    /// to the ITS-REST status code via [`crate::service::CallStatusType::api_error`],
+    /// to the ITS-REST status code via [`crate::service::status::CallStatusType::api_error`],
     /// so the wire outcome is identical row-for-row:
     ///
     /// | `ServiceError`            | `CallStatusType`             | HTTP |
@@ -522,8 +504,8 @@ impl From<ServiceError> for crate::service::SmError {
     /// `422_COMPOSITION.yaml` declares no `content`/`schema` (the `422` body is
     /// spec-silent; the `Error` object is formally bound only to `400`).
     fn from(e: ServiceError) -> Self {
-        use crate::service::CallStatusType as S;
-        use crate::service::SmError;
+        use crate::service::status::CallStatusType as S;
+        use crate::service::status::SmError;
         match e {
             ServiceError::NotFound(m) => SmError::new(S::VersionedObjectDoesNotExist, m),
             ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
@@ -564,7 +546,7 @@ impl From<ServiceError> for ApiError {
             // 503) rather than blanket-500 (W-14 F-13). A genuine fault stays
             // 500. This path is secondary to the SM `SmError` bridge, but must
             // stay consistent with it.
-            ServiceError::Storage(e) => sqlx_conflict_api_error(crate::service::SmError::from(e)),
+            ServiceError::Storage(e) => sqlx_conflict_api_error(crate::service::status::SmError::from(e)),
             ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::classify_sqlx(&e)),
             // A JSON (de)serialization failure at the service boundary is a
             // malformed client payload → 400.
@@ -576,15 +558,15 @@ impl From<ServiceError> for ApiError {
     }
 }
 
-/// Map a storage-classified [`SmError`](crate::service::SmError) (from
+/// Map a storage-classified [`SmError`](crate::service::status::SmError) (from
 /// [`crate::storage::classify_sqlx`]) to the ITS-REST [`ApiError`] on the
 /// direct `ServiceError → ApiError` path. Only the storage-classified statuses
 /// occur here — a database conflict (`409`), pool exhaustion (`503`), or a
 /// genuine fault (`500`) — mirroring the `sm_api_error` rows the SM bridge uses
 /// (`ehrbase-rest::overview::error`). The `503` is our own overload contract
 /// (no openEHR spec governs overload; RFC 9110 §15.6.4 is the HTTP authority).
-fn sqlx_conflict_api_error(sm: crate::service::SmError) -> ApiError {
-    use crate::service::CallStatusType as S;
+fn sqlx_conflict_api_error(sm: crate::service::status::SmError) -> ApiError {
+    use crate::service::status::CallStatusType as S;
     match sm.status {
         S::Conflict | S::EhrForSubjectAlreadyExists => ApiError::Conflict(sm.message),
         S::ServiceOverloaded => ApiError::ServiceUnavailable(sm.message),
@@ -594,7 +576,7 @@ fn sqlx_conflict_api_error(sm: crate::service::SmError) -> ApiError {
 
 #[cfg(test)]
 mod sm_error_table_tests {
-    use crate::service::CallStatusType as S;
+    use crate::service::status::CallStatusType as S;
     use openehr_its::rest::runtime::ApiError;
 
     use super::ServiceError;

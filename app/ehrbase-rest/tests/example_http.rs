@@ -27,7 +27,7 @@ use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase::service::{CallStatusType, SmError};
+use ehrbase::service::status::{CallStatusType, SmError};
 use openehr_flat::{DetailLevel, ExampleType};
 
 mod common;

@@ -45,7 +45,7 @@ pub enum StorageError {
     Database(#[from] sqlx::Error),
 }
 
-impl From<StorageError> for crate::service::SmError {
+impl From<StorageError> for crate::service::status::SmError {
     /// Bridge a storage failure to the SM call-status model. Constraint/
     /// concurrency detail is preserved via [`classify_sqlx`] for the raw
     /// `sqlx` case; the typed conflicts keep their specific `409` meaning; codec
@@ -54,7 +54,7 @@ impl From<StorageError> for crate::service::SmError {
     /// HTTP mapping the resulting status drives is the ITS-REST-governed one
     /// (overview §HTTP status codes).
     fn from(e: StorageError) -> Self {
-        use crate::service::{CallStatusType, SmError};
+        use crate::service::status::{CallStatusType, SmError};
         match e {
             // A raw driver/pool/query error carries SQLSTATE + constraint detail
             // — classify it instead of collapsing to a blanket 500.
@@ -98,8 +98,8 @@ impl From<StorageError> for crate::service::SmError {
 ///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the W-12
 ///   admission contract).
 /// - anything else → [`CallStatusType::Exception`] (`500`, a genuine fault).
-pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::SmError {
-    use crate::service::{CallStatusType, SmError};
+pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
+    use crate::service::status::{CallStatusType, SmError};
     match e {
         sqlx::Error::PoolTimedOut => {
             tracing::warn!(
@@ -153,7 +153,7 @@ pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::SmError {
 
 #[cfg(test)]
 mod tests {
-    use crate::service::CallStatusType;
+    use crate::service::status::CallStatusType;
 
     use super::classify_sqlx;
 

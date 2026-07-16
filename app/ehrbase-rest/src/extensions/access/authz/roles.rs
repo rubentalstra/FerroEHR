@@ -9,7 +9,7 @@
 use serde_json::{Map, Value};
 
 use crate::extensions::access::authz::classify::OperationClass;
-use crate::extensions::access::authz::config::{ManagementAccess, RbacConfig};
+use ehrbase::config::authz::{ManagementAccess, RbacConfig};
 
 /// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
 /// `OAuth2` `scope` claim), matching the v1 authorities converter (§2.4).

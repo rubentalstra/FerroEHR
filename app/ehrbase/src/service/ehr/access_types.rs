@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 
 /// The `_type` discriminator of this scheme's `ACCESS_CONTROL_SETTINGS` subtype
 /// on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from it.

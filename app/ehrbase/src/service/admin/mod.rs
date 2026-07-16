@@ -47,8 +47,10 @@ use std::path::Path;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::service::{PlatformService, StatTimeRange};
-use crate::service::{DumpLoadFailReport, ExportSpec, SmError};
+use crate::service::platform_service::PlatformService;
+use crate::service::admin::types::StatTimeRange;
+use crate::service::admin::types::{DumpLoadFailReport, ExportSpec};
+use crate::service::status::SmError;
 
 use crate::service::EhrbaseService;
 

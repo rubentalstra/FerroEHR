@@ -12,8 +12,10 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::{ResourceMeta, ServiceResponse};
-use crate::service::{CallStatusType, PartyKind, SmError, UpdateVersion};
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::demographic::types::PartyKind;
+use crate::service::version_update::UpdateVersion;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::{

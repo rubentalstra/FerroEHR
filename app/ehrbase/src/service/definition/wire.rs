@@ -11,7 +11,8 @@ use regex::Regex;
 use serde_json::Value;
 
 use crate::service::definition::types::TemplateListFilter;
-use crate::service::{CallStatusType, Page, SmError};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::list::Page;
 use openehr_flat::{DetailLevel, ExampleType};
 
 use crate::service::EhrbaseService;

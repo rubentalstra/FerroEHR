@@ -10,7 +10,7 @@
 //! our own design over the greenfield `contribution` / `vo_version` / `audit`
 //! tables (`0001_baseline.sql`).
 
-use crate::service::PlatformService;
+use crate::service::platform_service::PlatformService;
 
 use crate::service::{EhrbaseService, ServiceError};
 

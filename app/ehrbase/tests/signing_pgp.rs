@@ -49,7 +49,7 @@ fn pgp_signer(armored_key: &str, passphrase: Option<&str>) -> Result<Signer, Sig
         enabled: true,
         mode: Mode::Pgp,
         key_path: Some(temp_file(armored_key)),
-        key_passphrase: passphrase.map(ehrbase::config::Secret::new),
+        key_passphrase: passphrase.map(ehrbase::config::secret::Secret::new),
         key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Strict,
     };

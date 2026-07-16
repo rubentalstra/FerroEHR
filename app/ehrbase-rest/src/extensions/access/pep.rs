@@ -62,7 +62,7 @@ use crate::extensions::access::authn::{Principal, current_principal};
 use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
 
-use crate::smart::config::SmartConfig;
+use ehrbase::config::smart::SmartConfig;
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
 use crate::smart::scope::SmartScope;
 use crate::state::AppState;
@@ -128,7 +128,7 @@ pub(crate) fn query_pre(
 pub(crate) async fn query_post(
     state: &AppState,
     op: &'static str,
-    outcome: &ehrbase::service::QueryOutcome,
+    outcome: &ehrbase::service::query::request::QueryOutcome,
 ) -> Result<(), Response> {
     let Some(handle) = state.authz() else {
         return Ok(());
@@ -547,7 +547,7 @@ fn attr_single(attr: &Attr) -> Option<&str> {
 /// The SMART configuration for this server, or `None` when SMART is disabled.
 ///
 /// SMART is off by default and produces zero wire drift when disabled
-/// (`crate::smart::config::SmartConfig`), so the gate below is inert unless an
+/// (`ehrbase::config::smart::SmartConfig`), so the gate below is inert unless an
 /// operator opts in via `EHRBASE_REST_SMART__ENABLED` (the `smart` field on
 /// `crate::config::AppConfig`).
 fn smart_config(state: &AppState) -> Option<&SmartConfig> {

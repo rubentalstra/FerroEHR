@@ -59,7 +59,8 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{PartyProxy, PartySelf};
 
-use ehrbase::service::{ResourceMeta, ServiceResponse, UpdateAudit, UpdateVersion};
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 use crate::AuthMethod;
 use crate::overview::error::RestError;

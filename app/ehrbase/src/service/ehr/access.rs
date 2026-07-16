@@ -13,7 +13,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use crate::service::{EhrAccessSettings, SmError};
+use crate::service::ehr::access_types::EhrAccessSettings;
+use crate::service::status::SmError;
 use moka::future::Cache;
 use serde_json::{Value, json};
 use uuid::Uuid;

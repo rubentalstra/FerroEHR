@@ -15,7 +15,8 @@ use std::str::FromStr;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::service::{CallStatusType, Page, SmError};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::list::Page;
 use openehr_base::prelude::ArchetypeId;
 
 use super::{compile_pattern, page_bounds, paginate};

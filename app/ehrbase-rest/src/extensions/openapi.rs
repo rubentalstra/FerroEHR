@@ -54,7 +54,7 @@ use utoipa_axum::routes;
 use utoipa_swagger_ui::{Config, SwaggerFile, Url};
 
 use crate::config::AppConfig;
-use crate::extensions::access::authn::config::AuthConfig;
+use ehrbase::config::auth::AuthConfig;
 use crate::extensions::management;
 use crate::overview::status;
 use crate::smart::discovery as smart_discovery;

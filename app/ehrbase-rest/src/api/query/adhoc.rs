@@ -13,7 +13,7 @@
 use openehr_its::rest::generated::query::{AdhocQueryExecute, QueryExecuteAdhocQueryParams};
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase::service::{AqlQueryRequest, QueryOutcome};
+use ehrbase::service::query::request::{AqlQueryRequest, QueryOutcome};
 
 use super::response::{self, QueryScope};
 use crate::api::RequestParts;

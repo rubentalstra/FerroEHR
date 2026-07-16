@@ -15,7 +15,7 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase::service::{PartyKind};
+use ehrbase::service::demographic::types::PartyKind;
 use http::StatusCode;
 
 /// The per-kind `ITEM_TAG` operations (`tags_get`/`tags_update`/`tags_delete`).

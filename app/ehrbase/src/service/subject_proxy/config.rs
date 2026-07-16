@@ -29,7 +29,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 
 /// Default per-system connect timeout (ms).
 const DEFAULT_CONNECT_TIMEOUT_MS: u64 = 2_000;

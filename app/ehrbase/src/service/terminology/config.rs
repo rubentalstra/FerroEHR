@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 
 use super::fhir::FhirTerminologyProvider;
 

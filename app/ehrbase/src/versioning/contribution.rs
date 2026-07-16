@@ -10,7 +10,7 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
-use crate::service::Page;
+use crate::service::list::Page;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

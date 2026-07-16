@@ -39,11 +39,10 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{
-    AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, EhrStatusService,
-    QueryService, SmError,
-};
-use ehrbase::service::{UpdateAudit, UpdateVersion};
+use ehrbase::service::query::request::AqlQueryRequest;
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::service::{EhrCompositionService, EhrService, EhrStatusService, QueryService};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).

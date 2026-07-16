@@ -8,7 +8,9 @@
 //! (master04 §EHR Active Status), so its own commits are never gated by the
 //! content-write guard — that is how a deactivated EHR is flipped back on.
 
-use crate::service::{ResourceMeta, ServiceResponse, SmError, UpdateVersion};
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::SmError;
+use crate::service::version_update::UpdateVersion;
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;

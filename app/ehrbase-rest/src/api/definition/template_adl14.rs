@@ -34,7 +34,7 @@ use super::dispatch::list_filter_and_page;
 /// (version filter), `offset`, `fetch`
 /// (`operations/definition_template_adl1.4_list.yaml`); they are threaded to the
 /// adapter as a [`TemplateListFilter`](ehrbase::service::adapters::TemplateListFilter)
-/// + [`Page`](ehrbase::service::Page) (G-1).
+/// + [`Page`](ehrbase::service::list::Page) (G-1).
 pub(super) async fn list(
     state: &AppState,
     parts: &RequestParts,

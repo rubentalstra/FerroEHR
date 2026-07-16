@@ -35,11 +35,11 @@ use crate::extensions::access::authn::Authenticator;
 use crate::overview::error::RestError;
 use openehr_its::rest::runtime::ApiError;
 
-pub use ehrbase::config::{AccessLevel, EndpointLevels, ManagementConfig};
+pub use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
 pub use ehrbase::telemetry::build_info::BuildInfo;
 pub use ehrbase::telemetry::health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
 pub use ehrbase::telemetry::log_reload::LogReload;
-pub use ehrbase::telemetry::prometheus::{
+use ehrbase::telemetry::prometheus::{
     AUTH_FAILURES, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
     HTTP_RESPONSE_BODY_SIZE,
 };
@@ -406,7 +406,7 @@ async fn loggers_get(State(s): State<ManagementState>) -> Response {
 #[allow(clippy::unused_async)]
 async fn loggers_post(
     State(s): State<ManagementState>,
-    body: Json<loggers::SetFilter>,
+    body: Json<logger_routes::SetFilter>,
 ) -> Response {
     match &s.log_reload {
         Some(reload) => logger_routes::set(reload, &body.0),
