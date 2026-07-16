@@ -83,11 +83,7 @@ fn req(method: &str, uri: &str, body: Option<Value>) -> Request<Body> {
 #[tokio::test]
 async fn disabled_group_is_404() {
     let (_pg, a) = app("evsub_disabled", false).await;
-    let (status, _) = send(
-        a,
-        req("GET", GROUP, None),
-    )
-    .await;
+    let (status, _) = send(a, req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
@@ -177,11 +173,7 @@ async fn unknown_id_is_404() {
 #[tokio::test]
 async fn malformed_id_is_400() {
     let (_pg, a) = app("evsub_malformed", true).await;
-    let (status, _) = send(
-        a,
-        req("GET", &format!("{GROUP}/not-a-uuid"), None),
-    )
-    .await;
+    let (status, _) = send(a, req("GET", &format!("{GROUP}/not-a-uuid"), None)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
@@ -191,11 +183,7 @@ async fn enabled_group_lists_real_store() {
     // concrete service the CRUD persists to the real store, so an enabled group
     // answers 200 (never the trait-default 501).
     let (_pg, a) = app("evsub_enabled_200", true).await;
-    let (status, body) = send(
-        a,
-        req("GET", GROUP, None),
-    )
-    .await;
+    let (status, body) = send(a, req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::OK);
     assert!(body.is_array());
 }
