@@ -41,7 +41,10 @@ pub(super) async fn run(
             // person_create.yaml declares 201/400/422/404; a service NotFound
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
             // (overview::error::sm_api_error) — `?` routes each to its status.
-            let mut resp = state.backend().party_create(kind, body).await?;
+            let mut resp = state
+                .backend()
+                .party_create(kind, body, crate::overview::committal::committal_audit(h))
+                .await?;
             // the incoming `openehr-item-tag` request header (person_create.yaml)
             // carries ITEM_TAGs to persist. The party must exist first
             // (`item_tag.target_vo_id` FK), so tags are persisted after the create
@@ -77,7 +80,13 @@ pub(super) async fn run(
             let body = decode_party_body(kind, h, &parts.body)?;
             match state
                 .backend()
-                .party_update(kind, p.uid_based_id, p.if_match, body)
+                .party_update(
+                    kind,
+                    p.uid_based_id,
+                    p.if_match,
+                    body,
+                    crate::overview::committal::committal_audit(h),
+                )
                 .await
             {
                 Ok(mut resp) => {
@@ -180,7 +189,12 @@ async fn run_delete(
     // `precondition_violation` (→ 400_already_deleted).
     match state
         .backend()
-        .party_delete(kind, preceding.clone(), super::if_match_of(h))
+        .party_delete(
+            kind,
+            preceding.clone(),
+            super::if_match_of(h),
+            crate::overview::committal::committal_audit(h),
+        )
         .await
     {
         Ok(resp) => {
