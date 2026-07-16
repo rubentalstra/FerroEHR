@@ -319,7 +319,7 @@ impl EhrbaseService {
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
         // `versioned_composition.adoc`), lifted out of the versioning write
         // path (G-13) — checked in the same transaction as the commit.
-        super::check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
+        super::validation::check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
         let committed = update(
             &mut tx,
             Some(ehr_id),

@@ -65,9 +65,9 @@ impl EhrbaseService {
     ///   an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
     ///   `concept`.
     /// - The structural gate
-    ///   (`crate::validation::structure::validate_opt_structure`, S-05) and the
+    ///   (`crate::validation::validate_opt_structure`, S-05) and the
     ///   AOM2/08 artefact-validity catalogue
-    ///   (`crate::validation::opt::validate_opt_artefact`,
+    ///   (`crate::validation::validate_opt_artefact`,
     ///   `AM/docs/AOM2/master08-validation.adoc`, S-06) propagate their own
     ///   typed rejections.
     /// - [`ServiceError::Conflict`] (→ `409`) — a template with the same
@@ -77,13 +77,13 @@ impl EhrbaseService {
         let opt = ingest::parse_opt(xml)?;
         // Structural well-formedness the tolerant codec would otherwise accept
         // (foreign / duplicated top-level elements) — S-05.
-        crate::validation::structure::validate_opt_structure(xml)?;
+        crate::validation::validate_opt_structure(xml)?;
 
         // The AOM2/08 standalone-artefact validity catalogue (VCOC/VACMCO,
         // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying
         // the AOM2 rule code, S-06) is owned by the validation layer
         // (`crate::validation::opt`; spec `AM/docs/AOM2/master08-validation.adoc`).
-        crate::validation::opt::validate_opt_artefact(&opt)?;
+        crate::validation::validate_opt_artefact(&opt)?;
 
         let template_id = opt.template_id.value;
         if template_id.trim().is_empty() {

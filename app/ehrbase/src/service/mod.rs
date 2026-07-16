@@ -36,6 +36,12 @@ pub mod status;
 pub mod validity;
 pub mod version_update;
 
+use crate::service::ehr::access::EhrAccessCache;
+use crate::service::query::config::QueryConfig;
+use crate::service::query::plan_cache::PlanCache;
+use crate::service::subject_proxy::config::SubjectProxyFhir;
+use crate::service::terminology::fhir::FhirTerminologyProvider;
+
 mod commit_env;
 
 
@@ -96,7 +102,7 @@ pub struct EhrbaseService {
     /// The optional Subject Proxy FHIR-frame executor, selected when a
     /// deployment configures FHIR systems ([`SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
-    pub(crate) subject_proxy_fhir: Option<Arc<subject_proxy::SubjectProxyFhir>>,
+    pub(crate) subject_proxy_fhir: Option<Arc<SubjectProxyFhir>>,
     /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
     /// in single-tenant mode).
     pub(crate) tenant_cache: TenantCache,
@@ -104,7 +110,7 @@ pub struct EhrbaseService {
     /// decisions to data in the EHR must be made in accordance with the
     /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
     /// Invalidated on every `EHR_ACCESS` commit.
-    pub(in crate::service) ehr_access: ehr::EhrAccessCache,
+    pub(in crate::service) ehr_access: EhrAccessCache,
     /// Bounded cache of lowered AQL plans keyed on the query text. Shared
     /// across service clones (moka-backed). No openEHR spec governs it — our
     /// own performance design.
@@ -150,7 +156,7 @@ impl EhrbaseService {
             multimedia: None,
             subject_proxy_fhir: None,
             tenant_cache: TenantCache::default(),
-            ehr_access: ehr::EhrAccessCache::default(),
+            ehr_access: EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
             query_timeout: None,
             outbox_enabled: true,
@@ -210,7 +216,7 @@ impl EhrbaseService {
     /// [`SubjectProxyConfig`]). Without it, an `API_CALL`/`fhir_get`
     /// `DATA_FRAME` is a typed rejection (fail-closed).
     #[must_use]
-    pub fn with_subject_proxy(mut self, fhir: Arc<subject_proxy::SubjectProxyFhir>) -> Self {
+    pub fn with_subject_proxy(mut self, fhir: Arc<SubjectProxyFhir>) -> Self {
         self.subject_proxy_fhir = Some(fhir);
         self
     }

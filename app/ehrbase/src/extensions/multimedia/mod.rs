@@ -44,6 +44,9 @@ pub mod config;
 mod offload;
 pub mod store;
 
+use crate::extensions::multimedia::config::MultimediaConfig;
+use crate::extensions::multimedia::store::BlobStore;
+
 
 /// A failure in the multimedia externalization path.
 #[derive(Debug, thiserror::Error)]

@@ -46,7 +46,7 @@ use regex::Regex;
 use crate::service::list::Page;
 use crate::service::status::CallStatusType;
 
-use super::ServiceError;
+use crate::service::error::ServiceError;
 
 /// Apply an SM [`Page`] to an iterator: skip `offset`, take `limit` (`None` ⇒
 /// all — `master02-overview.adoc` §List Handling).

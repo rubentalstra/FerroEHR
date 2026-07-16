@@ -15,6 +15,8 @@
 //! shutdown (explicit async [`TelemetryGuard::shutdown`] + a `Drop` backstop).
 
 pub mod config;
+
+use crate::telemetry::config::{OtelConfig, TelemetryConfig};
 pub mod indicators;
 mod layers;
 pub mod prometheus;

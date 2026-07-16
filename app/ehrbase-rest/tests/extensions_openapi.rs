@@ -23,7 +23,7 @@ use tower::ServiceExt;
 use ehrbase::config::auth::AuthConfig;
 use ehrbase::config::server::{AdminConfig, ServerConfig, TenancyConfig};
 use ehrbase::config::smart::SmartConfig;
-use crate::config::AppConfig;
+use ehrbase_rest::config::AppConfig;
 use ehrbase_rest::extensions::openapi::extensions_document;
 use ehrbase_rest::extensions::management::Observability;
 use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};

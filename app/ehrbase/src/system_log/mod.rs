@@ -47,6 +47,8 @@ pub mod config;
 pub mod event;
 pub mod message;
 pub mod sender;
+
+use crate::system_log::sender::AuditSender;
 pub mod syslog;
 
 use event::{AuditEvent, EmitOutcome};

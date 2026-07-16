@@ -14,7 +14,9 @@ use super::ir::{
     AggFunc, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand, PathTarget, QueryIr,
     ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
-use super::{ParamValue, Params, SqlCtx, plan};
+use super::ir::{ParamValue, Params};
+use super::plan;
+use super::sql::SqlCtx;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

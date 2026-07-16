@@ -28,7 +28,7 @@ impl CommitEnv for EhrbaseService {
     }
 
     fn default_committer(&self) -> Value {
-        ehr::committer()
+        ehr::meta::committer()
     }
 
     fn signing_ctx(&self) -> SigningCtx<'_> {
@@ -87,7 +87,7 @@ impl CommitEnv for EhrbaseService {
         vo_id: Uuid,
         canonical: &Value,
     ) -> Result<(), ServiceError> {
-        ehr::check_versioned_composition_invariants(tx, vo_id, canonical).await
+        ehr::validation::check_versioned_composition_invariants(tx, vo_id, canonical).await
     }
 
     async fn post_status_commit(

@@ -57,6 +57,13 @@ pub mod ehr_access;
 pub mod pep;
 pub mod tenant;
 
+use crate::extensions::access::authn::{AuthError, AuthMethod, AuthenticatedUser, Authenticator, Principal, current_principal};
+use crate::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
+use crate::extensions::access::authz::engine::PolicyEngine;
+use crate::extensions::access::ehr_access::EhrAccessGate;
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::authz::AuthzConfig;
+
 // The authn surface (identity + the request-scoped principal). The middleware
 // + `AuthLayer` are `pub(crate)` and installed by the router via `authn::`
 // directly, so they are not re-exported here.

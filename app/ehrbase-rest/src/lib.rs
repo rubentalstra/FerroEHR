@@ -52,6 +52,14 @@ pub mod system_log;
 // (no re-exports). The two shared protocol helpers (`negotiate`, `params`)
 // live under `overview` and are imported here for the dispatcher glue below.
 use ehrbase::service::EhrbaseService;
+
+use crate::config::AppConfig;
+use crate::extensions::access::authn::Authenticator;
+use crate::extensions::access::authz::AuthzHandle;
+use crate::extensions::access::authz::roles::default_role_claims;
+use crate::extensions::management::Observability;
+use crate::router::{management_router, router};
+use crate::state::AppState;
 use overview::{negotiate, params};
 
 /// Errors raised while starting the server.
@@ -125,7 +133,7 @@ fn build_authenticator(
     authz: Option<&AuthzHandle>,
 ) -> Result<std::sync::Arc<Authenticator>, ServeError> {
     let role_claims =
-        authz.map_or_else(access::authz::default_role_claims, AuthzHandle::role_claims);
+        authz.map_or_else(default_role_claims, AuthzHandle::role_claims);
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 

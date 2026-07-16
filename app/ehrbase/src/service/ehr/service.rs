@@ -46,7 +46,7 @@ impl EhrbaseService {
         // The supplied EHR_STATUS must be a structurally valid RM instance
         // before the EHR is created (CNF master06 §Test Data Sets INVALID
         // class 2).
-        super::validate_ehr_status(&status)?;
+        super::validation::validate_ehr_status(&status)?;
 
         let mut tx = self.pool.begin().await?;
 
@@ -109,7 +109,7 @@ impl EhrbaseService {
                     audit.clone(),
                     Change::Create {
                         kind: Kind::EhrAccess,
-                        canonical: super::default_ehr_access(),
+                        canonical: super::access::default_ehr_access(),
                         template_id: None,
                         signature: None,
                         lifecycle_state: None,
