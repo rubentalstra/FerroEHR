@@ -92,8 +92,6 @@ fn build_date() -> String {
         .map_or_else(|| "unknown".to_owned(), |ts| ts.to_string())
 }
 
-/// `GET /management/info`.
-
 #[cfg(test)]
 mod tests {
     use super::*;
