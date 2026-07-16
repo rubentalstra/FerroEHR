@@ -40,31 +40,31 @@ use uuid::Uuid;
 use crate::service::ServiceError;
 use crate::versioning::signature::Signer;
 
-mod attestation;
-mod audit;
+pub(crate) mod attestation;
+pub(crate) mod audit;
 pub mod change;
-mod contribution;
-mod import;
-mod integrity;
-mod lifecycle;
-mod object_version_id;
-mod revision_history;
+pub(crate) mod contribution;
+pub(crate) mod import;
+pub(crate) mod integrity;
+pub(crate) mod lifecycle;
+pub(crate) mod object_version_id;
+pub(crate) mod revision_history;
 pub mod signature;
 
 // Re-exports: the versioning API the service layer and SM adapters consume.
-use attestation::PendingAttest;
-use audit::{AuditInput, OPENEHR, audit_details, change_type, change_type_code};
-use change::{Change, Committed, commit_contribution, create, delete, update};
-use contribution::{
+pub(crate) use attestation::PendingAttest;
+pub(crate) use audit::{AuditInput, OPENEHR, audit_details, change_type, change_type_code};
+pub(crate) use change::{Change, Committed, commit_contribution, create, delete, update};
+pub(crate) use contribution::{
     TimeRange, commit_version_set, count_contributions, get_contribution, list_contributions,
 };
-use import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
-use lifecycle::lifecycle_state_code;
-use object_version_id::{
+pub(crate) use import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
+pub(crate) use lifecycle::lifecycle_state_code;
+pub(crate) use object_version_id::{
     TreeId, components, expected_from_if_match, object_version_id, parse_object_version_id,
     parse_tree_id, parse_uid_based_id, parse_version_uid,
 };
-use revision_history::{
+pub(crate) use revision_history::{
     VersionRead, demographic_current, object_kind, original_version, read_current, read_version,
     read_version_by_ordinal, revision_history, version_at, versioned_object,
 };
@@ -77,7 +77,7 @@ use revision_history::{
 /// (EHR-scoped) and the demographic party roots + `PARTY_RELATIONSHIP` (no EHR
 /// scope, RM demographic).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Kind {
+pub(crate) enum Kind {
     Composition,
     EhrStatus,
     /// The EHR-wide access-control object created with the EHR (RM ehr §"EHR
@@ -98,7 +98,7 @@ enum Kind {
 }
 
 impl Kind {
-    fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Kind::Composition => "COMPOSITION",
             Kind::EhrStatus => "EHR_STATUS",
@@ -115,7 +115,7 @@ impl Kind {
 
     /// Whether this kind is a demographic party root (no EHR scope). This is the
     /// `/versioned_party` read scope — a `PARTY_RELATIONSHIP` is *not* a party.
-    fn is_party(self) -> bool {
+    pub(crate) fn is_party(self) -> bool {
         matches!(
             self,
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role
@@ -124,12 +124,12 @@ impl Kind {
 
     /// Whether this kind is a demographic versioned object (no EHR scope): the
     /// five party roots plus `PARTY_RELATIONSHIP`.
-    fn is_demographic(self) -> bool {
+    pub(crate) fn is_demographic(self) -> bool {
         self.is_party() || self == Kind::PartyRelationship
     }
 
     /// The versioned-object kind for an RM `_type`, if it is a versioned root.
-    fn from_type(rm_type: &str) -> Option<Self> {
+    pub(crate) fn from_type(rm_type: &str) -> Option<Self> {
         match rm_type {
             "COMPOSITION" => Some(Kind::Composition),
             "EHR_STATUS" => Some(Kind::EhrStatus),
@@ -149,21 +149,21 @@ impl Kind {
 /// The signing context threaded into every versioned-object write so the
 /// assembled `ORIGINAL_VERSION` is signed (RM common master06 §Digital
 /// Signature). Borrows the effective system id and the configured [`Signer`].
-struct SigningCtx<'a> {
+pub(crate) struct SigningCtx<'a> {
     /// The effective openEHR `system_id` for this write — the current tenant's
     /// own id when tenancy is on, else the service default.
-    system_id: String,
-    signer: &'a Signer,
+    pub(crate) system_id: String,
+    pub(crate) signer: &'a Signer,
     /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
     /// governs media externalization — our own extension). When set, the commit
     /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body
     /// is decomposed and signed.
-    multimedia: Option<&'a crate::extensions::multimedia::MultimediaEngine>,
+    pub(crate) multimedia: Option<&'a crate::extensions::multimedia::MultimediaEngine>,
     /// Whether to write the transactional event outbox on this commit. `false`
     /// when no eventing consumer is configured, so the per-commit `event_outbox`
     /// INSERT + envelope serialization is skipped entirely. No openEHR spec
     /// governs eventing — our own extension.
-    outbox_enabled: bool,
+    pub(crate) outbox_enabled: bool,
 }
 
 /// The cross-area hooks the CONTRIBUTION commit orchestration
@@ -182,7 +182,7 @@ struct SigningCtx<'a> {
 /// subject-column glue the direct write paths run inline; they are wired here so
 /// the CONTRIBUTION path runs them too, in the same commit transaction.
 #[async_trait::async_trait]
-trait CommitEnv {
+pub(crate) trait CommitEnv {
     /// The connection pool for the commit transaction.
     fn pool(&self) -> &PgPool;
     /// The effective openEHR `system_id` for this request.

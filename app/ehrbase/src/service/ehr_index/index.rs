@@ -30,7 +30,7 @@ impl EhrbaseService {
     /// status/location rather than erroring; the `0..1` cardinality of
     /// `add_ehr_subject` permits this. Status defaults to a `Primary` instance
     /// (`i_ehr_index.adoc`).
-    async fn index_add_subject(
+    pub(crate) async fn index_add_subject(
         &self,
         ehr_id: Uuid,
         subject: &SubjectRef,
@@ -69,7 +69,7 @@ impl EhrbaseService {
     /// `update_ehr_subject_status` (I2): update the status of an existing
     /// (`ehr_id`, `subject`) association. Errors `ehr_id_does_not_exist` /
     /// `subject_id_does_not_exist`.
-    async fn index_update_status(
+    pub(crate) async fn index_update_status(
         &self,
         ehr_id: Uuid,
         subject: &SubjectRef,
@@ -98,7 +98,7 @@ impl EhrbaseService {
     /// `update_ehr_subject_loc_desc` (I3): update (or clear, `loc = None`) the
     /// location descriptor of an existing association. Errors
     /// `ehr_id_does_not_exist` / `subject_id_does_not_exist`.
-    async fn index_update_loc_desc(
+    pub(crate) async fn index_update_loc_desc(
         &self,
         ehr_id: Uuid,
         subject: &SubjectRef,
@@ -121,7 +121,7 @@ impl EhrbaseService {
     /// `remove_ehr_subject` (I4): drop the `subject`↔`ehr_id` association (the
     /// subject may remain associated with other EHRs). Errors
     /// `ehr_id_does_not_exist` / `subject_id_does_not_exist`.
-    async fn index_remove_ehr_subject(
+    pub(crate) async fn index_remove_ehr_subject(
         &self,
         ehr_id: Uuid,
         subject: &SubjectRef,
@@ -141,7 +141,7 @@ impl EhrbaseService {
 
     /// `remove_subject` (I5): drop all associations for `subject`. Error
     /// `subject_id_does_not_exist`.
-    async fn index_remove_subject(
+    pub(crate) async fn index_remove_subject(
         &self,
         subject: &SubjectRef,
     ) -> Result<(), IndexError> {
@@ -156,7 +156,7 @@ impl EhrbaseService {
 
     /// The subjects associated with an EHR (design-filled read; the SM defines
     /// no read operations — our own design). Empty for an unknown EHR.
-    async fn index_ehr_subjects(
+    pub(crate) async fn index_ehr_subjects(
         &self,
         ehr_id: Uuid,
     ) -> Result<Vec<EhrIndexEntry>, IndexError> {
@@ -173,7 +173,7 @@ impl EhrbaseService {
 
     /// The EHRs associated with a subject (design-filled read). Empty for an
     /// unknown subject.
-    async fn index_subject_ehrs(
+    pub(crate) async fn index_subject_ehrs(
         &self,
         subject: &SubjectRef,
     ) -> Result<Vec<EhrIndexEntry>, IndexError> {

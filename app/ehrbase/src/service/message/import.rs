@@ -64,7 +64,7 @@ use crate::versioning::{
 impl EhrbaseService {
     /// SM `import_ehr(an_ehr_id[0..1], an_extract)` — clone a whole EHR into an
     /// empty target (master06 §Copying Case 1).
-    async fn import_whole_ehr(
+    pub(super) async fn import_whole_ehr(
         &self,
         an_ehr_id: Option<Uuid>,
         an_extract: Extract,
@@ -138,7 +138,7 @@ impl EhrbaseService {
 
     /// SM `import_ehr_extract(an_ehr_id, an_extract)` — land versioned objects
     /// into an existing EHR (master06 §Copying Cases 2/3).
-    async fn import_into_ehr(
+    pub(super) async fn import_into_ehr(
         &self,
         an_ehr_id: Uuid,
         an_extract: Extract,

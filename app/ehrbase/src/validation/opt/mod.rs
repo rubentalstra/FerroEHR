@@ -46,13 +46,13 @@ use crate::service::status::CallStatusType;
 use crate::service::ServiceError;
 
 /// One artefact-validity violation: the AOM2 rule code + a human detail.
-struct Violation {
+pub(super) struct Violation {
     code: &'static str,
     detail: String,
 }
 
 impl Violation {
-    fn new(code: &'static str, detail: impl Into<String>) -> Self {
+    pub(super) fn new(code: &'static str, detail: impl Into<String>) -> Self {
         Self {
             code,
             detail: detail.into(),
@@ -63,16 +63,16 @@ impl Violation {
 /// The per-walk validation context: the globally-collected code sets plus
 /// whether the artefact declares any `constraint_definitions` at all (which
 /// gates VACDF — see [`invariants::check_constraint_ref`]).
-struct Ctx {
-    defined_at: HashSet<String>,
-    defined_ac: HashSet<String>,
-    has_constraint_defs: bool,
+pub(super) struct Ctx {
+    pub(super) defined_at: HashSet<String>,
+    pub(super) defined_ac: HashSet<String>,
+    pub(super) has_constraint_defs: bool,
 }
 
 /// Validate an uploaded OPT 1.4 artefact against the AOM2/08 standalone-artefact
 /// validity rules. The first violation found is returned as a `400` carrying the
 /// AOM2 rule code (`"<CODE>: <detail>"`); a fully valid artefact returns `Ok`.
-fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
+pub(crate) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     check(opt).map_err(|v| {
         ServiceError::sm(
             CallStatusType::PreconditionViolation,
@@ -209,7 +209,7 @@ fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
 
 // ─── C_OBJECT accessors (shared across the pass) ─────────────────────────────────
 
-fn co_rm_type(obj: &CObject) -> &str {
+pub(super) fn co_rm_type(obj: &CObject) -> &str {
     match obj {
         CObject::ArchetypeInternalRef(o) => &o.rm_type_name,
         CObject::ArchetypeSlot(o) => &o.rm_type_name,
@@ -227,7 +227,7 @@ fn co_rm_type(obj: &CObject) -> &str {
     }
 }
 
-fn co_node_id(obj: &CObject) -> &str {
+pub(super) fn co_node_id(obj: &CObject) -> &str {
     match obj {
         CObject::ArchetypeInternalRef(o) => &o.node_id,
         CObject::ArchetypeSlot(o) => &o.node_id,
@@ -245,7 +245,7 @@ fn co_node_id(obj: &CObject) -> &str {
     }
 }
 
-fn co_occurrences(obj: &CObject) -> &Intervalofinteger {
+pub(super) fn co_occurrences(obj: &CObject) -> &Intervalofinteger {
     match obj {
         CObject::ArchetypeInternalRef(o) => &o.occurrences,
         CObject::ArchetypeSlot(o) => &o.occurrences,
@@ -265,7 +265,7 @@ fn co_occurrences(obj: &CObject) -> &Intervalofinteger {
 
 const NO_ATTRS: &[CAttribute] = &[];
 
-fn co_attributes(obj: &CObject) -> &[CAttribute] {
+pub(super) fn co_attributes(obj: &CObject) -> &[CAttribute] {
     match obj {
         CObject::CArchetypeRoot(o) => &o.attributes,
         CObject::CComplexObject(o) => &o.attributes,

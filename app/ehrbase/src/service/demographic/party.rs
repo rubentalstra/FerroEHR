@@ -25,26 +25,26 @@ use super::{kind_of, validate_party_body};
 /// dispatcher no longer resolves for `If-Match` and the service again for the
 /// existence/kind gate. RM common master06 §Version Identification / §Logical
 /// Deletion.
-struct CurrentParty {
-    kind: PartyKind,
-    vo_id: Uuid,
-    tree: TreeId,
-    creating_system_id: String,
-    time_committed: jiff::Timestamp,
-    deleted: bool,
+pub(crate) struct CurrentParty {
+    pub(crate) kind: PartyKind,
+    pub(crate) vo_id: Uuid,
+    pub(crate) tree: TreeId,
+    pub(crate) creating_system_id: String,
+    pub(crate) time_committed: jiff::Timestamp,
+    pub(crate) deleted: bool,
 }
 
 impl CurrentParty {
     /// The current version's full `OBJECT_VERSION_ID` `{vo}::{system}::{tree}`
     /// (the `ETag` value / `Location` tail).
-    fn ovid(&self) -> String {
+    pub(crate) fn ovid(&self) -> String {
         object_version_id(self.vo_id, &self.creating_system_id, self.tree)
     }
 
     /// The `ResourceMeta` a `412` (`If-Match`) echoes: the current
     /// `OBJECT_VERSION_ID` + its commit instant (empty `ehr_id` — parties are
     /// not EHR-scoped).
-    fn resource_meta(&self) -> ResourceMeta {
+    pub(crate) fn resource_meta(&self) -> ResourceMeta {
         ResourceMeta::new(String::new(), self.ovid()).with_last_modified(self.time_committed)
     }
 }
@@ -63,7 +63,7 @@ impl EhrbaseService {
     /// is the offloaded body, which the in-memory input does not reflect, so the
     /// fresh read is kept for byte-fidelity (no openEHR spec governs media
     /// externalization — our own extension).
-    async fn commit_new_party(
+    pub(crate) async fn commit_new_party(
         &self,
         kind: PartyKind,
         body: Value,
@@ -116,7 +116,7 @@ impl EhrbaseService {
     /// instant (`at`; else the latest). A deleted current version resolves to
     /// `Value::Null` (→ `204`, mirroring COMPOSITION). A wrong-kind object (a
     /// PERSON under the `agent` route, or a COMPOSITION) is `404`.
-    async fn read_party(
+    pub(crate) async fn read_party(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -138,7 +138,7 @@ impl EhrbaseService {
     /// [`load_party_version`](EhrbaseService::load_party_version) ran on the
     /// concurrency pre-read, so the write path never reassembles nodes just to
     /// gate the write.
-    async fn party_current(
+    pub(crate) async fn party_current(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -165,7 +165,7 @@ impl EhrbaseService {
     /// seam (`super::api`) resolves for `If-Match` and calls `commit_party_update`
     /// directly, threading its handle so the target is resolved only once across
     /// the request. `expected` (from `If-Match`) enforces optimistic concurrency.
-    async fn update_party_version(
+    pub(crate) async fn update_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -186,7 +186,7 @@ impl EhrbaseService {
     /// is `404` (pre `has_party`, mirroring the pre-refactor `ensure_party`
     /// gate). The write response is built from the commit result (see
     /// [`create_party`](EhrbaseService::create_party)).
-    async fn commit_party_update(
+    pub(crate) async fn commit_party_update(
         &self,
         current: CurrentParty,
         body: Value,
@@ -251,7 +251,7 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
     /// `409`; when `None`, the current version is deleted unconditionally (SM
     /// `delete_party` has no version argument). An already-deleted target → `400`.
-    async fn delete_party_version(
+    pub(crate) async fn delete_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -268,7 +268,7 @@ impl EhrbaseService {
     /// Commit the logical delete of an already-resolved party (see
     /// [`delete_party`](EhrbaseService::delete_party) for the `expected`
     /// semantics). Returns the deleted version's `ETag`/`Location` metadata.
-    async fn commit_party_delete(
+    pub(crate) async fn commit_party_delete(
         &self,
         current: CurrentParty,
         expected: Option<TreeId>,
@@ -325,7 +325,7 @@ impl EhrbaseService {
     /// The current party version metadata (the latest `version_uid` a `412`
     /// echoes in `ETag`/`Location`), or `None` if unknown/wrong-kind — the lean
     /// resolve, no node reassembly.
-    async fn party_current_meta(
+    pub(crate) async fn party_current_meta(
         &self,
         kind: PartyKind,
         vo_id: Uuid,

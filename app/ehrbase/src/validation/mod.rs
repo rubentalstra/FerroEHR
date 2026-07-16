@@ -66,6 +66,6 @@ pub mod structure;
 // The flat entry surface callers wire to (`crate::validation::<fn>`). The
 // artefact-metadata / violation types stay reachable via `adl2::` — they are
 // the return / error types of `validate_adl2_source`, not named by callers.
-use adl2::{check_specialisation_depth, validate_adl2_source};
-use opt::validate_opt_artefact;
-use structure::validate_opt_structure;
+pub(crate) use adl2::{check_specialisation_depth, validate_adl2_source};
+pub(crate) use opt::validate_opt_artefact;
+pub(crate) use structure::validate_opt_structure;

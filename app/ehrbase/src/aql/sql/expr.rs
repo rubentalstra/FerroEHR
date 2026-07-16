@@ -22,12 +22,12 @@ use openehr_query::lexer::CompOp;
 use crate::aql::ir::{Coercion, EhrField, LeafPath, PathTarget, TypeSet, TypedLit, VersionField};
 
 /// A typed `"alias"."column"` reference.
-fn col(alias: &str, column: &str) -> Expr {
+pub(super) fn col(alias: &str, column: &str) -> Expr {
     Expr::col((Alias::new(alias), Alias::new(column)))
 }
 
 /// A typed custom-function call `name(args...)`.
-fn call(name: &str, args: Vec<Expr>) -> Expr {
+pub(super) fn call(name: &str, args: Vec<Expr>) -> Expr {
     let mut f = Func::cust(Alias::new(name));
     for a in args {
         f = f.arg(a);
@@ -36,12 +36,12 @@ fn call(name: &str, args: Vec<Expr>) -> Expr {
 }
 
 /// `to_jsonb(x)` — normalizes any scalar into a canonical-JSON cell.
-fn to_jsonb(e: Expr) -> Expr {
+pub(super) fn to_jsonb(e: Expr) -> Expr {
     call("to_jsonb", vec![e])
 }
 
 /// `jsonb_path_query_first(data, '<jp>'::jsonpath)`.
-fn jsonb_path(data: Expr, jp: &str) -> Expr {
+pub(super) fn jsonb_path(data: Expr, jp: &str) -> Expr {
     call(
         "jsonb_path_query_first",
         vec![data, cast(Expr::val(jp.to_owned()), "jsonpath")],
@@ -49,18 +49,18 @@ fn jsonb_path(data: Expr, jp: &str) -> Expr {
 }
 
 /// `<jsonb> #>> '{}'` — the scalar's text at the empty path.
-fn as_text(e: Expr) -> Expr {
+pub(super) fn as_text(e: Expr) -> Expr {
     e.binary(BinOper::Custom("#>>"), cast(Expr::val("{}"), "text[]"))
 }
 
 /// A typed cast `<e>::<ty>`.
-fn cast(e: Expr, ty: &str) -> Expr {
+pub(super) fn cast(e: Expr, ty: &str) -> Expr {
     e.cast_as(Alias::new(ty))
 }
 
 /// The jsonb extraction base: `jsonb_path_query_first(<data>, jp)` when a
 /// fragment path is present, else the raw `<data>` expression.
-fn extract_base(data: Expr, jp: Option<&str>) -> Expr {
+pub(super) fn extract_base(data: Expr, jp: Option<&str>) -> Expr {
     match jp {
         Some(jp) => jsonb_path(data, jp),
         None => data,
@@ -69,7 +69,7 @@ fn extract_base(data: Expr, jp: Option<&str>) -> Expr {
 
 /// The AQL comparison operators (QUERY master03 §Comparison operators) → the
 /// typed `sea-query` binary operators.
-fn binoper(op: CompOp) -> BinOper {
+pub(super) fn binoper(op: CompOp) -> BinOper {
     match op {
         CompOp::Eq => BinOper::Equal,
         CompOp::Ne => BinOper::NotEqual,
@@ -82,7 +82,7 @@ fn binoper(op: CompOp) -> BinOper {
 
 /// A typed AQL literal → a bound `sea-query` [`Value`] (QUERY master03
 /// §Literals + §Built-in Types).
-fn literal_value(lit: &TypedLit) -> Value {
+pub(super) fn literal_value(lit: &TypedLit) -> Value {
     match lit {
         TypedLit::Integer(i) => Value::from(*i),
         TypedLit::Real(r) => Value::from(*r),
@@ -95,7 +95,7 @@ fn literal_value(lit: &TypedLit) -> Value {
 /// A typed `rm_type IN (...)` condition, or `None` for an unresolved type set.
 /// The concrete RM types a source/step may bind (QUERY master03 §Class
 /// expressions; the abstract→concrete expansion is done in analysis).
-fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
+pub(super) fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
     if types.is_empty() {
         return None;
     }
@@ -105,7 +105,7 @@ fn type_cond(node: &str, types: &TypeSet) -> Option<Expr> {
 
 /// The coercion an ORDER BY key uses (QUERY master03 §ORDER BY — Ordered types
 /// compare by ordered-magnitude; mirrors the analyzer's leaf typing).
-fn order_coercion(target: &PathTarget) -> Coercion {
+pub(super) fn order_coercion(target: &PathTarget) -> Coercion {
     match target {
         PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => leaf.coercion,
         PathTarget::Version { field, .. } => {
@@ -128,7 +128,7 @@ fn order_coercion(target: &PathTarget) -> Coercion {
 /// A best-effort AQL path string for a `RESULT_SET` column's `path`
 /// (ITS-REST 1.0.3 `RESULT_SET_COLUMN.path` — the RM path "as specified in
 /// query"). `"/"` for a bare variable / whole-object leaf.
-fn leaf_path_string(leaf: &LeafPath) -> String {
+pub(super) fn leaf_path_string(leaf: &LeafPath) -> String {
     let mut s = String::new();
     for step in &leaf.anchor {
         let _ = write!(s, "/{}", step.attribute);
@@ -148,7 +148,7 @@ fn leaf_path_string(leaf: &LeafPath) -> String {
 /// `LIKE` pattern, escaping literal `%`/`_`/`\`. The AQL escapes `\*`/`\?` are
 /// the LITERAL characters (QUERY master03 §Operators/LIKE); `\\` is a literal
 /// backslash (SQL-escaped).
-fn aql_like_to_sql(pattern: &str) -> String {
+pub(super) fn aql_like_to_sql(pattern: &str) -> String {
     let mut out = String::with_capacity(pattern.len());
     let mut chars = pattern.chars().peekable();
     while let Some(ch) = chars.next() {
@@ -209,7 +209,7 @@ fn aql_like_to_sql(pattern: &str) -> String {
 // per master07 §Supporting Archetype-based Querying) is deferred to the ADL2
 // phase; the `-`-prefix rule here is exact for the ADL 1.4-form ids this store
 // holds (major-only `.vN`, lineage encoded directly in the concept).
-fn archetype_predicate(node: &str, value: &str) -> Expr {
+pub(super) fn archetype_predicate(node: &str, value: &str) -> Expr {
     if let Ok(id) = value.parse::<ArchetypeId>()
         && let Ok(major) = id.major_version().parse::<i32>()
     {
@@ -256,7 +256,7 @@ fn like_escape(s: &str) -> String {
 /// text (values folded in, not parameterized) so tests can assert the emitted
 /// condition.
 #[cfg(test)]
-fn archetype_predicate_sql(value: &str) -> String {
+pub(super) fn archetype_predicate_sql(value: &str) -> String {
     use sea_query::{PostgresQueryBuilder, Query};
 
     let cond = archetype_predicate("n", value);

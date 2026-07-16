@@ -63,7 +63,7 @@ const LEGACY_RM_ATTRS: &[(&str, &str)] = &[
 /// VCORM: "object constraint type name existence: a type name introducing an
 /// object constraint block must be defined in the underlying information model."
 /// (`AOM2/master04.5-…class_definitions.adoc` line 325.)
-fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), Violation> {
     // Strip any generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`);
     // the static model keys on the bare class name.
     let bare = rm_type.split('<').next().unwrap_or(rm_type).trim();
@@ -91,7 +91,7 @@ fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), Violation> {
 /// (multiplicity) and VCAEX (existence). Fires only when the enclosing object's
 /// RM type is known to the static model; an unknown parent means we cannot
 /// judge its attributes (and VCORM already flagged the parent if it was bogus).
-fn check_attribute(
+pub(super) fn check_attribute(
     attr: &CAttribute,
     attr_name: &str,
     parent_rm: &str,
@@ -192,7 +192,7 @@ fn rm_conformance(
 /// alternative child blocks — each `occurrences 0..1` — is a legal openEHR
 /// pattern whose occurrence-maxima sum exceeds the cardinality, cADL
 /// §Single-valued/alternative blocks.)
-fn check_cardinality_occurrences(
+pub(super) fn check_cardinality_occurrences(
     attr_name: &str,
     parent_rm: &str,
     card: &Cardinality,

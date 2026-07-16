@@ -119,10 +119,10 @@ impl ManagementConfig {
 mod defaults {
     use super::AccessLevel;
 
-    fn base_path() -> String {
+    pub(super) fn base_path() -> String {
         "/management".to_owned()
     }
-    const fn access_default() -> AccessLevel {
+    pub(super) const fn access_default() -> AccessLevel {
         AccessLevel::AdminOnly
     }
 }

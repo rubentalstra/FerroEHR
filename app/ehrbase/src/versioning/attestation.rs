@@ -23,15 +23,15 @@ use crate::versioning::object_version_id::TreeId;
 /// A `666|attestation|` of an **existing** `ORIGINAL_VERSION` committed within a
 /// CONTRIBUTION (master06 §Contributions — adds no new version). Carried
 /// alongside the change set so it commits in the same transaction.
-struct PendingAttest {
-    vo_id: Uuid,
-    kind: Kind,
+pub(crate) struct PendingAttest {
+    pub(crate) vo_id: Uuid,
+    pub(crate) kind: Kind,
     /// The target version to attest (from `preceding_version_uid` — trunk or
     /// branch).
-    expected: TreeId,
+    pub(crate) expected: TreeId,
     /// The wire `UPDATE_ATTESTATION` partial, completed into a full RM
     /// `ATTESTATION` at commit time.
-    partial: Value,
+    pub(crate) partial: Value,
 }
 
 /// The located attestation target — the value contract from
@@ -39,13 +39,13 @@ struct PendingAttest {
 ///
 /// Mapped from the storage lookup (`version_repo::attestation_target`).
 #[derive(Debug, Clone)]
-struct AttestTarget {
+pub(crate) struct AttestTarget {
     /// The owning EHR of the target version (compared against the caller's).
-    ehr_id: Option<Uuid>,
+    pub(crate) ehr_id: Option<Uuid>,
     /// The target version's storage ordinal.
-    ordinal: i32,
+    pub(crate) ordinal: i32,
     /// The target version's `creating_system_id` (carried into the outbox).
-    creating_system_id: String,
+    pub(crate) creating_system_id: String,
 }
 
 /// Attach an `ATTESTATION` to an **existing** `ORIGINAL_VERSION` (a
@@ -56,7 +56,7 @@ struct AttestTarget {
 /// [`ServiceError::NotFound`]. `attestation` is the already-completed full RM
 /// `ATTESTATION`.
 #[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
-async fn attest(
+pub(crate) async fn attest(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
@@ -113,7 +113,7 @@ async fn attest(
 /// committal"). Each partial `UPDATE_ATTESTATION` is completed into a full RM
 /// `ATTESTATION` and attached to the just-written version — same transaction.
 #[allow(clippy::too_many_arguments)] // the parts of an ATTESTATION + its target version
-async fn insert_accompanying_attestations(
+pub(crate) async fn insert_accompanying_attestations(
     tx: &mut PgConnection,
     vo_id: Uuid,
     sys_version: i32,
@@ -150,7 +150,7 @@ async fn insert_accompanying_attestations(
 /// `items`, if present, must be non-empty (`ATTESTATION.Items_valid`).
 /// `committer` comes from the partial when present, else the CONTRIBUTION's
 /// committer (master06 §Committal).
-fn complete_attestation(
+pub(crate) fn complete_attestation(
     partial: &Value,
     system_id: &str,
     committer_fallback: &Value,

@@ -44,20 +44,20 @@ use super::ir::{
 /// The variable → source bindings gathered from the FROM clause. Built by
 /// [`super::lower`]; consumed here to resolve identified-path roots.
 #[derive(Debug, Default)]
-struct Bindings {
+pub(crate) struct Bindings {
     vars: HashMap<String, Binding>,
 }
 
 /// One FROM variable binding.
 #[derive(Debug, Clone)]
-struct Binding {
+pub(crate) struct Binding {
     pub source: SourceId,
     pub kind: BindingKind,
 }
 
 /// What a bound variable resolves to.
 #[derive(Debug, Clone)]
-enum BindingKind {
+pub(crate) enum BindingKind {
     /// An `EHR` variable.
     Ehr,
     /// An RM structure-class variable, carrying its concrete type set.
@@ -69,11 +69,11 @@ enum BindingKind {
 impl Bindings {
     /// Variable names are not case-sensitive (QUERY master03
     /// §Variables/Syntax) — bindings key on the case-folded name.
-    fn insert(&mut self, var: &str, binding: Binding) {
+    pub(crate) fn insert(&mut self, var: &str, binding: Binding) {
         self.vars.insert(var.to_ascii_lowercase(), binding);
     }
 
-    fn contains(&self, var: &str) -> bool {
+    pub(crate) fn contains(&self, var: &str) -> bool {
         self.vars.contains_key(&var.to_ascii_lowercase())
     }
 
@@ -83,7 +83,7 @@ impl Bindings {
 }
 
 /// Resolve an identified path to a typed [`PathTarget`].
-fn analyze_path(
+pub(crate) fn analyze_path(
     path: &IdentifiedPath,
     bindings: &Bindings,
 ) -> Result<PathTarget, AqlError> {
@@ -396,7 +396,7 @@ fn version_field_from_parts(parts: &[&str]) -> Result<VersionField, AqlError> {
 
 /// Resolve a version standard predicate (`VERSION v[commit_audit/... op val]`).
 /// Rejects branch (non-trunk) version ids explicitly.
-fn resolve_version_predicate(
+pub(crate) fn resolve_version_predicate(
     sp: &StandardPredicate,
 ) -> Result<VersionMetaPredicate, AqlError> {
     let parts: Vec<&str> = sp.path.parts.iter().map(|p| p.name.as_str()).collect();
@@ -427,7 +427,7 @@ fn is_branch_version_id(s: &str) -> bool {
 // ── predicate resolution ─────────────────────────────────────────────────────
 
 /// Resolve an EHR class-predicate `[ehr_id/value=$id]` to its field + value.
-fn resolve_ehr_predicate(
+pub(crate) fn resolve_ehr_predicate(
     sp: &StandardPredicate,
 ) -> Result<(EhrField, CompOp, Bind), AqlError> {
     let parts: Vec<&str> = sp.path.parts.iter().map(|p| p.name.as_str()).collect();
@@ -447,7 +447,7 @@ fn resolve_ehr_predicate(
 }
 
 /// Resolve an AST [`PathPredicate`] into a typed [`NodeConstraint`].
-fn resolve_node_predicate(pred: &PathPredicate) -> Result<NodeConstraint, AqlError> {
+pub(crate) fn resolve_node_predicate(pred: &PathPredicate) -> Result<NodeConstraint, AqlError> {
     let mut out = NodeConstraint::default();
     apply_predicate(pred, &mut out)?;
     Ok(out)
@@ -566,13 +566,13 @@ fn bind_from_operand(operand: &PathPredicateOperand) -> Result<Bind, AqlError> {
 
 /// Normalize an AST parameter token to its bare name (the lexer keeps the
 /// leading `$`; the IR and [`super::ir::Params`] key on the name without it).
-fn param_name(raw: &str) -> String {
+pub(crate) fn param_name(raw: &str) -> String {
     raw.strip_prefix('$').unwrap_or(raw).to_owned()
 }
 
 /// Map an AST [`Primitive`] to a typed literal (temporals stay strings until a
 /// comparison context retypes them; QUERY §Built-in Types/Dates and Times).
-fn typed_lit(p: &Primitive) -> TypedLit {
+pub(crate) fn typed_lit(p: &Primitive) -> TypedLit {
     match p {
         Primitive::String(s) => TypedLit::String(s.clone()),
         Primitive::Integer(i) => TypedLit::Integer(*i),

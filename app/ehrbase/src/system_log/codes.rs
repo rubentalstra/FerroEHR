@@ -109,7 +109,7 @@ pub const OBJECT_ROLE_QUERY: &str = "24";
 use super::event::{EventActionCode, EventOutcome, ObjectClass};
 
 /// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventActionCode`].
-trait AtnaAction {
+pub(crate) trait AtnaAction {
     /// The single-character DICOM `EventActionCode`.
     fn as_char(&self) -> char;
     /// The DICOM `ParticipantObjectDataLifeCycle` most fitting for the action.
@@ -117,7 +117,7 @@ trait AtnaAction {
 }
 
 /// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventOutcome`].
-trait AtnaOutcome {
+pub(crate) trait AtnaOutcome {
     /// The numeric DICOM `EventOutcomeIndicator`.
     fn as_i32(&self) -> i32;
     /// The `EventOutcomeDescription` text.
@@ -127,7 +127,7 @@ trait AtnaOutcome {
 /// ATNA (DICOM / RFC-3881) rendering of an [`ObjectClass`] — the `EventID`
 /// (DICOM PS3.15 §A.5.1) and the participant-object shape
 /// (`ParticipantObjectIdentification`, DICOM PS3.15 §A.5 / RFC 3881 §5.5).
-trait AtnaObject {
+pub(crate) trait AtnaObject {
     /// The DICOM `EventID` `(csd-code, originalText)` for this object class.
     fn event_id(&self) -> (&'static str, &'static str);
     /// Whether this class carries a patient (Patient-Number) participant object.

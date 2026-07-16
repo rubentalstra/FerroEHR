@@ -341,28 +341,28 @@ impl AbacConfig {
 }
 
 mod defaults {
-    const fn yes() -> bool {
+    pub(super) const fn yes() -> bool {
         true
     }
-    fn admin_role() -> String {
+    pub(super) fn admin_role() -> String {
         "ADMIN".to_owned()
     }
-    fn user_role() -> String {
+    pub(super) fn user_role() -> String {
         "USER".to_owned()
     }
-    fn role_claims() -> Vec<String> {
+    pub(super) fn role_claims() -> Vec<String> {
         vec!["realm_access.roles".to_owned(), "scope".to_owned()]
     }
-    fn organization_claim() -> String {
+    pub(super) fn organization_claim() -> String {
         "organization_id".to_owned()
     }
-    fn patient_claim() -> String {
+    pub(super) fn patient_claim() -> String {
         "patient_id".to_owned()
     }
-    const fn connect_timeout_ms() -> u64 {
+    pub(super) const fn connect_timeout_ms() -> u64 {
         2000
     }
-    const fn request_timeout_ms() -> u64 {
+    pub(super) const fn request_timeout_ms() -> u64 {
         5000
     }
 }

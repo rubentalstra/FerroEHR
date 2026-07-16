@@ -12,7 +12,7 @@
 //! `__Pre_…__` clauses and no error codes; every unmet precondition surfaces as
 //! `SmError(PreconditionViolation, …)` (→ `400`).
 
-mod config;
+pub(crate) mod config;
 mod extract;
 mod frames;
 mod freshness;
@@ -42,7 +42,7 @@ use store::db_err;
 impl EhrbaseService {
     /// The connection pool, shared with the `sp_*` store methods (cheap `Arc`
     /// clone; a borrow of the temporary satisfies `sqlx`'s `Executor`).
-    fn pool(&self) -> PgPool {
+    pub(super) fn pool(&self) -> PgPool {
         self.pool.clone()
     }
 
@@ -161,6 +161,11 @@ fn build_variable_sample(frame_sample: &DataFrameSample, var: &SubjectVariable) 
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn register_subject(
         &self,
         subject_id: String,
@@ -184,6 +189,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn add_subject_variable(
         &self,
         subject_id: String,
@@ -198,6 +208,11 @@ impl EhrbaseService {
         self.sp_upsert_variable(&subject_id, &var, true).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn register_application_data_set(
         &self,
         definition: SubjectDataSet,
@@ -265,6 +280,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn remove_application_data_set(
         &self,
         subject_id: String,
@@ -303,6 +323,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn remove_subject_proxy(&self, subject_id: String) -> Result<(), SmError> {
         // __Pre_subject_valid__: has_subject.
         if !self.sp_has_subject(&subject_id).await? {
@@ -319,6 +344,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn remove_application(&self, application_id: String) -> Result<(), SmError> {
         // __Pre_application_valid__: has_application.
         if !self.sp_has_application(&application_id).await? {
@@ -341,6 +371,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_variable(
         &self,
         subject_id: String,
@@ -369,6 +404,11 @@ impl EhrbaseService {
         Ok(sample.result.unwrap_or_else(VariableValue::none))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_data_set(
         &self,
         subject_id: String,
@@ -400,14 +440,29 @@ impl EhrbaseService {
         })
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_subject(&self, subject_id: String) -> Result<bool, SmError> {
         self.sp_has_subject(&subject_id).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_application(&self, application_id: String) -> Result<bool, SmError> {
         self.sp_has_application(&application_id).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_variable_defs(&self, subject_id: String) -> Result<Vec<String>, SmError> {
         // "a list of variable definitions each of the form 'name: Type', where
         // 'name' is the canonical name" (i_subject_proxy_service.adoc).
@@ -425,6 +480,11 @@ impl EhrbaseService {
             .collect())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn register_binding(&self, binding: EnvBinding) -> Result<(), SmError> {
         // __Pre_new_env__: not has_binding(binding.env_id).
         if self.sp_has_binding(&binding.env_id).await? {
@@ -447,6 +507,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn add_binding_frame(
         &self,
         env_id: String,
@@ -464,10 +529,20 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_binding(&self, env_id: String) -> Result<bool, SmError> {
         self.sp_has_binding(&env_id).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn reset(&self) -> Result<(), SmError> {
         // "Set back to virgin state … remove all subjects, variables and
         // bindings" (master10 §Persistence). Subjects cascade to variables,
@@ -485,6 +560,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn notify_variable_sample(
         &self,
         subject_id: String,
@@ -518,6 +598,11 @@ impl EhrbaseService {
             .await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_subject_variable(
         &self,
         subject_id: String,

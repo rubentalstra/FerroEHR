@@ -33,6 +33,11 @@ use crate::versioning::Kind;
 /// ([`EhrbaseService::validate_for_commit`]); an unrecognized root `_type` is
 /// `false`.
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn definitions_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let template_id = a_content
             .pointer("/archetype_details/template_id/value")
@@ -43,6 +48,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn content_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let rm_type = a_content.get("_type").and_then(Value::as_str).unwrap_or("");
         let Some(kind) = Kind::from_type(rm_type) else {

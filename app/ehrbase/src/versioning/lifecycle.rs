@@ -19,20 +19,20 @@ use openehr_term::bundle::openehr;
 const VERSION_LIFECYCLE_STATE: &str = "version_lifecycle_state";
 
 /// `version_lifecycle_state` group codes (master06 §Version Lifecycle).
-mod state {
+pub(crate) mod state {
     /// `532|complete|` — a fully authored version.
-    const COMPLETE: &str = "532";
+    pub(crate) const COMPLETE: &str = "532";
     /// `553|incomplete|` — a partial/unreviewed version committed with relaxed
     /// validation (master06 §Incomplete Content).
-    const INCOMPLETE: &str = "553";
+    pub(crate) const INCOMPLETE: &str = "553";
     /// `523|deleted|` — a logically deleted version (master06 §Logical Deletion).
-    const DELETED: &str = "523";
+    pub(crate) const DELETED: &str = "523";
     /// `800|inactive|` — content marked no longer valid for use (master06
     /// §Abandoned and Inactive States).
-    const INACTIVE: &str = "800";
+    pub(crate) const INACTIVE: &str = "800";
     /// `801|abandoned|` — incomplete content that lost relevance before
     /// completion (master06 §Abandoned and Inactive States).
-    const ABANDONED: &str = "801";
+    pub(crate) const ABANDONED: &str = "801";
 }
 
 /// Resolve an inbound `lifecycle_state` token — a numeric group code (`"553"`)
@@ -40,7 +40,7 @@ mod state {
 /// `version_lifecycle_state` code. `None` when the token is not a member of the
 /// group (`ORIGINAL_VERSION.Lifecycle_state_valid`; master06 §Version
 /// Lifecycle: the five values `532/553/523/800/801`).
-fn lifecycle_state_code(token: &str) -> Option<String> {
+pub(crate) fn lifecycle_state_code(token: &str) -> Option<String> {
     let t = openehr();
     if t.is_valid_version_lifecycle_state(token) {
         return Some(token.to_owned());
@@ -55,7 +55,7 @@ fn lifecycle_state_code(token: &str) -> Option<String> {
 /// falls back to the code itself if unknown. Note the SPECPR-51 quirk: `532` is
 /// `complete` in this group (`completed` only in `instruction_states`) — the
 /// group-scoped lookup resolves it correctly.
-fn lifecycle_rubric(code: &str) -> String {
+pub(crate) fn lifecycle_rubric(code: &str) -> String {
     openehr()
         .rubric(VERSION_LIFECYCLE_STATE, code, "en")
         .unwrap_or(code)
@@ -66,7 +66,7 @@ fn lifecycle_rubric(code: &str) -> String {
 /// numeric code, defaulting to `532|complete|` when absent (master06 §Version
 /// Lifecycle). An out-of-group token is a `422`
 /// (`ORIGINAL_VERSION.Lifecycle_state_valid`), naming the terminology group.
-fn resolve_lifecycle(token: Option<String>) -> Result<String, ServiceError> {
+pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, ServiceError> {
     match token {
         Some(token) => lifecycle_state_code(&token).ok_or_else(|| {
             ServiceError::Unprocessable(format!(
@@ -101,7 +101,7 @@ fn resolve_lifecycle(token: Option<String>) -> Result<String, ServiceError> {
 /// **not** call this (it preserves source history verbatim — master06
 /// §Copying), and the logical-delete path targets `deleted` from any live state
 /// (master06 §Logical Deletion).
-fn validate_transition(from: Option<&str>, to: &str) -> Result<(), ServiceError> {
+pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), ServiceError> {
     use state::{ABANDONED, COMPLETE, DELETED, INACTIVE, INCOMPLETE};
 
     let allowed = match from {

@@ -362,7 +362,7 @@ impl EhrbaseService {
     /// column is currently left NULL on the commit path, so relying on it would
     /// emit nothing. Deriving it from the canonical body avoids touching the
     /// versioning path.
-    async fn fhir_outbound_messages(
+    pub(crate) async fn fhir_outbound_messages(
         &self,
         ehr_id: Option<Uuid>,
         vo_id: Uuid,
@@ -514,18 +514,38 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_mappings().await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
         Ok(self.create_mapping(&a_mapping).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_mapping(a_mapping_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_mapping_update(
         &self,
         a_mapping_id: Uuid,
@@ -534,10 +554,20 @@ impl EhrbaseService {
         Ok(self.update_mapping(a_mapping_id, &a_mapping).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_mapping(a_mapping_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_ingest(
         &self,
         resource_type: String,
@@ -598,6 +628,11 @@ impl EhrbaseService {
         Ok(self.committed_response(ehr_id, &committed))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn fhir_search(
         &self,
         resource_type: String,

@@ -29,7 +29,7 @@ impl Builder<'_> {
 
     /// Lower an identified path to a value expression, discriminated by what it
     /// addresses (QUERY master03 §Identified Paths / §Identified expression).
-    fn value_expr(
+    pub(super) fn value_expr(
         &mut self,
         target: &PathTarget,
         mode: ValueMode,
@@ -63,7 +63,7 @@ impl Builder<'_> {
     /// The design's path split for a data leaf: empty anchor → read the source
     /// node's `data` fragment inline; non-empty anchor → a correlated scalar
     /// subquery walking the anchor chain and extracting the fragment.
-    fn data_leaf_expr(
+    pub(super) fn data_leaf_expr(
         &mut self,
         leaf: &LeafPath,
         mode: ValueMode,
@@ -214,7 +214,7 @@ impl Builder<'_> {
     }
 
     /// Resolve a leaf's source to a node alias present in the FROM.
-    fn source_node(&self, sid: usize) -> Result<String, AqlError> {
+    pub(super) fn source_node(&self, sid: usize) -> Result<String, AqlError> {
         self.node_alias.get(&sid).cloned().ok_or_else(|| {
             SqlError::Unsupported("data path on a non-node source".to_owned()).into()
         })
@@ -224,7 +224,7 @@ impl Builder<'_> {
 
     /// ORDER BY (QUERY master03 §ORDER BY): multi-key, ASC/DESC, Ordered types
     /// compared by ordered-magnitude via the key's own [`Coercion`].
-    fn build_order_by(&mut self) -> Result<(), AqlError> {
+    pub(super) fn build_order_by(&mut self) -> Result<(), AqlError> {
         for key in self.ir.order_by.clone() {
             let OrderKey { path, ascending } = key;
             let order = if ascending { Order::Asc } else { Order::Desc };
@@ -254,7 +254,7 @@ impl Builder<'_> {
     /// LIMIT/OFFSET (QUERY master03 §LIMIT): the effective window is pre-composed
     /// by the service (AQL clause vs REST `fetch`/`offset`); bounds were checked
     /// at lowering.
-    fn build_paging(&mut self) {
+    pub(super) fn build_paging(&mut self) {
         if let Some(limit) = self.ctx.limit
             && limit >= 0
         {
@@ -272,7 +272,7 @@ impl Builder<'_> {
 
 /// Apply the value coercion to a jsonb extraction base (QUERY master03
 /// §Comparison operators; `DV_ORDERED` ordered-magnitude via `ext.openehr_magnitude`).
-fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr {
+pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr {
     match mode {
         ValueMode::Projection => base,
         ValueMode::Value(Coercion::Magnitude) => {
@@ -300,7 +300,7 @@ fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr {
 
 /// Cast a bound right-hand-side value to match the comparison coercion
 /// (QUERY master03 §Comparison operators).
-fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Expr {
+pub(super) fn coerce_rhs(value: sea_query::Value, coercion: Coercion) -> Expr {
     match coercion {
         Coercion::Magnitude => cast(Expr::val(value), "numeric"),
         Coercion::Boolean => cast(Expr::val(value), "boolean"),
@@ -330,7 +330,7 @@ fn raw_numeric(base: Expr) -> Expr {
 /// is immutable per version, RM common master06 §Distributed versioning) via
 /// the typed `PgExpr::concatenate` `||` operator; the tree id renders
 /// `trunk[.branch.version]`.
-fn version_field_expr(
+pub(super) fn version_field_expr(
     voa: &str,
     aud: &str,
     field: VersionField,
@@ -370,7 +370,7 @@ fn version_field_expr(
 
 /// The typed SQL for an EHR attribute (`ehr_id/value`, `time_created`,
 /// `system_id`). RM 1.2.0 `EHR` (`docs/specs/openehr/RM/docs/ehr/`).
-fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
+pub(super) fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
     match field {
         EhrField::EhrId | EhrField::Whole => cast(col(alias, "id"), "text"),
         EhrField::TimeCreated => col(alias, "time_created"),
@@ -382,7 +382,7 @@ fn ehr_field_expr(alias: &str, field: EhrField, system_id: &str) -> Expr {
 
 /// Build the fragment jsonpath (`$.a.b`) for a leaf, or `None` when the leaf
 /// addresses the whole anchor node.
-fn fragment_jsonpath(leaf: &LeafPath) -> Option<String> {
+pub(super) fn fragment_jsonpath(leaf: &LeafPath) -> Option<String> {
     if leaf.fragment.is_empty() {
         return None;
     }
@@ -395,7 +395,7 @@ fn fragment_jsonpath(leaf: &LeafPath) -> Option<String> {
 
 /// Build a jsonpath from a relative object path (`[a, b]` → `$.a.b`) — a node
 /// standard-predicate sub-path (QUERY master03 §Standard predicate).
-fn jsonpath(parts: &[String]) -> String {
+pub(super) fn jsonpath(parts: &[String]) -> String {
     let mut jp = String::from("$");
     for p in parts {
         let _ = write!(jp, ".{p}");

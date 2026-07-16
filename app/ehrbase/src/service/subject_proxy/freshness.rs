@@ -12,7 +12,7 @@
 use jiff::{Span, Timestamp, Zoned};
 
 /// Parse a `SUBJECT_VARIABLE.currency` ISO-8601 duration (e.g. `PT2m`, `P1D`).
-fn parse_currency(s: &str) -> Result<Span, String> {
+pub(super) fn parse_currency(s: &str) -> Result<Span, String> {
     s.parse::<Span>()
         .map_err(|e| format!("invalid ISO-8601 duration {s:?}: {e}"))
 }
@@ -28,7 +28,7 @@ fn threshold(currency: &Span) -> Result<Timestamp, String> {
 
 /// Whether a sample stamped `sample_time` (ISO-8601; `effective_time` falling
 /// back to `retrieve_time`) still satisfies `currency`.
-fn is_fresh(sample_time: &str, currency: &Span) -> bool {
+pub(super) fn is_fresh(sample_time: &str, currency: &Span) -> bool {
     let Ok(at) = sample_time.parse::<Timestamp>() else {
         return false; // unparseable stamp: treat as stale (fail-closed)
     };
@@ -41,7 +41,7 @@ fn is_fresh(sample_time: &str, currency: &Span) -> bool {
 /// variable" (`i_subject_proxy_service.adoc`). `None` means "most recent
 /// available is valid" — the loosest possible currency, so any concrete
 /// candidate is lower.
-fn tighter_currency(existing: Option<&str>, candidate: Option<&str>) -> Option<String> {
+pub(super) fn tighter_currency(existing: Option<&str>, candidate: Option<&str>) -> Option<String> {
     let Some(cand) = candidate else {
         return existing.map(str::to_owned);
     };

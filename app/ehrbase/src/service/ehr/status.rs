@@ -26,7 +26,7 @@ use super::{ensure_if_match, parse_at_time, version_uid};
 impl EhrbaseService {
     /// The `EHR_STATUS` of an EHR as canonical JSON with its `uid` set — the
     /// current version, or the one current at `at` (time-travel) when given.
-    async fn status_at(
+    pub(in crate::service) async fn status_at(
         &self,
         ehr_id: Uuid,
         at: Option<jiff::Timestamp>,
@@ -45,7 +45,7 @@ impl EhrbaseService {
 
     /// The **bare** `EHR_STATUS` at a specific version (not the
     /// `ORIGINAL_VERSION` wrapper) — `GET …/ehr_status/{version_uid}` (F-01-03).
-    async fn status_by_version(
+    pub(in crate::service) async fn status_by_version(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -126,7 +126,7 @@ impl EhrbaseService {
     /// — that guard scopes to EHR *contents*, never to `EHR_STATUS`, which is how
     /// `clear_ehr_modifiable` disables an EHR yet `set_ehr_modifiable` re-enables
     /// it.
-    async fn status_mutate(
+    pub(in crate::service) async fn status_mutate(
         &self,
         ehr_id: Uuid,
         mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
@@ -164,7 +164,7 @@ impl EhrbaseService {
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
-    async fn versioned_status(
+    pub(in crate::service) async fn versioned_status(
         &self,
         ehr_id: Uuid,
     ) -> Result<Value, ServiceError> {
@@ -176,7 +176,7 @@ impl EhrbaseService {
     }
 
     /// The `REVISION_HISTORY` of an EHR's `EHR_STATUS`.
-    async fn status_revision_history(
+    pub(in crate::service) async fn status_revision_history(
         &self,
         ehr_id: Uuid,
     ) -> Result<Value, ServiceError> {
@@ -188,7 +188,7 @@ impl EhrbaseService {
     }
 
     /// An `ORIGINAL_VERSION` of an `EHR_STATUS` at a specific version.
-    async fn status_version(
+    pub(in crate::service) async fn status_version(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -205,7 +205,7 @@ impl EhrbaseService {
     /// latest when `at` is `None` (`GET …/versioned_ehr_status/version`,
     /// F-01-05). The metadata carries the `version_uid` for the
     /// `200_VERSION_at_time` `ETag`/`Location`.
-    async fn status_version_at_time(
+    pub(in crate::service) async fn status_version_at_time(
         &self,
         ehr_id: Uuid,
         at: Option<jiff::Timestamp>,
@@ -233,7 +233,7 @@ impl EhrbaseService {
     }
 
     /// The current `EHR_STATUS` version metadata (for a `412` `ETag`/`Location`).
-    async fn ehr_status_meta(
+    pub(in crate::service) async fn ehr_status_meta(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
@@ -247,7 +247,7 @@ impl EhrbaseService {
     /// the `vo_id` threaded into [`Self::status_update`], so the update path
     /// resolves the versioned object exactly once. `None` when the EHR has no
     /// current `EHR_STATUS`.
-    async fn ehr_status_meta_with_vo(
+    pub(in crate::service) async fn ehr_status_meta_with_vo(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
@@ -288,7 +288,7 @@ impl EhrbaseService {
     /// flag flip, not the write-block outcome), so the code is underdetermined.
     /// We return `409 Conflict` — the write conflicts with the current state of
     /// the target resource (RFC 9110 §15.5.10), the closest HTTP semantics.
-    async fn ensure_content_writable(
+    pub(in crate::service) async fn ensure_content_writable(
         &self,
         ehr_id: Uuid,
     ) -> Result<(), ServiceError> {
@@ -304,7 +304,7 @@ impl EhrbaseService {
     /// for the PORT NOTE on the status-code choice. Shared with the combined
     /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
     /// single-sourced.
-    fn not_modifiable_error(ehr_id: Uuid) -> ServiceError {
+    pub(in crate::service) fn not_modifiable_error(ehr_id: Uuid) -> ServiceError {
         ServiceError::Conflict(format!(
             "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
              contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
@@ -330,7 +330,7 @@ impl EhrbaseService {
     /// `ehr_repo` read) because it maps the subject-uniqueness constraint
     /// violation to a service-level [`ServiceError::Conflict`] (→ 409); the
     /// `ehr.subject_*` columns are spec-silent index plumbing (our own design).
-    async fn sync_ehr_subject(
+    pub(in crate::service) async fn sync_ehr_subject(
         &self,
         tx: &mut PgConnection,
         ehr_id: Uuid,
@@ -378,7 +378,7 @@ impl EhrbaseService {
 /// EHR-create path's folded INSERT and the update/contribution
 /// [`EhrbaseService::sync_ehr_subject`] hook so both promote identical values.
 /// No openEHR spec governs the promoted columns — our own storage design.
-fn ehr_promoted_columns(
+pub(in crate::service) fn ehr_promoted_columns(
     canonical: &Value,
 ) -> (Option<&str>, Option<&str>, bool, bool) {
     let subject_id = canonical
@@ -403,6 +403,11 @@ fn ehr_promoted_columns(
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_ehr_status_version(
         &self,
         an_ehr_id: Uuid,
@@ -416,10 +421,20 @@ impl EhrbaseService {
             .is_some_and(|(vo, _)| vo == a_version_uid))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_at(an_ehr_id, None).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -429,6 +444,11 @@ impl EhrbaseService {
         Ok(self.status_at(an_ehr_id, at).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -443,10 +463,20 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_status(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         Ok(self
                 .status_mutate(an_ehr_id, |m| {
@@ -456,6 +486,11 @@ impl EhrbaseService {
                 .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         Ok(self
                 .status_mutate(an_ehr_id, |m| {
@@ -465,6 +500,11 @@ impl EhrbaseService {
                 .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         Ok(self
                 .status_mutate(an_ehr_id, |m| {
@@ -474,6 +514,11 @@ impl EhrbaseService {
                 .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
@@ -485,6 +530,11 @@ impl EhrbaseService {
                 .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_other_details(
         &self,
         an_ehr_id: Uuid,
@@ -498,6 +548,11 @@ impl EhrbaseService {
                 .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn replace_ehr_status(
         &self,
         an_ehr_id: Uuid,
@@ -526,10 +581,20 @@ impl EhrbaseService {
             .version_uid())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_version_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -539,6 +604,11 @@ impl EhrbaseService {
         Ok(self.status_version_at_time(an_ehr_id, at).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_original_version(
         &self,
         an_ehr_id: Uuid,

@@ -122,6 +122,10 @@ impl FhirTerminologyProvider {
     /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition
     /// caller maps to `VersionedObjectDoesNotExist`); any other non-2xx or a
     /// transport/parse fault → `Err(SmError::exception)`.
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get<T: for<'de> Deserialize<'de>>(
         &self,
         op_path: &str,
@@ -192,7 +196,11 @@ impl FhirTerminologyProvider {
 
     /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set is
     /// unknown (`404`). Forwards `at_date` as the FHIR `date` parameter (G-1).
-    async fn expand(
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
+    pub(crate) async fn expand(
         &self,
         value_set_url: &str,
         at_date: Option<&str>,
@@ -213,6 +221,10 @@ impl FhirTerminologyProvider {
     /// value-set `url`; `at_date` as the FHIR `date` (G-1). An unknown value set
     /// → `VersionedObjectDoesNotExist` (`Pre_has_terminology`); a known value set
     /// with a non-member code → `Ok(false)`.
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn value_set_validate(
         &self,
         terminology_id: &str,
@@ -257,6 +269,10 @@ impl FhirTerminologyProvider {
     /// `get_value_set` → FHIR `ValueSet/$expand`, mapped to a
     /// [`TerminologyExtract`] (flat `terms` for membership; the `contains` tree
     /// preserved as `relationships` — G-2/G-5).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_value_set(
         &self,
         _terminology_id: &str,
@@ -272,6 +288,10 @@ impl FhirTerminologyProvider {
     /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`, `codeB` =
     /// `candidate_child_code`). True iff the outcome is `subsumes` — the SM's
     /// *strict* subsumption (`equivalent` is excluded).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn subsumes(
         &self,
         terminology_id: &str,
@@ -301,6 +321,10 @@ impl FhirTerminologyProvider {
     /// `has_term` → FHIR `CodeSystem/$lookup`: `true` when the lookup resolves
     /// (`200`), `false` when the code is unknown (`404`). `at_date` → the FHIR
     /// `date` parameter (G-1).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_term(
         &self,
         terminology_id: &str,
@@ -324,6 +348,10 @@ impl FhirTerminologyProvider {
     /// `display` (mapped to the term text), so there is nothing further to
     /// filter; `attributes` is accepted and has no effect on the returned
     /// extract.
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_term(
         &self,
         terminology_id: &str,
@@ -361,6 +389,10 @@ impl FhirTerminologyProvider {
 
     /// `has_value_set` → FHIR `ValueSet/$expand`: `true` when the value set
     /// expands (`200`), `false` when it is unknown (`404`).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_value_set(
         &self,
         _terminology_id: &str,
@@ -371,6 +403,10 @@ impl FhirTerminologyProvider {
 
     /// `get_terminology_description` → not modelled for a FHIR TS (PORT NOTE at
     /// module head — G-4).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn get_terminology_description(
         &self,
         _terminology_id: &str,
@@ -432,7 +468,7 @@ impl FhirParameters {
 
 /// A FHIR `ValueSet` resource with an expansion — only the expansion members.
 #[derive(Debug, Clone, Deserialize)]
-struct FhirValueSet {
+pub(crate) struct FhirValueSet {
     expansion: Option<FhirExpansion>,
 }
 

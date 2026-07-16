@@ -207,7 +207,7 @@ impl EhrbaseService {
     /// as deliberately-unbuilt spec enum members. A requested XML or non-`None`
     /// compression format is a `precondition_violation` (400), never a silent
     /// downgrade.
-    async fn export_ehrs_to(
+    pub(super) async fn export_ehrs_to(
         &self,
         dir: &Path,
         spec: &ExportSpec,
@@ -285,7 +285,7 @@ impl EhrbaseService {
     /// Populate the repository from a canonical-JSON archive under `dir` (SM
     /// `load_ehrs`). Duplicate EHR ids are reported (`dump_status = false`) and
     /// skipped; all other EHRs are re-persisted verbatim.
-    async fn load_ehrs_from(
+    pub(super) async fn load_ehrs_from(
         &self,
         dir: &Path,
     ) -> Result<Vec<DumpLoadFailReport>, SmError> {

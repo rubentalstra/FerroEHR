@@ -55,8 +55,8 @@
 //!   not surfaced/queried; we index `template_id`/`concept`/root only (the spec
 //!   permits an optional `_description_`) (see [`ingest`]).
 
-mod identity;
-mod ingest;
+pub(crate) mod identity;
+pub(crate) mod ingest;
 mod runtime;
 mod store;
 

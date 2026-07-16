@@ -18,21 +18,21 @@ use crate::service::{EhrbaseService, ServiceError};
 /// Cap on retained samples per (subject, variable): newest N survive. No
 /// openEHR spec governs retention — our own design (the history stays a
 /// bounded ring, not an unbounded log).
-const SAMPLE_RETENTION: i64 = 100;
+pub(super) const SAMPLE_RETENTION: i64 = 100;
 
 /// Map a persistence failure to the SM `exception` status (server fault).
-fn db_err(e: impl Into<ServiceError>) -> SmError {
+pub(super) fn db_err(e: impl Into<ServiceError>) -> SmError {
     SmError::from(e.into())
 }
 
 /// A loaded `sp_data_frame` row.
-struct FrameRow {
+pub(super) struct FrameRow {
     pub frame: DataFrame,
 }
 
 impl EhrbaseService {
     /// Whether a subject proxy is registered.
-    async fn sp_has_subject(&self, subject_id: &str) -> Result<bool, SmError> {
+    pub(super) async fn sp_has_subject(&self, subject_id: &str) -> Result<bool, SmError> {
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_subject WHERE subject_id = $1)")
             .bind(subject_id)
             .fetch_one(&self.pool())
@@ -42,7 +42,7 @@ impl EhrbaseService {
 
     /// Whether an application has registered or uses any data set
     /// (`creating_app_id` or membership of `using_app_ids`).
-    async fn sp_has_application(&self, application_id: &str) -> Result<bool, SmError> {
+    pub(super) async fn sp_has_application(&self, application_id: &str) -> Result<bool, SmError> {
         sqlx::query_scalar(
             "SELECT EXISTS(SELECT 1 FROM sp_data_set \
              WHERE creating_app_id = $1 OR using_app_ids ? $1)",
@@ -54,7 +54,7 @@ impl EhrbaseService {
     }
 
     /// Whether an environment binding is registered.
-    async fn sp_has_binding(&self, env_id: &str) -> Result<bool, SmError> {
+    pub(super) async fn sp_has_binding(&self, env_id: &str) -> Result<bool, SmError> {
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_binding WHERE env_id = $1)")
             .bind(env_id)
             .fetch_one(&self.pool())
@@ -63,7 +63,7 @@ impl EhrbaseService {
     }
 
     /// Load a subject's variable definition by canonical name.
-    async fn sp_variable(
+    pub(super) async fn sp_variable(
         &self,
         subject_id: &str,
         canonical_name: &str,
@@ -85,7 +85,7 @@ impl EhrbaseService {
     /// return its canonical name (master10 §Subject Variable Naming: an
     /// application data set "may however use data set-local aliases, for
     /// example `dob` for the canonical name `date_of_birth`").
-    async fn sp_resolve_alias(
+    pub(super) async fn sp_resolve_alias(
         &self,
         subject_id: &str,
         local_name: &str,
@@ -108,7 +108,7 @@ impl EhrbaseService {
     }
 
     /// Insert (or, for `add_subject_variable`, replace) a subject variable.
-    async fn sp_upsert_variable(
+    pub(super) async fn sp_upsert_variable(
         &self,
         subject_id: &str,
         var: &SubjectVariable,
@@ -156,7 +156,7 @@ impl EhrbaseService {
     /// Tighten an existing variable's currency (the
     /// `register_application_data_set` "reducing the currency … if the
     /// currency is lower" branch).
-    async fn sp_set_currency(
+    pub(super) async fn sp_set_currency(
         &self,
         subject_id: &str,
         canonical_name: &str,
@@ -176,7 +176,7 @@ impl EhrbaseService {
     }
 
     /// Load a data frame by service-wide `frame_id`.
-    async fn sp_frame(&self, frame_id: &str) -> Result<Option<FrameRow>, SmError> {
+    pub(super) async fn sp_frame(&self, frame_id: &str) -> Result<Option<FrameRow>, SmError> {
         let row = sqlx::query(
             "SELECT frame_id, model_type, primary_method, fallback_method \
              FROM sp_data_frame WHERE frame_id = $1",
@@ -214,7 +214,7 @@ impl EhrbaseService {
     /// `master07-ehr_index_service.adoc`). Order: literal EHR id (UUID that
     /// exists in `ehr`), then the EHR Index by subject id (any namespace;
     /// `Primary` instances first). `None` = unresolved.
-    async fn sp_resolve_subject_ehr(
+    pub(super) async fn sp_resolve_subject_ehr(
         &self,
         subject_id: &str,
     ) -> Result<Option<uuid::Uuid>, SmError> {
@@ -243,7 +243,7 @@ impl EhrbaseService {
     /// enforce the retention cap. "Every retrieval attempt will generate a new
     /// Sample object, regardless of whether data was actually available or
     /// not" (`sample.adoc`).
-    async fn sp_record_sample(
+    pub(super) async fn sp_record_sample(
         &self,
         subject_id: &str,
         canonical_name: &str,
@@ -294,7 +294,7 @@ impl EhrbaseService {
 
     /// The newest recorded sample for a variable (freshness candidate):
     /// `(variable sample, frame sample if frame-driven)`.
-    async fn sp_latest_sample(
+    pub(super) async fn sp_latest_sample(
         &self,
         subject_id: &str,
         canonical_name: &str,
@@ -314,7 +314,7 @@ impl EhrbaseService {
 
     /// The retrieve history of a variable, newest first
     /// (`SUBJECT_VARIABLE.history` + `last_frame`).
-    async fn sp_sample_history(
+    pub(super) async fn sp_sample_history(
         &self,
         subject_id: &str,
         canonical_name: &str,
@@ -349,7 +349,7 @@ fn parse_sample_row(
 
 /// Reassemble a [`SubjectVariable`] definition from an `sp_variable` row
 /// (runtime `history`/`last_frame` are materialised separately).
-fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVariable, SmError> {
+pub(super) fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVariable, SmError> {
     Ok(SubjectVariable {
         namespace: row.try_get("namespace").map_err(db_err)?,
         name: row.try_get("name").map_err(db_err)?,
@@ -367,7 +367,7 @@ fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVariable, SmErr
 /// Map a foreign-key violation on `sp_variable.frame_id` to a precondition
 /// error naming the missing frame (a data-set variable may only bind an
 /// existing frame), and everything else to `exception`.
-fn frame_fk_err(e: sqlx::Error, frame_id: &str) -> SmError {
+pub(super) fn frame_fk_err(e: sqlx::Error, frame_id: &str) -> SmError {
     match &e {
         // 23503 = foreign_key_violation.
         sqlx::Error::Database(db) if db.code().as_deref() == Some("23503") => {
@@ -382,7 +382,7 @@ fn frame_fk_err(e: sqlx::Error, frame_id: &str) -> SmError {
 /// Insert one `sp_data_frame` row within a transaction. A `frame_id` that
 /// collides with an existing frame (the service-wide `UNIQUE (frame_id)`) is a
 /// `precondition_violation`, not a 500.
-async fn insert_frame(
+pub(super) async fn insert_frame(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     env_id: &str,
     frame: &DataFrame,

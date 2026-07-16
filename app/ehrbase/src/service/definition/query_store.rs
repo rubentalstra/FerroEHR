@@ -37,7 +37,7 @@ impl EhrbaseService {
     /// three-part name's formalism segment is lifted out per `master04`
     /// §Registered Queries, G-05-04). Identity is case-insensitive (BASE
     /// master05 §Composite Identifiers and Case, G-05-14).
-    async fn query_exists(&self, a_query_name: &str) -> Result<bool, ServiceError> {
+    pub(super) async fn query_exists(&self, a_query_name: &str) -> Result<bool, ServiceError> {
         let qualified = parse_qualified_name(a_query_name).qualified();
         let (rdn, semantic) = split_qualified(&qualified);
         Ok(sqlx::query_scalar::<_, bool>(
@@ -62,7 +62,7 @@ impl EhrbaseService {
     /// PORT NOTE (G-05-09, spec naming): the SM precondition names
     /// `is_valid_query` though the function is `valid_query`; we enforce
     /// `valid_query` and reject an invalid query as `invalid_query` (`422`).
-    async fn query_store_sm(
+    pub(super) async fn query_store_sm(
         &self,
         text: String,
         a_type: &str,
@@ -112,7 +112,7 @@ impl EhrbaseService {
     }
 
     /// `list_queries` — all registered queries, as descriptors.
-    async fn stored_query_descriptors(
+    pub(super) async fn stored_query_descriptors(
         &self,
         page: Page,
     ) -> Result<Vec<QueryDescriptor>, ServiceError> {
@@ -142,7 +142,7 @@ impl EhrbaseService {
     /// text — a query matches when its source contains a substring matching the
     /// artefact pattern. Replacing the raw-text scan with that analysed set is
     /// the future AQL-surface work.
-    async fn query_list_matching(
+    pub(super) async fn query_list_matching(
         &self,
         id_pattern: &str,
         artefact_id_pattern: Option<&str>,
@@ -175,7 +175,7 @@ impl EhrbaseService {
     /// `delete_query` (Pre `has_query` / Post `query_deleted`) — delete every
     /// version of the query with qualified name `a_query_name` (the SM keys
     /// deletion by *name*); absent → `404`. Identity is case-insensitive.
-    async fn query_delete(&self, a_query_name: &str) -> Result<(), ServiceError> {
+    pub(super) async fn query_delete(&self, a_query_name: &str) -> Result<(), ServiceError> {
         let qualified = parse_qualified_name(a_query_name).qualified();
         let (rdn, semantic) = split_qualified(&qualified);
         let deleted = sqlx::query(
@@ -200,7 +200,7 @@ impl EhrbaseService {
     ///
     /// PORT NOTE: counts distinct *qualified names* (a query with N stored
     /// versions counts once) — the natural reading of "total count of queries".
-    async fn query_count(&self) -> Result<i64, ServiceError> {
+    pub(super) async fn query_count(&self) -> Result<i64, ServiceError> {
         Ok(sqlx::query_scalar::<_, i64>(
             "SELECT count(*) FROM \
              (SELECT DISTINCT reverse_domain_name, semantic_id FROM stored_query) t",
@@ -211,7 +211,7 @@ impl EhrbaseService {
 
     /// `valid_query` — `a_query_text` is a valid instance of formalism `a_type`.
     #[must_use]
-    fn valid_query_source(a_query_text: &str, a_type: &str) -> bool {
+    pub(super) fn valid_query_source(a_query_text: &str, a_type: &str) -> bool {
         valid_query_text(a_query_text, a_type)
     }
 
@@ -229,7 +229,7 @@ impl EhrbaseService {
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case, G-05-14).
-    async fn store_query_version(
+    pub(in crate::service) async fn store_query_version(
         &self,
         qualified_name: &str,
         version: Option<&str>,
@@ -319,7 +319,7 @@ impl EhrbaseService {
     /// (`{major}` or `{major}.{minor}` → the *highest* matching stored version,
     /// `parameters/path/version.yaml`, G-05-13), or the latest when no version
     /// is given. Identity is case-insensitive (G-05-14).
-    async fn get_stored_query(
+    pub(in crate::service) async fn get_stored_query(
         &self,
         qualified_name: &str,
         version: Option<&str>,
@@ -370,7 +370,7 @@ impl EhrbaseService {
     /// starting with `org.openehr`"; empty ⇒ wildcard). All stored versions of
     /// every matching name are returned. The prefix match is case-insensitive
     /// (G-05-14).
-    async fn list_stored_queries(
+    pub(in crate::service) async fn list_stored_queries(
         &self,
         name_pattern: &str,
     ) -> Result<Vec<Value>, ServiceError> {
@@ -491,14 +491,29 @@ fn is_partial_semver(version: &str) -> bool {
 // ── SM Definitions native API (I_DEFINITION_QUERY) ───────────────────────────
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
         Ok(self.query_exists(&a_query_name).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn valid_query(&self, a_query_text: &str, a_type: &str) -> Result<bool, SmError> {
         Ok(Self::valid_query_source(a_query_text, a_type))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn store_query(
         &self,
         a_query_text: String,
@@ -516,6 +531,10 @@ impl EhrbaseService {
     /// PORT NOTE: an explicit spec TODO with no defined semantics
     /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
     /// spec defines it.
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
         Err(SmError::new(
             CallStatusType::NotImplemented,
@@ -523,10 +542,20 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self.stored_query_descriptors(page).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_matching_queries(
         &self,
         id_pattern: String,
@@ -538,10 +567,20 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
         Ok(self.query_delete(&a_query_name).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn queries_count(&self) -> Result<i64, SmError> {
         Ok(self.query_count().await?)
     }

@@ -192,7 +192,7 @@ impl EhrbaseService {
     /// Convert a single TDD and commit it through the validated
     /// [`Self::create_composition`] path. Returns the created COMPOSITION's
     /// `OBJECT_VERSION_ID`.
-    async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
+    pub(super) async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
         let composition = self.prepare_one_tdd(ehr_id, tdd).await?;
         // The validated commit path (WebTemplate + RM-invariant + terminology
         // validation, contribution/audit).
@@ -205,7 +205,7 @@ impl EhrbaseService {
     /// Convert and commit a batch of TDDs, all-or-nothing (G-M8): every TDD is
     /// parsed and converted before any is committed, so a single unconvertible
     /// TDD rejects the whole batch with nothing committed.
-    async fn import_tdds_batch(
+    pub(super) async fn import_tdds_batch(
         &self,
         ehr_id: Uuid,
         tdds: &[String],

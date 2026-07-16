@@ -55,7 +55,7 @@ use uuid::Uuid;
 /// across service clones (single registry view); cleared wholesale on any
 /// tenant CRUD write. Multi-tenancy is spec-silent — our own extension
 /// ([`crate::extensions::tenancy`]).
-type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
+pub(crate) type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
 
 /// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
 /// audit rows. Configurable per deployment (`main.rs` wires it from config).
@@ -65,11 +65,11 @@ pub const DEFAULT_SYSTEM_ID: &str = "ehrbase-rs.local";
 /// native traits.
 #[derive(Debug, Clone)]
 pub struct EhrbaseService {
-    pool: PgPool,
+    pub(crate) pool: PgPool,
     system_id: String,
     /// Cache of `WebTemplate`s built from stored OPTs, used by composition
     /// validation on create/update. Cheaply cloneable (moka-backed).
-    web_templates: WebTemplateCache,
+    pub(crate) web_templates: WebTemplateCache,
     /// Version signer (`VERSION.signature`, RM common master06 §Digital
     /// Signature). Defaults to server-side `digest` signing; `main.rs` wires
     /// the configured [`Signer`].
@@ -77,33 +77,33 @@ pub struct EhrbaseService {
     /// The optional IHE ATNA audit sender realizing the SM `I_SYSTEM_LOG`
     /// component (`crate::system_log`). `None` = auditing off; the binary
     /// wires the configured [`AuditSender`] via [`Self::with_audit`].
-    audit: Option<AuditSender>,
+    pub(crate) audit: Option<AuditSender>,
     /// The optional external terminology provider (FHIR R4), selected when a
     /// deployment opts in ([`ExternalTerminologyConfig`]). Used by AQL
     /// `TERMINOLOGY(…)` resolution; `None` keeps terminology on the
     /// in-process `openehr-term` bundle only.
-    external_terminology: Option<Arc<FhirTerminologyProvider>>,
+    pub(crate) external_terminology: Option<Arc<FhirTerminologyProvider>>,
     /// The optional `DV_MULTIMEDIA` externalization engine (no openEHR spec
     /// governs media externalization — our own extension,
     /// [`crate::extensions::multimedia`]). `None` (default) = inline
     /// behaviour byte-identical.
-    multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
+    pub(crate) multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
     /// The optional Subject Proxy FHIR-frame executor, selected when a
     /// deployment configures FHIR systems ([`SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
-    subject_proxy_fhir: Option<Arc<subject_proxy::SubjectProxyFhir>>,
+    pub(crate) subject_proxy_fhir: Option<Arc<subject_proxy::SubjectProxyFhir>>,
     /// Multi-tenancy tenant registry cache (extension; empty and unconsulted
     /// in single-tenant mode).
-    tenant_cache: TenantCache,
+    pub(crate) tenant_cache: TenantCache,
     /// Per-EHR cache of the current `EHR_ACCESS` scheme settings ("All access
     /// decisions to data in the EHR must be made in accordance with the
     /// policies and rules in this object" — RM ehr `ehr_access.adoc`).
     /// Invalidated on every `EHR_ACCESS` commit.
-    ehr_access: ehr::EhrAccessCache,
+    pub(in crate::service) ehr_access: ehr::EhrAccessCache,
     /// Bounded cache of lowered AQL plans keyed on the query text (P20). Shared
     /// across service clones (moka-backed). No openEHR spec governs it — our
     /// own performance design.
-    plan_cache: PlanCache,
+    pub(crate) plan_cache: PlanCache,
     /// Per-query DB execution budget (`[query].timeout_ms`); `None` disables it
     /// (the global request timeout is then the only guard). On overrun the query
     /// is reported as `408`. No openEHR spec governs a query timeout — our own
@@ -127,7 +127,7 @@ pub struct EhrbaseService {
     /// or absent entry falls back to a full read, so it is invalidation-free by
     /// construction (an EHR's identity at creation is immutable). No openEHR spec
     /// governs it — our own performance design.
-    created_ehr_repr: moka::future::Cache<Uuid, Value>,
+    pub(in crate::service) created_ehr_repr: moka::future::Cache<Uuid, Value>,
 }
 
 impl EhrbaseService {
@@ -160,7 +160,7 @@ impl EhrbaseService {
     /// tenant's own `system_id` when tenancy is on, else the configured
     /// default (with tenancy off the task-local is never set and this is
     /// byte-identical to the configured `system_id`).
-    fn effective_system_id(&self) -> String {
+    pub(crate) fn effective_system_id(&self) -> String {
         crate::extensions::tenant_context::current()
             .map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
@@ -239,7 +239,7 @@ impl EhrbaseService {
 
     /// Whether the transactional event outbox is written on commit (see
     /// [`Self::with_outbox_enabled`]).
-    fn outbox_enabled(&self) -> bool {
+    pub(crate) fn outbox_enabled(&self) -> bool {
         self.outbox_enabled
     }
 
@@ -254,13 +254,13 @@ impl EhrbaseService {
     }
 
     /// The configured version [`Signer`] (used for read-time verification).
-    fn signer(&self) -> &Signer {
+    pub(crate) fn signer(&self) -> &Signer {
         &self.signer
     }
 
     /// The write-time signing context (RM common master06 §Digital Signature)
     /// threaded into every versioned-object commit.
-    fn signing_ctx(&self) -> SigningCtx<'_> {
+    pub(crate) fn signing_ctx(&self) -> SigningCtx<'_> {
         SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
@@ -362,6 +362,11 @@ impl CommitEnv for EhrbaseService {
 /// FLAT/STRUCTURED conversion, and `wt+json` (the derived runtime artefact —
 /// the `WebTemplate` format itself is spec-silent, `crate::templates`).
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, SmError> {
         Ok(self.web_template_for(template_id).await?)
     }

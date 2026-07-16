@@ -61,7 +61,7 @@ impl EhrbaseService {
     /// `OBJECT_REF`s, or — with `resolve_refs` — as the resolved
     /// `ORIGINAL_VERSION` objects (ITS-REST `Prefer: resolve_refs`,
     /// `Requests_and_responses` §Representation details negotiation).
-    async fn ehr_contribution(
+    pub(in crate::service) async fn ehr_contribution(
         &self,
         ehr_id: Uuid,
         contribution_id: Uuid,
@@ -79,6 +79,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_contribution(
         &self,
         an_ehr_id: Uuid,
@@ -91,6 +96,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_contribution(
         &self,
         an_ehr_id: Uuid,
@@ -101,6 +111,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_contribution_resolved(
         &self,
         an_ehr_id: Uuid,
@@ -109,6 +124,11 @@ impl EhrbaseService {
         Ok(self.ehr_contribution(an_ehr_id, a_contrib_id, true).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn commit_contribution(
         &self,
         an_ehr_id: Uuid,
@@ -137,6 +157,11 @@ impl EhrbaseService {
         Ok(id.to_string())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_contributions(
         &self,
         an_ehr_id: Uuid,
@@ -150,6 +175,11 @@ impl EhrbaseService {
         Ok(ids.iter().map(Uuid::to_string).collect())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn contribution_count(
         &self,
         an_ehr_id: Uuid,
@@ -161,6 +191,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_contribution_commit(
         &self,
         an_ehr_id: Uuid,
