@@ -563,10 +563,15 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 - [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
 
-**Structural wave (owner-ruled 2026-07-16: B+C — see §4d plan):** delete the
+**Structural wave (owner-ruled 2026-07-16: B+C — see §4d plan; RESEQUENCED
+by owner: runs IMMEDIATELY after Wave 1 lands, BEFORE Waves 2–4):** delete the
 trait seam, absorb `ehrbase-sm` into the `ehrbase` lib, concrete `AppState`,
-new `ehrbase-server` bin, Mock → testcontainers. Sequenced after Wave 1 lands
-(same files in flight); Waves 2–4 apply to the new shape.
+new `ehrbase-server` bin, Mock → testcontainers. **Method (owner-mandated,
+the W-3f discipline): executed by the orchestrator in-session as a BIG-BANG
+nuke+rewrite — all code moves land first, compile/test convergence happens
+ONCE at the end. No intermediate green checkpoints, no compatibility shims or
+stubs to "sort of make it work" between steps.** Waves 2–4 then apply to the
+new shape.
 
 **Close:** full workspace gates → instrumented knee re-run (names the ladder
 errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.
