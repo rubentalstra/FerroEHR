@@ -1,9 +1,14 @@
-# `ehrbase` — the binary + `Platform` implementation
+# `ehrbase` — the platform library
 
-The application core (ADR-010/011): storage, service layer, AQL engine,
-versioning, CLI, plus the `signing` (VERSION.signature) and `system_log`
-(IHE ATNA) modules. Hand-written idiomatic Rust of our own design on the
-generated `openehr-*` crates.
+The application core (consolidated per ADR-018): storage, the service layer
+(one module per SM chapter — concrete `EhrbaseService` methods, no trait
+catalog), AQL engine, versioning, the full configuration tree
+(`ehrbase::config`), telemetry, plus the `signing` (VERSION.signature) and
+`system_log` (IHE ATNA) modules. Hand-written idiomatic Rust of our own
+design on the generated `openehr-*` crates. The binary lives in
+`app/ehrbase-server`; the REST adapter (`ehrbase-rest`) depends on this
+crate and calls the service directly. **Zero re-exports: every import names
+its defining module.**
 
 - **Spec first:** every spec-facing behaviour (versioning/change-control,
   validation, AQL semantics) is implemented from the vendored text under

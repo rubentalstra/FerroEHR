@@ -27,7 +27,7 @@ COPY . .
 # before it unmounts.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/app/target,sharing=locked \
-    cargo build --release --locked -p ehrbase \
+    cargo build --release --locked -p ehrbase-server \
     && cp target/release/ehrbase /usr/local/bin/ehrbase \
     && strip /usr/local/bin/ehrbase
 

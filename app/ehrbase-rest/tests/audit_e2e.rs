@@ -2,7 +2,7 @@
 //!
 //! Drives the assembled router (auth + audit + dispatch) with `tower`'s
 //! `oneshot`, over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`
-//! + in-memory `AuditSink` are gone). Auditing now runs the real ATNA path: an
+//! and its in-memory `AuditSink` are gone). Auditing now runs the real ATNA path: an
 //! [`AuditSender`] ships a DICOM `AuditMessage` (rendered to XML, framed as an
 //! RFC 5424 syslog record) over UDP to a listener the test binds. We assert on
 //! the datagram the listener receives — the action code, outcome indicator,
@@ -183,7 +183,9 @@ async fn audit_capture_fail_closed() -> AuditSender {
     // so the 1-slot queue saturates and stays saturated.
     let resolver: SubjectResolver = Arc::new(|_ehr_id: String| {
         Box::pin(async move {
-            tokio::time::sleep(Duration::from_secs(3600)).await;
+            // Never resolves → the drain parks here forever, so the 1-slot queue
+            // saturates and every further emit is rejected.
+            std::future::pending::<()>().await;
             None
         })
     });
