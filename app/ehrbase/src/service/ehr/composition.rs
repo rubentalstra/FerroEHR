@@ -26,28 +26,71 @@ use super::composition_validate::{
     check_versioned_composition_invariants, composition_template_id,
 };
 
+/// The caller's `UPDATE_VERSION` envelope resolved for a direct commit: the
+/// commit audit (caller attributes merged with the server rules — ITS-REST
+/// overview §"openehr-version and openehr-audit-details" MUST) and the write
+/// envelope (lifecycle / verbatim signature / attestations).
+pub(in crate::service) fn resolve_envelope(
+    version: &crate::service::version_update::UpdateVersion,
+    operation_change_type: &str,
+    default_description: &str,
+    system_id: &str,
+) -> (crate::versioning::AuditInput, crate::versioning::change::WriteEnvelope) {
+    let audit = crate::versioning::AuditInput::from_update(
+        &version.audit,
+        operation_change_type,
+        default_description,
+        system_id,
+    );
+    let attestations = version
+        .attestations
+        .as_ref()
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| serde_json::to_value(x).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    let envelope = crate::versioning::change::WriteEnvelope {
+        lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
+        signature: version.signature.clone(),
+        attestations,
+    };
+    (audit, envelope)
+}
+
 impl EhrbaseService {
-    /// Create a COMPOSITION in an EHR, returning it with its `uid` set and the
-    /// version metadata (the `ETag`/`Location` for `201_COMPOSITION`).
+    /// Create a COMPOSITION in an EHR from the caller's full `UPDATE_VERSION`
+    /// envelope, returning the version metadata (the `ETag`/`Location` for
+    /// `201_COMPOSITION`). The envelope's audit attributes, lifecycle state,
+    /// verbatim signature and attestations are honoured on the persisted
+    /// commit (ITS-REST committal-header merge — MUST).
     pub(crate) async fn create_composition_response(
         &self,
         ehr_id: Uuid,
-        composition: Value,
+        version: crate::service::version_update::UpdateVersion,
     ) -> Result<ServiceResponse, ServiceError> {
+        let (audit, envelope) = resolve_envelope(
+            &version,
+            change_type::CREATION,
+            "COMPOSITION creation",
+            &self.effective_system_id(),
+        );
+        // 553|incomplete| relaxes validation strictness (master06 §Version
+        // Lifecycle; blueprint incomplete-lifecycle rule).
+        let incomplete = version.lifecycle_state.code_string == "553";
+        let composition = version.data;
         // The EHR-existence (404) and content-writability (409) gates in one
         // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR Creation
         // / §EHR Active Status). Same errors, same order as the separate
         // `ensure_ehr_exists` + `ensure_content_writable` checks.
         self.ensure_ehr_content_writable(ehr_id).await?;
-        // A direct create carries no lifecycle_state → always 532|complete| →
-        // full-strictness validation (`incomplete = false`).
-        self.validate_composition_for_commit(&composition, false)
+        self.validate_composition_for_commit(&composition, incomplete)
             .await?;
         self.reject_duplicate_persistent(ehr_id, &composition)
             .await?;
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::CREATION, "COMPOSITION creation");
         let committed = create(
             &mut tx,
             Some(ehr_id),
@@ -55,6 +98,7 @@ impl EhrbaseService {
             composition,
             None,
             &audit,
+            envelope,
             &self.signing_ctx(),
         )
         .await?;
@@ -185,10 +229,18 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        composition: Value,
+        version: crate::service::version_update::UpdateVersion,
         expected: Option<TreeId>,
         current: crate::storage::version_repo::CurrentCompositionMeta,
     ) -> Result<ServiceResponse, ServiceError> {
+        let (audit, envelope) = resolve_envelope(
+            &version,
+            change_type::MODIFICATION,
+            "COMPOSITION update",
+            &self.effective_system_id(),
+        );
+        let incomplete = version.lifecycle_state.code_string == "553";
+        let composition = version.data;
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
         // and the content-write guard are checked from the threaded pre-read.
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
@@ -219,7 +271,7 @@ impl EhrbaseService {
                  composition was committed against template {stored} (template_id mismatch)"
             )));
         }
-        self.validate_composition_for_commit(&composition, false)
+        self.validate_composition_for_commit(&composition, incomplete)
             .await?;
 
         let mut tx = self.pool.begin().await?;
@@ -227,7 +279,6 @@ impl EhrbaseService {
         // `versioned_composition.adoc`), lifted out of the versioning write path
         // (G-13) — checked in the same transaction as the commit.
         check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
-        let audit = self.audit(change_type::MODIFICATION, "COMPOSITION update");
         let committed = update(
             &mut tx,
             Some(ehr_id),
@@ -237,6 +288,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            envelope,
             &self.signing_ctx(),
         )
         .await?;
@@ -351,6 +403,7 @@ impl EhrbaseService {
             Kind::Composition,
             Some(expected),
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &self.signing_ctx(),
         )
         .await?;
@@ -510,11 +563,7 @@ impl EhrbaseService {
         an_ehr_id: Uuid,
         a_comp: UpdateVersion,
     ) -> Result<String, SmError> {
-        // Inherent `create_composition` (Value) wins by method-resolution priority.
-        super::version_uid(
-            self.create_composition_response(an_ehr_id, a_comp.data)
-                .await?,
-        )
+        super::version_uid(self.create_composition_response(an_ehr_id, a_comp).await?)
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -567,14 +616,8 @@ impl EhrbaseService {
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_composition_response(
-                an_ehr_id,
-                a_versioned_object_uid,
-                a_comp.data,
-                expected,
-                current,
-            )
-            .await?,
+            self.update_composition_response(an_ehr_id, a_versioned_object_uid, a_comp, expected, current)
+                .await?,
         )
     }
 

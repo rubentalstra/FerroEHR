@@ -219,6 +219,46 @@ pub(crate) async fn commit_version_set(
         .and_then(Value::as_str)
         .map_or_else(|| cx.effective_system_id(), str::to_owned);
 
+    // Batch the modification-target existence/kind reads: a K-change commit
+    // reads every target in ONE statement (the per-version loop below only
+    // consults the map). master06 semantics are unchanged — this is read
+    // batching, which no openEHR spec governs (our own design).
+    let mut target_ids: Vec<Uuid> = Vec::new();
+    for version in versions {
+        let token = version
+            .get("commit_audit")
+            .and_then(|a| a.get("change_type"))
+            .and_then(coded_value);
+        let has_data = version.get("data").is_some_and(|d| !d.is_null());
+        let has_preceding = version
+            .get("preceding_version_uid")
+            .is_some_and(|v| !v.is_null());
+        if let Ok((action, _)) = classify(token.as_deref(), has_preceding, has_data)
+            && action != Action::Create
+            && let Ok((vo_id, _)) = parse_preceding(version)
+        {
+            target_ids.push(vo_id);
+        }
+    }
+    target_ids.sort_unstable();
+    target_ids.dedup();
+    let target_kinds: std::collections::HashMap<Uuid, Kind> =
+        crate::storage::version_repo::object_kinds(cx.pool(), &target_ids)
+            .await
+            .map_err(crate::service::ServiceError::from)?
+            .into_iter()
+            .filter_map(|(id, kind)| Kind::from_type(&kind).map(|k| (id, k)))
+            .collect();
+    let require_kind = |vo_id: Uuid| -> Result<Kind, ServiceError> {
+        target_kinds.get(&vo_id).copied().ok_or_else(|| {
+            ServiceError::BadRequest(format!(
+                "modification target does not exist: versioned object {vo_id} \
+                 (ITS-REST contribution 400 — the modification does not match \
+                 a stored object)"
+            ))
+        })
+    };
+
     let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(versions.len());
     // 666 attestations of existing versions (committing no new version).
     let mut attests: Vec<PendingAttest> = Vec::new();
@@ -247,7 +287,7 @@ pub(crate) async fn commit_version_set(
 
         if action == Action::Attest {
             let (vo_id, expected) = parse_preceding(version)?;
-            let kind = require_kind(cx.pool(), vo_id).await?;
+            let kind = require_kind(vo_id)?;
             check_kind_scope(kind, party_only)?;
             let partial = version.get("commit_audit").cloned().ok_or_else(|| {
                 ServiceError::Unprocessable(
@@ -329,7 +369,7 @@ pub(crate) async fn commit_version_set(
                     ServiceError::Unprocessable("modification version needs data".to_owned())
                 })?;
                 let (vo_id, expected) = parse_preceding(version)?;
-                let kind = require_kind(cx.pool(), vo_id).await?;
+                let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 cx.validate_for_commit(kind, &data, incomplete).await?;
                 // ORIGINAL_VERSION.other_input_version_uids: merge provenance
@@ -361,7 +401,7 @@ pub(crate) async fn commit_version_set(
             }
             Action::Delete => {
                 let (vo_id, expected) = parse_preceding(version)?;
-                let kind = require_kind(cx.pool(), vo_id).await?;
+                let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 Change::Delete {
                     vo_id,
@@ -531,17 +571,6 @@ async fn reject_duplicate_singleton(
 /// `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
 /// declares `404` only for an unknown `ehr_id` (the URI resource), never for
 /// content the committed CONTRIBUTION refers to.
-async fn require_kind(pool: &sqlx::PgPool, vo_id: Uuid) -> Result<Kind, ServiceError> {
-    revision_history::object_kind(pool, vo_id)
-        .await?
-        .ok_or_else(|| {
-            ServiceError::BadRequest(format!(
-                "modification target does not exist: versioned object {vo_id} \
-                 (ITS-REST contribution 400 — the modification does not match \
-                 a stored object)"
-            ))
-        })
-}
 
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the
 /// already-resolved numeric `audit_change_type` code, defaulting the

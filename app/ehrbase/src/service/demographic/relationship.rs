@@ -112,6 +112,7 @@ impl EhrbaseService {
         let audit = self.demographic_audit(change_type::CREATION, "PARTY_RELATIONSHIP creation");
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
+        let canonical = body.clone();
         let committed = create(
             &mut tx,
             None,
@@ -119,6 +120,7 @@ impl EhrbaseService {
             body,
             None,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &ctx,
         )
         .await?;
@@ -126,8 +128,10 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_relationship(committed.vo_id, Some(committed.tree), None)
-            .await
+        // The write response is built from the committed identity + the body
+        // already in hand — no post-write reassembly read-back (the same
+        // metadata discipline as every other write path).
+        Ok(Self::party_committed_response(canonical, &committed))
     }
 
     /// `get_party_relationship` / `get_party_relationship_at_time`
@@ -163,6 +167,7 @@ impl EhrbaseService {
 
         let audit = self.demographic_audit(change_type::MODIFICATION, "PARTY_RELATIONSHIP update");
         let ctx = CommitEnv::signing_ctx(self);
+        let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
         let committed = update(
             &mut tx,
@@ -173,6 +178,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &ctx,
         )
         .await?;
@@ -180,8 +186,8 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        self.read_relationship(vo_id, Some(committed.tree), None)
-            .await
+        // Metadata + in-hand body — no post-write reassembly read-back.
+        Ok(Self::party_committed_response(canonical, &committed))
     }
 
     /// `delete_party_relationship` (`i_party_relationship.adoc`): logically
@@ -222,6 +228,7 @@ impl EhrbaseService {
             Kind::PartyRelationship,
             Some(expected),
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &ctx,
         )
         .await?;

@@ -85,6 +85,45 @@ pub(crate) struct AuditInput {
 }
 
 impl AuditInput {
+    /// Build the commit audit from the caller's `UPDATE_VERSION.audit`
+    /// envelope, merged with the server rules (ITS-REST overview
+    /// §"openehr-version and openehr-audit-details": provided attributes
+    /// "MUST be merged"; RM common master06 §Committal m4 defaults):
+    ///
+    /// - `change_type` is the OPERATION's — a direct create IS a creation, a
+    ///   PUT a modification, a DELETE a deletion — never client-overridable
+    ///   (the wire has no legal divergent value);
+    /// - `description` — the caller's when supplied, else the server default;
+    /// - `committer` — the caller's `PARTY_PROXY` (the protocol adapter has
+    ///   already defaulted an absent committer to the authenticated
+    ///   principal / system identity);
+    /// - `system_id` — the caller's when supplied, else this server's.
+    pub(crate) fn from_update(
+        update: &crate::service::version_update::UpdateAudit,
+        operation_change_type: &str,
+        default_description: &str,
+        fallback_system_id: &str,
+    ) -> Self {
+        let committer = serde_json::to_value(&update.committer)
+            .unwrap_or_else(|_| serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }));
+        Self {
+            system_id: update
+                .system_id
+                .clone()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| fallback_system_id.to_owned()),
+            change_type: operation_change_type.to_owned(),
+            description: Some(
+                update
+                    .description
+                    .clone()
+                    .filter(|d| !d.is_empty())
+                    .unwrap_or_else(|| default_description.to_owned()),
+            ),
+            committer,
+        }
+    }
+
     /// The borrowed storage row shape ([`crate::storage::version_repo::AuditRow`])
     /// this audit persists as.
     pub(crate) fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {

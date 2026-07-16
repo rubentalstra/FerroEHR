@@ -320,7 +320,6 @@ async fn commit_import_scoped(
                 other_input_version_uids: &version.other_input_version_uids,
                 contribution_id,
                 audit_id,
-                template_id: None,
                 signature: version.signature.as_deref(),
             };
             crate::storage::version_repo::insert_imported_vo_version(

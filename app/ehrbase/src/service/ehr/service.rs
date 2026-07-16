@@ -213,24 +213,19 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<ServiceResponse, ServiceError> {
+        // ONE statement for the whole representation (the former four serial
+        // reads — header, EHR_STATUS identity, EHR_ACCESS ref, folder
+        // hierarchies — merged; read batching is spec-silent, our own design).
         // EHR.system_id is IMMUTABLE after creation (arch master06 §System
         // Identity) — the stored per-EHR value, never the live config.
-        let (stored_system_id, time_created) = ehr_repo::ehr_header(&self.pool, ehr_id)
+        let read = ehr_repo::ehr_summary_read(&self.pool, ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
-
-        // The current EHR_STATUS version identity in ONE metadata-only statement:
-        // its vo_id, VERSION_TREE_ID ints, and the stored per-version
-        // creating_system_id (master06 §Distributed Versioning, stable across a
-        // `with_system_id` change) — folding the prior `current_vo` +
-        // `version_creating_system_id` two-read pair.
-        let status = version_repo::current_version_meta_by_kind(
-            &self.pool,
-            ehr_id,
-            Kind::EhrStatus.as_str(),
-        )
-        .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let stored_system_id = read.system_id;
+        let time_created = read.time_created;
+        let status = read
+            .status
+            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
         let status_version = TreeId::from_columns(
             status.trunk_version,
             status.branch_number,
@@ -259,7 +254,7 @@ impl EhrbaseService {
         // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS container
         // (invariant Ehr_access_valid — RM ehr, EHR class). Every EHR this
         // service creates has one; tolerate absence only for raw fixtures.
-        if let Some((access_vo, _)) = self.current_vo(ehr_id, Kind::EhrAccess).await? {
+        if let Some(access_vo) = read.access_vo {
             body["ehr_access"] = json!({
                 "_type": "OBJECT_REF",
                 "namespace": "local",
@@ -270,8 +265,8 @@ impl EhrbaseService {
         // EHR.folders (0..1) + EHR.directory (0..1): the LIVE hierarchies in rank
         // order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant Folders_valid;
         // directory = folders.item(1), Directory_in_folders — RM ehr, EHR class).
-        let folders = self.live_folder_hierarchies(ehr_id).await?;
-        let refs: Vec<Value> = folders
+        let refs: Vec<Value> = read
+            .folders
             .iter()
             .map(|vo| {
                 json!({
