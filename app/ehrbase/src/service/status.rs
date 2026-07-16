@@ -32,7 +32,7 @@
 /// (`docs/design/sm-platform/05-ehr.md`); this enum is their one concrete
 /// home.
 ///
-/// Deliberately **not** `#[non_exhaustive]`: `ehrbase-sm` is an internal,
+/// Deliberately **not** `#[non_exhaustive]`: this is an internal,
 /// unpublished workspace crate, so the attribute would buy no
 /// forward-compatibility — it would only force wildcard match arms in the
 /// protocol adapter's SM → HTTP table that silently swallow any future

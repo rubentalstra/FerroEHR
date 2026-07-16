@@ -8,7 +8,7 @@
 //! `content_valid`, both over a `LOCATABLE`). SM keeps `I_VALIDITY_CHECKER` in
 //! its `common` package (not among the platform *services*), so its impl sits as
 //! a peer file `service/validity.rs`, mirroring the SM placement
-//! (`ehrbase-sm/src/services/common/validity.rs`).
+//! (SM `I_VALIDITY_CHECKER`, `i_validity_checker.adoc`).
 //!
 //! Validation itself is owned by the validation register (`src/validation/`);
 //! this file is only the SM interface adapter over the shared choke points

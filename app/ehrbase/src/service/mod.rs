@@ -1,10 +1,10 @@
 //! The application service layer: the SM Platform Service Model realization,
-//! one folder per SM chapter mirroring `app/ehrbase-sm/src/services/`
+//! one folder per SM chapter
 //! (vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`).
 //!
 //! Each chapter folder carries the domain logic plus its
 //! `impl <Interface>Service for EhrbaseService` blocks — the SM native traits
-//! in `ehrbase-sm` are the fixed service seam the protocol adapter
+//! are the service surface the protocol adapter
 //! (`ehrbase-rest`) calls through. Change-control semantics live in
 //! [`crate::versioning`]; SQL row I/O lives in [`crate::storage`] (no openEHR
 //! spec governs the SQL — our own design); this layer orchestrates.
@@ -416,7 +416,7 @@ pub enum ServiceError {
 impl ServiceError {
     /// Construct the [`ServiceError`] variant for an SM call status — the
     /// service-side entry into the single SM ↔ `ServiceError` ↔ HTTP table
-    /// (statuses per `CALL_STATUS_TYPE` + descendants, `ehrbase-sm::error`).
+    /// (statuses per `CALL_STATUS_TYPE` + descendants, `service::status`).
     ///
     /// Consistency with the wire is test-enforced: for every status,
     /// `ApiError::from(ServiceError::sm(s, m))` and

@@ -14,7 +14,7 @@
 //!   the `userinfo` component with [`REDACTED`]
 //!   (`postgres://***@host:5432/db`).
 //!
-//! Both types live in `ehrbase-sm` — the shared bottom application crate that
+//! Both types are configuration primitives the whole platform shares —
 //! both `ehrbase` and `ehrbase-rest` already depend on — so every section
 //! struct across the two upper crates can use one shared secret representation.
 //! Each `Secret`-typed key has a `*_file` sibling resolved by the loader
