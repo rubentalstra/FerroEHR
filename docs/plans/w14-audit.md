@@ -11,6 +11,24 @@ pair → ECC zero-drift.
 Standing rules apply: measured numbers only; spec citations only (never ADRs);
 no test weakening; ECC baseline ratchets only upward.
 
+**Owner rules for this phase (2026-07-16):**
+
+1. **Greenfield — nuking rewrites welcome.** This is a greenfield application:
+   when a probe shows a subsystem is structurally slow or structurally lossy,
+   the fix is a proper redesign/rewrite of that path (W-3c/W-3f style), never
+   a patch bolted onto a bad shape. No quick fixes; no deferrals dressed as
+   fixes. A fix wave may nuke and re-author an entire module if that is the
+   right shape.
+2. **Spec triage on every finding.** `docs/specs/openehr/` is the oracle
+   (`/spec-lookup`). Every OPT/DEFECT row gets a spec triage before its fix
+   ships: (a) does the spec MANDATE the behaviour (then the fix must preserve
+   it — cite file + section); (b) is the spec SILENT (then flag "no openEHR
+   spec governs this — our own design" and optimize freely); (c) does the
+   current code DIVERGE from the spec (then the fix is the spec-true
+   behaviour, and it may supersede the perf concern). Status-code and wire
+   findings triage against ITS-REST; versioning against RM common; AQL
+   against QUERY. No fix merges without its triage line in the receipt.
+
 ## 0. Method
 
 Three passes over the full surface, in order:
