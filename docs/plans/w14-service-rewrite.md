@@ -106,10 +106,13 @@ findings register: `w14-audit.md` §4/§5.
       NOTE: the earlier strip-and-readd visibility experiment stays
       REVERTED (no definition spans for E0624/E0616); the fleet set
       deliberate visibility per folder instead.
-- [ ] S6 gates: workspace clippy/nextest green, ECC **zero-drift vs the B+C
-      receipt (370·335·0)**, fresh benchmark pair at W-14 close. Register
-      refreshed 2026-07-16 (`w14-audit.md`: wave state + §4k fleet
-      findings + the issue #94/#95 plans).
+- [x] S6 gates (2026-07-17): workspace clippy clean, nextest
+      **1656/1656** (the three convergence-era defects fixed: the ADL2
+      list_opts mis-rename, the moved fhir_inbound fixture path, the moved
+      telemetry snapshot), ECC **370·335·0 — exact zero drift vs the B+C
+      receipt**. Register refreshed (`w14-audit.md`: wave state + §4k
+      fleet findings + the issue #94/#95 plans). The fresh benchmark pair
+      rides at final W-14 close, after the remaining fix waves.
 - [ ] S7 (owner 2026-07-16, parked on the agent rate limit): finish the
       global tracker-ID comment scrub — no F-nn/S-nn/G-nn/W-nn/etc. anywhere
       in code; only `docs/specs/openehr/` citations. Partial slice landed
