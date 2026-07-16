@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The application is consolidated to two library crates plus a thin binary
+  (`ehrbase` — the platform, `ehrbase-rest` — the ITS-REST adapter,
+  `ehrbase-server` — the binary): the `ehrbase-sm` trait catalog is gone,
+  the REST adapter calls the concrete platform service directly, and the
+  full configuration tree (`[server]`, `[auth]`, `[authz]`, `[smart]`,
+  `[management]`, `[tenancy]`, `[admin]`) is defined in the platform crate.
+  The served wire, the `ehrbase.toml` schema, and the container entrypoint
+  (`ehrbase`) are unchanged.
+- Bundle-backed terminology lookups and template/query validity checks are
+  now synchronous in-process calls (no behaviour change on the wire).
+
+### Changed
+
 - The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
   spec-selector family documents) and the SMART `.well-known/smart-configuration`
   discovery document are now built once at server startup instead of being
