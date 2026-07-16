@@ -491,29 +491,14 @@ fn is_partial_semver(version: &str) -> bool {
 // ── SM Definitions native API (I_DEFINITION_QUERY) ───────────────────────────
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
         Ok(self.query_exists(&a_query_name).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub fn valid_query(&self, a_query_text: &str, a_type: &str) -> Result<bool, SmError> {
         Ok(Self::valid_query_source(a_query_text, a_type))
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn store_query(
         &self,
         a_query_text: String,
@@ -531,10 +516,6 @@ impl EhrbaseService {
     /// PORT NOTE: an explicit spec TODO with no defined semantics
     /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
     /// spec defines it.
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
         Err(SmError::new(
             CallStatusType::NotImplemented,
@@ -542,20 +523,10 @@ impl EhrbaseService {
         ))
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self.stored_query_descriptors(page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_matching_queries(
         &self,
         id_pattern: String,
@@ -567,20 +538,10 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
         Ok(self.query_delete(&a_query_name).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn queries_count(&self) -> Result<i64, SmError> {
         Ok(self.query_count().await?)
     }
