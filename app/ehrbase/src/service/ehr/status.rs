@@ -70,13 +70,17 @@ impl EhrbaseService {
     /// re-reads the row it just wrote. Every caller uses only the `uid`
     /// (`version_uid(…)`); a `Prefer: return=representation` body is read back at
     /// the protocol layer, matching the COMPOSITION/DIRECTORY write paths.
-    pub(in crate::service) async fn status_update(
+    /// The one EHR_STATUS commit core (`replace_ehr_status` and the discrete
+    /// SM mutators both land here): commit a new version from the caller's
+    /// full `UPDATE_VERSION` envelope, sync the promoted subject columns, and
+    /// return the committed version identity.
+    async fn commit_status(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
         version: crate::service::version_update::UpdateVersion,
         if_match: &str,
-    ) -> Result<ServiceResponse, ServiceError> {
+    ) -> Result<crate::versioning::Committed, ServiceError> {
         let (audit, envelope) = crate::service::ehr::composition::resolve_envelope(
             &version,
             change_type::MODIFICATION,
@@ -106,14 +110,14 @@ impl EhrbaseService {
         self.sync_ehr_subject(&mut tx, ehr_id, &body).await?;
         tx.commit().await?;
 
-        Ok(self.committed_response(ehr_id, &committed))
+        Ok(committed)
     }
 
     /// Apply a single in-place mutation to the current `EHR_STATUS` root and
     /// commit it as a new implicit-CONTRIBUTION version — the shared body of the
     /// discrete `I_EHR_STATUS` mutators (`i_ehr_status.adoc` §`set_ehr_queryable` …
     /// §`update_other_details`), formally equivalent to the whole-object replace
-    /// (`master02-overview.adoc` §Interface Calls). Reuses [`Self::status_update`]
+    /// (`master02-overview.adoc` §Interface Calls). Reuses [`Self::commit_status`]
     /// with the current version uid as the preceding version (server-driven
     /// optimistic lock).
     ///
@@ -126,7 +130,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
-    ) -> Result<ServiceResponse, ServiceError> {
+    ) -> Result<crate::versioning::Committed, ServiceError> {
         // Resolve the current EHR_STATUS versioned object once and read its body;
         // the resolved `vo_id` threads into `status_update` so its commit skips a
         // second `current_vo` resolution.
@@ -150,7 +154,7 @@ impl EhrbaseService {
             map.remove("uid");
             mutate(map);
         }
-        self.status_update(
+        self.commit_status(
             ehr_id,
             vo_id,
             crate::service::version_update::UpdateVersion::direct(body),
@@ -474,12 +478,12 @@ impl EhrbaseService {
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
-        version_uid(
-            self.status_mutate(an_ehr_id, |m| {
+        Ok(self
+                .status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(true));
             })
-            .await?,
-        )
+                .await?
+                .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -488,12 +492,12 @@ impl EhrbaseService {
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
     pub async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
-        version_uid(
-            self.status_mutate(an_ehr_id, |m| {
+        Ok(self
+                .status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(false));
             })
-            .await?,
-        )
+                .await?
+                .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -502,12 +506,12 @@ impl EhrbaseService {
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
-        version_uid(
-            self.status_mutate(an_ehr_id, |m| {
+        Ok(self
+                .status_mutate(an_ehr_id, |m| {
                 m.insert("is_modifiable".to_owned(), Value::Bool(true));
             })
-            .await?,
-        )
+                .await?
+                .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -518,12 +522,12 @@ impl EhrbaseService {
     pub async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
-        version_uid(
-            self.status_mutate(an_ehr_id, |m| {
+        Ok(self
+                .status_mutate(an_ehr_id, |m| {
                 m.insert("is_modifiable".to_owned(), Value::Bool(false));
             })
-            .await?,
-        )
+                .await?
+                .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -536,12 +540,12 @@ impl EhrbaseService {
         an_ehr_id: Uuid,
         a_details: Value,
     ) -> Result<String, SmError> {
-        version_uid(
-            self.status_mutate(an_ehr_id, move |m| {
+        Ok(self
+                .status_mutate(an_ehr_id, move |m| {
                 m.insert("other_details".to_owned(), a_details);
             })
-            .await?,
-        )
+                .await?
+                .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -571,10 +575,10 @@ impl EhrbaseService {
             .preceding_version_uid
             .map(|o| o.value)
             .unwrap_or_default();
-        version_uid(
-            self.status_update(an_ehr_id, vo_id, a_status, &if_match)
-                .await?,
-        )
+        Ok(self
+            .commit_status(an_ehr_id, vo_id, a_status, &if_match)
+            .await?
+            .version_uid())
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
