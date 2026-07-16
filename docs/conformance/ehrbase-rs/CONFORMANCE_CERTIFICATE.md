@@ -5,19 +5,19 @@
 - **Assessor:** self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework
 - **This is NOT an official openEHR conformance certification.** No official openEHR certification program exists; this artefact is a self-assessment produced by an independent framework.
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
-- **ECC framework version:** 3.0.1 · catalogue `inventory/ecc-catalog.tsv`
+- **ECC framework version:** 3.0.3 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-15T20:11:20.259621Z
+- **Run date:** 2026-07-16T14:15:27.194641Z
 
 ## System Under Test (SUT)
 
 | | |
 |---|---|
-| Solution | ehrbase-rs ehrbase-rs 3.0.1 @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
+| Solution | ehrbase-rs ehrbase-rs 3.0.3 @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-15T20:11:20.259621Z |
+| Date | 2026-07-16T14:15:27.194641Z |
 
 ## Scope of Test
 
