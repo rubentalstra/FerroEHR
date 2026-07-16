@@ -63,7 +63,7 @@ impl EhrbaseService {
     /// is the offloaded body, which the in-memory input does not reflect, so the
     /// fresh read is kept for byte-fidelity (no openEHR spec governs media
     /// externalization — our own extension).
-    pub(crate) async fn create_party_response(
+    pub(crate) async fn commit_new_party(
         &self,
         kind: PartyKind,
         body: Value,
@@ -165,7 +165,7 @@ impl EhrbaseService {
     /// seam (`super::api`) resolves for `If-Match` and calls `commit_party_update`
     /// directly, threading its handle so the target is resolved only once across
     /// the request. `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(crate) async fn update_party_response(
+    pub(crate) async fn commit_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -191,6 +191,7 @@ impl EhrbaseService {
         current: CurrentParty,
         body: Value,
         expected: Option<TreeId>,
+        update: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let kind = current.kind;
         if current.deleted {
@@ -250,11 +251,12 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
     /// `409`; when `None`, the current version is deleted unconditionally (SM
     /// `delete_party` has no version argument). An already-deleted target → `400`.
-    pub(crate) async fn delete_party_response(
+    pub(crate) async fn commit_party_delete(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
         expected: Option<TreeId>,
+        update: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
@@ -287,7 +289,15 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = self.demographic_audit(change_type::DELETED, "PARTY delete");
+        let audit = match update {
+            Some(u) => crate::versioning::AuditInput::from_update(
+                u,
+                change_type::DELETED,
+                "PARTY delete",
+                &self.effective_system_id(),
+            ),
+            None => self.demographic_audit(change_type::DELETED, "PARTY delete"),
+        };
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(

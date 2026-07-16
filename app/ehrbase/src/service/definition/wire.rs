@@ -52,7 +52,7 @@ impl EhrbaseService {
         // (`operations/definition_template_adl1.4_list.yaml`). Filter + paginate
         // the stored template descriptors (from the templates layer) here.
         Ok(filter_templates(
-            self.list_templates_response().await?,
+            self.template_summaries().await?,
             &filter,
             page,
         ))
@@ -177,7 +177,7 @@ impl EhrbaseService {
         }
         // The effective version is recovered by the dispatcher through the list
         // seam for the `Location` header; the store itself is bodyless.
-        self.store_query_response(&qualified_query_name, version.as_deref(), body)
+        self.store_query_version(&qualified_query_name, version.as_deref(), body)
             .await?;
         Ok(())
     }

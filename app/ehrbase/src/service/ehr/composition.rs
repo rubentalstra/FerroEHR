@@ -169,7 +169,7 @@ impl EhrbaseService {
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.
-    pub(in crate::service) async fn composition_revision_history_response(
+    pub(in crate::service) async fn composition_revision_history_value(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -195,7 +195,7 @@ impl EhrbaseService {
     /// `at` is `None` (`GET …/versioned_composition/{uid}/version`, F-02-04). A
     /// deleted version still returns `200` with the deleted-lifecycle
     /// `ORIGINAL_VERSION` (no `data`).
-    pub(in crate::service) async fn composition_version_at_time_response(
+    pub(in crate::service) async fn composition_version_at_time_read(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -614,7 +614,7 @@ impl EhrbaseService {
         a_versioned_object_uid: Uuid,
     ) -> Result<Value, SmError> {
         Ok(self
-            .composition_revision_history_response(an_ehr_id, a_versioned_object_uid)
+            .composition_revision_history_value(an_ehr_id, a_versioned_object_uid)
             .await?)
     }
 
@@ -631,7 +631,7 @@ impl EhrbaseService {
     ) -> Result<Value, SmError> {
         let at = a_time.as_deref().map(super::parse_at_time).transpose()?;
         Ok(self
-            .composition_version_at_time_response(an_ehr_id, a_versioned_object_uid, at)
+            .composition_version_at_time_read(an_ehr_id, a_versioned_object_uid, at)
             .await?
             .body)
     }
