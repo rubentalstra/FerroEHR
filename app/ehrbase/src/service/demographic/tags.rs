@@ -13,7 +13,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::demographic::types::PartyKind;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::storage::tag_repo;
 
 impl EhrbaseService {

@@ -13,7 +13,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::service::response::ServiceResponse;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::TreeId;
 
 impl EhrbaseService {

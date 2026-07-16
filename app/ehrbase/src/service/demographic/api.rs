@@ -18,7 +18,8 @@ use crate::service::demographic::types::PartyKind;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{
     components, expected_from_if_match, parse_uid_based_id, parse_version_uid,
 };

@@ -16,7 +16,7 @@
 use openehr_term::bundle::openehr;
 use serde_json::{Value, json};
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
 pub(crate) const OPENEHR: &str = "openehr";

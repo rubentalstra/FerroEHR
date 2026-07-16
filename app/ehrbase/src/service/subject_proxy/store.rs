@@ -12,7 +12,8 @@ use crate::service::status::SmError;
 use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
 use crate::service::subject_proxy::sample::{DataFrameSample, VariableSample};
 use crate::service::subject_proxy::variable::SubjectVariable;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 /// Cap on retained samples per (subject, variable): newest N survive. No
 /// openEHR spec governs retention — our own design (the history stays a

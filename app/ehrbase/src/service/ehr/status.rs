@@ -16,7 +16,8 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{
     Kind, TreeId, change_type, expected_from_if_match, original_version, parse_tree_id,
     read_current, read_version, revision_history, update, version_at, versioned_object,

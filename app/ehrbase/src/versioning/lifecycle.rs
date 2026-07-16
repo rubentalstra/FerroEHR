@@ -12,7 +12,7 @@
 //! the current state from the preceding version and rejecting a transition the
 //! spec does not sanction (previously any target state was accepted — G-01).
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use openehr_term::bundle::openehr;
 
 /// The `version_lifecycle_state` openEHR terminology group id.

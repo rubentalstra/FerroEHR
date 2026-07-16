@@ -33,7 +33,8 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::system_log::event::EventActionCode;
 use crate::versioning::{
     original_version, read_current, read_version_by_ordinal, revision_history, versioned_object,

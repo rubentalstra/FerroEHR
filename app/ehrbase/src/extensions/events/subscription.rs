@@ -22,7 +22,8 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::status::SmError;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 impl EhrbaseService {
     /// Map an `event_subscription` row to its PHI-free JSON record (NULL

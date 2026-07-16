@@ -15,7 +15,8 @@ use crate::service::status::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{
     Change, Kind, TreeId, change_type, commit_contribution, object_version_id,
 };

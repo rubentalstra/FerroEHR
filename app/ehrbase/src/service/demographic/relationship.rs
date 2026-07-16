@@ -25,7 +25,8 @@ use uuid::Uuid;
 use crate::service::demographic::support;
 use crate::service::demographic::validate::validate_relationship_body;
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::{
     CommitEnv, Kind, TreeId, VersionRead, change_type, create, delete, demographic_current,

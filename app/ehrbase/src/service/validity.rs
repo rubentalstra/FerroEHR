@@ -26,7 +26,8 @@
 use serde_json::Value;
 
 use crate::service::status::SmError;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 
 impl EhrbaseService {

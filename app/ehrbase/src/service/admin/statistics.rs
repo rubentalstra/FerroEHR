@@ -13,7 +13,8 @@
 use crate::service::admin::types::StatTimeRange;
 use crate::service::platform_service::PlatformService;
 use crate::service::status::SmError;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 /// Whether a [`PlatformService`]'s CONTRIBUTIONs are EHR-scoped (`Some(true)` →
 /// `ehr_id IS NOT NULL`), ehr-less (`Some(false)` → `ehr_id IS NULL`), or the

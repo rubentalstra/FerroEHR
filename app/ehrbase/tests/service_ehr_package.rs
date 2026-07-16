@@ -11,7 +11,8 @@
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-use ehrbase::service::{EhrbaseService, ServiceError};
+use ehrbase::service::EhrbaseService;
+use ehrbase::service::error::ServiceError;
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};

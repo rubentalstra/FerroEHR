@@ -22,7 +22,8 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::status::{CallStatusType, SmError};
-use ehrbase::service::{EhrbaseService, ServiceError};
+use ehrbase::service::EhrbaseService;
+use ehrbase::service::error::ServiceError;
 use ehrbase::versioning::change::Committed;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};

@@ -24,7 +24,8 @@ use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{Kind, TreeId, components, read_current, read_version};
 
 impl EhrbaseService {

@@ -40,7 +40,8 @@ use crate::service::ehr_index::types::SubjectRef;
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::storage::version_repo;
 
 use self::mapping::FhirMappingDefinition;
