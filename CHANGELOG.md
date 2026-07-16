@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Direct COMPOSITION create/update/delete now honour the ITS-REST committal
+  headers (`openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*`): a
+  caller-supplied committer, audit description, change type, lifecycle
+  state, signature, and attestations are merged into the stored version
+  exactly as on the CONTRIBUTION path (previously the direct paths discarded
+  them and always committed server defaults).
+- The template store no longer double-reads the OPT XML when generating an
+  example for a cold template, and template upload is a single atomic
+  statement (the duplicate-check race window is gone).
+- The event-outbox publisher declares its AMQP topology only on connect or
+  subscription change (previously every poll cycle re-declared each queue),
+  and the FHIR outbound emitter parks a persistently failing row after a
+  bounded retry budget instead of blocking the stream forever.
+
 ### Changed
 
 - The application is consolidated to two library crates plus a thin binary
@@ -27,6 +43,12 @@ workflow refuses a tag that has no matching section here.
   (`ehrbase`) are unchanged.
 - Bundle-backed terminology lookups and template/query validity checks are
   now synchronous in-process calls (no behaviour change on the wire).
+- Every versioned write now commits through the single folded
+  audit+contribution+version statement even with digest signing enabled
+  (the commit instant is read up front with the placement, so the signature
+  is computed before any insert); version-tree placement is one read instead
+  of three, and contribution commits batch their target pre-reads. Fewer
+  round trips per write, identical wire behaviour and stored semantics.
 
 ### Changed
 
