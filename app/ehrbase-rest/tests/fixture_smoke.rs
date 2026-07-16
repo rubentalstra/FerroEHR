@@ -14,16 +14,14 @@ const BASE: &str = "/ehrbase/rest/openehr/v1";
 
 #[tokio::test]
 async fn ehr_get_unknown_is_404_and_create_roundtrips() {
-    let app = common::test_router("fixture_smoke").await;
+    let (_pg, app) = common::test_router("fixture_smoke").await;
 
     let resp = app
         .clone()
         .oneshot(
-            Request::get(format!(
-                "{BASE}/ehr/3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            ))
-            .body(Body::empty())
-            .unwrap(),
+            Request::get(format!("{BASE}/ehr/3fa85f64-5717-4562-b3fc-2c963f66afa6"))
+                .body(Body::empty())
+                .unwrap(),
         )
         .await
         .unwrap();

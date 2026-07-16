@@ -42,11 +42,7 @@ use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await

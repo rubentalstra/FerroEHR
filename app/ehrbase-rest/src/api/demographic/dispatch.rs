@@ -18,11 +18,7 @@ use crate::overview::error::RestError;
 use crate::state::AppState;
 
 /// The group dispatcher: box the response future and forward to [`run`].
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await

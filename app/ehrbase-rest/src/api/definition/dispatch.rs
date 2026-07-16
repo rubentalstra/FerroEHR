@@ -14,8 +14,8 @@
 
 use axum::response::{IntoResponse, Response};
 
-use ehrbase::service::list::Page;
 use ehrbase::service::definition::types::TemplateListFilter;
+use ehrbase::service::list::Page;
 
 use crate::api::{BoxResponse, RequestParts};
 use crate::overview::error::RestError;
@@ -23,11 +23,7 @@ use crate::state::AppState;
 
 use super::{stored_query, template_adl2, template_adl14};
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await

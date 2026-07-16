@@ -69,7 +69,9 @@ pub(super) async fn run(
             // `Prefer: resolve_refs` (Requests_and_responses §Representation
             // details negotiation): versions as full ORIGINAL_VERSIONs.
             let body = if negotiate::prefers_resolve_refs(h) {
-                state.backend().get_contribution_resolved(ehr_id, cid)
+                state
+                    .backend()
+                    .get_contribution_resolved(ehr_id, cid)
                     .await?
             } else {
                 state.backend().get_contribution(ehr_id, cid).await?

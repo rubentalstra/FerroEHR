@@ -61,9 +61,12 @@ fn config(enabled: bool) -> AppConfig {
     }
 }
 
-async fn app(name: &str, enabled: bool) -> Router {
-    let service = common::test_service(name).await;
-    ehrbase_rest::build_with(config(enabled), service).expect("router builds")
+async fn app(name: &str, enabled: bool) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(name).await;
+    (
+        pg,
+        ehrbase_rest::build_with(config(enabled), service).expect("router builds"),
+    )
 }
 
 /// Upload the vendored `Demo Vitals` OPT so a mapping referencing it satisfies
@@ -145,7 +148,10 @@ fn mapping(name: &str) -> Value {
 async fn disabled_connector_is_404_operation_outcome() {
     // Mapping CRUD off.
     let (status, _, body) = send(
-        app("fhir_disabled_map", false).await,
+        {
+            let (_pg, a) = app("fhir_disabled_map", false).await;
+            a
+        },
         req("GET", MAPPINGS, None),
     )
     .await;
@@ -154,7 +160,10 @@ async fn disabled_connector_is_404_operation_outcome() {
     // Inbound off.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/x" } });
     let (status, _, body) = send(
-        app("fhir_disabled_in", false).await,
+        {
+            let (_pg, a) = app("fhir_disabled_in", false).await;
+            a
+        },
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -169,7 +178,10 @@ async fn unknown_resource_type_is_501_before_backend() {
     let uri = format!("{BASE}/fhir/r4/MedicationRequest");
     let body = json!({ "resourceType": "MedicationRequest" });
     let (status, _, oo) = send(
-        app("fhir_unknown_type", true).await,
+        {
+            let (_pg, a) = app("fhir_unknown_type", true).await;
+            a
+        },
         req("POST", &uri, Some(body)),
     )
     .await;
@@ -183,11 +195,8 @@ async fn search_returns_empty_searchset_on_empty_db() {
     // Re-targeted: with no mapping/data the real façade returns an empty
     // searchset Bundle (was a Mock-scripted one-entry Bundle).
     let uri = format!("{INGEST_OBS}?patient=p-1&_count=10");
-    let resp = app("fhir_search", true)
-        .await
-        .oneshot(req("GET", &uri, None))
-        .await
-        .expect("response");
+    let (_pg, a) = app("fhir_search", true).await;
+    let resp = a.oneshot(req("GET", &uri, None)).await.expect("response");
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(
         resp.headers()
@@ -207,7 +216,10 @@ async fn search_returns_empty_searchset_on_empty_db() {
 async fn search_missing_patient_is_400() {
     // No patient param → 400 (explicit scope only; never generic Search).
     let (status, _, oo) = send(
-        app("fhir_search_no_patient", true).await,
+        {
+            let (_pg, a) = app("fhir_search_no_patient", true).await;
+            a
+        },
         req("GET", INGEST_OBS, None),
     )
     .await;
@@ -219,7 +231,10 @@ async fn search_missing_patient_is_400() {
 async fn search_unknown_type_is_501() {
     let uri = format!("{BASE}/fhir/r4/MedicationRequest?patient=p-1");
     let (status, _, oo) = send(
-        app("fhir_search_unknown", true).await,
+        {
+            let (_pg, a) = app("fhir_search_unknown", true).await;
+            a
+        },
         req("GET", &uri, None),
     )
     .await;
@@ -231,7 +246,10 @@ async fn search_unknown_type_is_501() {
 async fn search_disabled_is_404() {
     let uri = format!("{INGEST_OBS}?patient=p-1");
     let (status, _, oo) = send(
-        app("fhir_search_disabled", false).await,
+        {
+            let (_pg, a) = app("fhir_search_disabled", false).await;
+            a
+        },
         req("GET", &uri, None),
     )
     .await;
@@ -246,7 +264,10 @@ async fn ingest_no_mapping_is_404() {
     // type with no mapping). Was Mock-scripted per resource type.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/p" } });
     let (status, _, oo) = send(
-        app("fhir_ingest_no_map", true).await,
+        {
+            let (_pg, a) = app("fhir_ingest_no_map", true).await;
+            a
+        },
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -261,7 +282,10 @@ async fn ingest_condition_no_mapping_is_404() {
     let uri = format!("{BASE}/fhir/r4/Condition");
     let body = json!({ "resourceType": "Condition", "subject": { "reference": "Patient/p" } });
     let (status, _, oo) = send(
-        app("fhir_ingest_condition", true).await,
+        {
+            let (_pg, a) = app("fhir_ingest_condition", true).await;
+            a
+        },
         req("POST", &uri, Some(body)),
     )
     .await;
@@ -283,7 +307,10 @@ async fn ingest_success_is_201_with_location() {
         "component": [ { "valueQuantity": { "value": 120, "unit": "mm[Hg]" } } ]
     });
     let (status, location, body) = send(
-        app("fhir_ingest_ok", true).await,
+        {
+            let (_pg, a) = app("fhir_ingest_ok", true).await;
+            a
+        },
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -307,7 +334,10 @@ async fn ingest_validation_rejection_is_422_with_validator_message() {
         "subject": { "reference": "Patient/invalid" }
     });
     let (status, _, body) = send(
-        app("fhir_ingest_422", true).await,
+        {
+            let (_pg, a) = app("fhir_ingest_422", true).await;
+            a
+        },
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -325,7 +355,7 @@ async fn ingest_validation_rejection_is_422_with_validator_message() {
 // ── mapping CRUD ──────────────────────────────────────────────────────────────
 #[tokio::test]
 async fn mapping_crud_round_trip() {
-    let app = app("fhir_map_crud", true).await;
+    let (_pg, app) = app("fhir_map_crud", true).await;
     upload_template(&app).await;
 
     let (status, _, list) = send(app.clone(), req("GET", MAPPINGS, None)).await;
@@ -357,7 +387,7 @@ async fn mapping_crud_round_trip() {
 
 #[tokio::test]
 async fn mapping_duplicate_name_is_409() {
-    let app = app("fhir_map_dup", true).await;
+    let (_pg, app) = app("fhir_map_dup", true).await;
     upload_template(&app).await;
     let (status, _, _) = send(app.clone(), req("POST", MAPPINGS, Some(mapping("dup")))).await;
     assert_eq!(status, StatusCode::CREATED);
@@ -369,7 +399,10 @@ async fn mapping_duplicate_name_is_409() {
 #[tokio::test]
 async fn mapping_malformed_id_is_400() {
     let (status, _, oo) = send(
-        app("fhir_map_malformed", true).await,
+        {
+            let (_pg, a) = app("fhir_map_malformed", true).await;
+            a
+        },
         req("GET", &format!("{MAPPINGS}/not-a-uuid"), None),
     )
     .await;
@@ -381,8 +414,14 @@ async fn mapping_malformed_id_is_400() {
 async fn mapping_list_enabled_is_200() {
     // Re-targeted from the old `unhooked → 501`: the mapping store is real, so an
     // enabled group lists (200), never the trait-default 501.
-    let (status, _, list) =
-        send(app("fhir_map_list", true).await, req("GET", MAPPINGS, None)).await;
+    let (status, _, list) = send(
+        {
+            let (_pg, a) = app("fhir_map_list", true).await;
+            a
+        },
+        req("GET", MAPPINGS, None),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
     assert!(list.is_array());
 }

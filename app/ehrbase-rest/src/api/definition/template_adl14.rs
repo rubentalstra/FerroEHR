@@ -35,10 +35,7 @@ use super::dispatch::list_filter_and_page;
 /// (`operations/definition_template_adl1.4_list.yaml`); they are threaded to the
 /// adapter as a [`TemplateListFilter`](ehrbase::service::adapters::TemplateListFilter)
 /// + [`Page`](ehrbase::service::list::Page) (G-1).
-pub(super) async fn list(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl14ListParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -53,10 +50,7 @@ pub(super) async fn list(
 
 /// `POST …/definition/template/adl1.4` — ingest an OPT 1.4 canonical-XML
 /// template (`operations/definition_template_adl1.4_upload.yaml`).
-pub(super) async fn upload(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, parts.query.as_deref(), h)?;
     // The OPT 1.4 template arrives as canonical XML; the lenient reader hands it
@@ -91,10 +85,7 @@ pub(super) async fn upload(
 /// template EHRbase-compatible extension), sets the mandated `ETag` (G-4), and
 /// returns `406` for an `Accept` outside `Accept_Template` (G-5). An unknown
 /// template → `404` (checked first, before negotiation).
-pub(super) async fn get(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -293,10 +284,7 @@ fn example_accept_supported(headers: &HeaderMap) -> bool {
 ///
 /// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
 /// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).
-async fn web_template_response(
-    state: &AppState,
-    template_id: &str,
-) -> Result<Response, RestError> {
+async fn web_template_response(state: &AppState, template_id: &str) -> Result<Response, RestError> {
     let built = state
         .backend()
         .web_template(template_id)

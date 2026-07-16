@@ -9,7 +9,6 @@ use axum::response::Response;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
-
 use crate::api::guarded_dispatch;
 use crate::state::AppState;
 

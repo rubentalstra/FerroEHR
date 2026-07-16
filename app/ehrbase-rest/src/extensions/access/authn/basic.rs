@@ -10,8 +10,8 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use http::HeaderValue;
 
-use ehrbase::config::auth::BasicConfig;
 use super::{AuthError, AuthMethod, Principal};
+use ehrbase::config::auth::BasicConfig;
 
 /// Verify a `Basic <base64>` credential against the configured user store.
 ///
@@ -93,8 +93,8 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ehrbase::config::auth::BasicUser;
     use argon2::password_hash::{PasswordHasher, SaltString};
+    use ehrbase::config::auth::BasicUser;
 
     fn hash(pw: &str) -> String {
         // Fixed salt keeps the test hermetic without the argon2 `rand` feature.

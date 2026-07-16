@@ -73,8 +73,9 @@ fn config() -> AppConfig {
     }
 }
 
-async fn app(db: &str) -> Router {
-    common::router_with(config(), common::test_service(db).await)
+async fn app(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
+    (pg, common::router_with(config(), service))
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
@@ -147,7 +148,7 @@ async fn commit_ips_composition(app: &Router) -> (String, String) {
 
 #[tokio::test]
 async fn options_root_is_system_options_and_conformance() {
-    let app = app("pt_options_root").await;
+    let (_pg, app) = app("pt_options_root").await;
     let req = Request::builder()
         .method("OPTIONS")
         .uri("/")
@@ -174,7 +175,7 @@ async fn options_root_is_system_options_and_conformance() {
 
 #[tokio::test]
 async fn committal_headers_merge_into_the_commit() {
-    let app = app("pt_committal_merge").await;
+    let (_pg, app) = app("pt_committal_merge").await;
     let (ehr_id, v1) = commit_ips_composition(&app).await;
     let vo = vo_of(&v1).to_owned();
 
@@ -254,7 +255,7 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
     // A required If-Match that is not a well-formed OBJECT_VERSION_ID must be a
     // client error (400), never a silent skip of the precondition — rejected
     // before the backend, so the (non-existent) target ids are irrelevant.
-    let app = app("pt_bad_ifmatch_comp").await;
+    let (_pg, app) = app("pt_bad_ifmatch_comp").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{VO_ID}"))
@@ -270,7 +271,7 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
 async fn malformed_if_match_on_ehr_status_update_is_rejected() {
     // The required-If-Match ehr_status update rejects a malformed precondition
     // (400) before the backend, never treating it as no-precondition (W-14 F-12).
-    let app = app("pt_bad_ifmatch_status").await;
+    let (_pg, app) = app("pt_bad_ifmatch_status").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/ehr_status"))
@@ -286,7 +287,7 @@ async fn malformed_if_match_on_ehr_status_update_is_rejected() {
 async fn malformed_if_match_on_directory_update_is_rejected() {
     // The required-If-Match directory update rejects a malformed precondition
     // (400) at the wire, never a silent bypass (W-14 F-12).
-    let app = app("pt_bad_ifmatch_dir").await;
+    let (_pg, app) = app("pt_bad_ifmatch_dir").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/directory"))
@@ -302,7 +303,7 @@ async fn malformed_if_match_on_directory_update_is_rejected() {
 
 #[tokio::test]
 async fn versioned_composition_serves_xml() {
-    let app = app("pt_versioned_comp_xml").await;
+    let (_pg, app) = app("pt_versioned_comp_xml").await;
     let (ehr_id, v1) = commit_ips_composition(&app).await;
     let vo = vo_of(&v1);
 
@@ -330,7 +331,7 @@ async fn composition_version_serves_xml_with_signature() {
     // `EhrbaseService` signer is enabled (SHA-256 digest), so the committed
     // version carries a genuine `sha256:` signature which the canonical XML
     // serializes into `<signature>`.
-    let app = app("pt_version_xml_sig").await;
+    let (_pg, app) = app("pt_version_xml_sig").await;
     let (ehr_id, v1) = commit_ips_composition(&app).await;
     let vo = vo_of(&v1);
 

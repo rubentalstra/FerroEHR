@@ -40,13 +40,7 @@ pub(crate) async fn query_execute_adhoc_query(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "query_execute_adhoc_query",
-        parts,
-        super::dispatch,
-    )
-    .await
+    guarded_dispatch(state, "query_execute_adhoc_query", parts, super::dispatch).await
 }
 
 /// Execute an ad-hoc AQL query supplied in the request body.
@@ -82,13 +76,7 @@ pub(crate) async fn query_execute_stored_query(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "query_execute_stored_query",
-        parts,
-        super::dispatch,
-    )
-    .await
+    guarded_dispatch(state, "query_execute_stored_query", parts, super::dispatch).await
 }
 
 /// Execute a named stored query (parameters in the request body).

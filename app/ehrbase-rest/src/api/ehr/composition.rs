@@ -22,8 +22,8 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
-use ehrbase::service::status::CallStatusType;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::status::CallStatusType;
 
 use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};

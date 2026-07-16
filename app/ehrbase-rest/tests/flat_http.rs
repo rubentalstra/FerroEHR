@@ -126,7 +126,8 @@ fn without_uids(map: BTreeMap<String, Value>) -> BTreeMap<String, Value> {
 /// A router over a fresh real service with the IPS OPT uploaded; returns the
 /// router and a created EHR id.
 async fn app_with_ehr(db: &str) -> (Router, String) {
-    let app = common::router_with(config(), common::test_service(db).await);
+    let (_pg, service) = common::test_service(db).await;
+    let app = common::router_with(config(), service);
     let (status, _h, body) = send(
         &app,
         Request::builder()

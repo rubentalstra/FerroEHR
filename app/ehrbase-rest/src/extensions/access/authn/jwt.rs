@@ -21,8 +21,8 @@ use std::time::Duration;
 use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
 
-use ehrbase::config::auth::OidcConfig;
 use super::{AuthError, AuthMethod, Principal};
+use ehrbase::config::auth::OidcConfig;
 
 /// A configured bearer-token validator.
 pub(super) struct JwtValidator {

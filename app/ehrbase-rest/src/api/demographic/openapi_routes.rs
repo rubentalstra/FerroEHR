@@ -634,13 +634,7 @@ pub(crate) async fn organisation_tags_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "organisation_tags_update",
-        parts,
-        super::dispatch,
-    )
-    .await
+    guarded_dispatch(state, "organisation_tags_update", parts, super::dispatch).await
 }
 
 /// Delete one `ITEM_TAG` from an `ORGANISATION` by key.
@@ -657,13 +651,7 @@ pub(crate) async fn organisation_tags_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "organisation_tags_delete",
-        parts,
-        super::dispatch,
-    )
-    .await
+    guarded_dispatch(state, "organisation_tags_delete", parts, super::dispatch).await
 }
 
 /// Read a `PERSON`'s `ITEM_TAGs`. 404 when absent.

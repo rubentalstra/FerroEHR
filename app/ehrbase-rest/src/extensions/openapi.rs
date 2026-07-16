@@ -54,11 +54,11 @@ use utoipa_axum::routes;
 use utoipa_swagger_ui::{Config, SwaggerFile, Url};
 
 use crate::config::AppConfig;
-use ehrbase::config::auth::AuthConfig;
 use crate::extensions::management;
 use crate::overview::status;
 use crate::smart::discovery as smart_discovery;
 use crate::state::AppState;
+use ehrbase::config::auth::AuthConfig;
 
 /// The logical name of the single advertised security scheme. One name, one
 /// scheme kind chosen by config, so the Swagger "Authorize" dialog shows exactly

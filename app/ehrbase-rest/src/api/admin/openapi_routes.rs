@@ -57,11 +57,5 @@ pub(crate) async fn admin_ehr_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "admin_ehr_delete",
-        parts,
-        super::dispatch::dispatch,
-    )
-    .await
+    guarded_dispatch(state, "admin_ehr_delete", parts, super::dispatch::dispatch).await
 }

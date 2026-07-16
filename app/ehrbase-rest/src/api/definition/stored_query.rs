@@ -33,10 +33,7 @@ const DEFAULT_QUERY_TYPE: &str = "AQL";
 
 /// `GET …/definition/query/{qualified_query_name}` — the registered queries
 /// under the qualified name (a prefix pattern; wildcard on empty).
-pub(super) async fn list(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DefinitionQueryListParams>(&parts.path, parts.query.as_deref(), h)?;
     Ok(negotiate::respond(
@@ -55,10 +52,7 @@ pub(super) async fn list(
 /// per `QUERY_DESCRIPTOR.formalism` ("may be any other string value"), an
 /// unsupported non-AQL formalism gets an honest unsupported-formalism reject
 /// (not a blanket "invalid AQL" 400).
-pub(super) async fn store(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn store(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionQueryStoreYamlParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -150,11 +144,7 @@ pub(super) async fn version_store(
 /// the highest. `None` when the lookup fails or finds nothing — the store itself
 /// already succeeded, so the response degrades to Location-less rather than
 /// failing the request.
-async fn stored_version_of(
-    state: &AppState,
-    name: &str,
-    _headers: &HeaderMap,
-) -> Option<String> {
+async fn stored_version_of(state: &AppState, name: &str, _headers: &HeaderMap) -> Option<String> {
     let list = state.backend().query_list(name.to_owned()).await.ok()?;
     list.iter()
         .filter(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(name))

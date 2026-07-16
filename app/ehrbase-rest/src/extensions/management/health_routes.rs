@@ -38,4 +38,3 @@ pub(super) fn liveness() -> Response {
 pub(super) async fn readiness(registry: HealthRegistry) -> Response {
     AggregateHealthResponse(registry.evaluate().await).into_response()
 }
-

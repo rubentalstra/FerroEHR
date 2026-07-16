@@ -35,10 +35,7 @@ use super::dispatch::list_filter_and_page;
 /// `template_id`/`concept`/`version`/`offset`/`fetch` filter + pagination the
 /// wire decodes (`operations/definition_template_adl2_list.yaml`) threaded to
 /// the adapter (G-1).
-pub(super) async fn list(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl2ListParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -58,10 +55,7 @@ pub(super) async fn list(
 /// `deprecated: true` (`parameters/query/at_version.yaml`); dropping it is
 /// spec-permitted, so only `Prefer` is read. Recorded as residue, not a defect
 /// (`docs/design/its-rest/definition.md` G-7).
-pub(super) async fn upload(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DefinitionTemplateAdl2UploadParams>(
         &parts.path,
@@ -94,10 +88,7 @@ pub(super) async fn upload(
 /// `OperationalTemplateV2` and `application/xml` forms need a cADL parser
 /// (deferred, WORKLIST W-4), so a request that names *only* one of those is a
 /// `406` rather than a wrong body.
-pub(super) async fn get(
-    state: &AppState,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl2GetParams>(&parts.path, parts.query.as_deref(), h)?;

@@ -57,7 +57,9 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase::system_log::event::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
+use ehrbase::system_log::event::{
+    AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass,
+};
 
 use crate::extensions::access::authn::{FreshAuthentication, Principal};
 use crate::overview::error::RestError;
@@ -90,11 +92,7 @@ pub struct AuditObject {
 
 /// The ATNA audit middleware. Installed via `from_fn_with_state(state, middleware)`;
 /// emission is routed through the platform's SM `SystemLog` component.
-pub async fn middleware(
-    State(state): State<AppState>,
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn middleware(State(state): State<AppState>, req: Request, next: Next) -> Response {
     // The SM System Log master switch (audit disabled → no per-request work).
     if !state.backend().audit_enabled() {
         return next.run(req).await;
