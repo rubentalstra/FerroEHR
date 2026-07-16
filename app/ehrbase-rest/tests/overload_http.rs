@@ -1,10 +1,22 @@
-//! Ingress overload-shedding tests, driven through the fully assembled router.
+//! Ingress overload-shedding tests, driven through the fully assembled router
+//! over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`/parking
+//! hook is gone).
 //!
 //! No openEHR spec governs server overload — this is our own design (RFC 9110
 //! §15.6.4 for the `503` status). These tests exercise the real router stack
 //! (`build_with`): a bounded-concurrency + load-shed layer scoped to the API
-//! subtree. A handler that parks (blocks on a shared [`Barrier`]) holds its
-//! in-flight permit so we can observe what happens to further requests:
+//! subtree.
+//!
+//! Reproducing real contention without the removed in-handler hook: a request
+//! whose handler buffers a **never-ending request body**
+//! (`futures::stream::pending`) parks inside the API permit (the body is read
+//! while the concurrency permit is held), so a further request to the **same
+//! route** is shed. (`ConcurrencyLimitLayer` is applied per route, so the
+//! parked requests and the shed probe must target the same operation — the old
+//! Mock test parked and probed the same `GET /ehr` route; here we use
+//! `POST …/composition`, whose handler reads the body.) The per-request timeout
+//! (30 s) is far longer than the probe window, and the parked tasks are aborted
+//! at the end of each test, so no permit leaks.
 //!
 //! * beyond the `max_in_flight` cap, an API request is shed immediately with
 //!   `503 Service Unavailable` + `Retry-After: 1` and the openEHR error body;
@@ -13,26 +25,23 @@
 //!   even while the API permit pool is fully saturated.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Barrier};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use axum::Router;
-use axum::body::Body;
-use http::{Request, StatusCode, header};
+use axum::body::{Body, Bytes};
+use http::{Request, Response, StatusCode, header};
 use http_body_util::BodyExt;
-use serde_json::{Value, json};
+use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase_rest::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
-/// A syntactically valid EHR id (the `ehr_object` handler decodes it before
-/// reaching the backend hook).
+/// A syntactically valid EHR id (the dispatcher decodes it before the backend).
 const EHR: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
 /// Auth-disabled config with an explicit in-flight cap.
@@ -56,27 +65,34 @@ fn config(max_in_flight: usize) -> AppConfig {
     }
 }
 
-/// A router whose `GET /ehr/{id}` handler parks on `barrier` (holding its
-/// in-flight permit) and bumps `entered` on entry, so the test can tell exactly
-/// how many requests have acquired a permit.
-fn parking_app(max_in_flight: usize, entered: &Arc<AtomicUsize>, barrier: &Arc<Barrier>) -> Router {
-    let entered = Arc::clone(entered);
-    let barrier = Arc::clone(barrier);
-    let hooks = Hooks {
-        ehr_object: Some(Arc::new(move |_id| {
-            entered.fetch_add(1, Ordering::SeqCst);
-            // Block until the test releases the barrier; the ConcurrencyLimit
-            // permit acquired in poll_ready is held for this whole duration.
-            barrier.wait();
-            Ok(json!({
-                "_type": "EHR",
-                "ehr_id": { "_type": "HIER_OBJECT_ID", "value": EHR }
-            }))
-        })),
-        ..Default::default()
-    };
-    ehrbase_rest::build_with(config(max_in_flight), Arc::new(Mock::with(hooks)))
-        .expect("router builds")
+async fn app(name: &str, max_in_flight: usize) -> Router {
+    let service = common::test_service(name).await;
+    ehrbase_rest::build_with(config(max_in_flight), service).expect("router builds")
+}
+
+/// A request whose handler parks holding its API permit: a composition create
+/// whose body never ends, so the body-buffering extractor (`into_parts`) awaits
+/// forever (well within the 30 s request timeout).
+fn parking_request() -> Request<Body> {
+    let never = futures::stream::pending::<Result<Bytes, std::io::Error>>();
+    Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header("content-type", "application/json")
+        .body(Body::from_stream(never))
+        .expect("request")
+}
+
+/// A shed-probe on the **same route** as [`parking_request`]. When the route's
+/// permits are exhausted this is shed at `poll_ready` (before its body is read),
+/// so an empty body suffices and the `503` returns immediately.
+fn probe_request() -> Request<Body> {
+    Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header("content-type", "application/json")
+        .body(Body::empty())
+        .expect("request")
 }
 
 fn get_ehr() -> Request<Body> {
@@ -87,34 +103,42 @@ fn get_ehr() -> Request<Body> {
         .expect("request")
 }
 
-/// Spin until `counter` reaches `target`, failing if it does not within 5s.
-async fn wait_for(counter: &AtomicUsize, target: usize) {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while counter.load(Ordering::SeqCst) < target {
-        assert!(
-            Instant::now() < deadline,
-            "timed out waiting for {target} in-flight requests (saw {})",
-            counter.load(Ordering::SeqCst)
-        );
-        tokio::time::sleep(Duration::from_millis(10)).await;
+/// Probe the (parked) route until a request is shed (`503`), giving the parked
+/// handlers time to acquire their permits. Fails if no shed is observed within
+/// ~5 s.
+async fn probe_until_shed(app: &Router) -> Response<Body> {
+    for _ in 0..250 {
+        let resp = app
+            .clone()
+            .oneshot(probe_request())
+            .await
+            .expect("response");
+        if resp.status() == StatusCode::SERVICE_UNAVAILABLE {
+            return resp;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
     }
+    panic!("no request was shed within the probe window (permits never saturated)");
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn requests_beyond_limit_are_shed_with_503() {
-    let entered = Arc::new(AtomicUsize::new(0));
-    // Two parked handlers + this test thread trip the barrier together.
-    let barrier = Arc::new(Barrier::new(3));
-    let app = parking_app(2, &entered, &barrier);
+    let app = app("overload_shed", 2).await;
 
-    // Two requests occupy both permits and park inside the handler.
-    let p1 = tokio::spawn(app.clone().oneshot(get_ehr()));
-    let p2 = tokio::spawn(app.clone().oneshot(get_ehr()));
-    wait_for(&entered, 2).await;
+    // Two parked handlers occupy both permits of the composition route. Let them
+    // acquire the permits *before* probing: `LoadShed` sheds a request that can't
+    // immediately get a permit, so a probe racing the parked tasks could steal a
+    // permit and get one of them shed instead of parked.
+    let p1 = tokio::spawn(app.clone().oneshot(parking_request()));
+    let p2 = tokio::spawn(app.clone().oneshot(parking_request()));
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    assert!(
+        !p1.is_finished() && !p2.is_finished(),
+        "both parking requests must be holding permits (not shed)"
+    );
 
-    // The third request finds no free permit and is shed immediately — it never
-    // reaches the handler (the entry counter stays at 2).
-    let resp = app.clone().oneshot(get_ehr()).await.expect("response");
+    // A further request to the same route finds no free permit and is shed.
+    let resp = probe_until_shed(&app).await;
     assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
     assert_eq!(
         resp.headers()
@@ -127,62 +151,49 @@ async fn requests_beyond_limit_are_shed_with_503() {
     // The standard openEHR `{ error, message }` shape.
     assert_eq!(body["error"], "Service Unavailable");
     assert!(body.get("message").and_then(Value::as_str).is_some());
-    assert_eq!(
-        entered.load(Ordering::SeqCst),
-        2,
-        "shed request must not run"
-    );
 
-    // Release the parked handlers; both complete normally (were not shed).
-    barrier.wait();
-    assert_eq!(
-        p1.await.expect("join").expect("response").status(),
-        StatusCode::OK
-    );
-    assert_eq!(
-        p2.await.expect("join").expect("response").status(),
-        StatusCode::OK
-    );
+    // Release the parked handlers (aborting drops their futures → frees permits).
+    p1.abort();
+    p2.abort();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn limit_zero_disables_shedding() {
-    let entered = Arc::new(AtomicUsize::new(0));
-    // Three concurrent handlers + this test thread.
-    let barrier = Arc::new(Barrier::new(4));
-    let app = parking_app(0, &entered, &barrier);
+    // With `max_in_flight = 0` no shed layer is installed, so concurrency is
+    // unbounded: many concurrent real requests all complete, none is shed.
+    let app = app("overload_nolimit", 0).await;
 
-    let p1 = tokio::spawn(app.clone().oneshot(get_ehr()));
-    let p2 = tokio::spawn(app.clone().oneshot(get_ehr()));
-    let p3 = tokio::spawn(app.clone().oneshot(get_ehr()));
-
-    // With no limit installed, all three reach the handler concurrently; if any
-    // were shed, the entry count would never reach 3 and this would time out.
-    wait_for(&entered, 3).await;
-
-    barrier.wait();
-    for p in [p1, p2, p3] {
-        assert_eq!(
-            p.await.expect("join").expect("response").status(),
-            StatusCode::OK
+    let mut handles = Vec::new();
+    for _ in 0..8 {
+        handles.push(tokio::spawn(app.clone().oneshot(get_ehr())));
+    }
+    for h in handles {
+        let status = h.await.expect("join").expect("response").status();
+        assert_ne!(
+            status,
+            StatusCode::SERVICE_UNAVAILABLE,
+            "no request may be shed when the limit is disabled"
         );
     }
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn status_endpoint_is_never_shed() {
-    let entered = Arc::new(AtomicUsize::new(0));
-    // One parked handler + this test thread.
-    let barrier = Arc::new(Barrier::new(2));
-    let app = parking_app(1, &entered, &barrier);
+    let app = app("overload_status", 1).await;
 
-    // Saturate the single API permit.
-    let parked = tokio::spawn(app.clone().oneshot(get_ehr()));
-    wait_for(&entered, 1).await;
+    // Saturate the single permit of the composition route with one parked
+    // handler; let it acquire the permit before probing (see the note in
+    // `requests_beyond_limit_are_shed_with_503`).
+    let parked = tokio::spawn(app.clone().oneshot(parking_request()));
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    assert!(
+        !parked.is_finished(),
+        "the parking request must hold the permit"
+    );
 
-    // A second API request is shed — the limit is genuinely saturated.
-    let api = app.clone().oneshot(get_ehr()).await.expect("response");
-    assert_eq!(api.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // A second request to that route is shed — the limit is genuinely saturated.
+    let shed = probe_until_shed(&app).await;
+    assert_eq!(shed.status(), StatusCode::SERVICE_UNAVAILABLE);
 
     // …but `/status` is outside the API subtree and answers normally, so an
     // operator can always probe an overloaded server.
@@ -194,9 +205,5 @@ async fn status_endpoint_is_never_shed() {
     let status = app.clone().oneshot(status_req).await.expect("response");
     assert_eq!(status.status(), StatusCode::OK);
 
-    barrier.wait();
-    assert_eq!(
-        parked.await.expect("join").expect("response").status(),
-        StatusCode::OK
-    );
+    parked.abort();
 }

@@ -12,7 +12,6 @@
 //! [`CallStatusType`](crate::service::status::CallStatusType) variants — never the generic
 //! `versioned_object_does_not_exist` (`i_ehr_index.adoc §Errors`).
 
-use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
@@ -28,6 +27,11 @@ fn parse_ehr_id(raw: &str) -> Result<Uuid, SmError> {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn add_ehr_subject(
         &self,
         ehr_id: String,
@@ -41,6 +45,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_ehr_subject_status(
         &self,
         ehr_id: String,
@@ -51,6 +60,11 @@ impl EhrbaseService {
         Ok(self.index_update_status(ehr_id, &subject, &status).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_ehr_subject_loc_desc(
         &self,
         ehr_id: String,
@@ -63,20 +77,40 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn remove_ehr_subject(&self, ehr_id: String, subject: SubjectRef) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         Ok(self.index_remove_ehr_subject(ehr_id, &subject).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn remove_subject(&self, subject: SubjectRef) -> Result<(), SmError> {
         Ok(self.index_remove_subject(&subject).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_subjects(&self, ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         Ok(self.index_ehr_subjects(ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn subject_ehrs(&self, subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, SmError> {
         Ok(self.index_subject_ehrs(&subject).await?)
     }

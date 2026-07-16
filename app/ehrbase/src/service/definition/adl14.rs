@@ -12,7 +12,6 @@
 
 use std::str::FromStr;
 
-use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
@@ -319,26 +318,56 @@ fn extract_archetype_id(adl: &str) -> Option<ArchetypeId> {
 // ── SM Definitions native API (I_DEFINITION_ADL14) ───────────────────────────
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_archetype(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.archetype_exists(&an_id).await?)
     }
 
-    pub async fn valid_archetype(&self, adl: String) -> Result<bool, SmError> {
-        Ok(Self::valid_archetype_source(&adl))
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
+    pub fn valid_archetype(&self, adl: &str) -> Result<bool, SmError> {
+        Ok(Self::valid_archetype_source(adl))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
         Ok(self.archetype_upload(&adl).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_archetype(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.archetype_get(&an_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_archetypes_adl14(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.archetype_list(page).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_matching_archetypes(
         &self,
         id_pattern: String,
@@ -347,22 +376,47 @@ impl EhrbaseService {
         Ok(self.archetype_list_matching(&id_pattern, page).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_archetype(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.archetype_delete(&an_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn archetypes_count_adl14(&self) -> Result<i64, SmError> {
         Ok(self.archetype_count().await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_opt(&self, an_opt_id: String) -> Result<bool, SmError> {
         Ok(self.opt_exists(&an_opt_id).await?)
     }
 
-    pub async fn valid_opt(&self, opt_xml: String) -> Result<bool, SmError> {
-        Ok(Self::valid_opt_xml(&opt_xml))
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
+    pub fn valid_opt(&self, opt_xml: &str) -> Result<bool, SmError> {
+        Ok(Self::valid_opt_xml(opt_xml))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
         // OPT ingestion runs in the templates layer: `store_template` parses +
         // structurally validates the OPT (invalid → 422 `invalid_template`) and
@@ -371,14 +425,29 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
         Ok(self.opt_get(&an_opt_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_opts_adl14(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.opt_list(page).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_matching_opts(
         &self,
         id_pattern: String,
@@ -387,10 +456,20 @@ impl EhrbaseService {
         Ok(self.opt_list_matching(&id_pattern, page).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
         Ok(self.opt_delete(&an_opt_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn opts_count_adl14(&self) -> Result<i64, SmError> {
         Ok(self.opt_count().await?)
     }

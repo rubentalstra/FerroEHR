@@ -89,6 +89,7 @@ impl From<std::io::Error> for AuditError {
 /// With no sender wired, auditing is off and every emit is
 /// [`EmitOutcome::Dropped`].
 impl EhrbaseService {
+    #[must_use]
     pub fn emit(&self, event: AuditEvent) -> EmitOutcome {
         // `map_or` (not `map(..).unwrap_or(..)`) keeps clippy happy; behaviour
         // is identical to `Dropped` when no sender is wired.

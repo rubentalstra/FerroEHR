@@ -407,6 +407,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_composition(
         &self,
         an_ehr_id: Uuid,
@@ -420,6 +425,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_latest(
         &self,
         an_ehr_id: Uuid,
@@ -431,6 +441,11 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -453,6 +468,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -465,6 +485,11 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_composition(
         &self,
         an_ehr_id: Uuid,
@@ -475,6 +500,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_composition(
         &self,
         an_ehr_id: Uuid,
@@ -484,6 +514,11 @@ impl EhrbaseService {
         super::version_uid(self.create_composition_response(an_ehr_id, a_comp.data).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_composition(
         &self,
         an_ehr_id: Uuid,
@@ -540,6 +575,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_composition(
         &self,
         an_ehr_id: Uuid,
@@ -552,6 +592,11 @@ impl EhrbaseService {
         super::version_uid(self.delete_composition_response(an_ehr_id, vo_id, version).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_revision_history(
         &self,
         an_ehr_id: Uuid,
@@ -562,6 +607,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_version_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -575,6 +625,11 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_original_version(
         &self,
         an_ehr_id: Uuid,
@@ -588,6 +643,11 @@ impl EhrbaseService {
 // ── ITS-REST MultimediaAdapter (adapter-support extension) ────────────────────
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         // Off by default: no engine ⇒ serve the stored form unchanged.
         let Some(engine) = &self.multimedia else {

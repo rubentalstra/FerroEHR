@@ -194,20 +194,10 @@ pub(crate) async fn terminology_value_set_validate(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "terminology_value_set_validate",
-        parts,
-        dispatch,
-    )
-    .await
+    guarded_dispatch(state, "terminology_value_set_validate", parts, dispatch).await
 }
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -234,7 +224,7 @@ async fn run(
 
     match op {
         "terminology_ids" => {
-            let ids = state.backend().get_terminology_ids().await?;
+            let ids = state.backend().get_terminology_ids()?;
             Ok(negotiate::respond(
                 h,
                 ok,
@@ -244,7 +234,7 @@ async fn run(
         "terminology_description" => {
             let tid = path_get(&parts, "terminology_id")?;
             // A failed `Pre_has_terminology` → NotFound (404).
-            let desc = state.backend().get_terminology_description(&tid).await?;
+            let desc = state.backend().get_terminology_description(&tid)?;
             Ok(negotiate::respond(h, ok, &desc))
         }
         "terminology_get_term" => {

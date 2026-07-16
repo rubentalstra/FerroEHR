@@ -9,14 +9,7 @@
 //! platform component implements them beside the SM catalog; the adapter
 //! dispatches to them for the wire routes that need them.
 
-use async_trait::async_trait;
-use serde_json::Value;
-use uuid::Uuid;
 
-use crate::service::status::SmError;
-use crate::service::list::Page;
-use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::extensions::tenant_context::TenantContext;
 
 /// The template-list filter carried by the ITS-REST `definition_template_*_list`
 /// operations. All three are optional query parameters the wire decodes but the

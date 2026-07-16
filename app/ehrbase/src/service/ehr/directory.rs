@@ -387,12 +387,22 @@ fn select_subfolder(folder: &Value, path: &str) -> Option<Value> {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_directory(&self, an_ehr_id: Uuid) -> Result<bool, SmError> {
         // EHR.directory (= folders[1]) — resolve the directory slot rather than
         // assuming a single FOLDER (RM ehr master04 §Folders).
         Ok(self.directory_vo_opt(an_ehr_id).await?.is_some())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_path(&self, an_ehr_id: Uuid, a_path: String) -> Result<bool, SmError> {
         match self.directory_at_time(an_ehr_id, None, Some(&a_path)).await {
             Ok(resp) => Ok(!resp.body.is_null()),
@@ -401,6 +411,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_directory(
         &self,
         an_ehr_id: Uuid,
@@ -409,6 +424,11 @@ impl EhrbaseService {
         super::version_uid(self.create_directory_response(an_ehr_id, a_dir_struct.data).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_directory_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -422,6 +442,11 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_directory(
         &self,
         an_ehr_id: Uuid,
@@ -448,6 +473,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_directory(
         &self,
         an_ehr_id: Uuid,
@@ -467,6 +497,11 @@ impl EhrbaseService {
         Ok(())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_directory_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -479,6 +514,11 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_directory_version(
         &self,
         an_ehr_id: Uuid,
@@ -490,6 +530,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_directory(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_directory(an_ehr_id).await?)
     }

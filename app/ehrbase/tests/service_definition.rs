@@ -92,10 +92,9 @@ async fn archetype_upload_get_list_match_replace_delete() {
     );
 
     // valid_archetype on good vs bad source.
-    assert!(svc.valid_archetype(adl.clone()).await.unwrap());
+    assert!(svc.valid_archetype(&adl).unwrap());
     assert!(
-        !svc.valid_archetype("not an archetype".to_owned())
-            .await
+        !svc.valid_archetype("not an archetype")
             .unwrap()
     );
 
@@ -245,8 +244,8 @@ async fn opt_upload_has_get_list_match_delete() {
     let xml = fixture(OPT_REL);
 
     // valid_opt on good vs bad XML.
-    assert!(svc.valid_opt(xml.clone()).await.unwrap());
-    assert!(!svc.valid_opt("<not-a-template/>".to_owned()).await.unwrap());
+    assert!(svc.valid_opt(&xml).unwrap());
+    assert!(!svc.valid_opt("<not-a-template/>").unwrap());
     assert_eq!(svc.opts_count_adl14().await.unwrap(), 0);
 
     // upload_opt (Pre_valid).
@@ -532,10 +531,9 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     );
     let adl2_arch = adl2_source("archetype", ADL2_ARCH_HRID, None);
     let adl2_tmpl = adl2_source("template", ADL2_TMPL_HRID, None);
-    assert!(svc.valid_artefact(adl2_opt.clone()).await.unwrap());
+    assert!(svc.valid_artefact(&adl2_opt).unwrap());
     assert!(
-        !svc.valid_artefact("this is not adl2".to_owned())
-            .await
+        !svc.valid_artefact("this is not adl2")
             .unwrap()
     );
 
@@ -718,23 +716,19 @@ async fn query_valid_store_list_match_delete() {
 
     // valid_query: formalism equivalence + parse.
     assert!(
-        svc.valid_query(good.to_owned(), "aql".to_owned())
-            .await
+        svc.valid_query(good, "aql")
             .unwrap()
     );
     assert!(
-        svc.valid_query(good.to_owned(), "AQL::1".to_owned())
-            .await
+        svc.valid_query(good, "AQL::1")
             .unwrap()
     );
     assert!(
-        !svc.valid_query(good.to_owned(), "cql".to_owned())
-            .await
+        !svc.valid_query(good, "cql")
             .unwrap()
     );
     assert!(
-        !svc.valid_query("this is not aql".to_owned(), "AQL".to_owned())
-            .await
+        !svc.valid_query("this is not aql", "AQL")
             .unwrap()
     );
     assert_eq!(svc.queries_count().await.unwrap(), 0);
@@ -870,7 +864,6 @@ async fn query_store_set_not_implemented() {
     // store_query_set is a spec TODO → 501 (trait default, PORT NOTE).
     let err = svc
         .store_query_set(None)
-        .await
         .expect_err("not implemented");
     assert!(
         matches!(

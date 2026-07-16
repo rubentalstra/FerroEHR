@@ -1,16 +1,17 @@
 //! End-to-end HTTP tests for the tenant admin extension API group:
-//! the config gate (`RestConfig::tenancy.enabled`), the `200`/`201`/`204`/`404`/
-//! `400`/`409`/`501` wire outcomes for the CRUD verbs, and the JSON body shapes
-//! — driven through the assembled router with the shared [`Mock`] platform,
-//! whose `tenant_*` hooks back an in-memory store so the CRUD round-trips.
+//! the config gate (`AppConfig::tenancy.enabled`), the `200`/`201`/`204`/`404`/
+//! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —
+//! driven through the assembled router over the **real** `EhrbaseService` on a
+//! real Postgres database (W-14 B+C: the scripted `Mock` is gone; the tenant
+//! CRUD persists to the real `tenant` table).
 //!
 //! Design: the tenancy model is spec-silent — our own extension; the surface is
 //! our own, config-gated like the event-subscription group, mounted under
 //! `/admin/` and dispatching to the `TenantAdapter` extension.
+//!
+//! Note: `migrations/ehr/0004_multitenancy.sql` seeds one reserved `default`
+//! tenant (the nil UUID), so a freshly-migrated DB already lists one tenant.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::type_complexity)]
-
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
 
 use axum::Router;
 use axum::body::Body;
@@ -20,110 +21,14 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 use uuid::Uuid;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig, TenancyConfig};
-use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::{ServerConfig, TenancyConfig};
+use ehrbase_rest::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const GROUP: &str = "/ehrbase/rest/openehr/v1/admin/tenant";
-
-/// An in-memory tenant store the hooks share, so the CRUD verbs actually
-/// round-trip (create → get → update → delete) through the router.
-type Store = Arc<Mutex<BTreeMap<Uuid, Value>>>;
-
-/// Build a tenant record from a create/update body.
-fn record(id: Uuid, body: &Value) -> Value {
-    json!({
-        "id": id.to_string(),
-        "name": body.get("name").cloned().unwrap_or(Value::Null),
-        "system_id": body.get("system_id").cloned().unwrap_or(Value::Null),
-        "created_at": "2026-07-11T00:00:00Z",
-    })
-}
-
-fn not_found(id: Uuid) -> SmError {
-    SmError::new(
-        CallStatusType::VersionedObjectDoesNotExist,
-        format!("tenant {id} does not exist"),
-    )
-}
-
-/// `{name, system_id}` are both required and non-empty (→ 400 otherwise).
-fn require_fields(body: &Value) -> Result<(), SmError> {
-    for f in ["name", "system_id"] {
-        let ok = body
-            .get(f)
-            .and_then(Value::as_str)
-            .is_some_and(|s| !s.trim().is_empty());
-        if !ok {
-            return Err(SmError::new(
-                CallStatusType::PreconditionViolation,
-                format!("`{f}` required"),
-            ));
-        }
-    }
-    Ok(())
-}
-
-/// Hooks backed by a shared in-memory store.
-fn hooks(store: Store) -> Hooks {
-    let (s_list, s_create, s_get, s_update, s_delete) = (
-        store.clone(),
-        store.clone(),
-        store.clone(),
-        store.clone(),
-        store,
-    );
-    Hooks {
-        tenant_list: Some(Arc::new(move || {
-            Ok(s_list.lock().unwrap().values().cloned().collect())
-        })),
-        tenant_create: Some(Arc::new(move |body: Value| {
-            require_fields(&body)?;
-            let mut map = s_create.lock().unwrap();
-            // Unique name → duplicate is a 409 (Conflict).
-            if map.values().any(|v| v["name"] == body["name"]) {
-                return Err(SmError::new(
-                    CallStatusType::CompositionAlreadyExists,
-                    "duplicate name",
-                ));
-            }
-            let id = Uuid::now_v7();
-            let rec = record(id, &body);
-            map.insert(id, rec.clone());
-            Ok(rec)
-        })),
-        tenant_get: Some(Arc::new(move |id: Uuid| {
-            s_get
-                .lock()
-                .unwrap()
-                .get(&id)
-                .cloned()
-                .ok_or_else(|| not_found(id))
-        })),
-        tenant_update: Some(Arc::new(move |id: Uuid, body: Value| {
-            require_fields(&body)?;
-            let mut map = s_update.lock().unwrap();
-            if !map.contains_key(&id) {
-                return Err(not_found(id));
-            }
-            let rec = record(id, &body);
-            map.insert(id, rec.clone());
-            Ok(rec)
-        })),
-        tenant_delete: Some(Arc::new(move |id: Uuid| {
-            if s_delete.lock().unwrap().remove(&id).is_some() {
-                Ok(())
-            } else {
-                Err(not_found(id))
-            }
-        })),
-        ..Default::default()
-    }
-}
 
 fn config(enabled: bool) -> AppConfig {
     AppConfig {
@@ -147,16 +52,9 @@ fn config(enabled: bool) -> AppConfig {
     }
 }
 
-fn app(enabled: bool) -> Router {
-    let backend = Arc::new(Mock::with(hooks(Store::default())));
-    ehrbase_rest::build_with(config(enabled), backend).expect("router builds")
-}
-
-/// An enabled app with no hooks → every CRUD call hits the trait's mandatory
-/// path (the mock returns `501`).
-fn app_unhooked() -> Router {
-    let backend = Arc::new(Mock::new());
-    ehrbase_rest::build_with(config(true), backend).expect("router builds")
+async fn app(name: &str, enabled: bool) -> Router {
+    let service = common::test_service(name).await;
+    ehrbase_rest::build_with(config(enabled), service).expect("router builds")
 }
 
 async fn send(app: Router, req: Request<Body>) -> (StatusCode, Value) {
@@ -183,19 +81,20 @@ fn req(method: &str, uri: &str, body: Option<Value>) -> Request<Body> {
 }
 
 #[tokio::test]
-async fn disabled_group_is_404_and_never_touches_backend() {
-    let (status, _) = send(app(false), req("GET", GROUP, None)).await;
+async fn disabled_group_is_404() {
+    let (status, _) = send(app("tenant_disabled", false).await, req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn crud_round_trip() {
-    let app = app(true);
+    let app = app("tenant_crud", true).await;
 
-    // Empty list.
+    // A freshly-migrated DB seeds the reserved `default` tenant.
     let (status, body) = send(app.clone(), req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body.as_array().unwrap().len(), 0);
+    let initial = body.as_array().unwrap().len();
+    assert!(initial >= 1, "the seeded default tenant is present");
 
     // Create — 201 with the stored record + a generated id.
     let create_body = json!({ "name": "acme", "system_id": "acme.example.org" });
@@ -220,9 +119,9 @@ async fn crud_round_trip() {
     assert_eq!(status, StatusCode::OK);
     assert_eq!(updated["system_id"], "acme-2.example.org");
 
-    // List now has one.
+    // List now has one more than the initial (seeded) set.
     let (_status, list) = send(app.clone(), req("GET", GROUP, None)).await;
-    assert_eq!(list.as_array().unwrap().len(), 1);
+    assert_eq!(list.as_array().unwrap().len(), initial + 1);
 
     // Delete — 204.
     let (status, _) = send(app.clone(), req("DELETE", &format!("{GROUP}/{id}"), None)).await;
@@ -236,11 +135,15 @@ async fn crud_round_trip() {
 #[tokio::test]
 async fn create_without_required_fields_is_400() {
     // Missing system_id.
-    let (status, _) = send(app(true), req("POST", GROUP, Some(json!({ "name": "x" })))).await;
+    let (status, _) = send(
+        app("tenant_400a", true).await,
+        req("POST", GROUP, Some(json!({ "name": "x" }))),
+    )
+    .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     // Missing name.
     let (status, _) = send(
-        app(true),
+        app("tenant_400b", true).await,
         req("POST", GROUP, Some(json!({ "system_id": "s" }))),
     )
     .await;
@@ -249,7 +152,7 @@ async fn create_without_required_fields_is_400() {
 
 #[tokio::test]
 async fn duplicate_name_is_409() {
-    let app = app(true);
+    let app = app("tenant_409", true).await;
     let body = json!({ "name": "dup", "system_id": "s" });
     let (status, _) = send(app.clone(), req("POST", GROUP, Some(body.clone()))).await;
     assert_eq!(status, StatusCode::CREATED);
@@ -259,7 +162,7 @@ async fn duplicate_name_is_409() {
 
 #[tokio::test]
 async fn unknown_id_is_404() {
-    let app = app(true);
+    let app = app("tenant_unknown", true).await;
     let id = Uuid::now_v7();
     let (status, _) = send(app.clone(), req("GET", &format!("{GROUP}/{id}"), None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -269,12 +172,24 @@ async fn unknown_id_is_404() {
 
 #[tokio::test]
 async fn malformed_id_is_400() {
-    let (status, _) = send(app(true), req("GET", &format!("{GROUP}/not-a-uuid"), None)).await;
+    let (status, _) = send(
+        app("tenant_malformed", true).await,
+        req("GET", &format!("{GROUP}/not-a-uuid"), None),
+    )
+    .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]
-async fn unhooked_call_is_501() {
-    let (status, _) = send(app_unhooked(), req("GET", GROUP, None)).await;
-    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+async fn enabled_group_lists_real_store() {
+    // Re-targeted from the old `unhooked → 501` Mock-scaffolding case: with the
+    // concrete service the tenant CRUD persists to the real store, so an enabled
+    // group answers 200 (never the trait-default 501).
+    let (status, body) = send(
+        app("tenant_enabled_200", true).await,
+        req("GET", GROUP, None),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.is_array());
 }

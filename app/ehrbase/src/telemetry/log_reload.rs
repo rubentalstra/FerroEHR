@@ -14,8 +14,6 @@
 
 use std::sync::Arc;
 
-use http::StatusCode;
-use serde::{Deserialize, Serialize};
 
 /// Reads the effective filter directives from the subscriber's reload handle.
 pub type ReadFilter = Arc<dyn Fn() -> String + Send + Sync>;
