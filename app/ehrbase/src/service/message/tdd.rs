@@ -14,22 +14,22 @@
 //! ## Pipeline
 //!
 //! 1. **Envelope** — parse the XML, require the templates namespace + a
-//!    `template_id`, verify the target EHR exists (`has_ehr`), and resolve the
-//!    referenced operational template (an unknown template is
-//!    `template_does_not_exist`, which also rejects the corpus
-//!    `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
-//!    surfaces through [`EhrbaseService::web_template_for`]).
+//! `template_id`, verify the target EHR exists (`has_ehr`), and resolve the
+//! referenced operational template (an unknown template is
+//! `template_does_not_exist`, which also rejects the corpus
+//! `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
+//! surfaces through [`EhrbaseService::web_template_for`]).
 //! 2. **Body conversion** — the OPT-guided TDD-body → canonical-COMPOSITION walk
-//!    ([`openehr_flat::from_tdd`]): the template node names are matched to the
-//!    `WebTemplate` node tree to supply `archetype_node_id`s, re-materialise the
-//!    `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT` wrappers the template compacts, and
-//!    parse each `rm:`-namespaced leaf into its RM datatype. A body that does not
-//!    conform to the template is a typed `precondition_violation`.
+//! ([`openehr_flat::from_tdd`]): the template node names are matched to the
+//! `WebTemplate` node tree to supply `archetype_node_id`s, re-materialise the
+//! `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT` wrappers the template compacts, and
+//! parse each `rm:`-namespaced leaf into its RM datatype. A body that does not
+//! conform to the template is a typed `precondition_violation`.
 //! 3. **Commit** — the produced canonical COMPOSITION goes through the normal
-//!    validated [`EhrbaseService::create_composition`] path (`WebTemplate` +
-//!    RM-invariant + terminology validation, contribution/audit — RM common
-//!    master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
-//!    failure is `content_invalid` — never a silent partial COMPOSITION.
+//! validated [`EhrbaseService::create_composition`] path (`WebTemplate` +
+//! RM-invariant + terminology validation, contribution/audit — RM common
+//! master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
+//! failure is `content_invalid` — never a silent partial COMPOSITION.
 //!
 //! PORT NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
 //! `import_tdds` is a design-filled `(UUID, Vec<String>) -> Vec<String>`,
@@ -145,14 +145,14 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `content_invalid` — the payload is not well-formed XML / has no root,
-    ///   or the produced COMPOSITION fails WebTemplate/RM/terminology
-    ///   validation at commit.
+    /// or the produced COMPOSITION fails WebTemplate/RM/terminology
+    /// validation at commit.
     /// - `precondition_violation` (`400`) — the root is not in the templates
-    ///   namespace, carries no `template_id`, or the body does not conform to
-    ///   the operational template.
+    /// namespace, carries no `template_id`, or the body does not conform to
+    /// the operational template.
     /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
     /// - `template_does_not_exist` — the referenced operational template is not
-    ///   provisioned.
+    /// provisioned.
     /// - `exception` — a database fault while checking/committing.
     pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
         let composition = self.prepare_one_tdd(an_ehr_id, &tdd).await?;

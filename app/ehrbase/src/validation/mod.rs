@@ -5,25 +5,25 @@
 //! seams to the other two:
 //!
 //! - **Surface A — artefact validity (owned here).** The AOM 1.4/2.4
-//!   constraint catalogue applied to an *uploaded* artefact, before it becomes
-//!   an operational template:
-//!   - `opt` (A1) — OPT 1.4 artefact validity, the AOM2/08 catalogue on a
-//!     flattened `openehr_its::opt14::OperationalTemplate`;
-//!   - `adl2` (A2) — ADL2 *source* registration validity, the honestly
-//!     enforceable header / ODIN / terminology subset (no cADL compiler);
-//!   - `structure` (A3) — OPT XML well-formedness (a CNF ingestion guard,
-//!     not an AOM constraint kind).
+//! constraint catalogue applied to an *uploaded* artefact, before it becomes
+//! an operational template:
+//! - `opt` — OPT 1.4 artefact validity, the AOM2/08 catalogue on a
+//! flattened `openehr_its::opt14::OperationalTemplate`;
+//! - `adl2` (A2) — ADL2 *source* registration validity, the honestly
+//! enforceable header / ODIN / terminology subset (no cADL compiler);
+//! - `structure` (A3) — OPT XML well-formedness (a CNF ingestion guard,
+//! not an AOM constraint kind).
 //! - **Surface B — instance `valid_value` cascade (a seam, NOT here).** The
-//!   recursive top-down data-conformance function ("the key function of an
-//!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
-//!   package.adoc` §`Valid_value`) runs at commit time over the compacted
-//!   `WebTemplate`. It lives in `openehr-flat` (a spec crate) and is invoked from
-//!   the EHR commit choke point (`service::ehr::composition_validate`). Its
-//!   closed-world semantics are recorded as a spec-cited PORT NOTE below.
+//! recursive top-down data-conformance function ("the key function of an
+//! archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
+//! package.adoc` §`Valid_value`) runs at commit time over the compacted
+//! `WebTemplate`. It lives in `openehr-flat` (a spec crate) and is invoked from
+//! the EHR commit choke point (`service::ehr::composition_validate`). Its
+//! closed-world semantics are recorded as a spec-cited PORT NOTE below.
 //! - **Surface C — per-kind RM structural validators (a seam, NOT here).** The
-//!   RM-invariant checks on template-less commit bodies (`EHR_STATUS`,
-//!   `EHR_ACCESS`, FOLDER, party roots) live with their kinds under
-//!   `service/`; the commit dispatch owns the routing (F-07-01 single seam).
+//! RM-invariant checks on template-less commit bodies (`EHR_STATUS`,
+//! `EHR_ACCESS`, FOLDER, party roots) live with their kinds under
+//! `service/`; the commit dispatch owns the routing (F-07-01 single seam).
 //!
 //! The boundaries between the files under `opt` follow the **AM constraint
 //! taxonomy** (kind-of-check: structural invariant / RM conformance /
@@ -40,30 +40,30 @@
 //! # Cross-surface wiring and recorded deferrals
 //!
 //! - **Surface-A callers.** The A entry points are reached here from `service/`:
-//!   `templates::store` calls [`validate_opt_artefact`] +
-//!   [`validate_opt_structure`]; `service::definition::{adl2,wire}`
-//!   call [`validate_adl2_source`] + [`check_specialisation_depth`];
-//!   `service::definition::adl14` calls [`validate_opt_structure`].
+//! `templates::store` calls [`validate_opt_artefact`] +
+//! [`validate_opt_structure`]; `service::definition::{adl2,wire}`
+//! call [`validate_adl2_source`] + [`check_specialisation_depth`];
+//! `service::definition::adl14` calls [`validate_opt_structure`].
 //! - **Surface-C dispatch (wired).** `service::ehr`'s `validate_for_commit`
-//!   routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/
-//!   party-relationship) to its per-kind RM validator, so no commit path
-//!   bypasses validation (F-07-01 single seam).
-//! - **PORT NOTE — surface-B closed-world semantics (G-09-05).** The
-//!   closed-world check lives in `openehr-flat::validation` (a spec crate,
-//!   outside this crate's ownership). AOM 1.4 defines only the positive
-//!   `valid_value` cascade (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
-//!   §`Valid_value`, silent on present-but-unmatched nodes); closure — reject
-//!   unmatched *archetyped* siblings, tolerate RM-permitted metadata, tolerate
-//!   unlisted archetype-rooted fillers under slotless attributes — follows the
-//!   AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
-//!   (`AM/docs/AOM2/master08-validation.adoc` §Phase 2, lines 96–101).
-//!   Re-expressing the `openehr-flat` PORT NOTE against those spec sections
-//!   (it presently cites an ADR) is the future work this note records.
-//! - **PORT NOTE — terminology binding resolution (T17/T15).** VTTBK/VTCBK
-//!   here check binding *keys* only; resolving ac-code value sets against the
-//!   live terminology service (`TerminologyService`) at ingestion is unwired,
-//!   to land with the `CONSTRAINT_REF` policy
-//!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology; blueprint 03-am §3).
+//! routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/
+//! party-relationship) to its per-kind RM validator, so no commit path
+//! bypasses validation (F-07-01 single seam).
+//! - **PORT NOTE — surface-B closed-world semantics.** The
+//! closed-world check lives in `openehr-flat::validation` (a spec crate,
+//! outside this crate's ownership). AOM 1.4 defines only the positive
+//! `valid_value` cascade (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
+//! §`Valid_value`, silent on present-but-unmatched nodes); closure — reject
+//! unmatched *archetyped* siblings, tolerate RM-permitted metadata, tolerate
+//! unlisted archetype-rooted fillers under slotless attributes — follows the
+//! AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
+//! (`AM/docs/AOM2/master08-validation.adoc` §Phase 2, lines 96–101).
+//! Re-expressing the `openehr-flat` PORT NOTE against those spec sections
+//! (it presently cites an ADR) is the future work this note records.
+//! - **PORT NOTE — terminology binding resolution.** VTTBK/VTCBK
+//! here check binding *keys* only; resolving ac-code value sets against the
+//! live terminology service (`TerminologyService`) at ingestion is unwired,
+//! to land with the `CONSTRAINT_REF` policy
+//! (`AM/docs/AOM2/master08-validation.adoc` §Terminology; blueprint 03-am §3).
 
 pub(crate) mod adl2;
 mod opt;

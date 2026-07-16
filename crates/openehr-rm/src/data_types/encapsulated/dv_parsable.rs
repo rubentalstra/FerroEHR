@@ -9,12 +9,12 @@ use openehr_derive::OpenEhrType;
 #[openehr(type_name = "DV_PARSABLE")]
 pub struct DvParsable {
     // inherited: DV_ENCAPSULATED
-    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub charset: Option<CodePhrase>,
     /// Optional indicator of the localised language in which the data is written, if relevant. Coded from openEHR Code Set `languages`.
     pub language: Option<CodePhrase>,
     /// The string, which may validly be empty in some syntaxes.
     pub value: String,
-    /// Name of the formalism, e.g.  GLIF 1.0 ,  Proforma  etc.
+    /// Name of the formalism, e.g. GLIF 1.0 , Proforma etc.
     pub formalism: String,
 }

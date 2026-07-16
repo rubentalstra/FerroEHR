@@ -422,7 +422,7 @@ impl EhrbaseService {
         an_ehr_id: Uuid,
         an_ehr_status: Option<Value>,
     ) -> Result<Uuid, SmError> {
-        // G-5: see `create_ehr` — `Pre_no_subject` deliberately not enforced.
+        // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
         self.commit_new_ehr(an_ehr_id, status).await?;
         Ok(an_ehr_id)
@@ -488,7 +488,7 @@ impl EhrbaseService {
         &self,
         a_subject_id: SubjectRef,
     ) -> Result<Vec<EhrSummary>, SmError> {
-        // G-4: one EHR per subject narrows the List to ≤1 (see `ehr_by_subject`).
+        // one EHR per subject narrows the List to ≤1 (see `ehr_by_subject`).
         match self
             .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
             .await

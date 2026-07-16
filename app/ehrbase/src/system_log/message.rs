@@ -445,7 +445,7 @@ mod tests {
 
     #[test]
     fn ehr_extract_export_is_patient_and_uri_scoped() {
-        // G-7: EHR-Extract communication is patient-identifiable clinical data
+        // EHR-Extract communication is patient-identifiable clinical data
         // audited for non-repudiation — it carries both a Patient-Number and an
         // object-URI participant (DICOM PS3.15 §A.5 / RFC 3881 §5.5), like a
         // composition, under the Patient-Record EventID family.

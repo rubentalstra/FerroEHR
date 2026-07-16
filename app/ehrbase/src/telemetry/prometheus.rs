@@ -33,8 +33,8 @@ pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes"
 pub const AUTH_FAILURES: &str = "auth_failures_total";
 
 // ── Metric names emitted from this crate (§1.2). The http_* / auth_* names
-//    are emitted by `ehrbase-rest`; the atna_* names by
-//    `crate::system_log::sender`. ─────────────────────────────────────────────
+// are emitted by `ehrbase-rest`; the atna_* names by
+// `crate::system_log::sender`. ─────────────────────────────────────────────
 
 /// DB pool connection gauge (`state` = `idle/in_use`).
 pub const DB_POOL_CONNECTIONS: &str = "db_pool_connections";

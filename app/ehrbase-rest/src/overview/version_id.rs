@@ -97,7 +97,7 @@ pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
 /// **required** (`ehr_status_update`, `composition_update`, `directory_update`,
 /// `directory_delete` — all `required: true`, `parameters/If-Match`). The value
 /// is the full quoted `OBJECT_VERSION_ID`; a malformed or empty value is a
-/// client error rather than a silently-skipped precondition (F-01-09/F-02-08).
+/// client error rather than a silently-skipped precondition.
 ///
 /// PORT NOTE (wire, spec-silent): ITS-REST defines only the "received and the
 /// condition evaluates to false → `412`" case; it says nothing about a

@@ -13,26 +13,26 @@
 //! Register 02 rulings realized here:
 //!
 //! - **G-2 / D2 (`list_queries` split).** ITS-REST binds the list resource as
-//!   `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a bare
-//!   `GET /definition/query` collection is absent in Release-1.0.3 and
-//!   development@e8a093e. So `list_queries-non_empty` is rebound to the named
-//!   resource (a live [`Binding::Rest`] case), while `list_queries-empty` /
-//!   `-select_items` carry [`Binding::NoRestBinding`] and skip-with-reason.
-//!   The bare-list endpoint is an edition-ladder probe: a future/other-CDR
-//!   edition exposing it would make the skipped cases live (recorded, not baked
-//!   shut).
+//! `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a bare
+//! `GET /definition/query` collection is absent in Release-1.0.3 and
+//! development@e8a093e. So `list_queries-non_empty` is rebound to the named
+//! resource (a live [`Binding::Rest`] case), while `list_queries-empty` /
+//! `-select_items` carry [`Binding::NoRestBinding`] and skip-with-reason.
+//! The bare-list endpoint is an edition-ladder probe: a future/other-CDR
+//! edition exposing it would make the skipped cases live (recorded, not baked
+//! shut).
 //! - **G-3 (placeholder id + round-trip).** The schedule's literal `has_query-xxx`
-//!   placeholder id is NOT carried as the case id — this case is renamed
-//!   `sqr/has-query-existing` (a new slug; the retired `sqr/has-query-xxx`
-//!   number is recorded in the catalogue), and the stub heading is kept in the
-//!   `schedule` trace. The store cases assert the retrieved AQL **round-trips**
-//!   to what was stored, not merely a status.
+//! placeholder id is NOT carried as the case id — this case is renamed
+//! `sqr/has-query-existing` (a new slug; the retired `sqr/has-query-xxx`
+//! number is recorded in the catalogue), and the stub heading is kept in the
+//! `schedule` trace. The store cases assert the retrieved AQL **round-trips**
+//! to what was stored, not merely a status.
 //! - **G-4 (data-set sourcing).** Valid + invalid AQL come from register 80's
-//!   corpus keys (shared with the QUERY area), not hand-picked strings.
+//! corpus keys (shared with the QUERY area), not hand-picked strings.
 //! - **G-5 (negative status width).** The store-time negatives accept
-//!   `[400, 422]`: ITS-REST does not pin `400` (malformed request) vs `422`
-//!   (semantically-invalid AQL) for stored-query create — an implementation
-//!   choice, recorded as a boundary rather than masked.
+//! `[400, 422]`: ITS-REST does not pin `400` (malformed request) vs `422`
+//! (semantically-invalid AQL) for stored-query create — an implementation
+//! choice, recorded as a boundary rather than masked.
 
 use uuid::Uuid;
 
@@ -99,7 +99,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /definition/query/{qualified_query_name}/{version}"),
             run_has_query,
         ),
-        // ── list_queries: non_empty rebound to the named resource (D2) ─────────
+        // ── list_queries: non_empty rebound to the named resource ─────────
         rest_case(
             "sqr/list-queries-non-empty",
             "List stored queries — non empty",
@@ -144,7 +144,7 @@ fn rest_case(
             capability: Capability::QueryProvisioning,
             formats: JSON,
             citation,
-            // G-1: master05 is a stub, so the case is ECC-original — the reason
+            // master05 is a stub, so the case is ECC-original — the reason
             // names the stub provenance + the derivation basis, never presenting
             // the case as schedule-conformant.
             schedule: ScheduleTrace::EccOriginal(schedule),

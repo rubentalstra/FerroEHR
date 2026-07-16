@@ -167,7 +167,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // The manifest advertises the **live** mounted-group set (System API G-1):
     // the four always-on standardised groups plus `/admin` when its group is
     // enabled. Its identity/conformance fields come from `cfg.server.identity`
-    // (G-2/G-6).
+    //.
     let mut endpoints = vec![
         "/ehr".to_owned(),
         "/definition".to_owned(),
@@ -277,7 +277,7 @@ mod tests {
 
     use super::handle_panic;
 
-    /// F-34: a panicked handler renders the standard openEHR `{ error, message }`
+    /// a panicked handler renders the standard openEHR `{ error, message }`
     /// JSON 500 body (never tower-http's default text/plain), and the panic
     /// payload is never echoed into the response.
     #[tokio::test]

@@ -25,23 +25,23 @@
 //! the TDD:
 //!
 //! * A TDD element **matches** a web-template node when the element's local name
-//!   (spaces ↔ `_`, and dropping an Ocean `…_as_<ConcreteType>` polymorphic
-//!   suffix) equals the node's `name` (its localised term). The child is located
-//!   by a **scoped search** of the parent element's subtree, so the compaction
-//!   difference between the TDD (some wrappers explicit, e.g. `HISTORY`/`EVENT`;
-//!   some omitted, e.g. an `ITEM_TREE` `description`) and the `WebTemplate` is
-//!   absorbed — the intermediate TDD wrapper elements are simply skipped, and the
-//!   canonical wrapper chain is rebuilt from the node's `aqlPath`.
+//! (spaces ↔ `_`, and dropping an Ocean `…_as_<ConcreteType>` polymorphic
+//! suffix) equals the node's `name` (its localised term). The child is located
+//! by a **scoped search** of the parent element's subtree, so the compaction
+//! difference between the TDD (some wrappers explicit, e.g. `HISTORY`/`EVENT`;
+//! some omitted, e.g. an `ITEM_TREE` `description`) and the `WebTemplate` is
+//! absorbed — the intermediate TDD wrapper elements are simply skipped, and the
+//! canonical wrapper chain is rebuilt from the node's `aqlPath`.
 //! * The **composition/entry context** the `WebTemplate` does not model as tree
-//!   nodes (`COMPOSITION` `name`/`language`/`territory`/`composer`/`context`/
-//!   `links`; `ENTRY` `language`/`encoding`/`subject`/`other_participations`/
-//!   `narrative`/…) is read **directly** from the TDD elements and parsed through
-//!   the canonical-XML [`FromXml`](openehr_its::xml::FromXml) codec (fully typed:
-//!   nested `_type`s, `xsi:type` dispatch, numeric coercion) — faithful to the
-//!   instance.
+//! nodes (`COMPOSITION` `name`/`language`/`territory`/`composer`/`context`/
+//! `links`; `ENTRY` `language`/`encoding`/`subject`/`other_participations`/
+//! `narrative`/…) is read **directly** from the TDD elements and parsed through
+//! the canonical-XML [`FromXml`](openehr_its::xml::FromXml) codec (fully typed:
+//! nested `_type`s, `xsi:type` dispatch, numeric coercion) — faithful to the
+//! instance.
 //! * A **leaf** node's `DATA_VALUE` is the leaf element's `<value>` fragment,
-//!   re-serialised to canonical XML with the web-template-declared concrete type
-//!   as `xsi:type` and parsed as an [`openehr_rm::prelude::DataValue`].
+//! re-serialised to canonical XML with the web-template-declared concrete type
+//! as `xsi:type` and parsed as an [`openehr_rm::prelude::DataValue`].
 //!
 //! # Scope this wave (`// PORT NOTE`s below)
 //!
@@ -50,20 +50,20 @@
 //! validity of the produced COMPOSITION:
 //!
 //! * **Compacted-wrapper instance data is not carried.** Where the TDD spells out
-//!   a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`/`name`),
-//!   the re-materialised node takes the RM-mandatory default
-//!   ([`DEFAULT_TIME`](crate::flat)-equivalent), matching the FLAT reverse
-//!   converter — the *leaf data values* and the full composition/entry context
-//!   are faithful. Driving from the (uncompacted) OPT definition tree to recover
-//!   them is future work (the same BMM-RM-model dependency `from_flat` carries).
+//! a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`/`name`),
+//! the re-materialised node takes the RM-mandatory default
+//! ([`DEFAULT_TIME`](crate::flat)-equivalent), matching the FLAT reverse
+//! converter — the *leaf data values* and the full composition/entry context
+//! are faithful. Driving from the (uncompacted) OPT definition tree to recover
+//! them is future work (the same BMM-RM-model dependency `from_flat` carries).
 //! * The multi-valued RM-attribute set used to re-materialise arrays is derived
-//!   from the generated BMM RM attribute model ([`is_multiple_attr`]) — the same
-//!   single source of truth the FLAT builder ([`from_flat`](crate::from_flat))
-//!   delegates to; no hard-coded list.
+//! from the generated BMM RM attribute model ([`is_multiple_attr`]) — the same
+//! single source of truth the FLAT builder ([`from_flat`](crate::from_flat))
+//! delegates to; no hard-coded list.
 //! * A construct outside the corpus (e.g. an archetyped `other_context`, choice
-//!   leaves) is handled on a best-effort basis; the SM `import_tdd` envelope
-//!   rejects an unconvertible TDD with a typed error rather than committing a
-//!   partial COMPOSITION.
+//! leaves) is handled on a best-effort basis; the SM `import_tdd` envelope
+//! rejects an unconvertible TDD with a typed error rather than committing a
+//! partial COMPOSITION.
 
 use std::collections::HashSet;
 use std::sync::LazyLock;

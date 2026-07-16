@@ -1,4 +1,4 @@
-//! The AQL execution engine (P16) — our own typed IR over the
+//! The AQL execution engine — our own typed IR over the
 //! greenfield node store.
 //!
 //! This module is the *planning* front half of the engine: it turns a parsed
@@ -40,9 +40,9 @@ use ir::{
 /// # Errors
 ///
 /// * [`AqlError::Feature`] — a syntactically valid construct outside the
-///   accepted feature envelope (each variant cites its QUERY spec section).
+/// accepted feature envelope (each variant cites its QUERY spec section).
 /// * [`AqlError::Analysis`] — an unknown class/variable, an unresolvable
-///   attribute, a type mismatch, or an unbound parameter.
+/// attribute, a type mismatch, or an unbound parameter.
 pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
     let ir = lower_query(query)?;
     check_params(&ir, params)?;

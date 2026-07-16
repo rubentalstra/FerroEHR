@@ -202,7 +202,7 @@ impl EhrbaseService {
     /// for the `404`. `VERSIONED_OBJECT.time_created` is the commit time of
     /// the earliest held version (for a locally-created object, v1).
     ///
-    /// PORT NOTE (G-6): `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner
+    /// PORT NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner
     /// for a demographic versioned object (no openEHR spec governs the owner
     /// of an ehr-less demographic versioned object — our own design); we
     /// reference the object's own versioned-object id (the demographics
@@ -210,7 +210,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`ServiceError::NotFound`] — the object holds no versions (`label`
-    ///   names the family in the message).
+    /// names the family in the message).
     /// - [`ServiceError`] on a storage/database fault reading `time_created`.
     pub(super) async fn versioned_wrapper(
         &self,
@@ -260,9 +260,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`ServiceError::NotFound`] — no ehr-less version `version` of `vo_id`
-    ///   exists.
+    /// exists.
     /// - [`ServiceError`] on a storage/database fault, or when the
-    ///   `ORIGINAL_VERSION` assembly/signing fails.
+    /// `ORIGINAL_VERSION` assembly/signing fails.
     pub(super) async fn demographic_original_version(
         &self,
         vo_id: Uuid,
@@ -282,9 +282,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`ServiceError::NotFound`] — no ehr-less version of `vo_id` existed
-    ///   at `at` (or no current version when `at` is `None`).
+    /// at `at` (or no current version when `at` is `None`).
     /// - [`ServiceError`] on a storage/database fault, or when the
-    ///   `ORIGINAL_VERSION` assembly/signing fails.
+    /// `ORIGINAL_VERSION` assembly/signing fails.
     pub(super) async fn demographic_original_version_at(
         &self,
         vo_id: Uuid,

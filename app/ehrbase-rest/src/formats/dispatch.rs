@@ -12,13 +12,13 @@
 //! uses. For FLAT specifically:
 //!
 //! * **input** (`Content-Type` FLAT on create/update): the flat map is rebuilt
-//!   into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
-//!   by the target template's `WebTemplate`. The template id — which a flat body
-//!   does not carry — comes from the `template_id`/`templateId` query parameter
-//!   or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
+//! into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
+//! by the target template's `WebTemplate`. The template id — which a flat body
+//! does not carry — comes from the `template_id`/`templateId` query parameter
+//! or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
 //! * **output** (`Accept` FLAT on get/create/update): the stored canonical
-//!   composition is converted via `openehr_flat::to_flat` (its template id is
-//!   read from `archetype_details/template_id`).
+//! composition is converted via `openehr_flat::to_flat` (its template id is
+//! read from `archetype_details/template_id`).
 
 use axum::response::Response;
 use bytes::Bytes;
@@ -185,7 +185,7 @@ mod tests {
 
     use super::{flat_err, flat_input_err};
 
-    /// F-32: a FLAT/STRUCTURED **input** conversion failure is client data →
+    /// a FLAT/STRUCTURED **input** conversion failure is client data →
     /// `422`, not a `500` server fault (ITS-REST `Requests_and_responses.md`
     /// §HTTP status codes). `openehr_flat::from_flat` is presently infallible in
     /// practice, so this asserts the mapping directly at the seam.
@@ -196,7 +196,7 @@ mod tests {
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     }
 
-    /// F-32: an **output** conversion failure (rendering stored server data)
+    /// an **output** conversion failure (rendering stored server data)
     /// stays a `500` — the server should always be able to convert its own data.
     #[test]
     fn output_conversion_failure_stays_500() {

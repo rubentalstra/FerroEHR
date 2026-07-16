@@ -1,4 +1,4 @@
-//! The `PARTY_RELATIONSHIP` wire — **our own extension** (G-5).
+//! The `PARTY_RELATIONSHIP` wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs this: the vendored Demographic API
 //! (`demographic.openapi.yaml`) defines **no** `party_relationship` /

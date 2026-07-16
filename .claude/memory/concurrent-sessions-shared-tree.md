@@ -30,16 +30,15 @@ first session's mid-edit files into its own commit.
 - Don't "fix" broken files you didn't touch (e.g. a half-edited test file) —
   they're the other session's work in progress.
 
-**RustRover lock contention (diagnosed 2026-07-11, fix inverted 2026-07-12):**
-the IDE's cargo check shared `target/` and invalidated CLI artifacts on every
-save (recompile ping-pong). The first fix — CLI on `target-cli` — doubled the
-disk (35 GB copy) and was retired 2026-07-12: `target-cli` is deleted, do NOT
-recreate it. Current scheme: the CLI keeps `./target`; the IDE is the one
-isolated (RustRover Cargo settings → env `CARGO_TARGET_DIR=<ABSOLUTE
-repo path>/target/ide` — absolute, never relative: a relative value
-resolves against cargo's per-crate cwd and sprouts nested `target/` dirs
-inside crates, observed 2026-07-12).
-Never pkill -9 rustc to "fix" slowness — it corrupts incremental caches and
-makes it worse. Full discipline (fixed agent lanes target/agent-t1..t4,
-clean-at->30GB hygiene) lives in CLAUDE.md §"Target-dir & warm-build
-discipline".
+**Target-dir history (final state 2026-07-16 — ONE `./target`, no overrides
+anywhere):** every isolation scheme tried has been retired after ballooning
+the disk: `target-cli` (2026-07-12, 35 GB copy), the fixed agent lanes
+`target/agent-t1..t4` + the RustRover `target/ide` override (2026-07-16,
+part of a 394 GB fill: 211 GB debug + 140 GB lanes + 40 GB ide). Owner
+ruling: the CLI, all subagents, AND the IDE share the single default
+`./target`; lock waiting is expected and never answered with a second
+target dir; subagents never run cargo in parallel (the orchestrator builds
+once at convergence); check `du -sh target` at session start and after any
+rewrite-scale change, `cargo clean` above ~30 GB. Never pkill -9 rustc to
+"fix" slowness — it corrupts incremental caches. Full discipline in
+CLAUDE.md §"Target-dir & warm-build discipline".

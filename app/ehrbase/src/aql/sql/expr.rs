@@ -174,7 +174,7 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
     out
 }
 
-// ── archetype_node_id predicate (G-05) ──────────────────────────────────────
+// ── archetype_node_id predicate ──────────────────────────────────────
 
 /// Build the `archetype_node_id` predicate condition for a node alias.
 ///

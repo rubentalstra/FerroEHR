@@ -15,14 +15,14 @@
 //! sibling modules along the AOM2/08 catalogue's own section axis:
 //!
 //! - `invariants` — AOM 1.4 constraint-model per-node-kind invariants
-//!   (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
-//!   VDFAI, STCDC);
+//! (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
+//! VDFAI, STCDC);
 //! - `rm_conformance` — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
-//!   `openehr_rm::model`;
+//! `openehr_rm::model`;
 //! - `primitive` — `C_PRIMITIVE` + temporal/duration patterns + the
-//!   `C_DOMAIN_TYPE` assumed-value rules;
+//! `C_DOMAIN_TYPE` assumed-value rules;
 //! - `terminology` — VATID/VTTBK/VTCBK/VTLC + code collection;
-//! - `interval` — the BASE interval / multiplicity primitives (T20).
+//! - `interval` — the BASE interval / multiplicity primitives.
 //!
 //! It does **not** run `valid_value` (that is instance-time — surface B in
 //! [`crate::validation`]). Every violation is reported through

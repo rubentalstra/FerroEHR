@@ -18,7 +18,7 @@
 //! string-parser grammar exists to conform to yet. Re-evaluate on any SM
 //! `serial_data_formats` / `simplified_im_b` STABLE release.
 //!
-//! **FLAT round-trip scope (F-10-10):** the tested contract is `from_flat →
+//! **FLAT round-trip scope:** the tested contract is `from_flat →
 //! to_flat` stability of *FLAT-expressible* data, not full RM fidelity. RM
 //! constructs with no web-template node are intentionally **not surfaced** on
 //! `RM → FLAT` and are lost on that direction: `LINK`, `FEEDER_AUDIT`, non-root
@@ -29,8 +29,8 @@
 //!
 //! - [`to_flat`] — canonical-JSON `COMPOSITION` → flat map (`RawToFlat`).
 //! - [`from_flat`] — flat map → canonical-JSON `COMPOSITION` (the composition
-//!   builder), re-materialising the compacted RM structure so the result
-//!   deserialises as an `openehr-rm` `Composition`.
+//! builder), re-materialising the compacted RM structure so the result
+//! deserialises as an `openehr-rm` `Composition`.
 //!
 //! [`WebTemplate`]: crate::webtemplate::WebTemplate
 

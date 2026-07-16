@@ -2,7 +2,7 @@
 //!
 //! Mirrors archie's `Entry` (non-terminology) + inherited LOCATABLE:
 //! - `Is_archetypeRoot`: an ENTRY is an archetype root, so `archetype_details`
-//!   must be present.
+//! must be present.
 //! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
 //!
 //! PORT NOTE: archie's `Entry.Language_valid` / `Encoding_valid` are

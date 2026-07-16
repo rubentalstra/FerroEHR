@@ -4,15 +4,15 @@
 //!
 //! Standing rule 3: a corpus/golden defect is never fixed by editing the case
 //! or the golden — it is adjudicated here with a spec citation, and the case
-//! reports `Skipped(adjudicated: …)`. Register 07 §4 (G-3) mandated moving
+//! reports `Skipped(adjudicated: …)`. Register 07 §4 mandated moving
 //! these rulings out of suite code into committed data. Two dispositions:
 //!
 //! - `corpus-dialect` → the vendored data contradicts the pinned spec (e.g.
-//!   the 2019-era AQL goldens place `LIMIT` before `ORDER BY`, invalid under
-//!   the AQL 1.1 grammar) → the case is skipped with the citation.
+//! the 2019-era AQL goldens place `LIMIT` before `ORDER BY`, invalid under
+//! the AQL 1.1 grammar) → the case is skipped with the citation.
 //! - `spec-supersedes-corpus` → the pinned spec's meaning replaces the
-//!   corpus expectation; the case *runs* against the spec-derived
-//!   expectation, and the entry documents why the corpus value is not used.
+//! corpus expectation; the case *runs* against the spec-derived
+//! expectation, and the entry documents why the corpus value is not used.
 //!
 //! Format (`tools/conformance/adjudications/ecc-own.toml`):
 //!

@@ -82,7 +82,7 @@ impl Builder<'_> {
                     Some(target) => {
                         let mode = match func {
                             AggFunc::Count => ValueMode::Projection,
-                            // G-15: MIN/MAX preserve the argument leaf's own
+                            // MIN/MAX preserve the argument leaf's own
                             // comparison type — "Input values type should be
                             // either String, Date, Time, Integer or Real, and it
                             // will also determine the return type" (QUERY master03

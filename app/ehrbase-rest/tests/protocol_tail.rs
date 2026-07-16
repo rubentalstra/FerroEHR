@@ -2,7 +2,7 @@
 //! 4): the `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request
 //! headers (parse + merge), `If-Match` hardening (malformed → 400), the
 //! `OPTIONS /` System-Options-and-Conformance endpoint, and canonical-XML
-//! responses for the VERSION family (F-05-06). Driven through the assembled
+//! responses for the VERSION family. Driven through the assembled
 //! router over a **real** `EhrbaseService` on a real `PostgreSQL`.
 //!
 //! The committal-header merge is now verified end-to-end: the update is
@@ -248,7 +248,7 @@ async fn committal_headers_merge_into_the_commit() {
     assert_eq!(audit["committer"]["external_ref"]["type"], "PERSON");
 }
 
-// ── If-Match hardening (F-01-09/F-02-08) ─────────────────────────────────────
+// ── If-Match hardening ─────────────────────────────────────
 
 #[tokio::test]
 async fn malformed_if_match_is_rejected_not_bypassed() {

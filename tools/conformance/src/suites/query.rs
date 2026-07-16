@@ -18,16 +18,16 @@
 //! Register 07 rulings realized here:
 //!
 //! - **G-2 (`AqlAdvanced` claimable).** Every master11-spine case is
-//!   [`Capability::AqlBasic`] (STANDARD), but [`run_advanced_order_limit`] is
-//!   [`Capability::AqlAdvanced`] (OPTIONS) — an `ORDER BY … LIMIT`/`OFFSET`
-//!   query per AQL 1.1 (`AqlParser.g4` `orderByClause? limitClause?`), so the
-//!   AQL-advanced OPTIONS capability is earned from a real passing case, not
-//!   left unclaimable.
+//! [`Capability::AqlBasic`] (STANDARD), but [`run_advanced_order_limit`] is
+//! [`Capability::AqlAdvanced`] (OPTIONS) — an `ORDER BY … LIMIT`/`OFFSET`
+//! query per AQL 1.1 (`AqlParser.g4` `orderByClause? limitClause?`), so the
+//! AQL-advanced OPTIONS capability is earned from a real passing case, not
+//! left unclaimable.
 //! - **G-4 (no `_schema_version` pinning).** `RESULT_SET` fields are read through
-//!   the local [`result_set`] helpers with explicit ITS-REST `RESULT_SET`
-//!   citations; nothing asserts `meta._schema_version` (a dev-OAS/RM-1.2.0
-//!   artefact). A fully centralized `RESULT_SET` wire adapter with an edition
-//!   ladder (register 90) is not yet exposed — recorded as a boundary.
+//! the local [`result_set`] helpers with explicit ITS-REST `RESULT_SET`
+//! citations; nothing asserts `meta._schema_version` (a dev-OAS/RM-1.2.0
+//! artefact). A fully centralized `RESULT_SET` wire adapter with an edition
+//! ladder (register 90) is not yet exposed — recorded as a boundary.
 
 use uuid::Uuid;
 
@@ -438,7 +438,7 @@ fn run_invalid_queries<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// AQL-advanced (G-2): an `ORDER BY … LIMIT` query executes and returns a
+/// AQL-advanced: an `ORDER BY … LIMIT` query executes and returns a
 /// well-formed, bounded `RESULT_SET`. Self-contained (queries whatever EHRs the
 /// shared SUT holds; the LIMIT bound is the deterministic assertion).
 fn run_advanced_order_limit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {

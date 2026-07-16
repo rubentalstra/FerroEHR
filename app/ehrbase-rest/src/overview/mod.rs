@@ -16,56 +16,56 @@
 //! register in `docs/design/its-rest/overview.md` §2 tracks the source rows):
 //!
 //! - **G-1 `ETag` weakness indicator — DONE.** Every resource-identifier `ETag`
-//!   is emitted as the weak `W/"{uid}"` form ([`negotiate::resource_etag`],
-//!   used by [`negotiate::set_versioning_headers`] and the template path).
-//!   Inbound `If-Match` accepts both the weak and the deprecated bare quoted
-//!   forms ([`version_id::strip_etag`]).
+//! is emitted as the weak `W/"{uid}"` form ([`negotiate::resource_etag`],
+//! used by [`negotiate::set_versioning_headers`] and the template path).
+//! Inbound `If-Match` accepts both the weak and the deprecated bare quoted
+//! forms ([`version_id::strip_etag`]).
 //! - **G-2/G-3 committal headers — DONE.** The development-edition value forms
-//!   `openehr-version: lifecycle_state.code_string="…"` and
-//!   `openehr-audit-details: change_type.code_string="…"` / `description.value`
-//!   / `committer.*` / `system_id` are parsed and merged
-//!   ([`committal::merge_committal_headers`]), repeated headers included; the
-//!   deprecated dotted-*name* forms still work, and the new form wins on
-//!   conflict. A client-supplied `system_id` is carried into
-//!   `UpdateAudit.system_id`; when absent "the server MUST set it to its own
-//!   configured system identifier" — asserted at the versioning seam.
+//! `openehr-version: lifecycle_state.code_string="…"` and
+//! `openehr-audit-details: change_type.code_string="…"` / `description.value`
+//! / `committer.*` / `system_id` are parsed and merged
+//! ([`committal::merge_committal_headers`]), repeated headers included; the
+//! deprecated dotted-*name* forms still work, and the new form wins on
+//! conflict. A client-supplied `system_id` is carried into
+//! `UpdateAudit.system_id`; when absent "the server MUST set it to its own
+//! configured system identifier" — asserted at the versioning seam.
 //! - **G-4 Location — DONE.** `Location` is set only on create/update writes
-//!   ([`negotiate::set_resource_headers`]); reads, deletes, and the `409`/`412`
-//!   error path emit versioning headers without `Location`
-//!   ([`negotiate::set_versioning_headers`]).
+//! ([`negotiate::set_resource_headers`]); reads, deletes, and the `409`/`412`
+//! error path emit versioning headers without `Location`
+//! ([`negotiate::set_versioning_headers`]).
 //! - **G-5 `return=identifier` — DONE.** [`negotiate::write_rm`] /
-//!   [`negotiate::write_json`] honour `return=identifier` with a
-//!   `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
-//!   overview §"Prefer only identifier" shape ("a single JSON object with a
-//!   single `uid` attribute"). That generic `{uid}` body is the realization for
-//!   every `uid`-versioned resource (EHR, COMPOSITION, `EHR_STATUS`, FOLDER,
-//!   CONTRIBUTION): the `ehr`-group OAS defines no distinct per-resource
-//!   identifier schema. The one divergence is the `definition` group — templates
-//!   are not `uid`-versioned, so their identifier body is
-//!   `{ "template_id": … }` (`schemas/others/TemplateIdentifier.yaml`), rendered
-//!   in that group's handlers.
+//! [`negotiate::write_json`] honour `return=identifier` with a
+//! `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
+//! overview §"Prefer only identifier" shape ("a single JSON object with a
+//! single `uid` attribute"). That generic `{uid}` body is the realization for
+//! every `uid`-versioned resource (EHR, COMPOSITION, `EHR_STATUS`, FOLDER,
+//! CONTRIBUTION): the `ehr`-group OAS defines no distinct per-resource
+//! identifier schema. The one divergence is the `definition` group — templates
+//! are not `uid`-versioned, so their identifier body is
+//! `{ "template_id": … }` (`schemas/others/TemplateIdentifier.yaml`), rendered
+//! in that group's handlers.
 //! - **G-6 `Preference-Applied` — DONE.** Emitted on write responses echoing
-//!   the honoured `return=` preference ([`negotiate`], a MAY).
+//! the honoured `return=` preference ([`negotiate`], a MAY).
 //! - **G-7 item-tag headers — DONE (EHR group).** The parse/emit helpers
-//!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
-//!   consumed by the EHR/COMPOSITION dispatch:
-//!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
-//!   the request wrapper headers onto the `ITEM_TAG` service on change-controlled
-//!   writes (empty value ⇒ delete all) and
-//!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
-//!   on the response. (The demographic group does not yet emit these — a pending
-//!   service seam.)
+//! ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
+//! consumed by the EHR/COMPOSITION dispatch:
+//! [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
+//! the request wrapper headers onto the `ITEM_TAG` service on change-controlled
+//! writes (empty value ⇒ delete all) and
+//! [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
+//! on the response. (The demographic group does not yet emit these — a pending
+//! service seam.)
 //! - **G-10 method status — DONE.** [`error::method_not_allowed_handler`]
-//!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
-//!   (`crate::router::router`), so a known path called with a disallowed method renders
-//!   the openEHR `{ error, message }` body; the paired `501` for a
-//!   recognised-but-unimplemented operation rides
-//!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
-//!   dispatch level ([`error::not_implemented_handler`]).
+//! (`405`) is mounted as the API router's `method_not_allowed_fallback`
+//! (`crate::router::router`), so a known path called with a disallowed method renders
+//! the openEHR `{ error, message }` body; the paired `501` for a
+//! recognised-but-unimplemented operation rides
+//! [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
+//! dispatch level ([`error::not_implemented_handler`]).
 //! - **G-8 version identity / G-9 `openehr-uri`** are out of this change's
-//!   scope (tracked in the register); `/status` reports the tested
-//!   development-edition contract identity (shared provenance,
-//!   `crate::extensions::provenance::ITS_REST`) and `openehr-uri` is not emitted.
+//! scope (tracked in the register); `/status` reports the tested
+//! development-edition contract identity (shared provenance,
+//! `crate::extensions::provenance::ITS_REST`) and `openehr-uri` is not emitted.
 //!
 //! All the cross-folder wiring the redesign deferred has since landed: the
 //! item-tag dispatch (the EHR group's `apply_item_tag_headers` / `echo_item_tags`),
@@ -77,43 +77,43 @@
 //! ## Module map (file ↦ governing sections)
 //!
 //! - [`negotiate`] — data representation + content negotiation
-//!   (`Resources.md` §Data representation: canonical XML/JSON MUSTs, the
-//!   `415`/`406` discipline, the Simplified-Format media types
-//!   `application/openehr.wt.{flat,structured}+json`;
-//!   `Requests_and_responses.md` §Representation details negotiation:
-//!   `Prefer: return=minimal|return=representation` — minimal the current
-//!   default — and `Prefer: resolve_refs`).
+//! (`Resources.md` §Data representation: canonical XML/JSON MUSTs, the
+//! `415`/`406` discipline, the Simplified-Format media types
+//! `application/openehr.wt.{flat,structured}+json`;
+//! `Requests_and_responses.md` §Representation details negotiation:
+//! `Prefer: return=minimal|return=representation` — minimal the current
+//! default — and `Prefer: resolve_refs`).
 //! - [`committal`] — the committal metadata request headers
-//!   (`Requests_and_responses.md` §openehr-version and openehr-audit-details:
-//!   services MUST accept them; "whatever is provided it MUST be merged with
-//!   the default VERSION and `VERSION.audit_details` attributes on commit";
-//!   direct `PUT`/`POST`/`DELETE` on change-controlled resources "MUST
-//!   internally be executed using the 'native' way" — a CONTRIBUTION; when
-//!   `system_id` is absent "the server MUST set it to its own configured
-//!   system identifier").
+//! (`Requests_and_responses.md` §openehr-version and openehr-audit-details:
+//! services MUST accept them; "whatever is provided it MUST be merged with
+//! the default VERSION and `VERSION.audit_details` attributes on commit";
+//! direct `PUT`/`POST`/`DELETE` on change-controlled resources "MUST
+//! internally be executed using the 'native' way" — a CONTRIBUTION; when
+//! `system_id` is absent "the server MUST set it to its own configured
+//! system identifier").
 //! - [`error`] — the HTTP status-code table (`Requests_and_responses.md`
-//!   §HTTP status codes: 200/201/204/400/401/403/404/405/406/408/409/412/
-//!   415/422/500/501; unrecognized method → `501`, known-but-not-allowed →
-//!   `405`) + the optional error body ("if `Prefer: return=representation`")
-//!   + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
-//!     wire here and only here).
+//! §HTTP status codes: 200/201/204/400/401/403/404/405/406/408/409/412/
+//! 415/422/500/501; unrecognized method → `501`, known-but-not-allowed →
+//! `405`) + the optional error body ("if `Prefer: return=representation`")
+//! + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
+//! wire here and only here).
 //! - [`version_id`] — resource identification (`Resources.md` §Resource
-//!   identification: `versioned_object_uid` `HIER_OBJECT_ID` vs `version_uid`
-//!   `OBJECT_VERSION_ID` `object_id::creating_system_id::version_tree_id`,
-//!   `uid_based_id` dual addressing) and the `If-Match` discipline
-//!   (§If-Match: on a false condition "MUST NOT perform the requested
-//!   method … MUST respond with `412 Precondition Failed`, and SHOULD
-//!   return also latest `version_uid` in the `ETag` response headers";
-//!   expected-but-missing → `400`).
+//! identification: `versioned_object_uid` `HIER_OBJECT_ID` vs `version_uid`
+//! `OBJECT_VERSION_ID` `object_id::creating_system_id::version_tree_id`,
+//! `uid_based_id` dual addressing) and the `If-Match` discipline
+//! (§If-Match: on a false condition "MUST NOT perform the requested
+//! method … MUST respond with `412 Precondition Failed`, and SHOULD
+//! return also latest `version_uid` in the `ETag` response headers";
+//! expected-but-missing → `400`).
 //! - [`params`] — common parameters (`Glossary_and_conventions.md`:
-//!   `version_at_time` extended ISO 8601; `Resources.md` §Datetime format:
-//!   temporal query/path values "MUST always use the extended ISO 8601
-//!   format").
+//! `version_at_time` extended ISO 8601; `Resources.md` §Datetime format:
+//! temporal query/path values "MUST always use the extended ISO 8601
+//! format").
 //! - [`status`] — response headers (`Requests_and_responses.md` §Location:
-//!   201-only; §`ETag` and Last-Modified: weak `W/` quoted resource
-//!   identifier + `Last-Modified` from
-//!   `VERSION.commit_audit.time_committed.value`, both SHOULD be present on
-//!   `VERSION/VERSIONED_OBJECT` responses; §openehr-uri MAY).
+//! 201-only; §`ETag` and Last-Modified: weak `W/` quoted resource
+//! identifier + `Last-Modified` from
+//! `VERSION.commit_audit.time_committed.value`, both SHOULD be present on
+//! `VERSION/VERSIONED_OBJECT` responses; §openehr-uri MAY).
 //!
 //! Auth is out of band (`Requests_and_responses.md` §Authentication and
 //! authorization: no scheme mandated; `401`/`403`/`407` +

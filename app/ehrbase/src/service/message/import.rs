@@ -69,11 +69,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — the extract carries no `EHR_STATUS`
-    ///   versioned object, carries duplicate singleton containers, names no
-    ///   source EHR id when `an_ehr_id` is absent, or any content item /
-    ///   `ORIGINAL_VERSION` is malformed (see the parse errors in this module).
+    /// versioned object, carries duplicate singleton containers, names no
+    /// source EHR id when `an_ehr_id` is absent, or any content item /
+    /// `ORIGINAL_VERSION` is malformed (see the parse errors in this module).
     /// - `ehr_create_fail_duplicate_id` — an EHR with the target id already
-    ///   exists (`import_ehr` requires an empty target).
+    /// exists (`import_ehr` requires an empty target).
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr(
         &self,
@@ -148,11 +148,11 @@ impl EhrbaseService {
     /// # Errors
     /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
     /// - `precondition_violation` (`400`) — duplicate singleton containers, or
-    ///   any malformed content item / `ORIGINAL_VERSION` (see the parse errors
-    ///   in this module).
+    /// any malformed content item / `ORIGINAL_VERSION` (see the parse errors
+    /// in this module).
     /// - `Conflict` (`409`) — the EHR already holds an `EHR_STATUS`/`EHR_ACCESS`
-    ///   under a different object id (an EHR holds at most one of each; RM ehr,
-    ///   EHR class 1..1).
+    /// under a different object id (an EHR holds at most one of each; RM ehr,
+    /// EHR class 1..1).
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr_extract(
         &self,

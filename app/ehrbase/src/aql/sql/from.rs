@@ -57,7 +57,7 @@ impl Builder<'_> {
                 self.walk(b, ehr, vo)?;
                 Ok(g)
             }
-            // G-01: OR-containment (QUERY master03 §Containment — "Logical
+            // OR-containment (QUERY master03 §Containment — "Logical
             // operators AND and OR"). The enclosing object satisfies either
             // branch's containment; each branch lowers to a correlated `EXISTS`
             // over the shared anchor, combined with `OR`. A top-level `OR` with
@@ -143,7 +143,7 @@ impl Builder<'_> {
                 let parent = vo.ok_or_else(|| {
                     SqlError::Unsupported("NOT CONTAINS without a containing object".to_owned())
                 })?;
-                // G-08: the exclusion is the negation of "parent contains
+                // the exclusion is the negation of "parent contains
                 // <tree>" — the same disjunction-capable `EXISTS` builder,
                 // negated. This generalises NOT CONTAINS to compound (AND/OR)
                 // and further-nested operands (QUERY master03 §Containment,
@@ -231,8 +231,8 @@ impl Builder<'_> {
     /// Build the correlated `EXISTS` boolean for "the `anchor` object contains
     /// `tree`" (QUERY master03 §Containment). Recurses through `AND`/`OR`
     /// subtrees (each a conjunction / disjunction of `EXISTS`) and nested
-    /// `[NOT] CONTAINS` within an operand. Used by both OR-containment (G-01) and
-    /// the generalised NOT-CONTAINS anti-join (G-08).
+    /// `[NOT] CONTAINS` within an operand. Used by both OR-containment and
+    /// the generalised NOT-CONTAINS anti-join.
     fn contained_exists(
         &mut self,
         anchor: &ExistsAnchor,

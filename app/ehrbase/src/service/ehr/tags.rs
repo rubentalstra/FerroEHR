@@ -67,7 +67,7 @@ impl EhrbaseService {
 
     /// Replace the **whole** tag collection of a target with the posted set,
     /// returning the target's tags after — `PUT` full-collection semantics
-    /// (F-03-05): tags omitted from the body are removed, and an empty list
+    ///: tags omitted from the body are removed, and an empty list
     /// clears all tags on the target.
     ///
     /// # Errors
@@ -152,7 +152,7 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// One `ITEM_TAG` in its wire shape (F-03-06): exactly the OAS `ItemTag`
+    /// One `ITEM_TAG` in its wire shape: exactly the OAS `ItemTag`
     /// properties — `key`, optional `value`/`target_path`, OBJECT_REF-shaped
     /// `target` (the tagged versioned object, its RM type in `type`) and
     /// `owner_id` (the owning EHR). No extra fields — the schema is

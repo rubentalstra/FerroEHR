@@ -253,7 +253,7 @@ impl EhrbaseService {
         else {
             return Err(ServiceError::NotFound(format!("COMPOSITION {vo_id}")));
         };
-        // The full-`OBJECT_VERSION_ID` `If-Match` compare (F-02-08), built from
+        // The full-`OBJECT_VERSION_ID` `If-Match` compare, built from
         // the same merged read (ITS-REST overview §Concurrency control).
         let tree = TreeId::from_columns(
             current.trunk_version,
@@ -318,7 +318,7 @@ impl EhrbaseService {
         let mut tx = self.pool.begin().await?;
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
         // `versioned_composition.adoc`), lifted out of the versioning write
-        // path (G-13) — checked in the same transaction as the commit.
+        // path — checked in the same transaction as the commit.
         super::validation::check_versioned_composition_invariants(&mut tx, vo_id, &composition)
             .await?;
         let committed = update(
@@ -403,14 +403,14 @@ impl EhrbaseService {
     /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a
     /// `523|deleted|` version of the addressed COMPOSITION (RM common master06
     /// §Logical Deletion), returning the (now deleted) version identity
-    /// (`204_COMPOSITION_deleted`). PORT NOTE (G-7): takes the full
+    /// (`204_COMPOSITION_deleted`). PORT NOTE: takes the full
     /// `OBJECT_VERSION_ID` — the mandatory `preceding_version_uid`
     /// (`composition_delete.yaml`) — stronger than the SM's `UUID`; the SM is
     /// internally inconsistent (`has_composition` takes `OBJECT_VERSION_ID`).
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
-    /// EHR; [`ServiceError::BadRequest`] when it is already deleted (F-02-05);
+    /// EHR; [`ServiceError::BadRequest`] when it is already deleted;
     /// [`ServiceError::Conflict`] when the EHR is not modifiable or the
     /// `preceding_version_uid` is stale (→ 409); [`ServiceError::Database`] on
     /// a storage failure.
@@ -475,7 +475,7 @@ impl EhrbaseService {
     }
 
     /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also
-    /// the [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6).
+    /// the [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
     /// The existence read is a storage seam
     /// ([`crate::storage::version_repo::meta::ehr_exists`]; no openEHR spec governs
     /// the SQL — our own design).

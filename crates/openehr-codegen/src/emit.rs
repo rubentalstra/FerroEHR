@@ -3,19 +3,19 @@
 //!
 //! Emission rules:
 //! - **Flattened concrete structs**: a concrete class inlines all inherited
-//!   fields (ancestor-first, `// inherited: X` banners); one hop to any field.
+//! fields (ancestor-first, `// inherited: X` banners); one hop to any field.
 //! - **`Option<T>`** for non-mandatory single properties; **`Vec<T>`** for
-//!   containers (optional containers get `default` + `skip_serializing_if`).
+//! containers (optional containers get `default` + `skip_serializing_if`).
 //! - **Enums** (`#[serde(untagged)]`) for abstract classes used as a property
-//!   type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
+//! type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
 //! - **Transparent newtypes** for enumeration classes that are just a
-//!   primitive on the wire (`VALIDITY_KIND` → `String`).
+//! primitive on the wire (`VALIDITY_KIND` → `String`).
 //! - **Generics** only for classes the BMM declares generic (`Interval<T>`);
-//!   the actual type argument is emitted at each use site.
+//! the actual type argument is emitted at each use site.
 //! - `_type` is handled by `#[derive(OpenEhrType)]` (`openehr-derive`), not a
-//!   per-struct field.
+//! per-struct field.
 //! - Foundation **primitives / containers / marker traits** are mapped to Rust
-//!   (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
+//! (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
 
 use crate::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
 use crate::naming;
@@ -884,11 +884,11 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
     b.push_str("//!\n//! @generated module tree by openehr-codegen. The type files\n");
     b.push_str("//! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.\n\n");
     // Lint exceptions inherent to faithful spec generation:
-    //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked
-    //    terms, tabs, quote-style links, loose list continuation);
-    //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds);
-    //  - the package tree can nest a module of the same name (module_inception);
-    //  - closed-slot enums can have size-disparate variants.
+    // - doc comments are verbatim openEHR spec text (bare URLs, un-backticked
+    // terms, tabs, quote-style links, loose list continuation);
+    // - some spec classes carry >3 boolean flags (e.g. `Interval` bounds);
+    // - the package tree can nest a module of the same name (module_inception);
+    // - closed-slot enums can have size-disparate variants.
     b.push_str(
         "#![allow(\n    \
          clippy::doc_markdown,\n    \
@@ -1271,7 +1271,7 @@ fn emit_enum(
     // the base concrete type. We emit a hand-rolled `Deserialize` that dispatches
     // on `_type` (deep descendants routed to their direct variant, which
     // recurses) instead of `#[serde(untagged)]`, whose structural guessing
-    // silently mis-types a `_type`-less value (audit F-04-01/03). Serialize keeps
+    // silently mis-types a `_type`-less value. Serialize keeps
     // `#[serde(untagged)]` — its output is byte-identical (variant payload only).
     let dispatch = model.xsi_dispatch(&class.name, variants);
     // `_type` dispatch is valid only when every concrete target actually carries
@@ -1363,13 +1363,13 @@ fn emit_enum(
 
 /// Emit a hand-rolled `Deserialize` for an abstract/polymorphic enum that
 /// dispatches on the canonical-JSON `_type` discriminator instead of
-/// `#[serde(untagged)]`'s structural fallback (audit F-04-01/02/03).
+/// `#[serde(untagged)]`'s structural fallback.
 ///
 /// The value is buffered into a `serde_json::Value` (these types are
 /// canonical-JSON-only for serde; XML has its own `FromXml` path), its `_type`
 /// read, and the whole value re-deserialized into the one matching variant via
 /// `serde_json::from_value` — which preserves that variant's precise inner error
-/// (F-04-03) and re-checks `_type` + unknown keys in the inner `OpenEhrType`
+/// and re-checks `_type` + unknown keys in the inner `OpenEhrType`
 /// reader. A deep descendant (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes to
 /// its direct variant (`DvText`), whose own dispatcher recurses.
 ///
@@ -1538,8 +1538,8 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
     // Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS`
     // date formats) that rustdoc would compile as Rust doctests and choke on.
     // Neutralize both forms it recognizes so the docs render as text, never run:
-    //   - a bare ``` fence → tag the opening as ```text (closing stays bare);
-    //   - a run of 4-space-indented lines → wrap it in a ```text fence.
+    // - a bare ``` fence → tag the opening as ```text (closing stays bare);
+    // - a run of 4-space-indented lines → wrap it in a ```text fence.
     let mut push = |line: &str| {
         if line.is_empty() {
             b.push_str(&format!("{indent}///\n"));
@@ -1734,7 +1734,7 @@ impl Model {
     /// canonical-JSON wire? A `Struct` or `PolyEnum` does (it derives
     /// `OpenEhrType`, which emits `_type` first); a transparent enumeration
     /// `Newtype` (`VALIDITY_KIND` → a bare JSON string) does not. Used to decide
-    /// whether an enum's variants can be dispatched on `_type` (F-04-01):
+    /// whether an enum's variants can be dispatched on `_type`:
     /// `_type` dispatch is only valid when every concrete target carries one.
     fn concrete_carries_type(&self, name: &str) -> bool {
         let Some(class) = self.get(name) else {

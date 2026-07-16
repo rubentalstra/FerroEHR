@@ -54,8 +54,8 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Source failing the registration validator, a malformed
-    ///   `ARCHETYPE_HRID`, or a VACSD specialisation-depth violation →
-    ///   `invalid_artefact` (`422`).
+    /// `ARCHETYPE_HRID`, or a VACSD specialisation-depth violation →
+    /// `invalid_artefact` (`422`).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         self.adl2_upload(&adl2).await?;
@@ -388,7 +388,7 @@ fn valid_adl2_source(adl2: &str) -> bool {
 }
 
 /// Map an artefact `kind` to the value the storage `kind` column accepts
-/// (G-05-07). The AOM2 keyword set includes `template_overlay`, but the
+///. The AOM2 keyword set includes `template_overlay`, but the
 /// storage `kind` domain is `{archetype, template, operational_template}` (our
 /// own design — no openEHR spec governs the schema); an overlay is a
 /// specialising fragment of a template, so it is stored under `template`. This
@@ -420,7 +420,7 @@ mod tests {
 
     #[test]
     fn template_overlay_folds_into_the_template_storage_kind() {
-        // G-05-07: the storage `kind` domain excludes `template_overlay`; it is
+        // the storage `kind` domain excludes `template_overlay`; it is
         // stored as `template` so an upload never hits the DB CHECK.
         assert_eq!(store_kind("template_overlay"), "template");
         assert_eq!(store_kind("archetype"), "archetype");

@@ -5,16 +5,16 @@
 //!
 //! Spec oracles:
 //! - `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc`
-//!   (`Identities_valid`, `Contacts_valid`, `Relationships_validity`,
-//!   `Uid_mandatory`), `…demographic.actor.adoc` (`Roles_valid`),
-//!   `…demographic.role.adoc` (`Capabilities_valid`, `performer`),
-//!   `…demographic.party_relationship.adoc` (`source`/`target`),
+//! (`Identities_valid`, `Contacts_valid`, `Relationships_validity`,
+//! `Uid_mandatory`), `…demographic.actor.adoc` (`Roles_valid`),
+//! `…demographic.role.adoc` (`Capabilities_valid`, `performer`),
+//! `…demographic.party_relationship.adoc` (`source`/`target`),
 //! - `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.party_ref.adoc`
-//!   (`PARTY_REF.Type_validity`) +
-//!   `…object_ref.adoc` (`OBJECT_REF.namespace`),
+//! (`PARTY_REF.Type_validity`) +
+//! `…object_ref.adoc` (`OBJECT_REF.namespace`),
 //! - `docs/specs/openehr/RM/docs/demographic/master02` (§Modelling of Parties
-//!   and Relationships — relationship refs denote the party's version
-//!   container).
+//! and Relationships — relationship refs denote the party's version
+//! container).
 
 use std::sync::LazyLock;
 
@@ -53,7 +53,7 @@ const PARTY_REF_TYPES: [&str; 7] = [
 /// The RM `_type` a `PARTY_RELATIONSHIP` versioned object stores.
 const RELATIONSHIP_RM_TYPE: &str = "PARTY_RELATIONSHIP";
 
-/// Validate one inbound `PARTY_REF` value (G-17 + G-18): enforce
+/// Validate one inbound `PARTY_REF` value: enforce
 /// `PARTY_REF.Type_validity` (`type ∈` [`PARTY_REF_TYPES`], BASE `party_ref.adoc`)
 /// and `OBJECT_REF.namespace` legality (BASE `object_ref.adoc`). `context`
 /// names the referencing attribute for the `422` message. An absent value is
@@ -165,7 +165,7 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
         }
     }
 
-    // G-17: enforce PARTY_REF.Type_validity on the demographic refs a party
+    // enforce PARTY_REF.Type_validity on the demographic refs a party
     // body carries. ACTOR.roles is `List<PARTY_REF>` (actor.adoc); ROLE.performer
     // is `PARTY_REF` (role.adoc). BASE `party_ref.adoc §Type_validity`.
     if let Some(roles) = data.get("roles").and_then(Value::as_array) {
@@ -184,7 +184,7 @@ fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
 /// Structurally validate a candidate `PARTY_RELATIONSHIP` body: deserialize into
 /// the `openehr_rm` type (a type mismatch → `422`), enforce that both `source`
 /// and `target` `PARTY_REF`s are present continuant refs, and enforce their
-/// `PARTY_REF.Type_validity` (G-17). `uid` need not be supplied — the server
+/// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
 fn relationship_check(data: &Value) -> Result<(), ServiceError> {
     use openehr_rm::prelude::PartyRelationship;
@@ -216,7 +216,7 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
                  — RM demographic master02"
             )));
         }
-        // G-17: PARTY_REF.Type_validity + OBJECT_REF.namespace (BASE
+        // PARTY_REF.Type_validity + OBJECT_REF.namespace (BASE
         // `party_ref.adoc` / `object_ref.adoc`).
         validate_party_ref(reference, &format!("PARTY_RELATIONSHIP.{field}"))?;
     }
@@ -335,7 +335,7 @@ mod tests {
         assert!(msg.contains("Contacts_valid"), "got {msg}");
     }
 
-    /// G-17: a `PARTY_REF` whose `type` is outside the legal set is a `422`
+    /// a `PARTY_REF` whose `type` is outside the legal set is a `422`
     /// (`PARTY_REF.Type_validity`); a legal supertype (`ACTOR`) is accepted.
     #[test]
     fn party_ref_type_validity_is_enforced() {
@@ -353,7 +353,7 @@ mod tests {
         }
     }
 
-    /// G-18: an `OBJECT_REF.namespace` that is empty or violates the standard
+    /// an `OBJECT_REF.namespace` that is empty or violates the standard
     /// regex is a `422` (`OBJECT_REF.namespace`).
     #[test]
     fn object_ref_namespace_legality_is_enforced() {
@@ -365,7 +365,7 @@ mod tests {
         }
     }
 
-    /// A ROLE.performer / ACTOR.roles ref is checked for `Type_validity` (G-17).
+    /// A ROLE.performer / ACTOR.roles ref is checked for `Type_validity`.
     #[test]
     fn role_performer_ref_is_validated() {
         let role = |performer_type: &str| {

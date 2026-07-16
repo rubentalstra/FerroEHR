@@ -9,7 +9,7 @@
 //! [`crate::versioning`]; the FOLDER-tree commit validation lives in
 //! [`validation`](super::validation).
 //!
-//! PORT NOTE (G-3): the read side is multi-hierarchy (the `ehr_summary`
+//! PORT NOTE: the read side is multi-hierarchy (the `ehr_summary`
 //! folder refs); the write side manages the single directory slot
 //! (= `folders[1]`) only. Additional hierarchies are committed via
 //! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04

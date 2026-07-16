@@ -202,7 +202,7 @@ impl FhirTerminologyProvider {
 
     /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set
     /// is unknown (`404`). Forwards `at_date` as the FHIR `date` parameter
-    /// (G-1).
+    ///.
     ///
     /// # Errors
     ///
@@ -223,7 +223,7 @@ impl FhirTerminologyProvider {
     /// membership when the provider is configured for `expand`).
     ///
     /// `terminology_id` is passed as the FHIR `system`; `value_set_id` as the
-    /// value-set `url`; `at_date` as the FHIR `date` (G-1). A known value set
+    /// value-set `url`; `at_date` as the FHIR `date`. A known value set
     /// with a non-member code → `Ok(false)`.
     ///
     /// # Errors
@@ -331,7 +331,7 @@ impl FhirTerminologyProvider {
 
     /// `has_term` → FHIR `CodeSystem/$lookup`: `true` when the lookup
     /// resolves (`200`), `false` when the code is unknown (`404`). `at_date`
-    /// → the FHIR `date` parameter (G-1).
+    /// → the FHIR `date` parameter.
     ///
     /// # Errors
     ///
@@ -354,7 +354,7 @@ impl FhirTerminologyProvider {
     /// `get_term` → FHIR `CodeSystem/$lookup`, mapped to a single-term
     /// [`TerminologyExtract`] (the `display` becomes the term text; a lookup
     /// with no `display` falls back to the code itself). `at_date` → the FHIR
-    /// `date` parameter (G-1).
+    /// `date` parameter.
     ///
     /// PORT NOTE (attributes — G-3): the SM `attributes` allow-list filters
     /// the meta-model attributes returned. `$lookup` returns only the concept
@@ -515,7 +515,7 @@ impl FhirValueSet {
 
     /// Map the expansion into a [`TerminologyExtract`]: a flat `terms` map
     /// keyed by code (the membership view) plus, when the expansion nests
-    /// members, the parent→child tree preserved as `relationships` (G-2/G-5).
+    /// members, the parent→child tree preserved as `relationships`.
     fn into_extract(self, terminology_id: &str) -> TerminologyExtract {
         let mut terms = BTreeMap::new();
         let mut relationships = Vec::new();
@@ -557,7 +557,7 @@ impl FhirContains {
 
     /// Collect this member (and its descendants) into the flat `terms` map,
     /// and record a `Term_relationship` from this member to each direct child
-    /// so the `$expand` hierarchy is not lost (G-2/G-5).
+    /// so the `$expand` hierarchy is not lost.
     fn collect(&self, out: &mut BTreeMap<String, TermEntry>, rels: &mut Vec<TermRelationship>) {
         if let Some(code) = &self.code {
             let entry = match &self.display {

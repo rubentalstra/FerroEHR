@@ -1,4 +1,4 @@
-//! Terminology-server integration support for the ECC (B4): the hermetic
+//! Terminology-server integration support for the ECC: the hermetic
 //! `wiremock` FHIR-tx [`fixture`] the runner spins up, and the [`TxServer`]
 //! descriptor threaded into a case's [`crate::harness::RunContext`] so a case
 //! knows which terminology server the harness has available (the CI fixture or

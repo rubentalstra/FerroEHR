@@ -8,7 +8,7 @@
 //! [`crate::versioning`] (`commit_version_set` / `get_contribution` /
 //! `list_contributions` / `count_contributions`); this file keeps only the
 //! `I_EHR_CONTRIBUTION` surface and the wire glue. The `Pre_has_ehr` guard
-//! (G-6) is enforced inside `commit_version_set` via the
+//! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
 use crate::service::list::Page;

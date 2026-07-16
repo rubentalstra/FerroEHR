@@ -51,15 +51,15 @@ enum Action {
 /// (RM common master06 §Contributions):
 ///
 /// - *addition of new item* → a **new** `VERSIONED_OBJECT`, `249|creation|`
-///   (so `249` with a preceding is invalid, and any non-`249` needs an existing
-///   object);
+/// (so `249` with a preceding is invalid, and any non-`249` needs an existing
+/// object);
 /// - *deletion* → a new version whose data is Void, `523|deleted|` (so data
-///   alongside `523` is invalid);
+/// alongside `523` is invalid);
 /// - *modification* → `250|amendment|` / `251|modification|` / `252` / `253` /
-///   `816` / `817`, content-carrying commits against an existing object;
+/// `816` / `817`, content-carrying commits against an existing object;
 /// - *attestation* → `666|attestation|` attaches to an existing
-///   `ORIGINAL_VERSION` — **not** a new version; requires a preceding and no
-///   data.
+/// `ORIGINAL_VERSION` — **not** a new version; requires a preceding and no
+/// data.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] for a change-control mismatch the ITS-REST
@@ -209,7 +209,7 @@ pub(crate) async fn commit_version_set(
     body: &Value,
     party_only: bool,
 ) -> Result<Uuid, ServiceError> {
-    // G-6: `Pre_has_ehr` — the CONTRIBUTION's target EHR must exist.
+    // `Pre_has_ehr` — the CONTRIBUTION's target EHR must exist.
     if let Some(ehr_id) = ehr_id {
         cx.ensure_ehr_exists(ehr_id).await?;
     }
@@ -523,7 +523,7 @@ pub(crate) async fn commit_version_set(
     let mut tx = cx.pool().begin().await?;
     // VERSIONED_COMPOSITION cross-version invariants (RM ehr
     // `versioned_composition.adoc`) run before the write of each COMPOSITION
-    // modify, in the commit tx (G-13).
+    // modify, in the commit tx.
     for (_, change) in &changes {
         if let Change::Modify {
             vo_id,

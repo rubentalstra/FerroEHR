@@ -102,7 +102,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("DELETE /admin/ehr/all"),
             run_delete_all_empty,
         ),
-        // ── I_ADMIN_SERVICE.* Activity Report — native-API-only (G-2) ───────
+        // ── I_ADMIN_SERVICE.* Activity Report — native-API-only ───────
         native(
             "adm/list-contributions",
             "Admin list contributions",
@@ -139,7 +139,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "I_ADMIN_SERVICE.composition_version_count",
             skip_composition_version_count,
         ),
-        // ── I_ADMIN_DUMP_LOAD / I_ADMIN_ARCHIVE — native-API-only (G-2) ─────
+        // ── I_ADMIN_DUMP_LOAD / I_ADMIN_ARCHIVE — native-API-only ─────
         native(
             "adm/export-ehrs",
             "Admin export EHRs (dump/load)",
@@ -158,7 +158,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "I_ADMIN_ARCHIVE.archive_ehrs",
             skip_archive_ehrs,
         ),
-        // ── demographic-dependent SM ops — no REST binding (G-3) ────────────
+        // ── demographic-dependent SM ops — no REST binding ────────────
         no_binding(
             "adm/physical-party-delete",
             "Admin physical party delete",

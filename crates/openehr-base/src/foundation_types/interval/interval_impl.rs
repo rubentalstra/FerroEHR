@@ -9,10 +9,10 @@
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
-//!   (the `Interval<T>` class: attributes, `has`/`intersects`/`contains`/
-//!   `is_equal`, invariants).
+//! (the `Interval<T>` class: attributes, `has`/`intersects`/`contains`/
+//! `is_equal`, invariants).
 //! - `BASE/docs/foundation_types/master05-interval.adoc` (prose: open/closed
-//!   boundaries, unbounded = ±infinity).
+//! boundaries, unbounded = ±infinity).
 //!
 //! The truth tables are derived from the `has` post-condition and the
 //! open/closed-boundary prose; `intersects`/`contains` follow the standard
@@ -27,7 +27,7 @@ use super::proper_interval::{ProperInterval, ProperIntervalData};
 // PORT NOTE: BASE intervals range over an ordered foundation type, so the
 // algebra is bounded on `T: PartialOrd` (matching `proper_interval_impl.rs`).
 // RM `DV_INTERVAL<T: DV_ORDERED>` ordering is the separate `openehr_magnitude`
-// concern (P16) and is out of scope here.
+// concern and is out of scope here.
 
 /// A read-only view of the six `Interval<T>` boundary components, so the spec
 /// algebra (`has`/`intersects`/`contains`) is written once and reused by every

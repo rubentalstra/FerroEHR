@@ -458,7 +458,7 @@ fn coded_text(terminology: &str, code: &str) -> Value {
 
 #[test]
 fn dv_text_bad_language_and_encoding_reported() {
-    // F-11-02: DV_TEXT.language (ISO 639-1) and .encoding (IANA character sets).
+    // DV_TEXT.language (ISO 639-1) and .encoding (IANA character sets).
     let bad_lang = json!({
         "_type": "DV_TEXT", "value": "hi",
         "language": code_phrase("ISO_639-1", "zz"),
@@ -495,7 +495,7 @@ fn dv_text_bad_language_and_encoding_reported() {
 
 #[test]
 fn composition_bad_territory_reported() {
-    // F-07-03: COMPOSITION.territory (ISO 3166-1 countries).
+    // COMPOSITION.territory (ISO 3166-1 countries).
     let inst = json!({
         "_type": "COMPOSITION", "archetype_node_id": "x",
         "language": code_phrase("ISO_639-1", "en"),
@@ -511,7 +511,7 @@ fn composition_bad_territory_reported() {
 
 #[test]
 fn entry_bad_encoding_reported() {
-    // F-07-03: ENTRY (OBSERVATION) encoding (IANA character sets).
+    // ENTRY (OBSERVATION) encoding (IANA character sets).
     let inst = json!({
         "_type": "OBSERVATION", "archetype_node_id": "a",
         "language": code_phrase("ISO_639-1", "en"),
@@ -529,7 +529,7 @@ fn entry_bad_encoding_reported() {
 
 #[test]
 fn ism_transition_bad_transition_reported() {
-    // F-11-03: ISM_TRANSITION.transition (instruction_transitions group).
+    // ISM_TRANSITION.transition (instruction_transitions group).
     let inst = json!({
         "_type": "ISM_TRANSITION",
         "current_state": coded_text("openehr", "245"), // active (valid)
@@ -545,7 +545,7 @@ fn ism_transition_bad_transition_reported() {
 
 #[test]
 fn term_mapping_bad_purpose_reported() {
-    // F-11-04: TERM_MAPPING.purpose (term_mapping_purpose group), reached via a
+    // TERM_MAPPING.purpose (term_mapping_purpose group), reached via a
     // DV_TEXT.mappings[].
     let inst = json!({
         "_type": "DV_TEXT", "value": "hi",
@@ -566,7 +566,7 @@ fn term_mapping_bad_purpose_reported() {
 
 #[test]
 fn party_related_bad_relationship_reported() {
-    // F-11-05: PARTY_RELATED.relationship (subject_relationship group).
+    // PARTY_RELATED.relationship (subject_relationship group).
     let inst = json!({
         "_type": "PARTY_RELATED",
         "relationship": coded_text("openehr", "99999"),
@@ -582,7 +582,7 @@ fn party_related_bad_relationship_reported() {
 
 #[test]
 fn dv_ordered_bad_normal_status_reported() {
-    // F-11-05: DV_ORDERED.normal_status (normal_statuses code set) — checked on
+    // DV_ORDERED.normal_status (normal_statuses code set) — checked on
     // any node carrying `normal_status`.
     let inst = json!({
         "_type": "DV_QUANTITY", "magnitude": 1.0, "units": "kg",
@@ -602,7 +602,7 @@ fn dv_ordered_bad_normal_status_reported() {
     assert!(!kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Terminology));
 }
 
-// ── AOM 1.4 C_ATTRIBUTE.existence (F-07-04) ───────────────────────────────────────
+// ── AOM 1.4 C_ATTRIBUTE.existence ───────────────────────────────────────
 
 #[test]
 fn existence_mandatory_attribute_missing_reported() {
@@ -922,7 +922,7 @@ fn media_type_code_list() {
     assert!(walk_only(&good, &mm).is_empty());
 }
 
-// ── closed-archetype walk (F-07-05) ─────────────────────────────────────────
+// ── closed-archetype walk ─────────────────────────────────────────
 
 use crate::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
 
@@ -992,7 +992,7 @@ fn closed_world_ignores_metadata_values() {
     );
 }
 
-// ── ARCHETYPE_SLOT enforcement (F-07-10) ─────────────────────────────────────
+// ── ARCHETYPE_SLOT enforcement ─────────────────────────────────────
 
 fn obs_slot(includes: &[&str], excludes: &[&str], min: i32, max: i32) -> WebTemplateNode {
     let mut root = node("COMPOSITION", "");
@@ -1093,7 +1093,7 @@ fn slot_occurrences_min_and_max() {
     );
 }
 
-// ── DV_ORDINAL / DV_SCALE (symbol, value) pairing (F-07-06) ──────────────────
+// ── DV_ORDINAL / DV_SCALE (symbol, value) pairing ──────────────────
 
 fn ordinal_node(rm: &str, scale: bool) -> WebTemplateNode {
     let mut n = node(rm, "/value");
@@ -1154,7 +1154,7 @@ fn scale_pair_must_match() {
     );
 }
 
-// ── C_STRING fail-closed with fancy-regex fallback (F-07-11) ─────────────────
+// ── C_STRING fail-closed with fancy-regex fallback ─────────────────
 
 #[test]
 fn c_string_backreference_is_enforced() {
@@ -1520,7 +1520,7 @@ fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
 /// write path (~9–11 PG round trips + multi-second node/version INSERTs under
 /// load per the checklist). Ignored by default (timing, not correctness); run:
 /// `cargo nextest run -p openehr-flat --run-ignored all \
-///   -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
+/// -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
 #[test]
 #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
 fn measure_ips_validation_walk_cost() {
@@ -1567,7 +1567,7 @@ fn measure_ips_validation_walk_cost() {
 /// the allocation-discipline rewrite is honest. Ignored by default (timing, not
 /// correctness); run:
 /// `cargo nextest run -p openehr-flat --run-ignored all \
-///   -E 'test(measure_ips_validation_full_cost)' --no-capture`.
+/// -E 'test(measure_ips_validation_full_cost)' --no-capture`.
 #[test]
 #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
 fn measure_ips_validation_full_cost() {

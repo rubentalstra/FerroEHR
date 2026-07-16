@@ -2,16 +2,16 @@
 //!
 //! Spec authority:
 //! - RM common §"Digital Signature"
-//!   (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`):
-//!   "a Version object (an `ORIGINAL_VERSION` or `IMPORTED_VERSION`) is
-//!   serialised into canonical form which is then hashed to produce a digest …
-//!   note that the signature attribute will be Void at this point". For an
-//!   `IMPORTED_VERSION` "all attributes of the object are serialised".
+//! (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`):
+//! "a Version object (an `ORIGINAL_VERSION` or `IMPORTED_VERSION`) is
+//! serialised into canonical form which is then hashed to produce a digest …
+//! note that the signature attribute will be Void at this point". For an
+//! `IMPORTED_VERSION` "all attributes of the object are serialised".
 //! - `VERSION.canonical_form()`
-//!   (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc`):
-//!   "A canonical serial form of this Version, created by serialising all
-//!   attributes except signature, suitable for generating reliable hashes and
-//!   signatures."
+//! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.version.adoc`):
+//! "A canonical serial form of this Version, created by serialising all
+//! attributes except signature, suitable for generating reliable hashes and
+//! signatures."
 //!
 //! PORT NOTE (design `docs/design/version-signing.md` §3.1): the spec leaves the
 //! exact serialization `[.tbd]` ("not yet defined by openEHR; ODIN might be

@@ -66,12 +66,12 @@
 //! until a CNF re-vendor adds cases:
 //!
 //! - master17.1 `=== DV_STATE` — NOTE: "not used and not supported by modeling
-//!   tools".
+//! tools".
 //! - master17.2 `=== DV_PARAGRAPH` — NOTE: "not used or supported".
 //! - master17.5 `=== DV_GENERAL_TIME_SPECIFICATION` — "TBD: this data type
-//!   might not be used or supported by modeling tools".
+//! might not be used or supported by modeling tools".
 //! - master17.5 `=== DV_PERIODIC_TIME_SPECIFICATION` — "TBD: this data type
-//!   might not be used or supported by modeling tools".
+//! might not be used or supported by modeling tools".
 //!
 //! **G-6 — schedule defect: `CONT-DV_TEXT-validate_open` duplicated.**
 //! master17.2 carries the heading `==== Test Case CONT-DV_TEXT-validate_open`
@@ -967,7 +967,7 @@ async fn drive_leaf_rows(
 //
 // Each drives the value type's mandatory field on `Base::AllTypes`, self-skipping
 // when the corpus carries no such leaf (`data_type_mandatory`); the `of_schedule_rows`
-// literal is the register §2 truth-table row count (G-2). DV_SCALE / DV_EHR_URI
+// literal is the register §2 truth-table row count. DV_SCALE / DV_EHR_URI
 // have no all_types leaf and are handled by dedicated retyping run fns below.
 macro_rules! open_case {
     ($fn:ident, $ty:literal, $field:literal, $rows:expr) => {

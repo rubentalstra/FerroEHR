@@ -6,32 +6,32 @@
 //! never a masked skip. By family:
 //!
 //! - **OBSERVATION (4, ECC-VAL-013..016)** — `state`/`protocol` **existence**
-//!   (`0..1` vs `1..1`). The persistent base carries data but neither
-//!   `state` nor `protocol`, so each case authors the existence constraint
-//!   ([`author::constrain_nested_single_mandatory`] on `OBSERVATION`) and drives
-//!   three genuine rows of the 8-row table (register 12 G-1): the RM/schema
-//!   `data`-absent reject, the archetype existence-boundary row
-//!   (`data present, state/protocol absent`) that **distinguishes** this case
-//!   from its siblings, and a `state`+`protocol`-present accept row (injected —
-//!   see [`inject_obs_state_protocol`]). The five `data`-absent-only and the
-//!   remaining `present` permutations are the declared coverage bound
-//!   ([`DataSetReport::of_schedule_rows`]).
+//! (`0..1` vs `1..1`). The persistent base carries data but neither
+//! `state` nor `protocol`, so each case authors the existence constraint
+//! ([`author::constrain_nested_single_mandatory`] on `OBSERVATION`) and drives
+//! three genuine rows of the 8-row table (register 12 G-1): the RM/schema
+//! `data`-absent reject, the archetype existence-boundary row
+//! (`data present, state/protocol absent`) that **distinguishes** this case
+//! from its siblings, and a `state`+`protocol`-present accept row (injected —
+//! see [`inject_obs_state_protocol`]). The five `data`-absent-only and the
+//! remaining `present` permutations are the declared coverage bound
+//! ([`DataSetReport::of_schedule_rows`]).
 //! - **HISTORY (12, ECC-VAL-017..028)** — `events` cardinality × `summary`
-//!   existence, authored OPT, {0,1,3} events with `summary` absent (the
-//!   summary-absent half of each 6-row table). RM `HISTORY.Events_valid` (≥1
-//!   event OR a summary) overrides the schedule's "no events, absent summary →
-//!   accepted" row (register 12 G-7): the RM invariant is spec-authoritative
-//!   over the printed schedule table.
+//! existence, authored OPT, {0,1,3} events with `summary` absent (the
+//! summary-absent half of each 6-row table). RM `HISTORY.Events_valid` (≥1
+//! event OR a summary) overrides the schedule's "no events, absent summary →
+//! accepted" row (register 12 G-7): the RM invariant is spec-authoritative
+//! over the printed schedule table.
 //! - **EVENT (5, ECC-VAL-029..033)** — `state` existence (2, like OBSERVATION)
-//!   + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract `EVENT` accepts
-//!     either). The valid `INTERVAL_EVENT` is fabricated from the base
-//!     `POINT_EVENT` + the mandatory `width`/`math_function` (register 12 G-8,
-//!     [`build_interval_event`]).
+//! + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract `EVENT` accepts
+//! either). The valid `INTERVAL_EVENT` is fabricated from the base
+//! `POINT_EVENT` + the mandatory `width`/`math_function` (register 12 G-8,
+//! [`build_interval_event`]).
 //! - **`ITEM_STRUCTURE` (5, ECC-VAL-034..038)** — type narrowing driven against
-//!   `clinical_content_validation` (four EVALUATION `data` slots narrowed to
-//!   `ITEM_SINGLE`/`TREE`/`LIST`/`TABLE`): the vendored composition accepted, a
-//!   sibling `_type` rejected ("Class not allowed"). `type_any` re-opens the
-//!   slot to abstract `ITEM_STRUCTURE`.
+//! `clinical_content_validation` (four EVALUATION `data` slots narrowed to
+//! `ITEM_SINGLE`/`TREE`/`LIST`/`TABLE`): the vendored composition accepted, a
+//! sibling `_type` rejected ("Class not allowed"). `type_any` re-opens the
+//! slot to abstract `ITEM_STRUCTURE`.
 
 use serde_json::{Value, json};
 
@@ -355,14 +355,14 @@ async fn drive_obs(
     }
 
     // Row B: data present, state/protocol absent → accept iff neither mandatory
-    //        (else reject on the mandated attribute's existence.lower). This is
-    //        the row that distinguishes the four OBS cases.
+    // (else reject on the mandated attribute's existence.lower). This is
+    // the row that distinguishes the four OBS cases.
     let mut boundary = base.clone();
     mutate::retarget_template(&mut boundary, tid);
     let boundary_accept = !state_mand && !protocol_mand;
 
     // Row C: data present, state present, protocol present → accepted (all four
-    //        cases: schedule `present|present|present` row).
+    // cases: schedule `present|present|present` row).
     let mut present = base;
     mutate::retarget_template(&mut present, tid);
     inject_obs_state_protocol(&mut present);
@@ -684,7 +684,7 @@ async fn drive_hist(
             mutate::set_array_count(h, "events", count);
             mutate::remove_field(h, "summary");
         }
-        // Events_valid override (G-7): summary is absent on every row, so 0
+        // Events_valid override: summary is absent on every row, so 0
         // events is rejected by the RM invariant even where the archetype
         // cardinality would permit it.
         let accepted = count >= 1 && events_ok(card, count) && !summary_mand;

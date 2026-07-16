@@ -4,12 +4,12 @@
 //!
 //! Covers the spec-mandated write semantics fixed in the W1-C audit wave:
 //! - a versioned store returns `200 OK` + a `Location` header
-//!   (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`),
-//!   not `204`;
+//! (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`),
+//! not `204`;
 //! - re-storing an existing `(name, version)` returns `409 Conflict`
-//!   (`responses/409_StoredQuery_version.yaml`), never a silent overwrite;
+//! (`responses/409_StoredQuery_version.yaml`), never a silent overwrite;
 //! - the no-version store path upserts (spec: "stores a new query, or updates
-//!   an existing query", `operations/definition_query_store.yaml`, no `409`).
+//! an existing query", `operations/definition_query_store.yaml`, no `409`).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use axum::Router;
@@ -122,7 +122,7 @@ async fn post_json(app: Router, uri: &str, body: &str) -> (StatusCode, String) {
     (status, String::from_utf8_lossy(&bytes).into_owned())
 }
 
-/// The QUERY API is wired end to end through the router (P16): `POST /query/aql`
+/// The QUERY API is wired end to end through the router: `POST /query/aql`
 /// and `GET /query/aql` execute an ad-hoc query and return a `RESULT_SET`
 /// (`schemas/query/ResultSet`: `columns` + `rows`, `_schema_version` 1.0.3).
 #[tokio::test]

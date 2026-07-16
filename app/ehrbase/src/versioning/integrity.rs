@@ -1,4 +1,4 @@
-//! Digital-signature integrity at commit and read (S-15, S-40, S-44).
+//! Digital-signature integrity at commit and read.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature +
 //! BASE arch-overview `master07-security.adoc` §Integrity. The signature is

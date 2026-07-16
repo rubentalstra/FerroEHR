@@ -111,7 +111,7 @@ pub(crate) fn leaf_to_flat(
             // types) marks `DV_TEXT._formatting_` as **skip** (along with
             // `_language_`/`_encoding_`, which we do drop). We deliberately keep
             // `|formatting` for RM→FLAT→RM round-trip fidelity, matching Better
-            // (F-10-06). `formatting` is optional, so its presence never breaks
+            //. `formatting` is optional, so its presence never breaks
             // canonical validity.
             put(out, base, "formatting", dv.get("formatting"));
         }
@@ -143,7 +143,7 @@ pub(crate) fn leaf_to_flat(
             // concrete format exists (SM serial_data_formats is unfinished,
             // F-10-01/05). Per serialization.md these Better-only extras live
             // behind `ehrbase-quirks` and must never be hard-coded onto the
-            // default (spec/ITS-REST-common) FLAT path (F-13-25).
+            // default (spec/ITS-REST-common) FLAT path.
             #[cfg(feature = "ehrbase-quirks")]
             {
                 put(out, base, "unit_system", dv.get("units_system"));
@@ -676,7 +676,7 @@ mod tests {
             .collect()
     }
 
-    // G-3: DV_QUANTITY secondary attributes (master05 §DV_QUANTITY).
+    // DV_QUANTITY secondary attributes (master05 §DV_QUANTITY).
     #[test]
     fn quantity_extras_roundtrip() {
         let dv = json!({
@@ -711,7 +711,7 @@ mod tests {
         );
     }
 
-    // G-3: DV_PROPORTION — precision + computed magnitude on output.
+    // DV_PROPORTION — precision + computed magnitude on output.
     #[test]
     fn proportion_computed_magnitude() {
         let dv = json!({"_type": "DV_PROPORTION", "numerator": 20.5,
@@ -725,7 +725,7 @@ mod tests {
         assert!((mag - 20.5 / 12.4).abs() < 1e-9);
     }
 
-    // G-5: DV_MULTIMEDIA full attribute set (master05 §DV_MULTIMEDIA).
+    // DV_MULTIMEDIA full attribute set (master05 §DV_MULTIMEDIA).
     #[test]
     fn multimedia_full_roundtrip() {
         let dv = json!({
@@ -769,7 +769,7 @@ mod tests {
         assert_eq!(dv2["data"], json!("Z2hn"));
     }
 
-    // G-2: `|raw` canonical-JSON bypass (master02/master04 §"Raw canonical JSON").
+    // `|raw` canonical-JSON bypass (master02/master04 §"Raw canonical JSON").
     #[test]
     fn raw_bypass_returns_verbatim() {
         // The FLAT key is `<path>|raw`; here the leaf-relative key is just `|raw`.
@@ -782,7 +782,7 @@ mod tests {
         assert_eq!(dv["magnitude"], json!(120));
     }
 
-    // G-2: a `|raw` value without `_type` is ignored (falls through to a leaf).
+    // a `|raw` value without `_type` is ignored (falls through to a leaf).
     #[test]
     fn raw_without_type_ignored() {
         let es = view_of(&[("|raw", json!({"magnitude": 1})), ("", json!("plain"))]);
@@ -791,7 +791,7 @@ mod tests {
         assert_eq!(dv["value"], json!("plain"));
     }
 
-    // G-4: temporal family magnitude_status/normal_status.
+    // temporal family magnitude_status/normal_status.
     #[test]
     fn datetime_extras() {
         let dv = json!({"_type": "DV_DATE_TIME", "value": "2022-01-12T13:22:34Z",

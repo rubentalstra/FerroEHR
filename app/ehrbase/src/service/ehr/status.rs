@@ -53,7 +53,7 @@ impl EhrbaseService {
 
     /// The **bare** `EHR_STATUS` at a specific version (not the
     /// `ORIGINAL_VERSION` wrapper) — `GET …/ehr_status/{version_uid}`
-    /// (F-01-03).
+    ///.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs to
@@ -508,7 +508,7 @@ impl EhrbaseService {
         a_version: &str,
     ) -> Result<Value, SmError> {
         let tree = parse_tree_id(a_version)?;
-        // F-01-03: the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
+        // the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
         Ok(self
             .status_by_version(an_ehr_id, a_version_uid, tree)
             .await?

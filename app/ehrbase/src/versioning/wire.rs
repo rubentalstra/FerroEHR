@@ -1,5 +1,5 @@
 //! The served wire builders: `ORIGINAL_VERSION` / `VERSIONED_OBJECT` /
-//! `REVISION_HISTORY` canonical-JSON value construction (S-12, S-13, S-46).
+//! `REVISION_HISTORY` canonical-JSON value construction.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Versioned Objects /
 //! §Version and its Subtypes, RM common `master04-generic_package.adoc`

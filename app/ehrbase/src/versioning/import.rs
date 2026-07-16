@@ -1,5 +1,5 @@
 //! Import: replaying received `ORIGINAL_VERSION`s into the local store as
-//! `IMPORTED_VERSION`s (S-14, S-36).
+//! `IMPORTED_VERSION`s.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Copying / §Committal
 //! and Audits. Each received original is committed locally wrapped in an

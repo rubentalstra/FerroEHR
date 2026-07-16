@@ -120,15 +120,15 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `content_invalid` — the payload `_type` is absent or not a
-    ///   demographic party type (AGENT/GROUP/ORGANISATION/PERSON/ROLE),
-    ///   `i_party.adoc`.
+    /// demographic party type (AGENT/GROUP/ORGANISATION/PERSON/ROLE),
+    /// `i_party.adoc`.
     /// - [`SmError`] `content_invalid` — the body fails RM validation for the
-    ///   resolved party kind (`validate::validate_party_body`).
+    /// resolved party kind (`validate::validate_party_body`).
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — the
-    ///   versioned-create transaction fails (integrity conflict, pool
-    ///   exhaustion, or a storage/database fault).
+    /// versioned-create transaction fails (integrity conflict, pool
+    /// exhaustion, or a storage/database fault).
     /// - [`SmError`] `precondition_violation` — the committed version uid does
-    ///   not parse (defensive; the uid is server-generated).
+    /// not parse (defensive; the uid is server-generated).
     pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
@@ -144,9 +144,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
-    ///   storage/database fault while resolving the party kind or reading its
-    ///   current version. A *not-found* on either resolves to `Ok(false)`, not
-    ///   an error.
+    /// storage/database fault while resolving the party kind or reading its
+    /// current version. A *not-found* on either resolves to `Ok(false)`, not
+    /// an error.
     pub async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
         // True iff a *live* party of some kind exists (a logically deleted party
         // reads `Null`, satisfying the delete post-condition `not has_party`).
@@ -169,8 +169,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
-    ///   storage/database fault while reading the version. A malformed id or a
-    ///   *not-found* version resolves to `Ok(false)`, not an error.
+    /// storage/database fault while reading the version. A malformed id or a
+    /// *not-found* version resolves to `Ok(false)`, not an error.
     pub async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
         let Ok((vo_id, tree)) = parse_version_uid(&a_party_version_id) else {
             return Ok(false);
@@ -186,10 +186,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no versioned party with
-    ///   this id exists (`party_kind_at`), or its current version is logically
-    ///   deleted / absent (the read is empty).
+    /// this id exists (`party_kind_at`), or its current version is logically
+    /// deleted / absent (the read is empty).
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
-    ///   storage/database fault during kind resolution or read.
+    /// storage/database fault during kind resolution or read.
     pub async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
@@ -211,9 +211,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no versioned party
-    ///   with this id exists, or no version existed at `a_time`.
+    /// with this id exists, or no version existed at `a_time`.
     /// - [`SmError`] `precondition_violation` — `a_time` does not parse as an
-    ///   ISO-8601 timestamp.
+    /// ISO-8601 timestamp.
     /// - [`SmError`] on a storage/database fault during kind resolution or read.
     pub async fn get_party_at_time(
         &self,
@@ -233,11 +233,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse as an
-    ///   `OBJECT_VERSION_ID`.
+    /// `OBJECT_VERSION_ID`.
     /// - [`SmError`] `object_version_does_not_exist` — the object is not a
-    ///   party or holds no such version.
+    /// party or holds no such version.
     /// - [`SmError`] on a storage/database fault or a signing failure while
-    ///   assembling the `ORIGINAL_VERSION`.
+    /// assembling the `ORIGINAL_VERSION`.
     pub async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
         let (vo_id, tree) = parse_version_uid(&a_party_version_id)?;
         match self.party_version(vo_id, tree).await {
@@ -255,13 +255,13 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `content_invalid` — the payload `_type` is absent / not a
-    ///   party type, or the body fails RM validation for that kind.
+    /// party type, or the body fails RM validation for that kind.
     /// - [`SmError`] `precondition_violation` — `preceding_version_uid` does
-    ///   not parse as an `OBJECT_VERSION_ID`.
+    /// not parse as an `OBJECT_VERSION_ID`.
     /// - [`SmError`] `versioned_object_does_not_exist` — no live party of the
-    ///   payload's kind exists under this id (unknown, wrong-kind, or deleted).
+    /// payload's kind exists under this id (unknown, wrong-kind, or deleted).
     /// - [`SmError`] `conflict` — the preceding version is stale (optimistic
-    ///   concurrency), or the write transaction fails.
+    /// concurrency), or the write transaction fails.
     pub async fn update_party(
         &self,
         a_versioned_party_id: Uuid,
@@ -291,7 +291,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no versioned party
-    ///   with this id exists.
+    /// with this id exists.
     /// - [`SmError`] mapped from `400` — the party is already deleted.
     /// - [`SmError`] on a storage/database fault during the delete transaction.
     pub async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
@@ -314,11 +314,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] mapped from `422` — the body's `_type` mismatches the
-    ///   route or fails RM validation.
+    /// route or fails RM validation.
     /// - [`SmError`] `precondition_violation` — the committed version uid does
-    ///   not parse (defensive; server-generated).
+    /// not parse (defensive; server-generated).
     /// - [`SmError`] on a storage/database fault during the create transaction
-    ///   or the tag read.
+    /// or the tag read.
     pub async fn party_create(
         &self,
         kind: PartyKind,
@@ -343,9 +343,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or `version_at_time`
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] mapped from `404` — unknown id, wrong kind for the route,
-    ///   or no version at the requested version/instant.
+    /// or no version at the requested version/instant.
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn party_get(
         &self,
@@ -369,14 +369,14 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or the `If-Match` token
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
-    ///   a version other than the current latest.
+    /// a version other than the current latest.
     /// - [`SmError`] mapped from `404` — unknown id, wrong kind, or a deleted
-    ///   current version.
+    /// current version.
     /// - [`SmError`] mapped from `422` — the body fails RM validation.
     /// - [`SmError`] mapped from `409` — the expected version is stale, or the
-    ///   write transaction fails.
+    /// write transaction fails.
     pub async fn party_update(
         &self,
         kind: PartyKind,
@@ -410,10 +410,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse, or a
-    ///   supplied `If-Match` is malformed (W-14 F-12: a malformed header is
-    ///   rejected, never silently ignored).
+    /// supplied `If-Match` is malformed (W-14 F-12: a malformed header is
+    /// rejected, never silently ignored).
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
-    ///   a version other than the current latest.
+    /// a version other than the current latest.
     /// - [`SmError`] mapped from `404` — unknown id or wrong kind for the route.
     /// - [`SmError`] mapped from `400` — the party is already deleted.
     /// - [`SmError`] mapped from `409` — the expected version is stale.
@@ -446,7 +446,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a party or holds no
-    ///   versions.
+    /// versions.
     /// - [`SmError`] on a storage/database fault reading the version spine.
     pub async fn versioned_party_get(
         &self,
@@ -478,9 +478,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or `version_at_time`
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a party or no version
-    ///   existed at the instant.
+    /// existed at the instant.
     /// - [`SmError`] on a storage/database fault or a signing failure.
     pub async fn versioned_party_version_get_at_time(
         &self,
@@ -497,7 +497,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — either id does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a party or holds no
-    ///   such version.
+    /// such version.
     /// - [`SmError`] on a storage/database fault or a signing failure.
     pub async fn versioned_party_version_get_by_id(
         &self,
@@ -518,11 +518,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] mapped from `422` — the change-set is malformed, contains
-    ///   an EHR-kind version (the engine's scope check), or a version fails
-    ///   validation.
+    /// an EHR-kind version (the engine's scope check), or a version fails
+    /// validation.
     /// - [`SmError`] mapped from `409` — a preceding version is stale.
     /// - [`SmError`] on a storage/database fault during the commit or the
-    ///   read-back.
+    /// read-back.
     pub async fn demographic_contribution_create(
         &self,
         body: Value,
@@ -535,7 +535,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the uid is not a UUID.
     /// - [`SmError`] mapped from `404` — unknown uid, or an EHR-scoped
-    ///   contribution (the demographic surface only sees `ehr_id IS NULL`).
+    /// contribution (the demographic surface only sees `ehr_id IS NULL`).
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn demographic_contribution_get(
         &self,
@@ -593,7 +593,7 @@ impl EhrbaseService {
     /// - [`SmError`] `precondition_violation` — the id does not parse.
     /// - [`SmError`] mapped from `404` — no live party of the routed kind.
     /// - [`SmError`] mapped from `422` — a tag misses its key or violates
-    ///   `Inv_key_valid`/`Inv_value_valid` (RM `common.item_tag`).
+    /// `Inv_key_valid`/`Inv_value_valid` (RM `common.item_tag`).
     /// - [`SmError`] on a storage/database fault during the replace.
     pub async fn party_tags_update(
         &self,
@@ -649,10 +649,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] mapped from `422` — the body is not a valid
-    ///   `PARTY_RELATIONSHIP` (missing/invalid `source`/`target` `PARTY_REF`s,
-    ///   `validate::validate_relationship_body`).
+    /// `PARTY_RELATIONSHIP` (missing/invalid `source`/`target` `PARTY_REF`s,
+    /// `validate::validate_relationship_body`).
     /// - [`SmError`] `precondition_violation` — the committed version uid does
-    ///   not parse (defensive; server-generated).
+    /// not parse (defensive; server-generated).
     /// - [`SmError`] on a storage/database fault during the create transaction.
     pub async fn create_party_relationship(
         &self,
@@ -691,8 +691,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no relationship with
-    ///   this id exists, or its current version is logically deleted / absent
-    ///   (the read is empty).
+    /// this id exists, or its current version is logically deleted / absent
+    /// (the read is empty).
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn get_party_relationship(
         &self,
@@ -716,9 +716,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — `a_time` does not parse as an
-    ///   ISO-8601 timestamp.
+    /// ISO-8601 timestamp.
     /// - [`SmError`] `versioned_object_does_not_exist` — no relationship with
-    ///   this id, or no version existed at `a_time`.
+    /// this id, or no version existed at `a_time`.
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn get_party_relationship_at_time(
         &self,
@@ -738,7 +738,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse.
     /// - [`SmError`] `object_version_does_not_exist` — the object is not a
-    ///   relationship or holds no such version.
+    /// relationship or holds no such version.
     /// - [`SmError`] on a storage/database fault or a signing failure.
     pub async fn get_party_relationship_at_version(
         &self,
@@ -759,9 +759,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — `preceding_version_uid` does
-    ///   not parse as an `OBJECT_VERSION_ID`.
+    /// not parse as an `OBJECT_VERSION_ID`.
     /// - [`SmError`] mapped from `404` — no live relationship under this id
-    ///   (unknown, wrong-kind, or deleted).
+    /// (unknown, wrong-kind, or deleted).
     /// - [`SmError`] mapped from `422` — the body fails RM validation.
     /// - [`SmError`] mapped from `409` — the preceding version is stale.
     pub async fn update_party_relationship(
@@ -786,7 +786,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no relationship with
-    ///   this id has a current version.
+    /// this id has a current version.
     /// - [`SmError`] mapped from `400` — the relationship is already deleted.
     /// - [`SmError`] on a storage/database fault during the delete transaction.
     pub async fn delete_party_relationship(
@@ -815,7 +815,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] mapped from `422` — the body's `_type` is not
-    ///   `PARTY_RELATIONSHIP` or fails RM validation.
+    /// `PARTY_RELATIONSHIP` or fails RM validation.
     /// - [`SmError`] on a storage/database fault during the create transaction.
     pub async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
         Ok(self.create_relationship(body).await?)
@@ -826,9 +826,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or `version_at_time`
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] mapped from `404` — unknown id, wrong kind, or no version
-    ///   at the requested version/instant.
+    /// at the requested version/instant.
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn party_relationship_get(
         &self,
@@ -847,11 +847,11 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or the `If-Match` token
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
-    ///   a version other than the current latest.
+    /// a version other than the current latest.
     /// - [`SmError`] mapped from `404` — unknown id, wrong kind, or a deleted
-    ///   current version.
+    /// current version.
     /// - [`SmError`] mapped from `422` — the body fails RM validation.
     /// - [`SmError`] mapped from `409` — the expected version is stale.
     pub async fn party_relationship_update(
@@ -880,10 +880,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse, or a
-    ///   supplied `If-Match` is malformed (W-14 F-12: rejected, never silently
-    ///   ignored).
+    /// supplied `If-Match` is malformed (W-14 F-12: rejected, never silently
+    /// ignored).
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
-    ///   a version other than the current latest.
+    /// a version other than the current latest.
     /// - [`SmError`] mapped from `404` — unknown id or wrong kind.
     /// - [`SmError`] mapped from `400` — the relationship is already deleted.
     /// - [`SmError`] mapped from `409` — the expected version is stale.
@@ -913,7 +913,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a relationship or holds
-    ///   no versions.
+    /// no versions.
     /// - [`SmError`] on a storage/database fault reading the version spine.
     pub async fn versioned_party_relationship_get(
         &self,
@@ -947,9 +947,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or `version_at_time`
-    ///   does not parse.
+    /// does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a relationship or no
-    ///   version existed at the instant.
+    /// version existed at the instant.
     /// - [`SmError`] on a storage/database fault or a signing failure.
     pub async fn party_relationship_version_get_at_time(
         &self,
@@ -966,7 +966,7 @@ impl EhrbaseService {
     /// # Errors
     /// - [`SmError`] `precondition_violation` — either id does not parse.
     /// - [`SmError`] mapped from `404` — the id is not a relationship or holds
-    ///   no such version.
+    /// no such version.
     /// - [`SmError`] on a storage/database fault or a signing failure.
     pub async fn party_relationship_version_get_by_id(
         &self,

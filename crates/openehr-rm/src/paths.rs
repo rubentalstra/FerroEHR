@@ -14,37 +14,37 @@
 //!
 //! Spec:
 //! - RM 1.2.0 `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`
-//!   (the function signatures + parent semantics).
+//! (the function signatures + parent semantics).
 //! - BASE `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
-//!   the path syntax:
-//!   - §"Basic Syntax": `/`-separated attribute segments, relative vs absolute,
-//!     and the `//` path pattern ("matches any number of path segments").
-//!   - §"Predicate Expressions": the `[atNNNN]` archetype-node-id shortcut for
-//!     `[@archetype_node_id='atNNNN']`, the archetype-id predicate at chaining
-//!     points (`[openEHR-EHR-…]` / `[archetype_id=…]`), the
-//!     `[atNNNN and name/value='x']` form and its `[atNNNN,'name']` shortcut.
-//!   - §"Using a Uid-based Predicate": `[uid='…']` / `[atNNNN and uid='…']`.
-//!   - §"Using Positional Parameters": the XPath positional predicate `[n]`
-//!     (1-based) — "the only guaranteed unique paths are those based on
-//!     positional predicates".
+//! the path syntax:
+//! - §"Basic Syntax": `/`-separated attribute segments, relative vs absolute,
+//! and the `//` path pattern ("matches any number of path segments").
+//! - §"Predicate Expressions": the `[atNNNN]` archetype-node-id shortcut for
+//! `[@archetype_node_id='atNNNN']`, the archetype-id predicate at chaining
+//! points (`[openEHR-EHR-…]` / `[archetype_id=…]`), the
+//! `[atNNNN and name/value='x']` form and its `[atNNNN,'name']` shortcut.
+//! - §"Using a Uid-based Predicate": `[uid='…']` / `[atNNNN and uid='…']`.
+//! - §"Using Positional Parameters": the XPath positional predicate `[n]`
+//! (1-based) — "the only guaranteed unique paths are those based on
+//! positional predicates".
 //!
 //! Design notes (recorded per F-12-02):
 //! - `PATHABLE.parent()` is a back-reference; per the repo convention (no
-//!   owning back-refs) it is realised as a root-anchored lookup
-//!   ([`parent_of`]), not a stored pointer.
+//! owning back-refs) it is realised as a root-anchored lookup
+//! ([`parent_of`]), not a stored pointer.
 //! - The typed-`enum` RM tree is *not* walked directly: a second, typed
-//!   visitor over ~130 generated structs would duplicate this logic for no
-//!   wire gain — every consumer already holds the canonical JSON form.
+//! visitor over ~130 generated structs would duplicate this logic for no
+//! wire gain — every consumer already holds the canonical JSON form.
 //! - Predicates carrying general comparison expressions (e.g.
-//!   `[at0007 and time >= '...']`) are rejected as
-//!   [`PathError::UnsupportedPredicate`] — the accept-set here is the
-//!   archetype-id / name / uid / positional subset the spec's own
-//!   top-level-structure and uniqueness examples use.
+//! `[at0007 and time >= '...']`) are rejected as
+//! [`PathError::UnsupportedPredicate`] — the accept-set here is the
+//! archetype-id / name / uid / positional subset the spec's own
+//! top-level-structure and uniqueness examples use.
 //! - PORT NOTE: the `//` pattern and the positional predicate `[n]` are part of
-//!   the master11 *path* grammar (realised here), but are **not** part of the
-//!   AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
-//!   standard/archetype/node predicates) — this module is the RM/URI path
-//!   engine, not the AQL one, and the AQL parser (`openehr-query`) is untouched.
+//! the master11 *path* grammar (realised here), but are **not** part of the
+//! AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
+//! standard/archetype/node predicates) — this module is the RM/URI path
+//! engine, not the AQL one, and the AQL parser (`openehr-query`) is untouched.
 
 use serde_json::Value;
 use std::fmt;
@@ -83,13 +83,13 @@ pub enum PathError {
 /// The predicate of one path segment (a conjunction of the BASE `master11-paths`
 /// §"Predicate Expressions" shortcuts):
 /// - `archetype_node_id` — `[at0003]` / `[openEHR-EHR-OBSERVATION.x.v1]` /
-///   `[archetype_id=…]`, the shortcut for `[@archetype_node_id='…']` (at
-///   archetype chaining points the node id carries the archetype id);
+/// `[archetype_id=…]`, the shortcut for `[@archetype_node_id='…']` (at
+/// archetype chaining points the node id carries the archetype id);
 /// - `name_value` — `[at0003,'name']` / `[at0003 and name/value='name']`;
 /// - `uid` — `[uid='…']` / `[at0003 and uid='…']` (§"Using a Uid-based
-///   Predicate");
+/// Predicate");
 /// - `position` — the 1-based XPath positional predicate `[n]` (§"Using
-///   Positional Parameters"), applied to the *container*, not a node attribute.
+/// Positional Parameters"), applied to the *container*, not a node attribute.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Predicate {
     /// `archetype_node_id` (or, at archetype roots, archetype id).
@@ -825,9 +825,9 @@ impl FromStr for EhrUri {
             return Err(EhrUriError::WrongScheme(scheme.to_owned()));
         }
         // The three leading forms are distinguished by what follows `ehr:`:
-        //   `//` → authority form (`//system_id/ehr_id/…`);
-        //   `/`  → absolute form  (`/ehr_id/…`);
-        //   else → relative form  (`compositions/…`, `directory`).
+        // `//` → authority form (`//system_id/ehr_id/…`);
+        // `/` → absolute form (`/ehr_id/…`);
+        // else → relative form (`compositions/…`, `directory`).
         let (system_id, ehr_id, tail) = if let Some(after) = rest.strip_prefix("//") {
             let (system, after) = split_first(after);
             let (ehr, tail) = split_first(after);
