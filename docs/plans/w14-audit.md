@@ -569,8 +569,17 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 - [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
 
-**Structural wave (owner-ruled 2026-07-16: B+C — see §4d plan; RESEQUENCED
-by owner: runs IMMEDIATELY after Wave 1 lands, BEFORE Waves 2–4):** delete the
+**Structural wave — B+C EXECUTED 2026-07-16** (big-bang, converged once):
+`ehrbase-sm` deleted (33 traits + ~238 forwarding methods → inherent
+`EhrbaseService` API, SM-chapter-qualified names for cross-interface
+collisions), `ehrbase-rest → ehrbase` concrete (zero generics, zero dyn),
+`ehrbase-server` wiring binary (entrypoint unchanged), zero re-exports
+anywhere, config/telemetry/provenance/committer-context platform-owned,
+Mock deleted → per-test real-PG containers (Drop-reaped). Receipts:
+**364/365 HTTP tests green** (the 1 red = the intentional F-43 spec-gap
+test; 2 principled ignores pending a FHIR transform fixture); platform +
+server crates green across all targets; ADR-018 + docs/changelog landed.
+Original plan for the record:** delete the
 trait seam, absorb `ehrbase-sm` into the `ehrbase` lib, concrete `AppState`,
 new `ehrbase-server` bin, Mock → testcontainers. **Method (owner-mandated,
 the W-3f discipline): executed by the orchestrator in-session as a BIG-BANG
