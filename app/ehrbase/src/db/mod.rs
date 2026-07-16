@@ -9,7 +9,7 @@
 mod error;
 mod migrate;
 mod pool;
-mod settings;
+pub mod settings;
 
 pub mod iden;
 
