@@ -83,8 +83,13 @@ findings register: `w14-audit.md` §4/§5.
       every direct helper, `AuditInput::from_update` (ITS-REST committal
       MUST merge), lifecycle 553 relaxes validation, verbatim signature +
       attestations threaded on composition create/update + status update.
-- [ ] S2 common types: typed results replace `ServiceResponse`/
-      `ResourceMeta`; `service/mod.rs` split; `CommitEnv` relocation.
+- [~] S2 common types — RE-SCOPED (honest finding): `ResourceMeta` is
+      already a small typed struct (uid/ehr_id/last_modified), not JSON
+      digging — the write paths now return typed `Committed` (composition,
+      status, mutators) and further envelope retirement is wire-seam work in
+      S5; `CommitEnv` already lives in `versioning` (tracker error);
+      `service/mod.rs` split happens during convergence with compiler
+      feedback.
 - [ ] S3 chapter `ehr` — PARTIAL: F-4 done (one indexed EXISTS over the
       promoted `template_id`), F-7 done (`ehr_summary_read`, one statement),
       composition/status envelope threading done. OPEN: the wrapper/inner
@@ -95,8 +100,11 @@ findings register: `w14-audit.md` §4/§5.
       wrapper/inner merges and cleanup across demographic, definition,
       query, terminology, admin, message, ehr_index, subject_proxy,
       validity.
-- [ ] S5 REST adapter convergence + test convergence + the visibility
-      rationalization sweep (target 10).
+- [ ] S5 THE CONVERGENCE (started 2026-07-16): compiler-driven — minimal
+      visibility re-adds (622 qualifiers stripped; each survivor is proven),
+      real per-method `# Errors`/docs where clippy demands, REST/test
+      call-site fixes for the typed results and renamed primitives,
+      `service/mod.rs` split, then full gates.
 - [ ] S6 gates: workspace clippy/nextest green, fmt, ECC **zero-drift vs
       the B+C receipt**, register re-anchor pass (`w14-audit.md`
       post-rewrite item), fresh benchmark pair at W-14 close.
