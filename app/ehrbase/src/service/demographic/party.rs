@@ -171,6 +171,7 @@ impl EhrbaseService {
         vo_id: Uuid,
         body: Value,
         expected: Option<TreeId>,
+        update: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
@@ -201,7 +202,15 @@ impl EhrbaseService {
         }
         validate_party_body(kind, &body)?;
 
-        let audit = self.demographic_audit(change_type::MODIFICATION, "PARTY update");
+        let audit = match update {
+            Some(u) => crate::versioning::AuditInput::from_update(
+                u,
+                change_type::MODIFICATION,
+                "PARTY update",
+                &self.effective_system_id(),
+            ),
+            None => self.demographic_audit(change_type::MODIFICATION, "PARTY update"),
+        };
         let ctx = CommitEnv::signing_ctx(self);
         let repr_body = self.multimedia.is_none().then(|| body.clone());
         let mut tx = self.pool.begin().await?;
