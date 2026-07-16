@@ -126,23 +126,27 @@ cargo audit && cargo deny check
 bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
 ```
 
-### Target-dir & warm-build discipline (owner rules 2026-07-12)
+### Target-dir & warm-build discipline (owner rules 2026-07-12, tightened 2026-07-16)
 
-The workspace is huge; a cold build is expensive and `target/` bloat once hit
-~90 GB. These rules keep builds warm and disk bounded:
+The workspace is huge; a cold build is expensive and `target/` bloat has
+twice filled the disk (~90 GB, then **394 GB on 2026-07-16** — one debug tree
+plus four agent lanes plus the IDE dir). These rules keep builds warm and
+disk bounded:
 
-- **One shared `./target` for all CLI cargo** in a session (build, clippy,
-  nextest). Concurrent subagents that must build in parallel use **fixed lanes**
-  `CARGO_TARGET_DIR=$PWD/target/agent-t1` … `agent-t4` (stable names, reused
-  across sessions = warm) — never a fresh per-task name, never a `/tmp` or
-  scratchpad target dir, and never more than four lanes.
-- **`target-cli` is retired (deleted 2026-07-12) — do not recreate it.** The
-  IDE-vs-CLI contention fix is inverted: RustRover gets its own small dir
-  (Cargo settings → env `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
-  — MUST be absolute: a relative value resolves against cargo's cwd and
-  sprouts a nested `target/` inside every crate the IDE checks), the CLI
-  keeps `./target`. Never `pkill -9 rustc` to "fix" slowness — it corrupts
-  incremental caches.
+- **ONE `./target` for ALL cargo, period (owner ruling 2026-07-16).** The
+  per-agent lane scheme (`target/agent-t1` … `t4`) is **retired — never
+  recreate it**: every extra target dir is a full duplicate build tree, and
+  the lanes alone held 140 GB. Subagents use the same `./target`; cargo's
+  own file lock serializes concurrent builds — waiting on the lock is the
+  intended behaviour, never work around it with a second target dir, a
+  `/tmp`/scratchpad dir, or any `CARGO_TARGET_DIR` override. (Corollary:
+  don't have subagents run cargo in parallel at all — the orchestrator runs
+  the builds once at convergence.)
+- RustRover keeps its own small dir (Cargo settings → env
+  `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
+  — MUST be absolute) so the IDE never holds the CLI lock; it is included in
+  the hygiene sweep below. Never `pkill -9 rustc` to "fix" slowness — it
+  corrupts incremental caches.
 - **Iterate scoped, gate wide.** While working: `cargo clippy -p <crate>
   --all-targets` and `cargo nextest run -p <crate>`. The full `--workspace`
   gates run once, before commit. `clippy` shares the check cache — running it
@@ -150,9 +154,10 @@ The workspace is huge; a cold build is expensive and `target/` bloat once hit
 - **Never vary `RUSTFLAGS`, features, or profile between runs** — any change
   rebuilds the world. Use the exact commands above, no ad-hoc flags.
 - **Disk hygiene:** cargo never garbage-collects `target/debug/deps` (stale
-  `.rlib`s accumulate on every dep bump). When `du -sh target` exceeds ~30 GB,
-  run `cargo clean` once (one cold rebuild, then warm again) and delete stale
-  agent lanes. Check no other session/IDE is mid-build first
+  `.rlib`s accumulate on every dep bump and every wide refactor). Check
+  `du -sh target` at the START of any heavy session and after any
+  rewrite-scale change; above ~30 GB run `cargo clean` (one cold rebuild,
+  then warm again). Check no other session/IDE is mid-build first
   (`pgrep -fl 'cargo|rustc'`) — parallel sessions share this tree.
 
 Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
