@@ -5,14 +5,15 @@ paths:
   - "app/ehrbase-rest/src/config.rs"
   - "app/ehrbase-rest/src/**/config.rs"
   - "app/ehrbase/assets/ehrbase.default.toml"
-  - "docs/design/configuration.md"
 ---
 
 # Configuration discipline — one `ehrbase.toml`, one loader (W-13)
 
-No openEHR spec governs configuration — this is entirely our own design. The
-implementation contract is `docs/design/configuration.md`; this rule is the
-short standing guard. **Cite the openEHR spec only where a config value is
+No openEHR spec governs configuration — this is entirely our own design.
+The implementation contract is the loader itself
+(`app/ehrbase/src/config/`) + the documented default file
+(`app/ehrbase/assets/ehrbase.default.toml`) + the user book page; this rule
+is the standing guard. **Cite the openEHR spec only where a config value is
 spec-adjacent** (e.g. signing modes → RM common master06 §Digital Signature);
 everywhere else flag "no openEHR spec governs configuration — our own design".
 
@@ -63,8 +64,8 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
    `website/book/src/installation/configuration.md`, the Helm `values.yaml`
    `config:` block + golden renders (`deploy/helm/validate.sh --update`), and
    `CHANGELOG.md` — same PR.
-4. Keep the `docs/design/configuration.md` schema (§3) and the §4 old→new table
-   authoritative; reconcile the deployment/compose spellings against them.
+4. The default TOML + the book page are the schema of record; reconcile
+   the deployment/compose spellings against them.
 
 ## Tests
 
