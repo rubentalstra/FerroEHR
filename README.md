@@ -240,22 +240,22 @@ on official openEHR CKM templates. Both directions always published.
 
 ### Maximum sustained throughput
 
-**262 req/s vs 161 req/s — ehrbase-rs sustains 1.6× upstream's load**, and
-carries **6,498 vs 3,981 completed clinical events per minute** doing it
+**632 req/s vs 316 req/s — ehrbase-rs sustains 2.0× upstream's load**, and
+carries **15,647 vs 7,838 completed clinical events per minute** doing it
 (the knee: the highest load holding p99 ≤ 1 s and errors ≤ 0.1%, measured
 back-to-back on the same host, same payloads, full config parity):
 
 | | Max sustained | Clinical events/min | p99 at the knee |
 |---|--:|--:|--:|
-| **ehrbase-rs** | **262 req/s** (15,733 req/min) | **6,498** | 195 ms |
-| EHRbase 2.34.0 (Java) | 161 req/s (9,632 req/min) | 3,981 | 32 ms |
+| **ehrbase-rs** | **632 req/s** (37,894 req/min) | **15,647** | **92 ms** |
+| EHRbase 2.34.0 (Java) | 316 req/s (18,968 req/min) | 7,838 | 200 ms |
 
 ![Max sustained req/s at the SLO](docs/benchmarks/charts/comparison-knee.svg)
 
-Past its knee, upstream falls off a cliff: at the load ehrbase-rs *almost*
-still sustains (L=32), upstream's p99 is **44 seconds** with 4.3% errors —
-ours is 2.9 s with 0.14%. Full ladders:
-[ehrbase-rs](docs/benchmarks/ehrbase-rs/KNEE.md) ·
+At upstream's own knee load (L=32), ehrbase-rs answers with a **21.8 ms**
+p99 against upstream's 200 ms — and at the load ehrbase-rs still sustains
+(L=64), upstream collapses to **48.5% errors with a 59-second p99**. Full
+ladders: [ehrbase-rs](docs/benchmarks/ehrbase-rs/KNEE.md) ·
 [upstream](docs/benchmarks/ehrbase-java/KNEE.md).
 
 ![ehrbase-rs saturation ladder](docs/benchmarks/ehrbase-rs/charts/knee.svg)
@@ -265,20 +265,20 @@ ours is 2.9 s with 0.14%. Full ladders:
 The measured clinical hour (1,209 requests, zero errors on both servers),
 from [the full comparison](docs/benchmarks/COMPARISON.md) — generated,
 every number traces to a committed artefact. **ehrbase-rs holds the lower
-p99 in 12 of 14 operation classes and the lower median in 11 of 14**:
+p99 and the lower median in all 14 operation classes**:
 
 | | ehrbase-rs | EHRbase 2.34.0 (Java) |
 |---|--:|--:|
-| Idle memory | **12 MB** | 607 MB |
-| Peak memory | **139 MB** | 677 MB |
-| Mean CPU, identical load | **0.6 %** | 1.9 % |
-| Cold start (container → healthy) | **11.4 s** | 17.2 s |
-| p99 — composition create | **76 ms** | 122 ms |
-| p99 — patient AQL dashboard | **64 ms** | 112 ms |
-| p99 — composition read | **57 ms** | 103 ms |
-| p99 — composition update | **74 ms** | 134 ms |
+| Idle memory | **11 MB** | 547 MB |
+| Peak memory | **132 MB** | 624 MB |
+| Mean CPU, identical load | **0.7 %** | 3.0 % |
+| Cold start (container → healthy) | **11.6 s** | 17.2 s |
+| p99 — composition create | **94 ms** | 162 ms |
+| p99 — patient AQL dashboard | **65 ms** | 137 ms |
+| p99 — composition read | **75 ms** | 132 ms |
+| p99 — composition update | **81 ms** | 205 ms |
 | Storage per composition | **24.9 KB** | 35.9 KB |
-| Efficiency | **57.4 req/s per core** | 17.2 |
+| Efficiency | **47.1 req/s per core** | 11.2 |
 
 ![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
 
@@ -286,8 +286,9 @@ p99 in 12 of 14 operation classes and the lower median in 11 of 14**:
 
 ### Fair, and reproducible
 
-Where upstream wins, it's printed (its p99 *at* its own knee is lower —
-it saturates earlier but gracefully up to that point). The instrument
+Where upstream wins, it's printed (in this pair: the p99.9 tail of one
+read class — everything else is ehrbase-rs, both directions in the
+generated comparison). The instrument
 treats both sides identically — same payload set (accepted 6/6 by both
 servers), same DB tuning floor incl. shared-memory and vacuum settling,
 same admission depth, same log levels — and its fairness fixes cut both

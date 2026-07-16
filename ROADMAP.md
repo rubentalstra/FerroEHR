@@ -23,9 +23,11 @@ A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18:
   externalization, RBAC/ABAC, integrated multi-tenancy (PostgreSQL RLS),
   ATNA audit, Helm/distroless deployment, full observability.
 - **Measured against upstream EHRbase (Java)** on an identical clinical
-  workload: lower p99 in every headline class, ~10× less memory, smaller
-  storage per composition (`docs/benchmarks/COMPARISON.md`; both directions
-  always published).
+  workload (v3.0.3 pair, 2026-07-16): **2.0× the max sustained throughput
+  (632 vs 316 req/s at the p99 ≤ 1 s SLO)**, lower p50 and p99 in all 14
+  operation classes, ~50× less idle memory (11 vs 547 MB), smaller storage
+  per composition (`docs/benchmarks/COMPARISON.md`; both directions always
+  published).
 
 ## Now — performance (P20)
 
@@ -41,13 +43,16 @@ fully-populated clinical workload. Tracker:
   ehrbase-rs 262 req/s vs upstream 161 req/s (1.63×) at the p99 ≤ 1 s SLO
   on fully-populated documents — the max-sustained row is flipped.**
   Five instrument defects found and fixed en route (both directions).
-- [ ] Group-commit A/B (item 22), knee-run bottleneck profiling (item 27),
-  ECC zero-drift close (item 19).
+- [x] **Re-measured on v3.0.3 (2026-07-16, hot-path items 33–35 landed):
+  ehrbase-rs 632 req/s (L=64, p99 92 ms) vs upstream 316 req/s (L=32,
+  p99 200 ms) — 2.0×; all 14 operation classes lower at p50 and p99;
+  fresh hour pair + knee ladders committed.**
+- [ ] Group-commit A/B (item 22), knee-run bottleneck profiling (item 27).
 
 ## Next — publication & compliance depth
 
-1. **v3.0.1 release** — the P20 wins, the benchmark/conformance instruments,
-   and the honest comparison surfaces.
+1. **v3.0.3 released** (2026-07-16) — the P20 wins, the native OpenAPI
+   surface, the configuration redesign, and the honest comparison surfaces.
 2. **X1 — the public comparison page** (`docs/plans/x1-comparison.md`): the
    ECC matrix (ours vs upstream 2.34.0), the benchmark ladder + overlay
    curves, per-case upstream failure triage. Measured numbers only.

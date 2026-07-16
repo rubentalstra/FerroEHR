@@ -18,13 +18,15 @@ measured numbers only**). The working tracker is
 per item); the phase plan is
 [`phase-20-optimization.md`](phase-20-optimization.md).
 
-State (2026-07-14): checklist items 1–18, 20–21, 23–26, 28–32 done; v3.0.1
-released. **The definitive instrument-clean pair is measured (v5,
-`claude/p20-final-pair`): ehrbase-rs 262.2 req/s (L=26, p99 195 ms) vs
-upstream 160.5 req/s (L=16) on the fully-populated workload — the
-max-sustained row is flipped, 1.63×.** ECC zero-drift receipt committed
-(370·335·0, CORE+STANDARD PASS). Open: the item-19 publication rewrite
-(in flight), 22 (group-commit A/B), 27 (knee profiler automation).
+State (2026-07-16): checklist items 1–21, 23–26, 28–35 done; v3.0.3
+released (the hot-path elimination items 33–35, the native utoipa-axum
+OpenAPI surface, the W-13 configuration redesign). **The v3.0.3 pair is
+measured (2026-07-16, official `scripts/benchmark.sh`, both knees first,
+then both hour runs): ehrbase-rs 631.6 req/s (L=64, p99 92 ms) vs upstream
+316.1 req/s (L=32, p99 200 ms) — 2.0×; all 14 operation classes lower at
+p50 and p99.** ECC zero-drift receipt committed (370·335·0,
+CORE+STANDARD PASS). Open: 22 (group-commit A/B), 27 (knee profiler
+automation).
 
 ## Then, in order
 
