@@ -344,6 +344,27 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 | F-16 | CLEAN: every other status mapping spec-correct (404/412/409/422/400/501 rows verified against `Requests_and_responses.md:218-235`); 408 for execution timeout is the SPEC'S OWN code (`:229` — 504/503 absent from the spec subset); Success/FileNotWritable/Exception→500 defensible. Unwrap sweep of the 7 worst-density files (negotiate, offload, bundle, object_version_id, contribution, authn, codec): **exactly one defect** (F-12); all other hits infallible/optional-header/server-data/test-only. | probe P-3 | n/a | note |
 | F-17 | **Instrument finding (tools/benchmark)**: error counting is asymmetric — successes are warmup-filtered, errors are counted unconditionally (`measure.rs:106-127`), slightly overstating error_rate; and "error" conflates server-side non-expected status with generator-side 2 s dependency-misses (`drive.rs:38,874-878`). Split server vs generator errors + warmup-filter both, or the W-14 close pair mis-attributes. | `tools/benchmark/src/{measure.rs,drive.rs}` | **S** (our instrument) | ☐ |
 
+### 4h. Versioned reads + definition/demographic/extension tail (probe P-6, 2026-07-16 — completes §1 coverage)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-37 | OPT: **party_relationship writes re-read the just-written version** (full 2-RT reassembly read-back on create AND update) instead of the metadata-only `committed_response` every other write path adopted; its update/delete pre-reads are 2 unfolded statements (`object_kind` + `read_current`) vs composition's single merged pre-read; demographic contribution create also does a post-commit composite re-read. Align all three with the composition write shape. | `demographic/relationship.rs:129,183,371-391`, `demographic/contribution.rs:32-40` | **S** | ☐ |
+| F-38 | OPT (minor): template example generation on a cold template reads the OPT XML **twice** (existence read + cache-miss re-read inside `web_template_for`); ADL2 upload re-parses the parent source per upload and no compiled ADL2 form is ever cached. | `templates/runtime.rs:121-130,83`, `definition/adl2.rs:42-91` | **S** | ☐ |
+| F-39 | OPT: the FHIR terminology provider is per-request HTTP with **no result cache** (every get_term/validate/subsumes = a remote round-trip; AQL `TERMINOLOGY()` operands additionally bypass the plan cache — F-10). Bundle-owned terminologies stay pure in-memory (clean). Add a TTL cache on the provider seam. | `terminology/fhir.rs`, `terminology/mod.rs:93-186`, `execute.rs:200-205` | **S** (external-TS integration ours; AQL semantics QUERY-governed) | ☐ |
+| F-40 | Note: event-subscription and fhir_mapping admin LISTs are unbounded full-table SELECTs (no pagination; trait signatures carry no Page). Admin-scale config tables — acceptable, flagged. | `events/subscription.rs:58-66`, `fhir/mod.rs:76-84` | **S** | ☐ |
+| F-41 | CLEAN (completes coverage): EHR_STATUS by-version/at-time reads = 3 RT (singleton `current_vo` resolve + version read — structural, not a defect); revision_history = 2 queries total, NO per-version N+1 (both EHR and party variants); composition update/delete pre-reads already folded into ONE merged statement, metadata-only responses, correct 400/409/204 edges; directory POST = up to 4 pre-reads + commit (fine), GET-by-version standard; EHR PUT-with-id = zero delta from POST; stored-query execute = ad-hoc + exactly 1 resolve SELECT (single-SQL semver resolution, no N+1); CONTRIBUTION GET = 2 RT, N+1 only under opt-in `Prefer: resolve_refs`; terminology bundle ops pure in-memory; event/fhir CRUD statuses correct (409/400). | probe P-6 | n/a | note |
+
+**§1 coverage note (2026-07-16, P-6 close):** every remaining ☐ L-cell in §1b–§1f
+is covered by a P-6 group receipt: EHR-4→F-41 (zero delta), EHR-5/6/8–11→F-41
+(status/versioned-status reads), EHR-15→F-41 (delete ladder), EHR-16–19→F-41
+(versioned-composition family), EHR-22/23/24→F-41 (directory POST/DELETE/by-version),
+EHR-26→F-41 (contribution GET), EHR-28/30/31/33→F-41+F-27 (tag reads/deletes),
+QRY-2→F-10, QRY-3–6→F-41 (stored resolve +1 RT), DEF-3→F-41 (single SELECT, no
+parse), DEF-4→F-38, DEF-5–9→F-38 (ADL2), DEF-12/13→F-26/F-29 shapes, DEM-V→F-41,
+DEM-C→F-37, DEM-T→F-27, DEM-R→F-37, TRM-1..6→F-39/F-41, EVT/TEN/FHR CRUD→F-40/F-33,
+M-10→F-36 (mounted-but-gated routes are trivial 404 branches). The endpoint
+register is fully probed; remaining ☐ E-cells ride the same receipts.
+
 ### 4g. Public surface + middleware (probe P-7, 2026-07-16)
 
 | # | Finding | Evidence | Triage | Fix |
