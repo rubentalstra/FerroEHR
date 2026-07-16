@@ -5,7 +5,7 @@
 //!
 //! One enum per table, in the official `sea-query` derive shape: the `Table`
 //! variant carries an explicit `#[iden = "..."]` and renders the table name;
-//! every other variant renders its snake_cased column name. This is the
+//! every other variant renders its `snake_cased` column name. This is the
 //! single typed name catalog — the AQL SQL generator consumes the `Table`
 //! variants, and dynamic SQL elsewhere addresses columns through these enums
 //! rather than string-duplicating names. Every rendered name is pinned to the

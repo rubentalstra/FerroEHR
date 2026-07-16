@@ -196,7 +196,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — the definition's subject is not
-    ///   registered (`__Pre_subject_valid__` — the subject_id is inside the
+    ///   registered (`__Pre_subject_valid__` — the `subject_id` is inside the
     ///   definition, a spec imprecision), a new variable's name is invalid, or
     ///   a variable binds an unknown data frame.
     /// - `exception` — a serialization or database fault while writing.

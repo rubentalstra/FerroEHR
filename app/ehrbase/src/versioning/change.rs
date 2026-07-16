@@ -562,31 +562,7 @@ async fn commit_resolved(
         ContributionCtx::Existing(cid) => cid,
     };
 
-    // The signed form: a logically deleted version has no nodes → Void
-    // (master06 §Logical Deletion); a content version signs the reassembled
-    // served bytes so the digest recomputes at read time. Reassembly runs only
-    // when a signature will actually be computed.
-    let signature = if r.client_signature.is_some() || !ctx.signer.enabled() {
-        r.client_signature.clone()
-    } else {
-        let served = if r.rows.is_empty() {
-            Value::Null
-        } else {
-            reassemble(&r.rows)?
-        };
-        integrity::sign_version(
-            ctx,
-            audit,
-            r.time_committed,
-            r.vo_id,
-            r.tree,
-            r.preceding_uid.as_deref(),
-            contribution_id,
-            &r.lifecycle,
-            &served,
-            None,
-        )?
-    };
+    let signature = version_signature(ctx, audit, contribution_id, &r)?;
 
     let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
@@ -661,6 +637,45 @@ async fn commit_resolved(
         },
         contribution_id,
     ))
+}
+
+/// The signature stored with the version: a client-supplied signature is kept
+/// verbatim (`VERSION.signature`, master06 §Digital Signature); otherwise,
+/// with server signing enabled, the version's canonical form is signed — a
+/// logically deleted version has no nodes → Void (master06 §Logical Deletion);
+/// a content version signs the reassembled served bytes so the digest
+/// recomputes at read time. Reassembly runs only when a signature will
+/// actually be computed.
+///
+/// # Errors
+/// [`ServiceError::Signing`] when the canonical form cannot be produced or the
+/// signer fails.
+fn version_signature(
+    ctx: &SigningCtx<'_>,
+    audit: &AuditInput,
+    contribution_id: Uuid,
+    r: &ResolvedWrite,
+) -> Result<Option<String>, ServiceError> {
+    if r.client_signature.is_some() || !ctx.signer.enabled() {
+        return Ok(r.client_signature.clone());
+    }
+    let served = if r.rows.is_empty() {
+        Value::Null
+    } else {
+        reassemble(&r.rows)?
+    };
+    integrity::sign_version(
+        ctx,
+        audit,
+        r.time_committed,
+        r.vo_id,
+        r.tree,
+        r.preceding_uid.as_deref(),
+        contribution_id,
+        &r.lifecycle,
+        &served,
+        None,
+    )
 }
 
 /// Write the one PHI-free event-outbox row a single-object commit announces,
@@ -778,6 +793,7 @@ pub(crate) async fn update(
 /// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
 /// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
 /// open lineage tip; plus the [`commit_resolved`] storage/signing errors.
+#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn delete(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,

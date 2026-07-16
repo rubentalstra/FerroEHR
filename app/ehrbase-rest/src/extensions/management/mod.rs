@@ -20,7 +20,7 @@ mod metrics;
 
 use ehrbase::config::management::{AccessLevel, ManagementConfig};
 use ehrbase::telemetry::build_info::BuildInfo;
-use ehrbase::telemetry::health::{HealthRegistry};
+use ehrbase::telemetry::health::HealthRegistry;
 use ehrbase::telemetry::log_reload::LogReload;
 
 use std::sync::Arc;
