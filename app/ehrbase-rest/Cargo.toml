@@ -80,6 +80,9 @@ utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]
+sqlx.workspace = true
+testcontainers.workspace = true
+testcontainers-modules.workspace = true
 tokio = { workspace = true }
 tower = { workspace = true }
 axum = { workspace = true }
