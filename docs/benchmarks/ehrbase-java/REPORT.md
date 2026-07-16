@@ -10,14 +10,11 @@
 |---|---|
 | SUT | EHRbase upstream (foreign) |
 | Base URL | http://localhost:8091/ehrbase/rest/openehr/v1 |
-| Run start | 2026-07-14T22:55:12.222103Z |
+| Run start | 2026-07-16T02:22:24.978012Z |
 | Load-gen host | 8 logical CPUs, 16384 MiB RAM |
-| Harness rev | d5dc1d34a |
+| Harness rev | 117fad2e1 |
 | Workload lock | `431ac3f50ac093fc492ec6a47a47d4084daf51e597e4c59fddb1e77d28edd590` |
 | Config `BENCH_DB_POOL` | `50` |
-| Config `EHRBASE_LOG_FILTER` | `warn` |
-| Config `EHRBASE_REST_MAX_IN_FLIGHT` | `2048` |
-| Config `EHRBASE_SIGNING_ENABLED` | `false` |
 | Config `LOGGING_LEVEL_ROOT` | `WARN` |
 
 > A report with a different load-generator line is not directly comparable.
@@ -28,20 +25,20 @@ p50 / p90 / p99 / p99.9 / max latency (µs) and error count per class. Raw HdrHi
 
 | Class | count | errors | p50 | p90 | p99 | p99.9 | max |
 |---|--:|--:|--:|--:|--:|--:|--:|
-| ehr-create | 2 | 0 | 43167 | 55327 | 55327 | 55327 | 55327 |
-| ehr-read | 2 | 0 | 64607 | 111423 | 111423 | 111423 | 111423 |
-| comp-create-small | 213 | 0 | 42015 | 84351 | 121983 | 131967 | 131967 |
-| comp-create-large | 4 | 0 | 123967 | 196607 | 196607 | 196607 | 196607 |
-| comp-update | 27 | 0 | 53695 | 98175 | 134399 | 134399 | 134399 |
-| comp-read-latest | 501 | 0 | 25887 | 73343 | 102591 | 141311 | 141311 |
-| comp-read-version | 167 | 0 | 23295 | 75775 | 101631 | 142463 | 142463 |
-| contribution-commit | 40 | 0 | 42911 | 90879 | 151935 | 151935 | 151935 |
-| aql-patient | 167 | 0 | 37119 | 84223 | 112191 | 310015 | 310015 |
-| aql-ward | 14 | 0 | 28159 | 61823 | 100991 | 100991 | 100991 |
-| dir-read | 43 | 0 | 22111 | 57247 | 87935 | 87935 | 87935 |
-| dir-update | 6 | 0 | 34111 | 83583 | 83583 | 83583 | 83583 |
-| history-read | 21 | 0 | 29647 | 58847 | 76095 | 76095 | 76095 |
-| status-update | 2 | 0 | 48351 | 95295 | 95295 | 95295 | 95295 |
+| ehr-create | 2 | 0 | 72511 | 89407 | 89407 | 89407 | 89407 |
+| ehr-read | 2 | 0 | 116479 | 147327 | 147327 | 147327 | 147327 |
+| comp-create-small | 213 | 0 | 54431 | 126591 | 162175 | 196991 | 196991 |
+| comp-create-large | 4 | 0 | 112639 | 249087 | 249087 | 249087 | 249087 |
+| comp-update | 27 | 0 | 56703 | 108479 | 205439 | 205439 | 205439 |
+| comp-read-latest | 501 | 0 | 34783 | 92607 | 132479 | 141951 | 141951 |
+| comp-read-version | 167 | 0 | 32111 | 91711 | 131583 | 146303 | 146303 |
+| contribution-commit | 40 | 0 | 48031 | 108543 | 186879 | 186879 | 186879 |
+| aql-patient | 167 | 0 | 51551 | 103743 | 136575 | 409343 | 409343 |
+| aql-ward | 14 | 0 | 30783 | 115327 | 126591 | 126591 | 126591 |
+| dir-read | 43 | 0 | 25583 | 82559 | 112895 | 112895 | 112895 |
+| dir-update | 6 | 0 | 47135 | 166655 | 166655 | 166655 | 166655 |
+| history-read | 21 | 0 | 32351 | 65023 | 86463 | 86463 | 86463 |
+| status-update | 2 | 0 | 47999 | 86079 | 86079 | 86079 | 86079 |
 | opt-upload | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tpl-list | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
@@ -76,19 +73,19 @@ A clinical event (admission, medication round, lab batch, discharge…) is a mul
 
 | Container | mean CPU | peak RSS | idle RSS |
 |---|--:|--:|--:|
-| benchmark-ehrbase-java-1 | 1.9% | 645.3 MiB | 578.8 MiB |
-| benchmark-ehrbase-java-db-1 | 0.9% | 376.5 MiB | 349.9 MiB |
+| benchmark-ehrbase-java-1 | 3.0% | 624.5 MiB | 547.2 MiB |
+| benchmark-ehrbase-java-db-1 | 1.3% | 343.4 MiB | 316.5 MiB |
 
-- **17.2 req/s per app CPU-core** (0.3 req/s ÷ 0.02 cores).
-- **0.5 req/s per GB peak app RSS** (0.3 req/s ÷ 0.677 GB).
+- **11.2 req/s per app CPU-core** (0.3 req/s ÷ 0.03 cores).
+- **0.5 req/s per GB peak app RSS** (0.3 req/s ÷ 0.655 GB).
 
 ## 5. Storage footprint
 
-Database on-disk size **342.2 MiB** over **10000** compositions = **35.0 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
+Database on-disk size **342.3 MiB** over **10000** compositions = **35.1 KiB/composition** (`pg_total_relation_size` over tables/indexes/TOAST/matviews).
 
 ## 6. Cold start
 
-Compose-up → first successful HTTP answer: **17171 ms** (17.2 s).
+Compose-up → first successful HTTP answer: **17184 ms** (17.2 s).
 
 ## 7. Limitations
 
