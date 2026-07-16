@@ -263,6 +263,22 @@ pub struct CallStatus {
     pub message: String,
 }
 
+/// Sentinel prefix marking an `exception` [`SmError`] as a **query-execution
+/// timeout** rather than a generic server fault — the "message-tagged" 408 seam.
+///
+/// The platform query path (the platform query path) aborts a query
+/// that overruns its configured execution budget and returns
+/// `SmError::exception(format!("{QUERY_TIMEOUT_TAG}{detail}"))`. The native SM
+/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout status),
+/// so the timeout is tagged in the message and recognised by the protocol adapter,
+/// where [`RestError::into_response`] strips the prefix and renders the response
+/// as `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes,
+/// row `408` — "Request maximum execution time is reached, therefore the server
+/// aborted the request"; `responses/408_Query.yaml`). The tag is a control-char
+/// sentinel so it can never collide with a genuine error message and is never
+/// shown to clients.
+pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,19 +295,3 @@ mod tests {
         assert_eq!(status.message, "no such EHR");
     }
 }
-
-/// Sentinel prefix marking an `exception` [`SmError`] as a **query-execution
-/// timeout** rather than a generic server fault — the "message-tagged" 408 seam.
-///
-/// The platform query path (the platform query path) aborts a query
-/// that overruns its configured execution budget and returns
-/// `SmError::exception(format!("{QUERY_TIMEOUT_TAG}{detail}"))`. The native SM
-/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout status),
-/// so the timeout is tagged in the message and recognised by the protocol adapter,
-/// where [`RestError::into_response`] strips the prefix and renders the response
-/// as `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes,
-/// row `408` — "Request maximum execution time is reached, therefore the server
-/// aborted the request"; `responses/408_Query.yaml`). The tag is a control-char
-/// sentinel so it can never collide with a genuine error message and is never
-/// shown to clients.
-pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
