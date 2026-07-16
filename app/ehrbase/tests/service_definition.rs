@@ -553,7 +553,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
         vec![ADL2_TMPL_HRID.to_owned()]
     );
     assert_eq!(
-        svc.list_opts_adl14(Page::all()).await.unwrap(),
+        svc.list_opts_adl2(Page::all()).await.unwrap(),
         vec![ADL2_OPT_HRID.to_owned()]
     );
 
