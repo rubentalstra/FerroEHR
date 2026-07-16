@@ -209,13 +209,13 @@ struct NextVersion {
 /// §Version tree / §Distributed Versioning):
 ///
 /// - the preceding version is the current TRUNK tip when `expected` is absent,
-/// or exactly the version `expected` names (trunk or branch) — which must be
-/// an open lineage tip, else `VersionConflict`;
+///   or exactly the version `expected` names (trunk or branch) — which must be
+///   an open lineage tip, else `VersionConflict`;
 /// - a preceding version created by THIS system is continued on its lineage
-/// (trunk `N` → `N+1`; branch `t.b.v` → `t.b.v+1`), superseding it;
+///   (trunk `N` → `N+1`; branch `t.b.v` → `t.b.v+1`), superseding it;
 /// - a preceding version created by ANOTHER system (an imported copy) FORKS a
-/// new branch `t.(max_branch+1).1` (master06 §Subsequent Local
-/// Modifications) — the preceding version stays valid.
+///   new branch `t.(max_branch+1).1` (master06 §Subsequent Local
+///   Modifications) — the preceding version stays valid.
 ///
 /// Same-system detection is case-insensitive on `creating_system_id`
 /// (composite-identifier equality, G-09; BASE master05 §Composite Identifiers
@@ -223,9 +223,9 @@ struct NextVersion {
 ///
 /// # Errors
 /// - [`ServiceError::NotFound`] when the object does not exist, or its stored
-/// owner/kind do not match the addressed `(ehr_id, kind)`;
+///   owner/kind do not match the addressed `(ehr_id, kind)`;
 /// - [`ServiceError::VersionConflict`] when `expected` names a version that
-/// does not exist or has been superseded (a closed lineage tip).
+///   does not exist or has been superseded (a closed lineage tip).
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -368,12 +368,12 @@ struct ResolvedWrite {
 /// orchestration ([`crate::versioning::CommitEnv`], called from
 /// [`super::contribution::commit_version_set`]) and by the direct write paths:
 /// - `CommitEnv::pre_composition_modify` — the `VERSIONED_COMPOSITION`
-/// cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
-/// RM ehr `versioned_composition.adoc`), before a COMPOSITION modify;
+///   cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
+///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify;
 /// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
-/// after an `EHR_STATUS` version;
+///   after an `EHR_STATUS` version;
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
-/// concern, not a storage write.
+///   concern, not a storage write.
 ///
 /// # Errors
 /// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on

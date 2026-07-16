@@ -8,17 +8,17 @@
 //! vendored ITS-REST contract, NOT from observed server behaviour:
 //!
 //! - **Content check.** master07 attaches "the retrieved format should
-//! contain all the exact same data as the format used when committing" to
-//! every `get_*` case. Realized as retrieved ⊇ committed
-//! ([`Compare::Superset`]) — the server additionally assigns `uid` +
-//! committal metadata, so "contain all the same data" is a superset test,
-//! not exact equality. Applied over a JSON read (works for both JSON and XML
-//! runs).
+//!   contain all the exact same data as the format used when committing" to
+//!   every `get_*` case. Realized as retrieved ⊇ committed
+//!   ([`Compare::Superset`]) — the server additionally assigns `uid` +
+//!   committal metadata, so "contain all the same data" is a superset test,
+//!   not exact equality. Applied over a JSON read (works for both JSON and XML
+//!   runs).
 //! - **Versioning postconditions.** `update` asserts the audit
-//! `change_type` CREATE→MODIFY (TERM `SupportTerminology` `audit_change_type`:
-//! 249 creation, 251 modification); `delete` asserts the logical-delete
-//! `VERSION.lifecycle_state = openehr::523|deleted|` (master07 §delete NOTE)
-//! plus the ITS-REST 204/404 observable.
+//!   `change_type` CREATE→MODIFY (TERM `SupportTerminology` `audit_change_type`:
+//!   249 creation, 251 modification); `delete` asserts the logical-delete
+//!   `VERSION.lifecycle_state = openehr::523|deleted|` (master07 §delete NOTE)
+//!   plus the ITS-REST 204/404 observable.
 //!
 //! Wire ids come ONLY from [`crate::wire`]; negative ids are built from an
 //! OBSERVED id via [`support::nonexistent_version_like`] — never a

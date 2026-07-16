@@ -7,14 +7,14 @@
 //! semantics). The acceptance properties:
 //!
 //! 1. **Whole-EHR export** carries every versioned object of the EHR
-//! (`EHR_STATUS`, `EHR_ACCESS`, directory `FOLDER`) as an
-//! `OPENEHR_CONTENT_ITEM` wrapping the matching `X_VERSIONED_<kind>`, latest
-//! version only, with the version data byte-equal (canonical JSON) to what
-//! the read surface serves.
+//!    (`EHR_STATUS`, `EHR_ACCESS`, directory `FOLDER`) as an
+//!    `OPENEHR_CONTENT_ITEM` wrapping the matching `X_VERSIONED_<kind>`, latest
+//!    version only, with the version data byte-equal (canonical JSON) to what
+//!    the read surface serves.
 //! 2. **Spec-driven export** honours the `EXTRACT_ENTITY_MANIFEST.item_list`
-//! (only the named version container) and the `EXTRACT_VERSION_SPEC`
-//! (`include_all_versions` ⇒ every version; `include_revision_history` ⇒ the
-//! full `REVISION_HISTORY`).
+//!    (only the named version container) and the `EXTRACT_VERSION_SPEC`
+//!    (`include_all_versions` ⇒ every version; `include_revision_history` ⇒ the
+//!    full `REVISION_HISTORY`).
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};

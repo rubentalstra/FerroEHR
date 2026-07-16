@@ -10,7 +10,7 @@ use openehr_derive::OpenEhrType;
 #[openehr(type_name = "DV_MULTIMEDIA")]
 pub struct DvMultimedia {
     // inherited: DV_ENCAPSULATED
-    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub charset: Option<CodePhrase>,
     /// Optional indicator of the localised language in which the data is written, if relevant. Coded from openEHR Code Set `languages`.
     pub language: Option<CodePhrase>,
@@ -20,7 +20,7 @@ pub struct DvMultimedia {
     pub uri: Option<DvUri>,
     /// The actual data found at `_uri_`, if supplied inline.
     pub data: Option<String>,
-    /// Data media type coded from openEHR code set media types (interface for the IANA MIME types code set).
+    /// Data media type coded from openEHR code set  media types  (interface for the IANA MIME types code set).
     pub media_type: CodePhrase,
     /// Compression type, a coded value from the openEHR Integrity check code set. Void means no compression.
     pub compression_algorithm: Option<CodePhrase>,

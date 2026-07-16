@@ -9,17 +9,17 @@
 //! Two body shapes, both from the ITS-REST 1.0.3 spec:
 //!
 //! * A semantic-validation failure ([`ApiError::ValidationFailed`], HTTP `422`)
-//! renders the openEHR `Error` object —
-//! `docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
-//! `{ "message", "validationErrors": ["<path>: <message>", …] }` — via the
-//! generated [`openehr_its::rest::generated::ehr::Error`] DTO.
+//!   renders the openEHR `Error` object —
+//!   `docs/specs/openehr/ITS-REST/specifications/schemas/others/Error.yaml`:
+//!   `{ "message", "validationErrors": ["<path>: <message>", …] }` — via the
+//!   generated [`openehr_its::rest::generated::ehr::Error`] DTO.
 //!
-//! PORT NOTE: `422_COMPOSITION.yaml` declares no `content`/`schema` (the 422
-//! body is spec-silent); the `Error` object is formally bound only to the
-//! `400` response. Reusing that `{ message, validationErrors[] }` shape for
-//! the `422` validation case is a deliberate, documented choice.
+//!   PORT NOTE: `422_COMPOSITION.yaml` declares no `content`/`schema` (the 422
+//!   body is spec-silent); the `Error` object is formally bound only to the
+//!   `400` response. Reusing that `{ message, validationErrors[] }` shape for
+//!   the `422` validation case is a deliberate, documented choice.
 //! * Every other error renders `{ "error", "message" }` (the status reason
-//! phrase + human-readable detail).
+//!   phrase + human-readable detail).
 
 use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode, header};

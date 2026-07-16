@@ -66,12 +66,12 @@
 //! until a CNF re-vendor adds cases:
 //!
 //! - master17.1 `=== DV_STATE` — NOTE: "not used and not supported by modeling
-//! tools".
+//!   tools".
 //! - master17.2 `=== DV_PARAGRAPH` — NOTE: "not used or supported".
 //! - master17.5 `=== DV_GENERAL_TIME_SPECIFICATION` — "TBD: this data type
-//! might not be used or supported by modeling tools".
+//!   might not be used or supported by modeling tools".
 //! - master17.5 `=== DV_PERIODIC_TIME_SPECIFICATION` — "TBD: this data type
-//! might not be used or supported by modeling tools".
+//!   might not be used or supported by modeling tools".
 //!
 //! **G-6 — schedule defect: `CONT-DV_TEXT-validate_open` duplicated.**
 //! master17.2 carries the heading `==== Test Case CONT-DV_TEXT-validate_open`

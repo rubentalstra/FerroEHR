@@ -5,16 +5,16 @@
 //!
 //! Spec oracles:
 //! - `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc`
-//! (`Identities_valid`, `Contacts_valid`, `Relationships_validity`,
-//! `Uid_mandatory`), `…demographic.actor.adoc` (`Roles_valid`),
-//! `…demographic.role.adoc` (`Capabilities_valid`, `performer`),
-//! `…demographic.party_relationship.adoc` (`source`/`target`),
+//!   (`Identities_valid`, `Contacts_valid`, `Relationships_validity`,
+//!   `Uid_mandatory`), `…demographic.actor.adoc` (`Roles_valid`),
+//!   `…demographic.role.adoc` (`Capabilities_valid`, `performer`),
+//!   `…demographic.party_relationship.adoc` (`source`/`target`),
 //! - `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.party_ref.adoc`
-//! (`PARTY_REF.Type_validity`) +
-//! `…object_ref.adoc` (`OBJECT_REF.namespace`),
+//!   (`PARTY_REF.Type_validity`) +
+//!   `…object_ref.adoc` (`OBJECT_REF.namespace`),
 //! - `docs/specs/openehr/RM/docs/demographic/master02` (§Modelling of Parties
-//! and Relationships — relationship refs denote the party's version
-//! container).
+//!   and Relationships — relationship refs denote the party's version
+//!   container).
 
 use std::sync::LazyLock;
 

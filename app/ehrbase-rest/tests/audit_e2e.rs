@@ -11,11 +11,11 @@
 //! Where the old Mock scripted a canned success (a `501` stub or a fixed uid),
 //! the assertion is re-targeted to the **real** behaviour for that scenario:
 //! - the ad-hoc query group is implemented, so an AQL execute succeeds (`0`,
-//! was a `501`/serious-failure under the stub);
+//!   was a `501`/serious-failure under the stub);
 //! - the demographic person-get on an empty DB is a `404` minor-failure (`4`,
-//! was a `501`/serious-failure under the stub);
+//!   was a `501`/serious-failure under the stub);
 //! - the composition read/update/delete object ids are the real committed
-//! version uids (seeded through the service before the audited request).
+//!   version uids (seeded through the service before the audited request).
 //!
 //! DICOM codes asserted (`system_log::codes`): action `C`/`R`/`U`/`D`/`E`;
 //! `EventOutcomeIndicator` `0` success / `4` minor / `8` serious;

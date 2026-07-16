@@ -4,9 +4,9 @@
 //! meta-model.
 //!
 //! Usage:
-//! `openehr-codegen check` — load + validate the vendored BMM schemas.
-//! `openehr-codegen emit [OUTDIR]` — emit Rust into OUTDIR (default:
-//! `target/codegen-preview`).
+//!   `openehr-codegen check`          — load + validate the vendored BMM schemas.
+//!   `openehr-codegen emit [OUTDIR]`  — emit Rust into OUTDIR (default:
+//!                                       `target/codegen-preview`).
 
 mod bmm;
 mod emit;

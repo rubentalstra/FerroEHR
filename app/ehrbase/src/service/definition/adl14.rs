@@ -60,7 +60,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Structurally invalid ADL 1.4 source (no `archetype` header or no
-    /// well-formed `ARCHETYPE_ID`) → `invalid_archetype` (`422`).
+    ///   well-formed `ARCHETYPE_ID`) → `invalid_archetype` (`422`).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
         Ok(self.archetype_upload(&adl).await?)
@@ -127,7 +127,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
-    /// (`400`).
+    ///   (`400`).
     /// - A database failure (`exception` → `500`).
     pub async fn has_opt(&self, an_opt_id: String) -> Result<bool, SmError> {
         Ok(self.opt_exists(&an_opt_id).await?)
@@ -151,9 +151,9 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Unparseable / structurally invalid OPT XML → `invalid_template`
-    /// (`422`).
+    ///   (`422`).
     /// - A template with the same `template_id` already stored → conflict
-    /// (`409`).
+    ///   (`409`).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
         self.store_template(&opt_xml).await?;
@@ -166,7 +166,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
-    /// (`400`).
+    ///   (`400`).
     /// - No OPT with that id → `template_does_not_exist` (`404`, G-05-15).
     /// - A database failure (`exception` → `500`).
     pub async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
@@ -209,7 +209,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
-    /// (`400`).
+    ///   (`400`).
     /// - No OPT with that id → `template_does_not_exist` (`404`, G-05-15).
     /// - A database failure (`exception` → `500`).
     pub async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {

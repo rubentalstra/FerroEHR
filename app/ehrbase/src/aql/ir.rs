@@ -13,17 +13,17 @@
 //! ## Deviations from the design sketch (justified)
 //!
 //! * The design sketch lists `VersionScope::AtTime(param)` as a distinct
-//! variant. AQL only expresses version-at-time as a *standard predicate* on
-//! version metadata (there is no dedicated grammar), so all version-selection
-//! predicates lower uniformly to [`VersionScope::Predicate`]; the common
-//! at-time case is recognised via [`VersionScope::is_at_time`] rather than a
-//! separate variant. This keeps one lowering path and mirrors the AST (which
-//! only has `VersionPredicate::Standard`).
+//!   variant. AQL only expresses version-at-time as a *standard predicate* on
+//!   version metadata (there is no dedicated grammar), so all version-selection
+//!   predicates lower uniformly to [`VersionScope::Predicate`]; the common
+//!   at-time case is recognised via [`VersionScope::is_at_time`] rather than a
+//!   separate variant. This keeps one lowering path and mirrors the AST (which
+//!   only has `VersionPredicate::Standard`).
 //! * `Coercion::Magnitude` covers **both** `DV_ORDERED` value objects (extracted
-//! via `ext.openehr_magnitude`) and numeric primitives (a direct numeric
-//! cast). The analyzer records the candidate leaf [`TypeSet`] on the
-//! [`LeafPath`]; the SQL package picks the exact extraction from it. This
-//! preserves the design's 5-variant `Coercion` enum.
+//!   via `ext.openehr_magnitude`) and numeric primitives (a direct numeric
+//!   cast). The analyzer records the candidate leaf [`TypeSet`] on the
+//!   [`LeafPath`]; the SQL package picks the exact extraction from it. This
+//!   preserves the design's 5-variant `Coercion` enum.
 
 use std::collections::HashMap;
 

@@ -14,23 +14,23 @@
 //! This module removes that cost for the common case:
 //!
 //! 1. **Structural conformance** is checked directly against the live
-//! `&serde_json::Value` node, driven by the **generated static RM model**
-//! ([`crate::model`] — the same BMM the structs are generated from), so the
-//! field tables can never drift from the generated types by hand-editing.
+//!    `&serde_json::Value` node, driven by the **generated static RM model**
+//!    ([`crate::model`] — the same BMM the structs are generated from), so the
+//!    field tables can never drift from the generated types by hand-editing.
 //! 2. When the node **conforms**, the class invariants are evaluated straight
-//! off the JSON map via the same `pub(crate)` invariant cores the typed
-//! `Validate` impls call — one source of truth for every violation message,
-//! byte-identical output by construction.
+//!    off the JSON map via the same `pub(crate)` invariant cores the typed
+//!    `Validate` impls call — one source of truth for every violation message,
+//!    byte-identical output by construction.
 //! 3. When the node does **not** verifiably conform — a shape this checker
-//! does not model (`DV_INTERVAL` limits, `FEEDER_AUDIT`, …), a mandatory
-//! field missing, a wrong JSON kind, an unknown `_type` in a slot — the
-//! caller **falls back to the typed path**, which is authoritative: it
-//! either produces the exact `does not conform to RM type …` serde error or
-//! runs the typed invariants. The fast path never emits a rejection of its
-//! own, so a vouching bug can only degrade to the slow-correct path, never
-//! to a different wire result. Equivalence with the typed path over the
-//! canonical corpus (valid nodes + per-key mutations) is pinned by the
-//! tests below.
+//!    does not model (`DV_INTERVAL` limits, `FEEDER_AUDIT`, …), a mandatory
+//!    field missing, a wrong JSON kind, an unknown `_type` in a slot — the
+//!    caller **falls back to the typed path**, which is authoritative: it
+//!    either produces the exact `does not conform to RM type …` serde error or
+//!    runs the typed invariants. The fast path never emits a rejection of its
+//!    own, so a vouching bug can only degrade to the slow-correct path, never
+//!    to a different wire result. Equivalence with the typed path over the
+//!    canonical corpus (valid nodes + per-key mutations) is pinned by the
+//!    tests below.
 //!
 //! # The conformance rules mirrored from the deserialize layer
 //!
@@ -38,19 +38,19 @@
 //! (and the generated `_type`-dispatched slot enums) accept:
 //!
 //! - mandatory single-valued attribute: present and non-`null` (the derive's
-//! shadow treats a `null` as absent → `missing field`);
+//!   shadow treats a `null` as absent → `missing field`);
 //! - optional attribute: absent or `null` is fine;
 //! - `Vec` attribute: absent → empty; present must be an array (`null` is a
-//! deserialize error);
+//!   deserialize error);
 //! - `_type` on a slot payload: must name a concrete descendant of the
-//! declared class; absent is only allowed when the declared class is itself
-//! concrete (the generated enums' untagged-default arm) — abstract slots
-//! require it;
+//!   declared class; absent is only allowed when the declared class is itself
+//!   concrete (the generated enums' untagged-default arm) — abstract slots
+//!   require it;
 //! - primitives: `String`→JSON string, `Boolean`→bool, `Real`→any number,
-//! `Integer`/`Integer64`→integral number in `i32`/`i64` range (floats
-//! rejected, as serde does), `Character`→one-char string;
+//!   `Integer`/`Integer64`→integral number in `i32`/`i64` range (floats
+//!   rejected, as serde does), `Character`→one-char string;
 //! - anything not modelled here (`Hash` attributes, classes outside
-//! [`fast_spec`], the `Interval` default-able bound flags) → fall back.
+//!   [`fast_spec`], the `Interval` default-able bound flags) → fall back.
 //!
 //! **Shallow mode** mirrors [`super::prune_child_nodes`] for the structural
 //! container classes the typed path checks via `run_shallow`: a child

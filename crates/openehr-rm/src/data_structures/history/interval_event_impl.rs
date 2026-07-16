@@ -4,8 +4,8 @@
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.interval_event.adoc`.
 //!
 //! - `interval_start_time()`: start time of the interval of this event —
-//! `time - width` (per the `Interval_start_time_valid` invariant, which the
-//! computed function satisfies by construction).
+//!   `time - width` (per the `Interval_start_time_valid` invariant, which the
+//!   computed function satisfies by construction).
 //! - Inherited LOCATABLE `Archetype_node_id_valid`.
 //!
 //! PORT NOTE: `Math_function_validity` (the `math_function` code must belong

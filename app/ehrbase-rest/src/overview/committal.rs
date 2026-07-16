@@ -8,8 +8,8 @@
 //! provided with the server's default VERSION + `commit_audit` attributes:
 //!
 //! > "None of these headers are mandatory, but whatever is provided it MUST be
-//! > merged with the default VERSION and VERSION.audit_details attributes on
-//! > commit runtime."
+//! >  merged with the default VERSION and VERSION.audit_details attributes on
+//! >  commit runtime."
 //!
 //! The **development edition** moved each attribute path *into the header
 //! value*. The current header names are lowercase and the value is a

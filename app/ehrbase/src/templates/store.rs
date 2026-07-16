@@ -4,15 +4,15 @@
 //! # Spec basis
 //!
 //! - S-05/S-06 (`AM/docs/OPT2/master02-overview.adoc` §Purpose of the OPT,
-//! §Types of OPT): the stored artefact is the compiled OPT; "a production
-//! EHR … can safely run only using guaranteed *validated* templates" — hence
-//! the parse + structural + artefact-validity gates before an insert.
+//!   §Types of OPT): the stored artefact is the compiled OPT; "a production
+//!   EHR … can safely run only using guaranteed *validated* templates" — hence
+//!   the parse + structural + artefact-validity gates before an insert.
 //! - S-07 (`BASE/docs/architecture_overview/master10-archetypes.adoc`
-//! §Overview): the template/archetype repository is separate from the EHR
-//! data.
+//!   §Overview): the template/archetype repository is separate from the EHR
+//!   data.
 //! - S-11 (`AM/docs/AOM2/master10-templates.adoc` §Template Identifiers): a
-//! `TEMPLATE_ID` identifies a template; equality follows the §Composite
-//! Identifiers and Case rule (G-T04, see [`crate::templates::identity`]).
+//!   `TEMPLATE_ID` identifies a template; equality follows the §Composite
+//!   Identifiers and Case rule (G-T04, see [`crate::templates::identity`]).
 //!
 //! PORT NOTE (G-T07 — dual identity): the `template_store` row carries **both**
 //! a surrogate `UUID` handle (the SM `I_DEFINITION_ADL14` OPT key,
@@ -62,16 +62,16 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - [`ServiceError::Unprocessable`] (→ `422`) — the XML does not decode as
-    /// an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
-    /// `concept`.
+    ///   an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
+    ///   `concept`.
     /// - The structural gate
-    /// (`crate::validation::validate_opt_structure`, S-05) and the
-    /// AOM2/08 artefact-validity catalogue
-    /// (`crate::validation::validate_opt_artefact`,
-    /// `AM/docs/AOM2/master08-validation.adoc`, S-06) propagate their own
-    /// typed rejections.
+    ///   (`crate::validation::validate_opt_structure`, S-05) and the
+    ///   AOM2/08 artefact-validity catalogue
+    ///   (`crate::validation::validate_opt_artefact`,
+    ///   `AM/docs/AOM2/master08-validation.adoc`, S-06) propagate their own
+    ///   typed rejections.
     /// - [`ServiceError::Conflict`] (→ `409`) — a template with the same
-    /// `template_id` (case-insensitively, G-T04/G-T09) already exists.
+    ///   `template_id` (case-insensitively, G-T04/G-T09) already exists.
     /// - [`ServiceError::Database`] — the insert itself failed.
     pub(crate) async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
         let opt = ingest::parse_opt(xml)?;
@@ -143,8 +143,8 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - [`ServiceError::NotFound`] (→ `404`,
-    /// `responses/404_unknown_template_id.yaml`) — no template with this id
-    /// is stored.
+    ///   `responses/404_unknown_template_id.yaml`) — no template with this id
+    ///   is stored.
     /// - [`ServiceError::Database`] — the lookup failed.
     pub(crate) async fn get_template_xml(&self, template_id: &str) -> Result<String, ServiceError> {
         // §Composite Identifiers and Case: compare case-insensitively.
@@ -164,7 +164,7 @@ impl EhrbaseService {
     ///
     /// - [`ServiceError::Database`] — the listing query failed.
     /// - [`ServiceError::Internal`]-class decode faults surface through
-    /// [`template_json`](Self::template_json)'s row-decode discipline.
+    ///   [`template_json`](Self::template_json)'s row-decode discipline.
     pub(crate) async fn template_summaries(&self) -> Result<Vec<Value>, ServiceError> {
         let rows = sqlx::query(
             "SELECT template_id, concept, root_archetype, created_at \

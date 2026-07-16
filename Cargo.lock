@@ -2055,14 +2055,12 @@ dependencies = [
 name = "ehrbase"
 version = "3.0.3"
 dependencies = [
- "anyhow",
  "assert_fs",
  "async-trait",
  "axum",
  "backon",
  "base64 0.22.1",
  "bytes",
- "clap",
  "config",
  "futures",
  "http",

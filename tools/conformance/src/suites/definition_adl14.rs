@@ -20,31 +20,31 @@
 //! Register 01 rulings realized here:
 //!
 //! - **G-6 (`template_id` is server-specific, never a literal).** master04
-//! §Test Environment note 3: "openEHR not yet defining a format for the
-//! template IDs". Every case reads the `template_id` from the **uploaded
-//! OPT's own content** ([`opt_template_id`]), never a hardcoded string.
+//!   §Test Environment note 3: "openEHR not yet defining a format for the
+//!   template IDs". Every case reads the `template_id` from the **uploaded
+//!   OPT's own content** ([`opt_template_id`]), never a hardcoded string.
 //! - **G-3 (round-trip equality).** master04 §get_opt-retrieve_single NOTE:
-//! "the retrieved OPT should be exactly the same as the uploaded one" —
-//! [`run_get_single`] parses the retrieved OPT and asserts its `template_id`
-//! equals the uploaded one (semantic identity on the identifying field; full
-//! byte-equality is server-canonicalisation-sensitive and is documented as a
-//! boundary). [`run_get_all`] asserts the uploaded id is **in** the list.
+//!   "the retrieved OPT should be exactly the same as the uploaded one" —
+//!   [`run_get_single`] parses the retrieved OPT and asserts its `template_id`
+//!   equals the uploaded one (semantic identity on the identifying field; full
+//!   byte-equality is server-canonicalisation-sensitive and is documented as a
+//!   boundary). [`run_get_all`] asserts the uploaded id is **in** the list.
 //! - **G-2 (OPT versioning has no ADL 1.4 wire).** master04 admits the version
-//! parameter is non-standard (§upload_opt-valid_opt_twice NOTE,
-//! SPECBASE-30/SPECITS-42); ITS-REST ADL 1.4 exposes no version-addressed
-//! template resource. The three version cases assert only what the wire +
-//! spec determine and carry a `// PORT NOTE:` that the schedule's
-//! two-coexisting-versions / latest / specific post-conditions are
-//! structurally unrealizable on the ADL 1.4 REST binding.
+//!   parameter is non-standard (§upload_opt-valid_opt_twice NOTE,
+//!   SPECBASE-30/SPECITS-42); ITS-REST ADL 1.4 exposes no version-addressed
+//!   template resource. The three version cases assert only what the wire +
+//!   spec determine and carry a `// PORT NOTE:` that the schedule's
+//!   two-coexisting-versions / latest / specific post-conditions are
+//!   structurally unrealizable on the ADL 1.4 REST binding.
 //! - **G-5 / D2 (`delete_opt` skip).** The SM `I_DEFINITION_ADL14.delete_opt()`
-//! has no ITS-REST ADL 1.4 DELETE verb — deletion is ADMIN-API-only — so the
-//! four delete cases carry [`Binding::NoRestBinding`] and skip-with-reason,
-//! never a fabricated URL. The ADMIN template-deletion path is evidenced in
-//! the Admin area, not here.
+//!   has no ITS-REST ADL 1.4 DELETE verb — deletion is ADMIN-API-only — so the
+//!   four delete cases carry [`Binding::NoRestBinding`] and skip-with-reason,
+//!   never a fabricated URL. The ADMIN template-deletion path is evidenced in
+//!   the Admin area, not here.
 //! - **validate-via-upload** is master04 §`validate_opt` NOTE-sanctioned
-//! (a server without a standalone validate service realizes validation
-//! through the upload endpoint); recorded as a deliberate binding, not a
-//! divergence.
+//!   (a server without a standalone validate service realizes validation
+//!   through the upload endpoint); recorded as a deliberate binding, not a
+//!   divergence.
 
 use serde_json::Value;
 
@@ -467,8 +467,8 @@ fn run_example_roundtrip<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         support::ensure_opt_xml(ctx, &xml).await?;
 
         // 2. GET the required-level input example (a committable COMPOSITION).
-        // The `template_id` ("International Patient Summary") carries spaces,
-        // so its path segment is percent-encoded (never hand-rolled).
+        //    The `template_id` ("International Patient Summary") carries spaces,
+        //    so its path segment is percent-encoded (never hand-rolled).
         let encoded = urlencoding::encode(&template_id);
         let example_path = format!("{ADL14}/{encoded}/example?type=input&detail_level=required");
         let resp = ctx

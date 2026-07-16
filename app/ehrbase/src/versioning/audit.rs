@@ -91,12 +91,12 @@ impl AuditInput {
     /// "MUST be merged"; RM common master06 §Committal m4 defaults):
     ///
     /// - `change_type` is the OPERATION's — a direct create IS a creation, a
-    /// PUT a modification, a DELETE a deletion — never client-overridable
-    /// (the wire has no legal divergent value);
+    ///   PUT a modification, a DELETE a deletion — never client-overridable
+    ///   (the wire has no legal divergent value);
     /// - `description` — the caller's when supplied, else the server default;
     /// - `committer` — the caller's `PARTY_PROXY` (the protocol adapter has
-    /// already defaulted an absent committer to the authenticated
-    /// principal / system identity);
+    ///   already defaulted an absent committer to the authenticated
+    ///   principal / system identity);
     /// - `system_id` — the caller's when supplied, else this server's.
     pub(crate) fn from_update(
         update: &crate::service::version_update::UpdateAudit,
@@ -183,14 +183,14 @@ pub(crate) fn audit_details(
 /// [`ServiceError::Unprocessable`] when either enforced invariant fails:
 ///
 /// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM common
-/// master04 §Audit Details). Without this guard an empty client-supplied
-/// `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
-/// `500` — a validation failure must be `422`, not an internal error.
+///   master04 §Audit Details). Without this guard an empty client-supplied
+///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
+///   `500` — a validation failure must be `422`, not an internal error.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
-/// invariants `Basic_validity` + `Name_valid` (+ `Relationship_valid` for
-/// `PARTY_RELATED`; RM common master04 §Party Proxies). A PARTY that appears
-/// as *content* is validated by the RM-invariant pass, but the audit
-/// committer is stored verbatim, so it is checked here.
+///   invariants `Basic_validity` + `Name_valid` (+ `Relationship_valid` for
+///   `PARTY_RELATED`; RM common master04 §Party Proxies). A PARTY that appears
+///   as *content* is validated by the RM-invariant pass, but the audit
+///   committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(

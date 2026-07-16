@@ -4,29 +4,29 @@
 //! openEHR `_type` discriminator, **without** a per-struct tag field:
 //!
 //! - **Serialize**: emits `"_type": "<CLASS>"` as the first entry, then each
-//! field. `Option` fields are omitted when `None`; `Vec` fields are omitted
-//! when empty. (This matches serde's `skip_serializing_if` conventions, done
-//! here so the generated struct itself carries no serde attributes.)
+//!   field. `Option` fields are omitted when `None`; `Vec` fields are omitted
+//!   when empty. (This matches serde's `skip_serializing_if` conventions, done
+//!   here so the generated struct itself carries no serde attributes.)
 //! - **Deserialize**: accepts input with or without `_type`; if present, it
-//! must equal the class name (mismatch is an error). This tag check is what
-//! lets the abstract-slot enums (emitted by `openehr-codegen`) dispatch on
-//! `_type` — see their hand-rolled `Deserialize`, which *requires* `_type` on
-//! an abstract polymorphic slot and rejects a `_type`-less value rather than
-//! guessing structurally (audit F-04-01/03). Unknown wire keys are ignored;
-//! this deliberate tolerance (a superset of the ITS-JSON schema's
-//! `additionalProperties: false`) is documented as a `PORT NOTE` on the shadow
-//! struct below.
+//!   must equal the class name (mismatch is an error). This tag check is what
+//!   lets the abstract-slot enums (emitted by `openehr-codegen`) dispatch on
+//!   `_type` — see their hand-rolled `Deserialize`, which *requires* `_type` on
+//!   an abstract polymorphic slot and rejects a `_type`-less value rather
+//!   than guessing structurally. Unknown wire keys are ignored; this
+//!   deliberate tolerance (a superset of the ITS-JSON schema's
+//!   `additionalProperties: false`) is documented as a `PORT NOTE` on the
+//!   shadow struct below.
 //!
 //! Usage (emitted by `openehr-codegen`):
 //! ```ignore
 //! #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 //! #[openehr(type_name = "DV_QUANTITY")]
 //! pub struct DvQuantity {
-//! pub magnitude: f64,
-//! pub precision: Option<i32>, // omitted when None
-//! #[openehr(rename = "use")]
-//! pub use_: String, // serialized as "use"
-//! pub other_reference_ranges: Vec<ReferenceRange<DvQuantity>>, // omitted when empty
+//!     pub magnitude: f64,
+//!     pub precision: Option<i32>,          // omitted when None
+//!     #[openehr(rename = "use")]
+//!     pub use_: String,                     // serialized as "use"
+//!     pub other_reference_ranges: Vec<ReferenceRange<DvQuantity>>, // omitted when empty
 //! }
 //! ```
 
@@ -252,13 +252,13 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             // (no `#[serde(deny_unknown_fields)]`), a documented superset of the
             // ITS-JSON schema's `additionalProperties: false`. Two reasons make
             // strict rejection the wrong default at the deserialize layer:
-            // 1. RM-version skew — the generated types are RM 1.2.0 but the
-            // vendored ITS-JSON schema + SDK corpus are RM 1.1.0-era, so a
-            // conformant-for-its-version payload can legitimately carry keys
-            // this pinned model does not place identically.
-            // 2. The vendored SDK corpus itself ships fixtures with stray keys
-            // (e.g. `feeder_system_audit` on an INSTRUCTION), and the
-            // openehr-its corpus-read fidelity gate requires them to load.
+            //  1. RM-version skew — the generated types are RM 1.2.0 but the
+            //     vendored ITS-JSON schema + SDK corpus are RM 1.1.0-era, so a
+            //     conformant-for-its-version payload can legitimately carry keys
+            //     this pinned model does not place identically.
+            //  2. The vendored SDK corpus itself ships fixtures with stray keys
+            //     (e.g. `feeder_system_audit` on an INSTRUCTION), and the
+            //     openehr-its corpus-read fidelity gate requires them to load.
             // The strict wire-shape contract (`_type` present + no unknown keys)
             // is available separately via `openehr_its::json::validate_canonical`
             // (the ITS-JSON schema), to be run at the ingestion edge where strict

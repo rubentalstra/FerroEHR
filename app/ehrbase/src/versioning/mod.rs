@@ -3,15 +3,15 @@
 //!
 //! Spec oracles (precedence order):
 //! - RM common `master06-change_control_package.adoc` — the change-control law
-//! (`VERSIONED_OBJECT`, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
-//! audits, Digital Signature, Attestation, version lifecycle, logical
-//! deletion, version identification, copying/merging).
+//!   (`VERSIONED_OBJECT`, VERSION, ORIGINAL/IMPORTED, CONTRIBUTION, committal &
+//!   audits, Digital Signature, Attestation, version lifecycle, logical
+//!   deletion, version identification, copying/merging).
 //! - RM common `master04-generic_package.adoc` — `AUDIT_DETAILS`, ATTESTATION,
-//! `REVISION_HISTORY`(_ITEM), `PARTY_PROXY`.
+//!   `REVISION_HISTORY`(_ITEM), `PARTY_PROXY`.
 //! - BASE `base_types` `master05-identification_package.adoc` — `OBJECT_VERSION_ID`
-//! / `VERSION_TREE_ID` lexical forms, composite-identifier case rules.
+//!   / `VERSION_TREE_ID` lexical forms, composite-identifier case rules.
 //! - BASE arch-overview `master07-security.adoc` §Integrity,
-//! `master08-versioning.adoc`, `master09-identification.adoc`.
+//!   `master08-versioning.adoc`, `master09-identification.adoc`.
 //!
 //! Layout derives from the spec's own decomposition. The digital signature is a
 //! section of master06 (`change_control`), so the signer/verifier live **inside**

@@ -29,9 +29,9 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id in the list is not a
-    /// well-formed UUID (the whole request is rejected).
+    ///   well-formed UUID (the whole request is rejected).
     /// - `versioned_object_does_not_exist` (`404`) — any EHR is unknown
-    /// (`ehr_id_does_not_exist`); nothing is archived.
+    ///   (`ehr_id_does_not_exist`); nothing is archived.
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
         let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
@@ -49,10 +49,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id in the list is not a
-    /// well-formed UUID (the whole request is rejected).
+    ///   well-formed UUID (the whole request is rejected).
     /// - `versioned_object_does_not_exist` (`404`) — any id names no
-    /// demographic PARTY root (`party_id_does_not_exist`); nothing is
-    /// archived.
+    ///   demographic PARTY root (`party_id_does_not_exist`); nothing is
+    ///   archived.
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn archive_parties(&self, party_ids: Vec<String>) -> Result<(), SmError> {
         let ids = super::parse_uuid_list(&party_ids, "party")?;

@@ -64,9 +64,9 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Query text that is not a valid instance of the effective formalism →
-    /// `invalid_query` (`422`).
+    ///   `invalid_query` (`422`).
     /// - Query text that fails the store-time AQL parse →
-    /// `precondition_violation` (`400`).
+    ///   `precondition_violation` (`400`).
     /// - A database failure (`exception` → `500`).
     pub async fn store_query(
         &self,
@@ -102,7 +102,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - A row-decode failure on a `NOT NULL` column (a genuine server fault)
-    /// → `exception` (`500`).
+    ///   → `exception` (`500`).
     /// - A database failure (`exception` → `500`).
     pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self.stored_query_descriptors(page).await?)
@@ -115,7 +115,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - An uncompilable `id_pattern` or `artefact_id_pattern` →
-    /// `invalid_id_pattern` (`400`).
+    ///   `invalid_id_pattern` (`400`).
     /// - A row-decode failure (a genuine server fault) → `exception` (`500`).
     /// - A database failure (`exception` → `500`).
     pub async fn list_matching_queries(
@@ -136,7 +136,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - No registered query with that name → `artefact_does_not_exist`
-    /// (`404`).
+    ///   (`404`).
     /// - A database failure (`exception` → `500`).
     pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
         Ok(self.query_delete(&a_query_name).await?)
@@ -333,12 +333,12 @@ impl EhrbaseService {
     /// Store a stored query, returning the effective SEMVER it is stored at.
     ///
     /// - **With an explicit `version`**, the `(name, version)` pair is
-    /// **immutable**: an already-existing pair (case-insensitive) is a
-    /// `Conflict` (→ ITS-REST `409`), never an overwrite
-    /// (`409_StoredQuery_version.yaml`).
+    ///   **immutable**: an already-existing pair (case-insensitive) is a
+    ///   `Conflict` (→ ITS-REST `409`), never an overwrite
+    ///   (`409_StoredQuery_version.yaml`).
     /// - **Without a version**, the query is stored (or updated) at
-    /// [`DEFAULT_QUERY_VERSION`] (`definition_query_store`: "stores a new
-    /// query, or updates an existing query"; response set `200/400`).
+    ///   [`DEFAULT_QUERY_VERSION`] (`definition_query_store`: "stores a new
+    ///   query, or updates an existing query"; response set `200/400`).
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case, G-05-14).

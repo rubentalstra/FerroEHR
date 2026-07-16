@@ -7,11 +7,11 @@
 //!
 //! 1. **The `_type`→[`Validate`] dispatcher** ([`validate_rm_value`]) the
 //! composition validator calls on a canonical-JSON node: it reads the
-//! node's `_type`, deserializes into the matching concrete `openehr-rm` /
-//! `openehr-base` type, and runs that type's RM **class invariants**.
+//!    node's `_type`, deserializes into the matching concrete `openehr-rm` /
+//!    `openehr-base` type, and runs that type's RM **class invariants**.
 //! 2. **Shared invariant helpers** used by the sibling `*_impl.rs` behaviour
-//! files (the DV_AMOUNT / DV_QUANTIFIED accuracy + magnitude-status rules,
-//! the LOCATABLE `Archetype_node_id_valid` rule, ISO-8601 value checks).
+//!    files (the DV_AMOUNT / DV_QUANTIFIED accuracy + magnitude-status rules,
+//!    the LOCATABLE `Archetype_node_id_valid` rule, ISO-8601 value checks).
 //!
 //! # Fidelity to the reference implementation (archie)
 //!
@@ -24,16 +24,16 @@
 //!
 //! What we deliberately do **not** implement here (`// PORT NOTE:`):
 //! - **Terminology-bound invariants** (archie's `Language_valid`,
-//! `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
-//! `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
-//! `openehr-rm` has no `openehr-term` dependency; these belong to the
+//!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
+//!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
+//!   `openehr-rm` has no `openehr-term` dependency; these belong to the
 //! composition validator + terminology binding (P15 PR-C), which resolves
-//! codes against the openEHR terminology bundle.
+//!   codes against the openEHR terminology bundle.
 //! - **archie's `ignored = true` invariants** (never executed by archie —
-//! implementing them would over-reject relative to the reference).
+//!   implementing them would over-reject relative to the reference).
 //! - **Cross-child recursion**: each `Validate` impl checks only its own class
-//! invariants; the composition validator recurses into children (and prefixes
-//! the absolute RM path onto each [`InvariantViolation`]).
+//!   invariants; the composition validator recurses into children (and prefixes
+//!   the absolute RM path onto each [`InvariantViolation`]).
 
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -483,13 +483,13 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// `measure_ips_validation_walk_cost` harness):
 ///
 /// 1. the **fast path** ([`fast`]) verifies structural conformance directly
-/// against the live JSON node using the generated static RM model and runs
-/// the class invariants through the same `pub(crate)` cores the typed
-/// impls call — no deserialization, no allocation, byte-identical output;
+///    against the live JSON node using the generated static RM model and runs
+///    the class invariants through the same `pub(crate)` cores the typed
+///    impls call — no deserialization, no allocation, byte-identical output;
 /// 2. anything the fast path cannot vouch for falls back to the authoritative
-/// **typed dispatch** below ([`validate_rm_value_typed`]), which
-/// deserializes into the concrete RM type (surfacing `does not conform to
-/// RM type …` for a structural mismatch) and runs the typed invariants.
+///    **typed dispatch** below ([`validate_rm_value_typed`]), which
+///    deserializes into the concrete RM type (surfacing `does not conform to
+///    RM type …` for a structural mismatch) and runs the typed invariants.
 pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;

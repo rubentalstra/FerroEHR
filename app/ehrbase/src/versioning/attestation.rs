@@ -140,8 +140,8 @@ pub(crate) async fn insert_accompanying_attestations(
 /// # Errors
 /// [`ServiceError::Unprocessable`] when an RM invariant fails:
 /// - `reason` absent (mandatory, 1..1), or a coded `reason` whose
-/// `defining_code` is not in the openEHR `attestation reason` group
-/// (`ATTESTATION.Reason_valid`);
+///   `defining_code` is not in the openEHR `attestation reason` group
+///   (`ATTESTATION.Reason_valid`);
 /// - `is_pending` absent or not a `Boolean` (mandatory, 1..1);
 /// - `items` present but not a non-empty list (`ATTESTATION.Items_valid`).
 pub(crate) fn complete_attestation(

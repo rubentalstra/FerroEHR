@@ -5,17 +5,17 @@
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_interval.adoc`.
 //!
 //! - The base `Interval` boundary-flag invariants (`Lower_included_valid`,
-//! `Upper_included_valid`).
+//!   `Upper_included_valid`).
 //! - `Limits_consistent`: `(not upper_unbounded and not lower_unbounded)
-//! implies (lower.is_strictly_comparable_to(upper) and lower <= upper)` —
-//! enforced through the [`OrderedLimit`] ordered-magnitude surface
-//! (`dv_ordered_impl`); undecidable comparisons (e.g. a `serde_json::Value`
-//! element, or a malformed temporal magnitude) are not reported as
-//! violations — value well-formedness is caught by the element's own
-//! `Value_valid` invariant.
+//!   implies (lower.is_strictly_comparable_to(upper) and lower <= upper)` —
+//!   enforced through the [`OrderedLimit`] ordered-magnitude surface
+//!   (`dv_ordered_impl`); undecidable comparisons (e.g. a `serde_json::Value`
+//!   element, or a malformed temporal magnitude) are not reported as
+//!   violations — value well-formedness is caught by the element's own
+//!   `Value_valid` invariant.
 //! - `has(v)`: the base `Interval.has` membership test, honouring the
-//! `*_included` boundary flags (used by `REFERENCE_RANGE.is_in_range` and
-//! `DV_ORDERED.is_normal`).
+//!   `*_included` boundary flags (used by `REFERENCE_RANGE.is_in_range` and
+//!   `DV_ORDERED.is_normal`).
 //!
 //! PORT NOTE: archie reports the boundary-flag invariants under the base type
 //! `INTERVAL` (its `DvInterval` composes an inner `Interval`); our `DvInterval`

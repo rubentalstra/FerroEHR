@@ -117,9 +117,9 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 /// excluded here with the exact spec violation named — they are not a valid
 /// oracle for "validates clean". Excluded on those grounds:
 /// - `rawdb_composition.json` — its `composer.external_ref` is a `PARTY_REF`
-/// missing the mandatory `type` (`PARTY_REF.type [1]`, RM support) whose `id`
-/// is a `GENERIC_ID` missing the mandatory `value` (`OBJECT_ID.value [1]`, RM
-/// support). Strict typed validation surfaces both (phase S2-04, T1).
+///   missing the mandatory `type` (`PARTY_REF.type [1]`, RM support) whose `id`
+///   is a `GENERIC_ID` missing the mandatory `value` (`OBJECT_ID.value [1]`, RM
+///   support). Strict typed validation surfaces both (phase S2-04, T1).
 const CLEAN_COMPOSITIONS: &[&str] = &[
     "all_types_no_multimedia.json",
     "choice_validation_test.json",

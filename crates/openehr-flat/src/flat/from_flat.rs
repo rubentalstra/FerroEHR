@@ -546,21 +546,21 @@ fn finish_identity(
     // form carried no content under. Two spec cases:
     //
     // * The template **constrains** the attribute to a node-identified structural
-    // child (e.g. `ACTION.description` → `ITEM_TREE[at0017]`): that constraint
-    // must be satisfied by a conforming value (AOM 1.4
-    // `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
-    // The web-template records the constrained identity as a structural stub
-    // (dropped from the tree because it had no leaf content), so we stamp the
-    // *constrained* `archetype_node_id`/type/name — an `at0001` placeholder here
-    // is rejected by the closed-archetype walk (`unexpected node 'at0001'`).
+    //   child (e.g. `ACTION.description` → `ITEM_TREE[at0017]`): that constraint
+    //   must be satisfied by a conforming value (AOM 1.4
+    //   `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+    //   The web-template records the constrained identity as a structural stub
+    //   (dropped from the tree because it had no leaf content), so we stamp the
+    //   *constrained* `archetype_node_id`/type/name — an `at0001` placeholder here
+    //   is rejected by the closed-archetype walk (`unexpected node 'at0001'`).
     // * The template leaves the attribute **unconstrained**: no constraint stated
-    // means any RM-valid value is permitted (ADL 1.4
-    // `AM/docs/ADL1.4/master05-cadl.adoc` §"Any" Constraints; CNF
-    // `master15-content_tc_composition.adoc` L38 — "When there is no constraint
-    // defined for an attribute … anything is allowed on that attribute"). No
-    // faithful source id exists, so the `at0001` placeholder is stamped — it
-    // only needs to be a non-empty archetype-relative id for the rebuilt object
-    // to be a valid `LOCATABLE` (`RM/.../common/locatable.adoc` invariants).
+    //   means any RM-valid value is permitted (ADL 1.4
+    //   `AM/docs/ADL1.4/master05-cadl.adoc` §"Any" Constraints; CNF
+    //   `master15-content_tc_composition.adoc` L38 — "When there is no constraint
+    //   defined for an attribute … anything is allowed on that attribute"). No
+    //   faithful source id exists, so the `at0001` placeholder is stamped — it
+    //   only needs to be a non-empty archetype-relative id for the rebuilt object
+    //   to be a valid `LOCATABLE` (`RM/.../common/locatable.adoc` invariants).
     match rm_type {
         "OBSERVATION" => {
             obj.entry("data".to_owned())

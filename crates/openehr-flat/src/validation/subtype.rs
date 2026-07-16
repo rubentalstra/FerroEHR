@@ -24,10 +24,10 @@ fn base(t: &str) -> &str {
 ///
 /// - Equal (modulo generics) always conforms.
 /// - When the constraint type is **known** to the RM model, the model decides:
-/// a known instance type conforms iff [`openehr_rm::model::is_a`] holds; an
-/// unknown/bogus instance type is rejected (a known slot needs a known filler).
+///   a known instance type conforms iff [`openehr_rm::model::is_a`] holds; an
+///   unknown/bogus instance type is rejected (a known slot needs a known filler).
 /// - When the constraint type is **unknown** to the RM model, stay permissive
-/// (never over-reject on a type the spec model does not carry).
+///   (never over-reject on a type the spec model does not carry).
 #[must_use]
 pub(crate) fn conforms(instance_type: &str, wt_type: &str) -> bool {
     let (inst, wt) = (base(instance_type), base(wt_type));

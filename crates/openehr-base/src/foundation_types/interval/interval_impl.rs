@@ -9,10 +9,10 @@
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
-//! (the `Interval<T>` class: attributes, `has`/`intersects`/`contains`/
-//! `is_equal`, invariants).
+//!   (the `Interval<T>` class: attributes, `has`/`intersects`/`contains`/
+//!   `is_equal`, invariants).
 //! - `BASE/docs/foundation_types/master05-interval.adoc` (prose: open/closed
-//! boundaries, unbounded = ±infinity).
+//!   boundaries, unbounded = ±infinity).
 //!
 //! The truth tables are derived from the `has` post-condition and the
 //! open/closed-boundary prose; `intersects`/`contains` follow the standard

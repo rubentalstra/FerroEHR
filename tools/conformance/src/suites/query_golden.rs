@@ -4,19 +4,20 @@
 //! This module owns two things:
 //!
 //! 1. **The golden normalizer** ([`Rule`], [`compare`]) — the documented
-//! suppression layer a served `RESULT_SET` is diffed through. Design §6: *"a
-//! diff suppressed by the normalizer must name its rule"* — every suppressed
-//! difference records the [`Rule`] that justified it, so the suppression set
-//! is auditable. Register 07 G-4 boundary: rules that are **version-specific**
-//! (RM 1.2.0 `_type`, default-on `signature`, whole-number formatting,
-//! `meta._schema_version`) carry an edition-rung comment — they suppress a
-//! *development-edition* wire shape and would be ladder assertions in a full
-//! `RESULT_SET` wire adapter (register 90, not yet exposed).
+//!    suppression layer a served `RESULT_SET` is diffed through, under the
+//!    standing honesty rule that *a diff suppressed by the normalizer must
+//!    name its rule*: every suppressed difference records the [`Rule`] that
+//!    justified it, so the suppression set is auditable. Boundary: rules that
+//!    are **version-specific** (RM 1.2.0 `_type`, default-on `signature`,
+//!    whole-number formatting,
+//!    `meta._schema_version`) carry an edition-rung comment — they suppress a
+//!    *development-edition* wire shape and would be ladder assertions in a full
+//!    `RESULT_SET` wire adapter (register 90, not yet exposed).
 //!
 //! 2. **The golden-diff cases** ([`entries`]) — the eight carried per-group ×
-//! per-DB-state cases (legacy slugs `qry/corpus-{a-d}-{empty,loaded}-db`),
-//! plus the ten **dialect** cases broken out so the vendored-data defects can
-//! be adjudicated per-golden.
+//!    per-DB-state cases (legacy slugs `qry/corpus-{a-d}-{empty,loaded}-db`),
+//!    plus the ten **dialect** cases broken out so the vendored-data defects can
+//!    be adjudicated per-golden.
 //!
 //! ## Golden-dialect handling — register 07 G-3 (adjudications OUT of code)
 //!
@@ -25,12 +26,12 @@
 //! ([`crate::engine::run`]):
 //!
 //! - **LIMIT-before-ORDER-BY** — the 2019-era corpus places `LIMIT` before
-//! `ORDER BY`, invalid under the AQL 1.1 grammar (`AqlParser.g4`
-//! `orderByClause? limitClause?`). Disposition **`corpus-dialect`** → the
-//! runner skips the dedicated case with the citation.
+//!   `ORDER BY`, invalid under the AQL 1.1 grammar (`AqlParser.g4`
+//!   `orderByClause? limitClause?`). Disposition **`corpus-dialect`** → the
+//!   runner skips the dedicated case with the citation.
 //! - **TIMEWINDOW** — AQL 1.1 removed the clause (QUERY `master00-amendment_record`
-//! SPECQUERY-20). Disposition **`spec-supersedes-corpus`** → the case runs
-//! against the spec-derived expectation (the query must be rejected, `4xx`).
+//!   SPECQUERY-20). Disposition **`spec-supersedes-corpus`** → the case runs
+//!   against the spec-derived expectation (the query must be rejected, `4xx`).
 //!
 //! The suite carries **no hardcoded skip list**: the eight group cases route a
 //! dialect golden to its dedicated case via the spec-cited classifiers

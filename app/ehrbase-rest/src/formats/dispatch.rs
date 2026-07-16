@@ -12,13 +12,13 @@
 //! uses. For FLAT specifically:
 //!
 //! * **input** (`Content-Type` FLAT on create/update): the flat map is rebuilt
-//! into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
-//! by the target template's `WebTemplate`. The template id — which a flat body
-//! does not carry — comes from the `template_id`/`templateId` query parameter
-//! or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
+//!   into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
+//!   by the target template's `WebTemplate`. The template id — which a flat body
+//!   does not carry — comes from the `template_id`/`templateId` query parameter
+//!   or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
 //! * **output** (`Accept` FLAT on get/create/update): the stored canonical
-//! composition is converted via `openehr_flat::to_flat` (its template id is
-//! read from `archetype_details/template_id`).
+//!   composition is converted via `openehr_flat::to_flat` (its template id is
+//!   read from `archetype_details/template_id`).
 
 use axum::response::Response;
 use bytes::Bytes;

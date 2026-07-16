@@ -252,8 +252,8 @@ fn path_parsers<'a>() -> (
         .or(parameter().map(ArchetypePredicate::Parameter));
 
     // nodePredicate : node/archetype code (+optional name) | parameter |
-    // objectPath MATCHES CONTAINED_REGEX | standardPredicate |
-    // nodePredicate (AND|OR) nodePredicate. AND binds tighter than OR.
+    //   objectPath MATCHES CONTAINED_REGEX | standardPredicate |
+    //   nodePredicate (AND|OR) nodePredicate. AND binds tighter than OR.
     let name_constraint = select! {
         Token::String(s) => NodeNameConstraint::String(unquote(&s)),
         Token::TermCode(s) => NodeNameConstraint::TermCode(s),
@@ -633,7 +633,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .map(|(limit, offset)| Limit { limit, offset });
 
     // selectQuery : selectClause fromClause whereClause? orderByClause?
-    // limitClause? '--'? EOF
+    //               limitClause? '--'? EOF
     //
     // NOTE: no TIMEWINDOW clause — AQL 1.1 removed it (SPECQUERY-20); a query
     // using it is invalid and fails to parse, which is the conformant outcome.
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn where_boolean_precedence() {
-        // a AND b OR c ⇒ Or(And(a,b), c)
+        // a AND b OR c  ⇒  Or(And(a,b), c)
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1 AND c/y = 2 OR c/z = 3")
             .expect("parse");
         assert!(matches!(q.where_, Some(WhereExpr::Or(_, _))));
@@ -764,7 +764,7 @@ mod tests {
 
     #[test]
     fn not_binds_tighter_than_and() {
-        // NOT a AND b ⇒ And(Not(a), b) — not Not(And(a,b))
+        // NOT a AND b  ⇒  And(Not(a), b)  — not Not(And(a,b))
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE NOT EXISTS c/x AND EXISTS c/y")
             .expect("parse");
         match q.where_ {

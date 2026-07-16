@@ -7,15 +7,15 @@
 //! Specifications to Runnable Tests machine-readable on every case:
 //!
 //! - [`ScheduleTrace`] — the abstract schedule test case this case
-//! concretizes (or an explicit `EccOriginal` marker where the schedule
-//! chapter is a stub — a stub-derived case is never presented as
-//! schedule-conformant; registers 02/07/08/09/10).
+//!   concretizes (or an explicit `EccOriginal` marker where the schedule
+//!   chapter is a stub — a stub-derived case is never presented as
+//!   schedule-conformant; registers 02/07/08/09/10).
 //! - [`Binding`] — the ITS-REST concretization, or the explicit
-//! `NoRestBinding` fact for SM operations the REST contract never bound
-//! (schedule master04 `delete_opt`, master05 `list_queries`, master08
-//! `list_contributions`, Messaging, native-only Admin ops): those cases
-//! skip-with-reason or probe, they never fabricate a URL and never book a
-//! failure.
+//!   `NoRestBinding` fact for SM operations the REST contract never bound
+//!   (schedule master04 `delete_opt`, master05 `list_queries`, master08
+//!   `list_contributions`, Messaging, native-only Admin ops): those cases
+//!   skip-with-reason or probe, they never fabricate a URL and never book a
+//!   failure.
 
 use serde::Serialize;
 

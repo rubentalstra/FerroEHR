@@ -19,10 +19,10 @@
 //! at the end of each test, so no permit leaks.
 //!
 //! * beyond the `max_in_flight` cap, an API request is shed immediately with
-//! `503 Service Unavailable` + `Retry-After: 1` and the openEHR error body;
+//!   `503 Service Unavailable` + `Retry-After: 1` and the openEHR error body;
 //! * `max_in_flight = 0` installs no layer, so concurrency is unbounded;
 //! * the public `/status` endpoint is outside the limit and is never shed,
-//! even while the API permit pool is fully saturated.
+//!   even while the API permit pool is fully saturated.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::time::Duration;

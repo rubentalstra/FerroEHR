@@ -11,15 +11,15 @@
 //! executor seam ([`crate::engine::run`]). Three dispositions:
 //!
 //! - `extension` → the case exercises an `ehrbase-rs` extension the SUT does
-//! not implement (e.g. the demographic REST API, version signing) → reported
-//! [`NotApplicable`](crate::reporting::results::CaseStatus::NotApplicable).
+//!   not implement (e.g. the demographic REST API, version signing) → reported
+//!   [`NotApplicable`](crate::reporting::results::CaseStatus::NotApplicable).
 //! - `rm-version-sensitive` → the case's request payload or response comparison
-//! depends on RM 1.2.0 shapes the SUT's older RM/ITS surface cannot produce →
-//! [`NotApplicable`](crate::reporting::results::CaseStatus::NotApplicable), with the
-//! RM/ITS-version citation.
+//!   depends on RM 1.2.0 shapes the SUT's older RM/ITS surface cannot produce →
+//!   [`NotApplicable`](crate::reporting::results::CaseStatus::NotApplicable), with the
+//!   RM/ITS-version citation.
 //! - `defect` → a genuine spec gap that survives triage → the case runs
-//! normally and its natural outcome (a **failure**) stands, documented here
-//! with the spec citation.
+//!   normally and its natural outcome (a **failure**) stands, documented here
+//!   with the spec citation.
 //!
 //! **Hard rule (honesty rule 10 / standing rule 3):** the register only
 //! *reclassifies with a citation*; it never weakens, edits, or skips a case.
@@ -31,13 +31,13 @@
 //!
 //! ```toml
 //! [meta]
-//! sut = "ehrbase-java" # informational; the product name lives in results.json
+//! sut = "ehrbase-java"        # informational; the product name lives in results.json
 //! version = "2.34.0"
 //! description = "Upstream fairness adjudication register for EHRbase (Java) 2.34.0."
 //!
 //! # An area-wide rule: every case in the area gets this disposition.
 //! [[area]]
-//! area = "DEM" # the ECC area tag (see `catalog::Area::tag`)
+//! area = "DEM"                # the ECC area tag (see `catalog::Area::tag`)
 //! disposition = "extension"
 //! reason = "Upstream EHRbase has no demographic REST API."
 //! citation = "docs/plans/x1-comparison.md §2c"

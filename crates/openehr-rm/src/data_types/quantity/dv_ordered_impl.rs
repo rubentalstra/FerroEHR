@@ -10,15 +10,15 @@
 //!
 //! - `DV_QUANTITY.magnitude` / `DV_COUNT.magnitude` — stored fields.
 //! - `DV_PROPORTION.magnitude()` — "effective magnitude represented by ratio"
-//! = `numerator / denominator`.
+//!   = `numerator / denominator`.
 //! - `DV_DATE.magnitude()` — days since the calendar origin `0001-01-01`.
 //! - `DV_TIME.magnitude()` — seconds since the start of day `00:00:00`.
 //! - `DV_DATE_TIME.magnitude()` — seconds since `0001-01-01T00:00:00Z`.
 //! - `DV_DURATION.magnitude()` — seconds, computed via `Iso8601_duration.
-//! to_seconds()` (BASE): non-definite components use the *nominal* averages
-//! from BASE `Time_definitions` — `Average_days_in_year` = 365.24,
-//! `Average_days_in_month` = 30.42
-//! (`org.openehr.base.foundation_types.{iso8601_duration,time_definitions}.adoc`).
+//!   to_seconds()` (BASE): non-definite components use the *nominal* averages
+//!   from BASE `Time_definitions` — `Average_days_in_year` = 365.24,
+//!   `Average_days_in_month` = 30.42
+//!   (`org.openehr.base.foundation_types.{iso8601_duration,time_definitions}.adoc`).
 //!
 //! `less_than` carries the spec precondition `is_strictly_comparable_to(other)`
 //! and, for partial/malformed temporal values, an unavailable magnitude — both

@@ -4,13 +4,13 @@
 //! Rules enforced (`AOM2/master07-terminology_package.adoc`,
 //! `AOM2/master08-validation.adoc`):
 //! - **VATID** — every at-code used as a `node_id` in the definition is
-//! defined in terminology (master08 line 56).
+//!   defined in terminology (master08 line 56).
 //! - **VTTBK** — every term-binding key is a defined archetype term or a path
-//! (master07 line 77).
+//!   (master07 line 77).
 //! - **VTCBK** — every constraint-binding key is a defined ac-code
-//! (master07 line 80).
+//!   (master07 line 80).
 //! - **VTLC** — all term/constraint codes exist in all languages
-//! (master07 line 74).
+//!   (master07 line 74).
 //!
 //! This module also owns the global code-collection helpers and the flattened
 //! ontology / nested-root accessors the whole pass shares.

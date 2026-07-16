@@ -219,12 +219,12 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — the spec requests
-    /// `openehr_canonical_xml`, any compression format, or a non-positive
-    /// `segment_split_size`.
+    ///   `openehr_canonical_xml`, any compression format, or a non-positive
+    ///   `segment_split_size`.
     /// - `file_not_writable` — the directory, a segment file, a blob file, or
-    /// the manifest cannot be created/written.
+    ///   the manifest cannot be created/written.
     /// - `exception` — a database/codec fault while collecting records, or a
-    /// blob-store fault while exporting referenced multimedia.
+    ///   blob-store fault while exporting referenced multimedia.
     pub async fn export_ehrs(
         &self,
         file_sys_loc: String,
@@ -308,14 +308,14 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `file_not_writable` — the manifest, a segment file, or a blob file
-    /// cannot be read.
+    ///   cannot be read.
     /// - `precondition_violation` (`400`) — the archive carries externalized
-    /// multimedia blobs but this server has no multimedia store configured.
+    ///   multimedia blobs but this server has no multimedia store configured.
     /// - `unprocessable` — an archive record carries overlapping version
-    /// validity periods (a corrupted/hand-crafted archive; the record's
-    /// transaction is rolled back).
+    ///   validity periods (a corrupted/hand-crafted archive; the record's
+    ///   transaction is rolled back).
     /// - `exception` — a malformed manifest/segment JSON, a database/codec
-    /// fault while re-persisting, or a blob-store fault while importing.
+    ///   fault while re-persisting, or a blob-store fault while importing.
     pub async fn load_ehrs(
         &self,
         file_sys_loc: String,

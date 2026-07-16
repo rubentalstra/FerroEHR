@@ -4,32 +4,32 @@
 //!
 //! Faithfulness notes:
 //! - AQL keywords are **case-insensitive** (the grammar builds them from
-//! case-insensitive letter fragments), so each keyword uses
-//! `ignore(case)`.
+//!   case-insensitive letter fragments), so each keyword uses
+//!   `ignore(case)`.
 //! - The grammar's grouped function-id tokens (`STRING_FUNCTION_ID`,
-//! `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID`) are **not** pre-grouped
-//! here: names like `length`/`abs`/`now` lex as [`Token::Identifier`] and the
-//! parser classifies a `name(args)` call. Structurally-distinct calls
-//! (aggregates, `terminology(...)`) keep dedicated keyword tokens because
-//! their argument grammar differs.
+//!   `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID`) are **not** pre-grouped
+//!   here: names like `length`/`abs`/`now` lex as [`Token::Identifier`] and the
+//!   parser classifies a `name(args)` call. Structurally-distinct calls
+//!   (aggregates, `terminology(...)`) keep dedicated keyword tokens because
+//!   their argument grammar differs.
 //! - `// PORT NOTE:` quoted temporal literals (`DATE`/`TIME`/`DATETIME` in the
-//! grammar) are lexed as [`Token::String`]; typing them as temporals is a
-//! later semantic concern (the parser accepts a string where a primitive is
-//! expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
-//! priority tangle. Per the QUERY spec §Dates and Times NOTE, the *typing*
-//! of a quoted value as a date/time is resolved from the identified-path
-//! context in the semantic pass, not from the literal — so an untyped
-//! `Token::String` is the faithful carrier here. (F-08-06: all temporal
-//! literals are indistinguishable from strings at this layer by design.)
+//!   grammar) are lexed as [`Token::String`]; typing them as temporals is a
+//!   later semantic concern (the parser accepts a string where a primitive is
+//!   expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
+//!   priority tangle. Per the QUERY spec §Dates and Times NOTE, the *typing*
+//!   of a quoted value as a date/time is resolved from the identified-path
+//!   context in the semantic pass, not from the literal — so an untyped
+//!   `Token::String` is the faithful carrier here (all temporal literals are
+//!   indistinguishable from strings at this layer, by design).
 //! - `// PORT NOTE:` the grammar's single-row function-id groups
-//! (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
-//! `length`, `abs`, `now`, …) are **not** reserved here: they lex as
-//! [`Token::Identifier`] and the parser classifies a `name(args)` call
-//! (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
-//! name). This makes the accepted set a *superset* of the grammar (it never
-//! rejects valid AQL; it additionally tolerates these words as identifiers).
-//! a superset accept-envelope is the sanctioned direction; the
-//! reserved-word restriction is a semantic concern, not a syntax one.
+//!   (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
+//!   `length`, `abs`, `now`, …) are **not** reserved here: they lex as
+//!   [`Token::Identifier`] and the parser classifies a `name(args)` call
+//!   (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
+//!   name). This makes the accepted set a *superset* of the grammar (it never
+//!   rejects valid AQL; it additionally tolerates these words as identifiers).
+//!   a superset accept-envelope is the sanctioned direction; the
+//!   reserved-word restriction is a semantic concern, not a syntax one.
 
 use logos::Logos;
 

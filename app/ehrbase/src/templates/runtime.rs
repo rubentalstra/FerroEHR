@@ -6,14 +6,14 @@
 //! `docs/specs/openehr/BASE/docs/architecture_overview/master10-archetypes.adoc`:
 //!
 //! - §Archetypes and Templates at Runtime: a template's runtime function
-//! is (a) to validate data at capture/import against the RM + archetypes, and
-//! (b) to be the design basis for AQL paths. The validation/commit path
-//! consumes [`EhrbaseService::web_template_for`].
+//!   is (a) to validate data at capture/import against the RM + archetypes, and
+//!   (b) to be the design basis for AQL paths. The validation/commit path
+//!   consumes [`EhrbaseService::web_template_for`].
 //! - §Deploying Archetypes and Templates: the spec blesses a *compiled
-//! near-runtime form* ("compiled into a near-runtime form from the sharable
-//! openEHR form") that incorporates copies of the relevant archetypes for
-//! performance and to guarantee only validated artefacts run. Our derived
-//! form is the [`WebTemplate`], memoised in a `moka` cache.
+//!   near-runtime form* ("compiled into a near-runtime form from the sharable
+//!   openEHR form") that incorporates copies of the relevant archetypes for
+//!   performance and to guarantee only validated artefacts run. Our derived
+//!   form is the [`WebTemplate`], memoised in a `moka` cache.
 //!
 //! PORT NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
 //! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
@@ -44,14 +44,14 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`, **not** `NotFound`
-    /// — G-T08) when the template is not in the store: on a composition
-    /// commit an unknown referenced template is a *semantic* error, per
-    /// `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
-    /// ("semantic validation errors, such as the underlying template is not
-    /// known") and the CNF Robot case
-    /// `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserting `422`.
+    ///   — G-T08) when the template is not in the store: on a composition
+    ///   commit an unknown referenced template is a *semantic* error, per
+    ///   `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
+    ///   ("semantic validation errors, such as the underlying template is not
+    ///   known") and the CNF Robot case
+    ///   `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserting `422`.
     /// - [`ServiceError::Unprocessable`] when the stored XML fails to build
-    /// into a [`WebTemplate`].
+    ///   into a [`WebTemplate`].
     /// - [`ServiceError::Database`] — the store read failed.
     pub(crate) async fn web_template_for(
         &self,
@@ -110,12 +110,12 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - [`ServiceError::NotFound`] (→ ITS-REST `404`,
-    /// `responses/404_unknown_template_id.yaml`) — unknown `template_id`,
-    /// matching the `adl1.4/{template_id}` GET surface rather than the `422`
-    /// [`web_template_for`](Self::web_template_for) maps for an unknown
-    /// template on a *commit* path.
+    ///   `responses/404_unknown_template_id.yaml`) — unknown `template_id`,
+    ///   matching the `adl1.4/{template_id}` GET surface rather than the `422`
+    ///   [`web_template_for`](Self::web_template_for) maps for an unknown
+    ///   template on a *commit* path.
     /// - [`ServiceError::Unprocessable`] (→ `422`) — the template is stored but
-    /// cannot be built into a [`WebTemplate`].
+    ///   cannot be built into a [`WebTemplate`].
     /// - [`ServiceError::Database`] — the store read failed.
     pub(crate) async fn template_example(
         &self,

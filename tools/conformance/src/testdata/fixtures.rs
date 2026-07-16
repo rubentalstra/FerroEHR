@@ -11,12 +11,12 @@
 //! Three source kinds resolve to bytes:
 //!
 //! - `owned:` — reviewed committed corrections under `testdata/fixtures/`
-//! (the B2 owned-fixture register, `testdata/fixtures/REGISTER.md`).
+//!   (the B2 owned-fixture register, `testdata/fixtures/REGISTER.md`).
 //! - `corpus:` / `corpus-dir:` — vendored CNF corpus under
-//! `docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`.
+//!   `docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`.
 //! - `generated:` — programmatically authored data sets; the authoring code
-//! lives in the content suites, so resolution here returns a typed marker
-//! error directing the caller to the authoring path.
+//!   lives in the content suites, so resolution here returns a typed marker
+//!   error directing the caller to the authoring path.
 //!
 //! ## RM-version adaptation
 //!

@@ -251,18 +251,18 @@ mod tests {
 // success `RESULT_SET` (and its `meta`) verbatim. The three query codes:
 //
 // - `ehr_id_does_not_exist` → `404`: a scoped query probes existence
-// (`aql_query::resolve_ehr_ids`) and raises `SmError::ehr_not_found`
-// (`CallStatusType::EhrIdDoesNotExist` → `ApiError::NotFound`) for a
-// well-formed-but-absent EHR id; a malformed UUID stays a `400`
-// (`SmError::precondition`). (`Request.md` §About the ehr_id parameter.)
+//   (`aql_query::resolve_ehr_ids`) and raises `SmError::ehr_not_found`
+//   (`CallStatusType::EhrIdDoesNotExist` → `ApiError::NotFound`) for a
+//   well-formed-but-absent EHR id; a malformed UUID stays a `400`
+//   (`SmError::precondition`). (`Request.md` §About the ehr_id parameter.)
 //
 // - query-execution timeout → `408` (`responses/408_Query.yaml`): the executor
-// bounds the DB execution by the `EHRBASE__QUERY__TIMEOUT_MS` budget and, on
-// overrun, raises the timeout-tagged `SmError` that `sm_api_error`/
-// `RestError::into_response` render as `408 Request Timeout`
-// (`Requests_and_responses.md` §HTTP status codes, row `408`). With the budget
-// unset, an over-long query trips only the blunt global `TimeoutLayer`.
+//   bounds the DB execution by the `EHRBASE__QUERY__TIMEOUT_MS` budget and, on
+//   overrun, raises the timeout-tagged `SmError` that `sm_api_error`/
+//   `RestError::into_response` render as `408 Request Timeout`
+//   (`Requests_and_responses.md` §HTTP status codes, row `408`). With the budget
+//   unset, an over-long query trips only the blunt global `TimeoutLayer`.
 //
 // - `meta._executed_aql` (the parameter-substituted query text) is assembled by
-// `aql_query::substitute_params` into the `RESULT_SET.meta`; this renderer
-// emits it as-is.
+//   `aql_query::substitute_params` into the `RESULT_SET.meta`; this renderer
+//   emits it as-is.

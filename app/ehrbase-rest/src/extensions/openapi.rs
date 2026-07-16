@@ -8,12 +8,12 @@
 //! (`.into_openapi()` per area, merged here):
 //!
 //! - the standardised **ITS-REST API groups** — EHR / COMPOSITION / CONTRIBUTION
-//! / DIRECTORY / DEMOGRAPHIC / DEFINITION / QUERY / ADMIN
-//! ([`crate::api::api_doc`]);
+//!   / DIRECTORY / DEMOGRAPHIC / DEFINITION / QUERY / ADMIN
+//!   ([`crate::api::api_doc`]);
 //! - the own-design extension groups (terminology, `PARTY_RELATIONSHIP`,
-//! event-subscription, multi-tenancy, FHIR connector);
+//!   event-subscription, multi-tenancy, FHIR connector);
 //! - the operational endpoints (`/status`, health), the management surface, the
-//! SMART discovery document, and these `OpenAPI` endpoints.
+//!   SMART discovery document, and these `OpenAPI` endpoints.
 //!
 //! Route and `OpenAPI` path are single-sourced from one `#[utoipa::path]` handler —
 //! the document cannot drift from the router. The vendored ITS-REST OAS bundles

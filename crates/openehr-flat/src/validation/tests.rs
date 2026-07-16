@@ -1520,7 +1520,7 @@ fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
 /// write path (~9–11 PG round trips + multi-second node/version INSERTs under
 /// load per the checklist). Ignored by default (timing, not correctness); run:
 /// `cargo nextest run -p openehr-flat --run-ignored all \
-/// -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
+///   -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
 #[test]
 #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
 fn measure_ips_validation_walk_cost() {
@@ -1567,7 +1567,7 @@ fn measure_ips_validation_walk_cost() {
 /// the allocation-discipline rewrite is honest. Ignored by default (timing, not
 /// correctness); run:
 /// `cargo nextest run -p openehr-flat --run-ignored all \
-/// -E 'test(measure_ips_validation_full_cost)' --no-capture`.
+///   -E 'test(measure_ips_validation_full_cost)' --no-capture`.
 #[test]
 #[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
 fn measure_ips_validation_full_cost() {

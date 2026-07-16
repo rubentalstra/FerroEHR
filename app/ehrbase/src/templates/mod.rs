@@ -7,23 +7,23 @@
 //! operational form → derived runtime artefact**:
 //!
 //! - [`identity`] — the `ARCHETYPE_ID` / `TEMPLATE_ID` identity law
-//! (`BASE/docs/base_types/master05-identification_package.adoc`,
-//! §Composite Identifiers and Case: case-preserving *and* case-insensitive
-//! — G-T04), applied at every lookup and cache boundary.
+//!   (`BASE/docs/base_types/master05-identification_package.adoc`,
+//!   §Composite Identifiers and Case: case-preserving *and* case-insensitive
+//!   — G-T04), applied at every lookup and cache boundary.
 //! - [`ingest`] — OPT 1.4 canonical XML → `OperationalTemplate` parse;
-//! the artefact is an `AUTHORED_RESOURCE`
-//! (`BASE/docs/resource/master02-resource_package.adoc` §Meta-data,
-//! S-01/S-02/S-03).
+//!   the artefact is an `AUTHORED_RESOURCE`
+//!   (`BASE/docs/resource/master02-resource_package.adoc` §Meta-data,
+//!   S-01/S-02/S-03).
 //! - [`store`] — the `template_store` repository:
-//! insert-only upload (`409` on a duplicate id, G-T09) and the
-//! `template_id`-keyed retrieval/listing behind the ITS-REST
-//! `/definition/template/adl1.4` surface
-//! (`ITS-REST/specifications/definition.openapi.yaml`).
+//!   insert-only upload (`409` on a duplicate id, G-T09) and the
+//!   `template_id`-keyed retrieval/listing behind the ITS-REST
+//!   `/definition/template/adl1.4` surface
+//!   (`ITS-REST/specifications/definition.openapi.yaml`).
 //! - [`runtime`] — the S-08/S-09 derived near-runtime form
-//! (`BASE/docs/architecture_overview/master10-archetypes.adoc`
-//! §Archetypes and Templates at Runtime, §Deploying Archetypes and
-//! Templates), `moka`-cached; the `WebTemplate` *format* is
-//! spec-silent and stays in `openehr-flat`.
+//!   (`BASE/docs/architecture_overview/master10-archetypes.adoc`
+//!   §Archetypes and Templates at Runtime, §Deploying Archetypes and
+//!   Templates), `moka`-cached; the `WebTemplate` *format* is
+//!   spec-silent and stays in `openehr-flat`.
 //!
 //! # The inherent-method surface on `EhrbaseService`
 //!
@@ -40,26 +40,26 @@
 //! # PORT NOTE residue (register: `docs/design/platform/10-templates.md`)
 //!
 //! - **G-T06** — the `WebTemplate` JSON *format* is the Better `web-template`
-//! SDT format, **not** openEHR-normative; kept in `openehr-flat`, never
-//! presented as canonical (see [`runtime`]).
+//!   SDT format, **not** openEHR-normative; kept in `openehr-flat`, never
+//!   presented as canonical (see [`runtime`]).
 //! - **G-T08** — an unknown template on a *commit* path is a `422`
-//! (ITS-REST `responses/422.yaml`: "the underlying template is not known")
-//! whereas the `adl1.4/{template_id}` GET surface is a `404`
-//! (`responses/404_unknown_template_id.yaml`); both re-verified against the
-//! ITS-REST responses + CNF (see [`runtime`]).
+//!   (ITS-REST `responses/422.yaml`: "the underlying template is not known")
+//!   whereas the `adl1.4/{template_id}` GET surface is a `404`
+//!   (`responses/404_unknown_template_id.yaml`); both re-verified against the
+//!   ITS-REST responses + CNF (see [`runtime`]).
 //! - **G-T09** — re-uploading an existing `template_id` is a `409`
-//! (`responses/409_template_already_exists.yaml`), never a silent overwrite
-//! (see [`store`]).
+//!   (`responses/409_template_already_exists.yaml`), never a silent overwrite
+//!   (see [`store`]).
 //! - **G-T10** — the SM `list_matching_opts` is typed `List<ARCHETYPE_ID>`
-//! though OPTs are UUID-keyed; the definition register returns `template_id`
-//! strings (the meaningful pattern target). Spec defect, re-verified; the
-//! operation itself lives in `service/definition/adl14.rs`.
+//!   though OPTs are UUID-keyed; the definition register returns `template_id`
+//!   strings (the meaningful pattern target). Spec defect, re-verified; the
+//!   operation itself lives in `service/definition/adl14.rs`.
 //! - **G-T11** — OPT 1.4 has **no normative prose master**; its structure is
-//! governed by the ITS-XML v1 Template XSD + AOM 1.4 (see [`ingest`]).
+//!   governed by the ITS-XML v1 Template XSD + AOM 1.4 (see [`ingest`]).
 //! - **G-T12** — the `AUTHORED_RESOURCE` meta-data
-//! (`language`/`description`/`translations`/`revision_history`) is parsed
-//! but not surfaced/queried; we index `template_id`/`concept`/root only
-//! (the spec permits an optional `_description_`) (see [`ingest`]).
+//!   (`language`/`description`/`translations`/`revision_history`) is parsed
+//!   but not surfaced/queried; we index `template_id`/`concept`/root only
+//!   (the spec permits an optional `_description_`) (see [`ingest`]).
 
 pub(crate) mod identity;
 mod ingest;

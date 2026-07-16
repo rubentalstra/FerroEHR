@@ -9,15 +9,15 @@
 //! Two families of shortcut (per the `EHRbase` Context doc):
 //!
 //! * **Bidirectional** (composition-`context` level): `language`, `territory`,
-//! `composer_*`, `id_namespace`/`id_scheme`, `time`, `end_time`, `setting`,
-//! **`participation_*`**, **`health_care_facility`**, **`location`** — emitted
-//! by [`emit_ctx`] and rebuilt by [`apply_ctx`], round-trip stable.
+//!   `composer_*`, `id_namespace`/`id_scheme`, `time`, `end_time`, `setting`,
+//!   **`participation_*`**, **`health_care_facility`**, **`location`** — emitted
+//!   by [`emit_ctx`] and rebuilt by [`apply_ctx`], round-trip stable.
 //! * **Input defaults** (per-`ENTRY`/structural, applied by [`apply_ctx`] only —
-//! on output these live in their structural positions, so emitting them as
-//! `ctx/` would be ambiguous): `provider_name`/`provider_id`, `work_flow_id`,
-//! `instruction_narrative`, `action_ism_transition_current_state`,
-//! `activity_timing`, `history_origin`. A FLAT body may set them; they fill
-//! the matching RM field on every entry that lacks it.
+//!   on output these live in their structural positions, so emitting them as
+//!   `ctx/` would be ambiguous): `provider_name`/`provider_id`, `work_flow_id`,
+//!   `instruction_narrative`, `action_ism_transition_current_state`,
+//!   `activity_timing`, `history_origin`. A FLAT body may set them; they fill
+//!   the matching RM field on every entry that lacks it.
 
 use serde_json::{Map, Value, json};
 
