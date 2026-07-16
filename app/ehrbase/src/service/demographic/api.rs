@@ -120,7 +120,9 @@ impl EhrbaseService {
     pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
-        let resp = self.create_party_response(kind, a_version.data).await?;
+        let resp = self
+            .create_party_response(kind, a_version.data, Some(&a_version.audit))
+            .await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
     }
@@ -265,7 +267,7 @@ impl EhrbaseService {
         kind: PartyKind,
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        let mut resp = self.create_party_response(kind, body).await?;
+        let mut resp = self.create_party_response(kind, body, None).await?;
         // Surface the party's stored ITEM_TAGs on the response seam for the
         // `openehr-item-tag`/`openehr-version-item-tag` response headers
         // (person_create.yaml). A fresh party has none yet; the wire adapter

@@ -67,10 +67,22 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         body: Value,
+        update: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_party_body(kind, &body)?;
 
-        let audit = self.demographic_audit(change_type::CREATION, "PARTY creation");
+        // The caller's UPDATE_VERSION audit attributes merge with the server
+        // rules (ITS-REST committal MUST); the wire party seam passes them
+        // when the request carried committal headers.
+        let audit = match update {
+            Some(u) => crate::versioning::AuditInput::from_update(
+                u,
+                change_type::CREATION,
+                "PARTY creation",
+                &self.effective_system_id(),
+            ),
+            None => self.demographic_audit(change_type::CREATION, "PARTY creation"),
+        };
         let ctx = CommitEnv::signing_ctx(self);
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
