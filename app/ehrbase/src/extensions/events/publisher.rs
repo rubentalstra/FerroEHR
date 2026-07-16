@@ -359,7 +359,18 @@ fn build_payload(seq: i64, version_index: usize, envelope: &serde_json::Value) -
         obj.insert("seq".to_owned(), serde_json::json!(seq));
         obj.insert("version_index".to_owned(), serde_json::json!(version_index));
     }
-    serde_json::to_vec(&payload).unwrap_or_default()
+    // A `Value` serializes infallibly (no non-string keys, no NaN); if that
+    // invariant ever breaks, fail loudly for this row rather than publishing
+    // a zero-byte message a consumer cannot attribute.
+    match serde_json::to_vec(&payload) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            tracing::error!(seq, version_index, error = %e, "event payload serialization failed");
+            serde_json::json!({ "seq": seq, "version_index": version_index, "error": "payload serialization failed" })
+                .to_string()
+                .into_bytes()
+        }
+    }
 }
 
 /// Publish with exponential backoff, up to `publish_max_retries`

@@ -305,7 +305,18 @@ async fn process_batch(
             };
             for (resource_type, template_id, resource) in &messages {
                 let routing_key = routing_key(resource_type, template_id);
-                let payload = serde_json::to_vec(resource).unwrap_or_default();
+                // A serialization failure is a mapping fault for THIS row —
+                // surfaced (and poison-parked after its retry budget), never
+                // published as an empty message.
+                let payload = match serde_json::to_vec(resource) {
+                    Ok(bytes) => bytes,
+                    Err(e) => {
+                        outcome = Err(ProcessError::Map(format!(
+                            "serialize {resource_type}: {e}"
+                        )));
+                        break 'rows;
+                    }
+                };
                 if let Err(e) = publish_with_retry(publisher, &routing_key, &payload, config).await
                 {
                     outcome = Err(ProcessError::Publish(e));
@@ -369,7 +380,11 @@ async fn read_cursor(pool: &PgPool) -> Result<i64, sqlx::Error> {
 
 /// Advance the emitter's delivery cursor to `seq`.
 async fn write_cursor(pool: &PgPool, seq: i64) -> Result<(), sqlx::Error> {
-    sqlx::query("UPDATE fhir_outbound_cursor SET last_seq = $1")
+    // Monotonic guard: a concurrent emitter (or a delayed pass) must never
+    // move the cursor backwards — regression would re-emit every version
+    // after the older seq. At-least-once stays the contract; this bounds the
+    // duplication window instead of leaving it unbounded.
+    sqlx::query("UPDATE fhir_outbound_cursor SET last_seq = $1 WHERE last_seq < $1")
         .bind(seq)
         .execute(pool)
         .await?;
