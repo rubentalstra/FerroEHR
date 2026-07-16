@@ -111,40 +111,42 @@ columns for hot extractions. See `docs/postgres-features.md`.
 
 ## Workspace layout
 
-Three physical directories (ADR-010; move executed 2026-07-08. App-crate
-packaging redesigned by **ADR-011**, 2026-07-09):
-**`app/*`** holds the **three** application crates (`ehrbase`, `ehrbase-rest`,
-`ehrbase-sm`); **`tools/*`** holds the dev/verification tooling that is
-*not* part of the shipped application (`conformance` — the ECC runner,
-`benchmark`); **`crates/*`** holds the generated openEHR spec layer + its
-tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root workspace
-`members = ["crates/*", "app/*", "tools/*"]`. The former leaf crates
-`ehrbase-audit`/`ehrbase-signing`/`ehrbase-authz` were dissolved into modules
-(`ehrbase::system_log`, `ehrbase::signing`, `ehrbase-rest::access`) per ADR-011.
-Dependencies point downward only: `tools/* → app/* → crates/openehr-*`. The service seam is the SM-aligned native API
-(`ehrbase-sm`, ADR-010): one trait per SM Platform Service Model interface,
-with `ehrbase-rest` as the ITS-REST protocol adapter — see ADR-010/ADR-011 and
-the component map below.
+Three physical directories (consolidated 2026-07-16, ADR-018):
+**`app/*`** holds the application — `ehrbase` (the platform **library**),
+`ehrbase-rest` (the ITS-REST protocol adapter, which calls the concrete
+`EhrbaseService` directly), and `ehrbase-server` (the wiring-only binary; the
+bin is still named `ehrbase`); **`tools/*`** holds the dev/verification
+tooling that is *not* part of the shipped application (`conformance` — the
+ECC runner, `benchmark`); **`crates/*`** holds the generated openEHR spec
+layer + its tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root
+workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
+`ehrbase-server → {ehrbase-rest, ehrbase}`, `ehrbase-rest → ehrbase`,
+`app/* → crates/openehr-*`. The former `ehrbase-sm` trait catalog is deleted
+(ADR-018): the SM Platform Service Model survives as the *structure* of
+`ehrbase::service` — one module per SM chapter, concrete methods, SM call
+semantics as the design authority — with zero re-exports anywhere (every
+import names its defining module).
 
 ### SM platform component map
 
 The service layer realizes the openEHR **SM Platform Service Model**
-(ADR-010/011; vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`).
-One trait per SM interface in `ehrbase-sm`:
+(vendored SM spec `docs/specs/openehr/SM/docs/openehr_platform/`). One
+`ehrbase::service` module per SM component; the SM interfaces map to concrete
+`EhrbaseService` methods (ADR-018 deleted the trait catalog):
 
-| SM component | SM interface(s) | Native trait(s) (`ehrbase-sm`) | Status |
+| SM component | SM interface(s) | Realization (`ehrbase::service`) | Status |
 |---|---|---|---|
-| EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `EhrService`, `EhrStatusService`, `EhrCompositionService`, `EhrDirectoryService`, `EhrContributionService` | implemented (SM-1) |
-| Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | `DefinitionAdl14Service`, `DefinitionAdl2Service`, `DefinitionQueryService` + wire-shaped `DefinitionAdapter` (ITS-REST `DefinitionApi` excised from `Platform`, ADR-011) | implemented (SM-2) |
-| Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`, `I_PARTY_RELATIONSHIP` | `DemographicService` | implemented (SM-3) |
-| Query | `I_QUERY_SERVICE` | `QueryService` | implemented |
-| Validity checking | `I_VALIDITY_CHECKER` | `ValidityChecker` | implemented (SM-1) |
-| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `SystemLog` trait (event model + emit; designed contract) → impl `ehrbase::system_log` | implemented |
-| Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `AdminService` | implemented (SM-4 / B3) |
-| EHR Index | `I_EHR_INDEX` | `EhrIndexService` | implemented (SM-3) |
-| Terminology | `I_TERMINOLOGY_SERVICE` | `TerminologyService` | implemented (SM-4 / B4) |
-| Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | `MessageService` | implemented (SM-5 / B3) |
-| Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | `SubjectProxyService` | implemented (SM-6 / B3) |
+| EHR | `I_EHR_SERVICE`, `I_EHR_STATUS`, `I_EHR_COMPOSITION`, `I_EHR_DIRECTORY`, `I_EHR_CONTRIBUTION` | `service::ehr` (status/composition/directory/contributions/tags/access modules) | implemented (SM-1) |
+| Definitions | `I_DEFINITION_ADL14`/`ADL2`/`QUERY` | `service::definition` (adl14/adl2/query_store/wire modules) | implemented (SM-2) |
+| Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`, `I_PARTY_RELATIONSHIP` | `service::demographic` | implemented (SM-3) |
+| Query | `I_QUERY_SERVICE` | `service::query` | implemented |
+| Validity checking | `I_VALIDITY_CHECKER` | `service::validity` | implemented (SM-1) |
+| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ehrbase::system_log` (event model + emit) | implemented |
+| Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `service::admin` | implemented (SM-4 / B3) |
+| EHR Index | `I_EHR_INDEX` | `service::ehr_index` | implemented (SM-3) |
+| Terminology | `I_TERMINOLOGY_SERVICE` | `service::terminology` | implemented (SM-4 / B4) |
+| Message | `I_MESSAGE_SERVICE`, `I_EHR_EXTRACT_SERVICE`, `I_TDD_SERVICE` | `service::message` | implemented (SM-5 / B3) |
+| Subject Proxy | `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING` | `service::subject_proxy` | implemented (SM-6 / B3) |
 
 | Crate | Role | Kind |
 |---|---|---|
@@ -158,9 +160,9 @@ One trait per SM interface in `ehrbase-sm`:
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`, P16) | tooling |
 | `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
-| `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + EhrScape adapter (P17); ATNA audit middleware + op-id classification; `access` module = RBAC/ABAC authz (ADR-011, was `ehrbase-authz`) | application |
-| `ehrbase-sm` | SM native-API traits (protocol-free literal catalog, ADR-011) + shared service types + `SystemLog` event model | application |
-| `ehrbase` | Binary + `Platform` implementation: storage, service layer, AQL engine, versioning, CLI; `signing` (VERSION.signature, was `ehrbase-signing`) + `system_log` (ATNA, was `ehrbase-audit`) modules (ADR-011) | application |
+| `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
+| `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
+| `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
 | `conformance` | ECC conformance runner (`tools/*`) | tooling |
 | `benchmark` | Benchmark harness (`tools/*`) | tooling |
 
