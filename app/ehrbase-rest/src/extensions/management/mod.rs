@@ -39,10 +39,6 @@ pub use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementCon
 pub use ehrbase::telemetry::build_info::BuildInfo;
 pub use ehrbase::telemetry::health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
 pub use ehrbase::telemetry::log_reload::LogReload;
-use ehrbase::telemetry::prometheus::{
-    AUTH_FAILURES, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
-    HTTP_RESPONSE_BODY_SIZE,
-};
 pub use http_metrics::{http_metrics, root_span};
 
 /// Everything the management router needs. Assembled by the binary (which owns

@@ -344,6 +344,11 @@ pub(in crate::service) fn default_ehr_status() -> Value {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
         match self.ensure_ehr_exists(ehr_id).await {
             Ok(()) => Ok(true),
@@ -352,6 +357,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_ehr_for_subject(&self, a_subject_id: SubjectRef) -> Result<bool, SmError> {
         match self
             .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
@@ -363,6 +373,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
         // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`): the
         // SM precondition `an_ehr_status.subject = Void` is NOT enforced on the
@@ -379,6 +394,11 @@ impl EhrbaseService {
         Ok(ehr_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_ehr_with_id(
         &self,
         an_ehr_id: Uuid,
@@ -390,6 +410,11 @@ impl EhrbaseService {
         Ok(an_ehr_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_ehr_for_subject(
         &self,
         a_subject_id: SubjectRef,
@@ -404,6 +429,11 @@ impl EhrbaseService {
         Ok(ehr_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_ehr_for_subject_with_id(
         &self,
         an_ehr_id: Uuid,
@@ -418,10 +448,20 @@ impl EhrbaseService {
         Ok(an_ehr_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
         Ok(self.summarize_ehr(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehrs_for_subject(
         &self,
         a_subject_id: SubjectRef,
@@ -445,10 +485,20 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.ehr_summary(an_ehr_id).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         // Serve the create-time representation from the stash the commit path
         // populated (built from `Committed`, no re-read); a popped entry cannot
@@ -460,6 +510,11 @@ impl EhrbaseService {
         self.ehr_object(an_ehr_id).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_object_for_subject(
         &self,
         subject_id: &str,

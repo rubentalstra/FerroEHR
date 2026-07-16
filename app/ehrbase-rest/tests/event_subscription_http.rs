@@ -1,17 +1,14 @@
-//! End-to-end HTTP tests for the event-subscription admin extension API group
-//!: the config gate
-//! (`RestConfig::event_subscription.enabled`), the `200`/`201`/`204`/`404`/`400`/
-//! `501` wire outcomes for the CRUD verbs, and the JSON body shapes — driven
-//! through the assembled router with the shared [`Mock`] platform, whose
-//! `event_subscription_*` hooks back an in-memory store so the CRUD round-trips.
+//! End-to-end HTTP tests for the event-subscription admin extension API group:
+//! the config gate (`AppConfig::events_admin_api`), the `200`/`201`/`204`/`404`/
+//! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —
+//! driven through the assembled router over the **real** `EhrbaseService` on a
+//! real Postgres database (W-14 B+C: the scripted `Mock` is gone; the CRUD
+//! persists to the real `event_subscription` table).
 //!
-//! Design: event/subscription semantics are spec-silent; the surface is our own, config-gated like the terminology
-//! group, mounted under `/admin/` and dispatching to the
-//! `EventSubscriptionAdapter` extension.
+//! Design: event/subscription semantics are spec-silent; the surface is our own,
+//! config-gated like the terminology group, mounted under `/admin/` and
+//! dispatching to the `EventSubscriptionAdapter` extension.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::type_complexity)]
-
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
 
 use axum::Router;
 use axum::body::Body;
@@ -21,108 +18,14 @@ use serde_json::{Value, json};
 use tower::ServiceExt;
 use uuid::Uuid;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase_rest::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const GROUP: &str = "/ehrbase/rest/openehr/v1/admin/event_subscription";
-
-/// An in-memory subscription store the hooks share, so the CRUD verbs actually
-/// round-trip (create → get → update → delete) through the router.
-type Store = Arc<Mutex<BTreeMap<Uuid, Value>>>;
-
-/// Build a subscription record from a create/update body (predicates default to
-/// JSON `null` = wildcard; enabled defaults to true).
-fn record(id: Uuid, body: &Value) -> Value {
-    let pred = |k: &str| body.get(k).cloned().unwrap_or(Value::Null);
-    json!({
-        "id": id.to_string(),
-        "name": body.get("name").cloned().unwrap_or(Value::Null),
-        "kind": pred("kind"),
-        "change_type": pred("change_type"),
-        "template_id": pred("template_id"),
-        "archetype": pred("archetype"),
-        "enabled": body.get("enabled").and_then(Value::as_bool).unwrap_or(true),
-        "created_at": "2026-07-10T00:00:00Z",
-    })
-}
-
-fn not_found(id: Uuid) -> SmError {
-    SmError::new(
-        CallStatusType::VersionedObjectDoesNotExist,
-        format!("event subscription {id} does not exist"),
-    )
-}
-
-/// Hooks backed by a shared in-memory store.
-fn hooks(store: Store) -> Hooks {
-    let (s_list, s_create, s_get, s_update, s_delete) = (
-        store.clone(),
-        store.clone(),
-        store.clone(),
-        store.clone(),
-        store,
-    );
-    Hooks {
-        event_subscription_list: Some(Arc::new(move || {
-            Ok(s_list.lock().unwrap().values().cloned().collect())
-        })),
-        event_subscription_create: Some(Arc::new(move |body: Value| {
-            // `name` required — a missing/blank one is a client error (400).
-            let name = body
-                .get("name")
-                .and_then(Value::as_str)
-                .filter(|s| !s.is_empty())
-                .ok_or_else(|| {
-                    SmError::new(CallStatusType::PreconditionViolation, "name required")
-                })?;
-            let mut map = s_create.lock().unwrap();
-            // Unique name → duplicate is a 409 (Conflict).
-            if map.values().any(|v| v["name"] == json!(name)) {
-                return Err(SmError::new(
-                    CallStatusType::CompositionAlreadyExists,
-                    "duplicate name",
-                ));
-            }
-            let id = Uuid::now_v7();
-            let rec = record(id, &body);
-            map.insert(id, rec.clone());
-            Ok(rec)
-        })),
-        event_subscription_get: Some(Arc::new(move |id: Uuid| {
-            s_get
-                .lock()
-                .unwrap()
-                .get(&id)
-                .cloned()
-                .ok_or_else(|| not_found(id))
-        })),
-        event_subscription_update: Some(Arc::new(move |id: Uuid, body: Value| {
-            let mut map = s_update.lock().unwrap();
-            if !map.contains_key(&id) {
-                return Err(not_found(id));
-            }
-            // Name is immutable — keep the stored name.
-            let name = map[&id]["name"].clone();
-            let mut rec = record(id, &body);
-            rec["name"] = name;
-            map.insert(id, rec.clone());
-            Ok(rec)
-        })),
-        event_subscription_delete: Some(Arc::new(move |id: Uuid| {
-            if s_delete.lock().unwrap().remove(&id).is_some() {
-                Ok(())
-            } else {
-                Err(not_found(id))
-            }
-        })),
-        ..Default::default()
-    }
-}
 
 fn config(enabled: bool) -> AppConfig {
     AppConfig {
@@ -146,16 +49,9 @@ fn config(enabled: bool) -> AppConfig {
     }
 }
 
-fn app(enabled: bool) -> Router {
-    let backend = Arc::new(Mock::with(hooks(Store::default())));
-    ehrbase_rest::build_with(config(enabled), backend).expect("router builds")
-}
-
-/// An enabled app with no hooks → every call hits the trait's mandatory path
-/// (the mock returns `501`).
-fn app_unhooked() -> Router {
-    let backend = Arc::new(Mock::new());
-    ehrbase_rest::build_with(config(true), backend).expect("router builds")
+async fn app(name: &str, enabled: bool) -> Router {
+    let service = common::test_service(name).await;
+    ehrbase_rest::build_with(config(enabled), service).expect("router builds")
 }
 
 async fn send(app: Router, req: Request<Body>) -> (StatusCode, Value) {
@@ -182,16 +78,16 @@ fn req(method: &str, uri: &str, body: Option<Value>) -> Request<Body> {
 }
 
 #[tokio::test]
-async fn disabled_group_is_404_and_never_touches_backend() {
-    let (status, _) = send(app(false), req("GET", GROUP, None)).await;
+async fn disabled_group_is_404() {
+    let (status, _) = send(app("evsub_disabled", false).await, req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn crud_round_trip() {
-    let app = app(true);
+    let app = app("evsub_crud", true).await;
 
-    // Empty list.
+    // Empty list (no seed row for subscriptions).
     let (status, body) = send(app.clone(), req("GET", GROUP, None)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body.as_array().unwrap().len(), 0);
@@ -242,7 +138,7 @@ async fn crud_round_trip() {
 #[tokio::test]
 async fn create_without_name_is_400() {
     let (status, _) = send(
-        app(true),
+        app("evsub_400", true).await,
         req("POST", GROUP, Some(json!({ "kind": "COMPOSITION" }))),
     )
     .await;
@@ -251,7 +147,7 @@ async fn create_without_name_is_400() {
 
 #[tokio::test]
 async fn duplicate_name_is_409() {
-    let app = app(true);
+    let app = app("evsub_409", true).await;
     let body = json!({ "name": "dup" });
     let (status, _) = send(app.clone(), req("POST", GROUP, Some(body.clone()))).await;
     assert_eq!(status, StatusCode::CREATED);
@@ -261,7 +157,7 @@ async fn duplicate_name_is_409() {
 
 #[tokio::test]
 async fn unknown_id_is_404() {
-    let app = app(true);
+    let app = app("evsub_unknown", true).await;
     let id = Uuid::now_v7();
     let (status, _) = send(app.clone(), req("GET", &format!("{GROUP}/{id}"), None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -271,12 +167,24 @@ async fn unknown_id_is_404() {
 
 #[tokio::test]
 async fn malformed_id_is_400() {
-    let (status, _) = send(app(true), req("GET", &format!("{GROUP}/not-a-uuid"), None)).await;
+    let (status, _) = send(
+        app("evsub_malformed", true).await,
+        req("GET", &format!("{GROUP}/not-a-uuid"), None),
+    )
+    .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]
-async fn unhooked_call_is_501() {
-    let (status, _) = send(app_unhooked(), req("GET", GROUP, None)).await;
-    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+async fn enabled_group_lists_real_store() {
+    // Re-targeted from the old `unhooked → 501` Mock-scaffolding case: with the
+    // concrete service the CRUD persists to the real store, so an enabled group
+    // answers 200 (never the trait-default 501).
+    let (status, body) = send(
+        app("evsub_enabled_200", true).await,
+        req("GET", GROUP, None),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.is_array());
 }

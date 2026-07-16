@@ -86,6 +86,9 @@ testcontainers-modules.workspace = true
 tokio = { workspace = true }
 tower = { workspace = true }
 axum = { workspace = true }
+# Overload-shedding tests hold an API permit by parking a handler on a
+# never-ending request body (`futures::stream::pending`).
+futures = { workspace = true }
 http = { workspace = true }
 http-body-util = { workspace = true }
 serde_json = { workspace = true }

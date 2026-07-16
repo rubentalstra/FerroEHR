@@ -286,7 +286,7 @@ mod tests {
         // W-14 F-13: a storage-classified pool exhaustion (`ServiceOverloaded`)
         // surfaces as 503 + Retry-After (our overload contract; RFC 9110
         // §15.6.4).
-        use ehrbase::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
+        use ehrbase::service::status::{CallStatusType, SmError};
         let sm = SmError::new(CallStatusType::ServiceOverloaded, "overloaded");
         let resp = RestError::from(sm).into_response();
         assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
@@ -302,7 +302,7 @@ mod tests {
     async fn storage_conflict_maps_to_409() {
         // W-14 F-13: a storage-classified integrity/serialization conflict
         // (`Conflict`) surfaces as 409 (ITS-REST overview §HTTP status codes).
-        use ehrbase::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
+        use ehrbase::service::status::{CallStatusType, SmError};
         let sm = SmError::new(CallStatusType::Conflict, "duplicate key");
         let resp = RestError::from(sm).into_response();
         assert_eq!(resp.status(), StatusCode::CONFLICT);

@@ -386,6 +386,11 @@ pub(in crate::service) fn ehr_promoted_columns(
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_ehr_status_version(
         &self,
         an_ehr_id: Uuid,
@@ -399,10 +404,20 @@ impl EhrbaseService {
             .is_some_and(|(vo, _)| vo == a_version_uid))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_at(an_ehr_id, None).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -412,6 +427,11 @@ impl EhrbaseService {
         Ok(self.status_at(an_ehr_id, at).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_ehr_status_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -426,10 +446,20 @@ impl EhrbaseService {
             .body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_status(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
@@ -439,6 +469,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
@@ -448,6 +483,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
@@ -457,6 +497,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
@@ -468,6 +513,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_other_details(
         &self,
         an_ehr_id: Uuid,
@@ -481,6 +531,11 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn replace_ehr_status(
         &self,
         an_ehr_id: Uuid,
@@ -509,10 +564,20 @@ impl EhrbaseService {
         )
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_version_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -522,6 +587,11 @@ impl EhrbaseService {
         Ok(self.status_version_at_time(an_ehr_id, at).await?.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_original_version(
         &self,
         an_ehr_id: Uuid,

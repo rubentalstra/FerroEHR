@@ -23,7 +23,6 @@
 //! variable context the `sp_sample` FK requires; a bare `get_frame` has no
 //! variable to attach a sample to.
 
-use async_trait::async_trait;
 
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::status::{CallStatusType, SmError};
@@ -42,6 +41,11 @@ fn not_implemented(message: impl Into<String>) -> SmError {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_frame(
         &self,
         subject_id: String,

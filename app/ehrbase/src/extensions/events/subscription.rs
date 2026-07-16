@@ -18,7 +18,6 @@
 // The CRUD helpers below read the `pub(crate)` `pool` field of
 // `crate::service::EhrbaseService`.
 
-use async_trait::async_trait;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
@@ -189,18 +188,38 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_subscriptions().await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError> {
         Ok(self.create_subscription(&a_subscription).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_subscription(a_subscription_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn event_subscription_update(
         &self,
         a_subscription_id: Uuid,
@@ -211,6 +230,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_subscription(a_subscription_id).await?)
     }

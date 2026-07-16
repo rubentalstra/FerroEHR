@@ -19,8 +19,6 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::config::auth::AuthConfig;
-use crate::config::smart::SmartConfig;
 
 /// The `[server]` section — the HTTP listener and REST surface (§3.1).
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -23,7 +23,7 @@ use std::time::Instant;
 
 use axum::extract::{ConnectInfo, MatchedPath, Request};
 use ehrbase::telemetry::prometheus::{
-    AUTH_FAILURES, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
+    HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
     HTTP_RESPONSE_BODY_SIZE,
 };
 use axum::middleware::Next;

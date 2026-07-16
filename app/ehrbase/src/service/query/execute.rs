@@ -11,7 +11,6 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -28,6 +27,10 @@ use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
 impl EhrbaseService {
     /// `execute_ad_hoc_query` — execute an ad hoc query, supplying the query
     /// text. Error `ehr_id_does_not_exist` (a listed EHR does not exist).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn execute_ad_hoc_query(
         &self,
         aql: String,
@@ -39,6 +42,10 @@ impl EhrbaseService {
     /// `execute_stored_query` — execute a query stored in the definition service
     /// by its qualified name (`version` a semver.org string, latest when
     /// absent). Error `ehr_id_does_not_exist`.
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn execute_stored_query(
         &self,
         qualified_query_name: String,

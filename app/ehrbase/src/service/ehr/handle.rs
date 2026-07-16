@@ -6,7 +6,6 @@
 
 use serde_json::Value;
 
-use crate::service::ehr_index::types::SubjectRef;
 
 // --- EHR summary (SM I_EHR_SERVICE) ---
 #[derive(Debug, Clone)]

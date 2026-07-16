@@ -2,58 +2,51 @@
 //! `POST /definition/template/adl2` (text/plain source upload, `Location` +
 //! `Prefer` body), `GET /definition/template/adl2/{template_id}` (text/plain
 //! source, 404 on unknown), and `GET /definition/template/adl2` (JSON list).
-//! Driven through the assembled router with a canned backend — the dispatcher
-//! wiring (`dispatch::definition`) is what is under test, not the DB.
+//! Driven through the assembled router over a **real** `DefinitionAdl2Service`
+//! on a real `PostgreSQL` — the source is a spec-valid ADL2 operational template
+//! (built by the same `adl2_source` shape the service tests use), uploaded
+//! through the wire and stored verbatim, so the representation/GET bodies echo
+//! it exactly.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
-
-use std::sync::Arc;
 
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
-use serde_json::{Value, json};
+use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase_rest::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const HRID: &str = "openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0";
-const SOURCE: &str = "operational_template (adl_version=2.0.6)\n\
-    openEHR-EHR-COMPOSITION.t_clinical_info.v1.0.0\n";
 
-/// The ADL2 wire hooks (all SM-native → `SmError`): upload echoes the
-/// stored HRID, list returns one metadata object, and `get_artefact` serves the
-/// source or `404`.
-fn hooks() -> Hooks {
-    Hooks {
-        template_adl2_upload: Some(Arc::new(|source: String| {
-            // The dispatcher hands the text/plain source through as a String.
-            assert_eq!(source, SOURCE);
-            Ok(HRID.to_owned())
-        })),
-        template_adl2_list: Some(Arc::new(|| {
-            Ok(vec![
-                json!({ "template_id": HRID, "created_timestamp": "2017-08-14T19:24:56.639Z" }),
-            ])
-        })),
-        get_artefact: Some(Arc::new(|an_id: String| {
-            if an_id == HRID {
-                Ok(SOURCE.to_owned())
-            } else {
-                Err(SmError::new(
-                    CallStatusType::ArtefactDoesNotExist,
-                    format!("ADL2 artefact {an_id}"),
-                ))
-            }
-        })),
-        ..Default::default()
-    }
+/// A spec-valid ADL2 operational-template source (`adl_version=2.0.6`), the same
+/// shape `app/ehrbase/tests/service_definition.rs` builds: header + HRID,
+/// `language`, `definition` (root `id1`), `terminology` blocks. The real
+/// registration validator (`validate_adl2_source`) accepts it, and the store
+/// keeps it verbatim.
+fn adl2_source(keyword: &str, hrid: &str) -> String {
+    let rm_type = hrid
+        .split('.')
+        .next()
+        .and_then(|q| q.rsplit_once('-').map(|(_, e)| e))
+        .expect("HRID carries an RM entity");
+    format!(
+        "{keyword} (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n\n\
+         language\n    original_language = <[ISO_639-1::en]>\n\n\
+         definition\n    {rm_type}[id1] matches {{ *}}\n\n\
+         terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
+         [\"id1\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
+    )
+}
+
+fn source() -> String {
+    adl2_source("operational_template", HRID)
 }
 
 fn config() -> AppConfig {
@@ -77,12 +70,12 @@ fn config() -> AppConfig {
     }
 }
 
-fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
+async fn app(db: &str) -> Router {
+    common::router_with(config(), common::test_service(db).await)
 }
 
-async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
-    let resp = app().oneshot(req).await.expect("response");
+async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
+    let resp = app.clone().oneshot(req).await.expect("response");
     let status = resp.status();
     let headers = resp.headers().clone();
     let bytes = resp.into_body().collect().await.expect("body").to_bytes();
@@ -93,7 +86,7 @@ async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
     )
 }
 
-fn upload(prefer: Option<&str>) -> Request<Body> {
+fn upload_req(prefer: Option<&str>) -> Request<Body> {
     let mut b = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/definition/template/adl2"))
@@ -101,12 +94,13 @@ fn upload(prefer: Option<&str>) -> Request<Body> {
     if let Some(p) = prefer {
         b = b.header("Prefer", p);
     }
-    b.body(Body::from(SOURCE)).unwrap()
+    b.body(Body::from(source())).unwrap()
 }
 
 #[tokio::test]
 async fn upload_minimal_returns_201_and_location_only() {
-    let (status, headers, body) = send(upload(None)).await;
+    let app = app("adl2_upload_minimal").await;
+    let (status, headers, body) = send(&app, upload_req(None)).await;
     assert_eq!(status, StatusCode::CREATED);
     assert_eq!(
         headers.get(header::LOCATION).unwrap().to_str().unwrap(),
@@ -120,7 +114,8 @@ async fn upload_minimal_returns_201_and_location_only() {
 
 #[tokio::test]
 async fn upload_representation_returns_source_text() {
-    let (status, headers, body) = send(upload(Some("return=representation"))).await;
+    let app = app("adl2_upload_repr").await;
+    let (status, headers, body) = send(&app, upload_req(Some("return=representation"))).await;
     assert_eq!(status, StatusCode::CREATED);
     assert!(
         headers
@@ -131,12 +126,13 @@ async fn upload_representation_returns_source_text() {
             .starts_with("text/plain")
     );
     assert!(headers.contains_key(header::LOCATION));
-    assert_eq!(body, SOURCE, "representation echoes the OPT source");
+    assert_eq!(body, source(), "representation echoes the OPT source");
 }
 
 #[tokio::test]
 async fn upload_identifier_returns_template_id_json() {
-    let (status, headers, body) = send(upload(Some("return=identifier"))).await;
+    let app = app("adl2_upload_ident").await;
+    let (status, headers, body) = send(&app, upload_req(Some("return=identifier"))).await;
     assert_eq!(status, StatusCode::CREATED);
     assert!(headers.contains_key(header::LOCATION));
     let v: Value = serde_json::from_str(&body).unwrap();
@@ -145,12 +141,17 @@ async fn upload_identifier_returns_template_id_json() {
 
 #[tokio::test]
 async fn get_serves_source_as_text_and_404s_unknown() {
+    let app = app("adl2_get_source").await;
+    // Upload first so the artefact exists.
+    let (status, _h, _b) = send(&app, upload_req(None)).await;
+    assert_eq!(status, StatusCode::CREATED);
+
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/definition/template/adl2/{HRID}"))
         .body(Body::empty())
         .unwrap();
-    let (status, headers, body) = send(req).await;
+    let (status, headers, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::OK);
     assert!(
         headers
@@ -160,7 +161,7 @@ async fn get_serves_source_as_text_and_404s_unknown() {
             .unwrap()
             .starts_with("text/plain")
     );
-    assert_eq!(body, SOURCE);
+    assert_eq!(body, source());
 
     let req = Request::builder()
         .method("GET")
@@ -169,18 +170,22 @@ async fn get_serves_source_as_text_and_404s_unknown() {
         ))
         .body(Body::empty())
         .unwrap();
-    let (status, _, _) = send(req).await;
+    let (status, _, _) = send(&app, req).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn list_returns_template_metadata() {
+    let app = app("adl2_list").await;
+    let (status, _h, _b) = send(&app, upload_req(None)).await;
+    assert_eq!(status, StatusCode::CREATED);
+
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/definition/template/adl2"))
         .body(Body::empty())
         .unwrap();
-    let (status, _, body) = send(req).await;
+    let (status, _, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::OK);
     let v: Value = serde_json::from_str(&body).unwrap();
     let list = v.as_array().expect("array");

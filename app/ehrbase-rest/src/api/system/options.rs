@@ -25,7 +25,6 @@ use axum::routing::{MethodRouter, options};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use serde::Serialize;
 
-use ehrbase::telemetry::provenance;
 use crate::overview::negotiate;
 
 /// The HTTP methods this API surface supports — the `Allow` header the OAS
@@ -49,8 +48,8 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 ///
 /// The defaults are the single shared provenance source
 /// ([`ehrbase::telemetry::provenance`]): `restapi_specs_version` quotes the
-/// tested-contract identity [`provenance::ITS_REST`] and `conformance_profile`
-/// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
+/// tested-contract identity [`ehrbase::telemetry::provenance::ITS_REST`] and `conformance_profile`
+/// quotes [`ehrbase::telemetry::provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
 /// verdict, updated at each conformance re-baseline
 /// (`docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
 /// MUST NOT out-claim that verdict. [`crate::config::server::ServerConfig`] carries a
@@ -224,8 +223,8 @@ mod tests {
         // The tested development-edition contract identity (shared provenance,
         // matching management `/info` + the ECC report), not the retired
         // `1.0.3` release label; the profile is the machine-computed verdict.
-        assert_eq!(v["restapi_specs_version"], provenance::ITS_REST);
-        assert_eq!(v["conformance_profile"], provenance::CONFORMANCE_PROFILE);
+        assert_eq!(v["restapi_specs_version"], ehrbase::telemetry::provenance::ITS_REST);
+        assert_eq!(v["conformance_profile"], ehrbase::telemetry::provenance::CONFORMANCE_PROFILE);
         assert!(v["endpoints"].is_array());
     }
 

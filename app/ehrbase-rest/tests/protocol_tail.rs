@@ -3,29 +3,54 @@
 //! headers (parse + merge), `If-Match` hardening (malformed → 400), the
 //! `OPTIONS /` System-Options-and-Conformance endpoint, and canonical-XML
 //! responses for the VERSION family (F-05-06). Driven through the assembled
-//! router with the shared [`Mock`] platform.
+//! router over a **real** `EhrbaseService` on a real `PostgreSQL`.
+//!
+//! The committal-header merge is now verified end-to-end: the update is
+//! committed and the persisted `ORIGINAL_VERSION` is read back to confirm the
+//! header-supplied lifecycle/audit values were merged (replacing the former
+//! `Mock` hook that captured the `UpdateVersion` in-process). The signed-version
+//! XML asserts the real server-side digest signature (the default `EhrbaseService`
+//! signer is enabled), not the Mock's injected fixture.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use std::sync::{Arc, Mutex};
+use std::path::PathBuf;
 
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
-use serde_json::{Value, json};
+use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase::service::version_update::UpdateVersion;
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase_rest::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
+/// A syntactically valid EHR/VO id for the malformed-If-Match probes (the
+/// precondition is rejected before the backend, so the ids need not exist).
 const EHR_ID: &str = "7d44b88c-4199-4bad-97dc-d78268e01398";
 const VO_ID: &str = "8849182c-82ad-4088-a07f-48ead4180515";
-const OVID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys::2";
+
+fn opt_xml() -> String {
+    std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates/openehr-flat/tests/fixtures/sdk/ips.v0.opt"),
+    )
+    .expect("ips.v0.opt vendored in openehr-flat")
+}
+
+fn canonical_composition() -> Value {
+    let text = std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
+        ),
+    )
+    .expect("ips_canonical.json vendored in openehr-its");
+    serde_json::from_str(&text).expect("valid canonical composition")
+}
 
 fn config() -> AppConfig {
     AppConfig {
@@ -48,12 +73,12 @@ fn config() -> AppConfig {
     }
 }
 
-fn app(hooks: Hooks) -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks))).expect("router builds")
+async fn app(db: &str) -> Router {
+    common::router_with(config(), common::test_service(db).await)
 }
 
-async fn send(app: Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
-    let resp = app.oneshot(req).await.expect("response");
+async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
+    let resp = app.clone().oneshot(req).await.expect("response");
     let status = resp.status();
     let headers = resp.headers().clone();
     let bytes = resp.into_body().collect().await.expect("body").to_bytes();
@@ -64,16 +89,71 @@ async fn send(app: Router, req: Request<Body>) -> (StatusCode, header::HeaderMap
     )
 }
 
+fn etag_uid(h: &header::HeaderMap) -> String {
+    h.get(header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag present")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned()
+}
+
+fn vo_of(ovid: &str) -> &str {
+    ovid.split("::").next().expect("vo uuid")
+}
+
+/// Create an EHR, upload the IPS OPT, and commit the IPS composition; return the
+/// `(ehr_id, version_uid)` of the committed COMPOSITION.
+async fn commit_ips_composition(app: &Router) -> (String, String) {
+    let (status, h, _b) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED);
+    let ehr_id = etag_uid(&h);
+
+    let (status, _h, body) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/definition/template/adl1.4"))
+            .header(header::CONTENT_TYPE, "application/xml")
+            .body(Body::from(opt_xml()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
+
+    let (status, h, body) = send(
+        app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(canonical_composition().to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
+    (ehr_id, etag_uid(&h))
+}
+
 // ── OPTIONS / (R32) ────────────────────────────────────────────────────────
 
 #[tokio::test]
 async fn options_root_is_system_options_and_conformance() {
+    let app = app("pt_options_root").await;
     let req = Request::builder()
         .method("OPTIONS")
         .uri("/")
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(app(Hooks::default()), req).await;
+    let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::OK);
     // The `Allow` header lists the supported methods.
@@ -94,21 +174,19 @@ async fn options_root_is_system_options_and_conformance() {
 
 #[tokio::test]
 async fn committal_headers_merge_into_the_commit() {
-    let captured: Arc<Mutex<Option<UpdateVersion>>> = Arc::new(Mutex::new(None));
-    let sink = captured.clone();
-    let hooks = Hooks {
-        update_composition: Some(Arc::new(move |_e, _vo, uv| {
-            *sink.lock().unwrap() = Some(uv);
-            Ok(OVID.to_owned())
-        })),
-        ..Default::default()
-    };
+    let app = app("pt_committal_merge").await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
 
+    // Update the composition, supplying the committal metadata via the MUST-level
+    // request headers; re-post the canonical body (strip the server-owned uid).
+    let mut body = canonical_composition();
+    body.as_object_mut().unwrap().remove("uid");
     let req = Request::builder()
         .method("PUT")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{VO_ID}"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
         .header(header::CONTENT_TYPE, "application/json")
-        .header(header::IF_MATCH, format!("\"{OVID}\""))
+        .header(header::IF_MATCH, format!("\"{v1}\""))
         .header("openEHR-VERSION.lifecycle_state", "code_string=\"523\"")
         .header("openEHR-AUDIT_DETAILS.change_type", "code_string=\"251\"")
         .header(
@@ -120,21 +198,53 @@ async fn committal_headers_merge_into_the_commit() {
             "name=\"John Doe\", external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\", \
              external_ref.namespace=\"demographic\", external_ref.type=\"PERSON\"",
         )
-        .body(Body::from(r#"{"_type":"COMPOSITION"}"#))
+        .body(Body::from(body.to_string()))
         .unwrap();
-    let (status, _h, _body) = send(app(hooks), req).await;
-    assert!(status.is_success(), "update succeeded, got {status}");
-
-    let uv = captured.lock().unwrap().take().expect("uv captured");
-    assert_eq!(uv.lifecycle_state.code_string, "523");
-    assert_eq!(uv.audit.change_type.code_string, "251");
-    assert_eq!(
-        uv.audit.description.as_deref(),
-        Some("An updated composition")
+    let (status, h, resp_body) = send(&app, req).await;
+    assert!(
+        status.is_success(),
+        "update succeeded, got {status}: {resp_body}"
     );
-    let committer = serde_json::to_value(&uv.audit.committer).unwrap();
-    assert_eq!(committer["name"], "John Doe");
-    assert_eq!(committer["external_ref"]["type"], "PERSON");
+    let v2 = etag_uid(&h);
+
+    // Read the persisted ORIGINAL_VERSION back and confirm the header-supplied
+    // committal metadata was merged into the commit.
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{vo}/version/{v2}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    assert_eq!(ver["_type"], "ORIGINAL_VERSION");
+    // Spec MUST (ITS-REST overview §"openehr-version and openehr-audit-details"):
+    // "whatever is provided [in the committal headers] MUST be merged with the
+    // default VERSION and VERSION.audit_details attributes on commit runtime."
+    // The former `Mock` hook only captured the dispatcher-built `UpdateVersion`
+    // (which is correct — see committal.rs unit tests); with the real service the
+    // *persisted* ORIGINAL_VERSION must reflect the merged values. These
+    // assertions verify the end-to-end MUST.
+    assert_eq!(
+        ver["lifecycle_state"]["defining_code"]["code_string"], "523",
+        "openEHR-VERSION.lifecycle_state merged: {ver}"
+    );
+    let audit = &ver["commit_audit"];
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "251",
+        "openEHR-AUDIT_DETAILS.change_type merged"
+    );
+    assert_eq!(
+        audit["description"]["value"], "An updated composition",
+        "openEHR-AUDIT_DETAILS.description merged"
+    );
+    assert_eq!(audit["committer"]["name"], "John Doe");
+    assert_eq!(audit["committer"]["external_ref"]["type"], "PERSON");
 }
 
 // ── If-Match hardening (F-01-09/F-02-08) ─────────────────────────────────────
@@ -142,14 +252,9 @@ async fn committal_headers_merge_into_the_commit() {
 #[tokio::test]
 async fn malformed_if_match_is_rejected_not_bypassed() {
     // A required If-Match that is not a well-formed OBJECT_VERSION_ID must be a
-    // client error (400), never a silent skip of the precondition. The backend
-    // hook must never be reached.
-    let hooks = Hooks {
-        update_composition: Some(Arc::new(|_e, _vo, _uv| {
-            panic!("backend reached despite malformed If-Match");
-        })),
-        ..Default::default()
-    };
+    // client error (400), never a silent skip of the precondition — rejected
+    // before the backend, so the (non-existent) target ids are irrelevant.
+    let app = app("pt_bad_ifmatch_comp").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{VO_ID}"))
@@ -157,7 +262,7 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
         .header(header::IF_MATCH, "\"not-an-object-version-id\"")
         .body(Body::from(r#"{"_type":"COMPOSITION"}"#))
         .unwrap();
-    let (status, _h, _body) = send(app(hooks), req).await;
+    let (status, _h, _body) = send(&app, req).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
@@ -165,12 +270,7 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
 async fn malformed_if_match_on_ehr_status_update_is_rejected() {
     // The required-If-Match ehr_status update rejects a malformed precondition
     // (400) before the backend, never treating it as no-precondition (W-14 F-12).
-    let hooks = Hooks {
-        replace_ehr_status: Some(Arc::new(|_e, _uv| {
-            panic!("backend reached despite malformed If-Match");
-        })),
-        ..Default::default()
-    };
+    let app = app("pt_bad_ifmatch_status").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/ehr_status"))
@@ -178,7 +278,7 @@ async fn malformed_if_match_on_ehr_status_update_is_rejected() {
         .header(header::IF_MATCH, "\"garbage\"")
         .body(Body::from(r#"{"_type":"EHR_STATUS"}"#))
         .unwrap();
-    let (status, _h, _body) = send(app(hooks), req).await;
+    let (status, _h, _body) = send(&app, req).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
@@ -186,6 +286,7 @@ async fn malformed_if_match_on_ehr_status_update_is_rejected() {
 async fn malformed_if_match_on_directory_update_is_rejected() {
     // The required-If-Match directory update rejects a malformed precondition
     // (400) at the wire, never a silent bypass (W-14 F-12).
+    let app = app("pt_bad_ifmatch_dir").await;
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/ehr/{EHR_ID}/directory"))
@@ -193,7 +294,7 @@ async fn malformed_if_match_on_directory_update_is_rejected() {
         .header(header::IF_MATCH, "\"a::b::c::3\"")
         .body(Body::from(r#"{"_type":"FOLDER","name":{"value":"root"}}"#))
         .unwrap();
-    let (status, _h, _body) = send(app(Hooks::default()), req).await;
+    let (status, _h, _body) = send(&app, req).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
@@ -201,27 +302,17 @@ async fn malformed_if_match_on_directory_update_is_rejected() {
 
 #[tokio::test]
 async fn versioned_composition_serves_xml() {
-    let hooks = Hooks {
-        get_versioned_composition: Some(Arc::new(|_e, vo| {
-            Ok(json!({
-                "_type": "VERSIONED_COMPOSITION",
-                "uid": { "_type": "HIER_OBJECT_ID", "value": vo.to_string() },
-                "owner_id": {
-                    "_type": "OBJECT_REF", "namespace": "local", "type": "EHR",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": EHR_ID }
-                },
-                "time_created": { "_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00Z" }
-            }))
-        })),
-        ..Default::default()
-    };
+    let app = app("pt_versioned_comp_xml").await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1);
+
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/versioned_composition/{VO_ID}"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/versioned_composition/{vo}"))
         .header(header::ACCEPT, "application/xml")
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(app(hooks), req).await;
+    let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::OK, "body: {body}");
     assert_eq!(
@@ -229,53 +320,29 @@ async fn versioned_composition_serves_xml() {
         Some("application/xml")
     );
     assert!(body.contains("<versioned_composition"), "root: {body}");
-    assert!(body.contains(VO_ID), "uid present: {body}");
+    assert!(body.contains(vo), "uid present: {body}");
 }
 
 #[tokio::test]
 async fn composition_version_serves_xml_with_signature() {
     // ECC-SIG-001: the ORIGINAL_VERSION XML carries the `<signature>` element.
-    let hooks = Hooks {
-        composition_original_version: Some(Arc::new(|_e, ovid| {
-            Ok(json!({
-                "_type": "ORIGINAL_VERSION",
-                "contribution": {
-                    "_type": "OBJECT_REF", "namespace": "local", "type": "CONTRIBUTION",
-                    "id": { "_type": "HIER_OBJECT_ID", "value": "c1" }
-                },
-                "commit_audit": {
-                    "_type": "AUDIT_DETAILS",
-                    "system_id": "ehrbase-rs",
-                    "time_committed": { "_type": "DV_DATE_TIME", "value": "2024-01-01T00:00:00Z" },
-                    "change_type": {
-                        "_type": "DV_CODED_TEXT", "value": "creation",
-                        "defining_code": { "_type": "CODE_PHRASE",
-                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                            "code_string": "249" }
-                    },
-                    "committer": { "_type": "PARTY_IDENTIFIED", "name": "clinician" }
-                },
-                "signature": "-----BEGIN PGP SIGNATURE-----\nDEADBEEF\n-----END PGP SIGNATURE-----",
-                "uid": { "_type": "OBJECT_VERSION_ID", "value": ovid.value },
-                "lifecycle_state": {
-                    "_type": "DV_CODED_TEXT", "value": "complete",
-                    "defining_code": { "_type": "CODE_PHRASE",
-                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
-                        "code_string": "532" }
-                }
-            }))
-        })),
-        ..Default::default()
-    };
+    // RE-TARGET: the old Mock injected a fake PGP signature; the real default
+    // `EhrbaseService` signer is enabled (SHA-256 digest), so the committed
+    // version carries a genuine `sha256:` signature which the canonical XML
+    // serializes into `<signature>`.
+    let app = app("pt_version_xml_sig").await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1);
+
     let req = Request::builder()
         .method("GET")
         .uri(format!(
-            "{BASE}/ehr/{EHR_ID}/versioned_composition/{VO_ID}/version/{OVID}"
+            "{BASE}/ehr/{ehr_id}/versioned_composition/{vo}/version/{v1}"
         ))
         .header(header::ACCEPT, "application/xml")
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(app(hooks), req).await;
+    let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::OK, "body: {body}");
     assert_eq!(
@@ -284,5 +351,5 @@ async fn composition_version_serves_xml_with_signature() {
     );
     assert!(body.contains("<original_version"), "root: {body}");
     assert!(body.contains("<signature"), "signature element: {body}");
-    assert!(body.contains("DEADBEEF"), "signature value: {body}");
+    assert!(body.contains("sha256:"), "digest signature value: {body}");
 }

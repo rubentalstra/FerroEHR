@@ -8,7 +8,6 @@
 //! through the shared BASE decoder in [`crate::versioning`]
 //! (`object_version_id.rs`, re-exported).
 
-use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -113,6 +112,11 @@ fn ensure_full_ovid_if_match(
 
 impl EhrbaseService {
     // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
@@ -121,6 +125,11 @@ impl EhrbaseService {
         Ok(vo_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
         // True iff a *live* party of some kind exists (a logically deleted party
         // reads `Null`, satisfying the delete post-condition `not has_party`).
@@ -138,6 +147,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
         let Ok((vo_id, tree)) = parse_version_uid(&a_party_version_id) else {
             return Ok(false);
@@ -149,6 +163,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
@@ -164,6 +183,11 @@ impl EhrbaseService {
         Ok(resp.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party_at_time(
         &self,
         a_versioned_party_id: Uuid,
@@ -177,6 +201,11 @@ impl EhrbaseService {
         Ok(resp.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
         let (vo_id, tree) = parse_version_uid(&a_party_version_id)?;
         match self.party_version(vo_id, tree).await {
@@ -189,6 +218,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_party(
         &self,
         a_versioned_party_id: Uuid,
@@ -204,6 +238,11 @@ impl EhrbaseService {
         Ok(version_uid(resp))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
         // The SM `delete_party` has no version argument — delete the current
         // version unconditionally.
@@ -213,6 +252,11 @@ impl EhrbaseService {
     }
 
     // ── PARTY CRUD (wire seam) ────────────────────────────────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
         let mut resp = self.create_party_response(kind, body).await?;
         // Surface the party's stored ITEM_TAGs on the response seam for the
@@ -226,6 +270,11 @@ impl EhrbaseService {
         Ok(resp)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_get(
         &self,
         kind: PartyKind,
@@ -241,6 +290,11 @@ impl EhrbaseService {
         Ok(resp)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_update(
         &self,
         kind: PartyKind,
@@ -261,6 +315,11 @@ impl EhrbaseService {
         Ok(self.commit_party_update(current, body, expected).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_delete(
         &self,
         kind: PartyKind,
@@ -290,6 +349,11 @@ impl EhrbaseService {
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_party_get(
         &self,
         versioned_object_uid: String,
@@ -298,6 +362,11 @@ impl EhrbaseService {
         Ok(ServiceResponse::plain(self.versioned_party(vo_id).await?))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_party_revision_history(
         &self,
         versioned_object_uid: String,
@@ -308,6 +377,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_party_version_get_at_time(
         &self,
         versioned_object_uid: String,
@@ -318,6 +392,11 @@ impl EhrbaseService {
         Ok(self.party_version_at_time(vo_id, at).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_party_version_get_by_id(
         &self,
         versioned_object_uid: String,
@@ -331,6 +410,11 @@ impl EhrbaseService {
     }
 
     // ── demographic CONTRIBUTION ─────────────────────────────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn demographic_contribution_create(
         &self,
         body: Value,
@@ -338,6 +422,11 @@ impl EhrbaseService {
         Ok(self.create_demographic_contribution(body).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn demographic_contribution_get(
         &self,
         contribution_uid: String,
@@ -351,6 +440,11 @@ impl EhrbaseService {
     }
 
     // ── demographic item tags ────────────────────────────────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn demographic_tags_get(
         &self,
         tag_key: Option<String>,
@@ -367,6 +461,11 @@ impl EhrbaseService {
         Ok(tags_response(tags))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_tags_get(
         &self,
         _kind: PartyKind,
@@ -376,6 +475,11 @@ impl EhrbaseService {
         Ok(tags_response(self.party_tags(vo_id).await?))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_tags_update(
         &self,
         kind: PartyKind,
@@ -388,6 +492,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_tags_delete(
         &self,
         _kind: PartyKind,
@@ -399,6 +508,11 @@ impl EhrbaseService {
         Ok(ServiceResponse::plain(Value::Null))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn demographic_latest_meta(
         &self,
         kind: PartyKind,
@@ -411,12 +525,22 @@ impl EhrbaseService {
 
 impl EhrbaseService {
     // ── I_PARTY_RELATIONSHIP + create factory (the SM core) ─────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_party_relationship(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let resp = self.create_relationship(a_version.data).await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
@@ -433,6 +557,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
@@ -449,6 +578,11 @@ impl EhrbaseService {
         Ok(resp.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party_relationship_at_time(
         &self,
         a_versioned_party_rel_id: Uuid,
@@ -461,6 +595,11 @@ impl EhrbaseService {
         Ok(resp.body)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_party_relationship_at_version(
         &self,
         a_party_rel_version_id: String,
@@ -475,6 +614,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
@@ -490,6 +634,11 @@ impl EhrbaseService {
         Ok(version_uid(resp))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
@@ -513,10 +662,20 @@ impl EhrbaseService {
     }
 
     // ── the relationship wire seam ────────────────────────────────────────────
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
         Ok(self.create_relationship(body).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_get(
         &self,
         uid_based_id: String,
@@ -527,6 +686,11 @@ impl EhrbaseService {
         Ok(self.read_relationship(vo_id, version, at).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_update(
         &self,
         uid_based_id: String,
@@ -540,6 +704,11 @@ impl EhrbaseService {
         Ok(self.update_relationship(vo_id, body, expected).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_delete(
         &self,
         uid_based_id: String,
@@ -562,6 +731,11 @@ impl EhrbaseService {
         Ok(self.delete_relationship(vo_id, expected).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_party_relationship_get(
         &self,
         versioned_object_uid: String,
@@ -572,6 +746,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_revision_history(
         &self,
         versioned_object_uid: String,
@@ -582,6 +761,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_version_get_at_time(
         &self,
         versioned_object_uid: String,
@@ -592,6 +776,11 @@ impl EhrbaseService {
         Ok(self.relationship_version_at_time(vo_id, at).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_version_get_by_id(
         &self,
         versioned_object_uid: String,
@@ -604,6 +793,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn party_relationship_latest_meta(
         &self,
         uid_based_id: String,

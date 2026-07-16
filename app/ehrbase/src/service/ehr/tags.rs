@@ -168,6 +168,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_tags_get(
         &self,
         an_ehr_id: Uuid,
@@ -185,6 +190,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tags_get(
         &self,
         an_ehr_id: Uuid,
@@ -194,6 +204,11 @@ impl EhrbaseService {
         Ok(self.target_tags(an_ehr_id, vo_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tags_replace(
         &self,
         an_ehr_id: Uuid,
@@ -207,6 +222,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tag_delete(
         &self,
         an_ehr_id: Uuid,

@@ -6,7 +6,6 @@
 //! concern. The retrieval/store behaviour rides on the SM logic in the sibling
 //! interface files.
 
-use async_trait::async_trait;
 use regex::Regex;
 use serde_json::Value;
 
@@ -18,16 +17,31 @@ use openehr_flat::{DetailLevel, ExampleType};
 use crate::service::EhrbaseService;
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
         // The OPT 1.4 canonical XML is parsed + stored through the templates
         // layer; the wire `201` body is the created template summary.
         Ok(self.store_template(&opt_xml).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError> {
         Ok(self.opt_get_by_template_id(&template_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl14_list(
         &self,
         filter: TemplateListFilter,
@@ -44,6 +58,11 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl14_example(
         &self,
         template_id: String,
@@ -60,6 +79,11 @@ impl EhrbaseService {
         Ok(self.template_example(&template_id, level, kind).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
         // ADL2 operational-template source (text/plain). Store it and return the
         // stored ARCHETYPE_HRID; the dispatcher builds `Location` + the `Prefer`
@@ -82,6 +106,11 @@ impl EhrbaseService {
         Ok(self.adl2_upload(&source).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn template_adl2_list(
         &self,
         filter: TemplateListFilter,
@@ -99,10 +128,20 @@ impl EhrbaseService {
         ))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
         Ok(self.list_stored_queries(&qualified_query_name).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn query_version_get(
         &self,
         qualified_query_name: String,
@@ -113,6 +152,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn query_store(
         &self,
         qualified_query_name: String,

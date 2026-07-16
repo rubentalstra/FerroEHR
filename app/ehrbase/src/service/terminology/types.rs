@@ -22,10 +22,8 @@
 
 use std::collections::BTreeMap;
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::service::status::{CallStatusType, SmError};
 
 // ─── extract data model (`terminology_extract` package) ──────────────────────
 

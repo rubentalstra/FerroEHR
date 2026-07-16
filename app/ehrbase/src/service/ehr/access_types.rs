@@ -29,12 +29,9 @@
 //! It exposes the current `EHR_ACCESS` scheme settings so the protocol adapter —
 //! the out-of-band decision point — can enforce them after authentication.
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use uuid::Uuid;
 
-use crate::service::status::SmError;
 
 /// The `_type` discriminator of this scheme's `ACCESS_CONTROL_SETTINGS` subtype
 /// on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from it.

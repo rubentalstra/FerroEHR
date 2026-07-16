@@ -240,6 +240,11 @@ pub(in crate::service) fn committer() -> Value {
 // ── ITS-REST VersionMetaAdapter (adapter-support extension) ───────────────────
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_latest_meta(
         &self,
         an_ehr_id: Uuid,
@@ -250,6 +255,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_status_latest_meta(
         &self,
         an_ehr_id: Uuid,
@@ -257,6 +267,11 @@ impl EhrbaseService {
         Ok(self.ehr_status_meta(an_ehr_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn directory_latest_meta(
         &self,
         an_ehr_id: Uuid,
