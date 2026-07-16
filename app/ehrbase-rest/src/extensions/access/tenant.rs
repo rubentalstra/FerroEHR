@@ -21,17 +21,12 @@ use axum::extract::{Request, State};
 use axum::middleware::Next;
 use axum::response::Response;
 
-
 use crate::extensions::access::authn::current_principal;
 use crate::extensions::access::authz::roles::claim_string;
 use crate::state::AppState;
 
 /// Resolve and scope the request's tenant. See the module docs.
-pub async fn middleware(
-    State(state): State<AppState>,
-    req: Request,
-    next: Next,
-) -> Response {
+pub async fn middleware(State(state): State<AppState>, req: Request, next: Next) -> Response {
     let cfg = &state.config().tenancy;
 
     // A dev header override (when configured) wins over the JWT claim; otherwise

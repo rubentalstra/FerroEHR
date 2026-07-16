@@ -119,11 +119,7 @@ pub(crate) async fn tenant_delete(
     guarded_dispatch(state, "tenant_delete", parts, dispatch).await
 }
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await

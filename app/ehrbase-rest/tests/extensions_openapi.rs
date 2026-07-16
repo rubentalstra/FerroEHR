@@ -329,6 +329,6 @@ async fn full_app(name: &str) -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    let service = common::test_service(name).await;
+    let (_pg, service) = common::test_service(name).await;
     ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }

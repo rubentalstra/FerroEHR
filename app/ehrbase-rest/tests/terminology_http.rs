@@ -59,9 +59,12 @@ fn config(terminology_enabled: bool) -> AppConfig {
 }
 
 /// The assembled router over the real service with the terminology group toggled.
-async fn app(name: &str, terminology_enabled: bool) -> Router {
-    let service = common::test_service(name).await;
-    ehrbase_rest::build_with(config(terminology_enabled), service).expect("router builds")
+async fn app(name: &str, terminology_enabled: bool) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(name).await;
+    (
+        pg,
+        ehrbase_rest::build_with(config(terminology_enabled), service).expect("router builds"),
+    )
 }
 
 async fn send(app: Router, req: Request<Body>) -> (StatusCode, String) {
@@ -83,14 +86,14 @@ fn get(uri: String) -> Request<Body> {
 async fn disabled_terminology_is_404() {
     // Gate off → 404 before any backend work (the config gate short-circuits;
     // the real bundle is never consulted).
-    let app = app("term_disabled", false).await;
+    let (_pg, app) = app("term_disabled", false).await;
     let (status, _) = send(app, get(format!("{BASE}/terminology"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn terminology_ids_returns_list() {
-    let app = app("term_ids", true).await;
+    let (_pg, app) = app("term_ids", true).await;
     let (status, body) = send(app, get(format!("{BASE}/terminology"))).await;
     assert_eq!(status, StatusCode::OK);
     let v: Value = serde_json::from_str(&body).expect("json body");
@@ -105,7 +108,7 @@ async fn terminology_ids_returns_list() {
 
 #[tokio::test]
 async fn terminology_description_found_is_200() {
-    let app = app("term_desc", true).await;
+    let (_pg, app) = app("term_desc", true).await;
     let (status, body) = send(app, get(format!("{BASE}/terminology/{KNOWN}"))).await;
     assert_eq!(status, StatusCode::OK);
     let v: Value = serde_json::from_str(&body).expect("json body");
@@ -116,7 +119,7 @@ async fn terminology_description_found_is_200() {
 
 #[tokio::test]
 async fn terminology_description_unknown_maps_to_404() {
-    let app = app("term_desc_unknown", true).await;
+    let (_pg, app) = app("term_desc_unknown", true).await;
     // The bundle's `versioned_object_does_not_exist` surfaces as HTTP 404.
     let (status, _) = send(app, get(format!("{BASE}/terminology/{UNKNOWN}"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -124,7 +127,7 @@ async fn terminology_description_unknown_maps_to_404() {
 
 #[tokio::test]
 async fn get_term_lookup_returns_extract() {
-    let app = app("term_get_term", true).await;
+    let (_pg, app) = app("term_get_term", true).await;
     // 249 is `creation` in the audit_change_type group (a real openEHR code).
     // `at_date` is accepted but a no-op for the single-version bundle.
     let (status, body) = send(
@@ -142,7 +145,7 @@ async fn get_term_lookup_returns_extract() {
 
 #[tokio::test]
 async fn subsumes_returns_bool() {
-    let app = app("term_subsumes", true).await;
+    let (_pg, app) = app("term_subsumes", true).await;
     // The openEHR bundle is flat and `subsumes` is strict, so subsumption is
     // uniformly false — even the identity case (was Mock-scripted identity→true).
     let (status, body) = send(
@@ -159,7 +162,7 @@ async fn subsumes_returns_bool() {
 
 #[tokio::test]
 async fn subsumes_missing_required_query_is_400() {
-    let app = app("term_subsumes_400", true).await;
+    let (_pg, app) = app("term_subsumes_400", true).await;
     // `candidate` absent → 400 before the backend is consulted.
     let (status, _) = send(
         app,
@@ -171,7 +174,7 @@ async fn subsumes_missing_required_query_is_400() {
 
 #[tokio::test]
 async fn get_value_set_expand_returns_extract() {
-    let app = app("term_vs", true).await;
+    let (_pg, app) = app("term_vs", true).await;
     // `audit_change_type` is a real openEHR group addressable as a value set.
     let (status, body) = send(
         app,
@@ -188,7 +191,7 @@ async fn get_value_set_expand_returns_extract() {
 
 #[tokio::test]
 async fn get_value_set_unknown_maps_to_404() {
-    let app = app("term_vs_unknown", true).await;
+    let (_pg, app) = app("term_vs_unknown", true).await;
     let (status, _) = send(
         app,
         get(format!(
@@ -201,7 +204,7 @@ async fn get_value_set_unknown_maps_to_404() {
 
 #[tokio::test]
 async fn value_set_validate_returns_valid() {
-    let app = app("term_vs_validate", true).await;
+    let (_pg, app) = app("term_vs_validate", true).await;
     // 249 is a member of audit_change_type → valid.
     let (status, body) = send(
         app,
@@ -217,7 +220,7 @@ async fn value_set_validate_returns_valid() {
 
 #[tokio::test]
 async fn value_set_validate_missing_candidate_is_400() {
-    let app = app("term_vs_validate_400", true).await;
+    let (_pg, app) = app("term_vs_validate_400", true).await;
     let (status, _) = send(
         app,
         get(format!(
@@ -233,7 +236,7 @@ async fn enabled_terminology_group_serves_real_bundle() {
     // Re-targeted from the old `unhooked → 501` Mock-scaffolding case: with the
     // concrete service the terminology group is always implemented, so an enabled
     // group serves the real bundle (200), never the trait-default 501.
-    let app = app("term_enabled_200", true).await;
+    let (_pg, app) = app("term_enabled_200", true).await;
     let (status, _) = send(app, get(format!("{BASE}/terminology"))).await;
     assert_eq!(status, StatusCode::OK);
 }

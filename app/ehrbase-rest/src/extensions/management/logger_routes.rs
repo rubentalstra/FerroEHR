@@ -58,4 +58,3 @@ pub(super) fn reset(reload: &LogReload) -> Response {
             .into_response(),
     }
 }
-

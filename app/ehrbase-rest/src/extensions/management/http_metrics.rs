@@ -22,12 +22,11 @@ use std::net::SocketAddr;
 use std::time::Instant;
 
 use axum::extract::{ConnectInfo, MatchedPath, Request};
-use ehrbase::telemetry::prometheus::{
-    HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
-    HTTP_RESPONSE_BODY_SIZE,
-};
 use axum::middleware::Next;
 use axum::response::Response;
+use ehrbase::telemetry::prometheus::{
+    HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION, HTTP_RESPONSE_BODY_SIZE,
+};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use opentelemetry::propagation::Extractor;
 use opentelemetry::trace::TraceContextExt;
@@ -36,7 +35,6 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // ── Metric names (§1.2) — the single source of truth for the emitters here and
 //    the bucket-ladder / description registration in `ehrbase::telemetry`. ────
-
 
 /// The label value used when a request did not match any route template (the
 /// fallback that keeps the `http_route` label a closed set).

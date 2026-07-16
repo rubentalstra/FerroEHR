@@ -62,11 +62,11 @@ use crate::extensions::access::authn::{Principal, current_principal};
 use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
 
-use ehrbase::config::smart::SmartConfig;
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
 use crate::smart::scope::SmartScope;
 use crate::state::AppState;
 use crate::{negotiate, params};
+use ehrbase::config::smart::SmartConfig;
 
 /// Whether an operation is ABAC-checked, and when.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -222,11 +222,7 @@ pub(crate) async fn pre_check(
 }
 
 /// Post-check a successful response using the resource ids the dispatch recorded.
-pub(crate) async fn post_check(
-    state: &AppState,
-    op: &'static str,
-    resp: Response,
-) -> Response {
+pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Response) -> Response {
     if !resp.status().is_success() {
         return resp;
     }

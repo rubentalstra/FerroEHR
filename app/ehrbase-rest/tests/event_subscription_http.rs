@@ -49,9 +49,12 @@ fn config(enabled: bool) -> AppConfig {
     }
 }
 
-async fn app(name: &str, enabled: bool) -> Router {
-    let service = common::test_service(name).await;
-    ehrbase_rest::build_with(config(enabled), service).expect("router builds")
+async fn app(name: &str, enabled: bool) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(name).await;
+    (
+        pg,
+        ehrbase_rest::build_with(config(enabled), service).expect("router builds"),
+    )
 }
 
 async fn send(app: Router, req: Request<Body>) -> (StatusCode, Value) {
@@ -79,13 +82,20 @@ fn req(method: &str, uri: &str, body: Option<Value>) -> Request<Body> {
 
 #[tokio::test]
 async fn disabled_group_is_404() {
-    let (status, _) = send(app("evsub_disabled", false).await, req("GET", GROUP, None)).await;
+    let (status, _) = send(
+        {
+            let (_pg, a) = app("evsub_disabled", false).await;
+            a
+        },
+        req("GET", GROUP, None),
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
 async fn crud_round_trip() {
-    let app = app("evsub_crud", true).await;
+    let (_pg, app) = app("evsub_crud", true).await;
 
     // Empty list (no seed row for subscriptions).
     let (status, body) = send(app.clone(), req("GET", GROUP, None)).await;
@@ -138,7 +148,10 @@ async fn crud_round_trip() {
 #[tokio::test]
 async fn create_without_name_is_400() {
     let (status, _) = send(
-        app("evsub_400", true).await,
+        {
+            let (_pg, a) = app("evsub_400", true).await;
+            a
+        },
         req("POST", GROUP, Some(json!({ "kind": "COMPOSITION" }))),
     )
     .await;
@@ -147,7 +160,7 @@ async fn create_without_name_is_400() {
 
 #[tokio::test]
 async fn duplicate_name_is_409() {
-    let app = app("evsub_409", true).await;
+    let (_pg, app) = app("evsub_409", true).await;
     let body = json!({ "name": "dup" });
     let (status, _) = send(app.clone(), req("POST", GROUP, Some(body.clone()))).await;
     assert_eq!(status, StatusCode::CREATED);
@@ -157,7 +170,7 @@ async fn duplicate_name_is_409() {
 
 #[tokio::test]
 async fn unknown_id_is_404() {
-    let app = app("evsub_unknown", true).await;
+    let (_pg, app) = app("evsub_unknown", true).await;
     let id = Uuid::now_v7();
     let (status, _) = send(app.clone(), req("GET", &format!("{GROUP}/{id}"), None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -168,7 +181,10 @@ async fn unknown_id_is_404() {
 #[tokio::test]
 async fn malformed_id_is_400() {
     let (status, _) = send(
-        app("evsub_malformed", true).await,
+        {
+            let (_pg, a) = app("evsub_malformed", true).await;
+            a
+        },
         req("GET", &format!("{GROUP}/not-a-uuid"), None),
     )
     .await;
@@ -181,7 +197,10 @@ async fn enabled_group_lists_real_store() {
     // concrete service the CRUD persists to the real store, so an enabled group
     // answers 200 (never the trait-default 501).
     let (status, body) = send(
-        app("evsub_enabled_200", true).await,
+        {
+            let (_pg, a) = app("evsub_enabled_200", true).await;
+            a
+        },
         req("GET", GROUP, None),
     )
     .await;

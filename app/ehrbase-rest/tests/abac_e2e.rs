@@ -164,13 +164,13 @@ fn authz(abac_enabled: bool) -> Option<Arc<AuthzHandle>> {
 }
 
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
-async fn service(name: &str, audit: Option<AuditSender>) -> Arc<EhrbaseService> {
-    let pool = common::migrated_pool(name).await;
+async fn service(name: &str, audit: Option<AuditSender>) -> (common::Pg, Arc<EhrbaseService>) {
+    let (pg, pool) = common::migrated_pool(name).await;
     let mut svc = EhrbaseService::new(pool);
     if let Some(sender) = audit {
         svc = svc.with_audit(sender);
     }
-    Arc::new(svc)
+    (pg, Arc::new(svc))
 }
 
 /// The ABAC app over `svc`.
@@ -290,7 +290,8 @@ async fn status(app: &Router, req: Request<Body>) -> StatusCode {
 #[tokio::test]
 async fn create_for_other_patient_is_pre_check_forbidden() {
     // The pre-check denies before dispatch (no data needed).
-    let app = abac_app(service("abac_pre_other", None).await, true);
+    let (_pg, svc) = service("abac_pre_other", None).await;
+    let app = abac_app(svc, true);
     let s = status(
         &app,
         request(
@@ -309,7 +310,7 @@ async fn create_for_other_patient_is_pre_check_forbidden() {
 
 #[tokio::test]
 async fn create_for_own_patient_clears_the_gate() {
-    let svc = service("abac_create_own", None).await;
+    let (_pg, svc) = service("abac_create_own", None).await;
     let seed = build_with(seed_config(), svc.clone()).expect("seed app");
     seed_ehr(&seed, EHR_OWN).await;
 
@@ -333,7 +334,7 @@ async fn create_for_own_patient_clears_the_gate() {
 
 #[tokio::test]
 async fn read_of_other_patient_is_post_check_forbidden() {
-    let svc = service("abac_read_other", None).await;
+    let (_pg, svc) = service("abac_read_other", None).await;
     let seed = build_with(seed_config(), svc.clone()).expect("seed app");
     // Seed EHR_OTHER + a composition so the read succeeds and the post-check can
     // evaluate it; the post-check then denies because EHR_OTHER's subject is
@@ -360,7 +361,7 @@ async fn read_of_other_patient_is_post_check_forbidden() {
 
 #[tokio::test]
 async fn read_of_own_patient_is_served() {
-    let svc = service("abac_read_own", None).await;
+    let (_pg, svc) = service("abac_read_own", None).await;
     let seed = build_with(seed_config(), svc.clone()).expect("seed app");
     seed_ehr(&seed, EHR_OWN).await;
     let uid = seed_composition(&seed, EHR_OWN).await;
@@ -380,7 +381,8 @@ async fn read_of_own_patient_is_served() {
 
 #[tokio::test]
 async fn missing_patient_claim_is_forbidden() {
-    let app = abac_app(service("abac_no_claim", None).await, true);
+    let (_pg, svc) = service("abac_no_claim", None).await;
+    let app = abac_app(svc, true);
     let s = status(
         &app,
         request(
@@ -400,7 +402,7 @@ async fn missing_patient_claim_is_forbidden() {
 #[tokio::test]
 async fn abac_disabled_restores_behaviour() {
     // ABAC off → no gate → a create for any EHR is served (auth+RBAC only).
-    let svc = service("abac_disabled", None).await;
+    let (_pg, svc) = service("abac_disabled", None).await;
     let seed = build_with(seed_config(), svc.clone()).expect("seed app");
     seed_ehr(&seed, EHR_OTHER).await;
 
@@ -425,7 +427,8 @@ async fn abac_deny_is_audited() {
     // over syslog/UDP; we assert on the datagrams: a minor-failure outcome
     // (`EventOutcomeIndicator="4"`) attributed to `svc`.
     let (socket, sender) = audit_capture().await;
-    let app = abac_app(service("abac_deny_audit", Some(sender)).await, true);
+    let (_pg, svc) = service("abac_deny_audit", Some(sender)).await;
+    let app = abac_app(svc, true);
 
     let s = status(
         &app,

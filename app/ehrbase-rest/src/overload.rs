@@ -43,10 +43,7 @@ const RETRY_AFTER_SECONDS: &str = "1";
 /// reading the request body). A `max_in_flight` of `0` returns the router
 /// unchanged — shedding disabled, no layer installed. See [`crate::router`] for
 /// where this sits relative to the shared request stack.
-pub(crate) fn shed_layer(
-    api: Router<AppState>,
-    max_in_flight: usize,
-) -> Router<AppState> {
+pub(crate) fn shed_layer(api: Router<AppState>, max_in_flight: usize) -> Router<AppState> {
     if max_in_flight == 0 {
         return api;
     }

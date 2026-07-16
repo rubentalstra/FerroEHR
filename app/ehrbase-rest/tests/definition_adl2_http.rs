@@ -70,8 +70,9 @@ fn config() -> AppConfig {
     }
 }
 
-async fn app(db: &str) -> Router {
-    common::router_with(config(), common::test_service(db).await)
+async fn app(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
+    (pg, common::router_with(config(), service))
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
@@ -99,7 +100,7 @@ fn upload_req(prefer: Option<&str>) -> Request<Body> {
 
 #[tokio::test]
 async fn upload_minimal_returns_201_and_location_only() {
-    let app = app("adl2_upload_minimal").await;
+    let (_pg, app) = app("adl2_upload_minimal").await;
     let (status, headers, body) = send(&app, upload_req(None)).await;
     assert_eq!(status, StatusCode::CREATED);
     assert_eq!(
@@ -114,7 +115,7 @@ async fn upload_minimal_returns_201_and_location_only() {
 
 #[tokio::test]
 async fn upload_representation_returns_source_text() {
-    let app = app("adl2_upload_repr").await;
+    let (_pg, app) = app("adl2_upload_repr").await;
     let (status, headers, body) = send(&app, upload_req(Some("return=representation"))).await;
     assert_eq!(status, StatusCode::CREATED);
     assert!(
@@ -131,7 +132,7 @@ async fn upload_representation_returns_source_text() {
 
 #[tokio::test]
 async fn upload_identifier_returns_template_id_json() {
-    let app = app("adl2_upload_ident").await;
+    let (_pg, app) = app("adl2_upload_ident").await;
     let (status, headers, body) = send(&app, upload_req(Some("return=identifier"))).await;
     assert_eq!(status, StatusCode::CREATED);
     assert!(headers.contains_key(header::LOCATION));
@@ -141,7 +142,7 @@ async fn upload_identifier_returns_template_id_json() {
 
 #[tokio::test]
 async fn get_serves_source_as_text_and_404s_unknown() {
-    let app = app("adl2_get_source").await;
+    let (_pg, app) = app("adl2_get_source").await;
     // Upload first so the artefact exists.
     let (status, _h, _b) = send(&app, upload_req(None)).await;
     assert_eq!(status, StatusCode::CREATED);
@@ -176,7 +177,7 @@ async fn get_serves_source_as_text_and_404s_unknown() {
 
 #[tokio::test]
 async fn list_returns_template_metadata() {
-    let app = app("adl2_list").await;
+    let (_pg, app) = app("adl2_list").await;
     let (status, _h, _b) = send(&app, upload_req(None)).await;
     assert_eq!(status, StatusCode::CREATED);
 

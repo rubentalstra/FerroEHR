@@ -21,11 +21,7 @@ use super::response::{self, QueryScope};
 use super::{adhoc, stored};
 use crate::state::AppState;
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await

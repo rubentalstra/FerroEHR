@@ -202,11 +202,7 @@ pub(crate) async fn fhir_mapping_delete(
     guarded_dispatch(state, "fhir_mapping_delete", parts, dispatch).await
 }
 
-pub(crate) fn dispatch(
-    state: AppState,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move { run(state, op, parts).await })
 }
 

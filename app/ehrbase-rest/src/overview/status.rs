@@ -10,8 +10,8 @@ use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
-use ehrbase::telemetry::provenance;
 use crate::state::AppState;
+use ehrbase::telemetry::provenance;
 
 /// `/rest/status` body — server and conformance-target versions. The
 /// `openehr_rest_api_version` is the single shared provenance identity

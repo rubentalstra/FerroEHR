@@ -101,23 +101,25 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
 }
 
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
-async fn service(name: &str, audit: Option<AuditSender>) -> Arc<EhrbaseService> {
-    let pool = common::migrated_pool(name).await;
+async fn service(name: &str, audit: Option<AuditSender>) -> (common::Pg, Arc<EhrbaseService>) {
+    let (pg, pool) = common::migrated_pool(name).await;
     let mut svc = EhrbaseService::new(pool);
     if let Some(sender) = audit {
         svc = svc.with_audit(sender);
     }
-    Arc::new(svc)
+    (pg, Arc::new(svc))
 }
 
-async fn app(name: &str, rbac_enabled: bool, audit: Option<AuditSender>) -> Router {
-    ehrbase_rest::build_full(
+async fn app(name: &str, rbac_enabled: bool, audit: Option<AuditSender>) -> (common::Pg, Router) {
+    let (pg, svc) = service(name, audit).await;
+    let app = ehrbase_rest::build_full(
         rest_config(),
-        service(name, audit).await,
+        svc,
         authz(rbac_enabled),
         ehrbase_rest::Observability::default(),
     )
-    .expect("build app")
+    .expect("build app");
+    (pg, app)
 }
 
 // ── ATNA capture: a UDP listener + a sender pointed at it ──────────────────────
@@ -196,7 +198,7 @@ async fn status(app: &Router, request: Request<Body>) -> StatusCode {
 
 #[tokio::test]
 async fn admin_op_forbidden_for_user_role() {
-    let app = app("rbac_admin_user", true, None).await;
+    let (_pg, app) = app("rbac_admin_user", true, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
@@ -207,7 +209,7 @@ async fn admin_op_forbidden_for_user_role() {
 
 #[tokio::test]
 async fn admin_op_passes_gate_for_admin_role() {
-    let app = app("rbac_admin_admin", true, None).await;
+    let (_pg, app) = app("rbac_admin_admin", true, None).await;
     // ADMIN clears the RBAC gate; the concrete post-gate status is real-backend
     // behaviour — the point is the gate did NOT reject it with 403.
     let s = status(
@@ -220,14 +222,14 @@ async fn admin_op_passes_gate_for_admin_role() {
 
 #[tokio::test]
 async fn clinical_op_allowed_for_user_role() {
-    let app = app("rbac_clinical_user", true, None).await;
+    let (_pg, app) = app("rbac_clinical_user", true, None).await;
     let s = status(&app, req("GET", &format!("/ehr/{EHR_ID}"), &basic("user"))).await;
     assert_ne!(s, StatusCode::FORBIDDEN, "USER may reach a clinical op");
 }
 
 #[tokio::test]
 async fn zero_role_principal_denied_clinical() {
-    let app = app("rbac_zero_role", true, None).await;
+    let (_pg, app) = app("rbac_zero_role", true, None).await;
     let s = status(
         &app,
         req("GET", &format!("/ehr/{EHR_ID}"), &basic("noroles")),
@@ -244,7 +246,7 @@ async fn zero_role_principal_denied_clinical() {
 async fn rbac_disabled_restores_admin_access() {
     // With RBAC disabled the handle is None → the gate is skipped; a USER reaches
     // the admin op exactly as before this feature (auth-only behaviour).
-    let app = app("rbac_disabled", false, None).await;
+    let (_pg, app) = app("rbac_disabled", false, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
@@ -258,7 +260,7 @@ async fn admin_scope_alias_migrates_via_scope_role() {
     // The deprecated `admin_scope` gate is subsumed: a token whose `scope`
     // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
     // non-admin scope is rejected — the automatic migration path (§5.2).
-    let app = app("rbac_scope_alias", true, None).await;
+    let (_pg, app) = app("rbac_scope_alias", true, None).await;
     let denied = status(
         &app,
         req(
@@ -289,7 +291,7 @@ async fn rbac_deny_is_audited() {
     // Application-Activity event (`csd-code="110100"`), a minor-failure outcome
     // (`EventOutcomeIndicator="4"`), attributed to `user`.
     let (socket, sender) = audit_capture().await;
-    let app = app("rbac_deny_audit", true, Some(sender)).await;
+    let (_pg, app) = app("rbac_deny_audit", true, Some(sender)).await;
 
     let s = status(
         &app,

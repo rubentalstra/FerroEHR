@@ -58,9 +58,6 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// field while the defaults stay measured.
 use ehrbase::config::server::SystemOptionsConfig;
 
-
-
-
 /// The wire body of the `OPTIONS /` response — the OAS `Options` schema
 /// (`system-codegen.openapi.yaml` lines 92-121): `solution`,
 /// `solution_version`, `vendor`, `restapi_specs_version`,
@@ -223,8 +220,14 @@ mod tests {
         // The tested development-edition contract identity (shared provenance,
         // matching management `/info` + the ECC report), not the retired
         // `1.0.3` release label; the profile is the machine-computed verdict.
-        assert_eq!(v["restapi_specs_version"], ehrbase::telemetry::provenance::ITS_REST);
-        assert_eq!(v["conformance_profile"], ehrbase::telemetry::provenance::CONFORMANCE_PROFILE);
+        assert_eq!(
+            v["restapi_specs_version"],
+            ehrbase::telemetry::provenance::ITS_REST
+        );
+        assert_eq!(
+            v["conformance_profile"],
+            ehrbase::telemetry::provenance::CONFORMANCE_PROFILE
+        );
         assert!(v["endpoints"].is_array());
     }
 

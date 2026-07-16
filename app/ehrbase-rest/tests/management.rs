@@ -72,7 +72,7 @@ async fn app_with(name: &str, level: AccessLevel, admin_scope: Option<&str>) -> 
         },
         ..Observability::default()
     };
-    let service = common::test_service(name).await;
+    let (_pg, service) = common::test_service(name).await;
     ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }
 
@@ -196,7 +196,7 @@ async fn app_with_metrics(name: &str) -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    let service = common::test_service(name).await;
+    let (_pg, service) = common::test_service(name).await;
     ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }
 
@@ -294,7 +294,7 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let service = common::test_service("mgmt_separate_port").await;
+    let (_pg, service) = common::test_service("mgmt_separate_port").await;
     let main_app = ehrbase_rest::build_full(config, service, None, observability).expect("build");
 
     // …the main app 404s the management route.

@@ -37,9 +37,9 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::overview::error::RestError;
 use crate::overview::params::ItemTagHeaderEntry;
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::demographic::types::PartyKind;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::status::{CallStatusType, SmError};
 
 mod contribution;
 mod dispatch;

@@ -444,9 +444,9 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ehrbase::config::auth::{BasicConfig, BasicUser, OidcConfig};
     use argon2::password_hash::{PasswordHasher, SaltString};
     use argon2::{Argon2, password_hash::PasswordHash};
+    use ehrbase::config::auth::{BasicConfig, BasicUser, OidcConfig};
 
     fn hash(pw: &str) -> String {
         let salt = SaltString::from_b64("MTIzNDU2Nzg5MDEyMzQ1Ng").unwrap();

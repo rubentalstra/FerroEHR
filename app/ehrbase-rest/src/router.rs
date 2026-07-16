@@ -52,7 +52,6 @@ use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
-
 use crate::api::system;
 use crate::extensions::access::authn::{self, Authenticator};
 use crate::extensions::management::{self, ManagementState};
@@ -88,8 +87,8 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // see [`crate::overview::error::not_implemented_handler`]; axum routes by
     // path+method and offers no distinct "unrecognised method" seam, so a blanket
     // `501` fallback would wrongly convert genuine `404`s.)
-    let api = crate::api::api_router()
-        .method_not_allowed_fallback(error::method_not_allowed_handler);
+    let api =
+        crate::api::api_router().method_not_allowed_fallback(error::method_not_allowed_handler);
     // Tenant resolution sits inside the auth layer so it runs *after*
     // authentication (the principal + its claims are established) and scopes the
     // handler in the tenant task-local. Only installed when tenancy is on — a
@@ -255,10 +254,7 @@ fn mount_public_surface(
 
 /// Build the standalone management router (separate-port mode). The binary
 /// serves this on the management listener when `management.port` is set.
-pub fn management_router(
-    state: &AppState,
-    authenticator: Arc<Authenticator>,
-) -> Router {
+pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
     management::router(ManagementState::from_observability(
         state.observability().clone(),
         authenticator,

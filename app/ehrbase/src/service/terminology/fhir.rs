@@ -468,7 +468,7 @@ impl FhirParameters {
 
 /// A FHIR `ValueSet` resource with an expansion — only the expansion members.
 #[derive(Debug, Clone, Deserialize)]
-struct FhirValueSet {
+pub(crate) struct FhirValueSet {
     expansion: Option<FhirExpansion>,
 }
 

@@ -108,8 +108,9 @@ fn config() -> AppConfig {
     }
 }
 
-async fn app(db: &str) -> Router {
-    common::router_with(config(), common::test_service(db).await)
+async fn app(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
+    (pg, common::router_with(config(), service))
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
@@ -161,7 +162,7 @@ fn vo_of(ovid: &str) -> &str {
 
 #[tokio::test]
 async fn person_create_default_is_minimal_with_headers() {
-    let app = app("dem_person_create_min").await;
+    let (_pg, app) = app("dem_person_create_min").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/demographic/person"))
@@ -184,7 +185,7 @@ async fn person_create_default_is_minimal_with_headers() {
 
 #[tokio::test]
 async fn person_create_representation_returns_body() {
-    let app = app("dem_person_create_repr").await;
+    let (_pg, app) = app("dem_person_create_repr").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/demographic/person"))
@@ -203,7 +204,7 @@ async fn person_create_representation_returns_body() {
 
 #[tokio::test]
 async fn person_get_sets_etag_and_location() {
-    let app = app("dem_person_get").await;
+    let (_pg, app) = app("dem_person_get").await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
 
@@ -226,7 +227,7 @@ async fn person_get_sets_etag_and_location() {
 
 #[tokio::test]
 async fn deleted_person_read_is_204() {
-    let app = app("dem_person_deleted_204").await;
+    let (_pg, app) = app("dem_person_deleted_204").await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
 
@@ -252,7 +253,7 @@ async fn deleted_person_read_is_204() {
 
 #[tokio::test]
 async fn person_delete_is_204_with_headers() {
-    let app = app("dem_person_delete").await;
+    let (_pg, app) = app("dem_person_delete").await;
     let ovid = create(&app, "person", &person_body()).await;
 
     let req = Request::builder()
@@ -277,7 +278,7 @@ async fn person_delete_is_204_with_headers() {
 /// bare `HIER_OBJECT_ID` and the preceding version is carried by `If-Match`.
 #[tokio::test]
 async fn person_delete_by_versioned_uid_with_if_match_is_204() {
-    let app = app("dem_person_delete_ifmatch").await;
+    let (_pg, app) = app("dem_person_delete_ifmatch").await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
 
@@ -295,7 +296,7 @@ async fn person_delete_by_versioned_uid_with_if_match_is_204() {
 
 #[tokio::test]
 async fn stale_update_is_412_with_latest_headers() {
-    let app = app("dem_person_stale_412").await;
+    let (_pg, app) = app("dem_person_stale_412").await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
     // A syntactically valid but stale OBJECT_VERSION_ID (same VO, wrong version).
@@ -322,7 +323,7 @@ async fn stale_update_is_412_with_latest_headers() {
 #[tokio::test]
 async fn role_create_uses_role_segment() {
     // The 5× kind fan-out routes each kind to its own segment.
-    let app = app("dem_role_create").await;
+    let (_pg, app) = app("dem_role_create").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/demographic/role"))
@@ -343,7 +344,7 @@ async fn party_relationship_create_is_mounted_with_headers() {
     // The our-own-design PARTY_RELATIONSHIP extension route is mounted and
     // reaches the seam (a create returns 201 + ETag/Location on the
     // /demographic/party_relationship segment; an unmounted route would 404).
-    let app = app("dem_rel_create").await;
+    let (_pg, app) = app("dem_rel_create").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/demographic/party_relationship"))
@@ -366,7 +367,7 @@ async fn party_relationship_create_is_mounted_with_headers() {
 
 #[tokio::test]
 async fn party_relationship_get_is_mounted() {
-    let app = app("dem_rel_get").await;
+    let (_pg, app) = app("dem_rel_get").await;
     let ovid = create(&app, "party_relationship", &relationship_body()).await;
     let vo = vo_of(&ovid);
 
@@ -389,7 +390,7 @@ async fn versioned_party_relationship_is_mounted() {
     // The versioned-party-relationship read is a real implementation now, so a
     // created relationship reads back its VERSIONED_PARTY_RELATIONSHIP → `200`
     // (an unmounted path would 404), which still proves the route is mounted.
-    let app = app("dem_versioned_rel").await;
+    let (_pg, app) = app("dem_versioned_rel").await;
     let ovid = create(&app, "party_relationship", &relationship_body()).await;
     let vo = vo_of(&ovid);
 

@@ -284,9 +284,7 @@ fn discovery_response(body: Bytes) -> Response {
     get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
     responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))
 )]
-async fn smart_configuration(
-    State(state): State<AppState>,
-) -> Json<SmartConfiguration> {
+async fn smart_configuration(State(state): State<AppState>) -> Json<SmartConfiguration> {
     let cfg = state.config();
     // R-04/recommended: FHIR base advertised only when the connector is enabled.
     let fhir_base = cfg

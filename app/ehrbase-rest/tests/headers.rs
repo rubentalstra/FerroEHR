@@ -73,8 +73,9 @@ fn config() -> AppConfig {
     }
 }
 
-async fn app(db: &str) -> Router {
-    common::router_with(config(), common::test_service(db).await)
+async fn app(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
+    (pg, common::router_with(config(), service))
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
@@ -167,7 +168,7 @@ async fn current_ehr_status(app: &Router, ehr_id: &str) -> (Value, String) {
 
 #[tokio::test]
 async fn ehr_create_default_is_minimal_with_headers() {
-    let app = app("hdr_ehr_create_min").await;
+    let (_pg, app) = app("hdr_ehr_create_min").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr"))
@@ -185,7 +186,7 @@ async fn ehr_create_default_is_minimal_with_headers() {
 
 #[tokio::test]
 async fn ehr_create_representation_returns_body() {
-    let app = app("hdr_ehr_create_repr").await;
+    let (_pg, app) = app("hdr_ehr_create_repr").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr"))
@@ -205,7 +206,7 @@ async fn ehr_create_representation_returns_body() {
 
 #[tokio::test]
 async fn ehr_status_update_default_is_204_with_headers() {
-    let app = app("hdr_status_update_min").await;
+    let (_pg, app) = app("hdr_status_update_min").await;
     let ehr_id = create_ehr(&app).await;
     let (mut status_body, current) = current_ehr_status(&app, &ehr_id).await;
     // Re-commit the current status (a new version) — strip the uid the server owns.
@@ -234,7 +235,7 @@ async fn ehr_status_update_default_is_204_with_headers() {
 
 #[tokio::test]
 async fn ehr_status_update_representation_is_200_with_body() {
-    let app = app("hdr_status_update_repr").await;
+    let (_pg, app) = app("hdr_status_update_repr").await;
     let ehr_id = create_ehr(&app).await;
     let (mut status_body, current) = current_ehr_status(&app, &ehr_id).await;
     status_body.as_object_mut().unwrap().remove("uid");
@@ -261,7 +262,7 @@ async fn ehr_status_update_representation_is_200_with_body() {
 
 #[tokio::test]
 async fn composition_get_sets_etag_and_location() {
-    let app = app("hdr_comp_get").await;
+    let (_pg, app) = app("hdr_comp_get").await;
     let ehr_id = create_ehr(&app).await;
     upload_opt(&app).await;
     let ovid = commit_composition(&app, &ehr_id).await;
@@ -291,7 +292,7 @@ async fn versioned_ehr_status_version_at_time_sets_version_headers() {
     // 200_VERSION_of_EHR_STATUS_at_time declares ETag_VERSION (the version_uid)
     // plus a `Location_deprecated` header — the deprecated Location is no longer
     // emitted (overview §"Deprecated headers").
-    let app = app("hdr_versioned_status").await;
+    let (_pg, app) = app("hdr_versioned_status").await;
     let ehr_id = create_ehr(&app).await;
     let (_body, current) = current_ehr_status(&app, &ehr_id).await;
 
@@ -315,7 +316,7 @@ async fn versioned_ehr_status_version_at_time_sets_version_headers() {
 
 #[tokio::test]
 async fn composition_delete_is_204_with_headers() {
-    let app = app("hdr_comp_delete").await;
+    let (_pg, app) = app("hdr_comp_delete").await;
     let ehr_id = create_ehr(&app).await;
     upload_opt(&app).await;
     let ovid = commit_composition(&app, &ehr_id).await;

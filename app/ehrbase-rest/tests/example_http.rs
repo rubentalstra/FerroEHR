@@ -70,7 +70,8 @@ fn config() -> AppConfig {
 
 /// A router over a fresh real service with the Demo Vitals OPT already uploaded.
 async fn app_with_template(db: &str) -> Router {
-    let app = common::router_with(config(), common::test_service(db).await);
+    let (_pg, service) = common::test_service(db).await;
+    let app = common::router_with(config(), service);
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/definition/template/adl1.4"))
