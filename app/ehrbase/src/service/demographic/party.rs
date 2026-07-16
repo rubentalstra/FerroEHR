@@ -165,7 +165,7 @@ impl EhrbaseService {
     /// seam (`super::api`) resolves for `If-Match` and calls `commit_party_update`
     /// directly, threading its handle so the target is resolved only once across
     /// the request. `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(crate) async fn commit_party_version(
+    pub(crate) async fn update_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -177,7 +177,7 @@ impl EhrbaseService {
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_update(current, body, expected).await
+        self.commit_party_update(current, body, expected, update).await
     }
 
     /// Commit a new version of an already-resolved party. `current` is the lean
@@ -251,7 +251,7 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
     /// `409`; when `None`, the current version is deleted unconditionally (SM
     /// `delete_party` has no version argument). An already-deleted target → `400`.
-    pub(crate) async fn commit_party_delete(
+    pub(crate) async fn delete_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -262,7 +262,7 @@ impl EhrbaseService {
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_delete(current, expected).await
+        self.commit_party_delete(current, expected, update).await
     }
 
     /// Commit the logical delete of an already-resolved party (see
@@ -272,6 +272,7 @@ impl EhrbaseService {
         &self,
         current: CurrentParty,
         expected: Option<TreeId>,
+        update: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::BadRequest(format!(
