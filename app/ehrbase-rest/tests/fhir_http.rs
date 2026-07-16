@@ -148,21 +148,13 @@ fn mapping(name: &str) -> Value {
 async fn disabled_connector_is_404_operation_outcome() {
     // Mapping CRUD off.
     let (_pg, a) = app("fhir_disabled_map", false).await;
-    let (status, _, body) = send(
-        a,
-        req("GET", MAPPINGS, None),
-    )
-    .await;
+    let (status, _, body) = send(a, req("GET", MAPPINGS, None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_operation_outcome(&body, "not-supported");
     // Inbound off.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/x" } });
     let (_pg, a) = app("fhir_disabled_in", false).await;
-    let (status, _, body) = send(
-        a,
-        req("POST", INGEST_OBS, Some(obs)),
-    )
-    .await;
+    let (status, _, body) = send(a, req("POST", INGEST_OBS, Some(obs))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_operation_outcome(&body, "not-supported");
 }
@@ -174,11 +166,7 @@ async fn unknown_resource_type_is_501_before_backend() {
     let uri = format!("{BASE}/fhir/r4/MedicationRequest");
     let body = json!({ "resourceType": "MedicationRequest" });
     let (_pg, a) = app("fhir_unknown_type", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("POST", &uri, Some(body)),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("POST", &uri, Some(body))).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
     assert_operation_outcome(&oo, "not-supported");
 }
@@ -210,11 +198,7 @@ async fn search_returns_empty_searchset_on_empty_db() {
 async fn search_missing_patient_is_400() {
     // No patient param → 400 (explicit scope only; never generic Search).
     let (_pg, a) = app("fhir_search_no_patient", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("GET", INGEST_OBS, None),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("GET", INGEST_OBS, None)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_operation_outcome(&oo, "required");
 }
@@ -223,11 +207,7 @@ async fn search_missing_patient_is_400() {
 async fn search_unknown_type_is_501() {
     let uri = format!("{BASE}/fhir/r4/MedicationRequest?patient=p-1");
     let (_pg, a) = app("fhir_search_unknown", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("GET", &uri, None),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("GET", &uri, None)).await;
     assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
     assert_operation_outcome(&oo, "not-supported");
 }
@@ -236,11 +216,7 @@ async fn search_unknown_type_is_501() {
 async fn search_disabled_is_404() {
     let uri = format!("{INGEST_OBS}?patient=p-1");
     let (_pg, a) = app("fhir_search_disabled", false).await;
-    let (status, _, oo) = send(
-        a,
-        req("GET", &uri, None),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("GET", &uri, None)).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_operation_outcome(&oo, "not-supported");
 }
@@ -252,11 +228,7 @@ async fn ingest_no_mapping_is_404() {
     // type with no mapping). Was Mock-scripted per resource type.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/p" } });
     let (_pg, a) = app("fhir_ingest_no_map", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("POST", INGEST_OBS, Some(obs)),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("POST", INGEST_OBS, Some(obs))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_operation_outcome(&oo, "not-found");
 }
@@ -268,11 +240,7 @@ async fn ingest_condition_no_mapping_is_404() {
     let uri = format!("{BASE}/fhir/r4/Condition");
     let body = json!({ "resourceType": "Condition", "subject": { "reference": "Patient/p" } });
     let (_pg, a) = app("fhir_ingest_condition", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("POST", &uri, Some(body)),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("POST", &uri, Some(body))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_operation_outcome(&oo, "not-found");
 }
@@ -291,11 +259,7 @@ async fn ingest_success_is_201_with_location() {
         "component": [ { "valueQuantity": { "value": 120, "unit": "mm[Hg]" } } ]
     });
     let (_pg, a) = app("fhir_ingest_ok", true).await;
-    let (status, location, body) = send(
-        a,
-        req("POST", INGEST_OBS, Some(obs)),
-    )
-    .await;
+    let (status, location, body) = send(a, req("POST", INGEST_OBS, Some(obs))).await;
     assert_eq!(status, StatusCode::CREATED);
     let loc = location.expect("Location header present");
     assert!(
@@ -316,11 +280,7 @@ async fn ingest_validation_rejection_is_422_with_validator_message() {
         "subject": { "reference": "Patient/invalid" }
     });
     let (_pg, a) = app("fhir_ingest_422", true).await;
-    let (status, _, body) = send(
-        a,
-        req("POST", INGEST_OBS, Some(obs)),
-    )
-    .await;
+    let (status, _, body) = send(a, req("POST", INGEST_OBS, Some(obs))).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert_operation_outcome(&body, "invalid");
     assert!(
@@ -379,11 +339,7 @@ async fn mapping_duplicate_name_is_409() {
 #[tokio::test]
 async fn mapping_malformed_id_is_400() {
     let (_pg, a) = app("fhir_map_malformed", true).await;
-    let (status, _, oo) = send(
-        a,
-        req("GET", &format!("{MAPPINGS}/not-a-uuid"), None),
-    )
-    .await;
+    let (status, _, oo) = send(a, req("GET", &format!("{MAPPINGS}/not-a-uuid"), None)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_operation_outcome(&oo, "invalid");
 }
@@ -393,11 +349,7 @@ async fn mapping_list_enabled_is_200() {
     // Re-targeted from the old `unhooked → 501`: the mapping store is real, so an
     // enabled group lists (200), never the trait-default 501.
     let (_pg, a) = app("fhir_map_list", true).await;
-    let (status, _, list) = send(
-        a,
-        req("GET", MAPPINGS, None),
-    )
-    .await;
+    let (status, _, list) = send(a, req("GET", MAPPINGS, None)).await;
     assert_eq!(status, StatusCode::OK);
     assert!(list.is_array());
 }
