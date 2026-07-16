@@ -439,7 +439,9 @@ impl ServiceError {
             S::VersionMismatch => ServiceError::VersionConflict(m),
             S::EhrCreateFailDuplicateId
             | S::CompositionAlreadyExists
-            | S::EhrForSubjectAlreadyExists => ServiceError::Conflict(m),
+            | S::EhrForSubjectAlreadyExists
+            // A storage-classified generic conflict (W-14 F-13) is also a `409`.
+            | S::Conflict => ServiceError::Conflict(m),
             S::CompositionArchetypeInvalid
             | S::InvalidArchetype
             | S::InvalidTemplate
@@ -450,7 +452,13 @@ impl ServiceError {
             // No service-side `ServiceError::NotImplemented`; a not-implemented
             // status surfaces as a server fault (the service implements every
             // catalog call, so this row is unreachable in practice).
-            S::NotImplemented => ServiceError::Internal(m),
+            //
+            // `ServiceOverloaded` (W-14 F-13) originates only at the storage
+            // bridge and flows *up* to the wire as an `SmError` (→ `503`); it
+            // never round-trips back into a `ServiceError`. `ServiceError` has
+            // no overload variant, so this defensive (unreachable) reverse
+            // mapping degrades to a server fault.
+            S::NotImplemented | S::ServiceOverloaded => ServiceError::Internal(m),
         }
     }
 }
@@ -504,8 +512,12 @@ impl From<ServiceError> for ehrbase_sm::SmError {
                 SmError::new(S::ContentInvalid, joined)
             }
             ServiceError::BadRequest(m) => SmError::new(S::PreconditionViolation, m),
-            ServiceError::Storage(e) => SmError::new(S::Exception, e.to_string()),
-            ServiceError::Database(e) => SmError::new(S::Exception, e.to_string()),
+            ServiceError::Storage(e) => SmError::from(e),
+            // A raw `sqlx` error carries SQLSTATE/constraint detail: classify it
+            // (integrity/serialization conflict → 409, pool exhaustion → 503)
+            // instead of collapsing every database error to a blanket 500
+            // (W-14 F-13). The classifier emits the structured trace.
+            ServiceError::Database(e) => crate::storage::classify_sqlx(&e),
             ServiceError::Json(e) => SmError::new(S::Exception, e.to_string()),
             ServiceError::Signing(m) | ServiceError::Internal(m) => SmError::new(S::Exception, m),
         }
@@ -521,14 +533,36 @@ impl From<ServiceError> for ApiError {
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
             ServiceError::Unprocessable(m) => ApiError::Unprocessable(m),
             ServiceError::ValidationFailed(v) => ApiError::ValidationFailed(v),
-            // Storage/DB/JSON failures are our fault, not the client's.
-            ServiceError::Storage(e) => ApiError::Internal(e.to_string()),
-            ServiceError::Database(e) => ApiError::Internal(e.to_string()),
+            // Storage/DB failures carry SQLSTATE/constraint detail: classify
+            // them (integrity/serialization conflict → 409, pool exhaustion →
+            // 503) rather than blanket-500 (W-14 F-13). A genuine fault stays
+            // 500. This path is secondary to the SM `SmError` bridge, but must
+            // stay consistent with it.
+            ServiceError::Storage(e) => sqlx_conflict_api_error(ehrbase_sm::SmError::from(e)),
+            ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::classify_sqlx(&e)),
+            // A JSON (de)serialization failure at the service boundary is a
+            // malformed client payload → 400.
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
             // Signing/integrity failures and generic faults are server-side
             // (5xx).
             ServiceError::Signing(m) | ServiceError::Internal(m) => ApiError::Internal(m),
         }
+    }
+}
+
+/// Map a storage-classified [`SmError`](ehrbase_sm::SmError) (from
+/// [`crate::storage::classify_sqlx`]) to the ITS-REST [`ApiError`] on the
+/// direct `ServiceError → ApiError` path. Only the storage-classified statuses
+/// occur here — a database conflict (`409`), pool exhaustion (`503`), or a
+/// genuine fault (`500`) — mirroring the `sm_api_error` rows the SM bridge uses
+/// (`ehrbase-rest::overview::error`). The `503` is our own overload contract
+/// (no openEHR spec governs overload; RFC 9110 §15.6.4 is the HTTP authority).
+fn sqlx_conflict_api_error(sm: ehrbase_sm::SmError) -> ApiError {
+    use ehrbase_sm::CallStatusType as S;
+    match sm.status {
+        S::Conflict | S::EhrForSubjectAlreadyExists => ApiError::Conflict(sm.message),
+        S::ServiceOverloaded => ApiError::ServiceUnavailable(sm.message),
+        _ => ApiError::Internal(sm.message),
     }
 }
 

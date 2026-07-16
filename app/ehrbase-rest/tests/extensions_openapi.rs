@@ -172,6 +172,32 @@ async fn every_family_document_is_non_empty() {
     }
 }
 
+// ── Test 4: the once-built served document equals a fresh extensions_document ─
+
+/// F-31: the `OpenAPI` document is built once at router assembly and served as
+/// pre-serialized bytes. The served bytes must be byte-for-byte the same
+/// document `extensions_document(cfg)` produces fresh — the optimization is a
+/// pure serving-mechanics change, no content change.
+#[tokio::test]
+async fn served_openapi_json_equals_fresh_document() {
+    let app = full_app();
+    let resp = app
+        .clone()
+        .oneshot(get("/ehrbase/rest/api-docs/openapi.json"))
+        .await
+        .expect("openapi.json response");
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    let served: Value = serde_json::from_slice(&bytes).expect("served openapi json");
+
+    let fresh = serde_json::to_value(extensions_document::<Mock>(&app_config()))
+        .expect("fresh extensions_document");
+    assert_eq!(
+        served, fresh,
+        "the once-built served OpenAPI document must equal a fresh extensions_document(cfg)"
+    );
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 fn is_method(key: &str) -> bool {

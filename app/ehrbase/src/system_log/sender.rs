@@ -33,6 +33,11 @@ pub type SubjectResolver =
 pub const METRIC_EMITTED: &str = "atna_audit_emitted_total";
 /// Records dropped because the queue was full or the drain stopped.
 pub const METRIC_DROPPED: &str = "atna_audit_dropped_total";
+/// Records dropped in the drain because the ATNA message failed to serialize to
+/// XML. SM master02 §Component table names the System Log as an "IHE
+/// ATNA-compliant system log"; silent audit loss would undermine that, so every
+/// serialize-drop is metered (W-14 F-20).
+pub const METRIC_SERIALIZE_FAILED: &str = "atna_audit_serialize_failed_total";
 /// Records successfully written to the transport.
 pub const METRIC_SENT: &str = "atna_audit_sent_total";
 /// Transport send failures (post-enqueue).
@@ -162,6 +167,10 @@ async fn drain(
         let xml = match message.to_xml() {
             Ok(xml) => xml,
             Err(e) => {
+                // SM master02 §Component table ("IHE ATNA-compliant system
+                // log"): a dropped audit record must never be silent — meter it
+                // (W-14 F-20).
+                metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
                 tracing::warn!("ATNA audit message serialization failed: {e}");
                 continue;
             }

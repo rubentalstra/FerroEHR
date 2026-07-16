@@ -76,7 +76,7 @@ impl EhrbaseService {
         if_match: &str,
     ) -> Result<ServiceResponse, ServiceError> {
         super::validate_ehr_status(&body)?;
-        let expected = expected_from_if_match(if_match);
+        let expected = expected_from_if_match(if_match)?;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");

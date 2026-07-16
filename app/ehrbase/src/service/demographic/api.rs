@@ -262,7 +262,7 @@ impl DemographicService for EhrbaseService {
         let current = self.party_current(kind, vo_id).await?;
         let meta = current.as_ref().map(CurrentParty::resource_meta);
         ensure_full_ovid_if_match(Some(&if_match), meta.as_ref())?;
-        let expected = expected_from_if_match(&if_match);
+        let expected = expected_from_if_match(&if_match)?;
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
         Ok(self.commit_party_update(current, body, expected).await?)
@@ -285,10 +285,12 @@ impl DemographicService for EhrbaseService {
         let current = self.party_current(kind, vo_id).await?;
         let meta = current.as_ref().map(CurrentParty::resource_meta);
         ensure_full_ovid_if_match(if_match.as_deref(), meta.as_ref())?;
-        let expected = if_match
-            .as_deref()
-            .and_then(expected_from_if_match)
-            .or(path_version);
+        // A malformed `If-Match` is rejected, not silently ignored (W-14 F-12);
+        // an absent header falls back to the path OVID's version.
+        let expected = match if_match.as_deref() {
+            Some(raw) => expected_from_if_match(raw)?.or(path_version),
+            None => path_version,
+        };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
         Ok(self.commit_party_delete(current, expected).await?)
@@ -542,7 +544,7 @@ impl PartyRelationshipService for EhrbaseService {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
         let current = self.relationship_current_meta(vo_id).await?;
         ensure_full_ovid_if_match(Some(&if_match), current.as_ref())?;
-        let expected = expected_from_if_match(&if_match);
+        let expected = expected_from_if_match(&if_match)?;
         Ok(self.update_relationship(vo_id, body, expected).await?)
     }
 
@@ -559,10 +561,12 @@ impl PartyRelationshipService for EhrbaseService {
         let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
         let current = self.relationship_current_meta(vo_id).await?;
         ensure_full_ovid_if_match(if_match.as_deref(), current.as_ref())?;
-        let expected = if_match
-            .as_deref()
-            .and_then(expected_from_if_match)
-            .or(path_version);
+        // A malformed `If-Match` is rejected, not silently ignored (W-14 F-12);
+        // an absent header falls back to the path OVID's version.
+        let expected = match if_match.as_deref() {
+            Some(raw) => expected_from_if_match(raw)?.or(path_version),
+            None => path_version,
+        };
         Ok(self.delete_relationship(vo_id, expected).await?)
     }
 

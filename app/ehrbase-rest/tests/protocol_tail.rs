@@ -161,6 +161,42 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
+#[tokio::test]
+async fn malformed_if_match_on_ehr_status_update_is_rejected() {
+    // The required-If-Match ehr_status update rejects a malformed precondition
+    // (400) before the backend, never treating it as no-precondition (W-14 F-12).
+    let hooks = Hooks {
+        replace_ehr_status: Some(Arc::new(|_e, _uv| {
+            panic!("backend reached despite malformed If-Match");
+        })),
+        ..Default::default()
+    };
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{EHR_ID}/ehr_status"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, "\"garbage\"")
+        .body(Body::from(r#"{"_type":"EHR_STATUS"}"#))
+        .unwrap();
+    let (status, _h, _body) = send(app(hooks), req).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn malformed_if_match_on_directory_update_is_rejected() {
+    // The required-If-Match directory update rejects a malformed precondition
+    // (400) at the wire, never a silent bypass (W-14 F-12).
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{EHR_ID}/directory"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, "\"a::b::c::3\"")
+        .body(Body::from(r#"{"_type":"FOLDER","name":{"value":"root"}}"#))
+        .unwrap();
+    let (status, _h, _body) = send(app(Hooks::default()), req).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
 // ── VERSION-family canonical XML (F-05-06 / ECC-COM-022, ECC-SIG-001) ────────
 
 #[tokio::test]

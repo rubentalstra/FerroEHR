@@ -82,9 +82,12 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::SubjectIdDoesNotExist
         | S::VersionedCompositionDoesNotExist => ApiError::NotFound(message),
         S::VersionMismatch => ApiError::PreconditionFailed(message),
+        // The specific conflicts plus the storage-classified generic conflict
+        // (integrity/serialization; W-14 F-13) all map to `409`.
         S::EhrCreateFailDuplicateId
         | S::CompositionAlreadyExists
-        | S::EhrForSubjectAlreadyExists => ApiError::Conflict(message),
+        | S::EhrForSubjectAlreadyExists
+        | S::Conflict => ApiError::Conflict(message),
         S::CompositionArchetypeInvalid
         | S::InvalidArchetype
         | S::InvalidTemplate
@@ -93,6 +96,10 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::DefinitionUnknown
         | S::ContentInvalid => ApiError::Unprocessable(message),
         S::NotImplemented => ApiError::NotImplemented,
+        // Backend resource exhaustion (pool acquire timeout; our W-12 overload
+        // contract, spec-silent — RFC 9110 §15.6.4 is the HTTP authority) → 503.
+        // `RestError::into_response` adds the `Retry-After` hint for any 503.
+        S::ServiceOverloaded => ApiError::ServiceUnavailable(message),
         // `success` is not an error; mapping it is defensively a 500.
         S::Success | S::FileNotWritable | S::Exception => ApiError::Internal(message),
     }
@@ -192,6 +199,14 @@ impl IntoResponse for RestError {
             header::CONTENT_TYPE,
             HeaderValue::from_static("application/json"),
         );
+        // Every `503 Service Unavailable` carries a `Retry-After` hint: the
+        // condition is transient by definition (RFC 9110 §15.6.4). This covers
+        // both the overload-shed path and a storage-classified pool-exhaustion
+        // `503` (W-14 F-13); no openEHR spec governs overload — our own design.
+        if status == StatusCode::SERVICE_UNAVAILABLE {
+            resp.headers_mut()
+                .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
+        }
         resp
     }
 }
@@ -280,5 +295,32 @@ mod tests {
         // A genuine server fault (no timeout tag) still maps to 500.
         let (status, _body) = body_json(ApiError::Internal("boom".to_owned())).await;
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn service_overloaded_maps_to_503_with_retry_after() {
+        // W-14 F-13: a storage-classified pool exhaustion (`ServiceOverloaded`)
+        // surfaces as 503 + Retry-After (our overload contract; RFC 9110
+        // §15.6.4).
+        use ehrbase_sm::{CallStatusType, SmError};
+        let sm = SmError::new(CallStatusType::ServiceOverloaded, "overloaded");
+        let resp = RestError::from(sm).into_response();
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(
+            resp.headers()
+                .get(http::header::RETRY_AFTER)
+                .and_then(|v| v.to_str().ok()),
+            Some("1")
+        );
+    }
+
+    #[tokio::test]
+    async fn storage_conflict_maps_to_409() {
+        // W-14 F-13: a storage-classified integrity/serialization conflict
+        // (`Conflict`) surfaces as 409 (ITS-REST overview §HTTP status codes).
+        use ehrbase_sm::{CallStatusType, SmError};
+        let sm = SmError::new(CallStatusType::Conflict, "duplicate key");
+        let resp = RestError::from(sm).into_response();
+        assert_eq!(resp.status(), StatusCode::CONFLICT);
     }
 }
