@@ -29,8 +29,8 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::extensions::TenantContext;
-use crate::service::SmError;
+use crate::extensions::tenant_context::TenantContext;
+use crate::service::status::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 

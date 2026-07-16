@@ -21,7 +21,7 @@ use std::time::Duration;
 use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
 
-use super::config::OidcConfig;
+use ehrbase::config::auth::OidcConfig;
 use super::{AuthError, AuthMethod, Principal};
 
 /// A configured bearer-token validator.
@@ -247,7 +247,7 @@ mod tests {
                 issuer: ISSUER.to_owned(),
                 audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase::config::Secret::new(SECRET.to_owned())),
+                hmac_secret: Some(ehrbase::config::secret::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             },

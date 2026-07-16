@@ -36,7 +36,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::service::SubjectRef;
+use crate::service::ehr_index::types::SubjectRef;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 

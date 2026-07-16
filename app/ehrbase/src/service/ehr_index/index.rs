@@ -3,7 +3,7 @@
 //! domain's own design — register §5; no openEHR spec governs the storage,
 //! master07 governs the operation semantics + error names).
 
-use crate::service::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
+use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;

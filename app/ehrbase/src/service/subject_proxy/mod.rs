@@ -35,17 +35,12 @@ use async_trait::async_trait;
 use serde_json::Value;
 use sqlx::PgPool;
 
-use crate::service::{
-    DataFrameSample,
-    DataSetResult,
-    EnvBinding,
-    Sample,
-    SmError,
-    SubjectDataSet,
-    SubjectVariable,
-    VariableSample,
-    VariableValue,
-};
+use crate::service::subject_proxy::sample::{DataFrameSample, Sample, VariableSample};
+use crate::service::subject_proxy::data_set::{DataSetResult, SubjectDataSet};
+use crate::service::subject_proxy::binding::EnvBinding;
+use crate::service::status::SmError;
+use crate::service::subject_proxy::variable::SubjectVariable;
+use crate::service::subject_proxy::value::VariableValue;
 
 use super::EhrbaseService;
 use store::db_err;
@@ -461,7 +456,7 @@ impl EhrbaseService {
     pub async fn add_binding_frame(
         &self,
         env_id: String,
-        frame: crate::service::DataFrame,
+        frame: crate::service::subject_proxy::binding::DataFrame,
     ) -> Result<(), SmError> {
         // __Pre_valid_binding__: has_binding(env_id).
         if !self.sp_has_binding(&env_id).await? {

@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::Kind;

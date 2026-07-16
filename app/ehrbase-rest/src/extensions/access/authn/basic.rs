@@ -10,7 +10,7 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use http::HeaderValue;
 
-use super::config::BasicConfig;
+use ehrbase::config::auth::BasicConfig;
 use super::{AuthError, AuthMethod, Principal};
 
 /// Verify a `Basic <base64>` credential against the configured user store.
@@ -109,7 +109,7 @@ mod tests {
         BasicConfig {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
-                password_hash: ehrbase::config::Secret::new(hash("s3cret")),
+                password_hash: ehrbase::config::secret::Secret::new(hash("s3cret")),
                 roles: vec!["user".to_owned()],
             }],
         }
@@ -167,7 +167,7 @@ mod tests {
         let cfg = BasicConfig {
             users: vec![BasicUser {
                 username: "root".to_owned(),
-                password_hash: ehrbase::config::Secret::new(hash("s3cret")),
+                password_hash: ehrbase::config::secret::Secret::new(hash("s3cret")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         };

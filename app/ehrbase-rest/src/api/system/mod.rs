@@ -17,4 +17,4 @@
 
 pub mod options;
 
-pub use options::{SPEC_ENDPOINTS, SystemManifest, SystemOptionsConfig, route};
+pub use options::{SPEC_ENDPOINTS, SystemManifest, route};

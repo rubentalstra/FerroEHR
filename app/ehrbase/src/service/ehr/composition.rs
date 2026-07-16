@@ -9,7 +9,9 @@
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 
-use crate::service::{ResourceMeta, ServiceResponse, SmError, UpdateVersion};
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::SmError;
+use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;

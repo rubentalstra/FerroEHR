@@ -9,13 +9,14 @@
 //! G-8/G-9: every domain failure crosses this seam as [`super::IndexError`],
 //! whose `From<IndexError> for SmError` maps `ehr_id_does_not_exist` /
 //! `subject_id_does_not_exist` onto their dedicated
-//! [`CallStatusType`](crate::service::CallStatusType) variants — never the generic
+//! [`CallStatusType`](crate::service::status::CallStatusType) variants — never the generic
 //! `versioned_object_does_not_exist` (`i_ehr_index.adoc §Errors`).
 
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::service::{EhrIndexEntry, LocationDesc, ResourceStatus, SmError, SubjectRef};
+use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
+use crate::service::status::SmError;
 
 use crate::service::EhrbaseService;
 

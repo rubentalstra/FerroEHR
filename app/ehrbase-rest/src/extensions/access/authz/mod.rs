@@ -38,14 +38,13 @@
 
 pub mod cedar;
 pub mod classify;
-pub mod config;
 pub mod engine;
 pub mod remote;
 pub mod request;
 pub mod roles;
 
 pub use classify::{OperationClass, access_of, class_of, kind_of};
-pub use config::{
+pub use ehrbase::config::authz::{
     AbacConfig, AbacEngineKind, AbacParam, AuthzConfig, AuthzConfigError, CedarConfig,
     ManagementAccess, PolicyRule, RbacConfig, RemoteConfig,
 };

@@ -27,7 +27,7 @@
 //! (BASE `architecture_overview/master07-security.adoc` §Integrity). That
 //! write-audit is **not** implemented here; do not duplicate it in this module.
 //!
-//! The transport-agnostic event model ([`AuditEvent`](crate::system_log::AuditEvent))
+//! The transport-agnostic event model ([`AuditEvent`](crate::system_log::event::AuditEvent))
 //! and the [`SystemLog`](crate::service::SystemLog) trait live in the SM native-API
 //! crate (`ehrbase-sm`, the empty-stub `I_SYSTEM_LOG` component); this module is
 //! the ATNA *rendering* — the DICOM `AuditMessage`, syslog framing, transports,
@@ -54,7 +54,8 @@ pub mod sender;
 pub mod syslog;
 
 pub mod event;
-pub use event::*;
+
+use event::{AuditEvent, EmitOutcome};
 
 pub use config::{AuditConfig, FailMode, Transport};
 pub use message::{AuditContext, AuditMessage};

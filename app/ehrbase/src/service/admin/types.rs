@@ -3,9 +3,9 @@
 
 use async_trait::async_trait;
 
-use crate::service::{CallStatusType, SmError};
+use crate::service::status::{CallStatusType, SmError};
 
-use crate::service::PlatformService;
+use crate::service::platform_service::PlatformService;
 
 /// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
 /// date-time bounds, each independently optional (open bounds allowed). Realizes

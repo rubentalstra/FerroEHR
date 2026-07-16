@@ -12,7 +12,7 @@
 //! SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10 storage
 //! seam — our own design).
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

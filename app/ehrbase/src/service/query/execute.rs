@@ -15,8 +15,9 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::QUERY_TIMEOUT_TAG;
-use crate::service::{AqlQueryRequest, QueryOutcome, SmError};
+use crate::service::status::QUERY_TIMEOUT_TAG;
+use crate::service::query::request::{AqlQueryRequest, QueryOutcome};
+use crate::service::status::SmError;
 use openehr_query::parser::parse_str;
 
 use super::result_set::{build_params, result_set_json, substitute_params};

@@ -16,7 +16,7 @@
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
-use ehrbase::service::DefaultAccess;
+use ehrbase::service::ehr::access_types::DefaultAccess;
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;

@@ -15,7 +15,7 @@
 //! [`SystemLog`](ehrbase::service::SystemLog) seam (`ehrbase::service::system_log`),
 //! with the DICOM/syslog rendering in the platform crate (`ehrbase::system_log`):
 //!
-//! - [`middleware`] resolves each request into an [`AuditEvent`](ehrbase::system_log::AuditEvent)
+//! - [`middleware`] resolves each request into an [`AuditEvent`](ehrbase::system_log::event::AuditEvent)
 //!   — caller identity, client network address, and DICOM outcome from the HTTP
 //!   status — and hands it to the platform emitter (non-blocking).
 //! - [`classify`] maps every operation id to its DICOM `EventActionCode` +

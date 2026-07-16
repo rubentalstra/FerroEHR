@@ -17,7 +17,7 @@
 //! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our own
 //! design).
 
-use crate::service::{ResourceMeta, ServiceResponse};
+use crate::service::response::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -244,7 +244,7 @@ impl EhrbaseService {
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
-    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self
             .composition_current_meta(an_ehr_id, a_versioned_object_uid)
             .await?)
@@ -253,14 +253,14 @@ impl EhrbaseService {
     pub async fn ehr_status_latest_meta(
         &self,
         an_ehr_id: Uuid,
-    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self.ehr_status_meta(an_ehr_id).await?)
     }
 
     pub async fn directory_latest_meta(
         &self,
         an_ehr_id: Uuid,
-    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self.directory_meta(an_ehr_id).await?)
     }
 }

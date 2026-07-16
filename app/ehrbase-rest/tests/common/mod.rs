@@ -33,24 +33,21 @@ use uuid::Uuid;
 use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
 
-use ehrbase::service::EhrAccessSettings;
+use ehrbase::service::ehr::access_types::EhrAccessSettings;
 use ehrbase::service::adapters::TemplateListFilter;
-use ehrbase::service::{
-    AdminArchive, AdminService, AqlQueryRequest, ContributionAdapter, DefinitionAdapter,
-    DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
-    EhrAccessAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
-    EhrIndexService, EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter,
-    ItemTagAdapter, LocationDesc, MultimediaAdapter, Page, PartyRelationshipService,
-    QueryDescriptor, QueryOutcome, QueryService, ResourceStatus, SystemLog, TenantAdapter,
-    TerminologyService, VersionMetaAdapter, WebTemplateService,
-};
-use ehrbase::service::{
-    AuditEvent, CallStatusType, EmitOutcome, SmError, TenantContext, TerminologyDescription,
-    TerminologyExtract,
-};
-use ehrbase::service::{
-    EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
-};
+use ehrbase::service::{AdminArchive, AdminService, ContributionAdapter, DefinitionAdapter, DefinitionAdl14Service, DefinitionAdl2Service, DefinitionQueryService, DemographicService, EhrAccessAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, EventSubscriptionAdapter, FhirConnectorAdapter, ItemTagAdapter, MultimediaAdapter, PartyRelationshipService, QueryService, SystemLog, TenantAdapter, TerminologyService, VersionMetaAdapter, WebTemplateService};
+use ehrbase::service::query::request::{AqlQueryRequest, QueryOutcome};
+use ehrbase::service::ehr_index::types::{LocationDesc, ResourceStatus};
+use ehrbase::service::list::Page;
+use ehrbase::service::definition::types::QueryDescriptor;
+use ehrbase::service::{AuditEvent, EmitOutcome, TenantContext};
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::service::terminology::types::{TerminologyDescription, TerminologyExtract};
+use ehrbase::service::ehr::handle::EhrSummary;
+use ehrbase::service::demographic::types::PartyKind;
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::ehr_index::types::SubjectRef;
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 /// A `501 Not Implemented` SM error — the un-hooked default (old `StubBackend`).
 fn not_impl() -> SmError {
@@ -634,15 +631,15 @@ impl EhrContributionService for Mock {
     async fn list_contributions(
         &self,
         _e: Uuid,
-        _tr: ehrbase::service::TimeRange,
-        _page: ehrbase::service::Page,
+        _tr: ehrbase::service::ehr::handle::TimeRange,
+        _page: ehrbase::service::list::Page,
     ) -> Result<Vec<String>, SmError> {
         Err(not_impl())
     }
     async fn contribution_count(
         &self,
         _e: Uuid,
-        _tr: ehrbase::service::TimeRange,
+        _tr: ehrbase::service::ehr::handle::TimeRange,
     ) -> Result<i64, SmError> {
         Err(not_impl())
     }

@@ -12,7 +12,9 @@
 //! via CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
 //! §Folders). Multi-hierarchy write management is owned by WORKLIST W-6.
 
-use crate::service::{ServiceResponse, SmError, UpdateVersion};
+use crate::service::response::ServiceResponse;
+use crate::service::status::SmError;
+use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;
@@ -231,7 +233,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_meta(
         &self,
         ehr_id: Uuid,
-    ) -> Result<Option<crate::service::ResourceMeta>, ServiceError> {
+    ) -> Result<Option<crate::service::response::ResourceMeta>, ServiceError> {
         Ok(self
             .directory_meta_with_vo(ehr_id)
             .await?
@@ -251,7 +253,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_meta_with_vo(
         &self,
         ehr_id: Uuid,
-    ) -> Result<Option<(Uuid, bool, crate::service::ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(Uuid, bool, crate::service::response::ResourceMeta)>, ServiceError> {
         let Some((m, is_modifiable)) =
             crate::storage::ehr_repo::directory_current_meta(&self.pool, ehr_id).await?
         else {

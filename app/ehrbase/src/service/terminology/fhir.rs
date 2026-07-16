@@ -60,10 +60,8 @@ use async_trait::async_trait;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-use crate::service::{
-    CallStatusType, DefinedTerm, SmError, TermCode, TermEntry, TermRelationship,
-    TerminologyDescription, TerminologyExtract, TerminologyRelation,
-};
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::terminology::types::{DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract, TerminologyRelation};
 
 use super::config::{FhirOperation, FhirProviderConfig};
 

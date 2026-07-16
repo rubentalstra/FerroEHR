@@ -71,15 +71,17 @@ pub(in crate::service) use meta::committer;
 pub(in crate::service) use service::default_ehr_status;
 pub(in crate::service) use status_validate::validate_ehr_status;
 
-use crate::service::{ResourceMeta, SmError, SubjectRef};
+use crate::service::response::ResourceMeta;
+use crate::service::status::SmError;
+use crate::service::ehr_index::types::SubjectRef;
 use serde_json::{Value, json};
 
 use crate::versioning::TimeRange;
 
 /// Extract the version-uid `String` a write produced from the internal
-/// [`ServiceResponse`](crate::service::ServiceResponse)'s resource metadata — the
+/// [`ServiceResponse`](crate::service::response::ServiceResponse)'s resource metadata — the
 /// value the SM `create_*`/`update_*`/`delete_*` calls return.
-fn version_uid(resp: crate::service::ServiceResponse) -> Result<String, SmError> {
+fn version_uid(resp: crate::service::response::ServiceResponse) -> Result<String, SmError> {
     resp.meta
         .map(|m| m.uid)
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
@@ -118,7 +120,7 @@ fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
 /// Parse the optional SM `Interval<Iso8601_date_time>` bounds of a contribution
 /// `time_range` into the internal [`crate::versioning::TimeRange`]; a malformed
 /// bound is a `400`-equivalent precondition failure.
-fn parse_time_range(raw: crate::service::TimeRange) -> Result<TimeRange, SmError> {
+fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeRange, SmError> {
     let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
         b.map(|s| {
             s.parse::<jiff::Timestamp>()

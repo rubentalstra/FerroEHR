@@ -13,7 +13,7 @@
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 
-use crate::system_log::AuditEvent;
+use crate::system_log::event::AuditEvent;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::{

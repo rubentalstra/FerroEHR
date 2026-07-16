@@ -10,7 +10,7 @@ use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
-use crate::extensions::provenance;
+use ehrbase::telemetry::provenance;
 use crate::state::AppState;
 
 /// `/rest/status` body — server and conformance-target versions. The

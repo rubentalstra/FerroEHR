@@ -16,7 +16,7 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Ehr, EhrStatus};
 
-use ehrbase::service::{ResourceMeta, ServiceResponse};
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
 use crate::overview::error::RestError;

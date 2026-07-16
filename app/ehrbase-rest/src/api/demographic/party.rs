@@ -17,7 +17,9 @@ use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase::service::{CallStatusType, PartyKind, ServiceResponse};
+use ehrbase::service::status::CallStatusType;
+use ehrbase::service::demographic::types::PartyKind;
+use ehrbase::service::response::ServiceResponse;
 
 /// The per-kind CRUD operations (`create`/`get`/`update`/`delete`).
 pub(super) async fn run(

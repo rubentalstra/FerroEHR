@@ -10,7 +10,7 @@
 //! configured on (this publisher OR the FHIR outbound emitter), gated in
 //! `main.rs` from `events.enabled || fhir.outbound.enabled`.
 
-use crate::config::SecretUrl;
+use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).

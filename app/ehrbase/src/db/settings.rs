@@ -6,7 +6,7 @@
 //! once at boot. The DSN is a [`SecretUrl`]: its embedded credentials are
 //! redacted from every rendering (`Debug`, `/management/env`, `config check`).
 
-use crate::config::SecretUrl;
+use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The zero-config dev DSN (matches the compose dev stack). Production MUST

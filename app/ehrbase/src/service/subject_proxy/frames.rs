@@ -25,16 +25,10 @@
 
 use async_trait::async_trait;
 
-use crate::service::AqlQueryRequest;
-use crate::service::{
-    CallStatusType,
-    DataFrame,
-    DataFrameSample,
-    FramePayload,
-    Sample,
-    SmError,
-    SystemCall,
-};
+use crate::service::query::request::AqlQueryRequest;
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
+use crate::service::subject_proxy::sample::{DataFrameSample, FramePayload, Sample};
 use serde_json::Value;
 
 use super::store::FrameRow;

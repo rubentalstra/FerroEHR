@@ -94,7 +94,7 @@ fn rest_config() -> AppConfig {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase::config::Secret::new(hash_pw("pw")),
+                    password_hash: ehrbase::config::secret::Secret::new(hash_pw("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),

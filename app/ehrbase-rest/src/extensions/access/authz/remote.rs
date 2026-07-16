@@ -16,7 +16,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use serde_json::{Map, Value};
 
-use crate::extensions::access::authz::config::{AbacConfig, AbacParam, PolicyRule};
+use ehrbase::config::authz::{AbacConfig, AbacParam, PolicyRule};
 use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
 use crate::extensions::access::authz::request::{AuthzRequest, Combination, Decision};
 

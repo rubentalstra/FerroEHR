@@ -29,7 +29,7 @@ use utoipa_axum::routes;
 use crate::config::AppConfig;
 use crate::state::AppState;
 
-use super::config::SmartConfig;
+use ehrbase::config::smart::SmartConfig;
 
 /// The `/.well-known/smart-configuration` document (master04 §Authentication
 /// Endpoints + §Services + §Capabilities). Unset optional endpoints are omitted.

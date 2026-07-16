@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use ehrbase::telemetry::log_reload::LogReload;
 
+#[derive(Debug, Serialize)]
 pub(super) struct LoggersView {
     /// The effective filter directives.
     filter: String,

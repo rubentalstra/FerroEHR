@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use config::{Config, Environment, File, FileFormat};
-use crate::config::Secret;
+use crate::config::secret::Secret;
 
 use super::EhrbaseConfig;
 use super::alias::{CONVENTIONAL, LIST_KEYS};

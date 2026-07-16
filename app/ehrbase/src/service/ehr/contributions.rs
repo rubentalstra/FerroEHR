@@ -11,7 +11,10 @@
 //! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
-use crate::service::{Page, ResourceMeta, ServiceResponse, SmError, UpdateAudit, UpdateVersion};
+use crate::service::list::Page;
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::SmError;
+use crate::service::version_update::{UpdateAudit, UpdateVersion};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -133,7 +136,7 @@ impl EhrbaseService {
     pub async fn list_contributions(
         &self,
         an_ehr_id: Uuid,
-        time_range: crate::service::TimeRange,
+        time_range: crate::service::ehr::handle::TimeRange,
         page: Page,
     ) -> Result<Vec<String>, SmError> {
         let time_range = parse_time_range(time_range)?;
@@ -146,7 +149,7 @@ impl EhrbaseService {
     pub async fn contribution_count(
         &self,
         an_ehr_id: Uuid,
-        time_range: crate::service::TimeRange,
+        time_range: crate::service::ehr::handle::TimeRange,
     ) -> Result<i64, SmError> {
         let time_range = parse_time_range(time_range)?;
         Ok(count_contributions(&self.pool, an_ehr_id, time_range).await?)

@@ -49,7 +49,7 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::{CallStatusType, SmError};
+use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 use openehr_rm::ehr_extract::common::extract::Extract;
 

@@ -52,7 +52,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::SmError;
+use crate::service::status::SmError;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;

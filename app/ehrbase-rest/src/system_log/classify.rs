@@ -32,7 +32,7 @@
 //! operation is left *unaudited* only by an **explicit** [`Classification::Unaudited`]
 //! entry — a deliberate, reviewable opt-out, not an omission.
 
-use ehrbase::service::{EventActionCode, ObjectClass};
+use ehrbase::system_log::event::{EventActionCode, ObjectClass};
 
 /// The audit classification of an ITS-REST operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

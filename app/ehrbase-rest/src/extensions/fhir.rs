@@ -50,8 +50,8 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use uuid::Uuid;
 
-use ehrbase::service::ServiceResponse;
-use ehrbase::service::SmError;
+use ehrbase::service::response::ServiceResponse;
+use ehrbase::service::status::SmError;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};

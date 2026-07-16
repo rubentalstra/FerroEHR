@@ -96,7 +96,7 @@ fn observation() -> Value {
 fn outbound_config(url: String) -> FhirOutboundConfig {
     FhirOutboundConfig {
         enabled: true,
-        url: ehrbase::config::SecretUrl::new(url),
+        url: ehrbase::config::secret::SecretUrl::new(url),
         exchange: EXCHANGE.to_owned(),
         poll_interval_ms: 50,
         publish_max_retries: 1,

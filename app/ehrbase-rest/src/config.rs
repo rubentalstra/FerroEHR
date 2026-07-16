@@ -4,8 +4,9 @@
 //! (`ehrbase::config` — one TOML, one schema); this module holds only the
 //! adapter-side assembly the router consumes.
 
-pub use ehrbase::config::{AdminConfig, ServerConfig, TenancyConfig};
-use ehrbase::config::{AuthConfig, SmartConfig};
+use ehrbase::config::server::{AdminConfig, ServerConfig, TenancyConfig};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::smart::SmartConfig;
 
 /// The REST adapter's runtime configuration view, assembled by the binary from
 /// the root [`ehrbase::config::EhrbaseConfig`]. Not a serde root — it is built

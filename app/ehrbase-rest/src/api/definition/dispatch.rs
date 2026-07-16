@@ -14,8 +14,8 @@
 
 use axum::response::{IntoResponse, Response};
 
-use ehrbase::service::Page;
-use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::list::Page;
+use ehrbase::service::definition::types::TemplateListFilter;
 
 use crate::api::{BoxResponse, RequestParts};
 use crate::overview::error::RestError;

@@ -58,20 +58,10 @@ use overview::{negotiate, params};
 
 pub use access::authn::{AuthMethod, Authenticator, Principal};
 pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
-// Shared service types come from the platform crate's `sm` module (W-14
-// B+C consolidation); re-exported here for the server's public surface.
-pub use api::system::SystemOptionsConfig;
-pub use config::{AdminConfig, AppConfig, ServerConfig, TenancyConfig};
-pub use ehrbase::service::StatTimeRange;
-pub use ehrbase::service::{
-    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
-    QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceMeta, ResourceStatus,
-    ServiceResponse, SubjectRef,
-};
+pub use config::AppConfig;
 pub use management::{ManagementConfig, Observability};
 pub use overview::error::RestError;
 pub use router::{management_router, router};
-pub use smart::config::SmartConfig;
 pub use state::AppState;
 
 /// Errors raised while starting the server.

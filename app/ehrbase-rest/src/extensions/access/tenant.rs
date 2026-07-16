@@ -54,7 +54,7 @@ pub async fn middleware(
     };
 
     match ctx {
-        Some(ctx) => ehrbase::extensions::scope(ctx, next.run(req)).await,
+        Some(ctx) => ehrbase::extensions::tenant_context::scope(ctx, next.run(req)).await,
         None => next.run(req).await,
     }
 }

@@ -57,7 +57,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase::service::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
+use ehrbase::system_log::event::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
 
 use crate::extensions::access::authn::{FreshAuthentication, Principal};
 use crate::overview::error::RestError;

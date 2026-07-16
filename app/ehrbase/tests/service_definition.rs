@@ -16,10 +16,9 @@ use testcontainers_modules::postgres::Postgres;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::adapters::TemplateListFilter;
-use ehrbase::service::{
-    CallStatusType, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
-    DefinitionQueryService, Page, SmError,
-};
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::service::{DefinitionAdapter, DefinitionAdl14Service, DefinitionAdl2Service, DefinitionQueryService};
+use ehrbase::service::list::Page;
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

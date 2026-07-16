@@ -8,9 +8,10 @@
 use serde_json::Value;
 use sqlx::Row;
 
-use crate::service::{
-    DataFrame, DataFrameSample, SmError, SubjectVariable, SystemCall, VariableSample,
-};
+use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
+use crate::service::subject_proxy::sample::{DataFrameSample, VariableSample};
+use crate::service::status::SmError;
+use crate::service::subject_proxy::variable::SubjectVariable;
 
 use crate::service::{EhrbaseService, ServiceError};
 

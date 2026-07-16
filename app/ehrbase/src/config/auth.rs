@@ -6,7 +6,7 @@
 //! loader of its own** — the whole tree is assembled once by `ehrbase::config`
 //! and this struct is deserialized as a field of it.
 //!
-//! Secrets use the shared [`ehrbase::config::Secret`] newtype (P-6): a password hash
+//! Secrets use the shared [`ehrbase::config::secret::Secret`] newtype (P-6): a password hash
 //! or HMAC secret deserializes from a plain string but never renders itself
 //! (`Debug`, `/management/env`, `ehrbase config check` all show `***`). Each
 //! secret key has a `*_file` sibling for file-based indirection
@@ -14,7 +14,7 @@
 
 use std::path::PathBuf;
 
-use crate::config::Secret;
+use crate::config::secret::Secret;
 use serde::{Deserialize, Serialize};
 
 /// Top-level authentication settings (`[auth]`).

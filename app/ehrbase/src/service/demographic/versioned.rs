@@ -19,7 +19,7 @@ use crate::versioning::{
     CommitEnv, TreeId, audit_details, object_version_id, original_version, read_current,
     read_version, version_at,
 };
-use crate::service::{ResourceMeta, ServiceResponse};
+use crate::service::response::{ResourceMeta, ServiceResponse};
 
 impl EhrbaseService {
     /// The `VERSIONED_PARTY` for a party (any of the five kinds). A non-party id

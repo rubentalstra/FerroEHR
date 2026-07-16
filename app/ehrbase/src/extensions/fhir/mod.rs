@@ -38,9 +38,11 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::CallStatusType;
-use crate::service::{AqlQueryRequest, ServiceResponse, SubjectRef};
-use crate::service::SmError;
+use crate::service::status::CallStatusType;
+use crate::service::query::request::AqlQueryRequest;
+use crate::service::response::ServiceResponse;
+use crate::service::ehr_index::types::SubjectRef;
+use crate::service::status::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::storage::version_repo;

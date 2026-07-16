@@ -47,7 +47,7 @@ fn hash_pw(pw: &str) -> String {
 fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
-        password_hash: ehrbase::config::Secret::new(hash_pw("pw")),
+        password_hash: ehrbase::config::secret::Secret::new(hash_pw("pw")),
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }
@@ -71,7 +71,7 @@ fn rest_config() -> AppConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase::config::Secret::new(HMAC_SECRET.to_owned())),
+                hmac_secret: Some(ehrbase::config::secret::Secret::new(HMAC_SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
