@@ -25,7 +25,7 @@ use openehr_base::prelude::{ObjectVersionId, Uid};
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 
 /// A decoded `VERSION_TREE_ID`: the trunk version plus, for a branch version,
 /// the `(branch_number, branch_version)` pair (both `>= 1` per BASE

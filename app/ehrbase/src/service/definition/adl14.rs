@@ -17,7 +17,8 @@ use uuid::Uuid;
 
 use crate::service::list::Page;
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 use super::{compile_pattern, page_bounds, paginate};
 

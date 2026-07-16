@@ -16,7 +16,8 @@ use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{
     Kind, TreeId, change_type, components, create, delete, original_version, parse_tree_id,
     read_current, read_version, revision_history, update, version_at, versioned_object,

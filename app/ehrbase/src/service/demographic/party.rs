@@ -14,7 +14,8 @@ use crate::service::demographic::types::PartyKind;
 use crate::service::demographic::validate::validate_party_body;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::version_update::UpdateAudit;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::{
     CommitEnv, TreeId, VersionRead, change_type, create, delete, demographic_current, object_kind,

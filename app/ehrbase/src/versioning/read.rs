@@ -12,7 +12,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle;

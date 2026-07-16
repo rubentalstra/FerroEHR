@@ -18,7 +18,8 @@ use crate::service::version_update::{UpdateAudit, UpdateVersion};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::{
     commit_version_set, count_contributions, get_contribution, list_contributions,
 };

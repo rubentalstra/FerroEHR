@@ -44,7 +44,8 @@ use uuid::Uuid;
 
 use crate::service::admin::types::{DumpLoadFailReport, ExportFormat, ExportSpec};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::storage::{decompose, node_repo, version_repo};
 
 /// Lifecycle-state code of a logically-deleted version (RM common master06

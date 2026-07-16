@@ -191,7 +191,7 @@ pub(super) async fn run(
                     }
                     Ok(resp)
                 }
-                Err(e @ ehrbase::service::ServiceError::VersionConflict(_)) => {
+                Err(e @ ehrbase::service::error::ServiceError::VersionConflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, uid.vo_id)
@@ -237,7 +237,7 @@ pub(super) async fn run(
                 }
                 // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable) →
                 // decorated with the latest version_uid.
-                Err(e @ ehrbase::service::ServiceError::Conflict(_)) => {
+                Err(e @ ehrbase::service::error::ServiceError::Conflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, vo_id)

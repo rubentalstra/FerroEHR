@@ -32,7 +32,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::service::ehr_index::types::{
     EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };

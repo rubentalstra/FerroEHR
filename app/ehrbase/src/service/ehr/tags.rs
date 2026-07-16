@@ -16,7 +16,8 @@ use crate::service::status::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::versioning::parse_uid_based_id;
 
 impl EhrbaseService {

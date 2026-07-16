@@ -14,7 +14,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::{audit_details, change_type};
 use crate::versioning::change::Committed;

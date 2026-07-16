@@ -18,7 +18,8 @@ use uuid::Uuid;
 use crate::service::demographic::types::PartyKind;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::version_update::UpdateAudit;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::storage::version_repo;
 use crate::versioning::{
     AuditInput, CommitEnv, Committed, Kind, TreeId, VersionRead, audit_details, object_version_id,

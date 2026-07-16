@@ -53,7 +53,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::versioning::signature::Signer;
 
 pub(crate) mod attestation;

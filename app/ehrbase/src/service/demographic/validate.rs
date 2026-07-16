@@ -21,7 +21,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::service::demographic::types::PartyKind;
 use crate::versioning::Kind;
 

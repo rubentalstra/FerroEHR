@@ -13,7 +13,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::service::list::Page;
 use crate::versioning::audit::{
     AuditInput, audit_details, change_type, change_type_code, validate_commit_audit,

@@ -44,7 +44,8 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::system_log::event::EventActionCode;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle;

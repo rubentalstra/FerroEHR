@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::{Kind, TreeId, VersionRead, object_version_id};
 

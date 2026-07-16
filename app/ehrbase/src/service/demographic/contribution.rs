@@ -20,7 +20,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 use crate::storage::version_repo;
 use crate::versioning::{TreeId, audit_details, commit_version_set, object_version_id};
 
