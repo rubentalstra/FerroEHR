@@ -360,13 +360,57 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 Owner hypothesis: merge `ehrbase` + `ehrbase-sm` into one crate, keep
 `ehrbase-rest` separate ("we are creating a lot of stubs and it feels janky";
 the ITS-REST↔SM interface seam must survive — ITS-REST endpoints bind to the
-SM service interfaces). Audit in flight: dependency-direction reality (does
-`ehrbase-sm` exist to break a rest↔platform cycle?), LoC + forwarding-stub
-count, who actually consumes the traits (dyn/generic/concrete; any mocks/second
-impl), build-graph impact, ADR-010/011 stated rationale vs SM-spec packaging
-(the SM spec defines service *interfaces*, not crate packaging — packaging is
-our own design). **Decision gate: owner sign-off required before any merge
-executes** — findings + options land here first.
+SM service interfaces). **Measured 2026-07-16 (probe P-5s):**
+
+**Facts:**
+1. **The merge as literally proposed cannot compile.** Dependency arrows today:
+   `ehrbase → ehrbase-rest → ehrbase-sm` (the binary lives in `ehrbase`,
+   `main.rs:314` calls `ehrbase_rest::serve_full`). Folding the traits into
+   `ehrbase` forces `ehrbase-rest → ehrbase` — a cargo cycle with the existing
+   `ehrbase → ehrbase-rest` edge (the exact rejected alternative in ADR-011).
+   A merge therefore also requires moving the composition point (a new tiny
+   bin crate, or `serve` ownership inverted) — ending at the same crate count.
+2. **The seam is light and insulating**: `ehrbase-sm` = 5,876 LoC, deps only
+   async-trait/serde/tokio/jiff/uuid + openehr-base/rm/flat — **no sqlx, no
+   AMQP, no S3, no pgp**. It keeps all of that out of `ehrbase-rest`'s build.
+   Post-merge, `ehrbase-rest` would transitively pull sqlx + sea-query + lapin
+   + object_store + pgp + the OTLP stack.
+3. **The traits are load-bearing, not stubs**: consumed via **generics**
+   (`AppState<S: Platform>`, zero `dyn`, monomorphized — **zero runtime
+   cost**); a full second `Platform` impl exists (`ehrbase-rest/tests/common/
+   mod.rs` Mock, 1,505 LoC — every `*_http.rs` router test runs DB-free on
+   it); a partial third (`FhirTerminologyProvider`). Killing the trait seam
+   kills the DB-free HTTP test harness.
+4. **The real jank measured**: 33 traits / ~225 methods, forwarding-dominated
+   trait-impl blocks, the canonical chain is 5 hops (handler → sm trait →
+   trait-impl forward → inherent service fn → versioning/storage). This is
+   **code/read overhead only — not latency** (monomorphized calls inline).
+5. **Spec check**: SM master02 explicitly says implementations "may be
+   organised quite differently" (§:23, :60, :173-179 — packages are a formal
+   reference, not product architecture). Both merge and status quo are
+   spec-conformant; the crate split is our own design (ADR-010: adapter
+   reuse, protocol purity, cycle avoidance).
+
+**Options for the owner:**
+- **A (recommended): keep the 3-crate shape; kill the jank in place.** The
+  measured overhead of the split is zero at runtime and negative at build
+  time (insulation). Shrink what actually hurts: collapse the 33-trait
+  catalog where SM chapters allow grouping, macro-/pattern-align the ~225
+  forwarding impls so each is a true one-liner (signature-align inherent fns
+  with trait fns), and prune the 6 traits outside the `Platform` bound into
+  direct calls. Less code, same seam, tests intact.
+- **B: merge + move the binary** (`ehrbase` becomes a lib with traits+impl;
+  new `ehrbase-server` bin crate on top; `ehrbase-rest → ehrbase`). Compiles,
+  but: same crate count (3), `ehrbase-rest` build inherits every heavy dep,
+  the Mock harness must re-target the merged trait set, and rest/platform
+  compile in series instead of parallel. No LoC win beyond option A's.
+- **C: drop traits for a concrete type** — rejected up front: kills the
+  DB-free Mock test harness and re-couples adapters (contradicts the SM
+  native-API-behind-adapters shape ADR-010/011 encode, and W-14's own probes
+  rely on that seam's clarity).
+
+**Decision gate: owner sign-off required — no merge executes until the owner
+picks.** Recommendation: A.
 
 ## 5. Fix waves
 
