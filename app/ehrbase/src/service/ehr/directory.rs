@@ -308,8 +308,8 @@ impl EhrbaseService {
     /// ([`crate::storage::ehr_repo::directory_current_meta`] — no node
     /// reassembly, no attestation read). The slot JOIN, the metadata-only
     /// current-version read, and the former standalone `is_modifiable`
-    /// side-SELECT are folded into a single round trip; threading the `vo_id`
-    /// + `is_modifiable` back to the caller lets the inner write skip
+    /// side-SELECT are folded into a single round trip; threading the
+    /// `vo_id` and `is_modifiable` back to the caller lets the inner write skip
     /// re-running the slot JOIN and the writability probe. `None` when the EHR
     /// indexes no directory hierarchy.
     ///

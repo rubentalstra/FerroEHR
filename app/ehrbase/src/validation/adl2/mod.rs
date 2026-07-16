@@ -247,7 +247,7 @@ fn check_mandatory_sections(sections: &Sections) -> Result<(), Adl2Violation> {
 
 /// The definition root line `TYPE[idN] matches {`: parseable (STCNT), the
 /// root RM type matches the HRID's type slot (VARDT — composite identifiers
-/// compare case-insensitively, BASE base_types master05 §Composite
+/// compare case-insensitively, BASE `base_types` master05 §Composite
 /// Identifiers and Case), and the root node id has the required
 /// `id1{.1}*` / `at0000{.1}*` form with extensions iff the artefact
 /// specialises (VARCN — AOM2 master03 VARCN; master08 Phase 1). Returns the
@@ -435,7 +435,7 @@ fn check_code_specialisation_levels(
 /// the definition must be defined (AOM2 master08 §Code Validation). A
 /// terminology-qualified code (`[snomed_ct::…]`) is an external binding
 /// (VETDF is advisory: "warn only" where the terminology is inaccessible).
-/// The C_TERMINOLOGY_CODE structural rule rides along: a constraint is a
+/// The `C_TERMINOLOGY_CODE` structural rule rides along: a constraint is a
 /// single ac-code, optionally with ONE assumed at-code (`[acN; atM]`), or a
 /// single at-code — nothing else (AOM2 master04.2 §Terminology Constraints,
 /// Formal Definition; ADL2 removed the ADL 1.4 inline at-code value list in
@@ -516,7 +516,7 @@ fn check_value_sets(
     Ok(())
 }
 
-/// VATDA: a C_TERMINOLOGY_CODE assumed at-code (`[acN; atM]`) must belong to
+/// VATDA: a `C_TERMINOLOGY_CODE` assumed at-code (`[acN; atM]`) must belong to
 /// the value set identified by the ac-code (AOM2 master03 VATDA).
 fn check_assumed_value_set_membership(
     terminology: &OdinValue,

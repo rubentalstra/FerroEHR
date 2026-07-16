@@ -57,7 +57,6 @@ pub mod ehr_access;
 pub mod pep;
 pub mod tenant;
 
-
 // The authn surface (identity + the request-scoped principal). The middleware
 // + `AuthLayer` are `pub(crate)` and installed by the router via `authn::`
 // directly, so they are not re-exported here.

@@ -1,8 +1,9 @@
 //! Contribution-outbox eventing.
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY`
-//! + `FEEDER_AUDIT`), not message brokers, topic routing, or outbound emission;
+//! integration model is archetype-to-archetype data conversion
+//! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not message brokers, topic routing,
+//! or outbound emission;
 //! master13 is informative deployment guidance and prescribes no eventing.
 //! Gate: [`EventsConfig::enabled`] (`events.enabled`, default off) — with it
 //! off the publisher is never spawned and the commit path is byte-identical

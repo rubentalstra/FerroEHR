@@ -80,9 +80,9 @@ impl std::error::Error for ConfigErrors {}
 ///
 /// # Errors
 /// [`ConfigErrors`] if an explicit path is missing/unreadable.
-pub fn discover_file(
+pub fn discover_file<S: std::hash::BuildHasher>(
     cli_config: Option<&Path>,
-    env: &HashMap<String, String>,
+    env: &HashMap<String, String, S>,
 ) -> Result<Option<PathBuf>, ConfigErrors> {
     if let Some(path) = cli_config {
         return require(path);
@@ -110,10 +110,16 @@ fn require(path: &Path) -> Result<Option<PathBuf>, ConfigErrors> {
     }
 }
 
-/// The pure assembly seam (§5.1 point 3).
-pub fn assemble(
+/// The pure assembly seam: file + env + CLI overrides folded into one
+/// validated [`EhrbaseConfig`], strictly (unknown keys rejected).
+///
+/// # Errors
+/// [`ConfigErrors`] collecting every problem found in one pass: an unreadable
+/// file, TOML parse errors, unknown/misspelled keys or env vars, type
+/// mismatches, and cross-field validation failures.
+pub fn assemble<S: std::hash::BuildHasher>(
     file: Option<&Path>,
-    env: &HashMap<String, String>,
+    env: &HashMap<String, String, S>,
     overrides: &[(String, String)],
 ) -> Result<EhrbaseConfig, ConfigErrors> {
     let mut errors = strict::strict_env(env);

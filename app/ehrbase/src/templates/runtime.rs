@@ -127,16 +127,13 @@ impl EhrbaseService {
         // WebTemplate cache maps for a commit-time unknown template, G-T08).
         let xml = self.get_template_xml(template_id).await?;
         let key = identity::canonical_key(template_id);
-        let wt = match self.web_templates.get(&key).await {
-            Some(wt) => {
-                note_cache_event("hit");
-                wt
-            }
-            None => {
-                note_cache_event("miss");
-                self.build_cached_web_template(&key, template_id, &xml)
-                    .await?
-            }
+        let wt = if let Some(wt) = self.web_templates.get(&key).await {
+            note_cache_event("hit");
+            wt
+        } else {
+            note_cache_event("miss");
+            self.build_cached_web_template(&key, template_id, &xml)
+                .await?
         };
         let mut composition = openehr_flat::example_composition(&wt, level);
         if kind == ExampleType::Output {

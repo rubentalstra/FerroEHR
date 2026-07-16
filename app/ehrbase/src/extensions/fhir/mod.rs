@@ -2,8 +2,9 @@
 //! reverse-map.
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY`
-//! + `FEEDER_AUDIT`), not FHIR resources; this connector maps directly to
+//! integration model is archetype-to-archetype data conversion
+//! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not FHIR resources; this connector
+//! maps directly to
 //! *designed* templates (mapping-as-data), a different, spec-silent mechanism.
 //! Gate: the `/fhir/r4/*` + `/admin/fhir_mapping` routes are config-gated in
 //! `ehrbase-rest`; the outbound emitter behind [`FhirOutboundConfig`].

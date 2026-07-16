@@ -1,8 +1,9 @@
 //! The ITS-REST wire-shaped DEFINITION extension methods: the rich shapes the
 //! `DEFINITION` API group returns (template summaries, the example
 //! COMPOSITION, `StoredQuery` descriptors, glob filters) that the SM
-//! `I_DEFINITION_*` interfaces do not express. All native (`serde_json::Value`
-//! + `SmError`), so this layer stays protocol-free; the route wiring is the
+//! `I_DEFINITION_*` interfaces do not express. All native
+//! (`serde_json::Value` and `SmError`), so this layer stays protocol-free;
+//! the route wiring is the
 //! ITS-REST layer's concern. The retrieval/store behaviour rides on the SM
 //! logic in the sibling interface files.
 
@@ -67,7 +68,7 @@ impl EhrbaseService {
     }
 
     /// `GET /definition/template/adl1.4/{template_id}/example` — an example
-    /// COMPOSITION built from the template's WebTemplate by the templates
+    /// COMPOSITION built from the template's `WebTemplate` by the templates
     /// layer. `kind`/`detail_level` are the dev-OAS
     /// `example_type`/`example_detail_level` enums.
     ///
