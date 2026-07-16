@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Audits for authenticated writes that carry no committal headers are now
+  attributed to the authenticated user (Basic username / token subject, with
+  the mechanism recorded as the identifier type) instead of the generic
+  system identity.
 - Multi-tenant deployments now actually run on the tenant-scoped connection
   pool: with `tenancy.enabled = true` every database connection carries the
   request's tenant for the row-level-security policies. Previously the
