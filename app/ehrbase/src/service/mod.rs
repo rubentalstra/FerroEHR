@@ -362,11 +362,6 @@ impl CommitEnv for EhrbaseService {
 /// FLAT/STRUCTURED conversion, and `wt+json` (the derived runtime artefact —
 /// the `WebTemplate` format itself is spec-silent, `crate::templates`).
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn web_template(&self, template_id: &str) -> Result<Arc<WebTemplate>, SmError> {
         Ok(self.web_template_for(template_id).await?)
     }

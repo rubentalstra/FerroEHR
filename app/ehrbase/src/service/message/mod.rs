@@ -88,20 +88,10 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn extract_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
         self.export_all_ehrs(an_ehr_id).await
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn export_ehr_extracts(
         &self,
         extract_spec: ExtractSpec,
@@ -109,11 +99,6 @@ impl EhrbaseService {
         self.export_ehr_extracts_spec(extract_spec).await
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn import_ehr(
         &self,
         an_ehr_id: Option<Uuid>,
@@ -122,11 +107,6 @@ impl EhrbaseService {
         self.import_whole_ehr(an_ehr_id, an_extract).await
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn import_ehr_extract(
         &self,
         an_ehr_id: Uuid,
@@ -137,20 +117,10 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
         self.import_one_tdd(an_ehr_id, &tdd).await
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn import_tdds(
         &self,
         an_ehr_id: Uuid,

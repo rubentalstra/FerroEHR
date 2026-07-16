@@ -264,85 +264,40 @@ fn valid_adl2_hrid(hrid: &str) -> bool {
 // ── SM Definitions native API (I_DEFINITION_ADL2) ────────────────────────────
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_artefact(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.adl2_exists(&an_id).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub fn valid_artefact(&self, adl2: &str) -> Result<bool, SmError> {
         Ok(Self::valid_adl2_source(adl2))
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         // Replace-if-exists (same HRID); invalid source → 422 invalid_artefact.
         self.adl2_upload(&adl2).await?;
         Ok(())
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_artefact(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.adl2_get(&an_id).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list(page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_archetypes_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("archetype", page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_templates_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("template", page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_opts_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("operational_template", page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn list_matching_artefacts(
         &self,
         id_pattern: String,
@@ -351,47 +306,22 @@ impl EhrbaseService {
         Ok(self.adl2_list_matching(&id_pattern, page).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_artefact(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.adl2_delete(&an_id).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn artefacts_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count().await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn archetypes_count_adl2(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("archetype").await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn templates_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("template").await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn opts_count_adl2(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("operational_template").await?)
     }

@@ -63,11 +63,6 @@ impl EhrbaseService {
 /// `EHR_ACCESS` settings through this seam. The SM defines no `I_EHR_ACCESS`
 /// interface — no openEHR spec governs this adapter, our own extension.
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn current_ehr_access_settings(
         &self,
         ehr_id: Uuid,

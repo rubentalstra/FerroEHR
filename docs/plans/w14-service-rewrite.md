@@ -105,6 +105,11 @@ findings register: `w14-audit.md` §4/§5.
       real per-method `# Errors`/docs where clippy demands, REST/test
       call-site fixes for the typed results and renamed primitives,
       `service/mod.rs` split, then full gates.
+      NOTE (2026-07-16): the strip-and-readd visibility experiment was
+      REVERTED — rustc emits no definition spans for E0624/E0616, so
+      error-driven re-adding cannot resolve private methods/fields. The
+      visibility rationalization ships in the polish wave with real tooling
+      (rust-analyzer-assisted or an unreachable-pub audit), not blind regex.
 - [ ] S6 gates: workspace clippy/nextest green, fmt, ECC **zero-drift vs
       the B+C receipt**, register re-anchor pass (`w14-audit.md`
       post-rewrite item), fresh benchmark pair at W-14 close.
