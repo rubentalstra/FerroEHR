@@ -399,68 +399,87 @@ register is fully probed; remaining ☐ E-cells ride the same receipts.
 | F-22 | CLEAN: telemetry sampler zero-DB per tick; `created_ehr_repr` pop-on-read, never consulted by normal reads — no wrong-answer path; plan cache excludes terminology expansions, param values never in the key, bounded 256; WebTemplate invalidation correct-by-construction (ADL2 is a separate store); outbox drain proper (`FOR UPDATE SKIP LOCKED` + LIMIT, at-least-once, prefix-commit); ATNA request path is `try_send`-only with counted drops + fail-open/closed policy; no background loop dies on operational error. Open sub-item: verify a partial index exists for `event_outbox(published_at IS NULL) ORDER BY seq`. | probe P-4 | n/a | note |
 | F-23 | OPT: no template warm at startup — first commit per template pays the full OPT-XML parse + WebTemplate build (single-flighted, but the XML load itself isn't de-duped across a first-commit burst); ADL2 sources re-parsed/re-validated per use (no memoization). Startup warm + ADL2 cache candidates. Startup ladder receipt: the 11.6 s cold start contains NO template work (deferred) — it is pool+migrations (2 serial migrators + btree_gist bootstrap) + telemetry/OTLP init. | `templates/runtime.rs:48-105`, `definition/adl2.rs`, `main.rs:139-314`, `migrate.rs:22-56` | **S** | ☐ |
 
-### 4d. Structural track — crate-layout overhead (owner question 2026-07-16)
+### 4d. Structural track — crate-layout overhead (owner question 2026-07-16; spec-fact-checked ADR-free 2026-07-16)
 
-Owner hypothesis: merge `ehrbase` + `ehrbase-sm` into one crate, keep
-`ehrbase-rest` separate ("we are creating a lot of stubs and it feels janky";
-the ITS-REST↔SM interface seam must survive — ITS-REST endpoints bind to the
-SM service interfaces). **Measured 2026-07-16 (probe P-5s):**
+Owner hypothesis: merge `ehrbase` + `ehrbase-sm`, keep `ehrbase-rest`.
 
-**Facts:**
-1. **The merge as literally proposed cannot compile.** Dependency arrows today:
-   `ehrbase → ehrbase-rest → ehrbase-sm` (the binary lives in `ehrbase`,
-   `main.rs:314` calls `ehrbase_rest::serve_full`). Folding the traits into
-   `ehrbase` forces `ehrbase-rest → ehrbase` — a cargo cycle with the existing
-   `ehrbase → ehrbase-rest` edge (the exact rejected alternative in ADR-011).
-   A merge therefore also requires moving the composition point (a new tiny
-   bin crate, or `serve` ownership inverted) — ending at the same crate count.
-2. **The seam is light and insulating**: `ehrbase-sm` = 5,876 LoC, deps only
-   async-trait/serde/tokio/jiff/uuid + openehr-base/rm/flat — **no sqlx, no
-   AMQP, no S3, no pgp**. It keeps all of that out of `ehrbase-rest`'s build.
-   Post-merge, `ehrbase-rest` would transitively pull sqlx + sea-query + lapin
-   + object_store + pgp + the OTLP stack.
-3. **The traits are load-bearing, not stubs**: consumed via **generics**
-   (`AppState<S: Platform>`, zero `dyn`, monomorphized — **zero runtime
-   cost**); a full second `Platform` impl exists (`ehrbase-rest/tests/common/
-   mod.rs` Mock, 1,505 LoC — every `*_http.rs` router test runs DB-free on
-   it); a partial third (`FhirTerminologyProvider`). Killing the trait seam
-   kills the DB-free HTTP test harness.
-4. **The real jank measured**: 33 traits / ~225 methods, forwarding-dominated
-   trait-impl blocks, the canonical chain is 5 hops (handler → sm trait →
-   trait-impl forward → inherent service fn → versioning/storage). This is
-   **code/read overhead only — not latency** (monomorphized calls inline).
-5. **Spec check**: SM master02 explicitly says implementations "may be
-   organised quite differently" (§:23, :60, :173-179 — packages are a formal
-   reference, not product architecture). Both merge and status quo are
-   spec-conformant; the crate split is our own design (ADR-010: adapter
-   reuse, protocol purity, cycle avoidance).
+**What the SM spec ACTUALLY requires (read first-hand from
+`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`, no ADR
+relied on):**
 
-**Options for the owner:**
-- **A (recommended): keep the 3-crate shape; kill the jank in place.** The
-  measured overhead of the split is zero at runtime and negative at build
-  time (insulation). Shrink what actually hurts: collapse the 33-trait
-  catalog where SM chapters allow grouping, macro-/pattern-align the ~225
-  forwarding impls so each is a true one-liner (signature-align inherent fns
-  with trait fns), and prune the 6 traits outside the `Platform` bound into
-  direct calls. Less code, same seam, tests intact.
-- **B: merge + move the binary** (`ehrbase` becomes a lib with traits+impl;
-  new `ehrbase-server` bin crate on top; `ehrbase-rest → ehrbase`). Compiles,
-  but: same crate count (3), `ehrbase-rest` build inherits every heavy dep,
-  the Mock harness must re-target the merged trait set, and rest/platform
-  compile in series instead of parallel. No LoC win beyond option A's.
-- **C: drop traits for a concrete type** — rejected up front: kills the
-  DB-free Mock test harness and re-couples adapters (contradicts the SM
-  native-API-behind-adapters shape ADR-010/011 encode, and W-14's own probes
-  rely on that seam's clarity).
+- §General Assumptions: the abstract interface definition exists "so as to be
+  able to state the formal interface call semantics independent of any
+  particular implementation technology" — it is a property of the
+  *specification*, not a mandate on implementation packaging. REST is one
+  "protocol adapter" in the spec's *assumed* architecture.
+- §openEHR Platform Model: "This view **does not attempt to define a real
+  product architecture** … implementers … may be organised **quite
+  differently**."
+- §Interface Calls: conformance is "formally statable and testable" **call
+  semantics** — "even if three calls in an implementation are required to
+  achieve the effect of a single call in this specification", it conforms if
+  pre/post-conditions hold and the calls are transactionally protected.
+- The spec's component table names **10 services** (Definitions, EHR,
+  Demographic, EHR Index, Query, Terminology, Message, System Log, Subject
+  Proxy, Admin).
 
-**Decision gate: owner sign-off required — no merge executes until the owner
-picks.** Recommendation: A.
+**Verdict: the SM spec imposes ZERO packaging requirements.** No crate split,
+no Rust traits, not even a compile-time seam is mandated — options A, B, and
+even C (concrete type, no traits) are ALL spec-conformant; conformance is
+proven by the ECC suite, not by code structure. The earlier claim that C
+"contradicts the SM native-API-behind-adapters shape" is **retracted** — that
+was ADR-flavoured, not spec text. The crate layout is purely our engineering
+choice.
 
-### 4i. Issue-driven (GitHub #95, filed 2026-07-15, owner-directed into W-14)
+**Measured facts (verified first-hand in the manifests/sources):**
 
-| # | Finding | Evidence | Triage | Fix |
-|---|---|---|---|---|
-| F-42 | **Issue #95: the `format` query parameter is silently ignored** (no handler parses one). Spec state: the vendored OAS selects the example representation via the `Accept` header (`Accept_LOCATABLE` enum: json / xml / wt.flat+json / wt.structured+json — `definition-codegen.openapi.yaml` `/definition/template/adl1.4/{template_id}/example`), and the ADL1.4 example endpoint ALREADY serves all four via Accept (`template_adl14.rs:146-169`); **no openEHR spec defines a `format` query param — EHRbase-Java prior-art convenience.** **OWNER RULING 2026-07-16: Accept header ONLY — no `?format=` param** (RFC 9110 §12 proactive content negotiation is the HTTP mechanism; the ITS-REST OAS follows it with `Accept_LOCATABLE`). Fix scope: (a) audit-verify every LOCATABLE-returning endpoint honours its full spec Accept enum (example endpoint: all four ✓; composition GET/write responses: flat/structured/json/xml ✓ per P-2/P-7 — sweep the remaining reads for gaps); (b) document format selection via Accept in the website book (formats page); (c) answer #95 pointing at the Accept mechanism with examples; unknown `format` param stays ignored per standard HTTP practice. ADL2 example stays the PORT-NOTEd 501 (W-4 example generator). | issue #95; `negotiate.rs:140-154`, `template_adl14.rs:130-170` | **M** — RFC 9110 §12 + `Accept_LOCATABLE` (`definition-codegen.openapi.yaml`); owner-ruled | ☐ Wave 1c |
+1. Arrows: `ehrbase-rest` → `ehrbase-sm` only (`app/ehrbase-rest/Cargo.toml:24`);
+   `ehrbase` → `ehrbase-rest` + `ehrbase-sm` (`app/ehrbase/Cargo.toml:91-92`);
+   binary composition at `main.rs:314` (`serve_full`). Folding the traits into
+   `ehrbase` therefore makes `rest → ehrbase` a **cargo cycle** unless the
+   binary moves out.
+2. `ehrbase-sm` = 5,876 LoC, zero heavy deps (no sqlx/AMQP/S3/pgp) — it is why
+   `ehrbase-rest` builds without the platform's dependency tree, and why
+   platform edits don't recompile the rest crate.
+3. Traits consumed via generics (`AppState<S: Platform>`, no dyn — zero
+   runtime cost). A full second impl exists: the DB-free `Mock`
+   (28 trait impls, 1,505 lines, `app/ehrbase-rest/tests/common/mod.rs`)
+   behind every `*_http.rs` router test.
+4. The jank = 33 traits / ~225 forwarding methods / 5-hop chains. **This jank
+   is orthogonal to crate packaging — a merge relocates it, deleting ~nothing**
+   (the traits + forwards survive B verbatim; only C deletes them).
+
+**Options, re-evaluated ADR-free (why A and not B, plainly):**
+
+- **A — keep 3 crates, consolidate the catalog (recommended).** The code
+  reduction the owner wants comes from the CATALOG, not the crate count:
+  re-shape the 33 traits to the **spec's own 10-service component table**
+  (one trait per SM service + our extension adapters explicitly flagged
+  own-design), signature-align so every forwarding impl is a one-liner, prune
+  the 6 non-`Platform` traits to direct calls. Deletes the same jank B would
+  never touch, keeps parallel builds, dep insulation, and the DB-free Mock.
+  This consolidation is MORE spec-literal than today (trait catalog mirrors
+  master02's component table).
+- **B — merge + move the binary.** Same crate count after the forced binary
+  move (`ehrbase` lib + `ehrbase-rest` + new bin). Deletes ~nothing (traits/
+  forwards relocate); costs: every platform edit now recompiles rest + bin
+  (today they build in parallel), rest's build pulls sqlx/sea-query/lapin/
+  object_store/pgp/OTLP, Mock must re-target. Net: navigation convenience
+  only, paid for with dev-loop time in a workspace where builds are already
+  the bottleneck (the target-dir rules exist for a reason).
+- **B+C — merge AND drop the traits** (rest calls `EhrbaseService` directly):
+  the maximum-deletion path (~5.9k crate + ~225 forwards + the trait
+  ceremony), and **spec-legal** (per the verdict above — corrected from the
+  earlier analysis). Real costs: the 28-impl Mock dies → every rest HTTP test
+  needs a real PG18 testcontainer (CI time multiplies across the whole
+  `tests/*_http.rs` suite), rest binds to the concrete service forever, same
+  build serialization as B. Honest, viable, expensive in test infrastructure.
+
+**Recommendation stands: A** — not because the spec says so (it doesn't care),
+but because B pays real build/test costs to delete nothing, while A deletes
+the actual jank and aligns the catalog closer to master02's component table.
+**Owner decision gate unchanged: A / B / B+C — nothing structural executes
+until the owner picks.**
 
 ## 5. Fix waves
 
