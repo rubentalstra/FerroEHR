@@ -121,7 +121,7 @@ impl EhrbaseService {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
         let resp = self
-            .create_party_response(kind, a_version.data, Some(&a_version.audit))
+            .commit_new_party(kind, a_version.data, Some(&a_version.audit))
             .await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
@@ -236,7 +236,7 @@ impl EhrbaseService {
             None => None,
         };
         let resp = self
-            .update_party_response(
+            .commit_party_version(
                 kind,
                 a_versioned_party_id,
                 a_version.data,
@@ -257,7 +257,7 @@ impl EhrbaseService {
         // version unconditionally.
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
-            .delete_party_response(kind, a_versioned_party_id, None)
+            .commit_party_delete(kind, a_versioned_party_id, None, None)
             .await?;
         Ok(version_uid(resp))
     }
@@ -273,7 +273,7 @@ impl EhrbaseService {
         kind: PartyKind,
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
-        let mut resp = self.create_party_response(kind, body, None).await?;
+        let mut resp = self.commit_new_party(kind, body, None).await?;
         // Surface the party's stored ITEM_TAGs on the response seam for the
         // `openehr-item-tag`/`openehr-version-item-tag` response headers
         // (person_create.yaml). A fresh party has none yet; the wire adapter
@@ -327,7 +327,9 @@ impl EhrbaseService {
         let expected = expected_from_if_match(&if_match)?;
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        Ok(self.commit_party_update(current, body, expected).await?)
+        Ok(self
+            .commit_party_update(current, body, expected, None)
+            .await?)
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).

@@ -29,7 +29,7 @@ use super::{ensure_if_match, parse_at_time};
 
 impl EhrbaseService {
     /// Create the EHR's directory (its root FOLDER). Conflicts if one exists.
-    pub(in crate::service) async fn create_directory_response(
+    pub(in crate::service) async fn commit_new_directory(
         &self,
         ehr_id: Uuid,
         version: crate::service::version_update::UpdateVersion,
@@ -141,7 +141,7 @@ impl EhrbaseService {
     /// Whether `version` of the directory versioned object `vo_id` exists for
     /// this EHR (`has_directory_version`). A logically deleted version still
     /// counts as existing.
-    pub(in crate::service) async fn has_directory_version_response(
+    pub(in crate::service) async fn directory_version_exists(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -161,7 +161,7 @@ impl EhrbaseService {
     /// re-run here); `is_modifiable` is the EHR's content-write flag from that
     /// same merged pre-read (so the writability probe is not re-run either);
     /// `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(in crate::service) async fn update_directory_response(
+    pub(in crate::service) async fn commit_directory_update(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -437,7 +437,7 @@ impl EhrbaseService {
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
         super::version_uid(
-            self.create_directory_response(an_ehr_id, a_dir_struct)
+            self.commit_new_directory(an_ehr_id, a_dir_struct)
                 .await?,
         )
     }
@@ -486,7 +486,7 @@ impl EhrbaseService {
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_directory_response(an_ehr_id, vo_id, a_dir_struct, expected, is_modifiable)
+            self.commit_directory_update(an_ehr_id, vo_id, a_dir_struct, expected, is_modifiable)
                 .await?,
         )
     }
@@ -544,7 +544,7 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
         Ok(self
-            .has_directory_version_response(an_ehr_id, vo_id, version)
+            .directory_version_exists(an_ehr_id, vo_id, version)
             .await?)
     }
 

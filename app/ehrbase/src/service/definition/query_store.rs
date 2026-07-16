@@ -85,7 +85,7 @@ impl EhrbaseService {
                 "query text is not a valid instance of its formalism",
             ));
         }
-        let version = self.store_query_response(&qualified, None, text).await?;
+        let version = self.store_query_version(&qualified, None, text).await?;
         self.query_descriptor(&qualified, &version).await
     }
 
@@ -112,7 +112,7 @@ impl EhrbaseService {
     }
 
     /// `list_queries` — all registered queries, as descriptors.
-    pub(super) async fn query_list_response(
+    pub(super) async fn stored_query_descriptors(
         &self,
         page: Page,
     ) -> Result<Vec<QueryDescriptor>, ServiceError> {
@@ -229,7 +229,7 @@ impl EhrbaseService {
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case, G-05-14).
-    pub(in crate::service) async fn store_query_response(
+    pub(in crate::service) async fn store_query_version(
         &self,
         qualified_name: &str,
         version: Option<&str>,
@@ -548,7 +548,7 @@ impl EhrbaseService {
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
     pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
-        Ok(self.query_list_response(page).await?)
+        Ok(self.stored_query_descriptors(page).await?)
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).

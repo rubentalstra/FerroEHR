@@ -158,7 +158,7 @@ impl EhrbaseService {
     }
 
     /// List every stored template's metadata descriptor (by `template_id`).
-    pub(crate) async fn list_templates_response(&self) -> Result<Vec<Value>, ServiceError> {
+    pub(crate) async fn template_summaries(&self) -> Result<Vec<Value>, ServiceError> {
         let rows = sqlx::query(
             "SELECT template_id, concept, root_archetype, created_at \
              FROM template_store ORDER BY template_id",

@@ -31,7 +31,7 @@ impl EhrbaseService {
     /// A duplicate subject conflicts at the database (`ehr_subject_uq`, kept in
     /// sync by [`Self::sync_ehr_subject`]) → 409 (ITS-REST `409_EHR.yaml`; CNF
     /// `create_ehr-two_ehrs_same_patient`).
-    pub(in crate::service) async fn create_ehr_response(
+    pub(in crate::service) async fn commit_new_ehr(
         &self,
         ehr_id: Uuid,
         status: Value,
@@ -385,7 +385,7 @@ impl EhrbaseService {
         // than rejecting it. Recorded, not silently guessed.
         let ehr_id = Uuid::now_v7();
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.create_ehr_response(ehr_id, status).await?;
+        self.commit_new_ehr(ehr_id, status).await?;
         Ok(ehr_id)
     }
 
@@ -401,7 +401,7 @@ impl EhrbaseService {
     ) -> Result<Uuid, SmError> {
         // G-5: see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.create_ehr_response(an_ehr_id, status).await?;
+        self.commit_new_ehr(an_ehr_id, status).await?;
         Ok(an_ehr_id)
     }
 
@@ -420,7 +420,7 @@ impl EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.create_ehr_response(ehr_id, status).await?;
+        self.commit_new_ehr(ehr_id, status).await?;
         Ok(ehr_id)
     }
 
@@ -439,7 +439,7 @@ impl EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.create_ehr_response(an_ehr_id, status).await?;
+        self.commit_new_ehr(an_ehr_id, status).await?;
         Ok(an_ehr_id)
     }
 
