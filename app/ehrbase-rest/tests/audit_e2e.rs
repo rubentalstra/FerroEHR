@@ -35,7 +35,7 @@ use ehrbase::config::server::ServerConfig;
 use ehrbase::service::EhrbaseService;
 use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
 use ehrbase::system_log::sender::{AuditSender, SubjectResolver, start};
-use crate::config::AppConfig;
+use ehrbase_rest::config::AppConfig;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};

@@ -99,7 +99,7 @@ impl EhrbaseService {
             &self.effective_system_id(),
         );
         let body = version.data;
-        super::validate_ehr_status(&body)?;
+        super::validation::validate_ehr_status(&body)?;
         let expected = expected_from_if_match(if_match)?;
 
         let mut tx = self.pool.begin().await?;

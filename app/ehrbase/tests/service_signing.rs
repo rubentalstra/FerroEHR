@@ -15,9 +15,9 @@ use std::sync::Arc;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::{CallStatusType, SmError};
-use crate::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
-use crate::versioning::signature::signer::Signer;
-use crate::versioning::signature::verify::Verdict;
+use ehrbase::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+use ehrbase::versioning::signature::signer::Signer;
+use ehrbase::versioning::signature::verify::Verdict;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};

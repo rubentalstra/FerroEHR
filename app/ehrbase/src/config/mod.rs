@@ -18,6 +18,8 @@
 
 mod alias;
 pub mod loader;
+
+use crate::config::loader::{ConfigError, ConfigErrors};
 mod strict;
 
 pub mod auth;

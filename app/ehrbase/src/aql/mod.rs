@@ -25,7 +25,7 @@ use std::collections::BTreeSet;
 
 use openehr_query::ast::SelectQuery;
 
-use error::{AqlError, AqlFeatureError};
+use error::{AnalysisError, AqlError};
 use ir::{
     ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, Params, PathTarget,
     QueryIr, SelectValue, Source, VersionScope,

@@ -12,7 +12,7 @@ use axum::Router;
 use axum::body::Body;
 use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase::config::server::ServerConfig;
-use crate::config::AppConfig;
+use ehrbase_rest::config::AppConfig;
 use ehrbase_rest::extensions::management::Observability;
 use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
 use ehrbase::telemetry::build_info::BuildInfo;

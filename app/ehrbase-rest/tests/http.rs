@@ -21,7 +21,7 @@ use tower::ServiceExt;
 
 use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
 use ehrbase::config::server::{AdminConfig, ServerConfig};
-use crate::config::AppConfig;
+use ehrbase_rest::config::AppConfig;
 
 mod common;
 

@@ -36,8 +36,8 @@ use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::query::request::AqlQueryRequest;
 use ehrbase::service::status::CallStatusType;
-use crate::service::terminology::config::{FhirOperation, FhirProviderConfig, ProviderKind};
-use crate::service::terminology::fhir::FhirTerminologyProvider;
+use ehrbase::service::terminology::config::{FhirOperation, FhirProviderConfig, ProviderKind};
+use ehrbase::service::terminology::fhir::FhirTerminologyProvider;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 

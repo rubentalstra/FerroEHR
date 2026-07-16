@@ -140,12 +140,12 @@ pub(crate) fn api_router() -> Router<AppState> {
 /// layout or the extension surfaces — our own design.
 pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .merge(ehr::routes())
-        .merge(demographic::routes())
-        .merge(demographic::relationship_routes())
-        .merge(definition::routes())
-        .merge(query::routes())
-        .merge(admin::routes())
+        .merge(ehr::openapi_routes::routes())
+        .merge(demographic::openapi_routes::routes())
+        .merge(demographic::relationship::relationship_routes())
+        .merge(definition::openapi_routes::routes())
+        .merge(query::openapi_routes::routes())
+        .merge(admin::openapi_routes::routes())
         .merge(terminology::routes())
         .merge(event_subscription::routes())
         .merge(tenant_routes::routes())

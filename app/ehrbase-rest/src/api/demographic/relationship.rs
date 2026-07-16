@@ -34,7 +34,7 @@ use ehrbase::service::response::ServiceResponse;
 /// **no ITS-REST contract** (see the module docs), realizing SM
 /// `I_PARTY_RELATIONSHIP` with our own wire. Group-relative paths (nested under
 /// `base_path`); every operation runs through [`guarded_dispatch`] with the
-/// demographic group [`dispatch`](super::dispatch), which routes relationship
+/// demographic group [`dispatch`](super::dispatch::dispatch), which routes relationship
 /// ops back into [`run`] — so the wire behaviour is identical to the former
 /// table-driven mount.
 pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
@@ -56,7 +56,7 @@ pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
 
 // ── Handlers (our own wire; no ITS-REST operation governs these) ──────────────
 // Each snapshots the request and runs it through the demographic group
-// dispatcher (`super::dispatch`), which routes relationship ops into [`run`].
+// dispatcher (`super::dispatch::dispatch`), which routes relationship ops into [`run`].
 
 /// Create a `PARTY_RELATIONSHIP` (RM canonical JSON body). 201 with the created
 /// resource; ETag/Location headers.
@@ -70,7 +70,7 @@ pub(crate) async fn party_relationship_create(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_create", parts, super::dispatch).await
+    guarded_dispatch(state, "party_relationship_create", parts, super::dispatch::dispatch).await
 }
 
 /// Read a `PARTY_RELATIONSHIP` by uid-based id. 404 when absent.
@@ -87,7 +87,7 @@ pub(crate) async fn party_relationship_get(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_get", parts, super::dispatch).await
+    guarded_dispatch(state, "party_relationship_get", parts, super::dispatch::dispatch).await
 }
 
 /// Update a `PARTY_RELATIONSHIP` (If-Match required; RM canonical JSON body).
@@ -102,7 +102,7 @@ pub(crate) async fn party_relationship_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_update", parts, super::dispatch).await
+    guarded_dispatch(state, "party_relationship_update", parts, super::dispatch::dispatch).await
 }
 
 /// Delete a `PARTY_RELATIONSHIP` (If-Match required).
@@ -116,7 +116,7 @@ pub(crate) async fn party_relationship_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_delete", parts, super::dispatch).await
+    guarded_dispatch(state, "party_relationship_delete", parts, super::dispatch::dispatch).await
 }
 
 /// Read the `VERSIONED_PARTY_RELATIONSHIP` container.
@@ -134,7 +134,7 @@ pub(crate) async fn versioned_party_relationship_get(
         state,
         "versioned_party_relationship_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -154,7 +154,7 @@ pub(crate) async fn party_relationship_revision_history(
         state,
         "party_relationship_revision_history",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -177,7 +177,7 @@ pub(crate) async fn party_relationship_version_get_at_time(
         state,
         "party_relationship_version_get_at_time",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -200,7 +200,7 @@ pub(crate) async fn party_relationship_version_get_by_id(
         state,
         "party_relationship_version_get_by_id",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }

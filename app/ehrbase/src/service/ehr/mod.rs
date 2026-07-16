@@ -56,9 +56,6 @@ pub(in crate::service) mod validation;
 pub mod access_types;
 pub mod handle;
 
-// The EHR-component surface other service modules and adapters consume.
-#[cfg(test)]
-
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
 use crate::service::status::SmError;

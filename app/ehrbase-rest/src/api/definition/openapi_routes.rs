@@ -57,7 +57,7 @@ pub(crate) async fn definition_template_adl1_4_list(
         state,
         "definition_template_adl1.4_list",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -76,7 +76,7 @@ pub(crate) async fn definition_template_adl1_4_upload(
         state,
         "definition_template_adl1.4_upload",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -99,7 +99,7 @@ pub(crate) async fn definition_template_adl1_4_get(
         state,
         "definition_template_adl1.4_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -122,7 +122,7 @@ pub(crate) async fn definition_template_adl1_4_example_get(
         state,
         "definition_template_adl1.4_example_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -141,7 +141,7 @@ pub(crate) async fn definition_template_adl2_list(
         state,
         "definition_template_adl2_list",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -160,7 +160,7 @@ pub(crate) async fn definition_template_adl2_upload(
         state,
         "definition_template_adl2_upload",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -183,7 +183,7 @@ pub(crate) async fn definition_template_adl2_get(
         state,
         "definition_template_adl2_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -206,7 +206,7 @@ pub(crate) async fn definition_template_adl2_example_get(
         state,
         "definition_template_adl2_example_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -232,7 +232,7 @@ pub(crate) async fn definition_template_adl2_version_get(
         state,
         "definition_template_adl2_version_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -251,7 +251,7 @@ pub(crate) async fn definition_query_list(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "definition_query_list", parts, super::dispatch).await
+    guarded_dispatch(state, "definition_query_list", parts, super::dispatch::dispatch).await
 }
 
 /// Store a named AQL query (auto-versioned).
@@ -265,7 +265,7 @@ pub(crate) async fn definition_query_store_yaml(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "definition_query_store.yaml", parts, super::dispatch).await
+    guarded_dispatch(state, "definition_query_store.yaml", parts, super::dispatch::dispatch).await
 }
 
 /// Retrieve a named stored query at a specific version.
@@ -289,7 +289,7 @@ pub(crate) async fn definition_query_version_get(
         state,
         "definition_query_version_get",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -312,7 +312,7 @@ pub(crate) async fn definition_query_version_store_yaml(
         state,
         "definition_query_version_store.yaml",
         parts,
-        super::dispatch,
+        super::dispatch::dispatch,
     )
     .await
 }

@@ -24,7 +24,7 @@ use std::sync::Arc;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::status::CallStatusType;
 use ehrbase::service::EhrbaseService;
-use crate::service::subject_proxy::config::{SpFhirSystem, SubjectProxyConfig};
+use ehrbase::service::subject_proxy::config::{SpFhirSystem, SubjectProxyConfig};
 
 use ehrbase::service::subject_proxy::binding::{DataFrame, EnvBinding, SystemCall, SystemCallBody};
 use ehrbase::service::subject_proxy::data_set::SubjectDataSet;

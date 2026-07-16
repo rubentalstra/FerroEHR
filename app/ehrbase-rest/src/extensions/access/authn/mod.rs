@@ -33,6 +33,8 @@
 mod basic;
 mod jwt;
 
+use ehrbase::config::auth::AuthConfig;
+
 use std::sync::Arc;
 
 use crate::extensions::access::authz::roles::RbacDecision;

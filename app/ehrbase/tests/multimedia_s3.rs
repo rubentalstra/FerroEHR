@@ -35,8 +35,8 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::multimedia::MultimediaEngine;
-use crate::extensions::multimedia::config::MultimediaConfig;
-use crate::extensions::multimedia::store::BlobStore;
+use ehrbase::extensions::multimedia::config::MultimediaConfig;
+use ehrbase::extensions::multimedia::store::BlobStore;
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::admin::types::ExportSpec;
 
