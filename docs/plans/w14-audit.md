@@ -213,16 +213,16 @@ One row per non-request execution path. Verdicts: OPT / DEFECT / CLEAN / N/A.
 
 | # | Path | Where | Trigger | Risk noted at inventory | L | E | Receipt |
 |---|---|---|---|---|---|---|---|
-| B-1 | ATNA audit drain task | `system_log/sender.rs:134` | startup spawn | request path only `try_send`, drop on full queue — is the drop counted/logged? | ☐ | ☐ | |
-| B-2 | Event outbox publisher loop | `extensions/events/publisher.rs:86,120-173` | startup + interval | drain loop hammers outbox until short batch; `sync_subscriptions` re-declares AMQP queues **every cycle** | ☐ | ☐ | |
-| B-3 | FHIR outbound emitter loop | `extensions/fhir/outbound.rs:95,143-178` | startup + interval | builds+POSTs per COMPOSITION version; network-bound; cursor advance | ☐ | ☐ | |
-| B-4 | Telemetry DB sampler | `telemetry/samplers.rs:45-50` | interval | pool/DB stat queries per tick | ☐ | ☐ | |
-| B-5 | DB migrations at startup | `main.rs:172` → `db/migrate.rs:39-53` | startup | sequential EXT then EHR on one conn — cold-start cost (11.6 s measured) | ☐ | ☐ | |
+| B-1 | ATNA audit drain task | `system_log/sender.rs:134` | startup spawn | request path only `try_send`, drop on full queue — is the drop counted/logged? | ✓ | ◐ | probed P-4 → F-20, F-22 (drops counted+metered; serialize-fail uncounted) |
+| B-2 | Event outbox publisher loop | `extensions/events/publisher.rs:86,120-173` | startup + interval | drain loop hammers outbox until short batch; `sync_subscriptions` re-declares AMQP queues **every cycle** | ◐ | ◐ | probed P-4 → F-18 (per-cycle re-declare confirmed), F-22 (drain query clean) |
+| B-3 | FHIR outbound emitter loop | `extensions/fhir/outbound.rs:95,143-178` | startup + interval | builds+POSTs per COMPOSITION version; network-bound; cursor advance | ◐ | ◐ | probed P-4 → F-19 (poison-row head-of-line block, no DLQ) |
+| B-4 | Telemetry DB sampler | `telemetry/samplers.rs:45-50` | interval | pool/DB stat queries per tick | ✓ | ✓ | CLEAN (F-22): zero DB queries per tick — in-process gauges only |
+| B-5 | DB migrations at startup | `main.rs:172` → `db/migrate.rs:39-53` | startup | sequential EXT then EHR on one conn — cold-start cost (11.6 s measured) | ◐ | ☐ | probed P-4 → F-23 (startup ladder receipted; no template work in the 11.6 s) |
 | B-6 | S3 multimedia offload (commit path) | `extensions/multimedia/offload.rs:171-175` | per-request | tree rewrite synchronous; failed upload aborts commit; `offload.rs:149` drops source error | ☐ | ☐ | |
 | B-7 | S3 blob put/get/delete | `extensions/multimedia/store.rs:111-154` | per-request | network I/O in request path | ☐ | ☐ | |
 | B-8 | Health indicator probes | `main.rs:194-201` | per probe | — | ☐ | ☐ | |
 | B-9 | Telemetry shutdown flush | `telemetry/mod.rs:215` | shutdown | spawn_blocking | ☐ | ☐ | |
-| B-10 | Template load (lazy, no warm) | `templates/store.rs`, WebTemplateCache | first request per template | cold-first-hit latency; is a startup warm worth it? | ☐ | ☐ | |
+| B-10 | Template load (lazy, no warm) | `templates/store.rs`, WebTemplateCache | first request per template | cold-first-hit latency; is a startup warm worth it? | ◐ | ☐ | probed P-4 → F-23 (no warm; ADL2 uncached) |
 
 ### 2b. Known N+1 / per-item query loops (from inventory — probe each)
 
@@ -243,11 +243,11 @@ sqlx call-site density (probe order for the L-track): `storage/version_repo.rs` 
 
 | # | Cache | Where | Note from inventory | Verdict | Receipt |
 |---|---|---|---|---|---|
-| C-1 | `created_ehr_repr` (moka, 4096, TTL 30 s) | `service/mod.rs:122` | TTL-only, no invalidate — stale-read window on status update? | ☐ | |
-| C-2 | `web_templates` (WebTemplateCache) | `service/mod.rs:64` | invalidated on template op (`adl14.rs:261`) — ADL2 ops too? | ☐ | |
+| C-1 | `created_ehr_repr` (moka, 4096, TTL 30 s) | `service/mod.rs:122` | TTL-only, no invalidate — stale-read window on status update? | ✓ CLEAN | F-22: pop-on-read, create-seam only — no wrong-answer path |
+| C-2 | `web_templates` (WebTemplateCache) | `service/mod.rs:64` | invalidated on template op (`adl14.rs:261`) — ADL2 ops too? | ✓ CLEAN | F-22: ADL2 is a separate store, nothing to evict; uploads create-only |
 | C-3 | `ehr_access` (moka, single-flight) | `service/ehr/access.rs:167` | capacity-bounded, no TTL; invalidate via CommitEnv hook | ☐ | |
-| C-4 | `plan_cache` (moka, keyed by query text) | `query/plan_cache.rs:69` | insert-only LRU; param-normalization? key = raw text | ☐ | |
-| C-5 | `tenant_cache` (RwLock\<HashMap\>) | `service/mod.rs:50` | whole-map clear on any tenant op; RwLock on hot path | ☐ | |
+| C-4 | `plan_cache` (moka, keyed by query text) | `query/plan_cache.rs:69` | insert-only LRU; param-normalization? key = raw text | ✓ CLEAN | F-22: param values never keyed, terminology excluded, bounded 256 (F-10 covers the expansion gap) |
+| C-5 | `tenant_cache` (RwLock\<HashMap\>) | `service/mod.rs:50` | whole-map clear on any tenant op; RwLock on hot path | ◐ OPT | F-21: unbounded map, herd on clear; lock never held across await (clean) |
 
 ## 3. Error-surface register
 
@@ -343,6 +343,17 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 | F-15 | Note: SM-level `AuthFailure` always → 403; no 401 route exists from the service layer (401 only from authn middleware). Matches "authenticated-but-unauthorized → 403" discipline — verify intent, then PORT-NOTE. | `overview/error.rs:71` | ☐ | ☐ |
 | F-16 | CLEAN: every other status mapping spec-correct (404/412/409/422/400/501 rows verified against `Requests_and_responses.md:218-235`); 408 for execution timeout is the SPEC'S OWN code (`:229` — 504/503 absent from the spec subset); Success/FileNotWritable/Exception→500 defensible. Unwrap sweep of the 7 worst-density files (negotiate, offload, bundle, object_version_id, contribution, authn, codec): **exactly one defect** (F-12); all other hits infallible/optional-header/server-data/test-only. | probe P-3 | n/a | note |
 | F-17 | **Instrument finding (tools/benchmark)**: error counting is asymmetric — successes are warmup-filtered, errors are counted unconditionally (`measure.rs:106-127`), slightly overstating error_rate; and "error" conflates server-side non-expected status with generator-side 2 s dependency-misses (`drive.rs:38,874-878`). Split server vs generator errors + warmup-filter both, or the W-14 close pair mis-attributes. | `tools/benchmark/src/{measure.rs,drive.rs}` | **S** (our instrument) | ☐ |
+
+### 4e. Background paths + caches (probe P-4, 2026-07-16)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-18 | OPT: outbox publisher re-declares AMQP queue+bind for EVERY enabled subscription EVERY poll cycle (~1/s): 1 DB SELECT + N broker round-trips/sec steady-state. Declare on connect/subscription-change only. E: `sync_subscriptions` failure logged at **debug** (near-silent — rows stay pending). | `events/publisher.rs:124-134,278-306`, `amqp.rs:108-133` | **S** (extension, spec-silent) | ☐ |
+| F-19 | **DEFECT: FHIR outbound has a poison-row head-of-line block** — a persistently failing row (publish or reverse-map error) blocks the cursor forever, no dead-letter, and the blocked batch is re-loaded + fully re-reassembled + re-mapped every poll cycle. Design a DLQ/skip-after-N policy. | `fhir/outbound.rs:160-172,209-272` | **S** (our extension — flag own-design) | ☐ |
+| F-20 | DEFECT (minor): ATNA XML-serialize failure drops the record with only a warn — not counted on any metric (drop-on-full and send-fail ARE counted). Add a counter; decide retry policy for transport fails (currently drop, no retry). | `system_log/sender.rs:162-176` | **M-adjacent** — SM master02 mandates ATNA-compliant logging; silent audit loss needs at least metering | ☐ |
+| F-21 | OPT (minor): tenant cache = unbounded `HashMap` + whole-map `clear()` on ANY tenant write → thundering-herd re-resolution, no single-flight. Targeted invalidation + bound. | `service/mod.rs:50`, `tenancy.rs:92,110,158,164-193` | **S** | ☐ |
+| F-22 | CLEAN: telemetry sampler zero-DB per tick; `created_ehr_repr` pop-on-read, never consulted by normal reads — no wrong-answer path; plan cache excludes terminology expansions, param values never in the key, bounded 256; WebTemplate invalidation correct-by-construction (ADL2 is a separate store); outbox drain proper (`FOR UPDATE SKIP LOCKED` + LIMIT, at-least-once, prefix-commit); ATNA request path is `try_send`-only with counted drops + fail-open/closed policy; no background loop dies on operational error. Open sub-item: verify a partial index exists for `event_outbox(published_at IS NULL) ORDER BY seq`. | probe P-4 | n/a | note |
+| F-23 | OPT: no template warm at startup — first commit per template pays the full OPT-XML parse + WebTemplate build (single-flighted, but the XML load itself isn't de-duped across a first-commit burst); ADL2 sources re-parsed/re-validated per use (no memoization). Startup warm + ADL2 cache candidates. Startup ladder receipt: the 11.6 s cold start contains NO template work (deferred) — it is pool+migrations (2 serial migrators + btree_gist bootstrap) + telemetry/OTLP init. | `templates/runtime.rs:48-105`, `definition/adl2.rs`, `main.rs:139-314`, `migrate.rs:22-56` | **S** | ☐ |
 
 ### 4d. Structural track — crate-layout overhead (owner question 2026-07-16)
 
