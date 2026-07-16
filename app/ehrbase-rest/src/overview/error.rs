@@ -25,7 +25,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode, header};
 use serde::Serialize;
 
-use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase::service::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
 use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
 
@@ -38,22 +38,6 @@ impl From<ApiError> for RestError {
         Self(e)
     }
 }
-
-/// Sentinel prefix marking an `exception` [`SmError`] as a **query-execution
-/// timeout** rather than a generic server fault — the "message-tagged" 408 seam.
-///
-/// The platform query path ([`ehrbase`'s `service::aql_query`]) aborts a query
-/// that overruns its configured execution budget and returns
-/// `SmError::exception(format!("{QUERY_TIMEOUT_TAG}{detail}"))`. The native SM
-/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout status),
-/// so the timeout is tagged in the message and recognised here at the wire,
-/// where [`RestError::into_response`] strips the prefix and renders the response
-/// as `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes,
-/// row `408` — "Request maximum execution time is reached, therefore the server
-/// aborted the request"; `responses/408_Query.yaml`). The tag is a control-char
-/// sentinel so it can never collide with a genuine error message and is never
-/// shown to clients.
-pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
 
 /// The single SM → HTTP mapping, owned by the protocol adapter (the crate split,
 /// `docs/design/sm-platform/08-target-architecture.md` §5): a native [`SmError`]
@@ -302,7 +286,7 @@ mod tests {
         // W-14 F-13: a storage-classified pool exhaustion (`ServiceOverloaded`)
         // surfaces as 503 + Retry-After (our overload contract; RFC 9110
         // §15.6.4).
-        use ehrbase_sm::{CallStatusType, SmError};
+        use ehrbase::service::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
         let sm = SmError::new(CallStatusType::ServiceOverloaded, "overloaded");
         let resp = RestError::from(sm).into_response();
         assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
@@ -318,7 +302,7 @@ mod tests {
     async fn storage_conflict_maps_to_409() {
         // W-14 F-13: a storage-classified integrity/serialization conflict
         // (`Conflict`) surfaces as 409 (ITS-REST overview §HTTP status codes).
-        use ehrbase_sm::{CallStatusType, SmError};
+        use ehrbase::service::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
         let sm = SmError::new(CallStatusType::Conflict, "duplicate key");
         let resp = RestError::from(sm).into_response();
         assert_eq!(resp.status(), StatusCode::CONFLICT);

@@ -48,8 +48,8 @@
 
 use std::sync::LazyLock;
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use ehrbase_sm::PartyKind;
+use crate::service::{ResourceMeta, ServiceResponse};
+use crate::service::PartyKind;
 use regex::Regex;
 use serde_json::Value;
 use uuid::Uuid;
@@ -515,3 +515,6 @@ mod tests {
         }
     }
 }
+
+pub mod types;
+pub use types::*;

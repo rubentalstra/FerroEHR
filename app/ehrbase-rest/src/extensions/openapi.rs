@@ -45,7 +45,6 @@ use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use bytes::Bytes;
-use ehrbase_sm::Platform;
 use utoipa::OpenApi;
 use utoipa::openapi::security::{
     Http, HttpAuthScheme, HttpBuilder, SecurityRequirement, SecurityScheme,
@@ -122,21 +121,21 @@ struct ExtensionsInfo;
 /// (a per-endpoint padlock) whenever authentication is enabled. The scheme kind
 /// (bearer JWT vs HTTP Basic) is chosen by [`advertised_scheme`].
 #[must_use]
-pub fn extensions_document<S: Platform>(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
+pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     let mut doc = ExtensionsInfo::openapi();
 
     // Public (no lock): operational status/health, SMART discovery, the OAS
     // meta-endpoints.
-    doc.merge(status::openapi::<S>());
-    doc.merge(smart_discovery::openapi::<S>());
-    doc.merge(meta_openapi::<S>());
+    doc.merge(status::openapi());
+    doc.merge(smart_discovery::openapi());
+    doc.merge(meta_openapi());
 
     // Authenticated: the management surface + the entire API surface (every
     // ITS-REST standard group + the own-design extension groups, all behind the
     // auth layer). Paths for the API groups are nested under the configured base
     // path so they read as full server paths.
     let mut protected = management::openapi();
-    protected.merge(crate::api::api_doc::<S>(&cfg.server.base_path));
+    protected.merge(crate::api::api_doc(&cfg.server.base_path));
 
     let scheme = advertised_scheme(&cfg.auth);
     if scheme.is_some() {
@@ -210,8 +209,8 @@ fn require_auth(doc: &mut utoipa::openapi::OpenApi) {
     get, path = "/ehrbase/rest/api-docs/openapi.json", tag = "openapi",
     responses((status = 200, description = "The extension-surface `OpenAPI` document.", body = serde_json::Value))
 )]
-async fn openapi_json<S: Platform>(State(state): State<AppState<S>>) -> Response {
-    let doc = extensions_document::<S>(state.config());
+async fn openapi_json(State(state): State<AppState>) -> Response {
+    let doc = extensions_document(state.config());
     let body = serde_json::to_string(&doc).unwrap_or_else(|_| "{}".to_owned());
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
@@ -225,15 +224,15 @@ async fn openapi_json<S: Platform>(State(state): State<AppState<S>>) -> Response
     get, path = "/ehrbase/rest/swagger-ui", tag = "openapi",
     responses((status = 200, description = "The Swagger UI index.", content_type = "text/html"))
 )]
-async fn swagger_ui_index<S: Platform>(State(state): State<AppState<S>>) -> Response {
+async fn swagger_ui_index(State(state): State<AppState>) -> Response {
     let config = swagger_config(state.config());
     serve_ui_file("", &config)
 }
 
 /// The OAS meta-endpoints' `OpenAPI` (paths at the default REST root; a
 /// non-default base path shifts them uniformly). Public (no auth requirement).
-fn meta_openapi<S: Platform>() -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState<S>>::new()
+fn meta_openapi() -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState>::new()
         .routes(routes!(openapi_json))
         .routes(routes!(swagger_ui_index))
         .into_openapi()
@@ -457,8 +456,8 @@ struct PrebuiltDocs {
 /// Build the composed document and every family document once, serializing each
 /// to [`Bytes`] (the filter machinery — [`filter_by_path`]/[`filter_by_tags`] —
 /// is applied here rather than per request).
-fn prebuild_docs<S: Platform>(cfg: &AppConfig) -> PrebuiltDocs {
-    let full_doc = extensions_document::<S>(cfg);
+fn prebuild_docs(cfg: &AppConfig) -> PrebuiltDocs {
+    let full_doc = extensions_document(cfg);
     let full = to_json_bytes(&full_doc);
 
     let families = FAMILIES
@@ -496,7 +495,7 @@ fn json_document_response(body: Bytes) -> Response {
 /// `openapi.json`, and one filtered JSON document per API family — ALL
 /// server-generated (nothing vendored is served). Config paths come from
 /// [`AppConfig`].
-pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>> {
+pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
     let ui_path = cfg.server.swagger_ui_path();
     let json_path = cfg.server.openapi_json_path();
     let api_docs_root = api_docs_root(&json_path);
@@ -504,7 +503,7 @@ pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>
     // Build the composed document and every family document ONCE (they are pure
     // functions of static configuration); every route below serves ready
     // [`Bytes`], so a request never re-runs utoipa reflection or a deep clone.
-    let docs = prebuild_docs::<S>(cfg);
+    let docs = prebuild_docs(cfg);
 
     // The complete composed document (tooling + the selector's full entry).
     let full = docs.full;

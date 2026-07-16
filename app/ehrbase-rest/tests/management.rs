@@ -39,7 +39,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
         basic: Some(BasicConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
-                password_hash: ehrbase_sm::Secret::new(hash("pw")),
+                password_hash: ehrbase::config::Secret::new(hash("pw")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         }),

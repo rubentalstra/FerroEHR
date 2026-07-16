@@ -23,12 +23,12 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::{EhrbaseService, SpFhirSystem, SubjectProxyConfig};
-use ehrbase_sm::{
+use ehrbase::service::{
     CallStatusType, DataBinding, DataFrame, EhrCompositionService, EhrService, EnvBinding,
     FramePayload, SubjectDataSet, SubjectProxyService, SubjectVariable, SystemCall, SystemCallBody,
     VariableValue,
 };
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use wiremock::matchers::{method, path};

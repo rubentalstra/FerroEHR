@@ -29,7 +29,6 @@ use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase_sm::DefinitionAdapter;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const MAPPINGS: &str = "/ehrbase/rest/openehr/v1/admin/fhir_mapping";

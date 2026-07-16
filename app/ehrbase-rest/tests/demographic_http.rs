@@ -16,8 +16,8 @@ use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase_sm::SmError;
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::SmError;
+use ehrbase::service::{ResourceMeta, ServiceResponse};
 
 mod common;
 use common::{Hooks, Mock};

@@ -27,8 +27,7 @@ use testcontainers_modules::postgres::Postgres;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::events::{EventError, EventPublisher, EventsConfig, start_with_publisher};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{EhrCompositionService, EhrExtractService, EhrService, EhrStatusService};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 

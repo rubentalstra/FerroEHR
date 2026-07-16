@@ -11,8 +11,6 @@ use openehr_its::rest::runtime::ApiError;
 
 // The contribution trait is named explicitly (its call names collide with other
 // groups, so a trait-path call disambiguates).
-use ehrbase_sm::Platform;
-use ehrbase_sm::services::EhrContributionService;
 
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
@@ -20,8 +18,8 @@ use crate::overview::version_id::{parse_ehr_id, parse_uuid};
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

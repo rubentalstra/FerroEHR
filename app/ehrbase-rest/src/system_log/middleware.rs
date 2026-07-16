@@ -5,7 +5,7 @@
 //! handlers never see. IHE **ATNA** requires one audit record per audited access
 //! describing *who* acted, on *what*, with *what* outcome, from *where*, and
 //! *when*; this layer assembles exactly that and hands it to the SM `System Log`
-//! component (`ehrbase_sm::SystemLog`, the only normative openEHR requirement
+//! component (`ehrbase::service::SystemLog`, the only normative openEHR requirement
 //! being "System Log | IHE ATNA-compliant system log",
 //! SM `master02-overview.adoc` §openEHR Platform Model). The DICOM Audit Message
 //! (DICOM PS3.15 §A.5) rendering + syslog transport are the platform emitter's
@@ -57,7 +57,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
+use ehrbase::service::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
 
 use crate::extensions::access::authn::{FreshAuthentication, Principal};
 use crate::overview::error::RestError;
@@ -90,8 +90,8 @@ pub struct AuditObject {
 
 /// The ATNA audit middleware. Installed via `from_fn_with_state(state, middleware)`;
 /// emission is routed through the platform's SM `SystemLog` component.
-pub async fn middleware<S: Platform>(
-    State(state): State<AppState<S>>,
+pub async fn middleware(
+    State(state): State<AppState>,
     req: Request,
     next: Next,
 ) -> Response {

@@ -57,6 +57,11 @@ mod status_validate;
 mod tags;
 mod uri;
 
+pub mod handle;
+pub mod access_types;
+pub use handle::*;
+pub use access_types::*;
+
 // The EHR-component surface other service modules and adapters consume.
 pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
 pub(in crate::service) use composition_validate::check_versioned_composition_invariants;
@@ -66,15 +71,15 @@ pub(in crate::service) use meta::committer;
 pub(in crate::service) use service::default_ehr_status;
 pub(in crate::service) use status_validate::validate_ehr_status;
 
-use ehrbase_sm::{ResourceMeta, SmError, SubjectRef};
+use crate::service::{ResourceMeta, SmError, SubjectRef};
 use serde_json::{Value, json};
 
 use crate::versioning::TimeRange;
 
 /// Extract the version-uid `String` a write produced from the internal
-/// [`ServiceResponse`](ehrbase_sm::ServiceResponse)'s resource metadata — the
+/// [`ServiceResponse`](crate::service::ServiceResponse)'s resource metadata — the
 /// value the SM `create_*`/`update_*`/`delete_*` calls return.
-fn version_uid(resp: ehrbase_sm::ServiceResponse) -> Result<String, SmError> {
+fn version_uid(resp: crate::service::ServiceResponse) -> Result<String, SmError> {
     resp.meta
         .map(|m| m.uid)
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
@@ -113,7 +118,7 @@ fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
 /// Parse the optional SM `Interval<Iso8601_date_time>` bounds of a contribution
 /// `time_range` into the internal [`crate::versioning::TimeRange`]; a malformed
 /// bound is a `400`-equivalent precondition failure.
-fn parse_time_range(raw: ehrbase_sm::TimeRange) -> Result<TimeRange, SmError> {
+fn parse_time_range(raw: crate::service::TimeRange) -> Result<TimeRange, SmError> {
     let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
         b.map(|s| {
             s.parse::<jiff::Timestamp>()

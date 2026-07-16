@@ -1,5 +1,5 @@
 //! [`FhirTerminologyProvider`] — a FHIR R4 terminology-server client that
-//! implements the SM `I_TERMINOLOGY_SERVICE` trait ([`ehrbase_sm::TerminologyService`])
+//! implements the SM `I_TERMINOLOGY_SERVICE` trait ([`crate::service::TerminologyService`])
 //! against a remote server, over `reqwest` (rustls).
 //!
 //! The remote provider is one of the two the composing [`TerminologyService`]
@@ -13,7 +13,7 @@
 //! server it points at). SM contract:
 //! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`.
 //!
-//! [`TerminologyService`]: ehrbase_sm::TerminologyService
+//! [`TerminologyService`]: crate::service::TerminologyService
 //!
 //! # SM call → FHIR operation mapping
 //!
@@ -60,7 +60,7 @@ use async_trait::async_trait;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-use ehrbase_sm::{
+use crate::service::{
     CallStatusType, DefinedTerm, SmError, TermCode, TermEntry, TermRelationship,
     TerminologyDescription, TerminologyExtract, TerminologyRelation,
 };
@@ -122,7 +122,7 @@ impl FhirTerminologyProvider {
     /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition
     /// caller maps to `VersionedObjectDoesNotExist`); any other non-2xx or a
     /// transport/parse fault → `Err(SmError::exception)`.
-    async fn get<T: for<'de> Deserialize<'de>>(
+    pub async fn get<T: for<'de> Deserialize<'de>>(
         &self,
         op_path: &str,
         query: &[(&str, &str)],
@@ -192,7 +192,7 @@ impl FhirTerminologyProvider {
 
     /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set is
     /// unknown (`404`). Forwards `at_date` as the FHIR `date` parameter (G-1).
-    async fn expand(
+    pub async fn expand(
         &self,
         value_set_url: &str,
         at_date: Option<&str>,
@@ -205,8 +205,7 @@ impl FhirTerminologyProvider {
     }
 }
 
-#[async_trait]
-impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
+impl FhirTerminologyProvider {
     /// `value_set_validate` → FHIR `ValueSet/$validate-code` (or `$expand` +
     /// membership when the provider is configured for `expand`).
     ///
@@ -214,7 +213,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// value-set `url`; `at_date` as the FHIR `date` (G-1). An unknown value set
     /// → `VersionedObjectDoesNotExist` (`Pre_has_terminology`); a known value set
     /// with a non-member code → `Ok(false)`.
-    async fn value_set_validate(
+    pub async fn value_set_validate(
         &self,
         terminology_id: &str,
         value_set_id: &str,
@@ -258,7 +257,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// `get_value_set` → FHIR `ValueSet/$expand`, mapped to a
     /// [`TerminologyExtract`] (flat `terms` for membership; the `contains` tree
     /// preserved as `relationships` — G-2/G-5).
-    async fn get_value_set(
+    pub async fn get_value_set(
         &self,
         _terminology_id: &str,
         value_set_code: &str,
@@ -273,7 +272,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`, `codeB` =
     /// `candidate_child_code`). True iff the outcome is `subsumes` — the SM's
     /// *strict* subsumption (`equivalent` is excluded).
-    async fn subsumes(
+    pub async fn subsumes(
         &self,
         terminology_id: &str,
         ref_code: &str,
@@ -302,7 +301,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// `has_term` → FHIR `CodeSystem/$lookup`: `true` when the lookup resolves
     /// (`200`), `false` when the code is unknown (`404`). `at_date` → the FHIR
     /// `date` parameter (G-1).
-    async fn has_term(
+    pub async fn has_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -325,7 +324,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// `display` (mapped to the term text), so there is nothing further to
     /// filter; `attributes` is accepted and has no effect on the returned
     /// extract.
-    async fn get_term(
+    pub async fn get_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -362,7 +361,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
 
     /// `has_value_set` → FHIR `ValueSet/$expand`: `true` when the value set
     /// expands (`200`), `false` when it is unknown (`404`).
-    async fn has_value_set(
+    pub async fn has_value_set(
         &self,
         _terminology_id: &str,
         value_set_code: &str,
@@ -372,7 +371,7 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
 
     /// `get_terminology_description` → not modelled for a FHIR TS (PORT NOTE at
     /// module head — G-4).
-    async fn get_terminology_description(
+    pub async fn get_terminology_description(
         &self,
         _terminology_id: &str,
     ) -> Result<TerminologyDescription, SmError> {

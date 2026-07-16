@@ -20,9 +20,8 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{CallStatusType, SmError, UpdateVersion};
-use ehrbase_sm::{DemographicService, EhrIndexService, PartyRelationshipService};
-use ehrbase_sm::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
+use ehrbase::service::{CallStatusType, SmError, UpdateVersion};
+use ehrbase::service::{LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

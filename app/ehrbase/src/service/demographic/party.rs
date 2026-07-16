@@ -6,8 +6,8 @@
 //! wire contract, so status/`ETag`/`Location`/`If-Match`/deleted-read semantics
 //! follow the EHR group by analogy (module PORT NOTE in [`super`]).
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use ehrbase_sm::PartyKind;
+use crate::service::{ResourceMeta, ServiceResponse};
+use crate::service::PartyKind;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -63,7 +63,7 @@ impl EhrbaseService {
     /// is the offloaded body, which the in-memory input does not reflect, so the
     /// fresh read is kept for byte-fidelity (no openEHR spec governs media
     /// externalization — our own extension).
-    pub(crate) async fn create_party(
+    pub(crate) async fn create_party_response(
         &self,
         kind: PartyKind,
         body: Value,
@@ -144,7 +144,7 @@ impl EhrbaseService {
     /// seam (`super::api`) resolves for `If-Match` and calls `commit_party_update`
     /// directly, threading its handle so the target is resolved only once across
     /// the request. `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(crate) async fn update_party(
+    pub(crate) async fn update_party_response(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -219,7 +219,7 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
     /// `409`; when `None`, the current version is deleted unconditionally (SM
     /// `delete_party` has no version argument). An already-deleted target → `400`.
-    pub(crate) async fn delete_party(
+    pub(crate) async fn delete_party_response(
         &self,
         kind: PartyKind,
         vo_id: Uuid,

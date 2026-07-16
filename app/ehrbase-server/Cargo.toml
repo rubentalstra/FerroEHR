@@ -1,0 +1,28 @@
+[package]
+name = "ehrbase-server"
+version.workspace = true
+description = "EHRbase server binary: boots the ITS-REST server over the platform library"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "ehrbase"
+path = "src/main.rs"
+
+[dependencies]
+ehrbase = { path = "../ehrbase" }
+ehrbase-rest = { path = "../ehrbase-rest" }
+
+anyhow.workspace = true
+clap.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

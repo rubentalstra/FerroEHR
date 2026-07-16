@@ -11,12 +11,11 @@
 //! and optionally served from a separate internal port (binding doc §2/§3).
 //! Observability must never widen the clinical API's attack surface.
 
-pub mod config;
 mod env;
-pub mod health;
+mod health_routes;
 mod http_metrics;
-pub mod info;
-mod loggers;
+mod info_routes;
+mod logger_routes;
 mod metrics;
 
 use std::sync::Arc;
@@ -36,14 +35,15 @@ use crate::extensions::access::authn::Authenticator;
 use crate::overview::error::RestError;
 use openehr_its::rest::runtime::ApiError;
 
-pub use config::{AccessLevel, EndpointLevels, ManagementConfig};
-pub use health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
-pub use http_metrics::{
+pub use ehrbase::config::{AccessLevel, EndpointLevels, ManagementConfig};
+pub use ehrbase::telemetry::build_info::BuildInfo;
+pub use ehrbase::telemetry::health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
+pub use ehrbase::telemetry::log_reload::LogReload;
+pub use ehrbase::telemetry::prometheus::{
     AUTH_FAILURES, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
-    HTTP_RESPONSE_BODY_SIZE, http_metrics, root_span,
+    HTTP_RESPONSE_BODY_SIZE,
 };
-pub use info::BuildInfo;
-pub use loggers::LogReload;
+pub use http_metrics::{http_metrics, root_span};
 
 /// Everything the management router needs. Assembled by the binary (which owns
 /// the telemetry handles, the health indicators, and the effective config) and
@@ -272,7 +272,7 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
     )
 )]
 async fn aggregate_health(State(s): State<ManagementState>) -> Response {
-    health::aggregate(s.health).await
+    health_routes::aggregate(s.health).await
 }
 
 // The handlers below have no I/O of their own but must be `async` — axum only
@@ -286,7 +286,7 @@ async fn aggregate_health(State(s): State<ManagementState>) -> Response {
 )]
 #[allow(clippy::unused_async)]
 async fn liveness() -> Response {
-    health::liveness()
+    health_routes::liveness()
 }
 
 /// Kubernetes-style readiness probe (public when probes are enabled). 503 when
@@ -299,7 +299,7 @@ async fn liveness() -> Response {
     )
 )]
 async fn readiness(State(s): State<ManagementState>) -> Response {
-    health::readiness(s.health).await
+    health_routes::readiness(s.health).await
 }
 
 /// Build/spec provenance (`/info`): version, git, spec pins. Access-level gated.
@@ -309,7 +309,7 @@ async fn readiness(State(s): State<ManagementState>) -> Response {
 )]
 #[allow(clippy::unused_async)]
 async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
-    info::info(s.build_info)
+    info_routes::info(s.build_info)
 }
 
 /// Prometheus text exposition. 503 when the recorder is not installed.
@@ -386,7 +386,7 @@ async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
 #[allow(clippy::unused_async)]
 async fn loggers_get(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
-        Some(reload) => loggers::get(reload).into_response(),
+        Some(reload) => logger_routes::get(reload).into_response(),
         None => recorder_unavailable(),
     }
 }
@@ -409,7 +409,7 @@ async fn loggers_post(
     body: Json<loggers::SetFilter>,
 ) -> Response {
     match &s.log_reload {
-        Some(reload) => loggers::set(reload, &body.0),
+        Some(reload) => logger_routes::set(reload, &body.0),
         None => recorder_unavailable(),
     }
 }
@@ -426,7 +426,7 @@ async fn loggers_post(
 #[allow(clippy::unused_async)]
 async fn loggers_reset(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
-        Some(reload) => loggers::reset(reload),
+        Some(reload) => logger_routes::reset(reload),
         None => recorder_unavailable(),
     }
 }

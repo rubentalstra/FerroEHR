@@ -33,9 +33,9 @@ use uuid::Uuid;
 use openehr_base::prelude::ObjectVersionId;
 use openehr_flat::WebTemplate;
 
-use ehrbase_sm::EhrAccessSettings;
-use ehrbase_sm::extensions::adapters::TemplateListFilter;
-use ehrbase_sm::{
+use ehrbase::service::EhrAccessSettings;
+use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::{
     AdminArchive, AdminService, AqlQueryRequest, ContributionAdapter, DefinitionAdapter,
     DefinitionAdl2Service, DefinitionAdl14Service, DefinitionQueryService, DemographicService,
     EhrAccessAdapter, EhrCompositionService, EhrContributionService, EhrDirectoryService,
@@ -44,11 +44,11 @@ use ehrbase_sm::{
     QueryDescriptor, QueryOutcome, QueryService, ResourceStatus, SystemLog, TenantAdapter,
     TerminologyService, VersionMetaAdapter, WebTemplateService,
 };
-use ehrbase_sm::{
+use ehrbase::service::{
     AuditEvent, CallStatusType, EmitOutcome, SmError, TenantContext, TerminologyDescription,
     TerminologyExtract,
 };
-use ehrbase_sm::{
+use ehrbase::service::{
     EhrSummary, PartyKind, ResourceMeta, ServiceResponse, SubjectRef, UpdateAudit, UpdateVersion,
 };
 
@@ -634,15 +634,15 @@ impl EhrContributionService for Mock {
     async fn list_contributions(
         &self,
         _e: Uuid,
-        _tr: ehrbase_sm::TimeRange,
-        _page: ehrbase_sm::Page,
+        _tr: ehrbase::service::TimeRange,
+        _page: ehrbase::service::Page,
     ) -> Result<Vec<String>, SmError> {
         Err(not_impl())
     }
     async fn contribution_count(
         &self,
         _e: Uuid,
-        _tr: ehrbase_sm::TimeRange,
+        _tr: ehrbase::service::TimeRange,
     ) -> Result<i64, SmError> {
         Err(not_impl())
     }

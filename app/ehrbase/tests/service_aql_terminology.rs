@@ -35,10 +35,10 @@ use openehr_rm::prelude::PartyProxy;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
-use ehrbase_sm::{
+use ehrbase::service::{
     AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, QueryService,
 };
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The coded leaf path (mirrors the DV_QUANTITY leaf in `service_aql.rs`, but at

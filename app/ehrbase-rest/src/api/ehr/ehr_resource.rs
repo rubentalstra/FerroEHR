@@ -16,8 +16,7 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Ehr, EhrStatus};
 
-use ehrbase_sm::Platform;
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
@@ -25,8 +24,8 @@ use crate::overview::version_id::parse_ehr_id;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -82,8 +81,8 @@ pub(super) async fn run<S: Platform>(
 
 /// Render an EHR create response (`201_EHR)`: `ETag(ehr_id)` + `Location`, with the
 /// RM `EHR` body only on `Prefer: return=representation`.
-async fn ehr_write_response<S: Platform>(
-    state: &AppState<S>,
+async fn ehr_write_response(
+    state: &AppState,
     h: &http::HeaderMap,
     base: &str,
     ehr_id: Uuid,

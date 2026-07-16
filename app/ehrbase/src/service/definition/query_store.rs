@@ -13,7 +13,7 @@ use sqlx::Row;
 use sqlx::postgres::PgRow;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, DefinitionQueryService, Page, QueryDescriptor, SmError};
+use crate::service::{CallStatusType, Page, QueryDescriptor, SmError};
 
 use super::{compile_pattern, page_bounds, paginate, parse_qualified_name, split_qualified};
 use crate::service::{EhrbaseService, ServiceError};
@@ -84,7 +84,7 @@ impl EhrbaseService {
                 "query text is not a valid instance of its formalism",
             ));
         }
-        let version = self.store_query(&qualified, None, text).await?;
+        let version = self.store_query_response(&qualified, None, text).await?;
         self.query_descriptor(&qualified, &version).await
     }
 
@@ -111,7 +111,7 @@ impl EhrbaseService {
     }
 
     /// `list_queries` — all registered queries, as descriptors.
-    pub(super) async fn query_list(
+    pub(super) async fn query_list_response(
         &self,
         page: Page,
     ) -> Result<Vec<QueryDescriptor>, ServiceError> {
@@ -228,7 +228,7 @@ impl EhrbaseService {
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case, G-05-14).
-    pub(in crate::service) async fn store_query(
+    pub(in crate::service) async fn store_query_response(
         &self,
         qualified_name: &str,
         version: Option<&str>,
@@ -489,17 +489,16 @@ fn is_partial_semver(version: &str) -> bool {
 
 // ── SM Definitions native API (I_DEFINITION_QUERY) ───────────────────────────
 
-#[async_trait]
-impl DefinitionQueryService for EhrbaseService {
-    async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
         Ok(self.query_exists(&a_query_name).await?)
     }
 
-    async fn valid_query(&self, a_query_text: String, a_type: String) -> Result<bool, SmError> {
+    pub async fn valid_query(&self, a_query_text: String, a_type: String) -> Result<bool, SmError> {
         Ok(Self::valid_query_source(&a_query_text, &a_type))
     }
 
-    async fn store_query(
+    pub async fn store_query(
         &self,
         a_query_text: String,
         a_type: String,
@@ -513,11 +512,11 @@ impl DefinitionQueryService for EhrbaseService {
     // `store_query_set` keeps the trait default (`NotImplemented` → 501, G-05-10)
     // — the SM entry is an explicit TODO with no defined semantics.
 
-    async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
-        Ok(self.query_list(page).await?)
+    pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
+        Ok(self.query_list_response(page).await?)
     }
 
-    async fn list_matching_queries(
+    pub async fn list_matching_queries(
         &self,
         id_pattern: String,
         artefact_id_pattern: Option<String>,
@@ -528,11 +527,11 @@ impl DefinitionQueryService for EhrbaseService {
             .await?)
     }
 
-    async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
+    pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
         Ok(self.query_delete(&a_query_name).await?)
     }
 
-    async fn queries_count(&self) -> Result<i64, SmError> {
+    pub async fn queries_count(&self) -> Result<i64, SmError> {
         Ok(self.query_count().await?)
     }
 }

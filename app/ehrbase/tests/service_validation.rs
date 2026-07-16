@@ -30,11 +30,11 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
+use ehrbase::service::{
     CallStatusType, DefinitionAdapter, DefinitionAdl14Service, EhrCompositionService, EhrService,
     SmError,
 };
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -492,7 +492,7 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
 
     // Delete the OPT through the real SM path (opt_delete), which invalidates
     // the cache entry.
-    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, ehrbase_sm::Page::all())
+    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, ehrbase::service::Page::all())
         .await
         .expect("list opts")
         .into_iter()

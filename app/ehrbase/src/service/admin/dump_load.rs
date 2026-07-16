@@ -43,7 +43,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, DumpLoadFailReport, ExportFormat, ExportSpec, SmError};
+use crate::service::{CallStatusType, DumpLoadFailReport, ExportFormat, ExportSpec, SmError};
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::storage::{decompose, node_repo, version_repo};

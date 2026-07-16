@@ -98,7 +98,7 @@ pub const OBJECT_ROLE_PATIENT: &str = "1";
 pub const OBJECT_ROLE_QUERY: &str = "24";
 
 // ── ATNA rendering of the SM event enums ─────────────────────────────────────
-// The SM `System Log` event model (`ehrbase_sm::{EventActionCode, EventOutcome,
+// The SM `System Log` event model (`crate::service::{EventActionCode, EventOutcome,
 // ObjectClass}`) is a pure, transport-agnostic model with no methods. The DICOM
 // / RFC-3881 renderings live here, in the ATNA layer, as three focused extension
 // traits — one per enum — so the `message` serializer's call sites
@@ -106,7 +106,7 @@ pub const OBJECT_ROLE_QUERY: &str = "24";
 // resolve through them. One trait per type (rather than a single umbrella trait)
 // keeps every method meaningful for its receiver: no empty/`unreachable!` stubs.
 
-use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
+use super::event::{EventActionCode, EventOutcome, ObjectClass};
 
 /// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventActionCode`].
 pub(crate) trait AtnaAction {

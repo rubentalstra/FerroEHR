@@ -463,7 +463,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase_sm::Secret::new(hash("pw")),
+                    password_hash: ehrbase::config::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),
@@ -482,7 +482,7 @@ mod tests {
                 issuer: "https://issuer.example".to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase_sm::Secret::new("secret".to_owned())),
+                hmac_secret: Some(ehrbase::config::Secret::new("secret".to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
@@ -535,7 +535,7 @@ mod tests {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase_sm::Secret::new(hash("pw")),
+                    password_hash: ehrbase::config::Secret::new(hash("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),

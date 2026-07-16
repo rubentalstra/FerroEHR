@@ -59,8 +59,7 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{PartyProxy, PartySelf};
 
-use ehrbase_sm::Platform;
-use ehrbase_sm::{ResourceMeta, ServiceResponse, UpdateAudit, UpdateVersion};
+use ehrbase::service::{ResourceMeta, ServiceResponse, UpdateAudit, UpdateVersion};
 
 use crate::AuthMethod;
 use crate::overview::error::RestError;
@@ -186,7 +185,7 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// effectively remove all `ITEM_TAGs` associated with the given target". The
 /// header parse is [`crate::overview::params::parse_item_tag_header`]; the
 /// entries are folded onto the existing vo-keyed
-/// [`ItemTagAdapter`](ehrbase_sm::ItemTagAdapter) `target_tags_replace` seam
+/// [`ItemTagAdapter`](ehrbase::service::ItemTagAdapter) `target_tags_replace` seam
 /// (the same seam the dedicated `*_tags_*` operations use).
 ///
 /// Returns the present header name(s) + the stored list (for the optional
@@ -194,8 +193,8 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// neither was — an absent header leaves the target's tags untouched. This
 /// server supports `ITEM_TAGs`; a server that did not would ignore the headers
 /// (spec: "these headers will also be unsupported").
-pub(super) async fn apply_item_tag_headers<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn apply_item_tag_headers(
+    state: &AppState,
     ehr_id: Uuid,
     target_type: &str,
     version_uid: &str,

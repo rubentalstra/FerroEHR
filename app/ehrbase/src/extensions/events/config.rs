@@ -10,7 +10,7 @@
 //! configured on (this publisher OR the FHIR outbound emitter), gated in
 //! `main.rs` from `events.enabled || fhir.outbound.enabled`.
 
-use ehrbase_sm::SecretUrl;
+use crate::config::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).

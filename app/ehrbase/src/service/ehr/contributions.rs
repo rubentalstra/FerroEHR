@@ -11,10 +11,7 @@
 //! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
-use ehrbase_sm::{
-    ContributionAdapter, EhrContributionService, Page, ResourceMeta, ServiceResponse, SmError,
-    UpdateAudit, UpdateVersion,
-};
+use crate::service::{Page, ResourceMeta, ServiceResponse, SmError, UpdateAudit, UpdateVersion};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -78,9 +75,8 @@ impl EhrbaseService {
     }
 }
 
-#[async_trait::async_trait]
-impl EhrContributionService for EhrbaseService {
-    async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError> {
         match self.ehr_contribution(an_ehr_id, a_contrib_id, false).await {
             Ok(_) => Ok(true),
             Err(ServiceError::NotFound(_)) => Ok(false),
@@ -88,7 +84,7 @@ impl EhrContributionService for EhrbaseService {
         }
     }
 
-    async fn get_contribution(
+    pub async fn get_contribution(
         &self,
         an_ehr_id: Uuid,
         a_contrib_id: Uuid,
@@ -98,7 +94,7 @@ impl EhrContributionService for EhrbaseService {
             .await?)
     }
 
-    async fn get_contribution_resolved(
+    pub async fn get_contribution_resolved(
         &self,
         an_ehr_id: Uuid,
         a_contrib_id: Uuid,
@@ -106,7 +102,7 @@ impl EhrContributionService for EhrbaseService {
         Ok(self.ehr_contribution(an_ehr_id, a_contrib_id, true).await?)
     }
 
-    async fn commit_contribution(
+    pub async fn commit_contribution(
         &self,
         an_ehr_id: Uuid,
         versions: Vec<UpdateVersion>,
@@ -134,10 +130,10 @@ impl EhrContributionService for EhrbaseService {
         Ok(id.to_string())
     }
 
-    async fn list_contributions(
+    pub async fn list_contributions(
         &self,
         an_ehr_id: Uuid,
-        time_range: ehrbase_sm::TimeRange,
+        time_range: crate::service::TimeRange,
         page: Page,
     ) -> Result<Vec<String>, SmError> {
         let time_range = parse_time_range(time_range)?;
@@ -147,19 +143,18 @@ impl EhrContributionService for EhrbaseService {
         Ok(ids.iter().map(Uuid::to_string).collect())
     }
 
-    async fn contribution_count(
+    pub async fn contribution_count(
         &self,
         an_ehr_id: Uuid,
-        time_range: ehrbase_sm::TimeRange,
+        time_range: crate::service::TimeRange,
     ) -> Result<i64, SmError> {
         let time_range = parse_time_range(time_range)?;
         Ok(count_contributions(&self.pool, an_ehr_id, time_range).await?)
     }
 }
 
-#[async_trait::async_trait]
-impl ContributionAdapter for EhrbaseService {
-    async fn ehr_contribution_commit(
+impl EhrbaseService {
+    pub async fn ehr_contribution_commit(
         &self,
         an_ehr_id: Uuid,
         a_contribution: Value,

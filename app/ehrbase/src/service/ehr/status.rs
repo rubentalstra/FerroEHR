@@ -8,7 +8,7 @@
 //! (master04 §EHR Active Status), so its own commits are never gated by the
 //! content-write guard — that is how a deactivated EHR is flipped back on.
 
-use ehrbase_sm::{EhrStatusService, ResourceMeta, ServiceResponse, SmError, UpdateVersion};
+use crate::service::{ResourceMeta, ServiceResponse, SmError, UpdateVersion};
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -383,9 +383,8 @@ pub(in crate::service) fn ehr_promoted_columns(
     (subject_id, namespace, is_queryable, is_modifiable)
 }
 
-#[async_trait::async_trait]
-impl EhrStatusService for EhrbaseService {
-    async fn has_ehr_status_version(
+impl EhrbaseService {
+    pub async fn has_ehr_status_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
@@ -398,11 +397,11 @@ impl EhrStatusService for EhrbaseService {
             .is_some_and(|(vo, _)| vo == a_version_uid))
     }
 
-    async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_at(an_ehr_id, None).await?.body)
     }
 
-    async fn get_ehr_status_at_time(
+    pub async fn get_ehr_status_at_time(
         &self,
         an_ehr_id: Uuid,
         a_time: Option<String>,
@@ -411,7 +410,7 @@ impl EhrStatusService for EhrbaseService {
         Ok(self.status_at(an_ehr_id, at).await?.body)
     }
 
-    async fn get_ehr_status_at_version(
+    pub async fn get_ehr_status_at_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,
@@ -425,11 +424,11 @@ impl EhrStatusService for EhrbaseService {
             .body)
     }
 
-    async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_status(an_ehr_id).await?)
     }
 
-    async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(true));
@@ -438,7 +437,7 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(false));
@@ -447,7 +446,7 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         version_uid(
             self.status_mutate(an_ehr_id, |m| {
                 m.insert("is_modifiable".to_owned(), Value::Bool(true));
@@ -456,7 +455,7 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
         version_uid(
@@ -467,7 +466,7 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn update_other_details(
+    pub async fn update_other_details(
         &self,
         an_ehr_id: Uuid,
         a_details: Value,
@@ -480,7 +479,7 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn replace_ehr_status(
+    pub async fn replace_ehr_status(
         &self,
         an_ehr_id: Uuid,
         a_status: UpdateVersion,
@@ -508,11 +507,11 @@ impl EhrStatusService for EhrbaseService {
         )
     }
 
-    async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
-    async fn ehr_status_version_at_time(
+    pub async fn ehr_status_version_at_time(
         &self,
         an_ehr_id: Uuid,
         a_time: Option<String>,
@@ -521,7 +520,7 @@ impl EhrStatusService for EhrbaseService {
         Ok(self.status_version_at_time(an_ehr_id, at).await?.body)
     }
 
-    async fn ehr_status_original_version(
+    pub async fn ehr_status_original_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: Uuid,

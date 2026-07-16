@@ -13,7 +13,6 @@
 
 use axum::extract::State;
 use axum::response::Response;
-use ehrbase_sm::Platform;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
@@ -22,7 +21,7 @@ use crate::state::AppState;
 
 /// The Definition API group as a native `utoipa-axum` router (group-relative
 /// paths; nested under the configured base path).
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(
             definition_template_adl1_4_list,
@@ -49,8 +48,8 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     get, path = "/definition/template/adl1.4", tag = "ADL1.4",
     responses((status = 200, description = "The template ids.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_template_adl1_4_list<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl1_4_list(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -58,7 +57,7 @@ pub(crate) async fn definition_template_adl1_4_list<S: Platform>(
         state,
         "definition_template_adl1.4_list",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -68,8 +67,8 @@ pub(crate) async fn definition_template_adl1_4_list<S: Platform>(
     post, path = "/definition/template/adl1.4", tag = "ADL1.4",
     responses((status = 201, description = "Template stored.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_template_adl1_4_upload<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl1_4_upload(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -77,7 +76,7 @@ pub(crate) async fn definition_template_adl1_4_upload<S: Platform>(
         state,
         "definition_template_adl1.4_upload",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -91,8 +90,8 @@ pub(crate) async fn definition_template_adl1_4_upload<S: Platform>(
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_template_adl1_4_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl1_4_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -100,7 +99,7 @@ pub(crate) async fn definition_template_adl1_4_get<S: Platform>(
         state,
         "definition_template_adl1.4_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -114,8 +113,8 @@ pub(crate) async fn definition_template_adl1_4_get<S: Platform>(
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_template_adl1_4_example_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl1_4_example_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -123,7 +122,7 @@ pub(crate) async fn definition_template_adl1_4_example_get<S: Platform>(
         state,
         "definition_template_adl1.4_example_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -133,8 +132,8 @@ pub(crate) async fn definition_template_adl1_4_example_get<S: Platform>(
     get, path = "/definition/template/adl2", tag = "ADL2",
     responses((status = 200, description = "The template ids.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_template_adl2_list<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl2_list(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -142,7 +141,7 @@ pub(crate) async fn definition_template_adl2_list<S: Platform>(
         state,
         "definition_template_adl2_list",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -152,8 +151,8 @@ pub(crate) async fn definition_template_adl2_list<S: Platform>(
     post, path = "/definition/template/adl2", tag = "ADL2",
     responses((status = 201, description = "Template stored.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_template_adl2_upload<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl2_upload(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -161,7 +160,7 @@ pub(crate) async fn definition_template_adl2_upload<S: Platform>(
         state,
         "definition_template_adl2_upload",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -175,8 +174,8 @@ pub(crate) async fn definition_template_adl2_upload<S: Platform>(
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_template_adl2_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl2_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -184,7 +183,7 @@ pub(crate) async fn definition_template_adl2_get<S: Platform>(
         state,
         "definition_template_adl2_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -198,8 +197,8 @@ pub(crate) async fn definition_template_adl2_get<S: Platform>(
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_template_adl2_example_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl2_example_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -207,7 +206,7 @@ pub(crate) async fn definition_template_adl2_example_get<S: Platform>(
         state,
         "definition_template_adl2_example_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -224,8 +223,8 @@ pub(crate) async fn definition_template_adl2_example_get<S: Platform>(
         (status = 404, description = "Unknown template version.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_template_adl2_version_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_template_adl2_version_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -233,7 +232,7 @@ pub(crate) async fn definition_template_adl2_version_get<S: Platform>(
         state,
         "definition_template_adl2_version_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -247,12 +246,12 @@ pub(crate) async fn definition_template_adl2_version_get<S: Platform>(
         (status = 404, description = "Unknown stored query.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_query_list<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_query_list(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "definition_query_list", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "definition_query_list", parts, super::dispatch).await
 }
 
 /// Store a named AQL query (auto-versioned).
@@ -261,8 +260,8 @@ pub(crate) async fn definition_query_list<S: Platform>(
     params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
     responses((status = 200, description = "Stored.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_query_store_yaml<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_query_store_yaml(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -270,7 +269,7 @@ pub(crate) async fn definition_query_store_yaml<S: Platform>(
         state,
         "definition_query_store.yaml",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -287,8 +286,8 @@ pub(crate) async fn definition_query_store_yaml<S: Platform>(
         (status = 404, description = "Unknown stored query version.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn definition_query_version_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_query_version_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -296,7 +295,7 @@ pub(crate) async fn definition_query_version_get<S: Platform>(
         state,
         "definition_query_version_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -310,8 +309,8 @@ pub(crate) async fn definition_query_version_get<S: Platform>(
     ),
     responses((status = 200, description = "Stored.", body = serde_json::Value))
 )]
-pub(crate) async fn definition_query_version_store_yaml<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn definition_query_version_store_yaml(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -319,7 +318,7 @@ pub(crate) async fn definition_query_version_store_yaml<S: Platform>(
         state,
         "definition_query_version_store.yaml",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }

@@ -39,13 +39,16 @@ mod delete;
 mod dump_load;
 mod statistics;
 
+pub mod types;
+pub use types::*;
+
 use std::path::Path;
 
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use ehrbase_rest::{AdminArchive, AdminService, PlatformService, StatTimeRange};
-use ehrbase_sm::{AdminDumpLoad, DumpLoadFailReport, ExportSpec, SmError};
+use crate::service::{PlatformService, StatTimeRange};
+use crate::service::{DumpLoadFailReport, ExportSpec, SmError};
 
 use crate::service::EhrbaseService;
 
@@ -57,15 +60,14 @@ pub(super) fn is_party_kind(kind: &str) -> bool {
     matches!(kind, "AGENT" | "GROUP" | "ORGANISATION" | "PERSON" | "ROLE")
 }
 
-#[async_trait]
-impl AdminService for EhrbaseService {
-    async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
+impl EhrbaseService {
+    pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
         Ok(self
             .physical_ehr_delete(parse_uuid(&ehr_id, "EHR")?)
             .await?)
     }
 
-    async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
+    pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
         // Any malformed id in the list → 400 (the whole bulk request is rejected
         // before any deletion runs).
         let ids = ehr_ids
@@ -75,7 +77,7 @@ impl AdminService for EhrbaseService {
         Ok(self.physical_ehr_delete_all(&ids).await?)
     }
 
-    async fn admin_list_contributions(
+    pub async fn admin_list_contributions(
         &self,
         a_service: PlatformService,
         time_range: StatTimeRange,
@@ -84,7 +86,7 @@ impl AdminService for EhrbaseService {
         Ok(self.stat_list_contributions(a_service, lo, hi).await?)
     }
 
-    async fn admin_contribution_count(
+    pub async fn admin_contribution_count(
         &self,
         a_service: PlatformService,
         time_range: StatTimeRange,
@@ -93,7 +95,7 @@ impl AdminService for EhrbaseService {
         Ok(self.stat_contribution_count(a_service, lo, hi).await?)
     }
 
-    async fn versioned_composition_count(
+    pub async fn versioned_composition_count(
         &self,
         a_service: PlatformService,
         time_range: StatTimeRange,
@@ -104,7 +106,7 @@ impl AdminService for EhrbaseService {
             .await?)
     }
 
-    async fn composition_version_count(
+    pub async fn composition_version_count(
         &self,
         a_service: PlatformService,
         time_range: StatTimeRange,
@@ -115,16 +117,15 @@ impl AdminService for EhrbaseService {
             .await?)
     }
 
-    async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
+    pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self
             .party_physical_delete(parse_uuid(&a_party_id, "party")?)
             .await?)
     }
 }
 
-#[async_trait]
-impl AdminArchive for EhrbaseService {
-    async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
+impl EhrbaseService {
+    pub async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
         let ids = ehr_ids
             .iter()
             .map(|s| parse_uuid(s, "EHR"))
@@ -132,7 +133,7 @@ impl AdminArchive for EhrbaseService {
         Ok(self.archive_ehr_vos(&ids).await?)
     }
 
-    async fn archive_parties(&self, party_ids: Vec<String>) -> Result<(), SmError> {
+    pub async fn archive_parties(&self, party_ids: Vec<String>) -> Result<(), SmError> {
         let ids = party_ids
             .iter()
             .map(|s| parse_uuid(s, "party"))
@@ -141,9 +142,8 @@ impl AdminArchive for EhrbaseService {
     }
 }
 
-#[async_trait]
-impl AdminDumpLoad for EhrbaseService {
-    async fn export_ehrs(
+impl EhrbaseService {
+    pub async fn export_ehrs(
         &self,
         file_sys_loc: String,
         spec: ExportSpec,
@@ -151,7 +151,7 @@ impl AdminDumpLoad for EhrbaseService {
         self.export_ehrs_to(Path::new(&file_sys_loc), &spec).await
     }
 
-    async fn load_ehrs(&self, file_sys_loc: String) -> Result<Vec<DumpLoadFailReport>, SmError> {
+    pub async fn load_ehrs(&self, file_sys_loc: String) -> Result<Vec<DumpLoadFailReport>, SmError> {
         self.load_ehrs_from(Path::new(&file_sys_loc)).await
     }
 }

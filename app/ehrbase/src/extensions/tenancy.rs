@@ -29,7 +29,8 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::{SmError, TenantAdapter, TenantContext};
+use crate::extensions::TenantContext;
+use crate::service::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 
@@ -212,29 +213,28 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     ServiceError::Database(e)
 }
 
-#[async_trait]
-impl TenantAdapter for EhrbaseService {
-    async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    pub async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_tenants().await?)
     }
 
-    async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
+    pub async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
         Ok(self.create_tenant(&a_tenant).await?)
     }
 
-    async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
+    pub async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_tenant(a_tenant_id).await?)
     }
 
-    async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError> {
+    pub async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError> {
         Ok(self.update_tenant(a_tenant_id, &a_tenant).await?)
     }
 
-    async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
+    pub async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_tenant(a_tenant_id).await?)
     }
 
-    async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
+    pub async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
         Ok(self.resolve_tenant(key).await?)
     }
 }

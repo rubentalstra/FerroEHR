@@ -13,7 +13,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use ehrbase_sm::{EhrAccessAdapter, EhrAccessSettings, SmError};
+use crate::service::{EhrAccessSettings, SmError};
 use moka::future::Cache;
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -62,9 +62,8 @@ impl EhrbaseService {
 /// `openehr_platform/master02-overview.adoc`) — reads the EHR's current
 /// `EHR_ACCESS` settings through this seam. The SM defines no `I_EHR_ACCESS`
 /// interface — no openEHR spec governs this adapter, our own extension.
-#[async_trait]
-impl EhrAccessAdapter for EhrbaseService {
-    async fn current_ehr_access_settings(
+impl EhrbaseService {
+    pub async fn current_ehr_access_settings(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<EhrAccessSettings>, SmError> {

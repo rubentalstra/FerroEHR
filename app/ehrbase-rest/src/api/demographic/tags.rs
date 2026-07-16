@@ -15,12 +15,12 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{PartyKind, Platform};
+use ehrbase::service::{PartyKind};
 use http::StatusCode;
 
 /// The per-kind `ITEM_TAG` operations (`tags_get`/`tags_update`/`tags_delete`).
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     kind: PartyKind,
     action: &str,
     parts: RequestParts,
@@ -67,8 +67,8 @@ pub(super) async fn run<S: Platform>(
 
 /// `GET /demographic/tags` — the kind-agnostic `ITEM_TAG` collection filter
 /// (`demographic_tags_get.yaml`).
-pub(super) async fn run_collection<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run_collection(
+    state: AppState,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;

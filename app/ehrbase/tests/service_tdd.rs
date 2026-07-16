@@ -25,7 +25,7 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
+use ehrbase::service::{
     CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, TddService,
 };
 

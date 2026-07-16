@@ -57,7 +57,7 @@ pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
 /// Create the **tenant-scoped** application pool: the same pool
 /// plus a `before_acquire` hook that stamps `ehrbase.tenant_id` on every
 /// checked-out connection from the current request's tenant context
-/// ([`ehrbase_sm::tenant::current`]).
+/// ([`crate::extensions::current`]).
 ///
 /// This is the [`SET LOCAL`-equivalent] seam that scopes **both** autocommit
 /// reads and transactions: the service checks out a fresh connection per read
@@ -80,7 +80,7 @@ pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbErro
     let pool = base_options(settings)
         .before_acquire(|conn, _meta| {
             Box::pin(async move {
-                let tenant = ehrbase_sm::tenant::current()
+                let tenant = crate::extensions::current()
                     .map_or_else(String::new, |t| t.tenant_id.to_string());
                 sqlx::query("SELECT set_config('ehrbase.tenant_id', $1, false)")
                     .bind(tenant)

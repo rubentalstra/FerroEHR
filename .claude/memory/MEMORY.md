@@ -1,6 +1,6 @@
 # Memory index
 
-- [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; rerun ECC after runner/validation merges
+- [Owner work style](owner-work-style.md) — defer nothing; no quick fixes (proper rewrites welcome); orchestrator codes context-heavy work itself; big-bang rewrites converge once at the end (no intermediate stubs); specs re-read first-hand over ADR claims; rerun ECC after runner/validation merges
 - [Official CLI/tooling first](official-cli-tooling-first.md) — always use the official CLI (sqlx-cli etc.) for tool-managed artifacts; never hand-name/hand-roll
 - [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — commit-msg hook deletes lines containing "Claude Code" etc.; avoid the literal in commit/PR text
 - [Concurrent sessions share this tree](concurrent-sessions-shared-tree.md) — explicit-path commits, scoped gates, worktree-isolate subagents; IDE isolated to target/ide, CLI keeps ./target

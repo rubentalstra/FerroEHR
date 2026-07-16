@@ -1,5 +1,5 @@
 //! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
-//! over the [`FhirConnectorAdapter`](ehrbase_sm::FhirConnectorAdapter) seam.
+//! over the [`FhirConnectorAdapter`](ehrbase::service::FhirConnectorAdapter) seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (E3, FHIR
 //! connectors + read façade).** A persistence-boundary connector, distinct from
@@ -50,9 +50,8 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 use uuid::Uuid;
 
-use ehrbase_sm::Platform;
-use ehrbase_sm::ServiceResponse;
-use ehrbase_sm::SmError;
+use ehrbase::service::ServiceResponse;
+use ehrbase::service::SmError;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
@@ -73,7 +72,7 @@ pub(crate) const STARTER_RESOURCES: &[&str] =
 /// `/fhir/r4`, the mapping store under `/admin`. Served through
 /// [`guarded_dispatch`] → [`dispatch`]. No openEHR spec governs FHIR interop —
 /// our own extension.
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // One `routes!` per PATH (handlers in a single call must share the path;
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
@@ -99,12 +98,12 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
 )]
-pub(crate) async fn fhir_ingest<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_ingest(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_ingest", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_ingest", parts, dispatch).await
 }
 
 /// Read façade: a patient-scoped FHIR searchset Bundle of reverse-mapped
@@ -122,12 +121,12 @@ pub(crate) async fn fhir_ingest<S: Platform>(
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
 )]
-pub(crate) async fn fhir_search<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_search(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_search", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_search", parts, dispatch).await
 }
 
 /// List the FHIR mapping artefacts (mapping-as-data).
@@ -135,12 +134,12 @@ pub(crate) async fn fhir_search<S: Platform>(
     get, path = "/admin/fhir_mapping", tag = "fhir",
     responses((status = 200, description = "The mapping records.", body = serde_json::Value))
 )]
-pub(crate) async fn fhir_mapping_list<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_mapping_list(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_mapping_list", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_mapping_list", parts, dispatch).await
 }
 
 /// Create a FHIR mapping artefact.
@@ -149,12 +148,12 @@ pub(crate) async fn fhir_mapping_list<S: Platform>(
     request_body(content = serde_json::Value, description = "The mapping definition."),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn fhir_mapping_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_mapping_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_mapping_create", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_mapping_create", parts, dispatch).await
 }
 
 /// Read one FHIR mapping artefact by id. 404 when absent.
@@ -166,12 +165,12 @@ pub(crate) async fn fhir_mapping_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn fhir_mapping_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_mapping_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_mapping_get", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_mapping_get", parts, dispatch).await
 }
 
 /// Update one FHIR mapping artefact.
@@ -181,12 +180,12 @@ pub(crate) async fn fhir_mapping_get<S: Platform>(
     request_body(content = serde_json::Value, description = "The updated mapping definition."),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn fhir_mapping_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_mapping_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_mapping_update", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_mapping_update", parts, dispatch).await
 }
 
 /// Delete one FHIR mapping artefact.
@@ -195,23 +194,23 @@ pub(crate) async fn fhir_mapping_update<S: Platform>(
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn fhir_mapping_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn fhir_mapping_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "fhir_mapping_delete", parts, dispatch::<S>).await
+    guarded_dispatch(state, "fhir_mapping_delete", parts, dispatch).await
 }
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
+pub(crate) fn dispatch(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> BoxResponse {
     Box::pin(async move { run(state, op, parts).await })
 }
 
-async fn run<S: Platform>(state: AppState<S>, op: &'static str, parts: RequestParts) -> Response {
+async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response {
     // Config gate: opt-in. When disabled every route answers 404 (as an
     // `OperationOutcome`) without consulting the backend.
     if !state.config().fhir_api_enabled {
@@ -302,7 +301,7 @@ fn scoped_resource_type(parts: &RequestParts) -> Result<String, Response> {
 }
 
 /// `POST /fhir/r4/{resource_type}` — the inbound connector.
-async fn ingest<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Response {
+async fn ingest(state: &AppState, parts: &RequestParts) -> Response {
     let resource_type = match scoped_resource_type(parts) {
         Ok(rt) => rt,
         Err(resp) => return resp,
@@ -323,7 +322,7 @@ async fn ingest<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Respo
 }
 
 /// `GET /fhir/r4/{resource_type}?patient=…[&_count=N]` — the read façade.
-async fn search<S: Platform>(state: &AppState<S>, parts: &RequestParts) -> Response {
+async fn search(state: &AppState, parts: &RequestParts) -> Response {
     let resource_type = match scoped_resource_type(parts) {
         Ok(rt) => rt,
         Err(resp) => return resp,
@@ -366,7 +365,7 @@ fn first_profile(resource: &Value) -> Option<String> {
 /// The `201` response for a committed resource: an information `OperationOutcome`
 /// plus the `ETag`/`Location` headers pointing at the openEHR COMPOSITION (so a
 /// client can read it back through the openEHR surface).
-fn ingest_created<S: Platform>(state: &AppState<S>, resp: &ServiceResponse) -> Response {
+fn ingest_created(state: &AppState, resp: &ServiceResponse) -> Response {
     let mut out = operation_outcome(
         StatusCode::CREATED,
         "informational",

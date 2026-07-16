@@ -580,6 +580,22 @@ finding's evidence pointer to the new layout, and re-verify the CLEAN
 verdicts whose receipts named moved code. The measured seeds and verdicts
 themselves stay (behaviour didn't move); only anchors refresh.
 
+**Structural wave phase 2 — FULL `service/` rewrite (owner directive
+2026-07-16, DO NOT DROP):** after B+C convergence is green, the whole
+`app/ehrbase/src/service/` folder gets a total rewrite — not a tidy-up:
+- kill every trait-era legacy idea: the `*_response` inner/wrapper method
+  splits (one clean method per SM call), the ServiceResponse/ResourceMeta
+  envelope where a typed return does better, stale "method-resolution
+  priority"/adapter-era comments, the flat re-export scaffolding;
+- modern clean idiomatic Rust throughout; module docs cite their SM chapter
+  (master02–15) and call semantics keep pre/post-condition citations;
+- fold the W-14 latency findings that live in this layer into the rewrite
+  (F-1 signing fold, F-2 placement trio, F-4 batch, F-7 EHR-summary merge,
+  F-24 contribution batching, F-37 write-shape alignment) — the rewrite IS
+  Wave 2+3 for service-owned findings, executed once, properly;
+- owner: "it's still legacy ideas in the service layer" — treat prior shapes
+  as prior art only; the SM spec text is the design authority.
+
 **Close:** full workspace gates → instrumented knee re-run (names the ladder
 errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.
 

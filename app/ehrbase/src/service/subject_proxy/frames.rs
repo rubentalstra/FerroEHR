@@ -25,9 +25,14 @@
 
 use async_trait::async_trait;
 
-use ehrbase_rest::AqlQueryRequest;
-use ehrbase_sm::{
-    CallStatusType, DataBinding, DataFrame, DataFrameSample, FramePayload, Sample, SmError,
+use crate::service::AqlQueryRequest;
+use crate::service::{
+    CallStatusType,
+    DataFrame,
+    DataFrameSample,
+    FramePayload,
+    Sample,
+    SmError,
     SystemCall,
 };
 use serde_json::Value;
@@ -42,9 +47,8 @@ fn not_implemented(message: impl Into<String>) -> SmError {
     SmError::new(CallStatusType::NotImplemented, message)
 }
 
-#[async_trait]
-impl DataBinding for EhrbaseService {
-    async fn get_frame(
+impl EhrbaseService {
+    pub async fn get_frame(
         &self,
         subject_id: String,
         frame_id: String,

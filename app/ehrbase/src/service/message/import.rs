@@ -49,7 +49,8 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, EventActionCode, SmError};
+use crate::service::{CallStatusType, SmError};
+use crate::system_log::event::EventActionCode;
 use openehr_rm::ehr_extract::common::extract::Extract;
 
 use crate::service::{EhrbaseService, ServiceError};

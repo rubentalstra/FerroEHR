@@ -28,7 +28,6 @@ use utoipa_axum::routes;
 
 use crate::config::AppConfig;
 use crate::state::AppState;
-use ehrbase_sm::Platform;
 
 use super::config::SmartConfig;
 
@@ -239,7 +238,7 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
 ///
 /// Mount it in `crate::router` beside `overview::status::router` — **outside**
 /// the auth layer (the document is unauthenticated, master04).
-pub fn router<S: Platform>(cfg: &AppConfig, rest_root: &str) -> Router<AppState<S>> {
+pub fn router(cfg: &AppConfig, rest_root: &str) -> Router<AppState> {
     // Mounted from `crate::router`: merged beside `status::router(&rest_root)`,
     // OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document,
     // master04 §Service Discovery), with `rest_root` = the `/ehrbase/rest` root.
@@ -285,8 +284,8 @@ fn discovery_response(body: Bytes) -> Response {
     get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
     responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))
 )]
-async fn smart_configuration<S: Platform>(
-    State(state): State<AppState<S>>,
+async fn smart_configuration(
+    State(state): State<AppState>,
 ) -> Json<SmartConfiguration> {
     let cfg = state.config();
     // R-04/recommended: FHIR base advertised only when the connector is enabled.
@@ -305,8 +304,8 @@ async fn smart_configuration<S: Platform>(
 /// The SMART discovery document's `OpenAPI` (path at the default REST root;
 /// config-gated: `EHRBASE_REST_SMART__ENABLED`). Served pre-auth. Spec:
 /// ITS-REST `smart_app_launch/master04`.
-pub(crate) fn openapi<S: Platform>() -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState<S>>::new()
+pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState>::new()
         .routes(routes!(smart_configuration))
         .into_openapi()
 }

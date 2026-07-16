@@ -10,11 +10,28 @@
 //! exposition text served at `/management/prometheus`.
 
 use crate::system_log::sender::{METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT};
-use ehrbase_rest::management::{
-    AUTH_FAILURES, BuildInfo, HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION,
-    HTTP_RESPONSE_BODY_SIZE,
-};
+use crate::telemetry::build_info::BuildInfo;
 use metrics_exporter_prometheus::{BuildError, Matcher, PrometheusBuilder, PrometheusHandle};
+
+// HTTP-surface metric names (recorded by the protocol adapter's middleware,
+// registered here so the exporter and the recorder share one vocabulary).
+/// HTTP request-duration histogram (`http_route`, `http_request_method`,
+/// `status_class`).
+pub const HTTP_REQUEST_DURATION: &str = "http_server_request_duration_seconds";
+
+/// In-flight requests gauge (`http_route`).
+pub const HTTP_ACTIVE_REQUESTS: &str = "http_server_active_requests";
+
+/// Request body size histogram (`http_route`).
+pub const HTTP_REQUEST_BODY_SIZE: &str = "http_server_request_body_size_bytes";
+
+/// Response body size histogram (`http_route`).
+pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes";
+
+/// Authentication-failure counter (`mechanism`, `status`), emitted by the auth
+/// middleware.
+pub const AUTH_FAILURES: &str = "auth_failures_total";
+
 
 // ── Metric names emitted from this crate (§1.2). The http_* / auth_* names
 //    live in `ehrbase-rest`; the atna_* names in `ehrbase-audit`. ────────────

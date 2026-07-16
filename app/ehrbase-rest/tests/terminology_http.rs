@@ -26,7 +26,7 @@ use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AppConfig, ServerConfig};
-use ehrbase_sm::{
+use ehrbase::service::{
     CallStatusType, DefinedTerm, SmError, TermEntry, TerminologyDescription, TerminologyExtract,
 };
 
@@ -112,7 +112,7 @@ fn hooks(calls: Arc<AtomicUsize>) -> Hooks {
                         terms: Some(
                             [(
                                 "532".to_owned(),
-                                TermEntry::Bare(ehrbase_sm::TermCode {
+                                TermEntry::Bare(ehrbase::service::TermCode {
                                     code: "532".to_owned(),
                                 }),
                             )]

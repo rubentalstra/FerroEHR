@@ -32,7 +32,8 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, EventActionCode, SmError};
+use crate::service::{CallStatusType, SmError};
+use crate::system_log::event::EventActionCode;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
 use crate::service::{EhrbaseService, ServiceError};

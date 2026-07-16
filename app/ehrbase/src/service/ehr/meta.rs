@@ -17,7 +17,7 @@
 //! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our own
 //! design).
 
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use crate::service::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -215,58 +215,52 @@ impl EhrbaseService {
     }
 }
 
-/// The committer `PARTY_PROXY` for an audit, from the authenticated principal of
-/// the current request (published by the auth middleware). A write with no
+/// The committer `PARTY_PROXY` for an audit, from the authenticated committer of
+/// the current request (published by the protocol adapter into the
+/// [`crate::service::committer`] context). A write with no
 /// authenticated principal (auth disabled, or an internal/system write) is
 /// attributed to the system identity (RM common master04 `AUDIT_DETAILS.committer`
 /// 1..1).
 pub(in crate::service) fn committer() -> Value {
-    match ehrbase_rest::access::authn::current_principal() {
-        Some(principal) => {
-            let id_type = match principal.method {
-                ehrbase_rest::AuthMethod::Basic => "basic",
-                ehrbase_rest::AuthMethod::Bearer => "oauth2",
-            };
-            json!({
-                "_type": "PARTY_IDENTIFIED",
-                "name": principal.subject.clone(),
-                "identifiers": [{
-                    "_type": "DV_IDENTIFIER",
-                    "id": principal.subject,
-                    "issuer": "ehrbase-rs",
-                    "type": id_type
-                }]
-            })
-        }
+    match crate::service::committer::current_committer() {
+        Some(identity) => json!({
+            "_type": "PARTY_IDENTIFIED",
+            "name": identity.subject.clone(),
+            "identifiers": [{
+                "_type": "DV_IDENTIFIER",
+                "id": identity.subject,
+                "issuer": "ehrbase-rs",
+                "type": identity.id_type
+            }]
+        }),
         None => json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
     }
 }
 
 // ── ITS-REST VersionMetaAdapter (adapter-support extension) ───────────────────
 
-#[async_trait::async_trait]
-impl ehrbase_sm::VersionMetaAdapter for EhrbaseService {
-    async fn composition_latest_meta(
+impl EhrbaseService {
+    pub async fn composition_latest_meta(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
-    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
         Ok(self
             .composition_current_meta(an_ehr_id, a_versioned_object_uid)
             .await?)
     }
 
-    async fn ehr_status_latest_meta(
+    pub async fn ehr_status_latest_meta(
         &self,
         an_ehr_id: Uuid,
-    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
         Ok(self.ehr_status_meta(an_ehr_id).await?)
     }
 
-    async fn directory_latest_meta(
+    pub async fn directory_latest_meta(
         &self,
         an_ehr_id: Uuid,
-    ) -> Result<Option<ResourceMeta>, ehrbase_sm::SmError> {
+    ) -> Result<Option<ResourceMeta>, crate::service::SmError> {
         Ok(self.directory_meta(an_ehr_id).await?)
     }
 }

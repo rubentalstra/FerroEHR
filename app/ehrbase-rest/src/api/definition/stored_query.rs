@@ -26,7 +26,6 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::Platform;
 
 /// The default query formalism when `query_type` is absent
 /// (`parameters/query/query_type.yaml`: `default: "AQL"`).
@@ -34,8 +33,8 @@ const DEFAULT_QUERY_TYPE: &str = "AQL";
 
 /// `GET …/definition/query/{qualified_query_name}` — the registered queries
 /// under the qualified name (a prefix pattern; wildcard on empty).
-pub(super) async fn list<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn list(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -56,8 +55,8 @@ pub(super) async fn list<S: Platform>(
 /// per `QUERY_DESCRIPTOR.formalism` ("may be any other string value"), an
 /// unsupported non-AQL formalism gets an honest unsupported-formalism reject
 /// (not a blanket "invalid AQL" 400).
-pub(super) async fn store<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn store(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -95,8 +94,8 @@ pub(super) async fn store<S: Platform>(
 
 /// `GET …/definition/query/{qualified_query_name}/{version}` — the registered
 /// query at the SEMVER (or SEMVER prefix); `404` if absent.
-pub(super) async fn version_get<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn version_get(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -116,8 +115,8 @@ pub(super) async fn version_get<S: Platform>(
 /// a specified SEMVER (stored verbatim); `409` on an existing `(name, version)`.
 ///
 /// G-2: as [`store`], the `query_type` parameter is read and threaded through.
-pub(super) async fn version_store<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn version_store(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -151,8 +150,8 @@ pub(super) async fn version_store<S: Platform>(
 /// the highest. `None` when the lookup fails or finds nothing — the store itself
 /// already succeeded, so the response degrades to Location-less rather than
 /// failing the request.
-async fn stored_version_of<S: Platform>(
-    state: &AppState<S>,
+async fn stored_version_of(
+    state: &AppState,
     name: &str,
     _headers: &HeaderMap,
 ) -> Option<String> {

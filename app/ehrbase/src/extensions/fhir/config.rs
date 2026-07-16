@@ -14,7 +14,7 @@
 //! restrict the PHI-bearing stream independently. Turning it on is an explicit,
 //! audited deployment decision.
 
-use ehrbase_sm::SecretUrl;
+use crate::config::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).

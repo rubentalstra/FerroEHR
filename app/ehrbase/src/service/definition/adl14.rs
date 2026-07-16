@@ -15,7 +15,7 @@ use std::str::FromStr;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, DefinitionAdl14Service, Page, SmError};
+use crate::service::{CallStatusType, Page, SmError};
 use openehr_base::prelude::ArchetypeId;
 
 use super::{compile_pattern, page_bounds, paginate};
@@ -317,29 +317,28 @@ fn extract_archetype_id(adl: &str) -> Option<ArchetypeId> {
 
 // ── SM Definitions native API (I_DEFINITION_ADL14) ───────────────────────────
 
-#[async_trait]
-impl DefinitionAdl14Service for EhrbaseService {
-    async fn has_archetype(&self, an_id: String) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn has_archetype(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.archetype_exists(&an_id).await?)
     }
 
-    async fn valid_archetype(&self, adl: String) -> Result<bool, SmError> {
+    pub async fn valid_archetype(&self, adl: String) -> Result<bool, SmError> {
         Ok(Self::valid_archetype_source(&adl))
     }
 
-    async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
+    pub async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
         Ok(self.archetype_upload(&adl).await?)
     }
 
-    async fn get_archetype(&self, an_id: String) -> Result<String, SmError> {
+    pub async fn get_archetype(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.archetype_get(&an_id).await?)
     }
 
-    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_archetypes_adl14(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.archetype_list(page).await?)
     }
 
-    async fn list_matching_archetypes(
+    pub async fn list_matching_archetypes(
         &self,
         id_pattern: String,
         page: Page,
@@ -347,23 +346,23 @@ impl DefinitionAdl14Service for EhrbaseService {
         Ok(self.archetype_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_archetype(&self, an_id: String) -> Result<(), SmError> {
+    pub async fn delete_archetype(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.archetype_delete(&an_id).await?)
     }
 
-    async fn archetypes_count(&self) -> Result<i64, SmError> {
+    pub async fn archetypes_count_adl14(&self) -> Result<i64, SmError> {
         Ok(self.archetype_count().await?)
     }
 
-    async fn has_opt(&self, an_opt_id: String) -> Result<bool, SmError> {
+    pub async fn has_opt(&self, an_opt_id: String) -> Result<bool, SmError> {
         Ok(self.opt_exists(&an_opt_id).await?)
     }
 
-    async fn valid_opt(&self, opt_xml: String) -> Result<bool, SmError> {
+    pub async fn valid_opt(&self, opt_xml: String) -> Result<bool, SmError> {
         Ok(Self::valid_opt_xml(&opt_xml))
     }
 
-    async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
+    pub async fn upload_opt(&self, opt_xml: String) -> Result<(), SmError> {
         // OPT ingestion runs in the templates layer: `store_template` parses +
         // structurally validates the OPT (invalid → 422 `invalid_template`) and
         // rejects a duplicate id with 409.
@@ -371,15 +370,15 @@ impl DefinitionAdl14Service for EhrbaseService {
         Ok(())
     }
 
-    async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
+    pub async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
         Ok(self.opt_get(&an_opt_id).await?)
     }
 
-    async fn list_opts(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_opts_adl14(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.opt_list(page).await?)
     }
 
-    async fn list_matching_opts(
+    pub async fn list_matching_opts(
         &self,
         id_pattern: String,
         page: Page,
@@ -387,11 +386,11 @@ impl DefinitionAdl14Service for EhrbaseService {
         Ok(self.opt_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
+    pub async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
         Ok(self.opt_delete(&an_opt_id).await?)
     }
 
-    async fn opts_count(&self) -> Result<i64, SmError> {
+    pub async fn opts_count_adl14(&self) -> Result<i64, SmError> {
         Ok(self.opt_count().await?)
     }
 }

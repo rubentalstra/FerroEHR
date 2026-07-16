@@ -17,11 +17,11 @@ use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{CallStatusType, PartyKind, Platform, ServiceResponse};
+use ehrbase::service::{CallStatusType, PartyKind, ServiceResponse};
 
 /// The per-kind CRUD operations (`create`/`get`/`update`/`delete`).
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     kind: PartyKind,
     action: &str,
     parts: RequestParts,
@@ -125,8 +125,8 @@ pub(super) async fn run<S: Platform>(
 /// G-3). The party must already exist (`item_tag.target_vo_id` FK), so this runs
 /// after the create/update write. A present-but-empty header clears all tags
 /// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
-async fn persist_request_tags<S: Platform>(
-    state: &AppState<S>,
+async fn persist_request_tags(
+    state: &AppState,
     kind: PartyKind,
     h: &HeaderMap,
     resp: &mut ServiceResponse,
@@ -156,8 +156,8 @@ async fn persist_request_tags<S: Platform>(
 /// `If-Match` header. Responses: `204_version_deleted`, `400_already_deleted`,
 /// `404`, `409_PERSON_with_uid_based_id` (supplied uid doesn't match the latest
 /// version; returns the latest `version_uid` in `ETag`).
-async fn run_delete<S: Platform>(
-    state: &AppState<S>,
+async fn run_delete(
+    state: &AppState,
     kind: PartyKind,
     base: &str,
     seg: &str,

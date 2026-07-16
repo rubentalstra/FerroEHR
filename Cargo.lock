@@ -2064,8 +2064,6 @@ dependencies = [
  "bytes",
  "clap",
  "config",
- "ehrbase-rest",
- "ehrbase-sm",
  "futures",
  "http",
  "http-body-util",
@@ -2097,8 +2095,10 @@ dependencies = [
  "rustls",
  "sea-query",
  "sea-query-sqlx",
+ "secrecy",
  "serde",
  "serde_json",
+ "serde_norway",
  "sha2 0.11.0",
  "sqlx",
  "testcontainers",
@@ -2127,7 +2127,7 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "cedar-policy",
- "ehrbase-sm",
+ "ehrbase",
  "http",
  "http-body-util",
  "indexmap 2.14.0",
@@ -2162,20 +2162,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "ehrbase-sm"
+name = "ehrbase-server"
 version = "3.0.3"
 dependencies = [
- "async-trait",
- "jiff",
- "openehr-base",
- "openehr-flat",
- "openehr-rm",
- "secrecy",
- "serde",
- "serde_json",
- "serde_norway",
- "thiserror 2.0.18",
+ "anyhow",
+ "clap",
+ "ehrbase",
+ "ehrbase-rest",
+ "sqlx",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

@@ -13,11 +13,11 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{Platform, ServiceResponse};
+use ehrbase::service::{ServiceResponse};
 
 /// The `contribution_*` operations.
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

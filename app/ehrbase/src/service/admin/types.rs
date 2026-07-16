@@ -1,0 +1,149 @@
+//! The ADMIN group's application seam (SM `I_ADMIN_SERVICE` +
+//! `I_ADMIN_ARCHIVE`).
+
+use async_trait::async_trait;
+
+use crate::service::{CallStatusType, SmError};
+
+use crate::service::PlatformService;
+
+/// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
+/// date-time bounds, each independently optional (open bounds allowed). Realizes
+/// the SM `time_interval: Interval<Iso8601_date_time> [0..1]` parameter of the
+/// four `i_admin_service.adoc` statistics calls.
+///
+/// PORT NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
+/// default openEHR `Interval` bound inclusivity — matched against each
+/// CONTRIBUTION/version audit `time_committed`. An invalid ISO bound is a `400`
+/// (rejected at the adapter before the query runs).
+pub type StatTimeRange = Option<(Option<String>, Option<String>)>;
+
+/// `EXPORT_FORMAT` enumeration
+/// (`docs/specs/openehr/SM/docs/UML/classes/export_format.adoc`): the logical
+/// serialization flavour a dump is written in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportFormat {
+    /// `openehr_canonical_xml`.
+    OpenehrCanonicalXml,
+    /// `openehr_canonical_json`.
+    OpenehrCanonicalJson,
+}
+
+impl ExportFormat {
+    /// The SM enumeration literal, exactly as the spec spells it.
+    #[must_use]
+    pub fn sm_name(self) -> &'static str {
+        match self {
+            Self::OpenehrCanonicalXml => "openehr_canonical_xml",
+            Self::OpenehrCanonicalJson => "openehr_canonical_json",
+        }
+    }
+}
+
+/// `COMPRESSION_FORMAT` enumeration
+/// (`docs/specs/openehr/SM/docs/UML/classes/compression_format.adoc`): the
+/// compression to apply while dumping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompressionFormat {
+    /// `zip`.
+    Zip,
+    /// `7z` (not a valid Rust identifier — the SM literal is `7z`).
+    SevenZip,
+}
+
+impl CompressionFormat {
+    /// The SM enumeration literal, exactly as the spec spells it.
+    #[must_use]
+    pub fn sm_name(self) -> &'static str {
+        match self {
+            Self::Zip => "zip",
+            Self::SevenZip => "7z",
+        }
+    }
+}
+
+/// `EXPORT_SPEC` class
+/// (`docs/specs/openehr/SM/docs/UML/classes/export_spec.adoc`): "the details for
+/// an export operation".
+///
+/// PORT NOTE: `EXPORT_SPEC` carries `logical_format [0..1]`,
+/// `compression_format [0..1]`, `encoding: ENCODING_FORMAT [0..1]`, and
+/// `segment_split_size: Integer [1..1]` (kb). The `I_ADMIN_DUMP_LOAD.export_ehrs`
+/// signature instead passes the three format enums *loose* and omits
+/// `segment_split_size` entirely — `EXPORT_SPEC` is the SM's own richer bundle
+/// for exactly this operation, so [`AdminDumpLoad::export_ehrs`] takes an
+/// `ExportSpec` (the strictly more expressive form) and the loose params map
+/// onto its fields. `ENCODING_FORMAT` is an **empty enumeration** (no values in
+/// `encoding_format.adoc`), so the SM `encoding` attribute has no representable
+/// value and is dropped here (`docs/design/sm-platform/
+/// 04-message-subject-proxy-terminology-admin.md` §4.3).
+#[derive(Debug, Clone)]
+pub struct ExportSpec {
+    /// Logical format to use, i.e. flavour of XML, JSON etc.
+    pub logical_format: Option<ExportFormat>,
+    /// Compression format to use during dump.
+    pub compression_format: Option<CompressionFormat>,
+    /// Size in kb of segment size on file system to split the export into
+    /// (`segment_split_size`, 1..1).
+    pub segment_split_size: i32,
+}
+
+impl ExportSpec {
+    /// An uncompressed canonical-JSON export split into `segment_split_size_kb`
+    /// segments — the format the greenfield storage exports natively (a deliberate design decision:
+    /// `node.data` is verbatim canonical openEHR JSON).
+    #[must_use]
+    pub fn canonical_json(segment_split_size_kb: i32) -> Self {
+        Self {
+            logical_format: Some(ExportFormat::OpenehrCanonicalJson),
+            compression_format: None,
+            segment_split_size: segment_split_size_kb,
+        }
+    }
+}
+
+/// `DUMP_LOAD_FAIL_REPORT` class
+/// (`docs/specs/openehr/SM/docs/UML/classes/dump_load_fail_report.adoc`):
+/// "Dump or Load fail report for a single entity, e.g. `EHR`, `PARTY` etc."
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DumpLoadFailReport {
+    /// Type name of entity (`entity_type`, 1..1).
+    pub entity_type: String,
+    /// Identifier of entity (`entity_id`, 1..1).
+    pub entity_id: String,
+    /// Status of entity in the dump/load operation (`dump_status`, 1..1):
+    /// `true` = successfully dumped/loaded; `false` = failed for this entity.
+    pub dump_status: bool,
+    /// Detailed error information, if available (`error`, 0..1).
+    pub error: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_enum_sm_names_match_the_spec_literals() {
+        assert_eq!(
+            ExportFormat::OpenehrCanonicalXml.sm_name(),
+            "openehr_canonical_xml"
+        );
+        assert_eq!(
+            ExportFormat::OpenehrCanonicalJson.sm_name(),
+            "openehr_canonical_json"
+        );
+        assert_eq!(CompressionFormat::Zip.sm_name(), "zip");
+        assert_eq!(CompressionFormat::SevenZip.sm_name(), "7z");
+    }
+
+    #[test]
+    fn canonical_json_spec_defaults_to_uncompressed_json() {
+        let spec = ExportSpec::canonical_json(1024);
+        assert_eq!(
+            spec.logical_format,
+            Some(ExportFormat::OpenehrCanonicalJson)
+        );
+        assert_eq!(spec.compression_format, None);
+        assert_eq!(spec.segment_split_size, 1024);
+    }
+}

@@ -28,8 +28,6 @@ use testcontainers_modules::rabbitmq::RabbitMq;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::fhir::{FhirOutboundConfig, start};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::DefinitionAdapter;
-use ehrbase_sm::FhirConnectorAdapter;
 
 /// The separate PHI exchange the outbound emitter publishes to.
 const EXCHANGE: &str = "ehrbase.fhir";
@@ -98,7 +96,7 @@ fn observation() -> Value {
 fn outbound_config(url: String) -> FhirOutboundConfig {
     FhirOutboundConfig {
         enabled: true,
-        url: ehrbase_sm::SecretUrl::new(url),
+        url: ehrbase::config::SecretUrl::new(url),
         exchange: EXCHANGE.to_owned(),
         poll_interval_ms: 50,
         publish_max_retries: 1,

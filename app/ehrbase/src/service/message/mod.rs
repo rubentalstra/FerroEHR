@@ -52,10 +52,8 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_sm::{
-    AuditEvent, EhrExtractService, EventActionCode, EventOutcome, ObjectClass, SmError, SystemLog,
-    TddService,
-};
+use crate::service::SmError;
+use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
@@ -90,17 +88,16 @@ impl EhrbaseService {
     }
 }
 
-#[async_trait]
-impl EhrExtractService for EhrbaseService {
-    async fn export_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    pub async fn extract_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
         self.export_all_ehrs(an_ehr_id).await
     }
 
-    async fn export_ehr_extracts(&self, extract_spec: ExtractSpec) -> Result<Vec<Value>, SmError> {
+    pub async fn export_ehr_extracts(&self, extract_spec: ExtractSpec) -> Result<Vec<Value>, SmError> {
         self.export_ehr_extracts_spec(extract_spec).await
     }
 
-    async fn import_ehr(
+    pub async fn import_ehr(
         &self,
         an_ehr_id: Option<Uuid>,
         an_extract: Extract,
@@ -108,7 +105,7 @@ impl EhrExtractService for EhrbaseService {
         self.import_whole_ehr(an_ehr_id, an_extract).await
     }
 
-    async fn import_ehr_extract(
+    pub async fn import_ehr_extract(
         &self,
         an_ehr_id: Uuid,
         an_extract: Extract,
@@ -117,13 +114,12 @@ impl EhrExtractService for EhrbaseService {
     }
 }
 
-#[async_trait]
-impl TddService for EhrbaseService {
-    async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
+impl EhrbaseService {
+    pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
         self.import_one_tdd(an_ehr_id, &tdd).await
     }
 
-    async fn import_tdds(
+    pub async fn import_tdds(
         &self,
         an_ehr_id: Uuid,
         tdds: Vec<String>,

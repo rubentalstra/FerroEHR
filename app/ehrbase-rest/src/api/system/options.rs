@@ -59,32 +59,11 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// field while the defaults stay measured.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(default)]
-pub struct SystemOptionsConfig {
-    /// `Options.solution` — the product name.
-    pub solution: String,
-    /// `Options.solution_version` — the product version.
-    pub solution_version: String,
-    /// `Options.vendor` — the organisation providing the solution.
-    pub vendor: String,
-    /// `Options.restapi_specs_version` — the ITS-REST version targeted.
-    pub restapi_specs_version: String,
-    /// `Options.conformance_profile` — CORE / STANDARD (CNF master03 profiles).
-    pub conformance_profile: String,
-}
 
-impl Default for SystemOptionsConfig {
-    fn default() -> Self {
-        Self {
-            // G-6: `solution` (the product) and `vendor` (the organisation) are
-            // distinct — they were the same placeholder before the redesign.
-            solution: "EHRbase-RS".to_owned(),
-            solution_version: env!("CARGO_PKG_VERSION").to_owned(),
-            vendor: "EHRbase-RS project".to_owned(),
-            restapi_specs_version: provenance::ITS_REST.to_owned(),
-            conformance_profile: provenance::CONFORMANCE_PROFILE.to_owned(),
-        }
-    }
-}
+use ehrbase::config::SystemOptionsConfig;
+
+
+
 
 /// The wire body of the `OPTIONS /` response — the OAS `Options` schema
 /// (`system-codegen.openapi.yaml` lines 92-121): `solution`,

@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use ehrbase_sm::SmError;
+use crate::service::SmError;
 
 use super::fhir::FhirTerminologyProvider;
 

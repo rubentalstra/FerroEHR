@@ -5,7 +5,6 @@
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Json, Router};
-use ehrbase_sm::Platform;
 use http::StatusCode;
 use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
@@ -61,7 +60,7 @@ async fn status_health() -> impl IntoResponse {
     (StatusCode::OK, "OK")
 }
 
-pub(crate) fn router<S: Platform>(rest_root: &str) -> Router<AppState<S>> {
+pub(crate) fn router(rest_root: &str) -> Router<AppState> {
     Router::new()
         .route(&format!("{rest_root}/status"), get(status))
         .route("/health", get(root_health))
@@ -72,8 +71,8 @@ pub(crate) fn router<S: Platform>(rest_root: &str) -> Router<AppState<S>> {
 /// REST root; a non-default base path shifts them uniformly). These endpoints
 /// are unauthenticated (mounted outside the auth layer). No openEHR spec governs
 /// an operational status/health endpoint — our own surface.
-pub(crate) fn openapi<S: Platform>() -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState<S>>::new()
+pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState>::new()
         .routes(routes!(status))
         .routes(routes!(root_health))
         .routes(routes!(status_health))

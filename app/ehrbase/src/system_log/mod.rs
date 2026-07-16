@@ -1,6 +1,6 @@
 //! IHE **ATNA** (Audit Trail and Node Authentication) audit trail for the
 //! ehrbase-rs CDR — the platform-crate implementation of the SM
-//! [`SystemLog`](ehrbase_sm::SystemLog) component (`I_SYSTEM_LOG`).
+//! [`SystemLog`](crate::service::SystemLog) component (`I_SYSTEM_LOG`).
 //!
 //! The one normative openEHR statement for this component is a single line of
 //! the SM platform component table — verbatim: "System Log | IHE
@@ -27,11 +27,11 @@
 //! (BASE `architecture_overview/master07-security.adoc` §Integrity). That
 //! write-audit is **not** implemented here; do not duplicate it in this module.
 //!
-//! The transport-agnostic event model ([`AuditEvent`](ehrbase_sm::AuditEvent))
-//! and the [`SystemLog`](ehrbase_sm::SystemLog) trait live in the SM native-API
+//! The transport-agnostic event model ([`AuditEvent`](crate::system_log::AuditEvent))
+//! and the [`SystemLog`](crate::service::SystemLog) trait live in the SM native-API
 //! crate (`ehrbase-sm`, the empty-stub `I_SYSTEM_LOG` component); this module is
 //! the ATNA *rendering* — the DICOM `AuditMessage`, syslog framing, transports,
-//! and the non-blocking sender — plus the [`SystemLog`](ehrbase_sm::SystemLog)
+//! and the non-blocking sender — plus the [`SystemLog`](crate::service::SystemLog)
 //! implementation on [`EhrbaseService`](crate::service::EhrbaseService). The
 //! ITS-REST operation → classification mapping is the protocol adapter's
 //! concern (`ehrbase-rest::audit_table`). The `ehrbase-rest` layer builds an
@@ -53,11 +53,13 @@ pub mod message;
 pub mod sender;
 pub mod syslog;
 
+pub mod event;
+pub use event::*;
+
 pub use config::{AuditConfig, FailMode, Transport};
 pub use message::{AuditContext, AuditMessage};
 pub use sender::{AuditHandle, AuditSender, SubjectResolver, start};
 
-use ehrbase_sm::{AuditEvent, EmitOutcome, SystemLog};
 
 use crate::service::EhrbaseService;
 
@@ -85,8 +87,8 @@ impl From<std::io::Error> for AuditError {
 /// ([`EhrbaseService::with_audit`](crate::service::EhrbaseService::with_audit)).
 /// With no sender wired, auditing is off and every emit is
 /// [`EmitOutcome::Dropped`].
-impl SystemLog for EhrbaseService {
-    fn emit(&self, event: AuditEvent) -> EmitOutcome {
+impl EhrbaseService {
+    pub fn emit(&self, event: AuditEvent) -> EmitOutcome {
         // `map_or` (not `map(..).unwrap_or(..)`) keeps clippy happy; behaviour
         // is identical to `Dropped` when no sender is wired.
         self.audit
@@ -94,11 +96,11 @@ impl SystemLog for EhrbaseService {
             .map_or(EmitOutcome::Dropped, |s| s.emit(event))
     }
 
-    fn audit_enabled(&self) -> bool {
+    pub fn audit_enabled(&self) -> bool {
         self.audit.as_ref().is_some_and(AuditSender::enabled)
     }
 
-    fn suppress_login_events(&self) -> bool {
+    pub fn suppress_login_events(&self) -> bool {
         self.audit
             .as_ref()
             .is_some_and(AuditSender::suppress_login_events)

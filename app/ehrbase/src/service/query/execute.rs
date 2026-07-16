@@ -15,8 +15,8 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_rest::overview::error::QUERY_TIMEOUT_TAG;
-use ehrbase_sm::{AqlQueryRequest, QueryOutcome, QueryService, SmError};
+use crate::service::QUERY_TIMEOUT_TAG;
+use crate::service::{AqlQueryRequest, QueryOutcome, SmError};
 use openehr_query::parser::parse_str;
 
 use super::result_set::{build_params, result_set_json, substitute_params};
@@ -24,11 +24,10 @@ use crate::aql::{self, AqlError, ExecError, Params, QueryIr, SqlCtx};
 use crate::service::EhrbaseService;
 use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
 
-#[async_trait]
-impl QueryService for EhrbaseService {
+impl EhrbaseService {
     /// `execute_ad_hoc_query` — execute an ad hoc query, supplying the query
     /// text. Error `ehr_id_does_not_exist` (a listed EHR does not exist).
-    async fn execute_ad_hoc_query(
+    pub async fn execute_ad_hoc_query(
         &self,
         aql: String,
         request: AqlQueryRequest,
@@ -39,7 +38,7 @@ impl QueryService for EhrbaseService {
     /// `execute_stored_query` — execute a query stored in the definition service
     /// by its qualified name (`version` a semver.org string, latest when
     /// absent). Error `ehr_id_does_not_exist`.
-    async fn execute_stored_query(
+    pub async fn execute_stored_query(
         &self,
         qualified_query_name: String,
         version: Option<String>,

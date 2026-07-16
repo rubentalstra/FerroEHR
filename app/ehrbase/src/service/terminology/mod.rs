@@ -1,6 +1,6 @@
 //! The **Terminology** component of the platform crate: the concrete
 //! realization of the SM `I_TERMINOLOGY_SERVICE` interface
-//! ([`ehrbase_sm::TerminologyService`]) on [`EhrbaseService`], plus the AQL
+//! ([`crate::service::TerminologyService`]) on [`EhrbaseService`], plus the AQL
 //! terminology seam.
 //!
 //! Spec: `docs/specs/openehr/SM/docs/openehr_platform/
@@ -34,6 +34,9 @@ mod bundle;
 mod config;
 mod fhir;
 
+pub mod types;
+pub use types::*;
+
 pub use config::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind, TerminologyConfig,
 };
@@ -43,8 +46,8 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use ehrbase_sm::SmError;
-use ehrbase_sm::{CallStatusType, TerminologyDescription, TerminologyExtract, TerminologyService};
+use crate::service::SmError;
+use crate::service::{CallStatusType, TerminologyDescription, TerminologyExtract};
 
 use crate::aql::TerminologyExpander;
 use crate::aql::error::{AqlError, AqlFeatureError, ExecError};
@@ -70,19 +73,18 @@ fn is_fhir_service_api(service_api: &str) -> bool {
 
 // ─── SM `I_TERMINOLOGY_SERVICE` on the service (provider routing) ─────────────
 
-#[async_trait]
-impl TerminologyService for EhrbaseService {
-    async fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
+impl EhrbaseService {
+    pub async fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
         // Enumeration is the bundle's (G-4).
         Ok(bundle::terminology_ids())
     }
 
-    async fn has_terminology(&self, terminology_id: &str) -> Result<bool, SmError> {
+    pub async fn has_terminology(&self, terminology_id: &str) -> Result<bool, SmError> {
         // Enumeration is the bundle's (G-4).
         Ok(bundle::has_terminology(terminology_id))
     }
 
-    async fn get_terminology_description(
+    pub async fn get_terminology_description(
         &self,
         terminology_id: &str,
     ) -> Result<TerminologyDescription, SmError> {
@@ -90,7 +92,7 @@ impl TerminologyService for EhrbaseService {
         bundle::terminology_description(terminology_id)
     }
 
-    async fn has_term(
+    pub async fn has_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -106,7 +108,7 @@ impl TerminologyService for EhrbaseService {
         }
     }
 
-    async fn get_term(
+    pub async fn get_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -124,7 +126,7 @@ impl TerminologyService for EhrbaseService {
         }
     }
 
-    async fn subsumes(
+    pub async fn subsumes(
         &self,
         terminology_id: &str,
         ref_code: &str,
@@ -140,7 +142,7 @@ impl TerminologyService for EhrbaseService {
         }
     }
 
-    async fn value_set_validate(
+    pub async fn value_set_validate(
         &self,
         terminology_id: &str,
         value_set_id: &str,
@@ -157,7 +159,7 @@ impl TerminologyService for EhrbaseService {
         }
     }
 
-    async fn has_value_set(
+    pub async fn has_value_set(
         &self,
         terminology_id: &str,
         value_set_code: &str,
@@ -171,7 +173,7 @@ impl TerminologyService for EhrbaseService {
         }
     }
 
-    async fn get_value_set(
+    pub async fn get_value_set(
         &self,
         terminology_id: &str,
         value_set_code: &str,

@@ -5,7 +5,7 @@
 //!
 //! Internal split: [`index`] = the SM write ops (I1–I5) + the design-filled
 //! reads; [`conflicts`] = the design-filled advisory duplicate-detection read
-//! (G-10); [`api`] = the [`EhrIndexService`](ehrbase_sm::EhrIndexService) trait
+//! (G-10); [`api`] = the [`EhrIndexService`](crate::service::EhrIndexService) trait
 //! impl.
 //!
 //! PORT NOTE: index entries are **not** versioned objects — the SM defines no
@@ -22,7 +22,7 @@
 //! operation semantics + error names), so the table access lives here rather
 //! than behind a storage-owned repository.
 
-use ehrbase_sm::{
+use crate::service::{
     CallStatusType, EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SmError,
     SubjectRef,
 };
@@ -202,3 +202,6 @@ mod tests {
         assert!(parse_valid_time(Some("not-a-time")).is_err());
     }
 }
+
+pub mod types;
+pub use types::*;

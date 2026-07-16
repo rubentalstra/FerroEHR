@@ -16,7 +16,7 @@
 //! ([`super::fhir`]) is the other (`arch-overview master12` "terminology query
 //! server").
 //!
-//! [`TerminologyService`]: ehrbase_sm::TerminologyService
+//! [`TerminologyService`]: crate::service::TerminologyService
 //!
 //! # Bundle mapping (design decisions, each documented as a PORT NOTE)
 //!
@@ -58,8 +58,8 @@
 use openehr_term::bundle::openehr;
 use openehr_term::terminology::code_set::CodeSet;
 
-use ehrbase_sm::{CallStatusType, SmError};
-use ehrbase_sm::{DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract};
+use crate::service::{CallStatusType, SmError};
+use crate::service::{DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract};
 
 use crate::versioning::OPENEHR;
 

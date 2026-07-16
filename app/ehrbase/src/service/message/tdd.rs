@@ -47,7 +47,7 @@ use quick_xml::events::Event;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_sm::{CallStatusType, ServiceResponse, SmError};
+use crate::service::{CallStatusType, ServiceResponse, SmError};
 
 use crate::service::{EhrbaseService, ServiceError};
 
@@ -195,7 +195,7 @@ impl EhrbaseService {
         let composition = self.prepare_one_tdd(ehr_id, tdd).await?;
         // The validated commit path (WebTemplate + RM-invariant + terminology
         // validation, contribution/audit).
-        let resp = self.create_composition(ehr_id, composition).await?;
+        let resp = self.create_composition_response(ehr_id, composition).await?;
         version_uid(&resp)
     }
 
@@ -214,7 +214,7 @@ impl EhrbaseService {
         let mut ids = Vec::with_capacity(prepared.len());
         for composition in prepared {
             // The validated commit path (as in `import_one_tdd`).
-            let resp = self.create_composition(ehr_id, composition).await?;
+            let resp = self.create_composition_response(ehr_id, composition).await?;
             ids.push(version_uid(&resp)?);
         }
         Ok(ids)

@@ -38,9 +38,9 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::CallStatusType;
-use ehrbase_sm::{AqlQueryRequest, ServiceResponse, SubjectRef};
-use ehrbase_sm::{EhrService, FhirConnectorAdapter, SmError};
+use crate::service::CallStatusType;
+use crate::service::{AqlQueryRequest, ServiceResponse, SubjectRef};
+use crate::service::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::storage::version_repo;
@@ -188,7 +188,7 @@ impl EhrbaseService {
 
     /// Resolve-or-create the EHR whose `EHR_STATUS.subject` matches `subject`.
     async fn ensure_ehr_for_subject(&self, subject: SubjectRef) -> Result<Uuid, SmError> {
-        let existing = EhrService::get_ehrs_for_subject(self, subject.clone()).await?;
+        let existing = self.get_ehrs_for_subject(subject.clone()).await?;
         if let Some(summary) = existing.first() {
             return Uuid::parse_str(&summary.ehr_id).map_err(|e| {
                 SmError::new(
@@ -197,7 +197,7 @@ impl EhrbaseService {
                 )
             });
         }
-        EhrService::create_ehr_for_subject(self, subject, None).await
+        self.create_ehr_for_subject(subject, None).await
     }
 
     /// Every enabled mapping definition for a resource type, across all
@@ -512,21 +512,20 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     ServiceError::Database(e)
 }
 
-#[async_trait]
-impl FhirConnectorAdapter for EhrbaseService {
-    async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    pub async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_mappings().await?)
     }
 
-    async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
+    pub async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
         Ok(self.create_mapping(&a_mapping).await?)
     }
 
-    async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
+    pub async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_mapping(a_mapping_id).await?)
     }
 
-    async fn fhir_mapping_update(
+    pub async fn fhir_mapping_update(
         &self,
         a_mapping_id: Uuid,
         a_mapping: Value,
@@ -534,11 +533,11 @@ impl FhirConnectorAdapter for EhrbaseService {
         Ok(self.update_mapping(a_mapping_id, &a_mapping).await?)
     }
 
-    async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
+    pub async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_mapping(a_mapping_id).await?)
     }
 
-    async fn fhir_ingest(
+    pub async fn fhir_ingest(
         &self,
         resource_type: String,
         profile: Option<String>,
@@ -589,10 +588,10 @@ impl FhirConnectorAdapter for EhrbaseService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        Ok(self.create_composition(ehr_id, composition).await?)
+        Ok(self.create_composition_response(ehr_id, composition).await?)
     }
 
-    async fn fhir_search(
+    pub async fn fhir_search(
         &self,
         resource_type: String,
         patient: String,

@@ -6,7 +6,7 @@
 //! once at boot. The DSN is a [`SecretUrl`]: its embedded credentials are
 //! redacted from every rendering (`Debug`, `/management/env`, `config check`).
 
-use ehrbase_sm::SecretUrl;
+use crate::config::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The zero-config dev DSN (matches the compose dev stack). Production MUST

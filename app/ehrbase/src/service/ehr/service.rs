@@ -8,7 +8,7 @@
 //! and folder-membership SQL is a storage seam (G-10; no openEHR spec governs
 //! the schema — our own design).
 
-use ehrbase_sm::{EhrService, EhrSummary, ResourceMeta, ServiceResponse, SmError, SubjectRef};
+use crate::service::{EhrSummary, ResourceMeta, ServiceResponse, SmError, SubjectRef};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -28,7 +28,7 @@ impl EhrbaseService {
     /// A duplicate subject conflicts at the database (`ehr_subject_uq`, kept in
     /// sync by [`Self::sync_ehr_subject`]) → 409 (ITS-REST `409_EHR.yaml`; CNF
     /// `create_ehr-two_ehrs_same_patient`).
-    pub(in crate::service) async fn create_ehr(
+    pub(in crate::service) async fn create_ehr_response(
         &self,
         ehr_id: Uuid,
         status: Value,
@@ -340,9 +340,8 @@ pub(in crate::service) fn default_ehr_status() -> Value {
     })
 }
 
-#[async_trait::async_trait]
-impl EhrService for EhrbaseService {
-    async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
         match self.ensure_ehr_exists(ehr_id).await {
             Ok(()) => Ok(true),
             Err(ServiceError::NotFound(_)) => Ok(false),
@@ -350,7 +349,7 @@ impl EhrService for EhrbaseService {
         }
     }
 
-    async fn has_ehr_for_subject(&self, a_subject_id: SubjectRef) -> Result<bool, SmError> {
+    pub async fn has_ehr_for_subject(&self, a_subject_id: SubjectRef) -> Result<bool, SmError> {
         match self
             .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
             .await
@@ -361,7 +360,7 @@ impl EhrService for EhrbaseService {
         }
     }
 
-    async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
+    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
         // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`): the
         // SM precondition `an_ehr_status.subject = Void` is NOT enforced on the
         // id-only create paths. `POST /ehr` intentionally accepts a
@@ -373,22 +372,22 @@ impl EhrService for EhrbaseService {
         // than rejecting it. Recorded, not silently guessed.
         let ehr_id = Uuid::now_v7();
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.create_ehr(ehr_id, status).await?;
+        self.create_ehr_response(ehr_id, status).await?;
         Ok(ehr_id)
     }
 
-    async fn create_ehr_with_id(
+    pub async fn create_ehr_with_id(
         &self,
         an_ehr_id: Uuid,
         an_ehr_status: Option<Value>,
     ) -> Result<Uuid, SmError> {
         // G-5: see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.create_ehr(an_ehr_id, status).await?;
+        self.create_ehr_response(an_ehr_id, status).await?;
         Ok(an_ehr_id)
     }
 
-    async fn create_ehr_for_subject(
+    pub async fn create_ehr_for_subject(
         &self,
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
@@ -398,11 +397,11 @@ impl EhrService for EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.create_ehr(ehr_id, status).await?;
+        self.create_ehr_response(ehr_id, status).await?;
         Ok(ehr_id)
     }
 
-    async fn create_ehr_for_subject_with_id(
+    pub async fn create_ehr_for_subject_with_id(
         &self,
         an_ehr_id: Uuid,
         a_subject_id: SubjectRef,
@@ -412,15 +411,15 @@ impl EhrService for EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.create_ehr(an_ehr_id, status).await?;
+        self.create_ehr_response(an_ehr_id, status).await?;
         Ok(an_ehr_id)
     }
 
-    async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
+    pub async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
         Ok(self.summarize_ehr(an_ehr_id).await?)
     }
 
-    async fn get_ehrs_for_subject(
+    pub async fn get_ehrs_for_subject(
         &self,
         a_subject_id: SubjectRef,
     ) -> Result<Vec<EhrSummary>, SmError> {
@@ -443,11 +442,11 @@ impl EhrService for EhrbaseService {
         }
     }
 
-    async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.ehr_summary(an_ehr_id).await?.body)
     }
 
-    async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         // Serve the create-time representation from the stash the commit path
         // populated (built from `Committed`, no re-read); a popped entry cannot
         // be reused. Fall back to a full read when the entry has been evicted
@@ -458,7 +457,7 @@ impl EhrService for EhrbaseService {
         self.ehr_object(an_ehr_id).await
     }
 
-    async fn ehr_object_for_subject(
+    pub async fn ehr_object_for_subject(
         &self,
         subject_id: &str,
         subject_namespace: &str,

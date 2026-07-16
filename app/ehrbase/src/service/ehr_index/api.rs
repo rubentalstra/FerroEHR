@@ -9,15 +9,13 @@
 //! G-8/G-9: every domain failure crosses this seam as [`super::IndexError`],
 //! whose `From<IndexError> for SmError` maps `ehr_id_does_not_exist` /
 //! `subject_id_does_not_exist` onto their dedicated
-//! [`CallStatusType`](ehrbase_sm::CallStatusType) variants — never the generic
+//! [`CallStatusType`](crate::service::CallStatusType) variants — never the generic
 //! `versioned_object_does_not_exist` (`i_ehr_index.adoc §Errors`).
 
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use ehrbase_sm::{
-    EhrIndexEntry, EhrIndexService, LocationDesc, ResourceStatus, SmError, SubjectRef,
-};
+use crate::service::{EhrIndexEntry, LocationDesc, ResourceStatus, SmError, SubjectRef};
 
 use crate::service::EhrbaseService;
 
@@ -28,9 +26,8 @@ fn parse_ehr_id(raw: &str) -> Result<Uuid, SmError> {
     Uuid::parse_str(raw).map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
 }
 
-#[async_trait]
-impl EhrIndexService for EhrbaseService {
-    async fn add_ehr_subject(
+impl EhrbaseService {
+    pub async fn add_ehr_subject(
         &self,
         ehr_id: String,
         subject: SubjectRef,
@@ -43,7 +40,7 @@ impl EhrIndexService for EhrbaseService {
             .await?)
     }
 
-    async fn update_ehr_subject_status(
+    pub async fn update_ehr_subject_status(
         &self,
         ehr_id: String,
         subject: SubjectRef,
@@ -53,7 +50,7 @@ impl EhrIndexService for EhrbaseService {
         Ok(self.index_update_status(ehr_id, &subject, &status).await?)
     }
 
-    async fn update_ehr_subject_loc_desc(
+    pub async fn update_ehr_subject_loc_desc(
         &self,
         ehr_id: String,
         subject: SubjectRef,
@@ -65,21 +62,21 @@ impl EhrIndexService for EhrbaseService {
             .await?)
     }
 
-    async fn remove_ehr_subject(&self, ehr_id: String, subject: SubjectRef) -> Result<(), SmError> {
+    pub async fn remove_ehr_subject(&self, ehr_id: String, subject: SubjectRef) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         Ok(self.index_remove_ehr_subject(ehr_id, &subject).await?)
     }
 
-    async fn remove_subject(&self, subject: SubjectRef) -> Result<(), SmError> {
+    pub async fn remove_subject(&self, subject: SubjectRef) -> Result<(), SmError> {
         Ok(self.index_remove_subject(&subject).await?)
     }
 
-    async fn ehr_subjects(&self, ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
+    pub async fn ehr_subjects(&self, ehr_id: String) -> Result<Vec<EhrIndexEntry>, SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         Ok(self.index_ehr_subjects(ehr_id).await?)
     }
 
-    async fn subject_ehrs(&self, subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, SmError> {
+    pub async fn subject_ehrs(&self, subject: SubjectRef) -> Result<Vec<EhrIndexEntry>, SmError> {
         Ok(self.index_subject_ehrs(&subject).await?)
     }
 }

@@ -47,7 +47,7 @@
 #![allow(clippy::result_large_err)]
 
 use axum::response::{IntoResponse, Response};
-use ehrbase_sm::{AccessLevel, DefaultAccess, EhrAccessSettings, Platform, principal_matches};
+use ehrbase::service::{AccessLevel, DefaultAccess, EhrAccessSettings, principal_matches};
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
@@ -198,8 +198,8 @@ fn contribution_targets_ehr_access(parts: &RequestParts) -> bool {
 /// ready `403` (deny) or `500` (settings unavailable — fail-closed, consistent
 /// with the ABAC PEP); `Ok(())` lets the request proceed. A route without an
 /// `ehr_id` path param is not EHR-scoped and always proceeds.
-pub(crate) async fn enforce<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn enforce(
+    state: &AppState,
     op: &'static str,
     parts: &RequestParts,
 ) -> Result<(), Response> {

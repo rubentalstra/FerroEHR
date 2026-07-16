@@ -20,6 +20,20 @@ mod alias;
 mod loader;
 mod strict;
 
+pub mod secret;
+pub mod auth;
+pub mod authz;
+pub mod management;
+pub mod server;
+pub mod smart;
+
+pub use auth::AuthConfig;
+pub use authz::AuthzConfig;
+pub use management::{AccessLevel, ManagementConfig};
+pub use secret::{REDACTED, Secret, SecretUrl};
+pub use server::{AdminConfig, ServerConfig, SystemOptionsConfig, TenancyConfig};
+pub use smart::SmartConfig;
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -34,7 +48,7 @@ pub use loader::{ConfigError, ConfigErrors};
 #[serde(default, deny_unknown_fields)]
 pub struct EhrbaseConfig {
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
-    pub server: ehrbase_rest::config::ServerConfig,
+    pub server: server::ServerConfig,
     /// `[db]` — `PostgreSQL` connection.
     pub db: crate::db::DbConfig,
     /// `[log]` — logging.
@@ -42,17 +56,17 @@ pub struct EhrbaseConfig {
     /// `[telemetry]` — OpenTelemetry export.
     pub telemetry: crate::telemetry::OtelConfig,
     /// `[auth]` — authentication.
-    pub auth: ehrbase_rest::access::authn::AuthConfig,
+    pub auth: auth::AuthConfig,
     /// `[authz]` — RBAC + ABAC.
-    pub authz: ehrbase_rest::access::authz::AuthzConfig,
+    pub authz: authz::AuthzConfig,
     /// `[admin]` — the ADMIN API group.
-    pub admin: ehrbase_rest::config::AdminConfig,
+    pub admin: server::AdminConfig,
     /// `[tenancy]` — multi-tenancy.
-    pub tenancy: ehrbase_rest::config::TenancyConfig,
+    pub tenancy: server::TenancyConfig,
     /// `[smart]` — SMART App Launch.
-    pub smart: ehrbase_rest::smart::config::SmartConfig,
+    pub smart: smart::SmartConfig,
     /// `[management]` — the management/observability surface.
-    pub management: ehrbase_rest::management::ManagementConfig,
+    pub management: management::ManagementConfig,
     /// `[signing]` — VERSION signing.
     pub signing: crate::versioning::signature::SigningConfig,
     /// `[query]` — AQL execution knobs.
