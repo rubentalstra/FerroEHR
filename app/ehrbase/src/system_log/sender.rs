@@ -192,7 +192,7 @@ async fn drain(
 mod tests {
     use super::*;
     use crate::system_log::config::Transport as ConfigTransport;
-    use crate::service::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::system_log::event::{EventActionCode, EventOutcome, ObjectClass};
 
     fn udp_config() -> AuditConfig {
         AuditConfig {

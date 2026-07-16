@@ -59,8 +59,6 @@ mod uri;
 
 pub mod handle;
 pub mod access_types;
-pub use handle::*;
-pub use access_types::*;
 
 // The EHR-component surface other service modules and adapters consume.
 pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};

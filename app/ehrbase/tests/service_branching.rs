@@ -246,7 +246,7 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
     .await
     .expect("composition v2");
 
-    let mut extracts = svc.export_ehrs(source).await.expect("export");
+    let mut extracts = svc.extract_ehrs(source).await.expect("export");
     let extract = extracts.remove(0);
     let rewritten: Value = serde_json::from_str(
         &serde_json::to_string(&extract)

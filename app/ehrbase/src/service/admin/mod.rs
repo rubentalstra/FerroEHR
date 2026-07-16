@@ -40,7 +40,6 @@ mod dump_load;
 mod statistics;
 
 pub mod types;
-pub use types::*;
 
 use std::path::Path;
 

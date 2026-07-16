@@ -35,7 +35,6 @@ mod config;
 mod fhir;
 
 pub mod types;
-pub use types::*;
 
 pub use config::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind, TerminologyConfig,

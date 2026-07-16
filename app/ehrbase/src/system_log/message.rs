@@ -280,7 +280,7 @@ fn nonempty(value: &str, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::service::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::system_log::event::{EventActionCode, EventOutcome, ObjectClass};
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {
