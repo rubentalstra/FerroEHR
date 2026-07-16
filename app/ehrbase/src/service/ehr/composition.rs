@@ -150,9 +150,12 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let _read = read_current(&self.pool, vo_id)
+        // Ownership gate only — one scalar read (`vo_version.ehr_id`), never
+        // the full current-version reassembly this metadata-shaped response
+        // would immediately discard.
+        crate::storage::version_repo::meta::vo_owner(&self.pool, vo_id)
             .await?
-            .filter(|r| r.ehr_id == Some(ehr_id))
+            .filter(|owner| *owner == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await
     }
