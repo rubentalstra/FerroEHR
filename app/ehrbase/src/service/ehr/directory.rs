@@ -32,8 +32,15 @@ impl EhrbaseService {
     pub(in crate::service) async fn create_directory_response(
         &self,
         ehr_id: Uuid,
-        folder: Value,
+        version: crate::service::version_update::UpdateVersion,
     ) -> Result<ServiceResponse, ServiceError> {
+        let (audit, envelope) = crate::service::ehr::composition::resolve_envelope(
+            &version,
+            change_type::CREATION,
+            "FOLDER directory creation",
+            &self.effective_system_id(),
+        );
+        let folder = version.data;
         self.ensure_ehr_exists(ehr_id).await?;
         validate_folder(&folder)?;
         // is_modifiable = False forbids content writes; the directory is EHR
@@ -49,7 +56,6 @@ impl EhrbaseService {
         }
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::CREATION, "DIRECTORY creation");
         let committed = create(
             &mut tx,
             Some(ehr_id),
@@ -57,7 +63,7 @@ impl EhrbaseService {
             folder,
             None,
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            envelope,
             &self.signing_ctx(),
         )
         .await?;
@@ -159,10 +165,17 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        folder: Value,
+        version: crate::service::version_update::UpdateVersion,
         expected: Option<TreeId>,
         is_modifiable: bool,
     ) -> Result<ServiceResponse, ServiceError> {
+        let (audit, envelope) = crate::service::ehr::composition::resolve_envelope(
+            &version,
+            change_type::MODIFICATION,
+            "FOLDER directory update",
+            &self.effective_system_id(),
+        );
+        let folder = version.data;
         validate_folder(&folder)?;
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — the directory is EHR content. Folded from the
@@ -174,7 +187,6 @@ impl EhrbaseService {
         }
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::MODIFICATION, "DIRECTORY update");
         let committed = update(
             &mut tx,
             Some(ehr_id),
@@ -184,7 +196,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            envelope,
             &self.signing_ctx(),
         )
         .await?;
@@ -425,7 +437,7 @@ impl EhrbaseService {
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
         super::version_uid(
-            self.create_directory_response(an_ehr_id, a_dir_struct.data)
+            self.create_directory_response(an_ehr_id, a_dir_struct)
                 .await?,
         )
     }
@@ -474,14 +486,8 @@ impl EhrbaseService {
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_directory_response(
-                an_ehr_id,
-                vo_id,
-                a_dir_struct.data,
-                expected,
-                is_modifiable,
-            )
-            .await?,
+            self.update_directory_response(an_ehr_id, vo_id, a_dir_struct, expected, is_modifiable)
+                .await?,
         )
     }
 
