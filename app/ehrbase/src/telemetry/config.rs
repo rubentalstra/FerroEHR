@@ -97,14 +97,6 @@ pub struct TelemetryConfig {
     pub otel: OtelConfig,
 }
 
-/// Serialize the effective telemetry config to a JSON value.
-///
-/// # Errors
-/// Returns a [`serde_json::Error`] if serialization fails.
-pub fn as_value(cfg: &TelemetryConfig) -> Result<serde_json::Value, serde_json::Error> {
-    serde_json::to_value(cfg)
-}
-
 mod defaults {
     pub(super) fn filter() -> String {
         "info,ehrbase=info".to_owned()

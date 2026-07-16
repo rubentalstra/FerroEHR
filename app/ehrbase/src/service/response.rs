@@ -31,7 +31,8 @@ pub struct ResourceMeta {
     /// resource, as their canonical-JSON list (`Value::Array` of `ITEM_TAG`
     /// objects), or `None` when the operation carries no tags. The ITS-REST
     /// adapter renders this into the `openehr-item-tag` /
-    /// `openehr-version-item-tag` response headers (`headers/openehr-item-tag.yaml`,
+    /// `openehr-version-item-tag` response headers
+    /// (`headers/openehr-item-tag.yaml`,
     /// `headers/openehr-version-item-tag.yaml`).
     ///
     /// No openEHR spec governs this envelope field — our own design: the SM

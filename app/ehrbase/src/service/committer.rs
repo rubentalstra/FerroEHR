@@ -4,9 +4,10 @@
 //! RM common `master04-generic_package` §Audit Details): when a request is
 //! authenticated, the audit is attributed to that principal; an internal or
 //! unauthenticated write falls back to the system identity. The protocol
-//! adapter publishes the identity for the request's task scope and the
-//! platform reads it here — the transport (a task-local) is spec-silent:
-//! no openEHR spec governs this — our own design.
+//! adapter publishes the identity for the request's task scope via
+//! [`with_committer`] and the platform reads it via [`current_committer`] —
+//! the transport (a task-local) is spec-silent: no openEHR spec governs this
+//! — our own design.
 
 use tokio::task_local;
 

@@ -1,19 +1,11 @@
-//! ITS-REST **adapter-support** extension traits — calls the openEHR SM does
-//! **not** define, segregated here so the SM catalog traits stay pure.
-//!
-//! PORT NOTE: none of these are SM interface calls. They exist because the
-//! ITS-REST 1.0.3 wire needs them: the `*_latest_meta` seams decorate a
-//! `409`/`412` response with the current `version_uid` in `ETag`/`Location`
-//! (`409_COMPOSITION_with_uid_based_id.yaml` / `412_*.yaml`), and the item-tag
-//! CRUD is `EHRbase`'s experimental tag extension — neither has an SM call. The
-//! platform component implements them beside the SM catalog; the adapter
-//! dispatches to them for the wire routes that need them.
+//! The DEFINITION data shapes shared with the REST adapter: the wire
+//! template-list filter and the SM stored-query descriptor.
 
 /// The template-list filter carried by the ITS-REST `definition_template_*_list`
 /// operations. All three are optional query parameters the wire decodes but the
 /// SM `I_DEFINITION_*` list interfaces (which return plain `List<UUID>`) do not
-/// express — so they ride on the wire-shaped [`DefinitionAdapter`] list methods
-/// alongside the SM cursor [`Page`].
+/// express — so they ride on the wire-shaped list methods alongside the SM
+/// cursor [`Page`](crate::service::list::Page).
 ///
 /// - `template_id`: glob pattern matching `template_id`, `*` wildcard
 ///   (`parameters/query/filter_template_id.yaml`, "supports wildcards `*`").
@@ -32,7 +24,8 @@ pub struct TemplateListFilter {
     pub version: Option<String>,
 }
 
-// --- stored-query descriptor (SM I_DEFINITION_QUERY, definition/query) ---
+/// The SM `QUERY_DESCRIPTOR` (`query_descriptor.adoc`) — the registration
+/// record `I_DEFINITION_QUERY.store_query` / `list_queries` return.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QueryDescriptor {
     /// `qualified_query_name [1]` — "Unique qualified name of query.

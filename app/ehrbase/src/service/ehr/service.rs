@@ -3,10 +3,10 @@
 //! folder-hierarchy reads the `EHR` wire body needs.
 //!
 //! Spec: arch-overview `master06-design_of_the_ehr.adoc` §The EHR (EHR root,
-//! `system_id`, `EHR_ACCESS`, `EHR_STATUS`, directory, folders, `time_created`) and
-//! RM ehr `master04-ehr_package.adoc` §EHR Creation / §Folders. The EHR-table
-//! and folder-membership SQL is a storage seam (G-10; no openEHR spec governs
-//! the schema — our own design).
+//! `system_id`, `EHR_ACCESS`, `EHR_STATUS`, directory, folders,
+//! `time_created`) and RM ehr `master04-ehr_package.adoc` §EHR Creation /
+//! §Folders. The EHR-table and folder-membership SQL is a storage seam (G-10;
+//! no openEHR spec governs the schema — our own design).
 
 use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;
@@ -16,8 +16,9 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::{EhrbaseService, ServiceError};
-use crate::storage::{ehr_repo, version_repo};
-use crate::versioning::{Change, Kind, TreeId, change_type, commit_contribution};
+use crate::versioning::{
+    Change, Kind, TreeId, change_type, commit_contribution, object_version_id,
+};
 
 use super::status_for_subject;
 
@@ -28,16 +29,21 @@ impl EhrbaseService {
     /// object, and an EHR Access object … created and committed in a
     /// Contribution". Shared by `POST /ehr` and `PUT /ehr/{ehr_id}`.
     ///
-    /// A duplicate subject conflicts at the database (`ehr_subject_uq`, kept in
-    /// sync by [`Self::sync_ehr_subject`]) → 409 (ITS-REST `409_EHR.yaml`; CNF
-    /// `create_ehr-two_ehrs_same_patient`).
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] when the supplied `EHR_STATUS` is
+    /// structurally invalid; [`ServiceError::Conflict`] when the EHR already
+    /// exists or the subject already owns another EHR (`ehr_subject_uq`, kept
+    /// in sync by [`Self::sync_ehr_subject`] → 409, ITS-REST `409_EHR.yaml`;
+    /// CNF `create_ehr-two_ehrs_same_patient`); [`ServiceError::Database`] on
+    /// a storage failure.
     pub(in crate::service) async fn commit_new_ehr(
         &self,
         ehr_id: Uuid,
         status: Value,
     ) -> Result<ServiceResponse, ServiceError> {
-        // The supplied EHR_STATUS must be a structurally valid RM instance before
-        // the EHR is created (CNF master06 §Test Data Sets INVALID class 2).
+        // The supplied EHR_STATUS must be a structurally valid RM instance
+        // before the EHR is created (CNF master06 §Test Data Sets INVALID
+        // class 2).
         super::validate_ehr_status(&status)?;
 
         let mut tx = self.pool.begin().await?;
@@ -45,15 +51,16 @@ impl EhrbaseService {
         // EHR.system_id is recorded at creation, immutable thereafter (arch
         // master06 §System Identity — a stored value, not the live config).
         // `time_created` (arch master06 §The EHR) comes back from the INSERT so
-        // the create response is built without a follow-up `ehr` header read. The
-        // promoted subject / is_queryable columns are set in this same INSERT
-        // (the values are known from the incoming EHR_STATUS), so the create path
-        // never runs the separate `sync_ehr_subject` UPDATE the update/
-        // contribution paths use. A subject already owned by another EHR is a
-        // distinct 409 (RM ehr master04 §EHR Status; ITS-REST `409_EHR.yaml`).
+        // the create response is built without a follow-up `ehr` header read.
+        // The promoted subject / is_queryable columns are set in this same
+        // INSERT (the values are known from the incoming EHR_STATUS), so the
+        // create path never runs the separate `sync_ehr_subject` UPDATE the
+        // update/contribution paths use. A subject already owned by another EHR
+        // is a distinct 409 (RM ehr master04 §EHR Status; ITS-REST
+        // `409_EHR.yaml`).
         let (subject_id, subject_namespace, is_queryable, is_modifiable) =
             super::status::ehr_promoted_columns(&status);
-        let time_created = match ehr_repo::insert_ehr(
+        let time_created = match crate::storage::ehr_repo::insert_ehr(
             &mut tx,
             ehr_id,
             &self.effective_system_id(),
@@ -113,8 +120,8 @@ impl EhrbaseService {
         )
         .await?;
         // The promoted subject / is_queryable columns were set in the initial
-        // `insert_ehr` (folded, no separate UPDATE) — one EHR per subject (RM ehr
-        // master04 §EHR Status).
+        // `insert_ehr` (folded, no separate UPDATE) — one EHR per subject (RM
+        // ehr master04 §EHR Status).
         tx.commit().await?;
 
         // The EHR is created with the settings-less default EHR_ACCESS
@@ -127,8 +134,8 @@ impl EhrbaseService {
         // `time_created` came back from the row INSERT, and a fresh EHR indexes
         // no folder hierarchy — so the create path never re-reads via
         // `ehr_summary` (its five header/version/folder reads). The body is
-        // byte-identical to `ehr_summary` for a new EHR (pinned by a test);
-        // it is stashed so `ehr_created_object` serves a
+        // byte-identical to `ehr_summary` for a new EHR (pinned by a test); it
+        // is stashed so `ehr_created_object` serves a
         // `Prefer: return=representation` response without a re-read.
         let body = self.ehr_object_from_committed(ehr_id, time_created, &committed);
         self.created_ehr_repr.insert(ehr_id, body.clone()).await;
@@ -138,14 +145,15 @@ impl EhrbaseService {
     }
 
     /// Assemble the RM `EHR` wire body for a just-created EHR straight from the
-    /// CONTRIBUTION commit results — no storage reads. The status/access version
-    /// identities come from the [`Committed`](crate::versioning::Committed) rows
-    /// (`EHR_STATUS` then `EHR_ACCESS`, RM ehr master04 §EHR Creation), the
-    /// status ref carries its `OBJECT_VERSION_ID` (the stored per-version
-    /// `creating_system_id`, master06 §Distributed Versioning), and a fresh EHR
-    /// has no `directory`/`folders` (RM ehr master04 §Folders, 0..1). Byte-
-    /// identical to [`Self::ehr_summary`] for a newly created EHR (pinned by a
-    /// test); the key order mirrors `ehr_summary`.
+    /// CONTRIBUTION commit results — no storage reads. The status/access
+    /// version identities come from the
+    /// [`Committed`](crate::versioning::Committed) rows (`EHR_STATUS` then
+    /// `EHR_ACCESS`, RM ehr master04 §EHR Creation), the status ref carries its
+    /// `OBJECT_VERSION_ID` (the stored per-version `creating_system_id`,
+    /// master06 §Distributed Versioning), and a fresh EHR has no
+    /// `directory`/`folders` (RM ehr master04 §Folders, 0..1). Byte-identical
+    /// to [`Self::ehr_summary`] for a newly created EHR (pinned by a test); the
+    /// key order mirrors `ehr_summary`.
     fn ehr_object_from_committed(
         &self,
         ehr_id: Uuid,
@@ -162,7 +170,7 @@ impl EhrbaseService {
                     "type": "VERSIONED_EHR_STATUS",
                     "id": {
                         "_type": "OBJECT_VERSION_ID",
-                        "value": self.object_version_id(c.vo_id, &c.creating_system_id, c.tree)
+                        "value": object_version_id(c.vo_id, &c.creating_system_id, c.tree)
                     }
                 })
             });
@@ -190,15 +198,20 @@ impl EhrbaseService {
     ///
     /// PORT NOTE (G-4, `i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
     /// constraint narrows the SM `List<EHR_SUMMARY>` to ≤1. CNF
-    /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for the
-    /// same subject, which supports the one-EHR-per-subject rule (RM ehr master04
-    /// §EHR Status: the subject is 0..1 and identifies the EHR); kept, cited.
+    /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for
+    /// the same subject, which supports the one-EHR-per-subject rule (RM ehr
+    /// master04 §EHR Status: the subject is 0..1 and identifies the EHR);
+    /// kept, cited.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when no EHR names the subject;
+    /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn ehr_by_subject(
         &self,
         subject_id: &str,
         namespace: &str,
     ) -> Result<ServiceResponse, ServiceError> {
-        let ehr_id = ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace)
+        let ehr_id = crate::storage::ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace)
             .await?
             .ok_or_else(|| {
                 ServiceError::NotFound(format!("EHR for subject {subject_id}@{namespace}"))
@@ -206,9 +219,14 @@ impl EhrbaseService {
         self.ehr_summary(ehr_id).await
     }
 
-    /// Build the canonical RM `EHR` object for an existing EHR, with its `ehr_id`
-    /// metadata (the `ETag`/`Location` for `POST /ehr`). ITS-REST extension: the
-    /// wire `GET /ehr/{id}` returns the RM `EHR`, not the SM `EHR_SUMMARY`.
+    /// Build the canonical RM `EHR` object for an existing EHR, with its
+    /// `ehr_id` metadata (the `ETag`/`Location` for `POST /ehr`). ITS-REST
+    /// extension: the wire `GET /ehr/{id}` returns the RM `EHR`, not the SM
+    /// `EHR_SUMMARY`.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR or its current `EHR_STATUS` does
+    /// not exist; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn ehr_summary(
         &self,
         ehr_id: Uuid,
@@ -218,7 +236,7 @@ impl EhrbaseService {
         // hierarchies — merged; read batching is spec-silent, our own design).
         // EHR.system_id is IMMUTABLE after creation (arch master06 §System
         // Identity) — the stored per-EHR value, never the live config.
-        let read = ehr_repo::ehr_summary_read(&self.pool, ehr_id)
+        let read = crate::storage::ehr_repo::ehr_summary_read(&self.pool, ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
         let stored_system_id = read.system_id;
@@ -232,7 +250,7 @@ impl EhrbaseService {
             status.branch_version,
         );
         let status_ovid =
-            self.object_version_id(status.vo_id, &status.creating_system_id, status_version);
+            object_version_id(status.vo_id, &status.creating_system_id, status_version);
 
         let mut body = json!({
             "_type": "EHR",
@@ -251,9 +269,9 @@ impl EhrbaseService {
             },
             "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
         });
-        // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS container
-        // (invariant Ehr_access_valid — RM ehr, EHR class). Every EHR this
-        // service creates has one; tolerate absence only for raw fixtures.
+        // EHR.ehr_access (1..1): a reference to the VERSIONED_EHR_ACCESS
+        // container (invariant Ehr_access_valid — RM ehr, EHR class). Every EHR
+        // this service creates has one; tolerate absence only for raw fixtures.
         if let Some(access_vo) = read.access_vo {
             body["ehr_access"] = json!({
                 "_type": "OBJECT_REF",
@@ -262,9 +280,10 @@ impl EhrbaseService {
                 "id": { "_type": "HIER_OBJECT_ID", "value": access_vo.to_string() }
             });
         }
-        // EHR.folders (0..1) + EHR.directory (0..1): the LIVE hierarchies in rank
-        // order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant Folders_valid;
-        // directory = folders.item(1), Directory_in_folders — RM ehr, EHR class).
+        // EHR.folders (0..1) + EHR.directory (0..1): the LIVE hierarchies in
+        // rank order, each an OBJECT_REF to a VERSIONED_FOLDER (invariant
+        // Folders_valid; directory = folders.item(1), Directory_in_folders —
+        // RM ehr, EHR class).
         let refs: Vec<Value> = read
             .folders
             .iter()
@@ -290,19 +309,26 @@ impl EhrbaseService {
     /// `system_id` is the stored `EHR.system_id`; `ehr_status` is the current
     /// bare `EHR_STATUS`; `composition_count` is the number of "(versioned)
     /// Compositions" — distinct versioned objects (`vo_id`), not versions.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR or its current `EHR_STATUS` does
+    /// not exist; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn summarize_ehr(
         &self,
         ehr_id: Uuid,
     ) -> Result<EhrSummary, ServiceError> {
-        let (stored_system_id, time_created) = ehr_repo::ehr_header(&self.pool, ehr_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
+        let (stored_system_id, time_created) =
+            crate::storage::ehr_repo::ehr_header(&self.pool, ehr_id)
+                .await?
+                .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
 
         // Copy of EHR.ehr_status: the current EHR_STATUS (bare, with its uid).
         let ehr_status = self.status_at(ehr_id, None).await?.body;
 
-        let contribution_count = version_repo::ehr_contribution_count(&self.pool, ehr_id).await?;
-        let composition_count = version_repo::composition_count(&self.pool, ehr_id).await?;
+        let contribution_count =
+            crate::storage::version_repo::ehr_contribution_count(&self.pool, ehr_id).await?;
+        let composition_count =
+            crate::storage::version_repo::composition_count(&self.pool, ehr_id).await?;
 
         Ok(EhrSummary {
             ehr_id: ehr_id.to_string(),
@@ -313,10 +339,10 @@ impl EhrbaseService {
             composition_count,
         })
     }
-
 }
 
-/// The default `EHR_STATUS` for a new EHR (queryable, modifiable, `PARTY_SELF`).
+/// The default `EHR_STATUS` for a new EHR (queryable, modifiable,
+/// `PARTY_SELF`) — RM ehr master04 §EHR Creation.
 pub(in crate::service) fn default_ehr_status() -> Value {
     json!({
         "_type": "EHR_STATUS",
@@ -328,7 +354,13 @@ pub(in crate::service) fn default_ehr_status() -> Value {
     })
 }
 
+// ── The SM I_EHR_SERVICE call surface ─────────────────────────────────────────
+
 impl EhrbaseService {
+    /// SM `I_EHR_SERVICE.has_ehr` — whether the EHR exists.
+    ///
+    /// # Errors
+    /// [`SmError`] if the existence read fails (a missing EHR is `Ok(false)`).
     pub async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
         match self.ensure_ehr_exists(ehr_id).await {
             Ok(()) => Ok(true),
@@ -337,6 +369,12 @@ impl EhrbaseService {
         }
     }
 
+    /// SM `I_EHR_SERVICE.has_ehr_for_subject` — whether an EHR exists whose
+    /// current `EHR_STATUS` names the subject.
+    ///
+    /// # Errors
+    /// [`SmError`] if the subject lookup fails (no matching EHR is
+    /// `Ok(false)`).
     pub async fn has_ehr_for_subject(&self, a_subject_id: SubjectRef) -> Result<bool, SmError> {
         match self
             .ehr_by_subject(&a_subject_id.id, &a_subject_id.namespace)
@@ -348,22 +386,34 @@ impl EhrbaseService {
         }
     }
 
+    /// SM `I_EHR_SERVICE.create_ehr` — create an EHR with a server-assigned id
+    /// and the given (or default) `EHR_STATUS`, returning the new `ehr_id`.
+    ///
+    /// # Errors
+    /// [`SmError`] when the status is structurally invalid (422-equivalent),
+    /// the subject already owns an EHR (409-equivalent), or storage fails.
     pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
-        // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`): the
-        // SM precondition `an_ehr_status.subject = Void` is NOT enforced on the
-        // id-only create paths. `POST /ehr` intentionally accepts a
+        // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
+        // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
+        // the id-only create paths. `POST /ehr` intentionally accepts a
         // subject-bearing status (the ITS-REST `ehr` schema carries an optional
         // `ehr_status`, and the sync hook records the subject as the EHR's
-        // patient), an accepted SM-vs-ITS-REST divergence: the subject slot is a
-        // 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats a
-        // supplied anonymous-or-identified subject as the EHR's subject rather
-        // than rejecting it. Recorded, not silently guessed.
+        // patient), an accepted SM-vs-ITS-REST divergence: the subject slot is
+        // a 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats
+        // a supplied anonymous-or-identified subject as the EHR's subject
+        // rather than rejecting it. Recorded, not silently guessed.
         let ehr_id = Uuid::now_v7();
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
         self.commit_new_ehr(ehr_id, status).await?;
         Ok(ehr_id)
     }
 
+    /// SM `I_EHR_SERVICE.create_ehr_with_id` — create an EHR under the
+    /// caller-supplied id (`PUT /ehr/{ehr_id}`).
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR already exists (409-equivalent), the status is
+    /// invalid, the subject already owns an EHR, or storage fails.
     pub async fn create_ehr_with_id(
         &self,
         an_ehr_id: Uuid,
@@ -375,6 +425,12 @@ impl EhrbaseService {
         Ok(an_ehr_id)
     }
 
+    /// SM `I_EHR_SERVICE.create_ehr_for_subject` — create an EHR whose
+    /// `EHR_STATUS.subject` names the given subject.
+    ///
+    /// # Errors
+    /// [`SmError`] when the subject already owns an EHR (409-equivalent), the
+    /// status is invalid, or storage fails.
     pub async fn create_ehr_for_subject(
         &self,
         a_subject_id: SubjectRef,
@@ -389,6 +445,12 @@ impl EhrbaseService {
         Ok(ehr_id)
     }
 
+    /// SM `I_EHR_SERVICE.create_ehr_for_subject_with_id` — subject-scoped
+    /// creation under a caller-supplied EHR id.
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR already exists, the subject already owns an
+    /// EHR, the status is invalid, or storage fails.
     pub async fn create_ehr_for_subject_with_id(
         &self,
         an_ehr_id: Uuid,
@@ -403,10 +465,22 @@ impl EhrbaseService {
         Ok(an_ehr_id)
     }
 
+    /// SM `I_EHR_SERVICE.get_ehr` — the `EHR_SUMMARY` of an EHR.
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR does not exist (404-equivalent) or a read
+    /// fails.
     pub async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
         Ok(self.summarize_ehr(an_ehr_id).await?)
     }
 
+    /// SM `I_EHR_SERVICE.get_ehrs_for_subject` — the `EHR_SUMMARY` list for a
+    /// subject (≤1 under the one-EHR-per-subject rule; see G-4 on
+    /// [`Self::ehr_by_subject`]).
+    ///
+    /// # Errors
+    /// [`SmError`] if a read fails, or when a found EHR body carries no
+    /// `ehr_id` (an internal invariant violation).
     pub async fn get_ehrs_for_subject(
         &self,
         a_subject_id: SubjectRef,
@@ -430,10 +504,22 @@ impl EhrbaseService {
         }
     }
 
+    /// The canonical RM `EHR` wire object (`GET /ehr/{ehr_id}` — an ITS-REST
+    /// shape, not the SM `EHR_SUMMARY`).
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR or its current `EHR_STATUS` does not exist, or
+    /// a read fails.
     pub async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.ehr_summary(an_ehr_id).await?.body)
     }
 
+    /// The RM `EHR` wire object for a just-created EHR — the
+    /// `Prefer: return=representation` body of `POST /ehr` / `PUT /ehr/{id}`.
+    ///
+    /// # Errors
+    /// [`SmError`] when the fallback full read finds no such EHR, or a read
+    /// fails.
     pub async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         // Serve the create-time representation from the stash the commit path
         // populated (built from `Committed`, no re-read); a popped entry cannot
@@ -445,6 +531,12 @@ impl EhrbaseService {
         self.ehr_object(an_ehr_id).await
     }
 
+    /// The canonical RM `EHR` wire object located by subject
+    /// (`GET /ehr?subject_id=…&subject_namespace=…`).
+    ///
+    /// # Errors
+    /// [`SmError`] when no EHR names the subject (404-equivalent) or a read
+    /// fails.
     pub async fn ehr_object_for_subject(
         &self,
         subject_id: &str,

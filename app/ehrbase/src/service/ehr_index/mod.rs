@@ -1,12 +1,13 @@
-//! EHR Index service module (SM `I_EHR_INDEX`,
-//! `master07-ehr_index_service.adoc`): N:M subject↔EHR associations with
-//! duplicate-management metadata. Register:
-//! `docs/design/platform/04-service-demographic-ehr-index.md`.
+//! The EHR Index service (`service/ehr_index/`) — SM `I_EHR_INDEX`
+//! (`docs/specs/openehr/SM/docs/openehr_platform/master07-ehr_index_service.adoc`
+//! and the UML class `i_ehr_index.adoc`): N:M subject↔EHR associations with
+//! duplicate-management metadata.
 //!
-//! Internal split: [`index`] = the SM write ops (I1–I5) + the design-filled
-//! reads; [`conflicts`] = the design-filled advisory duplicate-detection read
-//! (G-10); [`api`] = the [`EhrIndexService`](crate::service::EhrIndexService) trait
-//! impl.
+//! Layout: [`index`] = the SM write operations (I1–I5) + the design-filled
+//! reads, each public method parsing its `ehr_id` at the boundary;
+//! [`conflicts`] = the design-filled advisory duplicate-detection read;
+//! [`types`] = the SM information structures (`RESOURCE_STATUS`,
+//! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!
 //! PORT NOTE: index entries are **not** versioned objects — the SM defines no
 //! versioning for the index — so these are plain SQL writes over the
@@ -14,37 +15,38 @@
 //! the storage mechanism (our own design); master07 governs the operation
 //! semantics + error names. This does not touch the `ehr.subject_id` promotion
 //! (the Primary-instance fast path for `ehr_get_by_subject`); the index models
-//! the full N:M state (G-15: the index and `ehr.subject_id` are intentionally
+//! the full N:M state (the index and `ehr.subject_id` are intentionally
 //! decoupled — an EHR created via the normal API is not auto-indexed here).
+//! The `ehr_index` + `ehr`-existence SQL is this domain's own direct-SQL design,
+//! so the table access lives here rather than behind a storage-owned repository.
 //!
-//! The `ehr_index` + `ehr`-existence SQL is this domain's own direct-SQL design
-//! — no openEHR spec governs the storage mechanism (master07 governs only the
-//! operation semantics + error names), so the table access lives here rather
-//! than behind a storage-owned repository.
+//! No wire is mounted (EHR Index has no ITS-REST contract — native-API-only,
+//! our own extension surface); the public methods exist for the SM native API
+//! and future extension routes.
 
-use crate::service::ehr_index::types::{
-    EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
-};
-use crate::service::status::{CallStatusType, SmError};
+pub(crate) mod conflicts;
+pub(crate) mod index;
+pub mod types;
+
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::ServiceError;
+use crate::service::ehr_index::types::{
+    EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
+};
+use crate::service::status::{CallStatusType, SmError};
 
-pub(crate) mod api;
-pub(crate) mod conflicts;
-pub(crate) mod index;
-
-/// The precise EHR-index failure kind (G-8/G-9): `master07 §Errors` declares
-/// distinct `ehr_id_does_not_exist` and `subject_id_does_not_exist` statuses,
-/// which must NOT collapse to the generic `versioned_object_does_not_exist`
-/// (`i_ehr_index.adoc §Errors`). The adapter ([`api`]) maps each variant onto
-/// its dedicated [`CallStatusType`]; a generic [`ServiceError`] (a DB/codec
-/// fault) rides through unchanged.
-// Nominal `pub`: [`crate::service::EhrbaseService::index_conflicts`] (a `pub`
-// method — the design-filled detection read has no SM trait binding) carries
-// this type in its public signature.
+/// The precise EHR-index failure kind: `master07 §Errors` declares distinct
+/// `ehr_id_does_not_exist` and `subject_id_does_not_exist` statuses, which must
+/// NOT collapse to the generic `versioned_object_does_not_exist`
+/// (`i_ehr_index.adoc §Errors`). [`From<IndexError> for SmError`] maps each
+/// variant onto its dedicated [`CallStatusType`]; a generic [`ServiceError`]
+/// (a DB/codec fault) rides through unchanged.
+// Nominal `pub`: `EhrbaseService::index_conflicts` (a `pub` method — the
+// design-filled detection read has no SM trait binding) carries this type in
+// its public signature.
 #[derive(Debug, thiserror::Error)]
 pub enum IndexError {
     /// `ehr_id_does_not_exist` — the addressed EHR is unknown.
@@ -65,8 +67,8 @@ impl From<sqlx::Error> for IndexError {
 }
 
 impl From<IndexError> for SmError {
-    /// G-8/G-9: map the precise EHR-index errors onto their dedicated SM
-    /// statuses (`master07 §Errors`), bypassing the generic
+    /// Map the precise EHR-index errors onto their dedicated SM statuses
+    /// (`master07 §Errors`), bypassing the generic
     /// `NotFound → versioned_object_does_not_exist` collapse the shared
     /// [`From<ServiceError> for SmError`] applies.
     fn from(e: IndexError) -> Self {
@@ -90,8 +92,8 @@ impl From<IndexError> for SmError {
 /// Parse an ISO-8601 date-time string into a Postgres `timestamptz` binding, or
 /// `None`. An unparseable value is a `400`.
 ///
-/// PORT NOTE (G-16): `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are
-/// typed `@@` (an unresolved placeholder) in the SM — a recorded spec defect
+/// PORT NOTE: `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are typed
+/// `@@` (an unresolved placeholder) in the SM — a recorded spec defect
 /// (`resource_status.adoc:20,24`); implemented as ISO date-time strings.
 fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, ServiceError> {
     use jiff_sqlx::ToSqlx;
@@ -106,7 +108,7 @@ fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, S
 
 /// Render a [`LocationDesc`] as the stored canonical JSON, or SQL NULL.
 ///
-/// PORT NOTE (G-12): `LOCATION_DESC` is an attribute-less stub in the SM
+/// PORT NOTE: `LOCATION_DESC` is an attribute-less stub in the SM
 /// (`location_desc.adoc`) — a recorded spec defect; the designed contract
 /// `{system_id, uri?, description?}` is our own design.
 fn location_json(loc: Option<&LocationDesc>) -> Option<Value> {
@@ -174,8 +176,9 @@ mod tests {
 
     use super::*;
 
-    /// G-8/G-9: the two declared EHR-index errors map to their dedicated SM
-    /// statuses, never the generic `versioned_object_does_not_exist`.
+    /// The two declared EHR-index errors map to their dedicated SM statuses
+    /// (`master07 §Errors`), never the generic
+    /// `versioned_object_does_not_exist`.
     #[test]
     fn index_errors_map_to_dedicated_statuses() {
         let ehr = Uuid::now_v7();
@@ -202,5 +205,3 @@ mod tests {
         assert!(parse_valid_time(Some("not-a-time")).is_err());
     }
 }
-
-pub mod types;

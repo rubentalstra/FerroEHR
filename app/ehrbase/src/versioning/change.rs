@@ -48,20 +48,34 @@ pub struct Committed {
     pub time_committed: jiff::Timestamp,
 }
 
-/// One change applied within a CONTRIBUTION (the openEHR change-set unit).
 impl Committed {
     /// The committed version's full `OBJECT_VERSION_ID` (`ETag`/`Location`
     /// value — RM common master06 §Version Identification).
     #[must_use]
     pub fn version_uid(&self) -> String {
-        super::object_version_id::object_version_id(
-            self.vo_id,
-            &self.creating_system_id,
-            self.tree,
-        )
+        object_version_id(self.vo_id, &self.creating_system_id, self.tree)
+    }
+
+    /// The per-version entry for the PHI-free event-outbox envelope: identity +
+    /// provenance metadata only, never clinical content.
+    ///
+    /// PORT NOTE: no openEHR spec governs eventing — our own extension. The
+    /// outbox row is written inside the commit transaction by storage; this
+    /// only builds the payload (README cross-ruling: extensions build payloads).
+    pub(crate) fn envelope_entry(&self) -> Value {
+        serde_json::json!({
+            "vo_id": self.vo_id,
+            "kind": self.kind.as_str(),
+            "sys_version": self.sys_version,
+            "version_tree_id": self.tree.to_string(),
+            "change_type": self.change_type,
+            "template_id": self.template_id,
+        })
     }
 }
 
+/// One change applied within a CONTRIBUTION — the openEHR change-set unit
+/// (RM common master06 §Contributions).
 ///
 /// `signature` carries a **client-supplied** `UPDATE_VERSION.signature`
 /// (master06 §Digital Signature): present ⇒ stored verbatim, server does not
@@ -122,74 +136,52 @@ impl Change {
     }
 }
 
-/// One `vo_version` row to insert (validity `[now, ∞)` for a live write; an
-/// explicit period for import). The write-side value contract to
-/// `crate::storage::version_repo`.
-pub(crate) struct NewVersionRow<'a> {
-    pub(crate) vo_id: Uuid,
-    pub kind: Kind,
-    pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) ordinal: i32,
-    pub tree: TreeId,
-    pub(crate) lifecycle_state: &'a str,
-    pub(crate) creating_system_id: &'a str,
-    /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
-    pub(crate) preceding_version_uid: Option<&'a str>,
-    /// `ORIGINAL_VERSION.other_input_version_uids` (empty → stored NULL,
-    /// `Is_merged_validity`).
-    pub(crate) other_input_version_uids: &'a [String],
-    pub(crate) contribution_id: Uuid,
-    pub(crate) audit_id: Uuid,
-    pub(crate) signature: Option<&'a str>,
-}
-
-impl NewVersionRow<'_> {
-    /// The plain storage row ([`crate::storage::version_repo::VersionRow`]) —
-    /// kind and tree rendered to their column values.
-
-    /// The imported-row analogue with an explicit `sys_period` `[lower, upper)`
-    /// (master06 §Copying — the synthetic local period chain).
-    pub(crate) fn imported_row(
-        &self,
-        lower: jiff::Timestamp,
-        upper: Option<jiff::Timestamp>,
-    ) -> crate::storage::version_repo::ImportedVersionRow<'_> {
-        let (trunk_version, branch_number, branch_version) = self.tree.columns();
-        crate::storage::version_repo::ImportedVersionRow {
-            vo_id: self.vo_id,
-            kind: self.kind.as_str(),
-            ehr_id: self.ehr_id,
-            sys_version: self.ordinal,
-            trunk_version,
-            branch_number,
-            branch_version,
-            lifecycle_state: self.lifecycle_state,
-            creating_system_id: self.creating_system_id,
-            preceding_version_uid: self.preceding_version_uid,
-            other_input_version_uids: self.other_input_version_uids,
-            contribution_id: self.contribution_id,
-            audit_id: self.audit_id,
-            signature: self.signature,
-            lower,
-            upper,
-        }
-    }
+/// The caller's `UPDATE_VERSION` envelope pieces a direct write threads into
+/// the commit (ITS-REST committal-header merge — the attributes "MUST be
+/// merged … on commit runtime"): the lifecycle state, a verbatim client
+/// signature, and accompanying attestations. `Default` = the plain server
+/// commit (532|complete|, server-signed, none).
+#[derive(Debug, Default)]
+pub(crate) struct WriteEnvelope {
+    /// `UPDATE_VERSION.lifecycle_state` (None → 532|complete|, G-01-checked).
+    pub(crate) lifecycle_state: Option<String>,
+    /// A client-supplied `VERSION.signature`, stored verbatim (master06
+    /// §Digital Signature).
+    pub(crate) signature: Option<String>,
+    /// `UPDATE_VERSION.attestations` committed with the version.
+    pub(crate) attestations: Vec<Value>,
 }
 
 /// The preceding lineage tip read for a tree-placement decision — mapped from
-/// the storage row (`crate::storage::version_repo::lineage_tip`).
+/// the storage row (`crate::storage::version_repo::next_placement`).
 #[derive(Debug, Clone)]
-pub(crate) struct PrecedingTip {
-    pub(crate) ehr_id: Option<Uuid>,
-    pub kind: Kind,
-    pub(crate) ordinal: i32,
-    pub tree: TreeId,
-    pub(crate) creating_system_id: String,
+struct PrecedingTip {
+    ehr_id: Option<Uuid>,
+    kind: Kind,
+    ordinal: i32,
+    tree: TreeId,
+    creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
     /// transition (G-01).
-    pub(crate) lifecycle_state: String,
+    lifecycle_state: String,
     /// Whether the tip is still open (`upper_inf(sys_period)`).
-    pub(crate) open: bool,
+    open: bool,
+}
+
+/// Map a storage tip row onto the versioning value contract ([`PrecedingTip`]).
+fn preceding_tip(row: crate::storage::version_repo::TipRow) -> Result<PrecedingTip, ServiceError> {
+    let kind = Kind::from_type(&row.kind).ok_or_else(|| {
+        ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
+    })?;
+    Ok(PrecedingTip {
+        ehr_id: row.ehr_id,
+        kind,
+        ordinal: row.sys_version,
+        tree: TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
+        creating_system_id: row.creating_system_id,
+        lifecycle_state: row.lifecycle_state,
+        open: row.open,
+    })
 }
 
 /// The resolved placement of a new version in the version tree.
@@ -225,33 +217,12 @@ struct NextVersion {
 /// Same-system detection is case-insensitive on `creating_system_id`
 /// (composite-identifier equality, G-09; BASE master05 §Composite Identifiers
 /// and Case).
-/// Read the preceding lineage tip through the storage row I/O, mapped onto the
-/// versioning value contract ([`PrecedingTip`]).
-async fn lineage_tip(
-    tx: &mut PgConnection,
-    vo_id: Uuid,
-    expected: Option<TreeId>,
-) -> Result<Option<PrecedingTip>, ServiceError> {
-    let row = crate::storage::version_repo::next_placement(tx, vo_id, expected.map(TreeId::columns))
-        .await?
-        .tip;
-    row.map(|row| {
-        let kind = Kind::from_type(&row.kind).ok_or_else(|| {
-            ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
-        })?;
-        Ok(PrecedingTip {
-            ehr_id: row.ehr_id,
-            kind,
-            ordinal: row.sys_version,
-            tree: TreeId::from_columns(row.trunk_version, row.branch_number, row.branch_version),
-            creating_system_id: row.creating_system_id,
-            lifecycle_state: row.lifecycle_state,
-            open: row.open,
-        })
-    })
-    .transpose()
-}
-
+///
+/// # Errors
+/// - [`ServiceError::NotFound`] when the object does not exist, or its stored
+///   owner/kind do not match the addressed `(ehr_id, kind)`;
+/// - [`ServiceError::VersionConflict`] when `expected` names a version that
+///   does not exist or has been superseded (a closed lineage tip).
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -270,32 +241,16 @@ async fn next_version(
             .await?;
     let ordinal = placement.next_ordinal;
     let now = placement.now;
-    let tip = placement
-        .tip
-        .map(|row| {
-            let kind = Kind::from_type(&row.kind).ok_or_else(|| {
-                ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
-            })?;
-            Ok::<_, ServiceError>(PrecedingTip {
-                ehr_id: row.ehr_id,
-                kind,
-                ordinal: row.sys_version,
-                tree: TreeId::from_columns(
-                    row.trunk_version,
-                    row.branch_number,
-                    row.branch_version,
-                ),
-                creating_system_id: row.creating_system_id,
-                lifecycle_state: row.lifecycle_state,
-                open: row.open,
-            })
-        })
-        .transpose()?;
+    let tip = placement.tip.map(preceding_tip).transpose()?;
     let Some(tip) = tip else {
         // The object may exist with the expectation naming no stored version —
         // distinguish "no such object" (404) from "wrong version" (409): the
         // current trunk tip is the lineage tip with no expectation.
-        let current = lineage_tip(tx, vo_id, None).await?;
+        let current = crate::storage::version_repo::next_placement(tx, vo_id, None)
+            .await?
+            .tip
+            .map(preceding_tip)
+            .transpose()?;
         return match (expected, current) {
             (Some(tree), Some(current)) => Err(ServiceError::VersionConflict(format!(
                 "expected version {tree}, which does not exist (current is {})",
@@ -412,6 +367,12 @@ struct ResolvedWrite {
 ///   after an `EHR_STATUS` version;
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
 ///   concern, not a storage write.
+///
+/// # Errors
+/// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on
+/// modify/delete; [`ServiceError::Unprocessable`] for an out-of-group or
+/// illegal lifecycle transition; [`ServiceError::Internal`] on a multimedia
+/// offload failure; plus the storage/signing errors of [`commit_resolved`].
 #[allow(clippy::too_many_lines)] // the three change arms building the resolved write
 #[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
 async fn apply_change(
@@ -550,15 +511,21 @@ async fn apply_change(
 /// master06 §Digital Signature), which embeds `time_committed` and
 /// `contribution_id`. Both are known BEFORE any statement: the commit instant
 /// is the transaction timestamp (read by the placement query /
-/// [`tx_now`](crate::storage::version_repo::tx_now)); every row of the transaction stamps
-/// the same `now()`), and a standalone write generates its `contribution_id`
-/// here. So audit + contribution + `vo_version` always collapse into the one
-/// folded CTE ([`commit_new_version`](crate::storage::version_repo::commit_new_version)
+/// [`tx_now`](crate::storage::version_repo::tx_now); every row of the
+/// transaction stamps the same `now()`), and a standalone write generates its
+/// `contribution_id` here. So audit + contribution + `vo_version` always
+/// collapse into the one folded CTE
+/// ([`commit_new_version`](crate::storage::version_repo::commit_new_version)
 /// / [`commit_version_into`](crate::storage::version_repo::commit_version_into)).
 /// The lineage-tip close stays a separate prior statement (the
 /// one-open-row-per-lineage partial unique indexes need the old open row gone
 /// before the new open row is inserted). No openEHR spec governs statement
 /// batching — our own design.
+///
+/// # Errors
+/// [`ServiceError::Signing`] when the canonical form cannot be produced or the
+/// signer fails; the storage errors of the close / folded-insert / node /
+/// attestation writes; the attestation-completion `Unprocessable` rejections.
 async fn commit_resolved(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
@@ -687,22 +654,6 @@ async fn commit_resolved(
     ))
 }
 
-/// The caller's `UPDATE_VERSION` envelope pieces a direct write threads into
-/// the commit (ITS-REST committal-header merge — the attributes "MUST be
-/// merged … on commit runtime"): the lifecycle state, a verbatim client
-/// signature, and accompanying attestations. `Default` = the plain server
-/// commit (532|complete|, server-signed, none).
-#[derive(Debug, Default)]
-pub(crate) struct WriteEnvelope {
-    /// `UPDATE_VERSION.lifecycle_state` (None → 532|complete|, G-01-checked).
-    pub(crate) lifecycle_state: Option<String>,
-    /// A client-supplied `VERSION.signature`, stored verbatim (master06
-    /// §Digital Signature).
-    pub(crate) signature: Option<String>,
-    /// `UPDATE_VERSION.attestations` committed with the version.
-    pub(crate) attestations: Vec<Value>,
-}
-
 /// Write the one PHI-free event-outbox row a single-object commit announces,
 /// when eventing is enabled (our own extension; no openEHR spec governs it — the
 /// row is skipped entirely, envelope included, when no consumer is configured).
@@ -728,6 +679,11 @@ async fn write_single_outbox(
 
 /// Create the first version of a new versioned object under its own
 /// contribution.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] for an out-of-group / non-first lifecycle
+/// state; the [`commit_resolved`] storage/signing errors; a multimedia offload
+/// failure as [`ServiceError::Internal`].
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn create(
     tx: &mut PgConnection,
@@ -762,6 +718,12 @@ pub(crate) async fn create(
 }
 
 /// Commit a new version of an existing object under its own contribution.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
+/// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
+/// open lineage tip; [`ServiceError::Unprocessable`] for an illegal lifecycle
+/// transition; plus the [`commit_resolved`] storage/signing errors.
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn update(
     tx: &mut PgConnection,
@@ -802,6 +764,11 @@ pub(crate) async fn update(
 
 /// Logically delete an object under its own contribution (master06 §Logical
 /// Deletion).
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when `(ehr_id, kind, vo_id)` does not address a
+/// stored object; [`ServiceError::VersionConflict`] when `expected` is not the
+/// open lineage tip; plus the [`commit_resolved`] storage/signing errors.
 pub(crate) async fn delete(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -843,6 +810,11 @@ pub(crate) async fn delete(
 /// inherits them from the CONTRIBUTION audit (S-21) — realized by the callers
 /// building each version `AuditInput`; the attestation committer likewise
 /// defaults to the CONTRIBUTION committer here.
+///
+/// # Errors
+/// The per-change [`apply_change`] errors; the attestation-completion
+/// `Unprocessable` rejections and the `NotFound` of a missing attestation
+/// target; the storage errors of the contribution/outbox writes.
 pub(crate) async fn commit_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,

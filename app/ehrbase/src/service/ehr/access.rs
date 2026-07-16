@@ -1,14 +1,16 @@
-//! `EHR_ACCESS` — the EHR-wide access-control top-level structure (arch-overview
-//! `master06-design_of_the_ehr.adoc` §`EHR_ACCESS`; RM ehr
-//! `org.openehr.rm.ehr.ehr_access.adoc`). This file owns the object's default +
-//! validation (created under the EHR-creation CONTRIBUTION — there is no direct
-//! ITS-REST `EHR_ACCESS` write) and carries the per-EHR scheme cache.
+//! `EHR_ACCESS` — the EHR-wide access-control top-level structure
+//! (arch-overview `master06-design_of_the_ehr.adoc` §`EHR_ACCESS`; RM ehr
+//! `org.openehr.rm.ehr.ehr_access.adoc`). This file owns the object's default
+//! (created under the EHR-creation CONTRIBUTION — there is no direct ITS-REST
+//! `EHR_ACCESS` write), the settings read the protocol adapter consumes, and
+//! the per-EHR scheme cache; the commit validator lives in
+//! [`validation`](super::validation).
 //!
 //! The `EhrAccessCache` mechanics are spec-silent — no openEHR spec governs a
 //! per-request cache of `EHR_ACCESS` settings (our own design/extension). The
-//! cache rides along here (cross-register ruling) but the access-control *gate*
-//! that consults it (RBAC/ABAC) is a Stage-2 enterprise concern (CLAUDE.md), not
-//! designed in this chapter.
+//! cache rides along here (cross-register ruling) but the access-control
+//! *gate* that consults it (RBAC/ABAC) is a Stage-2 enterprise concern
+//! (CLAUDE.md), not designed in this chapter.
 
 use std::sync::Arc;
 
@@ -18,14 +20,15 @@ use moka::future::Cache;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
 use crate::versioning::{Kind, read_current};
 
 impl EhrbaseService {
     /// Drop the cached `EHR_ACCESS` settings for `ehr_id` — the
-    /// [`crate::versioning::CommitEnv`] `invalidate_ehr_access` hook, called after
-    /// any `EHR_ACCESS` commit so the next access decision reflects the new
-    /// version (the settings are change-controlled — RM ehr master04 §EHR Access).
+    /// [`crate::versioning::CommitEnv`] `invalidate_ehr_access` hook, called
+    /// after any `EHR_ACCESS` commit so the next access decision reflects the
+    /// new version (the settings are change-controlled — RM ehr master04 §EHR
+    /// Access).
     pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
         self.ehr_access.invalidate(ehr_id).await;
     }
@@ -34,15 +37,17 @@ impl EhrbaseService {
     /// (`None`). Every EHR is created with the settings-less
     /// [`super::default_ehr_access`] (there is no direct `EHR_ACCESS` write —
     /// RM ehr master04 §EHR Access), so a fresh EHR is unconditionally
-    /// default-open; seeding that entry saves the first-access DB miss. A later
-    /// `EHR_ACCESS` commit evicts it through [`Self::invalidate_ehr_access`].
+    /// default-open; seeding that entry saves the first-access DB miss. A
+    /// later `EHR_ACCESS` commit evicts it through
+    /// [`Self::invalidate_ehr_access`].
     pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: Uuid) {
         self.ehr_access.insert(ehr_id, None).await;
     }
 
-    /// Read + parse the EHR's current `EHR_ACCESS` scheme settings from storage
-    /// (the cache-miss path). `None` when the EHR has no `EHR_ACCESS`, its
-    /// settings are absent, or they belong to another scheme — all default-open.
+    /// Read + parse the EHR's current `EHR_ACCESS` scheme settings from
+    /// storage (the cache-miss path). `None` when the EHR has no `EHR_ACCESS`,
+    /// its settings are absent, or they belong to another scheme — all
+    /// default-open.
     async fn load_ehr_access_settings(
         &self,
         ehr_id: Uuid,
@@ -55,14 +60,19 @@ impl EhrbaseService {
         };
         Ok(EhrAccessSettings::from_ehr_access(&read.canonical))
     }
-}
 
-/// The `EhrAccessAdapter` native-API extension: the protocol adapter
-/// (`ehrbase-rest`) — the out-of-band access-decision point (SM
-/// `openehr_platform/master02-overview.adoc`) — reads the EHR's current
-/// `EHR_ACCESS` settings through this seam. The SM defines no `I_EHR_ACCESS`
-/// interface — no openEHR spec governs this adapter, our own extension.
-impl EhrbaseService {
+    /// The EHR's current `EHR_ACCESS` scheme settings, cached per EHR — the
+    /// `EhrAccessAdapter` native-API extension: the protocol adapter
+    /// (`ehrbase-rest`) — the out-of-band access-decision point (SM
+    /// `openehr_platform/master02-overview.adoc`) — reads the settings through
+    /// this seam. The SM defines no `I_EHR_ACCESS` interface — no openEHR spec
+    /// governs this adapter, our own extension. `None` = default-open (no
+    /// settings, or a scheme this server does not understand).
+    ///
+    /// # Errors
+    /// [`SmError`] when the cache-miss load (the `current_vo` + `read_current`
+    /// storage reads) fails; the error is shared across concurrent callers of
+    /// the single-flight load.
     pub async fn current_ehr_access_settings(
         &self,
         ehr_id: Uuid,
@@ -83,9 +93,9 @@ impl EhrbaseService {
 }
 
 /// The default `EHR_ACCESS` created with every EHR (RM ehr master04 §EHR
-/// Creation; finding F-06-07). `EHR_ACCESS` is a LOCATABLE with only the optional
-/// `settings`; with no access-control scheme configured (Stage 1 has no RBAC),
-/// it is committed with none.
+/// Creation; finding F-06-07). `EHR_ACCESS` is a LOCATABLE with only the
+/// optional `settings`; with no access-control scheme configured (Stage 1 has
+/// no RBAC), it is committed with none.
 pub(in crate::service) fn default_ehr_access() -> Value {
     json!({
         "_type": "EHR_ACCESS",
@@ -94,69 +104,15 @@ pub(in crate::service) fn default_ehr_access() -> Value {
     })
 }
 
-/// Validate a client-supplied `EHR_ACCESS` before it is committed (via a
-/// CONTRIBUTION — there is no direct ITS-REST `EHR_ACCESS` write). RM ehr
-/// `ehr_access.adoc`:
-///
-/// - a LOCATABLE: `name` (1..1) and a non-empty `archetype_node_id`
-///   (`Archetype_node_id_valid`);
-/// - a foreign `_type` in this slot is invalid (the container holds `EHR_ACCESS`
-///   only);
-/// - `settings` (0..1) is a subtype of the ABSTRACT `ACCESS_CONTROL_SETTINGS` —
-///   the RM defines no concrete scheme, so a present `settings` must carry a
-///   non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
-pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(m);
-    let obj = access
-        .as_object()
-        .ok_or_else(|| unproc("EHR_ACCESS must be a JSON object".to_owned()))?;
-    match obj.get("_type").and_then(Value::as_str) {
-        None | Some("EHR_ACCESS") => {}
-        Some(other) => {
-            return Err(unproc(format!(
-                "expected an EHR_ACCESS, got _type {other:?}"
-            )));
-        }
-    }
-    if obj.get("name").is_none_or(Value::is_null) {
-        return Err(unproc(
-            "EHR_ACCESS.name is mandatory (LOCATABLE.name 1..1)".to_owned(),
-        ));
-    }
-    if obj
-        .get("archetype_node_id")
-        .and_then(Value::as_str)
-        .is_none_or(str::is_empty)
-    {
-        return Err(unproc(
-            "EHR_ACCESS.archetype_node_id is mandatory and non-empty \
-             (LOCATABLE.Archetype_node_id_valid)"
-                .to_owned(),
-        ));
-    }
-    if let Some(settings) = obj.get("settings").filter(|v| !v.is_null())
-        && settings
-            .get("_type")
-            .and_then(Value::as_str)
-            .is_none_or(str::is_empty)
-    {
-        return Err(unproc(
-            "EHR_ACCESS.settings must be a concrete ACCESS_CONTROL_SETTINGS subtype \
-             carrying its _type — the scheme name (EHR_ACCESS.Scheme_valid)"
-                .to_owned(),
-        ));
-    }
-    Ok(())
-}
-
-/// A shared, cloneable per-EHR cache of the current `EHR_ACCESS` scheme settings.
+/// A shared, cloneable per-EHR cache of the current `EHR_ACCESS` scheme
+/// settings.
 ///
 /// The `EHR_ACCESS` gateway clause ("All access decisions to data in the EHR
-/// must be made in accordance with the policies and rules in this object" — RM
-/// ehr `ehr_access.adoc`) is consulted on **every** EHR-scoped request, so the
-/// current settings are cached rather than re-read + re-decomposed per request.
-/// Invalidated on every `EHR_ACCESS` commit (the settings are change-controlled
-/// — RM ehr master04 §EHR Access).
+/// must be made in accordance with the policies and rules in this object" —
+/// RM ehr `ehr_access.adoc`) is consulted on **every** EHR-scoped request, so
+/// the current settings are cached rather than re-read + re-decomposed per
+/// request. Invalidated on every `EHR_ACCESS` commit (the settings are
+/// change-controlled — RM ehr master04 §EHR Access).
 ///
 /// No openEHR spec governs this cache — our own design/extension. `moka`'s
 /// `Cache` is `Arc`-backed, so every clone of the owning service shares one
@@ -200,8 +156,9 @@ impl EhrAccessCache {
     /// `current_vo` + `read_current` lookup) to discover it is default-open.
     /// A workload that creates EHRs constantly (a hospital day) pays that miss
     /// per new EHR; seeding the known-default-open entry at creation turns the
-    /// first access into a hit. Any later `EHR_ACCESS` commit evicts this entry
-    /// via [`Self::invalidate`], so a subsequently-restricted EHR is re-read.
+    /// first access into a hit. Any later `EHR_ACCESS` commit evicts this
+    /// entry via [`Self::invalidate`], so a subsequently-restricted EHR is
+    /// re-read.
     pub(in crate::service) async fn insert(
         &self,
         ehr_id: Uuid,
@@ -211,8 +168,8 @@ impl EhrAccessCache {
     }
 
     /// Drop the cached settings for `ehr_id` — called on every `EHR_ACCESS`
-    /// commit so the next read reflects the new version (evicts a positive OR a
-    /// pre-warmed default-open negative entry alike).
+    /// commit so the next read reflects the new version (evicts a positive OR
+    /// a pre-warmed default-open negative entry alike).
     pub(in crate::service) async fn invalidate(&self, ehr_id: Uuid) {
         self.inner.invalidate(&ehr_id).await;
     }
@@ -221,37 +178,5 @@ impl EhrAccessCache {
 impl Default for EhrAccessCache {
     fn default() -> Self {
         Self::new(4096)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::{default_ehr_access, validate_ehr_access};
-
-    /// `EHR_ACCESS` commit validation (RM ehr `ehr_access.adoc`): LOCATABLE
-    /// structure enforced, a present `settings` must be a concrete
-    /// `ACCESS_CONTROL_SETTINGS` subtype (its `_type` is the scheme name —
-    /// `Scheme_valid`).
-    #[test]
-    fn ehr_access_commit_validation() {
-        validate_ehr_access(&default_ehr_access()).expect("the default EHR_ACCESS is valid");
-        let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }))
-            .expect_err("foreign _type rejected");
-        assert!(err.to_string().contains("EHR_ACCESS"), "got {err}");
-        let err = validate_ehr_access(&json!({
-            "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1"
-        }))
-        .expect_err("missing name rejected");
-        assert!(err.to_string().contains("name"), "got {err}");
-        let err = validate_ehr_access(&json!({
-            "_type": "EHR_ACCESS",
-            "name": { "_type": "DV_TEXT", "value": "EHR Access" },
-            "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
-            "settings": { "scheme": "acme" }
-        }))
-        .expect_err("settings without a concrete _type rejected (Scheme_valid)");
-        assert!(err.to_string().contains("Scheme_valid"), "got {err}");
     }
 }

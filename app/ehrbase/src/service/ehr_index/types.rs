@@ -105,8 +105,8 @@ pub struct LocationDesc {
 
 /// One EHR Index record: a subject↔EHR association with its status and
 /// optional location descriptor. Returned by the design-filled read calls
-/// (`EhrIndexService::ehr_subjects` / `subject_ehrs` — the SM defines no
-/// reads; PORT NOTE on the trait).
+/// (`ehr_subjects` / `subject_ehrs` — the SM defines no reads; PORT NOTE on
+/// those methods).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EhrIndexEntry {
     /// The associated EHR id.

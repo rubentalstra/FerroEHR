@@ -1,15 +1,20 @@
 //! The AMQP 0.9.1 (`RabbitMQ`) [`EventPublisher`] via `lapin`.
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-01; master14's integration model is archetype data-conversion, not
-//! message brokers). Active only when the eventing extension is enabled.
+//! **No openEHR spec governs this — our own design/extension** (master14's
+//! integration model is archetype data-conversion, not message brokers).
+//! Active only when the eventing extension is enabled.
 //!
 //! Publishes to a **durable topic exchange** with **publisher confirms**: a
 //! publish resolves only after the broker acknowledges, so the drainer marks a
 //! row published exactly when delivery is guaranteed (at-least-once). The
-//! connection + channel are established lazily and re-established on loss, so a
-//! broker that is down at start (or restarts) is tolerated — the outbox simply
-//! stays pending until the broker returns.
+//! connection + channel are established lazily and re-established on loss, so
+//! a broker that is down at start (or restarts) is tolerated — the outbox
+//! simply stays pending until the broker returns. Every fresh connection
+//! advances the [`topology epoch`](EventPublisher::topology_epoch) so the
+//! drainer knows when subscription queues may need re-declaring (a broker
+//! replaced without our durable state).
+
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use async_trait::async_trait;
 use lapin::options::{
@@ -33,9 +38,11 @@ pub struct AmqpPublisher {
     url: String,
     exchange: String,
     /// The live connection + channel, or `None` until first use / after a loss.
-    /// The [`Connection`] is retained so its background I/O task stays alive for
-    /// as long as the channel is in use.
+    /// The [`Connection`] is retained so its background I/O task stays alive
+    /// for as long as the channel is in use.
     conn: Mutex<Option<(Connection, Channel)>>,
+    /// Counts fresh connections (the topology epoch).
+    epoch: AtomicU64,
 }
 
 impl AmqpPublisher {
@@ -47,11 +54,13 @@ impl AmqpPublisher {
             url: url.into(),
             exchange: exchange.into(),
             conn: Mutex::new(None),
+            epoch: AtomicU64::new(0),
         }
     }
 
     /// Return a connected channel, (re)connecting + (re)declaring the exchange
-    /// when there is none or the current one has dropped.
+    /// when there is none or the current one has dropped. A fresh connection
+    /// advances the topology epoch.
     async fn channel(&self) -> Result<Channel, EventError> {
         let mut guard = self.conn.lock().await;
         if let Some((_conn, channel)) = guard.as_ref()
@@ -79,6 +88,7 @@ impl AmqpPublisher {
             .await?;
         let handle = channel.clone();
         *guard = Some((conn, channel));
+        self.epoch.fetch_add(1, Ordering::Relaxed);
         Ok(handle)
     }
 }
@@ -130,5 +140,9 @@ impl EventPublisher for AmqpPublisher {
             )
             .await?;
         Ok(())
+    }
+
+    fn topology_epoch(&self) -> u64 {
+        self.epoch.load(Ordering::Relaxed)
     }
 }

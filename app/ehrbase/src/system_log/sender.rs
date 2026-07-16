@@ -70,13 +70,11 @@ impl AuditSender {
         self.inner.suppress_login_events
     }
 
-    /// Whether the failure mode is `closed` (a drop → `503`).
-    #[must_use]
-    pub fn fail_closed(&self) -> bool {
-        self.inner.fail_mode == FailMode::Closed
-    }
-
     /// Enqueue an event (non-blocking). Never awaits, never blocks the request.
+    /// A full queue (or a stopped drain) is metered and mapped through the
+    /// configured [`FailMode`]: `open` → [`EmitOutcome::Dropped`] (the request
+    /// proceeds), `closed` → [`EmitOutcome::Rejected`] (the REST layer returns
+    /// `503`).
     pub fn emit(&self, event: AuditEvent) -> EmitOutcome {
         metrics::counter!(METRIC_EMITTED).increment(1);
         if let Ok(()) = self.inner.tx.try_send(event) {

@@ -9,10 +9,10 @@
 //! PHI NOTE: unlike the PHI-free event envelopes, the outbound emitter's
 //! payload IS the mapped FHIR **resource**, so it carries clinical content by
 //! design. It is off by default behind its own explicit flag, and publishes to
-//! a SEPARATE [`exchange`](FhirOutboundConfig::exchange) (default `ehrbase.fhir`,
-//! distinct from the events exchange) so broker-level access control can
-//! restrict the PHI-bearing stream independently. Turning it on is an explicit,
-//! audited deployment decision.
+//! a SEPARATE [`exchange`](FhirOutboundConfig::exchange) (default
+//! `ehrbase.fhir`, distinct from the events exchange) so broker-level access
+//! control can restrict the PHI-bearing stream independently. Turning it on is
+//! an explicit, audited deployment decision.
 
 use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};

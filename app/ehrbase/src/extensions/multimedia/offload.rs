@@ -4,9 +4,8 @@
 //! driven by [`MultimediaEngine`](super::MultimediaEngine).
 //!
 //! **The blob-storage mechanism is spec-silent — no openEHR spec governs it —
-//! our own design/extension** (`crate::extensions`, G-12-05). The
-//! `DV_MULTIMEDIA` *shape* this rewrites is RM data types, so the rewrite honours
-//! the RM invariants cited below.
+//! our own design/extension.** The `DV_MULTIMEDIA` *shape* this rewrites is RM
+//! data types, so the rewrite honours the RM invariants cited below.
 //!
 //! Spec basis (RM 1.2.0 `DV_MULTIMEDIA`,
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`):
@@ -124,9 +123,8 @@ pub(super) fn referenced_keys(root: &Value, store: &BlobStore) -> Vec<String> {
 ///
 /// Qualifies only when the value is purely inline (`data` present, `uri`
 /// absent) and its **decoded** length strictly exceeds `threshold`. A value
-/// that already carries a `uri` (client-managed external media) is
-/// stored verbatim; a small inline value is left untouched (the zero-drift
-/// gate).
+/// that already carries a `uri` (client-managed external media) is stored
+/// verbatim; a small inline value is left untouched (the zero-drift gate).
 fn offload_one(
     map: &mut Map<String, Value>,
     threshold: usize,

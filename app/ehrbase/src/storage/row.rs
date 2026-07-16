@@ -61,7 +61,7 @@ pub struct NodeRow {
 
 /// The lean read row: only the columns [`crate::storage::reassemble`] and the
 /// nested-set contract need. The read path fetches exactly these five columns
-/// (G-S6) — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
+/// — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
 /// live inside `data` and are not needed to reconstruct the canonical tree.
 ///
 /// `num_cap`/`parent_num` are surfaced (unused by reassembly) because they are
@@ -85,7 +85,7 @@ pub struct ReadRow {
 /// node row — its pre-order number, its materialized path, and its JSON
 /// fragment. Implemented by both the write [`NodeRow`] and the lean [`ReadRow`],
 /// so reassembly works from either shape without forcing the read path to fetch
-/// the promoted query columns (G-S6).
+/// the promoted query columns.
 pub trait NodeContent {
     /// Pre-order number within the versioned object (root = 0).
     fn num(&self) -> i32;

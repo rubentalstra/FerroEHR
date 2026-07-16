@@ -1,9 +1,8 @@
-//! The `FEEDER_AUDIT` provenance builder for the FHIR connector (carved out of
-//! `mapping.rs` per register 12, G-12-04).
+//! The `FEEDER_AUDIT` provenance builder for the FHIR connector.
 //!
 //! The FHIR connector as a whole is spec-silent (no openEHR spec governs the
-//! FHIR↔openEHR mapping — our own design/extension; `crate::extensions`). **This
-//! submodule, however, builds RM-typed data**: the `FEEDER_AUDIT` /
+//! FHIR↔openEHR mapping — our own design/extension). **This submodule,
+//! however, builds RM-typed data**: the `FEEDER_AUDIT` /
 //! `FEEDER_AUDIT_DETAILS` provenance stamped on the imported COMPOSITION. That
 //! shape is governed by **RM common `feeder_audit`** (`FEEDER_AUDIT`,
 //! `FEEDER_AUDIT_DETAILS.system_id`/`time`/`version_id`,
@@ -13,8 +12,8 @@
 //! `DV_IDENTIFIER`. (master14's *integration* model is archetype-level and does
 //! not govern this builder; the RM `FEEDER_AUDIT` types do.)
 //!
-//! Gate: the connector's inbound routes are config-gated in `ehrbase-rest`; this
-//! builder only runs on the ingest path.
+//! Gate: the connector's inbound routes are config-gated in `ehrbase-rest`;
+//! this builder only runs on the ingest path.
 
 use serde_json::{Value, json};
 

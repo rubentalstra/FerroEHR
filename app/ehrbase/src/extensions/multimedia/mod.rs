@@ -1,11 +1,9 @@
-//! `DV_MULTIMEDIA` externalization to S3-compatible object storage (G-12-05).
+//! `DV_MULTIMEDIA` externalization to S3-compatible object storage.
 //!
-//! **No openEHR spec governs this — our own design/extension.** Server-side blob
-//! storage is spec-silent (master13 is informative deployment guidance and
-//! prescribes no blob-offload mechanism); this module fills it. Quarantined
-//! under `crate::extensions`; see `docs/design/platform/12-extensions.md`.
-//! Gate: [`MultimediaConfig::enabled`] (`EHRBASE_MULTIMEDIA_ENABLED`, default
-//! off).
+//! **No openEHR spec governs this — our own design/extension.** Server-side
+//! blob storage is spec-silent (master13 is informative deployment guidance and
+//! prescribes no blob-offload mechanism); this module fills it. Gate:
+//! [`MultimediaConfig::enabled`] (`multimedia.enabled`, default off).
 //!
 //! On commit, an inline `DV_MULTIMEDIA.data` larger than a configured threshold
 //! is written to a content-addressed blob store (keyed by its SHA-256) and the
@@ -19,9 +17,9 @@
 //! byte-identical to inline behaviour (the zero-drift gate).
 //!
 //! Spec basis for the *data shape* it rewrites: RM 1.2.0 `DV_MULTIMEDIA`
-//! (`uri`/`data` alternatives under `is_inline or is_external`; `integrity_check`
-//! ⇒ `integrity_check_algorithm` from the openEHR `Integrity check algorithms`
-//! code set; mandatory unencoded `size`).
+//! (`uri`/`data` alternatives under `is_inline or is_external`;
+//! `integrity_check` ⇒ `integrity_check_algorithm` from the openEHR `Integrity
+//! check algorithms` code set; mandatory unencoded `size`).
 //!
 //! ## Seams to versioning / storage
 //! The engine is attached to the service via
@@ -29,9 +27,11 @@
 //! (offload, via the versioning `SigningCtx`) and the read path (expand). Those
 //! call sites live in `crate::versioning` / `crate::service::ehr`; this module
 //! only owns the engine + transforms.
-// The `EhrbaseService.multimedia` field holds this engine; the
-// `with_multimedia` setter attaches it and `signing_ctx().multimedia` reads it
-// on the commit path.
+//!
+//! ## Module map
+//! - `config` — the [`MultimediaConfig`] section struct.
+//! - `store` — the content-addressed [`BlobStore`] over `object_store`.
+//! - `offload` — the pure canonical-JSON transforms (externalize / expand).
 
 // openEHR/product identifiers (DV_MULTIMEDIA, SeaweedFS, …) read as prose in docs.
 #![allow(clippy::doc_markdown)]
@@ -113,8 +113,10 @@ impl MultimediaEngine {
     /// already-external value is left untouched.
     ///
     /// # Errors
-    /// Propagates malformed-value or blob-store failures (the caller aborts the
-    /// commit, so nothing is persisted on error).
+    /// [`MultimediaError::Malformed`] when an inline `data` is not base64 or
+    /// exceeds the i64 byte range, or [`MultimediaError::Store`] on an upload
+    /// failure (the caller aborts the commit, so nothing is persisted on
+    /// error).
     pub async fn offload(&self, canonical: &mut Value) -> Result<(), MultimediaError> {
         let pending = offload::plan_offload(canonical, self.threshold, &self.store)?;
         for (hex, bytes) in pending {
@@ -128,8 +130,9 @@ impl MultimediaEngine {
     /// inline, or referencing a foreign URI, is left as-is.
     ///
     /// # Errors
-    /// [`MultimediaError::Integrity`] on a hash mismatch, or a blob-store
-    /// failure.
+    /// [`MultimediaError::Integrity`] on a hash mismatch, or
+    /// [`MultimediaError::Store`] when a referenced blob is missing or the
+    /// backend fails.
     pub async fn expand(&self, canonical: &mut Value) -> Result<(), MultimediaError> {
         let mut keys = offload::collect_expand_keys(canonical, &self.store);
         keys.sort_unstable();

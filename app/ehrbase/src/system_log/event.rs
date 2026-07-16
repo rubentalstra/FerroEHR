@@ -1,13 +1,16 @@
-//! The SM **System Log** component (`I_SYSTEM_LOG`) — the pure event model and
-//! the emit contract.
+//! The transport-agnostic audit **event model** for the SM System Log
+//! component (`I_SYSTEM_LOG`).
 //!
-//! This module carries only the transport-agnostic audit *event* model and the
-//! [`SystemLog`] trait. The IHE **ATNA** rendering (the DICOM `AuditMessage`,
-//! syslog framing, transports) is the platform crate's concern
-//! (`ehrbase::system_log`, `docs/enterprise/atna-audit.md`); the ITS-REST
-//! operation → classification mapping is the protocol adapter's
-//! (`ehrbase-rest::audit_table`). Nothing here depends on `openehr-its`, HTTP,
-//! or DICOM.
+//! PORT NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
+//! `docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names the
+//! interface with no methods and no description; the only normative statement
+//! is the platform overview's one line "System Log | IHE ATNA-compliant system
+//! log" (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
+//! §Overview). This event model — the minimal shape the ITS-REST audit
+//! middleware needs to hand a resolved operation record to the platform's ATNA
+//! emitter — is therefore entirely our own design. Nothing here depends on
+//! `openehr-its`, HTTP, or DICOM; the DICOM / RFC-3881 renderings of these
+//! enums live in [`super::codes`], the wire model in [`super::message`].
 
 use jiff::Timestamp;
 
@@ -40,7 +43,8 @@ pub enum EventOutcome {
 }
 
 /// The class of resource an operation touches — determines the DICOM `EventID`
-/// and the participant-object rendering (binding doc §3 field mapping).
+/// and the participant-object rendering (see [`super::codes`] and
+/// [`super::message`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectClass {
     /// EHR / `EHR_STATUS` → "Patient Record"; a Patient-Number participant.
@@ -70,14 +74,15 @@ pub enum ObjectClass {
     /// passed between systems" (BASE
     /// `architecture_overview/master07-security.adoc` §Non-repudiation).
     // The SM-5 EHR-Extract export/import path emits an
-    // `AuditEvent { object: Extract, .. }` on completion (the platform crate's
-    // `EhrbaseService::emit_extract_audit`); this variant is its resource class.
+    // `AuditEvent { object: Extract, .. }` on completion
+    // (`EhrbaseService::emit_extract_audit`); this variant is its resource class.
     Extract,
     /// Login / application activity → "Application Activity"; no clinical object.
     ApplicationActivity,
 }
 
-/// A fully-resolved audit event, ready to be rendered into a DICOM `AuditMessage`.
+/// A fully-resolved audit event, ready to be rendered into a DICOM
+/// `AuditMessage` ([`super::message`]).
 #[derive(Debug, Clone)]
 pub struct AuditEvent {
     /// The CRUD/execute class.
@@ -90,7 +95,7 @@ pub struct AuditEvent {
     pub user_id: String,
     /// Whether the source participant is the requestor (always true here).
     pub user_is_requestor: bool,
-    /// The client network address (`X-Forwarded-First-hop`/peer), if known.
+    /// The client network address (`X-Forwarded-For` first hop / peer), if known.
     pub client_ip: Option<String>,
     /// The owning EHR id, for optional background subject enrichment.
     pub ehr_id: Option<String>,
@@ -130,16 +135,3 @@ pub enum EmitOutcome {
     /// layer must return `503`.
     Rejected,
 }
-
-// The SM **System Log** component (`I_SYSTEM_LOG`, `i_system_log.adoc`).
-//
-// PORT NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
-// `docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names the
-// interface with no methods and no description; the only normative statement
-// is the platform overview's one line "System Log | IHE ATNA-compliant system
-// log" (`docs/specs/openehr/SM/docs/openehr_platform/master02-overview.adoc`
-// §Overview). The trait contract below (`emit` + the audit-policy accessors) is
-// therefore entirely our design: the minimal seam the ITS-REST audit middleware
-// needs to hand a resolved [`AuditEvent`] to the platform's ATNA emitter without
-// knowing how (or whether) it ships. The ATNA wire rendering lives in the
-// platform crate (`ehrbase::system_log`, `docs/enterprise/atna-audit.md`).

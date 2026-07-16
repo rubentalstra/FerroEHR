@@ -1,0 +1,476 @@
+//! Lean metadata-only reads over `vo_version` (⋈ `audit` where the commit
+//! instant is needed): the `ETag`/`If-Match` identity reads, revision-history
+//! enumeration, and the existence/kind/ownership/count lookups — none of them
+//! pays the node reassembly or attestation aggregation the full
+//! [`crate::storage::version_repo::read_current`] does.
+//!
+//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
+//! §Storage). The version identity these reads serve is RM common master06
+//! §Version Identification; the commit instant is §Committal.
+
+use serde_json::Value;
+use sqlx::postgres::PgRow;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
+
+use crate::storage::StorageError;
+
+// ── revision-history enumeration ──────────────────────────────────────────────
+
+/// One version's metadata row (`vo_version` ⋈ `audit`, no canonical body, no
+/// attestations) — the lean list shape for `REVISION_HISTORY` and version
+/// enumeration, where reassembling every body would be wasted work.
+#[derive(Debug, Clone)]
+pub struct VersionMeta {
+    pub ehr_id: Option<Uuid>,
+    pub kind: String,
+    pub sys_version: i32,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub creating_system_id: String,
+    pub lifecycle_state: String,
+    pub audit_system_id: String,
+    pub audit_change_type: String,
+    pub audit_description: Option<String>,
+    pub audit_committer: Value,
+    pub time_committed: jiff::Timestamp,
+}
+
+/// All version metadata rows of an object, ordered by storage ordinal.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn all_version_meta(
+    pool: &PgPool,
+    vo_id: Uuid,
+) -> Result<Vec<VersionMeta>, StorageError> {
+    let rows = sqlx::query(
+        "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
+         v.branch_version, v.creating_system_id, v.lifecycle_state, \
+         a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 ORDER BY v.sys_version",
+    )
+    .bind(vo_id)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|row| {
+            Ok(VersionMeta {
+                ehr_id: row.try_get("ehr_id")?,
+                kind: row.try_get("kind")?,
+                sys_version: row.try_get("sys_version")?,
+                trunk_version: row.try_get("trunk_version")?,
+                branch_number: row.try_get("branch_number")?,
+                branch_version: row.try_get("branch_version")?,
+                creating_system_id: row.try_get("creating_system_id")?,
+                lifecycle_state: row.try_get("lifecycle_state")?,
+                audit_system_id: row.try_get("system_id")?,
+                audit_change_type: row.try_get("change_type")?,
+                audit_description: row.try_get("description")?,
+                audit_committer: row.try_get("committer")?,
+                time_committed: row
+                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                    .to_jiff(),
+            })
+        })
+        .collect()
+}
+
+/// The commit time of the earliest **held** version of an object
+/// (`VERSIONED_OBJECT.time_created`; a latest-only import clone legitimately
+/// starts above version 1). `None` when the object does not exist.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn time_created(
+    pool: &PgPool,
+    vo_id: Uuid,
+) -> Result<Option<jiff::Timestamp>, StorageError> {
+    Ok(sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(
+        "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 ORDER BY v.sys_version LIMIT 1",
+    )
+    .bind(vo_id)
+    .fetch_optional(pool)
+    .await?
+    .map(jiff_sqlx::Timestamp::to_jiff))
+}
+
+// ── existence / kind / ownership ──────────────────────────────────────────────
+
+/// Whether the EHR row exists (the CONTRIBUTION-commit `Pre_has_ehr` precheck
+/// and the contribution-listing 404 distinction).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn ehr_exists(pool: &PgPool, ehr_id: Uuid) -> Result<bool, StorageError> {
+    Ok(
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
+            .bind(ehr_id)
+            .fetch_one(pool)
+            .await?,
+    )
+}
+
+/// The kind text of the current version of an object, or `None` if it does not
+/// exist. Mapping to a versioned-object kind is the caller's.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn object_kind(pool: &PgPool, vo_id: Uuid) -> Result<Option<String>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) \
+         AND branch_number = 0",
+    )
+    .bind(vo_id)
+    .fetch_optional(pool)
+    .await?)
+}
+
+/// The kind text of the current version of EVERY object in `vo_ids`, in one
+/// round trip (the CONTRIBUTION-commit target pre-check batches its per-version
+/// lookups — a K-change commit reads its targets with one statement). Absent
+/// objects are simply missing from the result; the caller maps absence to its
+/// 400. No openEHR spec governs read batching — our own design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn object_kinds(
+    pool: &PgPool,
+    vo_ids: &[Uuid],
+) -> Result<Vec<(Uuid, String)>, StorageError> {
+    if vo_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows = sqlx::query(
+        "SELECT vo_id, kind FROM vo_version WHERE vo_id = ANY($1) \
+         AND upper_inf(sys_period) AND branch_number = 0",
+    )
+    .bind(vo_ids)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|r| Ok((r.try_get("vo_id")?, r.try_get("kind")?)))
+        .collect()
+}
+
+/// The owning EHR of a versioned object (`None` when the object does not
+/// exist; `Some(None)` for an ehr-less demographic object).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn vo_owner(pool: &PgPool, vo_id: Uuid) -> Result<Option<Option<Uuid>>, StorageError> {
+    Ok(
+        sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
+            .bind(vo_id)
+            .fetch_optional(pool)
+            .await?,
+    )
+}
+
+// ── current-version identity reads ────────────────────────────────────────────
+
+/// The current version of an EHR-owned object of one kind: its `vo_id` and
+/// `VERSION_TREE_ID` column ints, from the current open trunk row
+/// (`upper_inf(sys_period)`, `branch_number = 0`). `None` when the EHR has no
+/// such object. Mapping the ints to a `TreeId` is the caller's.
+#[derive(Debug, Clone)]
+pub struct CurrentVoRow {
+    pub vo_id: Uuid,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+}
+
+/// Read the current-version `(vo_id, tree)` of an EHR's object of `kind`.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_vo(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    kind: &str,
+) -> Result<Option<CurrentVoRow>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+         WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
+    )
+    .bind(ehr_id)
+    .bind(kind)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CurrentVoRow {
+        vo_id: row.try_get("vo_id")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+    }))
+}
+
+/// The current version's metadata only — the `vo_version`⋈`audit` columns the
+/// `ETag`/`If-Match` full-`OBJECT_VERSION_ID` compare needs (`VERSION_TREE_ID`
+/// column ints + the stored per-version `creating_system_id` + the audit
+/// `time_committed`), **without** node reassembly or the attestation read the
+/// full [`crate::storage::version_repo::read_current`] pays. `None` when the
+/// object has no current trunk version. The version identity is RM common
+/// master06 §Version Identification; the commit instant is master06 §Committal.
+#[derive(Debug, Clone)]
+pub struct CurrentMeta {
+    pub vo_id: Uuid,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub creating_system_id: String,
+    pub time_committed: jiff::Timestamp,
+}
+
+fn current_meta_row(row: &PgRow) -> Result<CurrentMeta, StorageError> {
+    Ok(CurrentMeta {
+        vo_id: row.try_get("vo_id")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+    })
+}
+
+/// The current trunk version's metadata for an EHR's object of `kind`, resolved
+/// and read in **one** `vo_version`⋈`audit` statement (no node/attestation
+/// reads) — the metadata-only replacement for [`current_vo`] +
+/// [`crate::storage::version_repo::read_current`] on the `ETag`/`If-Match`
+/// path.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_version_meta_by_kind(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    kind: &str,
+) -> Result<Option<CurrentMeta>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+         v.creating_system_id, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
+         AND v.branch_number = 0",
+    )
+    .bind(ehr_id)
+    .bind(kind)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(current_meta_row(&row)?))
+}
+
+/// The current trunk version's metadata for an object addressed by its `vo_id`
+/// **scoped to one EHR** — one `vo_version`⋈`audit` statement (no node
+/// reassembly), returning `None` when the object is not the EHR's (a foreign or
+/// unknown id). The lean `ETag`/`If-Match` read for an EHR-owned object; the
+/// version identity is RM common master06 §Version Identification, the commit
+/// instant §Committal.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_version_meta_scoped(
+    pool: &PgPool,
+    vo_id: Uuid,
+    ehr_id: Uuid,
+) -> Result<Option<CurrentMeta>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+         v.creating_system_id, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND v.ehr_id = $2 AND upper_inf(v.sys_period) \
+         AND v.branch_number = 0",
+    )
+    .bind(vo_id)
+    .bind(ehr_id)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(current_meta_row(&row)?))
+}
+
+/// The current trunk version's metadata for a **demographic** (ehr-less)
+/// versioned object addressed by its `vo_id`, in ONE `vo_version`⋈`audit`
+/// statement — `kind` + `lifecycle_state` alongside the `ETag`/`If-Match`
+/// identity parts (`VERSION_TREE_ID` ints + the stored per-version
+/// `creating_system_id`) and the commit instant, **without** the node
+/// reassembly the full [`crate::storage::version_repo::read_current`] pays.
+/// `ehr_id IS NULL` scopes the read to the demographic repository (a party /
+/// `PARTY_RELATIONSHIP` has no owning EHR — our own design; no openEHR spec
+/// governs the SQL). The caller gates the route on `kind` (a wrong-kind or
+/// EHR-scoped id → no match) and the not-deleted precondition on
+/// `lifecycle_state` (RM common master06 §Logical Deletion). `None` when there
+/// is no current trunk demographic version.
+#[derive(Debug, Clone)]
+pub struct CurrentDemographicMeta {
+    pub kind: String,
+    pub lifecycle_state: String,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub creating_system_id: String,
+    pub time_committed: jiff::Timestamp,
+}
+
+/// Read the lean [`CurrentDemographicMeta`] for a demographic versioned object.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_demographic_meta(
+    pool: &PgPool,
+    vo_id: Uuid,
+) -> Result<Option<CurrentDemographicMeta>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
+         v.branch_version, v.creating_system_id, a.time_committed \
+         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+         WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND upper_inf(v.sys_period) \
+         AND v.branch_number = 0",
+    )
+    .bind(vo_id)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CurrentDemographicMeta {
+        kind: row.try_get("kind")?,
+        lifecycle_state: row.try_get("lifecycle_state")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+    }))
+}
+
+/// The current trunk version of a COMPOSITION reduced to exactly what the
+/// modify/delete pre-checks need, in ONE `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN
+/// `node`) statement — a single read that serves the whole write pre-check
+/// (folding the former separate `If-Match` meta read, modify pre-read, and
+/// `is_modifiable` side-SELECT):
+///
+/// - owning `ehr_id` (the ownership gate) + `lifecycle_state` (the deleted gate,
+///   RM common master06 §Logical Deletion);
+/// - the `VERSION_TREE_ID` column ints + the stored per-version
+///   `creating_system_id` + the audit `time_committed` — the full
+///   `OBJECT_VERSION_ID` + commit instant the `ETag`/`If-Match` compare needs
+///   (RM common master06 §Version Identification / §Committal);
+/// - the EHR's promoted `is_modifiable` flag (the content-write guard, RM ehr
+///   master04 §EHR Active Status) via the `ehr` join;
+/// - the **root node fragment** (`num = 0`, children pruned) from which the
+///   modify path reads the declared `archetype_details.template_id.value` —
+///   **without** reassembling every node the full
+///   [`crate::storage::version_repo::read_current`] pays.
+///
+/// `root_data` is `None` for a deleted current (a logical delete stores no node
+/// rows). `None` when the object has no current trunk version (a COMPOSITION
+/// always owns an `ehr`, so the inner join never drops a live row). No openEHR
+/// spec governs the SQL — our own design.
+#[derive(Debug, Clone)]
+pub struct CurrentCompositionMeta {
+    pub ehr_id: Option<Uuid>,
+    pub lifecycle_state: String,
+    pub trunk_version: i32,
+    pub branch_number: i32,
+    pub branch_version: i32,
+    pub creating_system_id: String,
+    pub time_committed: jiff::Timestamp,
+    pub is_modifiable: bool,
+    pub root_data: Option<Value>,
+}
+
+/// Read the lean [`CurrentCompositionMeta`] for a COMPOSITION's current version.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_composition_meta(
+    pool: &PgPool,
+    vo_id: Uuid,
+) -> Result<Option<CurrentCompositionMeta>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
+         v.branch_version, v.creating_system_id, a.time_committed, e.is_modifiable, \
+         n.data AS root_data \
+         FROM vo_version v \
+         JOIN audit a ON a.id = v.audit_id \
+         JOIN ehr e ON e.id = v.ehr_id \
+         LEFT JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+         WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0",
+    )
+    .bind(vo_id)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(CurrentCompositionMeta {
+        ehr_id: row.try_get("ehr_id")?,
+        lifecycle_state: row.try_get("lifecycle_state")?,
+        trunk_version: row.try_get("trunk_version")?,
+        branch_number: row.try_get("branch_number")?,
+        branch_version: row.try_get("branch_version")?,
+        creating_system_id: row.try_get("creating_system_id")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+        is_modifiable: row.try_get("is_modifiable")?,
+        root_data: row.try_get("root_data")?,
+    }))
+}
+
+// ── counts / enumeration ──────────────────────────────────────────────────────
+
+/// The number of distinct (versioned) COMPOSITIONs in an EHR — the
+/// `EHR_SUMMARY.composition_count` (SM `ehr_summary.adoc`: "(versioned)
+/// Compositions", i.e. distinct `vo_id`, not versions).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn composition_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+    )
+    .bind(ehr_id)
+    .fetch_one(pool)
+    .await?)
+}
+
+/// The ids of an EHR's current (open trunk tip) versioned objects of one kind,
+/// excluding an optional lifecycle state (e.g. `523|deleted|`).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn current_vo_ids(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    kind: &str,
+    exclude_lifecycle: Option<&str>,
+) -> Result<Vec<Uuid>, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = $2 \
+         AND upper_inf(sys_period) AND branch_number = 0 \
+         AND ($3::text IS NULL OR lifecycle_state <> $3)",
+    )
+    .bind(ehr_id)
+    .bind(kind)
+    .bind(exclude_lifecycle)
+    .fetch_all(pool)
+    .await?)
+}

@@ -242,7 +242,11 @@ pub struct EhrSummaryRead {
     pub status: Option<EhrStatusIdentity>,
     /// The `EHR_ACCESS` versioned-object id.
     pub access_vo: Option<Uuid>,
-    /// The LIVE folder-hierarchy ids in `rank` order.
+    /// The LIVE folder-hierarchy ids in `rank` order — the members of
+    /// `EHR.folders` (RM ehr, EHR class `Folders_valid`; RM ehr master04
+    /// §Folders). "Live" = the current trunk version exists and is not
+    /// logically deleted (lifecycle `523`). Empty when the EHR indexes no
+    /// live hierarchy.
     pub folders: Vec<Uuid>,
 }
 
@@ -259,30 +263,6 @@ pub struct EhrStatusIdentity {
     pub branch_version: i32,
     /// The per-version creating system.
     pub creating_system_id: String,
-}
-
-/// The LIVE folder-hierarchy ids of an EHR in `rank` order — the members of
-/// `EHR.folders` (RM ehr, EHR class `Folders_valid`; RM ehr master04 §Folders).
-/// "Live" = the current trunk version exists and is not logically deleted
-/// (lifecycle `523`). Empty when the EHR indexes no live hierarchy.
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver failure.
-pub async fn live_folder_hierarchies(
-    pool: &PgPool,
-    ehr_id: Uuid,
-) -> Result<Vec<Uuid>, StorageError> {
-    let rows = sqlx::query(
-        "SELECT f.vo_id FROM ehr_folder f \
-         JOIN vo_version v ON v.vo_id = f.vo_id \
-         AND upper_inf(v.sys_period) AND v.branch_number = 0 \
-         WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \
-         ORDER BY f.rank",
-    )
-    .bind(ehr_id)
-    .fetch_all(pool)
-    .await?;
-    rows.iter().map(|r| Ok(r.try_get("vo_id")?)).collect()
 }
 
 /// The versioned-object id of the EHR's directory — `EHR.directory`

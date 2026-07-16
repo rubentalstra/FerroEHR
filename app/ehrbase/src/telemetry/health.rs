@@ -2,10 +2,13 @@
 //! (binding doc §2).
 //!
 //! A [`HealthIndicator`] is a named, async, bounded check (e.g. "ping the DB").
-//! Concrete indicators live in the binary (they need the pool / audit sender);
-//! this module owns the trait, the registry, the aggregation rules, and the
-//! three HTTP handlers. The registry runs every indicator concurrently, each
-//! bounded to [`CHECK_TIMEOUT`], so a wedged dependency cannot hang a probe.
+//! This module owns the trait, the registry, and the aggregation rules; the
+//! concrete indicators live in [`crate::telemetry::indicators`] and the HTTP
+//! probe handlers in the protocol adapter (`ehrbase-rest`). The registry runs
+//! every indicator concurrently, each bounded to [`CHECK_TIMEOUT`], so a
+//! wedged dependency cannot hang a probe.
+//!
+//! No openEHR spec governs health probes — our own operational design.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

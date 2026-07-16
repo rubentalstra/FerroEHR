@@ -1,65 +1,70 @@
 //! The EHR service (`service/ehr/`) — the openEHR **EHR component** of the
-//! platform crate, implementing the six SM `I_EHR_*` interfaces.
+//! platform crate, implementing the SM `I_EHR_*` interfaces as concrete
+//! `EhrbaseService` methods.
 //!
 //! Layout mirrors the SM interface set one-file-per-interface (arch-overview
 //! `master06-design_of_the_ehr.adoc` × the SM EHR component,
 //! `docs/specs/openehr/SM/docs/openehr_platform/master05-ehr_service.adoc`):
 //!
-//! - [`service`]   — `I_EHR_SERVICE` (`i_ehr_service.adoc`): EHR create/get,
+//! - [`service`]      — `I_EHR_SERVICE` (`i_ehr_service.adoc`): EHR create/get,
 //!   `EHR_SUMMARY`, subject lookup, folder-hierarchy reads.
-//! - [`status`]    — `I_EHR_STATUS` (`i_ehr_status.adoc`): the `EHR_STATUS`
+//! - [`status`]       — `I_EHR_STATUS` (`i_ehr_status.adoc`): the `EHR_STATUS`
 //!   reads + the five discrete mutators + the `is_modifiable` write guard.
-//! - [`directory`] — `I_EHR_DIRECTORY` (`i_ehr_directory.adoc`): the DIRECTORY
-//!   FOLDER surface.
-//! - [`composition`] — `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`).
+//! - [`directory`]    — `I_EHR_DIRECTORY` (`i_ehr_directory.adoc`): the
+//!   DIRECTORY FOLDER surface.
+//! - [`composition`]  — `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`).
 //! - [`contributions`] — `I_EHR_CONTRIBUTION` (`i_ehr_contribution.adoc`).
-//! - [`access`]    — the `EHR_ACCESS` top-level structure (arch-overview
+//! - [`access`]       — the `EHR_ACCESS` top-level structure (arch-overview
 //!   master06 §`EHR_ACCESS`) + the spec-silent scheme cache.
-//! - [`tags`]      — `ITEM_TAG` (ITS-REST experimental extension).
-//! - [`uri`]       — `ehr:`-URI resolution (spec-silent extension).
-//! - [`meta`]      — the shared version-metadata helpers (G-9).
+//! - [`validation`]   — the commit-validation choke point for every EHR-owned
+//!   kind (`EHR_STATUS` / `EHR_ACCESS` / FOLDER / COMPOSITION) + the
+//!   `VERSIONED_COMPOSITION` cross-version invariants.
+//! - [`meta`]         — the shared version-metadata helpers (G-9).
+//! - [`tags`]         — `ITEM_TAG` (ITS-REST experimental extension).
+//! - [`uri`]          — `ehr:`-URI resolution (spec-silent extension).
 //!
-//! Every file carries its SM calls as concrete `EhrbaseService` methods. The versioned-object mechanics are delegated to
-//! [`crate::versioning`] (change control, RM common master06) and
-//! [`crate::storage`] (row I/O — no openEHR spec governs the SQL).
+//! The versioned-object mechanics are delegated to [`crate::versioning`]
+//! (change control, RM common master06) and [`crate::storage`] (row I/O — no
+//! openEHR spec governs the SQL).
 //!
 //! # Integration seams
 //!
 //! [`crate::versioning::CommitEnv`] (the hooks the CONTRIBUTION commit engine
-//! needs) is implemented for `EhrbaseService` in `service/mod.rs`; its EHR-owned
-//! constituents are authored in this chapter: `default_committer` =
+//! needs) is implemented for `EhrbaseService` in `service/mod.rs`; its
+//! EHR-owned constituents are authored in this chapter: `default_committer` =
 //! [`meta::committer`], `ensure_ehr_exists` / `ensure_content_writable` /
-//! `current_vo` / `invalidate_ehr_access` are `EhrbaseService` methods here, and
-//! the two in-transaction hooks delegate to
+//! `current_vo` / `invalidate_ehr_access` are `EhrbaseService` methods here,
+//! and the two in-transaction hooks delegate to
 //! [`check_versioned_composition_invariants`] (COMPOSITION modify) and
-//! [`EhrbaseService::sync_ehr_subject`] (`EHR_STATUS` commit) — the same fns the
+//! `EhrbaseService::sync_ehr_subject` (`EHR_STATUS` commit) — the same fns the
 //! direct create/update paths run inline. SQL row I/O is a storage seam
-//! ([`crate::storage::ehr_repo`] / [`crate::storage::version_repo`]; no openEHR
-//! spec governs the schema — our own design).
+//! ([`crate::storage::ehr_repo`] /
+//! [`crate::storage::version_repo`]; no openEHR spec governs the schema — our
+//! own design).
 
 mod access;
 mod composition;
-mod composition_validate;
 mod contributions;
 mod directory;
 mod meta;
 mod service;
 mod status;
-mod status_validate;
 mod tags;
 mod uri;
+mod validation;
 
 pub mod access_types;
 pub mod handle;
 
 // The EHR-component surface other service modules and adapters consume.
-pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
-pub(in crate::service) use composition_validate::check_versioned_composition_invariants;
-pub(in crate::service) use directory::validate_folder;
+pub(in crate::service) use access::{EhrAccessCache, default_ehr_access};
 pub(in crate::service) use meta::committer;
 #[cfg(test)]
 pub(in crate::service) use service::default_ehr_status;
-pub(in crate::service) use status_validate::validate_ehr_status;
+pub(in crate::service) use validation::{
+    check_versioned_composition_invariants, validate_ehr_access, validate_ehr_status,
+    validate_folder,
+};
 
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
@@ -69,8 +74,8 @@ use serde_json::{Value, json};
 use crate::versioning::TimeRange;
 
 /// Extract the version-uid `String` a write produced from the internal
-/// [`ServiceResponse`](crate::service::response::ServiceResponse)'s resource metadata — the
-/// value the SM `create_*`/`update_*`/`delete_*` calls return.
+/// [`ServiceResponse`](crate::service::response::ServiceResponse)'s resource
+/// metadata — the value the SM `create_*`/`update_*`/`delete_*` calls return.
 fn version_uid(resp: crate::service::response::ServiceResponse) -> Result<String, SmError> {
     resp.meta
         .map(|m| m.uid)
@@ -119,6 +124,43 @@ fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeR
         .transpose()
     };
     raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
+}
+
+/// The caller's `UPDATE_VERSION` envelope resolved for a direct commit: the
+/// commit audit (caller attributes merged with the server rules — ITS-REST
+/// overview §"openehr-version and openehr-audit-details" MUST) and the write
+/// envelope (lifecycle / verbatim signature / attestations). Shared by the
+/// COMPOSITION, `EHR_STATUS`, and DIRECTORY direct-write paths.
+fn resolve_envelope(
+    version: &crate::service::version_update::UpdateVersion,
+    operation_change_type: &str,
+    default_description: &str,
+    system_id: &str,
+) -> (
+    crate::versioning::AuditInput,
+    crate::versioning::change::WriteEnvelope,
+) {
+    let audit = crate::versioning::AuditInput::from_update(
+        &version.audit,
+        operation_change_type,
+        default_description,
+        system_id,
+    );
+    let attestations = version
+        .attestations
+        .as_ref()
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| serde_json::to_value(x).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    let envelope = crate::versioning::change::WriteEnvelope {
+        lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
+        signature: version.signature.clone(),
+        attestations,
+    };
+    (audit, envelope)
 }
 
 /// Build the `EHR_STATUS` for a subject-scoped EHR creation: the base status

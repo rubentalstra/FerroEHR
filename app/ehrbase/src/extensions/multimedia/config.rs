@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_THRESHOLD_BYTES: usize = 256 * 1024;
 
 /// The default bucket name when a deployment does not set one.
-pub const DEFAULT_BUCKET: &str = "openehr-multimedia";
+const DEFAULT_BUCKET: &str = "openehr-multimedia";
 
 /// DV_MULTIMEDIA externalization settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]

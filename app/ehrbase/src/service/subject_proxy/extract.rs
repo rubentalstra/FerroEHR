@@ -4,8 +4,8 @@
 //! intended type (single, list, `time_series`)").
 //!
 //! PORT NOTE (selector grammar). The SM leaves `frame_path` undefined ("Path
-//! within `last_frame` result"); the documented grammar here is our
-//! realization (`docs/design/sm-platform/10-subject-proxy.md` §2.2):
+//! within `last_frame` result"); the documented grammar here is our own
+//! realization:
 //!
 //! - `OPENEHR_SAMPLE` (a `RESULT_SET`): `frame_path` is a **column selector**
 //!   matched against a column `name`; `"col @ timecol"` pairs the column with

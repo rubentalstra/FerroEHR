@@ -61,7 +61,7 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
 
 /// The rubric (English display text) for an `audit_change_type` code; falls
 /// back to the code itself if the code is unknown to the bundle.
-pub(crate) fn change_type_rubric(code: &str) -> String {
+fn change_type_rubric(code: &str) -> String {
     openehr()
         .rubric(AUDIT_CHANGE_TYPE, code, "en")
         .unwrap_or(code)
@@ -104,8 +104,9 @@ impl AuditInput {
         default_description: &str,
         fallback_system_id: &str,
     ) -> Self {
-        let committer = serde_json::to_value(&update.committer)
-            .unwrap_or_else(|_| serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }));
+        let committer = serde_json::to_value(&update.committer).unwrap_or_else(
+            |_| serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
+        );
         Self {
             system_id: update
                 .system_id
@@ -174,19 +175,22 @@ pub(crate) fn audit_details(
 
 /// Validate a client-supplied commit `AUDIT_DETAILS`' non-terminology RM
 /// invariants before it is persisted (a CONTRIBUTION audit or a version
-/// `commit_audit`). Two invariants are enforced here as a service-layer `422`:
+/// `commit_audit`).
+///
+/// `change_type` is validated separately ([`change_type_code`]).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when either enforced invariant fails:
 ///
 /// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM common
 ///   master04 §Audit Details). Without this guard an empty client-supplied
 ///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
 ///   `500` — a validation failure must be `422`, not an internal error.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
-///   invariants `Basic_validity` + `Name_valid` (RM common master04 §Party
-///   Proxies). A PARTY that appears as *content* is validated by the
-///   RM-invariant pass, but the audit committer is stored verbatim, so it is
-///   checked here.
-///
-/// `change_type` is validated separately ([`change_type_code`]).
+///   invariants `Basic_validity` + `Name_valid` (+ `Relationship_valid` for
+///   `PARTY_RELATED`; RM common master04 §Party Proxies). A PARTY that appears
+///   as *content* is validated by the RM-invariant pass, but the audit
+///   committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(

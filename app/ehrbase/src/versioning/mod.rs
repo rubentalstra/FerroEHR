@@ -17,6 +17,22 @@
 //! section of master06 (`change_control`), so the signer/verifier live **inside**
 //! this module ([`signature`]), not as a standalone sibling.
 //!
+//! # Module tree
+//!
+//! | module | concern |
+//! |---|---|
+//! | [`object_version_id`] | `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding (BASE master05) |
+//! | [`lifecycle`] | `version_lifecycle_state` codes + the transition state machine |
+//! | [`audit`] | `AUDIT_DETAILS` values, the `audit_change_type` group, committer invariants |
+//! | [`change`] | the change-set unit, version-tree placement, the shared commit engine |
+//! | [`contribution`] | CONTRIBUTION classify + commit orchestration + retrieval |
+//! | [`attestation`] | attaching `ATTESTATION`s at or after committal |
+//! | [`read`] | loading stored versions ([`read::VersionRead`] and friends) |
+//! | [`wire`] | the served canonical-JSON builders (`ORIGINAL_VERSION`, `VERSIONED_*`, `REVISION_HISTORY`) |
+//! | [`integrity`] | signing policy at commit + verification policy at read |
+//! | [`import`] | replaying received originals as `IMPORTED_VERSION`s |
+//! | [`signature`] | the digest / `OpenPGP` signature primitives + configuration |
+//!
 //! # Seam with storage (`crate::storage`)
 //!
 //! This module owns the *decisions* (classify, tree placement, lifecycle
@@ -48,8 +64,9 @@ pub(crate) mod import;
 pub(crate) mod integrity;
 pub(crate) mod lifecycle;
 pub(crate) mod object_version_id;
-pub(crate) mod revision_history;
+pub(crate) mod read;
 pub mod signature;
+pub(crate) mod wire;
 
 // Re-exports: the versioning API the service layer and SM adapters consume.
 pub(crate) use attestation::PendingAttest;
@@ -64,10 +81,11 @@ pub(crate) use object_version_id::{
     TreeId, components, expected_from_if_match, object_version_id, parse_object_version_id,
     parse_tree_id, parse_uid_based_id, parse_version_uid,
 };
-pub(crate) use revision_history::{
-    VersionRead, demographic_current, object_kind, original_version, read_current, read_version,
-    read_version_by_ordinal, revision_history, version_at, versioned_object,
+pub(crate) use read::{
+    VersionRead, demographic_current, object_kind, read_current, read_version,
+    read_version_by_ordinal, version_at,
 };
+pub(crate) use wire::{original_version, revision_history, versioned_object};
 
 /// The kind of versioned object (discriminates `vo_version.kind`).
 ///
@@ -98,6 +116,7 @@ pub enum Kind {
 }
 
 impl Kind {
+    /// The stored `vo_version.kind` discriminator — the full RM type name.
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Kind::Composition => "COMPOSITION",

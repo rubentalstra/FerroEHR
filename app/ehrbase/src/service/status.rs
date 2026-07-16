@@ -8,15 +8,14 @@
 //! explicitly sanctions (`master02-overview.adoc` §Functional Style: "Another
 //! common style is to include results as 'out' parameters, and to use the
 //! return value to return call status. Either style can be used, and can be
-//! trivially mapped from one to the other"). Every catalog trait returns
+//! trivially mapped from one to the other"). Every chapter method returns
 //! `Result<T, SmError>`; a failed call's [`CallStatus`] object is built on
 //! demand via [`SmError::into_call_status`].
 //!
 //! The single SM → HTTP table lives with the protocol adapter
-//! (`ehrbase-rest::error`): this crate is protocol-free and carries **no**
-//! ITS-REST dependency. ITS-REST 1.0.3 + the CNF/ECC schedule remain the wire
-//! oracle: where the SM name and the wire disagree, the wire's status code
-//! wins in that adapter table.
+//! (`ehrbase-rest::overview::error`): this module is protocol-free. ITS-REST
+//! 1.0.3 + the CNF/ECC schedule remain the wire oracle: where the SM name and
+//! the wire disagree, the wire's status code wins in that adapter table.
 
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
 ///
@@ -81,9 +80,9 @@ pub enum CallStatusType {
     /// resource is exhausted (the `sqlx` connection pool acquire timed out under
     /// sustained load). Not an SM `CALL_STATUS_TYPE` member — an adapter
     /// affordance; no openEHR spec governs server overload (our own design, the
-    /// W-12 admission contract), and the wire maps it to `503 Service
-    /// Unavailable` + `Retry-After` (RFC 9110 §15.6.4; the ITS-REST status
-    /// subset has no 503, so this is a documented extension).
+    /// admission contract), and the wire maps it to `503 Service Unavailable` +
+    /// `Retry-After` (RFC 9110 §15.6.4; the ITS-REST status subset has no 503,
+    /// so this is a documented extension).
     ServiceOverloaded,
 
     // ── EHR_CALL_STATUS_TYPE (`ehr_call_status_type.adoc`) ──────────────────
@@ -176,7 +175,7 @@ impl CallStatusType {
     }
 }
 
-/// The native-API error type — a `CALL_STATUS_TYPE` code plus a message.
+/// The native error type — a `CALL_STATUS_TYPE` code plus a message.
 ///
 /// Realizes the SM `I_STATUS` protocol (`i_status.adoc`:
 /// `last_call_failed()`/`last_call_status()`) in the stateless typed-`Result`
@@ -264,19 +263,20 @@ pub struct CallStatus {
 }
 
 /// Sentinel prefix marking an `exception` [`SmError`] as a **query-execution
-/// timeout** rather than a generic server fault — the "message-tagged" 408 seam.
+/// timeout** rather than a generic server fault — the "message-tagged" 408
+/// seam.
 ///
-/// The platform query path (the platform query path) aborts a query
-/// that overruns its configured execution budget and returns
+/// The query chapter ([`super::query`]) aborts a query that overruns its
+/// configured execution budget and returns
 /// `SmError::exception(format!("{QUERY_TIMEOUT_TAG}{detail}"))`. The native SM
-/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout status),
-/// so the timeout is tagged in the message and recognised by the protocol adapter,
-/// where [`RestError::into_response`] strips the prefix and renders the response
-/// as `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes,
-/// row `408` — "Request maximum execution time is reached, therefore the server
-/// aborted the request"; `responses/408_Query.yaml`). The tag is a control-char
-/// sentinel so it can never collide with a genuine error message and is never
-/// shown to clients.
+/// error model carries only a `CALL_STATUS_TYPE` + message (no timeout
+/// status), so the timeout is tagged in the message and recognised by the
+/// protocol adapter, which strips the prefix and renders the response as
+/// `408 Request Timeout` (`Requests_and_responses.md` §HTTP status codes, row
+/// `408` — "Request maximum execution time is reached, therefore the server
+/// aborted the request"; `responses/408_Query.yaml`). The tag is a
+/// control-char sentinel so it can never collide with a genuine error message
+/// and is never shown to clients.
 pub const QUERY_TIMEOUT_TAG: &str = "\u{1}query-execution-timeout\u{1}";
 
 #[cfg(test)]

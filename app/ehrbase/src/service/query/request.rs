@@ -15,8 +15,8 @@ use serde_json::Value;
 /// `rows_to_fetch`, and `ehr_ids`.
 ///
 /// `formalism` (`ADHOC_QUERY_EXECUTE_SPEC.formalism`, default `"aql"`) is
-/// fixed to AQL — another formalism is rejected typed, which the SM
-/// sanctions ("matching one of: aql; any other string value").
+/// fixed to AQL — another formalism is rejected typed, which the SM sanctions
+/// ("matching one of: aql; any other string value").
 #[derive(Debug, Clone, Default)]
 pub struct AqlQueryRequest {
     /// `ehr_ids: List<UUID> [0..1]` — "Specific set of EHRs on which to

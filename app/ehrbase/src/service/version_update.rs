@@ -167,7 +167,6 @@ impl UpdateVersion {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

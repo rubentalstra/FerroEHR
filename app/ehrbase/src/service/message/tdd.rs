@@ -1,6 +1,5 @@
 //! TDD (Template Data Document) import — SM `I_TDD_SERVICE.import_tdd` /
 //! `import_tdds` (`docs/specs/openehr/SM/docs/UML/classes/i_tdd_service.adoc`).
-//! Design register: `docs/design/platform/06-service-message-admin.md` §5.1.
 //!
 //! A TDD is a template-namespaced XML instance of a COMPOSITION: the root
 //! element is named after the operational template and carries a `template_id`
@@ -32,8 +31,8 @@
 //!    master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
 //!    failure is `content_invalid` — never a silent partial COMPOSITION.
 //!
-//! PORT NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature;
-//! G-M8): `import_tdds` is a design-filled `(UUID, Vec<String>) -> Vec<String>`,
+//! PORT NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
+//! `import_tdds` is a design-filled `(UUID, Vec<String>) -> Vec<String>`,
 //! all-or-nothing — every TDD is parsed and converted before any is committed,
 //! so a single unconvertible TDD rejects the whole batch with nothing committed.
 //! A flagged extension of the SM interface.
@@ -48,7 +47,7 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
-
+use crate::service::version_update::UpdateVersion;
 use crate::service::{EhrbaseService, ServiceError};
 
 /// The Ocean/Marand operational-template-data XML namespace every TDD root
@@ -75,67 +74,122 @@ fn decode_attr(attr: &quick_xml::events::attributes::Attribute) -> Result<String
         })
 }
 
-impl EhrbaseService {
-    /// Parse the TDD XML envelope: locate the root element, require the Ocean
-    /// templates namespace, and read its `template_id`. A document that is not
-    /// well-formed XML, is not in the templates namespace, or carries no
-    /// `template_id` is a typed `precondition_violation`.
-    fn parse_tdd_envelope(tdd: &str) -> Result<TddEnvelope, SmError> {
-        let mut reader = Reader::from_str(tdd);
+/// Parse the TDD XML envelope: locate the root element, require the Ocean
+/// templates namespace, and read its `template_id`. A document that is not
+/// well-formed XML, is not in the templates namespace, or carries no
+/// `template_id` is a typed rejection (`content_invalid` /
+/// `precondition_violation`).
+fn parse_tdd_envelope(tdd: &str) -> Result<TddEnvelope, SmError> {
+    let mut reader = Reader::from_str(tdd);
 
-        loop {
-            match reader.read_event() {
-                // The first element start is the TDD root.
-                Ok(Event::Start(e) | Event::Empty(e)) => {
-                    let mut template_id: Option<String> = None;
-                    let mut namespace: Option<String> = None;
-                    for attr in e.attributes() {
-                        let attr = attr.map_err(|err| {
-                            SmError::new(
-                                CallStatusType::ContentInvalid,
-                                format!("TDD root has malformed XML attributes: {err}"),
-                            )
-                        })?;
-                        let key = attr.key.as_ref();
-                        // The default-namespace declaration `xmlns="..."` (the
-                        // TDD root declares the templates namespace as default).
-                        if key == b"xmlns" {
-                            namespace = Some(decode_attr(&attr)?);
-                        } else if key == b"template_id" {
-                            template_id = Some(decode_attr(&attr)?);
-                        }
-                    }
-
-                    match namespace.as_deref() {
-                        Some(TDD_TEMPLATE_NS) => {}
-                        other => {
-                            return Err(SmError::precondition(format!(
-                                "TDD root is not in the templates namespace {TDD_TEMPLATE_NS:?} \
-                                 (found {other:?}); the payload is not a Template Data Document"
-                            )));
-                        }
-                    }
-                    let template_id = template_id.filter(|t| !t.is_empty()).ok_or_else(|| {
-                        SmError::precondition("TDD root carries no non-empty template_id attribute")
+    loop {
+        match reader.read_event() {
+            // The first element start is the TDD root.
+            Ok(Event::Start(e) | Event::Empty(e)) => {
+                let mut template_id: Option<String> = None;
+                let mut namespace: Option<String> = None;
+                for attr in e.attributes() {
+                    let attr = attr.map_err(|err| {
+                        SmError::new(
+                            CallStatusType::ContentInvalid,
+                            format!("TDD root has malformed XML attributes: {err}"),
+                        )
                     })?;
-                    return Ok(TddEnvelope { template_id });
+                    let key = attr.key.as_ref();
+                    // The default-namespace declaration `xmlns="..."` (the
+                    // TDD root declares the templates namespace as default).
+                    if key == b"xmlns" {
+                        namespace = Some(decode_attr(&attr)?);
+                    } else if key == b"template_id" {
+                        template_id = Some(decode_attr(&attr)?);
+                    }
                 }
-                Ok(Event::Eof) => {
-                    return Err(SmError::new(
-                        CallStatusType::ContentInvalid,
-                        "TDD payload has no root element (empty or not XML)",
-                    ));
+
+                match namespace.as_deref() {
+                    Some(TDD_TEMPLATE_NS) => {}
+                    other => {
+                        return Err(SmError::precondition(format!(
+                            "TDD root is not in the templates namespace {TDD_TEMPLATE_NS:?} \
+                             (found {other:?}); the payload is not a Template Data Document"
+                        )));
+                    }
                 }
-                // Skip the XML declaration, comments, leading text, etc.
-                Ok(_) => {}
-                Err(err) => {
-                    return Err(SmError::new(
-                        CallStatusType::ContentInvalid,
-                        format!("TDD payload is not well-formed XML: {err}"),
-                    ));
-                }
+                let template_id = template_id.filter(|t| !t.is_empty()).ok_or_else(|| {
+                    SmError::precondition("TDD root carries no non-empty template_id attribute")
+                })?;
+                return Ok(TddEnvelope { template_id });
+            }
+            Ok(Event::Eof) => {
+                return Err(SmError::new(
+                    CallStatusType::ContentInvalid,
+                    "TDD payload has no root element (empty or not XML)",
+                ));
+            }
+            // Skip the XML declaration, comments, leading text, etc.
+            Ok(_) => {}
+            Err(err) => {
+                return Err(SmError::new(
+                    CallStatusType::ContentInvalid,
+                    format!("TDD payload is not well-formed XML: {err}"),
+                ));
             }
         }
+    }
+}
+
+impl EhrbaseService {
+    /// SM `import_tdd`: convert a single TDD and commit it through the
+    /// validated [`Self::create_composition`] path. Returns the created
+    /// COMPOSITION's `OBJECT_VERSION_ID`.
+    ///
+    /// # Errors
+    /// - `content_invalid` — the payload is not well-formed XML / has no root,
+    ///   or the produced COMPOSITION fails WebTemplate/RM/terminology
+    ///   validation at commit.
+    /// - `precondition_violation` (`400`) — the root is not in the templates
+    ///   namespace, carries no `template_id`, or the body does not conform to
+    ///   the operational template.
+    /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
+    /// - `template_does_not_exist` — the referenced operational template is not
+    ///   provisioned.
+    /// - `exception` — a database fault while checking/committing.
+    pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
+        let composition = self.prepare_one_tdd(an_ehr_id, &tdd).await?;
+        // The validated commit path (WebTemplate + RM-invariant + terminology
+        // validation, contribution/audit).
+        let resp = self
+            .create_composition(an_ehr_id, UpdateVersion::direct(composition))
+            .await?;
+        Ok(resp.version_uid())
+    }
+
+    /// The `import_tdds` extension: convert and commit a batch of TDDs,
+    /// all-or-nothing — every TDD is parsed and converted before any is
+    /// committed, so a single unconvertible TDD rejects the whole batch with
+    /// nothing committed. Returns the created `OBJECT_VERSION_ID`s in input
+    /// order.
+    ///
+    /// # Errors
+    /// As [`Self::import_tdd`], for any TDD in the batch (a conversion failure
+    /// rejects the batch before any commit).
+    pub async fn import_tdds(
+        &self,
+        an_ehr_id: Uuid,
+        tdds: Vec<String>,
+    ) -> Result<Vec<String>, SmError> {
+        let mut prepared = Vec::with_capacity(tdds.len());
+        for tdd in &tdds {
+            prepared.push(self.prepare_one_tdd(an_ehr_id, tdd).await?);
+        }
+        let mut ids = Vec::with_capacity(prepared.len());
+        for composition in prepared {
+            // The validated commit path (as in `import_tdd`).
+            let resp = self
+                .create_composition(an_ehr_id, UpdateVersion::direct(composition))
+                .await?;
+            ids.push(resp.version_uid());
+        }
+        Ok(ids)
     }
 
     /// Validate a TDD's envelope against a target EHR and its referenced
@@ -144,9 +198,9 @@ impl EhrbaseService {
     /// Envelope failures are typed (`ehr_id_does_not_exist`,
     /// `template_does_not_exist`); a body that does not conform to the template
     /// is `precondition_violation`. Splitting prepare from commit is what lets
-    /// [`Self::import_tdds_batch`] convert a whole batch before committing any.
+    /// [`Self::import_tdds`] convert a whole batch before committing any.
     async fn prepare_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<Value, SmError> {
-        let envelope = Self::parse_tdd_envelope(tdd)?;
+        let envelope = parse_tdd_envelope(tdd)?;
 
         // Precondition: the target EHR exists (`has_ehr`).
         let ehr_exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
@@ -187,41 +241,4 @@ impl EhrbaseService {
             ))
         })
     }
-
-    /// Convert a single TDD and commit it through the validated
-    /// [`Self::create_composition`] path. Returns the created COMPOSITION's
-    /// `OBJECT_VERSION_ID`.
-    pub(super) async fn import_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<String, SmError> {
-        let composition = self.prepare_one_tdd(ehr_id, tdd).await?;
-        // The validated commit path (WebTemplate + RM-invariant + terminology
-        // validation, contribution/audit).
-        let resp = self
-            .create_composition(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
-            .await?;
-        Ok(resp.version_uid())
-    }
-
-    /// Convert and commit a batch of TDDs, all-or-nothing (G-M8): every TDD is
-    /// parsed and converted before any is committed, so a single unconvertible
-    /// TDD rejects the whole batch with nothing committed.
-    pub(super) async fn import_tdds_batch(
-        &self,
-        ehr_id: Uuid,
-        tdds: &[String],
-    ) -> Result<Vec<String>, SmError> {
-        let mut prepared = Vec::with_capacity(tdds.len());
-        for tdd in tdds {
-            prepared.push(self.prepare_one_tdd(ehr_id, tdd).await?);
-        }
-        let mut ids = Vec::with_capacity(prepared.len());
-        for composition in prepared {
-            // The validated commit path (as in `import_one_tdd`).
-            let resp = self
-                .create_composition(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
-                .await?;
-            ids.push(resp.version_uid());
-        }
-        Ok(ids)
-    }
 }
-

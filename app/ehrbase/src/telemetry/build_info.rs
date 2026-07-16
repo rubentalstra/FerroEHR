@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn build_info_is_populated() {
         let info = BuildInfo::current();
-        assert_eq!(info.name, "ehrbase-rest");
+        assert_eq!(info.name, "ehrbase");
         assert_eq!(info.spec.rm, "1.2.0");
         // The tested development-edition identity (matches the ECC report), not
         // the retired `1.0.3` label — sourced from the shared provenance.
