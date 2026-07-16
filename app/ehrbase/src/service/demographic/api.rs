@@ -325,18 +325,13 @@ impl EhrbaseService {
         body: Value,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let mut resp = self
+        // A freshly created party has no stored ITEM_TAGs by construction, so
+        // the response seam needs no tag read here; when the request carried
+        // `openehr-item-tag` header tags, the wire adapter persists them after
+        // the create and re-populates the seam itself (person_create.yaml).
+        Ok(self
             .commit_new_party(kind, body, update_audit.as_ref())
-            .await?;
-        // Surface the party's stored ITEM_TAGs on the response seam for the
-        // `openehr-item-tag`/`openehr-version-item-tag` response headers
-        // (person_create.yaml). A fresh party has none yet; the wire adapter
-        // persists any request-header tags and re-populates the seam afterwards.
-        if let Some(uid) = resp.meta.as_ref().map(|m| m.uid.clone()) {
-            let (vo_id, _) = parse_version_uid(&uid)?;
-            self.attach_party_item_tags(vo_id, &mut resp).await?;
-        }
-        Ok(resp)
+            .await?)
     }
 
     /// Read a party of the routed [`PartyKind`] by uid-based id (bare
