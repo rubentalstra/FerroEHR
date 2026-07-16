@@ -2,7 +2,7 @@
 //! `DEFINITION` API group returns (template summaries, the example COMPOSITION,
 //! `StoredQuery` descriptors, glob filters) that the SM `I_DEFINITION_*`
 //! interfaces do not express. All native (`serde_json::Value` + `SmError`), so
-//! `ehrbase-sm` stays protocol-free; the route wiring is the ITS-REST layer's
+//! this layer stays protocol-free; the route wiring is the ITS-REST layer's
 //! concern. The retrieval/store behaviour rides on the SM logic in the sibling
 //! interface files.
 

@@ -6,7 +6,7 @@
 //! versioned objects in the demographics repository.
 //!
 //! Internal split mirrors the SM interface boundaries
-//! (`app/ehrbase-sm/src/services/demographic/`):
+//! (SM `master06`, one file per interface):
 //! [`party`] = `I_PARTY` CRUD (+ `I_DEMOGRAPHIC_SERVICE.create_party`),
 //! [`relationship`] = `I_PARTY_RELATIONSHIP` (+ `create_party_relationship`),
 //! [`versioned`] = the `VERSIONED_PARTY` read surface (our extension),

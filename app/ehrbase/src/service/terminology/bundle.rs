@@ -9,7 +9,7 @@
 //! terminology + the six external code sets; archetype-internal terminology is
 //! flat, no server) grounds the "openehr" id + the group↔value-set split.
 //!
-//! The SM trait + extract types live in `ehrbase-sm`; this module is the
+//! The extract types live in `terminology::types`; this module is the
 //! concrete, DB-free mapping onto the bundle ([`openehr_term::bundle::openehr`]).
 //! It is one of the two providers the composing [`TerminologyService`] impl
 //! (in `super`) routes among — the enumerable local default; the remote FHIR TS

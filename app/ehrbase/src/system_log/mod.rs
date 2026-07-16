@@ -29,7 +29,7 @@
 //!
 //! The transport-agnostic event model ([`AuditEvent`](crate::system_log::event::AuditEvent))
 //! and the [`SystemLog`](crate::service::SystemLog) trait live in the SM native-API
-//! crate (`ehrbase-sm`, the empty-stub `I_SYSTEM_LOG` component); this module is
+//! (the SM's `I_SYSTEM_LOG` is an empty stub); this module is
 //! the ATNA *rendering* — the DICOM `AuditMessage`, syslog framing, transports,
 //! and the non-blocking sender — plus the [`SystemLog`](crate::service::SystemLog)
 //! implementation on [`EhrbaseService`](crate::service::EhrbaseService). The

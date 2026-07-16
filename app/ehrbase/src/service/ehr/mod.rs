@@ -19,17 +19,9 @@
 //! - [`uri`]       — `ehr:`-URI resolution (spec-silent extension).
 //! - [`meta`]      — the shared version-metadata helpers (G-9).
 //!
-//! Every file carries its domain logic **and** its `impl <Interface>Service for
-//! EhrbaseService`. The versioned-object mechanics are delegated to
+//! Every file carries its SM calls as concrete `EhrbaseService` methods. The versioned-object mechanics are delegated to
 //! [`crate::versioning`] (change control, RM common master06) and
 //! [`crate::storage`] (row I/O — no openEHR spec governs the SQL).
-//!
-//! Method-name clashes between an SM trait method and an inherent internal
-//! method of the same name (`create_ehr`, `create_composition`,
-//! `update_composition`, `delete_composition`, `create_directory`,
-//! `update_directory`, `has_directory_version`, …) resolve to the **inherent**
-//! method by Rust's method-resolution priority; `self.<name>(…)` inside a trait
-//! impl therefore calls the internal implementation, never recurses.
 //!
 //! # Integration seams
 //!
