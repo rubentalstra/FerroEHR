@@ -102,7 +102,10 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn export_ehr_extracts(&self, extract_spec: ExtractSpec) -> Result<Vec<Value>, SmError> {
+    pub async fn export_ehr_extracts(
+        &self,
+        extract_spec: ExtractSpec,
+    ) -> Result<Vec<Value>, SmError> {
         self.export_ehr_extracts_spec(extract_spec).await
     }
 

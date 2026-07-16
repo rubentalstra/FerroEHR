@@ -48,8 +48,8 @@
 
 use std::sync::LazyLock;
 
-use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::demographic::types::PartyKind;
+use crate::service::response::{ResourceMeta, ServiceResponse};
 use regex::Regex;
 use serde_json::Value;
 use uuid::Uuid;

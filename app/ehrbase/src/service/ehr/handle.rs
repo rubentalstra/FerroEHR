@@ -6,7 +6,6 @@
 
 use serde_json::Value;
 
-
 // --- EHR summary (SM I_EHR_SERVICE) ---
 #[derive(Debug, Clone)]
 pub struct EhrSummary {

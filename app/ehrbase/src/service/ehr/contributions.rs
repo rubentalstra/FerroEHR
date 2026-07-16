@@ -84,7 +84,11 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn has_contribution(&self, an_ehr_id: Uuid, a_contrib_id: Uuid) -> Result<bool, SmError> {
+    pub async fn has_contribution(
+        &self,
+        an_ehr_id: Uuid,
+        a_contrib_id: Uuid,
+    ) -> Result<bool, SmError> {
         match self.ehr_contribution(an_ehr_id, a_contrib_id, false).await {
             Ok(_) => Ok(true),
             Err(ServiceError::NotFound(_)) => Ok(false),

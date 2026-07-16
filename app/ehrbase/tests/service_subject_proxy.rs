@@ -22,14 +22,14 @@ use testcontainers_modules::postgres::Postgres;
 use std::sync::Arc;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::{EhrbaseService, SpFhirSystem, SubjectProxyConfig};
 use ehrbase::service::status::CallStatusType;
+use ehrbase::service::{EhrbaseService, SpFhirSystem, SubjectProxyConfig};
 
 use ehrbase::service::subject_proxy::binding::{DataFrame, EnvBinding, SystemCall, SystemCallBody};
-use ehrbase::service::subject_proxy::sample::FramePayload;
 use ehrbase::service::subject_proxy::data_set::SubjectDataSet;
-use ehrbase::service::subject_proxy::variable::SubjectVariable;
+use ehrbase::service::subject_proxy::sample::FramePayload;
 use ehrbase::service::subject_proxy::value::VariableValue;
+use ehrbase::service::subject_proxy::variable::SubjectVariable;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;

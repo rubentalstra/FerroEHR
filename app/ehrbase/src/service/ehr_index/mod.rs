@@ -22,8 +22,10 @@
 //! operation semantics + error names), so the table access lives here rather
 //! than behind a storage-owned repository.
 
+use crate::service::ehr_index::types::{
+    EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
+};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef};
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;

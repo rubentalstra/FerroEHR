@@ -197,7 +197,7 @@ async fn seed_ehr(seed: &Router, ehr_id: &str) {
     assert_eq!(resp.status(), StatusCode::CREATED, "seed EHR {ehr_id}");
 }
 
-/// Commit a composition into `ehr_id`; return its version uid (from the ETag).
+/// Commit a composition into `ehr_id`; return its version uid (from the `ETag`).
 async fn seed_composition(seed: &Router, ehr_id: &str) -> String {
     let req = Request::builder()
         .method("POST")

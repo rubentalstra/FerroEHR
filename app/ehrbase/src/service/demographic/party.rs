@@ -6,8 +6,8 @@
 //! wire contract, so status/`ETag`/`Location`/`If-Match`/deleted-read semantics
 //! follow the EHR group by analogy (module PORT NOTE in [`super`]).
 
-use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::demographic::types::PartyKind;
+use crate::service::response::{ResourceMeta, ServiceResponse};
 use serde_json::Value;
 use uuid::Uuid;
 

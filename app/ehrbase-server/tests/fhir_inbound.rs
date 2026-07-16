@@ -25,10 +25,10 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use tower::ServiceExt;
 
-use ehrbase::db::{self, DbConfig};
-use ehrbase::service::EhrbaseService;
 use ehrbase::config::auth::AuthConfig;
 use ehrbase::config::server::ServerConfig;
+use ehrbase::db::{self, DbConfig};
+use ehrbase::service::EhrbaseService;
 use ehrbase_rest::AppConfig;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";

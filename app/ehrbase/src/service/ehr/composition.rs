@@ -511,7 +511,10 @@ impl EhrbaseService {
         a_comp: UpdateVersion,
     ) -> Result<String, SmError> {
         // Inherent `create_composition` (Value) wins by method-resolution priority.
-        super::version_uid(self.create_composition_response(an_ehr_id, a_comp.data).await?)
+        super::version_uid(
+            self.create_composition_response(an_ehr_id, a_comp.data)
+                .await?,
+        )
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -589,7 +592,10 @@ impl EhrbaseService {
         // than the SM's `UUID` for `delete_composition` — the SM is internally
         // inconsistent (`has_composition` takes OBJECT_VERSION_ID). Kept.
         let (vo_id, version) = components(&a_version_uid)?;
-        super::version_uid(self.delete_composition_response(an_ehr_id, vo_id, version).await?)
+        super::version_uid(
+            self.delete_composition_response(an_ehr_id, vo_id, version)
+                .await?,
+        )
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).

@@ -82,7 +82,11 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn remove_ehr_subject(&self, ehr_id: String, subject: SubjectRef) -> Result<(), SmError> {
+    pub async fn remove_ehr_subject(
+        &self,
+        ehr_id: String,
+        subject: SubjectRef,
+    ) -> Result<(), SmError> {
         let ehr_id = parse_ehr_id(&ehr_id)?;
         Ok(self.index_remove_ehr_subject(ehr_id, &subject).await?)
     }

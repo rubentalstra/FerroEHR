@@ -37,10 +37,10 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::status::CallStatusType;
+use crate::service::ehr_index::types::SubjectRef;
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
-use crate::service::ehr_index::types::SubjectRef;
+use crate::service::status::CallStatusType;
 use crate::service::status::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -619,7 +619,9 @@ impl EhrbaseService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        Ok(self.create_composition_response(ehr_id, composition).await?)
+        Ok(self
+            .create_composition_response(ehr_id, composition)
+            .await?)
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).

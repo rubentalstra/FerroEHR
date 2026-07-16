@@ -59,7 +59,9 @@ use openehr_term::bundle::openehr;
 use openehr_term::terminology::code_set::CodeSet;
 
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::terminology::types::{DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract};
+use crate::service::terminology::types::{
+    DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract,
+};
 
 use crate::versioning::OPENEHR;
 

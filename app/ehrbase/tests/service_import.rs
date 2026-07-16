@@ -347,7 +347,10 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         .expect("import the FOLDER into the existing EHR");
 
     // The target now carries the imported directory FOLDER with the source's data.
-    let re_export = target.extract_ehrs(tgt_ehr).await.expect("re-export target");
+    let re_export = target
+        .extract_ehrs(tgt_ehr)
+        .await
+        .expect("re-export target");
     let imported_folder =
         find_by_xtype(&re_export[0], "X_VERSIONED_FOLDER").expect("folder now present in target");
     assert_eq!(

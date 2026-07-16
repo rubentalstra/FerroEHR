@@ -40,8 +40,8 @@ pub mod types;
 
 use regex::Regex;
 
-use crate::service::status::CallStatusType;
 use crate::service::list::Page;
+use crate::service::status::CallStatusType;
 
 use super::ServiceError;
 

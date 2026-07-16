@@ -19,7 +19,6 @@
 
 use serde::{Deserialize, Serialize};
 
-
 /// The `[server]` section — the HTTP listener and REST surface (§3.1).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -143,8 +142,6 @@ pub struct AdminConfig {
     /// answers `404` without touching the backend.
     pub enabled: bool,
 }
-
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]

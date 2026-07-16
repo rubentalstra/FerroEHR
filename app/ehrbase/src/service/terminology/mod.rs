@@ -45,8 +45,8 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use crate::service::status::SmError;
 use crate::service::status::CallStatusType;
+use crate::service::status::SmError;
 use crate::service::terminology::types::{TerminologyDescription, TerminologyExtract};
 
 use crate::aql::TerminologyExpander;

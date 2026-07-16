@@ -21,9 +21,9 @@ pub mod prometheus;
 pub mod samplers;
 
 pub mod build_info;
-pub mod provenance;
 pub mod health;
 pub mod log_reload;
+pub mod provenance;
 
 pub use config::{LogConfig, LogFormat, OtelConfig, TelemetryConfig};
 

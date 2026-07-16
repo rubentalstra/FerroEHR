@@ -6,8 +6,8 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use config::{Config, Environment, File, FileFormat};
 use crate::config::secret::Secret;
+use config::{Config, Environment, File, FileFormat};
 
 use super::EhrbaseConfig;
 use super::alias::{CONVENTIONAL, LIST_KEYS};

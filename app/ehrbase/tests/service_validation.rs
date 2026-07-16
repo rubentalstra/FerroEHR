@@ -490,15 +490,14 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
 
     // Delete the OPT through the real SM path (opt_delete), which invalidates
     // the cache entry.
-    let opt_uuid = svc.list_opts_adl14(ehrbase::service::list::Page::all())
+    let opt_uuid = svc
+        .list_opts_adl14(ehrbase::service::list::Page::all())
         .await
         .expect("list opts")
         .into_iter()
         .next()
         .expect("one stored OPT uuid");
-    svc.delete_opt(opt_uuid)
-        .await
-        .expect("delete opt");
+    svc.delete_opt(opt_uuid).await.expect("delete opt");
 
     // A commit against the now-deleted template resolves to the clean
     // "template not known" 422 — only reachable if the stale WebTemplate was

@@ -61,7 +61,6 @@ pub use config::{AuditConfig, FailMode, Transport};
 pub use message::{AuditContext, AuditMessage};
 pub use sender::{AuditHandle, AuditSender, SubjectResolver, start};
 
-
 use crate::service::EhrbaseService;
 
 /// Errors raised while rendering or shipping an audit record.

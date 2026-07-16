@@ -14,7 +14,6 @@
 
 use std::sync::Arc;
 
-
 /// Reads the effective filter directives from the subscriber's reload handle.
 pub type ReadFilter = Arc<dyn Fn() -> String + Send + Sync>;
 /// Applies a new filter directive set to the subscriber's reload handle.

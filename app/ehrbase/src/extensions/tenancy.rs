@@ -245,7 +245,11 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError> {
+    pub async fn tenant_update(
+        &self,
+        a_tenant_id: Uuid,
+        a_tenant: Value,
+    ) -> Result<Value, SmError> {
         Ok(self.update_tenant(a_tenant_id, &a_tenant).await?)
     }
 

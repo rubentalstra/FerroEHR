@@ -94,7 +94,6 @@ fn build_date() -> String {
 
 /// `GET /management/info`.
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

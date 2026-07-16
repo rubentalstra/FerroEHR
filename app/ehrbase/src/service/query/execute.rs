@@ -14,8 +14,8 @@ use std::time::{Duration, Instant};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::status::QUERY_TIMEOUT_TAG;
 use crate::service::query::request::{AqlQueryRequest, QueryOutcome};
+use crate::service::status::QUERY_TIMEOUT_TAG;
 use crate::service::status::SmError;
 use openehr_query::parser::parse_str;
 

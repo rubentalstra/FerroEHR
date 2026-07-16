@@ -20,13 +20,12 @@ mod alias;
 mod loader;
 mod strict;
 
-pub mod secret;
 pub mod auth;
 pub mod authz;
 pub mod management;
+pub mod secret;
 pub mod server;
 pub mod smart;
-
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

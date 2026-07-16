@@ -13,8 +13,8 @@ use testcontainers_modules::postgres::Postgres;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::list::Page;
+use ehrbase::service::status::{CallStatusType, SmError};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -88,7 +88,10 @@ async fn template_upload_list_get_roundtrip() {
 
     // List includes the uploaded template.
     let list = svc
-        .template_adl14_list(TemplateListFilter::default(), ehrbase::service::list::Page::all())
+        .template_adl14_list(
+            TemplateListFilter::default(),
+            ehrbase::service::list::Page::all(),
+        )
         .await
         .expect("list");
     assert!(
@@ -103,7 +106,8 @@ async fn template_upload_list_get_roundtrip() {
     // `DefinitionApi::..get` was template_id-keyed and returned a JSON-string
     // `Value`). Resolve the stored OPT's uuid via `list_opts` (one template
     // uploaded), then retrieve by uuid.
-    let opt_uuid = svc.list_opts_adl14(Page::all())
+    let opt_uuid = svc
+        .list_opts_adl14(Page::all())
         .await
         .expect("list opts")
         .into_iter()
@@ -135,7 +139,10 @@ async fn template_upload_list_get_roundtrip() {
 
     // The original template is untouched and there is still exactly one row.
     let list2 = svc
-        .template_adl14_list(TemplateListFilter::default(), ehrbase::service::list::Page::all())
+        .template_adl14_list(
+            TemplateListFilter::default(),
+            ehrbase::service::list::Page::all(),
+        )
         .await
         .expect("list after conflicting re-upload");
     assert_eq!(

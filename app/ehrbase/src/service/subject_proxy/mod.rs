@@ -19,22 +19,22 @@ mod freshness;
 mod store;
 
 pub mod binding;
-pub mod variable;
-pub mod sample;
 pub mod data_set;
+pub mod sample;
 pub mod value;
+pub mod variable;
 
 pub use config::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 
 use serde_json::Value;
 use sqlx::PgPool;
 
-use crate::service::subject_proxy::sample::{DataFrameSample, Sample, VariableSample};
-use crate::service::subject_proxy::data_set::{DataSetResult, SubjectDataSet};
-use crate::service::subject_proxy::binding::EnvBinding;
 use crate::service::status::SmError;
-use crate::service::subject_proxy::variable::SubjectVariable;
+use crate::service::subject_proxy::binding::EnvBinding;
+use crate::service::subject_proxy::data_set::{DataSetResult, SubjectDataSet};
+use crate::service::subject_proxy::sample::{DataFrameSample, Sample, VariableSample};
 use crate::service::subject_proxy::value::VariableValue;
+use crate::service::subject_proxy::variable::SubjectVariable;
 
 use super::EhrbaseService;
 use store::db_err;
