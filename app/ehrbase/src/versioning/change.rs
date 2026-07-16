@@ -27,28 +27,41 @@ use crate::versioning::{Kind, SigningCtx, integrity};
 /// tree id, and the provenance carried into the event-outbox envelope.
 #[derive(Debug, Clone)]
 #[allow(clippy::struct_field_names)] // `time_committed` is the master06 domain term, not a suffix echo
-pub(crate) struct Committed {
-    pub(crate) vo_id: Uuid,
+pub struct Committed {
+    pub vo_id: Uuid,
     /// The per-vo storage commit ordinal of the written row (the node /
     /// attestation key) — NOT the wire version number.
-    pub(crate) sys_version: i32,
+    pub sys_version: i32,
     /// The new version's `VERSION_TREE_ID` (the wire version identity).
-    pub(crate) tree: TreeId,
+    pub tree: TreeId,
     /// The `creating_system_id` recorded for the new version.
-    pub(crate) creating_system_id: String,
-    pub(crate) kind: Kind,
+    pub creating_system_id: String,
+    pub kind: Kind,
     /// The numeric `audit_change_type` group code recorded for this version.
-    pub(crate) change_type: String,
+    pub change_type: String,
     /// The OPT `template_id` a COMPOSITION was committed against (`None`
     /// otherwise).
-    pub(crate) template_id: Option<String>,
+    pub template_id: Option<String>,
     /// The server-computed commit instant (the audit `time_committed`,
     /// master06 §Committal) — the write response's `Last-Modified`, carried
     /// here so the service layer never re-reads the row it just wrote.
-    pub(crate) time_committed: jiff::Timestamp,
+    pub time_committed: jiff::Timestamp,
 }
 
 /// One change applied within a CONTRIBUTION (the openEHR change-set unit).
+impl Committed {
+    /// The committed version's full `OBJECT_VERSION_ID` (`ETag`/`Location`
+    /// value — RM common master06 §Version Identification).
+    #[must_use]
+    pub fn version_uid(&self) -> String {
+        super::object_version_id::object_version_id(
+            self.vo_id,
+            &self.creating_system_id,
+            self.tree,
+        )
+    }
+}
+
 ///
 /// `signature` carries a **client-supplied** `UPDATE_VERSION.signature`
 /// (master06 §Digital Signature): present ⇒ stored verbatim, server does not

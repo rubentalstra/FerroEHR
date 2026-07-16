@@ -65,11 +65,15 @@ impl EhrbaseService {
     /// `201_COMPOSITION`). The envelope's audit attributes, lifecycle state,
     /// verbatim signature and attestations are honoured on the persisted
     /// commit (ITS-REST committal-header merge — MUST).
-    pub(crate) async fn create_composition_response(
+    /// `create_composition` (SM `i_ehr_composition.adoc`): commit the first
+    /// version of a COMPOSITION in `ehr_id` from the caller's full
+    /// `UPDATE_VERSION` envelope, returning the committed version identity
+    /// ([`Committed`] — the `ETag`/`Location`/`Last-Modified` source).
+    pub async fn create_composition(
         &self,
         ehr_id: Uuid,
         version: crate::service::version_update::UpdateVersion,
-    ) -> Result<ServiceResponse, ServiceError> {
+    ) -> Result<crate::versioning::Committed, ServiceError> {
         let (audit, envelope) = resolve_envelope(
             &version,
             change_type::CREATION,
@@ -106,13 +110,9 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        // The write response is metadata-only: `Committed` already carries
-        // every field of the version identity + the commit instant, and every
-        // consumer (the SM trait, TDD import, the REST adapter) uses only the
-        // uid/meta — a representation response re-reads at the protocol layer.
-        // Re-reading + reassembling the just-written document here was a whole
-        // extra pool acquisition + two SELECTs per create, discarded.
-        Ok(self.committed_response(ehr_id, &committed))
+        // The write result is the committed version identity itself — a
+        // representation response re-reads at the protocol layer.
+        Ok(committed)
     }
 
     /// Retrieve a COMPOSITION by its versioned-object id, optionally at a specific
@@ -225,14 +225,45 @@ impl EhrbaseService {
     /// template root fragment, and the EHR's `is_modifiable` flag — so this write
     /// runs no further pre-read (the former `If-Match` meta read, modify
     /// pre-read, and `is_modifiable` side-SELECT are one statement now).
-    pub(in crate::service) async fn update_composition_response(
+    /// `update_composition` (SM `i_ehr_composition.adoc`): commit a new version
+    /// of `vo_id` from the caller's full `UPDATE_VERSION` envelope. ONE merged
+    /// pre-read carries the whole write pre-check: the owning EHR (ownership →
+    /// 404), the full-`OBJECT_VERSION_ID` `If-Match` identity (412), the
+    /// lifecycle (deleted → 404), the stored template root fragment (422) and
+    /// the EHR's `is_modifiable` flag (409).
+    pub async fn update_composition(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
         version: crate::service::version_update::UpdateVersion,
-        expected: Option<TreeId>,
-        current: crate::storage::version_repo::CurrentCompositionMeta,
-    ) -> Result<ServiceResponse, ServiceError> {
+    ) -> Result<crate::versioning::Committed, ServiceError> {
+        let Some(current) =
+            crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
+                .await?
+                .filter(|m| m.ehr_id == Some(ehr_id))
+        else {
+            return Err(ServiceError::NotFound(format!("COMPOSITION {vo_id}")));
+        };
+        // The full-`OBJECT_VERSION_ID` `If-Match` compare (F-02-08), built from
+        // the same merged read (ITS-REST overview §Concurrency control).
+        let tree = TreeId::from_columns(
+            current.trunk_version,
+            current.branch_number,
+            current.branch_version,
+        );
+        let latest = self.version_meta(
+            ehr_id,
+            vo_id,
+            &current.creating_system_id,
+            tree,
+            current.time_committed,
+        );
+        super::ensure_if_match(version.preceding_version_uid.as_ref(), Some(&latest))?;
+        let expected = version
+            .preceding_version_uid
+            .as_ref()
+            .map(|o| components(o).map(|(_, v)| v))
+            .transpose()?;
         let (audit, envelope) = resolve_envelope(
             &version,
             change_type::MODIFICATION,
@@ -296,8 +327,7 @@ impl EhrbaseService {
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
 
-        // Metadata-only write response (see `create_composition`).
-        Ok(self.committed_response(ehr_id, &committed))
+        Ok(committed)
     }
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a
@@ -357,12 +387,17 @@ impl EhrbaseService {
     /// is the version tree id carried by the mandatory `preceding_version_uid`
     /// (`composition_delete.yaml`). A stale precondition → `409`; an
     /// already-deleted target → `400` (F-02-05).
-    pub(in crate::service) async fn delete_composition_response(
+    /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a
+    /// `523|deleted|` version of the addressed COMPOSITION (RM common master06
+    /// §Logical Deletion). PORT NOTE (G-7): takes the full
+    /// `OBJECT_VERSION_ID`, stronger than the SM's `UUID` — the SM is
+    /// internally inconsistent (`has_composition` takes OBJECT_VERSION_ID).
+    pub async fn delete_composition(
         &self,
         ehr_id: Uuid,
-        vo_id: Uuid,
-        expected: TreeId,
-    ) -> Result<ServiceResponse, ServiceError> {
+        a_version_uid: &ObjectVersionId,
+    ) -> Result<crate::versioning::Committed, ServiceError> {
+        let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the
         // lifecycle (already-deleted → 400, F-02-05), and the current
         // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) — not
@@ -410,11 +445,8 @@ impl EhrbaseService {
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
-        // 204_COMPOSITION_deleted: the (now deleted) version_uid in ETag/Location.
-        Ok(ServiceResponse::deleted(ResourceMeta::new(
-            ehr_id.to_string(),
-            self.object_version_id(vo_id, &committed.creating_system_id, committed.tree),
-        )))
+        // 204_COMPOSITION_deleted: the (now deleted) version identity.
+        Ok(committed)
     }
 
     /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also the
@@ -558,88 +590,18 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn create_composition(
-        &self,
-        an_ehr_id: Uuid,
-        a_comp: UpdateVersion,
-    ) -> Result<String, SmError> {
-        super::version_uid(self.create_composition_response(an_ehr_id, a_comp).await?)
-    }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
     ///
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn update_composition(
-        &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
-        a_comp: UpdateVersion,
-    ) -> Result<String, SmError> {
-        // ONE merged pre-read for the whole write pre-check: the owning EHR
-        // (ownership → 404), the full-`OBJECT_VERSION_ID` `If-Match` identity,
-        // the lifecycle, the stored template root fragment, and the EHR's
-        // `is_modifiable` flag — threaded into the inner write so it re-reads
-        // nothing. A foreign/unknown id → 404 (the same outcome the prior
-        // scoped `If-Match` meta read + inner ownership filter produced; a
-        // stale `If-Match` never leaks a 412 for an id that is not this EHR's).
-        let Some(current) = crate::storage::version_repo::current_composition_meta(
-            &self.pool,
-            a_versioned_object_uid,
-        )
-        .await
-        .map_err(ServiceError::from)?
-        .filter(|m| m.ehr_id == Some(an_ehr_id)) else {
-            return Err(
-                ServiceError::NotFound(format!("COMPOSITION {a_versioned_object_uid}")).into(),
-            );
-        };
-        // The full-`OBJECT_VERSION_ID` `If-Match` compare (F-02-08), built from
-        // the same merged read (ITS-REST overview §Concurrency control).
-        let tree = TreeId::from_columns(
-            current.trunk_version,
-            current.branch_number,
-            current.branch_version,
-        );
-        let latest = self.version_meta(
-            an_ehr_id,
-            a_versioned_object_uid,
-            &current.creating_system_id,
-            tree,
-            current.time_committed,
-        );
-        super::ensure_if_match(a_comp.preceding_version_uid.as_ref(), Some(&latest))?;
-        let expected = a_comp
-            .preceding_version_uid
-            .as_ref()
-            .map(|o| components(o).map(|(_, v)| v))
-            .transpose()?;
-        super::version_uid(
-            self.update_composition_response(an_ehr_id, a_versioned_object_uid, a_comp, expected, current)
-                .await?,
-        )
-    }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
     ///
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn delete_composition(
-        &self,
-        an_ehr_id: Uuid,
-        a_version_uid: ObjectVersionId,
-    ) -> Result<String, SmError> {
-        // PORT NOTE (G-7): the impl uses OBJECT_VERSION_ID throughout, stronger
-        // than the SM's `UUID` for `delete_composition` — the SM is internally
-        // inconsistent (`has_composition` takes OBJECT_VERSION_ID). Kept.
-        let (vo_id, version) = components(&a_version_uid)?;
-        super::version_uid(
-            self.delete_composition_response(an_ehr_id, vo_id, version)
-                .await?,
-        )
-    }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
     ///

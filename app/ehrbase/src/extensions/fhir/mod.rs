@@ -619,9 +619,13 @@ impl EhrbaseService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        Ok(self
-            .create_composition_response(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
-            .await?)
+        let committed = self
+            .create_composition(
+                ehr_id,
+                crate::service::version_update::UpdateVersion::direct(composition),
+            )
+            .await?;
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).

@@ -66,7 +66,12 @@ pub(super) async fn run(
                 "COMPOSITION creation",
                 None,
             );
-            let uid = state.backend().create_composition(ehr_id, uv).await?;
+            let uid = state
+                .backend()
+                .create_composition(ehr_id, uv)
+                .await
+                .map_err(|e| RestError::from(ApiError::from(e)))?
+                .version_uid();
             // G-4: apply the openehr-item-tag / openehr-version-item-tag
             // write-wrapper headers to the committed COMPOSITION
             // (Requests_and_responses.md §…§Usage in Requests).
@@ -172,6 +177,7 @@ pub(super) async fn run(
                 .backend()
                 .update_composition(ehr_id, uid.vo_id, uv)
                 .await
+                .map(|c| c.version_uid())
             {
                 Ok(new_uid) => {
                     // G-4: apply item-tag write-wrapper headers to the new version.
@@ -186,7 +192,7 @@ pub(super) async fn run(
                     }
                     Ok(resp)
                 }
-                Err(e) if e.status == CallStatusType::VersionMismatch => {
+                Err(e @ ehrbase::service::ServiceError::VersionConflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, uid.vo_id)
@@ -194,13 +200,13 @@ pub(super) async fn run(
                         .ok()
                         .flatten();
                     Ok(negotiate::error_with_meta(
-                        sm_api_error(e),
+                        ApiError::from(e),
                         &base,
                         Some("composition"),
                         meta.as_ref(),
                     ))
                 }
-                Err(e) => Err(RestError::from(e)),
+                Err(e) => Err(RestError::from(ApiError::from(e))),
             }
         }
         "composition_delete" => {
@@ -215,7 +221,12 @@ pub(super) async fn run(
                     p.uid_based_id
                 ))
             })?;
-            match state.backend().delete_composition(ehr_id, ovid).await {
+            match state
+                .backend()
+                .delete_composition(ehr_id, &ovid)
+                .await
+                .map(|c| c.version_uid())
+            {
                 Ok(uid) => {
                     // 204_COMPOSITION_deleted: ETag + Location of the deleted version.
                     let resp = ServiceResponse::deleted(ResourceMeta::new(p.ehr_id, uid));
@@ -225,8 +236,9 @@ pub(super) async fn run(
                         &resp,
                     ))
                 }
-                // 409_COMPOSITION_with_uid_based_id (stale) → latest version_uid.
-                Err(e) if e.status == CallStatusType::CompositionAlreadyExists => {
+                // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable) →
+                // decorated with the latest version_uid.
+                Err(e @ ehrbase::service::ServiceError::Conflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, vo_id)
@@ -234,13 +246,13 @@ pub(super) async fn run(
                         .ok()
                         .flatten();
                     Ok(negotiate::error_with_meta(
-                        sm_api_error(e),
+                        ApiError::from(e),
                         &base,
                         Some("composition"),
                         meta.as_ref(),
                     ))
                 }
-                Err(e) => Err(RestError::from(e)),
+                Err(e) => Err(RestError::from(ApiError::from(e))),
             }
         }
         "composition_tags_get" => {

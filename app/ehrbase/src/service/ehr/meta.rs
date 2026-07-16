@@ -74,7 +74,7 @@ impl EhrbaseService {
     /// path never re-reads the row it just wrote (a representation response
     /// re-reads at the protocol layer). The body is `Value::Null` by contract:
     /// every write consumer uses only the metadata.
-    pub(in crate::service) fn committed_response(
+    pub(crate) fn committed_response(
         &self,
         ehr_id: uuid::Uuid,
         committed: &crate::versioning::Committed,
@@ -92,7 +92,7 @@ impl EhrbaseService {
     /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
     /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and its
     /// commit time (the `Last-Modified`).
-    pub(in crate::service) fn version_meta(
+    pub(crate) fn version_meta(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,

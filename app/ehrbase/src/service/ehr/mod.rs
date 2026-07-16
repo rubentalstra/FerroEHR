@@ -94,13 +94,13 @@ fn version_uid(resp: crate::service::response::ServiceResponse) -> Result<String
 fn ensure_if_match(
     preceding: Option<&openehr_base::prelude::ObjectVersionId>,
     latest: Option<&ResourceMeta>,
-) -> Result<(), SmError> {
+) -> Result<(), crate::service::ServiceError> {
     let Some(pre) = preceding else {
         return Ok(());
     };
     match latest {
         Some(meta) if meta.uid == pre.value => Ok(()),
-        Some(meta) => Err(SmError::version_mismatch(format!(
+        Some(meta) => Err(crate::service::ServiceError::VersionConflict(format!(
             "If-Match {:?} does not match the current latest version {:?}",
             pre.value, meta.uid
         ))),
