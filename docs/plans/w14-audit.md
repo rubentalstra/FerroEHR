@@ -117,9 +117,9 @@ verdict; ☐ = unprobed.
 | EHR-9 | GET …/versioned_ehr_status/revision_history | `:259` | ☐ | ☐ | |
 | EHR-10 | GET …/versioned_ehr_status/version (at time) | `:283` | ☐ | ☐ | |
 | EHR-11 | GET …/versioned_ehr_status/version/{version_uid} | `:310` | ☐ | ☐ | |
-| EHR-12 | POST …/composition | `:332` | ☐ | ☐ | seed: comp-create-large p99 128 ms, small 94 ms — probe P-1 in flight |
+| EHR-12 | POST …/composition | `:332` | ◐ | ☐ | L probed → F-1/F-3/F-4/F-5 (§4a); seed: comp-create-large p99 128 ms, small 94 ms |
 | EHR-13 | GET …/composition/{uid_based_id} | `:359` | ☐ | ☐ | seed: comp-read-latest p99 74.6, max 147.6 |
-| EHR-14 | PUT …/composition/{uid_based_id} | `:383` | ☐ | ☐ | seed: comp-update p99 81.5 |
+| EHR-14 | PUT …/composition/{uid_based_id} | `:383` | ◐ | ☐ | L probed → F-1/F-2/F-3/F-5 (§4a); seed: comp-update p99 81.5 |
 | EHR-15 | DELETE …/composition/{uid_based_id} | `:407` | ☐ | ☐ | |
 | EHR-16 | GET …/versioned_composition/{vo_uid} | `:436` | ☐ | ☐ | |
 | EHR-17 | GET …/versioned_composition/{vo_uid}/revision_history | `:465` | ☐ | ☐ | seed: history-read p99 33 ms |
@@ -302,12 +302,31 @@ pass; receipt = "all benign (parses of static data / infallible)" or a DEFECT ro
 - `service/ehr/composition_validate.rs:39` — scans + reassembles every live COMPOSITION
 - `service/ehr/composition.rs:281` — full version read-back after write (spec-fidelity)
 
-## 4. Fix waves
+## 4. Filed findings
+
+One row per probed finding. Spec-triage column per owner rule 2:
+**M** = spec-mandated (cite) / **S** = spec-silent (our design, free) /
+**D** = spec-divergent (spec-true fix wins). Fix column names the wave.
+
+### 4a. Write path (probe P-1, 2026-07-16 — POST/PUT composition traced handler→SQL)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-1 | **Default-on digest signing bypasses the P20 one-CTE commit fold.** `sig_preknown = client_signature.is_some() \|\| !signer.enabled()` and digest signing defaults to enabled → every default deployment runs the SPLIT path: `write_contribution` + `insert_vo_version` as two statements (signature computed over the returned `time_committed` between them) instead of the folded `commit_new_version` CTE. The measured v3.0.3 numbers are the slow path. Create = 6 RT, but the fold only fires with signing off. | `versioning/change.rs:552,589-645`, `signature/config.rs:54,71-81`, `signer.rs:107-113`, `version_repo.rs:304,346,578` | ☐ RM common §Version signature — is a *server-side digest* mandated or our own default? redesign target: sign without the mid-tx round-trip dependency (e.g. compute `time_committed` client-side/in-CTE) so the fold fires WITH signing on | ☐ |
+| F-2 | **Update pays a serial 3-read placement trio in-tx**: `advisory_lock` → `lineage_tip` → `next_ordinal` are three sequential round-trips; the two reads are independent of each other and read the same `vo_version` rows — collapsible into one statement (the tip-close UPDATE may fold too). Update ≈ 11 RT total vs create's 6. | `change.rs:258-325`, `version_repo.rs:179,1110,1144,506` | ☐ spec-silent (storage mechanics) — flag our-own-design | ☐ |
+| F-3 | **Decompose→reassemble double transform per commit (signing on)**: the just-decomposed rows are fully reassembled (`O(N log N)` sort + per-row path attach) solely to feed the signature, then dropped — and `return=representation` responses re-read + re-reassemble from the DB although that served form was in memory. | `change.rs:611`, `codec.rs:176-236`, rest `api/ehr/composition.rs:283-325` | ☐ spec-silent (mechanics); representation body itself ITS-REST-governed (content must be the committed version) | ☐ |
+| F-4 | **`reject_duplicate_persistent` is a serial N+1 that scales with EHR size on the write path**: for persistent compositions, one `read_current` (2 statements + full reassembly) per live persistent vo_id, sequentially. Event compositions skip it (0 RT). | `composition_validate.rs:28-60`, PERF marker `:39` | ☐ RM/CNF: what does the spec require for persistent-composition uniqueness? batch into one query either way | ☐ |
+| F-5 | **Large-composition penalty = ~6–7 full passes over the node set per create**: decompose walk + num_cap reverse pass + reassemble-for-signing (the only super-linear term, sort) + 2 validation walks + canonical serialize + SHA-256 + O(N·cols) insert bind. Pass consolidation is the comp-create-large lever. | `codec.rs:38-45,52-155,176-236`, `composition_validate.rs:86,93-97`, `integrity.rs:51-70`, `node_repo.rs:58-89` | ☐ validation walks spec-mandated (AM/RM conformance); *number of passes* spec-silent | ☐ |
+| F-6 | CLEAN (partial): create/update under `Prefer: return=minimal` does **no** read-back (metadata-only response from memory — the old read-back already removed); create takes no advisory lock; no FOR UPDATE/SERIALIZABLE anywhere; `write_nodes` already one bulk statement. PERF marker at `composition.rs:281` sits on `template_of_version` (ABAC helper), NOT the create path — marker text to verify/reword. | `composition.rs:63-69,245-246`, `meta.rs:77-90` | n/a | note |
+
+### 4b. Read path / spine (probe P-2) — PENDING
+
+## 5. Fix waves
 
 Filed after the probe pass; each wave lists its rows, the change, the gate
 receipts, and the re-measured numbers.
 
-## 5. Exit criteria
+## 6. Exit criteria
 
 - [ ] §1 has one row per endpoint (the count matches the router inventory)
       and every row carries an L and E verdict with a receipt.
