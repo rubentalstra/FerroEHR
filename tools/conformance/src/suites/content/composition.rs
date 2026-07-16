@@ -1,5 +1,5 @@
 //! master15 — COMPOSITION data-validation truth tables
-//! (`master15-content_tc_composition.adoc`; register 12 §2.1).
+//! (`master15-content_tc_composition.adoc`).
 //!
 //! Every `CONT-COMP-*` case constrains `COMPOSITION.content` **cardinality**
 //! (one of `0..*`, `1..*`, `3..*`, `0..1`, `1..1`, `3..5` — master15 §"For
@@ -21,11 +21,11 @@
 //! entries} × context ∈ {no context, context w/o `other_context`, context w/
 //! `other_context`}. The accept/reject oracle depends only on the content count
 //! vs the interval and on context present-vs-absent — `other_context` never
-//! flips the outcome across any master15 table (register 12 G-5), so the runner
+//! flips the outcome across any master15 table, so the runner
 //! drives the 6 rows {0,1,3}×{present,absent} and declares the 9-row bound via
 //! [`DataSetReport::of_schedule_rows`].
 //!
-//! **Context isolation (register 12 G-6):** RM 1.2.0 composition §COMPOSITION
+//! **Context isolation:** RM 1.2.0 composition §COMPOSITION
 //! carries no category↔context invariant — `context` is `0..1` and the only
 //! COMPOSITION invariants are `Category_validity` (category code valid) and
 //! `Territory_valid`. A missing `context` is therefore RM-legal on the
@@ -51,7 +51,7 @@ const BASE_COMP_KEY: &str = "content.base.minimal-evaluation.composition";
 const BASE_OPT_FILE: &str = "minimal/minimal_evaluation.opt";
 
 /// The number of rows the master15 COMPOSITION truth tables tabulate (3 content
-/// × 3 context) — the coverage bound (register 12 G-5: `other_context` never
+/// × 3 context) — the coverage bound (`other_context` never
 /// flips the outcome, so 6 of the 9 are driven).
 const SCHEDULE_ROWS: u32 = 9;
 
@@ -225,7 +225,7 @@ cont_comp!(
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     // (slug, title, schedule-case-id, run) — slugs + titles are the carried
-    // ECC-VAL-001..012 ids (register 12 ID STABILITY).
+    // ECC-VAL-001..012 ids (kept stable across renumbering).
     const CASES: &[(&str, &str, &str, crate::engine::harness::CaseRun)] = &[
         (
             "val/comp-content-card-any-context-any",
