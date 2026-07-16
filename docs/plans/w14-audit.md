@@ -93,13 +93,13 @@ verdict; ☐ = unprobed.
 |---|---|---|---|---|---|
 | M-1 | guarded_dispatch spine cost (enforce + pre/post PEP per request) | `api/mod.rs` | ◐ | ☐ | L probed → F-8/F-11 (§4b): near-zero ABAC-off; ABAC-on double-read = F-8 |
 | M-2 | authn middleware (Basic/Bearer per request; argon2 cost on Basic!) | `router.rs:103-109` | ◐ | ☐ | L probed → F-11 clean (verified-cred cache + JWKS cache); E pending P-3 |
-| M-3 | ATNA audit middleware (always installed, early-out if off) | `router.rs:113-116` | ☐ | ☐ | |
-| M-4 | tenant middleware (when enabled) | `router.rs:95-102` | ☐ | ☐ | |
-| M-5 | http_metrics + root_span | `router.rs:118-119` | ☐ | ☐ | |
-| M-6 | overload shed layer — API subtree only; management/docs/status never shed | `router.rs:129` | ☐ | ☐ | |
-| M-7 | tower-http stack order (request-id, trace, catch-panic, CORS, 16 MiB body limit, 30 s timeout, compression) | `router.rs:141-158` | ☐ | ☐ | |
-| M-8 | timeout → 408 special-case mapping | `overview/error.rs:167` | ☐ | ☐ | |
-| M-9 | content negotiation + body parse seam (`overview/negotiate.rs` — also the top unwrap-density file, 35) | `overview/negotiate.rs` | ☐ | ☐ | |
+| M-3 | ATNA audit middleware (always installed, early-out if off) | `router.rs:113-116` | ✓ | ◐ | P-7: off = 1 branch; on = no DB, try_send only; F-35 pre-alloc; fail-closed 503 plain text = F-34 |
+| M-4 | tenant middleware (when enabled) | `router.rs:95-102` | ◐ | ◐ | P-7 → **F-33** (resolution error silently unscoped, no negative cache) |
+| M-5 | http_metrics + root_span | `router.rs:118-119` | ✓ | ✓ | P-7 CLEAN (F-36): matched-route labels, bounded cardinality; unwraps test-only |
+| M-6 | overload shed layer — API subtree only; management/docs/status never shed | `router.rs:129` | ✓ | ✓ | P-7 CLEAN (F-36): proper 503 body + Retry-After; mgmt has own guards/listener; F-35 probes note |
+| M-7 | tower-http stack order (request-id, trace, catch-panic, CORS, 16 MiB body limit, 30 s timeout, compression) | `router.rs:141-158` | ✓ | ◐ | P-7: order sane (body limit before auth); CatchPanic plain-text 500 = F-34 |
+| M-8 | timeout → 408 special-case mapping | `overview/error.rs:167` | ✓ | ✓ | P-3 CLEAN (F-16): 408 is the spec's own code (`Requests_and_responses.md:229`) |
+| M-9 | content negotiation + body parse seam (`overview/negotiate.rs` — also the top unwrap-density file, 35) | `overview/negotiate.rs` | ✓ | ✓ | P-3+P-7 CLEAN: all 35 hits benign; single-parse; minor redundant header copies (F-35) |
 | M-10 | config-gated extensions mounted but handler-gated (disabled ⇒ 404 inside handler — routing slots always occupied) | inventory note | ☐ | ☐ | |
 
 ### 1b. EHR API (33 ops, `api/ehr/openapi_routes.rs`)
@@ -198,11 +198,11 @@ shared path once (DEM-P), spot-check per-kind divergence. Same for tags
 
 | # | Op group | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| SYS-1 | OPTIONS BP + OPTIONS / (manifest) | `api/system/options.rs:189`, `router.rs:186-187` | ☐ | ☐ | 10 unwrap-class hits in options.rs |
-| SYS-2 | GET RR/status, /health, RR/status/health | `overview/status.rs:37-60` | ☐ | ☐ | static — likely CLEAN |
-| SMT-1 | GET RR/.well-known/smart-configuration | `smart/discovery.rs:258` | ☐ | ☐ | doc rebuilt per request from config |
-| DOC-1 | openapi.json + 12 family docs + swagger UI (15 mounts) | `extensions/openapi.rs:209-488` | ☐ | ☐ | `extensions_document(cfg)` per request — cache? |
-| MGT-1..11 | management surface (11 method-routes) | `extensions/management/mod.rs:274-427` | ☐ | ☐ | never shed — DoS surface? own AccessGuard |
+| SYS-1 | OPTIONS BP + OPTIONS / (manifest) | `api/system/options.rs:189`, `router.rs:186-187` | ✓ | ✓ | P-7 CLEAN (F-36): manifest Arc'd at wiring, zero-copy; unwraps test-only |
+| SYS-2 | GET RR/status, /health, RR/status/health | `overview/status.rs:37-60` | ✓ | ✓ | P-7 CLEAN (F-36): static, no IO |
+| SMT-1 | GET RR/.well-known/smart-configuration | `smart/discovery.rs:258` | ◐ | ✓ | P-7 → F-31 (rebuild per request, cache candidate) |
+| DOC-1 | openapi.json + 12 family docs + swagger UI (15 mounts) | `extensions/openapi.rs:209-488` | ◐ | ✓ | P-7 → **F-31** (full utoipa rebuild + deep clone per request; config-static) |
+| MGT-1..11 | management surface (11 method-routes) | `extensions/management/mod.rs:274-427` | ◐ | ◐ | P-7: health concurrent+bounded (clean); F-35 (public probes DB-ping, metrics re-render, guard-off-when-authn-off) |
 
 Unshed/unauthed surface note (probe M-6): status/health/SMART/docs/management
 sit outside both auth and the overload layer — verify none does unbounded work.
@@ -343,6 +343,17 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 | F-15 | Note: SM-level `AuthFailure` always → 403; no 401 route exists from the service layer (401 only from authn middleware). Matches "authenticated-but-unauthorized → 403" discipline — verify intent, then PORT-NOTE. | `overview/error.rs:71` | ☐ | ☐ |
 | F-16 | CLEAN: every other status mapping spec-correct (404/412/409/422/400/501 rows verified against `Requests_and_responses.md:218-235`); 408 for execution timeout is the SPEC'S OWN code (`:229` — 504/503 absent from the spec subset); Success/FileNotWritable/Exception→500 defensible. Unwrap sweep of the 7 worst-density files (negotiate, offload, bundle, object_version_id, contribution, authn, codec): **exactly one defect** (F-12); all other hits infallible/optional-header/server-data/test-only. | probe P-3 | n/a | note |
 | F-17 | **Instrument finding (tools/benchmark)**: error counting is asymmetric — successes are warmup-filtered, errors are counted unconditionally (`measure.rs:106-127`), slightly overstating error_rate; and "error" conflates server-side non-expected status with generator-side 2 s dependency-misses (`drive.rs:38,874-878`). Split server vs generator errors + warmup-filter both, or the W-14 close pair mis-attributes. | `tools/benchmark/src/{measure.rs,drive.rs}` | **S** (our instrument) | ☐ |
+
+### 4g. Public surface + middleware (probe P-7, 2026-07-16)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-31 | **OPT (cheap, certain): OpenAPI + SMART docs rebuilt per request though config-static.** `extensions_document(cfg)` re-runs the FULL utoipa reflection (all 8 groups + extensions + auth-walk) on every `openapi.json` hit, and each family doc additionally deep-clones the whole document then filters; SMART discovery rebuilds its document per GET. Both are pure functions of static config — build once at router assembly behind `Arc` (exactly as SYS-1's manifest already does). | `extensions/openapi.rs:209-212,356-455`, `smart/discovery.rs:112-273` | **S** (serving mechanics) | ☐ |
+| F-32 | **DEFECT: a FLAT/STRUCTURED payload that parses as JSON but fails `from_flat` conversion returns 500** (`flat_err` = Internal) — client data error surfaced as server fault. Belongs 400/422. | `formats/dispatch.rs:44-46,89` | ☐ ITS-REST/SDT triage: invalid payload → 4xx row | ☐ |
+| F-33 | **DEFECT: tenant resolution failure is silently unscoped** — `.ok().flatten()` swallows resolution ERRORS (DB down ≠ unknown tenant) and the request proceeds on the default tenant; unknown keys are never negatively cached, so a bogus tenant header = 1 DB query per request; plus the F-21 whole-map-clear herd (confirmed: unbounded, no TTL). Redesign the tenant seam: error → 5xx, unknown → explicit policy, negative cache, targeted invalidation. | `access/tenant.rs:52-60`, `tenancy.rs:164-193` | **S** (multi-tenancy is our extension — flag own-design; isolation failure mode must be explicit) | ☐ |
+| F-34 | DEFECT (minor, wire shape): CatchPanic emits a plain-text 500 and ATNA fail-closed emits a plain-text 503 — both bypass the openEHR error body every other path emits (shed 503 does it right). | `router.rs:150`, `system_log/middleware.rs:166-174` | ☐ F-14's body-shape decision governs both | ☐ |
+| F-35 | Note/OPT: `probes_enabled` mounts liveness/readiness with NO access layer — readiness runs the full indicator registry incl. DB ping unauthenticated; AccessGuard returns Ok for Private/AdminOnly when the authenticator is disabled (documented design — re-confirm intent); metrics list/detail re-render + re-parse the full exposition per call; ATNA on-path pre-allocates path/ip/timestamp before knowing the request is audited; negotiate helpers make several redundant owned header copies per request. | `management/mod.rs:181-185,468-495`, `metrics.rs:61-69`, `middleware.rs:102-104`, `negotiate.rs:140-232` | **S** | ☐ |
+| F-36 | CLEAN: metrics/span label cardinality safe (matched-route templates, never raw paths — the 8+10 "unwrap hits" in http_metrics/options are all test-only); body limit runs before auth; shed 503 = proper body + Retry-After, scope = API subtree (management never shed — own listener/guards instead); OPTIONS manifest built once behind Arc, zero-copy respond; health indicators run CONCURRENTLY with 1 s bound each; status endpoints static; negotiate single-parse (no double serde); FLAT input ladder statuses correct up to the F-32 seam. | probe P-7 | n/a | note |
 
 ### 4f. Remaining API families (probe P-5, 2026-07-16 — contribution, status, demographic, definition, tags, admin, ehr-create, subject lookup)
 
