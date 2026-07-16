@@ -10,8 +10,8 @@ paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scrip
 
 The public site — https://rubentalstra.github.io/ehrbase-rs/ — is built from
 `website/` by `.github/workflows/docs.yml` and deployed to GitHub Pages.
-Design authority: `docs/design/docs-website.md` (§2 layout/URLs, §3 look &
-feel, §4 content map).
+No openEHR spec governs the website — our own design; this rule is the
+authority for layout, look & feel, and content.
 
 ## Layout & URLs
 
@@ -37,8 +37,8 @@ The `/phase-done` checklist enforces it at phase close.
 
 - End-user voice: second person, task-first. Audiences are integrators,
   operators, and evaluators — never repo-internal.
-- **Never publish or link:** `docs/ADRs/**`, `docs/blueprint/**`,
-  `docs/plans/**`, `docs/PROGRESS.md`, `docs/specs/**`, `.claude/**`.
+- **Never publish or link:** `docs/ADRs/**`, `docs/plans/**`,
+  `docs/PROGRESS.md`, `docs/specs/**`, `.claude/**`.
   Paraphrase into user language instead.
 - Callouts: mdBook 0.5 native `> [!NOTE]` / `[!WARNING]` / `[!TIP]` (no
   plugin syntax). Diagrams: ```mermaid fenced blocks. Long chapters get
@@ -55,8 +55,7 @@ The `/phase-done` checklist enforces it at phase close.
 ## Toolchain
 
 Pinned in `docs.yml` `env` (mdBook, mdbook-mermaid, mdbook-toc, mdbook-lint,
-lychee, Swagger UI). Bump only after live-verifying the new version and
-update the pins + `docs/design/docs-website.md` §1 together.
+lychee, Swagger UI). Bump only after live-verifying the new version.
 
 ## Local preview
 
