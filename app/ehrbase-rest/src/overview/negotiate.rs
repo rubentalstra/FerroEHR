@@ -7,20 +7,20 @@
 //!
 //! - **JSON** is wired end to end for every operation (request and response).
 //! - **XML request bodies** are decoded for the RM-typed write paths: the bytes
-//!   are parsed into the concrete `openehr-rm` type and re-emitted as the
-//!   canonical JSON `Value` the trait expects, so a handler never sees the wire
-//!   format. See [`rm_value`].
+//! are parsed into the concrete `openehr-rm` type and re-emitted as the
+//! canonical JSON `Value` the trait expects, so a handler never sees the wire
+//! format. See [`rm_value`].
 //! - **XML responses** for the spec-typed RM objects are served by
-//!   [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
-//!   `Accept` the value is re-typed into its concrete `openehr-rm` type at the
-//!   response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
-//!   request path. This covers the single objects (composition, `ehr_status`,
-//!   ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
-//!   `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
-//!   (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates (F-05-06).
-//!   Responses that are genuinely not a spec-typed RM value (collections, item
-//!   tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
-//!   spec-defined canonical-XML shape and stay JSON-only via [`respond`].
+//! [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
+//! `Accept` the value is re-typed into its concrete `openehr-rm` type at the
+//! response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
+//! request path. This covers the single objects (composition, `ehr_status`,
+//! ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
+//! `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
+//! (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates.
+//! Responses that are genuinely not a spec-typed RM value (collections, item
+//! tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
+//! spec-defined canonical-XML shape and stay JSON-only via [`respond`].
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -348,7 +348,7 @@ pub(crate) fn empty_with_location(status: StatusCode, location: &str) -> Respons
     resp
 }
 
-// ── ITS-REST response-header + `Prefer` handling (W2-A) ─────────────────────
+// ── ITS-REST response-header + `Prefer` handling ─────────────────────
 //
 // The header-bearing EHR operations carry a [`ServiceResponse`] (RM payload +
 // typed [`ResourceMeta`]) out of the service seam; these helpers turn that into
@@ -1019,7 +1019,7 @@ mod tests {
             "composition",
         );
         assert_eq!(out.status(), StatusCode::CREATED);
-        // G-1: the ETag carries the mandatory weak `W/` indicator.
+        // the ETag carries the mandatory weak `W/` indicator.
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::1\""));
         // A create keeps `Location` (overview §Location: creation-only).
         assert_eq!(
@@ -1028,7 +1028,7 @@ mod tests {
         );
         // Minimal → no content-type body header.
         assert_eq!(content_type(&out), None);
-        // G-6: `Preference-Applied` echoes the honoured (default) preference.
+        // `Preference-Applied` echoes the honoured (default) preference.
         assert_eq!(preference_applied(&out).as_deref(), Some("return=minimal"));
     }
 
@@ -1063,7 +1063,7 @@ mod tests {
         let out = deleted_with_headers(BASE, Some("composition"), &resp);
         assert_eq!(out.status(), StatusCode::NO_CONTENT);
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::3\""));
-        // G-4: `Location` is deprecated from DELETE responses.
+        // `Location` is deprecated from DELETE responses.
         assert!(loc(&out).is_none());
     }
 
@@ -1096,7 +1096,7 @@ mod tests {
         );
         assert_eq!(out.status(), StatusCode::OK);
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::7\""));
-        // G-4: reads MUST NOT carry `Location` (overview §Location).
+        // reads MUST NOT carry `Location` (overview §Location).
         assert!(loc(&out).is_none());
     }
 

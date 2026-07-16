@@ -6,13 +6,13 @@
 //! once by the binary. This module owns the REST-adapter's slice of it:
 //!
 //! - [`ServerConfig`] — the `[server]` section (the HTTP listener + REST
-//!   surface + the `OPTIONS /` System-Options identity, §3.1).
+//! surface + the `OPTIONS /` System-Options identity, §3.1).
 //! - [`AppConfig`] — the adapter's runtime view, assembled by the binary (the
-//!   composition root) from the root config's `[server]`, `[auth]`, `[admin]`,
-//!   `[tenancy]`, `[smart]` sections plus the extension-group mount toggles.
-//!   `ehrbase-rest` cannot depend on the `ehrbase` binary crate that owns the
-//!   root config, so the binary supplies exactly what the adapter needs
-//!   (dependency inversion).
+//! composition root) from the root config's `[server]`, `[auth]`, `[admin]`,
+//! `[tenancy]`, `[smart]` sections plus the extension-group mount toggles.
+//! `ehrbase-rest` cannot depend on the `ehrbase` binary crate that owns the
+//! root config, so the binary supplies exactly what the adapter needs
+//! (dependency inversion).
 //!
 //! [`AdminConfig`] and [`TenancyConfig`] are `[admin]`/`[tenancy]` sections of
 //! the root tree that this crate owns and the root references.
@@ -161,7 +161,7 @@ pub struct SystemOptionsConfig {
 impl Default for SystemOptionsConfig {
     fn default() -> Self {
         Self {
-            // G-6: `solution` (the product) and `vendor` (the organisation) are
+            // `solution` (the product) and `vendor` (the organisation) are
             // distinct — they were the same placeholder before the redesign.
             solution: "EHRbase-RS".to_owned(),
             solution_version: env!("CARGO_PKG_VERSION").to_owned(),

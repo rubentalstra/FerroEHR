@@ -23,7 +23,7 @@ impl EhrbaseService {
     /// # Errors
     /// - `precondition_violation` (`400`) — `ehr_id` is not a well-formed UUID.
     /// - `versioned_object_does_not_exist` (`404`) — no EHR with that id
-    ///   (`has_ehr` false → `ehr_id_does_not_exist`).
+    /// (`has_ehr` false → `ehr_id_does_not_exist`).
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
         Ok(self.delete_ehr(super::parse_uuid(&ehr_id, "EHR")?).await?)
@@ -37,7 +37,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — any id in the list is malformed
-    ///   (the whole bulk request is rejected before any deletion runs).
+    /// (the whole bulk request is rejected before any deletion runs).
     /// - `exception` — a database fault while deleting.
     pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
         let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
@@ -49,10 +49,10 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - `precondition_violation` (`400`) — `a_party_id` is not a well-formed
-    ///   UUID.
+    /// UUID.
     /// - `versioned_object_does_not_exist` (`404`) — the id names no
-    ///   demographic PARTY root (`party_id_does_not_exist`; a
-    ///   `PARTY_RELATIONSHIP` or unknown id is also this failure).
+    /// demographic PARTY root (`party_id_does_not_exist`; a
+    /// `PARTY_RELATIONSHIP` or unknown id is also this failure).
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self

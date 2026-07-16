@@ -23,25 +23,25 @@
 //! ## Two rendering modes, chosen empirically per template
 //!
 //! * **`Flat` (constraint-aware).** The template's OPT builds a `WebTemplate`
-//!   and the skeleton round-trips through `to_flat`/`from_flat` *faithfully*
-//!   (same populated-leaf count, no new validation messages). The skeleton is
-//!   decomposed to a FLAT map, numeric/temporal leaves are jittered against
-//!   their web-template inputs, and `from_flat` reassembles the canonical
-//!   composition. The five CKM templates — the only compositions the measured
-//!   workload commits — are `/example`-generated and round-trip byte-identically,
-//!   so this is lossless for them.
+//! and the skeleton round-trips through `to_flat`/`from_flat` *faithfully*
+//! (same populated-leaf count, no new validation messages). The skeleton is
+//! decomposed to a FLAT map, numeric/temporal leaves are jittered against
+//! their web-template inputs, and `from_flat` reassembles the canonical
+//! composition. The five CKM templates — the only compositions the measured
+//! workload commits — are `/example`-generated and round-trip byte-identically,
+//! so this is lossless for them.
 //! * **`Raw` (structure-preserving).** For a template whose skeleton does *not*
-//!   round-trip faithfully through FLAT (the ECC-corpus fixtures are richer than
-//!   their compacted web-template — e.g. a persistent composition has no
-//!   `EVENT_CONTEXT` that `from_flat` would inject, and a deeply nested corpus
-//!   example carries content the compacted tree drops), the raw JSON is
-//!   preserved and only the composition-context times + composer name (the
-//!   unconstrained RM housekeeping the workload's ordering/attribution needs)
-//!   are stamped; no leaf value is jittered, so no constraint can be breached.
-//!   The corpus templates are **provisioning-only** — the measured workload
-//!   uploads their OPTs (E10) but never commits their compositions — so raw
-//!   variation is measurement-neutral and honest (it never distorts a payload
-//!   nor asserts a shape the fixture does not have).
+//! round-trip faithfully through FLAT (the ECC-corpus fixtures are richer than
+//! their compacted web-template — e.g. a persistent composition has no
+//! `EVENT_CONTEXT` that `from_flat` would inject, and a deeply nested corpus
+//! example carries content the compacted tree drops), the raw JSON is
+//! preserved and only the composition-context times + composer name (the
+//! unconstrained RM housekeeping the workload's ordering/attribution needs)
+//! are stamped; no leaf value is jittered, so no constraint can be breached.
+//! The corpus templates are **provisioning-only** — the measured workload
+//! uploads their OPTs (E10) but never commits their compositions — so raw
+//! variation is measurement-neutral and honest (it never distorts a payload
+//! nor asserts a shape the fixture does not have).
 //!
 //! CKM templates *must* render `Flat` (a CKM skeleton that failed to round-trip
 //! is a committed-payload defect and is a hard error, not silently downgraded).

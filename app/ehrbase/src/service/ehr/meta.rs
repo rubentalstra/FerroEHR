@@ -1,4 +1,4 @@
-//! Shared version-metadata helpers (G-9): the cross-cutting glue every
+//! Shared version-metadata helpers: the cross-cutting glue every
 //! versioned kind (`EHR_STATUS`, COMPOSITION, DIRECTORY) needs to turn a
 //! loaded [`VersionRead`] into a wire [`ServiceResponse`] + its
 //! [`ResourceMeta`], plus the default commit-audit builder.

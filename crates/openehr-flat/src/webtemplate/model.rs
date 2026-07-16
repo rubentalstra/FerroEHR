@@ -9,7 +9,7 @@
 //! marked `#[serde(skip)]` are build-time scratch (the full dedup id chain, the
 //! polymorphic alternate id, the cardinality RM path) and never serialized.
 //!
-//! Relationship to the vendored ITS-REST schema (F-10-04): the normative
+//! Relationship to the vendored ITS-REST schema: the normative
 //! `schemas/web_template/{WebTemplate,Tree,Child,Input,…}.yaml` describe a
 //! *subset* of the fuller Better 2.3 shape emitted here. The impl carries
 //! additive Better fields the ITS-REST schema does not list (`cardinalities`,
@@ -155,7 +155,7 @@ pub struct WebTemplateNode {
 
     /// AOM 1.4 `C_ATTRIBUTE.existence` constraints on this node's mandatory RM
     /// attributes — captured for the validation walk, **not** part of the Better
-    /// web-template JSON (F-07-04), so `#[serde(skip)]`.
+    /// web-template JSON, so `#[serde(skip)]`.
     #[serde(skip)]
     pub existence: Vec<WebTemplateExistence>,
 
@@ -203,7 +203,7 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub code_lists: Vec<WebTemplateCodeList>,
 
-    /// Closed-archetype constraints (F-07-05 + F-07-10): per
+    /// Closed-archetype constraints: per
     /// constrained attribute that carries archetype-node-identified alternatives
     /// and/or open `ARCHETYPE_SLOT`s, the admissible child identities. The walk
     /// rejects an instance child under such an attribute whose `archetype_node_id`

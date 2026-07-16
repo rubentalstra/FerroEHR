@@ -5,23 +5,23 @@
 //! register, `docs/design/its-rest/README.md`), one folder per spec area:
 //!
 //! - [`overview`] — the cross-cutting Overview protocol (content negotiation,
-//!   committal headers, resource identification, common params, the HTTP
-//!   status/error table); [`RestError`] renders the openEHR error body.
+//! committal headers, resource identification, common params, the HTTP
+//! status/error table); [`RestError`] renders the openEHR error body.
 //! - [`api`] — the resource APIs, one module per group (`ehr`, `query`,
-//!   `definition`, `demographic`, `admin`) implementing the generated
-//!   `openehr_its::rest` contract, plus the hand-written `system` API
-//!   (`OPTIONS /` conformance manifest). [`api::api_router`] is the hub over the
-//!   generated `ROUTES` tables.
+//! `definition`, `demographic`, `admin`) implementing the generated
+//! `openehr_its::rest` contract, plus the hand-written `system` API
+//! (`OPTIONS /` conformance manifest). [`api::api_router`] is the hub over the
+//! generated `ROUTES` tables.
 //! - [`formats`] — the Simplified Formats wire (FLAT / STRUCTURED media types).
 //! - [`smart`] — SMART App Launch (service discovery + scope enforcement),
-//!   config-gated, off by default.
+//! config-gated, off by default.
 //! - [`system_log`] — the SM System Log component at the wire (the IHE ATNA
-//!   audit middleware + operation classification).
+//! audit middleware + operation classification).
 //! - [`extensions`] — everything the specs do **not** govern, quarantined and
-//!   flagged: authentication + authorization ([`extensions::access`]),
-//!   management/observability, `OpenAPI` serving, terminology, eventing, FHIR, and
-//!   multi-tenancy — each config-gated so a stock server exposes only the
-//!   standardised ITS-REST surface.
+//! flagged: authentication + authorization ([`extensions::access`]),
+//! management/observability, `OpenAPI` serving, terminology, eventing, FHIR, and
+//! multi-tenancy — each config-gated so a stock server exposes only the
+//! standardised ITS-REST surface.
 //!
 //! [`router`] assembles these under the configured base path with the
 //! `tower-http` middleware stack. The adapter is generic over the platform

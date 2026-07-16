@@ -5,7 +5,7 @@
 //! `definition_query_version_get` / `definition_query_version_store.yaml`.
 //! Governing spec text:
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md` (G-2).
+//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! Queries route through the wire-shaped `DefinitionAdapter`
 //! (`query_list`/`query_version_get`/`query_store`) — the SM
@@ -46,7 +46,7 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 /// `PUT …/definition/query/{qualified_query_name}` — store/upsert a query
 /// (server-assigned SEMVER).
 ///
-/// G-2: the `query_type` query parameter (default `AQL`,
+/// the `query_type` query parameter (default `AQL`,
 /// `parameters/query/query_type.yaml`) is now read and threaded to the store —
 /// no longer silently dropped. The store persists the declared formalism and,
 /// per `QUERY_DESCRIPTOR.formalism` ("may be any other string value"), an
@@ -108,7 +108,7 @@ pub(super) async fn version_get(
 /// `PUT …/definition/query/{qualified_query_name}/{version}` — store a query at
 /// a specified SEMVER (stored verbatim); `409` on an existing `(name, version)`.
 ///
-/// G-2: as [`store`], the `query_type` parameter is read and threaded through.
+/// as [`store`], the `query_type` parameter is read and threaded through.
 pub(super) async fn version_store(
     state: &AppState,
     parts: &RequestParts,

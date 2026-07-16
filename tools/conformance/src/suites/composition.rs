@@ -7,18 +7,18 @@
 //! surface. The suite is authored from the schedule postconditions + the
 //! vendored ITS-REST contract, NOT from observed server behaviour:
 //!
-//! - **Content check (G-1).** master07 attaches "the retrieved format should
-//!   contain all the exact same data as the format used when committing" to
-//!   every `get_*` case. Realized as retrieved ⊇ committed
-//!   ([`Compare::Superset`]) — the server additionally assigns `uid` +
-//!   committal metadata, so "contain all the same data" is a superset test,
-//!   not exact equality. Applied over a JSON read (works for both JSON and XML
-//!   runs).
-//! - **Versioning postconditions (G-2).** `update` asserts the audit
-//!   `change_type` CREATE→MODIFY (TERM `SupportTerminology` `audit_change_type`:
-//!   249 creation, 251 modification); `delete` asserts the logical-delete
-//!   `VERSION.lifecycle_state = openehr::523|deleted|` (master07 §delete NOTE)
-//!   plus the ITS-REST 204/404 observable.
+//! - **Content check.** master07 attaches "the retrieved format should
+//! contain all the exact same data as the format used when committing" to
+//! every `get_*` case. Realized as retrieved ⊇ committed
+//! ([`Compare::Superset`]) — the server additionally assigns `uid` +
+//! committal metadata, so "contain all the same data" is a superset test,
+//! not exact equality. Applied over a JSON read (works for both JSON and XML
+//! runs).
+//! - **Versioning postconditions.** `update` asserts the audit
+//! `change_type` CREATE→MODIFY (TERM `SupportTerminology` `audit_change_type`:
+//! 249 creation, 251 modification); `delete` asserts the logical-delete
+//! `VERSION.lifecycle_state = openehr::523|deleted|` (master07 §delete NOTE)
+//! plus the ITS-REST 204/404 observable.
 //!
 //! Wire ids come ONLY from [`crate::wire`]; negative ids are built from an
 //! OBSERVED id via [`support::nonexistent_version_like`] — never a
@@ -692,7 +692,7 @@ fn assert_version_number(uid: &str, n: u32) -> Result<(), CaseError> {
     }
 }
 
-/// The master07 content check (G-1): the retrieved composition must CONTAIN
+/// The master07 content check: the retrieved composition must CONTAIN
 /// all the same data as the committed fixture. Realized as retrieved ⊇
 /// committed ([`Compare::Superset`]) — the server assigns `uid` + committal
 /// metadata, so "contain all the same data" is a superset test.

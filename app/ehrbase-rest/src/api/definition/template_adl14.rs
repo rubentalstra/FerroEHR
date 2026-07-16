@@ -3,7 +3,7 @@
 //! Operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):
 //! `definition_template_adl1.4_list` / `_upload` / `_get` / `_example_get`.
 //! Governing spec text: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md` (G-1/G-3/G-4/G-5).
+//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! The wire addresses OPTs by their `template_id` string; the SM `get_opt` is
 //! UUID-keyed, so retrieval runs through the `DefinitionAdapter` extension
@@ -34,7 +34,7 @@ use super::dispatch::list_filter_and_page;
 /// (version filter), `offset`, `fetch`
 /// (`operations/definition_template_adl1.4_list.yaml`); they are threaded to the
 /// adapter as a [`TemplateListFilter`](ehrbase::service::adapters::TemplateListFilter)
-/// + [`Page`](ehrbase::service::list::Page) (G-1).
+/// + [`Page`](ehrbase::service::list::Page).
 pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
@@ -82,8 +82,8 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
 ///
 /// Negotiates the `200_Template_adl1_4_retrieved` representations
 /// (`application/xml` canonical OPT + the `application/openehr.wt+json` web
-/// template EHRbase-compatible extension), sets the mandated `ETag` (G-4), and
-/// returns `406` for an `Accept` outside `Accept_Template` (G-5). An unknown
+/// template EHRbase-compatible extension), sets the mandated `ETag`, and
+/// returns `406` for an `Accept` outside `Accept_Template`. An unknown
 /// template → `404` (checked first, before negotiation).
 pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;

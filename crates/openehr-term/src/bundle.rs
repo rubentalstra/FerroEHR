@@ -8,7 +8,7 @@
 //! `include_str!` (no runtime file I/O) and parsed once into the generated TERM
 //! data model ([`Terminology`], [`CodeSet`], [`TerminologyGroup`], …) plus
 //! lookup indexes, cached in a [`LazyLock`]. The parsed bundle drives openEHR
-//! coded-value validation for the composition validator (P15): the RM-mandated
+//! coded-value validation for the composition validator: the RM-mandated
 //! terminology groups (`composition_category`, `null_flavours`, `setting`,
 //! instruction states/transitions, participation function/mode, attestation
 //! reason, version lifecycle state, …), the external code sets (ISO country /

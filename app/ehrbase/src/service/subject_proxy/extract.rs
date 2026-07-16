@@ -8,12 +8,12 @@
 //! realization:
 //!
 //! - `OPENEHR_SAMPLE` (a `RESULT_SET`): `frame_path` is a **column selector**
-//!   matched against a column `name`; `"col @ timecol"` pairs the column with
-//!   a time column to yield `VARIABLE_VALUE_TIME_SERIES`. Without a time
-//!   pairing: 0 rows ⇒ `SINGLE{None}`, 1 row ⇒ `SINGLE`, many ⇒ `LIST`.
+//! matched against a column `name`; `"col @ timecol"` pairs the column with
+//! a time column to yield `VARIABLE_VALUE_TIME_SERIES`. Without a time
+//! pairing: 0 rows ⇒ `SINGLE{None}`, 1 row ⇒ `SINGLE`, many ⇒ `LIST`.
 //! - `HL7_FHIR_SAMPLE`: `frame_path` is a JSON pointer into the resource
-//!   (RFC 6901; a bare name is shorthand for `/name`). A JSON-array target
-//!   becomes `LIST`.
+//! (RFC 6901; a bare name is shorthand for `/name`). A JSON-array target
+//! becomes `LIST`.
 //! - A non-existent selector fails closed to `SINGLE{None}`.
 //!
 //! The variable's declared `type_name` is enforced: every extracted scalar is

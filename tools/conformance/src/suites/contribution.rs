@@ -250,10 +250,10 @@ pub fn entries() -> Vec<CaseEntry> {
             run_get_bad_contribution,
         ),
         // ── has_contribution (master08 §G) — SM boolean realized as GET
-        //    /contribution/{uid} (200 has / 404 not); the false/error trichotomy
-        //    collapses to 200/404 by the CNF guide element-2 mapping (register 05
-        //    G-7). The native ehrbase-sm surface keeps the distinction; the wire
-        //    runner must NOT "fix" a 404 into a 200-false.
+        // /contribution/{uid} (200 has / 404 not); the false/error trichotomy
+        // collapses to 200/404 by the CNF guide element-2 mapping (register 05
+        // G-7). The native ehrbase-sm surface keeps the distinction; the wire
+        // runner must NOT "fix" a 404 into a 200-false.
         get_case(
             "ctb/has-contribution-existing",
             "Contribution existence check — existing",
@@ -286,7 +286,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Compare::None,
             run_get_empty_ehr,
         ),
-        // ── list_contributions (master08 §F) — no ITS-REST binding → skip (D2) ─
+        // ── list_contributions (master08 §F) — no ITS-REST binding → skip ─
         skip_case(
             "ctb/list-contributions-empty",
             "List contributions — empty",

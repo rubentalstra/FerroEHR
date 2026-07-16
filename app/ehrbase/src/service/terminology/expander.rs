@@ -19,7 +19,7 @@ use super::bundle;
 
 /// The `service_api` identifier for the in-process openEHR terminology bundle.
 ///
-/// PORT NOTE (B4): master03 §TERMINOLOGY's `service_api` examples are all
+/// PORT NOTE: master03 §TERMINOLOGY's `service_api` examples are all
 /// *external* servers (FHIR, Ocean, Better, Apelon) and the spec defines it as
 /// "an identifier for the kind/flavour of terminology service" with an
 /// implementation-defined value set — there is no standard identifier for a

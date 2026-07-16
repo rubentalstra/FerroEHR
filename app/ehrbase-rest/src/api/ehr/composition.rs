@@ -71,7 +71,7 @@ pub(super) async fn run(
                 .await
                 .map_err(|e| RestError::from(ApiError::from(e)))?
                 .version_uid();
-            // G-4: apply the openehr-item-tag / openehr-version-item-tag
+            // apply the openehr-item-tag / openehr-version-item-tag
             // write-wrapper headers to the committed COMPOSITION
             // (Requests_and_responses.md §…§Usage in Requests).
             let stored_tags =
@@ -179,7 +179,7 @@ pub(super) async fn run(
                 .map(|c| c.version_uid())
             {
                 Ok(new_uid) => {
-                    // G-4: apply item-tag write-wrapper headers to the new version.
+                    // apply item-tag write-wrapper headers to the new version.
                     let stored_tags =
                         super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &new_uid, h)
                             .await?;

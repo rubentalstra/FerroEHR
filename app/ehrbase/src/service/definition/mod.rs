@@ -5,19 +5,19 @@
 //! concrete `EhrbaseService` catalog methods:
 //!
 //! - [`adl14`] — `I_DEFINITION_ADL14` (`i_definition_adl14.adoc`): ADL 1.4
-//!   source archetypes (keyed by `ARCHETYPE_ID`) + OPTs (keyed by `UUID`).
-//! - [`adl2`]  — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
-//!   (keyed by `ARCHETYPE_HRID`).
+//! source archetypes (keyed by `ARCHETYPE_ID`) + OPTs (keyed by `UUID`).
+//! - [`adl2`] — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
+//! (keyed by `ARCHETYPE_HRID`).
 //! - [`query`] — `I_DEFINITION_QUERY` (`i_definition_query.adoc`) +
-//!   `QUERY_DESCRIPTOR` + the stored-query CRUD. DEFINITION *owns* query
-//!   registration (`master04` §Registered Queries); the Query service only
-//!   resolves + executes it, so the stored-query store folds in here.
-//! - [`wire`]  — the ITS-REST wire-shaped extension methods (rich
-//!   template/query shapes the SM interfaces do not express). Their route
-//!   wiring is the ITS-REST layer's concern; behaviour rides on the SM logic
-//!   in the sibling files.
+//! `QUERY_DESCRIPTOR` + the stored-query CRUD. DEFINITION *owns* query
+//! registration (`master04` §Registered Queries); the Query service only
+//! resolves + executes it, so the stored-query store folds in here.
+//! - [`wire`] — the ITS-REST wire-shaped extension methods (rich
+//! template/query shapes the SM interfaces do not express). Their route
+//! wiring is the ITS-REST layer's concern; behaviour rides on the SM logic
+//! in the sibling files.
 //! - [`types`] — the shared data shapes ([`types::TemplateListFilter`],
-//!   [`types::QueryDescriptor`]) the REST adapter consumes.
+//! [`types::QueryDescriptor`]) the REST adapter consumes.
 //!
 //! PORT NOTE (interchange form): the SM `I_DEFINITION_*` signatures take/return
 //! AOM object types (`ARCHETYPE`, `AUTHORED_ARCHETYPE`). openEHR publishes no
@@ -72,7 +72,7 @@ pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
 /// Compile an id-pattern regex; an uncompilable pattern is `invalid_id_pattern`
 /// (`400`).
 ///
-/// PORT NOTE (G-05-11): the SM spells these "PERL regular expression"; the
+/// PORT NOTE: the SM spells these "PERL regular expression"; the
 /// `regex` crate is RE2-class, so PERL backreferences / lookaround are
 /// unsupported — a pattern using them fails to compile and surfaces as
 /// `invalid_id_pattern`, the correct SM outcome for an unusable pattern (a

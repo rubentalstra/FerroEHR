@@ -16,7 +16,7 @@ pub struct SpecVersions {
     /// The openEHR Reference Model version (e.g. `"1.2.0"`).
     pub rm: String,
     /// The tested ITS-REST contract identity (e.g. `"development@e8a093e"`),
-    /// derived from the vendored `-codegen` OAS provenance (D1), not the
+    /// derived from the vendored `-codegen` OAS provenance, not the
     /// released spec-text version.
     pub its_rest: String,
     /// The AQL (QUERY) specification version (e.g. `"1.1.0"`).
@@ -29,7 +29,7 @@ impl SpecVersions {
     /// The latest published set — the only set supported today (pins in
     /// `docs/VERSIONS.md`).
     ///
-    /// `its_rest` is **not** a hand-asserted literal (D1): it is derived from
+    /// `its_rest` is **not** a hand-asserted literal: it is derived from
     /// the vendored `-codegen` OAS provenance
     /// ([`crate::model::provenance::tested_its_rest`]) so the report claims exactly the
     /// ITS-REST contract the SUT implements — `development@<commit>`, not

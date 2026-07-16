@@ -1,7 +1,7 @@
 //! End-to-end service tests against a real PostgreSQL 18 (testcontainers):
 //! the EHR / EHR_STATUS / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
 //! including versioning, optimistic concurrency, time-travel, and logical
-//! delete — driven through the `EhrService` envelope seam (W2-A) exactly as the
+//! delete — driven through the `EhrService` envelope seam exactly as the
 //! REST layer calls it, asserting both the RM payload (`.body`) and the resource
 //! metadata (`.meta`, from which the HTTP edge derives `ETag`/`Location`).
 #![allow(
@@ -152,7 +152,7 @@ fn composition(name: &str) -> Value {
 /// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
 /// code (`openehr::9999` is not in the `composition_category` group) — used to
 /// prove templateless compositions still get RM/terminology validation
-/// (F-07-01/F-07-02). Every other mandatory attribute is valid, so the category
+///. Every other mandatory attribute is valid, so the category
 /// code is the only defect.
 fn composition_with_bad_category() -> Value {
     let mut c = composition("Bad category");
@@ -246,7 +246,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .expect("status reactivate");
     assert!(status_v3_uid.ends_with("::3"));
 
-    // A specific EHR_STATUS version reads as the BARE EHR_STATUS (F-01-03), not
+    // A specific EHR_STATUS version reads as the BARE EHR_STATUS, not
     // an ORIGINAL_VERSION wrapper.
     let sp: Vec<&str> = status_ovid_v1.split("::").collect();
     let status_by_v = svc
@@ -370,7 +370,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         deleted.ends_with("::3"),
         "delete names the new (deleted) version, got {deleted}"
     );
-    // A deleted read is NOT an error/500 — it yields Null (→ 204) (F-02-01).
+    // A deleted read is NOT an error/500 — it yields Null (→ 204).
     let after_delete = svc
         .get_composition_latest(ehr_uuid, comp_vo_uuid)
         .await
@@ -852,7 +852,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
 
 #[tokio::test]
 async fn templateless_composition_still_gets_rm_and_terminology_validation() {
-    // F-07-02: a COMPOSITION without a declared template_id must still fail on
+    // a COMPOSITION without a declared template_id must still fail on
     // RM-invariant / RM-terminology violations (here: an invalid category code),
     // and a valid templateless composition must still commit.
     let pg = Pg::start().await;
@@ -876,7 +876,7 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
 
 #[tokio::test]
 async fn contribution_rejects_an_invalid_composition() {
-    // F-07-01: the CONTRIBUTION commit path must run composition validation and
+    // the CONTRIBUTION commit path must run composition validation and
     // reject the whole contribution atomically.
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
@@ -1006,7 +1006,7 @@ async fn stored_query_crud() {
 
 #[tokio::test]
 async fn stored_query_semver_prefix_resolves_to_latest_match() {
-    // F-03-07: `parameters/path/version.yaml` — a partial `{major}` or
+    // `parameters/path/version.yaml` — a partial `{major}` or
     // `{major}.{minor}` version resolves to the HIGHEST stored version
     // matching the prefix.
     let pg = Pg::start().await;
@@ -1059,7 +1059,7 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
 
 #[tokio::test]
 async fn stored_query_list_matches_name_prefix() {
-    // F-03-08: `definition_query_list.yaml` — the qualified name is a PATTERN:
+    // `definition_query_list.yaml` — the qualified name is a PATTERN:
     // `org.openehr` "will list all versions of all queries with names starting
     // with `org.openehr`"; empty ⇒ wildcard.
     let pg = Pg::start().await;
@@ -1152,7 +1152,7 @@ async fn item_tag_crud() {
 
 #[tokio::test]
 async fn item_tag_wire_shape_matches_the_oas_schema() {
-    // F-03-06: the ITEM_TAG wire shape is the OAS `ItemTag` schema
+    // the ITEM_TAG wire shape is the OAS `ItemTag` schema
     // (`additionalProperties: false`): key/value/target_path plus
     // OBJECT_REF-shaped `target` and `owner_id`; no `id`, no `target_type`.
     let pg = Pg::start().await;
@@ -1203,7 +1203,7 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
 
 #[tokio::test]
 async fn item_tag_put_replaces_the_whole_collection() {
-    // F-03-05: PUT "updates the list of ALL ITEM_TAG resources … providing an
+    // PUT "updates the list of ALL ITEM_TAG resources … providing an
     // empty list will effectively remove all ITEM_TAG" — a full replace, not an
     // additive upsert.
     let pg = Pg::start().await;
@@ -1278,7 +1278,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
 
 #[tokio::test]
 async fn ehr_creation_produces_an_ehr_access() {
-    // F-06-07: RM ehr § "EHR Creation" — creating an EHR yields a root EHR
+    // RM ehr § "EHR Creation" — creating an EHR yields a root EHR
     // object, an EHR_STATUS AND an EHR_ACCESS; `EHR.ehr_access` (1..1) is an
     // OBJECT_REF whose type is VERSIONED_EHR_ACCESS (invariant Ehr_access_valid).
     let pg = Pg::start().await;
@@ -1303,7 +1303,7 @@ async fn ehr_creation_produces_an_ehr_access() {
 
 #[tokio::test]
 async fn duplicate_subject_ehr_creation_conflicts() {
-    // F-01-04: ITS-REST `409_EHR.yaml` + CNF master06
+    // ITS-REST `409_EHR.yaml` + CNF master06
     // `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient` — a second EHR for the
     // same subject (external_ref id + namespace) must be rejected.
     let pg = Pg::start().await;
@@ -1936,15 +1936,15 @@ async fn directory_versioned_and_has_version() {
 /// to be identical to what a fresh read yields.
 ///
 /// - Fix E: the EHR create representation is assembled from the commit `Committed`
-///   rows (`ehr_created_object`, from the create-time stash) and MUST be
-///   byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
+/// rows (`ehr_created_object`, from the create-time stash) and MUST be
+/// byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
 /// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
-///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
-///   master06 §Committal: the written version identity).
+/// (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
+/// master06 §Committal: the written version identity).
 /// - Item 34: the EHR_STATUS update response `OBJECT_VERSION_ID`
-///   (`committed_response`, replacing the discarded post-commit reassembly) MUST
-///   equal a fresh read's `uid`, and the mutation MUST persist (the folded
-///   subject/is_queryable sync rides the write's UPDATE).
+/// (`committed_response`, replacing the discarded post-commit reassembly) MUST
+/// equal a fresh read's `uid`, and the mutation MUST persist (the folded
+/// subject/is_queryable sync rides the write's UPDATE).
 #[tokio::test]
 async fn write_responses_match_a_fresh_read() {
     let pg = Pg::start().await;

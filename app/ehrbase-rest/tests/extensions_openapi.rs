@@ -182,7 +182,7 @@ async fn every_family_document_is_non_empty() {
 
 // ── Test 4: the once-built served document equals a fresh extensions_document ─
 
-/// F-31: the `OpenAPI` document is built once at router assembly and served as
+/// the `OpenAPI` document is built once at router assembly and served as
 /// pre-serialized bytes. The served bytes must be byte-for-byte the same
 /// document `extensions_document(cfg)` produces fresh — the optimization is a
 /// pure serving-mechanics change, no content change.

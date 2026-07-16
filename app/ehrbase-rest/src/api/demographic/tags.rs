@@ -42,7 +42,7 @@ pub(super) async fn run(
                 .backend()
                 .party_tags_update(kind, p.uid_based_id, body)
                 .await?;
-            // G-4: person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
+            // person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
             // with the tag list on `Prefer: return=representation`; 204
             // (204_updated) when `Prefer` is missing or `return=minimal`.
             if negotiate::prefers_representation(h) {

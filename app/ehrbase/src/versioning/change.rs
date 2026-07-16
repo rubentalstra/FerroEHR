@@ -88,7 +88,7 @@ impl Committed {
 /// `version_lifecycle_state` (master06 §Version Lifecycle); `None` defaults to
 /// `532|complete|`. `523|deleted|` is reserved to [`Change::Delete`]. Its
 /// legality against the preceding version's state is checked in [`apply_change`]
-/// (G-01).
+///.
 pub(crate) enum Change {
     /// Create a new versioned object.
     Create {
@@ -163,7 +163,7 @@ struct PrecedingTip {
     tree: TreeId,
     creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
-    /// transition (G-01).
+    /// transition.
     lifecycle_state: String,
     /// Whether the tip is still open (`upper_inf(sys_period)`).
     open: bool,
@@ -209,13 +209,13 @@ struct NextVersion {
 /// §Version tree / §Distributed Versioning):
 ///
 /// - the preceding version is the current TRUNK tip when `expected` is absent,
-///   or exactly the version `expected` names (trunk or branch) — which must be
-///   an open lineage tip, else `VersionConflict`;
+/// or exactly the version `expected` names (trunk or branch) — which must be
+/// an open lineage tip, else `VersionConflict`;
 /// - a preceding version created by THIS system is continued on its lineage
-///   (trunk `N` → `N+1`; branch `t.b.v` → `t.b.v+1`), superseding it;
+/// (trunk `N` → `N+1`; branch `t.b.v` → `t.b.v+1`), superseding it;
 /// - a preceding version created by ANOTHER system (an imported copy) FORKS a
-///   new branch `t.(max_branch+1).1` (master06 §Subsequent Local
-///   Modifications) — the preceding version stays valid.
+/// new branch `t.(max_branch+1).1` (master06 §Subsequent Local
+/// Modifications) — the preceding version stays valid.
 ///
 /// Same-system detection is case-insensitive on `creating_system_id`
 /// (composite-identifier equality, G-09; BASE master05 §Composite Identifiers
@@ -223,9 +223,9 @@ struct NextVersion {
 ///
 /// # Errors
 /// - [`ServiceError::NotFound`] when the object does not exist, or its stored
-///   owner/kind do not match the addressed `(ehr_id, kind)`;
+/// owner/kind do not match the addressed `(ehr_id, kind)`;
 /// - [`ServiceError::VersionConflict`] when `expected` names a version that
-///   does not exist or has been superseded (a closed lineage tip).
+/// does not exist or has been superseded (a closed lineage tip).
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -360,7 +360,7 @@ struct ResolvedWrite {
 /// resolve one [`Change`] to its version-tree placement + content and commit it
 /// under the supplied [`ContributionCtx`], signing the assembled
 /// `ORIGINAL_VERSION` (RM common master06 §Digital Signature) and rejecting an
-/// illegal lifecycle transition (G-01). Returns the [`Committed`] outcome and the
+/// illegal lifecycle transition. Returns the [`Committed`] outcome and the
 /// enclosing `contribution_id` (for the caller's event-outbox envelope).
 ///
 /// The cross-area pre/post-commit hooks the legacy path ran inline here now
@@ -368,12 +368,12 @@ struct ResolvedWrite {
 /// orchestration ([`crate::versioning::CommitEnv`], called from
 /// [`super::contribution::commit_version_set`]) and by the direct write paths:
 /// - `CommitEnv::pre_composition_modify` — the `VERSIONED_COMPOSITION`
-///   cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
-///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify (G-13);
+/// cross-version invariants (`Archetype_node_id_valid` / `Persistent_validity`,
+/// RM ehr `versioned_composition.adoc`), before a COMPOSITION modify;
 /// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
-///   after an `EHR_STATUS` version;
+/// after an `EHR_STATUS` version;
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
-///   concern, not a storage write.
+/// concern, not a storage write.
 ///
 /// # Errors
 /// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on
@@ -410,7 +410,7 @@ async fn apply_change(
                     .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
-            // G-01: a first version can only be `complete`/`incomplete`.
+            // a first version can only be `complete`/`incomplete`.
             validate_transition(None, &lifecycle)?;
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
@@ -455,7 +455,7 @@ async fn apply_change(
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             let rows = decompose(canonical)?;
             let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
-            // G-01: the transition from the preceding version's state must be
+            // the transition from the preceding version's state must be
             // legal (master06 §Version Lifecycle state machine).
             validate_transition(Some(&next.preceding_lifecycle), &lifecycle)?;
             ResolvedWrite {
@@ -828,11 +828,11 @@ pub(crate) async fn delete(
 /// master06 §Committal and Audits — "similar to nested transactions", S-17).
 /// `contribution_audit` is the CONTRIBUTION's own audit; each change carries its
 /// VERSION `commit_audit`. `attests` are `666|attestation|` items — new
-/// `ATTESTATION`s attached to **existing** versions (S-25), committed in the
+/// `ATTESTATION`s attached to **existing** versions, committed in the
 /// same transaction but adding no new version.
 ///
 /// master06 §Committal (m4): a version item that omits `committer`/`system_id`
-/// inherits them from the CONTRIBUTION audit (S-21) — realized by the callers
+/// inherits them from the CONTRIBUTION audit — realized by the callers
 /// building each version `AuditInput`; the attestation committer likewise
 /// defaults to the CONTRIBUTION committer here.
 ///

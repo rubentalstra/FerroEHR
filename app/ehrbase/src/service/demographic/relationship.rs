@@ -9,15 +9,15 @@
 //! PORT NOTEs on the SM spec asymmetries this module normalizes to the PARTY
 //! pattern (register `docs/design/platform/04-service-demographic-ehr-index.md`):
 //! - `i_party_relationship.adoc` gives **no** `has_party_relationship`
-//!   precondition on `get_party_relationship`, yet lists a
-//!   `versioned_object_does_not_exist` error — we treat an unknown id as `404`,
-//!   the same has-check the PARTY get performs, so the two demographic families
-//!   behave identically.
+//! precondition on `get_party_relationship`, yet lists a
+//! `versioned_object_does_not_exist` error — we treat an unknown id as `404`,
+//! the same has-check the PARTY get performs, so the two demographic families
+//! behave identically.
 //! - `update_party_relationship` retains the SM's `definitions_valid`
-//!   precondition (structural validity of the new version) rather than the
-//!   PARTY's `valid_content`; both reduce to the same structural check here
-//!   (`validate::validate_relationship_body`), so the normalization is
-//!   behaviour-preserving.
+//! precondition (structural validity of the new version) rather than the
+//! PARTY's `valid_content`; both reduce to the same structural check here
+//! (`validate::validate_relationship_body`), so the normalization is
+//! behaviour-preserving.
 
 use serde_json::Value;
 use uuid::Uuid;

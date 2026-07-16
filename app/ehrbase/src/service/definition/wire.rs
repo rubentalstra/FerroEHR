@@ -27,9 +27,9 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Unparseable / structurally invalid OPT XML → `invalid_template`
-    ///   (`422`).
+    /// (`422`).
     /// - A template with the same `template_id` already stored → conflict
-    ///   (`409`).
+    /// (`409`).
     /// - A database failure (`exception` → `500`).
     pub async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
         Ok(self.store_template(&opt_xml).await?)
@@ -75,9 +75,9 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - An out-of-enum `detail_level` or `kind` value →
-    ///   `precondition_violation` (`400`).
+    /// `precondition_violation` (`400`).
     /// - No template with that `template_id` → `template_does_not_exist`
-    ///   (`404`).
+    /// (`404`).
     /// - A database failure (`exception` → `500`).
     pub async fn template_adl14_example(
         &self,
@@ -96,7 +96,7 @@ impl EhrbaseService {
     /// dispatcher builds `Location` + the `Prefer` body from it
     /// (`201_Template_adl2_upload`).
     ///
-    /// PORT NOTE (G-05-12): duplicate handling diverges by surface. The REST
+    /// PORT NOTE: duplicate handling diverges by surface. The REST
     /// contract declares `409_template_already_exists` on this endpoint
     /// (`definition-codegen.openapi.yaml` /definition/template/adl2 POST),
     /// while the SM native `upload_artefact` says "replace it"
@@ -106,10 +106,10 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Source failing the registration validator →
-    ///   `precondition_violation` (`400`) on the pre-check, or
-    ///   `invalid_artefact` (`422`) from the store path.
+    /// `precondition_violation` (`400`) on the pre-check, or
+    /// `invalid_artefact` (`422`) from the store path.
     /// - An ADL2 artefact with the same HRID already stored → conflict
-    ///   (`409`).
+    /// (`409`).
     /// - A database failure (`exception` → `500`).
     pub async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
         let meta = crate::validation::validate_adl2_source(&source)
@@ -153,7 +153,7 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - A row-decode failure on a `NOT NULL` column (a genuine server fault)
-    ///   → `exception` (`500`).
+    /// → `exception` (`500`).
     /// - A database failure (`exception` → `500`).
     pub async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
         Ok(self.list_stored_queries(&qualified_query_name).await?)
@@ -194,7 +194,7 @@ impl EhrbaseService {
     /// - A non-AQL `query_type` → `precondition_violation` (`400`).
     /// - A body that fails the AQL parse → `precondition_violation` (`400`).
     /// - With an explicit `version`, an already-existing `(name, version)`
-    ///   pair → conflict (`409`, `409_StoredQuery_version.yaml`).
+    /// pair → conflict (`409`, `409_StoredQuery_version.yaml`).
     /// - A database failure (`exception` → `500`).
     pub async fn query_store(
         &self,

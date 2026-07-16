@@ -67,7 +67,7 @@ pub(super) async fn run(
             // (representation); ETag + Location on both. 412 → latest version_uid.
             match state.backend().update_directory(ehr_id, uv).await {
                 Ok(uid) => {
-                    // G-4: apply item-tag write-wrapper headers to the new version.
+                    // apply item-tag write-wrapper headers to the new version.
                     let stored_tags =
                         super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &uid, h).await?;
                     let repr = if negotiate::prefers_representation(h) {
@@ -122,7 +122,7 @@ pub(super) async fn run(
                 None,
             );
             let uid = state.backend().create_directory(ehr_id, uv).await?;
-            // G-4: apply item-tag write-wrapper headers to the committed FOLDER.
+            // apply item-tag write-wrapper headers to the committed FOLDER.
             let stored_tags =
                 super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &uid, h).await?;
             let repr = if negotiate::prefers_representation(h) {

@@ -42,7 +42,7 @@ pub(super) async fn run(
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
             // (overview::error::sm_api_error) — `?` routes each to its status.
             let mut resp = state.backend().party_create(kind, body).await?;
-            // G-3: the incoming `openehr-item-tag` request header (person_create.yaml)
+            // the incoming `openehr-item-tag` request header (person_create.yaml)
             // carries ITEM_TAGs to persist. The party must exist first
             // (`item_tag.target_vo_id` FK), so tags are persisted after the create
             // and the stored set is reflected on the response metadata seam.
@@ -81,7 +81,7 @@ pub(super) async fn run(
                 .await
             {
                 Ok(mut resp) => {
-                    // G-3: persist any `openehr-item-tag` request-header tags
+                    // persist any `openehr-item-tag` request-header tags
                     // against the updated party and reflect the stored set on the
                     // response metadata (person_update.yaml).
                     persist_request_tags(&state, kind, h, &mut resp).await?;
@@ -153,7 +153,7 @@ async fn persist_request_tags(
 /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` +
 /// `ETag`/`Location` of the deleted version.
 ///
-/// G-2: `person_delete.yaml` places the `preceding_version_uid` to delete in the
+/// `person_delete.yaml` places the `preceding_version_uid` to delete in the
 /// **path** (`uid_based_id_as_version_uid` — an `OBJECT_VERSION_ID`), not in an
 /// `If-Match` header. Responses: `204_version_deleted`, `400_already_deleted`,
 /// `404`, `409_PERSON_with_uid_based_id` (supplied uid doesn't match the latest

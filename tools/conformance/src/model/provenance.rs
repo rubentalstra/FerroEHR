@@ -1,4 +1,4 @@
-//! Vendored ITS-REST provenance — the *tested* contract identity (D1).
+//! Vendored ITS-REST provenance — the *tested* contract identity.
 //!
 //! The framework must claim exactly the ITS-REST contract it actually tests.
 //! The SUT implements the contract generated (`emit-rest`) from the
@@ -101,7 +101,7 @@ pub fn docs_its_rest() -> Option<&'static Provenance> {
 
 /// The tested ITS-REST identity string for `SpecVersions.its_rest` and the
 /// report header — derived from the vendored `-codegen` OAS provenance, never a
-/// hand-asserted literal (D1). openEHR publishes `master` as its unreleased
+/// hand-asserted literal. openEHR publishes `master` as its unreleased
 /// *development* line (the bundles self-stamp `info.version: latest`), so the
 /// identity is `development@<short-commit>`. Falls back to `development@unknown`
 /// only if the vendored provenance is unparseable — a state the guard test fails
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn tested_identity_is_derived_from_provenance_not_a_literal() {
-        // The report must claim exactly the pinned OAS commit (D1). The identity
+        // The report must claim exactly the pinned OAS commit. The identity
         // must be the derived `development@<commit>`, never a bare `1.0.3`.
         let id = tested_its_rest();
         assert_ne!(id, "1.0.3", "its_rest must not be a hand-asserted literal");
@@ -152,7 +152,7 @@ mod tests {
         );
     }
 
-    /// The reconciliation guard the owner asked for (D1): the two vendored
+    /// The reconciliation guard the owner asked for: the two vendored
     /// ITS-REST trees must reference the same upstream repo, and either be the
     /// same commit (fully reconciled) or the sanctioned "development OAS +
     /// released spec-text" arrangement. Any other divergence fails with a

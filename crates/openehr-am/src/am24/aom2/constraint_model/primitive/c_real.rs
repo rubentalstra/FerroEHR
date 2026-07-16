@@ -23,7 +23,7 @@ pub struct CReal {
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
     pub occurrences: Option<MultiplicityInterval>,
-    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
+    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
     ///

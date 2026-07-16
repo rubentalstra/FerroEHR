@@ -4,10 +4,10 @@
 //! packages, driven by [`openehr_its::opt14`] instead of Better's `AmNode` tree:
 //!
 //! 1. **build** a node per constraint object (rm type, node id, aql path,
-//!    occurrences, rubric names, term bindings), giving `DATA_VALUE/PARTY` leaves
-//!    their `inputs` and running the per-rm post-processors;
+//! occurrences, rubric names, term bindings), giving `DATA_VALUE/PARTY` leaves
+//! their `inputs` and running the per-rm post-processors;
 //! 2. **compact** the tree (Medium compactor: hoist `ITEM_*`/`HISTORY`/single
-//!    `EVENT`; promote an `ELEMENT/DATA_VALUE` single child; drop empties);
+//! `EVENT`; promote an `ELEMENT/DATA_VALUE` single child; drop empties);
 //! 3. **assign ids** (see [`super::id`]).
 //!
 //! Deliberate shape boundaries of the builder (design decisions, not omissions).
@@ -16,23 +16,23 @@
 //! here, and is instead completed and enforced where it is authoritative:
 //!
 //! * **RM-mandatory attributes the OPT leaves unconstrained** are not injected as
-//!   web-template nodes. The FLAT/TDD composition builders fill the RM-mandatory
-//!   structural fields on `RM ← FLAT/TDD` (`flat::graph::fill_structural_mandatory`,
-//!   driven by the same `openehr_rm::model` attribute model), and composition
-//!   validation enforces existence/occurrences (`crate::validation`) — so the
-//!   produced COMPOSITION is RM-valid without the builder duplicating that
-//!   structure. Governing cardinalities: openEHR RM `common`/`composition`/
-//!   `data_structures`.
+//! web-template nodes. The FLAT/TDD composition builders fill the RM-mandatory
+//! structural fields on `RM ← FLAT/TDD` (`flat::graph::fill_structural_mandatory`,
+//! driven by the same `openehr_rm::model` attribute model), and composition
+//! validation enforces existence/occurrences (`crate::validation`) — so the
+//! produced COMPOSITION is RM-valid without the builder duplicating that
+//! structure. Governing cardinalities: openEHR RM `common`/`composition`/
+//! `data_structures`.
 //! * **`ISM_TRANSITION`/careflow-step synthesis**: `ACTION.ism_transition` is
-//!   RM-mandatory (`RM ehr §ACTION`) and is materialised downstream by the
-//!   composition builders, not expanded into careflow nodes in the tree.
+//! RM-mandatory (`RM ehr §ACTION`) and is materialised downstream by the
+//! composition builders, not expanded into careflow nodes in the tree.
 //! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
-//!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
-//!   expansion (matching Better, the interop oracle).
+//! constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
+//! expansion (matching Better, the interop oracle).
 //! * **Archetype internal-reference (`use_node`) target resolution**: an internal
-//!   reference is emitted as its own node rather than resolved to its target
-//!   subtree; full ADL/AOM reference resolution is part of the ADL2 work track
-//!   (WORKLIST `W-4`), not the OPT 1.4 web-template shape.
+//! reference is emitted as its own node rather than resolved to its target
+//! subtree; full ADL/AOM reference resolution is part of the ADL2 work track
+//! (WORKLIST `W-4`), not the OPT 1.4 web-template shape.
 //!
 //! Node- and coded-value-level external `termBindings` and the multiple-coded-text
 //! compaction are wired.
@@ -385,7 +385,7 @@ fn build_children(
     node.card_all = all_cardinalities(co, &node.aql_path);
     // Existence is captured only for structural (attribute-recursing) nodes; a
     // DATA_VALUE leaf's constraints (`magnitude`, `is_integral`, `value`, …) are
-    // handled by `inputs`/leaf checks, not attribute navigation (F-07-04).
+    // handled by `inputs`/leaf checks, not attribute navigation.
     if recurse_attrs {
         node.existence = existence_constraints(co, &node.aql_path);
         node.closed_attributes = closed_attributes(co, &node.aql_path);
@@ -528,7 +528,7 @@ fn get_compacted(children: Vec<WebTemplateNode>, parent: &mut Hoisted) -> Vec<We
             // A hoisted wrapper's existence/cardinality constraints (on its own
             // attributes, e.g. HISTORY.events) reference absolute archetype
             // paths, so they stay valid when re-homed on the parent — the walk
-            // still enforces them (F-07-04).
+            // still enforces them.
             parent
                 .existence
                 .append(&mut std::mem::take(&mut child.existence));
@@ -787,12 +787,12 @@ fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinalit
 /// carry, onto the node's validation-only fields:
 ///
 /// - `C_INTEGER.list` / `C_REAL.list` on a numeric datum (`magnitude`, `value`)
-///   → [`WebTemplateNode::numeric_lists`] (AOM 1.4 §`C_INTEGER/§C_REAL`);
+/// → [`WebTemplateNode::numeric_lists`] (AOM 1.4 §`C_INTEGER/§C_REAL`);
 /// - `C_DURATION.range` on `value` → [`WebTemplateNode::duration_range`]
-///   (AOM 1.4 §`C_DURATION`);
+/// (AOM 1.4 §`C_DURATION`);
 /// - `C_CODE_PHRASE` code lists on coded attributes other than
-///   `defining_code` (e.g. `DV_MULTIMEDIA.media_type`) →
-///   [`WebTemplateNode::code_lists`] (AOM 1.4 §`C_CODE_PHRASE`).
+/// `defining_code` (e.g. `DV_MULTIMEDIA.media_type`) →
+/// [`WebTemplateNode::code_lists`] (AOM 1.4 §`C_CODE_PHRASE`).
 fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     for datum in ["magnitude", "value", "numerator", "denominator"] {
         match inputs::primitive_under(co, datum) {
@@ -875,7 +875,7 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
 
 /// Capture the AOM 1.4 `C_ATTRIBUTE.existence` constraints for the mandatory,
 /// plain (non-archetype-node-identified) single-valued RM attributes of `co`,
-/// keyed by their absolute archetype path (F-07-04).
+/// keyed by their absolute archetype path.
 ///
 /// Scope: only `C_SINGLE_ATTRIBUTE`s with an existence lower bound `>= 1` whose
 /// constraint children carry **no** `node_id`. Archetype-node-identified children

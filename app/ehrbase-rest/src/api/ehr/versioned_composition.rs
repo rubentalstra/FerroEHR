@@ -41,7 +41,7 @@ pub(super) async fn run(
                 .backend()
                 .get_versioned_composition(ehr_id, vo_id)
                 .await?;
-            // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06).
+            // VERSIONED_OBJECT container — canonical JSON or XML.
             Ok(negotiate::respond_rm::<VersionedComposition>(
                 h,
                 ok,
@@ -76,7 +76,7 @@ pub(super) async fn run(
                 .composition_version_at_time(ehr_id, vo_id, p.version_at_time)
                 .await?;
             let resp = super::read_resp(&p.ehr_id, body);
-            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML (F-05-06).
+            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.
             Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
                 h,
                 &base,

@@ -1,4 +1,4 @@
-//! IR → SQL lowering (P16). Turns a typed [`QueryIr`] into one `SELECT` over the
+//! IR → SQL lowering. Turns a typed [`QueryIr`] into one `SELECT` over the
 //! greenfield `node`/`vo_version`/`ehr`/`audit` store, built entirely with
 //! `sea-query`'s **typed** expression API + `sea-query-sqlx` — no
 //! string-concatenated SQL (`.claude/rules/sqlx-conventions.md`). Every
@@ -155,7 +155,7 @@ enum ValueMode {
     /// A coerced scalar for comparison / ordering / aggregation.
     Value(Coercion),
     /// A NULL-guarded numeric extraction for a mixed-type (`Raw`) leaf compared
-    /// or matched against a numeric literal (G-12).
+    /// or matched against a numeric literal.
     RawNumeric,
 }
 

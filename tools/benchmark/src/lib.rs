@@ -1,11 +1,10 @@
 //! The hospital-day stress instrument.
 //!
-//! Implements the pre-registered workload of
-//! `docs/design/benchmark/00-workload-model.md` and the measurement set of
-//! `docs/design/benchmark/01-measurement.md`, on the fairness methodology of
-//! `docs/design/benchmarking.md` (identical client via the conformance
-//! transport, coordinated-omission correction, symmetric warmup, published
-//! raw data, "where the other side wins").
+//! Implements a pre-registered clinical workload and a fixed measurement set
+//! under a fairness methodology: an identical client for both SUTs (via the
+//! conformance transport), coordinated-omission correction, symmetric warmup,
+//! published raw data, and an explicit "where the other side wins" account.
+//! No openEHR spec governs this — it is our own design.
 //!
 //! Shape: a deterministic generator ([`model`]) turns a ward of patients and
 //! a clinical day into an **open-loop arrival schedule** of [`PlannedOp`]s;

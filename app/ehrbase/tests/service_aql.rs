@@ -950,12 +950,12 @@ async fn executed_aql_substitutes_bound_parameters() {
 ///
 /// Asserts only what the schema requires:
 /// * `rows` is present and an array — the sole `required` field of
-///   `docs/specs/openehr/ITS-REST/specifications/schemas/query/ResultSet.yaml`.
+/// `docs/specs/openehr/ITS-REST/specifications/schemas/query/ResultSet.yaml`.
 /// * every `columns[]` entry carries a `name` — the sole `required` field of
-///   `schemas/query/ResultSetColumn.yaml`.
+/// `schemas/query/ResultSetColumn.yaml`.
 /// * each row is an array whose length equals the number of columns —
-///   `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
-///   RESULT_SET row, one cell for each column."
+/// `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
+/// RESULT_SET row, one cell for each column."
 #[tokio::test]
 async fn result_set_carries_the_its_rest_shape() {
     let pg = Pg::start().await;
@@ -1335,7 +1335,7 @@ async fn dashboard_context_start_ordering_and_uid() {
     );
 }
 
-/// The AQL plan cache (P20) is transparent: a repeated query text reuses the
+/// The AQL plan cache is transparent: a repeated query text reuses the
 /// lowered plan (a cache hit) yet returns byte-identical results, and the
 /// per-request parameter values + paging window still bind correctly on top of
 /// the shared plan. No openEHR spec governs the cache — our own performance

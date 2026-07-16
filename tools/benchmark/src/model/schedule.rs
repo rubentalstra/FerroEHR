@@ -1,6 +1,7 @@
-//! The open-loop arrival schedule (`docs/design/benchmark/00-workload-model.md`
-//! §1/§3): a deterministic, seeded expansion of the ward + event catalogue into
-//! a time-ordered list of [`PlannedOp`]s with pre-rendered payloads.
+//! The open-loop arrival schedule: a deterministic, seeded expansion of the
+//! ward + event catalogue into a time-ordered list of [`PlannedOp`]s with
+//! pre-rendered payloads (our own workload-model design; no openEHR spec
+//! governs it).
 //!
 //! Discipline enforced here:
 //! - **Determinism.** A single seeded [`StdRng`] is drawn in a fixed order

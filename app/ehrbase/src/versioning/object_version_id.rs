@@ -118,7 +118,7 @@ pub(crate) fn object_version_id(vo_id: Uuid, creating_system_id: &str, tree: Tre
     format!("{vo_id}::{creating_system_id}::{tree}")
 }
 
-/// Composite-identifier equality (G-09): case-insensitive comparison of a
+/// Composite-identifier equality: case-insensitive comparison of a
 /// `creating_system_id` (BASE `base_types` master05 §"Composite Identifiers and
 /// Case": composite identifiers are "case-preserving" **and** "case-insensitive
 /// — two identifiers identical apart from case … identify the same thing").
@@ -416,7 +416,7 @@ mod tests {
         ));
     }
 
-    /// G-09: composite-identifier equality is case-insensitive
+    /// composite-identifier equality is case-insensitive
     /// (BASE `base_types` master05 §"Composite Identifiers and Case").
     #[test]
     fn composite_identifier_equality_is_case_insensitive() {

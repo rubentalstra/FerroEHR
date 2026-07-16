@@ -4,32 +4,32 @@
 //!
 //! Faithfulness notes:
 //! - AQL keywords are **case-insensitive** (the grammar builds them from
-//!   case-insensitive letter fragments), so each keyword uses
-//!   `ignore(case)`.
+//! case-insensitive letter fragments), so each keyword uses
+//! `ignore(case)`.
 //! - The grammar's grouped function-id tokens (`STRING_FUNCTION_ID`,
-//!   `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID`) are **not** pre-grouped
-//!   here: names like `length`/`abs`/`now` lex as [`Token::Identifier`] and the
-//!   parser classifies a `name(args)` call. Structurally-distinct calls
-//!   (aggregates, `terminology(...)`) keep dedicated keyword tokens because
-//!   their argument grammar differs.
+//! `NUMERIC_FUNCTION_ID`, `DATE_TIME_FUNCTION_ID`) are **not** pre-grouped
+//! here: names like `length`/`abs`/`now` lex as [`Token::Identifier`] and the
+//! parser classifies a `name(args)` call. Structurally-distinct calls
+//! (aggregates, `terminology(...)`) keep dedicated keyword tokens because
+//! their argument grammar differs.
 //! - `// PORT NOTE:` quoted temporal literals (`DATE`/`TIME`/`DATETIME` in the
-//!   grammar) are lexed as [`Token::String`]; typing them as temporals is a
-//!   later semantic concern (the parser accepts a string where a primitive is
-//!   expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
-//!   priority tangle. Per the QUERY spec §Dates and Times NOTE, the *typing*
-//!   of a quoted value as a date/time is resolved from the identified-path
-//!   context in the semantic pass, not from the literal — so an untyped
-//!   `Token::String` is the faithful carrier here. (F-08-06: all temporal
-//!   literals are indistinguishable from strings at this layer by design.)
-//! - `// PORT NOTE:` (F-08-05) the grammar's single-row function-id groups
-//!   (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
-//!   `length`, `abs`, `now`, …) are **not** reserved here: they lex as
-//!   [`Token::Identifier`] and the parser classifies a `name(args)` call
-//!   (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
-//!   name). This makes the accepted set a *superset* of the grammar (it never
-//!   rejects valid AQL; it additionally tolerates these words as identifiers).
-//!   a superset accept-envelope is the sanctioned direction; the
-//!   reserved-word restriction is a semantic concern, not a syntax one.
+//! grammar) are lexed as [`Token::String`]; typing them as temporals is a
+//! later semantic concern (the parser accepts a string where a primitive is
+//! expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
+//! priority tangle. Per the QUERY spec §Dates and Times NOTE, the *typing*
+//! of a quoted value as a date/time is resolved from the identified-path
+//! context in the semantic pass, not from the literal — so an untyped
+//! `Token::String` is the faithful carrier here. (F-08-06: all temporal
+//! literals are indistinguishable from strings at this layer by design.)
+//! - `// PORT NOTE:` the grammar's single-row function-id groups
+//! (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
+//! `length`, `abs`, `now`, …) are **not** reserved here: they lex as
+//! [`Token::Identifier`] and the parser classifies a `name(args)` call
+//! (`AqlParser.g4 functionCall` explicitly also admits a bare `IDENTIFIER`
+//! name). This makes the accepted set a *superset* of the grammar (it never
+//! rejects valid AQL; it additionally tolerates these words as identifiers).
+//! a superset accept-envelope is the sanctioned direction; the
+//! reserved-word restriction is a semantic concern, not a syntax one.
 
 use logos::Logos;
 
@@ -173,7 +173,7 @@ pub enum Token {
     ///
     /// Per `AqlLexer.g4` `COMMENT`, `--` introduces a line comment on a hidden
     /// channel when it is followed by a space (`-- text`) or immediately by an
-    /// end-of-line/EOF (bare `--\n` / `--<EOF>`); the callback (F-08-04) skips
+    /// end-of-line/EOF (bare `--\n` / `--<EOF>`); the callback skips
     /// those, consuming to end of line. Only the rare `--` immediately followed
     /// by a non-space, non-newline char (e.g. `--foo`, two minus signs) is
     /// emitted as this token — matching ANTLR's `SYM_DOUBLE_DASH` fallback.
@@ -208,7 +208,7 @@ pub enum Token {
     // `ISO_639-1::en`. Per `AqlLexer.g4` `TERM_CODE`, every code segment is
     // `TERM_CODE_CHAR+` where `TERM_CODE_CHAR = NAME_CHAR | '.'` and
     // `NAME_CHAR = WORD_CHAR | '-'` — so hyphens are legal in both the
-    // terminology id and the code (F-08-01). A `::` is still required, so a
+    // terminology id and the code. A `::` is still required, so a
     // bare subtraction like `a-b` (no `::`) is unaffected.
     #[regex(
         r"[a-zA-Z0-9._\-]+(\([a-zA-Z0-9._\-]+\))?::[a-zA-Z0-9._\-]+(\|[^|\[\]]+\|)?",
@@ -250,7 +250,7 @@ pub enum Token {
     Identifier(String),
 }
 
-/// Callback for the `--` token implementing `AqlLexer.g4` `COMMENT` (F-08-04).
+/// Callback for the `--` token implementing `AqlLexer.g4` `COMMENT`.
 ///
 /// The grammar treats `--` as a line comment (hidden channel, i.e. skipped)
 /// when it is followed by a space and text, or immediately by end-of-line/EOF.
@@ -406,7 +406,7 @@ mod tests {
 
     #[test]
     fn hyphenated_term_codes_lex_as_one_token() {
-        // F-08-01: TERM_CODE_CHAR includes '-' (via NAME_CHAR), so hyphenated
+        // TERM_CODE_CHAR includes '-' (via NAME_CHAR), so hyphenated
         // terminology ids lex as a single TERM_CODE, not `id Minus code`.
         assert_eq!(
             toks("SNOMED-CT::1234"),
@@ -451,7 +451,7 @@ mod tests {
 
     #[test]
     fn archetype_hrid_version_suffixes_and_namespace_hyphen() {
-        // F-08-07: `VERSION_ID` `-rc`/`-alpha` pre-release suffixes and a
+        // `VERSION_ID` `-rc`/`-alpha` pre-release suffixes and a
         // hyphenated namespace both lex as a single ARCHETYPE_HRID.
         assert_eq!(
             toks("openEHR-EHR-OBSERVATION.blood_pressure.v1.0.0-rc.2"),
@@ -475,7 +475,7 @@ mod tests {
 
     #[test]
     fn line_comments_are_skipped() {
-        // F-08-04: `-- text` to end of line is a comment (skipped).
+        // `-- text` to end of line is a comment (skipped).
         assert_eq!(
             toks("SELECT c -- trailing comment\nFROM COMPOSITION c"),
             vec![
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn utf_bom_is_skipped() {
-        // F-08-13: a leading BOM is skipped, not a lex error.
+        // a leading BOM is skipped, not a lex error.
         assert_eq!(toks("\u{feff}SELECT"), vec![Token::Select]);
     }
 

@@ -4,7 +4,7 @@
 //! Spec: BASE 1.3.0
 //! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.uid_based_id.adoc`.
 //! Lexical form: `root '::' extension`.
-//! - `root()`  — the part left of the first `::`, or the whole string.
+//! - `root()` — the part left of the first `::`, or the whole string.
 //! - `extension()` — the part right of the first `::`, or the empty string.
 //! - `has_extension()` — `not extension.is_empty()`.
 //!

@@ -8,15 +8,15 @@
 //! without running the `valid_value` cascade:
 //!
 //! - **`Rm_attribute_name_valid`** / **`Existence_set`** (`C_ATTRIBUTE`) and
-//!   **`Members_valid`** (`C_SINGLE_ATTRIBUTE`).
+//! **`Members_valid`** (`C_SINGLE_ATTRIBUTE`).
 //! - **VARID / VARDT** — archetype-identifier syntax + the RM type / id type
-//!   slot match (master08 lines 544/556).
+//! slot match (master08 lines 544/556).
 //! - **VDFAI** — a slot-referenced archetype id is well-formed (master08 573).
 //! - **`Target_path_valid`** — an `ARCHETYPE_INTERNAL_REF` target path.
 //! - **VACDF** — a `CONSTRAINT_REF` ac-code is defined (master08 566).
 //! - **STCDC** — a terminology-code list has no duplicate codes
-//!   (`ADL2/master04.6-cadl_validity_rules.adoc` STCDC; the same defect in an
-//!   OPT 1.4 `C_CODE_PHRASE` list).
+//! (`ADL2/master04.6-cadl_validity_rules.adoc` STCDC; the same defect in an
+//! OPT 1.4 `C_CODE_PHRASE` list).
 
 use std::collections::HashSet;
 
@@ -135,12 +135,12 @@ pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Vio
 /// fixtures, which all conform strictly):
 ///
 /// - the version may be multi-part numeric (`v1.0.0`) — the ADL2-era archetype
-///   HRID form appears in deployed OPT 1.4 exports (the vendored
-///   `Request_for_Pancreas_Special_Urgency_Listing` corpus template);
+/// HRID form appears in deployed OPT 1.4 exports (the vendored
+/// `Request_for_Pancreas_Special_Urgency_Listing` corpus template);
 /// - PORT NOTE: concept segments tolerate `(`/`)` and digit-leading segments —
-///   Ocean/LANIT tooling emits concept names like
-///   `t_neurologist_examination(1-17)_lanit` (vendored Better corpus); the
-///   strict grammar would refuse real-world templates.
+/// Ocean/LANIT tooling emits concept names like
+/// `t_neurologist_examination(1-17)_lanit` (vendored Better corpus); the
+/// strict grammar would refuse real-world templates.
 fn is_archetype_id_shaped(id: &str) -> bool {
     fn alphanum_str(s: &str) -> bool {
         let mut chars = s.chars();

@@ -289,7 +289,7 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
         // Types/Dates and Times).
         ValueMode::Value(Coercion::Temporal) => cast(as_text(base), "timestamptz"),
         ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
-        // G-12: a mixed-type (`Raw`) leaf being compared/matched against a
+        // a mixed-type (`Raw`) leaf being compared/matched against a
         // numeric literal — extract numerically, but guard on the stored jsonb
         // type so a non-number occurrence yields NULL (comparison false) instead
         // of a cast error. "numeric for numbers, text otherwise" (QUERY master03

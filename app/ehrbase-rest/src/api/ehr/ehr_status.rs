@@ -42,7 +42,7 @@ pub(super) async fn run(
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
-            // F-01-03: the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
+            // the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
@@ -88,7 +88,7 @@ pub(super) async fn run(
             // (representation); ETag + Location on both. 412 → latest version_uid.
             match state.backend().replace_ehr_status(ehr_id, uv).await {
                 Ok(uid) => {
-                    // G-4: apply the openehr-item-tag / openehr-version-item-tag
+                    // apply the openehr-item-tag / openehr-version-item-tag
                     // write-wrapper headers to the committed target
                     // (Requests_and_responses.md §…§Usage in Requests).
                     let stored_tags =

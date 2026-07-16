@@ -34,7 +34,7 @@ pub fn is_structure_type(rm_type: &str) -> bool {
 
 /// Whether an RM `_type` may be the **root** of a versioned object handed to
 /// [`crate::storage::codec::decompose`]. This is [`is_structure_type`] plus
-/// `PARTY_RELATIONSHIP` (SM-3): a relationship is a standalone versioned object
+/// `PARTY_RELATIONSHIP`: a relationship is a standalone versioned object
 /// with its own `node`/`vo_version` rows, yet it is deliberately **not** a
 /// structure type for child-pruning purposes — a `PARTY_RELATIONSHIP` nested
 /// inside a party's `relationships` attribute must stay inline. Splitting the

@@ -23,7 +23,7 @@ pub struct ArchetypeSlot {
     /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
     pub occurrences: Option<MultiplicityInterval>,
-    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
+    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
     ///
@@ -34,9 +34,9 @@ pub struct ArchetypeSlot {
     pub is_deprecated: Option<bool>,
     /// Optional indicator of order of this node with respect to another sibling. Only meaningful in a specialised archetype for a `C_OBJECT` within a `C_ATTRIBUTE` with `_is_multiple_ = True`.
     pub sibling_order: Option<SiblingOrder>,
-    /// List of constraints defining other archetypes that could be included at this point. Represented as an `ASSERTION` containing an expression of the form  `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
+    /// List of constraints defining other archetypes that could be included at this point. Represented as an `ASSERTION` containing an expression of the form `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
     pub includes: Vec<Assertion>,
-    /// List of constraints defining other archetypes that cannot be included at this point. Represented as an `ASSERTION` containing an expression of the form  `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
+    /// List of constraints defining other archetypes that cannot be included at this point. Represented as an `ASSERTION` containing an expression of the form `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`.
     pub excludes: Vec<Assertion>,
     /// True if this slot specification in this artefact is closed to further filling either in further specialisations or at runtime. Default value False, i.e. unless explicitly set, a slot remains open.
     pub is_closed: bool,

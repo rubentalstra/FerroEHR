@@ -9,13 +9,13 @@
 //!
 //! Two spec-blessed modes, both first-class:
 //! - **digest** — `sha256:` + radix-64(SHA-256(canonical_form)): a
-//!   data-integrity check that needs no key management. master07 §Digital
-//!   Signature: "the encryption step might be omitted, resulting in a digest
-//!   only", i.e. a pure integrity check (S-42). The default.
+//! data-integrity check that needs no key management. master07 §Digital
+//! Signature: "the encryption step might be omitted, resulting in a digest
+//! only", i.e. a pure integrity check. The default.
 //! - **pgp** — an `OpenPGP` RFC 4880 detached signature (rPGP), ASCII-armored,
-//!   with a server-held private key: authentication + non-repudiation
-//!   (master06 §Digital Signature: the signature "is generated according to the
-//!   openPGP standard (IETF RFC 4880)", S-41).
+//! with a server-held private key: authentication + non-repudiation
+//! (master06 §Digital Signature: the signature "is generated according to the
+//! openPGP standard (IETF RFC 4880)", S-41).
 //!
 //! The bytes signed are the `VERSION.canonical_form()` produced by `openehr-rm`
 //! (canonical openEHR JSON per RFC 8785, signature attribute Void during

@@ -55,7 +55,7 @@ fn ident<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 }
 
 /// Strip the surrounding quotes from a lexed string literal and unescape it per
-/// `AqlLexer.g4` `ESCAPE_SEQ` / `OCTAL_ESC` / `UTF8CHAR` (F-08-09), so the AST
+/// `AqlLexer.g4` `ESCAPE_SEQ` / `OCTAL_ESC` / `UTF8CHAR`, so the AST
 /// carries the decoded value that predicate matching / `LIKE` / `terminology()`
 /// operands compare against — not the raw escaped source text.
 fn unquote(s: &str) -> String {
@@ -156,8 +156,8 @@ enum NumKind {
 
 /// Convert a lexed numeric to a [`Primitive`], returning `None` on overflow so
 /// the parser surfaces a hard error instead of silently coercing to `0`/`inf`
-/// (F-08-03). `SCI_INTEGER` retains its integer-ness when the magnitude is
-/// integral and fits `i64`, else degrades to `Real` (F-08-11).
+///. `SCI_INTEGER` retains its integer-ness when the magnitude is
+/// integral and fits `i64`, else degrades to `Real`.
 fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
     match kind {
         NumKind::Int => s.parse::<i64>().ok().map(Primitive::Integer),
@@ -182,7 +182,7 @@ fn parse_number(kind: NumKind, s: &str) -> Option<Primitive> {
 
 fn primitive<'a>() -> impl Parser<'a, &'a [Token], Primitive, Err<'a>> + Clone {
     // A single unsigned numeric literal; overflow is a hard parse error, not a
-    // silent `0`/`inf` (F-08-03).
+    // silent `0`/`inf`.
     let unsigned = select! {
         Token::Integer(s) => (NumKind::Int, s),
         Token::Real(s) => (NumKind::Real, s),
@@ -191,7 +191,7 @@ fn primitive<'a>() -> impl Parser<'a, &'a [Token], Primitive, Err<'a>> + Clone {
     }
     .try_map(|(kind, s), span| parse_number(kind, &s).ok_or_else(|| Simple::new(None, span)));
     // numericPrimitive : … | SYM_MINUS numericPrimitive — the minus recurses,
-    // so `- - 5` is accepted (F-08-08). Zero leading minuses folds to the bare
+    // so `- - 5` is accepted. Zero leading minuses folds to the bare
     // unsigned literal.
     let signed = just(Token::Minus)
         .repeated()
@@ -252,8 +252,8 @@ fn path_parsers<'a>() -> (
         .or(parameter().map(ArchetypePredicate::Parameter));
 
     // nodePredicate : node/archetype code (+optional name) | parameter |
-    //   objectPath MATCHES CONTAINED_REGEX | standardPredicate |
-    //   nodePredicate (AND|OR) nodePredicate. AND binds tighter than OR.
+    // objectPath MATCHES CONTAINED_REGEX | standardPredicate |
+    // nodePredicate (AND|OR) nodePredicate. AND binds tighter than OR.
     let name_constraint = select! {
         Token::String(s) => NodeNameConstraint::String(unquote(&s)),
         Token::TermCode(s) => NodeNameConstraint::TermCode(s),
@@ -296,7 +296,7 @@ fn path_parsers<'a>() -> (
 
     // pathPredicate : '[' (standardPredicate | archetypePredicate | nodePredicate) ']'
     //
-    // The grammar's three-way classification is honoured here (F-08-10). A
+    // The grammar's three-way classification is honoured here. A
     // bare comparison (`[ehr_id/value='123']`) is *both* a standardPredicate
     // and a nodePredicate in the grammar; ANTLR lists `standardPredicate`
     // first, so a lone comparison classifies as `PathPredicate::Standard`. A
@@ -455,7 +455,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     let select_expr = column
         .then(just(Token::As).ignore_then(ident()).or_not())
         .map(|(column, alias)| SelectExpr { column, alias });
-    // top (deprecated). Overflow is a parse error, not a silent `0` (F-08-03).
+    // top (deprecated). Overflow is a parse error, not a silent `0`.
     let top_count = select! { Token::Integer(s) => s }
         .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
     let top = just(Token::Top)
@@ -624,7 +624,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         )
         .map(|(path, order)| OrderByExpr { path, order });
     // LIMIT/OFFSET counts; overflow is a parse error, not a silent `0`
-    // (F-08-03).
+    //.
     let int = select! { Token::Integer(s) => s }
         .try_map(|s: String, span| s.parse::<i64>().map_err(|_| Simple::new(None, span)));
     let limit = just(Token::Limit)
@@ -633,7 +633,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
         .map(|(limit, offset)| Limit { limit, offset });
 
     // selectQuery : selectClause fromClause whereClause? orderByClause?
-    //               limitClause? '--'? EOF
+    // limitClause? '--'? EOF
     //
     // NOTE: no TIMEWINDOW clause — AQL 1.1 removed it (SPECQUERY-20); a query
     // using it is invalid and fails to parse, which is the conformant outcome.
@@ -756,7 +756,7 @@ mod tests {
 
     #[test]
     fn where_boolean_precedence() {
-        // a AND b OR c  ⇒  Or(And(a,b), c)
+        // a AND b OR c ⇒ Or(And(a,b), c)
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1 AND c/y = 2 OR c/z = 3")
             .expect("parse");
         assert!(matches!(q.where_, Some(WhereExpr::Or(_, _))));
@@ -764,7 +764,7 @@ mod tests {
 
     #[test]
     fn not_binds_tighter_than_and() {
-        // NOT a AND b  ⇒  And(Not(a), b)  — not Not(And(a,b))
+        // NOT a AND b ⇒ And(Not(a), b) — not Not(And(a,b))
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE NOT EXISTS c/x AND EXISTS c/y")
             .expect("parse");
         match q.where_ {
@@ -841,7 +841,7 @@ mod tests {
 
     #[test]
     fn version_standard_predicate_parses() {
-        // F-08-02: the third versionPredicate alternative (standardPredicate).
+        // the third versionPredicate alternative (standardPredicate).
         let q = parse_str("SELECT c FROM VERSION v[commit_audit/time_committed > '2020-01-01']")
             .expect("parse");
         match q.from {

@@ -18,44 +18,44 @@
 //! # Bundle mapping (design decisions, each documented as a PORT NOTE)
 //!
 //! - **Terminologies.** The primary terminology id is **`"openehr"`** — the
-//!   internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s).
-//!   The bundle's four **external** code sets (ISO 639-1 languages,
-//!   ISO 3166-1 countries, IANA character sets, IANA media types) are
-//!   additionally exposed as separate terminologies, each addressed by its
-//!   `external_id` (`"ISO_639-1"`, …) — `get_terminology_ids` lists
-//!   `"openehr"` + those four.
+//! internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s).
+//! The bundle's four **external** code sets (ISO 639-1 languages,
+//! ISO 3166-1 countries, IANA character sets, IANA media types) are
+//! additionally exposed as separate terminologies, each addressed by its
+//! `external_id` (`"ISO_639-1"`, …) — `get_terminology_ids` lists
+//! `"openehr"` + those four.
 //! - **Terms vs value sets (PORT NOTE).** openEHR terminology codes are
-//!   *group-scoped* (code `532` is `complete` in `version_lifecycle_state`
-//!   but `completed` in `instruction_states` — SPECPR-51). The code-only
-//!   `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a
-//!   term is any concept id present in **any** group, and `get_term` returns
-//!   the first matching group's rubric. Group-scoped access is the province
-//!   of the **value-set** calls (`value_set_id` = the group). This is the
-//!   faithful split for the two SM call families over a group-partitioned
-//!   vocabulary.
+//! *group-scoped* (code `532` is `complete` in `version_lifecycle_state`
+//! but `completed` in `instruction_states` — SPECPR-51). The code-only
+//! `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a
+//! term is any concept id present in **any** group, and `get_term` returns
+//! the first matching group's rubric. Group-scoped access is the province
+//! of the **value-set** calls (`value_set_id` = the group). This is the
+//! faithful split for the two SM call families over a group-partitioned
+//! vocabulary.
 //! - **Value sets.** For `"openehr"`, a `value_set_code` resolves (in order)
-//!   to an internal group by `openehr_id`, a group by display name, or an
-//!   internal code set by `openehr_id`. For an external terminology, the
-//!   code set is its own single value set (addressed by its id).
-//!   `value_set_validate` is set membership.
+//! to an internal group by `openehr_id`, a group by display name, or an
+//! internal code set by `openehr_id`. For an external terminology, the
+//! code set is its own single value set (addressed by its id).
+//! `value_set_validate` is set membership.
 //! - **`subsumes` (PORT NOTE).** The openEHR vocabulary is flat (no
-//!   subsumption hierarchy), so `subsumes` answers identity only — and,
-//!   being **strict** (`i_terminology_service.adoc` `subsumes`), even the
-//!   identity case is `false`. Hierarchical subsumption is the FHIR
-//!   provider's `$subsumes`.
+//! subsumption hierarchy), so `subsumes` answers identity only — and,
+//! being **strict** (`i_terminology_service.adoc` `subsumes`), even the
+//! identity case is `false`. Hierarchical subsumption is the FHIR
+//! provider's `$subsumes`.
 //! - **`at_date` (PORT NOTE — G-1 bundle side).** The bundle is a single
-//!   pinned version (TERM 3.1.0), so `at_date` never changes the answer
-//!   here; the temporal parameter is threaded to (and honoured by) the FHIR
-//!   provider.
+//! pinned version (TERM 3.1.0), so `at_date` never changes the answer
+//! here; the temporal parameter is threaded to (and honoured by) the FHIR
+//! provider.
 //! - **`attributes` (PORT NOTE — G-3 bundle side).** No meta-model
-//!   attributes are defined for the openEHR bundle
-//!   (`Terminology_description.attributes` is `None`), so the `get_term`
-//!   `attributes` allow-list has nothing to filter.
+//! attributes are defined for the openEHR bundle
+//! (`Terminology_description.attributes` is `None`), so the `get_term`
+//! `attributes` allow-list has nothing to filter.
 //! - **URI (PORT NOTE).** The TERM spec defines no canonical machine URI for
-//!   the internal terminology; we publish the openEHR terminology repository
-//!   URI (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
-//!   `https://github.com/openEHR/terminology`). External sets publish their
-//!   `external_id`.
+//! the internal terminology; we publish the openEHR terminology repository
+//! URI (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
+//! `https://github.com/openEHR/terminology`). External sets publish their
+//! `external_id`.
 
 use openehr_term::bundle::openehr;
 use openehr_term::terminology::code_set::CodeSet;
