@@ -19,12 +19,10 @@
 //! - [`config`] — the `[query]` tuning knobs (no openEHR spec governs
 //!   configuration — our own design).
 
-mod config;
+pub mod config;
 mod execute;
-mod plan_cache;
+pub mod plan_cache;
 mod result_set;
 
 pub mod request;
 
-pub use config::QueryConfig;
-pub use plan_cache::{PlanCache, PlanCacheStats};

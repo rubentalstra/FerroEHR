@@ -22,7 +22,7 @@ use openehr_its::opt14::{
     OperationalTemplate,
 };
 
-use super::Violation;
+use super::{NodeView, Violation, attribute_children};
 
 // ─── VATID (node-id codes defined in terminology) ───────────────────────────────
 
@@ -49,7 +49,7 @@ pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Resu
 
 /// An addressable archetype term code: `at0000`, `at0001.1`, or the ADL2 `id`
 /// form. A bare, empty, or free-text `node_id` is not an at-code.
-pub(super) fn is_at_code(code: &str) -> bool {
+fn is_at_code(code: &str) -> bool {
     let rest = code
         .strip_prefix("at")
         .or_else(|| code.strip_prefix("id"))
@@ -244,18 +244,14 @@ fn nested_roots(opt: &OperationalTemplate) -> Vec<&CArchetypeRoot> {
 }
 
 fn collect_roots_in_attr<'a>(attr: &'a CAttribute, out: &mut Vec<&'a CArchetypeRoot>) {
-    let children = match attr {
-        CAttribute::CSingleAttribute(a) => &a.children,
-        CAttribute::CMultipleAttribute(a) => &a.children,
-    };
-    for child in children {
+    for child in attribute_children(attr) {
         if let CObject::CArchetypeRoot(root) = child {
             out.push(root);
             for a in &root.attributes {
                 collect_roots_in_attr(a, out);
             }
         } else {
-            for a in super::co_attributes(child) {
+            for a in NodeView::of(child).attributes {
                 collect_roots_in_attr(a, out);
             }
         }

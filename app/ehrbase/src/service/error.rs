@@ -39,7 +39,7 @@ pub enum ServiceError {
     ValidationFailed(Vec<openehr_its::rest::runtime::ValidationError>),
     /// A storage/codec failure.
     #[error("storage: {0}")]
-    Storage(#[from] crate::storage::StorageError),
+    Storage(#[from] crate::storage::error::StorageError),
     /// A database failure.
     #[error("database: {0}")]
     Database(#[from] sqlx::Error),
@@ -172,7 +172,7 @@ impl From<ServiceError> for SmError {
             // (integrity/serialization conflict → 409, pool exhaustion → 503)
             // instead of collapsing every database error to a blanket 500.
             // The classifier emits the structured trace.
-            ServiceError::Database(e) => crate::storage::classify_sqlx(&e),
+            ServiceError::Database(e) => crate::storage::error::classify_sqlx(&e),
             ServiceError::Json(e) => SmError::new(S::Exception, e.to_string()),
             ServiceError::Signing(m) | ServiceError::Internal(m) => SmError::new(S::Exception, m),
         }
@@ -194,7 +194,7 @@ impl From<ServiceError> for ApiError {
             // path is secondary to the SM `SmError` bridge, but must stay
             // consistent with it.
             ServiceError::Storage(e) => sqlx_conflict_api_error(SmError::from(e)),
-            ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::classify_sqlx(&e)),
+            ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::error::classify_sqlx(&e)),
             // A JSON (de)serialization failure at the service boundary is a
             // malformed client payload → 400.
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),
@@ -205,7 +205,7 @@ impl From<ServiceError> for ApiError {
     }
 }
 
-/// Map a storage-classified [`SmError`] (from [`crate::storage::classify_sqlx`])
+/// Map a storage-classified [`SmError`] (from [`crate::storage::error::classify_sqlx`])
 /// to the ITS-REST [`ApiError`] on the direct `ServiceError → ApiError` path.
 /// Only the storage-classified statuses occur here — a database conflict
 /// (`409`), pool exhaustion (`503`), or a genuine fault (`500`) — mirroring the

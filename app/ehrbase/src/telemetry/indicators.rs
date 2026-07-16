@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::system_log::AuditSender;
+use crate::system_log::sender::AuditSender;
 use crate::telemetry::health::{Health, HealthIndicator};
 use async_trait::async_trait;
 use sqlx::PgPool;

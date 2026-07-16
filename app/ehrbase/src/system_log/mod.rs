@@ -51,10 +51,8 @@ pub mod syslog;
 
 use event::{AuditEvent, EmitOutcome};
 
-// The paths the binary and the config tree consume (`ehrbase::system_log::start`,
+// The paths the binary and the config tree consume (`crate::system_log::sender::start`,
 // `ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver}`).
-pub use config::AuditConfig;
-pub use sender::{AuditHandle, AuditSender, SubjectResolver, start};
 
 use crate::service::EhrbaseService;
 

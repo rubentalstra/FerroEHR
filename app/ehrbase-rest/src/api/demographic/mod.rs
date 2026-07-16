@@ -42,10 +42,10 @@ use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 use ehrbase::service::status::{CallStatusType, SmError};
 
 mod contribution;
-mod dispatch;
-mod openapi_routes;
+pub(crate) mod dispatch;
+pub(crate) mod openapi_routes;
 mod party;
-mod relationship;
+pub(crate) mod relationship;
 mod tags;
 mod versioned_party;
 
@@ -54,9 +54,6 @@ mod versioned_party;
 // the own-design PARTY_RELATIONSHIP extension (`demographic::relationship_routes`,
 // which single-sources those routes + their OpenAPI paths and dispatches back
 // through the group dispatcher).
-pub(crate) use dispatch::dispatch;
-pub(crate) use openapi_routes::routes;
-pub(crate) use relationship::relationship_routes;
 
 /// Map an operation id to `(PartyKind, action)` where `action` is the suffix
 /// after the kind prefix (e.g. `person_tags_update` → `(Person, "tags_update")`).

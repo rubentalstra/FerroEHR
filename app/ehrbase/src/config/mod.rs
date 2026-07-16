@@ -17,7 +17,7 @@
 //! process-global env — so the whole test plan runs on injected inputs.
 
 mod alias;
-mod loader;
+pub mod loader;
 mod strict;
 
 pub mod auth;
@@ -32,7 +32,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-pub use loader::{ConfigError, ConfigErrors};
 
 /// The complete server configuration. Every section has a `Default`, so the
 /// file may be empty or absent (zero-config boot, §3.16). `deny_unknown_fields`
@@ -45,9 +44,9 @@ pub struct EhrbaseConfig {
     /// `[db]` — `PostgreSQL` connection.
     pub db: crate::db::DbConfig,
     /// `[log]` — logging.
-    pub log: crate::telemetry::LogConfig,
+    pub log: crate::telemetry::config::LogConfig,
     /// `[telemetry]` — OpenTelemetry export.
-    pub telemetry: crate::telemetry::OtelConfig,
+    pub telemetry: crate::telemetry::config::OtelConfig,
     /// `[auth]` — authentication.
     pub auth: auth::AuthConfig,
     /// `[authz]` — RBAC + ABAC.
@@ -61,21 +60,21 @@ pub struct EhrbaseConfig {
     /// `[management]` — the management/observability surface.
     pub management: management::ManagementConfig,
     /// `[signing]` — VERSION signing.
-    pub signing: crate::versioning::signature::SigningConfig,
+    pub signing: crate::versioning::signature::config::SigningConfig,
     /// `[query]` — AQL execution knobs.
-    pub query: crate::service::QueryConfig,
+    pub query: crate::service::query::config::QueryConfig,
     /// `[events]` — contribution-outbox eventing (+ its admin API).
-    pub events: crate::extensions::events::EventsConfig,
+    pub events: crate::extensions::events::config::EventsConfig,
     /// `[fhir]` — the FHIR connector (inbound façade + outbound emitter).
-    pub fhir: crate::extensions::fhir::FhirConfig,
+    pub fhir: crate::extensions::fhir::config::FhirConfig,
     /// `[terminology]` — terminology API + external-server validation.
-    pub terminology: crate::service::TerminologyConfig,
+    pub terminology: crate::service::terminology::config::TerminologyConfig,
     /// `[multimedia]` — `DV_MULTIMEDIA` externalization.
-    pub multimedia: crate::extensions::multimedia::MultimediaConfig,
+    pub multimedia: crate::extensions::multimedia::config::MultimediaConfig,
     /// `[atna]` — IHE ATNA audit / System Log.
-    pub atna: crate::system_log::AuditConfig,
+    pub atna: crate::system_log::config::AuditConfig,
     /// `[subject_proxy]` — Subject Proxy FHIR systems.
-    pub subject_proxy: crate::service::SubjectProxyConfig,
+    pub subject_proxy: crate::service::subject_proxy::config::SubjectProxyConfig,
 }
 
 /// The annotated default template `ehrbase config default` prints — a
@@ -100,7 +99,7 @@ impl EhrbaseConfig {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
         }
         // signing.mode = pgp ⇒ key_path set.
-        if matches!(self.signing.mode, crate::versioning::signature::Mode::Pgp)
+        if matches!(self.signing.mode, crate::versioning::signature::config::Mode::Pgp)
             && self.signing.key_path.is_none()
         {
             errors.push(ConfigError::semantic(
@@ -474,7 +473,7 @@ mod tests {
     #[test]
     fn validate_pgp_requires_key_path() {
         let mut c = EhrbaseConfig::default();
-        c.signing.mode = crate::versioning::signature::Mode::Pgp;
+        c.signing.mode = crate::versioning::signature::config::Mode::Pgp;
         assert!(c.validate().is_err());
         c.signing.key_path = Some(std::path::PathBuf::from("/k.asc"));
         assert!(c.validate().is_ok());

@@ -18,8 +18,9 @@ use std::sync::Arc;
 use ehrbase::db;
 use ehrbase::db::settings::DbConfig;
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::access::authn::Authenticator;
-use ehrbase_rest::{AppConfig, AppState};
+use ehrbase_rest::extensions::access::authn::Authenticator;
+use crate::config::AppConfig;
+use crate::state::AppState;
 use sqlx::{Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
@@ -87,7 +88,7 @@ pub async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
 pub fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Router {
     let authenticator = Authenticator::new(config.auth.clone()).expect("test auth config is valid");
     let state = AppState::with_backend(config, service);
-    ehrbase_rest::router(state, authenticator)
+    crate::router::router(state, authenticator)
 }
 
 /// The assembled router over a real service with authentication disabled —

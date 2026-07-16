@@ -23,14 +23,12 @@
 // `service::query::execute_aql` and `service::ehr::create_composition`
 // (`pub(crate)`), and the storage `version_repo` reads.
 
-mod config;
+pub mod config;
 mod feeder_audit;
 mod mapping;
-mod outbound;
+pub mod outbound;
 mod reverse;
 
-pub use config::{FhirConfig, FhirOutboundConfig};
-pub use outbound::{FhirOutboundHandle, start, start_with_publisher};
 
 use serde_json::{Value, json};
 use sqlx::Row;
@@ -56,7 +54,7 @@ use self::mapping::FhirMappingDefinition;
 /// (null) RM leaf on the AQL read path (the reassembled body carries no uid),
 /// whereas the VERSION variable's uid is the engine-synthesized object-version
 /// id. The COMPOSITION body is then loaded through the versioned read seam
-/// ([`version_repo::read_version_by_ordinal`]) by that uid, keeping the façade
+/// ([`version_repo::read::read_version_by_ordinal`]) by that uid, keeping the façade
 /// on the query seam and reusing the same read seam the outbound emitter uses.
 const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
      CONTAINS VERSION v CONTAINS COMPOSITION c \
@@ -328,7 +326,7 @@ impl EhrbaseService {
                     continue;
                 };
                 let Some(read) =
-                    version_repo::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+                    version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
                 else {
                     continue;
                 };
@@ -379,7 +377,7 @@ impl EhrbaseService {
     /// logical delete (a deleted COMPOSITION has no content to map — a FHIR
     /// delete notification is out of the starter scope), carries no template,
     /// or its template has no enabled mapping. Reuses the versioned read seam
-    /// ([`version_repo::read_version_by_ordinal`]) and the reverse transform.
+    /// ([`version_repo::read::read_version_by_ordinal`]) and the reverse transform.
     ///
     /// PORT NOTE: the template is read from the COMPOSITION itself (as the
     /// read façade's AQL also does), NOT from `vo_version.template_id` — that
@@ -399,7 +397,7 @@ impl EhrbaseService {
     ) -> Result<Vec<(String, String, Value)>, ServiceError> {
         // Load the exact committed version; skip absent / logically-deleted ones.
         let Some(read) =
-            version_repo::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+            version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
         else {
             return Ok(Vec::new());
         };

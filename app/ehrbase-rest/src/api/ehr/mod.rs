@@ -38,8 +38,6 @@ pub mod openapi_routes;
 pub mod versioned_composition;
 pub mod versioned_ehr_status;
 
-pub(crate) use openapi_routes::routes;
-
 // COMPOSITION create/get/update negotiate the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam; the
 // group-level alias lets the `composition` module's `super::flat::…` resolve to
@@ -62,7 +60,7 @@ use openehr_rm::prelude::{PartyProxy, PartySelf};
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
-use crate::AuthMethod;
+use crate::extensions::access::authn::AuthMethod;
 use crate::overview::error::RestError;
 use crate::overview::params::{
     H_ITEM_TAG, H_VERSION_ITEM_TAG, ItemTagHeaderEntry, emit_item_tag_header, parse_item_tag_header,

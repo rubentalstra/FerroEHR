@@ -57,7 +57,7 @@
 //!   service seam.)
 //! - **G-10 method status — DONE.** [`error::method_not_allowed_handler`]
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
-//!   (`crate::router`), so a known path called with a disallowed method renders
+//!   (`crate::router::router`), so a known path called with a disallowed method renders
 //!   the openEHR `{ error, message }` body; the paired `501` for a
 //!   recognised-but-unimplemented operation rides
 //!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at

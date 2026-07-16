@@ -23,7 +23,7 @@
 //! is a purely additive extension left to the authz engine; the built-in gate
 //! here is the spec-mandated floor.
 
-use crate::extensions::access::authz::{AccessMode, ResourceKind};
+use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
 use super::scope::{Compartment, Permission, ResourceFamily, SmartScope};
 

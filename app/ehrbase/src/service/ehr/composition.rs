@@ -18,10 +18,12 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{
-    Kind, TreeId, change_type, components, create, delete, original_version, parse_tree_id,
-    read_current, read_version, revision_history, update, version_at, versioned_object,
-};
+use crate::versioning::Kind;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::{create, delete, update};
+use crate::versioning::object_version_id::{TreeId, components, parse_tree_id};
+use crate::versioning::read::{read_current, read_version, version_at};
+use crate::versioning::wire::{original_version, revision_history, versioned_object};
 
 use super::resolve_envelope;
 use super::validation::composition_template_id;
@@ -30,7 +32,7 @@ impl EhrbaseService {
     /// `create_composition` (SM `i_ehr_composition.adoc`): commit the first
     /// version of a COMPOSITION in `ehr_id` from the caller's full
     /// `UPDATE_VERSION` envelope, returning the committed version identity
-    /// ([`Committed`](crate::versioning::Committed) — the
+    /// ([`Committed`](crate::versioning::change::Committed) — the
     /// `ETag`/`Location`/`Last-Modified` source). The envelope's audit
     /// attributes, lifecycle state, verbatim signature and attestations are
     /// honoured on the persisted commit (ITS-REST committal-header merge —
@@ -47,7 +49,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         version: UpdateVersion,
-    ) -> Result<crate::versioning::Committed, ServiceError> {
+    ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (audit, envelope) = resolve_envelope(
             &version,
             change_type::CREATION,
@@ -243,9 +245,9 @@ impl EhrbaseService {
         ehr_id: Uuid,
         vo_id: Uuid,
         version: UpdateVersion,
-    ) -> Result<crate::versioning::Committed, ServiceError> {
+    ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let Some(current) =
-            crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
+            crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
                 .await?
                 .filter(|m| m.ehr_id == Some(ehr_id))
         else {
@@ -354,7 +356,7 @@ impl EhrbaseService {
         // §Committal), never the reassembled document the full `read_current`
         // pays.
         let Some(m) =
-            crate::storage::version_repo::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
+            crate::storage::version_repo::meta::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
                 .await?
         else {
             return Ok(None);
@@ -414,14 +416,14 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         a_version_uid: &ObjectVersionId,
-    ) -> Result<crate::versioning::Committed, ServiceError> {
+    ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the
         // lifecycle (already-deleted → 400, F-02-05), and the current
         // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) —
         // not a full node reassembly (the deleted version stores no nodes
         // anyway).
-        let current = crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
+        let current = crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
             .await?
             .filter(|m| m.ehr_id == Some(ehr_id))
             .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
@@ -472,7 +474,7 @@ impl EhrbaseService {
     /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also
     /// the [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6).
     /// The existence read is a storage seam
-    /// ([`crate::storage::version_repo::ehr_exists`]; no openEHR spec governs
+    /// ([`crate::storage::version_repo::meta::ehr_exists`]; no openEHR spec governs
     /// the SQL — our own design).
     ///
     /// # Errors
@@ -482,7 +484,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
     ) -> Result<(), ServiceError> {
-        if crate::storage::version_repo::ehr_exists(&self.pool, ehr_id).await? {
+        if crate::storage::version_repo::meta::ehr_exists(&self.pool, ehr_id).await? {
             Ok(())
         } else {
             Err(ServiceError::NotFound(format!("EHR {ehr_id}")))

@@ -19,7 +19,7 @@
 //! identity / `commit_audit` / lifecycle / data / signature / attestations are
 //! preserved verbatim — master06 §Copying "the `ORIGINAL_VERSION` instance is
 //! never modified") lives in the change-control engine
-//! ([`crate::versioning::commit_import`] / [`crate::versioning::commit_demographic_import`]).
+//! ([`crate::versioning::import::commit_import`] / [`crate::versioning::import::commit_demographic_import`]).
 //!
 //! `import_ehr` clones a whole EHR into an empty target (a caller-fixed id, else
 //! the source EHR id reused — master06 §Copying Case 1; RM ehr §"EHR Identifier
@@ -49,10 +49,11 @@ use crate::service::error::ServiceError;
 use crate::system_log::event::EventActionCode;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle;
-use crate::versioning::{
-    ImportContainer, ImportVersion, Kind, change_type, change_type_code, commit_demographic_import,
-    commit_import, lifecycle_state_code, parse_object_version_id,
-};
+use crate::versioning::Kind;
+use crate::versioning::audit::{change_type, change_type_code};
+use crate::versioning::import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
+use crate::versioning::lifecycle::lifecycle_state_code;
+use crate::versioning::object_version_id::parse_object_version_id;
 use openehr_rm::ehr_extract::common::extract::Extract;
 
 impl EhrbaseService {

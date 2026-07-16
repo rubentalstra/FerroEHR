@@ -10,7 +10,7 @@ use uuid::Uuid;
 /// Errors produced by the node-storage codec and the row repositories.
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {
-    /// The root value handed to [`crate::storage::decompose`] is not a
+    /// The root value handed to [`crate::storage::codec::decompose`] is not a
     /// decomposable versioned-object tree (its `_type` is not a versioned root).
     #[error("root object has no structure _type (found {0:?})")]
     NotAStructureRoot(Option<String>),

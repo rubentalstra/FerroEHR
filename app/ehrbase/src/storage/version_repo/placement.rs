@@ -11,7 +11,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 
 /// The preceding lineage-tip row read for the version-tree placement decision:
 /// the addressed version (`expected = Some((t, b, v))`) or the current open

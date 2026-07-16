@@ -11,7 +11,7 @@
 //!
 //! The response is `application/json` (master04 §Service Discovery, R-02) and is
 //! served **pre-auth**, on the same seam as the status router
-//! (`crate::router` merges `overview::status::router` outside the auth layer;
+//! (`crate::router::router` merges `overview::status::router` outside the auth layer;
 //! `crate::overview::status`).
 
 use std::collections::BTreeMap;
@@ -236,10 +236,10 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
 /// URLs + the OIDC issuer fallback), so it is **built once here** and served as
 /// ready [`Bytes`] — never rebuilt per request.
 ///
-/// Mount it in `crate::router` beside `overview::status::router` — **outside**
+/// Mount it in `crate::router::router` beside `overview::status::router` — **outside**
 /// the auth layer (the document is unauthenticated, master04).
 pub fn router(cfg: &AppConfig, rest_root: &str) -> Router<AppState> {
-    // Mounted from `crate::router`: merged beside `status::router(&rest_root)`,
+    // Mounted from `crate::router::router`: merged beside `status::router(&rest_root)`,
     // OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document,
     // master04 §Service Discovery), with `rest_root` = the `/ehrbase/rest` root.
     // Disabled → an empty router (a no-op merge), so the path is absent (`404`).

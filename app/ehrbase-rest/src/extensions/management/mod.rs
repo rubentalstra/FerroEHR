@@ -13,7 +13,7 @@
 
 mod env;
 mod health_routes;
-mod http_metrics;
+pub mod http_metrics;
 mod info_routes;
 mod logger_routes;
 mod metrics;
@@ -34,12 +34,6 @@ use utoipa_axum::routes;
 use crate::extensions::access::authn::Authenticator;
 use crate::overview::error::RestError;
 use openehr_its::rest::runtime::ApiError;
-
-pub use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
-pub use ehrbase::telemetry::build_info::BuildInfo;
-pub use ehrbase::telemetry::health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
-pub use ehrbase::telemetry::log_reload::LogReload;
-pub use http_metrics::{http_metrics, root_span};
 
 /// Everything the management router needs. Assembled by the binary (which owns
 /// the telemetry handles, the health indicators, and the effective config) and
@@ -91,7 +85,7 @@ impl ManagementState {
 }
 
 /// The observability inputs the binary assembles and carries in
-/// [`AppState`](crate::AppState): the management configuration, the telemetry
+/// [`AppState`](crate::state::AppState): the management configuration, the telemetry
 /// render/reload handles, the health registry, build provenance, and the
 /// redacted config snapshot. Everything defaults **off** (management disabled,
 /// no handles, empty registry) so a server without observability is the clean

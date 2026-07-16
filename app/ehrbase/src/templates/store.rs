@@ -3,18 +3,19 @@
 //!
 //! # Spec basis
 //!
-//! - S-05/S-06 (`AM/docs/OPT2/master02-overview.adoc` §Types of OPT, §Purpose
-//!   item 1): the stored artefact is the compiled OPT; "a production EHR can
-//!   safely run only using guaranteed *validated* templates" — hence the parse +
-//!   structural + artefact-validity gates before an insert.
-//! - S-07 (`BASE/docs/architecture_overview/master10-archetypes.adoc` §Overview):
-//!   the template/archetype repository is separate from the EHR data.
+//! - S-05/S-06 (`AM/docs/OPT2/master02-overview.adoc` §Purpose of the OPT,
+//!   §Types of OPT): the stored artefact is the compiled OPT; "a production
+//!   EHR … can safely run only using guaranteed *validated* templates" — hence
+//!   the parse + structural + artefact-validity gates before an insert.
+//! - S-07 (`BASE/docs/architecture_overview/master10-archetypes.adoc`
+//!   §Overview): the template/archetype repository is separate from the EHR
+//!   data.
 //! - S-11 (`AM/docs/AOM2/master10-templates.adoc` §Template Identifiers): a
 //!   `TEMPLATE_ID` identifies a template; equality follows the §Composite
 //!   Identifiers and Case rule (G-T04, see [`crate::templates::identity`]).
 //!
-//! PORT NOTE (G-T07 — dual identity): the `template_store` row carries **both** a
-//! surrogate `UUID` handle (the SM `I_DEFINITION_ADL14` OPT key,
+//! PORT NOTE (G-T07 — dual identity): the `template_store` row carries **both**
+//! a surrogate `UUID` handle (the SM `I_DEFINITION_ADL14` OPT key,
 //! `service/definition/adl14.rs`) and the wire `template_id` string (the
 //! ITS-REST `adl1.4/{template_id}` address). Both are load-bearing; the DB
 //! schema is spec-silent by construction ("no openEHR spec governs SQL").
@@ -26,36 +27,63 @@ use serde_json::{Value, json};
 use sqlx::Row;
 
 use super::ingest;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 impl EhrbaseService {
     /// Store an OPT 1.4 operational template from its canonical XML, returning
-    /// the stored template's metadata descriptor.
+    /// the stored template's metadata descriptor (the ITS-REST template list
+    /// shape — the `adl1.4` upload response body).
     ///
     /// The XML is parsed to validate it is a well-formed OPT and to pull the
-    /// `template_id` (the unique key), `concept`, and root archetype id, then run
-    /// through the standalone-artefact validity catalogue (the validation seam)
-    /// before any row is written — S-06 (only validated templates are stored).
+    /// `template_id` (the unique key), `concept`, and root archetype id, then
+    /// run through the standalone-artefact validity catalogue (the validation
+    /// seam) before any row is written — S-06 (only validated templates are
+    /// stored).
     ///
     /// Operational templates are **immutable on the `adl1.4` upload endpoint**:
-    /// re-uploading an existing `template_id` — under §Composite Identifiers and
-    /// Case, so a case variant counts as the same id (G-T04) — is a **`Conflict`**
-    /// (→ ITS-REST `409`), never a silent overwrite (G-T09). This matches
+    /// re-uploading an existing `template_id` — under §Composite Identifiers
+    /// and Case, so a case variant counts as the same id (G-T04) — is a
+    /// **`Conflict`** (→ ITS-REST `409`), never a silent overwrite (G-T09).
+    /// This matches
     /// `docs/specs/openehr/ITS-REST/specifications/responses/409_template_already_exists.yaml`
-    /// ("409 Conflict is returned when a template with same `template_id` …
+    /// ("409 Conflict is returned when a template with same `template_id`
     /// already exists") and the CNF Robot case
     /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict`.
+    ///
+    /// The write is a single statement: `INSERT … ON CONFLICT
+    /// (lower(template_id)) DO NOTHING RETURNING …` on the case-insensitive
+    /// functional unique index (`ux_template_store_template_id_ci`, baseline
+    /// §`template_store`) makes both exact and case-variant duplicates
+    /// race-free (no overwrite, no SQLSTATE parsing) and hands back the stored
+    /// row for the response in the same round-trip — no pre-check `SELECT`, no
+    /// post-insert re-read.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::Unprocessable`] (→ `422`) — the XML does not decode as
+    ///   an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
+    ///   `concept`.
+    /// - The structural gate
+    ///   (`crate::validation::structure::validate_opt_structure`, S-05) and the
+    ///   AOM2/08 artefact-validity catalogue
+    ///   (`crate::validation::opt::validate_opt_artefact`,
+    ///   `AM/docs/AOM2/master08-validation.adoc`, S-06) propagate their own
+    ///   typed rejections.
+    /// - [`ServiceError::Conflict`] (→ `409`) — a template with the same
+    ///   `template_id` (case-insensitively, G-T04/G-T09) already exists.
+    /// - [`ServiceError::Database`] — the insert itself failed.
     pub(crate) async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
         let opt = ingest::parse_opt(xml)?;
         // Structural well-formedness the tolerant codec would otherwise accept
         // (foreign / duplicated top-level elements) — S-05.
-        crate::validation::validate_opt_structure(xml)?;
+        crate::validation::structure::validate_opt_structure(xml)?;
 
         // The AOM2/08 standalone-artefact validity catalogue (VCOC/VACMCO,
         // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying
         // the AOM2 rule code, S-06) is owned by the validation layer
-        // (`crate::validation`; spec `AM/docs/AOM2/master08-validation.adoc`).
-        crate::validation::validate_opt_artefact(&opt)?;
+        // (`crate::validation::opt`; spec `AM/docs/AOM2/master08-validation.adoc`).
+        crate::validation::opt::validate_opt_artefact(&opt)?;
 
         let template_id = opt.template_id.value;
         if template_id.trim().is_empty() {
@@ -76,47 +104,27 @@ impl EhrbaseService {
             (!a.trim().is_empty()).then_some(a)
         };
 
-        // G-T04 (§Composite Identifiers and Case): a template_id that differs
-        // only in case from a stored one is the *same* id, so the insert-only
-        // guard is case-insensitive. This pre-check produces the friendly 409
-        // message in the common (non-concurrent) case; the race-free guard is the
-        // `ux_template_store_template_id_ci` functional unique index over
-        // `lower(template_id)` (migration 0007), which the `ON CONFLICT` below
-        // relies on for concurrency.
-        let case_variant_exists = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS(SELECT 1 FROM template_store WHERE lower(template_id) = lower($1))",
-        )
-        .bind(&template_id)
-        .fetch_one(&self.pool)
-        .await?;
-        if case_variant_exists {
-            return Err(ServiceError::Conflict(format!(
-                "an operational template with template_id '{template_id}' already exists"
-            )));
-        }
-
-        // Insert-only: `DO NOTHING` on the case-insensitive unique index
-        // (`lower(template_id)`) makes both exact and case-variant duplicates
-        // race-free (no overwrite, no SQLSTATE parsing) — an affected-row count of
-        // 0 means the template already exists → 409.
-        let inserted = sqlx::query(
+        // Insert-only: `DO NOTHING` arbitrated on the case-insensitive unique
+        // index (`lower(template_id)`) rejects exact and case-variant duplicates
+        // alike (G-T04: a case variant is the *same* id, §Composite Identifiers
+        // and Case) — no row returned means the template already exists → 409.
+        let row = sqlx::query(
             "INSERT INTO template_store (template_id, concept, root_archetype, content) \
              VALUES ($1, $2, $3, $4) \
-             ON CONFLICT (lower(template_id)) DO NOTHING",
+             ON CONFLICT (lower(template_id)) DO NOTHING \
+             RETURNING template_id, concept, root_archetype, created_at",
         )
         .bind(&template_id)
         .bind(&concept)
         .bind(&root_archetype)
         .bind(xml)
-        .execute(&self.pool)
+        .fetch_optional(&self.pool)
         .await?
-        .rows_affected();
-
-        if inserted == 0 {
-            return Err(ServiceError::Conflict(format!(
+        .ok_or_else(|| {
+            ServiceError::Conflict(format!(
                 "an operational template with template_id '{template_id}' already exists"
-            )));
-        }
+            ))
+        })?;
 
         // No `WebTemplate`-cache invalidation is needed on the create path: this
         // insert is create-only (`ON CONFLICT DO NOTHING` never overwrites), and
@@ -125,27 +133,19 @@ impl EhrbaseService {
         // cache is invalidated only where a template's lifetime ends — the delete
         // path (`service/definition/adl14.rs::opt_delete`). No openEHR spec
         // governs the cache; this is our own design.
-        self.get_template_meta(&template_id).await
-    }
-
-    /// The metadata descriptor for one stored template, addressed by
-    /// `template_id` (case-insensitive, G-T04). Absent → `NotFound` (`404`).
-    pub(crate) async fn get_template_meta(&self, template_id: &str) -> Result<Value, ServiceError> {
-        // §Composite Identifiers and Case: compare case-insensitively (G-T04).
-        let row = sqlx::query(
-            "SELECT template_id, concept, root_archetype, created_at \
-             FROM template_store WHERE lower(template_id) = lower($1)",
-        )
-        .bind(template_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("template {template_id}")))?;
         Self::template_json(&row)
     }
 
-    /// The stored OPT 1.4 XML for a template (the canonical retrieval artifact),
-    /// addressed by `template_id` (case-insensitive, G-T04). Absent → `NotFound`
-    /// (`404`).
+    /// The stored OPT 1.4 XML for a template (the canonical retrieval artifact
+    /// of `GET /definition/template/adl1.4/{template_id}`), addressed by
+    /// `template_id` (case-insensitive, G-T04).
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::NotFound`] (→ `404`,
+    ///   `responses/404_unknown_template_id.yaml`) — no template with this id
+    ///   is stored.
+    /// - [`ServiceError::Database`] — the lookup failed.
     pub(crate) async fn get_template_xml(&self, template_id: &str) -> Result<String, ServiceError> {
         // §Composite Identifiers and Case: compare case-insensitively (G-T04).
         sqlx::query_scalar::<_, String>(
@@ -157,7 +157,14 @@ impl EhrbaseService {
         .ok_or_else(|| ServiceError::NotFound(format!("template {template_id}")))
     }
 
-    /// List every stored template's metadata descriptor (by `template_id`).
+    /// List every stored template's metadata descriptor (by `template_id`) —
+    /// the `GET /definition/template/adl1.4` list surface.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::Database`] — the listing query failed.
+    /// - [`ServiceError::Internal`]-class decode faults surface through
+    ///   [`template_json`](Self::template_json)'s row-decode discipline.
     pub(crate) async fn template_summaries(&self) -> Result<Vec<Value>, ServiceError> {
         let rows = sqlx::query(
             "SELECT template_id, concept, root_archetype, created_at \
@@ -175,6 +182,11 @@ impl EhrbaseService {
     /// surface it (`?` → `500`) rather than silently blanking the field
     /// (W-14 F-29). `concept`/`root_archetype` are genuinely nullable, so a SQL
     /// `NULL` stays `None` while a *decode* error still propagates.
+    ///
+    /// # Errors
+    ///
+    /// [`ServiceError::Database`] — a column failed to decode (a server fault,
+    /// never silently blanked).
     fn template_json(row: &sqlx::postgres::PgRow) -> Result<Value, ServiceError> {
         let created = row
             .try_get::<jiff_sqlx::Timestamp, _>("created_at")?

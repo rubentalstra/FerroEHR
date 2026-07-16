@@ -56,7 +56,7 @@ impl EhrbaseService {
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self
-            .delete_party(super::parse_uuid(&a_party_id, "party")?)
+            .physical_delete_party(super::parse_uuid(&a_party_id, "party")?)
             .await?)
     }
 
@@ -226,7 +226,7 @@ impl EhrbaseService {
     /// (guarded — a row shared with a survivor is kept), and any `vo_archive`
     /// markers. `audit` has no FK from `vo_version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
-    async fn delete_party(&self, party_id: Uuid) -> Result<(), ServiceError> {
+    async fn physical_delete_party(&self, party_id: Uuid) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
 
         // The target must be a demographic PARTY (ehr-less; any version exists).

@@ -24,10 +24,12 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{
-    Kind, TreeId, change_type, components, create, delete, read_current, read_version, update,
-    version_at, versioned_object,
-};
+use crate::versioning::Kind;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::{create, delete, update};
+use crate::versioning::object_version_id::{TreeId, components};
+use crate::versioning::read::{read_current, read_version, version_at};
+use crate::versioning::wire::versioned_object;
 
 use super::{ensure_if_match, parse_at_time, resolve_envelope, validate_folder};
 

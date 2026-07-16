@@ -21,9 +21,10 @@ use crate::versioning::audit::{
 use crate::versioning::change::Change;
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
 use crate::versioning::object_version_id::{self, TreeId};
-use crate::versioning::signature::Signer;
+use crate::versioning::signature::signer::Signer;
 use crate::versioning::wire::original_version;
-use crate::versioning::{CommitEnv, Kind, PendingAttest, change, read};
+use crate::versioning::{CommitEnv, Kind, change, read};
+use crate::versioning::attestation::PendingAttest;
 
 /// An optional `(lower, upper)` inclusive commit-time window — the simple
 /// realization of the SM `Interval<Iso8601_date_time>` (either side open when
@@ -342,7 +343,7 @@ pub(crate) async fn commit_version_set(
     target_ids.sort_unstable();
     target_ids.dedup();
     let target_kinds: std::collections::HashMap<Uuid, Kind> =
-        crate::storage::version_repo::object_kinds(cx.pool(), &target_ids)
+        crate::storage::version_repo::meta::object_kinds(cx.pool(), &target_ids)
             .await
             .map_err(ServiceError::from)?
             .into_iter()
@@ -787,7 +788,7 @@ pub(crate) async fn get_contribution(
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
     let audit =
-        crate::storage::version_repo::contribution_audit(pool, contribution_id, Some(ehr_id))
+        crate::storage::version_repo::contribution::contribution_audit(pool, contribution_id, Some(ehr_id))
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
     let time_committed = audit.time_committed;
@@ -797,7 +798,7 @@ pub(crate) async fn get_contribution(
     // affects an existing one, so the storage query unions the versions
     // referenced by this contribution's `vo_attestation` rows (dedup).
     let referenced =
-        crate::storage::version_repo::contribution_version_refs(pool, contribution_id).await?;
+        crate::storage::version_repo::contribution::contribution_version_refs(pool, contribution_id).await?;
 
     let mut versions = Vec::with_capacity(referenced.len());
     for (vo_id, (t, b, v), creating_system_id, kind) in referenced {
@@ -852,7 +853,7 @@ pub(crate) async fn list_contributions(
     let offset = i64::try_from(page.offset()).unwrap_or(i64::MAX);
     let limit = page.limit().map(|l| i64::try_from(l).unwrap_or(i64::MAX));
     Ok(
-        crate::storage::version_repo::list_contributions(pool, ehr_id, lower, upper, offset, limit)
+        crate::storage::version_repo::contribution::list_contributions(pool, ehr_id, lower, upper, offset, limit)
             .await?,
     )
 }
@@ -870,16 +871,16 @@ pub(crate) async fn count_contributions(
 ) -> Result<i64, ServiceError> {
     ensure_ehr_exists(pool, ehr_id).await?;
     let (lower, upper) = time_range.unwrap_or((None, None));
-    Ok(crate::storage::version_repo::count_contributions(pool, ehr_id, lower, upper).await?)
+    Ok(crate::storage::version_repo::contribution::count_contributions(pool, ehr_id, lower, upper).await?)
 }
 
 /// The EHR-existence precheck for the read paths above (SM `ehr_does_not_exist`
 /// → `NotFound`).
 ///
-/// Storage exposes the read (`version_repo::ehr_exists`) so versioning stays
+/// Storage exposes the read (`version_repo::meta::ehr_exists`) so versioning stays
 /// self-contained.
 async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: Uuid) -> Result<(), ServiceError> {
-    if crate::storage::version_repo::ehr_exists(pool, ehr_id).await? {
+    if crate::storage::version_repo::meta::ehr_exists(pool, ehr_id).await? {
         Ok(())
     } else {
         Err(ServiceError::NotFound(format!("EHR {ehr_id}")))

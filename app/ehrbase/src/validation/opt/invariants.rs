@@ -22,10 +22,11 @@ use std::collections::HashSet;
 
 use openehr_its::opt14::{
     ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
+    Intervalofinteger,
 };
 
 use super::interval::{iv_lower, iv_upper};
-use super::{Ctx, Violation, co_node_id, co_occurrences};
+use super::{Ctx, NodeView, Violation};
 
 // ─── C_ATTRIBUTE / C_SINGLE_ATTRIBUTE invariants (T4, T5b) ───────────────────────
 
@@ -46,7 +47,7 @@ pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(
 pub(super) fn check_existence_set(
     attr_name: &str,
     parent_rm: &str,
-    existence: &openehr_its::opt14::Intervalofinteger,
+    existence: &Intervalofinteger,
 ) -> Result<(), Violation> {
     if iv_lower(existence) < 0
         || existence.upper_unbounded
@@ -76,14 +77,15 @@ pub(super) fn check_members_valid(
     children: &[CObject],
 ) -> Result<(), Violation> {
     for child in children {
-        let occ = co_occurrences(child);
+        let view = NodeView::of(child);
+        let occ = view.occurrences;
         if occ.upper_unbounded || iv_upper(occ).is_some_and(|u| u > 1) {
             return Err(Violation::new(
                 "Members_valid",
                 format!(
                     "attribute '{attr_name}' on '{parent_rm}' is single-valued but child object \
                      '{}' has occurrences upper > 1",
-                    co_node_id(child)
+                    view.node_id
                 ),
             ));
         }

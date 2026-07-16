@@ -12,11 +12,12 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
 
+use crate::storage::codec::reassemble;
+use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
-use crate::storage::{StorageError, reassemble};
 
 /// Bulk-insert the decomposed node rows of one stored version. `rows` is the
-/// output of [`crate::storage::decompose`]; the storage context
+/// output of [`crate::storage::codec::decompose`]; the storage context
 /// (`vo_id`/`sys_version`/`ehr_id`) is supplied here and written onto every row.
 ///
 /// A logically-deleted version (data Void, RM common master06 §Logical
@@ -48,7 +49,7 @@ pub async fn write_nodes(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
          rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data",
     );
-    for leaf in crate::storage::PROMOTED_LEAVES {
+    for leaf in crate::storage::promoted::PROMOTED_LEAVES {
         header.push_str(", ");
         header.push_str(leaf.column);
     }
@@ -74,10 +75,10 @@ pub async fn write_nodes(
         // value the AQL query-time cast accepted yields the same stored value,
         // and non-castable text becomes NULL rather than failing the write
         // (ext.openehr_timestamp, ext baseline).
-        for (i, leaf) in crate::storage::PROMOTED_LEAVES.iter().enumerate() {
+        for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
             let raw = row.promoted.get(i).and_then(Clone::clone);
             match leaf.kind {
-                crate::storage::PromotedKind::Timestamp => {
+                crate::storage::promoted::PromotedKind::Timestamp => {
                     b.push("ext.openehr_timestamp(")
                         .push_bind_unseparated(raw)
                         .push_unseparated(")");
@@ -90,7 +91,7 @@ pub async fn write_nodes(
 }
 
 /// Fetch the lean read rows of one stored version, ordered by `num`. Selects
-/// **only** the five columns [`crate::storage::reassemble`] and the nested-set
+/// **only** the five columns [`crate::storage::codec::reassemble`] and the nested-set
 /// contract need — the promoted query columns are not read back.
 async fn read_rows(
     pool: &PgPool,

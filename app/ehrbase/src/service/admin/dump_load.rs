@@ -32,7 +32,7 @@
 //! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
 //! back-up would need a demographic dump wave (deferred). The verbatim
 //! version-row re-persist is a storage seam
-//! ([`crate::storage::version_repo::insert_version_verbatim`]); this module
+//! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
 
 use std::path::Path;
@@ -46,7 +46,8 @@ use crate::service::admin::types::{DumpLoadFailReport, ExportFormat, ExportSpec}
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::storage::{decompose, node_repo, version_repo};
+use crate::storage::{node_repo, version_repo};
+use crate::storage::codec::decompose;
 
 /// Lifecycle-state code of a logically-deleted version (RM common master06
 /// §Logical Deletion) — such versions store no `node` rows, so their exported
@@ -735,7 +736,7 @@ impl EhrbaseService {
 
 /// Insert one version row and its re-decomposed node rows (through the storage
 /// codec). The `vo_version` row I/O is delegated to
-/// [`crate::storage::version_repo::insert_version_verbatim`] (our own design
+/// [`crate::storage::version_repo::import::insert_version_verbatim`] (our own design
 /// over the greenfield schema — no openEHR spec governs it); the node rows are
 /// re-decomposed here through the shared codec.
 async fn insert_version(
@@ -743,9 +744,9 @@ async fn insert_version(
     ehr_id: Uuid,
     v: &VersionRecord,
 ) -> Result<(), ServiceError> {
-    version_repo::insert_version_verbatim(
+    version_repo::import::insert_version_verbatim(
         tx,
-        &version_repo::VerbatimVersionRow {
+        &version_repo::import::VerbatimVersionRow {
             vo_id: v.vo_id,
             kind: &v.kind,
             ehr_id,

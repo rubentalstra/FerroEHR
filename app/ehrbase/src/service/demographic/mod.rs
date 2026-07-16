@@ -59,10 +59,9 @@ mod party;
 mod relationship;
 mod support;
 mod tags;
-mod validate;
+pub(crate) mod validate;
 mod versioned;
 
 // The commit-path validators the CONTRIBUTION engine (`validate_for_commit`,
 // `service/ehr/composition_validate.rs`) dispatches to once the
 // versioned-object kind is known from the payload `_type`.
-pub(crate) use validate::{validate_party_kind_for_commit, validate_relationship_for_commit};

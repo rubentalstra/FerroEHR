@@ -38,12 +38,6 @@ pub mod version_update;
 
 mod commit_env;
 
-pub use query::{PlanCache, PlanCacheStats, QueryConfig};
-pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
-pub use terminology::{
-    ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, FhirTerminologyProvider,
-    ProviderKind, TerminologyConfig,
-};
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -54,9 +48,9 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::extensions::tenant_context::TenantContext;
-use crate::system_log::AuditSender;
+use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
-use crate::versioning::signature::Signer;
+use crate::versioning::signature::signer::Signer;
 use openehr_flat::WebTemplate;
 use openehr_flat::cache::WebTemplateCache;
 use status::SmError;

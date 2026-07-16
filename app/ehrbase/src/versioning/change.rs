@@ -16,7 +16,8 @@ use sqlx::PgConnection;
 use uuid::Uuid;
 
 use crate::service::error::ServiceError;
-use crate::storage::{NodeRow, decompose, reassemble};
+use crate::storage::codec::{decompose, reassemble};
+use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle::{self, resolve_lifecycle, validate_transition};
@@ -153,7 +154,7 @@ pub(crate) struct WriteEnvelope {
 }
 
 /// The preceding lineage tip read for a tree-placement decision — mapped from
-/// the storage row (`crate::storage::version_repo::next_placement`).
+/// the storage row (`crate::storage::version_repo::placement::next_placement`).
 #[derive(Debug, Clone)]
 struct PrecedingTip {
     ehr_id: Option<Uuid>,
@@ -169,7 +170,7 @@ struct PrecedingTip {
 }
 
 /// Map a storage tip row onto the versioning value contract ([`PrecedingTip`]).
-fn preceding_tip(row: crate::storage::version_repo::TipRow) -> Result<PrecedingTip, ServiceError> {
+fn preceding_tip(row: crate::storage::version_repo::placement::TipRow) -> Result<PrecedingTip, ServiceError> {
     let kind = Kind::from_type(&row.kind).ok_or_else(|| {
         ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
     })?;
@@ -232,12 +233,12 @@ async fn next_version(
     local_system_id: &str,
 ) -> Result<NextVersion, ServiceError> {
     // Serialize concurrent writers of the same object.
-    crate::storage::version_repo::advisory_lock(tx, vo_id).await?;
+    crate::storage::version_repo::commit::advisory_lock(tx, vo_id).await?;
 
     // ONE statement: preceding tip + next ordinal + the transaction timestamp
     // (the commit instant every row of this transaction stamps).
     let placement =
-        crate::storage::version_repo::next_placement(tx, vo_id, expected.map(TreeId::columns))
+        crate::storage::version_repo::placement::next_placement(tx, vo_id, expected.map(TreeId::columns))
             .await?;
     let ordinal = placement.next_ordinal;
     let now = placement.now;
@@ -246,7 +247,7 @@ async fn next_version(
         // The object may exist with the expectation naming no stored version —
         // distinguish "no such object" (404) from "wrong version" (409): the
         // current trunk tip is the lineage tip with no expectation.
-        let current = crate::storage::version_repo::next_placement(tx, vo_id, None)
+        let current = crate::storage::version_repo::placement::next_placement(tx, vo_id, None)
             .await?
             .tip
             .map(preceding_tip)
@@ -290,7 +291,7 @@ async fn next_version(
         // at the preceding version's trunk fork point (master06 §Distributed
         // Versioning); the copied version itself stays valid.
         let next_branch =
-            crate::storage::version_repo::next_branch_number(tx, vo_id, tip.tree.trunk).await?;
+            crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk).await?;
         (TreeId::branch(tip.tree.trunk, next_branch, 1), None)
     };
     Ok(NextVersion {
@@ -408,7 +409,7 @@ async fn apply_change(
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
-                None => crate::storage::version_repo::tx_now(tx).await?,
+                None => crate::storage::version_repo::placement::tx_now(tx).await?,
             };
             ResolvedWrite {
                 kind,
@@ -511,12 +512,12 @@ async fn apply_change(
 /// master06 §Digital Signature), which embeds `time_committed` and
 /// `contribution_id`. Both are known BEFORE any statement: the commit instant
 /// is the transaction timestamp (read by the placement query /
-/// [`tx_now`](crate::storage::version_repo::tx_now); every row of the
+/// [`tx_now`](crate::storage::version_repo::placement::tx_now); every row of the
 /// transaction stamps the same `now()`), and a standalone write generates its
 /// `contribution_id` here. So audit + contribution + `vo_version` always
 /// collapse into the one folded CTE
-/// ([`commit_new_version`](crate::storage::version_repo::commit_new_version)
-/// / [`commit_version_into`](crate::storage::version_repo::commit_version_into)).
+/// ([`commit_new_version`](crate::storage::version_repo::commit::commit_new_version)
+/// / [`commit_version_into`](crate::storage::version_repo::commit::commit_version_into)).
 /// The lineage-tip close stays a separate prior statement (the
 /// one-open-row-per-lineage partial unique indexes need the old open row gone
 /// before the new open row is inserted). No openEHR spec governs statement
@@ -544,7 +545,7 @@ async fn commit_resolved(
     // the transaction timestamp, so the close boundary and the new version's
     // `sys_period` open at the identical instant (master06 §Version tree).
     if let Some(close_ordinal) = r.close_ordinal {
-        crate::storage::version_repo::close_ordinal_at_now(tx, r.vo_id, close_ordinal).await?;
+        crate::storage::version_repo::commit::close_ordinal_at_now(tx, r.vo_id, close_ordinal).await?;
     }
 
     // The enclosing CONTRIBUTION id: pre-existing for a multi-change commit,
@@ -580,7 +581,7 @@ async fn commit_resolved(
         )?
     };
 
-    let folded = crate::storage::version_repo::FoldedVersion {
+    let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
         kind: r.kind.as_str(),
         ehr_id: r.ehr_id,
@@ -597,7 +598,7 @@ async fn commit_resolved(
     };
     let time_committed = match contribution {
         ContributionCtx::New => {
-            let (_cid, _aid, tc) = crate::storage::version_repo::commit_new_version(
+            let (_cid, _aid, tc) = crate::storage::version_repo::commit::commit_new_version(
                 tx,
                 &audit_row,
                 Some(contribution_id),
@@ -608,7 +609,7 @@ async fn commit_resolved(
         }
         ContributionCtx::Existing(cid) => {
             let (_aid, tc) =
-                crate::storage::version_repo::commit_version_into(tx, &audit_row, cid, &folded)
+                crate::storage::version_repo::commit::commit_version_into(tx, &audit_row, cid, &folded)
                     .await?;
             tc
         }
@@ -625,7 +626,7 @@ async fn commit_resolved(
     if r.is_first_folder
         && let Some(ehr_id) = r.ehr_id
     {
-        crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, r.vo_id).await?;
+        crate::storage::version_repo::commit::insert_ehr_folder_rank(tx, ehr_id, r.vo_id).await?;
     }
     attestation::insert_accompanying_attestations(
         tx,
@@ -665,7 +666,7 @@ async fn write_single_outbox(
     committed: &Committed,
 ) -> Result<(), ServiceError> {
     if ctx.outbox_enabled {
-        crate::storage::version_repo::write_outbox(
+        crate::storage::version_repo::commit::write_outbox(
             tx,
             contribution_id,
             ehr_id,
@@ -827,7 +828,7 @@ pub(crate) async fn commit_contribution(
     // The CONTRIBUTION's own audit + contribution rows in one round trip (the
     // per-version `commit_audit`s are inserted per change below).
     let (contribution_id, _contribution_audit_id, contribution_time) =
-        crate::storage::version_repo::write_contribution(
+        crate::storage::version_repo::commit::write_contribution(
             tx,
             ehr_id,
             &contribution_audit.row(),
@@ -882,7 +883,7 @@ pub(crate) async fn commit_contribution(
     // consumer is configured (our own extension; no openEHR spec governs it).
     if ctx.outbox_enabled {
         let versions = committed.iter().map(Committed::envelope_entry).collect();
-        crate::storage::version_repo::write_outbox(
+        crate::storage::version_repo::commit::write_outbox(
             tx,
             contribution_id,
             ehr_id,

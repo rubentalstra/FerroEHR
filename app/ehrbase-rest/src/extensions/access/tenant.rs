@@ -12,7 +12,7 @@
 //! application's tenant-scoped pool then reads that scope on every acquired
 //! connection to set `ehrbase.tenant_id` for RLS.
 //!
-//! Only installed when `tenancy.enabled` (`crate::router`), so single-tenant
+//! Only installed when `tenancy.enabled` (`crate::router::router`), so single-tenant
 //! deployments pay nothing. A request that carries no tenant key, or an
 //! unknown/unresolvable one, runs **unscoped** → the reserved default tenant:
 //! cross-tenant access is an engine-level empty set, never a `403`.

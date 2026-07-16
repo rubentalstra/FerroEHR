@@ -4,12 +4,12 @@
 //! `docs/design/platform/04-service-demographic-ehr-index.md`). A demographic
 //! CONTRIBUTION wraps a change-set of party / relationship versions with
 //! `ehr_id = None`, committed through the shared CONTRIBUTION engine
-//! ([`crate::versioning::commit_version_set`]) with `party_only = true`
+//! ([`crate::versioning::contribution::commit_version_set`]) with `party_only = true`
 //! (RM common master06 §Contributions).
 //!
 //! The retrieval reads go through `crate::storage::version_repo` (storage owns
 //! the SQL — no openEHR spec governs the storage read, our own design):
-//! `versioning::get_contribution` is EHR-scoped and cannot serve an ehr-less
+//! `crate::versioning::contribution::get_contribution` is EHR-scoped and cannot serve an ehr-less
 //! contribution, so the demographic chapter reads the audit + version refs here.
 //! The version-refs helper unions the versions a `666|attestation|` item
 //! attested (RM common master06 §Contributions — an attestation affects an
@@ -23,7 +23,9 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::storage::version_repo;
-use crate::versioning::{TreeId, audit_details, commit_version_set, object_version_id};
+use crate::versioning::audit::audit_details;
+use crate::versioning::contribution::commit_version_set;
+use crate::versioning::object_version_id::{TreeId, object_version_id};
 
 impl EhrbaseService {
     /// Commit a demographic CONTRIBUTION (ehr-less): its versions must reference
@@ -47,7 +49,7 @@ impl EhrbaseService {
         &self,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let audit = version_repo::contribution_audit(&self.pool, contribution_id, None)
+        let audit = version_repo::contribution::contribution_audit(&self.pool, contribution_id, None)
             .await?
             .ok_or_else(|| {
                 ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
@@ -58,7 +60,7 @@ impl EhrbaseService {
         // an attestation affects an existing version), i.e. the full change-set
         // the CONTRIBUTION covers, not just the committed rows.
         let version_refs =
-            version_repo::contribution_version_refs(&self.pool, contribution_id).await?;
+            version_repo::contribution::contribution_version_refs(&self.pool, contribution_id).await?;
         let versions: Vec<Value> = version_refs
             .into_iter()
             .map(|(vo_id, columns, creating_system_id, kind)| {

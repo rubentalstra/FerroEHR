@@ -130,7 +130,7 @@ fn status_error_response(status: StatusCode, message: &str) -> Response {
 // `{ error, message }` body instead of axum's default bare `405`/text.
 //
 // `method_not_allowed_handler` is mounted as the router's method fallback
-// (`crate::router`), rendering `405` with the openEHR body. Operation-level
+// (`crate::router::router`), rendering `405` with the openEHR body. Operation-level
 // `501 Not Implemented` rides `ApiError` (a blanket 501 method fallback would
 // misreport unknown paths, `router.rs` doc).
 

@@ -125,10 +125,10 @@ impl AuditInput {
         }
     }
 
-    /// The borrowed storage row shape ([`crate::storage::version_repo::AuditRow`])
+    /// The borrowed storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
     /// this audit persists as.
-    pub(crate) fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {
-        crate::storage::version_repo::AuditRow {
+    pub(crate) fn row(&self) -> crate::storage::version_repo::commit::AuditRow<'_> {
+        crate::storage::version_repo::commit::AuditRow {
             system_id: &self.system_id,
             change_type: &self.change_type,
             description: self.description.as_deref(),

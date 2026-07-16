@@ -4,11 +4,16 @@
 //! kind** — it maps to CNF `I_DEFINITION_ADL14` `invalid_templates/*`
 //! (`alien_tags`, `multiple_elements`), not to a rule of the AOM 1.4/2.4
 //! constraint catalogue. It closes a leniency gap in the tolerant
-//! `openehr_its::opt14` codec before the artefact pass ([`super::opt`]) runs on
-//! the parsed tree, so it lives beside the artefact validators rather than in
-//! the constraint-taxonomy modules.
+//! `openehr_its::opt14` codec before the artefact pass (the sibling `opt`
+//! module) runs on the parsed tree, so it lives beside the artefact
+//! validators rather than in the constraint-taxonomy modules.
 
-use crate::service::ServiceError;
+use std::collections::HashMap;
+
+use quick_xml::Reader;
+use quick_xml::events::Event;
+
+use crate::service::error::ServiceError;
 
 /// The legal direct children of the root `<template>` element (the serialized
 /// `OPERATIONAL_TEMPLATE` attributes).
@@ -39,13 +44,15 @@ const OPT_TOP_LEVEL_MULTIPLE: &[&str] = &["component_ontologies", "annotations"]
 /// legitimate nested reuse of a name (e.g. `<template_id>` inside a term binding)
 /// is unaffected. The codec already catches missing mandatory elements; this
 /// closes the leniency gap the CNF `upload_opt-invalid_opt` case exercises.
-pub(crate) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
-    use quick_xml::Reader;
-    use quick_xml::events::Event;
-
+///
+/// # Errors
+///
+/// [`ServiceError::Unprocessable`] naming the foreign or duplicated element,
+/// or describing the XML parse failure when the document is malformed.
+pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     let mut reader = Reader::from_str(xml);
     let mut depth: i32 = 0;
-    let mut seen: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut seen: HashMap<String, u32> = HashMap::new();
     let mut check = |raw: &[u8]| -> Result<(), ServiceError> {
         let name = String::from_utf8_lossy(raw).into_owned();
         if !OPT_TOP_LEVEL.contains(&name.as_str()) {

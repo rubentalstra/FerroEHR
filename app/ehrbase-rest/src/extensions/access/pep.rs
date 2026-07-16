@@ -51,8 +51,9 @@
 
 use axum::response::{IntoResponse, Response};
 
-use crate::extensions::access::authz::{
-    AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of,
+use crate::extensions::access::authz::classify::{access_of, kind_of};
+use crate::extensions::access::authz::request::{
+    AccessMode, Attr, AuthzRequest, Decision, ResourceKind,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
@@ -296,7 +297,7 @@ fn resolve_patient_claim(
     let Some(claim) = &abac.patient_claim else {
         return Ok(None);
     };
-    match crate::extensions::access::authz::claim_string(&principal.claims, claim) {
+    match crate::extensions::access::authz::roles::claim_string(&principal.claims, claim) {
         Some(v) => Ok(Some(v)),
         None => Err(forbidden(
             principal,
@@ -309,7 +310,7 @@ fn resolve_patient_claim(
 fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
     abac.organization_claim
         .as_ref()
-        .and_then(|c| crate::extensions::access::authz::claim_string(&principal.claims, c))
+        .and_then(|c| crate::extensions::access::authz::roles::claim_string(&principal.claims, c))
 }
 
 /// The full pre-check patient gate (§5.7): the subject match for target-EHR ops,

@@ -7,7 +7,8 @@
 use std::time::Duration;
 
 use ehrbase::service::status::CallStatusType;
-use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
+use crate::service::terminology::config::{FhirOperation, FhirProviderConfig, ProviderKind};
+use crate::service::terminology::fhir::FhirTerminologyProvider;
 use serde_json::json;
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};

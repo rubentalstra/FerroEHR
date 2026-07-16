@@ -60,15 +60,7 @@ pub mod tenant;
 // The authn surface (identity + the request-scoped principal). The middleware
 // + `AuthLayer` are `pub(crate)` and installed by the router via `authn::`
 // directly, so they are not re-exported here.
-pub use authn::{
-    AuthConfig, AuthError, AuthMethod, AuthenticatedUser, Authenticator, Principal,
-    current_principal,
-};
 
 // The spec-grounded EHR_ACCESS gate (the foundational access-decision layer).
-pub use ehr_access::EhrAccessGate;
 
 // The authz surface (the Stage-2 RBAC/ABAC handle + its config/engine seams).
-pub use authz::{
-    AuthzConfig, AuthzHandle, AuthzResolvers, PolicyEngine, ResolveError, build_engine,
-};

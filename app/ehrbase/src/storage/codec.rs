@@ -13,7 +13,7 @@
 
 use serde_json::{Map, Value};
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 use crate::storage::row::{NodeContent, NodeRow};
 use crate::storage::structure::{archetype_parts, is_structure_type, is_versioned_root_type};
 

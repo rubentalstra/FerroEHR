@@ -4,7 +4,7 @@
 //! the `sqlx` pool, and assembles a [`QueryResult`] (column metadata + canonical
 //! JSON rows) the service renders as an ITS-REST 1.0.3 `RESULT_SET`. Scalar cells
 //! are read directly as canonical JSON (`jsonb`); whole-object cells reassemble
-//! their node subtree through the P10 codec ([`crate::storage::reassemble`]).
+//! their node subtree through the P10 codec ([`crate::storage::codec::reassemble`]).
 
 use serde_json::Value;
 use sqlx::{PgPool, Row};

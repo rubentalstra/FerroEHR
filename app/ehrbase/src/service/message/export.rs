@@ -14,7 +14,7 @@
 //! An exported `EXTRACT` is a canonical-JSON `Value` built directly over the
 //! stored versions: each versioned object becomes one `OPENEHR_CONTENT_ITEM`
 //! wrapping an `X_VERSIONED_<kind>` whose `versions` are the exact
-//! `ORIGINAL_VERSION`s the read path serves ([`crate::versioning::original_version`]),
+//! `ORIGINAL_VERSION`s the read path serves ([`crate::versioning::wire::original_version`]),
 //! so the extract content is byte-identical to what `GET .../versioned_*`
 //! returns — then its content references are rewritten to the extract-local
 //! namespace per the Creation-Semantics algorithm (see [`rewrite_content_refs`]).
@@ -36,9 +36,8 @@ use crate::service::status::{CallStatusType, SmError};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::system_log::event::EventActionCode;
-use crate::versioning::{
-    original_version, read_current, read_version_by_ordinal, revision_history, versioned_object,
-};
+use crate::versioning::read::{read_current, read_version_by_ordinal};
+use crate::versioning::wire::{original_version, revision_history, versioned_object};
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
 /// The extract-local reference namespace (`master09-semantics.adoc` §Creation

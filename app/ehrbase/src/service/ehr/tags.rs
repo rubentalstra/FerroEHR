@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::parse_uid_based_id;
+use crate::versioning::object_version_id::parse_uid_based_id;
 
 impl EhrbaseService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
@@ -88,7 +88,7 @@ impl EhrbaseService {
         // belong to this EHR — the item_tag table is deliberately FK-less (a
         // tag may address a specific VERSION), so the ownership check lives
         // here.
-        let owner = crate::storage::version_repo::vo_owner(&self.pool, target_vo_id).await?;
+        let owner = crate::storage::version_repo::meta::vo_owner(&self.pool, target_vo_id).await?;
         if owner != Some(Some(ehr_id)) {
             return Err(ServiceError::NotFound(format!(
                 "tag target {target_vo_id} does not exist in EHR {ehr_id} \

@@ -9,7 +9,8 @@ use regex::Regex;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::aql::{ParamValue, Params, QueryResult};
+use crate::aql::exec::QueryResult;
+use crate::aql::ir::{ParamValue, Params};
 use crate::service::query::request::AqlQueryRequest;
 
 /// The `RESULT_SET` schema version this server emits (ITS-REST 1.0.3).

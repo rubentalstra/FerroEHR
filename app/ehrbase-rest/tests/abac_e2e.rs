@@ -29,12 +29,13 @@ use ehrbase::config::authz::AuthzConfig;
 use ehrbase::config::server::ServerConfig;
 use ehrbase::service::EhrbaseService;
 use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
-use ehrbase::system_log::{AuditSender, start};
-use ehrbase_rest::access::authz::engine::{AuthzError, PolicyEngine};
-use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
-use ehrbase_rest::{
-    AppConfig, AuthzHandle, AuthzResolvers, Observability, ResolveError, build_full, build_with,
-};
+use ehrbase::system_log::sender::{AuditSender, start};
+use ehrbase_rest::extensions::access::authz::engine::{AuthzError, PolicyEngine};
+use ehrbase_rest::extensions::access::authz::request::{AuthzRequest, Decision};
+use ehrbase_rest::{build_full, build_with};
+use crate::config::AppConfig;
+use crate::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
+use crate::extensions::management::Observability;
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};

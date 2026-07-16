@@ -15,7 +15,7 @@ use uuid::Uuid;
 use crate::service::response::ServiceResponse;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::TreeId;
+use crate::versioning::object_version_id::TreeId;
 
 impl EhrbaseService {
     /// The `VERSIONED_PARTY` for a party (any of the five kinds). A non-party id

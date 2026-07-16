@@ -15,7 +15,8 @@ use crate::service::error::ServiceError;
 use crate::versioning::SigningCtx;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::TreeId;
-use crate::versioning::signature::{Signer, VerifyOnRead};
+use crate::versioning::signature::config::VerifyOnRead;
+use crate::versioning::signature::signer::Signer;
 use crate::versioning::wire::build_original_version;
 
 /// Compute the `VERSION.signature` for a version about to be persisted (RM

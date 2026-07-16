@@ -18,7 +18,7 @@
 //! [`Overloaded`](tower::load_shed::error::Overloaded) error synchronously
 //! instead of waiting. [`axum::error_handling::HandleErrorLayer`] turns that
 //! error back into an infallible response via [`handle_overload`]. The layer is
-//! wired in [`crate::router`]; see that module's doc for the layer order.
+//! wired in [`crate::router::router`]; see that module's doc for the layer order.
 
 use axum::error_handling::HandleErrorLayer;
 use axum::response::{IntoResponse, Response};
@@ -41,7 +41,7 @@ const RETRY_AFTER_SECONDS: &str = "1";
 /// Wrap the API router in the bounded-concurrency + load-shed stack, applied as
 /// its outermost layer (so a shed request is rejected before auth, audit, or
 /// reading the request body). A `max_in_flight` of `0` returns the router
-/// unchanged — shedding disabled, no layer installed. See [`crate::router`] for
+/// unchanged — shedding disabled, no layer installed. See [`crate::router::router`] for
 /// where this sits relative to the shared request stack.
 pub(crate) fn shed_layer(api: Router<AppState>, max_in_flight: usize) -> Router<AppState> {
     if max_in_flight == 0 {

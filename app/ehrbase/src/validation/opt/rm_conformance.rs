@@ -21,8 +21,8 @@
 use openehr_its::opt14::{CAttribute, CObject, Cardinality, Intervalofinteger};
 use openehr_rm::model;
 
-use super::Violation;
 use super::interval::{iv_lower, iv_upper};
+use super::{NodeView, Violation};
 
 /// LOCATABLE meta attributes tolerated on any RM class (see the PORT NOTE in
 /// [`check_attribute`]: archie-era OPTs constrain these on PATHABLE-only
@@ -203,7 +203,7 @@ pub(super) fn check_cardinality_occurrences(
     };
     let required: i64 = children
         .iter()
-        .map(|c| i64::from(iv_lower(super::co_occurrences(c))))
+        .map(|c| i64::from(iv_lower(NodeView::of(c).occurrences)))
         .sum();
     if required > i64::from(card_upper) {
         return Err(Violation::new(

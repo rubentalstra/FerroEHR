@@ -34,7 +34,9 @@ use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::extensions::multimedia::{BlobStore, MultimediaConfig, MultimediaEngine};
+use ehrbase::extensions::multimedia::MultimediaEngine;
+use crate::extensions::multimedia::config::MultimediaConfig;
+use crate::extensions::multimedia::store::BlobStore;
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::admin::types::ExportSpec;
 

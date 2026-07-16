@@ -11,7 +11,8 @@
 use std::path::Path;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::storage::{NodeRow, decompose, reassemble};
+use ehrbase::storage::codec::{decompose, reassemble};
+use ehrbase::storage::row::NodeRow;
 use serde_json::Value;
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
 use testcontainers::runners::AsyncRunner;

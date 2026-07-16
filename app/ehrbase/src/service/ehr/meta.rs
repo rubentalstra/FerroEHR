@@ -21,7 +21,9 @@ use uuid::Uuid;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::versioning::audit::AuditInput;
-use crate::versioning::{Kind, TreeId, VersionRead, object_version_id};
+use crate::versioning::Kind;
+use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::read::VersionRead;
 
 impl EhrbaseService {
     /// The current version `(vo_id, VERSION_TREE_ID)` of an EHR's object of a
@@ -29,7 +31,7 @@ impl EhrbaseService {
     /// `branch_number = 0`).
     ///
     /// The `vo_version` current-row read is a storage seam
-    /// ([`crate::storage::version_repo::current_vo`]; no openEHR spec governs
+    /// ([`crate::storage::version_repo::meta::current_vo`]; no openEHR spec governs
     /// the SQL — our own design). The [`crate::versioning::CommitEnv`]
     /// `current_vo` hook adapts this `(Uuid, TreeId)` to its `(Uuid, i32)`
     /// (trunk) shape.
@@ -42,7 +44,7 @@ impl EhrbaseService {
         kind: Kind,
     ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
         Ok(
-            crate::storage::version_repo::current_vo(&self.pool, ehr_id, kind.as_str())
+            crate::storage::version_repo::meta::current_vo(&self.pool, ehr_id, kind.as_str())
                 .await?
                 .map(|r| {
                     (
@@ -55,14 +57,14 @@ impl EhrbaseService {
 
     /// A metadata-only [`ServiceResponse`] for a write, built entirely from the
     /// commit result — the version identity and the server commit instant are
-    /// already in [`Committed`](crate::versioning::Committed), so the write
+    /// already in [`Committed`](crate::versioning::change::Committed), so the write
     /// path never re-reads the row it just wrote (a representation response
     /// re-reads at the protocol layer). The body is `Value::Null` by contract:
     /// every write consumer uses only the metadata.
     pub(crate) fn committed_response(
         &self,
         ehr_id: Uuid,
-        committed: &crate::versioning::Committed,
+        committed: &crate::versioning::change::Committed,
     ) -> ServiceResponse {
         let meta = self.version_meta(
             ehr_id,
@@ -183,7 +185,7 @@ impl EhrbaseService {
         ehr_id: Uuid,
         kind: Kind,
     ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
-        let Some(m) = crate::storage::version_repo::current_version_meta_by_kind(
+        let Some(m) = crate::storage::version_repo::meta::current_version_meta_by_kind(
             &self.pool,
             ehr_id,
             kind.as_str(),

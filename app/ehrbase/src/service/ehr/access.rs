@@ -21,7 +21,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;
-use crate::versioning::{Kind, read_current};
+use crate::versioning::Kind;
+use crate::versioning::read::read_current;
 
 impl EhrbaseService {
     /// Drop the cached `EHR_ACCESS` settings for `ehr_id` — the

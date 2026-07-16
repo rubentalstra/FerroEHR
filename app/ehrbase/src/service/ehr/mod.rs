@@ -42,36 +42,29 @@
 //! [`crate::storage::version_repo`]; no openEHR spec governs the schema — our
 //! own design).
 
-mod access;
+pub(in crate::service) mod access;
 mod composition;
 mod contributions;
 mod directory;
-mod meta;
-mod service;
+pub(in crate::service) mod meta;
+pub(in crate::service) mod service;
 mod status;
 mod tags;
 mod uri;
-mod validation;
+pub(in crate::service) mod validation;
 
 pub mod access_types;
 pub mod handle;
 
 // The EHR-component surface other service modules and adapters consume.
-pub(in crate::service) use access::{EhrAccessCache, default_ehr_access};
-pub(in crate::service) use meta::committer;
 #[cfg(test)]
-pub(in crate::service) use service::default_ehr_status;
-pub(in crate::service) use validation::{
-    check_versioned_composition_invariants, validate_ehr_access, validate_ehr_status,
-    validate_folder,
-};
 
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
 use crate::service::status::SmError;
 use serde_json::{Value, json};
 
-use crate::versioning::TimeRange;
+use crate::versioning::contribution::TimeRange;
 
 /// Extract the version-uid `String` a write produced from the internal
 /// [`ServiceResponse`](crate::service::response::ServiceResponse)'s resource
@@ -113,7 +106,7 @@ fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
 }
 
 /// Parse the optional SM `Interval<Iso8601_date_time>` bounds of a contribution
-/// `time_range` into the internal [`crate::versioning::TimeRange`]; a malformed
+/// `time_range` into the internal [`crate::versioning::contribution::TimeRange`]; a malformed
 /// bound is a `400`-equivalent precondition failure.
 fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeRange, SmError> {
     let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
@@ -137,10 +130,10 @@ fn resolve_envelope(
     default_description: &str,
     system_id: &str,
 ) -> (
-    crate::versioning::AuditInput,
+    crate::versioning::audit::AuditInput,
     crate::versioning::change::WriteEnvelope,
 ) {
-    let audit = crate::versioning::AuditInput::from_update(
+    let audit = crate::versioning::audit::AuditInput::from_update(
         &version.audit,
         operation_change_type,
         default_description,

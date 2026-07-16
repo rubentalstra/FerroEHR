@@ -11,7 +11,7 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 
 /// One `item_tag` row.
 #[derive(Debug, Clone)]

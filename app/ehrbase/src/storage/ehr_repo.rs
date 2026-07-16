@@ -13,8 +13,8 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
-use crate::storage::version_repo::CurrentMeta;
+use crate::storage::error::StorageError;
+use crate::storage::version_repo::meta::CurrentMeta;
 
 /// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
 /// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /

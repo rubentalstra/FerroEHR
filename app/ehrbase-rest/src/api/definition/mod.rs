@@ -15,14 +15,11 @@
 //! `ehrbase-sm` native API (`DefinitionAdl14Service` / `DefinitionAdl2Service` /
 //! `DefinitionQueryService` + the wire-shaped `DefinitionAdapter` extension).
 
-mod dispatch;
-mod openapi_routes;
+pub(crate) mod dispatch;
+pub(crate) mod openapi_routes;
 mod stored_query;
 mod template_adl14;
 mod template_adl2;
-
-pub(crate) use dispatch::dispatch;
-pub(crate) use openapi_routes::routes;
 
 // The `adl1.4/{id}/example` handler negotiates the Simplified-Formats
 // (FLAT/STRUCTURED) representations through the shared converter seam, exactly
