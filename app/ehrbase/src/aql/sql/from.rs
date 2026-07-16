@@ -40,7 +40,7 @@ enum ExistsAnchor {
 impl Builder<'_> {
     // ── FROM / containment ────────────────────────────────────────────────────
 
-    pub(super) fn build_from(&mut self, tree: &ContainsTree) -> Result<(), AqlError> {
+    fn build_from(&mut self, tree: &ContainsTree) -> Result<(), AqlError> {
         self.walk(tree, None, None)?;
         Ok(())
     }
@@ -332,7 +332,7 @@ impl Builder<'_> {
         }
     }
 
-    pub(super) fn apply_ehr_scope(&mut self) {
+    fn apply_ehr_scope(&mut self) {
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): restrict every VO root to
         // the id set with `ehr_id IN (…)` (equivalently `= ANY($ids)`). The
         // single-`ehr_id` REST case is just the one-element set. Empty = no
@@ -366,7 +366,7 @@ impl Builder<'_> {
     /// therefore restrict every EHR root — bare `EHR` sources (`ehr.id`) and VO
     /// roots (`node.ehr_id`) alike — to that set. A scoped query (a non-empty
     /// `ehr_ids` set) targets specific EHRs and is not gated.
-    pub(super) fn apply_population_gate(&mut self) {
+    fn apply_population_gate(&mut self) {
         if !self.ctx.ehr_ids.is_empty() {
             return;
         }
@@ -415,7 +415,7 @@ impl Builder<'_> {
     /// EHR has exactly one current `EHR_STATUS`, so the inner join is 1:1. The
     /// population/`ehr_id` gates already constrain the `ehr` row, so the joined
     /// status inherits that scope transitively (no separate gating).
-    pub(super) fn ensure_ehr_status_root(&mut self, ehr_sid: usize) -> Result<String, AqlError> {
+    fn ensure_ehr_status_root(&mut self, ehr_sid: usize) -> Result<String, AqlError> {
         if let Some(a) = self.ehr_status_node.get(&ehr_sid) {
             return Ok(a.clone());
         }
@@ -445,7 +445,7 @@ impl Builder<'_> {
         Ok(node)
     }
 
-    pub(super) fn ensure_audit(&mut self, voa: &str) -> String {
+    fn ensure_audit(&mut self, voa: &str) -> String {
         if let Some(a) = self.audit_alias.get(voa) {
             return a.clone();
         }
@@ -511,6 +511,6 @@ impl Builder<'_> {
 
 /// The VO-root RM types the store versions independently (RM common master06
 /// versioned objects; the store's `vo_version.kind` discriminants).
-pub(super) fn is_vo_root_type(t: &str) -> bool {
+fn is_vo_root_type(t: &str) -> bool {
     matches!(t, "COMPOSITION" | "EHR_STATUS" | "EHR_ACCESS" | "FOLDER")
 }

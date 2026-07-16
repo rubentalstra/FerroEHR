@@ -44,7 +44,7 @@ pub mod version_repo;
 
 pub use codec::{decompose, reassemble};
 pub use error::StorageError;
-pub(crate) use error::classify_sqlx;
+use error::classify_sqlx;
 pub use promoted::{PROMOTED_LEAVES, PromotedKind, PromotedLeaf};
 pub use row::{NodeContent, NodeRow, ReadRow};
 pub use structure::{archetype_parts, is_structure_type, is_versioned_root_type};

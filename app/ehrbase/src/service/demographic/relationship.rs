@@ -92,7 +92,7 @@ fn validate_relationship_body(body: &Value) -> Result<(), ServiceError> {
 /// [`Kind`] was already derived from the payload `_type`, so only the structural
 /// check remains). `EhrbaseService::validate_for_commit` dispatches a
 /// [`Kind::PartyRelationship`] here.
-pub(crate) fn validate_relationship_for_commit(data: &Value) -> Result<(), ServiceError> {
+fn validate_relationship_for_commit(data: &Value) -> Result<(), ServiceError> {
     typed_check(data)
 }
 
@@ -103,7 +103,7 @@ impl EhrbaseService {
     /// first version of a new `PARTY_RELATIONSHIP` (server-side
     /// `VERSIONED_OBJECT` + `ORIGINAL_VERSION` + `CONTRIBUTION`). Returns it with
     /// its `uid` set and the create-response `ETag`/`Location` metadata.
-    pub(crate) async fn create_relationship(
+    async fn create_relationship(
         &self,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -139,7 +139,7 @@ impl EhrbaseService {
     /// versioned-object id, optionally at a specific version or instant (else
     /// the latest). A deleted current version resolves to `Null` (→ `204`); an
     /// unknown or wrong-kind id is `404`.
-    pub(crate) async fn read_relationship(
+    async fn read_relationship(
         &self,
         vo_id: Uuid,
         version: Option<TreeId>,
@@ -156,7 +156,7 @@ impl EhrbaseService {
     /// version. `expected` (from `If-Match`) enforces optimistic concurrency (a
     /// stale precondition → `412`). Pre `has_party_relationship` is realized by
     /// [`ensure_relationship`](EhrbaseService::ensure_relationship).
-    pub(crate) async fn update_relationship(
+    async fn update_relationship(
         &self,
         vo_id: Uuid,
         body: Value,
@@ -194,7 +194,7 @@ impl EhrbaseService {
     /// delete (a `523|deleted|` version — RM common master06 §Logical Deletion).
     /// `expected` is the trunk version from the mandatory `OBJECT_VERSION_ID`; a
     /// stale value → `409`, an already-deleted target → `400`.
-    pub(crate) async fn delete_relationship(
+    async fn delete_relationship(
         &self,
         vo_id: Uuid,
         expected: Option<TreeId>,
@@ -244,7 +244,7 @@ impl EhrbaseService {
 
     /// The current relationship version metadata (the latest `version_uid` a
     /// `412` echoes in `ETag`/`Location`), or `None` if unknown/wrong-kind.
-    pub(crate) async fn relationship_current_meta(
+    async fn relationship_current_meta(
         &self,
         vo_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
@@ -267,7 +267,7 @@ impl EhrbaseService {
     /// analogy with the EHR group. The version-spine read goes through
     /// `crate::storage::version_repo` (storage owns the SQL — no openEHR spec
     /// governs the storage read, our own design).
-    pub(crate) async fn versioned_relationship(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    async fn versioned_relationship(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;
         let time_created = crate::storage::version_repo::time_created(&self.pool, vo_id)
             .await?
@@ -298,7 +298,7 @@ impl EhrbaseService {
     ///
     /// As [`versioned_relationship`](Self::versioned_relationship), the ehr-less
     /// version-spine read goes through `crate::storage::version_repo`.
-    pub(crate) async fn relationship_revision_history(
+    async fn relationship_revision_history(
         &self,
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
@@ -329,7 +329,7 @@ impl EhrbaseService {
 
     /// `get_party_relationship_at_version` (`i_party_relationship.adoc`): the
     /// `ORIGINAL_VERSION` at a specific version. A non-relationship id is `404`.
-    pub(crate) async fn relationship_version(
+    async fn relationship_version(
         &self,
         vo_id: Uuid,
         version: TreeId,
@@ -347,7 +347,7 @@ impl EhrbaseService {
 
     /// The `ORIGINAL_VERSION` extant at `at` (or the latest when `None`), with
     /// `ETag`/`Location` metadata for the VERSION resource.
-    pub(crate) async fn relationship_version_at_time(
+    async fn relationship_version_at_time(
         &self,
         vo_id: Uuid,
         at: Option<jiff::Timestamp>,

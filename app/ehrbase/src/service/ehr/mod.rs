@@ -61,13 +61,13 @@ pub mod access_types;
 pub mod handle;
 
 // The EHR-component surface other service modules and adapters consume.
-pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
-pub(in crate::service) use composition_validate::check_versioned_composition_invariants;
-pub(in crate::service) use directory::validate_folder;
-pub(in crate::service) use meta::committer;
+use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
+use composition_validate::check_versioned_composition_invariants;
+use directory::validate_folder;
+use meta::committer;
 #[cfg(test)]
-pub(in crate::service) use service::default_ehr_status;
-pub(in crate::service) use status_validate::validate_ehr_status;
+use service::default_ehr_status;
+use status_validate::validate_ehr_status;
 
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;

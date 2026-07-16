@@ -30,7 +30,7 @@ use crate::versioning::{Committed, SigningCtx};
 /// read-time bytes match) — is signed over its `canonical_form()` (the
 /// signature attribute Void during serialization, S-40).
 #[allow(clippy::too_many_arguments)] // the parts of an ORIGINAL_VERSION + signing context
-pub(crate) fn sign_version(
+fn sign_version(
     ctx: &SigningCtx<'_>,
     audit: &AuditInput,
     time_committed: jiff::Timestamp,
@@ -79,7 +79,7 @@ pub(crate) fn sign_version(
 /// # Errors
 /// [`ServiceError::Signing`] only when `verify_on_read = strict` and the stored
 /// signature fails verification.
-pub(crate) fn verify_on_read(
+fn verify_on_read(
     signer: &Signer,
     ov: &Value,
     signature: Option<&str>,
@@ -120,7 +120,7 @@ impl Committed {
     /// PORT NOTE: no openEHR spec governs eventing — our own extension. The
     /// outbox row is written inside the commit transaction by storage; this
     /// only builds the payload (README cross-ruling: extensions build payloads).
-    pub(crate) fn envelope_entry(&self) -> Value {
+    fn envelope_entry(&self) -> Value {
         serde_json::json!({
             "vo_id": self.vo_id,
             "kind": self.kind.as_str(),

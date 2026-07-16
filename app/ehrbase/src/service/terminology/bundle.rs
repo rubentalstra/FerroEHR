@@ -172,7 +172,7 @@ fn bundle_version() -> Option<String> {
 // ─── the 9 SM calls, as DB-free functions the trait impl delegates to ────────
 
 /// `get_terminology_ids` — `"openehr"` plus every external code set's id.
-pub(super) fn terminology_ids() -> Vec<String> {
+fn terminology_ids() -> Vec<String> {
     let mut ids = vec![OPENEHR.to_owned()];
     ids.extend(openehr().external_code_sets().iter().map(|cs| {
         cs.external_id
@@ -183,12 +183,12 @@ pub(super) fn terminology_ids() -> Vec<String> {
 }
 
 /// `has_terminology`.
-pub(super) fn has_terminology(terminology_id: &str) -> bool {
+fn has_terminology(terminology_id: &str) -> bool {
     terminology_id == OPENEHR || external_terminology(terminology_id).is_some()
 }
 
 /// `get_terminology_description`. `Pre_has_terminology`.
-pub(super) fn terminology_description(
+fn terminology_description(
     terminology_id: &str,
 ) -> Result<TerminologyDescription, SmError> {
     if terminology_id == OPENEHR {
@@ -216,7 +216,7 @@ pub(super) fn terminology_description(
 }
 
 /// `has_term`. `Pre_has_terminology` → `NotFound` on an unknown terminology.
-pub(super) fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError> {
+fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
@@ -235,7 +235,7 @@ pub(super) fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError
 }
 
 /// `get_term`. `Pre_has_terminology` + `Pre_has_term` (both → `NotFound`).
-pub(super) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyExtract, SmError> {
+fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyExtract, SmError> {
     if !has_terminology(terminology_id) {
         return Err(unknown_terminology(terminology_id));
     }
@@ -270,7 +270,7 @@ pub(super) fn get_term(terminology_id: &str, code: &str) -> Result<TerminologyEx
 /// any other here — always False. `Pre_has_terminology`. (Hierarchical
 /// subsumption is served by the external FHIR provider's
 /// `CodeSystem/$subsumes`.)
-pub(super) fn subsumes(
+fn subsumes(
     terminology_id: &str,
     _ref_code: &str,
     _candidate_child_code: &str,
@@ -282,12 +282,12 @@ pub(super) fn subsumes(
 }
 
 /// `has_value_set` — total (no precondition); unknown terminology → `false`.
-pub(super) fn has_value_set(terminology_id: &str, value_set_code: &str) -> bool {
+fn has_value_set(terminology_id: &str, value_set_code: &str) -> bool {
     resolve_value_set(terminology_id, value_set_code).is_some()
 }
 
 /// `value_set_validate` — set membership. `Pre_has_terminology`.
-pub(super) fn value_set_validate(
+fn value_set_validate(
     terminology_id: &str,
     value_set_id: &str,
     candidate_code: &str,
@@ -300,7 +300,7 @@ pub(super) fn value_set_validate(
 }
 
 /// `get_value_set`. `Pre_has_terminology` + `Pre_has_value_set` (both → `NotFound`).
-pub(super) fn get_value_set(
+fn get_value_set(
     terminology_id: &str,
     value_set_code: &str,
 ) -> Result<TerminologyExtract, SmError> {

@@ -49,7 +49,7 @@ pub struct PgpSignError(String);
 
 /// The structural outcome of verifying a PGP-armored signature against the key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum PgpVerdict {
+enum PgpVerdict {
     /// A valid detached signature by the configured key over the content.
     Valid,
     /// A well-formed detached signature that does not verify.
@@ -131,7 +131,7 @@ impl PgpKey {
     }
 
     /// Verify an armored detached signature over `data` against the public key.
-    pub(crate) fn verify(&self, data: &[u8], armored_sig: &str) -> PgpVerdict {
+    fn verify(&self, data: &[u8], armored_sig: &str) -> PgpVerdict {
         let Ok((sig, _headers)) = DetachedSignature::from_string(armored_sig) else {
             return PgpVerdict::Malformed;
         };

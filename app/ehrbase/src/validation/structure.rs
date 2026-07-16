@@ -39,7 +39,7 @@ const OPT_TOP_LEVEL_MULTIPLE: &[&str] = &["component_ontologies", "annotations"]
 /// legitimate nested reuse of a name (e.g. `<template_id>` inside a term binding)
 /// is unaffected. The codec already catches missing mandatory elements; this
 /// closes the leniency gap the CNF `upload_opt-invalid_opt` case exercises.
-pub(crate) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
+fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     use quick_xml::Reader;
     use quick_xml::events::Event;
 

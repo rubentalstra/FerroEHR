@@ -213,20 +213,20 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub(super) fn next_ctr(&mut self) -> usize {
+    fn next_ctr(&mut self) -> usize {
         let n = self.sub_ctr;
         self.sub_ctr += 1;
         n
     }
 
-    pub(super) fn bind_value(&self, b: &Bind) -> Result<Value, AqlError> {
+    fn bind_value(&self, b: &Bind) -> Result<Value, AqlError> {
         match b {
             Bind::Literal(lit) => Ok(literal_value(lit)),
             Bind::Param(p) => self.param_value(p),
         }
     }
 
-    pub(super) fn param_value(&self, name: &str) -> Result<Value, AqlError> {
+    fn param_value(&self, name: &str) -> Result<Value, AqlError> {
         match self.params.get(name) {
             Some(ParamValue::Int(i)) => Ok(Value::from(*i)),
             Some(ParamValue::Real(r)) => Ok(Value::from(*r)),
@@ -237,7 +237,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub(super) fn param_str(&self, name: &str) -> Result<String, AqlError> {
+    fn param_str(&self, name: &str) -> Result<String, AqlError> {
         match self.params.get(name) {
             Some(ParamValue::Str(s)) => Ok(s.clone()),
             Some(ParamValue::Int(i)) => Ok(i.to_string()),
@@ -325,7 +325,7 @@ pub fn build_scope(
 /// Translate an AQL `LIKE` pattern to a SQL `LIKE` pattern (QUERY master03
 /// §Operators/LIKE) — the test surface of [`expr::aql_like_to_sql`].
 #[cfg(test)]
-pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
+fn aql_like_to_sql_for_tests(pattern: &str) -> String {
     expr::aql_like_to_sql(pattern)
 }
 
@@ -333,7 +333,7 @@ pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
 /// tests can assert the emitted condition (the subsumption vs equality split,
 /// G-05).
 #[cfg(test)]
-pub(super) fn archetype_predicate_sql_for_tests(value: &str) -> String {
+fn archetype_predicate_sql_for_tests(value: &str) -> String {
     expr::archetype_predicate_sql(value)
 }
 

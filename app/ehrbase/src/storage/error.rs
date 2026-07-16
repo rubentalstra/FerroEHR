@@ -98,7 +98,7 @@ impl From<StorageError> for crate::service::status::SmError {
 ///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the W-12
 ///   admission contract).
 /// - anything else → [`CallStatusType::Exception`] (`500`, a genuine fault).
-pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
+fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
     use crate::service::status::{CallStatusType, SmError};
     match e {
         sqlx::Error::PoolTimedOut => {

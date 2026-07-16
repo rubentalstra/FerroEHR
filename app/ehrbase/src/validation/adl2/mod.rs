@@ -54,9 +54,9 @@ use odin::OdinValue;
 
 /// One registration-validity violation: the AOM2 rule code + a human detail.
 #[derive(Debug)]
-pub(crate) struct Adl2Violation {
-    pub(crate) code: &'static str,
-    pub(crate) detail: String,
+struct Adl2Violation {
+    code: &'static str,
+    detail: String,
 }
 
 impl Adl2Violation {
@@ -70,22 +70,22 @@ impl Adl2Violation {
 
 /// What the structural validation learns about an artefact — the upload path
 /// uses it for storage keys and the VACSD parent check.
-pub(crate) struct Adl2Meta {
+struct Adl2Meta {
     /// `archetype` / `template` / `template_overlay` / `operational_template`.
-    pub(crate) kind: &'static str,
+    kind: &'static str,
     /// The `ARCHETYPE_HRID` on the line after the header.
-    pub(crate) hrid: String,
+    hrid: String,
     /// The parent HRID from the `specialize` section, when present.
-    pub(crate) parent_hrid: Option<String>,
+    parent_hrid: Option<String>,
     /// Specialisation depth = extension count of the root node id
     /// (`id1` → 0, `id1.1` → 1, …).
-    pub(crate) depth: usize,
+    depth: usize,
 }
 
 /// Validate one ADL2 source at registration. Returns the artefact metadata or
 /// the first violation.
 #[allow(clippy::too_many_lines)] // one linear rule sequence; splitting would obscure the catalogue order
-pub(crate) fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation> {
+fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation> {
     let text = src.trim_start_matches('\u{feff}');
     let sections = split_sections(text);
 
@@ -461,7 +461,7 @@ pub(crate) fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation>
 /// been fetched from the registry; `None` parent-depth (parent not stored /
 /// not introspectable) skips the check — registration order is not
 /// constrained by the spec.
-pub(crate) fn check_specialisation_depth(
+fn check_specialisation_depth(
     meta: &Adl2Meta,
     parent_depth: usize,
 ) -> Result<(), Adl2Violation> {

@@ -112,6 +112,6 @@ pub type DataFrameSample = Sample<FramePayload>;
 pub type VariableSample = Sample<VariableValue>;
 
 /// The current time as an ISO-8601 string (`SAMPLE.retrieve_time`).
-pub(crate) fn now_iso() -> String {
+fn now_iso() -> String {
     jiff::Timestamp::now().to_string()
 }

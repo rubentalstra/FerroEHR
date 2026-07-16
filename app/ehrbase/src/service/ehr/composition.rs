@@ -30,7 +30,7 @@ use super::composition_validate::{
 /// commit audit (caller attributes merged with the server rules — ITS-REST
 /// overview §"openehr-version and openehr-audit-details" MUST) and the write
 /// envelope (lifecycle / verbatim signature / attestations).
-pub(in crate::service) fn resolve_envelope(
+fn resolve_envelope(
     version: &crate::service::version_update::UpdateVersion,
     operation_change_type: &str,
     default_description: &str,
@@ -118,7 +118,7 @@ impl EhrbaseService {
     /// Retrieve a COMPOSITION by its versioned-object id, optionally at a specific
     /// version (else the latest). A deleted version resolves to `Value::Null` (→
     /// `204`, F-02-01) — never 404 or 500.
-    pub(in crate::service) async fn read_composition(
+    async fn read_composition(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -139,7 +139,7 @@ impl EhrbaseService {
 
     /// A COMPOSITION as it was at an instant (time-travel), with its `uid` set. A
     /// deleted version resolves to an empty body (→ `204`).
-    pub(in crate::service) async fn composition_at_time(
+    async fn composition_at_time(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -156,7 +156,7 @@ impl EhrbaseService {
     }
 
     /// The `VERSIONED_OBJECT` for a COMPOSITION (verifies EHR ownership).
-    pub(in crate::service) async fn versioned_composition(
+    async fn versioned_composition(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -169,7 +169,7 @@ impl EhrbaseService {
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.
-    pub(in crate::service) async fn composition_revision_history_value(
+    async fn composition_revision_history_value(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -178,7 +178,7 @@ impl EhrbaseService {
     }
 
     /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
-    pub(in crate::service) async fn composition_version(
+    async fn composition_version(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -195,7 +195,7 @@ impl EhrbaseService {
     /// `at` is `None` (`GET …/versioned_composition/{uid}/version`, F-02-04). A
     /// deleted version still returns `200` with the deleted-lifecycle
     /// `ORIGINAL_VERSION` (no `data`).
-    pub(in crate::service) async fn composition_version_at_time_read(
+    async fn composition_version_at_time_read(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -332,7 +332,7 @@ impl EhrbaseService {
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a
     /// `409`/`412` must echo), or `None` if unknown/deleted.
-    pub(in crate::service) async fn composition_current_meta(
+    async fn composition_current_meta(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -454,7 +454,7 @@ impl EhrbaseService {
     /// existence read is a storage seam
     /// ([`crate::storage::version_repo::ehr_exists`]; no openEHR spec governs the
     /// SQL — our own design).
-    pub(in crate::service) async fn ensure_ehr_exists(
+    async fn ensure_ehr_exists(
         &self,
         ehr_id: Uuid,
     ) -> Result<(), ServiceError> {
@@ -473,7 +473,7 @@ impl EhrbaseService {
     /// round trips. The guarded concepts are RM ehr master04 §EHR Creation
     /// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
     /// openEHR spec governs the query shape (our own design).
-    pub(in crate::service) async fn ensure_ehr_content_writable(
+    async fn ensure_ehr_content_writable(
         &self,
         ehr_id: Uuid,
     ) -> Result<(), ServiceError> {
@@ -492,11 +492,6 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_composition(
         &self,
         an_ehr_id: Uuid,
@@ -510,11 +505,6 @@ impl EhrbaseService {
         }
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_latest(
         &self,
         an_ehr_id: Uuid,
@@ -526,11 +516,6 @@ impl EhrbaseService {
             .body)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -553,11 +538,6 @@ impl EhrbaseService {
         }
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_composition_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -570,11 +550,6 @@ impl EhrbaseService {
             .body)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_composition(
         &self,
         an_ehr_id: Uuid,
@@ -585,29 +560,9 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_revision_history(
         &self,
         an_ehr_id: Uuid,
@@ -618,11 +573,6 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_version_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -636,11 +586,6 @@ impl EhrbaseService {
             .body)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_original_version(
         &self,
         an_ehr_id: Uuid,
@@ -654,11 +599,6 @@ impl EhrbaseService {
 // ── ITS-REST MultimediaAdapter (adapter-support extension) ────────────────────
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         // Off by default: no engine ⇒ serve the stored form unchanged.
         let Some(engine) = &self.multimedia else {

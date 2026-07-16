@@ -30,7 +30,7 @@ use crate::service::subject_proxy::value::VariableValue;
 
 /// Extract the typed [`VariableValue`] for (`frame_path`, `type_name`) from a
 /// frame sample. `Err` is an extraction/typing failure (reason text).
-pub(super) fn extract_value(
+fn extract_value(
     sample: &DataFrameSample,
     frame_path: &str,
     type_name: &str,

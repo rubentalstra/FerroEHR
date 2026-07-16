@@ -23,38 +23,38 @@ use crate::versioning::{Kind, integrity};
 /// A loaded version: its full provenance metadata and reassembled canonical
 /// JSON (with attestations attached).
 #[derive(Debug, Clone)]
-pub(crate) struct VersionRead {
-    pub(crate) vo_id: Uuid,
-    pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) tree: TreeId,
-    pub(crate) preceding_version_uid: Option<String>,
-    pub(crate) other_input_version_uids: Vec<String>,
-    pub(crate) lifecycle_state: String,
+struct VersionRead {
+    vo_id: Uuid,
+    ehr_id: Option<Uuid>,
+    tree: TreeId,
+    preceding_version_uid: Option<String>,
+    other_input_version_uids: Vec<String>,
+    lifecycle_state: String,
     /// The immutable identity of the system that created this version (RM common
     /// master06 §Distributed Versioning), the middle part of its
     /// `OBJECT_VERSION_ID`.
-    pub(crate) creating_system_id: String,
-    pub(crate) contribution_id: Uuid,
+    creating_system_id: String,
+    contribution_id: Uuid,
     /// The mandatory `VERSION.commit_audit` (1..1).
-    pub(crate) audit: AuditInput,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) template_id: Option<String>,
+    audit: AuditInput,
+    time_committed: jiff::Timestamp,
+    template_id: Option<String>,
     /// The stored `VERSION.signature` (0..1; RM common master06 §Digital
     /// Signature), or `None` for versions committed before signing was enabled.
-    pub(crate) signature: Option<String>,
+    signature: Option<String>,
     /// The reassembled canonical JSON, or `Value::Null` for a deleted version
     /// (a logical delete stores no node rows — master06 §Logical Deletion).
-    pub(crate) canonical: Value,
+    canonical: Value,
     /// The `ATTESTATION`s attached to this version, in commit order (RM common
     /// master06 §Attestation). Surfaced as `ORIGINAL_VERSION.attestations`,
     /// appended **after** signature verification (attestations arrive after
     /// committal and are not part of the signed canonical form).
-    pub(crate) attestations: Vec<Value>,
+    attestations: Vec<Value>,
 }
 
 impl VersionRead {
     /// Whether this version is logically deleted (`lifecycle_state` `523`).
-    pub(crate) fn deleted(&self) -> bool {
+    fn deleted(&self) -> bool {
         self.lifecycle_state == lifecycle::state::DELETED
     }
 }
@@ -96,7 +96,7 @@ fn version_read(stored: crate::storage::version_repo::StoredVersion) -> VersionR
 /// existed; a deleted current version is returned with `canonical = Null` and a
 /// `523` lifecycle so callers can distinguish 404 (never existed) from a
 /// deleted read (RM common master06 §Logical Deletion).
-pub(crate) async fn read_current(
+async fn read_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
@@ -108,7 +108,7 @@ pub(crate) async fn read_current(
 /// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
 /// — for internal callers that key rows by ordinal (the FHIR mapping table,
 /// extract export iteration), never for wire version ids.
-pub(crate) async fn read_version_by_ordinal(
+async fn read_version_by_ordinal(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     ordinal: i32,
@@ -122,7 +122,7 @@ pub(crate) async fn read_version_by_ordinal(
 
 /// Read a specific version of an object by its `VERSION_TREE_ID`
 /// (`.../version/{version_uid}` — trunk or branch).
-pub(crate) async fn read_version(
+async fn read_version(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     tree: TreeId,
@@ -138,7 +138,7 @@ pub(crate) async fn read_version(
 /// Read the version of an object that was current at a given instant
 /// (time-travel; RM common master08 §Change Management — any previous state is
 /// reconstructable): the row whose `sys_period` contains `at`.
-pub(crate) async fn version_at(
+async fn version_at(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     at: jiff::Timestamp,
@@ -150,7 +150,7 @@ pub(crate) async fn version_at(
 
 /// The kind of the current version of an object, or `None` if it does not
 /// exist.
-pub(crate) async fn object_kind(
+async fn object_kind(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<Kind>, ServiceError> {
@@ -168,17 +168,17 @@ pub(crate) async fn object_kind(
 /// [`read_current`] node read (RM common master06 §Version Identification /
 /// §Logical Deletion).
 #[derive(Debug, Clone)]
-pub(crate) struct DemographicCurrent {
-    pub(crate) kind: Kind,
-    pub(crate) tree: TreeId,
-    pub(crate) creating_system_id: String,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) deleted: bool,
+struct DemographicCurrent {
+    kind: Kind,
+    tree: TreeId,
+    creating_system_id: String,
+    time_committed: jiff::Timestamp,
+    deleted: bool,
 }
 
 /// Resolve the current trunk version of a demographic object, or `None` if it
 /// has no current version (or the stored kind is unrecognized).
-pub(crate) async fn demographic_current(
+async fn demographic_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<DemographicCurrent>, ServiceError> {
@@ -207,7 +207,7 @@ pub(crate) async fn demographic_current(
 /// assembled directly as canonical JSON rather than through a typed
 /// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
 /// spec-correct.
-pub(crate) async fn revision_history(
+async fn revision_history(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,
     vo_id: Uuid,
@@ -272,7 +272,7 @@ pub(crate) async fn revision_history(
 /// (`import_ehr` over an `export_ehrs` extract) legitimately holds a partial
 /// trunk history whose lowest version is `> 1`; `time_created` is then the
 /// earliest version this repository received.
-pub(crate) async fn versioned_object(
+async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     ehr_id: Uuid,
@@ -304,7 +304,7 @@ pub(crate) async fn versioned_object(
 /// # Errors
 /// [`ServiceError::Signing`] only when `verify_on_read = strict` and the stored
 /// signature fails verification.
-pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
+fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
     let mut ov = build_original_version(
         &read.creating_system_id,
         read.vo_id,
@@ -344,7 +344,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 /// `ORIGINAL_VERSION.lifecycle_state` coded from `version_lifecycle_state`
 /// (RM common master06 §Version subtypes).
 #[allow(clippy::too_many_arguments)] // the ORIGINAL_VERSION's attributes; a struct would not read clearer
-pub(crate) fn build_original_version(
+fn build_original_version(
     creating_system_id: &str,
     vo_id: Uuid,
     tree: TreeId,

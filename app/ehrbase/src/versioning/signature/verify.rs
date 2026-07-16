@@ -64,7 +64,7 @@ impl Verdict {
 const PGP_ARMOR: &str = "-----BEGIN PGP SIGNATURE-----";
 
 /// Classify + verify a stored `signature` against the served `canonical` form.
-pub(crate) fn verify(mode: &SignerMode, canonical: &str, signature: &str) -> Verdict {
+fn verify(mode: &SignerMode, canonical: &str, signature: &str) -> Verdict {
     if signature.starts_with(DIGEST_PREFIX) {
         return if signature == digest_signature(canonical) {
             Verdict::DigestMatch

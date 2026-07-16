@@ -21,7 +21,7 @@ use crate::versioning::parse_uid_based_id;
 
 impl EhrbaseService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
-    pub(in crate::service) async fn ehr_tags(
+    async fn ehr_tags(
         &self,
         ehr_id: Uuid,
         key: Option<&str>,
@@ -41,7 +41,7 @@ impl EhrbaseService {
     }
 
     /// Tags on one target object (a COMPOSITION or `EHR_STATUS`).
-    pub(in crate::service) async fn target_tags(
+    async fn target_tags(
         &self,
         ehr_id: Uuid,
         target_vo_id: Uuid,
@@ -62,7 +62,7 @@ impl EhrbaseService {
     /// returning the target's tags after — `PUT` full-collection semantics
     /// (F-03-05): tags omitted from the body are removed, and an empty list
     /// clears all tags on the target.
-    pub(in crate::service) async fn replace_tags(
+    async fn replace_tags(
         &self,
         ehr_id: Uuid,
         target_vo_id: Uuid,
@@ -120,7 +120,7 @@ impl EhrbaseService {
     }
 
     /// Delete a tag by key from a target object.
-    pub(in crate::service) async fn delete_tag(
+    async fn delete_tag(
         &self,
         ehr_id: Uuid,
         target_vo_id: Uuid,
@@ -168,11 +168,6 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn ehr_tags_get(
         &self,
         an_ehr_id: Uuid,
@@ -190,11 +185,6 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tags_get(
         &self,
         an_ehr_id: Uuid,
@@ -204,11 +194,6 @@ impl EhrbaseService {
         Ok(self.target_tags(an_ehr_id, vo_id).await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tags_replace(
         &self,
         an_ehr_id: Uuid,
@@ -222,11 +207,6 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn target_tag_delete(
         &self,
         an_ehr_id: Uuid,
