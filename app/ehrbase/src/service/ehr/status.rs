@@ -74,14 +74,20 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        body: Value,
+        version: crate::service::version_update::UpdateVersion,
         if_match: &str,
     ) -> Result<ServiceResponse, ServiceError> {
+        let (audit, envelope) = crate::service::ehr::composition::resolve_envelope(
+            &version,
+            change_type::MODIFICATION,
+            "EHR_STATUS update",
+            &self.effective_system_id(),
+        );
+        let body = version.data;
         super::validate_ehr_status(&body)?;
         let expected = expected_from_if_match(if_match)?;
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::MODIFICATION, "EHR_STATUS update");
         let committed = update(
             &mut tx,
             Some(ehr_id),
@@ -91,6 +97,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            envelope,
             &self.signing_ctx(),
         )
         .await?;
@@ -143,7 +150,13 @@ impl EhrbaseService {
             map.remove("uid");
             mutate(map);
         }
-        self.status_update(ehr_id, vo_id, body, &preceding).await
+        self.status_update(
+            ehr_id,
+            vo_id,
+            crate::service::version_update::UpdateVersion::direct(body),
+            &preceding,
+        )
+        .await
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
@@ -559,7 +572,7 @@ impl EhrbaseService {
             .map(|o| o.value)
             .unwrap_or_default();
         version_uid(
-            self.status_update(an_ehr_id, vo_id, a_status.data, &if_match)
+            self.status_update(an_ehr_id, vo_id, a_status, &if_match)
                 .await?,
         )
     }

@@ -76,7 +76,16 @@ impl EhrbaseService {
         // externalization is on (then the fresh read reflects the offloaded form).
         let repr_body = self.multimedia.is_none().then(|| body.clone());
         let mut tx = self.pool.begin().await?;
-        let committed = create(&mut tx, None, kind_of(kind), body, None, &audit, &ctx).await?;
+        let committed = create(
+            &mut tx,
+            None,
+            kind_of(kind),
+            body,
+            None,
+            &audit,
+            crate::versioning::change::WriteEnvelope::default(),
+            &ctx,
+        ).await?;
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
@@ -193,6 +202,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &ctx,
         )
         .await?;
@@ -266,6 +276,7 @@ impl EhrbaseService {
             kind_of(current.kind),
             Some(current.tree),
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &ctx,
         )
         .await?;

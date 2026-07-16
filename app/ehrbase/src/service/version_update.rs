@@ -132,6 +132,42 @@ pub struct UpdateVersion<T = Value> {
     pub signature: Option<String>,
 }
 
+impl UpdateVersion {
+    /// A plain server-side commit envelope around `data`: 532|complete|
+    /// lifecycle, the server's own audit identity, no client signature, no
+    /// attestations. The internal commit paths (FHIR ingest, TDD import) that
+    /// synthesize compositions use this; wire commits carry the caller's
+    /// merged envelope instead.
+    #[must_use]
+    pub fn direct(data: Value) -> Self {
+        let code = |terminology: &str, code: &str| TerminologyCode {
+            terminology_id: terminology.to_owned(),
+            terminology_version: None,
+            code_string: code.to_owned(),
+            uri: None,
+        };
+        Self {
+            preceding_version_uid: None,
+            // 532|complete| (RM common master06 §Version Lifecycle).
+            lifecycle_state: code("openehr", "532"),
+            attestations: None,
+            data,
+            audit: UpdateAudit {
+                // 249|creation| — the operation overrides it anyway.
+                change_type: code("openehr", "249"),
+                description: None,
+                committer: serde_json::from_value(
+                    serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
+                )
+                .unwrap_or_else(|_| unreachable!("static PARTY_IDENTIFIED shape deserializes")),
+                system_id: None,
+            },
+            signature: None,
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

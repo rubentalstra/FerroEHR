@@ -339,42 +339,6 @@ pub async fn write_contribution(
 
 // ── vo_version writes ─────────────────────────────────────────────────────────
 
-/// Insert one `vo_version` row opening at `now()` (validity `[now, ∞)`).
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver/insert failure.
-pub async fn insert_vo_version(
-    tx: &mut PgConnection,
-    row: &VersionRow<'_>,
-) -> Result<(), StorageError> {
-    let other_input = optional_json_array(row.other_input_version_uids);
-    sqlx::query(
-        "INSERT INTO vo_version \
-         (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
-          sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-          other_input_version_uids, contribution_id, audit_id, template_id, signature) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, tstzrange(now(), NULL, '[)'), \
-                 $8, $9, $10, $11, $12, $13, $14, $15)",
-    )
-    .bind(row.vo_id)
-    .bind(row.kind)
-    .bind(row.ehr_id)
-    .bind(row.sys_version)
-    .bind(row.trunk_version)
-    .bind(row.branch_number)
-    .bind(row.branch_version)
-    .bind(row.lifecycle_state)
-    .bind(row.creating_system_id)
-    .bind(row.preceding_version_uid)
-    .bind(other_input)
-    .bind(row.contribution_id)
-    .bind(row.audit_id)
-    .bind(row.template_id)
-    .bind(row.signature)
-    .execute(&mut *tx)
-    .await?;
-    Ok(())
-}
 
 /// Insert one imported `vo_version` row with an explicit `sys_period`
 /// (the import analogue of [`insert_vo_version`]; master06 §Copying). Stores
@@ -1150,6 +1114,107 @@ pub async fn next_ordinal(tx: &mut PgConnection, vo_id: Uuid) -> Result<i32, Sto
     .await?)
 }
 
+/// The version-tree placement read, merged into ONE statement: the preceding
+/// lineage tip (the version `expected` names, or the open TRUNK tip), the next
+/// storage commit ordinal, and the transaction timestamp. The timestamp is the
+/// commit instant every row of this transaction stamps (`now()` is stable for
+/// the whole transaction), so the caller can compute the `VERSION.signature`
+/// over `time_committed` BEFORE any insert (RM common master06 §Digital
+/// Signature) and commit through the folded CTE unconditionally.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn next_placement(
+    tx: &mut PgConnection,
+    vo_id: Uuid,
+    expected: Option<(i32, i32, i32)>,
+) -> Result<Placement, StorageError> {
+    macro_rules! placement_select {
+        ($tip_where:literal) => {
+            concat!(
+                "SELECT o.next_ordinal, now() AS ts, tip.ehr_id, tip.kind, tip.sys_version, ",
+                "tip.trunk_version, tip.branch_number, tip.branch_version, ",
+                "tip.creating_system_id, tip.lifecycle_state, tip.open ",
+                "FROM (SELECT (COALESCE(MAX(sys_version), 0) + 1)::int AS next_ordinal ",
+                "      FROM vo_version WHERE vo_id = $1) o ",
+                "LEFT JOIN LATERAL ( ",
+                "    SELECT t.ehr_id, t.kind, t.sys_version, t.trunk_version, ",
+                "           t.branch_number, t.branch_version, t.creating_system_id, ",
+                "           t.lifecycle_state, upper_inf(t.sys_period) AS open ",
+                "    FROM vo_version t WHERE ",
+                $tip_where,
+                ") tip ON true"
+            )
+        };
+    }
+    let row = match expected {
+        None => {
+            sqlx::query(placement_select!(
+                "t.vo_id = $1 AND upper_inf(t.sys_period) AND t.branch_number = 0 "
+            ))
+            .bind(vo_id)
+            .fetch_one(&mut *tx)
+            .await?
+        }
+        Some((t, b, v)) => {
+            sqlx::query(placement_select!(
+                "t.vo_id = $1 AND t.trunk_version = $2 AND t.branch_number = $3 \
+                 AND t.branch_version = $4 "
+            ))
+            .bind(vo_id)
+            .bind(t)
+            .bind(b)
+            .bind(v)
+            .fetch_one(&mut *tx)
+            .await?
+        }
+    };
+    let kind: Option<String> = row.try_get("kind")?;
+    let tip = match kind {
+        None => None,
+        Some(kind) => Some(TipRow {
+            ehr_id: row.try_get("ehr_id")?,
+            kind,
+            sys_version: row.try_get("sys_version")?,
+            trunk_version: row.try_get("trunk_version")?,
+            branch_number: row.try_get("branch_number")?,
+            branch_version: row.try_get("branch_version")?,
+            creating_system_id: row.try_get("creating_system_id")?,
+            lifecycle_state: row.try_get("lifecycle_state")?,
+            open: row.try_get("open")?,
+        }),
+    };
+    Ok(Placement {
+        tip,
+        next_ordinal: row.try_get("next_ordinal")?,
+        now: row.try_get::<jiff_sqlx::Timestamp, _>("ts")?.to_jiff(),
+    })
+}
+
+/// The merged placement read ([`next_placement`]).
+#[derive(Debug)]
+pub struct Placement {
+    /// The preceding lineage tip, when the object has one.
+    pub tip: Option<TipRow>,
+    /// The next storage commit ordinal (`MAX(sys_version) + 1`).
+    pub next_ordinal: i32,
+    /// The transaction timestamp — the commit instant every row of this
+    /// transaction stamps.
+    pub now: jiff::Timestamp,
+}
+
+/// The transaction timestamp (`now()`), stable for the whole transaction —
+/// the commit instant for a create (no placement read exists to carry it).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn tx_now(tx: &mut PgConnection) -> Result<jiff::Timestamp, StorageError> {
+    Ok(sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
+        .fetch_one(&mut *tx)
+        .await?
+        .to_jiff())
+}
+
 /// The next branch number at a trunk fork point (`MAX(branch_number) + 1`
 /// among the versions at `trunk_version`).
 ///
@@ -1182,6 +1247,59 @@ pub async fn object_kind(pool: &PgPool, vo_id: Uuid) -> Result<Option<String>, S
     )
     .bind(vo_id)
     .fetch_optional(pool)
+    .await?)
+}
+
+/// The kind text of the current version of EVERY object in `vo_ids`, in one
+/// round trip (the CONTRIBUTION-commit target pre-check batches its per-version
+/// lookups — a K-change commit reads its targets with one statement). Absent
+/// objects are simply missing from the result; the caller maps absence to its
+/// 400. No openEHR spec governs read batching — our own design.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn object_kinds(
+    pool: &PgPool,
+    vo_ids: &[Uuid],
+) -> Result<Vec<(Uuid, String)>, StorageError> {
+    if vo_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows = sqlx::query(
+        "SELECT vo_id, kind FROM vo_version WHERE vo_id = ANY($1) \
+         AND upper_inf(sys_period) AND branch_number = 0",
+    )
+    .bind(vo_ids)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|r| Ok((r.try_get("vo_id")?, r.try_get("kind")?)))
+        .collect()
+}
+
+/// Whether a live (open, not logically deleted) COMPOSITION version committed
+/// against `template_id` exists in `ehr_id` — the one-statement
+/// persistent-duplicate check (CNF master07 `create_composition-same_opt_twice`).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn live_template_exists(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    template_id: &str,
+    deleted_state: &str,
+) -> Result<bool, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS ( \
+             SELECT 1 FROM vo_version \
+             WHERE ehr_id = $1 AND kind = 'COMPOSITION' AND template_id = $2 \
+               AND upper_inf(sys_period) AND branch_number = 0 \
+               AND lifecycle_state <> $3)",
+    )
+    .bind(ehr_id)
+    .bind(template_id)
+    .bind(deleted_state)
+    .fetch_one(pool)
     .await?)
 }
 

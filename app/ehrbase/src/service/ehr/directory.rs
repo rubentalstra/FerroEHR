@@ -57,6 +57,7 @@ impl EhrbaseService {
             folder,
             None,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &self.signing_ctx(),
         )
         .await?;
@@ -183,6 +184,7 @@ impl EhrbaseService {
             expected,
             None,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &self.signing_ctx(),
         )
         .await?;
@@ -219,6 +221,7 @@ impl EhrbaseService {
             Kind::Folder,
             expected,
             &audit,
+            crate::versioning::change::WriteEnvelope::default(),
             &self.signing_ctx(),
         )
         .await?;

@@ -620,7 +620,7 @@ impl EhrbaseService {
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
         Ok(self
-            .create_composition_response(ehr_id, composition)
+            .create_composition_response(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
             .await?)
     }
 
