@@ -535,20 +535,26 @@ open rows feed the next fix wave.
 | F-53 | Telemetry: `atna_audit_serialize_failed_total` (the F-20 counter) missing from `prometheus::catalog()` whose doc claims completeness — adding it changes the metric-catalog snapshot (now owned by `app/ehrbase-server/tests/telemetry.rs`, whose snapshot file also needs moving from `app/ehrbase/tests/snapshots/`); `telemetry::samplers::acquire` is a dead seam (the cataloged `db_pool_acquire_duration_seconds` histogram never records — adopt it on the storage hot path or retire the metric through the same snapshot change). | `telemetry/prometheus.rs`, `telemetry/samplers.rs`, `app/ehrbase-server/tests/telemetry.rs` | **S** | ☐ |
 | F-54 | Notes (ported as-is, no action without a trigger): `resolve_tenant` `id::text` cast defeats the PK index (tiny table — perf-only); `insert_contribution` maps an absent RETURNING row to a 409 where a driver anomaly would deserve 500 (unreachable with server-generated uuidv7); `close_lineage_at` with a branch relies on the one-open-row partial unique index rather than an explicit branch filter; `template_adl2_upload` maps invalid source to 400 pre-parse while the platform path says 422 (deliberate per-surface split — conformance owner aware); admin contribution-representation response lacks `last_modified` where other writes carry it. | agent reports (extensions, storage, versioning, definition, ehr) | mixed **S** | note |
 
-**Issue #95 plan (F-42, owner-ruled Accept-header only per RFC 9110):**
-content negotiation on every template/example/composition-format surface —
-the `?format=` query parameter stays ignored-by-design (documented), and the
-`Accept` header selects the representation: canonical JSON
-(`application/json`), canonical XML (`application/xml`), FLAT
-(`application/openehr.wt.flat.schema+json`), STRUCTURED
-(`application/openehr.wt.structured.schema+json`) wherever ITS-REST/SDT
-defines that family for the resource. Work items: (a) sweep every LOCATABLE
-endpoint for Accept coverage (the negotiation seam exists — the sweep
-verifies each family is reachable and 406 is correct elsewhere); (b) the
-example endpoint (DEF-4) gains FLAT/STRUCTURED/XML output via the existing
-`openehr-flat` converters; (c) book docs with Accept examples; (d) answer
-the issue. Spec: ITS-REST overview §Content negotiation + the SDT simplified
-formats; RFC 9110 §12.
+**Issue #95 plan (F-42, Accept-header only — spec-verified 2026-07-16):**
+the vendored ITS-REST OAS defines **no `format` query parameter anywhere**;
+format selection is the `Accept` header. The example/LOCATABLE operations
+carry the spec's own `Accept_LOCATABLE` enum — exactly:
+`application/json`, `application/xml`, `application/openehr.wt.flat+json`,
+`application/openehr.wt.structured+json`
+(`crates/openehr-its/vendor/rest-oas/definition-codegen.openapi.yaml`
+§components.parameters.Accept_LOCATABLE). So the Accept-only ruling IS the
+spec behaviour; a `?format=` param would be an off-spec invention. The spec
+DOES define two query params on the example op — `type` (input|output,
+default input) and `detail_level` (required|medium|complete, default
+required) — both already parsed at our wire
+(`service/definition/wire.rs::template_adl14_example`); their *semantics*
+(depth of the generated example) are the F-44/issue-#94 fix. Work items:
+(a) sweep every LOCATABLE endpoint for coverage of the four Accept media
+types above (verify each family reachable, 406 elsewhere); (b) the example
+endpoint gains FLAT/STRUCTURED/XML output via the existing `openehr-flat`
+converters; (c) book docs with Accept examples; (d) answer the issue citing
+the OAS. Spec: ITS-REST overview §Content negotiation + Simplified Formats
+(`docs/specs/openehr/ITS-REST/docs/simplified_formats/`); RFC 9110 §12.
 
 ## 5. Fix waves
 
