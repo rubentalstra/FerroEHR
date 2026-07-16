@@ -197,9 +197,9 @@ impl EhrbaseService {
         // The validated commit path (WebTemplate + RM-invariant + terminology
         // validation, contribution/audit).
         let resp = self
-            .create_composition_response(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
+            .create_composition(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
             .await?;
-        version_uid(&resp)
+        Ok(resp.version_uid())
     }
 
     /// Convert and commit a batch of TDDs, all-or-nothing (G-M8): every TDD is
@@ -218,9 +218,9 @@ impl EhrbaseService {
         for composition in prepared {
             // The validated commit path (as in `import_one_tdd`).
             let resp = self
-                .create_composition_response(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
+                .create_composition(ehr_id, crate::service::version_update::UpdateVersion::direct(composition))
                 .await?;
-            ids.push(version_uid(&resp)?);
+            ids.push(resp.version_uid());
         }
         Ok(ids)
     }

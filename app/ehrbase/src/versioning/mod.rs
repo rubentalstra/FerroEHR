@@ -42,7 +42,7 @@ use crate::versioning::signature::Signer;
 
 pub(crate) mod attestation;
 pub(crate) mod audit;
-pub(crate) mod change;
+pub mod change;
 pub(crate) mod contribution;
 pub(crate) mod import;
 pub(crate) mod integrity;
