@@ -12,7 +12,7 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::definition::types::TemplateListFilter;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::list::Page;
 
@@ -103,7 +103,7 @@ async fn template_upload_list_get_roundtrip() {
     // `DefinitionApi::..get` was template_id-keyed and returned a JSON-string
     // `Value`). Resolve the stored OPT's uuid via `list_opts` (one template
     // uploaded), then retrieve by uuid.
-    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, Page::all())
+    let opt_uuid = svc.list_opts_adl14(Page::all())
         .await
         .expect("list opts")
         .into_iter()

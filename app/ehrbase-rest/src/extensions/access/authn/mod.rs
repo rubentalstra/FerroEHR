@@ -444,7 +444,7 @@ impl<S: Sync> FromRequestParts<S> for AuthenticatedUser {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extensions::access::authn::config::{BasicConfig, BasicUser, OidcConfig};
+    use ehrbase::config::auth::{BasicConfig, BasicUser, OidcConfig};
     use argon2::password_hash::{PasswordHasher, SaltString};
     use argon2::{Argon2, password_hash::PasswordHash};
 

@@ -16,7 +16,7 @@ use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::versioning::signature::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
 use ehrbase::service::status::{CallStatusType, SmError};
-use ehrbase::service::{EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService, EhrStatusService};
+
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;

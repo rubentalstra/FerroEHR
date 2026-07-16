@@ -41,7 +41,7 @@ use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::query::request::AqlQueryRequest;
 use ehrbase::service::status::{CallStatusType, SmError};
-use ehrbase::service::{EhrCompositionService, EhrService, EhrStatusService, QueryService};
+
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";

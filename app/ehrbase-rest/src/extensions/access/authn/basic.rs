@@ -93,7 +93,7 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extensions::access::authn::config::BasicUser;
+    use ehrbase::config::auth::BasicUser;
     use argon2::password_hash::{PasswordHasher, SaltString};
 
     fn hash(pw: &str) -> String {

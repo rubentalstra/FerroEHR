@@ -566,7 +566,7 @@ async fn import_writes_one_phi_free_outbox_row() {
         .await
         .expect("status update");
 
-    let mut extracts = source.export_ehrs(ehr).await.expect("export");
+    let mut extracts = source.extract_ehrs(ehr).await.expect("export");
     let extract: openehr_rm::ehr_extract::common::extract::Extract =
         serde_json::from_value(extracts.remove(0)).expect("typed extract");
 

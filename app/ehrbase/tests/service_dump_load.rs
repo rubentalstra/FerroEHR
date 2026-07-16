@@ -28,7 +28,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{AdminDumpLoad, EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter};
+
 use ehrbase::service::admin::types::ExportSpec;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 

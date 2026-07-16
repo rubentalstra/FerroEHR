@@ -24,7 +24,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{AdminArchive, AdminService, DemographicService, EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter};
+
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::demographic::types::PartyKind;
 use ehrbase::service::platform_service::PlatformService;

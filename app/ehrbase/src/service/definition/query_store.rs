@@ -511,8 +511,18 @@ impl EhrbaseService {
             .await?)
     }
 
-    // `store_query_set` keeps the trait default (`NotImplemented` → 501, G-05-10)
-    // — the SM entry is an explicit TODO with no defined semantics.
+    /// `store_query_set (a_query_set_name: String [0..1]): UUID` — "Register
+    /// a query set. TODO: determine details."
+    ///
+    /// PORT NOTE: an explicit spec TODO with no defined semantics
+    /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
+    /// spec defines it.
+    pub async fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "store_query_set is an SM TODO (i_definition_query.adoc): not implemented",
+        ))
+    }
 
     pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
         Ok(self.query_list_response(page).await?)

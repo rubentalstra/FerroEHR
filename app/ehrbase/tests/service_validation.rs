@@ -31,7 +31,7 @@ use openehr_rm::prelude::PartyProxy;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::{CallStatusType, SmError};
-use ehrbase::service::{DefinitionAdapter, DefinitionAdl14Service, EhrCompositionService, EhrService};
+
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
@@ -490,13 +490,13 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
 
     // Delete the OPT through the real SM path (opt_delete), which invalidates
     // the cache entry.
-    let opt_uuid = DefinitionAdl14Service::list_opts(&svc, ehrbase::service::list::Page::all())
+    let opt_uuid = svc.list_opts_adl14(ehrbase::service::list::Page::all())
         .await
         .expect("list opts")
         .into_iter()
         .next()
         .expect("one stored OPT uuid");
-    DefinitionAdl14Service::delete_opt(&svc, opt_uuid)
+    svc.delete_opt(opt_uuid)
         .await
         .expect("delete opt");
 

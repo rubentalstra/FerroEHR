@@ -2166,15 +2166,29 @@ name = "ehrbase-server"
 version = "3.0.3"
 dependencies = [
  "anyhow",
+ "axum",
  "clap",
  "ehrbase",
  "ehrbase-rest",
+ "http",
+ "http-body-util",
+ "insta",
+ "jiff",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "reqwest 0.13.4",
+ "serde",
  "serde_json",
  "sqlx",
+ "testcontainers",
+ "testcontainers-modules",
  "tokio",
+ "tower",
  "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
  "uuid",
+ "wiremock",
 ]
 
 [[package]]

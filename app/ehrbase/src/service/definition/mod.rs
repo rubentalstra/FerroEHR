@@ -37,7 +37,6 @@ mod query_store;
 mod wire;
 
 pub mod types;
-pub use types::*;
 
 use regex::Regex;
 

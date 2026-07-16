@@ -50,7 +50,7 @@ mod tests {
         // contract identity (shared provenance), not the retired `1.0.3` label.
         assert_eq!(
             c.identity.restapi_specs_version,
-            crate::extensions::provenance::ITS_REST
+            ehrbase::telemetry::provenance::ITS_REST
         );
     }
 

@@ -15,9 +15,9 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::definition::types::TemplateListFilter;
 use ehrbase::service::status::{CallStatusType, SmError};
-use ehrbase::service::{DefinitionAdapter, DefinitionAdl14Service, DefinitionAdl2Service, DefinitionQueryService};
+
 use ehrbase::service::list::Page;
 
 struct Pg {
@@ -85,7 +85,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
     // Precondition: not present yet.
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
     assert_eq!(
-        DefinitionAdl14Service::archetypes_count(&svc)
+        svc.archetypes_count_adl14()
             .await
             .unwrap(),
         0
@@ -103,7 +103,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
     svc.upload_archetype(adl.clone()).await.expect("upload");
     assert!(svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
     assert_eq!(
-        DefinitionAdl14Service::archetypes_count(&svc)
+        svc.archetypes_count_adl14()
             .await
             .unwrap(),
         1
@@ -117,7 +117,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
     assert_eq!(got, adl, "stored ADL source is byte-identical");
 
     // list + list_matching (regex).
-    let list = DefinitionAdl14Service::list_archetypes(&svc, Page::all())
+    let list = svc.list_archetypes_adl14(Page::all())
         .await
         .unwrap();
     assert_eq!(list, vec![ARCHETYPE_ID.to_owned()]);
@@ -138,7 +138,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .await
         .expect("replace");
     assert_eq!(
-        DefinitionAdl14Service::archetypes_count(&svc)
+        svc.archetypes_count_adl14()
             .await
             .unwrap(),
         1,
@@ -156,7 +156,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .expect("delete");
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
     assert_eq!(
-        DefinitionAdl14Service::archetypes_count(&svc)
+        svc.archetypes_count_adl14()
             .await
             .unwrap(),
         0
@@ -247,14 +247,14 @@ async fn opt_upload_has_get_list_match_delete() {
     // valid_opt on good vs bad XML.
     assert!(svc.valid_opt(xml.clone()).await.unwrap());
     assert!(!svc.valid_opt("<not-a-template/>".to_owned()).await.unwrap());
-    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 0);
+    assert_eq!(svc.opts_count_adl14().await.unwrap(), 0);
 
     // upload_opt (Pre_valid).
     svc.upload_opt(xml.clone()).await.expect("upload opt");
-    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 1);
+    assert_eq!(svc.opts_count_adl14().await.unwrap(), 1);
 
     // list_opts yields the OPT's UUID; use it for has/get/delete (UUID-keyed).
-    let opts = DefinitionAdl14Service::list_opts(&svc, Page::all())
+    let opts = svc.list_opts_adl14(Page::all())
         .await
         .unwrap();
     assert_eq!(opts.len(), 1);
@@ -294,7 +294,7 @@ async fn opt_upload_has_get_list_match_delete() {
     // delete_opt (Pre_has_opt / Post_opt_removed).
     svc.delete_opt(uuid.clone()).await.expect("delete opt");
     assert!(!svc.has_opt(uuid.clone()).await.unwrap());
-    assert_eq!(DefinitionAdl14Service::opts_count(&svc).await.unwrap(), 0);
+    assert_eq!(svc.opts_count_adl14().await.unwrap(), 0);
 }
 
 /// The ITS-REST `definition_template_adl1.4_list` filter + pagination params
@@ -566,28 +566,28 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     // Definitions traits, so calls on the concrete service are qualified.
     assert_eq!(svc.artefacts_count().await.unwrap(), 3);
     assert_eq!(
-        DefinitionAdl2Service::archetypes_count(&svc).await.unwrap(),
+        svc.archetypes_count_adl2().await.unwrap(),
         1
     );
     assert_eq!(svc.templates_count().await.unwrap(), 1);
-    assert_eq!(DefinitionAdl2Service::opts_count(&svc).await.unwrap(), 1);
+    assert_eq!(svc.opts_count_adl2().await.unwrap(), 1);
 
     // list_artefacts = all HRIDs; per-kind lists partition them.
     let all = svc.list_artefacts(Page::all()).await.unwrap();
     assert_eq!(all.len(), 3);
     assert!(all.contains(&ADL2_OPT_HRID.to_owned()));
     assert_eq!(
-        DefinitionAdl2Service::list_archetypes(&svc, Page::all())
+        svc.list_archetypes_adl2(Page::all())
             .await
             .unwrap(),
         vec![ADL2_ARCH_HRID.to_owned()]
     );
     assert_eq!(
-        svc.list_templates(Page::all()).await.unwrap(),
+        svc.list_templates_adl2(Page::all()).await.unwrap(),
         vec![ADL2_TMPL_HRID.to_owned()]
     );
     assert_eq!(
-        DefinitionAdl2Service::list_opts(&svc, Page::all())
+        svc.list_opts_adl14(Page::all())
             .await
             .unwrap(),
         vec![ADL2_OPT_HRID.to_owned()]

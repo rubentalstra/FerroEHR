@@ -81,8 +81,6 @@ impl LogReload {
     }
 }
 
-/// The `GET`/`DELETE` response body.
-#[derive(Debug, Serialize)]
 #[cfg(test)]
 mod tests {
     use super::*;
