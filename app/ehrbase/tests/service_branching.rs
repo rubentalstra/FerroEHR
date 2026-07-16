@@ -244,7 +244,7 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
         uv(composition("v2"), "251", Some(&v1)),
     )
     .await
-    .expect("composition v2").version_uid();
+    .expect("composition v2");
 
     let mut extracts = svc.extract_ehrs(source).await.expect("export");
     let extract = extracts.remove(0);

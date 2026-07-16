@@ -21,7 +21,7 @@ use crate::versioning::{
     read_current, read_version, revision_history, update, version_at, versioned_object,
 };
 
-use super::{ensure_if_match, parse_at_time, version_uid};
+use super::{ensure_if_match, parse_at_time};
 
 impl EhrbaseService {
     /// The `EHR_STATUS` of an EHR as canonical JSON with its `uid` set — the

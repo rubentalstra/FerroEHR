@@ -10,9 +10,8 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::EhrbaseService;
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{EhrbaseService, ServiceError};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
@@ -140,7 +139,8 @@ async fn versioned_composition_cannot_switch_archetype() {
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
         .await
-        .expect("v1").version_uid();
+        .expect("v1")
+        .version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
@@ -152,10 +152,7 @@ async fn versioned_composition_cannot_switch_archetype() {
         .await
         .expect_err("switching archetype across versions must be rejected");
     match err {
-        SmError {
-            status: CallStatusType::ContentInvalid,
-            message,
-        } => assert!(
+        ServiceError::Unprocessable(message) => assert!(
             message.contains("Archetype_node_id_valid"),
             "should cite the invariant, got: {message}"
         ),
@@ -169,7 +166,7 @@ async fn versioned_composition_cannot_switch_archetype() {
         uv(composition(ENCOUNTER, "433", "event"), "251", Some(&v1)),
     )
     .await
-    .expect("same-archetype update").version_uid();
+    .expect("same-archetype update");
 }
 
 /// `VERSIONED_COMPOSITION.Persistent_validity`: flipping the category between
@@ -182,7 +179,8 @@ async fn versioned_composition_cannot_flip_persistence() {
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
         .await
-        .expect("v1").version_uid();
+        .expect("v1")
+        .version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
@@ -198,10 +196,7 @@ async fn versioned_composition_cannot_flip_persistence() {
         .await
         .expect_err("flipping is_persistent across versions must be rejected");
     match err {
-        SmError {
-            status: CallStatusType::ContentInvalid,
-            message,
-        } => assert!(
+        ServiceError::Unprocessable(message) => assert!(
             message.contains("Persistent_validity"),
             "should cite the invariant, got: {message}"
         ),
@@ -224,7 +219,8 @@ async fn tag_targets_must_be_within_the_same_ehr() {
             uv(composition(ENCOUNTER, "433", "event"), "249", None),
         )
         .await
-        .expect("composition in A").version_uid();
+        .expect("composition in A")
+        .version_uid();
     let vo_a: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let tag = json!([{ "key": "clin-proj-27a" }]);

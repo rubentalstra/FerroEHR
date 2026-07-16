@@ -29,8 +29,8 @@ use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::service::{EhrbaseService, ServiceError};
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
@@ -148,7 +148,8 @@ async fn composition_validation_gates_persistence() {
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("valid composition accepted (201)").version_uid();
+        .expect("valid composition accepted (201)")
+        .version_uid();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let fetched = svc
@@ -170,25 +171,16 @@ async fn composition_validation_gates_persistence() {
         .create_composition(ehr_uuid, uv(composition("ips_invalid.json"), "249", None))
         .await
         .expect_err("invalid composition rejected");
-    // PORT NOTE: the SM boundary flattens `ServiceError::ValidationFailed`
-    // to `SmError { status: ContentInvalid, message }`, the per-path violations
-    // joined into `message` ("path: msg; …"). The structured per-path list is now
-    // built at the protocol adapter's 422 body (`ehrbase-rest`); here we assert the
-    // status + that the message carries the RM paths, preserving the intent.
+    // A well-formed body that fails RM/template validation is a 422 carrying the
+    // per-path violations (`ServiceError::ValidationFailed`); the protocol adapter
+    // (`ehrbase-rest`) renders the structured list into the 422 body. Here we
+    // assert the variant + that the violations carry the RM paths.
+    let ServiceError::ValidationFailed(violations) = &err else {
+        panic!("expected content_invalid (422) with per-path violations, got {err:?}");
+    };
     assert!(
-        matches!(
-            err,
-            SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            }
-        ),
-        "expected content_invalid (422), got {err:?}"
-    );
-    assert!(
-        err.message.contains('/'),
-        "422 message carries the RM-path-keyed violations: {}",
-        err.message
+        violations.iter().any(|v| v.path.contains('/')),
+        "422 violations carry the RM-path-keyed entries: {violations:?}"
     );
     // Validation runs before the write transaction, so nothing was persisted.
     assert_eq!(
@@ -205,22 +197,14 @@ async fn composition_validation_gates_persistence() {
         .create_composition(ehr_uuid, uv(unknown, "249", None))
         .await
         .expect_err("unknown template rejected");
-    // PORT NOTE: `ServiceError::Unprocessable` → `ContentInvalid`; the
-    // cause still rides in the message.
+    // An unknown template is a 422 `ServiceError::Unprocessable`; the cause
+    // still rides in the message.
+    let ServiceError::Unprocessable(message) = &err else {
+        panic!("expected content_invalid (422) for unknown template, got {err:?}");
+    };
     assert!(
-        matches!(
-            err,
-            SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            }
-        ),
-        "expected content_invalid (422) for unknown template, got {err:?}"
-    );
-    assert!(
-        err.message.contains("not known"),
-        "422 message names the cause: {}",
-        err.message
+        message.contains("not known"),
+        "422 message names the cause: {message}"
     );
     assert_eq!(
         composition_versions(&pool).await,
@@ -245,7 +229,8 @@ async fn composition_update_is_validated() {
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("valid v1").version_uid();
+        .expect("valid v1")
+        .version_uid();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
     let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
@@ -259,17 +244,13 @@ async fn composition_update_is_validated() {
         )
         .await
         .expect_err("invalid update rejected");
-    // PORT NOTE: ValidationFailed → `ContentInvalid` with the violations
-    // in `message`.
+    // A failed-validation update is a 422 carrying the per-path violations.
+    let ServiceError::ValidationFailed(violations) = &err else {
+        panic!("expected content_invalid (422), got {err:?}");
+    };
     assert!(
-        matches!(
-            err,
-            SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            }
-        ) && !err.message.is_empty(),
-        "expected content_invalid (422), got {err:?}"
+        !violations.is_empty(),
+        "the 422 carries at least one per-path violation, got {err:?}"
     );
 
     let current = svc
@@ -339,13 +320,7 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
         .create_composition(ehr_uuid, uv(missing.clone(), "249", None))
         .await;
     assert!(
-        matches!(
-            strict,
-            Err(SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            })
-        ),
+        matches!(strict, Err(ServiceError::ValidationFailed(_))),
         "a complete commit must reject the missing mandatory sections, got {strict:?}"
     );
     assert_eq!(
@@ -426,7 +401,7 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
     // First commit warms the cache (web_template_for: miss → build → cache).
     svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("first valid composition warms the cache").version_uid();
+        .expect("first valid composition warms the cache");
 
     // Poison the stored OPT content: any later *store read* on the commit path
     // would build a broken WebTemplate and fail.
@@ -444,7 +419,7 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
     // the cached WebTemplate, never re-reading the poisoned store content.
     svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("second commit is served from the warm cache, not the poisoned store").version_uid();
+        .expect("second commit is served from the warm cache, not the poisoned store");
 
     assert_eq!(
         composition_versions(&pool).await,
@@ -507,20 +482,12 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
         .expect_err("commit against a deleted template is rejected");
+    let ServiceError::Unprocessable(message) = &err else {
+        panic!("expected content_invalid (422) for the deleted template, got {err:?}");
+    };
     assert!(
-        matches!(
-            err,
-            SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            }
-        ),
-        "expected content_invalid (422) for the deleted template, got {err:?}"
-    );
-    assert!(
-        err.message.contains("not known"),
-        "422 names the cause: {}",
-        err.message
+        message.contains("not known"),
+        "422 names the cause: {message}"
     );
     assert_eq!(
         composition_versions(&pool).await,

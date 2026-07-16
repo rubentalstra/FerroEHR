@@ -24,6 +24,14 @@ binding after A1 closed:
 - **Rerun ECC after merging anything that touches the runner or
   validation.** PR #69 left develop with a stale ECC baseline (92 phantom
   failures); the baseline is only trustworthy immediately after a rerun.
+- **"Rewrite" means FRESH FILES FROM THE SPEC, not in-place refactor
+  (owner, 2026-07-16, service-rewrite escalation).** When the owner orders a
+  "nuking complete rewrite" of a subsystem: design it anew from the governing
+  spec (module tree, call inventory, types), WRITE NEW FILES, port the
+  behaviour in, DELETE the old files. Parameter-threading, renames and
+  incremental edits to the existing shape do not qualify and will be
+  rejected. No cargo/clippy runs between steps — they are the "wild detour";
+  the compiler is consulted once, at the single convergence.
 - **Big-bang rewrites, converge ONCE at the end (owner, 2026-07-16, W-14
   B+C ruling; same method as the W-3f platform redesign).** For structural
   rewrites: land ALL code moves first, then one compile/test convergence
