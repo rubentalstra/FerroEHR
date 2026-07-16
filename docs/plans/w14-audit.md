@@ -603,8 +603,9 @@ full platform rewrite):**
 **Wave 3 — read-path + N+1 + caches — LARGELY DONE (rewrite), remainder open:**
 - [x] F-7 EHR GET: `ehr_summary_read` — one merged statement.
 - [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
-- [ ] F-9 single-query composition read (version row + nodes join/CTE),
-      drop the redundant re-sort.
+- [~] F-9: the redundant reassemble re-sort is gone (linear is_sorted
+      check; both producers deliver num order — 2026-07-17). OPEN: the
+      2-round-trip version-row + node fetch merge (one CTE/LATERAL).
 - [x] F-27 tag replace = one UNNEST multi-row insert (last-wins key
       dedupe preserved; 2026-07-17). — [x] F-37 relationship writes aligned with
       the lean `CurrentRelationship` threading + in-memory responses
