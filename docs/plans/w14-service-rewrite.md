@@ -63,16 +63,27 @@ findings register: `w14-audit.md` §4/§5.
 
 ## Execution order (each lands big-bang, converge once at the end)
 
-- [ ] S1 versioning core: F-1 + F-2 + F-43 envelope plumbing
-      (`versioning/change.rs`, `versioning/contribution.rs`,
-      `storage/version_repo.rs`).
+- [x] S1 versioning core (2026-07-16): F-1 — ONE folded commit path (app-known
+      tx timestamp via the placement read / `tx_now`, app-generated
+      contribution id, signature computed before any insert; the split path
+      and `insert_vo_version` deleted); F-2 — placement trio merged into one
+      statement carrying `now()`; F-24 — contribution target pre-reads
+      batched (`object_kinds`, `= ANY`); F-43 plumbing — `WriteEnvelope` on
+      every direct helper, `AuditInput::from_update` (ITS-REST committal
+      MUST merge), lifecycle 553 relaxes validation, verbatim signature +
+      attestations threaded on composition create/update + status update.
 - [ ] S2 common types: typed results replace `ServiceResponse`/
       `ResourceMeta`; `service/mod.rs` split; `CommitEnv` relocation.
-- [ ] S3 chapter `ehr` (composition/status/directory/contributions/tags/
-      access/meta) + F-4 + F-7.
-- [ ] S4 chapter `demographic` (+F-37), `definition`, `query`,
-      `terminology`, `admin`, `message`, `ehr_index`, `subject_proxy`,
-      `validity`.
+- [ ] S3 chapter `ehr` — PARTIAL: F-4 done (one indexed EXISTS over the
+      promoted `template_id`), F-7 done (`ehr_summary_read`, one statement),
+      composition/status envelope threading done. OPEN: the wrapper/inner
+      `*_response` merges, directory envelope threading, DELETE-path
+      committal headers, real per-method docs, stale-comment scrub.
+- [ ] S4 chapters — PARTIAL: F-37 done (relationship writes respond from the
+      in-hand body). OPEN: party/relationship envelope threading, the
+      wrapper/inner merges and cleanup across demographic, definition,
+      query, terminology, admin, message, ehr_index, subject_proxy,
+      validity.
 - [ ] S5 REST adapter convergence + test convergence.
 - [ ] S6 gates: workspace clippy/nextest green, fmt, ECC **zero-drift vs
       the B+C receipt**, register re-anchor pass (`w14-audit.md`
