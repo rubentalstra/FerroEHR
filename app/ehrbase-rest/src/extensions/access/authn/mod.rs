@@ -364,8 +364,23 @@ pub(crate) async fn middleware(
             req.extensions_mut().insert(principal.clone());
             // Publish the principal for the service layer (committer attribution).
             let for_audit = principal.clone();
+            // Also publish the platform committer identity: a default-committer
+            // audit (a write whose request carried no committal headers) is
+            // attributed to the authenticated principal instead of the system
+            // identity (`AUDIT_DETAILS.committer` 1..1 — RM common master04
+            // §Audit Details).
+            let committer = ehrbase::service::committer::CommitterIdentity {
+                subject: for_audit.subject.clone(),
+                id_type: match for_audit.method {
+                    AuthMethod::Basic => "basic",
+                    AuthMethod::Bearer => "oauth2",
+                },
+            };
             let mut resp = REQUEST_PRINCIPAL
-                .scope(Some(principal), next.run(req))
+                .scope(
+                    Some(principal),
+                    ehrbase::service::committer::with_committer(Some(committer), next.run(req)),
+                )
                 .await;
             // Republish onto the response so the outer ATNA audit layer — which
             // cannot observe request-extension mutations — can attribute events.

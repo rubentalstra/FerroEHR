@@ -436,3 +436,54 @@ async fn definition_group_is_mounted_with_dotted_route() {
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
     assert_eq!(v.as_array().map(Vec::len), Some(0), "no templates uploaded");
 }
+
+/// A default-committer audit (a write whose request carries NO committal
+/// headers) is attributed to the AUTHENTICATED principal, not the system
+/// identity (`AUDIT_DETAILS.committer` 1..1 — RM common master04 §Audit
+/// Details; the committal-header merge only overrides what the caller
+/// supplies).
+#[tokio::test]
+async fn authenticated_write_attributes_the_default_committer() {
+    let (_pg, app) = app(true, "http_committer_attribution").await;
+
+    // Create an EHR as `alice` (Basic), no committal headers.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr"))
+        .header(header::AUTHORIZATION, basic("alice", "pw"))
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    let ehr_id = resp
+        .headers()
+        .get("ETag")
+        .and_then(|v| v.to_str().ok())
+        .unwrap()
+        .trim_matches(['W', '/', '"'])
+        .to_owned();
+
+    // The EHR_STATUS's stored commit audit names the principal.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/ehr/{ehr_id}/versioned_ehr_status/revision_history"
+        ))
+        .header(header::AUTHORIZATION, basic("alice", "pw"))
+        .header(header::ACCEPT, "application/json")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let history: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let audit = &history["items"][0]["audits"][0];
+    assert_eq!(
+        audit["committer"]["name"], "alice",
+        "default committer is the authenticated principal: {history}"
+    );
+    assert_eq!(
+        audit["committer"]["identifiers"][0]["type"], "basic",
+        "identifier records the mechanism"
+    );
+}
