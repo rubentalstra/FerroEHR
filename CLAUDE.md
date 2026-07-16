@@ -142,11 +142,12 @@ disk bounded:
   `/tmp`/scratchpad dir, or any `CARGO_TARGET_DIR` override. (Corollary:
   don't have subagents run cargo in parallel at all — the orchestrator runs
   the builds once at convergence.)
-- RustRover keeps its own small dir (Cargo settings → env
-  `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
-  — MUST be absolute) so the IDE never holds the CLI lock; it is included in
-  the hygiene sweep below. Never `pkill -9 rustc` to "fix" slowness — it
-  corrupts incremental caches.
+- **The IDE is back on the default too (owner, 2026-07-16):** RustRover's
+  `CARGO_TARGET_DIR` override is removed — the IDE shares the same
+  `./target` as everything else. There is NO `CARGO_TARGET_DIR` override
+  anywhere anymore; if the IDE holds the cargo lock, CLI builds wait — that
+  is expected, never answer it with a second target dir. Never
+  `pkill -9 rustc` to "fix" slowness — it corrupts incremental caches.
 - **Iterate scoped, gate wide.** While working: `cargo clippy -p <crate>
   --all-targets` and `cargo nextest run -p <crate>`. The full `--workspace`
   gates run once, before commit. `clippy` shares the check cache — running it
