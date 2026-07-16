@@ -1,7 +1,7 @@
 //! The background drainer + retention pruner + [`EventsHandle`].
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-01). Active only when the eventing extension is enabled.
+//! **No openEHR spec governs this — our own design/extension.** Active only
+//! when the eventing extension is enabled.
 //!
 //! A **single** tokio task polls the outbox, publishes pending rows in `seq`
 //! order (a global order that trivially preserves per-EHR order), and marks
@@ -10,10 +10,19 @@
 //! backs off before retrying (the outbox buffers while the broker is down). A
 //! periodic pass prunes published rows older than the retention window.
 //!
+//! **Subscription topology is declared on connect/change only:** each cycle
+//! reads the enabled subscriptions (a cheap local query) and touches the broker
+//! only when the desired queue/binding set differs from what was last declared,
+//! or the publisher's topology epoch advanced (a fresh broker connection, which
+//! may mean a replaced broker without our durable queues). Declaration is
+//! idempotent, and it runs before the cycle's publishes so a just-created
+//! subscription's queue is bound before any matching event is routed (a topic
+//! exchange drops unroutable messages).
+//!
 //! The outbox row itself is written **inside the commit transaction** by
 //! `crate::storage::version_repo::write_outbox`, from the PHI-free per-version
 //! envelope built by `crate::versioning` (`Committed::envelope_entry`); this
-//! module only drains what storage recorded (README event-outbox cross-ruling).
+//! module only drains what storage recorded.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,6 +100,15 @@ pub fn start_with_publisher(
     }
 }
 
+/// The broker queue name for a subscription: `<exchange>.<name>`
+/// (`ehrbase.events.<name>` for the default exchange) — the configured exchange
+/// prefix + the subscription name. Exposed so a consumer knows the queue to
+/// consume from.
+#[must_use]
+pub fn subscription_queue_name(exchange: &str, name: &str) -> String {
+    format!("{exchange}.{name}")
+}
+
 /// A failure during one drain pass.
 enum DrainError {
     /// A DB error reading/marking the outbox.
@@ -98,6 +116,29 @@ enum DrainError {
     /// A broker publish failure; the drainer should back off before retrying.
     Publish(EventError),
 }
+
+/// A failure while syncing subscription queues.
+enum SyncError {
+    /// Reading the subscription rows failed.
+    Db(sqlx::Error),
+    /// Declaring/binding a queue on the broker failed.
+    Broker(EventError),
+}
+
+impl std::fmt::Display for SyncError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SyncError::Db(e) => write!(f, "subscription store: {e}"),
+            SyncError::Broker(e) => write!(f, "broker declare: {e}"),
+        }
+    }
+}
+
+/// The last successfully declared broker topology: the publisher's topology
+/// epoch at declaration time + the sorted `(queue, binding_key)` set. Broker
+/// declares are skipped while both still match (declared on connect/change
+/// only — never per cycle).
+type DeclaredTopology = Option<(u64, Vec<(String, String)>)>;
 
 /// The drain + prune loop.
 async fn run(
@@ -110,6 +151,7 @@ async fn run(
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
     let prune_every = Duration::from_secs(config.prune_interval_secs.max(1));
     let mut last_prune = tokio::time::Instant::now();
+    let mut declared: DeclaredTopology = None;
     tracing::info!(
         exchange = %config.exchange,
         batch_size = config.batch_size,
@@ -121,16 +163,13 @@ async fn run(
         if *shutdown.borrow() {
             break;
         }
-        // (Re)declare + bind the queues for the enabled subscriptions (the eventing extension
-        // §5) at the top of each cycle. This covers drainer startup AND picks up
-        // subscription CRUD (a config-gated admin surface that has no broker
-        // access of its own — the crate layout keeps the service protocol-free); queue
-        // declaration is idempotent, and doing it before this cycle's publishes
-        // guarantees a just-created subscription's queue is bound before any
-        // matching event is routed (a topic exchange drops unroutable messages).
-        // Best-effort: a failure (broker down) is logged; rows stay pending and
-        // the queues are declared on the next cycle the broker is reachable.
-        if let Err(e) = sync_subscriptions(&pool, publisher.as_ref(), &config.exchange).await {
+        // Sync the subscription topology (queues + bindings) before this
+        // cycle's publishes; broker calls happen only on connect/change (see
+        // the module docs). Best-effort: a failure (broker down) is logged;
+        // rows stay pending and the sync retries next cycle.
+        if let Err(e) =
+            sync_subscriptions(&pool, publisher.as_ref(), &config.exchange, &mut declared).await
+        {
             tracing::debug!("event subscription sync deferred: {e}");
         }
         // Drain until the outbox is empty or the broker/DB stalls.
@@ -184,6 +223,59 @@ async fn run(
     tracing::debug!("event publisher loop exited");
 }
 
+/// Declare + bind the queue for every **enabled** subscription — but only when
+/// the desired topology differs from `declared` (the subscription set changed)
+/// or the publisher's topology epoch advanced (a fresh broker connection).
+/// Reading the subscription rows is a cheap local query and runs every cycle
+/// so CRUD is picked up within one poll; the broker round-trips happen on
+/// change only. On success `declared` records the new state; on failure it is
+/// left unchanged so the caller retries next cycle.
+async fn sync_subscriptions(
+    pool: &PgPool,
+    publisher: &dyn EventPublisher,
+    exchange: &str,
+    declared: &mut DeclaredTopology,
+) -> Result<(), SyncError> {
+    let rows = sqlx::query(
+        "SELECT name, kind, change_type, template_id FROM event_subscription WHERE enabled",
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(SyncError::Db)?;
+    let mut desired: Vec<(String, String)> = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let name: String = row.try_get("name").map_err(SyncError::Db)?;
+        let kind: Option<String> = row.try_get("kind").map_err(SyncError::Db)?;
+        let change_type: Option<String> = row.try_get("change_type").map_err(SyncError::Db)?;
+        let template_id: Option<String> = row.try_get("template_id").map_err(SyncError::Db)?;
+        let binding_key = super::subscription_binding_key(
+            kind.as_deref(),
+            change_type.as_deref(),
+            template_id.as_deref(),
+        );
+        desired.push((subscription_queue_name(exchange, &name), binding_key));
+    }
+    desired.sort_unstable();
+
+    if let Some((epoch, topology)) = declared.as_ref()
+        && *epoch == publisher.topology_epoch()
+        && *topology == desired
+    {
+        return Ok(()); // Unchanged: no broker round-trips this cycle.
+    }
+    for (queue, binding_key) in &desired {
+        publisher
+            .declare_subscription(queue, binding_key)
+            .await
+            .map_err(SyncError::Broker)?;
+    }
+    // Read the epoch AFTER declaring: the declares themselves may have opened
+    // the connection (bumping the epoch); a later reconnect bumps it again and
+    // triggers a re-declare next cycle.
+    *declared = Some((publisher.topology_epoch(), desired));
+    Ok(())
+}
+
 /// Publish one batch of pending rows in `seq` order, marking each published only
 /// after the broker confirms. Returns the count published this pass, or a
 /// [`DrainError`] (the published prefix is committed first, preserving per-EHR
@@ -211,11 +303,11 @@ async fn drain_batch(
     'rows: for row in &rows {
         let seq: i64 = row.try_get("seq").map_err(DrainError::Db)?;
         let envelope: serde_json::Value = row.try_get("envelope").map_err(DrainError::Db)?;
-        // Per-version fan-out: one message per version entry, each
-        // under its own routing key, carrying the shared envelope + seq +
-        // version_index. All of a row's messages must confirm before the row is
-        // marked published; a failure part-way leaves the whole row pending, so
-        // the retry re-publishes every message (at-least-once — consumers
+        // Per-version fan-out: one message per version entry, each under its
+        // own routing key, carrying the shared envelope + seq + version_index.
+        // All of a row's messages must confirm before the row is marked
+        // published; a failure part-way leaves the whole row pending, so the
+        // retry re-publishes every message (at-least-once — consumers
         // deduplicate on (contribution_id, version_index)).
         for (version_index, routing_key) in version_routing_keys(&envelope) {
             let payload = build_payload(seq, version_index, &envelope);
@@ -268,67 +360,6 @@ fn build_payload(seq: i64, version_index: usize, envelope: &serde_json::Value) -
         obj.insert("version_index".to_owned(), serde_json::json!(version_index));
     }
     serde_json::to_vec(&payload).unwrap_or_default()
-}
-
-/// Declare + bind the queue for every **enabled** subscription. One
-/// idempotent `queue_declare` + `queue_bind` per row, keyed by
-/// [`super::subscription_binding_key`]. Best-effort at the call site: an error
-/// (broker unreachable) is propagated for the caller to log and retry next
-/// cycle.
-async fn sync_subscriptions(
-    pool: &PgPool,
-    publisher: &dyn EventPublisher,
-    exchange: &str,
-) -> Result<(), SyncError> {
-    let rows = sqlx::query(
-        "SELECT name, kind, change_type, template_id FROM event_subscription WHERE enabled",
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(SyncError::Db)?;
-    for row in &rows {
-        let name: String = row.try_get("name").map_err(SyncError::Db)?;
-        let kind: Option<String> = row.try_get("kind").map_err(SyncError::Db)?;
-        let change_type: Option<String> = row.try_get("change_type").map_err(SyncError::Db)?;
-        let template_id: Option<String> = row.try_get("template_id").map_err(SyncError::Db)?;
-        let binding_key = super::subscription_binding_key(
-            kind.as_deref(),
-            change_type.as_deref(),
-            template_id.as_deref(),
-        );
-        let queue = subscription_queue_name(exchange, &name);
-        publisher
-            .declare_subscription(&queue, &binding_key)
-            .await
-            .map_err(SyncError::Broker)?;
-    }
-    Ok(())
-}
-
-/// The broker queue name for a subscription: `<exchange>.<name>`
-/// (`ehrbase.events.<name>` for the default exchange) — the configured exchange
-/// prefix + the subscription name. Exposed so a consumer knows the queue to
-/// consume from.
-#[must_use]
-pub fn subscription_queue_name(exchange: &str, name: &str) -> String {
-    format!("{exchange}.{name}")
-}
-
-/// A failure while syncing subscription queues.
-enum SyncError {
-    /// Reading the subscription rows failed.
-    Db(sqlx::Error),
-    /// Declaring/binding a queue on the broker failed.
-    Broker(EventError),
-}
-
-impl std::fmt::Display for SyncError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SyncError::Db(e) => write!(f, "subscription store: {e}"),
-            SyncError::Broker(e) => write!(f, "broker declare: {e}"),
-        }
-    }
 }
 
 /// Publish with exponential backoff, up to `publish_max_retries`

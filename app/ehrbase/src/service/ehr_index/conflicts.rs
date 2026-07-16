@@ -1,15 +1,15 @@
-//! Design-filled advisory duplicate-detection read (G-10). `master07 §Overview`
+//! Design-filled advisory duplicate-detection read. `master07 §Overview`
 //! names two error states the index metadata exists "to detect and rectify":
 //! multiple EHRs recorded for one subject, and multiple subjects recorded for
 //! one EHR. The SM defines no detection *operation* — this read is our own
 //! design (advisory, never a hard reject: the N:M states are legal-but-flagged
 //! per `resource_instance_type.adoc` `Duplicate`).
 
-use crate::service::ehr_index::types::{EhrIndexEntry, SubjectRef};
 use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;
+use crate::service::ehr_index::types::{EhrIndexEntry, SubjectRef};
 
 use super::{IndexError, row_to_entry};
 

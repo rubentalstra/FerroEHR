@@ -2,11 +2,11 @@
 //! of the platform crate: SM `I_MESSAGE_SERVICE` / `I_EHR_EXTRACT_SERVICE` /
 //! `I_TDD_SERVICE` (`docs/specs/openehr/SM/docs/openehr_platform/master09-message_service.adoc`
 //! and the UML classes `i_message_service.adoc`, `i_ehr_extract_service.adoc`,
-//! `i_tdd_service.adoc`). The design register is
-//! `docs/design/platform/06-service-message-admin.md`.
+//! `i_tdd_service.adoc`).
 //!
 //! Layout mirrors the spec's own export / import / TDD decomposition, one file
-//! per concern:
+//! per concern, each carrying its public `EhrbaseService` methods and the
+//! machinery behind them:
 //!
 //! - [`export`] — `I_EHR_EXTRACT_SERVICE.export_ehrs` / `export_ehr_extracts`:
 //!   the extract-building algorithm over the stored versions (RM EHR-Extract IM
@@ -19,9 +19,7 @@
 //!   COMPOSITION → validated commit.
 //!
 //! `I_MESSAGE_SERVICE` declares no functions (`i_message_service.adoc`), so it
-//! gets no code. Every file carries its domain logic; this `mod.rs` holds the
-//! thin `impl <Interface>Service for EhrbaseService` adapters that delegate to
-//! it (the `service/api/` pattern).
+//! gets no code.
 //!
 //! # Cross-module wiring
 //!
@@ -38,25 +36,19 @@
 //!   `architecture_overview/master07-security.adoc` §Non-repudiation).
 //! - **`crate::aql`** — `EXTRACT_SPEC.criteria` / `commit_time_interval` remain
 //!   typed rejects pending the `$ehr`-bound AQL export wave (see the PORT NOTEs
-//!   in [`export`]; register 06 G-M3 / G-M4).
-//! - **The extension REST wire (G-M1) lives in `ehrbase-rest`**, not here
-//!   (ITS-REST vends no message endpoints — a message/admin extension route is
-//!   spec-silent transport, our own extension); this crate only needs its trait
-//!   impls reachable.
+//!   in [`export`]).
+//! - **The extension REST wire lives in `ehrbase-rest`**, not here (ITS-REST
+//!   vends no message endpoints — a message/admin extension route is
+//!   spec-silent transport, our own extension).
 
 mod export;
 mod import;
 mod tdd;
 
-use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::status::SmError;
-use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
-use openehr_rm::ehr_extract::common::extract::Extract;
-use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
-
 use crate::service::EhrbaseService;
+use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
 
 impl EhrbaseService {
     /// Emit one IHE-ATNA EHR-Extract audit event for a completed export or
@@ -84,48 +76,5 @@ impl EhrbaseService {
         event.ehr_id = Some(id.clone());
         event.object_id = Some(id);
         let _ = self.emit(event);
-    }
-}
-
-impl EhrbaseService {
-    pub async fn extract_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
-        self.export_all_ehrs(an_ehr_id).await
-    }
-
-    pub async fn export_ehr_extracts(
-        &self,
-        extract_spec: ExtractSpec,
-    ) -> Result<Vec<Value>, SmError> {
-        self.export_ehr_extracts_spec(extract_spec).await
-    }
-
-    pub async fn import_ehr(
-        &self,
-        an_ehr_id: Option<Uuid>,
-        an_extract: Extract,
-    ) -> Result<(), SmError> {
-        self.import_whole_ehr(an_ehr_id, an_extract).await
-    }
-
-    pub async fn import_ehr_extract(
-        &self,
-        an_ehr_id: Uuid,
-        an_extract: Extract,
-    ) -> Result<(), SmError> {
-        self.import_into_ehr(an_ehr_id, an_extract).await
-    }
-}
-
-impl EhrbaseService {
-    pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
-        self.import_one_tdd(an_ehr_id, &tdd).await
-    }
-
-    pub async fn import_tdds(
-        &self,
-        an_ehr_id: Uuid,
-        tdds: Vec<String>,
-    ) -> Result<Vec<String>, SmError> {
-        self.import_tdds_batch(an_ehr_id, &tdds).await
     }
 }

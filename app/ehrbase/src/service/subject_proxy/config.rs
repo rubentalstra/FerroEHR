@@ -1,5 +1,4 @@
-//! Subject-proxy FHIR-frame executor configuration + client
-//! (`docs/design/sm-platform/10-subject-proxy.md` §2.2, G-4).
+//! Subject-proxy FHIR-frame executor configuration + client.
 //!
 //! The Subject Proxy Service exists so a caller "need not know about the
 //! particular standard, representational model, query language or API of the
@@ -11,17 +10,15 @@
 //! (`hl7_fhir_sample.adoc`).
 //!
 //! No openEHR spec governs the transport specifics — our own design, mirroring
-//! the external-terminology provider (`crate::service::terminology::config`) and
-//! `docs/design/terminology-server-integration.md`. Configuration is
-//! **opt-in and fail-closed**: only systems named here are reachable; a frame
-//! whose `system_id` matches no configured system is a typed rejection, never
-//! an arbitrary outbound request.
+//! the external-terminology provider (`crate::service::terminology`).
+//! Configuration is **opt-in and fail-closed**: only systems named here are
+//! reachable; a frame whose `system_id` matches no configured system is a typed
+//! rejection, never an arbitrary outbound request.
 //!
 //! This is the `[subject_proxy]` section of the one config tree
-//! ([`crate::config::EhrbaseConfig`], `docs/design/configuration.md` §3.15); no
-//! loader of its own. The env form `EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL`
-//! now binds through the tree's mechanical mapping (fixing the historical
-//! documented-but-dead form).
+//! ([`crate::config::EhrbaseConfig`]); no loader of its own. The env form
+//! `EHRBASE_SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL` binds through the tree's
+//! mechanical mapping.
 
 use std::collections::BTreeMap;
 use std::time::Duration;
@@ -76,7 +73,8 @@ impl SubjectProxyConfig {
     /// Build the FHIR executor, or `None` when no systems are configured.
     ///
     /// # Errors
-    /// [`SmError`] if a system's URL is empty or its HTTP client cannot be built.
+    /// [`SmError`] (`exception`) — a system's `base_url` is empty/blank, or its
+    /// HTTP client cannot be built.
     pub fn build(&self) -> Result<Option<SubjectProxyFhir>, SmError> {
         if self.systems.is_empty() {
             return Ok(None);
@@ -146,14 +144,13 @@ impl SubjectProxyFhir {
     /// `Accept: application/fhir+json`. `query_path` is the frame's `query_text`
     /// with `$subject_id` already substituted.
     ///
-    /// `Ok` on a `200` FHIR body; `Err(reason)` on an unconfigured system, a
-    /// non-2xx status, a timeout, or a malformed body — the caller turns an
-    /// `Err` into an unavailable `SAMPLE` so the primary→fallback pipeline runs
-    /// (`data_frame.adoc`).
+    /// `Ok` on a 2xx FHIR body; the caller turns an `Err` into an unavailable
+    /// `SAMPLE` so the primary→fallback pipeline runs (`data_frame.adoc`).
     ///
     /// # Errors
-    /// An unconfigured `system_id`, a non-2xx response, a request timeout, or
-    /// a malformed body — see above.
+    /// A reason string on: an unconfigured `system_id`, a transport failure
+    /// (timeout / connect / other), a non-2xx HTTP status, or a body that is
+    /// not valid JSON.
     pub async fn get(&self, system_id: &str, query_path: &str) -> Result<FhirFetch, String> {
         let Some(sys) = self.clients.get(system_id) else {
             return Err(format!("FHIR system {system_id:?} is not configured"));

@@ -1,80 +1,79 @@
-//! The SM `I_TERMINOLOGY_SERVICE` interface + its extract model.
+//! The SM `I_TERMINOLOGY_SERVICE` extract data model.
 //!
 //! Spec (`docs/specs/openehr/SM/docs/openehr_platform/
 //! master12-terminology_service.adoc` and the UML classes it includes):
 //!
 //! - `i_terminology_service.adoc` — the 9 calls (`get_terminology_ids`,
-//!   `has_terminology`, `get_terminology_description`, `has_term`, `get_term`,
-//!   `subsumes`, `value_set_validate`, `has_value_set`, `get_value_set`) and
-//!   their preconditions (`Pre_has_terminology`, `Pre_has_term`,
-//!   `Pre_has_value_set`).
+//!   `has_terminology`, `get_terminology_description`, `has_term`,
+//!   `get_term`, `subsumes`, `value_set_validate`, `has_value_set`,
+//!   `get_value_set`) and their preconditions (`Pre_has_terminology`,
+//!   `Pre_has_term`, `Pre_has_value_set`).
 //! - `terminology_description.adoc`, `terminology_extract.adoc`,
 //!   `term_code.adoc`, `defined_term.adoc`, `term_relationship.adoc`,
 //!   `terminology_relation.adoc` — the extract data model.
 //!
-//! PORT NOTE (temporal): the SM `at_date` parameter (an `Iso8601_date`) selects
-//! the terminology as it stood on a date. Our provider is the compile-time,
-//! spec-pinned `openehr-term` bundle (a single version — TERM 3.1.0), so
-//! `at_date` is accepted and validated in shape by the caller but does not
-//! change the answer; it is modelled here as `Option<String>` (the ISO date
-//! text) rather than a strong date type because the native API never
-//! date-resolves against multiple versions.
+//! PORT NOTE (temporal): the SM `at_date` parameter (an `Iso8601_date`)
+//! selects the terminology as it stood on a date. Our default provider is the
+//! compile-time, spec-pinned `openehr-term` bundle (a single version — TERM
+//! 3.1.0), so `at_date` is accepted and validated in shape by the caller but
+//! does not change the bundle's answer; it is modelled as `Option<String>`
+//! (the ISO date text) rather than a strong date type because the native API
+//! never date-resolves against multiple versions.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-// ─── extract data model (`terminology_extract` package) ──────────────────────
-
-/// `Terminology_description` (`terminology_description.adoc`): "Descriptor for a
-/// terminology as it is known in a particular terminology service."
+/// `Terminology_description` (`terminology_description.adoc`): "Descriptor
+/// for a terminology as it is known in a particular terminology service."
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerminologyDescription {
     /// `publisher` (1..1) — publisher organisation name.
     pub publisher: String,
-    /// `available_versions` (0..1) — identifiers of available versions of this
-    /// terminology in this service.
+    /// `available_versions` (0..1) — identifiers of available versions of
+    /// this terminology in this service.
     pub available_versions: Option<Vec<String>>,
-    /// `attributes` (0..1) — meta-model attributes that may be requested within
-    /// extract requests.
+    /// `attributes` (0..1) — meta-model attributes that may be requested
+    /// within extract requests.
     pub attributes: Option<Vec<String>>,
     /// `uri` (1..1) — published and/or standardised identifying URI for the
     /// terminology.
     pub uri: String,
 }
 
-/// `Term_code` (`term_code.adoc`): "Pure terminology concept within the scope of
-/// the terminology of the owning extract."
+/// `Term_code` (`term_code.adoc`): "Pure terminology concept within the scope
+/// of the terminology of the owning extract."
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TermCode {
-    /// `code` (1..1) — a terminology code or post-coordinated code expression.
+    /// `code` (1..1) — a terminology code or post-coordinated code
+    /// expression.
     pub code: String,
 }
 
-/// `Defined_term` (`defined_term.adoc`): "Fully defined term within the scope of
-/// the terminology of the owning extract." Inherits `Term_code` (the `code`
-/// attribute is flattened in).
+/// `Defined_term` (`defined_term.adoc`): "Fully defined term within the scope
+/// of the terminology of the owning extract." Inherits `Term_code` (the
+/// `code` attribute is flattened in).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DefinedTerm {
     /// `Term_code.code` (inherited, 1..1).
     pub code: String,
     /// `text` (1..1) — text of term.
     pub text: String,
-    /// `language` (0..1) — code representing the language (ISO 639 / IETF RFC
-    /// 5646). PORT NOTE: the SM types this as `Terminology_code`; we carry the
-    /// bare code string (the native API resolves rubrics per language directly
-    /// against the `openehr-term` bundle).
+    /// `language` (0..1) — code representing the language (ISO 639 / IETF
+    /// RFC 5646). PORT NOTE: the SM types this as `Terminology_code`; we
+    /// carry the bare code string (the native API resolves rubrics per
+    /// language directly against the `openehr-term` bundle).
     pub language: Option<String>,
     /// `is_preferred_term` (0..1) — true if this term is the preferred term
     /// among alternatives, if supported within the scoping terminology.
     pub is_preferred_term: Option<bool>,
 }
 
-/// A `Terminology_extract._terms_` value: either a bare `Term_code` or a fully
-/// defined `Defined_term`.
+/// A `Terminology_extract._terms_` value: either a bare `Term_code` or a
+/// fully defined `Defined_term`.
 ///
-/// The SM types `_terms_` as `Hash<String, Term_code>` where "each [term] may be
-/// a bare code, or have displayable text included, via the `Term` subtype
+/// The SM types `_terms_` as `Hash<String, Term_code>` where "each [term] may
+/// be a bare code, or have displayable text included, via the `Term` subtype
 /// [`Defined_term`]" (`terminology_extract.adoc`). This closed enum is the
 /// faithful Rust encoding of that `Term_code`/`Defined_term` subtype choice.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,14 +86,14 @@ pub enum TermEntry {
 }
 
 /// `Term_relationship` (`term_relationship.adoc`): "Term relationship,
-/// represented as a 1:N code map in the scope of the terminology identified by
-/// the owning extract."
+/// represented as a 1:N code map in the scope of the terminology identified
+/// by the owning extract."
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TermRelationship {
     /// `origin_code` (1..1) — code of origin ('left-hand') concept.
     pub origin_code: String,
-    /// `relation_name` (1..1) — name of the relation; must match a key in the
-    /// owning `Terminology_extract._relations_`.
+    /// `relation_name` (1..1) — name of the relation; must match a key in
+    /// the owning `Terminology_extract._relations_`.
     pub relation_name: String,
     /// `target_codes` (0..1) — codes of target ('right-hand') concept(s).
     pub target_codes: Option<Vec<String>>,
@@ -104,8 +103,8 @@ pub struct TermRelationship {
 /// relationship within the terminology meta-model."
 ///
 /// Invariant `Inv_valid_definition`: `local_code /= Void xor external_code /=
-/// Void` — enforced by the [`TerminologyRelation::new`] constructor (exactly one
-/// of `local_code`/`external_code` is `Some`).
+/// Void` — enforced by the [`TerminologyRelation::new`] constructor (exactly
+/// one of `local_code`/`external_code` is `Some`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerminologyRelation {
     /// `name` (1..1) — name of this relation from relevant meta-model.
@@ -152,7 +151,8 @@ impl TerminologyRelation {
         })
     }
 
-    /// Construct a relation defined by a `local_code` (from this terminology).
+    /// Construct a relation defined by a `local_code` (from this
+    /// terminology) — upholds `Inv_valid_definition` structurally.
     #[must_use]
     pub fn local(name: impl Into<String>, local_code: impl Into<String>) -> Self {
         Self {
@@ -163,7 +163,7 @@ impl TerminologyRelation {
     }
 
     /// Construct a relation defined by an `external_code` (from another
-    /// terminology).
+    /// terminology) — upholds `Inv_valid_definition` structurally.
     #[must_use]
     pub fn external(name: impl Into<String>, external_code: impl Into<String>) -> Self {
         Self {
@@ -176,8 +176,8 @@ impl TerminologyRelation {
 
 /// `Terminology_extract` (`terminology_extract.adoc`): "Root object of a
 /// collection of items extracted from a single version or release of one
-/// terminology." May represent a flat value-set, a structured value-set, or a
-/// subsumption hierarchy.
+/// terminology." May represent a flat value-set, a structured value-set, or
+/// a subsumption hierarchy.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TerminologyExtract {
     /// `terminology_id` (1..1) — the namespace identifier of the terminology.
@@ -185,20 +185,21 @@ pub struct TerminologyExtract {
     /// `terminology_version` (0..1) — terminology version (date or dotted
     /// numeric).
     pub terminology_version: Option<String>,
-    /// `terms` (0..1) — the terms in the extract, keyed by code; each is a bare
-    /// code or a fully defined term ([`TermEntry`]).
+    /// `terms` (0..1) — the terms in the extract, keyed by code; each is a
+    /// bare code or a fully defined term ([`TermEntry`]).
     pub terms: Option<BTreeMap<String, TermEntry>>,
     /// `relationships` (0..1) — relationships according to the specification
     /// generating the extract.
     pub relationships: Option<Vec<TermRelationship>>,
-    /// `relations` (0..1) — definitions of relations used in this extract, keyed
-    /// by `_name_`.
+    /// `relations` (0..1) — definitions of relations used in this extract,
+    /// keyed by `_name_`.
     pub relations: Option<BTreeMap<String, TerminologyRelation>>,
 }
 
 impl TerminologyExtract {
-    /// `create_terminology_code` (`terminology_extract.adoc`) — the standalone
-    /// form of a terminology code within this extract's terminology: a
+    /// `create_terminology_code` (`terminology_extract.adoc`) — the
+    /// standalone form of a terminology code within this extract's
+    /// terminology: a
     /// [`TerminologyCode`](openehr_base::prelude::TerminologyCode) whose
     /// `terminology_id` is this extract's.
     #[must_use]
@@ -214,8 +215,6 @@ impl TerminologyExtract {
         }
     }
 }
-
-// ─── the service interface (`i_terminology_service`) ─────────────────────────
 
 #[cfg(test)]
 mod tests {

@@ -56,10 +56,6 @@
 //!   permits an optional `_description_`) (see [`ingest`]).
 
 pub(crate) mod identity;
-pub(crate) mod ingest;
+mod ingest;
 mod runtime;
 mod store;
-
-// Re-export for the SM Definitions provisioning surface
-// (`service/definition/adl14.rs` `valid_opt` / `upload_opt`), which validates
-// OPT well-formedness before delegating to `store_template`.

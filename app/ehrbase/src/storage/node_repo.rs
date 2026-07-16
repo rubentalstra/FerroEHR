@@ -3,9 +3,8 @@
 //!
 //! No openEHR spec governs the `node` table — it is our own decomposed store
 //! (`docs/architecture.md` §Storage). This module is the single home for the
-//! `node` write and the `node`→canonical reload: the former lived in the
-//! service layer (G-S2) and the latter was duplicated between the version read
-//! path and the dump/load export (G-S1) — both now funnel here.
+//! `node` write and the `node`→canonical reload: the version read path, the
+//! dump/load export, and the AQL result assembly all funnel here.
 
 use std::collections::HashMap;
 
@@ -92,7 +91,7 @@ pub async fn write_nodes(
 
 /// Fetch the lean read rows of one stored version, ordered by `num`. Selects
 /// **only** the five columns [`crate::storage::reassemble`] and the nested-set
-/// contract need (G-S6) — the promoted query columns are not read back.
+/// contract need — the promoted query columns are not read back.
 async fn read_rows(
     pool: &PgPool,
     vo_id: Uuid,
@@ -121,9 +120,8 @@ async fn read_rows(
 }
 
 /// Reassemble one stored version's canonical JSON from its `node` rows — the
-/// single consolidated node→canonical reload (G-S1: replaces the former
-/// duplicate in the version read path and the dump/load export; the
-/// message/admin export calls this by name).
+/// single consolidated node→canonical reload (the version read path and the
+/// message/admin exports all call this by name).
 ///
 /// A version with no stored nodes (a logical delete — data Void, RM common
 /// master06 §Logical Deletion) reassembles to [`Value::Null`], so callers need
@@ -169,10 +167,10 @@ pub struct SubtreeAnchor {
 ///
 /// This closes the AQL result-assembly N+1 — a P-row whole-object projection
 /// page (e.g. `SELECT c FROM EHR e CONTAINS COMPOSITION c` on a dashboard)
-/// previously issued P separate subtree SELECTs, one per candidate row (P20
-/// overhead checklist item 14). The rows of every anchor's subtree are now
-/// fetched by a single `unnest`-array join over the anchors, tagged by anchor
-/// index, then reassembled per anchor in memory.
+/// would otherwise issue P separate subtree SELECTs, one per candidate row.
+/// The rows of every anchor's subtree are instead fetched by a single
+/// `unnest`-array join over the anchors, tagged by anchor index, then
+/// reassembled per anchor in memory.
 ///
 /// Anchors are de-duplicated: a page may project the same version more than once
 /// (repeated rows, or two whole-object columns), and each distinct subtree is

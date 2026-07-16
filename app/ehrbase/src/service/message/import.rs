@@ -26,23 +26,17 @@
 //! Allocation"); `import_ehr_extract` lands versioned objects into an existing
 //! EHR (Cases 2/3).
 //!
-//! PORT NOTE (re-verify — import scope; G-M5): imported COMPOSITION content is
+//! PORT NOTE (re-verify — import scope): imported COMPOSITION content is
 //! stored verbatim without re-linking its operational template
 //! (`vo_version.template_id` stays NULL) or re-running WebTemplate/RM validation
 //! — the OPT must already be provisioned in the target through the DEFINITION
 //! API. Re-validation on import is deferred (it would require the source's
-//! exact OPT); this matches the admin dump/load path. The promoted
+//! exact OPT); this matches the admin dump/load path, which master06 §Copying
+//! permits: "the `ORIGINAL_VERSION` instance is never modified". The promoted
 //! `ehr.subject_id` column is left unset for an imported EHR — a clone shares
 //! the source subject, which the one-EHR-per-subject index cannot represent, so
 //! the subject is preserved inside the `EHR_STATUS` content, not the promoted
 //! column (RM ehr, `EHR.ehr_status`).
-//!
-//! PORT NOTE (re-validation on import; register 06 G-M5): whether an imported
-//! COMPOSITION is re-validated against a target-provisioned OPT is deferred —
-//! doing so needs the source's exact OPT and a re-validation pass keyed on the
-//! target template. Until that decision, imported content is stored verbatim
-//! (matching the admin dump/load path), which master06 §Copying permits: "the
-//! `ORIGINAL_VERSION` instance is never modified".
 
 use std::collections::BTreeMap;
 
@@ -50,21 +44,34 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
-use crate::system_log::event::EventActionCode;
-use openehr_rm::ehr_extract::common::extract::Extract;
-
 use crate::service::{EhrbaseService, ServiceError};
+use crate::system_log::event::EventActionCode;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::lifecycle;
 use crate::versioning::{
     ImportContainer, ImportVersion, Kind, change_type, change_type_code, commit_demographic_import,
     commit_import, lifecycle_state_code, parse_object_version_id,
 };
+use openehr_rm::ehr_extract::common::extract::Extract;
 
 impl EhrbaseService {
     /// SM `import_ehr(an_ehr_id[0..1], an_extract)` — clone a whole EHR into an
-    /// empty target (master06 §Copying Case 1).
-    pub(super) async fn import_whole_ehr(
+    /// empty target (master06 §Copying Case 1). The target id is the caller's
+    /// fixed id (the SM's "same patient in other EHR services" case), else the
+    /// source EHR id reused (master06 §Copying Case 1: the newly created EHR
+    /// re-uses the source EHR identifier; RM ehr §"EHR Identifier Allocation").
+    /// A completed import is audited for non-repudiation (inbound →
+    /// `EventActionCode::Create`).
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — the extract carries no `EHR_STATUS`
+    ///   versioned object, carries duplicate singleton containers, names no
+    ///   source EHR id when `an_ehr_id` is absent, or any content item /
+    ///   `ORIGINAL_VERSION` is malformed (see the parse errors in this module).
+    /// - `ehr_create_fail_duplicate_id` — an EHR with the target id already
+    ///   exists (`import_ehr` requires an empty target).
+    /// - `exception` — a database/replay fault mid-transaction (rolled back).
+    pub async fn import_ehr(
         &self,
         an_ehr_id: Option<Uuid>,
         an_extract: Extract,
@@ -79,10 +86,6 @@ impl EhrbaseService {
         }
         reject_duplicate_singleton_containers(&containers)?;
 
-        // The target id: the caller's fixed id (the SM's "same patient in other
-        // EHR services" case), else the source EHR id reused (master06 §Copying
-        // Case 1: the newly created EHR re-uses the source EHR identifier; RM
-        // ehr §"EHR Identifier Allocation").
         let ehr_id = match an_ehr_id {
             Some(id) => id,
             None => source_ehr_id(&an_extract)?,
@@ -130,15 +133,24 @@ impl EhrbaseService {
         if touches_ehr_access {
             self.invalidate_ehr_access(ehr_id).await;
         }
-        // A completed import is audited for non-repudiation (an inbound Extract
-        // communication landing new local versions → `EventActionCode::Create`).
         self.emit_extract_audit(ehr_id, EventActionCode::Create);
         Ok(())
     }
 
     /// SM `import_ehr_extract(an_ehr_id, an_extract)` — land versioned objects
-    /// into an existing EHR (master06 §Copying Cases 2/3).
-    pub(super) async fn import_into_ehr(
+    /// into an existing EHR (master06 §Copying Cases 2/3). A completed import
+    /// is audited for non-repudiation (inbound → `EventActionCode::Create`).
+    ///
+    /// # Errors
+    /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
+    /// - `precondition_violation` (`400`) — duplicate singleton containers, or
+    ///   any malformed content item / `ORIGINAL_VERSION` (see the parse errors
+    ///   in this module).
+    /// - `Conflict` (`409`) — the EHR already holds an `EHR_STATUS`/`EHR_ACCESS`
+    ///   under a different object id (an EHR holds at most one of each; RM ehr,
+    ///   EHR class 1..1).
+    /// - `exception` — a database/replay fault mid-transaction (rolled back).
+    pub async fn import_ehr_extract(
         &self,
         an_ehr_id: Uuid,
         an_extract: Extract,
@@ -191,8 +203,6 @@ impl EhrbaseService {
         if touches_ehr_access {
             self.invalidate_ehr_access(an_ehr_id).await;
         }
-        // A completed import is audited for non-repudiation (an inbound Extract
-        // communication landing new local versions → `EventActionCode::Create`).
         self.emit_extract_audit(an_ehr_id, EventActionCode::Create);
         Ok(())
     }
@@ -289,9 +299,9 @@ fn parse_import_containers(
             match item.get("_type").and_then(Value::as_str) {
                 Some("OPENEHR_CONTENT_ITEM") => {}
                 // PORT NOTE (keep — `master06-generic_extract_package.adoc`
-                // `GENERIC_CONTENT_ITEM`; G-M7): ISO 13606 / CDA generic content
-                // is out of this CDR's openEHR-only import scope; a typed
-                // reject, tied to the deferred integration-IM behaviour (BASE
+                // `GENERIC_CONTENT_ITEM`): ISO 13606 / CDA generic content is
+                // out of this CDR's openEHR-only import scope; a typed reject,
+                // tied to the deferred integration-IM behaviour (BASE
                 // arch-overview `master14-integration.adoc`).
                 Some("GENERIC_CONTENT_ITEM") => {
                     return Err(SmError::precondition(

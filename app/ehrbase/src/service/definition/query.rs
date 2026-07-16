@@ -15,9 +15,9 @@ use uuid::Uuid;
 use crate::service::definition::types::QueryDescriptor;
 use crate::service::list::Page;
 use crate::service::status::{CallStatusType, SmError};
-
-use super::{compile_pattern, page_bounds, paginate, parse_qualified_name, split_qualified};
 use crate::service::{EhrbaseService, ServiceError};
+
+use super::{compile_pattern, page_bounds, paginate};
 
 /// The SEMVER a no-version store assigns a query. The no-version store path is
 /// "stores a new query, or updates an existing query"
@@ -29,15 +29,137 @@ use crate::service::{EhrbaseService, ServiceError};
 /// version, which is what a no-version store does.
 const DEFAULT_QUERY_VERSION: &str = "1.0.0";
 
-impl EhrbaseService {
-    // ── I_DEFINITION_QUERY domain logic ──────────────────────────────────────
+// ── SM Definitions native API (I_DEFINITION_QUERY) — the catalog contract ────
 
+impl EhrbaseService {
     /// `has_query` — true if a query with the qualified name `a_query_name` is
     /// registered (the `"misc"` namespace is assumed when none is supplied; a
     /// three-part name's formalism segment is lifted out per `master04`
     /// §Registered Queries, G-05-04). Identity is case-insensitive (BASE
     /// master05 §Composite Identifiers and Case, G-05-14).
-    pub(super) async fn query_exists(&self, a_query_name: &str) -> Result<bool, ServiceError> {
+    ///
+    /// # Errors
+    ///
+    /// A database failure (`exception` → `500`).
+    pub async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
+        Ok(self.query_exists(&a_query_name).await?)
+    }
+
+    /// `valid_query` — `a_query_text` is a valid instance of formalism
+    /// `a_type` (a successful `openehr_query` parse; only AQL major-version 1
+    /// is a known formalism, G-05-06). Stateless.
+    ///
+    /// # Errors
+    ///
+    /// Never — the `Result` shape mirrors the SM catalog; validity is reported
+    /// in the `Ok` boolean.
+    pub fn valid_query(&self, a_query_text: &str, a_type: &str) -> Result<bool, SmError> {
+        Ok(valid_query_text(a_query_text, a_type))
+    }
+
+    /// `store_query` (Pre `valid_query`) — register a query, returning its
+    /// [`QueryDescriptor`].
+    ///
+    /// # Errors
+    ///
+    /// - Query text that is not a valid instance of the effective formalism →
+    ///   `invalid_query` (`422`).
+    /// - Query text that fails the store-time AQL parse →
+    ///   `precondition_violation` (`400`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn store_query(
+        &self,
+        a_query_text: String,
+        a_type: String,
+        a_query_name: Option<String>,
+    ) -> Result<QueryDescriptor, SmError> {
+        Ok(self
+            .register_query(a_query_text, &a_type, a_query_name)
+            .await?)
+    }
+
+    /// `store_query_set (a_query_set_name: String [0..1]): UUID` — "Register
+    /// a query set. TODO: determine details."
+    ///
+    /// PORT NOTE: an explicit spec TODO with no defined semantics
+    /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
+    /// spec defines it.
+    ///
+    /// # Errors
+    ///
+    /// Always — `not_implemented` (`501`), unconditionally.
+    pub fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
+        Err(SmError::new(
+            CallStatusType::NotImplemented,
+            "store_query_set is an SM TODO (i_definition_query.adoc): not implemented",
+        ))
+    }
+
+    /// `list_queries` — all registered queries, as descriptors, cursored by
+    /// `page`.
+    ///
+    /// # Errors
+    ///
+    /// - A row-decode failure on a `NOT NULL` column (a genuine server fault)
+    ///   → `exception` (`500`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
+        Ok(self.stored_query_descriptors(page).await?)
+    }
+
+    /// `list_matching_queries` — registered queries whose qualified name
+    /// matches `id_pattern` (regex) and whose referenced artefacts match
+    /// `artefact_id_pattern` (regex, `None` = match any), cursored by `page`.
+    ///
+    /// # Errors
+    ///
+    /// - An uncompilable `id_pattern` or `artefact_id_pattern` →
+    ///   `invalid_id_pattern` (`400`).
+    /// - A row-decode failure (a genuine server fault) → `exception` (`500`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn list_matching_queries(
+        &self,
+        id_pattern: String,
+        artefact_id_pattern: Option<String>,
+        page: Page,
+    ) -> Result<Vec<QueryDescriptor>, SmError> {
+        Ok(self
+            .query_list_matching(&id_pattern, artefact_id_pattern.as_deref(), page)
+            .await?)
+    }
+
+    /// `delete_query` (Pre `has_query` / Post `query_deleted`) — delete every
+    /// version of the query with qualified name `a_query_name` (the SM keys
+    /// deletion by *name*). Identity is case-insensitive.
+    ///
+    /// # Errors
+    ///
+    /// - No registered query with that name → `artefact_does_not_exist`
+    ///   (`404`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
+        Ok(self.query_delete(&a_query_name).await?)
+    }
+
+    /// `queries_count` — total count of queries.
+    ///
+    /// PORT NOTE: counts distinct *qualified names* (a query with N stored
+    /// versions counts once) — the natural reading of "total count of queries".
+    ///
+    /// # Errors
+    ///
+    /// A database failure (`exception` → `500`).
+    pub async fn queries_count(&self) -> Result<i64, SmError> {
+        Ok(self.query_count().await?)
+    }
+}
+
+// ── domain logic (the ServiceError layer under the catalog) ──────────────────
+
+impl EhrbaseService {
+    /// True if a query with the qualified name `a_query_name` is registered
+    /// (case-insensitive identity, `"misc"` default namespace).
+    async fn query_exists(&self, a_query_name: &str) -> Result<bool, ServiceError> {
         let qualified = parse_qualified_name(a_query_name).qualified();
         let (rdn, semantic) = split_qualified(&qualified);
         Ok(sqlx::query_scalar::<_, bool>(
@@ -50,19 +172,18 @@ impl EhrbaseService {
         .await?)
     }
 
-    /// `store_query` (Pre `valid_query`) — register a query, returning its
-    /// [`QueryDescriptor`].
+    /// `store_query` core — register a query, returning its descriptor.
     ///
     /// The name is qualified (`"misc"` default) or generated (`misc::q_<uuid>`)
     /// when absent. A three-part `<ns>::<formalism>::<name>` name lifts its
-    /// formalism out (G-05-04): the store key is the two-part `<ns>::<name>` and
-    /// the name-borne formalism, when present, is the effective formalism —
+    /// formalism out (G-05-04): the store key is the two-part `<ns>::<name>`
+    /// and the name-borne formalism, when present, is the effective formalism —
     /// otherwise `a_type` is (`master04` §Query Formalism).
     ///
     /// PORT NOTE (G-05-09, spec naming): the SM precondition names
     /// `is_valid_query` though the function is `valid_query`; we enforce
     /// `valid_query` and reject an invalid query as `invalid_query` (`422`).
-    pub(super) async fn query_store_sm(
+    async fn register_query(
         &self,
         text: String,
         a_type: &str,
@@ -111,8 +232,8 @@ impl EhrbaseService {
         descriptor_from_row(&row)
     }
 
-    /// `list_queries` — all registered queries, as descriptors.
-    pub(super) async fn stored_query_descriptors(
+    /// All registered queries as descriptors, paged in SQL.
+    async fn stored_query_descriptors(
         &self,
         page: Page,
     ) -> Result<Vec<QueryDescriptor>, ServiceError> {
@@ -130,10 +251,9 @@ impl EhrbaseService {
         rows.iter().map(descriptor_from_row).collect()
     }
 
-    /// `list_matching_queries` — registered queries whose qualified name matches
-    /// `id_pattern` (regex) and whose referenced artefacts match
-    /// `artefact_id_pattern` (regex, `None` = match any). Uncompilable pattern →
-    /// `invalid_id_pattern` (`400`).
+    /// Registered queries whose qualified name matches `id_pattern` and whose
+    /// referenced artefacts match `artefact_id_pattern` (`None` = match any),
+    /// then paged.
     ///
     /// PORT NOTE (register 05 G-05-05): `artefact_id_pattern` is spec'd against
     /// "archetype / template identifiers referenced in the query". Until the AQL
@@ -142,7 +262,7 @@ impl EhrbaseService {
     /// text — a query matches when its source contains a substring matching the
     /// artefact pattern. Replacing the raw-text scan with that analysed set is
     /// the future AQL-surface work.
-    pub(super) async fn query_list_matching(
+    async fn query_list_matching(
         &self,
         id_pattern: &str,
         artefact_id_pattern: Option<&str>,
@@ -172,10 +292,9 @@ impl EhrbaseService {
         Ok(paginate(matched, page))
     }
 
-    /// `delete_query` (Pre `has_query` / Post `query_deleted`) — delete every
-    /// version of the query with qualified name `a_query_name` (the SM keys
-    /// deletion by *name*); absent → `404`. Identity is case-insensitive.
-    pub(super) async fn query_delete(&self, a_query_name: &str) -> Result<(), ServiceError> {
+    /// Delete every version of the query with qualified name `a_query_name`
+    /// (case-insensitive); absent → `artefact_does_not_exist` (`404`).
+    async fn query_delete(&self, a_query_name: &str) -> Result<(), ServiceError> {
         let qualified = parse_qualified_name(a_query_name).qualified();
         let (rdn, semantic) = split_qualified(&qualified);
         let deleted = sqlx::query(
@@ -196,11 +315,8 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// `queries_count` — total count of queries.
-    ///
-    /// PORT NOTE: counts distinct *qualified names* (a query with N stored
-    /// versions counts once) — the natural reading of "total count of queries".
-    pub(super) async fn query_count(&self) -> Result<i64, ServiceError> {
+    /// Total count of distinct qualified query names.
+    async fn query_count(&self) -> Result<i64, ServiceError> {
         Ok(sqlx::query_scalar::<_, i64>(
             "SELECT count(*) FROM \
              (SELECT DISTINCT reverse_domain_name, semantic_id FROM stored_query) t",
@@ -208,15 +324,11 @@ impl EhrbaseService {
         .fetch_one(&self.pool)
         .await?)
     }
+}
 
-    /// `valid_query` — `a_query_text` is a valid instance of formalism `a_type`.
-    #[must_use]
-    pub(super) fn valid_query_source(a_query_text: &str, a_type: &str) -> bool {
-        valid_query_text(a_query_text, a_type)
-    }
+// ── the stored-query store (CRUD used by the DEFINITION wire + Query service) ─
 
-    // ── stored-query store (CRUD used by the DEFINITION wire + Query service) ─
-
+impl EhrbaseService {
     /// Store a stored query, returning the effective SEMVER it is stored at.
     ///
     /// - **With an explicit `version`**, the `(name, version)` pair is
@@ -229,7 +341,7 @@ impl EhrbaseService {
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case, G-05-14).
-    pub(in crate::service) async fn store_query_version(
+    pub(super) async fn store_query_version(
         &self,
         qualified_name: &str,
         version: Option<&str>,
@@ -361,7 +473,7 @@ impl EhrbaseService {
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("stored query {qualified_name}")))?;
 
-        Self::stored_query_json(&row)
+        stored_query_json(&row)
     }
 
     /// List stored queries whose qualified name starts with `name_pattern`
@@ -370,7 +482,7 @@ impl EhrbaseService {
     /// starting with `org.openehr`"; empty ⇒ wildcard). All stored versions of
     /// every matching name are returned. The prefix match is case-insensitive
     /// (G-05-14).
-    pub(in crate::service) async fn list_stored_queries(
+    pub(super) async fn list_stored_queries(
         &self,
         name_pattern: &str,
     ) -> Result<Vec<Value>, ServiceError> {
@@ -385,35 +497,37 @@ impl EhrbaseService {
         .bind(name_pattern)
         .fetch_all(&self.pool)
         .await?;
-        rows.iter().map(Self::stored_query_json).collect()
+        rows.iter().map(stored_query_json).collect()
     }
+}
 
-    /// The openEHR stored-query descriptor for one row (the ITS-REST wire shape).
-    ///
-    /// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
-    /// so a decode failure is a genuine server fault, not an empty field:
-    /// surface it (`?` → `500`) rather than silently blanking the value
-    /// (W-14 F-29).
-    fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
-        let rdn = row.try_get::<String, _>("reverse_domain_name")?;
-        let semantic = row.try_get::<String, _>("semantic_id")?;
-        let name = if rdn.is_empty() {
-            semantic
-        } else {
-            format!("{rdn}::{semantic}")
-        };
-        let saved = row
-            .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
-            .to_jiff()
-            .to_string();
-        Ok(json!({
-            "name": name,
-            "type": row.try_get::<String, _>("query_type")?,
-            "version": row.try_get::<String, _>("semver")?,
-            "saved": saved,
-            "q": row.try_get::<String, _>("query_text")?,
-        }))
-    }
+// ── row mapping ───────────────────────────────────────────────────────────────
+
+/// The openEHR stored-query descriptor for one row (the ITS-REST wire shape).
+///
+/// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
+/// so a decode failure is a genuine server fault, not an empty field:
+/// surface it (`?` → `500`) rather than silently blanking the value
+/// (W-14 F-29).
+fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
+    let rdn = row.try_get::<String, _>("reverse_domain_name")?;
+    let semantic = row.try_get::<String, _>("semantic_id")?;
+    let name = if rdn.is_empty() {
+        semantic
+    } else {
+        format!("{rdn}::{semantic}")
+    };
+    let saved = row
+        .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+        .to_jiff()
+        .to_string();
+    Ok(json!({
+        "name": name,
+        "type": row.try_get::<String, _>("query_type")?,
+        "version": row.try_get::<String, _>("semver")?,
+        "saved": saved,
+        "q": row.try_get::<String, _>("query_text")?,
+    }))
 }
 
 /// Build a [`QueryDescriptor`] from a `stored_query` row (per
@@ -448,6 +562,82 @@ fn descriptor_from_row(row: &PgRow) -> Result<QueryDescriptor, ServiceError> {
     })
 }
 
+// ── qualified names (master04 §Registered Queries) ────────────────────────────
+
+/// A qualified query name decomposed per `master04-definition_package.adoc`
+/// §Registered Queries: `<namespace>::<query-name>` or the three-part
+/// `<namespace>::<formalism>::<query-name>`.
+struct QualifiedName {
+    /// The namespace segment (`"misc"` when none was supplied — §Registered
+    /// Queries, l.34).
+    namespace: String,
+    /// The formalism segment of a three-part name, if present (§Registered
+    /// Queries scheme 2). Feeds `QUERY_DESCRIPTOR.formalism` / `query_type`.
+    formalism: Option<String>,
+    /// The bare query-name segment (the store key, never carrying the
+    /// formalism).
+    name: String,
+}
+
+impl QualifiedName {
+    /// The canonical two-part `<namespace>::<query-name>` — the form the
+    /// stored-query store keys on (so a three-part input round-trips to the
+    /// same row and the formalism is never folded into the name, G-05-04).
+    fn qualified(&self) -> String {
+        format!("{}::{}", self.namespace, self.name)
+    }
+}
+
+/// Decompose a (possibly unqualified) query name per `master04` §Registered
+/// Queries: apply the `"misc"` default namespace, then recognise the two-part
+/// `<ns>::<name>` and three-part `<ns>::<formalism>::<name>` schemes. A
+/// three-part name's middle segment is lifted out as the formalism (never left
+/// folded into the name — G-05-04); a name of four or more segments keeps the
+/// first segment as the namespace and the remainder as the (`::`-bearing) name.
+fn parse_qualified_name(raw: &str) -> QualifiedName {
+    let qualified = qualify(raw);
+    // `qualify` guarantees a `::`, so the fallback arm is unreachable; it keeps
+    // the decomposition total without a panic path.
+    let (namespace, rest) = qualified.split_once("::").unwrap_or(("misc", &qualified));
+    match rest.split_once("::") {
+        // Exactly three segments: the middle one is the formalism.
+        Some((formalism, name)) if !name.contains("::") => QualifiedName {
+            namespace: namespace.to_owned(),
+            formalism: Some(formalism.to_owned()),
+            name: name.to_owned(),
+        },
+        // Two segments, or four and more: the whole remainder is the name.
+        _ => QualifiedName {
+            namespace: namespace.to_owned(),
+            formalism: None,
+            name: rest.to_owned(),
+        },
+    }
+}
+
+/// Apply the SM `"misc"` default namespace: a name with no `::` becomes
+/// `misc::<name>` (`master04` §Registered Queries: "If no namespace is
+/// supplied, the namespace `"misc"` is assumed").
+fn qualify(name: &str) -> String {
+    if name.contains("::") {
+        name.to_owned()
+    } else {
+        format!("misc::{name}")
+    }
+}
+
+/// Split an already two-part-canonical query name into `(reverse_domain_name,
+/// semantic_id)` on the first `::`, so the SM and wire paths key `stored_query`
+/// rows identically. Callers pass the [`QualifiedName::qualified`] form, which
+/// is always two-part, so the formalism is never captured in `semantic_id`.
+fn split_qualified(qualified_name: &str) -> (&str, &str) {
+    qualified_name
+        .split_once("::")
+        .unwrap_or(("", qualified_name))
+}
+
+// ── formalism (master04 §Query Formalism) ─────────────────────────────────────
+
 /// True if `a_query_text` is a valid instance of the formalism `a_type`.
 ///
 /// Only AQL major-version 1 is a known formalism (`valid_query`; `master04`
@@ -455,14 +645,15 @@ fn descriptor_from_row(row: &PgRow) -> Result<QueryDescriptor, ServiceError> {
 /// "any other string value", which we reject typed since the store only holds
 /// AQL). AQL validity is a successful `openehr_query` parse.
 fn valid_query_text(text: &str, a_type: &str) -> bool {
-    // AQL validity is a successful `openehr_query` parse.
     is_aql_v1(a_type) && openehr_query::parser::parse_str(text).is_ok()
 }
 
-/// Parse the `a_type` formalism per `master04` §Query Formalism (case-insensitive
+/// Parse a formalism name per `master04` §Query Formalism (case-insensitive
 /// name, optional `::version`, major `"1"` when absent) and report whether it
-/// names AQL major-version 1.
-fn is_aql_v1(a_type: &str) -> bool {
+/// names AQL major-version 1 — the only formalism the build can validate +
+/// store (`parameters/query/query_type.yaml`; the SM sanctions "any other
+/// string value", which we reject typed — G-05-06). Shared with the wire seam.
+pub(super) fn is_aql_v1(a_type: &str) -> bool {
     let (name, version) = match a_type.split_once("::") {
         Some((n, v)) => (n, Some(v)),
         None => (a_type, None),
@@ -488,68 +679,47 @@ fn is_partial_semver(version: &str) -> bool {
             .all(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit()))
 }
 
-// ── SM Definitions native API (I_DEFINITION_QUERY) ───────────────────────────
-
-impl EhrbaseService {
-    pub async fn has_query(&self, a_query_name: String) -> Result<bool, SmError> {
-        Ok(self.query_exists(&a_query_name).await?)
-    }
-
-    pub fn valid_query(&self, a_query_text: &str, a_type: &str) -> Result<bool, SmError> {
-        Ok(Self::valid_query_source(a_query_text, a_type))
-    }
-
-    pub async fn store_query(
-        &self,
-        a_query_text: String,
-        a_type: String,
-        a_query_name: Option<String>,
-    ) -> Result<QueryDescriptor, SmError> {
-        Ok(self
-            .query_store_sm(a_query_text, &a_type, a_query_name)
-            .await?)
-    }
-
-    /// `store_query_set (a_query_set_name: String [0..1]): UUID` — "Register
-    /// a query set. TODO: determine details."
-    ///
-    /// PORT NOTE: an explicit spec TODO with no defined semantics
-    /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
-    /// spec defines it.
-    pub fn store_query_set(&self, _a_query_set_name: Option<String>) -> Result<String, SmError> {
-        Err(SmError::new(
-            CallStatusType::NotImplemented,
-            "store_query_set is an SM TODO (i_definition_query.adoc): not implemented",
-        ))
-    }
-
-    pub async fn list_queries(&self, page: Page) -> Result<Vec<QueryDescriptor>, SmError> {
-        Ok(self.stored_query_descriptors(page).await?)
-    }
-
-    pub async fn list_matching_queries(
-        &self,
-        id_pattern: String,
-        artefact_id_pattern: Option<String>,
-        page: Page,
-    ) -> Result<Vec<QueryDescriptor>, SmError> {
-        Ok(self
-            .query_list_matching(&id_pattern, artefact_id_pattern.as_deref(), page)
-            .await?)
-    }
-
-    pub async fn delete_query(&self, a_query_name: String) -> Result<(), SmError> {
-        Ok(self.query_delete(&a_query_name).await?)
-    }
-
-    pub async fn queries_count(&self) -> Result<i64, SmError> {
-        Ok(self.query_count().await?)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn qualify_applies_misc_default() {
+        // master04 §Registered Queries: no namespace ⇒ "misc".
+        assert_eq!(qualify("all_over_50"), "misc::all_over_50");
+        assert_eq!(qualify("ehr::x"), "ehr::x");
+        assert_eq!(qualify("ns::aql::x"), "ns::aql::x");
+    }
+
+    #[test]
+    fn three_part_name_lifts_the_formalism_out_of_the_name() {
+        // master04 §Registered Queries scheme 2: <ns>::<formalism>::<name>.
+        // The formalism segment must NOT be folded into the stored name
+        // (G-05-04) — it becomes the descriptor formalism and the store key is
+        // the canonical two-part <ns>::<name>.
+        let q = parse_qualified_name("task_planning::aql::chemotherapy_plans");
+        assert_eq!(q.namespace, "task_planning");
+        assert_eq!(q.formalism.as_deref(), Some("aql"));
+        assert_eq!(q.name, "chemotherapy_plans");
+        assert_eq!(q.qualified(), "task_planning::chemotherapy_plans");
+
+        // Two-part names keep the whole remainder as the name, no formalism.
+        let two = parse_qualified_name("ehr::all_over_50");
+        assert_eq!(two.namespace, "ehr");
+        assert_eq!(two.formalism, None);
+        assert_eq!(two.name, "all_over_50");
+
+        // Four and more segments: namespace + a `::`-bearing name, no
+        // formalism lift.
+        let four = parse_qualified_name("a::b::c::d");
+        assert_eq!(four.namespace, "a");
+        assert_eq!(four.formalism, None);
+        assert_eq!(four.name, "b::c::d");
+
+        // Unqualified ⇒ misc default, two-part canonical form.
+        let bare = parse_qualified_name("all_over_50");
+        assert_eq!(bare.qualified(), "misc::all_over_50");
+    }
 
     #[test]
     fn formalism_case_and_version_equivalence() {
@@ -587,8 +757,8 @@ mod tests {
     }
 
     /// The store path rejects a body that is not valid AQL (ECC-SQR-006/007):
-    /// `store_query` guards on `openehr_query::parser::parse_str`, so a non-AQL
-    /// or malformed body must fail that parse (→ `BadRequest` → `400`).
+    /// `store_query_version` guards on `openehr_query::parser::parse_str`, so a
+    /// non-AQL or malformed body must fail that parse (→ `BadRequest` → `400`).
     #[test]
     fn store_time_aql_validation() {
         assert!(

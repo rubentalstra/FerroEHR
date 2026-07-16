@@ -1,5 +1,5 @@
 //! Physical deletion (SM `I_ADMIN_SERVICE.physical_ehr_delete` /
-//! `physical_party_delete`).
+//! `physical_party_delete` + the `admin_ehr_delete_all` bulk extension).
 //!
 //! Spec: `docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`
 //! (`physical_ehr_delete`, precondition `has_ehr`, error `ehr_id_does_not_exist`;
@@ -12,9 +12,53 @@
 
 use uuid::Uuid;
 
+use crate::service::status::SmError;
 use crate::service::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
+    /// SM `physical_ehr_delete`: physically delete one EHR and every trace of
+    /// it.
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — `ehr_id` is not a well-formed UUID.
+    /// - `versioned_object_does_not_exist` (`404`) — no EHR with that id
+    ///   (`has_ehr` false → `ehr_id_does_not_exist`).
+    /// - `exception` — a database fault mid-transaction (rolled back).
+    pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
+        Ok(self.delete_ehr(super::parse_uuid(&ehr_id, "EHR")?).await?)
+    }
+
+    /// The `admin_ehr_delete_all` extension: physically delete a set of EHRs
+    /// (each with the full [`Self::admin_ehr_delete`] cascade), returning the
+    /// count actually deleted. An **empty** list means "delete ALL EHRs" (the
+    /// ITS-REST admin `DELETE /admin/ehr` types `ehr_id` as an **optional**
+    /// subset selector, so an absent/empty list denotes the full set).
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — any id in the list is malformed
+    ///   (the whole bulk request is rejected before any deletion runs).
+    /// - `exception` — a database fault while deleting.
+    pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
+        let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
+        Ok(self.delete_ehr_set(&ids).await?)
+    }
+
+    /// SM `physical_party_delete`: physically delete a demographic PARTY "along
+    /// with related Party relationships".
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — `a_party_id` is not a well-formed
+    ///   UUID.
+    /// - `versioned_object_does_not_exist` (`404`) — the id names no
+    ///   demographic PARTY root (`party_id_does_not_exist`; a
+    ///   `PARTY_RELATIONSHIP` or unknown id is also this failure).
+    /// - `exception` — a database fault mid-transaction (rolled back).
+    pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
+        Ok(self
+            .delete_party(super::parse_uuid(&a_party_id, "party")?)
+            .await?)
+    }
+
     /// Physically delete one EHR and every trace of it, in a single transaction.
     ///
     /// The FK graph (`0001_baseline.sql`) makes `DELETE FROM ehr` cascade to
@@ -35,7 +79,7 @@ impl EhrbaseService {
     /// only abstractly (`ehr_id_does_not_exist`) with no HTTP binding): we map it
     /// to `NotFound` → HTTP `404`, the natural REST reading of an operation on a
     /// non-existent resource.
-    pub(super) async fn physical_ehr_delete(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+    async fn delete_ehr(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
         // Our own extension (no openEHR spec governs multimedia offload): when
         // DV_MULTIMEDIA externalization is on, collect the blob keys this EHR's
         // nodes reference *before* deletion, so we can GC the ones no other node
@@ -82,6 +126,37 @@ impl EhrbaseService {
         // blob shared with another EHR/version must be kept).
         self.gc_unreferenced_blobs(candidate_blobs).await;
         Ok(())
+    }
+
+    /// Physically delete a set of EHRs, each with the full cascade of
+    /// [`Self::delete_ehr`] in its own transaction. Missing ids are skipped
+    /// (idempotent bulk delete); the count of EHRs actually deleted is
+    /// returned.
+    ///
+    /// PORT NOTE (keep — spec-silent extension): `i_admin_service.adoc` has no
+    /// bulk call, so the idempotent skip-missing semantics + returned count are
+    /// our own design (no openEHR spec governs bulk-delete internals); a
+    /// partial success is observable at the REST edge.
+    async fn delete_ehr_set(&self, ehr_ids: &[Uuid]) -> Result<u64, ServiceError> {
+        // An empty selector = the full EHR set (see `admin_ehr_delete_all`); a
+        // non-empty selector deletes exactly the named EHRs.
+        let targets: Vec<Uuid> = if ehr_ids.is_empty() {
+            sqlx::query_scalar("SELECT id FROM ehr")
+                .fetch_all(&self.pool)
+                .await?
+        } else {
+            ehr_ids.to_vec()
+        };
+        let mut deleted = 0u64;
+        for ehr_id in targets {
+            match self.delete_ehr(ehr_id).await {
+                Ok(()) => deleted += 1,
+                // A missing EHR is skipped, not an error (idempotent bulk).
+                Err(ServiceError::NotFound(_)) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(deleted)
     }
 
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
@@ -136,47 +211,9 @@ impl EhrbaseService {
         }
     }
 
-    /// Physically delete a set of EHRs, each with the full cascade of
-    /// [`Self::physical_ehr_delete`] in its own transaction. Missing ids are
-    /// skipped (idempotent bulk delete); the count of EHRs actually deleted is
-    /// returned.
-    ///
-    /// An **empty** id list means "delete ALL EHRs": the ITS-REST admin
-    /// `DELETE /admin/ehr` types its `ehr_id` as an **optional** subset selector,
-    /// so an absent/empty list denotes the full set.
-    ///
-    /// PORT NOTE (keep — spec-silent extension; G-A1): `i_admin_service.adoc`
-    /// has no bulk call, so the idempotent skip-missing semantics + returned
-    /// count are our own design (no openEHR spec governs bulk-delete internals);
-    /// a partial success is observable at the REST edge.
-    pub(super) async fn physical_ehr_delete_all(
-        &self,
-        ehr_ids: &[Uuid],
-    ) -> Result<u64, ServiceError> {
-        // An empty selector = the full EHR set (see doc above); a non-empty
-        // selector deletes exactly the named EHRs.
-        let targets: Vec<Uuid> = if ehr_ids.is_empty() {
-            sqlx::query_scalar("SELECT id FROM ehr")
-                .fetch_all(&self.pool)
-                .await?
-        } else {
-            ehr_ids.to_vec()
-        };
-        let mut deleted = 0u64;
-        for ehr_id in targets {
-            match self.physical_ehr_delete(ehr_id).await {
-                Ok(()) => deleted += 1,
-                // A missing EHR is skipped, not an error (idempotent bulk).
-                Err(ServiceError::NotFound(_)) => {}
-                Err(e) => return Err(e),
-            }
-        }
-        Ok(deleted)
-    }
-
     /// `physical_party_delete` (`i_admin_service.adoc`): physically delete a
     /// PARTY "along with related Party relationships", in one transaction —
-    /// mirroring [`Self::physical_ehr_delete`]'s capture-then-cascade approach.
+    /// mirroring [`Self::delete_ehr`]'s capture-then-cascade approach.
     ///
     /// The target must be a demographic PARTY root (any version, ehr-less); a
     /// `PARTY_RELATIONSHIP` or a non-party/unknown id is `party_id_does_not_exist`
@@ -188,7 +225,7 @@ impl EhrbaseService {
     /// (guarded — a row shared with a survivor is kept), and any `vo_archive`
     /// markers. `audit` has no FK from `vo_version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
-    pub(super) async fn party_physical_delete(&self, party_id: Uuid) -> Result<(), ServiceError> {
+    async fn delete_party(&self, party_id: Uuid) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
 
         // The target must be a demographic PARTY (ehr-less; any version exists).

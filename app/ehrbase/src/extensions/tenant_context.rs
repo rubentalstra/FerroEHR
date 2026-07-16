@@ -1,11 +1,11 @@
-//! Multi-tenancy request context (our own extension — no openEHR spec governs this; E2).
+//! Multi-tenancy request context.
 //!
-//! A tenant is one logical openEHR system with its own `system_id`.
-//! This module carries the *resolved* tenant of the in-flight request through a
-//! task-local, mirroring exactly how `ehrbase-rest` carries the authenticated
-//! principal (`REQUEST_PRINCIPAL`): the tenant-resolution middleware opens a
-//! [`scope`] around the request, and two consumers read it ambiently — never
-//! through a trait signature:
+//! **No openEHR spec governs this — our own design/extension.** A tenant is one
+//! logical openEHR system with its own `system_id`. This module carries the
+//! *resolved* tenant of the in-flight request through a tokio task-local,
+//! mirroring exactly how `ehrbase-rest` carries the authenticated principal:
+//! the tenant-resolution middleware opens a [`scope`] around the request, and
+//! two consumers read it ambiently — never through a trait signature:
 //!
 //!   * the application's connection pool issues `SET ehrbase.tenant_id` from it
 //!     on every acquired connection (so `PostgreSQL` RLS scopes reads AND
@@ -13,9 +13,9 @@
 //!   * the service reads the tenant's `system_id` for per-tenant version
 //!     identity / audits / `EHR.system_id`.
 //!
-//! Tenancy is OFF by default: the middleware is never installed,
-//! the task-local is never set, [`current`] returns `None`, and behaviour is
-//! byte-identical to pre-tenancy.
+//! Tenancy is OFF by default: the middleware is never installed, the task-local
+//! is never set, [`current`] returns `None`, and behaviour is byte-identical to
+//! pre-tenancy.
 
 use std::future::Future;
 

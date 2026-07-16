@@ -33,7 +33,8 @@ pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes"
 pub const AUTH_FAILURES: &str = "auth_failures_total";
 
 // ── Metric names emitted from this crate (§1.2). The http_* / auth_* names
-//    live in `ehrbase-rest`; the atna_* names in `ehrbase-audit`. ────────────
+//    are emitted by `ehrbase-rest`; the atna_* names by
+//    `crate::system_log::sender`. ─────────────────────────────────────────────
 
 /// DB pool connection gauge (`state` = `idle/in_use`).
 pub const DB_POOL_CONNECTIONS: &str = "db_pool_connections";
@@ -211,7 +212,7 @@ pub fn catalog() -> Vec<MetricSpec> {
             EVENTS_PUBLISHED,
             "Contribution-outbox events published to the broker",
         ),
-        // ATNA audit (emitted by ehrbase-audit).
+        // ATNA audit (emitted by crate::system_log::sender).
         counter(METRIC_EMITTED, "ATNA audit records enqueued"),
         counter(METRIC_DROPPED, "ATNA audit records dropped"),
         counter(METRIC_SENT, "ATNA audit records sent to transport"),

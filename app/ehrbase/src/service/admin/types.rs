@@ -1,5 +1,5 @@
-//! The ADMIN group's application seam (SM `I_ADMIN_SERVICE` +
-//! `I_ADMIN_ARCHIVE`).
+//! The ADMIN group's information classes (SM `I_ADMIN_SERVICE` +
+//! `I_ADMIN_DUMP_LOAD` parameter/report types).
 
 /// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
 /// date-time bounds, each independently optional (open bounds allowed). Realizes
@@ -9,7 +9,7 @@
 /// PORT NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
 /// default openEHR `Interval` bound inclusivity — matched against each
 /// CONTRIBUTION/version audit `time_committed`. An invalid ISO bound is a `400`
-/// (rejected at the adapter before the query runs).
+/// (rejected at the service boundary before the query runs).
 pub type StatTimeRange = Option<(Option<String>, Option<String>)>;
 
 /// `EXPORT_FORMAT` enumeration
@@ -65,12 +65,11 @@ impl CompressionFormat {
 /// `segment_split_size: Integer [1..1]` (kb). The `I_ADMIN_DUMP_LOAD.export_ehrs`
 /// signature instead passes the three format enums *loose* and omits
 /// `segment_split_size` entirely — `EXPORT_SPEC` is the SM's own richer bundle
-/// for exactly this operation, so [`AdminDumpLoad::export_ehrs`] takes an
-/// `ExportSpec` (the strictly more expressive form) and the loose params map
-/// onto its fields. `ENCODING_FORMAT` is an **empty enumeration** (no values in
+/// for exactly this operation, so `export_ehrs` takes an `ExportSpec` (the
+/// strictly more expressive form) and the loose params map onto its fields.
+/// `ENCODING_FORMAT` is an **empty enumeration** (no values in
 /// `encoding_format.adoc`), so the SM `encoding` attribute has no representable
-/// value and is dropped here (`docs/design/sm-platform/
-/// 04-message-subject-proxy-terminology-admin.md` §4.3).
+/// value and is dropped here.
 #[derive(Debug, Clone)]
 pub struct ExportSpec {
     /// Logical format to use, i.e. flavour of XML, JSON etc.
@@ -84,8 +83,9 @@ pub struct ExportSpec {
 
 impl ExportSpec {
     /// An uncompressed canonical-JSON export split into `segment_split_size_kb`
-    /// segments — the format the greenfield storage exports natively (a deliberate design decision:
-    /// `node.data` is verbatim canonical openEHR JSON).
+    /// segments — the format the greenfield storage exports natively (a
+    /// deliberate design decision: `node.data` is verbatim canonical openEHR
+    /// JSON).
     #[must_use]
     pub fn canonical_json(segment_split_size_kb: i32) -> Self {
         Self {

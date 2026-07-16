@@ -1,21 +1,18 @@
 //! Shared version-metadata helpers (G-9): the cross-cutting glue every
-//! versioned kind (`EHR_STATUS`, COMPOSITION, DIRECTORY — and the demographic
-//! roots) needs to turn a loaded [`VersionRead`] into a wire
-//! [`ServiceResponse`] + its [`ResourceMeta`].
+//! versioned kind (`EHR_STATUS`, COMPOSITION, DIRECTORY) needs to turn a
+//! loaded [`VersionRead`] into a wire [`ServiceResponse`] + its
+//! [`ResourceMeta`], plus the default commit-audit builder.
 //!
-//! These were scattered across the flat `ehr.rs`; W-3f hoists them into one
-//! place in the EHR chapter. The `OBJECT_VERSION_ID` law is RM common
+//! The `OBJECT_VERSION_ID` law is RM common
 //! `master06-change_control_package.adoc` §Version Identification + BASE
 //! `base_types/master05-identification_package.adoc` §Syntaxes; the
-//! `Last-Modified`/`ETag`/`Location` derivation from a version's commit audit is
-//! ITS-REST, carried in the [`ResourceMeta`] envelope (no openEHR spec governs
-//! that envelope — our own design).
+//! `Last-Modified`/`ETag`/`Location` derivation from a version's commit audit
+//! is ITS-REST, carried in the [`ResourceMeta`] envelope (no openEHR spec
+//! governs that envelope — our own design).
 //!
-//! The demographic worker (`service/demographic/`) consumes these
-//! `pub(in crate::service)` helpers for its versioned party reads; the
-//! `current_vo` row read is a storage seam
-//! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our own
-//! design).
+//! The `current_vo` row read is a storage seam
+//! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our
+//! own design).
 
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
@@ -32,9 +29,13 @@ impl EhrbaseService {
     /// `branch_number = 0`).
     ///
     /// The `vo_version` current-row read is a storage seam
-    /// ([`crate::storage::version_repo::current_vo`]; no openEHR spec governs the
-    /// SQL — our own design). The [`crate::versioning::CommitEnv`] `current_vo`
-    /// hook adapts this `(Uuid, TreeId)` to its `(Uuid, i32)` (trunk) shape.
+    /// ([`crate::storage::version_repo::current_vo`]; no openEHR spec governs
+    /// the SQL — our own design). The [`crate::versioning::CommitEnv`]
+    /// `current_vo` hook adapts this `(Uuid, TreeId)` to its `(Uuid, i32)`
+    /// (trunk) shape.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the current-row read fails.
     pub(in crate::service) async fn current_vo(
         &self,
         ehr_id: Uuid,
@@ -52,22 +53,6 @@ impl EhrbaseService {
         )
     }
 
-    /// The `OBJECT_VERSION_ID` wire string `{object_id}::{creating_system_id}::
-    /// {version_tree_id}` (RM common master06 §Version Identification).
-    /// `creating_system_id` is the stored per-version value — never re-derived
-    /// from the live config — so a version's uid and digital signature stay
-    /// stable across a later `with_system_id` change (master06 §Distributed
-    /// Versioning).
-    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
-    pub(in crate::service) fn object_version_id(
-        &self,
-        vo_id: Uuid,
-        creating_system_id: &str,
-        version: TreeId,
-    ) -> String {
-        object_version_id(vo_id, creating_system_id, version)
-    }
-
     /// A metadata-only [`ServiceResponse`] for a write, built entirely from the
     /// commit result — the version identity and the server commit instant are
     /// already in [`Committed`](crate::versioning::Committed), so the write
@@ -76,7 +61,7 @@ impl EhrbaseService {
     /// every write consumer uses only the metadata.
     pub(crate) fn committed_response(
         &self,
-        ehr_id: uuid::Uuid,
+        ehr_id: Uuid,
         committed: &crate::versioning::Committed,
     ) -> ServiceResponse {
         let meta = self.version_meta(
@@ -86,12 +71,16 @@ impl EhrbaseService {
             committed.tree,
             committed.time_committed,
         );
-        ServiceResponse::new(serde_json::Value::Null, meta)
+        ServiceResponse::new(Value::Null, meta)
     }
 
     /// The [`ResourceMeta`] for a versioned resource: the owning EHR plus the
-    /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and its
-    /// commit time (the `Last-Modified`).
+    /// resource `OBJECT_VERSION_ID` (the `ETag` value + `Location` tail) and
+    /// its commit time (the `Last-Modified`). `creating_system_id` is the
+    /// stored per-version value — never re-derived from the live config — so a
+    /// version's uid stays stable across a later system-id change (RM common
+    /// master06 §Distributed Versioning).
+    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
     pub(crate) fn version_meta(
         &self,
         ehr_id: Uuid,
@@ -102,13 +91,15 @@ impl EhrbaseService {
     ) -> ResourceMeta {
         ResourceMeta::new(
             ehr_id.to_string(),
-            self.object_version_id(vo_id, creating_system_id, version),
+            object_version_id(vo_id, creating_system_id, version),
         )
         .with_last_modified(at)
     }
 
-    /// Inject the `uid` (`OBJECT_VERSION_ID`) into a versioned object's canonical
-    /// JSON so a bare read carries its wire identity.
+    /// Inject the `uid` (`OBJECT_VERSION_ID`, RM common master06 §Version
+    /// Identification) into a versioned object's canonical JSON so a bare read
+    /// carries its wire identity.
+    #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
     pub(in crate::service) fn with_uid(
         &self,
         mut canonical: Value,
@@ -121,7 +112,7 @@ impl EhrbaseService {
                 "uid".to_owned(),
                 json!({
                     "_type": "OBJECT_VERSION_ID",
-                    "value": self.object_version_id(vo_id, creating_system_id, version)
+                    "value": object_version_id(vo_id, creating_system_id, version)
                 }),
             );
         }
@@ -129,7 +120,8 @@ impl EhrbaseService {
     }
 
     /// A [`ServiceResponse`] for a loaded versioned object: its canonical body
-    /// with the `uid` injected, plus the resource metadata for the wire headers.
+    /// with the `uid` injected, plus the resource metadata for the wire
+    /// headers.
     pub(in crate::service) fn version_response(
         &self,
         ehr_id: Uuid,
@@ -149,16 +141,21 @@ impl EhrbaseService {
         )
     }
 
-    /// The current version metadata of an EHR-owned object of `kind` (the latest
-    /// `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or `None`.
+    /// The current version metadata of an EHR-owned object of `kind` (the
+    /// latest `version_uid` a `409`/`412` must echo in `ETag`/`Location`), or
+    /// `None`.
     ///
     /// Resolved and read in ONE metadata-only `vo_version`⋈`audit` statement
     /// (`current_version_meta_by_kind`): the `409`/`412` path needs only the
-    /// full `OBJECT_VERSION_ID` + commit instant, never the reassembled document
-    /// or the attestations, so this avoids the node reassembly + attestation read
-    /// the full version read pays. The full-`OBJECT_VERSION_ID` `If-Match`
-    /// compare (ITS-REST overview §Concurrency control) is unchanged — the
-    /// emitted `ETag` is still `object_id::creating_system_id::version_tree_id`.
+    /// full `OBJECT_VERSION_ID` + commit instant, never the reassembled
+    /// document or the attestations, so this avoids the node reassembly +
+    /// attestation read the full version read pays. The
+    /// full-`OBJECT_VERSION_ID` `If-Match` compare (ITS-REST overview
+    /// §Concurrency control) is unchanged — the emitted `ETag` is still
+    /// `object_id::creating_system_id::version_tree_id`.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn latest_version_meta(
         &self,
         ehr_id: Uuid,
@@ -172,11 +169,15 @@ impl EhrbaseService {
 
     /// The current version's `vo_id` **and** its [`ResourceMeta`] for an
     /// EHR-owned object of `kind`, resolved and read in the same ONE
-    /// metadata-only `vo_version`⋈`audit` statement `latest_version_meta` uses.
-    /// Threading the `vo_id` back to the caller lets a following write skip
-    /// re-resolving `(ehr_id, kind) → vo_id`, so the `If-Match` pre-read and the
-    /// write share one `current_vo` resolution. The full-`OBJECT_VERSION_ID`
-    /// compare (ITS-REST overview §Concurrency control) is unchanged.
+    /// metadata-only `vo_version`⋈`audit` statement [`Self::latest_version_meta`]
+    /// uses. Threading the `vo_id` back to the caller lets a following write
+    /// skip re-resolving `(ehr_id, kind) → vo_id`, so the `If-Match` pre-read
+    /// and the write share one `current_vo` resolution. The
+    /// full-`OBJECT_VERSION_ID` compare (ITS-REST overview §Concurrency
+    /// control) is unchanged.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn latest_version_meta_with_vo(
         &self,
         ehr_id: Uuid,
@@ -202,9 +203,10 @@ impl EhrbaseService {
         Ok(Some((m.vo_id, meta)))
     }
 
-    /// Build an [`AuditInput`] for a direct (single-object) write: the effective
-    /// system id, the numeric `audit_change_type` code, a description, and the
-    /// request's authenticated committer (RM common master04 §Audit Details).
+    /// Build an [`AuditInput`] for a direct (single-object) write: the
+    /// effective system id, the numeric `audit_change_type` code, a
+    /// description, and the request's authenticated committer (RM common
+    /// master04 §Audit Details).
     pub(in crate::service) fn audit(&self, change_type: &str, description: &str) -> AuditInput {
         AuditInput {
             system_id: self.effective_system_id(),
@@ -215,12 +217,11 @@ impl EhrbaseService {
     }
 }
 
-/// The committer `PARTY_PROXY` for an audit, from the authenticated committer of
-/// the current request (published by the protocol adapter into the
-/// [`crate::service::committer`] context). A write with no
-/// authenticated principal (auth disabled, or an internal/system write) is
-/// attributed to the system identity (RM common master04 `AUDIT_DETAILS.committer`
-/// 1..1).
+/// The committer `PARTY_PROXY` for an audit, from the authenticated committer
+/// of the current request (published by the protocol adapter into the
+/// [`crate::service::committer`] context). A write with no authenticated
+/// principal (auth disabled, or an internal/system write) is attributed to the
+/// system identity (RM common master04 `AUDIT_DETAILS.committer` 1..1).
 pub(in crate::service) fn committer() -> Value {
     match crate::service::committer::current_committer() {
         Some(identity) => json!({
@@ -237,9 +238,17 @@ pub(in crate::service) fn committer() -> Value {
     }
 }
 
-// ── ITS-REST VersionMetaAdapter (adapter-support extension) ───────────────────
+// ── ITS-REST version-metadata adapter (adapter-support extension) ─────────────
+//
+// The protocol adapter's `412`/`ETag` pre-reads. No openEHR spec governs this
+// adapter seam — our own extension over the SM-governed version identities.
 
 impl EhrbaseService {
+    /// The current COMPOSITION version metadata (the latest `version_uid` a
+    /// `409`/`412` must echo), or `None` if unknown or outside this EHR.
+    ///
+    /// # Errors
+    /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn composition_latest_meta(
         &self,
         an_ehr_id: Uuid,
@@ -250,6 +259,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// The current `EHR_STATUS` version metadata of an EHR, or `None` when the
+    /// EHR has no current `EHR_STATUS`.
+    ///
+    /// # Errors
+    /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn ehr_status_latest_meta(
         &self,
         an_ehr_id: Uuid,
@@ -257,6 +271,11 @@ impl EhrbaseService {
         Ok(self.ehr_status_meta(an_ehr_id).await?)
     }
 
+    /// The current directory FOLDER version metadata of an EHR, or `None` when
+    /// the EHR indexes no directory hierarchy.
+    ///
+    /// # Errors
+    /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn directory_latest_meta(
         &self,
         an_ehr_id: Uuid,

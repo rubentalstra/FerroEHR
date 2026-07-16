@@ -1,201 +1,25 @@
-//! Version reads + the wire builders: `VERSIONED_OBJECT` / `ORIGINAL_VERSION` /
-//! `REVISION_HISTORY` (S-08..S-10, S-12, S-13, S-46, S-47).
+//! The served wire builders: `ORIGINAL_VERSION` / `VERSIONED_OBJECT` /
+//! `REVISION_HISTORY` canonical-JSON value construction (S-12, S-13, S-46).
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Versioned Objects /
 //! §Version and its Subtypes, RM common `master04-generic_package.adoc`
 //! §Revision History, BASE `base_types` `master05-identification_package.adoc`
 //! §References. These builders surface the full provenance a versioned object
 //! carries: its `OBJECT_VERSION_ID`, the CONTRIBUTION that produced it, the
-//! mandatory commit audit, and its data. All SQL is delegated to
-//! `crate::storage::version_repo`; the canonical body comes from
-//! `crate::storage::node_repo`.
+//! mandatory commit audit, and its data. The loaded-version input comes from
+//! [`super::read`]; the residual SQL (first-version time, all-version metadata)
+//! is delegated to `crate::storage::version_repo`.
 
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::ServiceError;
 use crate::versioning::audit::{AuditInput, OPENEHR, audit_details};
-use crate::versioning::lifecycle::{self, lifecycle_rubric};
+use crate::versioning::integrity;
+use crate::versioning::lifecycle::lifecycle_rubric;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::read::VersionRead;
 use crate::versioning::signature::Signer;
-use crate::versioning::{Kind, integrity};
-
-/// A loaded version: its full provenance metadata and reassembled canonical
-/// JSON (with attestations attached).
-#[derive(Debug, Clone)]
-pub(crate) struct VersionRead {
-    pub(crate) vo_id: Uuid,
-    pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) tree: TreeId,
-    pub(crate) preceding_version_uid: Option<String>,
-    pub(crate) other_input_version_uids: Vec<String>,
-    pub(crate) lifecycle_state: String,
-    /// The immutable identity of the system that created this version (RM common
-    /// master06 §Distributed Versioning), the middle part of its
-    /// `OBJECT_VERSION_ID`.
-    pub(crate) creating_system_id: String,
-    pub(crate) contribution_id: Uuid,
-    /// The mandatory `VERSION.commit_audit` (1..1).
-    pub(crate) audit: AuditInput,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) template_id: Option<String>,
-    /// The stored `VERSION.signature` (0..1; RM common master06 §Digital
-    /// Signature), or `None` for versions committed before signing was enabled.
-    pub(crate) signature: Option<String>,
-    /// The reassembled canonical JSON, or `Value::Null` for a deleted version
-    /// (a logical delete stores no node rows — master06 §Logical Deletion).
-    pub(crate) canonical: Value,
-    /// The `ATTESTATION`s attached to this version, in commit order (RM common
-    /// master06 §Attestation). Surfaced as `ORIGINAL_VERSION.attestations`,
-    /// appended **after** signature verification (attestations arrive after
-    /// committal and are not part of the signed canonical form).
-    pub(crate) attestations: Vec<Value>,
-}
-
-impl VersionRead {
-    /// Whether this version is logically deleted (`lifecycle_state` `523`).
-    pub(crate) fn deleted(&self) -> bool {
-        self.lifecycle_state == lifecycle::state::DELETED
-    }
-}
-
-/// Compose a [`VersionRead`] from the storage read shape
-/// ([`crate::storage::version_repo::StoredVersion`]): the tree id is rebuilt
-/// from its column ints and the flattened audit becomes the `commit_audit`.
-/// A deleted version (lifecycle `523`) stores no node rows, so storage already
-/// yields `canonical = Value::Null` (master06 §Logical Deletion).
-fn version_read(stored: crate::storage::version_repo::StoredVersion) -> VersionRead {
-    VersionRead {
-        vo_id: stored.vo_id,
-        ehr_id: stored.ehr_id,
-        tree: TreeId::from_columns(
-            stored.trunk_version,
-            stored.branch_number,
-            stored.branch_version,
-        ),
-        preceding_version_uid: stored.preceding_version_uid,
-        other_input_version_uids: stored.other_input_version_uids,
-        lifecycle_state: stored.lifecycle_state,
-        creating_system_id: stored.creating_system_id,
-        contribution_id: stored.contribution_id,
-        audit: AuditInput {
-            system_id: stored.audit_system_id,
-            change_type: stored.audit_change_type,
-            description: stored.audit_description,
-            committer: stored.audit_committer,
-        },
-        time_committed: stored.time_committed,
-        template_id: stored.template_id,
-        signature: stored.signature,
-        canonical: stored.canonical,
-        attestations: stored.attestations,
-    }
-}
-
-/// Read the current version of an object by id (any kind). `None` if it never
-/// existed; a deleted current version is returned with `canonical = Null` and a
-/// `523` lifecycle so callers can distinguish 404 (never existed) from a
-/// deleted read (RM common master06 §Logical Deletion).
-pub(crate) async fn read_current(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::read_current(pool, vo_id)
-        .await?
-        .map(version_read))
-}
-
-/// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
-/// — for internal callers that key rows by ordinal (the FHIR mapping table,
-/// extract export iteration), never for wire version ids.
-pub(crate) async fn read_version_by_ordinal(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-    ordinal: i32,
-) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(
-        crate::storage::version_repo::read_version_by_ordinal(pool, vo_id, ordinal)
-            .await?
-            .map(version_read),
-    )
-}
-
-/// Read a specific version of an object by its `VERSION_TREE_ID`
-/// (`.../version/{version_uid}` — trunk or branch).
-pub(crate) async fn read_version(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-    tree: TreeId,
-) -> Result<Option<VersionRead>, ServiceError> {
-    let (t, b, v) = tree.columns();
-    Ok(
-        crate::storage::version_repo::read_version(pool, vo_id, t, b, v)
-            .await?
-            .map(version_read),
-    )
-}
-
-/// Read the version of an object that was current at a given instant
-/// (time-travel; RM common master08 §Change Management — any previous state is
-/// reconstructable): the row whose `sys_period` contains `at`.
-pub(crate) async fn version_at(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-    at: jiff::Timestamp,
-) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::version_at(pool, vo_id, at)
-        .await?
-        .map(version_read))
-}
-
-/// The kind of the current version of an object, or `None` if it does not
-/// exist.
-pub(crate) async fn object_kind(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-) -> Result<Option<Kind>, ServiceError> {
-    Ok(crate::storage::version_repo::object_kind(pool, vo_id)
-        .await?
-        .and_then(|kind| Kind::from_type(&kind)))
-}
-
-/// The lean current-version handle for a demographic (ehr-less) versioned
-/// object: its kind-checked identity ([`Kind`] + `VERSION_TREE_ID` +
-/// `creating_system_id`, the `ETag`/`If-Match` parts), commit instant, and
-/// lifecycle-derived `deleted` flag — from ONE `vo_version`⋈`audit` read, with
-/// no node reassembly or attestation load. The wire seam uses this both for the
-/// `If-Match` `ETag` and the not-deleted write gate without the full
-/// [`read_current`] node read (RM common master06 §Version Identification /
-/// §Logical Deletion).
-#[derive(Debug, Clone)]
-pub(crate) struct DemographicCurrent {
-    pub(crate) kind: Kind,
-    pub(crate) tree: TreeId,
-    pub(crate) creating_system_id: String,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) deleted: bool,
-}
-
-/// Resolve the current trunk version of a demographic object, or `None` if it
-/// has no current version (or the stored kind is unrecognized).
-pub(crate) async fn demographic_current(
-    pool: &sqlx::PgPool,
-    vo_id: Uuid,
-) -> Result<Option<DemographicCurrent>, ServiceError> {
-    let Some(m) = crate::storage::version_repo::current_demographic_meta(pool, vo_id).await? else {
-        return Ok(None);
-    };
-    let Some(kind) = Kind::from_type(&m.kind) else {
-        return Ok(None);
-    };
-    Ok(Some(DemographicCurrent {
-        kind,
-        tree: TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version),
-        creating_system_id: m.creating_system_id,
-        time_committed: m.time_committed,
-        deleted: m.lifecycle_state == lifecycle::state::DELETED,
-    }))
-}
 
 /// The `REVISION_HISTORY` of a versioned object: one item per version, each with
 /// its version id and the `AUDIT_DETAILS` of the change that produced it plus
@@ -207,6 +31,11 @@ pub(crate) async fn demographic_current(
 /// assembled directly as canonical JSON rather than through a typed
 /// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
 /// spec-correct.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the object has no stored version or is not
+/// owned by `ehr_id`; the storage read errors of the metadata / attestation
+/// queries.
 pub(crate) async fn revision_history(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,
@@ -272,6 +101,10 @@ pub(crate) async fn revision_history(
 /// (`import_ehr` over an `export_ehrs` extract) legitimately holds a partial
 /// trunk history whose lowest version is `> 1`; `time_created` is then the
 /// earliest version this repository received.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the object has no stored version; the
+/// storage read error of `version_repo::time_created`.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
@@ -302,8 +135,9 @@ pub(crate) async fn versioned_object(
 /// `strict` mismatch is a 5xx integrity failure.
 ///
 /// # Errors
-/// [`ServiceError::Signing`] only when `verify_on_read = strict` and the stored
-/// signature fails verification.
+/// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
+/// signature fails verification, or (in any non-`off` mode) when the served
+/// version's canonical form cannot be recomputed.
 pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Value, ServiceError> {
     let mut ov = build_original_version(
         &read.creating_system_id,

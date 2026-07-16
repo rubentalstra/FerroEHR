@@ -1,7 +1,7 @@
-//! `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`) — COMPOSITION commit/retrieve
-//! with implicit CONTRIBUTION creation. The commit-validation choke point and
-//! the `VERSIONED_COMPOSITION` cross-version invariant hook live in the sibling
-//! [`composition_validate`](super::composition_validate).
+//! `I_EHR_COMPOSITION` (`i_ehr_composition.adoc`) — COMPOSITION
+//! commit/retrieve with implicit CONTRIBUTION creation. The commit-validation
+//! choke point and the `VERSIONED_COMPOSITION` cross-version invariant hook
+//! live in the sibling [`validation`](super::validation) module.
 //!
 //! Spec: RM ehr `versioned_composition.adoc`, RM composition
 //! (`COMPOSITION.category` / `is_persistent`), ITS-REST
@@ -11,6 +11,7 @@
 
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
+use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;
@@ -21,57 +22,30 @@ use crate::versioning::{
     read_current, read_version, revision_history, update, version_at, versioned_object,
 };
 
-use super::composition_validate::{
-    check_versioned_composition_invariants, composition_template_id,
-};
-
-/// The caller's `UPDATE_VERSION` envelope resolved for a direct commit: the
-/// commit audit (caller attributes merged with the server rules — ITS-REST
-/// overview §"openehr-version and openehr-audit-details" MUST) and the write
-/// envelope (lifecycle / verbatim signature / attestations).
-pub(in crate::service) fn resolve_envelope(
-    version: &crate::service::version_update::UpdateVersion,
-    operation_change_type: &str,
-    default_description: &str,
-    system_id: &str,
-) -> (crate::versioning::AuditInput, crate::versioning::change::WriteEnvelope) {
-    let audit = crate::versioning::AuditInput::from_update(
-        &version.audit,
-        operation_change_type,
-        default_description,
-        system_id,
-    );
-    let attestations = version
-        .attestations
-        .as_ref()
-        .map(|a| {
-            a.iter()
-                .filter_map(|x| serde_json::to_value(x).ok())
-                .collect()
-        })
-        .unwrap_or_default();
-    let envelope = crate::versioning::change::WriteEnvelope {
-        lifecycle_state: Some(version.lifecycle_state.code_string.clone()),
-        signature: version.signature.clone(),
-        attestations,
-    };
-    (audit, envelope)
-}
+use super::resolve_envelope;
+use super::validation::composition_template_id;
 
 impl EhrbaseService {
-    /// Create a COMPOSITION in an EHR from the caller's full `UPDATE_VERSION`
-    /// envelope, returning the version metadata (the `ETag`/`Location` for
-    /// `201_COMPOSITION`). The envelope's audit attributes, lifecycle state,
-    /// verbatim signature and attestations are honoured on the persisted
-    /// commit (ITS-REST committal-header merge — MUST).
     /// `create_composition` (SM `i_ehr_composition.adoc`): commit the first
     /// version of a COMPOSITION in `ehr_id` from the caller's full
     /// `UPDATE_VERSION` envelope, returning the committed version identity
-    /// ([`Committed`] — the `ETag`/`Location`/`Last-Modified` source).
+    /// ([`Committed`](crate::versioning::Committed) — the
+    /// `ETag`/`Location`/`Last-Modified` source). The envelope's audit
+    /// attributes, lifecycle state, verbatim signature and attestations are
+    /// honoured on the persisted commit (ITS-REST committal-header merge —
+    /// MUST).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR does not exist;
+    /// [`ServiceError::Conflict`] when the EHR is not modifiable or a live
+    /// persistent COMPOSITION for the same template already exists;
+    /// [`ServiceError::ValidationFailed`] when RM/terminology/template
+    /// validation fails (→ 422); [`ServiceError::Database`] on a storage
+    /// failure.
     pub async fn create_composition(
         &self,
         ehr_id: Uuid,
-        version: crate::service::version_update::UpdateVersion,
+        version: UpdateVersion,
     ) -> Result<crate::versioning::Committed, ServiceError> {
         let (audit, envelope) = resolve_envelope(
             &version,
@@ -84,9 +58,9 @@ impl EhrbaseService {
         let incomplete = version.lifecycle_state.code_string == "553";
         let composition = version.data;
         // The EHR-existence (404) and content-writability (409) gates in one
-        // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR Creation
-        // / §EHR Active Status). Same errors, same order as the separate
-        // `ensure_ehr_exists` + `ensure_content_writable` checks.
+        // round trip: a COMPOSITION is EHR content (RM ehr master04 §EHR
+        // Creation / §EHR Active Status). Same errors, same order as the
+        // separate `ensure_ehr_exists` + `ensure_content_writable` checks.
         self.ensure_ehr_content_writable(ehr_id).await?;
         self.validate_composition_for_commit(&composition, incomplete)
             .await?;
@@ -114,9 +88,13 @@ impl EhrbaseService {
         Ok(committed)
     }
 
-    /// Retrieve a COMPOSITION by its versioned-object id, optionally at a specific
-    /// version (else the latest). A deleted version resolves to `Value::Null` (→
-    /// `204`, F-02-01) — never 404 or 500.
+    /// Retrieve a COMPOSITION by its versioned-object id, optionally at a
+    /// specific version (else the latest). A deleted version resolves to
+    /// `Value::Null` (→ `204`, F-02-01) — never 404 or 500.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the version does not exist or belongs
+    /// to another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn read_composition(
         &self,
         ehr_id: Uuid,
@@ -136,8 +114,13 @@ impl EhrbaseService {
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
-    /// A COMPOSITION as it was at an instant (time-travel), with its `uid` set. A
-    /// deleted version resolves to an empty body (→ `204`).
+    /// A COMPOSITION as it was at an instant (time-travel), with its `uid`
+    /// set. A deleted version resolves to an empty body (→ `204`).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when no version existed at `at` or the
+    /// object belongs to another EHR; [`ServiceError::Database`] on a storage
+    /// failure.
     pub(in crate::service) async fn composition_at_time(
         &self,
         ehr_id: Uuid,
@@ -155,6 +138,10 @@ impl EhrbaseService {
     }
 
     /// The `VERSIONED_OBJECT` for a COMPOSITION (verifies EHR ownership).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the object does not exist or belongs to
+    /// another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn versioned_composition(
         &self,
         ehr_id: Uuid,
@@ -168,6 +155,10 @@ impl EhrbaseService {
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the object does not exist in this EHR;
+    /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn composition_revision_history_value(
         &self,
         ehr_id: Uuid,
@@ -177,6 +168,10 @@ impl EhrbaseService {
     }
 
     /// An `ORIGINAL_VERSION` of a COMPOSITION at a specific version.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the version does not exist or belongs
+    /// to another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn composition_version(
         &self,
         ehr_id: Uuid,
@@ -190,10 +185,15 @@ impl EhrbaseService {
         original_version(&read, self.signer())
     }
 
-    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest when
-    /// `at` is `None` (`GET …/versioned_composition/{uid}/version`, F-02-04). A
-    /// deleted version still returns `200` with the deleted-lifecycle
-    /// `ORIGINAL_VERSION` (no `data`).
+    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest
+    /// when `at` is `None` (`GET …/versioned_composition/{uid}/version`,
+    /// F-02-04). A deleted version still returns `200` with the
+    /// deleted-lifecycle `ORIGINAL_VERSION` (no `data`).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when no version existed at `at` or the
+    /// object belongs to another EHR; [`ServiceError::Database`] on a storage
+    /// failure.
     pub(in crate::service) async fn composition_version_at_time_read(
         &self,
         ehr_id: Uuid,
@@ -217,24 +217,31 @@ impl EhrbaseService {
         Ok(ServiceResponse::new(ov, meta))
     }
 
-    /// Commit a new version of a COMPOSITION. `expected` (from `If-Match`)
-    /// enforces optimistic concurrency. `current` is the trait layer's ONE
-    /// merged pre-read (`current_composition_meta`): the ownership gate is
-    /// already applied by the caller, and it carries the lifecycle, the stored
-    /// template root fragment, and the EHR's `is_modifiable` flag — so this write
-    /// runs no further pre-read (the former `If-Match` meta read, modify
-    /// pre-read, and `is_modifiable` side-SELECT are one statement now).
-    /// `update_composition` (SM `i_ehr_composition.adoc`): commit a new version
-    /// of `vo_id` from the caller's full `UPDATE_VERSION` envelope. ONE merged
-    /// pre-read carries the whole write pre-check: the owning EHR (ownership →
-    /// 404), the full-`OBJECT_VERSION_ID` `If-Match` identity (412), the
+    /// `update_composition` (SM `i_ehr_composition.adoc`): commit a new
+    /// version of `vo_id` from the caller's full `UPDATE_VERSION` envelope,
+    /// returning the committed version identity. ONE merged pre-read
+    /// (`current_composition_meta`) carries the whole write pre-check: the
+    /// owning EHR (ownership → 404), the full-`OBJECT_VERSION_ID` `If-Match`
+    /// identity (412, F-02-08 — ITS-REST overview §Concurrency control), the
     /// lifecycle (deleted → 404), the stored template root fragment (422) and
-    /// the EHR's `is_modifiable` flag (409).
+    /// the EHR's `is_modifiable` flag (409) — the former `If-Match` meta read,
+    /// modify pre-read, and `is_modifiable` side-SELECT are one statement.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
+    /// EHR or is already deleted; [`ServiceError::VersionConflict`] on an
+    /// `If-Match` mismatch (→ 412); [`ServiceError::Conflict`] when the EHR is
+    /// not modifiable (→ 409); [`ServiceError::Unprocessable`] on a
+    /// template-id mismatch with the stored composition or a
+    /// `VERSIONED_COMPOSITION` invariant violation;
+    /// [`ServiceError::ValidationFailed`] when RM/terminology/template
+    /// validation fails (→ 422); [`ServiceError::Database`] on a storage
+    /// failure.
     pub async fn update_composition(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
-        version: crate::service::version_update::UpdateVersion,
+        version: UpdateVersion,
     ) -> Result<crate::versioning::Committed, ServiceError> {
         let Some(current) =
             crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
@@ -280,8 +287,9 @@ impl EhrbaseService {
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — folded from the standalone `ensure_content_writable`
-        // side-SELECT into the merged pre-read; the 409 outcome and its ordering
-        // (after the deleted 404, before the template 422) are unchanged.
+        // side-SELECT into the merged pre-read; the 409 outcome and its
+        // ordering (after the deleted 404, before the template 422) are
+        // unchanged.
         if !current.is_modifiable {
             return Err(Self::not_modifiable_error(ehr_id));
         }
@@ -306,9 +314,9 @@ impl EhrbaseService {
 
         let mut tx = self.pool.begin().await?;
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
-        // `versioned_composition.adoc`), lifted out of the versioning write path
-        // (G-13) — checked in the same transaction as the commit.
-        check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
+        // `versioned_composition.adoc`), lifted out of the versioning write
+        // path (G-13) — checked in the same transaction as the commit.
+        super::check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
         let committed = update(
             &mut tx,
             Some(ehr_id),
@@ -331,15 +339,19 @@ impl EhrbaseService {
 
     /// The current COMPOSITION version metadata (the latest `version_uid` a
     /// `409`/`412` must echo), or `None` if unknown/deleted.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn composition_current_meta(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
-        // Lean `vo_version`⋈`audit` read scoped to the EHR: the `ETag`/`If-Match`
-        // compare needs only the full `OBJECT_VERSION_ID` + commit instant (RM
-        // common master06 §Version Identification / §Committal), never the
-        // reassembled document the full `read_current` pays.
+        // Lean `vo_version`⋈`audit` read scoped to the EHR: the
+        // `ETag`/`If-Match` compare needs only the full `OBJECT_VERSION_ID` +
+        // commit instant (RM common master06 §Version Identification /
+        // §Committal), never the reassembled document the full `read_current`
+        // pays.
         let Some(m) =
             crate::storage::version_repo::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
                 .await?
@@ -361,12 +373,13 @@ impl EhrbaseService {
     /// (`N` or `N.B.V`); `None` = the current version. The ABAC template
     /// attribute for the access pre-checks / any per-version resolver.
     ///
-    /// PERF(port): goes through the full version read-back for spec fidelity; a
-    /// direct `SELECT template_id FROM vo_version` is a cheaper equivalent if
-    /// this ever shows on a hot path.
+    /// PERF(port): goes through the full version read-back for spec fidelity;
+    /// a direct `SELECT template_id FROM vo_version` is a cheaper equivalent
+    /// if this ever shows on a hot path.
     ///
     /// # Errors
-    /// [`ServiceError`] if the version read-back fails.
+    /// [`ServiceError`] for a malformed `version` string or a failing version
+    /// read-back.
     pub async fn template_of_version(
         &self,
         vo_id: Uuid,
@@ -382,15 +395,20 @@ impl EhrbaseService {
         Ok(read.and_then(|r| r.template_id))
     }
 
-    /// Logically delete a COMPOSITION (a new `523|deleted|` version). `expected`
-    /// is the version tree id carried by the mandatory `preceding_version_uid`
-    /// (`composition_delete.yaml`). A stale precondition → `409`; an
-    /// already-deleted target → `400` (F-02-05).
     /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a
     /// `523|deleted|` version of the addressed COMPOSITION (RM common master06
-    /// §Logical Deletion). PORT NOTE (G-7): takes the full
-    /// `OBJECT_VERSION_ID`, stronger than the SM's `UUID` — the SM is
-    /// internally inconsistent (`has_composition` takes OBJECT_VERSION_ID).
+    /// §Logical Deletion), returning the (now deleted) version identity
+    /// (`204_COMPOSITION_deleted`). PORT NOTE (G-7): takes the full
+    /// `OBJECT_VERSION_ID` — the mandatory `preceding_version_uid`
+    /// (`composition_delete.yaml`) — stronger than the SM's `UUID`; the SM is
+    /// internally inconsistent (`has_composition` takes `OBJECT_VERSION_ID`).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the COMPOSITION does not exist in this
+    /// EHR; [`ServiceError::BadRequest`] when it is already deleted (F-02-05);
+    /// [`ServiceError::Conflict`] when the EHR is not modifiable or the
+    /// `preceding_version_uid` is stale (→ 409); [`ServiceError::Database`] on
+    /// a storage failure.
     pub async fn delete_composition(
         &self,
         ehr_id: Uuid,
@@ -399,8 +417,9 @@ impl EhrbaseService {
         let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the
         // lifecycle (already-deleted → 400, F-02-05), and the current
-        // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) — not
-        // a full node reassembly (the deleted version stores no nodes anyway).
+        // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) —
+        // not a full node reassembly (the deleted version stores no nodes
+        // anyway).
         let current = crate::storage::version_repo::current_composition_meta(&self.pool, vo_id)
             .await?
             .filter(|m| m.ehr_id == Some(ehr_id))
@@ -412,8 +431,9 @@ impl EhrbaseService {
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — folded from the standalone `ensure_content_writable`
-        // side-SELECT into the pre-read; the 409 outcome and its ordering (after
-        // the already-deleted 400, before the stale-precondition 409) unchanged.
+        // side-SELECT into the pre-read; the 409 outcome and its ordering
+        // (after the already-deleted 400, before the stale-precondition 409)
+        // unchanged.
         if !current.is_modifiable {
             return Err(Self::not_modifiable_error(ehr_id));
         }
@@ -448,11 +468,15 @@ impl EhrbaseService {
         Ok(committed)
     }
 
-    /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also the
-    /// [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6). The
-    /// existence read is a storage seam
-    /// ([`crate::storage::version_repo::ehr_exists`]; no openEHR spec governs the
-    /// SQL — our own design).
+    /// The EHR-existence precheck (SM `ehr_does_not_exist` → `NotFound`); also
+    /// the [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook (G-6).
+    /// The existence read is a storage seam
+    /// ([`crate::storage::version_repo::ehr_exists`]; no openEHR spec governs
+    /// the SQL — our own design).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR does not exist;
+    /// [`ServiceError::Database`] if the existence read fails.
     pub(in crate::service) async fn ensure_ehr_exists(
         &self,
         ehr_id: Uuid,
@@ -472,6 +496,11 @@ impl EhrbaseService {
     /// round trips. The guarded concepts are RM ehr master04 §EHR Creation
     /// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
     /// openEHR spec governs the query shape (our own design).
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR does not exist;
+    /// [`ServiceError::Conflict`] when it is not modifiable;
+    /// [`ServiceError::Database`] if the read fails.
     pub(in crate::service) async fn ensure_ehr_content_writable(
         &self,
         ehr_id: Uuid,
@@ -490,7 +519,15 @@ impl EhrbaseService {
     }
 }
 
+// ── The SM I_EHR_COMPOSITION call surface ─────────────────────────────────────
+
 impl EhrbaseService {
+    /// SM `I_EHR_COMPOSITION.has_composition` — whether the named version
+    /// exists in the EHR.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `OBJECT_VERSION_ID` or a failing read (a
+    /// missing version is `Ok(false)`).
     pub async fn has_composition(
         &self,
         an_ehr_id: Uuid,
@@ -504,6 +541,12 @@ impl EhrbaseService {
         }
     }
 
+    /// The latest COMPOSITION of a versioned object (bare, with its `uid`); a
+    /// deleted latest version yields `Value::Null` (→ 204).
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
     pub async fn get_composition_latest(
         &self,
         an_ehr_id: Uuid,
@@ -515,6 +558,12 @@ impl EhrbaseService {
             .body)
     }
 
+    /// SM `I_EHR_COMPOSITION.get_composition_at_time` — the COMPOSITION
+    /// current at `a_time`, or the latest when `a_time` is `None`.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing
+    /// version at that instant (404-equivalent), or a read failure.
     pub async fn get_composition_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -537,6 +586,12 @@ impl EhrbaseService {
         }
     }
 
+    /// SM `I_EHR_COMPOSITION.get_composition_at_version` — the bare
+    /// COMPOSITION at the named version.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `OBJECT_VERSION_ID`, an unknown version
+    /// (404-equivalent), or a read failure.
     pub async fn get_composition_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -549,6 +604,12 @@ impl EhrbaseService {
             .body)
     }
 
+    /// SM `I_EHR_COMPOSITION.get_versioned_composition` — the
+    /// `VERSIONED_COMPOSITION` container object.
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
     pub async fn get_versioned_composition(
         &self,
         an_ehr_id: Uuid,
@@ -559,9 +620,12 @@ impl EhrbaseService {
             .await?)
     }
 
-
-
-
+    /// SM `I_EHR_COMPOSITION.get_revision_history` — the `REVISION_HISTORY`
+    /// of a COMPOSITION.
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
     pub async fn composition_revision_history(
         &self,
         an_ehr_id: Uuid,
@@ -572,6 +636,13 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `a_time`, or the
+    /// latest when `a_time` is `None`
+    /// (`GET …/versioned_composition/{uid}/version`, F-02-04).
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing
+    /// version at that instant (404-equivalent), or a read failure.
     pub async fn composition_version_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -585,6 +656,12 @@ impl EhrbaseService {
             .body)
     }
 
+    /// The `ORIGINAL_VERSION` of a COMPOSITION at the named version
+    /// (`GET …/versioned_composition/{uid}/version/{version_uid}`).
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `OBJECT_VERSION_ID`, an unknown version
+    /// (404-equivalent), or a read failure.
     pub async fn composition_original_version(
         &self,
         an_ehr_id: Uuid,
@@ -598,6 +675,15 @@ impl EhrbaseService {
 // ── ITS-REST MultimediaAdapter (adapter-support extension) ────────────────────
 
 impl EhrbaseService {
+    /// Re-inline externalized multimedia content into a canonical body before
+    /// it is served (the S3/object-store externalization extension — no
+    /// openEHR spec governs storage movement; the served canonical form is
+    /// unchanged). With no engine configured the stored form is served
+    /// unchanged.
+    ///
+    /// # Errors
+    /// [`SmError`] when the configured multimedia engine fails to expand a
+    /// reference (e.g. the external object store is unreachable).
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         // Off by default: no engine ⇒ serve the stored form unchanged.
         let Some(engine) = &self.multimedia else {

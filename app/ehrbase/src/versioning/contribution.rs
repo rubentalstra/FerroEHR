@@ -10,20 +10,20 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
-use crate::service::list::Page;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::ServiceError;
+use crate::service::list::Page;
 use crate::versioning::audit::{
     AuditInput, audit_details, change_type, change_type_code, validate_commit_audit,
 };
 use crate::versioning::change::Change;
 use crate::versioning::lifecycle::{lifecycle_state_code, state};
 use crate::versioning::object_version_id::{self, TreeId};
-use crate::versioning::revision_history::original_version;
 use crate::versioning::signature::Signer;
-use crate::versioning::{CommitEnv, Kind, PendingAttest, change, revision_history};
+use crate::versioning::wire::original_version;
+use crate::versioning::{CommitEnv, Kind, PendingAttest, change, read};
 
 /// An optional `(lower, upper)` inclusive commit-time window — the simple
 /// realization of the SM `Interval<Iso8601_date_time>` (either side open when
@@ -59,6 +59,13 @@ enum Action {
 /// - *attestation* → `666|attestation|` attaches to an existing
 ///   `ORIGINAL_VERSION` — **not** a new version; requires a preceding and no
 ///   data.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] for a change-control mismatch the ITS-REST
+/// `400_CONTRIBUTION` scope covers (`249` with a preceding; `666` without one);
+/// [`ServiceError::Unprocessable`] for an out-of-group token or a data/preceding
+/// combination the spec forbids (data on `523`/`666`, missing data on a
+/// content commit, missing preceding on a non-creation).
 fn classify(
     token: Option<&str>,
     has_preceding: bool,
@@ -155,8 +162,9 @@ fn classify(
         }
     }
 }
-/// One parsed `UPDATE_VERSION` of a CONTRIBUTION commit (see the parse pass
-/// in [`commit_version_set`]).
+
+/// One parsed `UPDATE_VERSION` of a CONTRIBUTION commit — the single-pass plan
+/// entry (see the parse pass in [`commit_version_set`]).
 struct PlannedVersion {
     action: Action,
     /// The parsed `preceding_version_uid` target (modify/delete/attest).
@@ -173,8 +181,6 @@ struct PlannedVersion {
     other_input_version_uids: Vec<String>,
 }
 
-
-
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
 /// audit, returning the new contribution id. Shared by the EHR-scoped
 /// contribution path (`ehr_id = Some`, `party_only = false`) and the
@@ -186,6 +192,15 @@ struct PlannedVersion {
 /// G-6 (register 03 — SM `i_ehr_contribution.adoc` §`commit_contribution`
 /// `Pre_has_ehr`): the target EHR must exist before committing, so a create-only
 /// CONTRIBUTION to a missing EHR is a clean `NotFound`, not a storage FK error.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] for a missing target EHR; the [`classify`]
+/// rejections per version; [`ServiceError::Unprocessable`] for a malformed
+/// CONTRIBUTION `uid`, an empty `versions` list, a scope-mismatched kind, or a
+/// failed content/audit validation; [`ServiceError::BadRequest`] when a
+/// body-referenced modification target does not exist (the `400_CONTRIBUTION`
+/// scope); [`ServiceError::Conflict`] for a duplicate EHR singleton/directory;
+/// plus the commit-engine placement/storage/signing errors.
 #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
 pub(crate) async fn commit_version_set(
     cx: &impl CommitEnv,
@@ -273,7 +288,7 @@ pub(crate) async fn commit_version_set(
         // m4: default committer/system_id from the CONTRIBUTION audit when the
         // version item omits them (a "should be copied", so an explicit
         // per-version value is honoured — PORT NOTE: SHOULD, not MUST).
-        let audit = parse_version_audit(
+        let audit = parse_audit(
             version.get("commit_audit"),
             code,
             &contrib_committer,
@@ -333,6 +348,11 @@ pub(crate) async fn commit_version_set(
             .into_iter()
             .filter_map(|(id, kind)| Kind::from_type(&kind).map(|k| (id, k)))
             .collect();
+    // Every target here is **body-referenced** (`preceding_version_uid` of a
+    // modification/deletion/attestation item), so a missing object is the
+    // `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
+    // declares `404` only for an unknown `ehr_id` (the URI resource), never for
+    // content the committed CONTRIBUTION refers to.
     let require_kind = |vo_id: Uuid| -> Result<Kind, ServiceError> {
         target_kinds.get(&vo_id).copied().ok_or_else(|| {
             ServiceError::BadRequest(format!(
@@ -555,6 +575,10 @@ pub(crate) async fn commit_version_set(
 /// §`commit_contribution` E.2 — creating the existing root FOLDER again is
 /// negative); a distinct hierarchy joins `EHR.folders` (RM ehr master04
 /// §Folders). COMPOSITIONs are unbounded.
+///
+/// # Errors
+/// [`ServiceError::Conflict`] on a duplicate `EHR_STATUS`/`EHR_ACCESS` or an
+/// already-live same-identity folder hierarchy; the `CommitEnv` lookup errors.
 async fn reject_duplicate_singleton(
     cx: &impl CommitEnv,
     ehr_id: Uuid,
@@ -594,16 +618,12 @@ async fn reject_duplicate_singleton(
     Ok(())
 }
 
-/// The stored kind of an existing object. Every caller resolves a
-/// **body-referenced** target (`preceding_version_uid` of a
-/// modification/deletion/attestation item), so a missing object is the
-/// `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
-/// declares `404` only for an unknown `ehr_id` (the URI resource), never for
-/// content the committed CONTRIBUTION refers to.
-
 /// Build an [`AuditInput`] from an ITS-REST audit object (`UpdateAudit`) and the
 /// already-resolved numeric `audit_change_type` code, defaulting the
-/// `committer/system_id` to the request context.
+/// `committer`/`system_id` to the supplied fallbacks. Used both for the
+/// CONTRIBUTION's own audit and for each VERSION's `commit_audit` — for the
+/// latter the fallbacks are the enclosing CONTRIBUTION audit's values (master06
+/// §Committal copy rule, m4).
 fn parse_audit(
     audit: Option<&Value>,
     change_type: String,
@@ -631,18 +651,6 @@ fn parse_audit(
     }
 }
 
-/// Build an [`AuditInput`] for a VERSION's `commit_audit` — the committer and
-/// `system_id` default from the enclosing CONTRIBUTION's audit when the version
-/// item omits them (master06 §Committal copy rule, m4).
-fn parse_version_audit(
-    audit: Option<&Value>,
-    change_type: String,
-    fallback_committer: &Value,
-    fallback_system_id: &str,
-) -> AuditInput {
-    parse_audit(audit, change_type, fallback_committer, fallback_system_id)
-}
-
 /// The CONTRIBUTION-level aggregate change type when the client supplied none
 /// (master06 §Contributions): the shared code when every member version has the
 /// same change type, else `251|modification|` ("accommodates … a mixture").
@@ -655,8 +663,11 @@ fn aggregate_change_type(version_codes: &[String]) -> String {
 
 /// Enforce that a version's object kind matches the contribution's scope: a
 /// demographic contribution (`party_only`) may carry only party roots +
-/// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither. A mismatch is
-/// `422`.
+/// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] (`422`) on a scope mismatch in either
+/// direction.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
     if party_only && !kind.is_demographic() {
         return Err(ServiceError::Unprocessable(format!(
@@ -711,6 +722,9 @@ fn lifecycle_of(version: &Value) -> Option<String> {
 }
 
 /// The versioned-object kind of a VERSION's `data`, from its `_type`.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when the `_type` is not a versioned root.
 fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
     let rm_type = data
         .get("_type")
@@ -724,6 +738,10 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 /// Parse a VERSION's `preceding_version_uid` (`OBJECT_VERSION_ID`, string or
 /// `{value}`) into the object id and the version it must currently be at —
 /// through the strict BASE three-part parse.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when absent/`null` on a modify/delete/attest
+/// item, or when the value is not a valid `OBJECT_VERSION_ID`.
 fn parse_preceding(version: &Value) -> Result<(Uuid, TreeId), ServiceError> {
     let raw = version
         .get("preceding_version_uid")
@@ -756,6 +774,11 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 /// `OBJECT_REF`s of the versions it committed. With `resolve_refs` the
 /// `versions` list carries the resolved `ORIGINAL_VERSION` objects instead of
 /// `OBJECT_REF`s (ITS-REST `Prefer: resolve_refs`).
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the CONTRIBUTION does not exist in `ehr_id`,
+/// or (under `resolve_refs`) a referenced version row is gone; the storage read
+/// errors; the [`original_version`] verification error under `resolve_refs`.
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
@@ -778,12 +801,12 @@ pub(crate) async fn get_contribution(
 
     let mut versions = Vec::with_capacity(referenced.len());
     for (vo_id, (t, b, v), creating_system_id, kind) in referenced {
-        let tree = object_version_id::TreeId::from_columns(t, b, v);
+        let tree = TreeId::from_columns(t, b, v);
         if resolve_refs {
-            let read = revision_history::read_version(pool, vo_id, tree)
+            let loaded = read::read_version(pool, vo_id, tree)
                 .await?
                 .ok_or_else(|| ServiceError::NotFound(format!("VERSION {vo_id}::{tree}")))?;
-            versions.push(original_version(&read, signer)?);
+            versions.push(original_version(&loaded, signer)?);
         } else {
             versions.push(json!({
                 "_type": "OBJECT_REF",
@@ -813,7 +836,11 @@ pub(crate) async fn get_contribution(
 
 /// SM `I_EHR_CONTRIBUTION.list_contributions` — the ids of the EHR's
 /// CONTRIBUTIONs, oldest-first, within the optional commit-time window, paged
-/// (SM `i_ehr_contribution.adoc`). A missing EHR is `NotFound`.
+/// (SM `i_ehr_contribution.adoc`).
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the EHR does not exist; the storage read
+/// error of the list query.
 pub(crate) async fn list_contributions(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,
@@ -831,7 +858,11 @@ pub(crate) async fn list_contributions(
 }
 
 /// SM `I_EHR_CONTRIBUTION.contribution_count` — the number of CONTRIBUTIONs in
-/// the EHR within the optional commit-time window. A missing EHR is `NotFound`.
+/// the EHR within the optional commit-time window.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the EHR does not exist; the storage read
+/// error of the count query.
 pub(crate) async fn count_contributions(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,

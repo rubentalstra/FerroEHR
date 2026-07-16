@@ -1,5 +1,5 @@
-//! The `EhrAccessAdapter` native-API extension + the parsed
-//! `ehrbase.access_control.v1` scheme settings.
+//! The parsed `ehrbase.access_control.v1` scheme settings the protocol
+//! adapter's out-of-band access gate consumes.
 //!
 //! # Spec grounding
 //!
@@ -11,11 +11,11 @@
 //! "Currently implementation dependent" (RM
 //! `org.openehr.rm.ehr.access_control_settings.adoc`) — and `scheme(): String`
 //! names the concrete settings instance (`Scheme_valid: not scheme.is_empty`).
-//! The Architecture Overview describes what a scheme should provide — an access
-//! list, a gate-keeper, per-Composition privacy levels, and "sensible defaults"
-//! (BASE `architecture_overview/master07-security.adoc` §Access Control) — but
-//! notes "there is currently no published formal, proven model of access
-//! control for shared health information".
+//! The Architecture Overview describes what a scheme should provide — an
+//! access list, a gate-keeper, per-Composition privacy levels, and "sensible
+//! defaults" (BASE `architecture_overview/master07-security.adoc` §Access
+//! Control) — but notes "there is currently no published formal, proven model
+//! of access control for shared health information".
 //!
 //! # Our extension
 //!
@@ -23,17 +23,18 @@
 //! extension: **no openEHR spec governs the concrete scheme — our own design**
 //! (`docs/design/ehr-access-scheme.md`). Likewise the SM defines **no
 //! `I_EHR_ACCESS` interface** (authorisation is placed out of band — SM
-//! `openehr_platform/master02-overview.adoc` §General Assumptions), so
-//! [`EhrAccessAdapter`] is a native-API extension trait, kept beside the other
-//! wire adapters (`no openEHR spec governs this adapter — our own extension`).
-//! It exposes the current `EHR_ACCESS` scheme settings so the protocol adapter —
-//! the out-of-band decision point — can enforce them after authentication.
+//! `openehr_platform/master02-overview.adoc` §General Assumptions), so the
+//! settings read (`EhrbaseService::current_ehr_access_settings`) is a
+//! native-API extension kept beside the other wire adapters. It exposes the
+//! current `EHR_ACCESS` scheme settings so the protocol adapter — the
+//! out-of-band decision point — can enforce them after authentication.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// The `_type` discriminator of this scheme's `ACCESS_CONTROL_SETTINGS` subtype
-/// on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from it.
+/// The `_type` discriminator of this scheme's `ACCESS_CONTROL_SETTINGS`
+/// subtype on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from
+/// it.
 ///
 /// No openEHR spec governs the concrete scheme — our own design
 /// (`docs/design/ehr-access-scheme.md`).
@@ -43,8 +44,8 @@ pub const EHR_ACCESS_CONTROL_V1_TYPE: &str = "EHRBASE_ACCESS_CONTROL_V1";
 /// (`Scheme_valid` — RM `org.openehr.rm.ehr.ehr_access.adoc`).
 pub const EHR_ACCESS_CONTROL_V1_SCHEME: &str = "ehrbase.access_control.v1";
 
-/// The default access disposition of an EHR whose `EHR_ACCESS.settings` use this
-/// scheme (`master07` "sensible defaults").
+/// The default access disposition of an EHR whose `EHR_ACCESS.settings` use
+/// this scheme (`master07` "sensible defaults").
 ///
 /// No openEHR spec governs the concrete scheme — our own design
 /// (`docs/design/ehr-access-scheme.md`).
@@ -55,8 +56,8 @@ pub enum DefaultAccess {
     /// existing EHR working — `master07` "sensible defaults").
     #[default]
     Open,
-    /// Only principals matched by the [`access_list`](EhrAccessSettings::access_list)
-    /// may touch the EHR.
+    /// Only principals matched by the
+    /// [`access_list`](EhrAccessSettings::access_list) may touch the EHR.
     Restricted,
 }
 
@@ -96,8 +97,8 @@ pub struct AccessEntry {
 /// Per-Composition privacy levels. The meaning of a level is deliberately
 /// deployment-defined ("the definition of the privacy levels is not hard-wired
 /// in the openEHR models but rather is defined by standards or agreements
-/// within jurisdictions of use" — BASE `architecture_overview/master07-security.adoc`
-/// §Access Control).
+/// within jurisdictions of use" — BASE
+/// `architecture_overview/master07-security.adoc` §Access Control).
 ///
 /// No openEHR spec governs the concrete scheme — our own design
 /// (`docs/design/ehr-access-scheme.md`).
@@ -115,8 +116,8 @@ impl Privacy {
     /// The effective privacy level of the versioned Composition addressed by
     /// `target_vo_id` (a bare versioned-object uid): its override if pinned,
     /// else [`default_level`](Self::default_level). `target_vo_id` is compared
-    /// against each override `uid` on its versioned-object head (the part before
-    /// any `::` of an `OBJECT_VERSION_ID` — BASE
+    /// against each override `uid` on its versioned-object head (the part
+    /// before any `::` of an `OBJECT_VERSION_ID` — BASE
     /// `object_version_id.adoc`, `object_id '::' … '::' version_tree_id`).
     #[must_use]
     pub fn level_for(&self, target_vo_id: &str) -> i64 {
@@ -169,8 +170,8 @@ pub struct EhrAccessSettings {
 impl EhrAccessSettings {
     /// Parse the settings of the `ehrbase.access_control.v1` scheme from an
     /// `EHR_ACCESS` canonical-JSON object. Returns `None` when there are no
-    /// settings, they belong to another scheme, or they cannot be parsed as this
-    /// scheme — all of which the caller treats as **default-open** (the
+    /// settings, they belong to another scheme, or they cannot be parsed as
+    /// this scheme — all of which the caller treats as **default-open** (the
     /// gateway clause is dead weight without a scheme it understands — RM
     /// `org.openehr.rm.ehr.ehr_access.adoc`).
     #[must_use]
@@ -184,8 +185,9 @@ impl EhrAccessSettings {
         serde_json::from_value(settings.clone()).ok()
     }
 
-    /// The first access-list entry matching the given principal: `user:<subject>`
-    /// or any `role:<r>` (`master07`'s "identified individuals" / "categories").
+    /// The first access-list entry matching the given principal:
+    /// `user:<subject>` or any `role:<r>` (`master07`'s "identified
+    /// individuals" / "categories").
     #[must_use]
     pub fn match_principal(&self, subject: Option<&str>, roles: &[String]) -> Option<&AccessEntry> {
         self.access_list
@@ -195,9 +197,9 @@ impl EhrAccessSettings {
 }
 
 /// Whether a scheme principal string (`user:<id>` / `role:<name>`) matches the
-/// authenticated caller identified by `subject` (Basic username / OIDC subject)
-/// and `roles`. Role comparison is case-insensitive (roles are normalised
-/// upper-case at authentication).
+/// authenticated caller identified by `subject` (Basic username / OIDC
+/// subject) and `roles`. Role comparison is case-insensitive (roles are
+/// normalised upper-case at authentication).
 #[must_use]
 pub fn principal_matches(principal: &str, subject: Option<&str>, roles: &[String]) -> bool {
     if let Some(user) = principal.strip_prefix("user:") {
@@ -210,8 +212,9 @@ pub fn principal_matches(principal: &str, subject: Option<&str>, roles: &[String
 }
 
 /// The versioned-object head of a uid — the part before the first `::` of an
-/// `OBJECT_VERSION_ID` (`object_id '::' creating_system_id '::' version_tree_id`
-/// — BASE `object_version_id.adoc`), or the whole string for a bare uid.
+/// `OBJECT_VERSION_ID`
+/// (`object_id '::' creating_system_id '::' version_tree_id` — BASE
+/// `object_version_id.adoc`), or the whole string for a bare uid.
 fn vo_head(uid: &str) -> &str {
     uid.split("::").next().unwrap_or(uid)
 }

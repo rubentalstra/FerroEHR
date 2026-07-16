@@ -28,8 +28,7 @@ pub const RFC_3881: &str = "RFC-3881";
 // PORT NOTE: query execution could use the distinct DICOM EventID 110112
 // ("Query", DICOM PS3.15 §A.5.1); we group it under the data-op "Patient
 // Record" family with originalText="query" so all clinical-data access shares
-// one EventID and is distinguished by display text. (See also the non-normative
-// design record `docs/enterprise/atna-audit.md` §3.)
+// one EventID and is distinguished by display text.
 
 /// DICOM `EventID` `csd-code` for "Patient Record".
 pub const EVENT_PATIENT_RECORD_CODE: &str = "110110";
@@ -97,9 +96,9 @@ pub const OBJECT_ROLE_PATIENT: &str = "1";
 /// Participant object type-code role: query (`24`).
 pub const OBJECT_ROLE_QUERY: &str = "24";
 
-// ── ATNA rendering of the SM event enums ─────────────────────────────────────
-// The SM `System Log` event model (`crate::service::{EventActionCode, EventOutcome,
-// ObjectClass}`) is a pure, transport-agnostic model with no methods. The DICOM
+// ── ATNA rendering of the event enums ────────────────────────────────────────
+// The event model (`super::event::{EventActionCode, EventOutcome, ObjectClass}`)
+// is a pure, transport-agnostic model with no methods. The DICOM
 // / RFC-3881 renderings live here, in the ATNA layer, as three focused extension
 // traits — one per enum — so the `message` serializer's call sites
 // (`event.action.as_char()`, `event.outcome.as_i32()`, `event.object.event_id()`)

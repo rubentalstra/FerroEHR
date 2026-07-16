@@ -5,8 +5,8 @@
 //! storage design (`docs/architecture.md` §Storage). The *composition-content*
 //! structure set is NOT hand-maintained here: it is delegated to the single
 //! BMM-generated oracle [`openehr_rm::model::is_structure_root`], which the
-//! codegen keeps in lockstep with this codec (G-S4 — the former duplicate const
-//! is gone). The only local addition is the five demographic **party roots**,
+//! codegen keeps in lockstep with this codec — never a local duplicate
+//! constant. The only local addition is the five demographic **party roots**,
 //! which are versioned objects of their own but are deliberately outside the
 //! composition-content set (the RM model excludes the demographic LOCATABLE
 //! hierarchy, since a party is never composition content).

@@ -1,5 +1,6 @@
-//! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.0.3 `schemas/query/ResultSet`)
-//! and AQL parameter substitution (QUERY `master03-syntax.adoc` §Parameters).
+//! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.0.3
+//! `schemas/query/ResultSet`) and AQL parameter substitution
+//! (QUERY `master03-syntax.adoc` §Parameters).
 
 use std::sync::LazyLock;
 
@@ -8,16 +9,15 @@ use regex::Regex;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::query::request::AqlQueryRequest;
-
 use crate::aql::{ParamValue, Params, QueryResult};
+use crate::service::query::request::AqlQueryRequest;
 
 /// The `RESULT_SET` schema version this server emits (ITS-REST 1.0.3).
 const RESULT_SET_SCHEMA_VERSION: &str = "1.0.3";
 
-/// Build the typed [`Params`] from the request's `query_parameters` map (values
-/// arrive as JSON scalars; complex values degrade to their JSON text — the
-/// documented widening on `AqlQueryRequest`).
+/// Build the typed [`Params`] from the request's `query_parameters` map
+/// (values arrive as JSON scalars; complex values degrade to their JSON
+/// text — the documented widening on [`AqlQueryRequest::parameters`]).
 pub(super) fn build_params(request: &AqlQueryRequest) -> Params {
     let mut params = Params::new();
     for (name, value) in &request.parameters {
@@ -26,6 +26,9 @@ pub(super) fn build_params(request: &AqlQueryRequest) -> Params {
     params
 }
 
+/// One JSON parameter value as a typed [`ParamValue`]: scalars map directly;
+/// a number outside `i64`/`f64` and any array/object degrade to their JSON
+/// text.
 fn param_value(value: &Value) -> ParamValue {
     match value {
         Value::Null => ParamValue::Null,
@@ -54,9 +57,9 @@ static PARAM_REF: LazyLock<Regex> = LazyLock::new(|| {
 /// `RESULT_SET.meta._executed_aql` is "the executed AQL" — the query after
 /// parameter binding (QUERY `master03` §Parameters NOTE l.113; ITS-REST
 /// `schemas/query/ResultSetMeta`). A `Str` becomes a single-quoted AQL string
-/// literal (embedded `'` doubled), `Int`/`Real`/`Bool` render as their literal
-/// form, `Null` as `NULL`; a `$name` with no binding is left verbatim (the
-/// engine already rejects an unbound parameter at planning time).
+/// literal (embedded `'` doubled), `Int`/`Real`/`Bool` render as their
+/// literal form, `Null` as `NULL`; a `$name` with no binding is left verbatim
+/// (the engine already rejects an unbound parameter at planning time).
 pub(super) fn substitute_params(aql: &str, params: &Params) -> String {
     PARAM_REF
         .replace_all(aql, |caps: &regex::Captures<'_>| {
@@ -80,17 +83,18 @@ fn render_param(value: &ParamValue) -> String {
 }
 
 /// Assemble the ITS-REST 1.0.3 `RESULT_SET` document
-/// (`schemas/query/ResultSet`: `meta` + `q` + `columns[]` + `rows[][]`). `q` is
-/// the query as submitted; `executed` is the parameter-substituted text for
-/// `_executed_aql`.
+/// (`schemas/query/ResultSet`: `meta` + `q` + `columns[]` + `rows[][]`). `q`
+/// is the query as submitted; `executed` is the parameter-substituted text
+/// for `_executed_aql`; `name` (a stored query's qualified name) is emitted
+/// only when present.
 ///
-/// `RESULT_SET.id [1..1]` (`result_set.adoc`: "unique identifier of this result
-/// set") is emitted additively as a `uuidv7()`-derived id (G-05-03q).
+/// `RESULT_SET.id [1..1]` (`result_set.adoc`: "unique identifier of this
+/// result set") is emitted additively as a `uuidv7()`-derived id (G-05-03q).
 ///
 /// PORT NOTE (G-05-03q): the SM `RESULT_SET` makes `id` mandatory, but the
-/// ITS-REST 1.0.3 `ResultSet` schema omits it; we emit it additively so the SM
-/// requirement is met without breaking the ITS-REST shape (an extra field a
-/// 1.0.3 client ignores).
+/// ITS-REST 1.0.3 `ResultSet` schema omits it; we emit it additively so the
+/// SM requirement is met without breaking the ITS-REST shape (an extra field
+/// a 1.0.3 client ignores).
 pub(super) fn result_set_json(
     aql: &str,
     executed: &str,

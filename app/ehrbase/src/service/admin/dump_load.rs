@@ -5,10 +5,9 @@
 //! (`EXPORT_SPEC`, incl. `segment_split_size` kb), `dump_load_fail_report.adoc`
 //! (`DUMP_LOAD_FAIL_REPORT`), `export_format.adoc` / `compression_format.adoc`
 //! (the format/compression enumerations). `master02-overview.adoc` frames Admin
-//! as "administrative facilities … such as back-up". Design register:
-//! `docs/design/platform/06-service-message-admin.md` §5.2. No openEHR spec
-//! defines an on-disk archive format — the archive layout below is our own
-//! design (`0001_baseline.sql` is the source schema).
+//! as "administrative facilities … such as back-up". No openEHR spec defines an
+//! on-disk archive format — the archive layout below is our own design
+//! (`0001_baseline.sql` is the source schema).
 //!
 //! Export walks the greenfield storage and writes a **canonical-JSON archive**
 //! to a file-system directory, split into segment files no larger than
@@ -22,7 +21,7 @@
 //! EHRs with duplicate EHR ids will fail"), never a crash.
 //!
 //! PORT NOTE (re-verify — `export_ehrs(an_ehr_id)` is EHR-scoped; the archive
-//! carries EHR-owned content only; G-A6): `ehr`, `audit`, `contribution`,
+//! carries EHR-owned content only): `ehr`, `audit`, `contribution`,
 //! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
 //! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers for the
 //! EHR's versioned objects. Global DEFINITION artefacts a version references
@@ -45,7 +44,6 @@ use uuid::Uuid;
 
 use crate::service::admin::types::{DumpLoadFailReport, ExportFormat, ExportSpec};
 use crate::service::status::{CallStatusType, SmError};
-
 use crate::service::{EhrbaseService, ServiceError};
 use crate::storage::{decompose, node_repo, version_repo};
 
@@ -193,13 +191,22 @@ fn plan_segments(sizes: &[usize], limit_bytes: usize) -> Vec<std::ops::Range<usi
     segments
 }
 
+/// Build a `file_not_writable` [`SmError`] (the only error `I_ADMIN_DUMP_LOAD`
+/// declares) for a failed filesystem access to `path`.
+fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
+    SmError::new(
+        CallStatusType::FileNotWritable,
+        format!("{}: {err}", path.display()),
+    )
+}
+
 impl EhrbaseService {
-    /// Export every EHR to a canonical-JSON archive under `dir` (SM
-    /// `export_ehrs`). Returns a per-entity report; an empty list means every
+    /// SM `export_ehrs`: export every EHR to a canonical-JSON archive under
+    /// `file_sys_loc`. Returns a per-entity report; an empty list means every
     /// EHR was dumped successfully (the report carries only failures).
     ///
     /// PORT NOTE (re-verify — `export_format.adoc` /
-    /// `compression_format.adoc`; G-A4): only `openehr_canonical_json` and no
+    /// `compression_format.adoc`): only `openehr_canonical_json` and no
     /// compression are supported this wave. The storage IS verbatim canonical
     /// JSON, so JSON export is translation-free, whereas
     /// `openehr_canonical_xml` would re-serialize via `openehr-its` and
@@ -207,11 +214,21 @@ impl EhrbaseService {
     /// as deliberately-unbuilt spec enum members. A requested XML or non-`None`
     /// compression format is a `precondition_violation` (400), never a silent
     /// downgrade.
-    pub(super) async fn export_ehrs_to(
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — the spec requests
+    ///   `openehr_canonical_xml`, any compression format, or a non-positive
+    ///   `segment_split_size`.
+    /// - `file_not_writable` — the directory, a segment file, a blob file, or
+    ///   the manifest cannot be created/written.
+    /// - `exception` — a database/codec fault while collecting records, or a
+    ///   blob-store fault while exporting referenced multimedia.
+    pub async fn export_ehrs(
         &self,
-        dir: &Path,
-        spec: &ExportSpec,
+        file_sys_loc: String,
+        spec: ExportSpec,
     ) -> Result<Vec<DumpLoadFailReport>, SmError> {
+        let dir = Path::new(&file_sys_loc);
         match spec.logical_format {
             None | Some(ExportFormat::OpenehrCanonicalJson) => {}
             Some(ExportFormat::OpenehrCanonicalXml) => {
@@ -282,13 +299,26 @@ impl EhrbaseService {
         Ok(Vec::new())
     }
 
-    /// Populate the repository from a canonical-JSON archive under `dir` (SM
-    /// `load_ehrs`). Duplicate EHR ids are reported (`dump_status = false`) and
-    /// skipped; all other EHRs are re-persisted verbatim.
-    pub(super) async fn load_ehrs_from(
+    /// SM `load_ehrs`: populate the repository from a canonical-JSON archive
+    /// under `file_sys_loc`. Duplicate EHR ids are reported
+    /// (`dump_status = false`) and skipped; all other EHRs are re-persisted
+    /// verbatim.
+    ///
+    /// # Errors
+    /// - `file_not_writable` — the manifest, a segment file, or a blob file
+    ///   cannot be read.
+    /// - `precondition_violation` (`400`) — the archive carries externalized
+    ///   multimedia blobs but this server has no multimedia store configured.
+    /// - `unprocessable` — an archive record carries overlapping version
+    ///   validity periods (a corrupted/hand-crafted archive; the record's
+    ///   transaction is rolled back).
+    /// - `exception` — a malformed manifest/segment JSON, a database/codec
+    ///   fault while re-persisting, or a blob-store fault while importing.
+    pub async fn load_ehrs(
         &self,
-        dir: &Path,
+        file_sys_loc: String,
     ) -> Result<Vec<DumpLoadFailReport>, SmError> {
+        let dir = Path::new(&file_sys_loc);
         let manifest_path = dir.join("manifest.json");
         let manifest_bytes =
             std::fs::read(&manifest_path).map_err(|e| file_not_writable(&manifest_path, &e))?;
@@ -361,8 +391,8 @@ impl EhrbaseService {
     }
 
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
-    /// (idempotent, content-addressed). A no-op when externalization is off or
-    /// the archive carries no blobs. Our own extension.
+    /// (idempotent, content-addressed). A no-op when the archive carries no
+    /// blobs. Our own extension.
     async fn import_blobs(&self, dir: &Path, blobs: &[String]) -> Result<(), SmError> {
         if blobs.is_empty() {
             return Ok(());
@@ -677,7 +707,16 @@ impl EhrbaseService {
         // baseline's P20 NOTE). A corrupted or hand-crafted archive with
         // overlapping validity fails the whole record before commit.
         let overlap: bool = sqlx::query_scalar(
-            "SELECT EXISTS (                  SELECT 1 FROM vo_version a                  JOIN vo_version b ON a.vo_id = b.vo_id                      AND a.branch_number = b.branch_number                      AND (a.branch_number = 0                           OR (a.creating_system_id = b.creating_system_id                               AND a.trunk_version = b.trunk_version))                      AND a.sys_version < b.sys_version                      AND a.sys_period && b.sys_period                  WHERE a.ehr_id = $1)",
+            "SELECT EXISTS ( \
+                 SELECT 1 FROM vo_version a \
+                 JOIN vo_version b ON a.vo_id = b.vo_id \
+                     AND a.branch_number = b.branch_number \
+                     AND (a.branch_number = 0 \
+                          OR (a.creating_system_id = b.creating_system_id \
+                              AND a.trunk_version = b.trunk_version)) \
+                     AND a.sys_version < b.sys_version \
+                     AND a.sys_period && b.sys_period \
+                 WHERE a.ehr_id = $1)",
         )
         .bind(ehr_id)
         .fetch_one(&mut *tx)
@@ -734,15 +773,6 @@ async fn insert_version(
     let rows = decompose(v.body.clone())?;
     node_repo::write_nodes(tx, v.vo_id, v.sys_version, Some(ehr_id), &rows).await?;
     Ok(())
-}
-
-/// Build a `file_not_writable` [`SmError`] (the only error `I_ADMIN_DUMP_LOAD`
-/// declares) for a failed filesystem access to `path`.
-fn file_not_writable(path: &Path, err: &std::io::Error) -> SmError {
-    SmError::new(
-        CallStatusType::FileNotWritable,
-        format!("{}: {err}", path.display()),
-    )
 }
 
 #[cfg(test)]

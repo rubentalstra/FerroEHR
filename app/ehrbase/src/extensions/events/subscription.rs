@@ -1,19 +1,18 @@
-//! The event-filter subscription store and its [`EventSubscriptionAdapter`] impl
-//! on [`EhrbaseService`].
+//! The event-filter subscription store: CRUD over `event_subscription` as
+//! methods on `EhrbaseService`.
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-02; event/subscription semantics are our own model, not any SM
-//! interface). Part of the `events` extension; gate: the eventing extension's
-//! `EHRBASE_EVENTS_ENABLED` (a subscription is inert unless the publisher is
-//! spawned to bind its queue).
+//! **No openEHR spec governs this — our own design/extension** (the
+//! event/subscription semantics are our own model, not any SM interface).
+//! Part of the `events` extension; gate: `events.enabled` (a subscription is
+//! inert unless the publisher is spawned to bind its queue).
 //!
 //! A subscription is a small predicate record (`kind` / `change_type` /
 //! `template_id` / `archetype`, each NULL = wildcard) that the publisher turns
-//! into an AMQP topic binding on the `ehrbase.events` exchange so the broker
-//! fans events out to a durable per-subscription queue ([`super`]). This
-//! module owns only the CRUD against `event_subscription`; queue declaration is
-//! the drainer's concern (it re-syncs enabled rows each cycle — the service is
-//! kept broker-free).
+//! into an AMQP topic binding on the events exchange so the broker fans events
+//! out to a durable per-subscription queue ([`super`]). This module owns only
+//! the CRUD; queue declaration is the drainer's concern (it re-syncs the
+//! enabled set when it changes or the broker connection is fresh — the service
+//! is kept broker-free).
 //
 // The CRUD helpers below read the `pub(crate)` `pool` field of
 // `crate::service::EhrbaseService`.
@@ -23,11 +22,10 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::status::SmError;
-
 use crate::service::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
-    /// Map a `event_subscription` row to its PHI-free JSON record (NULL
+    /// Map an `event_subscription` row to its PHI-free JSON record (NULL
     /// predicate = wildcard, rendered as JSON `null`).
     fn subscription_row(row: &sqlx::postgres::PgRow) -> Result<Value, ServiceError> {
         let id: Uuid = row.try_get("id")?;
@@ -122,10 +120,10 @@ impl EhrbaseService {
 
     /// Delete a subscription by id. `NotFound` if the id is unknown.
     ///
-    /// PORT NOTE: the broker queue the deleted subscription bound
-    /// is not torn down here — the service is broker-free. A durable
-    /// queue simply stops being (re)bound; operators reap orphaned queues out of
-    /// band. Re-binding of the *remaining* subscriptions is the drainer's job.
+    /// PORT NOTE: the broker queue the deleted subscription bound is not torn
+    /// down here — the service is broker-free. A durable queue simply stops
+    /// being (re)bound; operators reap orphaned queues out of band. Re-binding
+    /// of the *remaining* subscriptions is the drainer's job.
     async fn delete_subscription(&self, id: Uuid) -> Result<(), ServiceError> {
         let deleted = sqlx::query("DELETE FROM event_subscription WHERE id = $1")
             .bind(id)
@@ -140,7 +138,8 @@ impl EhrbaseService {
 }
 
 /// Read `name` from the body and validate it: non-empty, and restricted to
-/// `[A-Za-z0-9_.-]` so it is a clean AMQP queue-name suffix (`ehrbase.events.<name>`).
+/// `[A-Za-z0-9_.-]` so it is a clean AMQP queue-name suffix
+/// (`ehrbase.events.<name>`).
 fn validated_name(body: &Value) -> Result<String, ServiceError> {
     let name = body
         .get("name")
@@ -188,18 +187,38 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
 }
 
 impl EhrbaseService {
+    /// List every stored event subscription (newest first) as PHI-free JSON
+    /// records.
+    ///
+    /// # Errors
+    /// [`SmError`] wrapping a database failure.
     pub async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_subscriptions().await?)
     }
 
+    /// Create an event subscription from a JSON body (`name` required; the
+    /// predicates optional, NULL = wildcard; `enabled` defaults `true`).
+    ///
+    /// # Errors
+    /// `BadRequest` when `name` is missing/empty or not `[A-Za-z0-9_.-]`;
+    /// `Conflict` on a duplicate name; otherwise a database failure.
     pub async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError> {
         Ok(self.create_subscription(&a_subscription).await?)
     }
 
+    /// Fetch one event subscription by id.
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
     pub async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_subscription(a_subscription_id).await?)
     }
 
+    /// Replace a subscription's predicates + `enabled` (the `name` is
+    /// immutable — it is the queue key).
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
     pub async fn event_subscription_update(
         &self,
         a_subscription_id: Uuid,
@@ -210,6 +229,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// Delete an event subscription by id (the broker queue is not torn down —
+    /// see the PORT NOTE on the private helper).
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
     pub async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_subscription(a_subscription_id).await?)
     }

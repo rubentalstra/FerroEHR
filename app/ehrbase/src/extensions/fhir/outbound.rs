@@ -1,22 +1,29 @@
-//! The FHIR outbound emitter's background drainer + [`FhirOutboundHandle`]
-//! (G-12-03).
+//! The FHIR outbound emitter's background drainer + [`FhirOutboundHandle`].
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`;
-//! no openEHR outbound/FHIR transport). Gate: [`FhirOutboundConfig::enabled`]
-//! (`EHRBASE_FHIR_OUTBOUND_ENABLED`, default off) — a separate switch from the
-//! REST FHIR connector, because this stream carries PHI.
+//! **No openEHR spec governs this — our own design/extension** (no openEHR
+//! outbound/FHIR transport). Gate: [`FhirOutboundConfig::enabled`]
+//! (`fhir.outbound.enabled`, default off) — a separate switch from the REST
+//! FHIR connector, because this stream carries PHI.
 //!
 //! Wired like the contribution-outbox publisher, but reading committed
 //! `event_outbox` rows through its OWN persistent cursor
 //! (`fhir_outbound_cursor.last_seq`), so it never touches the events drainer's
 //! `published_at` watermark. A single tokio task polls the outbox for rows past
-//! the cursor in `seq` order. For each COMPOSITION version whose template matches
-//! an enabled `fhir_mapping`, it loads the committed version through the
-//! versioned read seam, reverse-maps it to a FHIR resource, and publishes it
-//! (with broker confirms) to the configured PHI exchange. The cursor advances
-//! only over the fully-published prefix, so a crash/retry re-emits from the
-//! unadvanced cursor (at-least-once; downstream FHIR systems upsert by resource
-//! id).
+//! the cursor in `seq` order. For each COMPOSITION version whose template
+//! matches an enabled `fhir_mapping`, it loads the committed version through
+//! the versioned read seam, reverse-maps it to a FHIR resource, and publishes
+//! it (with broker confirms) to the configured PHI exchange. The cursor
+//! advances only over the fully-published prefix, so a crash/retry re-emits
+//! from the unadvanced cursor (at-least-once; downstream FHIR systems upsert by
+//! resource id).
+//!
+//! **Poison rows are parked, never allowed to block the stream:** a row whose
+//! reverse-mapping fails deterministically (a defective stored mapping or
+//! template) is retried [`PARK_AFTER_FAILED_PASSES`] times and then
+//! dead-lettered to the log — an `error`-level record naming the row — and the
+//! cursor advances past it, so one bad row cannot head-of-line-block every
+//! later commit. Broker (publish) and DB failures are transient and never
+//! park a row.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -33,6 +40,14 @@ use crate::extensions::events::{AmqpPublisher, EventError, EventPublisher};
 use crate::service::EhrbaseService;
 
 use super::config::FhirOutboundConfig;
+
+/// How many consecutive failed passes a deterministically-unmappable (poison)
+/// row gets before it is parked: dead-lettered to the log and skipped by
+/// advancing the cursor past it. In-memory — a restart grants a candidate a
+/// fresh budget, which only delays parking (at-least-once is preserved; a
+/// parked row is the one case a message is deliberately dropped, and it is
+/// always logged). No openEHR spec governs this — our own design.
+const PARK_AFTER_FAILED_PASSES: u32 = 5;
 
 /// Owns the outbound-emitter task; the binary keeps it and shuts it down on exit.
 #[derive(Debug)]
@@ -111,8 +126,9 @@ pub fn start_with_publisher(
 enum ProcessError {
     /// A DB error reading the outbox / cursor.
     Db(sqlx::Error),
-    /// Reverse-mapping a COMPOSITION failed (a stored mapping/template problem);
-    /// the row stays past the cursor for retry.
+    /// Reverse-mapping a COMPOSITION failed (a stored mapping/template
+    /// problem); the row stays past the cursor for retry until the park
+    /// budget is exhausted.
     Map(String),
     /// A broker publish failure; back off before retrying.
     Publish(EventError),
@@ -124,6 +140,11 @@ impl From<sqlx::Error> for ProcessError {
     }
 }
 
+/// The poison-row retry budget: the head row currently failing to map, with
+/// its consecutive-failed-pass count. Only ever the head row — the emitter is
+/// strictly sequential, so a mapping failure always blocks at the front.
+type PoisonBudget = Option<(i64, u32)>;
+
 /// The poll loop.
 async fn run(
     config: FhirOutboundConfig,
@@ -134,6 +155,7 @@ async fn run(
     healthy: Arc<AtomicBool>,
 ) {
     let poll_interval = Duration::from_millis(config.poll_interval_ms.max(1));
+    let mut poison: PoisonBudget = None;
     tracing::info!(
         exchange = %config.exchange,
         batch_size = config.batch_size,
@@ -149,7 +171,7 @@ async fn run(
             if *shutdown.borrow() {
                 break;
             }
-            match process_batch(&pool, &service, publisher.as_ref(), &config).await {
+            match process_batch(&pool, &service, publisher.as_ref(), &config, &mut poison).await {
                 Ok(n) => {
                     healthy.store(true, Ordering::Relaxed);
                     // A short batch means the outbox is caught up.
@@ -167,7 +189,9 @@ async fn run(
                     break;
                 }
                 Err(ProcessError::Map(e)) => {
-                    tracing::warn!("fhir outbound reverse-mapping error (row stays pending): {e}");
+                    tracing::warn!(
+                        "fhir outbound reverse-mapping error (row retried, then parked): {e}"
+                    );
                     break;
                 }
             }
@@ -186,11 +210,19 @@ async fn run(
 /// over the fully-published prefix. Returns the number of rows fully processed
 /// this pass, or a [`ProcessError`] (the committed prefix's cursor advance is
 /// persisted first, preserving order).
+///
+/// `poison` is the dead-letter budget of the head row currently failing to
+/// reverse-map: each failed pass increments it, and once it reaches
+/// [`PARK_AFTER_FAILED_PASSES`] the row is **parked** — logged at `error` and
+/// skipped by advancing the cursor past it — so a poison row never permanently
+/// blocks later rows. Publish/DB failures leave the budget untouched (they are
+/// transient and not the row's fault).
 async fn process_batch(
     pool: &PgPool,
     service: &EhrbaseService,
     publisher: &dyn EventPublisher,
     config: &FhirOutboundConfig,
+    poison: &mut PoisonBudget,
 ) -> Result<usize, ProcessError> {
     let last_seq = read_cursor(pool).await?;
     let rows =
@@ -214,7 +246,8 @@ async fn process_batch(
             .and_then(Value::as_str)
             .and_then(|s| Uuid::parse_str(s).ok());
 
-        for version in envelope
+        let mut parked = false;
+        'versions: for version in envelope
             .get("versions")
             .and_then(Value::as_array)
             .into_iter()
@@ -246,6 +279,25 @@ async fn process_batch(
             {
                 Ok(m) => m,
                 Err(e) => {
+                    // A mapping failure is deterministic for this row: charge
+                    // its park budget; once exhausted, dead-letter it to the
+                    // log and skip (the cursor advances past it below).
+                    let failed_passes = charge_poison(poison, seq);
+                    if failed_passes >= PARK_AFTER_FAILED_PASSES {
+                        tracing::error!(
+                            seq,
+                            vo_id = %vo_id,
+                            sys_version,
+                            error = %e,
+                            "fhir outbound: parking poison outbox row after \
+                             {PARK_AFTER_FAILED_PASSES} failed passes — row skipped \
+                             (dead-lettered to the log; fix the stored mapping/template \
+                             and re-commit to re-emit)"
+                        );
+                        *poison = None;
+                        parked = true;
+                        break 'versions;
+                    }
                     outcome = Err(ProcessError::Map(e.to_string()));
                     break 'rows;
                 }
@@ -260,9 +312,15 @@ async fn process_batch(
                 }
             }
         }
-        // The whole row published: it is safe to advance the cursor past it.
+        // The whole row published (or parked): it is safe to advance the
+        // cursor past it.
         advanced = seq;
         processed += 1;
+        if !parked {
+            // The head row completed cleanly — any earlier failures on it were
+            // transient; clear its budget.
+            clear_poison_for(poison, seq);
+        }
     }
 
     // Persist the fully-published prefix's cursor even on a mid-batch failure, so
@@ -273,6 +331,30 @@ async fn process_batch(
     match outcome {
         Err(e) => Err(e),
         Ok(_) => Ok(processed),
+    }
+}
+
+/// Charge one failed pass against `seq`'s park budget, returning its
+/// consecutive-failed-pass count. A different failing seq resets the budget
+/// (the previous blocker was resolved or parked).
+fn charge_poison(poison: &mut PoisonBudget, seq: i64) -> u32 {
+    match poison {
+        Some((s, n)) if *s == seq => {
+            *n += 1;
+            *n
+        }
+        _ => {
+            *poison = Some((seq, 1));
+            1
+        }
+    }
+}
+
+/// Clear the park budget when `seq` completed cleanly (its earlier failures
+/// were transient).
+fn clear_poison_for(poison: &mut PoisonBudget, seq: i64) {
+    if matches!(poison, Some((s, _)) if *s == seq) {
+        *poison = None;
     }
 }
 
@@ -336,5 +418,21 @@ mod tests {
             routing_key("Observation", "minimal_evaluation.en.v1"),
             "Observation.minimal_evaluation_en_v1"
         );
+    }
+
+    #[test]
+    fn poison_budget_charges_per_seq_and_resets_on_new_seq() {
+        let mut poison: PoisonBudget = None;
+        assert_eq!(charge_poison(&mut poison, 7), 1);
+        assert_eq!(charge_poison(&mut poison, 7), 2);
+        // A different failing row resets the budget (the old blocker is gone).
+        assert_eq!(charge_poison(&mut poison, 9), 1);
+        // A clean completion clears it.
+        clear_poison_for(&mut poison, 9);
+        assert!(poison.is_none());
+        // Clearing a non-matching seq is a no-op.
+        assert_eq!(charge_poison(&mut poison, 11), 1);
+        clear_poison_for(&mut poison, 12);
+        assert_eq!(poison, Some((11, 1)));
     }
 }

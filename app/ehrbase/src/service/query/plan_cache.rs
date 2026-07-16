@@ -1,10 +1,10 @@
-//! Bounded AQL plan cache (P20 — the parse/plan overhead item).
+//! Bounded AQL plan cache (the parse/plan overhead item).
 //!
 //! Parsing an AQL query (`logos` + `chumsky`, `openehr_query`) and lowering it
 //! to the typed [`QueryIr`] ([`crate::aql::lower_query`]) is a pure,
 //! deterministic function of the query **text**: no request parameter *value*,
-//! paging window (REST `fetch`/`offset` or AQL `LIMIT`/`OFFSET`), EHR scope, or
-//! system id is baked into the IR — those all bind at SQL-build time
+//! paging window (REST `fetch`/`offset` or AQL `LIMIT`/`OFFSET`), EHR scope,
+//! or system id is baked into the IR — those all bind at SQL-build time
 //! ([`crate::aql::build_sql`]). So a repeated query text can reuse one lowered
 //! plan; only the per-request binding differs. This cache holds that lowered
 //! plan keyed on the exact query text, sparing every repeat the parse + path
@@ -16,19 +16,20 @@
 //!
 //! * **Nothing request-specific is keyed or stored.** The cached [`QueryIr`]
 //!   records only the *names* of the `$parameters` it references
-//!   ([`QueryIr::params`]); the query service re-runs [`crate::aql::check_params`]
-//!   against the caller's bindings on every execution (hit or miss), and binds
-//!   the values, paging, and scope downstream — so two callers of the same
-//!   query text with different parameters, `fetch`, `offset`, or `ehr_ids`
-//!   still get correct, independent results from the one shared plan.
+//!   ([`QueryIr::params`]); the query service re-runs
+//!   [`crate::aql::check_params`] against the caller's bindings on every
+//!   execution (hit or miss), and binds the values, paging, and scope
+//!   downstream — so two callers of the same query text with different
+//!   parameters, `fetch`, `offset`, or `ehr_ids` still get correct,
+//!   independent results from the one shared plan.
 //! * **Terminology-resolving plans are never cached.** A query whose `WHERE`
 //!   uses `TERMINOLOGY(…)` (QUERY master03 §TERMINOLOGY) has its value lists
 //!   resolved through the terminology service at plan time
 //!   ([`crate::aql::expand_matches`]); that resolution may differ on a later
 //!   execution, so such a plan is *not* a pure function of the query text and
-//!   is excluded from the cache (the caller passes `cacheable = false`). This
-//!   is the "expansion stays out of the cached prefix" choice: no staleness
-//!   window, rather than a TTL that could serve a stale expansion.
+//!   is excluded from the cache by the caller. This is the "expansion stays
+//!   out of the cached prefix" choice: no staleness window, rather than a TTL
+//!   that could serve a stale expansion.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -38,12 +39,12 @@ use moka::future::Cache;
 use crate::aql::QueryIr;
 use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 
-/// The default maximum number of distinct query plans held. Bounded so a churn
-/// of one-off ad-hoc queries cannot grow the cache without limit. The effective
-/// capacity comes from `[query].plan_cache_capacity`
-/// (`crate::service::query::QueryConfig`), applied when the binary builds the
-/// service; a bare service (tests/embeddings) uses this default. No openEHR
-/// spec governs this — our own tuning knob.
+/// The default maximum number of distinct query plans held. Bounded so a
+/// churn of one-off ad-hoc queries cannot grow the cache without limit. The
+/// effective capacity comes from `[query].plan_cache_capacity`
+/// ([`super::QueryConfig`]), applied when the binary builds the service; a
+/// bare service (tests/embeddings) uses this default. No openEHR spec governs
+/// this — our own tuning knob.
 const DEFAULT_CAPACITY: u64 = 256;
 
 /// A point-in-time view of the plan cache's activity, for observability and
@@ -59,10 +60,11 @@ pub struct PlanCacheStats {
 }
 
 /// A shared, cloneable bounded cache of lowered AQL query plans keyed on the
-/// query text. `moka`'s [`Cache`] is `Arc`-backed, so every clone of the owning
-/// service shares one cache (mirroring [`openehr_flat::cache::WebTemplateCache`]
-/// and [`crate::service::ehr::EhrAccessCache`]); the hit/miss counters are
-/// shared the same way.
+/// query text. `moka`'s [`Cache`] is `Arc`-backed, so every clone of the
+/// owning service shares one cache (mirroring
+/// [`openehr_flat::cache::WebTemplateCache`] and
+/// [`crate::service::ehr::EhrAccessCache`]); the hit/miss counters are shared
+/// the same way.
 #[derive(Clone)]
 pub struct PlanCache {
     /// `None` when the cache is disabled (capacity `0`).
@@ -88,8 +90,8 @@ impl Default for PlanCache {
 }
 
 impl PlanCache {
-    /// A cache holding up to `capacity` distinct plans; `capacity == 0` disables
-    /// it (every lookup misses, nothing is stored).
+    /// A cache holding up to `capacity` distinct plans; `capacity == 0`
+    /// disables it (every lookup misses, nothing is stored).
     #[must_use]
     pub fn new(capacity: u64) -> Self {
         let inner = (capacity > 0).then(|| Cache::builder().max_capacity(capacity).build());
@@ -101,8 +103,8 @@ impl PlanCache {
     }
 
     /// The cached plan for `aql`, or `None` on a miss (or when disabled).
-    /// Records the hit/miss both on the [`AQL_PLAN_CACHE_EVENTS`] counter and on
-    /// the in-process [`PlanCache::stats`] view.
+    /// Records the hit/miss both on the [`AQL_PLAN_CACHE_EVENTS`] counter and
+    /// on the in-process [`PlanCache::stats`] view.
     pub async fn get(&self, aql: &str) -> Option<Arc<QueryIr>> {
         let hit = match &self.inner {
             Some(cache) => cache.get(aql).await,
@@ -118,10 +120,10 @@ impl PlanCache {
         hit
     }
 
-    /// Store the lowered `ir` under the query text `aql`. A no-op when the cache
-    /// is disabled. The caller must only insert a plan that is a pure function
-    /// of the query text — in particular, one with no resolved terminology
-    /// operand (see the module docs).
+    /// Store the lowered `ir` under the query text `aql`. A no-op when the
+    /// cache is disabled. The caller must only insert a plan that is a pure
+    /// function of the query text — in particular, one with no resolved
+    /// terminology operand (see the module docs).
     pub async fn insert(&self, aql: String, ir: Arc<QueryIr>) {
         if let Some(cache) = &self.inner {
             cache.insert(aql, ir).await;

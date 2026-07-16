@@ -6,9 +6,7 @@
 //! `AuditSourceIdentification`, `ParticipantObjectIdentification`; DICOM PS3.15
 //! §A.5); [`AuditMessage::to_xml`] renders canonical (indented) XML with
 //! `quick-xml`, which escapes all attribute/text values. The golden vector
-//! snapshotted in the tests is a PS3.15 §A.5 EHR-create success record (a
-//! worked example of that shape is also kept in the non-normative design record
-//! `docs/enterprise/atna-audit.md` §3).
+//! snapshotted in the tests is a PS3.15 §A.5 EHR-create success record.
 
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
@@ -22,7 +20,8 @@ use crate::system_log::codes::{
 };
 
 /// The server-side identity shared by every emitted record (the destination
-/// node + audit source). Built once by the sender from [`crate::AuditConfig`].
+/// node + audit source). Built once by the sender from
+/// [`super::config::AuditConfig`].
 #[derive(Debug, Clone)]
 pub struct AuditContext {
     /// `AuditSourceID` and the destination `ActiveParticipant.UserID`.

@@ -6,50 +6,113 @@
 //! wire contract, so status/`ETag`/`Location`/`If-Match`/deleted-read semantics
 //! follow the EHR group by analogy (module PORT NOTE in [`super`]).
 
-use crate::service::demographic::types::PartyKind;
-use crate::service::response::{ResourceMeta, ServiceResponse};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::service::demographic::support;
+use crate::service::demographic::types::PartyKind;
+use crate::service::demographic::validate::validate_party_body;
+use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::version_update::UpdateAudit;
 use crate::service::{EhrbaseService, ServiceError};
+use crate::versioning::change::WriteEnvelope;
 use crate::versioning::{
-    CommitEnv, TreeId, change_type, create, delete, demographic_current, object_version_id, update,
+    CommitEnv, TreeId, VersionRead, change_type, create, delete, demographic_current, object_kind,
+    object_version_id, update,
 };
-
-use super::{kind_of, validate_party_body};
 
 /// The current version of a demographic party, resolved in ONE lean
 /// `vo_version`⋈`audit` read (no node reassembly). Carries the kind-checked
 /// identity + commit instant (the `ETag`/`If-Match` parts) and the not-deleted
 /// gate, so a write path resolves the target **once** and threads it — the
-/// dispatcher no longer resolves for `If-Match` and the service again for the
+/// dispatcher never resolves for `If-Match` and the service again for the
 /// existence/kind gate. RM common master06 §Version Identification / §Logical
 /// Deletion.
-pub(crate) struct CurrentParty {
-    pub(crate) kind: PartyKind,
-    pub(crate) vo_id: Uuid,
-    pub(crate) tree: TreeId,
-    pub(crate) creating_system_id: String,
-    pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) deleted: bool,
+pub(super) struct CurrentParty {
+    kind: PartyKind,
+    vo_id: Uuid,
+    tree: TreeId,
+    creating_system_id: String,
+    time_committed: jiff::Timestamp,
+    deleted: bool,
 }
 
 impl CurrentParty {
     /// The current version's full `OBJECT_VERSION_ID` `{vo}::{system}::{tree}`
     /// (the `ETag` value / `Location` tail).
-    pub(crate) fn ovid(&self) -> String {
+    fn ovid(&self) -> String {
         object_version_id(self.vo_id, &self.creating_system_id, self.tree)
     }
 
     /// The `ResourceMeta` a `412` (`If-Match`) echoes: the current
     /// `OBJECT_VERSION_ID` + its commit instant (empty `ehr_id` — parties are
     /// not EHR-scoped).
-    pub(crate) fn resource_meta(&self) -> ResourceMeta {
+    pub(super) fn resource_meta(&self) -> ResourceMeta {
         ResourceMeta::new(String::new(), self.ovid()).with_last_modified(self.time_committed)
     }
 }
 
 impl EhrbaseService {
+    /// Load a version of a party, verifying it is of the expected [`PartyKind`]
+    /// and ehr-less. A wrong-kind or unknown id is `404`.
+    async fn load_party_version(
+        &self,
+        kind: PartyKind,
+        vo_id: Uuid,
+        version: Option<TreeId>,
+        at: Option<jiff::Timestamp>,
+    ) -> Result<VersionRead, ServiceError> {
+        // The stored kind (constant per versioned object) must match the route.
+        let stored = object_kind(&self.pool, vo_id).await?;
+        if stored != Some(support::kind_of(kind)) {
+            return Err(ServiceError::NotFound(format!(
+                "{} {vo_id}",
+                kind.rm_type()
+            )));
+        }
+        support::load_ehrless(&self.pool, vo_id, version, at)
+            .await?
+            .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))
+    }
+
+    /// Confirm a live party of the expected kind exists (not deleted) — the
+    /// SM `has_party` precondition (`i_party.adoc`).
+    pub(super) async fn ensure_party(
+        &self,
+        kind: PartyKind,
+        vo_id: Uuid,
+    ) -> Result<(), ServiceError> {
+        let read = self.load_party_version(kind, vo_id, None, None).await?;
+        if read.deleted() {
+            return Err(ServiceError::NotFound(format!(
+                "{} {vo_id} is deleted",
+                kind.rm_type()
+            )));
+        }
+        Ok(())
+    }
+
+    /// The stored [`PartyKind`] of a versioned object, for the kind-agnostic SM
+    /// `I_PARTY` calls (which address parties by versioned-object id only). A
+    /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`
+    /// (`versioned_object_does_not_exist`).
+    pub(super) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
+        object_kind(&self.pool, vo_id)
+            .await?
+            .and_then(support::party_kind_of)
+            .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))
+    }
+
+    /// Confirm `vo_id` is some party (any of the five kinds) — the check for the
+    /// kind-agnostic `versioned_party` reads. A non-party id (COMPOSITION, …) or
+    /// unknown id is `404` (`versioned_object_does_not_exist`).
+    pub(super) async fn ensure_any_party(&self, vo_id: Uuid) -> Result<(), ServiceError> {
+        match object_kind(&self.pool, vo_id).await? {
+            Some(k) if k.is_party() => Ok(()),
+            _ => Err(ServiceError::NotFound(format!("versioned party {vo_id}"))),
+        }
+    }
+
     /// `create_party` (`i_demographic_service.adoc`): create the first version
     /// of a new PARTY (server-side `VERSIONED_OBJECT` + `ORIGINAL_VERSION` +
     /// `CONTRIBUTION`). Returns it with its `uid` set and the create-response
@@ -63,26 +126,18 @@ impl EhrbaseService {
     /// is the offloaded body, which the in-memory input does not reflect, so the
     /// fresh read is kept for byte-fidelity (no openEHR spec governs media
     /// externalization — our own extension).
-    pub(crate) async fn commit_new_party(
+    pub(super) async fn commit_new_party(
         &self,
         kind: PartyKind,
         body: Value,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_party_body(kind, &body)?;
 
         // The caller's UPDATE_VERSION audit attributes merge with the server
         // rules (ITS-REST committal MUST); the wire party seam passes them
         // when the request carried committal headers.
-        let audit = match update_audit {
-            Some(u) => crate::versioning::AuditInput::from_update(
-                u,
-                change_type::CREATION,
-                "PARTY creation",
-                &self.effective_system_id(),
-            ),
-            None => self.demographic_audit(change_type::CREATION, "PARTY creation"),
-        };
+        let audit = self.demographic_audit(update_audit, change_type::CREATION, "PARTY creation");
         let ctx = CommitEnv::signing_ctx(self);
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
@@ -91,19 +146,19 @@ impl EhrbaseService {
         let committed = create(
             &mut tx,
             None,
-            kind_of(kind),
+            support::kind_of(kind),
             body,
             None,
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            WriteEnvelope::default(),
             &ctx,
-        ).await?;
+        )
+        .await?;
         tx.commit().await?;
-        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
-            .increment(1);
+        support::record_commit();
 
         match repr_body {
-            Some(canonical) => Ok(Self::party_committed_response(canonical, &committed)),
+            Some(canonical) => Ok(support::committed_response(canonical, &committed)),
             None => {
                 self.read_party(kind, committed.vo_id, Some(committed.tree), None)
                     .await
@@ -116,7 +171,7 @@ impl EhrbaseService {
     /// instant (`at`; else the latest). A deleted current version resolves to
     /// `Value::Null` (→ `204`, mirroring COMPOSITION). A wrong-kind object (a
     /// PERSON under the `agent` route, or a COMPOSITION) is `404`.
-    pub(crate) async fn read_party(
+    pub(super) async fn read_party(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -127,18 +182,15 @@ impl EhrbaseService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(Self::party_version_response(vo_id, read))
+        Ok(support::version_response(vo_id, read))
     }
 
     /// Resolve the current version of a party of the routed [`PartyKind`] in ONE
     /// lean read ([`demographic_current`]) — kind-checked and ehr-less. `None`
     /// when there is no current version, the stored kind differs (a PERSON under
     /// the `agent` route), or the id is a non-demographic / EHR-scoped object.
-    /// This replaces the `object_kind` + full `read_current` pair
-    /// [`load_party_version`](EhrbaseService::load_party_version) ran on the
-    /// concurrency pre-read, so the write path never reassembles nodes just to
-    /// gate the write.
-    pub(crate) async fn party_current(
+    /// The write paths never reassemble nodes just to gate the write.
+    pub(super) async fn party_current(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -146,7 +198,7 @@ impl EhrbaseService {
         let Some(current) = demographic_current(&self.pool, vo_id).await? else {
             return Ok(None);
         };
-        if current.kind != kind_of(kind) {
+        if current.kind != support::kind_of(kind) {
             return Ok(None);
         }
         Ok(Some(CurrentParty {
@@ -161,37 +213,37 @@ impl EhrbaseService {
 
     /// `update_party` (`i_party.adoc`): commit a new party version. Resolves the
     /// current version once (kind + existence gate) and delegates to
-    /// [`commit_party_update`](EhrbaseService::commit_party_update). The wire
-    /// seam (`super::api`) resolves for `If-Match` and calls `commit_party_update`
-    /// directly, threading its handle so the target is resolved only once across
-    /// the request. `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(crate) async fn update_party_version(
+    /// [`Self::commit_party_update`]. The wire seam (the `api` module) resolves
+    /// for `If-Match` and calls `commit_party_update` directly, threading its
+    /// handle so the target is resolved only once across the request.
+    /// `expected` (from `If-Match`) enforces optimistic concurrency.
+    pub(super) async fn update_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_update(current, body, expected, update_audit).await
+        self.commit_party_update(current, body, expected, update_audit)
+            .await
     }
 
     /// Commit a new version of an already-resolved party. `current` is the lean
     /// current-version handle (threaded from the dispatcher's `If-Match` resolve
-    /// or from [`update_party`](EhrbaseService::update_party)); a deleted current
-    /// is `404` (pre `has_party`, mirroring the pre-refactor `ensure_party`
-    /// gate). The write response is built from the commit result (see
-    /// [`create_party`](EhrbaseService::create_party)).
-    pub(crate) async fn commit_party_update(
+    /// or from [`Self::update_party_version`]); a deleted current is `404` (pre
+    /// `has_party`, `i_party.adoc §update_party`). The write response is built
+    /// from the commit result (see [`Self::commit_new_party`]).
+    pub(super) async fn commit_party_update(
         &self,
         current: CurrentParty,
         body: Value,
         expected: Option<TreeId>,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let kind = current.kind;
         if current.deleted {
@@ -203,15 +255,7 @@ impl EhrbaseService {
         }
         validate_party_body(kind, &body)?;
 
-        let audit = match update_audit {
-            Some(u) => crate::versioning::AuditInput::from_update(
-                u,
-                change_type::MODIFICATION,
-                "PARTY update",
-                &self.effective_system_id(),
-            ),
-            None => self.demographic_audit(change_type::MODIFICATION, "PARTY update"),
-        };
+        let audit = self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY update");
         let ctx = CommitEnv::signing_ctx(self);
         let repr_body = self.multimedia.is_none().then(|| body.clone());
         let mut tx = self.pool.begin().await?;
@@ -219,21 +263,20 @@ impl EhrbaseService {
             &mut tx,
             None,
             current.vo_id,
-            kind_of(kind),
+            support::kind_of(kind),
             body,
             expected,
             None,
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            WriteEnvelope::default(),
             &ctx,
         )
         .await?;
         tx.commit().await?;
-        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
-            .increment(1);
+        support::record_commit();
 
         match repr_body {
-            Some(canonical) => Ok(Self::party_committed_response(canonical, &committed)),
+            Some(canonical) => Ok(support::committed_response(canonical, &committed)),
             None => {
                 self.read_party(kind, committed.vo_id, Some(committed.tree), None)
                     .await
@@ -244,35 +287,35 @@ impl EhrbaseService {
     /// `delete_party` (`i_party.adoc`): logically delete a party (a new
     /// `523|deleted|` version — RM common master06 §Logical Deletion; post
     /// `not has_party` holds, a deleted party reads `Null`). Resolves the target
-    /// once and delegates to
-    /// [`commit_party_delete`](EhrbaseService::commit_party_delete); the wire
-    /// seam threads its `If-Match` resolve instead. `expected` is the
+    /// once and delegates to [`Self::commit_party_delete`]; the wire seam
+    /// threads its `If-Match` resolve instead. `expected` is the
     /// caller-supplied trunk version (from `If-Match` or the path
     /// `OBJECT_VERSION_ID`); when `Some`, a mismatch with the current version →
     /// `409`; when `None`, the current version is deleted unconditionally (SM
     /// `delete_party` has no version argument). An already-deleted target → `400`.
-    pub(crate) async fn delete_party_version(
+    pub(super) async fn delete_party_version(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
         expected: Option<TreeId>,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_delete(current, expected, update_audit).await
+        self.commit_party_delete(current, expected, update_audit)
+            .await
     }
 
     /// Commit the logical delete of an already-resolved party (see
-    /// [`delete_party`](EhrbaseService::delete_party) for the `expected`
-    /// semantics). Returns the deleted version's `ETag`/`Location` metadata.
-    pub(crate) async fn commit_party_delete(
+    /// [`Self::delete_party_version`] for the `expected` semantics). Returns
+    /// the deleted version's `ETag`/`Location` metadata.
+    pub(super) async fn commit_party_delete(
         &self,
         current: CurrentParty,
         expected: Option<TreeId>,
-        update_audit: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::BadRequest(format!(
@@ -290,31 +333,22 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = match update_audit {
-            Some(u) => crate::versioning::AuditInput::from_update(
-                u,
-                change_type::DELETED,
-                "PARTY delete",
-                &self.effective_system_id(),
-            ),
-            None => self.demographic_audit(change_type::DELETED, "PARTY delete"),
-        };
+        let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY delete");
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(
             &mut tx,
             None,
             current.vo_id,
-            kind_of(current.kind),
+            support::kind_of(current.kind),
             Some(current.tree),
             &audit,
-            crate::versioning::change::WriteEnvelope::default(),
+            WriteEnvelope::default(),
             &ctx,
         )
         .await?;
         tx.commit().await?;
-        metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
-            .increment(1);
+        support::record_commit();
 
         Ok(ServiceResponse::deleted(ResourceMeta::new(
             String::new(),
@@ -325,7 +359,7 @@ impl EhrbaseService {
     /// The current party version metadata (the latest `version_uid` a `412`
     /// echoes in `ETag`/`Location`), or `None` if unknown/wrong-kind — the lean
     /// resolve, no node reassembly.
-    pub(crate) async fn party_current_meta(
+    pub(super) async fn party_current_meta(
         &self,
         kind: PartyKind,
         vo_id: Uuid,

@@ -26,20 +26,19 @@
 //! *synthesizes* these structural nodes with no generating archetype. We emit
 //! the RM class token (`"EXTRACT"` etc.) as a self-descriptive placeholder
 //! rather than fabricate a fake archetype id — a deliberate deviation, since no
-//! archetype exists for a programmatically-built extract skeleton (G-M6).
+//! archetype exists for a programmatically-built extract skeleton.
 
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
 use crate::service::status::{CallStatusType, SmError};
-use crate::system_log::event::EventActionCode;
-use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
-
 use crate::service::{EhrbaseService, ServiceError};
+use crate::system_log::event::EventActionCode;
 use crate::versioning::{
     original_version, read_current, read_version_by_ordinal, revision_history, versioned_object,
 };
+use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 
 /// The extract-local reference namespace (`master09-semantics.adoc` §Creation
 /// Semantics: "rewriting its `OBJECT_REFs` so that `namespace` = \"local\"").
@@ -79,12 +78,7 @@ impl VersionSelection {
     }
 }
 
-/// The `X_VERSIONED_*` `_type` for a stored versioned-object `kind`
-/// (`master05-openehr_extract_package.adoc`: the five data-oriented
-/// `VERSIONED_OBJECT` wrappers). A kind with no dedicated wrapper (e.g.
-/// `PARTY_RELATIONSHIP`, never EHR-scoped) falls back to the generic
-/// `X_VERSIONED_OBJECT`.
-/// The concrete RM versioned-object class per kind (RM ehr master04:
+/// The concrete RM versioned-object class per stored `kind` (RM ehr master04:
 /// `VERSIONED_COMPOSITION` / `VERSIONED_EHR_STATUS` / `VERSIONED_FOLDER`).
 fn versioned_rm_type(kind: &str) -> &'static str {
     match kind {
@@ -96,6 +90,11 @@ fn versioned_rm_type(kind: &str) -> &'static str {
     }
 }
 
+/// The `X_VERSIONED_*` `_type` for a stored versioned-object `kind`
+/// (`master05-openehr_extract_package.adoc`: the five data-oriented
+/// `VERSIONED_OBJECT` wrappers). A kind with no dedicated wrapper (e.g.
+/// `PARTY_RELATIONSHIP`, never EHR-scoped) falls back to the generic
+/// `X_VERSIONED_OBJECT`.
 fn x_versioned_type(kind: &str) -> &'static str {
     match kind {
         "COMPOSITION" => "X_VERSIONED_COMPOSITION",
@@ -108,6 +107,150 @@ fn x_versioned_type(kind: &str) -> &'static str {
 }
 
 impl EhrbaseService {
+    /// SM `export_ehrs(an_ehr_id)` — the whole-EHR, latest-only export as a
+    /// single-element `List<EXTRACT>` (`i_ehr_extract_service.adoc`). A
+    /// completed export is audited for non-repudiation (an outbound Extract
+    /// communication → `EventActionCode::Read`).
+    ///
+    /// # Errors
+    /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
+    /// - `exception` — a database/codec fault while building the extract.
+    pub async fn extract_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
+        if !self.extract_ehr_exists(an_ehr_id).await? {
+            return Err(SmError::ehr_not_found(format!(
+                "no EHR with id {an_ehr_id}"
+            )));
+        }
+        let extract = self.export_whole_ehr(an_ehr_id, 1).await?;
+        self.emit_extract_audit(an_ehr_id, EventActionCode::Read);
+        Ok(vec![extract])
+    }
+
+    /// SM `export_ehr_extracts(extract_spec)` — one `EXTRACT` per manifest
+    /// entity, honouring `EXTRACT_VERSION_SPEC` + the item-list selector
+    /// (`i_ehr_extract_service.adoc`; `master09-semantics.adoc` §Creation
+    /// Semantics). One completed-export audit event is emitted per distinct
+    /// exported EHR (outbound → `EventActionCode::Read`; non-repudiation).
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — an unsupported
+    ///   `EXTRACT_VERSION_SPEC.commit_time_interval`, `include_data = false`
+    ///   without `include_revision_history`, an `extract_type` outside the
+    ///   openEHR extract-content-type group, `EXTRACT_SPEC.criteria` (AQL
+    ///   selection — not supported this stage), a malformed
+    ///   `item_list`/`ehr_id` value, or an entity naming neither `ehr_id` nor
+    ///   `subject_id`.
+    /// - `ehr_id_does_not_exist` — an entity's EHR/subject resolves to no EHR.
+    /// - `versioned_object_does_not_exist` — an `item_list` version container
+    ///   is not in the entity's EHR.
+    /// - `exception` — a database/codec fault while building an extract.
+    pub async fn export_ehr_extracts(
+        &self,
+        extract_spec: ExtractSpec,
+    ) -> Result<Vec<Value>, SmError> {
+        let sel = version_selection(&extract_spec)?;
+        validate_extract_type(&extract_spec)?;
+        let link_depth = extract_spec.link_depth;
+        let criteria_present = !extract_spec.criteria.is_empty();
+        let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
+
+        let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
+        let mut exported_ehrs: Vec<Uuid> = Vec::with_capacity(extract_spec.manifest.entities.len());
+        for (idx, entity) in extract_spec.manifest.entities.iter().enumerate() {
+            let ehr_id =
+                resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
+                    .await?;
+
+            // The primary set: an explicit item_list, else every VO of the EHR.
+            // PORT NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
+            // an AQL primary-set query): AQL criteria selection lands with the
+            // `$ehr`-bound AQL export wave. Until then it is a typed reject,
+            // never a silent over-export.
+            let vo_kinds: Vec<(Uuid, String)> = if entity.item_list.is_empty() {
+                if criteria_present {
+                    return Err(SmError::precondition(
+                        "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
+                         provide EXTRACT_ENTITY_MANIFEST.item_list instead",
+                    ));
+                }
+                self.ehr_versioned_objects(ehr_id).await?
+            } else {
+                let mut resolved = Vec::with_capacity(entity.item_list.len());
+                for obj_ref in &entity.item_list {
+                    let value = serde_json::to_value(obj_ref).map_err(ServiceError::from)?;
+                    let raw = value
+                        .pointer("/id/value")
+                        .and_then(Value::as_str)
+                        .ok_or_else(|| {
+                            SmError::precondition("item_list OBJECT_REF has no id.value")
+                        })?;
+                    let vo_id: Uuid = raw.parse().map_err(|_| {
+                        SmError::precondition(format!(
+                            "item_list id {raw:?} is not a version-container UUID"
+                        ))
+                    })?;
+                    let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
+                        SmError::new(
+                            CallStatusType::VersionedObjectDoesNotExist,
+                            format!("version container {vo_id} not found in EHR {ehr_id}"),
+                        )
+                    })?;
+                    resolved.push((vo_id, kind));
+                }
+                resolved
+            };
+
+            let mut included: Vec<Uuid> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
+            let mut items = Vec::with_capacity(vo_kinds.len());
+            for (vo_id, kind) in vo_kinds {
+                items.push(
+                    self.build_openehr_content_item(ehr_id, vo_id, &kind, sel, true)
+                        .await?,
+                );
+            }
+            // link_depth (`EXTRACT_SPEC.link_depth`; `master09-semantics.adoc`
+            // §Creation Semantics: "for each instance of `DV_LINK` encountered
+            // … follow the links recursively … write the target Compositions in
+            // … set `is_primary` = False"). Only same-EHR targets exist in this
+            // repository; a link outside it cannot be included.
+            let mut depth = link_depth;
+            while depth > 0 {
+                let targets = link_target_uuids(&items);
+                let mut added = false;
+                for target in targets {
+                    if included.contains(&target) {
+                        continue;
+                    }
+                    let Some(kind) = self.ehr_vo_kind(ehr_id, target).await? else {
+                        continue;
+                    };
+                    items.push(
+                        self.build_openehr_content_item(ehr_id, target, &kind, sel, false)
+                            .await?,
+                    );
+                    included.push(target);
+                    added = true;
+                }
+                if !added {
+                    break;
+                }
+                depth -= 1;
+            }
+            let mut demographics = self.demographic_chapter_items(&items, sel).await?;
+            rewrite_content_refs(&mut items);
+            rewrite_content_refs(&mut demographics);
+            let seq = i32::try_from(idx + 1).unwrap_or(i32::MAX);
+            out.push(self.assemble_extract(items, &demographics, spec_value.clone(), seq));
+            exported_ehrs.push(ehr_id);
+        }
+        exported_ehrs.sort_unstable();
+        exported_ehrs.dedup();
+        for ehr_id in exported_ehrs {
+            self.emit_extract_audit(ehr_id, EventActionCode::Read);
+        }
+        Ok(out)
+    }
+
     /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of both
     /// export calls; `i_ehr_extract_service.adoc`).
     async fn extract_ehr_exists(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
@@ -440,134 +583,6 @@ impl EhrbaseService {
             sequence_nr,
         ))
     }
-
-    /// SM `export_ehrs(an_ehr_id)` — the whole-EHR, latest-only export as a
-    /// single-element `List<EXTRACT>` (`i_ehr_extract_service.adoc`).
-    pub(super) async fn export_all_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
-        if !self.extract_ehr_exists(an_ehr_id).await? {
-            return Err(SmError::ehr_not_found(format!(
-                "no EHR with id {an_ehr_id}"
-            )));
-        }
-        let extract = self.export_whole_ehr(an_ehr_id, 1).await?;
-        // A completed export is audited for non-repudiation (an outbound
-        // Extract communication → `EventActionCode::Read`).
-        self.emit_extract_audit(an_ehr_id, EventActionCode::Read);
-        Ok(vec![extract])
-    }
-
-    /// SM `export_ehr_extracts(extract_spec)` — one `EXTRACT` per manifest
-    /// entity, honouring `EXTRACT_VERSION_SPEC` + the item-list selector
-    /// (`i_ehr_extract_service.adoc`; `master09-semantics.adoc` §Creation
-    /// Semantics).
-    pub(super) async fn export_ehr_extracts_spec(
-        &self,
-        extract_spec: ExtractSpec,
-    ) -> Result<Vec<Value>, SmError> {
-        let sel = version_selection(&extract_spec)?;
-        validate_extract_type(&extract_spec)?;
-        let link_depth = extract_spec.link_depth;
-        let criteria_present = !extract_spec.criteria.is_empty();
-        let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
-
-        let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
-        let mut exported_ehrs: Vec<Uuid> = Vec::with_capacity(extract_spec.manifest.entities.len());
-        for (idx, entity) in extract_spec.manifest.entities.iter().enumerate() {
-            let ehr_id =
-                resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
-                    .await?;
-
-            // The primary set: an explicit item_list, else every VO of the EHR.
-            // PORT NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
-            // an AQL primary-set query; register 06 G-M3): AQL criteria selection
-            // lands with the `$ehr`-bound AQL export wave. Until then it is a
-            // typed reject, never a silent over-export.
-            let vo_kinds: Vec<(Uuid, String)> = if entity.item_list.is_empty() {
-                if criteria_present {
-                    return Err(SmError::precondition(
-                        "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
-                         provide EXTRACT_ENTITY_MANIFEST.item_list instead",
-                    ));
-                }
-                self.ehr_versioned_objects(ehr_id).await?
-            } else {
-                let mut resolved = Vec::with_capacity(entity.item_list.len());
-                for obj_ref in &entity.item_list {
-                    let value = serde_json::to_value(obj_ref).map_err(ServiceError::from)?;
-                    let raw = value
-                        .pointer("/id/value")
-                        .and_then(Value::as_str)
-                        .ok_or_else(|| {
-                            SmError::precondition("item_list OBJECT_REF has no id.value")
-                        })?;
-                    let vo_id: Uuid = raw.parse().map_err(|_| {
-                        SmError::precondition(format!(
-                            "item_list id {raw:?} is not a version-container UUID"
-                        ))
-                    })?;
-                    let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
-                        SmError::new(
-                            CallStatusType::VersionedObjectDoesNotExist,
-                            format!("version container {vo_id} not found in EHR {ehr_id}"),
-                        )
-                    })?;
-                    resolved.push((vo_id, kind));
-                }
-                resolved
-            };
-
-            let mut included: Vec<Uuid> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
-            let mut items = Vec::with_capacity(vo_kinds.len());
-            for (vo_id, kind) in vo_kinds {
-                items.push(
-                    self.build_openehr_content_item(ehr_id, vo_id, &kind, sel, true)
-                        .await?,
-                );
-            }
-            // link_depth (`EXTRACT_SPEC.link_depth`; `master09-semantics.adoc`
-            // §Creation Semantics: "for each instance of `DV_LINK` encountered
-            // … follow the links recursively … write the target Compositions in
-            // … set `is_primary` = False"). Only same-EHR targets exist in this
-            // repository; a link outside it cannot be included.
-            let mut depth = link_depth;
-            while depth > 0 {
-                let targets = link_target_uuids(&items);
-                let mut added = false;
-                for target in targets {
-                    if included.contains(&target) {
-                        continue;
-                    }
-                    let Some(kind) = self.ehr_vo_kind(ehr_id, target).await? else {
-                        continue;
-                    };
-                    items.push(
-                        self.build_openehr_content_item(ehr_id, target, &kind, sel, false)
-                            .await?,
-                    );
-                    included.push(target);
-                    added = true;
-                }
-                if !added {
-                    break;
-                }
-                depth -= 1;
-            }
-            let mut demographics = self.demographic_chapter_items(&items, sel).await?;
-            rewrite_content_refs(&mut items);
-            rewrite_content_refs(&mut demographics);
-            let seq = i32::try_from(idx + 1).unwrap_or(i32::MAX);
-            out.push(self.assemble_extract(items, &demographics, spec_value.clone(), seq));
-            exported_ehrs.push(ehr_id);
-        }
-        // One completed-export audit event per distinct exported EHR (outbound
-        // Extract communication → `EventActionCode::Read`; non-repudiation).
-        exported_ehrs.sort_unstable();
-        exported_ehrs.dedup();
-        for ehr_id in exported_ehrs {
-            self.emit_extract_audit(ehr_id, EventActionCode::Read);
-        }
-        Ok(out)
-    }
 }
 
 /// Read the `EXTRACT_VERSION_SPEC` of a request into a [`VersionSelection`],
@@ -579,9 +594,9 @@ fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
         return Ok(VersionSelection::latest_only());
     };
     // PORT NOTE (`extract_version_spec.adoc`
-    // `EXTRACT_VERSION_SPEC.commit_time_interval`; register 06 G-M4):
-    // commit-time-window version selection lands with the AQL export wave
-    // (G-M3); a typed reject until then, never a silent full export.
+    // `EXTRACT_VERSION_SPEC.commit_time_interval`): commit-time-window version
+    // selection lands with the AQL export wave; a typed reject until then,
+    // never a silent full export.
     if vs.commit_time_interval.is_some() {
         return Err(SmError::precondition(
             "EXTRACT_VERSION_SPEC.commit_time_interval is not supported in this stage",

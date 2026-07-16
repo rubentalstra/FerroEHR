@@ -20,8 +20,8 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::service::response::{ResourceMeta, ServiceResponse};
-
 use crate::service::{EhrbaseService, ServiceError};
+use crate::storage::version_repo;
 use crate::versioning::{TreeId, audit_details, commit_version_set, object_version_id};
 
 impl EhrbaseService {
@@ -29,7 +29,7 @@ impl EhrbaseService {
     /// party / relationship objects (an EHR-kind type inside is rejected `422`
     /// by the engine's scope check). Returns the assembled CONTRIBUTION with its
     /// `ETag`/`Location` (the contribution uid).
-    pub(crate) async fn create_demographic_contribution(
+    pub(super) async fn create_demographic_contribution(
         &self,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -42,24 +42,22 @@ impl EhrbaseService {
     /// Retrieve a demographic (ehr-less) CONTRIBUTION by id. An EHR-scoped
     /// contribution uid here is `404` (the demographic surface only sees
     /// `ehr_id IS NULL` contributions).
-    pub(crate) async fn demographic_contribution(
+    pub(super) async fn demographic_contribution(
         &self,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let audit =
-            crate::storage::version_repo::contribution_audit(&self.pool, contribution_id, None)
-                .await?
-                .ok_or_else(|| {
-                    ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
-                })?;
+        let audit = version_repo::contribution_audit(&self.pool, contribution_id, None)
+            .await?
+            .ok_or_else(|| {
+                ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
+            })?;
 
         // The refs helper also unions the versions this contribution's
         // `666|attestation|` items attested (RM common master06 §Contributions —
         // an attestation affects an existing version), i.e. the full change-set
         // the CONTRIBUTION covers, not just the committed rows.
         let version_refs =
-            crate::storage::version_repo::contribution_version_refs(&self.pool, contribution_id)
-                .await?;
+            version_repo::contribution_version_refs(&self.pool, contribution_id).await?;
         let versions: Vec<Value> = version_refs
             .into_iter()
             .map(|(vo_id, columns, creating_system_id, kind)| {
