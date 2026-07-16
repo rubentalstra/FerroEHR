@@ -515,11 +515,48 @@ edits recompile the rest crate.
 6. Gates: full workspace clippy+nextest, ECC zero-drift (wire untouched —
    any drift is a defect in the move).
 
+### 4k. Found by the 2026-07-16 rewrite fleet (fresh anchors, post-rewrite tree)
+
+Every folder agent audited what it ported and reported suspected defects
+without fixing them (behaviour preservation was the mandate). Triaged here;
+open rows feed the next fix wave.
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-44 | **DEFECT (issue #94): the ADL 1.4 template example generator emits only the COMPOSITION skeleton** (category/name/archetype metadata) for multi-archetype templates — no populated content tree. Expected: an example with spec-valid values for every field the WebTemplate mandates. Plan: rewrite the example generator to walk the full WebTemplate node tree (mandatory + optional-with-children), synthesizing type-correct RM values per leaf (DV_TEXT/DV_QUANTITY/DV_CODED_TEXT from bindings, intervals honoured), and verify against a multi-archetype CKM template; the generated example must itself pass our own composition validation (round-trip gate). | `templates/runtime.rs` `template_example` → the WebTemplate example builder; [issue #94](https://github.com/rubentalstra/ehrbase-rs/issues/94) | **S** — no openEHR spec defines example generation; the output must still be RM-valid (validated against the OPT like any composition) | ☐ next wave — WORKLIST W-17 |
+| F-45 | **DEFECT (multi-tenancy wiring gap): `db::connect_tenant_scoped` has NEVER been called** — `ehrbase-server/src/main.rs` builds the plain pool even with `tenancy.enabled = true`, so the RLS `ehrbase.tenant_id` GUC-stamping pool is never wired and every request falls through to the reserved default tenant. Tenant isolation currently exists only in the `tenant_isolation.rs` test via manual `set_config`. | `app/ehrbase-server/src/main.rs` (pool construction), `app/ehrbase/src/db/mod.rs` `connect_tenant_scoped` | **S** (multi-tenancy is our extension) — but an isolation failure mode must be explicit; fix with F-33's tenant-seam redesign | ☐ |
+| F-46 | **DEFECT (dead committer seam): `service/committer.rs` `with_committer` has zero callers** — the task-local is never populated, so `current_committer()` is always `None` and default-committer audits are never attributed to the authenticated principal (the REST adapter carries attribution only via the `UpdateVersion` envelope; its own `REQUEST_PRINCIPAL` task-local is separate). Decide: wire `with_committer` around dispatch in the adapter, or delete the seam and make envelope attribution the one mechanism. | `app/ehrbase/src/service/committer.rs`; adapter principal at `ehrbase-rest/src/extensions/access/authn/mod.rs` | **M-adjacent** — RM common master04 `AUDIT_DETAILS.committer` 1..1: an authenticated write should be attributed to its principal | ☐ |
+| F-47 | DEFECT (minor): `sync_ehr_subject` matches DB constraint name `uq_ehr_subject` while the schema's index is named differently — if the names disagree the constraint-specific 409 mapping never fires (falls through to a 500-class database error). Verify the live index name and align. | `service/ehr/status.rs` `sync_ehr_subject` | **S** | ☐ |
+| F-48 | DEFECT (minor, events): multi-instance ordering hazard — `FOR UPDATE SKIP LOCKED` lets a second drainer publish later seq rows first (violates the documented per-EHR ordering); and the row-lock transaction is held across broker publishes including retry/backoff rounds. Single-instance deployments unaffected. Needs a registered decision (leader lease or per-EHR ordering keys) before multi-instance is supported. | `extensions/events/publisher.rs` drain path | **S** | ☐ |
+| F-49 | DEFECT (minor, fhir outbound): cursor write is last-writer-wins (`UPDATE … SET last_seq = $1` without `WHERE last_seq < $1`) — two emitter instances can regress the cursor (unbounded duplicate emission; at-least-once still holds). Add the monotonic guard. | `extensions/fhir/outbound.rs` cursor advance | **S** | ☐ |
+| F-50 | DEFECT (minor): `serde_json::to_vec(...).unwrap_or_default()` in events `build_payload` + fhir outbound would publish a zero-byte message on a (practically unreachable) serialization failure — silent. Surface the error instead. Same pattern: `adl2_template_list` blanks a row field on decode failure (the one F-29 site the rewrite kept). | `extensions/events/`, `extensions/fhir/outbound.rs`, `service/definition/adl2.rs` | **S** | ☐ |
+| F-51 | Demographic asymmetries observed (ported as-is, decide once): (a) relationship create/update serve the in-memory body with no multimedia-externalization gate (party paths re-read when offloading is on — a relationship's `details` CAN carry DV_MULTIMEDIA); (b) `party_relationship_latest_meta` carries no `last_modified` while the party variant does (adapter emits Last-Modified for one, not the other); (c) `get_party_at_time` returns a `Null` body instead of the not-found error when the version at that instant is deleted; (d) `party_tags_get`/`party_tags_delete` ignore their kind argument (tags on a PERSON readable via the /agent route). | `service/demographic/{relationship,api,versioned,tags}.rs` (agent report, demographic) | (a)(b) **S**; (c)(d) triage against ITS-REST demographic + SM master04 before fixing | ☐ |
+| F-52 | Versioning/import: the synthetic `sys_period` chain anchors on the app clock (`Timestamp::now()`) while contribution audits use the DB transaction timestamp — clock skew can produce an invalid tstzrange on `close_lineage_at` or a chain inconsistent with `import_time`. Derive the base from the DB `tx_now`. Also: `AuditInput::from_update`'s committer-serialize fallback silently masks a failure (unreachable today; make it an error). | `versioning/import.rs`, `versioning/audit.rs` | **S** (storage mechanics; import semantics RM ehr_extract-adjacent — re-check §Import on fix) | ☐ |
+| F-53 | Telemetry: `atna_audit_serialize_failed_total` (the F-20 counter) missing from `prometheus::catalog()` whose doc claims completeness — adding it changes the metric-catalog snapshot (now owned by `app/ehrbase-server/tests/telemetry.rs`, whose snapshot file also needs moving from `app/ehrbase/tests/snapshots/`); `telemetry::samplers::acquire` is a dead seam (the cataloged `db_pool_acquire_duration_seconds` histogram never records — adopt it on the storage hot path or retire the metric through the same snapshot change). | `telemetry/prometheus.rs`, `telemetry/samplers.rs`, `app/ehrbase-server/tests/telemetry.rs` | **S** | ☐ |
+| F-54 | Notes (ported as-is, no action without a trigger): `resolve_tenant` `id::text` cast defeats the PK index (tiny table — perf-only); `insert_contribution` maps an absent RETURNING row to a 409 where a driver anomaly would deserve 500 (unreachable with server-generated uuidv7); `close_lineage_at` with a branch relies on the one-open-row partial unique index rather than an explicit branch filter; `template_adl2_upload` maps invalid source to 400 pre-parse while the platform path says 422 (deliberate per-surface split — conformance owner aware); admin contribution-representation response lacks `last_modified` where other writes carry it. | agent reports (extensions, storage, versioning, definition, ehr) | mixed **S** | note |
+
+**Issue #95 plan (F-42, owner-ruled Accept-header only per RFC 9110):**
+content negotiation on every template/example/composition-format surface —
+the `?format=` query parameter stays ignored-by-design (documented), and the
+`Accept` header selects the representation: canonical JSON
+(`application/json`), canonical XML (`application/xml`), FLAT
+(`application/openehr.wt.flat.schema+json`), STRUCTURED
+(`application/openehr.wt.structured.schema+json`) wherever ITS-REST/SDT
+defines that family for the resource. Work items: (a) sweep every LOCATABLE
+endpoint for Accept coverage (the negotiation seam exists — the sweep
+verifies each family is reachable and 406 is correct elsewhere); (b) the
+example endpoint (DEF-4) gains FLAT/STRUCTURED/XML output via the existing
+`openehr-flat` converters; (c) book docs with Accept examples; (d) answer
+the issue. Spec: ITS-REST overview §Content negotiation + the SDT simplified
+formats; RFC 9110 §12.
+
 ## 5. Fix waves
 
 Probe phase closed 2026-07-16 (P-1..P-7): 41 findings, all §1/§2/§3 rows
-receipted. Waves ordered by value ÷ risk; every fix carries its spec-triage
-line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
+receipted; the 2026-07-16 rewrite fleet added §4k (F-44..F-54) and the two
+GitHub-issue plans. Waves ordered by value ÷ risk; every fix carries its
+spec-triage line; scoped gates per wave, full gates + fresh pair + ECC at
+phase close.
 
 **Wave 1 — error-track defects + free wins (no schema, no engine changes):**
 - [x] F-12 reject malformed `If-Match` (ITS-REST §If-Match) — 400/412, tests.
@@ -536,35 +573,45 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
       verify Accept coverage on all LOCATABLE endpoints, book docs, answer the
       issue with Accept examples. Wave 1c.
 
-**Wave 2 — the write-path redesign (the big rock; orchestrator-owned):**
-- [ ] F-1 signing redesign: assign `time_committed` app-side (RM common
-      master06 — server-computed; the Rust process is the server) so the
-      signature is pre-computable and `commit_new_version` folds WITH signing
-      on; kill the split path entirely.
-- [ ] F-2 collapse the update placement trio (lineage_tip + next_ordinal one
-      statement; evaluate folding close_ordinal).
-- [ ] F-24 contribution commit: batch pre-tx `require_kind` reads
-      (`= ANY($1)`), fold per-version in-tx reads.
-- [ ] F-3/F-5 pass consolidation: sign from the decompose product (no
-      re-assemble), thread the served form to representation responses.
-- [ ] F-4 batch the persistent-duplicate check (one query; PORT NOTE cites
-      the SEC-undecided status).
+**Wave 2 — the write-path redesign — DONE (2026-07-16, landed inside the
+full platform rewrite):**
+- [x] F-1 signing fold: `time_committed` known app-side up front (merged
+      placement read / `tx_now`), contribution id app-generated, signature
+      computed before any insert — the folded `commit_new_version`/
+      `commit_version_into` CTE is the ONLY commit path; the split path and
+      `insert_vo_version` are deleted.
+- [x] F-2 placement trio → one statement (`next_placement`: tip + ordinal +
+      `now()` in one round trip; advisory lock kept).
+- [x] F-24 contribution commit: single parse pass over a typed
+      `PlannedVersion` plan; pre-tx target reads batched (`object_kinds`,
+      `= ANY($1)`).
+- [x] F-3/F-5 partial: signing consumes the in-hand canonical form;
+      representation responses served from memory where safe
+      (`committed_response`); further pass consolidation in the codec is a
+      remaining OPT (see §5b P-1).
+- [x] F-4 persistent-duplicate check = one indexed EXISTS over the promoted
+      `template_id` (PORT NOTE cites the CNF SEC-undecided status).
 
-**Wave 3 — read-path + N+1 + caches:**
-- [ ] F-7 EHR GET: one merged summary query (or concurrent reads).
+**Wave 3 — read-path + N+1 + caches — LARGELY DONE (rewrite), remainder open:**
+- [x] F-7 EHR GET: `ehr_summary_read` — one merged statement.
 - [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
 - [ ] F-9 single-query composition read (version row + nodes join/CTE),
       drop the redundant re-sort.
-- [ ] F-27 batch tag inserts; F-37 align relationship/demographic-contribution
-      writes with `committed_response`; F-28 minor extra-read trio.
-- [ ] F-26 push matching-list filters into SQL; F-38 fix double XML read;
-      F-21/F-33 tenant seam redesign (negative cache, targeted invalidation,
-      error ≠ unscoped); F-39 TTL cache on the FHIR terminology provider.
+- [ ] F-27 batch tag inserts. — [x] F-37 relationship writes aligned with
+      the lean `CurrentRelationship` threading + in-memory responses
+      (demographic rewrite). — [ ] F-28 minor extra-read trio.
+- [ ] F-26 push matching-list filters into SQL. — [x] F-38 template example
+      cold-cache double read eliminated (templates rewrite; store write path
+      also folded 3→1 statements). — [ ] F-21/F-33 tenant seam redesign
+      (negative cache, targeted invalidation, error ≠ unscoped). — [ ] F-39
+      TTL cache on the FHIR terminology provider.
 - [ ] F-10 plan-cache for terminology queries (post-expansion keying).
 
 **Wave 4 — background/admin + instrument:**
-- [ ] F-19 FHIR outbound DLQ/skip-after-N (kill the poison-row block).
-- [ ] F-18 declare AMQP topology on connect/change only.
+- [x] F-19 FHIR outbound poison-row parking (retry budget + dead-letter to
+      the log + cursor skip — extensions rewrite).
+- [x] F-18 AMQP topology declared on connect/change only (DeclaredTopology
+      diffing — extensions rewrite).
 - [ ] F-25 admin delete batching + indexed blob-reference GC.
 - [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
@@ -588,28 +635,27 @@ ONCE at the end. No intermediate green checkpoints, no compatibility shims or
 stubs to "sort of make it work" between steps.** Waves 2–4 then apply to the
 new shape.
 
-**Post-rewrite re-anchor (owner directive 2026-07-16):** after the B+C
-structural rewrite lands, the register's file:line anchors and the open
-findings' locations are stale — run a re-anchor pass: update every open
-finding's evidence pointer to the new layout, and re-verify the CLEAN
-verdicts whose receipts named moved code. The measured seeds and verdicts
-themselves stay (behaviour didn't move); only anchors refresh.
+**Structural wave phase 2 — FULL platform rewrite — EXECUTED 2026-07-16
+(the per-folder fresh-rewrite fleet + single convergence):** 13 agents, one
+per folder, each designing its folder fresh from the governing spec sections
+and deleting the old files: `service/{ehr, demographic, definition,
+query+terminology+validity, admin+message+ehr_index+subject_proxy, root}`,
+`versioning`, `storage`, `extensions`, `system_log`+`telemetry`, `templates`,
+`validation`, `db`. Convergence receipts: whole workspace compiles all
+targets; `ServiceError` moved to `service/error.rs` (owner-mandated mod.rs
+split) and 50 consumers repointed; **every re-export façade dissolved**
+(zero `pub use` anywhere in the app crates — storage/version_repo module
+tree, versioning, all service chapters, telemetry, system_log, extensions,
+aql, config, the ehrbase-rest crate root and its api/access/management
+mods); duplicate `delete_party` collision resolved
+(`physical_delete_party`); public contracts held name-for-name per agent
+report (deviations: dead items deleted, each listed in the fleet reports —
+`scratchpad fleet-reports-full.md` for the session, distilled into §4k).
 
-**Structural wave phase 2 — FULL `service/` rewrite (owner directive
-2026-07-16, DO NOT DROP):** after B+C convergence is green, the whole
-`app/ehrbase/src/service/` folder gets a total rewrite — not a tidy-up:
-- kill every trait-era legacy idea: the `*_response` inner/wrapper method
-  splits (one clean method per SM call), the ServiceResponse/ResourceMeta
-  envelope where a typed return does better, stale "method-resolution
-  priority"/adapter-era comments, the flat re-export scaffolding;
-- modern clean idiomatic Rust throughout; module docs cite their SM chapter
-  (master02–15) and call semantics keep pre/post-condition citations;
-- fold the W-14 latency findings that live in this layer into the rewrite
-  (F-1 signing fold, F-2 placement trio, F-4 batch, F-7 EHR-summary merge,
-  F-24 contribution batching, F-37 write-shape alignment) — the rewrite IS
-  Wave 2+3 for service-owned findings, executed once, properly;
-- owner: "it's still legacy ideas in the service layer" — treat prior shapes
-  as prior art only; the SM spec text is the design authority.
+**Re-anchor status:** wave/verdict state above refreshed 2026-07-16 against
+the rewritten tree; file:line anchors in §1–§4 predate the rewrite — treat
+paths as historical pointers (module names still resolve; exact lines
+don't). New defects observed by the fleet are §4k rows with fresh anchors.
 
 **Close:** full workspace gates → instrumented knee re-run (names the ladder
 errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.
