@@ -194,7 +194,9 @@ impl From<ServiceError> for ApiError {
             // path is secondary to the SM `SmError` bridge, but must stay
             // consistent with it.
             ServiceError::Storage(e) => sqlx_conflict_api_error(SmError::from(e)),
-            ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::error::classify_sqlx(&e)),
+            ServiceError::Database(e) => {
+                sqlx_conflict_api_error(crate::storage::error::classify_sqlx(&e))
+            }
             // A JSON (de)serialization failure at the service boundary is a
             // malformed client payload → 400.
             ServiceError::Json(e) => ApiError::BadRequest(e.to_string()),

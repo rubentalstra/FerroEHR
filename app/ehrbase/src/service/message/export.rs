@@ -32,9 +32,9 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::status::{CallStatusType, SmError};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 use crate::versioning::read::{read_current, read_version_by_ordinal};
 use crate::versioning::wire::{original_version, revision_history, versioned_object};

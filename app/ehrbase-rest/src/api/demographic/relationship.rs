@@ -70,7 +70,13 @@ pub(crate) async fn party_relationship_create(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_create", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "party_relationship_create",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read a `PARTY_RELATIONSHIP` by uid-based id. 404 when absent.
@@ -87,7 +93,13 @@ pub(crate) async fn party_relationship_get(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_get", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "party_relationship_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Update a `PARTY_RELATIONSHIP` (If-Match required; RM canonical JSON body).
@@ -102,7 +114,13 @@ pub(crate) async fn party_relationship_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_update", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "party_relationship_update",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Delete a `PARTY_RELATIONSHIP` (If-Match required).
@@ -116,7 +134,13 @@ pub(crate) async fn party_relationship_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_delete", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "party_relationship_delete",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read the `VERSIONED_PARTY_RELATIONSHIP` container.

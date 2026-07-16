@@ -27,7 +27,6 @@ pub mod health;
 pub mod log_reload;
 pub mod provenance;
 
-
 use build_info::BuildInfo;
 use log_reload::LogReload;
 use metrics_exporter_prometheus::PrometheusHandle;

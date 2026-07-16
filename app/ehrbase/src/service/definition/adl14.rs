@@ -15,10 +15,10 @@ use std::str::FromStr;
 use openehr_base::prelude::ArchetypeId;
 use uuid::Uuid;
 
-use crate::service::list::Page;
-use crate::service::status::{CallStatusType, SmError};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::list::Page;
+use crate::service::status::{CallStatusType, SmError};
 
 use super::{compile_pattern, page_bounds, paginate};
 

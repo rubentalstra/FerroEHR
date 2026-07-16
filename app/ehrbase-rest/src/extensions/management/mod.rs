@@ -18,10 +18,9 @@ mod info_routes;
 mod logger_routes;
 mod metrics;
 
-use crate::extensions::management::http_metrics::{http_metrics, root_span};
-use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
+use ehrbase::config::management::{AccessLevel, ManagementConfig};
 use ehrbase::telemetry::build_info::BuildInfo;
-use ehrbase::telemetry::health::{Health, HealthIndicator, HealthRegistry, HealthStatus};
+use ehrbase::telemetry::health::{HealthRegistry};
 use ehrbase::telemetry::log_reload::LogReload;
 
 use std::sync::Arc;

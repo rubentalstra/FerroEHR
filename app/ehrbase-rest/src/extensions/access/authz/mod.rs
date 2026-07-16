@@ -43,11 +43,10 @@ pub mod remote;
 pub mod request;
 pub mod roles;
 
-use crate::extensions::access::authz::classify::{OperationClass, access_of, class_of, kind_of};
+use crate::extensions::access::authz::classify::{OperationClass, class_of};
 use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
-use crate::extensions::access::authz::request::{AccessMode, Attr, AuthzRequest, Combination, Decision, ResourceKind};
-use crate::extensions::access::authz::roles::{RbacDecision, authorize, claim_string, default_role_claims, extract_roles};
-use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AbacParam, AuthzConfig, AuthzConfigError, CedarConfig, ManagementAccess, PolicyRule, RbacConfig, RemoteConfig};
+use crate::extensions::access::authz::roles::{RbacDecision, authorize};
+use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AuthzConfig, RbacConfig};
 
 use std::collections::HashMap;
 use std::future::Future;

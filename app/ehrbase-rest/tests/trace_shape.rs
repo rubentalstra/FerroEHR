@@ -81,7 +81,9 @@ async fn root_span_is_route_template_and_phi_free() {
     // A templated route carrying an id, wrapped in the root-span middleware.
     let app = Router::new()
         .route("/ehr/{ehr_id}/composition", get(|| async { "ok" }))
-        .layer(middleware::from_fn(ehrbase_rest::extensions::management::http_metrics::root_span));
+        .layer(middleware::from_fn(
+            ehrbase_rest::extensions::management::http_metrics::root_span,
+        ));
 
     let ehr_id = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
     let req = Request::builder()

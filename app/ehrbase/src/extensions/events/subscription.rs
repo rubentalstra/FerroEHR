@@ -21,9 +21,9 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::status::SmError;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
 impl EhrbaseService {
     /// Map an `event_subscription` row to its PHI-free JSON record (NULL

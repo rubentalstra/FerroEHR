@@ -15,18 +15,18 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::service::EhrbaseService;
 use crate::service::demographic::types::PartyKind;
+use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::version_update::UpdateAudit;
-use crate::service::EhrbaseService;
-use crate::service::error::ServiceError;
 use crate::storage::version_repo;
-use crate::versioning::{CommitEnv, Kind};
 use crate::versioning::audit::{AuditInput, audit_details};
 use crate::versioning::change::Committed;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
 use crate::versioning::wire::original_version;
+use crate::versioning::{CommitEnv, Kind};
 
 /// The versioned-object [`Kind`] for a REST [`PartyKind`].
 pub(super) fn kind_of(kind: PartyKind) -> Kind {

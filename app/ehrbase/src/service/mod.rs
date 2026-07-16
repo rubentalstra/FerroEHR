@@ -44,7 +44,6 @@ use crate::service::terminology::fhir::FhirTerminologyProvider;
 
 mod commit_env;
 
-
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;

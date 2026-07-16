@@ -26,9 +26,9 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::extensions::tenant_context::TenantContext;
-use crate::service::status::SmError;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
 /// The reserved default tenant: the nil uuid, owner of every row created while
 /// tenancy is off. Matches `ext.current_tenant_id()`'s fallback

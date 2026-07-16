@@ -19,9 +19,9 @@
 
 use uuid::Uuid;
 
-use crate::service::status::SmError;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
 impl EhrbaseService {
     /// SM `archive_ehrs`: mark every versioned object of each EHR as archived

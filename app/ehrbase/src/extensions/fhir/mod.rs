@@ -29,17 +29,16 @@ mod mapping;
 pub mod outbound;
 mod reverse;
 
-
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::service::EhrbaseService;
 use crate::service::ehr_index::types::SubjectRef;
+use crate::service::error::ServiceError;
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::EhrbaseService;
-use crate::service::error::ServiceError;
 use crate::storage::version_repo;
 
 use self::mapping::FhirMappingDefinition;
@@ -326,7 +325,8 @@ impl EhrbaseService {
                     continue;
                 };
                 let Some(read) =
-                    version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+                    version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version)
+                        .await?
                 else {
                     continue;
                 };

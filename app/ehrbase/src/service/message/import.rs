@@ -43,15 +43,17 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::status::{CallStatusType, SmError};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
-use crate::versioning::audit::AuditInput;
-use crate::versioning::lifecycle;
 use crate::versioning::Kind;
+use crate::versioning::audit::AuditInput;
 use crate::versioning::audit::{change_type, change_type_code};
-use crate::versioning::import::{ImportContainer, ImportVersion, commit_demographic_import, commit_import};
+use crate::versioning::import::{
+    ImportContainer, ImportVersion, commit_demographic_import, commit_import,
+};
+use crate::versioning::lifecycle;
 use crate::versioning::lifecycle::lifecycle_state_code;
 use crate::versioning::object_version_id::parse_object_version_id;
 use openehr_rm::ehr_extract::common::extract::Extract;

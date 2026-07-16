@@ -12,9 +12,9 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::response::ServiceResponse;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::response::ServiceResponse;
 use crate::versioning::object_version_id::TreeId;
 
 impl EhrbaseService {

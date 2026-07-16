@@ -12,15 +12,17 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::service::EhrbaseService;
 use crate::service::demographic::party::CurrentParty;
 use crate::service::demographic::relationship::CurrentRelationship;
 use crate::service::demographic::types::PartyKind;
+use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
-use crate::service::EhrbaseService;
-use crate::service::error::ServiceError;
-use crate::versioning::object_version_id::{components, expected_from_if_match, parse_uid_based_id, parse_version_uid};
+use crate::versioning::object_version_id::{
+    components, expected_from_if_match, parse_uid_based_id, parse_version_uid,
+};
 
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
 fn tags_response(tags: Vec<Value>) -> ServiceResponse {

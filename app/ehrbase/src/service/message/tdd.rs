@@ -46,10 +46,10 @@ use quick_xml::events::Event;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::version_update::UpdateVersion;
 
 /// The Ocean/Marand operational-template-data XML namespace every TDD root
 /// declares (the corpus TDD instances use exactly this default `xmlns`).

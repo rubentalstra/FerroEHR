@@ -21,8 +21,8 @@ use std::sync::LazyLock;
 use regex::Regex;
 use serde_json::Value;
 
-use crate::service::error::ServiceError;
 use crate::service::demographic::types::PartyKind;
+use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 
 /// `OBJECT_REF.namespace` legality: `"local"`, `"unknown"`, or a value matching

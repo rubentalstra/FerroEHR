@@ -132,8 +132,7 @@ fn build_authenticator(
     config: &AppConfig,
     authz: Option<&AuthzHandle>,
 ) -> Result<std::sync::Arc<Authenticator>, ServeError> {
-    let role_claims =
-        authz.map_or_else(default_role_claims, AuthzHandle::role_claims);
+    let role_claims = authz.map_or_else(default_role_claims, AuthzHandle::role_claims);
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 

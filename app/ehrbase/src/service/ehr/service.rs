@@ -328,7 +328,8 @@ impl EhrbaseService {
         let ehr_status = self.status_at(ehr_id, None).await?.body;
 
         let contribution_count =
-            crate::storage::version_repo::contribution::ehr_contribution_count(&self.pool, ehr_id).await?;
+            crate::storage::version_repo::contribution::ehr_contribution_count(&self.pool, ehr_id)
+                .await?;
         let composition_count =
             crate::storage::version_repo::meta::composition_count(&self.pool, ehr_id).await?;
 

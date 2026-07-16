@@ -21,15 +21,15 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
 use ehrbase::config::server::{AdminConfig, ServerConfig, TenancyConfig};
 use ehrbase::config::smart::SmartConfig;
-use ehrbase_rest::config::AppConfig;
-use ehrbase_rest::extensions::openapi::extensions_document;
-use ehrbase_rest::extensions::management::Observability;
-use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
 use ehrbase::telemetry::build_info::BuildInfo;
 use ehrbase::telemetry::health::HealthRegistry;
 use ehrbase::telemetry::log_reload::LogReload;
+use ehrbase_rest::config::AppConfig;
+use ehrbase_rest::extensions::management::Observability;
+use ehrbase_rest::extensions::openapi::extensions_document;
 
 mod common;
 
