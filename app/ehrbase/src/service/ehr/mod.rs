@@ -57,8 +57,8 @@ mod status_validate;
 mod tags;
 mod uri;
 
-pub mod handle;
 pub mod access_types;
+pub mod handle;
 
 // The EHR-component surface other service modules and adapters consume.
 pub(in crate::service) use access::{EhrAccessCache, default_ehr_access, validate_ehr_access};
@@ -69,9 +69,9 @@ pub(in crate::service) use meta::committer;
 pub(in crate::service) use service::default_ehr_status;
 pub(in crate::service) use status_validate::validate_ehr_status;
 
+use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::ResourceMeta;
 use crate::service::status::SmError;
-use crate::service::ehr_index::types::SubjectRef;
 use serde_json::{Value, json};
 
 use crate::versioning::TimeRange;

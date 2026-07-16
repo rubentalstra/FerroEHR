@@ -45,9 +45,9 @@ use std::path::Path;
 
 use uuid::Uuid;
 
-use crate::service::platform_service::PlatformService;
 use crate::service::admin::types::StatTimeRange;
 use crate::service::admin::types::{DumpLoadFailReport, ExportSpec};
+use crate::service::platform_service::PlatformService;
 use crate::service::status::SmError;
 
 use crate::service::EhrbaseService;
@@ -206,7 +206,10 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn load_ehrs(&self, file_sys_loc: String) -> Result<Vec<DumpLoadFailReport>, SmError> {
+    pub async fn load_ehrs(
+        &self,
+        file_sys_loc: String,
+    ) -> Result<Vec<DumpLoadFailReport>, SmError> {
         self.load_ehrs_from(Path::new(&file_sys_loc)).await
     }
 }

@@ -25,9 +25,9 @@ use openehr_rm::prelude::PartyProxy;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::demographic::types::PartyKind;
 use ehrbase::service::platform_service::PlatformService;
+use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {

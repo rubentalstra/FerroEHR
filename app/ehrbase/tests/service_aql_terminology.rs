@@ -34,9 +34,9 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 use ehrbase::service::query::request::AqlQueryRequest;
 use ehrbase::service::status::CallStatusType;
+use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 

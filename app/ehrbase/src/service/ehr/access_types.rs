@@ -32,7 +32,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-
 /// The `_type` discriminator of this scheme's `ACCESS_CONTROL_SETTINGS` subtype
 /// on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from it.
 ///

@@ -308,7 +308,10 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
         .extract_ehrs(Uuid::now_v7())
         .await
         .expect_err("unknown EHR must fail");
-    assert_eq!(err.status, ehrbase::service::status::CallStatusType::EhrIdDoesNotExist);
+    assert_eq!(
+        err.status,
+        ehrbase::service::status::CallStatusType::EhrIdDoesNotExist
+    );
 }
 
 /// A1 rm-ehr-extract: `EXTRACT_SPEC.extract_type` must come from the extract

@@ -2,8 +2,6 @@
 //! to `DEMOGRAPHIC_SERVICE`") and `I_PARTY` (`i_party.adoc`: "Interface for
 //! `PARTY` level operations").
 
-
-
 /// The concrete PARTY resource families of the DEMOGRAPHIC group (the five
 /// concrete `ACTOR`/`PARTY` leaves of the RM demographic package the wire
 /// routes are keyed by).

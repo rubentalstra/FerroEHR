@@ -32,7 +32,6 @@ pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes"
 /// middleware.
 pub const AUTH_FAILURES: &str = "auth_failures_total";
 
-
 // ── Metric names emitted from this crate (§1.2). The http_* / auth_* names
 //    live in `ehrbase-rest`; the atna_* names in `ehrbase-audit`. ────────────
 

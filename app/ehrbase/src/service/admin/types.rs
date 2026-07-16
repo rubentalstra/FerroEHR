@@ -1,9 +1,6 @@
 //! The ADMIN group's application seam (SM `I_ADMIN_SERVICE` +
 //! `I_ADMIN_ARCHIVE`).
 
-
-
-
 /// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
 /// date-time bounds, each independently optional (open bounds allowed). Realizes
 /// the SM `time_interval: Interval<Iso8601_date_time> [0..1]` parameter of the

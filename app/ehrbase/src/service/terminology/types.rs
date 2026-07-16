@@ -24,7 +24,6 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-
 // ─── extract data model (`terminology_extract` package) ──────────────────────
 
 /// `Terminology_description` (`terminology_description.adoc`): "Descriptor for a

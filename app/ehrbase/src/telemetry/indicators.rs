@@ -7,8 +7,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::system_log::AuditSender;
-use async_trait::async_trait;
 use crate::telemetry::health::{Health, HealthIndicator};
+use async_trait::async_trait;
 use sqlx::PgPool;
 
 /// `db` — a bounded `SELECT 1` liveness ping. Required for readiness.

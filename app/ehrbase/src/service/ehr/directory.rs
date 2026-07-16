@@ -421,7 +421,10 @@ impl EhrbaseService {
         an_ehr_id: Uuid,
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
-        super::version_uid(self.create_directory_response(an_ehr_id, a_dir_struct.data).await?)
+        super::version_uid(
+            self.create_directory_response(an_ehr_id, a_dir_struct.data)
+                .await?,
+        )
     }
 
     /// See the SM interface doc for this call (module doc cites the chapter).
@@ -468,8 +471,14 @@ impl EhrbaseService {
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_directory_response(an_ehr_id, vo_id, a_dir_struct.data, expected, is_modifiable)
-                .await?,
+            self.update_directory_response(
+                an_ehr_id,
+                vo_id,
+                a_dir_struct.data,
+                expected,
+                is_modifiable,
+            )
+            .await?,
         )
     }
 

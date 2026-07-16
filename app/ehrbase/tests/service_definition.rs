@@ -84,29 +84,16 @@ async fn archetype_upload_get_list_match_replace_delete() {
 
     // Precondition: not present yet.
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(
-        svc.archetypes_count_adl14()
-            .await
-            .unwrap(),
-        0
-    );
+    assert_eq!(svc.archetypes_count_adl14().await.unwrap(), 0);
 
     // valid_archetype on good vs bad source.
     assert!(svc.valid_archetype(&adl).unwrap());
-    assert!(
-        !svc.valid_archetype("not an archetype")
-            .unwrap()
-    );
+    assert!(!svc.valid_archetype("not an archetype").unwrap());
 
     // upload → Post_has_archetype.
     svc.upload_archetype(adl.clone()).await.expect("upload");
     assert!(svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(
-        svc.archetypes_count_adl14()
-            .await
-            .unwrap(),
-        1
-    );
+    assert_eq!(svc.archetypes_count_adl14().await.unwrap(), 1);
 
     // get returns the source verbatim.
     let got = svc
@@ -116,9 +103,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
     assert_eq!(got, adl, "stored ADL source is byte-identical");
 
     // list + list_matching (regex).
-    let list = svc.list_archetypes_adl14(Page::all())
-        .await
-        .unwrap();
+    let list = svc.list_archetypes_adl14(Page::all()).await.unwrap();
     assert_eq!(list, vec![ARCHETYPE_ID.to_owned()]);
     let matched = svc
         .list_matching_archetypes("COMPOSITION\\.prescription".to_owned(), Page::all())
@@ -137,9 +122,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .await
         .expect("replace");
     assert_eq!(
-        svc.archetypes_count_adl14()
-            .await
-            .unwrap(),
+        svc.archetypes_count_adl14().await.unwrap(),
         1,
         "replace, not insert"
     );
@@ -154,12 +137,7 @@ async fn archetype_upload_get_list_match_replace_delete() {
         .await
         .expect("delete");
     assert!(!svc.has_archetype(ARCHETYPE_ID.to_owned()).await.unwrap());
-    assert_eq!(
-        svc.archetypes_count_adl14()
-            .await
-            .unwrap(),
-        0
-    );
+    assert_eq!(svc.archetypes_count_adl14().await.unwrap(), 0);
 }
 
 #[tokio::test]
@@ -253,9 +231,7 @@ async fn opt_upload_has_get_list_match_delete() {
     assert_eq!(svc.opts_count_adl14().await.unwrap(), 1);
 
     // list_opts yields the OPT's UUID; use it for has/get/delete (UUID-keyed).
-    let opts = svc.list_opts_adl14(Page::all())
-        .await
-        .unwrap();
+    let opts = svc.list_opts_adl14(Page::all()).await.unwrap();
     assert_eq!(opts.len(), 1);
     let uuid = opts[0].clone();
     assert!(
@@ -532,10 +508,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     let adl2_arch = adl2_source("archetype", ADL2_ARCH_HRID, None);
     let adl2_tmpl = adl2_source("template", ADL2_TMPL_HRID, None);
     assert!(svc.valid_artefact(&adl2_opt).unwrap());
-    assert!(
-        !svc.valid_artefact("this is not adl2")
-            .unwrap()
-    );
+    assert!(!svc.valid_artefact("this is not adl2").unwrap());
 
     // upload_artefact (OPT) → Post_has_artefact (keyed by ARCHETYPE_HRID).
     assert!(!svc.has_artefact(ADL2_OPT_HRID.to_owned()).await.unwrap());
@@ -563,10 +536,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     // `list_archetypes`/`list_opts`) are declared on both the ADL 1.4 and ADL2
     // Definitions traits, so calls on the concrete service are qualified.
     assert_eq!(svc.artefacts_count().await.unwrap(), 3);
-    assert_eq!(
-        svc.archetypes_count_adl2().await.unwrap(),
-        1
-    );
+    assert_eq!(svc.archetypes_count_adl2().await.unwrap(), 1);
     assert_eq!(svc.templates_count().await.unwrap(), 1);
     assert_eq!(svc.opts_count_adl2().await.unwrap(), 1);
 
@@ -575,9 +545,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
     assert_eq!(all.len(), 3);
     assert!(all.contains(&ADL2_OPT_HRID.to_owned()));
     assert_eq!(
-        svc.list_archetypes_adl2(Page::all())
-            .await
-            .unwrap(),
+        svc.list_archetypes_adl2(Page::all()).await.unwrap(),
         vec![ADL2_ARCH_HRID.to_owned()]
     );
     assert_eq!(
@@ -585,9 +553,7 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
         vec![ADL2_TMPL_HRID.to_owned()]
     );
     assert_eq!(
-        svc.list_opts_adl14(Page::all())
-            .await
-            .unwrap(),
+        svc.list_opts_adl14(Page::all()).await.unwrap(),
         vec![ADL2_OPT_HRID.to_owned()]
     );
 
@@ -715,22 +681,10 @@ async fn query_valid_store_list_match_delete() {
     let good = "SELECT c FROM COMPOSITION c";
 
     // valid_query: formalism equivalence + parse.
-    assert!(
-        svc.valid_query(good, "aql")
-            .unwrap()
-    );
-    assert!(
-        svc.valid_query(good, "AQL::1")
-            .unwrap()
-    );
-    assert!(
-        !svc.valid_query(good, "cql")
-            .unwrap()
-    );
-    assert!(
-        !svc.valid_query("this is not aql", "AQL")
-            .unwrap()
-    );
+    assert!(svc.valid_query(good, "aql").unwrap());
+    assert!(svc.valid_query(good, "AQL::1").unwrap());
+    assert!(!svc.valid_query(good, "cql").unwrap());
+    assert!(!svc.valid_query("this is not aql", "AQL").unwrap());
     assert_eq!(svc.queries_count().await.unwrap(), 0);
 
     // store_query with no name → a generated `misc::q_<uuid>` name.
@@ -862,9 +816,7 @@ async fn query_store_set_not_implemented() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("def_query_set").await);
     // store_query_set is a spec TODO → 501 (trait default, PORT NOTE).
-    let err = svc
-        .store_query_set(None)
-        .expect_err("not implemented");
+    let err = svc.store_query_set(None).expect_err("not implemented");
     assert!(
         matches!(
             err,

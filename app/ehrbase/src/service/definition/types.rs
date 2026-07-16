@@ -9,8 +9,6 @@
 //! platform component implements them beside the SM catalog; the adapter
 //! dispatches to them for the wire routes that need them.
 
-
-
 /// The template-list filter carried by the ITS-REST `definition_template_*_list`
 /// operations. All three are optional query parameters the wire decodes but the
 /// SM `I_DEFINITION_*` list interfaces (which return plain `List<UUID>`) do not

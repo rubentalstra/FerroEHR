@@ -11,9 +11,9 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::service::demographic::types::PartyKind;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::demographic::types::PartyKind;
 use crate::service::version_update::UpdateVersion;
 
 use crate::service::{EhrbaseService, ServiceError};
@@ -233,7 +233,8 @@ impl EhrbaseService {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
         };
-        let resp = self.update_party_response(kind, a_versioned_party_id, a_version.data, expected)
+        let resp = self
+            .update_party_response(kind, a_versioned_party_id, a_version.data, expected)
             .await?;
         Ok(version_uid(resp))
     }
@@ -247,7 +248,9 @@ impl EhrbaseService {
         // The SM `delete_party` has no version argument — delete the current
         // version unconditionally.
         let kind = self.party_kind_at(a_versioned_party_id).await?;
-        let resp = self.delete_party_response(kind, a_versioned_party_id, None).await?;
+        let resp = self
+            .delete_party_response(kind, a_versioned_party_id, None)
+            .await?;
         Ok(version_uid(resp))
     }
 
@@ -257,7 +260,11 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
+    pub async fn party_create(
+        &self,
+        kind: PartyKind,
+        body: Value,
+    ) -> Result<ServiceResponse, SmError> {
         let mut resp = self.create_party_response(kind, body).await?;
         // Surface the party's stored ITEM_TAGs on the response seam for the
         // `openehr-item-tag`/`openehr-version-item-tag` response headers
@@ -530,7 +537,10 @@ impl EhrbaseService {
     /// # Errors
     /// Returns the SM call-status error ([`SmError`]-mapped at the
     /// protocol adapter) for the failure conditions of this call.
-    pub async fn create_party_relationship(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
+    pub async fn create_party_relationship(
+        &self,
+        a_version: UpdateVersion,
+    ) -> Result<Uuid, SmError> {
         let resp = self.create_relationship(a_version.data).await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)

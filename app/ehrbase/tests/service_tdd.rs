@@ -27,7 +27,6 @@ use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::CallStatusType;
 
-
 struct Pg {
     _container: ContainerAsync<Postgres>,
     host: String,

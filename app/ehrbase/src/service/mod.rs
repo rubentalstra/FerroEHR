@@ -25,9 +25,9 @@ pub mod status;
 
 use status::SmError;
 pub mod list;
-pub mod version_update;
 pub mod platform_service;
 pub mod response;
+pub mod version_update;
 
 pub use query::{PlanCache, PlanCacheStats, QueryConfig};
 pub use subject_proxy::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
@@ -39,10 +39,10 @@ pub use terminology::{
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use crate::extensions::tenant_context::TenantContext;
 use crate::system_log::AuditSender;
 use crate::versioning::signature::Signer;
 use crate::versioning::{CommitEnv, Kind, SigningCtx};
-use crate::extensions::tenant_context::TenantContext;
 use openehr_flat::WebTemplate;
 use openehr_flat::cache::WebTemplateCache;
 use openehr_its::rest::runtime::ApiError;
@@ -161,7 +161,8 @@ impl EhrbaseService {
     /// default (with tenancy off the task-local is never set and this is
     /// byte-identical to the configured `system_id`).
     pub(crate) fn effective_system_id(&self) -> String {
-        crate::extensions::tenant_context::current().map_or_else(|| self.system_id.clone(), |t| t.system_id)
+        crate::extensions::tenant_context::current()
+            .map_or_else(|| self.system_id.clone(), |t| t.system_id)
     }
 
     /// The AQL plan cache (P20), for observability. No openEHR spec governs it.
@@ -550,7 +551,9 @@ impl From<ServiceError> for ApiError {
             // 503) rather than blanket-500 (W-14 F-13). A genuine fault stays
             // 500. This path is secondary to the SM `SmError` bridge, but must
             // stay consistent with it.
-            ServiceError::Storage(e) => sqlx_conflict_api_error(crate::service::status::SmError::from(e)),
+            ServiceError::Storage(e) => {
+                sqlx_conflict_api_error(crate::service::status::SmError::from(e))
+            }
             ServiceError::Database(e) => sqlx_conflict_api_error(crate::storage::classify_sqlx(&e)),
             // A JSON (de)serialization failure at the service boundary is a
             // malformed client payload → 400.

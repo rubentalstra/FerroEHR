@@ -10,9 +10,8 @@
 
 use std::str::FromStr;
 
-
-use crate::service::status::{CallStatusType, SmError};
 use crate::service::list::Page;
+use crate::service::status::{CallStatusType, SmError};
 use openehr_base::prelude::ArchetypeId;
 use sqlx::Row;
 

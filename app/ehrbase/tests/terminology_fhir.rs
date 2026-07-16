@@ -6,8 +6,8 @@
 
 use std::time::Duration;
 
-use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 use ehrbase::service::status::CallStatusType;
+use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
 use serde_json::json;
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -203,7 +203,9 @@ async fn lookup_drives_has_term_and_get_term() {
     let entry = terms.get("B").expect("B");
     match entry {
         ehrbase::service::terminology::types::TermEntry::Defined(d) => assert_eq!(d.text, "Buccal"),
-        ehrbase::service::terminology::types::TermEntry::Bare(_) => panic!("expected a defined term"),
+        ehrbase::service::terminology::types::TermEntry::Bare(_) => {
+            panic!("expected a defined term")
+        }
     }
 }
 

@@ -23,7 +23,6 @@
 //! variable context the `sp_sample` FK requires; a bare `get_frame` has no
 //! variable to attach a sample to.
 
-
 use crate::service::query::request::AqlQueryRequest;
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
