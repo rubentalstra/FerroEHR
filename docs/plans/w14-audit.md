@@ -516,16 +516,16 @@ receipted. Waves ordered by value ÷ risk; every fix carries its spec-triage
 line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 
 **Wave 1 — error-track defects + free wins (no schema, no engine changes):**
-- [ ] F-12 reject malformed `If-Match` (ITS-REST §If-Match) — 400/412, tests.
-- [ ] F-13 central sqlx/SQLSTATE classifier at the storage bridge: 23xxx →
+- [x] F-12 reject malformed `If-Match` (ITS-REST §If-Match) — 400/412, tests.
+- [x] F-13 central sqlx/SQLSTATE classifier at the storage bridge: 23xxx →
       typed conflict (409), 40001/40P01 → conflict/retryable, `PoolTimedOut`
       → 503 + Retry-After (W-12 contract), structured tracing at the bridge
       (constraint + code), delete the per-call-site sniffing.
-- [ ] F-31 build OpenAPI + SMART documents once at router assembly (Arc).
-- [ ] F-32 FLAT/STRUCTURED conversion failure → 400/422, not 500.
-- [ ] F-34 CatchPanic + ATNA fail-closed emit the openEHR error body.
-- [ ] F-29 surface row-decode errors instead of `unwrap_or_default`.
-- [ ] F-20 count ATNA serialize-drops.
+- [x] F-31 build OpenAPI + SMART documents once at router assembly (Arc).
+- [x] F-32 FLAT/STRUCTURED conversion failure → 400/422, not 500.
+- [x] F-34 CatchPanic + ATNA fail-closed emit the openEHR error body.
+- [x] F-29 surface row-decode errors instead of `unwrap_or_default`.
+- [x] F-20 count ATNA serialize-drops.
 - [ ] F-42 (issue #95, owner-ruled: Accept header only per RFC 9110 §12) —
       verify Accept coverage on all LOCATABLE endpoints, book docs, answer the
       issue with Accept examples. Wave 1c.
@@ -572,6 +572,13 @@ nuke+rewrite — all code moves land first, compile/test convergence happens
 ONCE at the end. No intermediate green checkpoints, no compatibility shims or
 stubs to "sort of make it work" between steps.** Waves 2–4 then apply to the
 new shape.
+
+**Post-rewrite re-anchor (owner directive 2026-07-16):** after the B+C
+structural rewrite lands, the register's file:line anchors and the open
+findings' locations are stale — run a re-anchor pass: update every open
+finding's evidence pointer to the new layout, and re-verify the CLEAN
+verdicts whose receipts named moved code. The measured seeds and verdicts
+themselves stay (behaviour didn't move); only anchors refresh.
 
 **Close:** full workspace gates → instrumented knee re-run (names the ladder
 errors, §3d) → fresh benchmark pair → ECC zero-drift → WORKLIST row closed.

@@ -18,12 +18,15 @@ use std::collections::BTreeMap;
 
 use axum::Router;
 use axum::extract::State;
-use axum::response::Json;
+use axum::response::{IntoResponse, Json, Response};
 use axum::routing::get;
+use bytes::Bytes;
+use http::header;
 use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
+use crate::config::AppConfig;
 use crate::state::AppState;
 use ehrbase_sm::Platform;
 
@@ -228,29 +231,56 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
 /// Build the pre-auth discovery router. Returns an **empty** router when SMART is
 /// disabled, so a merge is a no-op and the path is absent (a `404`) — matching
 /// the extension-group `404`-when-off convention (`crate::config`). When enabled,
-/// serves the prebuilt document (`application/json`, R-02) at
-/// [`discovery_path`].
+/// serves the document (`application/json`, R-02) at [`discovery_path`].
+///
+/// The document is a pure function of static configuration (the openEHR/FHIR base
+/// URLs + the OIDC issuer fallback), so it is **built once here** and served as
+/// ready [`Bytes`] — never rebuilt per request.
 ///
 /// Mount it in `crate::router` beside `overview::status::router` — **outside**
 /// the auth layer (the document is unauthenticated, master04).
-pub fn router<S: Platform>(cfg: &SmartConfig, rest_root: &str) -> Router<AppState<S>> {
+pub fn router<S: Platform>(cfg: &AppConfig, rest_root: &str) -> Router<AppState<S>> {
     // Mounted from `crate::router`: merged beside `status::router(&rest_root)`,
     // OUTSIDE the `authn::AuthLayer` (this is a pre-auth, public document,
     // master04 §Service Discovery), with `rest_root` = the `/ehrbase/rest` root.
     // Disabled → an empty router (a no-op merge), so the path is absent (`404`).
-    // The document is served by [`smart_configuration`], which rebuilds it from
-    // the request state (the derivation inputs — the openEHR/FHIR base URLs and
-    // the OIDC issuer fallback — all come from configuration).
-    if !cfg.enabled {
+    if !cfg.smart.enabled {
         return Router::new();
     }
-    let path = discovery_path(cfg, rest_root);
-    Router::new().route(&path, get(smart_configuration::<S>))
+    // R-04/recommended: the FHIR base is advertised only when the connector is on.
+    let fhir_base = cfg
+        .fhir_api_enabled
+        .then(|| format!("{}/fhir/r4", cfg.server.base_path));
+    let issuer = cfg.auth.oidc.as_ref().map(|o| o.issuer.as_str());
+    let doc = build_document(
+        &cfg.smart,
+        &cfg.server.base_path,
+        fhir_base.as_deref(),
+        issuer,
+    );
+    let body = Bytes::from(serde_json::to_vec(&doc).unwrap_or_else(|_| b"{}".to_vec()));
+
+    let path = discovery_path(&cfg.smart, rest_root);
+    Router::new().route(
+        &path,
+        get(move || {
+            let body = body.clone();
+            async move { discovery_response(body) }
+        }),
+    )
+}
+
+/// Serve the pre-serialized discovery document (`application/json`, R-02) as a
+/// clone-free (ref-counted) [`Bytes`] body write.
+fn discovery_response(body: Bytes) -> Response {
+    ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
 /// The SMART App Launch service-discovery document (master04 §Service
-/// Discovery). Unauthenticated, `application/json` (R-02). Rebuilt from the
-/// request state per call (the document is a pure function of configuration).
+/// Discovery). Unauthenticated, `application/json` (R-02). This handler carries
+/// the `#[utoipa::path]` metadata that documents the endpoint (via [`openapi`]);
+/// the **live** route serves the document pre-serialized once at assembly
+/// ([`router`]), so this body runs only if the endpoint is mounted directly.
 #[utoipa::path(
     get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
     responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))

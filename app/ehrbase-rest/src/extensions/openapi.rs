@@ -44,6 +44,7 @@ use axum::extract::{Path, State};
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
+use bytes::Bytes;
 use ehrbase_sm::Platform;
 use utoipa::OpenApi;
 use utoipa::openapi::security::{
@@ -200,8 +201,11 @@ fn require_auth(doc: &mut utoipa::openapi::OpenApi) {
 
 // ── The OAS meta-endpoints (documented + served by real handlers) ─────────────
 
-/// The served extension-surface `OpenAPI` JSON document. Rebuilt from the
-/// request state per call (a pure function of configuration).
+/// The served extension-surface `OpenAPI` JSON document. This handler carries
+/// the `#[utoipa::path]` metadata that puts this endpoint into the composed
+/// document (via [`meta_openapi`]); the **live** route serves the document
+/// pre-serialized once at assembly ([`prebuild_docs`], [`swagger_router`]), so
+/// this body runs only if the endpoint is ever mounted directly.
 #[utoipa::path(
     get, path = "/ehrbase/rest/api-docs/openapi.json", tag = "openapi",
     responses((status = 200, description = "The extension-surface `OpenAPI` document.", body = serde_json::Value))
@@ -436,21 +440,53 @@ fn prune_tags(doc: &mut utoipa::openapi::OpenApi) {
     }
 }
 
-/// One filtered extension-family document as JSON.
-fn family_json<S: Platform>(state: &AppState<S>, family: &str) -> Response {
-    let Some((name, _, members)) = FAMILIES.iter().find(|(_, slug, _)| *slug == family) else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-    let cfg = state.config();
-    let full = extensions_document::<S>(cfg);
-    let mut doc = match members {
-        Members::Path { include, exclude } => {
-            filter_by_path(&full, &cfg.server.base_path, include, exclude)
-        }
-        Members::Tags(tags) => filter_by_tags(&full, tags),
-    };
-    doc.info.title = (*name).to_string();
-    let body = serde_json::to_string(&doc).unwrap_or_else(|_| "{}".to_owned());
+/// Every served `OpenAPI` document, pre-serialized **once** at router assembly.
+///
+/// The composed document and every family document are pure functions of the
+/// static [`AppConfig`], so building them per request re-ran the full
+/// `utoipa` reflection (all API groups + the auth walk) and, for each family,
+/// an additional whole-document deep clone + filter. They are computed once here
+/// and served as ready [`Bytes`], so a request is a clone-free body write.
+struct PrebuiltDocs {
+    /// The complete composed document as serialized JSON.
+    full: Bytes,
+    /// One filtered family document per [`FAMILIES`] entry, in the same order.
+    families: Vec<Bytes>,
+}
+
+/// Build the composed document and every family document once, serializing each
+/// to [`Bytes`] (the filter machinery — [`filter_by_path`]/[`filter_by_tags`] —
+/// is applied here rather than per request).
+fn prebuild_docs<S: Platform>(cfg: &AppConfig) -> PrebuiltDocs {
+    let full_doc = extensions_document::<S>(cfg);
+    let full = to_json_bytes(&full_doc);
+
+    let families = FAMILIES
+        .iter()
+        .map(|(name, _, members)| {
+            let mut doc = match members {
+                Members::Path { include, exclude } => {
+                    filter_by_path(&full_doc, &cfg.server.base_path, include, exclude)
+                }
+                Members::Tags(tags) => filter_by_tags(&full_doc, tags),
+            };
+            doc.info.title = (*name).to_string();
+            to_json_bytes(&doc)
+        })
+        .collect();
+
+    PrebuiltDocs { full, families }
+}
+
+/// Serialize an `OpenAPI` document to JSON [`Bytes`] (empty object on the
+/// unreachable serialization error, mirroring the previous per-request path).
+fn to_json_bytes(doc: &utoipa::openapi::OpenApi) -> Bytes {
+    Bytes::from(serde_json::to_vec(doc).unwrap_or_else(|_| b"{}".to_vec()))
+}
+
+/// Serve a pre-serialized document: a clone-free (ref-counted) [`Bytes`] body
+/// write with the JSON content type.
+fn json_document_response(body: Bytes) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
@@ -465,33 +501,56 @@ pub(crate) fn swagger_router<S: Platform>(cfg: &AppConfig) -> Router<AppState<S>
     let json_path = cfg.server.openapi_json_path();
     let api_docs_root = api_docs_root(&json_path);
 
+    // Build the composed document and every family document ONCE (they are pure
+    // functions of static configuration); every route below serves ready
+    // [`Bytes`], so a request never re-runs utoipa reflection or a deep clone.
+    let docs = prebuild_docs::<S>(cfg);
+
     // The complete composed document (tooling + the selector's full entry).
-    let mut router = Router::new().route(&json_path, get(openapi_json::<S>));
+    let full = docs.full;
+    let mut router = Router::new().route(
+        &json_path,
+        get(move || {
+            let body = full.clone();
+            async move { json_document_response(body) }
+        }),
+    );
 
     // One filtered document per API family (standard groups + extensions).
     // One static route per family: axum path captures span a whole segment,
     // so a `{family}` embedded inside the `ehrbase-….openapi.json` filename
     // cannot be a route parameter.
-    for (_, slug, _) in FAMILIES {
-        router =
-            router.route(
-                &format!("{api_docs_root}/ehrbase-{slug}.openapi.json"),
-                get(move |State(state): State<AppState<S>>| async move {
-                    family_json::<S>(&state, slug)
-                }),
-            );
+    for ((_, slug, _), body) in FAMILIES.iter().zip(docs.families) {
+        router = router.route(
+            &format!("{api_docs_root}/ehrbase-{slug}.openapi.json"),
+            get(move || {
+                let body = body.clone();
+                async move { json_document_response(body) }
+            }),
+        );
     }
 
-    // The UI itself: assets straight from the embedded dist. The bare mount path
-    // serves index.html (serve() maps "" to it) — no redirect, no loop.
+    // The UI itself: assets straight from the embedded dist. The spec-selector
+    // config is also config-static — built once and shared by both the bare
+    // mount path (index.html; serve() maps "" to it — no redirect, no loop) and
+    // the asset path.
     let config = swagger_config(cfg);
-    router.route(&ui_path, get(swagger_ui_index::<S>)).route(
-        &format!("{ui_path}/{{*file}}"),
-        get(move |Path(file): Path<String>| {
-            let cfg = Arc::clone(&config);
-            async move { serve_ui_file(&file, &cfg) }
-        }),
-    )
+    let index_config = Arc::clone(&config);
+    router
+        .route(
+            &ui_path,
+            get(move || {
+                let config = Arc::clone(&index_config);
+                async move { serve_ui_file("", &config) }
+            }),
+        )
+        .route(
+            &format!("{ui_path}/{{*file}}"),
+            get(move |Path(file): Path<String>| {
+                let config = Arc::clone(&config);
+                async move { serve_ui_file(&file, &config) }
+            }),
+        )
 }
 
 /// The `api-docs` directory the documents live under (the parent of the

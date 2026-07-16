@@ -247,14 +247,47 @@ pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(Uuid, Option<TreeId>), Ve
 
 /// The expected (current) version from an `If-Match` header value: a quoted or
 /// bare `OBJECT_VERSION_ID` (strict BASE parse — the `object_id` need not be a
-/// UUID for precondition purposes), or a bare trunk integer. `None` when no
-/// precondition can be extracted (none is then enforced).
-pub(crate) fn expected_from_if_match(if_match: &str) -> Option<TreeId> {
+/// UUID for precondition purposes), or a bare trunk integer.
+///
+/// Returns `Ok(None)` only for `If-Match: *` — RFC 9110 §If-Match's "matches any
+/// current representation" wildcard: a must-exist precondition with no specific
+/// version to compare, so no version-tree precondition is extracted and the
+/// versioning path enforces existence alone.
+///
+/// A value that is neither a well-formed `OBJECT_VERSION_ID`, a bare
+/// `VERSION_TREE_ID` trunk integer, nor `*` is **rejected** as
+/// [`VersionIdError::Malformed`], never silently discarded: ITS-REST overview
+/// §"If-Match and accidental overwrites" requires the precondition be honoured
+/// ("if a service receives this header, and the condition evaluates to `false`,
+/// it MUST NOT perform the requested method"), so a header that cannot be
+/// evaluated must not run as if no precondition was sent (the lost-update
+/// window). The spec does not name a code for a *malformed* `If-Match`; we map
+/// it to `400 Bad Request` (the general "malformed request syntax" rule), the
+/// same choice `ehrbase-rest::overview::version_id::require_if_match` makes for
+/// the required-`If-Match` endpoints. `VersionIdError` converts into that `400`
+/// at each caller's error type.
+pub(crate) fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, VersionIdError> {
     let token = if_match.trim().trim_matches('"');
-    if let Ok(ovid) = ObjectVersionId::from_str(token) {
-        return TreeId::from_version_tree(&ovid.version_tree_id(), token).ok();
+    // RFC 9110 §If-Match: `*` matches any current representation — no specific
+    // version precondition to extract.
+    if token == "*" {
+        return Ok(None);
     }
-    token.parse().ok().map(TreeId::trunk)
+    match ObjectVersionId::from_str(token) {
+        // A full OBJECT_VERSION_ID names the version in its `version_tree_id` part.
+        Ok(ovid) => Ok(Some(TreeId::from_version_tree(
+            &ovid.version_tree_id(),
+            token,
+        )?)),
+        // Lenient fallback: a bare VERSION_TREE_ID trunk integer.
+        Err(source) => match token.parse().map(TreeId::trunk) {
+            Ok(tree) => Ok(Some(tree)),
+            Err(_) => Err(VersionIdError::Malformed {
+                raw: token.to_owned(),
+                source,
+            }),
+        },
+    }
 }
 
 #[cfg(test)]
@@ -347,25 +380,40 @@ mod tests {
     #[test]
     fn if_match_extraction() {
         assert_eq!(
-            expected_from_if_match("\"abc::sys::3\""),
+            expected_from_if_match("\"abc::sys::3\"").unwrap(),
             Some(TreeId::trunk(3))
         );
         assert_eq!(
-            expected_from_if_match("abc::sys::3"),
+            expected_from_if_match("abc::sys::3").unwrap(),
             Some(TreeId::trunk(3))
         );
         // A branch precondition is honoured, not dropped.
         assert_eq!(
-            expected_from_if_match("abc::sys::2.1.1"),
+            expected_from_if_match("abc::sys::2.1.1").unwrap(),
             Some(TreeId::branch(2, 1, 1))
         );
         // Bare integer.
-        assert_eq!(expected_from_if_match("2"), Some(TreeId::trunk(2)));
-        // Unparseable → no precondition.
-        assert_eq!(expected_from_if_match("garbage"), None);
-        // Malformed OVID shapes do not leak a version out of the wrong slot.
-        assert_eq!(expected_from_if_match("a::b::c::3"), None);
-        assert_eq!(expected_from_if_match("abc::3"), None);
+        assert_eq!(expected_from_if_match("2").unwrap(), Some(TreeId::trunk(2)));
+        // RFC 9110 `If-Match: *` — match any current representation: no specific
+        // version precondition, request proceeds (must-exist enforced downstream).
+        assert_eq!(expected_from_if_match("*").unwrap(), None);
+        // A malformed `If-Match` is REJECTED (400), never silently discarded as
+        // "no precondition" — ITS-REST overview §"If-Match and accidental
+        // overwrites" (the lost-update window fix, W-14 F-12).
+        assert!(matches!(
+            expected_from_if_match("garbage"),
+            Err(VersionIdError::Malformed { .. })
+        ));
+        // Malformed OVID shapes do not leak a version out of the wrong slot —
+        // and are rejected rather than dropped.
+        assert!(matches!(
+            expected_from_if_match("a::b::c::3"),
+            Err(VersionIdError::Malformed { .. })
+        ));
+        assert!(matches!(
+            expected_from_if_match("abc::3"),
+            Err(VersionIdError::Malformed { .. })
+        ));
     }
 
     /// G-09: composite-identifier equality is case-insensitive

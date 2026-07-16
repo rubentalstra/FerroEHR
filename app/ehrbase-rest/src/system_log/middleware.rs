@@ -54,11 +54,13 @@ use std::net::SocketAddr;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use http::StatusCode;
+use http::{HeaderValue, header};
+use openehr_its::rest::runtime::ApiError;
 
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass, Platform};
 
 use crate::extensions::access::authn::{FreshAuthentication, Principal};
+use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::system_log::classify::audit_for;
 
@@ -165,12 +167,19 @@ pub async fn middleware<S: Platform>(
 
     if op_rejected {
         // Fail-closed: an auditable operation whose record cannot be delivered
-        // must not be reported as having succeeded.
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "audit trail unavailable (fail-closed)",
-        )
-            .into_response();
+        // must not be reported as having succeeded. Emit the standard openEHR
+        // `{ error, message }` error body + `Retry-After` (matching the
+        // overload-shed 503 contract, `crate::overload`), never a plain-text
+        // body. No openEHR spec governs the error-body shape (it is a MAY,
+        // ITS-REST `Requests_and_responses.md` §HTTP status codes) — our own
+        // design keeps every error path consistent.
+        let mut resp = RestError(ApiError::ServiceUnavailable(
+            "audit trail unavailable (fail-closed)".to_owned(),
+        ))
+        .into_response();
+        resp.headers_mut()
+            .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
+        return resp;
     }
     resp
 }

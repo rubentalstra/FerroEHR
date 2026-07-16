@@ -32,13 +32,16 @@
 //! `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 //! before routing); see [`crate::serve_with`].
 
+use std::any::Any;
 use std::sync::Arc;
 use std::time::Duration;
 
 use axum::Router;
 use axum::middleware::from_fn_with_state;
+use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use http::header::AUTHORIZATION;
+use openehr_its::rest::runtime::ApiError;
 use tower::ServiceBuilder;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::compression::CompressionLayer;
@@ -147,7 +150,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
                     AUTHORIZATION,
                 )))
                 .layer(TraceLayer::new_for_http())
-                .layer(CatchPanicLayer::new())
+                .layer(CatchPanicLayer::custom(handle_panic))
                 .layer(cors)
                 .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
                 .layer(TimeoutLayer::with_status_code(
@@ -200,6 +203,32 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     }
 }
 
+/// [`CatchPanicLayer`] handler: render a panicked handler as the standard
+/// openEHR `{ error, message }` error body with a `500`, the same shape every
+/// other error path emits ([`crate::overview::error`]) — never tower-http's
+/// default `text/plain` body. The panic payload is logged for diagnosis but
+/// **never echoed into the response** (it may carry internal detail). No openEHR
+/// spec governs the error-body shape (it is a MAY, ITS-REST
+/// `Requests_and_responses.md` §HTTP status codes) — our own design keeps every
+/// error path consistent.
+// The by-value `Box<dyn Any>` parameter is dictated by tower-http's
+// `ResponseForPanic` closure signature (`CatchPanicLayer::custom`), not a choice.
+#[allow(clippy::needless_pass_by_value)]
+fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
+    let detail = if let Some(s) = err.downcast_ref::<&str>() {
+        (*s).to_owned()
+    } else if let Some(s) = err.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "unknown panic payload".to_owned()
+    };
+    tracing::error!(panic = %detail, "request handler panicked");
+    error::RestError(ApiError::Internal(
+        "the server encountered an internal error".to_owned(),
+    ))
+    .into_response()
+}
+
 /// Mount the public, pre-auth surface around the API tree: status/health,
 /// the config-gated SMART `/.well-known/smart-configuration` document (served
 /// pre-auth, SMART master04 §Service Discovery; an empty router when SMART is
@@ -210,10 +239,9 @@ fn mount_public_surface<S: Platform>(
     api: Router<AppState<S>>,
     rest_root: &str,
 ) -> Router<AppState<S>> {
-    // The SMART discovery document rebuilds itself from the request state (the
-    // openEHR/FHIR base URLs + OIDC issuer come from configuration), so the
-    // router only needs the config + REST root to decide the mount + path.
-    let discovery = smart::discovery::router::<S>(&cfg.smart, rest_root);
+    // The SMART discovery document is a pure function of static configuration
+    // (the openEHR/FHIR base URLs + OIDC issuer), built once inside the router.
+    let discovery = smart::discovery::router::<S>(cfg, rest_root);
 
     let mut inner = Router::new()
         .nest(&cfg.server.base_path, api)
@@ -236,4 +264,35 @@ pub fn management_router<S: Platform>(
         state.observability().clone(),
         authenticator,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
+    use axum::body::to_bytes;
+    use http::StatusCode;
+
+    use super::handle_panic;
+
+    /// F-34: a panicked handler renders the standard openEHR `{ error, message }`
+    /// JSON 500 body (never tower-http's default text/plain), and the panic
+    /// payload is never echoed into the response.
+    #[tokio::test]
+    async fn catch_panic_renders_openehr_json_body() {
+        let resp = handle_panic(Box::new("secret panic detail"));
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(
+            resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+            "application/json"
+        );
+        let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["error"], "Internal Server Error");
+        let message = body["message"].as_str().unwrap();
+        assert!(
+            !message.contains("secret panic detail"),
+            "panic payload must not leak into the response body"
+        );
+    }
 }

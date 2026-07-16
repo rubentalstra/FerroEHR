@@ -15,6 +15,40 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
+  spec-selector family documents) and the SMART `.well-known/smart-configuration`
+  discovery document are now built once at server startup instead of being
+  regenerated on every request. No change to the document content.
+
+### Fixed
+
+- A FLAT/STRUCTURED composition body that parses as JSON but does not conform
+  to its target template now returns `422 Unprocessable Entity` instead of
+  `500 Internal Server Error` — such an input is client data, not a server
+  fault. Output conversion of stored compositions remains a `500` on failure.
+- Panicking request handlers and audit fail-closed (`503`) responses now
+  carry the standard openEHR `{ error, message }` JSON error body (the audit
+  `503` also carries `Retry-After`), instead of a plain-text body.
+- A malformed `If-Match` header on a state-changing request is now rejected
+  with `400 Bad Request` instead of being silently ignored — an unparseable
+  precondition previously ran as if no `If-Match` was sent, opening a
+  lost-update window. `If-Match: *` and valid version ids are unaffected.
+- Database constraint and serialization/deadlock failures now surface as
+  `409 Conflict`, and connection-pool exhaustion under load as `503 Service
+  Unavailable` with `Retry-After`, instead of collapsing every database error
+  to `500 Internal Server Error`.
+- Stored-query and template metadata list/read endpoints no longer silently
+  blank a field when a database column fails to decode; a decode failure now
+  surfaces as `500` with a real error instead of an empty value.
+
+### Added
+
+- A new `atna_audit_serialize_failed_total` metric counts ATNA audit records
+  dropped because the message failed to serialize, so audit loss is always
+  metered.
+
 ## [3.0.3] - 2026-07-16
 
 ### Changed

@@ -26,6 +26,7 @@ use ehrbase_rest::access::authn::AuthConfig;
 use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser};
 use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
 use http::{Request, StatusCode};
+use http_body_util::BodyExt;
 use serde_json::json;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -334,4 +335,31 @@ async fn fail_closed_returns_503_when_channel_full() {
     let app = app(sink.clone());
     let (status, _events) = drive(&sink, &app, req("POST", "/ehr", true)).await;
     assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn fail_closed_503_carries_openehr_error_body_and_retry_after() {
+    // F-34: the fail-closed 503 must emit the standard openEHR `{ error, message }`
+    // JSON error body + a `Retry-After` header (the overload-shed contract), not a
+    // plain-text body.
+    let sink = AuditSink::recording().with_emit_outcome(EmitOutcome::Rejected);
+    let app = app(sink);
+    let resp = app
+        .oneshot(req("POST", "/ehr", true))
+        .await
+        .expect("oneshot");
+    assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(resp.headers().get(http::header::RETRY_AFTER).unwrap(), "1");
+    assert_eq!(
+        resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+        "application/json"
+    );
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json error body");
+    assert_eq!(body["error"], "Service Unavailable");
+    assert!(
+        body.get("message")
+            .and_then(serde_json::Value::as_str)
+            .is_some()
+    );
 }

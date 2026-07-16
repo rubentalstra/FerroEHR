@@ -41,8 +41,27 @@ fn bad_request(msg: impl Into<String>) -> RestError {
     RestError(ApiError::BadRequest(msg.into()))
 }
 
+/// A FLAT/STRUCTURED **output** conversion failure: the server failed to render
+/// a *stored* canonical composition into the requested simplified format. Stored
+/// data is the server's own and should always convert, so a failure here is a
+/// server fault → `500 Internal Server Error` (ITS-REST
+/// `Requests_and_responses.md` §HTTP status codes, row `500`).
 fn flat_err(e: &openehr_flat::FlatError) -> RestError {
     RestError(ApiError::Internal(format!("FLAT conversion failed: {e}")))
+}
+
+/// A FLAT/STRUCTURED **input** conversion failure: the request body parsed as
+/// JSON but does not conform to the target template's simplified-data-template
+/// shape (the simSDT/structSDT formats, SM `simplified_im_b`). That is
+/// well-formed-but-semantically-invalid *client* content, not a server fault →
+/// `422 Unprocessable Entity` (ITS-REST `Requests_and_responses.md` §HTTP status
+/// codes, row `422` — "The request was well-formed but was unable to be followed
+/// due to semantic errors"; syntactically-invalid JSON is caught earlier as a
+/// `400`).
+fn flat_input_err(e: &openehr_flat::FlatError) -> RestError {
+    RestError(ApiError::Unprocessable(format!(
+        "FLAT conversion failed: {e}"
+    )))
 }
 
 /// The template id for a FLAT request: the `template_id` (or `templateId`) query
@@ -86,7 +105,7 @@ pub(crate) async fn composition_from_flat<S: Platform>(
     if let Some(v) = openehr_flat::validate_flat_other(&flat, &wt).first() {
         return Err(bad_request(format!("{}: {}", v.path, v.message)));
     }
-    openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_err(&e))
+    openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_input_err(&e))
 }
 
 /// Render a canonical-JSON composition as a FLAT `application/openehr.wt.flat+json`
@@ -134,7 +153,7 @@ pub(crate) async fn composition_from_structured<S: Platform>(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_err(&e))
+    openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_input_err(&e))
 }
 
 /// Render a canonical-JSON composition as a STRUCTURED
@@ -158,4 +177,32 @@ pub(crate) async fn composition_structured_response<S: Platform>(
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
     Ok(negotiate::structured_json_body(status, json))
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::response::IntoResponse;
+    use http::StatusCode;
+
+    use super::{flat_err, flat_input_err};
+
+    /// F-32: a FLAT/STRUCTURED **input** conversion failure is client data →
+    /// `422`, not a `500` server fault (ITS-REST `Requests_and_responses.md`
+    /// §HTTP status codes). `openehr_flat::from_flat` is presently infallible in
+    /// practice, so this asserts the mapping directly at the seam.
+    #[test]
+    fn input_conversion_failure_maps_to_422() {
+        let e = openehr_flat::FlatError::Conversion("bad leaf".to_owned());
+        let status = flat_input_err(&e).into_response().status();
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    /// F-32: an **output** conversion failure (rendering stored server data)
+    /// stays a `500` — the server should always be able to convert its own data.
+    #[test]
+    fn output_conversion_failure_stays_500() {
+        let e = openehr_flat::FlatError::Conversion("bad leaf".to_owned());
+        let status = flat_err(&e).into_response().status();
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    }
 }

@@ -140,7 +140,7 @@ impl EhrbaseService {
         .fetch_optional(&self.pool)
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("template {template_id}")))?;
-        Ok(Self::template_json(&row))
+        Self::template_json(&row)
     }
 
     /// The stored OPT 1.4 XML for a template (the canonical retrieval artifact),
@@ -165,21 +165,27 @@ impl EhrbaseService {
         )
         .fetch_all(&self.pool)
         .await?;
-        Ok(rows.iter().map(Self::template_json).collect())
+        rows.iter().map(Self::template_json).collect()
     }
 
     /// The openEHR template descriptor for one row (ITS-REST template list shape).
-    fn template_json(row: &sqlx::postgres::PgRow) -> Value {
+    ///
+    /// `template_id`/`created_at` are `NOT NULL` (`0001_baseline.sql`
+    /// §`template_store`), so a decode failure there is a genuine server fault:
+    /// surface it (`?` → `500`) rather than silently blanking the field
+    /// (W-14 F-29). `concept`/`root_archetype` are genuinely nullable, so a SQL
+    /// `NULL` stays `None` while a *decode* error still propagates.
+    fn template_json(row: &sqlx::postgres::PgRow) -> Result<Value, ServiceError> {
         let created = row
-            .try_get::<jiff_sqlx::Timestamp, _>("created_at")
-            .map(|t| t.to_jiff().to_string())
-            .unwrap_or_default();
-        json!({
-            "template_id": row.try_get::<String, _>("template_id").unwrap_or_default(),
-            "concept": row.try_get::<Option<String>, _>("concept").ok().flatten(),
-            "archetype_id": row.try_get::<Option<String>, _>("root_archetype").ok().flatten(),
+            .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+            .to_jiff()
+            .to_string();
+        Ok(json!({
+            "template_id": row.try_get::<String, _>("template_id")?,
+            "concept": row.try_get::<Option<String>, _>("concept")?,
+            "archetype_id": row.try_get::<Option<String>, _>("root_archetype")?,
             "created_timestamp": created,
-        })
+        }))
     }
 }
 

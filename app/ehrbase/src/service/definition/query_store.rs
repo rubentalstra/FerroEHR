@@ -107,7 +107,7 @@ impl EhrbaseService {
         .fetch_optional(&self.pool)
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("stored query {qualified}")))?;
-        Ok(descriptor_from_row(&row))
+        descriptor_from_row(&row)
     }
 
     /// `list_queries` — all registered queries, as descriptors.
@@ -126,7 +126,7 @@ impl EhrbaseService {
         .bind(limit)
         .fetch_all(&self.pool)
         .await?;
-        Ok(rows.iter().map(descriptor_from_row).collect())
+        rows.iter().map(descriptor_from_row).collect()
     }
 
     /// `list_matching_queries` — registered queries whose qualified name matches
@@ -156,7 +156,13 @@ impl EhrbaseService {
         )
         .fetch_all(&self.pool)
         .await?;
-        let matched = rows.iter().map(descriptor_from_row).filter(|d| {
+        // Decode every row up front so a decode failure surfaces (500) rather
+        // than silently dropping a query from the match set (W-14 F-29).
+        let descriptors = rows
+            .iter()
+            .map(descriptor_from_row)
+            .collect::<Result<Vec<_>, _>>()?;
+        let matched = descriptors.into_iter().filter(|d| {
             id_re.is_match(&d.qualified_query_name)
                 && artefact_re
                     .as_ref()
@@ -354,7 +360,7 @@ impl EhrbaseService {
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("stored query {qualified_name}")))?;
 
-        Ok(Self::stored_query_json(&row))
+        Self::stored_query_json(&row)
     }
 
     /// List stored queries whose qualified name starts with `name_pattern`
@@ -378,31 +384,34 @@ impl EhrbaseService {
         .bind(name_pattern)
         .fetch_all(&self.pool)
         .await?;
-        Ok(rows.iter().map(Self::stored_query_json).collect())
+        rows.iter().map(Self::stored_query_json).collect()
     }
 
     /// The openEHR stored-query descriptor for one row (the ITS-REST wire shape).
-    fn stored_query_json(row: &PgRow) -> Value {
-        let rdn = row
-            .try_get::<String, _>("reverse_domain_name")
-            .unwrap_or_default();
-        let semantic = row.try_get::<String, _>("semantic_id").unwrap_or_default();
+    ///
+    /// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
+    /// so a decode failure is a genuine server fault, not an empty field:
+    /// surface it (`?` → `500`) rather than silently blanking the value
+    /// (W-14 F-29).
+    fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
+        let rdn = row.try_get::<String, _>("reverse_domain_name")?;
+        let semantic = row.try_get::<String, _>("semantic_id")?;
         let name = if rdn.is_empty() {
             semantic
         } else {
             format!("{rdn}::{semantic}")
         };
         let saved = row
-            .try_get::<jiff_sqlx::Timestamp, _>("created_at")
-            .map(|t| t.to_jiff().to_string())
-            .unwrap_or_default();
-        json!({
+            .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+            .to_jiff()
+            .to_string();
+        Ok(json!({
             "name": name,
-            "type": row.try_get::<String, _>("query_type").unwrap_or_else(|_| "AQL".to_owned()),
-            "version": row.try_get::<String, _>("semver").unwrap_or_default(),
+            "type": row.try_get::<String, _>("query_type")?,
+            "version": row.try_get::<String, _>("semver")?,
             "saved": saved,
-            "q": row.try_get::<String, _>("query_text").unwrap_or_default(),
-        })
+            "q": row.try_get::<String, _>("query_text")?,
+        }))
     }
 }
 
@@ -410,31 +419,32 @@ impl EhrbaseService {
 /// `query_descriptor.adoc`). The qualified name is `rdn::semantic` (or the bare
 /// `semantic` when the domain is empty); `formalism` is the `query_type`
 /// lowercased (`QUERY_DESCRIPTOR` spells AQL `"aql"`).
-fn descriptor_from_row(row: &PgRow) -> QueryDescriptor {
-    let rdn: String = row.try_get("reverse_domain_name").unwrap_or_default();
-    let semantic: String = row.try_get("semantic_id").unwrap_or_default();
+///
+/// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
+/// so a decode failure is a genuine server fault: surface it (`?` → `500`)
+/// rather than silently blanking the descriptor field (W-14 F-29).
+fn descriptor_from_row(row: &PgRow) -> Result<QueryDescriptor, ServiceError> {
+    let rdn: String = row.try_get("reverse_domain_name")?;
+    let semantic: String = row.try_get("semantic_id")?;
     let name = if rdn.is_empty() {
         semantic
     } else {
         format!("{rdn}::{semantic}")
     };
-    let version: String = row.try_get("semver").unwrap_or_default();
-    let formalism: String = row
-        .try_get::<String, _>("query_type")
-        .unwrap_or_else(|_| "AQL".to_owned())
-        .to_ascii_lowercase();
-    let source: String = row.try_get("query_text").unwrap_or_default();
+    let version: String = row.try_get("semver")?;
+    let formalism: String = row.try_get::<String, _>("query_type")?.to_ascii_lowercase();
+    let source: String = row.try_get("query_text")?;
     let registration_time = row
-        .try_get::<jiff_sqlx::Timestamp, _>("created_at")
-        .map(|t| t.to_jiff().to_string())
-        .unwrap_or_default();
-    QueryDescriptor {
+        .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+        .to_jiff()
+        .to_string();
+    Ok(QueryDescriptor {
         qualified_query_name: name,
         version: Some(version),
         registration_time,
         formalism,
         source: Some(source),
-    }
+    })
 }
 
 /// True if `a_query_text` is a valid instance of the formalism `a_type`.

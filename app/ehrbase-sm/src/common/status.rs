@@ -68,6 +68,23 @@ pub enum CallStatusType {
     /// affordance for optional/dev-branch routes and unimplemented seams;
     /// the wire maps it to `501 Not Implemented`.
     NotImplemented,
+    /// A storage-layer conflict the request could not proceed past — a database
+    /// integrity-constraint violation (SQLSTATE class 23) or a serialization/
+    /// deadlock failure (40001 / 40P01). Not an SM `CALL_STATUS_TYPE` member —
+    /// an adapter affordance (like [`Self::NotImplemented`]): the storage bridge
+    /// classifies these from `sqlx` rather than the domain layer naming a
+    /// specific conflict, and the wire maps it to `409 Conflict`
+    /// ("the request could not be processed because it might generate a
+    /// duplicate or a conflict", ITS-REST overview §HTTP status codes).
+    Conflict,
+    /// The service is temporarily unable to serve the request because a backend
+    /// resource is exhausted (the `sqlx` connection pool acquire timed out under
+    /// sustained load). Not an SM `CALL_STATUS_TYPE` member — an adapter
+    /// affordance; no openEHR spec governs server overload (our own design, the
+    /// W-12 admission contract), and the wire maps it to `503 Service
+    /// Unavailable` + `Retry-After` (RFC 9110 §15.6.4; the ITS-REST status
+    /// subset has no 503, so this is a documented extension).
+    ServiceOverloaded,
 
     // ── EHR_CALL_STATUS_TYPE (`ehr_call_status_type.adoc`) ──────────────────
     /// COMPOSITION not found (per-variant meanings are blank in the source).
@@ -135,6 +152,8 @@ impl CallStatusType {
             Self::FileNotWritable => "file_not_writable",
             Self::VersionMismatch => "version_mismatch",
             Self::NotImplemented => "not_implemented",
+            Self::Conflict => "conflict",
+            Self::ServiceOverloaded => "service_overloaded",
             Self::CompositionDoesNotExist => "composition_does_not_exist",
             Self::ContributionDoesNotExist => "contribution_does_not_exist",
             Self::CompositionArchetypeInvalid => "composition_archetype_invalid",
