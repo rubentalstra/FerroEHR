@@ -61,10 +61,133 @@ behaviour, by design).
 
 ## 1. Endpoint register
 
-<!-- populated from the full route inventory — one row per endpoint,
-     columns: # | METHOD path | handler (file:line) | L-verdict | E-verdict | receipt -->
+Full route inventory (2026-07-16): **159 route mounts / 155 distinct handler
+operations** — 127 API-subtree operations behind auth+overload, 32
+public/operational. `BP` = `/ehrbase/rest/openehr/v1`, `RR` = `/ehrbase/rest`.
+Every `api/**` handler runs the same spine: `into_parts` → `guarded_dispatch`
+(`ehr_access::enforce` → `pep::pre_check` → group dispatcher →
+`pep::post_check` → `AuditOpId`). Columns: L = latency verdict, E = error
+verdict; ☐ = unprobed.
 
-PENDING — inventory sweep in flight; populated in the next commit.
+### 1a. Middleware / cross-cutting rows (audit once, applies to all)
+
+| # | Layer / concern | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| M-1 | guarded_dispatch spine cost (enforce + pre/post PEP per request) | `api/mod.rs` | ☐ | ☐ | |
+| M-2 | authn middleware (Basic/Bearer per request; argon2 cost on Basic!) | `router.rs:103-109` | ☐ | ☐ | |
+| M-3 | ATNA audit middleware (always installed, early-out if off) | `router.rs:113-116` | ☐ | ☐ | |
+| M-4 | tenant middleware (when enabled) | `router.rs:95-102` | ☐ | ☐ | |
+| M-5 | http_metrics + root_span | `router.rs:118-119` | ☐ | ☐ | |
+| M-6 | overload shed layer — API subtree only; management/docs/status never shed | `router.rs:129` | ☐ | ☐ | |
+| M-7 | tower-http stack order (request-id, trace, catch-panic, CORS, 16 MiB body limit, 30 s timeout, compression) | `router.rs:141-158` | ☐ | ☐ | |
+| M-8 | timeout → 408 special-case mapping | `overview/error.rs:167` | ☐ | ☐ | |
+| M-9 | content negotiation + body parse seam (`overview/negotiate.rs` — also the top unwrap-density file, 35) | `overview/negotiate.rs` | ☐ | ☐ | |
+| M-10 | config-gated extensions mounted but handler-gated (disabled ⇒ 404 inside handler — routing slots always occupied) | inventory note | ☐ | ☐ | |
+
+### 1b. EHR API (33 ops, `api/ehr/openapi_routes.rs`)
+
+| # | Op | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| EHR-1 | GET BP/ehr (by subject) | `:74` | ☐ | ☐ | |
+| EHR-2 | POST BP/ehr | `:93` | ☐ | ☐ | |
+| EHR-3 | GET BP/ehr/{ehr_id} | `:116` | ☐ | ☐ | seed: ehr-read p99 91 ms (n=2 — re-measure) |
+| EHR-4 | PUT BP/ehr/{ehr_id} | `:136` | ☐ | ☐ | |
+| EHR-5 | GET …/ehr_status/{version_uid} | `:165` | ☐ | ☐ | |
+| EHR-6 | GET …/ehr_status (at time) | `:189` | ☐ | ☐ | |
+| EHR-7 | PUT …/ehr_status | `:209` | ☐ | ☐ | seed: status-update p99 49 ms |
+| EHR-8 | GET …/versioned_ehr_status | `:235` | ☐ | ☐ | |
+| EHR-9 | GET …/versioned_ehr_status/revision_history | `:259` | ☐ | ☐ | |
+| EHR-10 | GET …/versioned_ehr_status/version (at time) | `:283` | ☐ | ☐ | |
+| EHR-11 | GET …/versioned_ehr_status/version/{version_uid} | `:310` | ☐ | ☐ | |
+| EHR-12 | POST …/composition | `:332` | ☐ | ☐ | seed: comp-create-large p99 128 ms, small 94 ms — probe P-1 in flight |
+| EHR-13 | GET …/composition/{uid_based_id} | `:359` | ☐ | ☐ | seed: comp-read-latest p99 74.6, max 147.6 |
+| EHR-14 | PUT …/composition/{uid_based_id} | `:383` | ☐ | ☐ | seed: comp-update p99 81.5 |
+| EHR-15 | DELETE …/composition/{uid_based_id} | `:407` | ☐ | ☐ | |
+| EHR-16 | GET …/versioned_composition/{vo_uid} | `:436` | ☐ | ☐ | |
+| EHR-17 | GET …/versioned_composition/{vo_uid}/revision_history | `:465` | ☐ | ☐ | seed: history-read p99 33 ms |
+| EHR-18 | GET …/versioned_composition/{vo_uid}/version (at time) | `:494` | ☐ | ☐ | |
+| EHR-19 | GET …/versioned_composition/{vo_uid}/version/{version_uid} | `:524` | ☐ | ☐ | seed: comp-read-version p99 61.5, max 145 |
+| EHR-20 | GET …/directory (at time) | `:550` | ☐ | ☐ | seed: dir-read p99 49 ms |
+| EHR-21 | PUT …/directory | `:570` | ☐ | ☐ | seed: dir-update p99 90.6 ms |
+| EHR-22 | POST …/directory | `:590` | ☐ | ☐ | |
+| EHR-23 | DELETE …/directory | `:610` | ☐ | ☐ | |
+| EHR-24 | GET …/directory/{version_uid} | `:637` | ☐ | ☐ | |
+| EHR-25 | POST …/contribution | `:659` | ☐ | ☐ | seed: contribution-commit p99 75.3 |
+| EHR-26 | GET …/contribution/{contribution_uid} | `:686` | ☐ | ☐ | |
+| EHR-27 | GET …/tags | `:711` | ☐ | ☐ | |
+| EHR-28 | GET …/composition/{id}/tags | `:738` | ☐ | ☐ | |
+| EHR-29 | PUT …/composition/{id}/tags | `:762` | ☐ | ☐ | |
+| EHR-30 | DELETE …/composition/{id}/tags/{key} | `:787` | ☐ | ☐ | |
+| EHR-31 | GET …/ehr_status/{id}/tags | `:814` | ☐ | ☐ | |
+| EHR-32 | PUT …/ehr_status/{id}/tags | `:838` | ☐ | ☐ | |
+| EHR-33 | DELETE …/ehr_status/{id}/tags/{key} | `:863` | ☐ | ☐ | |
+
+### 1c. QUERY API (6 ops, `api/query/openapi_routes.rs`)
+
+| # | Op | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| QRY-1 | GET BP/query/aql | `:39` | ☐ | ☐ | seed: aql-patient p99 65, aql-ward 39 |
+| QRY-2 | POST BP/query/aql | `:58` | ☐ | ☐ | |
+| QRY-3 | GET BP/query/{name} | `:81` | ☐ | ☐ | |
+| QRY-4 | POST BP/query/{name} | `:104` | ☐ | ☐ | |
+| QRY-5 | GET BP/query/{name}/{version} | `:130` | ☐ | ☐ | |
+| QRY-6 | POST BP/query/{name}/{version} | `:156` | ☐ | ☐ | |
+
+### 1d. DEFINITION API (13 ops, `api/definition/openapi_routes.rs`)
+
+| # | Op | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| DEF-1 | GET BP/definition/template/adl1.4 | `:52` | ☐ | ☐ | tpl-list class n=0 in hour run — measure separately |
+| DEF-2 | POST BP/definition/template/adl1.4 | `:71` | ☐ | ☐ | opt-upload n=0 — measure |
+| DEF-3 | GET …/adl1.4/{template_id} | `:94` | ☐ | ☐ | |
+| DEF-4 | GET …/adl1.4/{template_id}/example | `:117` | ☐ | ☐ | example generation cost |
+| DEF-5 | GET BP/definition/template/adl2 | `:136` | ☐ | ☐ | |
+| DEF-6 | POST BP/definition/template/adl2 | `:155` | ☐ | ☐ | |
+| DEF-7 | GET …/adl2/{template_id} | `:178` | ☐ | ☐ | |
+| DEF-8 | GET …/adl2/{template_id}/example | `:201` | ☐ | ☐ | |
+| DEF-9 | GET …/adl2/{template_id}/{version} | `:227` | ☐ | ☐ | |
+| DEF-10 | GET BP/definition/query/{name} | `:250` | ☐ | ☐ | |
+| DEF-11 | PUT BP/definition/query/{name} | `:264` | ☐ | ☐ | |
+| DEF-12 | GET BP/definition/query/{name}/{version} | `:290` | ☐ | ☐ | |
+| DEF-13 | PUT BP/definition/query/{name}/{version} | `:313` | ☐ | ☐ | |
+
+### 1e. DEMOGRAPHIC API (42 standard + 8 relationship ext, `api/demographic/`)
+
+Party CRUD is one code path (`party::run(kind, action)`) × 5 kinds — audit the
+shared path once (DEM-P), spot-check per-kind divergence. Same for tags
+(`tags::run`, DEM-T) and versioned-party reads (DEM-V).
+
+| # | Op group | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| DEM-P | POST/GET/PUT/DELETE party ×5 kinds (20 ops, `openapi_routes.rs:80-365`) | `party.rs` | ☐ | ☐ | |
+| DEM-V | versioned_party get / revision_history / version-at-time / version-by-id (4 ops, `:384-450`) | `versioned.rs` | ☐ | ☐ | |
+| DEM-C | POST/GET contribution (2 ops, `:471,488`) | `contribution.rs` | ☐ | ☐ | |
+| DEM-T | tags collection + per-kind get/update/delete (16 ops, `:506-758`) | `tags.rs` | ☐ | ☐ | |
+| DEM-R | party_relationship ext: CRUD + versioned reads (8 ops, `relationship.rs:68-212`) | `relationship.rs` | ☐ | ☐ | |
+
+### 1f. ADMIN + extensions (25 ops)
+
+| # | Op group | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| ADM-1 | DELETE BP/admin/ehr/all (raw query walk for repeated ehr_id) | `api/admin/openapi_routes.rs:36` | ☐ | ☐ | |
+| ADM-2 | DELETE BP/admin/ehr/{ehr_id} | `:56` | ☐ | ☐ | ties to Q-3/Q-4 delete loops |
+| TRM-1..6 | terminology ext (6 ops) | `extensions/terminology.rs:88-193` | ☐ | ☐ | |
+| EVT-1..5 | event_subscription ext (5 ops) | `extensions/event_subscription.rs:60-121` | ☐ | ☐ | |
+| TEN-1..5 | tenant ext (5 ops) | `extensions/tenant_routes.rs:55-115` | ☐ | ☐ | whole-map cache clear on write (C-5) |
+| FHR-1..7 | FHIR ext: ingest/search + mapping CRUD (7 ops) | `extensions/fhir.rs:102-198` | ☐ | ☐ | E-3 lossy sites live here |
+
+### 1g. Public / operational surface (32 mounts)
+
+| # | Op group | Where | L | E | Receipt |
+|---|---|---|---|---|---|
+| SYS-1 | OPTIONS BP + OPTIONS / (manifest) | `api/system/options.rs:189`, `router.rs:186-187` | ☐ | ☐ | 10 unwrap-class hits in options.rs |
+| SYS-2 | GET RR/status, /health, RR/status/health | `overview/status.rs:37-60` | ☐ | ☐ | static — likely CLEAN |
+| SMT-1 | GET RR/.well-known/smart-configuration | `smart/discovery.rs:258` | ☐ | ☐ | doc rebuilt per request from config |
+| DOC-1 | openapi.json + 12 family docs + swagger UI (15 mounts) | `extensions/openapi.rs:209-488` | ☐ | ☐ | `extensions_document(cfg)` per request — cache? |
+| MGT-1..11 | management surface (11 method-routes) | `extensions/management/mod.rs:274-427` | ☐ | ☐ | never shed — DoS surface? own AccessGuard |
+
+Unshed/unauthed surface note (probe M-6): status/health/SMART/docs/management
+sit outside both auth and the overload layer — verify none does unbounded work.
 
 ## 2. Background / long-running path register
 
