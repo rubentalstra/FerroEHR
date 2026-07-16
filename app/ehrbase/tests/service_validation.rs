@@ -148,7 +148,7 @@ async fn composition_validation_gates_persistence() {
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("valid composition accepted (201)");
+        .expect("valid composition accepted (201)").version_uid();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
 
     let fetched = svc
@@ -245,7 +245,7 @@ async fn composition_update_is_validated() {
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("valid v1");
+        .expect("valid v1").version_uid();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
     let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
@@ -426,7 +426,7 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
     // First commit warms the cache (web_template_for: miss → build → cache).
     svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("first valid composition warms the cache");
+        .expect("first valid composition warms the cache").version_uid();
 
     // Poison the stored OPT content: any later *store read* on the commit path
     // would build a broken WebTemplate and fail.
@@ -444,7 +444,7 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
     // the cached WebTemplate, never re-reading the poisoned store content.
     svc.create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
-        .expect("second commit is served from the warm cache, not the poisoned store");
+        .expect("second commit is served from the warm cache, not the poisoned store").version_uid();
 
     assert_eq!(
         composition_versions(&pool).await,

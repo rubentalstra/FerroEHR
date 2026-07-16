@@ -179,7 +179,7 @@ async fn subject_proxy_pulls_variable_through_openehr_frame() {
     let subject = ehr.to_string();
     svc.create_composition(ehr, uv(composition("vitals")))
         .await
-        .expect("commit composition");
+        .expect("commit composition").version_uid();
 
     // Register the environment binding (openEHR frame) and the subject proxy.
     svc.register_binding(EnvBinding {
@@ -236,7 +236,7 @@ async fn subject_proxy_application_data_set_round_trip() {
     let subject = ehr.to_string();
     svc.create_composition(ehr, uv(composition("vitals")))
         .await
-        .expect("commit composition");
+        .expect("commit composition").version_uid();
 
     svc.register_binding(EnvBinding {
         env_id: "prod".to_owned(),

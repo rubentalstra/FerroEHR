@@ -236,7 +236,7 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
     let v1 = svc
         .create_composition(source, uv(composition("v1"), "249", None))
         .await
-        .expect("composition v1");
+        .expect("composition v1").version_uid();
     let vo = v1.split("::").next().unwrap().to_owned();
     svc.update_composition(
         source,
@@ -244,7 +244,7 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
         uv(composition("v2"), "251", Some(&v1)),
     )
     .await
-    .expect("composition v2");
+    .expect("composition v2").version_uid();
 
     let mut extracts = svc.extract_ehrs(source).await.expect("export");
     let extract = extracts.remove(0);
@@ -370,7 +370,7 @@ async fn merge_provenance_round_trips_the_wire() {
     let v1 = svc
         .create_composition(ehr, uv(composition("v1"), "249", None))
         .await
-        .expect("v1");
+        .expect("v1").version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     // A modification carrying other_input_version_uids (master06 §Version

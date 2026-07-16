@@ -302,7 +302,7 @@ async fn attestation_error_cases() {
             uv(composition("v1"), "249", None),
         )
         .await
-        .expect("composition_create");
+        .expect("composition_create").version_uid();
     let ovid_v1 = v1;
 
     let attempt = |body: Value| {
@@ -508,7 +508,7 @@ async fn contribution_listing_count_and_ehr_summary() {
 
     svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("composition_create"); // contribution #3
+        .expect("composition_create").version_uid(); // contribution #3
 
     // contribution_count matches the seeded three.
     let count = svc
@@ -865,7 +865,7 @@ async fn contribution_resolve_refs() {
     let comp_uid = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create").version_uid();
 
     let all = svc
         .list_contributions(ehr_uuid, None, Page::all())
@@ -977,7 +977,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
     svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("modifiable EHR accepts a composition");
+        .expect("modifiable EHR accepts a composition").version_uid();
 
     // (2) Deactivate the EHR (EHR_STATUS.is_modifiable = false) and retry: the
     // content write is refused with a conflict (the modifiability signal of the
@@ -1034,7 +1034,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     let created = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("create");
+        .expect("create").version_uid();
     let mut preceding = created;
     for i in 0..8 {
         preceding = svc
@@ -1049,7 +1049,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
                 uv(composition(&format!("obs-v{i}")), "251", Some(&preceding)),
             )
             .await
-            .expect("update");
+            .expect("update").version_uid();
     }
 
     let open_trunk: i64 = sqlx::query_scalar(
