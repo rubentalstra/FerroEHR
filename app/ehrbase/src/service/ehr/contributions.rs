@@ -20,7 +20,9 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::contribution::{commit_version_set, count_contributions, get_contribution, list_contributions};
+use crate::versioning::contribution::{
+    commit_version_set, count_contributions, get_contribution, list_contributions,
+};
 
 use super::parse_time_range;
 

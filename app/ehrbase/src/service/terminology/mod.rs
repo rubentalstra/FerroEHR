@@ -48,4 +48,3 @@ pub mod fhir;
 mod routing;
 
 pub mod types;
-

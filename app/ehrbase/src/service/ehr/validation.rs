@@ -18,8 +18,8 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{Kind, lifecycle};
 use crate::versioning::read::read_current;
+use crate::versioning::{Kind, lifecycle};
 
 impl EhrbaseService {
     /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may

@@ -22,8 +22,8 @@ use testcontainers_modules::postgres::Postgres;
 use std::sync::Arc;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::status::CallStatusType;
 use ehrbase::service::EhrbaseService;
+use ehrbase::service::status::CallStatusType;
 use ehrbase::service::subject_proxy::config::{SpFhirSystem, SubjectProxyConfig};
 
 use ehrbase::service::subject_proxy::binding::{DataFrame, EnvBinding, SystemCall, SystemCallBody};

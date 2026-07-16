@@ -19,9 +19,9 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::storage::version_repo;
 use crate::versioning::audit::audit_details;
 use crate::versioning::contribution::commit_version_set;
@@ -49,18 +49,20 @@ impl EhrbaseService {
         &self,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let audit = version_repo::contribution::contribution_audit(&self.pool, contribution_id, None)
-            .await?
-            .ok_or_else(|| {
-                ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
-            })?;
+        let audit =
+            version_repo::contribution::contribution_audit(&self.pool, contribution_id, None)
+                .await?
+                .ok_or_else(|| {
+                    ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
+                })?;
 
         // The refs helper also unions the versions this contribution's
         // `666|attestation|` items attested (RM common master06 §Contributions —
         // an attestation affects an existing version), i.e. the full change-set
         // the CONTRIBUTION covers, not just the committed rows.
         let version_refs =
-            version_repo::contribution::contribution_version_refs(&self.pool, contribution_id).await?;
+            version_repo::contribution::contribution_version_refs(&self.pool, contribution_id)
+                .await?;
         let versions: Vec<Value> = version_refs
             .into_iter()
             .map(|(vo_id, columns, creating_system_id, kind)| {

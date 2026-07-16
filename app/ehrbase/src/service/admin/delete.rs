@@ -12,9 +12,9 @@
 
 use uuid::Uuid;
 
-use crate::service::status::SmError;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
 impl EhrbaseService {
     /// SM `physical_ehr_delete`: physically delete one EHR and every trace of

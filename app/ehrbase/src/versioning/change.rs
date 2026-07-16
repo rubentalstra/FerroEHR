@@ -170,7 +170,9 @@ struct PrecedingTip {
 }
 
 /// Map a storage tip row onto the versioning value contract ([`PrecedingTip`]).
-fn preceding_tip(row: crate::storage::version_repo::placement::TipRow) -> Result<PrecedingTip, ServiceError> {
+fn preceding_tip(
+    row: crate::storage::version_repo::placement::TipRow,
+) -> Result<PrecedingTip, ServiceError> {
     let kind = Kind::from_type(&row.kind).ok_or_else(|| {
         ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
     })?;
@@ -237,9 +239,12 @@ async fn next_version(
 
     // ONE statement: preceding tip + next ordinal + the transaction timestamp
     // (the commit instant every row of this transaction stamps).
-    let placement =
-        crate::storage::version_repo::placement::next_placement(tx, vo_id, expected.map(TreeId::columns))
-            .await?;
+    let placement = crate::storage::version_repo::placement::next_placement(
+        tx,
+        vo_id,
+        expected.map(TreeId::columns),
+    )
+    .await?;
     let ordinal = placement.next_ordinal;
     let now = placement.now;
     let tip = placement.tip.map(preceding_tip).transpose()?;
@@ -291,7 +296,8 @@ async fn next_version(
         // at the preceding version's trunk fork point (master06 §Distributed
         // Versioning); the copied version itself stays valid.
         let next_branch =
-            crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk).await?;
+            crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk)
+                .await?;
         (TreeId::branch(tip.tree.trunk, next_branch, 1), None)
     };
     Ok(NextVersion {
@@ -545,7 +551,8 @@ async fn commit_resolved(
     // the transaction timestamp, so the close boundary and the new version's
     // `sys_period` open at the identical instant (master06 §Version tree).
     if let Some(close_ordinal) = r.close_ordinal {
-        crate::storage::version_repo::commit::close_ordinal_at_now(tx, r.vo_id, close_ordinal).await?;
+        crate::storage::version_repo::commit::close_ordinal_at_now(tx, r.vo_id, close_ordinal)
+            .await?;
     }
 
     // The enclosing CONTRIBUTION id: pre-existing for a multi-change commit,
@@ -608,9 +615,10 @@ async fn commit_resolved(
             tc
         }
         ContributionCtx::Existing(cid) => {
-            let (_aid, tc) =
-                crate::storage::version_repo::commit::commit_version_into(tx, &audit_row, cid, &folded)
-                    .await?;
+            let (_aid, tc) = crate::storage::version_repo::commit::commit_version_into(
+                tx, &audit_row, cid, &folded,
+            )
+            .await?;
             tc
         }
     };

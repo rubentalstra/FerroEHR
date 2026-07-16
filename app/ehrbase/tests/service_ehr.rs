@@ -21,9 +21,9 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
+use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::versioning::change::Committed;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};

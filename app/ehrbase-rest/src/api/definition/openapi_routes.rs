@@ -251,7 +251,13 @@ pub(crate) async fn definition_query_list(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "definition_query_list", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "definition_query_list",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Store a named AQL query (auto-versioned).
@@ -265,7 +271,13 @@ pub(crate) async fn definition_query_store_yaml(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "definition_query_store.yaml", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "definition_query_store.yaml",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Retrieve a named stored query at a specific version.

@@ -116,8 +116,12 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         crate::system_log::middleware::middleware,
     ));
     let api = api
-        .layer(axum::middleware::from_fn(management::http_metrics::http_metrics))
-        .layer(axum::middleware::from_fn(management::http_metrics::root_span));
+        .layer(axum::middleware::from_fn(
+            management::http_metrics::http_metrics,
+        ))
+        .layer(axum::middleware::from_fn(
+            management::http_metrics::root_span,
+        ));
 
     // ── Ingress overload protection (the API subtree's outermost layer) ──────
     // Bounded in-flight concurrency + load shedding: beyond `cfg.max_in_flight`
@@ -184,7 +188,10 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // a preflight; real per-resource CORS preflights are on sub-paths and reach
     // the CORS layer via the fallback.
     let app: Router = Router::new()
-        .route(&cfg.server.base_path, system::options::route(manifest.clone()))
+        .route(
+            &cfg.server.base_path,
+            system::options::route(manifest.clone()),
+        )
         .route("/", system::options::route(manifest))
         .fallback_service(inner);
 

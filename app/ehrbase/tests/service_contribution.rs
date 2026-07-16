@@ -13,9 +13,9 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
+use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::list::Page;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};

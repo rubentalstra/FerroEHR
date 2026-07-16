@@ -34,7 +34,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-
 /// The complete server configuration. Every section has a `Default`, so the
 /// file may be empty or absent (zero-config boot, §3.16). `deny_unknown_fields`
 /// makes a misspelled top-level table a boot error (§P-5).
@@ -101,8 +100,10 @@ impl EhrbaseConfig {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
         }
         // signing.mode = pgp ⇒ key_path set.
-        if matches!(self.signing.mode, crate::versioning::signature::config::Mode::Pgp)
-            && self.signing.key_path.is_none()
+        if matches!(
+            self.signing.mode,
+            crate::versioning::signature::config::Mode::Pgp
+        ) && self.signing.key_path.is_none()
         {
             errors.push(ConfigError::semantic(
                 "signing.mode = \"pgp\" requires signing.key_path".to_owned(),

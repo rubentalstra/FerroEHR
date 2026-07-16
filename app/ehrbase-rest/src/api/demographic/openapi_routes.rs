@@ -201,7 +201,13 @@ pub(crate) async fn organisation_create(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_create", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_create",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read an `ORGANISATION` by uid-based id. 404 when absent.
@@ -232,7 +238,13 @@ pub(crate) async fn organisation_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_update", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_update",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Delete an `ORGANISATION` (If-Match required).
@@ -246,7 +258,13 @@ pub(crate) async fn organisation_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_delete", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_delete",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 // ── PERSON ────────────────────────────────────────────────────────────────
@@ -385,7 +403,13 @@ pub(crate) async fn versioned_party_get(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "versioned_party_get", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "versioned_party_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// The party's `REVISION_HISTORY`. 404 when absent.
@@ -472,7 +496,13 @@ pub(crate) async fn contribution_create(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "contribution_create", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "contribution_create",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read a demographic `CONTRIBUTION` by uid. 404 when absent.
@@ -507,7 +537,13 @@ pub(crate) async fn demographic_tags_get(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "demographic_tags_get", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "demographic_tags_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read an `AGENT`'s `ITEM_TAGs`. 404 when absent.
@@ -620,7 +656,13 @@ pub(crate) async fn organisation_tags_get(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_tags_get", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_tags_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Upsert an `ORGANISATION`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -634,7 +676,13 @@ pub(crate) async fn organisation_tags_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_tags_update", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_tags_update",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Delete one `ITEM_TAG` from an `ORGANISATION` by key.
@@ -651,7 +699,13 @@ pub(crate) async fn organisation_tags_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_tags_delete", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "organisation_tags_delete",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read a `PERSON`'s `ITEM_TAGs`. 404 when absent.
@@ -682,7 +736,13 @@ pub(crate) async fn person_tags_update(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_tags_update", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "person_tags_update",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Delete one `ITEM_TAG` from a `PERSON` by key.
@@ -699,7 +759,13 @@ pub(crate) async fn person_tags_delete(
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_tags_delete", parts, super::dispatch::dispatch).await
+    guarded_dispatch(
+        state,
+        "person_tags_delete",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Read a `ROLE`'s `ITEM_TAGs`. 404 when absent.

@@ -87,10 +87,12 @@ fn ensure_if_match(
     };
     match latest {
         Some(meta) if meta.uid == pre.value => Ok(()),
-        Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(format!(
-            "If-Match {:?} does not match the current latest version {:?}",
-            pre.value, meta.uid
-        ))),
+        Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
+            format!(
+                "If-Match {:?} does not match the current latest version {:?}",
+                pre.value, meta.uid
+            ),
+        )),
         None => Ok(()),
     }
 }

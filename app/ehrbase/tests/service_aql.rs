@@ -660,7 +660,8 @@ async fn latest_versus_all_versions() {
                 uv(composition("v", magnitude), "251", Some(&current)),
             )
             .await
-            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}")).version_uid();
+            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"))
+            .version_uid();
     }
 
     // LATEST_VERSION (the default) sees one version.

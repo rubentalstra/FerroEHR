@@ -52,7 +52,8 @@ pub(crate) async fn revision_history(
     }
 
     // Attestations for the object, keyed by version, in commit order.
-    let att_rows = crate::storage::version_repo::attestation::read_attestations_all(pool, vo_id).await?;
+    let att_rows =
+        crate::storage::version_repo::attestation::read_attestations_all(pool, vo_id).await?;
     let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
         std::collections::HashMap::new();
     for (sys_version, data) in att_rows {

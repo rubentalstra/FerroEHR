@@ -44,7 +44,6 @@ mod subscription;
 
 use async_trait::async_trait;
 
-
 /// Placeholder routing-key segment for an absent value.
 const ABSENT: &str = "-";
 

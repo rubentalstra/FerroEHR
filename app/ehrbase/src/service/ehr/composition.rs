@@ -319,7 +319,8 @@ impl EhrbaseService {
         // VERSIONED_COMPOSITION cross-version invariants (RM ehr
         // `versioned_composition.adoc`), lifted out of the versioning write
         // path (G-13) — checked in the same transaction as the commit.
-        super::validation::check_versioned_composition_invariants(&mut tx, vo_id, &composition).await?;
+        super::validation::check_versioned_composition_invariants(&mut tx, vo_id, &composition)
+            .await?;
         let committed = update(
             &mut tx,
             Some(ehr_id),
@@ -355,9 +356,10 @@ impl EhrbaseService {
         // commit instant (RM common master06 §Version Identification /
         // §Committal), never the reassembled document the full `read_current`
         // pays.
-        let Some(m) =
-            crate::storage::version_repo::meta::current_version_meta_scoped(&self.pool, vo_id, ehr_id)
-                .await?
+        let Some(m) = crate::storage::version_repo::meta::current_version_meta_scoped(
+            &self.pool, vo_id, ehr_id,
+        )
+        .await?
         else {
             return Ok(None);
         };
@@ -423,10 +425,11 @@ impl EhrbaseService {
         // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) —
         // not a full node reassembly (the deleted version stores no nodes
         // anyway).
-        let current = crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
-            .await?
-            .filter(|m| m.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+        let current =
+            crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
+                .await?
+                .filter(|m| m.ehr_id == Some(ehr_id))
+                .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::BadRequest(format!(
                 "COMPOSITION {vo_id} is already deleted"

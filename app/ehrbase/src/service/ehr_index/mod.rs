@@ -32,10 +32,10 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::service::error::ServiceError;
 use crate::service::ehr_index::types::{
     EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
+use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 
 /// The precise EHR-index failure kind: `master07 §Errors` declares distinct

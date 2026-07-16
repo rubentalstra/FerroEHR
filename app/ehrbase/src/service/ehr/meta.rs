@@ -20,8 +20,8 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::audit::AuditInput;
 use crate::versioning::Kind;
+use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::VersionRead;
 

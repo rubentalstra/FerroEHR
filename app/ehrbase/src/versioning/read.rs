@@ -101,9 +101,11 @@ pub(crate) async fn read_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::read::read_current(pool, vo_id)
-        .await?
-        .map(version_read))
+    Ok(
+        crate::storage::version_repo::read::read_current(pool, vo_id)
+            .await?
+            .map(version_read),
+    )
 }
 
 /// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
@@ -153,9 +155,11 @@ pub(crate) async fn version_at(
     vo_id: Uuid,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::read::version_at(pool, vo_id, at)
-        .await?
-        .map(version_read))
+    Ok(
+        crate::storage::version_repo::read::version_at(pool, vo_id, at)
+            .await?
+            .map(version_read),
+    )
 }
 
 /// The kind of the current version of an object, or `None` if it does not
@@ -198,7 +202,8 @@ pub(crate) async fn demographic_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<DemographicCurrent>, ServiceError> {
-    let Some(m) = crate::storage::version_repo::meta::current_demographic_meta(pool, vo_id).await? else {
+    let Some(m) = crate::storage::version_repo::meta::current_demographic_meta(pool, vo_id).await?
+    else {
         return Ok(None);
     };
     let Some(kind) = Kind::from_type(&m.kind) else {

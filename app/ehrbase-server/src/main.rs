@@ -15,10 +15,10 @@ use anyhow::Context as _;
 use clap::{Parser, Subcommand};
 use ehrbase::system_log::config::AuditConfig;
 use ehrbase::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
-use ehrbase::versioning::signature::signer::Signer;
-use ehrbase_rest::config::AppConfig;
 use ehrbase::telemetry::build_info::BuildInfo;
 use ehrbase::telemetry::health::{HealthIndicator, HealthRegistry};
+use ehrbase::versioning::signature::signer::Signer;
+use ehrbase_rest::config::AppConfig;
 use ehrbase_rest::extensions::access::authz::AuthzHandle;
 use ehrbase_rest::extensions::management::Observability;
 use sqlx::PgPool;
@@ -26,8 +26,8 @@ use uuid::Uuid;
 
 use ehrbase::db;
 use ehrbase::service::EhrbaseService;
-use ehrbase::telemetry::{self, indicators};
 use ehrbase::telemetry::config::TelemetryConfig;
+use ehrbase::telemetry::{self, indicators};
 
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);

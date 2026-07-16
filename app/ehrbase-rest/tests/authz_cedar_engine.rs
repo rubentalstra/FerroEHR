@@ -7,13 +7,13 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
+use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AbacParam, PolicyRule, RemoteConfig};
 use ehrbase_rest::extensions::access::authz::cedar::CedarEngine;
 use ehrbase_rest::extensions::access::authz::engine::PolicyEngine;
 use ehrbase_rest::extensions::access::authz::remote::RemotePdp;
 use ehrbase_rest::extensions::access::authz::request::{
     AccessMode, Attr, AuthzRequest, Decision, ResourceKind,
 };
-use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AbacParam, PolicyRule, RemoteConfig};
 use serde_json::Value;
 use wiremock::matchers::method;
 use wiremock::{Mock, MockServer, Request, ResponseTemplate};

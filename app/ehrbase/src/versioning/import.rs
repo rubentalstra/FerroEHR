@@ -204,9 +204,12 @@ async fn commit_import_scoped(
     let base = jiff::Timestamp::now();
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
-    let contribution_id =
-        crate::storage::version_repo::commit::insert_contribution(tx, ehr_id, contribution_audit_id)
-            .await?;
+    let contribution_id = crate::storage::version_repo::commit::insert_contribution(
+        tx,
+        ehr_id,
+        contribution_audit_id,
+    )
+    .await?;
     let mut outbox_versions: Vec<Value> = Vec::new();
 
     for mut container in containers {
@@ -280,8 +283,12 @@ async fn commit_import_scoped(
         {
             // A first-received FOLDER container is a new folder hierarchy of the
             // EHR (RM ehr master04 §Folders; master06 §Copying Case 2).
-            crate::storage::version_repo::commit::insert_ehr_folder_rank(tx, ehr_id, container.vo_id)
-                .await?;
+            crate::storage::version_repo::commit::insert_ehr_folder_rank(
+                tx,
+                ehr_id,
+                container.vo_id,
+            )
+            .await?;
         }
 
         // Per-lineage period chains: within a lineage each version closes its
