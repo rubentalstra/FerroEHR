@@ -605,7 +605,8 @@ full platform rewrite):**
 - [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
 - [ ] F-9 single-query composition read (version row + nodes join/CTE),
       drop the redundant re-sort.
-- [ ] F-27 batch tag inserts. — [x] F-37 relationship writes aligned with
+- [x] F-27 tag replace = one UNNEST multi-row insert (last-wins key
+      dedupe preserved; 2026-07-17). — [x] F-37 relationship writes aligned with
       the lean `CurrentRelationship` threading + in-memory responses
       (demographic rewrite). — [ ] F-28 minor extra-read trio.
 - [ ] F-26 push matching-list filters into SQL. — [x] F-38 template example

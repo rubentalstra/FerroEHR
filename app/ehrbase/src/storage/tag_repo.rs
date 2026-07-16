@@ -92,25 +92,41 @@ pub async fn replace_tags(
         .bind(target_vo_id)
         .execute(&mut *tx)
         .await?;
-    for tag in tags {
-        // The upsert arm covers same-statement key repetition in the EHR scope;
-        // with a NULL scope the unique index never collides (NULLs are
-        // distinct), so callers there pre-deduplicate.
-        sqlx::query(
-            "INSERT INTO item_tag (ehr_id, target_vo_id, target_type, key, value, target_path) \
-             VALUES ($1, $2, $3, $4, $5, $6) \
-             ON CONFLICT (ehr_id, target_vo_id, key) \
-             DO UPDATE SET value = EXCLUDED.value, target_path = EXCLUDED.target_path",
-        )
-        .bind(ehr_scope)
-        .bind(target_vo_id)
-        .bind(tag.target_type)
-        .bind(tag.key)
-        .bind(tag.value)
-        .bind(tag.target_path)
-        .execute(&mut *tx)
-        .await?;
+    if tags.is_empty() {
+        return Ok(());
     }
+    // One multi-row insert for the whole set (never a per-tag round trip).
+    // Repeated keys keep the loop era's last-wins semantics via an in-memory
+    // dedupe — a single INSERT cannot upsert over its own rows ("ON CONFLICT
+    // DO UPDATE command cannot affect row a second time").
+    let mut last_by_key: indexmap::IndexMap<&str, &NewTag<'_>> = indexmap::IndexMap::new();
+    for tag in tags {
+        last_by_key.insert(tag.key, tag);
+    }
+    let (mut types, mut keys, mut values, mut paths) = (
+        Vec::with_capacity(last_by_key.len()),
+        Vec::with_capacity(last_by_key.len()),
+        Vec::with_capacity(last_by_key.len()),
+        Vec::with_capacity(last_by_key.len()),
+    );
+    for tag in last_by_key.values() {
+        types.push(tag.target_type);
+        keys.push(tag.key);
+        values.push(tag.value);
+        paths.push(tag.target_path);
+    }
+    sqlx::query(
+        "INSERT INTO item_tag (ehr_id, target_vo_id, target_type, key, value, target_path) \
+         SELECT $1, $2, t.* FROM UNNEST($3::text[], $4::text[], $5::text[], $6::text[]) AS t",
+    )
+    .bind(ehr_scope)
+    .bind(target_vo_id)
+    .bind(&types)
+    .bind(&keys)
+    .bind(&values)
+    .bind(&paths)
+    .execute(&mut *tx)
+    .await?;
     Ok(())
 }
 
