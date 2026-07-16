@@ -6,7 +6,7 @@
 //! Two things live here:
 //!
 //! 1. **The `_type`→[`Validate`] dispatcher** ([`validate_rm_value`]) the
-//!    composition validator (P15) calls on a canonical-JSON node: it reads the
+//! composition validator calls on a canonical-JSON node: it reads the
 //!    node's `_type`, deserializes into the matching concrete `openehr-rm` /
 //!    `openehr-base` type, and runs that type's RM **class invariants**.
 //! 2. **Shared invariant helpers** used by the sibling `*_impl.rs` behaviour
@@ -27,7 +27,7 @@
 //!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
 //!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
 //!   `openehr-rm` has no `openehr-term` dependency; these belong to the
-//!   composition validator + terminology binding (P15 PR-C), which resolves
+//! composition validator + terminology binding (P15 PR-C), which resolves
 //!   codes against the openEHR terminology bundle.
 //! - **archie's `ignored = true` invariants** (never executed by archie —
 //!   implementing them would over-reject relative to the reference).
@@ -474,7 +474,7 @@ fn prune_child_nodes(value: &Value) -> Value {
 
 /// Run the RM class invariants for a single canonical-JSON node, dispatching on
 /// its `_type`. A node with no (or an unrecognised) `_type` runs no invariants
-/// (returns without appending). The composition validator (P15) calls this per
+/// (returns without appending). The composition validator calls this per
 /// node and prefixes the absolute RM path onto each [`InvariantViolation`].
 ///
 /// Two tiers (PERF: the RM-invariant pass visits every `_type` node of a
@@ -597,7 +597,7 @@ pub(crate) fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<Inv
         "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(value, out),
         "REFERENCE_RANGE" => run::<ReferenceRange>(value, out),
         // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
-        // Limits_consistent ordering invariant runs (F-12-04); fall back to
+        // Limits_consistent ordering invariant runs; fall back to
         // Value elements (boundary flags only) for non-DV_ORDERED payloads.
         "DV_INTERVAL" => {
             if let Ok(v) = serde_json::from_value::<DvInterval<DvOrdered>>(value.clone()) {

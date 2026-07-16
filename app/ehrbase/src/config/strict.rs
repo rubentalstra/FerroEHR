@@ -16,7 +16,7 @@ use super::loader::ConfigError;
 /// suggestion. Deeper key typos inside a known section are caught at
 /// deserialize by `deny_unknown_fields`.
 #[must_use]
-pub fn strict_env(env: &HashMap<String, String>) -> Vec<ConfigError> {
+pub fn strict_env<S: std::hash::BuildHasher>(env: &HashMap<String, String, S>) -> Vec<ConfigError> {
     let mut errors = Vec::new();
     for key in env.keys() {
         if !key.starts_with("EHRBASE_") || ALLOWLIST.contains(&key.as_str()) {

@@ -11,11 +11,11 @@
 //!   must equal the class name (mismatch is an error). This tag check is what
 //!   lets the abstract-slot enums (emitted by `openehr-codegen`) dispatch on
 //!   `_type` — see their hand-rolled `Deserialize`, which *requires* `_type` on
-//!   an abstract polymorphic slot and rejects a `_type`-less value rather than
-//!   guessing structurally (audit F-04-01/03). Unknown wire keys are ignored;
-//!   this deliberate tolerance (a superset of the ITS-JSON schema's
-//!   `additionalProperties: false`) is documented as a `PORT NOTE` on the shadow
-//!   struct below (F-04-02).
+//!   an abstract polymorphic slot and rejects a `_type`-less value rather
+//!   than guessing structurally. Unknown wire keys are ignored; this
+//!   deliberate tolerance (a superset of the ITS-JSON schema's
+//!   `additionalProperties: false`) is documented as a `PORT NOTE` on the
+//!   shadow struct below.
 //!
 //! Usage (emitted by `openehr-codegen`):
 //! ```ignore
@@ -248,7 +248,7 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         const _: () = {
             #(#default_fns)*
 
-            // PORT NOTE (F-04-02): unknown wire keys are deliberately *ignored*
+            // PORT NOTE: unknown wire keys are deliberately *ignored*
             // (no `#[serde(deny_unknown_fields)]`), a documented superset of the
             // ITS-JSON schema's `additionalProperties: false`. Two reasons make
             // strict rejection the wrong default at the deserialize layer:
@@ -262,7 +262,7 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
             // The strict wire-shape contract (`_type` present + no unknown keys)
             // is available separately via `openehr_its::json::validate_canonical`
             // (the ITS-JSON schema), to be run at the ingestion edge where strict
-            // 400/422 rejection is desired (F-04-05). The *polymorphic-slot*
+            // 400/422 rejection is desired. The *polymorphic-slot*
             // `_type` requirement — the one that caused silent type corruption —
             // is enforced unconditionally by the enums' hand-rolled `_type`
             // dispatch (F-04-01/03), independent of this leniency.

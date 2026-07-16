@@ -99,7 +99,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /definition/query/{qualified_query_name}/{version}"),
             run_has_query,
         ),
-        // ── list_queries: non_empty rebound to the named resource (D2) ─────────
+        // ── list_queries: non_empty rebound to the named resource ─────────
         rest_case(
             "sqr/list-queries-non-empty",
             "List stored queries — non empty",
@@ -144,7 +144,7 @@ fn rest_case(
             capability: Capability::QueryProvisioning,
             formats: JSON,
             citation,
-            // G-1: master05 is a stub, so the case is ECC-original — the reason
+            // master05 is a stub, so the case is ECC-original — the reason
             // names the stub provenance + the derivation basis, never presenting
             // the case as schedule-conformant.
             schedule: ScheduleTrace::EccOriginal(schedule),

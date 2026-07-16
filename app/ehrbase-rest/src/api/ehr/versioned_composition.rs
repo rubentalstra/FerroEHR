@@ -16,16 +16,14 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Composition, OriginalVersion, RevisionHistory, VersionedComposition};
 
-use ehrbase_sm::Platform;
-
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::overview::version_id::{parse_ehr_id, parse_uuid, parse_version_uid};
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -43,7 +41,7 @@ pub(super) async fn run<S: Platform>(
                 .backend()
                 .get_versioned_composition(ehr_id, vo_id)
                 .await?;
-            // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06).
+            // VERSIONED_OBJECT container — canonical JSON or XML.
             Ok(negotiate::respond_rm::<VersionedComposition>(
                 h,
                 ok,
@@ -78,7 +76,7 @@ pub(super) async fn run<S: Platform>(
                 .composition_version_at_time(ehr_id, vo_id, p.version_at_time)
                 .await?;
             let resp = super::read_resp(&p.ehr_id, body);
-            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML (F-05-06).
+            // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.
             Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
                 h,
                 &base,

@@ -18,7 +18,7 @@ use sea_query::{Alias, Expr, ExprTrait as _, Order, Query};
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, Source, VersionField};
 use crate::db::iden::Node;
-use crate::storage::{PROMOTED_LEAVES, PromotedKind};
+use crate::storage::promoted::{PROMOTED_LEAVES, PromotedKind};
 
 use super::expr::{as_text, call, cast, col, extract_base, order_coercion};
 use super::from::is_vo_root_type;
@@ -289,7 +289,7 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
         // Types/Dates and Times).
         ValueMode::Value(Coercion::Temporal) => cast(as_text(base), "timestamptz"),
         ValueMode::Value(Coercion::Text | Coercion::Raw) => as_text(base),
-        // G-12: a mixed-type (`Raw`) leaf being compared/matched against a
+        // a mixed-type (`Raw`) leaf being compared/matched against a
         // numeric literal — extract numerically, but guard on the stored jsonb
         // type so a non-number occurrence yields NULL (comparison false) instead
         // of a cast error. "numeric for numbers, text otherwise" (QUERY master03

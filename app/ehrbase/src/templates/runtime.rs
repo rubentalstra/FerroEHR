@@ -1,18 +1,19 @@
 //! Derived-runtime resolution: the cached [`WebTemplate`] and example
-//! COMPOSITION surfaces (S-08 / S-09), thin over `openehr-flat`.
+//! COMPOSITION surfaces, thin over `openehr-flat`.
 //!
 //! # Spec basis
 //!
 //! `docs/specs/openehr/BASE/docs/architecture_overview/master10-archetypes.adoc`:
 //!
-//! - §Archetypes and Templates at Runtime (S-08): a template's runtime function
+//! - §Archetypes and Templates at Runtime: a template's runtime function
 //!   is (a) to validate data at capture/import against the RM + archetypes, and
 //!   (b) to be the design basis for AQL paths. The validation/commit path
 //!   consumes [`EhrbaseService::web_template_for`].
-//! - §Deploying Archetypes and Templates (S-09): the spec blesses a *compiled
-//!   near-runtime form* that incorporates copies of the relevant archetypes for
-//!   performance and to guarantee only validated artefacts run. Our derived form
-//!   is the [`WebTemplate`], memoised in a `moka` cache (G-T05).
+//! - §Deploying Archetypes and Templates: the spec blesses a *compiled
+//!   near-runtime form* ("compiled into a near-runtime form from the sharable
+//!   openEHR form") that incorporates copies of the relevant archetypes for
+//!   performance and to guarantee only validated artefacts run. Our derived
+//!   form is the [`WebTemplate`], memoised in a `moka` cache.
 //!
 //! PORT NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
 //! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
@@ -29,28 +30,35 @@ use openehr_flat::{DetailLevel, ExampleType, WebTemplate};
 use serde_json::Value;
 
 use super::identity;
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
 
 impl EhrbaseService {
     /// Resolve the (cached) [`WebTemplate`] for a stored operational template,
-    /// building it from the stored OPT 1.4 XML on first use (S-09).
-    ///
-    /// A template that is not in the store is reported as **`Unprocessable`**
-    /// (→ ITS-REST `422`), not `NotFound` (G-T08): on a composition commit an
-    /// unknown referenced template is a *semantic* error, per
-    /// `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`
-    /// ("the underlying template is not known"), and the CNF Robot case
-    /// `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserts `422`.
+    /// building it from the stored OPT 1.4 XML on first use.
     ///
     /// The cache is keyed by the §Composite Identifiers and Case canonical form
-    /// of `template_id` (G-T04), so case variants of one stored template resolve
+    /// of `template_id`, so case variants of one stored template resolve
     /// to a single cached [`WebTemplate`].
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`, **not** `NotFound`
+    ///   — G-T08) when the template is not in the store: on a composition
+    ///   commit an unknown referenced template is a *semantic* error, per
+    ///   `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
+    ///   ("semantic validation errors, such as the underlying template is not
+    ///   known") and the CNF Robot case
+    ///   `I_EHR_COMPOSITION.create_composition-event_bad_opt` asserting `422`.
+    /// - [`ServiceError::Unprocessable`] when the stored XML fails to build
+    ///   into a [`WebTemplate`].
+    /// - [`ServiceError::Database`] — the store read failed.
     pub(crate) async fn web_template_for(
         &self,
         template_id: &str,
     ) -> Result<Arc<WebTemplate>, ServiceError> {
         // Key the cache on the identity-canonical form so a case variant resolves
-        // to the single entry for the same template (G-T04).
+        // to the single entry for the same template.
         let key = identity::canonical_key(template_id);
 
         // Fast path: a built WebTemplate is already resident — serve it without
@@ -60,26 +68,17 @@ impl EhrbaseService {
         // per-commit OPT read). No openEHR spec governs this cache — S-09 blesses
         // a compiled near-runtime form; the caching mechanics are our own design.
         if let Some(wt) = self.web_templates.get(&key).await {
-            metrics::counter!(
-                crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
-                "event" => "hit",
-            )
-            .increment(1);
+            note_cache_event("hit");
             return Ok(wt);
         }
-        metrics::counter!(
-            crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
-            "event" => "miss",
-        )
-        .increment(1);
+        note_cache_event("miss");
 
         // Miss: load the stored OPT XML (the one store read, amortised across
         // every future commit for this template), mapping an unknown template to
-        // the commit-path 422 (G-T08). The expensive WebTemplate build is
-        // single-flighted by `get_or_build` (one build per key under contention);
-        // the XML load itself is not de-duplicated across a burst of concurrent
-        // *first* commits of a never-seen template — an accepted, bounded cost,
-        // since templates are provisioned before use and warm on the first hit.
+        // the commit-path 422. The XML load itself is not de-duplicated
+        // across a burst of concurrent *first* commits of a never-seen template —
+        // an accepted, bounded cost, since templates are provisioned before use
+        // and warm on the first hit.
         let xml = match self.get_template_xml(template_id).await {
             Ok(xml) => xml,
             Err(ServiceError::NotFound(_)) => {
@@ -90,18 +89,8 @@ impl EhrbaseService {
             Err(e) => return Err(e),
         };
 
-        self.web_templates
-            .get_or_build(&key, || {
-                let opt = openehr_its::opt14::from_xml(&xml)
-                    .map_err(|e| openehr_flat::FlatError::OptParse(e.to_string()))?;
-                openehr_flat::build_web_template(&opt)
-            })
+        self.build_cached_web_template(&key, template_id, &xml)
             .await
-            .map_err(|e| {
-                ServiceError::Unprocessable(format!(
-                    "operational template {template_id} could not be built into a WebTemplate: {e}"
-                ))
-            })
     }
 
     /// Generate an example COMPOSITION for a stored operational template
@@ -113,11 +102,21 @@ impl EhrbaseService {
     /// at the requested [`DetailLevel`], with a deterministic `uid` populated for
     /// the `output` ([`ExampleType::Output`]) form.
     ///
-    /// An unknown `template_id` is a **`NotFound`** (→ ITS-REST `404`), matching
-    /// the `adl1.4/{id}` GET surface (its `404_unknown_template_id` response)
-    /// rather than the `422` [`web_template_for`](Self::web_template_for) maps for
-    /// an unknown template on a *commit* path; a stored-but-unbuildable template
-    /// stays a `422` (`Unprocessable`).
+    /// The store is read unconditionally — the read doubles as the existence
+    /// probe *and* supplies the XML for a cold-cache build in one round-trip —
+    /// so a template deleted from the store is never served from a stale cache
+    /// entry on this surface.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::NotFound`] (→ ITS-REST `404`,
+    ///   `responses/404_unknown_template_id.yaml`) — unknown `template_id`,
+    ///   matching the `adl1.4/{template_id}` GET surface rather than the `422`
+    ///   [`web_template_for`](Self::web_template_for) maps for an unknown
+    ///   template on a *commit* path.
+    /// - [`ServiceError::Unprocessable`] (→ `422`) — the template is stored but
+    ///   cannot be built into a [`WebTemplate`].
+    /// - [`ServiceError::Database`] — the store read failed.
     pub(crate) async fn template_example(
         &self,
         template_id: &str,
@@ -125,13 +124,64 @@ impl EhrbaseService {
         kind: ExampleType,
     ) -> Result<Value, ServiceError> {
         // Resolve existence first so an unknown id is a 404 (not the 422 the
-        // WebTemplate cache maps for a commit-time unknown template).
-        let _ = self.get_template_xml(template_id).await?;
-        let wt = self.web_template_for(template_id).await?;
+        // WebTemplate cache maps for a commit-time unknown template, G-T08).
+        let xml = self.get_template_xml(template_id).await?;
+        let key = identity::canonical_key(template_id);
+        let wt = if let Some(wt) = self.web_templates.get(&key).await {
+            note_cache_event("hit");
+            wt
+        } else {
+            note_cache_event("miss");
+            self.build_cached_web_template(&key, template_id, &xml)
+                .await?
+        };
         let mut composition = openehr_flat::example_composition(&wt, level);
         if kind == ExampleType::Output {
             openehr_flat::apply_output_uid(&mut composition, template_id);
         }
         Ok(composition)
     }
+
+    /// Build the [`WebTemplate`] for `xml` and cache it under `key` (the
+    /// §Composite Identifiers and Case canonical form of `template_id`).
+    ///
+    /// The expensive build is single-flighted by the cache's `get_or_build`
+    /// (one build per key under contention); only a *successful* build is
+    /// cached, so no negative entry can shadow a later upload.
+    ///
+    /// # Errors
+    ///
+    /// [`ServiceError::Unprocessable`] (→ `422`) — the stored XML does not
+    /// re-parse as an OPT or the OPT does not build into a [`WebTemplate`]
+    /// (a stored-but-unbuildable template).
+    async fn build_cached_web_template(
+        &self,
+        key: &str,
+        template_id: &str,
+        xml: &str,
+    ) -> Result<Arc<WebTemplate>, ServiceError> {
+        self.web_templates
+            .get_or_build(key, || {
+                let opt = openehr_its::opt14::from_xml(xml)
+                    .map_err(|e| openehr_flat::FlatError::OptParse(e.to_string()))?;
+                openehr_flat::build_web_template(&opt)
+            })
+            .await
+            .map_err(|e| {
+                ServiceError::Unprocessable(format!(
+                    "operational template {template_id} could not be built into a WebTemplate: {e}"
+                ))
+            })
+    }
+}
+
+/// Record one WebTemplate-cache hit/miss on the
+/// [`crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS`] counter. No
+/// openEHR spec governs this — our own observability design.
+fn note_cache_event(event: &'static str) {
+    metrics::counter!(
+        crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
+        "event" => event,
+    )
+    .increment(1);
 }

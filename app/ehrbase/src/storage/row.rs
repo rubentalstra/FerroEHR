@@ -51,7 +51,7 @@ pub struct NodeRow {
     /// The node's canonical JSON fragment, structure children pruned.
     pub data: Value,
     /// The raw promoted-leaf text for this row, aligned to
-    /// [`crate::storage::PROMOTED_LEAVES`] (entry `i` ↔ index `i`); `Some` only
+    /// [`crate::storage::promoted::PROMOTED_LEAVES`] (entry `i` ↔ index `i`); `Some` only
     /// on a versioned-object root whose leaf is present, `None` elsewhere.
     /// [`crate::storage::node_repo::write_nodes`] converts and writes each into
     /// its promoted column. No openEHR spec governs promoted columns — our own
@@ -59,9 +59,9 @@ pub struct NodeRow {
     pub promoted: Vec<Option<String>>,
 }
 
-/// The lean read row: only the columns [`crate::storage::reassemble`] and the
+/// The lean read row: only the columns [`crate::storage::codec::reassemble`] and the
 /// nested-set contract need. The read path fetches exactly these five columns
-/// (G-S6) — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
+/// — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
 /// live inside `data` and are not needed to reconstruct the canonical tree.
 ///
 /// `num_cap`/`parent_num` are surfaced (unused by reassembly) because they are
@@ -81,11 +81,11 @@ pub struct ReadRow {
     pub data: Value,
 }
 
-/// Read access to the three fields [`crate::storage::reassemble`] needs from a
+/// Read access to the three fields [`crate::storage::codec::reassemble`] needs from a
 /// node row — its pre-order number, its materialized path, and its JSON
 /// fragment. Implemented by both the write [`NodeRow`] and the lean [`ReadRow`],
 /// so reassembly works from either shape without forcing the read path to fetch
-/// the promoted query columns (G-S6).
+/// the promoted query columns.
 pub trait NodeContent {
     /// Pre-order number within the versioned object (root = 0).
     fn num(&self) -> i32;

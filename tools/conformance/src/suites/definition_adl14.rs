@@ -143,7 +143,7 @@ pub fn entries() -> Vec<CaseEntry> {
             run_validate_invalid,
         ),
         // ── upload_opt ───────────────────────────────────────────────────────
-        // D5: this valid-upload provisions the OPT's embedded ADL 1.4 archetypes,
+        // this valid-upload provisions the OPT's embedded ADL 1.4 archetypes,
         // so it is the CORE `Adl14ArchetypeProvisioning` evidence (no standalone
         // archetype resource in ITS-REST — archetypes ride inside the OPT).
         case(

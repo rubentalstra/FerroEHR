@@ -24,6 +24,9 @@ use std::time::Instant;
 use axum::extract::{ConnectInfo, MatchedPath, Request};
 use axum::middleware::Next;
 use axum::response::Response;
+use ehrbase::telemetry::prometheus::{
+    HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION, HTTP_RESPONSE_BODY_SIZE,
+};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use opentelemetry::propagation::Extractor;
 use opentelemetry::trace::TraceContextExt;
@@ -32,19 +35,6 @@ use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // ── Metric names (§1.2) — the single source of truth for the emitters here and
 //    the bucket-ladder / description registration in `ehrbase::telemetry`. ────
-
-/// HTTP request-duration histogram (`http_route`, `http_request_method`,
-/// `status_class`).
-pub const HTTP_REQUEST_DURATION: &str = "http_server_request_duration_seconds";
-/// In-flight requests gauge (`http_route`).
-pub const HTTP_ACTIVE_REQUESTS: &str = "http_server_active_requests";
-/// Request body size histogram (`http_route`).
-pub const HTTP_REQUEST_BODY_SIZE: &str = "http_server_request_body_size_bytes";
-/// Response body size histogram (`http_route`).
-pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes";
-/// Authentication-failure counter (`mechanism`, `status`), emitted by the auth
-/// middleware.
-pub const AUTH_FAILURES: &str = "auth_failures_total";
 
 /// The label value used when a request did not match any route template (the
 /// fallback that keeps the `http_route` label a closed set).

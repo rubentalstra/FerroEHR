@@ -10,8 +10,8 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use http::HeaderValue;
 
-use super::config::BasicConfig;
 use super::{AuthError, AuthMethod, Principal};
+use ehrbase::config::auth::BasicConfig;
 
 /// Verify a `Basic <base64>` credential against the configured user store.
 ///
@@ -93,8 +93,8 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::extensions::access::authn::config::BasicUser;
     use argon2::password_hash::{PasswordHasher, SaltString};
+    use ehrbase::config::auth::BasicUser;
 
     fn hash(pw: &str) -> String {
         // Fixed salt keeps the test hermetic without the argon2 `rand` feature.
@@ -109,7 +109,7 @@ mod tests {
         BasicConfig {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
-                password_hash: ehrbase_sm::Secret::new(hash("s3cret")),
+                password_hash: ehrbase::config::secret::Secret::new(hash("s3cret")),
                 roles: vec!["user".to_owned()],
             }],
         }
@@ -167,7 +167,7 @@ mod tests {
         let cfg = BasicConfig {
             users: vec![BasicUser {
                 username: "root".to_owned(),
-                password_hash: ehrbase_sm::Secret::new(hash("s3cret")),
+                password_hash: ehrbase::config::secret::Secret::new(hash("s3cret")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         };

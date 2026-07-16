@@ -4,8 +4,8 @@
 //! intended type (single, list, `time_series`)").
 //!
 //! PORT NOTE (selector grammar). The SM leaves `frame_path` undefined ("Path
-//! within `last_frame` result"); the documented grammar here is our
-//! realization (`docs/design/sm-platform/10-subject-proxy.md` §2.2):
+//! within `last_frame` result"); the documented grammar here is our own
+//! realization:
 //!
 //! - `OPENEHR_SAMPLE` (a `RESULT_SET`): `frame_path` is a **column selector**
 //!   matched against a column `name`; `"col @ timecol"` pairs the column with
@@ -25,7 +25,8 @@ use std::collections::BTreeMap;
 
 use serde_json::Value;
 
-use ehrbase_sm::{DataFrameSample, FramePayload, VariableValue};
+use crate::service::subject_proxy::sample::{DataFrameSample, FramePayload};
+use crate::service::subject_proxy::value::VariableValue;
 
 /// Extract the typed [`VariableValue`] for (`frame_path`, `type_name`) from a
 /// frame sample. `Err` is an extraction/typing failure (reason text).
@@ -231,7 +232,7 @@ fn is_rm_family(value: &Value, family: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use ehrbase_sm::Sample;
+    use crate::service::subject_proxy::sample::Sample;
     use serde_json::json;
 
     use super::*;

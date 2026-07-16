@@ -384,7 +384,7 @@ const XML_BMM_ONLY_ALLOWLIST: &[BmmOnlyField] = &[
     },
 ];
 
-/// One allowlisted BMM-only field (F-05-02): the owning concrete type's spec
+/// One allowlisted BMM-only field: the owning concrete type's spec
 /// name, the field's wire name, and the spec-delta citation.
 struct BmmOnlyField {
     spec: &'static str,
@@ -483,7 +483,7 @@ pub fn emit_to_xml(
                     fields.iter().map(|f| f.wire_name.clone()).collect(),
                 )
             };
-            // F-05-02: append any allowlisted BMM-only field (no XSD slot) as a
+            // append any allowlisted BMM-only field (no XSD slot) as a
             // deterministic trailing element in BMM order, so it is not dropped.
             // (Non-allowlisted BMM-only fields already failed the guard above.)
             for f in bmm_only_fields(spec, fields, xsd) {

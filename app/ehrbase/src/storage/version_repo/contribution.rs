@@ -1,0 +1,167 @@
+//! CONTRIBUTION reads: a contribution's own audit, the versions it affected,
+//! and per-EHR listing/counting.
+//!
+//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
+//! §Storage). The CONTRIBUTION semantics realized are RM common master06
+//! §Contributions / §Committal and Audits.
+
+use serde_json::Value;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
+
+use crate::storage::error::StorageError;
+
+/// A CONTRIBUTION's own audit row (`contribution` ⋈ `audit`), flattened.
+#[derive(Debug, Clone)]
+pub struct ContributionAudit {
+    pub system_id: String,
+    pub change_type: String,
+    pub description: Option<String>,
+    pub committer: Value,
+    pub time_committed: jiff::Timestamp,
+}
+
+/// Read a CONTRIBUTION's audit, scoped to its owning EHR (`None` scope = the
+/// demographic, ehr-less store). `None` when the contribution does not exist
+/// in that scope.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn contribution_audit(
+    pool: &PgPool,
+    contribution_id: Uuid,
+    ehr_id: Option<Uuid>,
+) -> Result<Option<ContributionAudit>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT a.system_id, a.change_type, a.description, a.committer, a.time_committed \
+         FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         WHERE c.id = $1 AND c.ehr_id IS NOT DISTINCT FROM $2",
+    )
+    .bind(contribution_id)
+    .bind(ehr_id)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    Ok(Some(ContributionAudit {
+        system_id: row.try_get("system_id")?,
+        change_type: row.try_get("change_type")?,
+        description: row.try_get("description")?,
+        committer: row.try_get("committer")?,
+        time_committed: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+            .to_jiff(),
+    }))
+}
+
+/// The versions a CONTRIBUTION affected: the rows it committed, unioned with
+/// the rows its `666|attestation|` items attested (which add no new version) —
+/// deduplicated. Returned as `(vo_id, (trunk, branch_number, branch_version),
+/// creating_system_id, kind_text)`.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn contribution_version_refs(
+    pool: &PgPool,
+    contribution_id: Uuid,
+) -> Result<Vec<(Uuid, (i32, i32, i32), String, String)>, StorageError> {
+    let rows = sqlx::query(
+        "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, \
+         kind FROM vo_version \
+         WHERE contribution_id = $1 \
+         UNION \
+         SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+         v.creating_system_id, v.kind FROM vo_version v \
+         JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
+         WHERE att.contribution_id = $1 \
+         ORDER BY vo_id",
+    )
+    .bind(contribution_id)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|row| {
+            Ok((
+                row.try_get("vo_id")?,
+                (
+                    row.try_get("trunk_version")?,
+                    row.try_get("branch_number")?,
+                    row.try_get("branch_version")?,
+                ),
+                row.try_get("creating_system_id")?,
+                row.try_get("kind")?,
+            ))
+        })
+        .collect()
+}
+
+/// The ids of an EHR's CONTRIBUTIONs, oldest-first (audit `time_committed`,
+/// then id), within the optional inclusive commit-time window, paged. A NULL
+/// bound disables that side; a NULL LIMIT returns all rows.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn list_contributions(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    lower: Option<jiff::Timestamp>,
+    upper: Option<jiff::Timestamp>,
+    offset: i64,
+    limit: Option<i64>,
+) -> Result<Vec<Uuid>, StorageError> {
+    let rows = sqlx::query(
+        "SELECT c.id FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         WHERE c.ehr_id = $1 \
+           AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
+           AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz) \
+         ORDER BY a.time_committed, c.id \
+         OFFSET $4 LIMIT $5",
+    )
+    .bind(ehr_id)
+    .bind(lower.map(|t| t.to_string()))
+    .bind(upper.map(|t| t.to_string()))
+    .bind(offset)
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    rows.iter().map(|row| Ok(row.try_get("id")?)).collect()
+}
+
+/// The number of an EHR's CONTRIBUTIONs within the optional inclusive
+/// commit-time window.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn count_contributions(
+    pool: &PgPool,
+    ehr_id: Uuid,
+    lower: Option<jiff::Timestamp>,
+    upper: Option<jiff::Timestamp>,
+) -> Result<i64, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         WHERE c.ehr_id = $1 \
+           AND ($2::timestamptz IS NULL OR a.time_committed >= $2::timestamptz) \
+           AND ($3::timestamptz IS NULL OR a.time_committed <= $3::timestamptz)",
+    )
+    .bind(ehr_id)
+    .bind(lower.map(|t| t.to_string()))
+    .bind(upper.map(|t| t.to_string()))
+    .fetch_one(pool)
+    .await?)
+}
+
+/// The total number of an EHR's CONTRIBUTIONs (the
+/// `EHR_SUMMARY.contribution_count` — SM `ehr_summary.adoc`), unwindowed.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn ehr_contribution_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+    Ok(
+        sqlx::query_scalar("SELECT count(*) FROM contribution WHERE ehr_id = $1")
+            .bind(ehr_id)
+            .fetch_one(pool)
+            .await?,
+    )
+}

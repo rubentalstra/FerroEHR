@@ -8,16 +8,17 @@
 use serde_json::Value;
 use sqlx::Row;
 
-use ehrbase_sm::{
-    DataFrame, DataFrameSample, SmError, SubjectVariable, SystemCall, VariableSample,
-};
-
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
+use crate::service::status::SmError;
+use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
+use crate::service::subject_proxy::sample::{DataFrameSample, VariableSample};
+use crate::service::subject_proxy::variable::SubjectVariable;
 
 /// Cap on retained samples per (subject, variable): newest N survive. No
 /// openEHR spec governs retention — our own design (the history stays a
 /// bounded ring, not an unbounded log).
-pub(super) const SAMPLE_RETENTION: i64 = 100;
+const SAMPLE_RETENTION: i64 = 100;
 
 /// Map a persistence failure to the SM `exception` status (server fault).
 pub(super) fn db_err(e: impl Into<ServiceError>) -> SmError {
@@ -34,7 +35,7 @@ impl EhrbaseService {
     pub(super) async fn sp_has_subject(&self, subject_id: &str) -> Result<bool, SmError> {
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_subject WHERE subject_id = $1)")
             .bind(subject_id)
-            .fetch_one(&self.pool())
+            .fetch_one(&self.pool)
             .await
             .map_err(db_err)
     }
@@ -47,7 +48,7 @@ impl EhrbaseService {
              WHERE creating_app_id = $1 OR using_app_ids ? $1)",
         )
         .bind(application_id)
-        .fetch_one(&self.pool())
+        .fetch_one(&self.pool)
         .await
         .map_err(db_err)
     }
@@ -56,7 +57,7 @@ impl EhrbaseService {
     pub(super) async fn sp_has_binding(&self, env_id: &str) -> Result<bool, SmError> {
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM sp_binding WHERE env_id = $1)")
             .bind(env_id)
-            .fetch_one(&self.pool())
+            .fetch_one(&self.pool)
             .await
             .map_err(db_err)
     }
@@ -73,7 +74,7 @@ impl EhrbaseService {
         )
         .bind(subject_id)
         .bind(canonical_name)
-        .fetch_optional(&self.pool())
+        .fetch_optional(&self.pool)
         .await
         .map_err(db_err)?;
         row.map(|r| row_to_variable(&r)).transpose()
@@ -96,7 +97,7 @@ impl EhrbaseService {
         )
         .bind(subject_id)
         .bind(local_name)
-        .fetch_optional(&self.pool())
+        .fetch_optional(&self.pool)
         .await
         .map_err(db_err)?
         .flatten();
@@ -107,6 +108,9 @@ impl EhrbaseService {
     }
 
     /// Insert (or, for `add_subject_variable`, replace) a subject variable.
+    /// Subject-variable naming validity (SM master10 §Subject Variable Naming:
+    /// no whitespace / unprintable characters) is rejected before storing; an
+    /// unknown `frame_id` surfaces as a named precondition failure (FK).
     pub(super) async fn sp_upsert_variable(
         &self,
         subject_id: &str,
@@ -125,8 +129,6 @@ impl EhrbaseService {
              currency, ask_user, is_manual, frame_id, frame_path) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \
              ON CONFLICT (subject_id, canonical_name) DO NOTHING";
-        // Subject-variable naming validity (SM master10 §Subject Variable
-        // Naming): no whitespace / unprintable characters; reject before storing.
         if !var.name_valid() {
             return Err(SmError::precondition(format!(
                 "subject variable name {:?} (namespace {:?}) is not a valid canonical name \
@@ -146,7 +148,7 @@ impl EhrbaseService {
             .bind(var.is_manual)
             .bind(&var.frame_id)
             .bind(&var.frame_path)
-            .execute(&self.pool())
+            .execute(&self.pool)
             .await
             .map_err(|e| frame_fk_err(e, &var.frame_id))?;
         Ok(())
@@ -168,7 +170,7 @@ impl EhrbaseService {
         .bind(subject_id)
         .bind(canonical_name)
         .bind(currency)
-        .execute(&self.pool())
+        .execute(&self.pool)
         .await
         .map_err(db_err)?;
         Ok(())
@@ -181,7 +183,7 @@ impl EhrbaseService {
              FROM sp_data_frame WHERE frame_id = $1",
         )
         .bind(frame_id)
-        .fetch_optional(&self.pool())
+        .fetch_optional(&self.pool)
         .await
         .map_err(db_err)?;
         let Some(row) = row else { return Ok(None) };
@@ -220,7 +222,7 @@ impl EhrbaseService {
         if let Ok(id) = uuid::Uuid::parse_str(subject_id) {
             let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
                 .bind(id)
-                .fetch_one(&self.pool())
+                .fetch_one(&self.pool)
                 .await
                 .map_err(db_err)?;
             if exists {
@@ -232,7 +234,7 @@ impl EhrbaseService {
              ORDER BY (instance_type = 'Primary') DESC, created_at ASC LIMIT 1",
         )
         .bind(subject_id)
-        .fetch_optional(&self.pool())
+        .fetch_optional(&self.pool)
         .await
         .map_err(db_err)
     }
@@ -256,7 +258,7 @@ impl EhrbaseService {
             .map(serde_json::to_value)
             .transpose()
             .map_err(|e| SmError::exception(format!("serialize frame sample: {e}")))?;
-        let mut tx = self.pool().begin().await.map_err(db_err)?;
+        let mut tx = self.pool.begin().await.map_err(db_err)?;
         sqlx::query(
             "INSERT INTO sp_sample (subject_id, canonical_name, frame_id, retrieve_time, \
              effective_time, is_unavailable, sample, frame_sample) \
@@ -305,7 +307,7 @@ impl EhrbaseService {
         )
         .bind(subject_id)
         .bind(canonical_name)
-        .fetch_optional(&self.pool())
+        .fetch_optional(&self.pool)
         .await
         .map_err(db_err)?;
         row.map(|r| parse_sample_row(&r)).transpose()
@@ -325,7 +327,7 @@ impl EhrbaseService {
         )
         .bind(subject_id)
         .bind(canonical_name)
-        .fetch_all(&self.pool())
+        .fetch_all(&self.pool)
         .await
         .map_err(db_err)?;
         rows.iter().map(parse_sample_row).collect()
@@ -348,7 +350,7 @@ fn parse_sample_row(
 
 /// Reassemble a [`SubjectVariable`] definition from an `sp_variable` row
 /// (runtime `history`/`last_frame` are materialised separately).
-pub(super) fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVariable, SmError> {
+fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVariable, SmError> {
     Ok(SubjectVariable {
         namespace: row.try_get("namespace").map_err(db_err)?,
         name: row.try_get("name").map_err(db_err)?,
@@ -366,7 +368,7 @@ pub(super) fn row_to_variable(row: &sqlx::postgres::PgRow) -> Result<SubjectVari
 /// Map a foreign-key violation on `sp_variable.frame_id` to a precondition
 /// error naming the missing frame (a data-set variable may only bind an
 /// existing frame), and everything else to `exception`.
-pub(super) fn frame_fk_err(e: sqlx::Error, frame_id: &str) -> SmError {
+fn frame_fk_err(e: sqlx::Error, frame_id: &str) -> SmError {
     match &e {
         // 23503 = foreign_key_violation.
         sqlx::Error::Database(db) if db.code().as_deref() == Some("23503") => {

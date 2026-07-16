@@ -4,74 +4,52 @@
 //! End-to-end HTTP tests for the W2-A response-header + `Prefer` handling:
 //! `ETag`/`Location` on the EHR / `EHR_STATUS` / COMPOSITION writes and reads, and
 //! the `return=minimal` (default, header-only) vs `return=representation`
-//! (full body) `Prefer` policy — driven through the assembled router with a
-//! canned [`EhrService`] backend.
+//! (full body) `Prefer` policy — driven through the assembled router over a
+//! **real** `EhrbaseService` on a real `PostgreSQL`.
+//!
+//! The former `Mock` backend returned fixed resource ids; the real service
+//! assigns each version its own `OBJECT_VERSION_ID`, so the tests create the
+//! resources through the wire and read the server-assigned ids back from the
+//! `ETag`/body. The wire assertions (weak `ETag`, `Location` presence/absence,
+//! `Prefer` body policy, status codes) are unchanged.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use std::sync::Arc;
+use std::path::PathBuf;
 
 use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
-use serde_json::{Value, json};
+use serde_json::Value;
 use tower::ServiceExt;
-use uuid::Uuid;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
-use ehrbase_rest::{AppConfig, ServerConfig};
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase_rest::config::AppConfig;
 
 mod common;
-use common::{Hooks, Mock};
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
-const EHR_ID: &str = "7d44b88c-4199-4bad-97dc-d78268e01398";
-const STATUS_OVID: &str = "6cb19121-4307-4648-9da0-d62e4d51f19b::openEHRSys::2";
-const COMP_OVID: &str = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys::3";
-/// A valid `HIER_OBJECT_ID` for the bare `composition_get` route: the EHR
-/// dispatcher decodes `uid_based_id` before the read, so it must be a real UUID.
-const COMP_VO: &str = "8849182c-82ad-4088-a07f-48ead4180515";
 
-/// A canned platform that echoes fixed resources + metadata so the header/
-/// `Prefer` wiring in `dispatch::ehr` is exercised without a database. The SM
-/// `create`/`update` calls return only the `version_uid`; the resource body a
-/// `return=representation` response re-reads comes from the paired `get_*` hook.
-fn hooks() -> Hooks {
-    let ehr_uuid: Uuid = EHR_ID.parse().expect("valid ehr uuid");
-    Hooks {
-        // create_ehr returns the fixed id; ehr_object supplies the representation.
-        create_ehr: Some(Arc::new(move |_status| Ok(ehr_uuid))),
-        ehr_object: Some(Arc::new(|_id| {
-            Ok(json!({ "_type": "EHR", "ehr_id": { "_type": "HIER_OBJECT_ID", "value": EHR_ID } }))
-        })),
-        // EHR_STATUS update returns the new version_uid; get_ehr_status the body.
-        replace_ehr_status: Some(Arc::new(|_id, _uv| Ok(STATUS_OVID.to_owned()))),
-        get_ehr_status: Some(Arc::new(|_id| {
-            Ok(json!({
-                "_type": "EHR_STATUS",
-                "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID },
-                "subject": { "_type": "PARTY_SELF" }
-            }))
-        })),
-        // 200_VERSION_at_time: an ORIGINAL_VERSION carrying the version_uid.
-        ehr_status_version_at_time: Some(Arc::new(|_id, _t| {
-            Ok(json!({
-                "_type": "ORIGINAL_VERSION",
-                "uid": { "_type": "OBJECT_VERSION_ID", "value": STATUS_OVID }
-            }))
-        })),
-        // The bare COMPOSITION read: the ETag/Location come from the body's uid.
-        get_composition_latest: Some(Arc::new(|_e, _vo| {
-            Ok(json!({
-                "_type": "COMPOSITION",
-                "uid": { "_type": "OBJECT_VERSION_ID", "value": COMP_OVID },
-                "name": { "_type": "DV_TEXT", "value": "Encounter" }
-            }))
-        })),
-        // 204_COMPOSITION_deleted: the deleted version_uid.
-        delete_composition: Some(Arc::new(|_e, _ovid| Ok(COMP_OVID.to_owned()))),
-        ..Default::default()
-    }
+// The IPS OPT + its canonical composition are the pair driven end-to-end
+// through the real `EhrbaseService` (upload → create-EHR → commit) in
+// `app/ehrbase/tests/service_validation.rs`, so they commit cleanly here too.
+fn opt_xml() -> String {
+    std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates/openehr-flat/tests/fixtures/sdk/ips.v0.opt"),
+    )
+    .expect("ips.v0.opt vendored in openehr-flat")
+}
+
+fn canonical_composition() -> Value {
+    let text = std::fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+            "../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/ips_canonical.json",
+        ),
+    )
+    .expect("ips_canonical.json vendored in openehr-its");
+    serde_json::from_str(&text).expect("valid canonical composition")
 }
 
 fn config() -> AppConfig {
@@ -95,12 +73,13 @@ fn config() -> AppConfig {
     }
 }
 
-fn app() -> Router {
-    ehrbase_rest::build_with(config(), Arc::new(Mock::with(hooks()))).expect("router builds")
+async fn app(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
+    (pg, common::router_with(config(), service))
 }
 
-async fn send(req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
-    let resp = app().oneshot(req).await.expect("response");
+async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
+    let resp = app.clone().oneshot(req).await.expect("response");
     let status = resp.status();
     let headers = resp.headers().clone();
     let bytes = resp.into_body().collect().await.expect("body").to_bytes();
@@ -119,94 +98,186 @@ fn location(h: &header::HeaderMap) -> Option<&str> {
     h.get(header::LOCATION).and_then(|v| v.to_str().ok())
 }
 
-#[tokio::test]
-async fn ehr_create_default_is_minimal_with_headers() {
+/// The bare uid inside a weak `ETag` (`W/"{uid}"`).
+fn etag_uid(h: &header::HeaderMap) -> String {
+    etag(h)
+        .expect("ETag present")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned()
+}
+
+fn vo_of(ovid: &str) -> &str {
+    ovid.split("::").next().expect("vo uuid")
+}
+
+// ── wire setup helpers ───────────────────────────────────────────────────────
+
+/// Create an EHR through the wire; return its id (from the create `ETag`).
+async fn create_ehr(app: &Router) -> String {
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr"))
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, _b) = send(app, req).await;
+    assert_eq!(status, StatusCode::CREATED);
+    etag_uid(&h)
+}
+
+/// Upload the Demo Vitals OPT (canonical XML) through the wire.
+async fn upload_opt(app: &Router) {
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header(header::CONTENT_TYPE, "application/xml")
+        .body(Body::from(opt_xml()))
+        .unwrap();
+    let (status, _h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
+}
+
+/// Commit the IPS composition into `ehr_id`; return its `version_uid`.
+async fn commit_composition(app: &Router, ehr_id: &str) -> String {
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(canonical_composition().to_string()))
+        .unwrap();
+    let (status, h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
+    etag_uid(&h)
+}
+
+/// The current `EHR_STATUS` body + its `version_uid`.
+async fn current_ehr_status(app: &Router, ehr_id: &str) -> (Value, String) {
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::OK, "ehr_status read: {body}");
+    let v: Value = serde_json::from_str(&body).expect("json ehr_status");
+    let ovid = v["uid"]["value"].as_str().expect("status uid").to_owned();
+    (v, ovid)
+}
+
+// ── EHR create ───────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn ehr_create_default_is_minimal_with_headers() {
+    let (_pg, app) = app("hdr_ehr_create_min").await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
 
     // 201_EHR default (return=minimal): headers only, no body.
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("W/\"{EHR_ID}\"").as_str()));
-    assert_eq!(location(&h), Some(format!("{BASE}/ehr/{EHR_ID}").as_str()));
+    let ehr_id = etag_uid(&h);
+    assert_eq!(etag(&h), Some(format!("W/\"{ehr_id}\"").as_str()));
+    assert_eq!(location(&h), Some(format!("{BASE}/ehr/{ehr_id}").as_str()));
     assert!(body.is_empty(), "minimal create has no body, got {body:?}");
 }
 
 #[tokio::test]
 async fn ehr_create_representation_returns_body() {
+    let (_pg, app) = app("hdr_ehr_create_repr").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr"))
         .header("Prefer", "return=representation")
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::CREATED);
-    assert_eq!(etag(&h), Some(format!("W/\"{EHR_ID}\"").as_str()));
+    let ehr_id = etag_uid(&h);
+    assert_eq!(etag(&h), Some(format!("W/\"{ehr_id}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "EHR");
 }
 
+// ── EHR_STATUS update ────────────────────────────────────────────────────────
+
 #[tokio::test]
 async fn ehr_status_update_default_is_204_with_headers() {
+    let (_pg, app) = app("hdr_status_update_min").await;
+    let ehr_id = create_ehr(&app).await;
+    let (mut status_body, current) = current_ehr_status(&app, &ehr_id).await;
+    // Re-commit the current status (a new version) — strip the uid the server owns.
+    status_body.as_object_mut().unwrap().remove("uid");
+
     let req = Request::builder()
         .method("PUT")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/ehr_status"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
         .header(header::CONTENT_TYPE, "application/json")
-        .header(header::IF_MATCH, "\"prev::v::1\"")
-        .body(Body::from(
-            r#"{"_type":"EHR_STATUS","subject":{"_type":"PARTY_SELF"}}"#,
-        ))
+        .header(header::IF_MATCH, format!("\"{current}\""))
+        .body(Body::from(status_body.to_string()))
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
-    // 204_EHR_STATUS (default minimal): no body, ETag + Location.
+    // 204_EHR_STATUS (default minimal): no body, ETag + Location of the new version.
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
+    let new_ovid = etag_uid(&h);
+    assert_ne!(new_ovid, current, "a new version was created");
+    assert_eq!(etag(&h), Some(format!("W/\"{new_ovid}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/ehr/{EHR_ID}/ehr_status/{STATUS_OVID}").as_str())
+        Some(format!("{BASE}/ehr/{ehr_id}/ehr_status/{new_ovid}").as_str())
     );
     assert!(body.is_empty());
 }
 
 #[tokio::test]
 async fn ehr_status_update_representation_is_200_with_body() {
+    let (_pg, app) = app("hdr_status_update_repr").await;
+    let ehr_id = create_ehr(&app).await;
+    let (mut status_body, current) = current_ehr_status(&app, &ehr_id).await;
+    status_body.as_object_mut().unwrap().remove("uid");
+
     let req = Request::builder()
         .method("PUT")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/ehr_status"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
         .header(header::CONTENT_TYPE, "application/json")
-        .header(header::IF_MATCH, "\"prev::v::1\"")
+        .header(header::IF_MATCH, format!("\"{current}\""))
         .header("Prefer", "return=representation")
-        .body(Body::from(
-            r#"{"_type":"EHR_STATUS","subject":{"_type":"PARTY_SELF"}}"#,
-        ))
+        .body(Body::from(status_body.to_string()))
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
     // 200_EHR_STATUS_updated (representation): body present.
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
+    let new_ovid = etag_uid(&h);
+    assert_eq!(etag(&h), Some(format!("W/\"{new_ovid}\"").as_str()));
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "EHR_STATUS");
 }
 
+// ── COMPOSITION read/delete ──────────────────────────────────────────────────
+
 #[tokio::test]
 async fn composition_get_sets_etag_and_location() {
+    let (_pg, app) = app("hdr_comp_get").await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let ovid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&ovid);
+
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{COMP_VO}"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
-    // 200_COMPOSITION_retrieved: ETag(version_uid) + Location.
+    // 200_COMPOSITION_retrieved: ETag(version_uid) + Location deprecated (absent).
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("W/\"{COMP_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{ovid}\"").as_str()));
     assert_eq!(
         location(&h),
         None,
@@ -219,17 +290,21 @@ async fn composition_get_sets_etag_and_location() {
 #[tokio::test]
 async fn versioned_ehr_status_version_at_time_sets_version_headers() {
     // 200_VERSION_of_EHR_STATUS_at_time declares ETag_VERSION (the version_uid)
-    // plus a `Location_deprecated` header — the deprecated Location is no
-    // longer emitted (overview §"Deprecated headers").
+    // plus a `Location_deprecated` header — the deprecated Location is no longer
+    // emitted (overview §"Deprecated headers").
+    let (_pg, app) = app("hdr_versioned_status").await;
+    let ehr_id = create_ehr(&app).await;
+    let (_body, current) = current_ehr_status(&app, &ehr_id).await;
+
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/versioned_ehr_status/version"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/versioned_ehr_status/version"))
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(etag(&h), Some(format!("W/\"{STATUS_OVID}\"").as_str()));
+    assert_eq!(etag(&h), Some(format!("W/\"{current}\"").as_str()));
     assert_eq!(
         location(&h),
         None,
@@ -241,17 +316,23 @@ async fn versioned_ehr_status_version_at_time_sets_version_headers() {
 
 #[tokio::test]
 async fn composition_delete_is_204_with_headers() {
+    let (_pg, app) = app("hdr_comp_delete").await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let ovid = commit_composition(&app, &ehr_id).await;
+
     let req = Request::builder()
         .method("DELETE")
-        .uri(format!("{BASE}/ehr/{EHR_ID}/composition/{COMP_OVID}"))
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{ovid}"))
         .body(Body::empty())
         .unwrap();
-    let (status, h, body) = send(req).await;
+    let (status, h, body) = send(&app, req).await;
 
     // 204_version_deleted: ETag of the deleted version; its Location is
     // `Location_deprecated` in the OAS and is no longer emitted.
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(etag(&h), Some(format!("W/\"{COMP_OVID}\"").as_str()));
+    let deleted = etag_uid(&h);
+    assert_eq!(etag(&h), Some(format!("W/\"{deleted}\"").as_str()));
     assert_eq!(
         location(&h),
         None,

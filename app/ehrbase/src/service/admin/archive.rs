@@ -5,9 +5,9 @@
 //! "Move selected Parties and relationships to archival storage".
 //!
 //! PORT NOTE (re-verify — `i_admin_archive.adoc` says "Move … to archival
-//! storage"; G-A2): the *archival storage tier* is spec-silent — openEHR
-//! defines no storage mechanics — so this is our own design. This wave realises
-//! the "move" as a `vo_archive` marker only: serving reads are unchanged (zero
+//! storage"): the *archival storage tier* is spec-silent — openEHR defines no
+//! storage mechanics — so this is our own design. This wave realises the
+//! "move" as a `vo_archive` marker only: serving reads are unchanged (zero
 //! wire drift), and the physical storage movement to a cold tier is deferred.
 //! All-or-nothing — an unknown id aborts the transaction before any marker is
 //! written.
@@ -15,18 +15,53 @@
 //! PERF(port): the physical movement of `vo_archive`-marked rows to a cold
 //! storage tier (and any read-path effect) is deferred to P20 optimization —
 //! no openEHR spec governs storage mechanics, so the tiering is our own design
-//! and purely a performance concern, not a conformance one (register 02
-//! `storage/`).
+//! and purely a performance concern, not a conformance one.
 
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
 impl EhrbaseService {
-    /// `archive_ehrs`: mark every versioned object of each EHR as archived
-    /// (idempotent). Any unknown EHR → `ehr_id_does_not_exist`
-    /// ([`ServiceError::NotFound`], → `404`) and nothing is archived.
-    pub(super) async fn archive_ehr_vos(&self, ehr_ids: &[Uuid]) -> Result<(), ServiceError> {
+    /// SM `archive_ehrs`: mark every versioned object of each EHR as archived
+    /// (idempotent).
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — any id in the list is not a
+    ///   well-formed UUID (the whole request is rejected).
+    /// - `versioned_object_does_not_exist` (`404`) — any EHR is unknown
+    ///   (`ehr_id_does_not_exist`); nothing is archived.
+    /// - `exception` — a database fault mid-transaction (rolled back).
+    pub async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
+        let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
+        Ok(self.mark_ehr_vos_archived(&ids).await?)
+    }
+
+    /// SM `archive_parties`: mark each party's versioned object as archived
+    /// (idempotent).
+    ///
+    /// PORT NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
+    /// relationships"): only the party VO is marked this wave, not the related
+    /// `PARTY_RELATIONSHIP`s. While archival is a read-neutral marker this has
+    /// no observable effect; the relationship marker set is extended when the
+    /// storage-tier movement is realised.
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — any id in the list is not a
+    ///   well-formed UUID (the whole request is rejected).
+    /// - `versioned_object_does_not_exist` (`404`) — any id names no
+    ///   demographic PARTY root (`party_id_does_not_exist`); nothing is
+    ///   archived.
+    /// - `exception` — a database fault mid-transaction (rolled back).
+    pub async fn archive_parties(&self, party_ids: Vec<String>) -> Result<(), SmError> {
+        let ids = super::parse_uuid_list(&party_ids, "party")?;
+        Ok(self.mark_party_vos_archived(&ids).await?)
+    }
+
+    /// Mark every versioned object of each EHR archived, all-or-nothing: every
+    /// EHR is existence-checked before any marker is written.
+    async fn mark_ehr_vos_archived(&self, ehr_ids: &[Uuid]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         for &ehr_id in ehr_ids {
             let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
@@ -51,16 +86,11 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// `archive_parties`: mark each party's versioned object as archived
-    /// (idempotent). Any unknown/non-party id → `party_id_does_not_exist`
-    /// ([`ServiceError::NotFound`], → `404`) and nothing is archived.
-    ///
-    /// PORT NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
-    /// relationships"; G-A3): only the party VO is marked this wave, not the
-    /// related `PARTY_RELATIONSHIP`s. While archival is a read-neutral marker
-    /// (G-A2) this has no observable effect; the relationship marker set is
-    /// extended when the storage-tier movement (G-A2) is realised.
-    pub(super) async fn archive_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
+    /// Mark each party's versioned object archived, all-or-nothing: every id
+    /// is checked to name a demographic PARTY root before any marker is
+    /// written. An unknown or non-party id (e.g. a `PARTY_RELATIONSHIP`) is
+    /// `party_id_does_not_exist`.
+    async fn mark_party_vos_archived(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         for &party_id in party_ids {
             let kind: Option<String> = sqlx::query_scalar(

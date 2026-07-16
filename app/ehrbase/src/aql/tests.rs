@@ -14,7 +14,9 @@ use super::ir::{
     AggFunc, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand, PathTarget, QueryIr,
     ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
-use super::{ParamValue, Params, SqlCtx, plan};
+use super::ir::{ParamValue, Params};
+use super::plan;
+use super::sql::SqlCtx;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -742,7 +744,7 @@ fn anchor_exists(sql: &str) -> usize {
     sql.matches("EXISTS(SELECT").count()
 }
 
-/// G-01: OR-containment under an EHR lowers to a disjunction of correlated
+/// OR-containment under an EHR lowers to a disjunction of correlated
 /// `EXISTS` subqueries (QUERY master03 §Containment — "Logical operators AND and
 /// OR"). Previously `sql.rs` returned `SqlError::Unsupported` for any `OR` in the
 /// FROM tree; it must now build.
@@ -761,7 +763,7 @@ fn or_contains_under_ehr_lowers_to_disjunctive_exists() {
     assert!(sql.contains(" OR "), "the branches are OR-combined: {sql}");
 }
 
-/// G-01: OR-containment under a COMPOSITION shares the parent VO and
+/// OR-containment under a COMPOSITION shares the parent VO and
 /// interval-anchors each branch inside its node subtree (`num BETWEEN`).
 #[test]
 fn or_contains_under_vo_interval_anchors_each_branch() {
@@ -779,7 +781,7 @@ fn or_contains_under_vo_interval_anchors_each_branch() {
     );
 }
 
-/// G-01: a nested AND/OR containment tree lowers to the matching boolean tree of
+/// a nested AND/OR containment tree lowers to the matching boolean tree of
 /// `EXISTS` filters (QUERY master03 §Containment).
 #[test]
 fn nested_and_or_contains_tree_builds() {
@@ -798,7 +800,7 @@ fn nested_and_or_contains_tree_builds() {
     assert!(sql.contains(" OR ") && sql.contains(" AND "), "{sql}");
 }
 
-/// G-08: NOT CONTAINS generalises to a negated `EXISTS` over an arbitrary
+/// NOT CONTAINS generalises to a negated `EXISTS` over an arbitrary
 /// operand tree — a compound (OR) operand now builds (previously
 /// `SqlError::Unsupported`). QUERY master03 §Containment, §NOT.
 #[test]
@@ -813,7 +815,7 @@ fn not_contains_compound_operand_builds() {
     assert_eq!(anchor_exists(&sql), 2, "{sql}");
 }
 
-/// G-12: a mixed-type (`Raw`) leaf compared to a numeric literal extracts
+/// a mixed-type (`Raw`) leaf compared to a numeric literal extracts
 /// numerically with a `jsonb_typeof` guard (non-number occurrences → NULL),
 /// never a lexical text compare (QUERY master03 §Comparison operators).
 #[test]
@@ -829,7 +831,7 @@ fn raw_leaf_numeric_comparison_dispatches_to_numeric() {
     );
 }
 
-/// G-12: the same mixed-type leaf compared to a *string* literal stays on the
+/// the same mixed-type leaf compared to a *string* literal stays on the
 /// text path (no numeric guard).
 #[test]
 fn raw_leaf_text_comparison_stays_text() {
@@ -844,7 +846,7 @@ fn raw_leaf_text_comparison_stays_text() {
     );
 }
 
-/// G-15: MIN/MAX over a String leaf compare textually, not by forced numeric
+/// MIN/MAX over a String leaf compare textually, not by forced numeric
 /// magnitude — "Input values type should be either String, Date, Time, Integer
 /// or Real, and it will also determine the return type" (QUERY master03 §MAX).
 #[test]
@@ -856,7 +858,7 @@ fn min_max_over_text_leaf_is_not_forced_numeric() {
     );
 }
 
-/// G-15: MIN/MAX over a numeric leaf still lowers numerically.
+/// MIN/MAX over a numeric leaf still lowers numerically.
 #[test]
 fn min_max_over_numeric_leaf_is_numeric() {
     let sql = build_sql(

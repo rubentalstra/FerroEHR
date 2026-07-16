@@ -1,5 +1,5 @@
 //! Import: replaying received `ORIGINAL_VERSION`s into the local store as
-//! `IMPORTED_VERSION`s (S-14, S-36).
+//! `IMPORTED_VERSION`s.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Copying / §Committal
 //! and Audits. Each received original is committed locally wrapped in an
@@ -24,33 +24,32 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
-use crate::storage::decompose;
+use crate::service::error::ServiceError;
+use crate::storage::codec::decompose;
 use crate::versioning::Kind;
 use crate::versioning::audit::AuditInput;
-use crate::versioning::change::NewVersionRow;
 use crate::versioning::object_version_id::TreeId;
 
 /// A lineage key: the trunk (`("", 0, 0)`) or one specific branch of one system
 /// (`(creating_system_id, trunk_version, branch_number)`). Versions on the same
 /// lineage supersede each other; distinct lineages coexist.
-pub(crate) type Lineage = (String, i32, i32);
+type Lineage = (String, i32, i32);
 
 /// The current state of a to-be-imported container in the target store —
 /// mapped from the storage aggregate read
-/// (`crate::storage::version_repo::imported_container_state`).
+/// (`crate::storage::version_repo::import::imported_container_state`).
 #[derive(Debug, Clone, Default)]
-pub(crate) struct ContainerState {
+struct ContainerState {
     /// The stored kind, if the `vo_id` already exists.
-    pub(crate) kind: Option<Kind>,
+    kind: Option<Kind>,
     /// The owning EHR of the existing container.
-    pub(crate) owner: Option<Uuid>,
+    owner: Option<Uuid>,
     /// The highest trunk version currently held.
-    pub(crate) max_trunk: i32,
+    max_trunk: i32,
     /// The highest storage ordinal currently held.
-    pub(crate) max_ordinal: i32,
+    max_ordinal: i32,
     /// Whether a still-open current TRUNK version exists.
-    pub(crate) trunk_open: bool,
+    trunk_open: bool,
 }
 
 /// Read + map the container state through the storage row I/O; an existing
@@ -59,7 +58,7 @@ async fn container_state(
     tx: &mut PgConnection,
     vo_id: Uuid,
 ) -> Result<ContainerState, ServiceError> {
-    let row = crate::storage::version_repo::imported_container_state(tx, vo_id).await?;
+    let row = crate::storage::version_repo::import::imported_container_state(tx, vo_id).await?;
     let kind = match row.kind {
         None => None,
         Some(text) => Some(Kind::from_type(&text).ok_or_else(|| {
@@ -129,7 +128,14 @@ pub(crate) struct ImportContainer {
 /// Replay a set of received `ORIGINAL_VERSION`s into an EHR as
 /// `IMPORTED_VERSION`s under **one** local import CONTRIBUTION (master06
 /// §Copying, §Committal). The `import_audit` records the local act of committal
-/// (`249|creation|`, master06 §Contributions "import of item").
+/// (`249|creation|`, master06 §Contributions "import of item"). Returns the
+/// local import contribution id.
+///
+/// # Errors
+/// The [`commit_import_scoped`] conflicts: a duplicated version identity within
+/// the import, a container owned by another EHR, a kind mismatch against the
+/// existing clone, or a re-imported (non-newer) trunk version — all
+/// [`ServiceError::Conflict`]; plus decompose/storage write errors.
 pub(crate) async fn commit_import(
     tx: &mut PgConnection,
     ehr_id: Uuid,
@@ -152,6 +158,10 @@ pub(crate) async fn commit_import(
 /// own (ehr-less) import CONTRIBUTION (master09 §Creation Semantics — demographic
 /// content is not EHR-owned). A party whose version container already exists
 /// locally is SKIPPED — parties are shared continuants across extracts.
+///
+/// # Errors
+/// The same conflicts and storage errors as [`commit_import`], restricted to
+/// the containers that do not already exist locally.
 pub(crate) async fn commit_demographic_import(
     tx: &mut PgConnection,
     import_audit: &AuditInput,
@@ -193,10 +203,13 @@ async fn commit_import_scoped(
     // One local instant anchors the whole import's temporal chain.
     let base = jiff::Timestamp::now();
     let (contribution_audit_id, import_time) =
-        crate::storage::version_repo::insert_audit(tx, &import_audit.row()).await?;
-    let contribution_id =
-        crate::storage::version_repo::insert_contribution(tx, ehr_id, contribution_audit_id)
-            .await?;
+        crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
+    let contribution_id = crate::storage::version_repo::commit::insert_contribution(
+        tx,
+        ehr_id,
+        contribution_audit_id,
+    )
+    .await?;
     let mut outbox_versions: Vec<Value> = Vec::new();
 
     for mut container in containers {
@@ -257,7 +270,7 @@ async fn commit_import_scoped(
                 )));
             }
             if state.trunk_open && container.versions.iter().any(|v| v.tree.is_trunk()) {
-                crate::storage::version_repo::close_lineage_at(
+                crate::storage::version_repo::import::close_lineage_at(
                     tx,
                     container.vo_id,
                     &(String::new(), 0, 0),
@@ -270,8 +283,12 @@ async fn commit_import_scoped(
         {
             // A first-received FOLDER container is a new folder hierarchy of the
             // EHR (RM ehr master04 §Folders; master06 §Copying Case 2).
-            crate::storage::version_repo::insert_ehr_folder_rank(tx, ehr_id, container.vo_id)
-                .await?;
+            crate::storage::version_repo::commit::insert_ehr_folder_rank(
+                tx,
+                ehr_id,
+                container.vo_id,
+            )
+            .await?;
         }
 
         // Per-lineage period chains: within a lineage each version closes its
@@ -302,30 +319,33 @@ async fn commit_import_scoped(
                 });
             // Preserves the source commit time verbatim — master06 §Copying
             // ("the ORIGINAL_VERSION instance is never modified").
-            let audit_id = crate::storage::version_repo::insert_audit_at(
+            let audit_id = crate::storage::version_repo::commit::insert_audit_at(
                 tx,
                 &version.commit_audit.row(),
                 version.commit_time,
             )
             .await?;
-            let row = NewVersionRow {
-                vo_id: container.vo_id,
-                kind: container.kind,
-                ehr_id,
-                ordinal,
-                tree: version.tree,
-                lifecycle_state: &version.lifecycle_state,
-                creating_system_id: &version.creating_system_id,
-                preceding_version_uid: version.preceding_version_uid.as_deref(),
-                other_input_version_uids: &version.other_input_version_uids,
-                contribution_id,
-                audit_id,
-                template_id: None,
-                signature: version.signature.as_deref(),
-            };
-            crate::storage::version_repo::insert_imported_vo_version(
+            let (trunk_version, branch_number, branch_version) = version.tree.columns();
+            crate::storage::version_repo::import::insert_imported_vo_version(
                 tx,
-                &row.imported_row(lower, upper),
+                &crate::storage::version_repo::import::ImportedVersionRow {
+                    vo_id: container.vo_id,
+                    kind: container.kind.as_str(),
+                    ehr_id,
+                    sys_version: ordinal,
+                    trunk_version,
+                    branch_number,
+                    branch_version,
+                    lifecycle_state: &version.lifecycle_state,
+                    creating_system_id: &version.creating_system_id,
+                    preceding_version_uid: version.preceding_version_uid.as_deref(),
+                    other_input_version_uids: &version.other_input_version_uids,
+                    contribution_id,
+                    audit_id,
+                    signature: version.signature.as_deref(),
+                    lower,
+                    upper,
+                },
             )
             .await?;
             // A `523|deleted|` version stores no node rows (data is Void).
@@ -335,7 +355,7 @@ async fn commit_import_scoped(
                     .await?;
             }
             for attestation in &version.attestations {
-                crate::storage::version_repo::insert_attestation(
+                crate::storage::version_repo::attestation::insert_attestation(
                     tx,
                     container.vo_id,
                     ordinal,
@@ -347,7 +367,7 @@ async fn commit_import_scoped(
         }
     }
     if outbox_enabled && !outbox_versions.is_empty() {
-        crate::storage::version_repo::write_outbox(
+        crate::storage::version_repo::commit::write_outbox(
             tx,
             contribution_id,
             ehr_id,

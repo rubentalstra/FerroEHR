@@ -1,9 +1,8 @@
 //! Content-addressed blob store over `object_store`.
 //!
-//! **No openEHR spec governs this — our own design/extension** (quarantined
-//! under `crate::extensions`; see `docs/design/platform/12-extensions.md`,
-//! G-12-05). Active only when [`MultimediaConfig::enabled`](super::MultimediaConfig)
-//! is set; with the feature off nothing here is constructed.
+//! **No openEHR spec governs this — our own design/extension.** Active only
+//! when [`MultimediaConfig::enabled`](super::MultimediaConfig) is set; with the
+//! feature off nothing here is constructed.
 //!
 //! Blobs are keyed by the lowercase hex SHA-256 of their (unencoded) bytes, so
 //! identical media dedups naturally and a key is immutable — matching openEHR

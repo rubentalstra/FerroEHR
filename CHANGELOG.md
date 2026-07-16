@@ -15,6 +15,75 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Direct COMPOSITION create/update/delete now honour the ITS-REST committal
+  headers (`openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*`): a
+  caller-supplied committer, audit description, change type, lifecycle
+  state, signature, and attestations are merged into the stored version
+  exactly as on the CONTRIBUTION path (previously the direct paths discarded
+  them and always committed server defaults).
+- The template store no longer double-reads the OPT XML when generating an
+  example for a cold template, and template upload is a single atomic
+  statement (the duplicate-check race window is gone).
+- The event-outbox publisher declares its AMQP topology only on connect or
+  subscription change (previously every poll cycle re-declared each queue),
+  and the FHIR outbound emitter parks a persistently failing row after a
+  bounded retry budget instead of blocking the stream forever.
+
+### Changed
+
+- The application is consolidated to two library crates plus a thin binary
+  (`ehrbase` — the platform, `ehrbase-rest` — the ITS-REST adapter,
+  `ehrbase-server` — the binary): the `ehrbase-sm` trait catalog is gone,
+  the REST adapter calls the concrete platform service directly, and the
+  full configuration tree (`[server]`, `[auth]`, `[authz]`, `[smart]`,
+  `[management]`, `[tenancy]`, `[admin]`) is defined in the platform crate.
+  The served wire, the `ehrbase.toml` schema, and the container entrypoint
+  (`ehrbase`) are unchanged.
+- Bundle-backed terminology lookups and template/query validity checks are
+  now synchronous in-process calls (no behaviour change on the wire).
+- Every versioned write now commits through the single folded
+  audit+contribution+version statement even with digest signing enabled
+  (the commit instant is read up front with the placement, so the signature
+  is computed before any insert); version-tree placement is one read instead
+  of three, and contribution commits batch their target pre-reads. Fewer
+  round trips per write, identical wire behaviour and stored semantics.
+
+### Changed
+
+- The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
+  spec-selector family documents) and the SMART `.well-known/smart-configuration`
+  discovery document are now built once at server startup instead of being
+  regenerated on every request. No change to the document content.
+
+### Fixed
+
+- A FLAT/STRUCTURED composition body that parses as JSON but does not conform
+  to its target template now returns `422 Unprocessable Entity` instead of
+  `500 Internal Server Error` — such an input is client data, not a server
+  fault. Output conversion of stored compositions remains a `500` on failure.
+- Panicking request handlers and audit fail-closed (`503`) responses now
+  carry the standard openEHR `{ error, message }` JSON error body (the audit
+  `503` also carries `Retry-After`), instead of a plain-text body.
+- A malformed `If-Match` header on a state-changing request is now rejected
+  with `400 Bad Request` instead of being silently ignored — an unparseable
+  precondition previously ran as if no `If-Match` was sent, opening a
+  lost-update window. `If-Match: *` and valid version ids are unaffected.
+- Database constraint and serialization/deadlock failures now surface as
+  `409 Conflict`, and connection-pool exhaustion under load as `503 Service
+  Unavailable` with `Retry-After`, instead of collapsing every database error
+  to `500 Internal Server Error`.
+- Stored-query and template metadata list/read endpoints no longer silently
+  blank a field when a database column fails to decode; a decode failure now
+  surfaces as `500` with a real error instead of an empty value.
+
+### Added
+
+- A new `atna_audit_serialize_failed_total` metric counts ATNA audit records
+  dropped because the message failed to serialize, so audit loss is always
+  metered.
+
 ## [3.0.3] - 2026-07-16
 
 ### Changed

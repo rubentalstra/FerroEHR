@@ -111,7 +111,7 @@ fn every_opt_builds_a_web_template() {
     );
 
     let mut build_failures = Vec::new();
-    // opt14 (P13) parser gaps — reported, not a WebTemplate-builder failure.
+    // opt14 parser gaps — reported, not a WebTemplate-builder failure.
     let mut parse_skips = Vec::new();
     let mut built = 0usize;
     let mut composition_roots = 0usize;

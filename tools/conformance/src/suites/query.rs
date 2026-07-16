@@ -438,7 +438,7 @@ fn run_invalid_queries<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// AQL-advanced (G-2): an `ORDER BY … LIMIT` query executes and returns a
+/// AQL-advanced: an `ORDER BY … LIMIT` query executes and returns a
 /// well-formed, bounded `RESULT_SET`. Self-contained (queries whatever EHRs the
 /// shared SUT holds; the LIMIT bound is the deterministic assertion).
 fn run_advanced_order_limit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {

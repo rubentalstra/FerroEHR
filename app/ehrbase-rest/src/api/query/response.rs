@@ -25,7 +25,7 @@ use openehr_its::rest::runtime::ApiError;
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::{negotiate, params};
-use ehrbase_sm::AqlQueryRequest;
+use ehrbase::service::query::request::AqlQueryRequest;
 
 /// The ABAC pre-filter derived from the request (`extensions::abac::query_pre`):
 /// the patient subject-scope id and the touched-attribute collection flag. Both
@@ -88,7 +88,7 @@ pub(super) fn path_segment(parts: &RequestParts, key: &str) -> Result<String, Re
 }
 
 /// Render the assembled `RESULT_SET` as the `200 OK` response, emitting the
-/// spec-mandated `ETag` header (G-1).
+/// spec-mandated `ETag` header.
 ///
 /// `200_Query.yaml` declares an `ETag` response header — "an identifier of the
 /// `RESULT_SET`" — in the weak form (`headers/ETag_RESULT_SET.yaml`:

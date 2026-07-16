@@ -1,23 +1,21 @@
 //! The FHIR-connector **reverse** transform: canonical COMPOSITION → FHIR
 //! resource (the read façade + the outbound emitter share it).
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-03/04). Split out of `mapping.rs` to keep every file ≤ ~700 lines
-//! (register 12 named only the `feeder_audit` split; the ≤700 hard rule forced a
-//! second split — see the return note). Gate: the connector's routes are
-//! config-gated in `ehrbase-rest`; the outbound emitter behind
-//! [`FhirOutboundConfig`](super::FhirOutboundConfig).
+//! **No openEHR spec governs this — our own design/extension.** Gate: the
+//! connector's routes are config-gated in `ehrbase-rest`; the outbound emitter
+//! behind [`FhirOutboundConfig`](super::FhirOutboundConfig).
 //!
 //! The exact inverse of [`build_flat`](super::mapping::build_flat): the
-//! COMPOSITION is flattened to the same simSDT FLAT map [`openehr_flat::from_flat`]
-//! consumes (via [`openehr_flat::to_flat`], so the leaf keys — `path|magnitude`,
-//! `path|unit`, `path|code`, `path|terminology`, `path|value` — are byte-identical
-//! to what an entry wrote inbound), then each mapping entry reads its leaf(s)
-//! back out and writes them to its `FHIRPath`-lite target, building the FHIR
-//! JSON. `code_map` is applied in reverse (`terminology_id` → FHIR system URL).
+//! COMPOSITION is flattened to the same simSDT FLAT map
+//! [`openehr_flat::from_flat`] consumes (via [`openehr_flat::to_flat`], so the
+//! leaf keys — `path|magnitude`, `path|unit`, `path|code`, `path|terminology`,
+//! `path|value` — are byte-identical to what an entry wrote inbound), then each
+//! mapping entry reads its leaf(s) back out and writes them to its
+//! `FHIRPath`-lite target, building the FHIR JSON. `code_map` is applied in
+//! reverse (`terminology_id` → FHIR system URL).
 //!
-//! PORT NOTE: a `constant` entry is NOT reversed — it injected a fixed
-//! openEHR leaf inbound with no FHIR source, so it contributes nothing to the
+//! PORT NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
+//! leaf inbound with no FHIR source, so it contributes nothing to the
 //! reconstructed resource (round-trip fidelity is defined over the FHIR-sourced
 //! mapped fields). The `subject` is reconstructed from the owning EHR's subject
 //! id (the façade/emitter supply it — the COMPOSITION does not carry it), with
@@ -30,9 +28,10 @@ use serde_json::{Map, Value, json};
 use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transform, parse_segment};
 
 /// Reverse [`build_flat`](super::mapping::build_flat): build the FHIR resource
-/// for a COMPOSITION under a mapping definition. `subject_id` is the owning EHR's
-/// external subject id (placed back at the mapping's `subject.reference_path`,
-/// `strip_prefix` re-applied); `None` omits the subject.
+/// for a COMPOSITION under a mapping definition. `subject_id` is the owning
+/// EHR's external subject id (placed back at the mapping's
+/// `subject.reference_path`, `strip_prefix` re-applied); `None` omits the
+/// subject.
 pub(super) fn to_fhir(
     resource_type: &str,
     composition: &Value,

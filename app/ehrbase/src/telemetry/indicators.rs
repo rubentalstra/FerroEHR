@@ -1,14 +1,18 @@
-//! Concrete health indicators (binding doc §2). These live in the binary
-//! because they touch the pool / audit sender; they implement the
-//! [`HealthIndicator`] trait `ehrbase-rest` defines, and are registered into
-//! its [`HealthRegistry`] at boot.
+//! Concrete health indicators (binding doc §2): the dependency-touching checks
+//! (DB pool, migrations, audit sender, event publisher) implementing the
+//! [`HealthIndicator`] trait from [`crate::telemetry::health`]. The binary
+//! constructs them over the live handles and registers them into the
+//! [`HealthRegistry`](crate::telemetry::health::HealthRegistry) at boot; the
+//! HTTP probes live in the protocol adapter (`ehrbase-rest`).
+//!
+//! No openEHR spec governs health probes — our own operational design.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::system_log::AuditSender;
+use crate::system_log::sender::AuditSender;
+use crate::telemetry::health::{Health, HealthIndicator};
 use async_trait::async_trait;
-use ehrbase_rest::management::{Health, HealthIndicator};
 use sqlx::PgPool;
 
 /// `db` — a bounded `SELECT 1` liveness ping. Required for readiness.
@@ -121,7 +125,7 @@ pub struct EventsHealth {
 
 impl EventsHealth {
     /// Construct over the publisher's shared health flag
-    /// ([`EventsHandle::healthy`](crate::events::EventsHandle::healthy)).
+    /// ([`EventsHandle::healthy`](crate::extensions::events::publisher::EventsHandle::healthy)).
     #[must_use]
     pub fn new(healthy: Arc<AtomicBool>) -> Self {
         Self { healthy }

@@ -1271,7 +1271,7 @@ fn emit_enum(
     // the base concrete type. We emit a hand-rolled `Deserialize` that dispatches
     // on `_type` (deep descendants routed to their direct variant, which
     // recurses) instead of `#[serde(untagged)]`, whose structural guessing
-    // silently mis-types a `_type`-less value (audit F-04-01/03). Serialize keeps
+    // silently mis-types a `_type`-less value. Serialize keeps
     // `#[serde(untagged)]` — its output is byte-identical (variant payload only).
     let dispatch = model.xsi_dispatch(&class.name, variants);
     // `_type` dispatch is valid only when every concrete target actually carries
@@ -1363,13 +1363,13 @@ fn emit_enum(
 
 /// Emit a hand-rolled `Deserialize` for an abstract/polymorphic enum that
 /// dispatches on the canonical-JSON `_type` discriminator instead of
-/// `#[serde(untagged)]`'s structural fallback (audit F-04-01/02/03).
+/// `#[serde(untagged)]`'s structural fallback.
 ///
 /// The value is buffered into a `serde_json::Value` (these types are
 /// canonical-JSON-only for serde; XML has its own `FromXml` path), its `_type`
 /// read, and the whole value re-deserialized into the one matching variant via
 /// `serde_json::from_value` — which preserves that variant's precise inner error
-/// (F-04-03) and re-checks `_type` + unknown keys in the inner `OpenEhrType`
+/// and re-checks `_type` + unknown keys in the inner `OpenEhrType`
 /// reader. A deep descendant (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes to
 /// its direct variant (`DvText`), whose own dispatcher recurses.
 ///
@@ -1734,7 +1734,7 @@ impl Model {
     /// canonical-JSON wire? A `Struct` or `PolyEnum` does (it derives
     /// `OpenEhrType`, which emits `_type` first); a transparent enumeration
     /// `Newtype` (`VALIDITY_KIND` → a bare JSON string) does not. Used to decide
-    /// whether an enum's variants can be dispatched on `_type` (F-04-01):
+    /// whether an enum's variants can be dispatched on `_type`:
     /// `_type` dispatch is only valid when every concrete target carries one.
     fn concrete_carries_type(&self, name: &str) -> bool {
         let Some(class) = self.get(name) else {

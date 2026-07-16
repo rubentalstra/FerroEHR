@@ -1,0 +1,113 @@
+//! `GET /management/info` — the server's build + spec provenance.
+//!
+//! No openEHR spec governs this endpoint — it is our own operational surface
+//! (the register verdict for `management/`: pure ops, spec-silent by design).
+//! It reports the git commit, build timestamp, `rustc` version, the pinned
+//! openEHR specification versions, and the `PostgreSQL` target. The same
+//! [`BuildInfo`] feeds the `ehrbase_build_info` gauge and the `OTel` resource
+//! attributes in the binary, so the build facts are captured once.
+//!
+//! The spec-version fields are **not** local literals: they read the single
+//! [`provenance`](crate::telemetry::provenance) source shared with the System
+//! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
+//! quote one fact. In particular `its_rest` is the tested development-edition
+//! identity (`development@e8a093e`), matching the conformance report — not the
+//! retired `1.0.3` label. See that module for the derivation.
+
+use serde::Serialize;
+
+use crate::telemetry::provenance;
+
+/// Build- and spec-provenance, captured once. Cheap to clone.
+#[derive(Debug, Clone, Serialize)]
+pub struct BuildInfo {
+    /// The crate/package name.
+    pub name: &'static str,
+    /// The crate version.
+    pub version: &'static str,
+    /// The git commit (short SHA) the binary was built from, or `unknown`.
+    pub git_sha: &'static str,
+    /// The build timestamp (ISO-8601 UTC), or `unknown` if unavailable.
+    pub build_date: String,
+    /// The `rustc` version string the binary was compiled with.
+    pub rustc: &'static str,
+    /// The pinned openEHR specification versions.
+    pub spec: SpecVersions,
+    /// The `PostgreSQL` version target.
+    pub postgres_target: &'static str,
+}
+
+/// The pinned openEHR specification versions surfaced by `/management/info`.
+#[derive(Debug, Clone, Serialize)]
+pub struct SpecVersions {
+    /// ITS-REST contract version.
+    pub its_rest: &'static str,
+    /// AQL version.
+    pub aql: &'static str,
+    /// Reference Model version.
+    pub rm: &'static str,
+    /// BASE version.
+    pub base: &'static str,
+    /// Archetype Model versions.
+    pub am: &'static str,
+    /// Terminology version.
+    pub term: &'static str,
+}
+
+impl BuildInfo {
+    /// The build info for this binary, from the values captured by `build.rs`.
+    #[must_use]
+    pub fn current() -> Self {
+        Self {
+            name: env!("CARGO_PKG_NAME"),
+            version: env!("CARGO_PKG_VERSION"),
+            git_sha: env!("EHRBASE_GIT_SHA"),
+            build_date: build_date(),
+            rustc: env!("EHRBASE_RUSTC"),
+            spec: SpecVersions {
+                its_rest: provenance::ITS_REST,
+                aql: provenance::AQL,
+                rm: provenance::RM,
+                base: provenance::BASE,
+                am: provenance::AM,
+                term: provenance::TERM,
+            },
+            postgres_target: provenance::PG_TARGET,
+        }
+    }
+}
+
+impl Default for BuildInfo {
+    fn default() -> Self {
+        Self::current()
+    }
+}
+
+/// Render the build epoch captured by `build.rs` as an ISO-8601 UTC string.
+fn build_date() -> String {
+    env!("EHRBASE_BUILD_EPOCH")
+        .parse::<i64>()
+        .ok()
+        .and_then(|secs| jiff::Timestamp::from_second(secs).ok())
+        .map_or_else(|| "unknown".to_owned(), |ts| ts.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_info_is_populated() {
+        let info = BuildInfo::current();
+        assert_eq!(info.name, "ehrbase");
+        assert_eq!(info.spec.rm, "1.2.0");
+        // The tested development-edition identity (matches the ECC report), not
+        // the retired `1.0.3` label — sourced from the shared provenance.
+        assert_eq!(info.spec.its_rest, "development@e8a093e");
+        assert_eq!(info.spec.its_rest, provenance::ITS_REST);
+        assert_eq!(info.postgres_target, "18.4+");
+        // build_date parses to a real timestamp (not the "unknown" fallback) in
+        // a normal build where build.rs ran.
+        assert!(!info.build_date.is_empty());
+    }
+}

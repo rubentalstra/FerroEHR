@@ -2,75 +2,78 @@
 //! by the compile-time-embedded `openehr-term` bundle (TERM 3.1.0).
 //!
 //! Spec: `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`
-//! (the 9 calls + `Pre_has_terminology`/`Pre_has_term`/`Pre_has_value_set`) and
-//! the extract model (`terminology_extract.adoc`, `term_code.adoc`,
+//! (the 9 calls + `Pre_has_terminology`/`Pre_has_term`/`Pre_has_value_set`)
+//! and the extract model (`terminology_extract.adoc`, `term_code.adoc`,
 //! `defined_term.adoc`). Context: `BASE/docs/architecture_overview/
 //! master12-terminology.adoc` (RM coded attributes bound to the "openEHR"
-//! terminology + the six external code sets; archetype-internal terminology is
-//! flat, no server) grounds the "openehr" id + the group↔value-set split.
+//! terminology + the six external code sets; archetype-internal terminology
+//! is flat, no server) grounds the "openehr" id + the group↔value-set split.
 //!
-//! The SM trait + extract types live in `ehrbase-sm`; this module is the
-//! concrete, DB-free mapping onto the bundle ([`openehr_term::bundle::openehr`]).
-//! It is one of the two providers the composing [`TerminologyService`] impl
-//! (in `super`) routes among — the enumerable local default; the remote FHIR TS
-//! ([`super::fhir`]) is the other (`arch-overview master12` "terminology query
-//! server").
-//!
-//! [`TerminologyService`]: ehrbase_sm::TerminologyService
+//! The extract types live in [`super::types`]; this module is the concrete,
+//! DB-free mapping onto the bundle ([`openehr_term::bundle::openehr`]). It is
+//! one of the two providers the routing layer ([`super::routing`]) selects
+//! among — the enumerable local default; the remote FHIR TS ([`super::fhir`])
+//! is the other (`arch-overview master12` "terminology query server").
 //!
 //! # Bundle mapping (design decisions, each documented as a PORT NOTE)
 //!
 //! - **Terminologies.** The primary terminology id is **`"openehr"`** — the
-//!   internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s). The
-//!   bundle's four **external** code sets (ISO 639-1 languages, ISO 3166-1
-//!   countries, IANA character sets, IANA media types) are additionally exposed
-//!   as separate terminologies, each addressed by its `external_id`
-//!   (`"ISO_639-1"`, …) — `get_terminology_ids` lists `"openehr"` + those four.
+//!   internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s).
+//!   The bundle's four **external** code sets (ISO 639-1 languages,
+//!   ISO 3166-1 countries, IANA character sets, IANA media types) are
+//!   additionally exposed as separate terminologies, each addressed by its
+//!   `external_id` (`"ISO_639-1"`, …) — `get_terminology_ids` lists
+//!   `"openehr"` + those four.
 //! - **Terms vs value sets (PORT NOTE).** openEHR terminology codes are
-//!   *group-scoped* (code `532` is `complete` in `version_lifecycle_state` but
-//!   `completed` in `instruction_states` — SPECPR-51). The code-only
-//!   `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a term
-//!   is any concept id present in **any** group, and `get_term` returns the
-//!   first matching group's rubric. Group-scoped access is the province of the
-//!   **value-set** calls (`value_set_id` = the group). This is the faithful
-//!   split for the two SM call families over a group-partitioned vocabulary.
-//! - **Value sets.** For `"openehr"`, a `value_set_code` resolves (in order) to
-//!   an internal group by `openehr_id`, a group by display name, or an internal
-//!   code set by `openehr_id`. For an external terminology, the code set is its
-//!   own single value set (addressed by its id). `value_set_validate` is
-//!   set membership.
-//! - **`subsumes` (PORT NOTE).** The openEHR vocabulary is flat (no subsumption
-//!   hierarchy), so `subsumes` answers identity only — and, being **strict**
-//!   (`i_terminology_service.adoc` `subsumes`), even the identity case is
-//!   `false`. Hierarchical subsumption is the FHIR provider's `$subsumes`.
-//! - **`at_date` (PORT NOTE — G-1 bundle side).** The bundle is a single pinned
-//!   version (TERM 3.1.0), so `at_date` never changes the answer here; the
-//!   temporal parameter is threaded to (and honoured by) the FHIR provider.
-//! - **`attributes` (PORT NOTE — G-3 bundle side).** No meta-model attributes
-//!   are defined for the openEHR bundle (`Terminology_description.attributes` is
-//!   `None`), so the `get_term` `attributes` allow-list has nothing to filter.
-//! - **URI (PORT NOTE).** The TERM spec defines no canonical machine URI for the
-//!   internal terminology; we publish the openEHR terminology repository URI
-//!   (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
+//!   *group-scoped* (code `532` is `complete` in `version_lifecycle_state`
+//!   but `completed` in `instruction_states` — SPECPR-51). The code-only
+//!   `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a
+//!   term is any concept id present in **any** group, and `get_term` returns
+//!   the first matching group's rubric. Group-scoped access is the province
+//!   of the **value-set** calls (`value_set_id` = the group). This is the
+//!   faithful split for the two SM call families over a group-partitioned
+//!   vocabulary.
+//! - **Value sets.** For `"openehr"`, a `value_set_code` resolves (in order)
+//!   to an internal group by `openehr_id`, a group by display name, or an
+//!   internal code set by `openehr_id`. For an external terminology, the
+//!   code set is its own single value set (addressed by its id).
+//!   `value_set_validate` is set membership.
+//! - **`subsumes` (PORT NOTE).** The openEHR vocabulary is flat (no
+//!   subsumption hierarchy), so `subsumes` answers identity only — and,
+//!   being **strict** (`i_terminology_service.adoc` `subsumes`), even the
+//!   identity case is `false`. Hierarchical subsumption is the FHIR
+//!   provider's `$subsumes`.
+//! - **`at_date` (PORT NOTE — G-1 bundle side).** The bundle is a single
+//!   pinned version (TERM 3.1.0), so `at_date` never changes the answer
+//!   here; the temporal parameter is threaded to (and honoured by) the FHIR
+//!   provider.
+//! - **`attributes` (PORT NOTE — G-3 bundle side).** No meta-model
+//!   attributes are defined for the openEHR bundle
+//!   (`Terminology_description.attributes` is `None`), so the `get_term`
+//!   `attributes` allow-list has nothing to filter.
+//! - **URI (PORT NOTE).** The TERM spec defines no canonical machine URI for
+//!   the internal terminology; we publish the openEHR terminology repository
+//!   URI (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
 //!   `https://github.com/openEHR/terminology`). External sets publish their
 //!   `external_id`.
 
 use openehr_term::bundle::openehr;
 use openehr_term::terminology::code_set::CodeSet;
 
-use ehrbase_sm::{CallStatusType, SmError};
-use ehrbase_sm::{DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract};
-
-use crate::versioning::OPENEHR;
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::terminology::types::{
+    DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract,
+};
+use crate::versioning::audit::OPENEHR;
 
 /// The published identifying URI for the internal openEHR terminology.
 const OPENEHR_TERM_URI: &str = "https://github.com/openEHR/terminology";
 /// The canonical rubric language for `get_term`/`get_value_set` display text.
 const CANONICAL_LANG: &str = "en";
 
-/// A `Pre_has_terminology` failure → `NotFound` (the abstract error has no
-/// ITS-REST wire binding — the terminology surface is native-API-only, SM-4
-/// §Wire; `NotFound` is the natural HTTP reading of an unknown terminology).
+/// A `Pre_has_terminology` failure → `NotFound` (the abstract SM error has no
+/// ITS-REST wire binding — the terminology surface is native-API-only;
+/// `NotFound` is the natural HTTP reading of an unknown terminology).
 fn unknown_terminology(id: &str) -> SmError {
     SmError::new(
         CallStatusType::VersionedObjectDoesNotExist,
@@ -86,8 +89,9 @@ fn external_terminology(terminology_id: &str) -> Option<&'static CodeSet> {
     })
 }
 
-/// The value-set members (`code`, optional display text) for a `value_set_code`
-/// within `terminology_id`, or `None` if no such value set exists.
+/// The value-set members (`code`, optional display text) for a
+/// `value_set_code` within `terminology_id`, or `None` if no such value set
+/// exists.
 fn resolve_value_set(
     terminology_id: &str,
     value_set_code: &str,
@@ -155,8 +159,9 @@ fn extract_from_members(
         terminology_id: terminology_id.to_owned(),
         terminology_version: bundle_version(),
         terms: Some(terms),
-        // The openEHR bundle is flat (no subsumption/relationship meta-model),
-        // so no `Term_relationship`s are emitted (PORT NOTE, module head).
+        // The openEHR bundle is flat (no subsumption/relationship
+        // meta-model), so no `Term_relationship`s are emitted (PORT NOTE,
+        // module head).
         relationships: None,
         relations: None,
     }
@@ -167,7 +172,7 @@ fn bundle_version() -> Option<String> {
     openehr().terminology().version.clone()
 }
 
-// ─── the 9 SM calls, as DB-free functions the trait impl delegates to ────────
+// ─── the 9 SM calls, as DB-free functions the routing layer delegates to ─────
 
 /// `get_terminology_ids` — `"openehr"` plus every external code set's id.
 pub(super) fn terminology_ids() -> Vec<String> {
@@ -297,7 +302,8 @@ pub(super) fn value_set_validate(
         .is_some_and(|members| members.iter().any(|(code, _)| code == candidate_code)))
 }
 
-/// `get_value_set`. `Pre_has_terminology` + `Pre_has_value_set` (both → `NotFound`).
+/// `get_value_set`. `Pre_has_terminology` + `Pre_has_value_set` (both →
+/// `NotFound`).
 pub(super) fn get_value_set(
     terminology_id: &str,
     value_set_code: &str,
@@ -436,7 +442,8 @@ mod tests {
                 ..
             })
         ));
-        // value_set_validate against an unknown value set → false (no precondition).
+        // value_set_validate against an unknown value set → false (no
+        // precondition on the membership test itself).
         assert!(!value_set_validate("openehr", "no_such_group", "249").unwrap());
     }
 
@@ -449,8 +456,8 @@ mod tests {
 
     #[test]
     fn at_date_is_accepted_but_answers_from_pinned_version() {
-        // (The at_date threading lives in the trait impl; here we assert the
-        // pinned version is what the extract reports.)
+        // (The at_date threading lives in the routing layer; here we assert
+        // the pinned version is what the extract reports.)
         let extract = get_term("openehr", "249").unwrap();
         assert_eq!(extract.terminology_version.as_deref(), Some("3.1.0"));
     }

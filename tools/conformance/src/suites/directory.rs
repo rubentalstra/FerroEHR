@@ -67,7 +67,7 @@ pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── has_directory (master09 §C) — 200 has / 404 not; the false/error
         //    trichotomy collapses to 200/404 by element-2 mapping (register 06
-        //    G-5); the native ehrbase-sm surface keeps the distinction.
+        // G-5); the native ehrbase-sm surface keeps the distinction.
         entry(
             "dir/has-directory-empty-ehr",
             "Directory existence check — empty EHR",

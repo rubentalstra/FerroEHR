@@ -14,13 +14,13 @@ use std::sync::Arc;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::versioning::signature::{Mode, Signer, SigningConfig, Verdict, VerifyOnRead};
-use ehrbase_sm::{
-    CallStatusType, EhrCompositionService, EhrContributionService, EhrDirectoryService, EhrService,
-    EhrStatusService, SmError,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
-use openehr_base::prelude::TerminologyCode;
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+use ehrbase::versioning::signature::signer::Signer;
+use ehrbase::versioning::signature::verify::Verdict;
+
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
+use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
@@ -208,7 +208,8 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("create_composition");
+        .expect("create_composition")
+        .version_uid();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
     let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
     let ovid_v2 = svc
@@ -218,7 +219,8 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
             uv(composition("v2"), "251", Some(&ovid_v1)),
         )
         .await
-        .expect("update_composition");
+        .expect("update_composition")
+        .version_uid();
 
     for ovid in [&ovid_v1, &ovid_v2] {
         let ov = svc
@@ -386,7 +388,8 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("tamper"), "249", None))
         .await
-        .expect("create_composition");
+        .expect("create_composition")
+        .version_uid();
 
     // A clean read verifies fine.
     svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
@@ -494,7 +497,8 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("create_composition");
+        .expect("create_composition")
+        .version_uid();
     let (vo_uuid, v1) = version_components(&ovid_v1);
     assert_eq!(v1, "1", "first version is trunk 1 (master06 §Version tree)");
 
@@ -524,7 +528,8 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
             uv(composition("v2"), "251", Some(&ovid_v1)),
         )
         .await
-        .expect("update_composition");
+        .expect("update_composition")
+        .version_uid();
     let (_, v2) = version_components(&ovid_v2);
     assert_eq!(v2, "2", "second trunk version");
     let latest = svc
@@ -557,7 +562,8 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
 
     // DELETE → folded path (523|deleted|, no node rows); the current version
     // then resolves to an empty body (204, F-02-01), never 404.
-    svc.delete_composition(ehr_uuid, ovid_v2.parse().expect("ovid"))
+    let ovid_v2_id: ObjectVersionId = ovid_v2.parse().expect("ovid");
+    svc.delete_composition(ehr_uuid, &ovid_v2_id)
         .await
         .expect("delete_composition");
     let deleted = svc
@@ -614,7 +620,8 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     let ovid = svc_a
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("create_composition");
+        .expect("create_composition")
+        .version_uid();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
     let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
     // The uid's middle part is the creating system id.

@@ -13,8 +13,10 @@
 //!   opaque composite identifier governed by the case rule below, and do **not**
 //!   attempt a multi-axial decomposition the spec has not yet fixed.
 //! - **§Composite Identifiers and Case** — the case law that governs G-T04:
-//!   composite identifiers are *case-preserving* (stored verbatim) **and**
-//!   *case-insensitive* (two ids differing only in case are the **same** id).
+//!   composite identifiers are *case-preserving* ("not change case due to
+//!   persistence, copying, transfer or other computation processes") **and**
+//!   *case-insensitive* ("two identifiers identical apart from case are
+//!   considered to be identical, and therefore to identify the same thing").
 //!
 //! Coordination note: the SM `I_DEFINITION_ADL14` provisioning surface
 //! (`service/definition/adl14.rs`) enforces the same rule at its SQL boundary

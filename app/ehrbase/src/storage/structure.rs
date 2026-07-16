@@ -5,8 +5,8 @@
 //! storage design (`docs/architecture.md` §Storage). The *composition-content*
 //! structure set is NOT hand-maintained here: it is delegated to the single
 //! BMM-generated oracle [`openehr_rm::model::is_structure_root`], which the
-//! codegen keeps in lockstep with this codec (G-S4 — the former duplicate const
-//! is gone). The only local addition is the five demographic **party roots**,
+//! codegen keeps in lockstep with this codec — never a local duplicate
+//! constant. The only local addition is the five demographic **party roots**,
 //! which are versioned objects of their own but are deliberately outside the
 //! composition-content set (the RM model excludes the demographic LOCATABLE
 //! hierarchy, since a party is never composition content).
@@ -33,8 +33,8 @@ pub fn is_structure_type(rm_type: &str) -> bool {
 }
 
 /// Whether an RM `_type` may be the **root** of a versioned object handed to
-/// [`crate::storage::decompose`]. This is [`is_structure_type`] plus
-/// `PARTY_RELATIONSHIP` (SM-3): a relationship is a standalone versioned object
+/// [`crate::storage::codec::decompose`]. This is [`is_structure_type`] plus
+/// `PARTY_RELATIONSHIP`: a relationship is a standalone versioned object
 /// with its own `node`/`vo_version` rows, yet it is deliberately **not** a
 /// structure type for child-pruning purposes — a `PARTY_RELATIONSHIP` nested
 /// inside a party's `relationships` attribute must stay inline. Splitting the

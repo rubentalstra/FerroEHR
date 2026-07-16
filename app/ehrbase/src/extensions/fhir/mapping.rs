@@ -1,14 +1,14 @@
 //! The FHIR-connector **mapping definition** schema + the pure FHIR→FLAT
 //! transform.
 //!
-//! **No openEHR spec governs this — our own design/extension** (`crate::extensions`,
-//! G-12-04). FHIR↔openEHR mapping is spec-silent, so this schema is a design
-//! decision, not a transcription; master14's integration model maps *integration
-//! archetypes* → *designed archetypes* via `GENERIC_ENTRY`, whereas this
-//! connector maps directly to *designed* templates (mapping-as-data) — a
-//! different, spec-silent mechanism. The `FEEDER_AUDIT` builder (the one RM-typed
-//! part) is carved out into [`super::feeder_audit`]. Gate: the connector's
-//! inbound routes are config-gated in `ehrbase-rest`.
+//! **No openEHR spec governs this — our own design/extension.** FHIR↔openEHR
+//! mapping is spec-silent, so this schema is a design decision, not a
+//! transcription; master14's integration model maps *integration archetypes* →
+//! *designed archetypes* via `GENERIC_ENTRY`, whereas this connector maps
+//! directly to *designed* templates (mapping-as-data) — a different,
+//! spec-silent mechanism. The `FEEDER_AUDIT` builder (the one RM-typed part)
+//! lives in [`super::feeder_audit`]. Gate: the connector's inbound routes are
+//! config-gated in `ehrbase-rest`.
 //!
 //! A mapping definition binds one FHIR R4 resource profile to one openEHR
 //! template. Its `entries` each read a value out of the incoming FHIR resource
@@ -16,11 +16,11 @@
 //! template-relative **openEHR FLAT path** (the Better/simSDT `id[:i]/…|suffix`
 //! key `openehr-flat` consumes — `crates/openehr-flat/src/flat/sub.rs`). The
 //! resulting flat map is handed to [`openehr_flat::from_flat`] with the
-//! template's `WebTemplate` to build a canonical COMPOSITION, which then commits
-//! through the platform's NORMAL validated path. This
-//! module is protocol-free and DB-free: it is the deterministic transform, unit
-//! tested here; the orchestration (mapping-store lookup, EHR resolution,
-//! commit) lives in the parent [`super`] module on `EhrbaseService`.
+//! template's `WebTemplate` to build a canonical COMPOSITION, which then
+//! commits through the platform's NORMAL validated path. This module is
+//! protocol-free and DB-free: it is the deterministic transform, unit tested
+//! here; the orchestration (mapping-store lookup, EHR resolution, commit)
+//! lives in the parent [`super`] module on `EhrbaseService`.
 //!
 //! PORT NOTE: the FHIR side is a deliberate **subset** of `FHIRPath` —
 //! object-field navigation and array indexing only
@@ -36,7 +36,7 @@
 
 use std::collections::BTreeMap;
 
-use ehrbase_sm::SubjectRef;
+use crate::service::ehr_index::types::SubjectRef;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
@@ -206,7 +206,7 @@ pub(super) fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
 /// Split one path segment into its `(name, index)` parts, e.g. `component[0]`
 /// → `("component", Some(0))`, `reference` → `("reference", None)`. Returns
 /// `None` for a malformed segment (unbalanced/broken index). Shared with the
-/// reverse transform's writer ([`super::reverse::set_at`]).
+/// reverse transform's writer ([`super::reverse`]).
 pub(super) fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
     match seg.split_once('[') {
         None => Some((seg, None)),

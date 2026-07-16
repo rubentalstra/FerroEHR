@@ -24,8 +24,7 @@
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{EhrCompositionService, EhrExtractService, EhrService};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
@@ -237,7 +236,8 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
     let v1 = svc
         .create_composition(source, uv(composition("v1"), "249", None))
         .await
-        .expect("composition v1");
+        .expect("composition v1")
+        .version_uid();
     let vo = v1.split("::").next().unwrap().to_owned();
     svc.update_composition(
         source,
@@ -247,7 +247,7 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
     .await
     .expect("composition v2");
 
-    let mut extracts = svc.export_ehrs(source).await.expect("export");
+    let mut extracts = svc.extract_ehrs(source).await.expect("export");
     let extract = extracts.remove(0);
     let rewritten: Value = serde_json::from_str(
         &serde_json::to_string(&extract)
@@ -371,7 +371,8 @@ async fn merge_provenance_round_trips_the_wire() {
     let v1 = svc
         .create_composition(ehr, uv(composition("v1"), "249", None))
         .await
-        .expect("v1");
+        .expect("v1")
+        .version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     // A modification carrying other_input_version_uids (master06 §Version

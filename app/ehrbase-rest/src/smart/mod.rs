@@ -20,7 +20,6 @@
 //! out of scope for a CDR, recorded as PORT NOTEs in the register.
 //! Config-gated ([`config`]): off by default, zero wire drift when disabled.
 
-pub mod config;
 pub mod discovery;
 pub mod enforce;
 pub mod scope;

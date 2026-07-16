@@ -13,8 +13,8 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
-use crate::storage::version_repo::CurrentMeta;
+use crate::storage::error::StorageError;
+use crate::storage::version_repo::meta::CurrentMeta;
 
 /// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
 /// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /
@@ -165,28 +165,104 @@ pub async fn ehr_header(
     Ok(Some((system_id, time_created)))
 }
 
-/// The LIVE folder-hierarchy ids of an EHR in `rank` order — the members of
-/// `EHR.folders` (RM ehr, EHR class `Folders_valid`; RM ehr master04 §Folders).
-/// "Live" = the current trunk version exists and is not logically deleted
-/// (lifecycle `523`). Empty when the EHR indexes no live hierarchy.
+/// Everything the `GET /ehr/{ehr_id}` representation needs in ONE statement
+/// (the former four serial reads — header, current `EHR_STATUS` identity,
+/// `EHR_ACCESS` ref, live folder hierarchies — merged; no openEHR spec governs
+/// read batching, our own design): the EHR header, the current `EHR_STATUS`
+/// version identity, the `EHR_ACCESS` versioned-object id, and the LIVE
+/// folder-hierarchy ids in `rank` order.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn live_folder_hierarchies(
+pub async fn ehr_summary_read(
     pool: &PgPool,
     ehr_id: Uuid,
-) -> Result<Vec<Uuid>, StorageError> {
-    let rows = sqlx::query(
-        "SELECT f.vo_id FROM ehr_folder f \
-         JOIN vo_version v ON v.vo_id = f.vo_id \
-         AND upper_inf(v.sys_period) AND v.branch_number = 0 \
-         WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523' \
-         ORDER BY f.rank",
+) -> Result<Option<EhrSummaryRead>, StorageError> {
+    let Some(row) = sqlx::query(
+        "SELECT e.system_id, e.time_created, \
+                s.vo_id AS status_vo, s.trunk_version, s.branch_number, \
+                s.branch_version, s.creating_system_id, \
+                a.vo_id AS access_vo, \
+                COALESCE(f.folders, ARRAY[]::uuid[]) AS folders \
+         FROM ehr e \
+         LEFT JOIN LATERAL ( \
+             SELECT vo_id, trunk_version, branch_number, branch_version, \
+                    creating_system_id \
+             FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
+               AND upper_inf(sys_period) AND branch_number = 0 \
+         ) s ON true \
+         LEFT JOIN LATERAL ( \
+             SELECT vo_id FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
+               AND upper_inf(sys_period) AND branch_number = 0 \
+         ) a ON true \
+         LEFT JOIN LATERAL ( \
+             SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \
+             FROM ehr_folder f \
+             JOIN vo_version v ON v.vo_id = f.vo_id \
+               AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+             WHERE f.ehr_id = e.id AND v.lifecycle_state <> '523' \
+         ) f ON true \
+         WHERE e.id = $1",
     )
     .bind(ehr_id)
-    .fetch_all(pool)
-    .await?;
-    rows.iter().map(|r| Ok(r.try_get("vo_id")?)).collect()
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(None);
+    };
+    let status = match row.try_get::<Option<Uuid>, _>("status_vo")? {
+        None => None,
+        Some(vo_id) => Some(EhrStatusIdentity {
+            vo_id,
+            trunk_version: row.try_get("trunk_version")?,
+            branch_number: row.try_get("branch_number")?,
+            branch_version: row.try_get("branch_version")?,
+            creating_system_id: row.try_get("creating_system_id")?,
+        }),
+    };
+    Ok(Some(EhrSummaryRead {
+        system_id: row.try_get("system_id")?,
+        time_created: row
+            .try_get::<jiff_sqlx::Timestamp, _>("time_created")?
+            .to_jiff(),
+        status,
+        access_vo: row.try_get("access_vo")?,
+        folders: row.try_get("folders")?,
+    }))
+}
+
+/// The merged `GET /ehr/{ehr_id}` read ([`ehr_summary_read`]).
+#[derive(Debug)]
+pub struct EhrSummaryRead {
+    /// The stored, immutable `EHR.system_id`.
+    pub system_id: String,
+    /// `EHR.time_created`.
+    pub time_created: jiff::Timestamp,
+    /// The current `EHR_STATUS` version identity.
+    pub status: Option<EhrStatusIdentity>,
+    /// The `EHR_ACCESS` versioned-object id.
+    pub access_vo: Option<Uuid>,
+    /// The LIVE folder-hierarchy ids in `rank` order — the members of
+    /// `EHR.folders` (RM ehr, EHR class `Folders_valid`; RM ehr master04
+    /// §Folders). "Live" = the current trunk version exists and is not
+    /// logically deleted (lifecycle `523`). Empty when the EHR indexes no
+    /// live hierarchy.
+    pub folders: Vec<Uuid>,
+}
+
+/// The current `EHR_STATUS` version identity of the merged summary read.
+#[derive(Debug)]
+pub struct EhrStatusIdentity {
+    /// The `EHR_STATUS` versioned object.
+    pub vo_id: Uuid,
+    /// `VERSION_TREE_ID` trunk.
+    pub trunk_version: i32,
+    /// `VERSION_TREE_ID` branch number (0 = trunk).
+    pub branch_number: i32,
+    /// `VERSION_TREE_ID` branch version.
+    pub branch_version: i32,
+    /// The per-version creating system.
+    pub creating_system_id: String,
 }
 
 /// The versioned-object id of the EHR's directory — `EHR.directory`

@@ -86,7 +86,7 @@ const FORCE_GENERATE: &[&str] = &[
 /// it is never generated as a struct — its repeated-element usage is emitted as
 /// an order-preserving `IndexMap<String, String>` field.
 ///
-/// PORT NOTE (F-09-05): the XSD models this as an ordered `sequence`, so
+/// PORT NOTE: the XSD models this as an ordered `sequence`, so
 /// `IndexMap` (insertion order = document order, keyed `.get()` for the
 /// `WebTemplate` consumer) is used rather than the alphabetical `BTreeMap` the RM
 /// `emit-xml` path uses — a `ToXml` re-serialization then preserves element
@@ -105,7 +105,7 @@ const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 /// operational definition, so it is skipped.
 ///
 /// `T_CONSTRAINT` (the top-level `<constraints>` block) is **no longer opaque**
-/// (F-09-03): it is a named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying
+///: it is a named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying
 /// node `default_value` overlays, generated like any other type. Its
 /// differential children may omit `rm_type_name`/`occurrences`/`node_id`
 /// (they carry only `default_value` + `differential_path`); [`lenient_default`]
@@ -120,7 +120,7 @@ const OPAQUE_TYPES: &[&str] = &["T_VIEW"];
 /// single) so a missing multiplicity never over-constrains. The expression is
 /// emitted in the `opt14` impl context (prelude `crate::opt14`).
 ///
-/// PORT NOTE (F-09-07): a defaulted `occurrences`/`existence` of `0..1` is a
+/// PORT NOTE: a defaulted `occurrences`/`existence` of `0..1` is a
 /// *fallback for non-conformant input only* — conformant OPTs always carry the
 /// element. It is a guess (a node that should be `1..1` is silently made
 /// optional-single), so any downstream multiplicity check (P15 validation) must
@@ -252,7 +252,7 @@ impl<'a> OptModel<'a> {
         // A named `xs:simpleType` (restriction over string/integer): text on the
         // wire — `OPERATOR_KIND`, `Iso8601Date`, `VALIDITY_KIND`, patterns, … .
         //
-        // PORT NOTE (F-09-06): the AOM integer-enum `*_KIND` restrictions
+        // PORT NOTE: the AOM integer-enum `*_KIND` restrictions
         // (`VALIDITY_KIND` = 1001/1002/1003, `OPERATOR_KIND` = 2001..2024) are
         // carried verbatim as their wire text (`"1001"`, `"2001"`), not decoded
         // to a typed enum. This round-trips losslessly (text in, text out) and

@@ -17,8 +17,7 @@ role), ATNA audit middleware, and the EhrScape adapter.
   `oauth2`, `openidconnect`, `argon2`) — never hand-rolled. SMART scope
   enforcement AND-composes onto the ABAC PEP and is config-gated off by
   default (zero wire drift when disabled); spec:
-  `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`, design:
-  `docs/design/its-rest/smart.md`.
+  `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`.
 - URL/percent encoding ONLY via the `urlencoding` crate (owner hard rule).
 - Rules: `.claude/rules/rest-axum.md`, `.claude/rules/auth.md`,
   `.claude/rules/serialization.md`.

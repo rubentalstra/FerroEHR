@@ -1,4 +1,4 @@
-//! RM subtype relation for type-conformance checks (F-07-13).
+//! RM subtype relation for type-conformance checks.
 //!
 //! Backed by the BMM-generated static RM model ([`openehr_rm::model`]
 //! §3 `emit-rm-model`) — the spec-pinned type hierarchy, generated from the same

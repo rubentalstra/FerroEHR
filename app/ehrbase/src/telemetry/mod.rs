@@ -15,14 +15,20 @@
 //! shutdown (explicit async [`TelemetryGuard::shutdown`] + a `Drop` backstop).
 
 pub mod config;
+
+use crate::telemetry::config::{OtelConfig, TelemetryConfig};
 pub mod indicators;
 mod layers;
 pub mod prometheus;
 pub mod samplers;
 
-pub use config::{LogConfig, LogFormat, OtelConfig, TelemetryConfig};
+pub mod build_info;
+pub mod health;
+pub mod log_reload;
+pub mod provenance;
 
-use ehrbase_rest::management::{BuildInfo, LogReload};
+use build_info::BuildInfo;
+use log_reload::LogReload;
 use metrics_exporter_prometheus::PrometheusHandle;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::Meter;

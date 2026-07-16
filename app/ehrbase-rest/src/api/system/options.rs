@@ -13,7 +13,7 @@
 //! this one standalone operation is hand-written here, correctly.
 //!
 //! This module owns the manifest's *shape and content*; the wiring layer
-//! (`crate::router`) constructs the [`SystemManifest`] from config plus the
+//! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the
 //! live mounted-group set and mounts [`route`] at the API base-path root. The
 //! register the redesign closes is `docs/design/its-rest/system.md` §1
 //! (G-1..G-6).
@@ -25,7 +25,6 @@ use axum::routing::{MethodRouter, options};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use serde::Serialize;
 
-use crate::extensions::provenance;
 use crate::overview::negotiate;
 
 /// The HTTP methods this API surface supports — the `Allow` header the OAS
@@ -38,53 +37,26 @@ const ALLOW_METHODS: &str = "GET, POST, PUT, DELETE, OPTIONS";
 /// (`system-codegen.openapi.yaml` lines 116-121).
 ///
 /// This is the spec-defined **default** only. G-1 requires the *live* list —
-/// exactly the groups the router mounts — so [`crate::router`] passes its
+/// exactly the groups the router mounts — so [`crate::router::router`] passes its
 /// actual mounted-group set to [`SystemManifest::new`] rather than relying on
 /// this constant.
 pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/query", "/admin"];
 
 /// Identity + conformance fields of the System-Options manifest, sourced from
-/// configuration so the public identity (G-6) and the advertised conformance
-/// profile (G-2) are not string literals baked into the handler.
+/// configuration so the public identity and the advertised conformance
+/// profile are not string literals baked into the handler.
 ///
 /// The defaults are the single shared provenance source
-/// ([`crate::extensions::provenance`]): `restapi_specs_version` quotes the
-/// tested-contract identity [`provenance::ITS_REST`] and `conformance_profile`
-/// quotes [`provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
+/// ([`ehrbase::telemetry::provenance`]): `restapi_specs_version` quotes the
+/// tested-contract identity [`ehrbase::telemetry::provenance::ITS_REST`] and `conformance_profile`
+/// quotes [`ehrbase::telemetry::provenance::CONFORMANCE_PROFILE`] — the last machine-computed ECC
 /// verdict, updated at each conformance re-baseline
 /// (`docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"). The manifest
-/// MUST NOT out-claim that verdict. [`crate::config::ServerConfig`] carries a
+/// MUST NOT out-claim that verdict. [`crate::config::server::ServerConfig`] carries a
 /// `SystemOptionsConfig` as its `identity` field (the `[server.identity]`
 /// section of the one config tree), so an operator MAY override any identity
 /// field while the defaults stay measured.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(default)]
-pub struct SystemOptionsConfig {
-    /// `Options.solution` — the product name.
-    pub solution: String,
-    /// `Options.solution_version` — the product version.
-    pub solution_version: String,
-    /// `Options.vendor` — the organisation providing the solution.
-    pub vendor: String,
-    /// `Options.restapi_specs_version` — the ITS-REST version targeted.
-    pub restapi_specs_version: String,
-    /// `Options.conformance_profile` — CORE / STANDARD (CNF master03 profiles).
-    pub conformance_profile: String,
-}
-
-impl Default for SystemOptionsConfig {
-    fn default() -> Self {
-        Self {
-            // G-6: `solution` (the product) and `vendor` (the organisation) are
-            // distinct — they were the same placeholder before the redesign.
-            solution: "EHRbase-RS".to_owned(),
-            solution_version: env!("CARGO_PKG_VERSION").to_owned(),
-            vendor: "EHRbase-RS project".to_owned(),
-            restapi_specs_version: provenance::ITS_REST.to_owned(),
-            conformance_profile: provenance::CONFORMANCE_PROFILE.to_owned(),
-        }
-    }
-}
+use ehrbase::config::server::SystemOptionsConfig;
 
 /// The wire body of the `OPTIONS /` response — the OAS `Options` schema
 /// (`system-codegen.openapi.yaml` lines 92-121): `solution`,
@@ -116,7 +88,7 @@ impl SystemManifest {
     /// Build a manifest from its identity/conformance config and the endpoint
     /// list the server actually serves.
     ///
-    /// G-1: `endpoints` is the *live* mounted-group set — the wiring layer
+    /// `endpoints` is the *live* mounted-group set — the wiring layer
     /// passes what the router mounts (see [`route`]), so the manifest never
     /// advertises less (or more) than the server serves. Duplicates are
     /// removed and order preserved; use [`SPEC_ENDPOINTS`] as the spec-defined
@@ -147,7 +119,7 @@ impl SystemManifest {
     }
 
     /// Render the `OPTIONS /` response: a `200 OK` with the `Allow` header and
-    /// the `Options` body, honouring `Accept` (G-5).
+    /// the `Options` body, honouring `Accept`.
     ///
     /// Content negotiation goes through [`crate::overview::negotiate::respond`]:
     /// JSON for `application/json`/`*/*`/absent `Accept` (the OAS constrains
@@ -172,20 +144,21 @@ impl SystemManifest {
 /// `MethodRouter<S>` composes with a router of any state type. It is generic
 /// so the wiring layer can mount it on the `AppState`-typed application router.
 ///
-/// [`crate::router`] wires this:
+/// [`crate::router::router`] wires this:
 ///   1. it builds a [`SystemManifest`] from the server config
 ///      ([`SystemOptionsConfig`]) and the **live** mounted-group list — the
 ///      groups `crate::api::api_router` actually merges (`/ehr`,
-///      `/demographic`, `/definition`, `/query`, and `/admin` when its group is
-///      enabled), not [`SPEC_ENDPOINTS`] hardcoded (closes G-1);
+///      `/demographic`, `/definition`, `/query`, and `/admin` when its group
+///      is enabled), not [`SPEC_ENDPOINTS`] hardcoded;
 ///   2. it mounts this handler at the **API base-path root** (`cfg.base_path`,
 ///      e.g. `OPTIONS /ehrbase/rest/openehr/v1`) — the root the OAS
-///      `servers`/`paths` describe (closes G-3);
+///      `servers`/`paths` describe;
 ///   3. it keeps a bare-`/` mount as a compatibility alias for naive root
-///      probes (`docs/design/its-rest/system.md` §2.4);
+///      probes (no openEHR spec mounts `OPTIONS /` outside the base path —
+///      our own compatibility choice);
 ///   4. both mounts sit **above** the `CorsLayer` (that layer treats every
 ///      `OPTIONS` as a CORS preflight and short-circuits it), which is why the
-///      handler is added after the middleware stack in `crate::router`.
+///      handler is added after the middleware stack in `crate::router::router`.
 pub fn route<S>(manifest: Arc<SystemManifest>) -> MethodRouter<S>
 where
     S: Clone + Send + Sync + 'static,
@@ -248,14 +221,20 @@ mod tests {
         // The tested development-edition contract identity (shared provenance,
         // matching management `/info` + the ECC report), not the retired
         // `1.0.3` release label; the profile is the machine-computed verdict.
-        assert_eq!(v["restapi_specs_version"], provenance::ITS_REST);
-        assert_eq!(v["conformance_profile"], provenance::CONFORMANCE_PROFILE);
+        assert_eq!(
+            v["restapi_specs_version"],
+            ehrbase::telemetry::provenance::ITS_REST
+        );
+        assert_eq!(
+            v["conformance_profile"],
+            ehrbase::telemetry::provenance::CONFORMANCE_PROFILE
+        );
         assert!(v["endpoints"].is_array());
     }
 
     #[tokio::test]
     async fn solution_and_vendor_are_distinct_and_config_driven() {
-        // G-6: `solution` (product) and `vendor` (organisation) differ, and
+        // `solution` (product) and `vendor` (organisation) differ, and
         // both come from config — not a shared placeholder.
         let cfg = SystemOptionsConfig {
             solution: "MySolution".to_owned(),
@@ -271,7 +250,7 @@ mod tests {
 
     #[tokio::test]
     async fn conformance_profile_comes_from_config_not_a_literal() {
-        // G-2: the handler reports whatever the config carries — so it can be
+        // the handler reports whatever the config carries — so it can be
         // reconciled with / capped at the runner's machine verdict.
         let cfg = SystemOptionsConfig {
             conformance_profile: "CORE".to_owned(),
@@ -284,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn endpoints_reflect_the_supplied_live_list() {
-        // G-1: the manifest advertises exactly the groups it was built with.
+        // the manifest advertises exactly the groups it was built with.
         let live = ["/ehr", "/query", "/definition", "/demographic", "/admin"];
         let m = SystemManifest::new(
             SystemOptionsConfig::default(),
@@ -326,7 +305,7 @@ mod tests {
 
     #[tokio::test]
     async fn xml_only_accept_is_not_acceptable() {
-        // G-5: `Options` has no canonical-XML shape (it is not a spec-typed RM
+        // `Options` has no canonical-XML shape (it is not a spec-typed RM
         // object); an exclusively-XML `Accept` negotiates to 406.
         let resp = manifest().respond(&headers(&[("accept", "application/xml")]));
         assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE);

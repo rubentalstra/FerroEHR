@@ -28,10 +28,9 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    AdminDumpLoad, EhrDirectoryService, EhrService, EhrStatusService, ExportSpec, ItemTagAdapter,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+
+use ehrbase::service::admin::types::ExportSpec;
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

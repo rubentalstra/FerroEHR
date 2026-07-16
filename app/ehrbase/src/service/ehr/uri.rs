@@ -5,38 +5,41 @@
 //! `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
 //! §"EHR URIs" defines the URI *grammar* (parsed by
 //! [`openehr_rm::paths::EhrUri`]) but explicitly leaves *resolution* to an
-//! unspecified name-resolution service: "An `ehr:` URI implies the availability
-//! of a name resolution mechanism in ehr-space … Until such services are
-//! established, ad hoc means of dealing with `ehr:` URIs are likely to be
-//! used." **No openEHR spec governs how a server resolves such a URI to a
-//! node** — the local resolution here is our own extension, built on the same
-//! versioned-object machinery the REST reads use. Foreign-system resolution is
-//! out of scope (no cross-system name service exists).
+//! unspecified name-resolution service: "An `ehr:` URI implies the
+//! availability of a name resolution mechanism in ehr-space … Until such
+//! services are established, ad hoc means of dealing with `ehr:` URIs are
+//! likely to be used." **No openEHR spec governs how a server resolves such a
+//! URI to a node** — the local resolution here is our own extension, built on
+//! the same versioned-object machinery the REST reads use. Foreign-system
+//! resolution is out of scope (no cross-system name service exists).
 //!
 //! The item-path portion is applied with the RM `PATHABLE` primitives
 //! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.pathable.adoc`):
-//! [`EhrbaseService::resolve_ehr_uri`] enforces the `item_at_path` precondition
-//! `path_unique`, while [`EhrbaseService::resolve_ehr_uri_items`] returns every
-//! match (`items_at_path`).
+//! [`EhrbaseService::resolve_ehr_uri`] enforces the `item_at_path`
+//! precondition `path_unique`, while
+//! [`EhrbaseService::resolve_ehr_uri_items`] returns every match
+//! (`items_at_path`).
 
 use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
-use crate::versioning::{Kind, TreeId, components, read_current, read_version};
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
+use crate::versioning::Kind;
+use crate::versioning::object_version_id::{TreeId, components};
+use crate::versioning::read::{read_current, read_version};
 
 impl EhrbaseService {
     /// Resolve an `ehr:` URI to the single canonical-JSON node it addresses.
     ///
-    /// The item-path portion, if present, must resolve to exactly one node (the
-    /// RM `PATHABLE.item_at_path` precondition `path_unique`); a non-unique path
-    /// is a [`ServiceError::BadRequest`] and an empty result a
-    /// [`ServiceError::NotFound`]. With no item path the whole top-level object
-    /// is returned.
+    /// The item-path portion, if present, must resolve to exactly one node
+    /// (the RM `PATHABLE.item_at_path` precondition `path_unique`); a
+    /// non-unique path is a [`ServiceError::BadRequest`] and an empty result a
+    /// [`ServiceError::NotFound`]. With no item path the whole top-level
+    /// object is returned.
     ///
     /// # Errors
-    ///
     /// [`ServiceError::NotFound`] when the URI names a foreign system, an
     /// unknown EHR/object/version, or resolves to no item;
     /// [`ServiceError::BadRequest`] for a relative URI (no EHR context) or a
@@ -56,14 +59,13 @@ impl EhrbaseService {
     }
 
     /// Resolve an `ehr:` URI to *every* canonical-JSON node its path addresses
-    /// (RM `PATHABLE.items_at_path`). With no item path the result is the single
-    /// top-level object; with no locator it is the EHR object.
+    /// (RM `PATHABLE.items_at_path`). With no item path the result is the
+    /// single top-level object; with no locator it is the EHR object.
     ///
     /// # Errors
-    ///
     /// [`ServiceError::NotFound`] for a foreign system id or an unknown
-    /// EHR/object/version; [`ServiceError::BadRequest`] for a relative URI with
-    /// no EHR context.
+    /// EHR/object/version; [`ServiceError::BadRequest`] for a relative URI
+    /// with no EHR context.
     pub async fn resolve_ehr_uri_items(&self, uri: &EhrUri) -> Result<Vec<Value>, ServiceError> {
         // Foreign-system resolution is out of scope (master11 §"EHR URIs": name
         // resolution across systems is unspecified). Our own extension resolves
@@ -120,7 +122,8 @@ impl EhrbaseService {
             // bare `folders`, whose only spec-pinned member is `folders.item(1)`
             // = the directory — RM ehr §EHR Class `Directory_in_folders`) must
             // resolve deterministically among multiple hierarchies, so it goes
-            // through the rank-ordered directory lookup, never a bare kind-scan.
+            // through the rank-ordered directory lookup, never a bare
+            // kind-scan.
             let vo_id = match attribute.as_str() {
                 "directory" | "folders" => {
                     self.directory_vo_opt(ehr_id).await?.ok_or_else(|| {
@@ -172,8 +175,8 @@ impl EhrbaseService {
 }
 
 /// Decode a versioned-object reference into the storage key pair (`vo_id`,
-/// optional exact version). A bare uid → latest trunk (version `None`); an exact
-/// `OBJECT_VERSION_ID` → its [`TreeId`].
+/// optional exact version). A bare uid → latest trunk (version `None`); an
+/// exact `OBJECT_VERSION_ID` → its [`TreeId`].
 fn resolve_object_ref(object: &VersionLocator) -> Result<(Uuid, Option<TreeId>), ServiceError> {
     match object {
         VersionLocator::VersionedObject(uid) => {

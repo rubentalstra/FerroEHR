@@ -1,4 +1,4 @@
-//! Digital-signature integrity at commit and read (S-15, S-40, S-44).
+//! Digital-signature integrity at commit and read.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature +
 //! BASE arch-overview `master07-security.adoc` §Integrity. The signature is
@@ -11,12 +11,13 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
+use crate::versioning::SigningCtx;
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::TreeId;
-use crate::versioning::revision_history::build_original_version;
-use crate::versioning::signature::{Signer, VerifyOnRead};
-use crate::versioning::{Committed, SigningCtx};
+use crate::versioning::signature::config::VerifyOnRead;
+use crate::versioning::signature::signer::Signer;
+use crate::versioning::wire::build_original_version;
 
 /// Compute the `VERSION.signature` for a version about to be persisted (RM
 /// common master06 §Digital Signature).
@@ -29,6 +30,10 @@ use crate::versioning::{Committed, SigningCtx};
 /// served (built by the shared [`build_original_version`] so commit-time and
 /// read-time bytes match) — is signed over its `canonical_form()` (the
 /// signature attribute Void during serialization, S-40).
+///
+/// # Errors
+/// [`ServiceError::Signing`] when the canonical form cannot be produced or the
+/// `OpenPGP` signer fails (digest signing is infallible).
 #[allow(clippy::too_many_arguments)] // the parts of an ORIGINAL_VERSION + signing context
 pub(crate) fn sign_version(
     ctx: &SigningCtx<'_>,
@@ -73,12 +78,14 @@ pub(crate) fn sign_version(
 /// Read-time signature verification (RM common master06 §Digital Signature —
 /// the signature verifies the served version against its recomputed
 /// `canonical_form`). No-op when `verify_on_read = off` or the version carries
-/// no signature. A `warn` mismatch logs + meters; a `strict` mismatch is a 5xx
-/// integrity failure.
+/// no signature. A `warn` mismatch logs + meters
+/// (`version_signature_invalid_total`); a `strict` mismatch is a 5xx integrity
+/// failure.
 ///
 /// # Errors
-/// [`ServiceError::Signing`] only when `verify_on_read = strict` and the stored
-/// signature fails verification.
+/// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
+/// signature fails verification, or (in any non-`off` mode) when the served
+/// version's canonical form cannot be recomputed.
 pub(crate) fn verify_on_read(
     signer: &Signer,
     ov: &Value,
@@ -111,23 +118,4 @@ pub(crate) fn verify_on_read(
         }
     }
     Ok(())
-}
-
-impl Committed {
-    /// The per-version entry for the PHI-free event-outbox envelope: identity +
-    /// provenance metadata only, never clinical content.
-    ///
-    /// PORT NOTE: no openEHR spec governs eventing — our own extension. The
-    /// outbox row is written inside the commit transaction by storage; this
-    /// only builds the payload (README cross-ruling: extensions build payloads).
-    pub(crate) fn envelope_entry(&self) -> Value {
-        serde_json::json!({
-            "vo_id": self.vo_id,
-            "kind": self.kind.as_str(),
-            "sys_version": self.sys_version,
-            "version_tree_id": self.tree.to_string(),
-            "change_type": self.change_type,
-            "template_id": self.template_id,
-        })
-    }
 }

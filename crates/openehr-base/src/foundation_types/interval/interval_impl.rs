@@ -27,7 +27,7 @@ use super::proper_interval::{ProperInterval, ProperIntervalData};
 // PORT NOTE: BASE intervals range over an ordered foundation type, so the
 // algebra is bounded on `T: PartialOrd` (matching `proper_interval_impl.rs`).
 // RM `DV_INTERVAL<T: DV_ORDERED>` ordering is the separate `openehr_magnitude`
-// concern (P16) and is out of scope here.
+// concern and is out of scope here.
 
 /// A read-only view of the six `Interval<T>` boundary components, so the spec
 /// algebra (`has`/`intersects`/`contains`) is written once and reused by every

@@ -31,8 +31,8 @@
 //!   expansion (matching Better, the interop oracle).
 //! * **Archetype internal-reference (`use_node`) target resolution**: an internal
 //!   reference is emitted as its own node rather than resolved to its target
-//!   subtree; full ADL/AOM reference resolution is part of the ADL2 work track
-//!   (WORKLIST `W-4`), not the OPT 1.4 web-template shape.
+//!   subtree; full ADL/AOM reference resolution is part of the ADL2 work
+//!   track, not the OPT 1.4 web-template shape.
 //!
 //! Node- and coded-value-level external `termBindings` and the multiple-coded-text
 //! compaction are wired.
@@ -385,7 +385,7 @@ fn build_children(
     node.card_all = all_cardinalities(co, &node.aql_path);
     // Existence is captured only for structural (attribute-recursing) nodes; a
     // DATA_VALUE leaf's constraints (`magnitude`, `is_integral`, `value`, …) are
-    // handled by `inputs`/leaf checks, not attribute navigation (F-07-04).
+    // handled by `inputs`/leaf checks, not attribute navigation.
     if recurse_attrs {
         node.existence = existence_constraints(co, &node.aql_path);
         node.closed_attributes = closed_attributes(co, &node.aql_path);
@@ -528,7 +528,7 @@ fn get_compacted(children: Vec<WebTemplateNode>, parent: &mut Hoisted) -> Vec<We
             // A hoisted wrapper's existence/cardinality constraints (on its own
             // attributes, e.g. HISTORY.events) reference absolute archetype
             // paths, so they stay valid when re-homed on the parent — the walk
-            // still enforces them (F-07-04).
+            // still enforces them.
             parent
                 .existence
                 .append(&mut std::mem::take(&mut child.existence));
@@ -875,7 +875,7 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
 
 /// Capture the AOM 1.4 `C_ATTRIBUTE.existence` constraints for the mandatory,
 /// plain (non-archetype-node-identified) single-valued RM attributes of `co`,
-/// keyed by their absolute archetype path (F-07-04).
+/// keyed by their absolute archetype path.
 ///
 /// Scope: only `C_SINGLE_ATTRIBUTE`s with an existence lower bound `>= 1` whose
 /// constraint children carry **no** `node_id`. Archetype-node-identified children

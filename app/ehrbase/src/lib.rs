@@ -11,7 +11,7 @@
 //!   common master06 §Digital Signature lives inside it as
 //!   `versioning::signature`).
 //! - [`service`] — the SM Platform Service Model realization, one folder per
-//!   SM chapter mirroring `ehrbase-sm` (`SM/docs/openehr_platform/`).
+//!   SM chapter (`SM/docs/openehr_platform/`).
 //! - [`aql`] — the AQL 1.1 execution engine (QUERY `master03-syntax`; the
 //!   lowering internals are our own design).
 //! - [`validation`] — archetype/template artefact validity along the AOM

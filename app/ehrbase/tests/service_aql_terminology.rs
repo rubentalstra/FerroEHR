@@ -34,11 +34,12 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase::service::{FhirOperation, FhirProviderConfig, FhirTerminologyProvider, ProviderKind};
-use ehrbase_sm::{
-    AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, QueryService,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::query::request::AqlQueryRequest;
+use ehrbase::service::status::CallStatusType;
+use ehrbase::service::terminology::config::{FhirOperation, FhirProviderConfig, ProviderKind};
+use ehrbase::service::terminology::fhir::FhirTerminologyProvider;
+
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The coded leaf path (mirrors the DV_QUANTITY leaf in `service_aql.rs`, but at
@@ -181,6 +182,7 @@ async fn create_coded(
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {code}): {e:?}"))
+    .version_uid()
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str) -> Value {

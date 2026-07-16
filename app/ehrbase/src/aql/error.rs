@@ -272,7 +272,7 @@ pub enum ExecError {
     /// A whole-object `RESULT_SET` cell could not be reassembled from its node
     /// subtree (a storage/codec failure).
     #[error("result assembly failed: {0}")]
-    Assembly(#[from] crate::storage::StorageError),
+    Assembly(#[from] crate::storage::error::StorageError),
 
     /// A terminology-server call failed while resolving a
     /// `TERMINOLOGY('expand', …)` operand (transport/HTTP/malformed response).

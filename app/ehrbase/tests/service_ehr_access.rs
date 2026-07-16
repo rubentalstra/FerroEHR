@@ -15,8 +15,8 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use ehrbase::db::{self, DbConfig};
+use ehrbase::service::ehr::access_types::DefaultAccess;
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
-use ehrbase_sm::{DefaultAccess, EhrAccessAdapter, EhrService};
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;

@@ -17,11 +17,10 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::Platform;
 
 /// The `versioned_party_*` reads.
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

@@ -5,7 +5,7 @@
 //! Reference Model class invariants **plus** the RM-mandated openEHR
 //! terminology, collecting *all* violations (not fail-fast), each keyed by an RM
 //! path. It composes three existing building blocks: the [`WebTemplate`] tree
-//! (P14), [`openehr_rm::validate::validate_rm_value`] (RM class invariants), and
+//!, [`openehr_rm::validate::validate_rm_value`] (RM class invariants), and
 //! [`openehr_term::bundle`] (openEHR terminology).
 //!
 //! # The three passes
@@ -621,7 +621,7 @@ impl Validator {
         self.check_closure(instance, wt, plan);
     }
 
-    /// Closed-archetype walk (F-07-05 + F-07-10). Under each constrained
+    /// Closed-archetype walk. Under each constrained
     /// attribute this node records (an attribute with fixed archetype-node
     /// alternatives and/or open `ARCHETYPE_SLOT`s), an instance child bearing an
     /// `archetype_node_id` (i.e. a LOCATABLE — the archetyped-content
@@ -747,7 +747,7 @@ impl Validator {
         }
     }
 
-    /// AOM 1.4 `C_ATTRIBUTE.existence` check (F-07-04): for each mandatory plain
+    /// AOM 1.4 `C_ATTRIBUTE.existence` check: for each mandatory plain
     /// RM attribute constrained on this node, verify the attribute *field* is
     /// present on the matched instance. Existence is distinct from occurrences
     /// (archetype-node-identified children) and cardinality (container

@@ -30,8 +30,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{EhrDirectoryService, EhrExtractService, EhrService, EhrStatusService};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -156,7 +155,7 @@ async fn export_ehrs_carries_every_versioned_object_latest_only() {
     let svc = EhrbaseService::new(pg.migrated_pool("extract_whole").await);
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
-    let extracts = svc.export_ehrs(ehr).await.expect("export_ehrs");
+    let extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
     assert_eq!(
         extracts.len(),
         1,
@@ -306,10 +305,13 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("extract_missing").await);
     let err = svc
-        .export_ehrs(Uuid::now_v7())
+        .extract_ehrs(Uuid::now_v7())
         .await
         .expect_err("unknown EHR must fail");
-    assert_eq!(err.status, ehrbase_sm::CallStatusType::EhrIdDoesNotExist);
+    assert_eq!(
+        err.status,
+        ehrbase::service::status::CallStatusType::EhrIdDoesNotExist
+    );
 }
 
 /// A1 rm-ehr-extract: `EXTRACT_SPEC.extract_type` must come from the extract

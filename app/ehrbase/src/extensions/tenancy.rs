@@ -1,40 +1,37 @@
-//! The tenant registry and its [`TenantAdapter`] impl on [`EhrbaseService`]
-//! (G-12-06).
+//! The tenant registry: CRUD over the `tenant` table + claim/header →
+//! [`TenantContext`] resolution, as methods on `EhrbaseService`.
 //!
 //! **No openEHR spec governs this — our own design/extension.** master13 is
 //! informative deployment guidance and prescribes no multi-tenancy mechanism;
 //! master07 governs the `EHR_ACCESS` object and authn-at-deployment, not a
-//! tenant registry. Quarantined under `crate::extensions`
-//! (`docs/design/platform/12-extensions.md`). Gate: tenancy-resolution
-//! middleware is active only when a deployment configures it; with it off the
-//! `tenant` table is never consulted (byte-identical single-tenant behaviour).
+//! tenant registry. Gate: the tenancy-resolution middleware is active only when
+//! a deployment configures it; with it off the `tenant` table is never
+//! consulted (byte-identical single-tenant behaviour).
 //!
 //! **Stage-2-adjacent (multi-tenancy): quarantine only.** This module carries
-//! the tenancy surface exactly as it exists; it is NOT extended here (enterprise
-//! multi-tenancy is Stage 2).
+//! the tenancy surface exactly as it exists; it is NOT extended here
+//! (enterprise multi-tenancy is Stage 2).
 //!
-//! A tenant is one logical openEHR system with its own `system_id`. This module
-//! owns the CRUD against the `tenant` table plus the claim/header →
-//! [`TenantContext`] resolution the tenant-resolution middleware calls once per
-//! request. The `tenant` table is deliberately NOT RLS-scoped (it is the
-//! registry every tenant's isolation is defined against), so these queries need
-//! no session tenant context — and resolution can run before the request's
-//! tenant scope is established (no chicken-and-egg).
+//! A tenant is one logical openEHR system with its own `system_id`. The
+//! `tenant` table is deliberately NOT RLS-scoped (it is the registry every
+//! tenant's isolation is defined against), so these queries need no session
+//! tenant context — and resolution can run before the request's tenant scope
+//! is established (no chicken-and-egg).
 //
 // The helpers below read the `pub(crate)` `pool` + `tenant_cache` fields of
 // `crate::service::EhrbaseService`.
 
-use async_trait::async_trait;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::{SmError, TenantAdapter, TenantContext};
+use crate::extensions::tenant_context::TenantContext;
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
+use crate::service::status::SmError;
 
-use crate::service::{EhrbaseService, ServiceError};
-
-/// The reserved default tenant: the nil uuid, owner of every row
-/// created while tenancy is off. Matches `ext.current_tenant_id()`'s fallback
+/// The reserved default tenant: the nil uuid, owner of every row created while
+/// tenancy is off. Matches `ext.current_tenant_id()`'s fallback
 /// (`migrations/ext/0002_tenant_context.sql`) and cannot be deleted.
 const DEFAULT_TENANT_ID: Uuid = Uuid::nil();
 
@@ -65,7 +62,7 @@ impl EhrbaseService {
         rows.iter().map(Self::tenant_row).collect()
     }
 
-    /// Fetch one tenant by id.
+    /// Fetch one tenant by id, or `NotFound`.
     async fn get_tenant(&self, id: Uuid) -> Result<Value, ServiceError> {
         let row = sqlx::query("SELECT id, name, system_id, created_at FROM tenant WHERE id = $1")
             .bind(id)
@@ -76,7 +73,7 @@ impl EhrbaseService {
             .ok_or_else(|| ServiceError::NotFound(format!("tenant {id}")))?
     }
 
-    /// Create a tenant from `{name, system_id}`.
+    /// Create a tenant from `{name, system_id}` (both required, non-empty).
     async fn create_tenant(&self, body: &Value) -> Result<Value, ServiceError> {
         let name = required_str(body, "name")?;
         let system_id = required_str(body, "system_id")?;
@@ -93,7 +90,7 @@ impl EhrbaseService {
         Self::tenant_row(&row)
     }
 
-    /// Update a tenant's `name`/`system_id`.
+    /// Update a tenant's `name`/`system_id` (both required, non-empty).
     async fn update_tenant(&self, id: Uuid, body: &Value) -> Result<Value, ServiceError> {
         let name = required_str(body, "name")?;
         let system_id = required_str(body, "system_id")?;
@@ -114,9 +111,9 @@ impl EhrbaseService {
     }
 
     /// Delete a tenant — only when it is not the reserved default and owns no
-    /// data. The emptiness check scopes a transaction to the
-    /// *target* tenant via `SET LOCAL`, so the RLS policy admits the target's
-    /// rows regardless of the caller's own tenant context.
+    /// data. The emptiness check scopes a transaction to the *target* tenant
+    /// via `SET LOCAL`, so the RLS policy admits the target's rows regardless
+    /// of the caller's own tenant context.
     async fn delete_tenant(&self, id: Uuid) -> Result<(), ServiceError> {
         if id == DEFAULT_TENANT_ID {
             return Err(ServiceError::Conflict(
@@ -212,29 +209,60 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     ServiceError::Database(e)
 }
 
-#[async_trait]
-impl TenantAdapter for EhrbaseService {
-    async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    /// List every tenant (newest first) as PHI-free JSON records.
+    ///
+    /// # Errors
+    /// [`SmError`] wrapping a database failure.
+    pub async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_tenants().await?)
     }
 
-    async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
+    /// Create a tenant from a `{name, system_id}` JSON body.
+    ///
+    /// # Errors
+    /// `BadRequest` when `name`/`system_id` is missing or empty; `Conflict`
+    /// when the name is already taken; otherwise a database failure.
+    pub async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
         Ok(self.create_tenant(&a_tenant).await?)
     }
 
-    async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
+    /// Fetch one tenant by id.
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_tenant(a_tenant_id).await?)
     }
 
-    async fn tenant_update(&self, a_tenant_id: Uuid, a_tenant: Value) -> Result<Value, SmError> {
+    /// Replace a tenant's `name`/`system_id`.
+    ///
+    /// # Errors
+    /// `BadRequest` when a field is missing or empty; `Conflict` on a duplicate
+    /// name; `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn tenant_update(
+        &self,
+        a_tenant_id: Uuid,
+        a_tenant: Value,
+    ) -> Result<Value, SmError> {
         Ok(self.update_tenant(a_tenant_id, &a_tenant).await?)
     }
 
-    async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
+    /// Delete a tenant that is empty and not the reserved default.
+    ///
+    /// # Errors
+    /// `Conflict` when the tenant is the reserved default or still owns data;
+    /// `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_tenant(a_tenant_id).await?)
     }
 
-    async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
+    /// Resolve a claim/header value (a tenant name or uuid string) to its
+    /// [`TenantContext`]; `None` when no tenant matches.
+    ///
+    /// # Errors
+    /// [`SmError`] wrapping a database failure.
+    pub async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
         Ok(self.resolve_tenant(key).await?)
     }
 }

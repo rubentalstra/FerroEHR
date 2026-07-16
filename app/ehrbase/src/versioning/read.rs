@@ -1,0 +1,219 @@
+//! Version reads: loading stored versions into the versioning value contract
+//! ([`VersionRead`]) — current, by tree id, by storage ordinal, and by instant
+//! (S-08..S-10, S-46, S-47).
+//!
+//! Spec: RM common `master06-change_control_package.adoc` §Versioned Objects /
+//! §Version and its Subtypes / §Logical Deletion, RM common
+//! `master08-versioning.adoc` §Change Management (time-travel reads). All SQL
+//! is delegated to `crate::storage::version_repo`; the canonical body comes
+//! from `crate::storage::node_repo` via the storage read shape. The served
+//! wire forms are built from these reads by [`super::wire`].
+
+use serde_json::Value;
+use uuid::Uuid;
+
+use crate::service::error::ServiceError;
+use crate::versioning::Kind;
+use crate::versioning::audit::AuditInput;
+use crate::versioning::lifecycle;
+use crate::versioning::object_version_id::TreeId;
+
+/// A loaded version: its full provenance metadata and reassembled canonical
+/// JSON (with attestations attached).
+#[derive(Debug, Clone)]
+pub(crate) struct VersionRead {
+    pub(crate) vo_id: Uuid,
+    pub(crate) ehr_id: Option<Uuid>,
+    pub(crate) tree: TreeId,
+    pub(crate) preceding_version_uid: Option<String>,
+    pub(crate) other_input_version_uids: Vec<String>,
+    pub(crate) lifecycle_state: String,
+    /// The immutable identity of the system that created this version (RM common
+    /// master06 §Distributed Versioning), the middle part of its
+    /// `OBJECT_VERSION_ID`.
+    pub(crate) creating_system_id: String,
+    pub(crate) contribution_id: Uuid,
+    /// The mandatory `VERSION.commit_audit` (1..1).
+    pub(crate) audit: AuditInput,
+    pub(crate) time_committed: jiff::Timestamp,
+    pub(crate) template_id: Option<String>,
+    /// The stored `VERSION.signature` (0..1; RM common master06 §Digital
+    /// Signature), or `None` for versions committed before signing was enabled.
+    pub(crate) signature: Option<String>,
+    /// The reassembled canonical JSON, or `Value::Null` for a deleted version
+    /// (a logical delete stores no node rows — master06 §Logical Deletion).
+    pub(crate) canonical: Value,
+    /// The `ATTESTATION`s attached to this version, in commit order (RM common
+    /// master06 §Attestation). Surfaced as `ORIGINAL_VERSION.attestations`,
+    /// appended **after** signature verification (attestations arrive after
+    /// committal and are not part of the signed canonical form).
+    pub(crate) attestations: Vec<Value>,
+}
+
+impl VersionRead {
+    /// Whether this version is logically deleted (`lifecycle_state` `523`).
+    pub(crate) fn deleted(&self) -> bool {
+        self.lifecycle_state == lifecycle::state::DELETED
+    }
+}
+
+/// Compose a [`VersionRead`] from the storage read shape
+/// ([`crate::storage::version_repo::read::StoredVersion`]): the tree id is rebuilt
+/// from its column ints and the flattened audit becomes the `commit_audit`.
+/// A deleted version (lifecycle `523`) stores no node rows, so storage already
+/// yields `canonical = Value::Null` (master06 §Logical Deletion).
+fn version_read(stored: crate::storage::version_repo::read::StoredVersion) -> VersionRead {
+    VersionRead {
+        vo_id: stored.vo_id,
+        ehr_id: stored.ehr_id,
+        tree: TreeId::from_columns(
+            stored.trunk_version,
+            stored.branch_number,
+            stored.branch_version,
+        ),
+        preceding_version_uid: stored.preceding_version_uid,
+        other_input_version_uids: stored.other_input_version_uids,
+        lifecycle_state: stored.lifecycle_state,
+        creating_system_id: stored.creating_system_id,
+        contribution_id: stored.contribution_id,
+        audit: AuditInput {
+            system_id: stored.audit_system_id,
+            change_type: stored.audit_change_type,
+            description: stored.audit_description,
+            committer: stored.audit_committer,
+        },
+        time_committed: stored.time_committed,
+        template_id: stored.template_id,
+        signature: stored.signature,
+        canonical: stored.canonical,
+        attestations: stored.attestations,
+    }
+}
+
+/// Read the current version of an object by id (any kind). `None` if it never
+/// existed; a deleted current version is returned with `canonical = Null` and a
+/// `523` lifecycle so callers can distinguish 404 (never existed) from a
+/// deleted read (RM common master06 §Logical Deletion).
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_current`.
+pub(crate) async fn read_current(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+) -> Result<Option<VersionRead>, ServiceError> {
+    Ok(
+        crate::storage::version_repo::read::read_current(pool, vo_id)
+            .await?
+            .map(version_read),
+    )
+}
+
+/// Read a specific version of an object by its STORAGE ORDINAL (`sys_version`)
+/// — for internal callers that key rows by ordinal (the FHIR mapping table,
+/// extract export iteration), never for wire version ids.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_version_by_ordinal`.
+pub(crate) async fn read_version_by_ordinal(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+    ordinal: i32,
+) -> Result<Option<VersionRead>, ServiceError> {
+    Ok(
+        crate::storage::version_repo::read::read_version_by_ordinal(pool, vo_id, ordinal)
+            .await?
+            .map(version_read),
+    )
+}
+
+/// Read a specific version of an object by its `VERSION_TREE_ID`
+/// (`.../version/{version_uid}` — trunk or branch).
+///
+/// # Errors
+/// The storage read error of `version_repo::read::read_version`.
+pub(crate) async fn read_version(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+    tree: TreeId,
+) -> Result<Option<VersionRead>, ServiceError> {
+    let (t, b, v) = tree.columns();
+    Ok(
+        crate::storage::version_repo::read::read_version(pool, vo_id, t, b, v)
+            .await?
+            .map(version_read),
+    )
+}
+
+/// Read the version of an object that was current at a given instant
+/// (time-travel; RM common master08 §Change Management — any previous state is
+/// reconstructable): the row whose `sys_period` contains `at`.
+///
+/// # Errors
+/// The storage read error of `version_repo::read::version_at`.
+pub(crate) async fn version_at(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+    at: jiff::Timestamp,
+) -> Result<Option<VersionRead>, ServiceError> {
+    Ok(
+        crate::storage::version_repo::read::version_at(pool, vo_id, at)
+            .await?
+            .map(version_read),
+    )
+}
+
+/// The kind of the current version of an object, or `None` if it does not
+/// exist.
+///
+/// # Errors
+/// The storage read error of `version_repo::meta::object_kind`.
+pub(crate) async fn object_kind(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+) -> Result<Option<Kind>, ServiceError> {
+    Ok(crate::storage::version_repo::meta::object_kind(pool, vo_id)
+        .await?
+        .and_then(|kind| Kind::from_type(&kind)))
+}
+
+/// The lean current-version handle for a demographic (ehr-less) versioned
+/// object: its kind-checked identity ([`Kind`] + `VERSION_TREE_ID` +
+/// `creating_system_id`, the `ETag`/`If-Match` parts), commit instant, and
+/// lifecycle-derived `deleted` flag — from ONE `vo_version`⋈`audit` read, with
+/// no node reassembly or attestation load. The wire seam uses this both for the
+/// `If-Match` `ETag` and the not-deleted write gate without the full
+/// [`read_current`] node read (RM common master06 §Version Identification /
+/// §Logical Deletion).
+#[derive(Debug, Clone)]
+pub(crate) struct DemographicCurrent {
+    pub(crate) kind: Kind,
+    pub(crate) tree: TreeId,
+    pub(crate) creating_system_id: String,
+    pub(crate) time_committed: jiff::Timestamp,
+    pub(crate) deleted: bool,
+}
+
+/// Resolve the current trunk version of a demographic object, or `None` if it
+/// has no current version (or the stored kind is unrecognized).
+///
+/// # Errors
+/// The storage read error of `version_repo::meta::current_demographic_meta`.
+pub(crate) async fn demographic_current(
+    pool: &sqlx::PgPool,
+    vo_id: Uuid,
+) -> Result<Option<DemographicCurrent>, ServiceError> {
+    let Some(m) = crate::storage::version_repo::meta::current_demographic_meta(pool, vo_id).await?
+    else {
+        return Ok(None);
+    };
+    let Some(kind) = Kind::from_type(&m.kind) else {
+        return Ok(None);
+    };
+    Ok(Some(DemographicCurrent {
+        kind,
+        tree: TreeId::from_columns(m.trunk_version, m.branch_number, m.branch_version),
+        creating_system_id: m.creating_system_id,
+        time_committed: m.time_committed,
+        deleted: m.lifecycle_state == lifecycle::state::DELETED,
+    }))
+}

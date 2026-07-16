@@ -5,7 +5,7 @@
 //! `definition_query_version_get` / `definition_query_version_store.yaml`.
 //! Governing spec text:
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md` (G-2).
+//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! Queries route through the wire-shaped `DefinitionAdapter`
 //! (`query_list`/`query_version_get`/`query_store`) — the SM
@@ -26,7 +26,6 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::Platform;
 
 /// The default query formalism when `query_type` is absent
 /// (`parameters/query/query_type.yaml`: `default: "AQL"`).
@@ -34,10 +33,7 @@ const DEFAULT_QUERY_TYPE: &str = "AQL";
 
 /// `GET …/definition/query/{qualified_query_name}` — the registered queries
 /// under the qualified name (a prefix pattern; wildcard on empty).
-pub(super) async fn list<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DefinitionQueryListParams>(&parts.path, parts.query.as_deref(), h)?;
     Ok(negotiate::respond(
@@ -50,16 +46,13 @@ pub(super) async fn list<S: Platform>(
 /// `PUT …/definition/query/{qualified_query_name}` — store/upsert a query
 /// (server-assigned SEMVER).
 ///
-/// G-2: the `query_type` query parameter (default `AQL`,
+/// the `query_type` query parameter (default `AQL`,
 /// `parameters/query/query_type.yaml`) is now read and threaded to the store —
 /// no longer silently dropped. The store persists the declared formalism and,
 /// per `QUERY_DESCRIPTOR.formalism` ("may be any other string value"), an
 /// unsupported non-AQL formalism gets an honest unsupported-formalism reject
 /// (not a blanket "invalid AQL" 400).
-pub(super) async fn store<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn store(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionQueryStoreYamlParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -95,8 +88,8 @@ pub(super) async fn store<S: Platform>(
 
 /// `GET …/definition/query/{qualified_query_name}/{version}` — the registered
 /// query at the SEMVER (or SEMVER prefix); `404` if absent.
-pub(super) async fn version_get<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn version_get(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -115,9 +108,9 @@ pub(super) async fn version_get<S: Platform>(
 /// `PUT …/definition/query/{qualified_query_name}/{version}` — store a query at
 /// a specified SEMVER (stored verbatim); `409` on an existing `(name, version)`.
 ///
-/// G-2: as [`store`], the `query_type` parameter is read and threaded through.
-pub(super) async fn version_store<S: Platform>(
-    state: &AppState<S>,
+/// as [`store`], the `query_type` parameter is read and threaded through.
+pub(super) async fn version_store(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -151,11 +144,7 @@ pub(super) async fn version_store<S: Platform>(
 /// the highest. `None` when the lookup fails or finds nothing — the store itself
 /// already succeeded, so the response degrades to Location-less rather than
 /// failing the request.
-async fn stored_version_of<S: Platform>(
-    state: &AppState<S>,
-    name: &str,
-    _headers: &HeaderMap,
-) -> Option<String> {
+async fn stored_version_of(state: &AppState, name: &str, _headers: &HeaderMap) -> Option<String> {
     let list = state.backend().query_list(name.to_owned()).await.ok()?;
     list.iter()
         .filter(|entry| entry.get("name").and_then(|n| n.as_str()) == Some(name))

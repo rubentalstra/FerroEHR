@@ -1,11 +1,11 @@
-//! P10: the node codec round-trips the entire canonical-JSON corpus
+//! the node codec round-trips the entire canonical-JSON corpus
 //! losslessly (in memory — the DB round-trip lives in `persistence.rs`).
 
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::path::Path;
 
-use ehrbase::storage::{decompose, reassemble};
+use ehrbase::storage::codec::{decompose, reassemble};
 use serde_json::Value;
 
 #[test]

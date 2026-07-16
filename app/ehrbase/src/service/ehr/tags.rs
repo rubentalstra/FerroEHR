@@ -7,20 +7,24 @@
 //! `EHR.tags`: "Tag target values can only be within the same EHR") and the
 //! development-branch OAS `ItemTag` schema (`key`/`value`/`target_path`/
 //! `target`/`owner_id`, `additionalProperties: false`). `PUT …/tags` "updates
-//! the list of **all** `ITEM_TAG` resources associated with a given target … an
-//! empty list will effectively remove all" — a full-collection replace. Not an
-//! SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10 storage
-//! seam — our own design).
+//! the list of **all** `ITEM_TAG` resources associated with a given target …
+//! an empty list will effectively remove all" — a full-collection replace.
+//! Not an SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10
+//! storage seam — our own design).
 
-use ehrbase_sm::{ItemTagAdapter, SmError};
+use crate::service::status::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::service::{EhrbaseService, ServiceError};
-use crate::versioning::parse_uid_based_id;
+use crate::service::EhrbaseService;
+use crate::service::error::ServiceError;
+use crate::versioning::object_version_id::parse_uid_based_id;
 
 impl EhrbaseService {
     /// All tags in an EHR, optionally filtered by key / value / target path.
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the tag listing fails.
     pub(in crate::service) async fn ehr_tags(
         &self,
         ehr_id: Uuid,
@@ -41,6 +45,9 @@ impl EhrbaseService {
     }
 
     /// Tags on one target object (a COMPOSITION or `EHR_STATUS`).
+    ///
+    /// # Errors
+    /// [`ServiceError::Database`] if the tag listing fails.
     pub(in crate::service) async fn target_tags(
         &self,
         ehr_id: Uuid,
@@ -60,8 +67,14 @@ impl EhrbaseService {
 
     /// Replace the **whole** tag collection of a target with the posted set,
     /// returning the target's tags after — `PUT` full-collection semantics
-    /// (F-03-05): tags omitted from the body are removed, and an empty list
+    ///: tags omitted from the body are removed, and an empty list
     /// clears all tags on the target.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when the EHR does not exist or the target
+    /// versioned object is not in this EHR; [`ServiceError::Unprocessable`]
+    /// when a tag violates `Inv_key_valid` / `Inv_value_valid`;
+    /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn replace_tags(
         &self,
         ehr_id: Uuid,
@@ -70,19 +83,20 @@ impl EhrbaseService {
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_ehr_exists(ehr_id).await?;
-        // "Tag target values can only be within the same EHR" (RM ehr `ehr.adoc`
-        // EHR.tags): the target versioned object must exist AND belong to this
-        // EHR — the item_tag table is deliberately FK-less (a tag may address a
-        // specific VERSION), so the ownership check lives here.
-        let owner = crate::storage::version_repo::vo_owner(&self.pool, target_vo_id).await?;
+        // "Tag target values can only be within the same EHR" (RM ehr
+        // `ehr.adoc` EHR.tags): the target versioned object must exist AND
+        // belong to this EHR — the item_tag table is deliberately FK-less (a
+        // tag may address a specific VERSION), so the ownership check lives
+        // here.
+        let owner = crate::storage::version_repo::meta::vo_owner(&self.pool, target_vo_id).await?;
         if owner != Some(Some(ehr_id)) {
             return Err(ServiceError::NotFound(format!(
                 "tag target {target_vo_id} does not exist in EHR {ehr_id} \
                  (tag targets can only be within the same EHR)"
             )));
         }
-        // Validate every tag before writing; the `replace_tags` upsert arm covers
-        // same-key repetition (last-wins) in the EHR scope.
+        // Validate every tag before writing; the `replace_tags` upsert arm
+        // covers same-key repetition (last-wins) in the EHR scope.
         let mut new_tags: Vec<crate::storage::tag_repo::NewTag<'_>> =
             Vec::with_capacity(tags.len());
         for tag in &tags {
@@ -120,6 +134,10 @@ impl EhrbaseService {
     }
 
     /// Delete a tag by key from a target object.
+    ///
+    /// # Errors
+    /// [`ServiceError::NotFound`] when no such tag exists on the target;
+    /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn delete_tag(
         &self,
         ehr_id: Uuid,
@@ -134,7 +152,7 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// One `ITEM_TAG` in its wire shape (F-03-06): exactly the OAS `ItemTag`
+    /// One `ITEM_TAG` in its wire shape: exactly the OAS `ItemTag`
     /// properties — `key`, optional `value`/`target_path`, OBJECT_REF-shaped
     /// `target` (the tagged versioned object, its RM type in `type`) and
     /// `owner_id` (the owning EHR). No extra fields — the schema is
@@ -167,9 +185,14 @@ impl EhrbaseService {
     }
 }
 
-#[async_trait::async_trait]
-impl ItemTagAdapter for EhrbaseService {
-    async fn ehr_tags_get(
+// ── The ITS-REST tags call surface ────────────────────────────────────────────
+
+impl EhrbaseService {
+    /// `GET /ehr/{ehr_id}/tags` — all tags in an EHR, optionally filtered.
+    ///
+    /// # Errors
+    /// [`SmError`] if the tag listing fails.
+    pub async fn ehr_tags_get(
         &self,
         an_ehr_id: Uuid,
         key: Option<String>,
@@ -186,7 +209,12 @@ impl ItemTagAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn target_tags_get(
+    /// `GET …/{uid_based_id}/tags` — the tags on one target object.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `uid_based_id` (400-equivalent) or a
+    /// failing tag listing.
+    pub async fn target_tags_get(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,
@@ -195,7 +223,14 @@ impl ItemTagAdapter for EhrbaseService {
         Ok(self.target_tags(an_ehr_id, vo_id).await?)
     }
 
-    async fn target_tags_replace(
+    /// `PUT …/{uid_based_id}/tags` — full-collection replace of a target's
+    /// tags, returning the collection after the write.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `uid_based_id`, a missing EHR or target
+    /// (404-equivalent), an invalid tag (422-equivalent), or a storage
+    /// failure.
+    pub async fn target_tags_replace(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,
@@ -208,7 +243,12 @@ impl ItemTagAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn target_tag_delete(
+    /// `DELETE …/{uid_based_id}/tags/{key}` — delete one tag by key.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `uid_based_id`, a missing tag
+    /// (404-equivalent), or a storage failure.
+    pub async fn target_tag_delete(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,

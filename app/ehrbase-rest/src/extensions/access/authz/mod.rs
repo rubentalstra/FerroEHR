@@ -21,7 +21,7 @@
 //!    default) and the v1-compatible [`remote::RemotePdp`].
 //!
 //! This module also carries the per-server authorization handle wired onto
-//! [`AppState`](crate::AppState) (the RBAC + ABAC gates), built by the binary
+//! [`AppState`](crate::state::AppState) (the RBAC + ABAC gates), built by the binary
 //! from [`config::AuthzConfig`].
 //!
 //! ## Module map (§4.1)
@@ -38,20 +38,15 @@
 
 pub mod cedar;
 pub mod classify;
-pub mod config;
 pub mod engine;
 pub mod remote;
 pub mod request;
 pub mod roles;
 
-pub use classify::{OperationClass, access_of, class_of, kind_of};
-pub use config::{
-    AbacConfig, AbacEngineKind, AbacParam, AuthzConfig, AuthzConfigError, CedarConfig,
-    ManagementAccess, PolicyRule, RbacConfig, RemoteConfig,
-};
-pub use engine::{AuthzError, PolicyEngine};
-pub use request::{AccessMode, Attr, AuthzRequest, Combination, Decision, ResourceKind};
-pub use roles::{RbacDecision, authorize, claim_string, default_role_claims, extract_roles};
+use crate::extensions::access::authz::classify::{OperationClass, class_of};
+use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
+use crate::extensions::access::authz::roles::{RbacDecision, authorize};
+use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AuthzConfig, RbacConfig};
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -123,7 +118,7 @@ pub fn build_engine(config: &AbacConfig) -> Result<Option<Arc<dyn PolicyEngine>>
     Ok(Some(engine))
 }
 
-/// The per-server authorization handle. `None` on [`AppState`](crate::AppState)
+/// The per-server authorization handle. `None` on [`AppState`](crate::state::AppState)
 /// means authorization is off (authentication-only behaviour). Carries the
 /// coarse RBAC gate and/or the fine-grained ABAC gate.
 #[derive(Debug)]
@@ -135,7 +130,7 @@ pub struct AuthzHandle {
 impl AuthzHandle {
     /// Build an RBAC-only handle from config + the REST base path. `None` when
     /// RBAC is disabled — the caller then leaves the
-    /// [`AppState`](crate::AppState) slot empty, preserving auth-only behaviour.
+    /// [`AppState`](crate::state::AppState) slot empty, preserving auth-only behaviour.
     /// (The binary uses [`AuthzHandle::build`] to attach ABAC.)
     #[must_use]
     pub fn from_config(config: &AuthzConfig, base_path: &str) -> Option<Self> {
@@ -182,7 +177,7 @@ impl AuthzHandle {
     /// The configured JWT role-claim paths (fed into the [`Authenticator`] so
     /// Bearer role extraction uses them); defaults when RBAC is off.
     ///
-    /// [`Authenticator`]: crate::Authenticator
+    /// [`Authenticator`]: crate::extensions::access::authn::Authenticator
     #[must_use]
     pub fn role_claims(&self) -> Vec<String> {
         self.rbac

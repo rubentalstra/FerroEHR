@@ -1,4 +1,4 @@
-//! Interval / multiplicity primitives for the OPT 1.4 artefact pass (T20).
+//! Interval / multiplicity primitives for the OPT 1.4 artefact pass.
 //!
 //! The AOM occurrence / existence / cardinality invariants and the primitive
 //! `Assumed_value_valid` membership tests all rest on the BASE interval

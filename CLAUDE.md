@@ -1,14 +1,14 @@
 # CLAUDE.md
 
-A pure-Rust, **openEHR-spec-conformant** CDR (ITS-REST 1.0.3 + AQL 1.1) in a single root Cargo workspace, with greenfield PG18-native internals (ADR-008). The openEHR spec + serialization + REST-contract layer is **generated** from the official machine-readable specs (ADR-004/005); the application is **modern idiomatic Rust of our own design on top of the generated crates** (ADR-006/ADR-008): our own storage, versioning, and AQL engine, validated by the openEHR CNF conformance suite — EHRbase is prior art, not an oracle. **Read `docs/ADRs/ADR-008`, then ADR-004/005, before non-trivial work.** The forward product roadmap is the root `ROADMAP.md`; `docs/blueprint/00-THE-BLUEPRINT.md` is the spec-compliance ledger (§2 = the consolidated spec-gap surface); running plans live in `docs/plans/`. ROADMAP.md + the blueprint + the phase files + `docs/PROGRESS.md` are the authoritative record.
+A pure-Rust, **openEHR-spec-conformant** CDR (ITS-REST 1.0.3 + AQL 1.1) in a single root Cargo workspace, with greenfield PG18-native internals (ADR-008). The openEHR spec + serialization + REST-contract layer is **generated** from the official machine-readable specs (ADR-004/005); the application is **modern idiomatic Rust of our own design on top of the generated crates** (ADR-006/ADR-008): our own storage, versioning, and AQL engine, validated by the openEHR CNF conformance suite — EHRbase is prior art, not an oracle. **Read `docs/ADRs/ADR-008`, then ADR-004/005, before non-trivial work.** The forward product roadmap is the root `ROADMAP.md`; running plans + the single open-items tracker live in `docs/plans/` (`WORKLIST.md`). ROADMAP.md + the plan files + `docs/PROGRESS.md` are the authoritative record. (The former `docs/blueprint/` + `docs/design/` layer was deleted 2026-07-16 — implemented or stale; the vendored specs are the only doc oracle.)
 
 ## Repo map
 
 Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** (generated from the vendored BMM/XSD/OAS, ADR-004/005 — treat as `// @generated`); `ehrbase-*` = the **application** (idiomatic Rust of our own design consuming the `openehr-*` crates, ADR-006/008). The formerly in-tree EHRbase Java reference was removed by ADR-008 (git history / upstream repos are the prior-art record).
 
 - `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) + `openehr-derive` (proc-macro) are the hand-written tooling.
-- `app/*` — the application, **three crates** (ADR-010, packaging redesigned by **ADR-011**): `ehrbase` (the binary + `Platform` impl: storage, service layer, AQL engine, versioning; the `signing` [VERSION.signature, was `ehrbase-signing`] + `system_log` [ATNA, was `ehrbase-audit`] modules), `ehrbase-rest` (ITS-REST protocol adapter + auth + the `access` authz module [was `ehrbase-authz`] + EhrScape), and `ehrbase-sm` (the protocol-free SM native-API catalog). `tools/*` — dev/verification tooling, **not part of the app**: `conformance` (the ECC runner) and `benchmark`. Workspace `members = ["crates/*", "app/*", "tools/*"]`. The service layer follows the openEHR **SM Platform Service Model** (ADR-010/011; SM component map in `docs/architecture.md`, vendored SM spec at `docs/specs/openehr/SM/`).
-- `docs/` — **`docs/blueprint/` (the spec-compliance ledger + consolidated spec-gap surface in `00-THE-BLUEPRINT.md` §2)**, plans (active phases), ADRs, VERSIONS, architecture, postgres-features, design, conformance (generated reports), benchmarks; the forward product roadmap is the root `ROADMAP.md`. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
+- `app/*` — the application, **three crates** (consolidated 2026-07-16, ADR-018 — the former `ehrbase-sm` trait catalog is deleted): `ehrbase` (the platform **library**: storage, service layer [one module per SM chapter, concrete `EhrbaseService` methods — no traits], AQL engine, versioning, config tree, telemetry, `signing` + `system_log`), `ehrbase-rest` (ITS-REST protocol adapter + auth + the `access` authz module, calling the concrete service directly — depends on `ehrbase`), and `ehrbase-server` (the wiring-only binary; bin name stays `ehrbase`). **Zero re-exports (owner hard rule 2026-07-16): import every name from its defining module.** `tools/*` — dev/verification tooling, **not part of the app**: `conformance` (the ECC runner) and `benchmark`. Workspace `members = ["crates/*", "app/*", "tools/*"]`. The service layer follows the openEHR **SM Platform Service Model** (ADR-010/011; SM component map in `docs/architecture.md`, vendored SM spec at `docs/specs/openehr/SM/`).
+- `docs/` — plans (`docs/plans/`: the live pointer + `WORKLIST.md`), ADRs, VERSIONS, architecture, postgres-features, `endpoint-map.md` (every endpoint traced to its SQL), conformance (generated reports), benchmarks; the forward product roadmap is the root `ROADMAP.md`. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
 - `.claude/` — rules, skills, hooks, agents, **`memory/`** (the persistent agent memory, moved in-repo 2026-07-12 so it is visible and versioned; the harness memory dir under `~/.claude/projects/` is a symlink to it — never break that link). Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`, `ui-implementer`, `leptos-reviewer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
 
 ### Layered memory (nested CLAUDE.md — 2026-07-13)
@@ -126,23 +126,28 @@ cargo audit && cargo deny check
 bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
 ```
 
-### Target-dir & warm-build discipline (owner rules 2026-07-12)
+### Target-dir & warm-build discipline (owner rules 2026-07-12, tightened 2026-07-16)
 
-The workspace is huge; a cold build is expensive and `target/` bloat once hit
-~90 GB. These rules keep builds warm and disk bounded:
+The workspace is huge; a cold build is expensive and `target/` bloat has
+twice filled the disk (~90 GB, then **394 GB on 2026-07-16** — one debug tree
+plus four agent lanes plus the IDE dir). These rules keep builds warm and
+disk bounded:
 
-- **One shared `./target` for all CLI cargo** in a session (build, clippy,
-  nextest). Concurrent subagents that must build in parallel use **fixed lanes**
-  `CARGO_TARGET_DIR=$PWD/target/agent-t1` … `agent-t4` (stable names, reused
-  across sessions = warm) — never a fresh per-task name, never a `/tmp` or
-  scratchpad target dir, and never more than four lanes.
-- **`target-cli` is retired (deleted 2026-07-12) — do not recreate it.** The
-  IDE-vs-CLI contention fix is inverted: RustRover gets its own small dir
-  (Cargo settings → env `CARGO_TARGET_DIR=/Users/rubentalstra/RustroverProjects/ehrbase-rs/target/ide`
-  — MUST be absolute: a relative value resolves against cargo's cwd and
-  sprouts a nested `target/` inside every crate the IDE checks), the CLI
-  keeps `./target`. Never `pkill -9 rustc` to "fix" slowness — it corrupts
-  incremental caches.
+- **ONE `./target` for ALL cargo, period (owner ruling 2026-07-16).** The
+  per-agent lane scheme (`target/agent-t1` … `t4`) is **retired — never
+  recreate it**: every extra target dir is a full duplicate build tree, and
+  the lanes alone held 140 GB. Subagents use the same `./target`; cargo's
+  own file lock serializes concurrent builds — waiting on the lock is the
+  intended behaviour, never work around it with a second target dir, a
+  `/tmp`/scratchpad dir, or any `CARGO_TARGET_DIR` override. (Corollary:
+  don't have subagents run cargo in parallel at all — the orchestrator runs
+  the builds once at convergence.)
+- **The IDE is back on the default too (owner, 2026-07-16):** RustRover's
+  `CARGO_TARGET_DIR` override is removed — the IDE shares the same
+  `./target` as everything else. There is NO `CARGO_TARGET_DIR` override
+  anywhere anymore; if the IDE holds the cargo lock, CLI builds wait — that
+  is expected, never answer it with a second target dir. Never
+  `pkill -9 rustc` to "fix" slowness — it corrupts incremental caches.
 - **Iterate scoped, gate wide.** While working: `cargo clippy -p <crate>
   --all-targets` and `cargo nextest run -p <crate>`. The full `--workspace`
   gates run once, before commit. `clippy` shares the check cache — running it
@@ -150,9 +155,10 @@ The workspace is huge; a cold build is expensive and `target/` bloat once hit
 - **Never vary `RUSTFLAGS`, features, or profile between runs** — any change
   rebuilds the world. Use the exact commands above, no ad-hoc flags.
 - **Disk hygiene:** cargo never garbage-collects `target/debug/deps` (stale
-  `.rlib`s accumulate on every dep bump). When `du -sh target` exceeds ~30 GB,
-  run `cargo clean` once (one cold rebuild, then warm again) and delete stale
-  agent lanes. Check no other session/IDE is mid-build first
+  `.rlib`s accumulate on every dep bump and every wide refactor). Check
+  `du -sh target` at the START of any heavy session and after any
+  rewrite-scale change; above ~30 GB run `cargo clean` (one cold rebuild,
+  then warm again). Check no other session/IDE is mid-build first
   (`pgrep -fl 'cargo|rustc'`) — parallel sessions share this tree.
 
 Note (ADR-006 superseded the old "phases need not compile" gate): the spec + ITS
@@ -206,4 +212,4 @@ integration, conformance, optimization, cutover.
 - @docs/ADRs/ADR-004-spec-driven-codegen.md + @docs/ADRs/ADR-005-its-codegen.md (the codegen — read before touching any `openehr-*` crate)
 - @docs/architecture.md (the current design)
 - @docs/VERSIONS.md + @docs/postgres-features.md (pins + the PG 17/18 features we use)
-- @ROADMAP.md (the product roadmap) + @docs/blueprint/00-THE-BLUEPRINT.md (the spec-compliance ledger + spec-gap surface)
+- @ROADMAP.md (the product roadmap) + @docs/plans/WORKLIST.md (the single open-items tracker)

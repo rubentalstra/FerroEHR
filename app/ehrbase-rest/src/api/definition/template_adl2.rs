@@ -4,7 +4,7 @@
 //! `definition_template_adl2_list` / `_upload` / `_get` / `_example_get` /
 //! `_version_get`. Governing spec text:
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md` (G-1/G-5/G-6/G-7).
+//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! ADL2 artefacts are served as `text/plain` source
 //! (`200_Template_adl2_retrieved.yaml`: `text/plain` `OperationalTemplateV2 |
@@ -28,18 +28,14 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::Platform;
 
 use super::dispatch::list_filter_and_page;
 
 /// `GET …/definition/template/adl2` — list the stored ADL2 templates, with the
 /// `template_id`/`concept`/`version`/`offset`/`fetch` filter + pagination the
 /// wire decodes (`operations/definition_template_adl2_list.yaml`) threaded to
-/// the adapter (G-1).
-pub(super) async fn list<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+/// the adapter.
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl2ListParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -55,14 +51,11 @@ pub(super) async fn list<S: Platform>(
 /// `POST …/definition/template/adl2` — ingest an ADL2 operational-template
 /// `text/plain` source (`operations/definition_template_adl2_upload.yaml`).
 ///
-/// PORT NOTE (G-7): the `at_version` (`version`) query parameter is
+/// PORT NOTE: the `at_version` (`version`) query parameter is
 /// `deprecated: true` (`parameters/query/at_version.yaml`); dropping it is
 /// spec-permitted, so only `Prefer` is read. Recorded as residue, not a defect
 /// (`docs/design/its-rest/definition.md` G-7).
-pub(super) async fn upload<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DefinitionTemplateAdl2UploadParams>(
         &parts.path,
@@ -91,19 +84,16 @@ pub(super) async fn upload<S: Platform>(
 ///
 /// Serves the source as `text/plain` via the SM `get_artefact` seam (an unknown
 /// `template_id` → 404). `406`s an `Accept` outside `Accept_Template_adl2` that
-/// this build cannot serve (G-5): the `application/json`
+/// this build cannot serve: the `application/json`
 /// `OperationalTemplateV2` and `application/xml` forms need a cADL parser
 /// (deferred, WORKLIST W-4), so a request that names *only* one of those is a
 /// `406` rather than a wrong body.
-pub(super) async fn get<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl2GetParams>(&parts.path, parts.query.as_deref(), h)?;
     if !accepts_text(h) {
-        // PORT NOTE (G-5, W-4): `Accept_Template_adl2` also enumerates
+        // PORT NOTE: `Accept_Template_adl2` also enumerates
         // `application/json` (the `OperationalTemplateV2` JSON projection) and
         // `application/xml`; neither is produced until the cADL parser lands, so
         // an Accept naming only those is a `406`, not a wrong-format body.
@@ -119,7 +109,7 @@ pub(super) async fn get<S: Platform>(
 
 /// `GET …/definition/template/adl2/{template_id}/example` — `501`.
 ///
-/// PORT NOTE (G-6, W-4): needs an example generator over a cADL/AOM2 source
+/// PORT NOTE: needs an example generator over a cADL/AOM2 source
 /// model (none in the tree). ADL2 is OPTIONAL for CNF; the example generator
 /// lands with WORKLIST W-4 (`docs/design/its-rest/definition.md` G-6).
 pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
@@ -133,7 +123,7 @@ pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
 
 /// `GET …/definition/template/adl2/{template_id}/version/{version}` — `501`.
 ///
-/// PORT NOTE (G-6, W-4): needs a cADL source parser for the JSON
+/// PORT NOTE: needs a cADL source parser for the JSON
 /// `OperationalTemplateV2` form; the operation is `deprecated: true`
 /// (`operations/definition_template_adl2_version_get.yaml`) and ADL2 is OPTIONAL
 /// for CNF (`docs/design/its-rest/definition.md` G-6).
