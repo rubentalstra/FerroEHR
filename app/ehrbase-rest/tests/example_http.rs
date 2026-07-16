@@ -69,8 +69,8 @@ fn config() -> AppConfig {
 }
 
 /// A router over a fresh real service with the Demo Vitals OPT already uploaded.
-async fn app_with_template(db: &str) -> Router {
-    let (_pg, service) = common::test_service(db).await;
+async fn app_with_template(db: &str) -> (common::Pg, Router) {
+    let (pg, service) = common::test_service(db).await;
     let app = common::router_with(config(), service);
     let req = Request::builder()
         .method("POST")
@@ -84,7 +84,7 @@ async fn app_with_template(db: &str) -> Router {
         StatusCode::CREATED,
         "Demo Vitals OPT uploads through the real wire"
     );
-    app
+    (pg, app)
 }
 
 async fn get(
@@ -123,7 +123,7 @@ fn example_uri() -> String {
 
 #[tokio::test]
 async fn example_default_is_canonical_json() {
-    let app = app_with_template("ex_default_json").await;
+    let (_pg, app) = app_with_template("ex_default_json").await;
     let (status, content_type, body) = get(&app, &example_uri(), None).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(content_type.as_deref(), Some(JSON_MIME));
@@ -136,7 +136,7 @@ async fn example_default_is_canonical_json() {
 
 #[tokio::test]
 async fn example_as_canonical_xml() {
-    let app = app_with_template("ex_xml").await;
+    let (_pg, app) = app_with_template("ex_xml").await;
     let (status, content_type, body) = get(&app, &example_uri(), Some(XML_MIME)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(content_type.as_deref(), Some(XML_MIME));
@@ -145,7 +145,7 @@ async fn example_as_canonical_xml() {
 
 #[tokio::test]
 async fn example_as_flat() {
-    let app = app_with_template("ex_flat").await;
+    let (_pg, app) = app_with_template("ex_flat").await;
     let (status, content_type, body) = get(&app, &example_uri(), Some(FLAT_MIME)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(content_type.as_deref(), Some(FLAT_MIME));
@@ -158,7 +158,7 @@ async fn example_as_flat() {
 
 #[tokio::test]
 async fn example_as_structured() {
-    let app = app_with_template("ex_structured").await;
+    let (_pg, app) = app_with_template("ex_structured").await;
     let (status, content_type, _body) = get(&app, &example_uri(), Some(STRUCTURED_MIME)).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(content_type.as_deref(), Some(STRUCTURED_MIME));
@@ -166,14 +166,14 @@ async fn example_as_structured() {
 
 #[tokio::test]
 async fn example_unsupported_accept_is_406() {
-    let app = app_with_template("ex_406").await;
+    let (_pg, app) = app_with_template("ex_406").await;
     let (status, _content_type, _body) = get(&app, &example_uri(), Some("application/pdf")).await;
     assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
 }
 
 #[tokio::test]
 async fn example_unknown_template_is_404() {
-    let app = app_with_template("ex_404").await;
+    let (_pg, app) = app_with_template("ex_404").await;
     let uri = format!("{BASE}/definition/template/adl1.4/nope.v0/example");
     let (status, _content_type, _body) = get(&app, &uri, None).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -181,7 +181,7 @@ async fn example_unknown_template_is_404() {
 
 #[tokio::test]
 async fn example_invalid_detail_level_is_400() {
-    let app = app_with_template("ex_400").await;
+    let (_pg, app) = app_with_template("ex_400").await;
     let uri = format!("{}?detail_level=exhaustive", example_uri());
     let (status, _content_type, _body) = get(&app, &uri, None).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);

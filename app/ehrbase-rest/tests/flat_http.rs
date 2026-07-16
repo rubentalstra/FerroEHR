@@ -125,8 +125,8 @@ fn without_uids(map: BTreeMap<String, Value>) -> BTreeMap<String, Value> {
 
 /// A router over a fresh real service with the IPS OPT uploaded; returns the
 /// router and a created EHR id.
-async fn app_with_ehr(db: &str) -> (Router, String) {
-    let (_pg, service) = common::test_service(db).await;
+async fn app_with_ehr(db: &str) -> (common::Pg, Router, String) {
+    let (pg, service) = common::test_service(db).await;
     let app = common::router_with(config(), service);
     let (status, _h, body) = send(
         &app,
@@ -150,7 +150,7 @@ async fn app_with_ehr(db: &str) -> (Router, String) {
     )
     .await;
     assert_eq!(status, StatusCode::CREATED);
-    (app, etag_uid(&h))
+    (pg, app, etag_uid(&h))
 }
 
 /// Commit the canonical `comp` into `ehr_id`; return the new versioned-object uuid.
@@ -171,7 +171,7 @@ async fn commit_canonical(app: &Router, ehr_id: &str, comp: &Value) -> String {
 
 #[tokio::test]
 async fn get_composition_as_flat() {
-    let (app, ehr) = app_with_ehr("flat_get").await;
+    let (_pg, app, ehr) = app_with_ehr("flat_get").await;
     let vo = commit_canonical(&app, &ehr, &canonical_composition()).await;
 
     let req = Request::builder()
@@ -199,7 +199,7 @@ async fn get_composition_as_flat() {
 
 #[tokio::test]
 async fn post_flat_composition_is_rebuilt_to_canonical() {
-    let (app, ehr) = app_with_ehr("flat_post_rebuild").await;
+    let (_pg, app, ehr) = app_with_ehr("flat_post_rebuild").await;
 
     // Derive a real flat body from the canonical composition + its template.
     let wt = web_template();
@@ -248,7 +248,7 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
 
 #[tokio::test]
 async fn post_flat_without_template_id_is_400() {
-    let (app, ehr) = app_with_ehr("flat_post_no_tid").await;
+    let (_pg, app, ehr) = app_with_ehr("flat_post_no_tid").await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr}/composition"))
@@ -261,7 +261,7 @@ async fn post_flat_without_template_id_is_400() {
 
 #[tokio::test]
 async fn flat_round_trips_through_http() {
-    let (app, ehr) = app_with_ehr("flat_roundtrip").await;
+    let (_pg, app, ehr) = app_with_ehr("flat_roundtrip").await;
     let wt = web_template();
     let flat_in = openehr_flat::to_flat(&canonical_composition(), &wt).unwrap();
     let flat_in_map: serde_json::Map<String, Value> = flat_in.clone().into_iter().collect();

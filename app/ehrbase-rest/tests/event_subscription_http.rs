@@ -82,11 +82,9 @@ fn req(method: &str, uri: &str, body: Option<Value>) -> Request<Body> {
 
 #[tokio::test]
 async fn disabled_group_is_404() {
+    let (_pg, a) = app("evsub_disabled", false).await;
     let (status, _) = send(
-        {
-            let (_pg, a) = app("evsub_disabled", false).await;
-            a
-        },
+        a,
         req("GET", GROUP, None),
     )
     .await;
@@ -147,11 +145,9 @@ async fn crud_round_trip() {
 
 #[tokio::test]
 async fn create_without_name_is_400() {
+    let (_pg, a) = app("evsub_400", true).await;
     let (status, _) = send(
-        {
-            let (_pg, a) = app("evsub_400", true).await;
-            a
-        },
+        a,
         req("POST", GROUP, Some(json!({ "kind": "COMPOSITION" }))),
     )
     .await;
@@ -180,11 +176,9 @@ async fn unknown_id_is_404() {
 
 #[tokio::test]
 async fn malformed_id_is_400() {
+    let (_pg, a) = app("evsub_malformed", true).await;
     let (status, _) = send(
-        {
-            let (_pg, a) = app("evsub_malformed", true).await;
-            a
-        },
+        a,
         req("GET", &format!("{GROUP}/not-a-uuid"), None),
     )
     .await;
@@ -196,11 +190,9 @@ async fn enabled_group_lists_real_store() {
     // Re-targeted from the old `unhooked → 501` Mock-scaffolding case: with the
     // concrete service the CRUD persists to the real store, so an enabled group
     // answers 200 (never the trait-default 501).
+    let (_pg, a) = app("evsub_enabled_200", true).await;
     let (status, body) = send(
-        {
-            let (_pg, a) = app("evsub_enabled_200", true).await;
-            a
-        },
+        a,
         req("GET", GROUP, None),
     )
     .await;

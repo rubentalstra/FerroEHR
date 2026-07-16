@@ -147,11 +147,9 @@ fn mapping(name: &str) -> Value {
 #[tokio::test]
 async fn disabled_connector_is_404_operation_outcome() {
     // Mapping CRUD off.
+    let (_pg, a) = app("fhir_disabled_map", false).await;
     let (status, _, body) = send(
-        {
-            let (_pg, a) = app("fhir_disabled_map", false).await;
-            a
-        },
+        a,
         req("GET", MAPPINGS, None),
     )
     .await;
@@ -159,11 +157,9 @@ async fn disabled_connector_is_404_operation_outcome() {
     assert_operation_outcome(&body, "not-supported");
     // Inbound off.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/x" } });
+    let (_pg, a) = app("fhir_disabled_in", false).await;
     let (status, _, body) = send(
-        {
-            let (_pg, a) = app("fhir_disabled_in", false).await;
-            a
-        },
+        a,
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -177,11 +173,9 @@ async fn unknown_resource_type_is_501_before_backend() {
     // MedicationRequest is outside the starter set → typed 501 at the protocol edge.
     let uri = format!("{BASE}/fhir/r4/MedicationRequest");
     let body = json!({ "resourceType": "MedicationRequest" });
+    let (_pg, a) = app("fhir_unknown_type", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_unknown_type", true).await;
-            a
-        },
+        a,
         req("POST", &uri, Some(body)),
     )
     .await;
@@ -215,11 +209,9 @@ async fn search_returns_empty_searchset_on_empty_db() {
 #[tokio::test]
 async fn search_missing_patient_is_400() {
     // No patient param → 400 (explicit scope only; never generic Search).
+    let (_pg, a) = app("fhir_search_no_patient", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_search_no_patient", true).await;
-            a
-        },
+        a,
         req("GET", INGEST_OBS, None),
     )
     .await;
@@ -230,11 +222,9 @@ async fn search_missing_patient_is_400() {
 #[tokio::test]
 async fn search_unknown_type_is_501() {
     let uri = format!("{BASE}/fhir/r4/MedicationRequest?patient=p-1");
+    let (_pg, a) = app("fhir_search_unknown", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_search_unknown", true).await;
-            a
-        },
+        a,
         req("GET", &uri, None),
     )
     .await;
@@ -245,11 +235,9 @@ async fn search_unknown_type_is_501() {
 #[tokio::test]
 async fn search_disabled_is_404() {
     let uri = format!("{INGEST_OBS}?patient=p-1");
+    let (_pg, a) = app("fhir_search_disabled", false).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_search_disabled", false).await;
-            a
-        },
+        a,
         req("GET", &uri, None),
     )
     .await;
@@ -263,11 +251,9 @@ async fn ingest_no_mapping_is_404() {
     // No enabled mapping on an empty DB → 404 not-found (an in-scope resource
     // type with no mapping). Was Mock-scripted per resource type.
     let obs = json!({ "resourceType": "Observation", "subject": { "reference": "Patient/p" } });
+    let (_pg, a) = app("fhir_ingest_no_map", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_ingest_no_map", true).await;
-            a
-        },
+        a,
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -281,11 +267,9 @@ async fn ingest_condition_no_mapping_is_404() {
     // mapping on an empty DB → real 404 not-found (never the trait-default 501).
     let uri = format!("{BASE}/fhir/r4/Condition");
     let body = json!({ "resourceType": "Condition", "subject": { "reference": "Patient/p" } });
+    let (_pg, a) = app("fhir_ingest_condition", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_ingest_condition", true).await;
-            a
-        },
+        a,
         req("POST", &uri, Some(body)),
     )
     .await;
@@ -306,11 +290,9 @@ async fn ingest_success_is_201_with_location() {
         "subject": { "reference": "Patient/p-1" },
         "component": [ { "valueQuantity": { "value": 120, "unit": "mm[Hg]" } } ]
     });
+    let (_pg, a) = app("fhir_ingest_ok", true).await;
     let (status, location, body) = send(
-        {
-            let (_pg, a) = app("fhir_ingest_ok", true).await;
-            a
-        },
+        a,
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -333,11 +315,9 @@ async fn ingest_validation_rejection_is_422_with_validator_message() {
         "resourceType": "Observation",
         "subject": { "reference": "Patient/invalid" }
     });
+    let (_pg, a) = app("fhir_ingest_422", true).await;
     let (status, _, body) = send(
-        {
-            let (_pg, a) = app("fhir_ingest_422", true).await;
-            a
-        },
+        a,
         req("POST", INGEST_OBS, Some(obs)),
     )
     .await;
@@ -398,11 +378,9 @@ async fn mapping_duplicate_name_is_409() {
 
 #[tokio::test]
 async fn mapping_malformed_id_is_400() {
+    let (_pg, a) = app("fhir_map_malformed", true).await;
     let (status, _, oo) = send(
-        {
-            let (_pg, a) = app("fhir_map_malformed", true).await;
-            a
-        },
+        a,
         req("GET", &format!("{MAPPINGS}/not-a-uuid"), None),
     )
     .await;
@@ -414,11 +392,9 @@ async fn mapping_malformed_id_is_400() {
 async fn mapping_list_enabled_is_200() {
     // Re-targeted from the old `unhooked → 501`: the mapping store is real, so an
     // enabled group lists (200), never the trait-default 501.
+    let (_pg, a) = app("fhir_map_list", true).await;
     let (status, _, list) = send(
-        {
-            let (_pg, a) = app("fhir_map_list", true).await;
-            a
-        },
+        a,
         req("GET", MAPPINGS, None),
     )
     .await;
