@@ -460,7 +460,7 @@ picks.** Recommendation: A.
 
 | # | Finding | Evidence | Triage | Fix |
 |---|---|---|---|---|
-| F-42 | **Issue #95: the `format` query parameter is silently ignored** (no handler parses one). Spec state: the vendored OAS selects the example representation via the `Accept` header (`Accept_LOCATABLE` enum: json / xml / wt.flat+json / wt.structured+json — `definition-codegen.openapi.yaml` `/definition/template/adl1.4/{template_id}/example`), and the ADL1.4 example endpoint ALREADY serves all four via Accept (`template_adl14.rs:146-169`); **no openEHR spec defines a `format` query param — EHRbase-Java prior-art convenience.** Fix (extension, own-design flag): accept `?format=FLAT\|STRUCTURED\|JSON\|XML` (case-insensitive) on the LOCATABLE-returning endpoints (template example + composition GET/write responses), mapping onto the existing Accept negotiation; explicit `format` wins over `Accept`; unknown value → 400. Silently ignoring a recognized-but-unsupported parameter is the defect. ADL2 example stays the PORT-NOTEd 501 (W-4 example generator). | issue #95; `formats/dispatch.rs`, `negotiate.rs:140-154`, `template_adl14.rs:130-170` | **S** (triaged — spec-silent; Accept path is the spec mechanism and stays primary) | ☐ Wave 1c |
+| F-42 | **Issue #95: the `format` query parameter is silently ignored** (no handler parses one). Spec state: the vendored OAS selects the example representation via the `Accept` header (`Accept_LOCATABLE` enum: json / xml / wt.flat+json / wt.structured+json — `definition-codegen.openapi.yaml` `/definition/template/adl1.4/{template_id}/example`), and the ADL1.4 example endpoint ALREADY serves all four via Accept (`template_adl14.rs:146-169`); **no openEHR spec defines a `format` query param — EHRbase-Java prior-art convenience.** **OWNER RULING 2026-07-16: Accept header ONLY — no `?format=` param** (RFC 9110 §12 proactive content negotiation is the HTTP mechanism; the ITS-REST OAS follows it with `Accept_LOCATABLE`). Fix scope: (a) audit-verify every LOCATABLE-returning endpoint honours its full spec Accept enum (example endpoint: all four ✓; composition GET/write responses: flat/structured/json/xml ✓ per P-2/P-7 — sweep the remaining reads for gaps); (b) document format selection via Accept in the website book (formats page); (c) answer #95 pointing at the Accept mechanism with examples; unknown `format` param stays ignored per standard HTTP practice. ADL2 example stays the PORT-NOTEd 501 (W-4 example generator). | issue #95; `negotiate.rs:140-154`, `template_adl14.rs:130-170` | **M** — RFC 9110 §12 + `Accept_LOCATABLE` (`definition-codegen.openapi.yaml`); owner-ruled | ☐ Wave 1c |
 
 ## 5. Fix waves
 
@@ -479,8 +479,9 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 - [ ] F-34 CatchPanic + ATNA fail-closed emit the openEHR error body.
 - [ ] F-29 surface row-decode errors instead of `unwrap_or_default`.
 - [ ] F-20 count ATNA serialize-drops.
-- [ ] F-42 (issue #95) `?format=` extension on LOCATABLE endpoints — Wave 1c,
-      lands when an implementer slot frees; closes the issue in the PR.
+- [ ] F-42 (issue #95, owner-ruled: Accept header only per RFC 9110 §12) —
+      verify Accept coverage on all LOCATABLE endpoints, book docs, answer the
+      issue with Accept examples. Wave 1c.
 
 **Wave 2 — the write-path redesign (the big rock; orchestrator-owned):**
 - [ ] F-1 signing redesign: assign `time_committed` app-side (RM common
