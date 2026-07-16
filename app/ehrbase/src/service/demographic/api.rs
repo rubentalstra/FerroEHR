@@ -236,7 +236,7 @@ impl EhrbaseService {
             None => None,
         };
         let resp = self
-            .commit_party_version(
+            .update_party_version(
                 kind,
                 a_versioned_party_id,
                 a_version.data,
@@ -257,7 +257,7 @@ impl EhrbaseService {
         // version unconditionally.
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
-            .commit_party_delete(kind, a_versioned_party_id, None, None)
+            .delete_party_version(kind, a_versioned_party_id, None, None)
             .await?;
         Ok(version_uid(resp))
     }
@@ -362,7 +362,7 @@ impl EhrbaseService {
         };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        Ok(self.commit_party_delete(current, expected).await?)
+        Ok(self.commit_party_delete(current, expected, None).await?)
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────

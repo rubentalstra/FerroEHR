@@ -219,33 +219,114 @@ pub(crate) async fn commit_version_set(
         .and_then(Value::as_str)
         .map_or_else(|| cx.effective_system_id(), str::to_owned);
 
-    // Batch the modification-target existence/kind reads: a K-change commit
-    // reads every target in ONE statement (the per-version loop below only
-    // consults the map). master06 semantics are unchanged — this is read
-    // batching, which no openEHR spec governs (our own design).
-    let mut target_ids: Vec<Uuid> = Vec::new();
+    // ── ONE parse pass over the version set ────────────────────────────────
+    // Each UPDATE_VERSION is read exactly once into a typed plan entry:
+    // classification (master06 §Change Type), the parsed preceding target,
+    // the merged per-version audit (m4 committer/system_id copy-down), the
+    // lifecycle/signature/attestation envelope. The modification targets are
+    // then existence/kind-checked in ONE batched statement, and the plan is
+    // resolved to [`Change`]s without re-reading any JSON.
+    struct PlannedVersion {
+        action: Action,
+        /// The parsed `preceding_version_uid` target (modify/delete/attest).
+        target: Option<(Uuid, TreeId)>,
+        /// `data` (`null` ≙ absent — the deleted-version shape).
+        data: Option<Value>,
+        audit: AuditInput,
+        /// The raw `commit_audit` (the 666 attestation payload).
+        commit_audit: Option<Value>,
+        lifecycle_state: Option<String>,
+        incomplete: bool,
+        signature: Option<String>,
+        accompanying: Vec<Value>,
+        other_input_version_uids: Vec<String>,
+    }
+
+    let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
+    let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
     for version in versions {
         let token = version
             .get("commit_audit")
             .and_then(|a| a.get("change_type"))
             .and_then(coded_value);
-        let has_data = version.get("data").is_some_and(|d| !d.is_null());
+        let data = version.get("data").cloned().filter(|d| !d.is_null());
+        // PORT NOTE: a first version legitimately carries no
+        // `preceding_version_uid` (SM `update_version.adoc` types it `0..1`;
+        // master03 common_package: "must be specified, except … a first
+        // version"). The SM glue serializes a `None` preceding to JSON `null`,
+        // so treat a `null` as absent — a bare `.is_some()` would misclassify
+        // a spec-legal creation as a modify.
         let has_preceding = version
             .get("preceding_version_uid")
             .is_some_and(|v| !v.is_null());
-        if let Ok((action, _)) = classify(token.as_deref(), has_preceding, has_data)
-            && action != Action::Create
-            && let Ok((vo_id, _)) = parse_preceding(version)
-        {
-            target_ids.push(vo_id);
-        }
+        let (action, code) = classify(token.as_deref(), has_preceding, data.is_some())?;
+        version_codes.push(code.clone());
+
+        let target = if action == Action::Create {
+            None
+        } else {
+            Some(parse_preceding(version)?)
+        };
+        // m4: default committer/system_id from the CONTRIBUTION audit when the
+        // version item omits them (a "should be copied", so an explicit
+        // per-version value is honoured — PORT NOTE: SHOULD, not MUST).
+        let audit = parse_version_audit(
+            version.get("commit_audit"),
+            code,
+            &contrib_committer,
+            &contrib_system_id,
+        );
+        let lifecycle_state = lifecycle_of(version);
+        // A `553|incomplete|` version gets relaxed content validation
+        // (master06 §Incomplete Content).
+        let incomplete = lifecycle_state
+            .as_deref()
+            .and_then(lifecycle_state_code)
+            .is_some_and(|c| c == state::INCOMPLETE);
+        plan.push(PlannedVersion {
+            action,
+            target,
+            data,
+            audit,
+            commit_audit: version.get("commit_audit").cloned(),
+            lifecycle_state,
+            incomplete,
+            // A client UPDATE_VERSION.signature is stored verbatim; absent,
+            // the server signs (master06 §Digital Signature).
+            signature: version
+                .get("signature")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            accompanying: attestation_partials(version),
+            // ORIGINAL_VERSION.other_input_version_uids: merge provenance
+            // accepted on the wire (master06 §Version Merging).
+            other_input_version_uids: version
+                .get("other_input_version_uids")
+                .and_then(Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|u| {
+                            u.as_str()
+                                .or_else(|| u.get("value").and_then(Value::as_str))
+                                .map(str::to_owned)
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+        });
     }
+
+    // ── ONE batched target read ────────────────────────────────────────────
+    let mut target_ids: Vec<Uuid> = plan
+        .iter()
+        .filter_map(|v| v.target.map(|(vo_id, _)| vo_id))
+        .collect();
     target_ids.sort_unstable();
     target_ids.dedup();
     let target_kinds: std::collections::HashMap<Uuid, Kind> =
         crate::storage::version_repo::object_kinds(cx.pool(), &target_ids)
             .await
-            .map_err(crate::service::ServiceError::from)?
+            .map_err(ServiceError::from)?
             .into_iter()
             .filter_map(|(id, kind)| Kind::from_type(&kind).map(|k| (id, k)))
             .collect();
@@ -259,37 +340,16 @@ pub(crate) async fn commit_version_set(
         })
     };
 
-    let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(versions.len());
+    // ── Resolve the plan to changes ────────────────────────────────────────
+    let mut changes: Vec<(AuditInput, Change)> = Vec::with_capacity(plan.len());
     // 666 attestations of existing versions (committing no new version).
     let mut attests: Vec<PendingAttest> = Vec::new();
-    let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
-    for version in versions {
-        let token = version
-            .get("commit_audit")
-            .and_then(|a| a.get("change_type"))
-            .and_then(coded_value);
-        // A JSON `"data": null` is "no data" (the deleted-version shape).
-        let data = version.get("data").cloned().filter(|d| !d.is_null());
-        // PORT NOTE: a first version legitimately carries no
-        // `preceding_version_uid` (SM `update_version.adoc` types it `0..1`;
-        // master03 common_package: "must be specified, except … a first
-        // version"). The SM glue serializes a `None` preceding to JSON `null`,
-        // so treat a `null` as absent — a bare `.is_some()` would misclassify a
-        // spec-legal creation as a modify.
-        let (action, code) = classify(
-            token.as_deref(),
-            version
-                .get("preceding_version_uid")
-                .is_some_and(|v| !v.is_null()),
-            data.is_some(),
-        )?;
-        version_codes.push(code.clone());
-
-        if action == Action::Attest {
-            let (vo_id, expected) = parse_preceding(version)?;
+    for v in plan {
+        if v.action == Action::Attest {
+            let (vo_id, expected) = v.target.expect("attest always parses a preceding target");
             let kind = require_kind(vo_id)?;
             check_kind_scope(kind, party_only)?;
-            let partial = version.get("commit_audit").cloned().ok_or_else(|| {
+            let partial = v.commit_audit.ok_or_else(|| {
                 ServiceError::Unprocessable(
                     "666 attestation version requires a commit_audit \
                      (the UPDATE_ATTESTATION)"
@@ -304,54 +364,23 @@ pub(crate) async fn commit_version_set(
             });
             continue;
         }
-
-        // m4: default committer/system_id from the CONTRIBUTION audit when the
-        // version item omits them (a "should be copied", so an explicit
-        // per-version value is honoured — PORT NOTE: SHOULD, not MUST).
-        let version_audit = parse_version_audit(
-            version.get("commit_audit"),
-            code,
-            &contrib_committer,
-            &contrib_system_id,
-        );
         // AUDIT_DETAILS.System_id_valid + committer PARTY invariants — a
         // client-supplied version commit_audit must be a valid RM instance.
-        validate_commit_audit(&version_audit)?;
-        let lifecycle_state = lifecycle_of(version);
-        // A `553|incomplete|` version gets relaxed content validation
-        // (existence/cardinality lower limits treated as zero — master06
-        // §Incomplete Content).
-        let incomplete = lifecycle_state
-            .as_deref()
-            .and_then(lifecycle_state_code)
-            .is_some_and(|c| c == state::INCOMPLETE);
-        // A client-supplied UPDATE_VERSION.signature is stored verbatim; absent,
-        // the server signs (master06 §Digital Signature).
-        let signature = version
-            .get("signature")
-            .and_then(Value::as_str)
-            .map(str::to_owned);
-        let accompanying = attestation_partials(version);
-        let change = match action {
+        validate_commit_audit(&v.audit)?;
+        let change = match v.action {
             Action::Create => {
-                let data = data.ok_or_else(|| {
+                let data = v.data.ok_or_else(|| {
                     ServiceError::Unprocessable("creation version needs data".to_owned())
                 })?;
                 let kind = data_kind(&data)?;
                 check_kind_scope(kind, party_only)?;
-                // A CONTRIBUTION commit is a full commit route: its versions are
-                // validated exactly as a direct create/update, relaxed for a
-                // `553|incomplete|` lifecycle (master06 §Incomplete Content).
-                cx.validate_for_commit(kind, &data, incomplete).await?;
-                // An EHR holds exactly one EHR_STATUS / EHR_ACCESS (RM ehr, EHR
-                // class) — a CONTRIBUTION that *creates* a second is rejected.
-                // For FOLDERs the CONTRIBUTION route "operates at the
-                // `EHR.directory` level" (CNF platform test schedule
-                // master08-func_tc_ehr_contribution + case E.2): re-creating a
-                // hierarchy whose root already exists (same root
-                // `archetype_node_id`) is negative, while a DISTINCT hierarchy
-                // is a new `EHR.folders` member (RM ehr master04 §Folders —
-                // "an entirely new Folder hierarchy may be added").
+                // A CONTRIBUTION commit is a full commit route: its versions
+                // are validated exactly as a direct create/update, relaxed for
+                // a `553|incomplete|` lifecycle (master06 §Incomplete Content).
+                cx.validate_for_commit(kind, &data, v.incomplete).await?;
+                // An EHR holds exactly one EHR_STATUS / EHR_ACCESS (RM ehr,
+                // EHR class); FOLDER hierarchies follow the CNF
+                // master08-func_tc_ehr_contribution E.2 criterion.
                 if let Some(ehr_id) = ehr_id {
                     reject_duplicate_singleton(cx, ehr_id, kind, &data).await?;
                 }
@@ -359,60 +388,45 @@ pub(crate) async fn commit_version_set(
                     kind,
                     canonical: data,
                     template_id: None,
-                    signature,
-                    lifecycle_state,
-                    attestations: accompanying,
+                    signature: v.signature,
+                    lifecycle_state: v.lifecycle_state,
+                    attestations: v.accompanying,
                 }
             }
             Action::Modify => {
-                let data = data.ok_or_else(|| {
+                let data = v.data.ok_or_else(|| {
                     ServiceError::Unprocessable("modification version needs data".to_owned())
                 })?;
-                let (vo_id, expected) = parse_preceding(version)?;
+                let (vo_id, expected) = v.target.expect("modify always parses a preceding target");
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
-                cx.validate_for_commit(kind, &data, incomplete).await?;
-                // ORIGINAL_VERSION.other_input_version_uids: merge provenance
-                // accepted on the wire (master06 §Version Merging).
-                let other_input_version_uids = version
-                    .get("other_input_version_uids")
-                    .and_then(Value::as_array)
-                    .map(|a| {
-                        a.iter()
-                            .filter_map(|u| {
-                                u.as_str()
-                                    .or_else(|| u.get("value").and_then(Value::as_str))
-                                    .map(str::to_owned)
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                    .unwrap_or_default();
+                cx.validate_for_commit(kind, &data, v.incomplete).await?;
                 Change::Modify {
                     vo_id,
                     kind,
                     canonical: data,
                     expected: Some(expected),
                     template_id: None,
-                    signature,
-                    lifecycle_state,
-                    attestations: accompanying,
-                    other_input_version_uids,
+                    signature: v.signature,
+                    lifecycle_state: v.lifecycle_state,
+                    attestations: v.accompanying,
+                    other_input_version_uids: v.other_input_version_uids,
                 }
             }
             Action::Delete => {
-                let (vo_id, expected) = parse_preceding(version)?;
+                let (vo_id, expected) = v.target.expect("delete always parses a preceding target");
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 Change::Delete {
                     vo_id,
                     kind,
                     expected: Some(expected),
-                    signature,
+                    signature: v.signature,
                 }
             }
-            Action::Attest => unreachable!("Action::Attest handled before this match"),
+            Action::Attest => unreachable!("Action::Attest handled above"),
         };
-        changes.push((version_audit, change));
+        changes.push((v.audit, change));
     }
 
     // EHR_STATUS.is_modifiable = False forbids content writes (RM ehr master04
