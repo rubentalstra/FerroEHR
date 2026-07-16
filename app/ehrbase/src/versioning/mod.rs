@@ -77,7 +77,7 @@ pub(crate) use revision_history::{
 /// (EHR-scoped) and the demographic party roots + `PARTY_RELATIONSHIP` (no EHR
 /// scope, RM demographic).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Kind {
+pub enum Kind {
     Composition,
     EhrStatus,
     /// The EHR-wide access-control object created with the EHR (RM ehr §"EHR

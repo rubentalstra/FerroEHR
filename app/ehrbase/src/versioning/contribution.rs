@@ -155,6 +155,25 @@ fn classify(
         }
     }
 }
+/// One parsed `UPDATE_VERSION` of a CONTRIBUTION commit (see the parse pass
+/// in [`commit_version_set`]).
+struct PlannedVersion {
+    action: Action,
+    /// The parsed `preceding_version_uid` target (modify/delete/attest).
+    target: Option<(Uuid, TreeId)>,
+    /// `data` (`null` ≙ absent — the deleted-version shape).
+    data: Option<Value>,
+    audit: AuditInput,
+    /// The raw `commit_audit` (the 666 attestation payload).
+    commit_audit: Option<Value>,
+    lifecycle_state: Option<String>,
+    incomplete: bool,
+    signature: Option<String>,
+    accompanying: Vec<Value>,
+    other_input_version_uids: Vec<String>,
+}
+
+
 
 /// Commit a CONTRIBUTION's version set atomically under one contribution +
 /// audit, returning the new contribution id. Shared by the EHR-scoped
@@ -226,22 +245,6 @@ pub(crate) async fn commit_version_set(
     // lifecycle/signature/attestation envelope. The modification targets are
     // then existence/kind-checked in ONE batched statement, and the plan is
     // resolved to [`Change`]s without re-reading any JSON.
-    struct PlannedVersion {
-        action: Action,
-        /// The parsed `preceding_version_uid` target (modify/delete/attest).
-        target: Option<(Uuid, TreeId)>,
-        /// `data` (`null` ≙ absent — the deleted-version shape).
-        data: Option<Value>,
-        audit: AuditInput,
-        /// The raw `commit_audit` (the 666 attestation payload).
-        commit_audit: Option<Value>,
-        lifecycle_state: Option<String>,
-        incomplete: bool,
-        signature: Option<String>,
-        accompanying: Vec<Value>,
-        other_input_version_uids: Vec<String>,
-    }
-
     let mut plan: Vec<PlannedVersion> = Vec::with_capacity(versions.len());
     let mut version_codes: Vec<String> = Vec::with_capacity(versions.len());
     for version in versions {
@@ -346,7 +349,11 @@ pub(crate) async fn commit_version_set(
     let mut attests: Vec<PendingAttest> = Vec::new();
     for v in plan {
         if v.action == Action::Attest {
-            let (vo_id, expected) = v.target.expect("attest always parses a preceding target");
+            let Some((vo_id, expected)) = v.target else {
+                return Err(ServiceError::Internal(
+                    "attest plan entry lost its parsed preceding target".to_owned(),
+                ));
+            };
             let kind = require_kind(vo_id)?;
             check_kind_scope(kind, party_only)?;
             let partial = v.commit_audit.ok_or_else(|| {
@@ -397,7 +404,11 @@ pub(crate) async fn commit_version_set(
                 let data = v.data.ok_or_else(|| {
                     ServiceError::Unprocessable("modification version needs data".to_owned())
                 })?;
-                let (vo_id, expected) = v.target.expect("modify always parses a preceding target");
+                let Some((vo_id, expected)) = v.target else {
+                    return Err(ServiceError::Internal(
+                        "modify plan entry lost its parsed preceding target".to_owned(),
+                    ));
+                };
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 cx.validate_for_commit(kind, &data, v.incomplete).await?;
@@ -414,7 +425,11 @@ pub(crate) async fn commit_version_set(
                 }
             }
             Action::Delete => {
-                let (vo_id, expected) = v.target.expect("delete always parses a preceding target");
+                let Some((vo_id, expected)) = v.target else {
+                    return Err(ServiceError::Internal(
+                        "delete plan entry lost its parsed preceding target".to_owned(),
+                    ));
+                };
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 Change::Delete {

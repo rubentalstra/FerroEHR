@@ -47,7 +47,6 @@ use quick_xml::events::Event;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::service::response::ServiceResponse;
 use crate::service::status::{CallStatusType, SmError};
 
 use crate::service::{EhrbaseService, ServiceError};

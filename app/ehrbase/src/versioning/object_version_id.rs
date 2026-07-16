@@ -31,7 +31,7 @@ use crate::service::ServiceError;
 /// the `(branch_number, branch_version)` pair (both `>= 1` per BASE
 /// `VERSION_TREE_ID`; RM common master06 §Version tree).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct TreeId {
+pub struct TreeId {
     /// The trunk version this id sits on (first lexical part).
     pub(crate) trunk: i32,
     /// `None` for a trunk version; `Some((branch_number, branch_version))` for a

@@ -112,6 +112,20 @@ fn ensure_full_ovid_if_match(
 
 impl EhrbaseService {
     // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
+    /// `create_party` (`i_demographic_service.adoc`): commit the first version
+    /// of a new PARTY.
+    ///
+    /// # Errors
+    /// - [`SmError`] `content_invalid` — the payload `_type` is absent or not a
+    ///   demographic party type (AGENT/GROUP/ORGANISATION/PERSON/ROLE),
+    ///   `i_party.adoc`.
+    /// - [`SmError`] `content_invalid` — the body fails RM validation for the
+    ///   resolved party kind (`validate_party_body`).
+    /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — the
+    ///   versioned-create transaction fails (integrity conflict, pool
+    ///   exhaustion, or a storage/database fault).
+    /// - [`SmError`] `precondition_violation` — the committed version uid does
+    ///   not parse (defensive; the uid is server-generated).
     pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
@@ -122,6 +136,14 @@ impl EhrbaseService {
         Ok(vo_id)
     }
 
+    /// True iff a *live* party of some kind exists under this versioned-object
+    /// id (a logically deleted party reads `Null` → `false`).
+    ///
+    /// # Errors
+    /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
+    ///   storage/database fault while resolving the party kind or reading its
+    ///   current version. A *not-found* on either resolves to `Ok(false)`, not
+    ///   an error.
     pub async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
         // True iff a *live* party of some kind exists (a logically deleted party
         // reads `Null`, satisfying the delete post-condition `not has_party`).
@@ -139,6 +161,13 @@ impl EhrbaseService {
         }
     }
 
+    /// True iff a specific party `OBJECT_VERSION_ID` exists. An unparseable id
+    /// or a missing version resolve to `false`.
+    ///
+    /// # Errors
+    /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
+    ///   storage/database fault while reading the version. A malformed id or a
+    ///   *not-found* version resolves to `Ok(false)`, not an error.
     pub async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
         let Ok((vo_id, tree)) = parse_version_uid(&a_party_version_id) else {
             return Ok(false);
@@ -150,6 +179,14 @@ impl EhrbaseService {
         }
     }
 
+    /// `get_party` (`i_party.adoc`): the current version's body.
+    ///
+    /// # Errors
+    /// - [`SmError`] `versioned_object_does_not_exist` — no versioned party with
+    ///   this id exists (`party_kind_at`), or its current version is logically
+    ///   deleted / absent (the read is empty).
+    /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
+    ///   storage/database fault during kind resolution or read.
     pub async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self

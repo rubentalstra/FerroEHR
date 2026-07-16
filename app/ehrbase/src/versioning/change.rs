@@ -127,10 +127,10 @@ impl Change {
 /// `crate::storage::version_repo`.
 pub(crate) struct NewVersionRow<'a> {
     pub(crate) vo_id: Uuid,
-    pub(crate) kind: Kind,
+    pub kind: Kind,
     pub(crate) ehr_id: Option<Uuid>,
     pub(crate) ordinal: i32,
-    pub(crate) tree: TreeId,
+    pub tree: TreeId,
     pub(crate) lifecycle_state: &'a str,
     pub(crate) creating_system_id: &'a str,
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
@@ -181,9 +181,9 @@ impl NewVersionRow<'_> {
 #[derive(Debug, Clone)]
 pub(crate) struct PrecedingTip {
     pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) kind: Kind,
+    pub kind: Kind,
     pub(crate) ordinal: i32,
-    pub(crate) tree: TreeId,
+    pub tree: TreeId,
     pub(crate) creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
     /// transition (G-01).
@@ -413,6 +413,7 @@ struct ResolvedWrite {
 /// - the `compositions_committed_total` metric — a cross-cutting service-layer
 ///   concern, not a storage write.
 #[allow(clippy::too_many_lines)] // the three change arms building the resolved write
+#[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
 async fn apply_change(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
@@ -548,8 +549,8 @@ async fn apply_change(
 /// The signature is computed over the assembled `ORIGINAL_VERSION` (RM common
 /// master06 §Digital Signature), which embeds `time_committed` and
 /// `contribution_id`. Both are known BEFORE any statement: the commit instant
-/// is the transaction timestamp (read by the placement query / [`tx_now`]
-/// (crate::storage::version_repo::tx_now); every row of the transaction stamps
+/// is the transaction timestamp (read by the placement query /
+/// [`tx_now`](crate::storage::version_repo::tx_now)); every row of the transaction stamps
 /// the same `now()`), and a standalone write generates its `contribution_id`
 /// here. So audit + contribution + `vo_version` always collapse into the one
 /// folded CTE ([`commit_new_version`](crate::storage::version_repo::commit_new_version)
@@ -727,6 +728,7 @@ async fn write_single_outbox(
 
 /// Create the first version of a new versioned object under its own
 /// contribution.
+#[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn create(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,

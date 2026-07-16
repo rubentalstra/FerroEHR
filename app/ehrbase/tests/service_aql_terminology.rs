@@ -181,6 +181,7 @@ async fn create_coded(
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {code}): {e:?}"))
+    .version_uid()
 }
 
 async fn run_aql(svc: &EhrbaseService, aql: &str) -> Value {

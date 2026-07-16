@@ -11,7 +11,6 @@
 
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
-use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;
