@@ -236,7 +236,13 @@ impl EhrbaseService {
             None => None,
         };
         let resp = self
-            .update_party_response(kind, a_versioned_party_id, a_version.data, expected)
+            .update_party_response(
+                kind,
+                a_versioned_party_id,
+                a_version.data,
+                expected,
+                Some(&a_version.audit),
+            )
             .await?;
         Ok(version_uid(resp))
     }
