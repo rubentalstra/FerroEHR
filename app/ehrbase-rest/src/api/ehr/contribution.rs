@@ -11,8 +11,6 @@ use openehr_its::rest::runtime::ApiError;
 
 // The contribution trait is named explicitly (its call names collide with other
 // groups, so a trait-path call disambiguates).
-use ehrbase_sm::Platform;
-use ehrbase_sm::services::EhrContributionService;
 
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
@@ -20,8 +18,8 @@ use crate::overview::version_id::{parse_ehr_id, parse_uuid};
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -71,10 +69,12 @@ pub(super) async fn run<S: Platform>(
             // `Prefer: resolve_refs` (Requests_and_responses §Representation
             // details negotiation): versions as full ORIGINAL_VERSIONs.
             let body = if negotiate::prefers_resolve_refs(h) {
-                EhrContributionService::get_contribution_resolved(state.backend(), ehr_id, cid)
+                state
+                    .backend()
+                    .get_contribution_resolved(ehr_id, cid)
                     .await?
             } else {
-                EhrContributionService::get_contribution(state.backend(), ehr_id, cid).await?
+                state.backend().get_contribution(ehr_id, cid).await?
             };
             Ok(negotiate::respond(h, ok, &body))
         }

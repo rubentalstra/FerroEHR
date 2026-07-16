@@ -1,13 +1,13 @@
-//! Contribution-outbox eventing (G-12-01, G-12-02).
+//! Contribution-outbox eventing.
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY` +
-//! `FEEDER_AUDIT`), not message brokers, topic routing, or outbound emission;
-//! master13 is informative deployment guidance and prescribes no eventing. This
-//! surface is therefore quarantined under `crate::extensions`
-//! (`docs/design/platform/12-extensions.md`). Gate: [`EventsConfig::enabled`]
-//! (`EHRBASE_EVENTS_ENABLED`, default off) — with it off the publisher is never
-//! spawned and the commit path is byte-identical (the zero-drift gate).
+//! integration model is archetype-to-archetype data conversion
+//! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not message brokers, topic routing,
+//! or outbound emission;
+//! master13 is informative deployment guidance and prescribes no eventing.
+//! Gate: [`EventsConfig::enabled`] (`events.enabled`, default off) — with it
+//! off the publisher is never spawned and the commit path is byte-identical
+//! (the zero-drift gate).
 //!
 //! ## Design
 //! - **At-least-once, per-EHR ordered.** A single background drainer reads
@@ -17,38 +17,41 @@
 //!   when the broker is down — commits never block on the broker.
 //! - **PHI-free.** The payload is the stored envelope (contribution id,
 //!   `ehr_id`, `committed_at`, per-version `(vo_id, kind, sys_version,
-//!   change_type, template_id)`) plus the delivery `seq`. No clinical content
-//!   — identity and provenance metadata only, never clinical content. The
-//!   per-version entry is built by `crate::versioning`
-//!   (`Committed::envelope_entry`) and the row is written inside the commit
-//!   transaction by `crate::storage::version_repo::write_outbox` (README
-//!   event-outbox cross-ruling); this module drains that row.
+//!   change_type, template_id)`) plus the delivery `seq`. Identity and
+//!   provenance metadata only, never clinical content. The per-version entry
+//!   is built by `crate::versioning` (`Committed::envelope_entry`) and the row
+//!   is written inside the commit transaction by
+//!   `crate::storage::version_repo::commit::write_outbox`; this module drains that row.
 //! - **Broker abstraction, AMQP first.** [`EventPublisher`] is the seam;
-//!   [`AmqpPublisher`] is the `RabbitMQ` (lapin) implementation. Publishing is
-//!   **off by default** ([`EventsConfig::enabled`]).
+//!   [`AmqpPublisher`] is the `RabbitMQ` (lapin) implementation.
+//! - **Topology declared on connect/change only.** Subscription queues are
+//!   declared + bound when the broker connection is (re)established or the
+//!   enabled-subscription set changes — never re-declared per poll cycle
+//!   (see `publisher`).
 //! - **Retention.** Published rows are pruned after a configurable window
 //!   (default 7 days).
 //!
 //! ## Module map
-//! - [`config`] — the `figment` [`EventsConfig`].
-//! - [`amqp`] — the lapin [`AmqpPublisher`].
-//! - [`publisher`] — the drainer task + retention pruner + [`EventsHandle`].
-//! - [`subscription`] — the `event_subscription` CRUD + `EventSubscriptionAdapter`.
+//! - [`config`] — the [`EventsConfig`] section struct.
+//! - `amqp` — the lapin [`AmqpPublisher`].
+//! - `publisher` — the drainer task + retention pruner + [`EventsHandle`].
+//! - `subscription` — the `event_subscription` CRUD on `EhrbaseService`.
 
 pub mod config;
 
-mod amqp;
-mod publisher;
+pub mod amqp;
+pub mod publisher;
 mod subscription;
 
 use async_trait::async_trait;
 
-pub use amqp::AmqpPublisher;
-pub use config::EventsConfig;
-pub use publisher::{EventsHandle, start, start_with_publisher, subscription_queue_name};
-
 /// Placeholder routing-key segment for an absent value.
 const ABSENT: &str = "-";
+
+/// The `*` single-word topic wildcard used for a NULL subscription predicate
+/// — distinct from [`ABSENT`] (`-`), which is a *routing* key's
+/// empty-template rendering, not a wildcard.
+const WILDCARD: &str = "*";
 
 /// An eventing failure — either the broker transport or a negative confirm.
 #[derive(Debug, thiserror::Error)]
@@ -71,8 +74,8 @@ pub trait EventPublisher: Send + Sync {
     async fn publish(&self, routing_key: &str, payload: &[u8]) -> Result<(), EventError>;
 
     /// Declare a durable subscription `queue` bound to the topic exchange with
-    /// `binding_key`. The drainer calls this for every enabled
-    /// subscription so the broker fans events out to per-subscription queues;
+    /// `binding_key`. The drainer calls this when broker topology must be
+    /// (re)established — on a fresh connection or a subscription-set change;
     /// it is idempotent (safe to re-declare a queue/binding). The default is a
     /// no-op so non-AMQP `EventPublisher`s (test doubles, a future Kafka impl
     /// with its own topic model) need not implement it.
@@ -80,12 +83,18 @@ pub trait EventPublisher: Send + Sync {
         let _ = (queue, binding_key);
         Ok(())
     }
-}
 
-/// The `*` single-word topic wildcard used for a NULL subscription predicate
-/// — distinct from [`ABSENT`] (`-`), which is a *routing* key's
-/// empty-template rendering, not a wildcard.
-const WILDCARD: &str = "*";
+    /// The topology epoch: a counter that advances every time the publisher
+    /// establishes a **fresh** broker connection. The drainer re-declares the
+    /// subscription topology whenever this differs from the epoch it last
+    /// declared under, so a broker replaced under us (fresh, without our
+    /// durable queues) gets the topology back without re-declaring on every
+    /// poll cycle. The default is a constant `0` — a test double or a broker
+    /// with its own persistent topology model never forces a re-declare.
+    fn topology_epoch(&self) -> u64 {
+        0
+    }
+}
 
 /// Build the topic routing key for one committed version:
 /// `<kind>.<change_type>.<template_id|->` on the topic exchange.
@@ -97,10 +106,10 @@ const WILDCARD: &str = "*";
 ///
 /// PORT NOTE: a CONTRIBUTION may carry several versions of
 /// differing kinds (e.g. EHR creation commits `EHR_STATUS` + `EHR_ACCESS`).
-/// Each version is published as **its own message** under its own routing key
-/// (E1 task 4), carrying the shared envelope plus a `version_index` naming which
-/// entry it is — so a template-filtered subscription receives exactly the
-/// matching versions. The routing key is thus per version, not per contribution.
+/// Each version is published as **its own message** under its own routing key,
+/// carrying the shared envelope plus a `version_index` naming which entry it is
+/// — so a template-filtered subscription receives exactly the matching
+/// versions. The routing key is thus per version, not per contribution.
 #[must_use]
 pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> String {
     let template = template_id
@@ -109,11 +118,11 @@ pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> 
     format!("{kind}.{change_type}.{template}")
 }
 
-/// Build the topic **binding** key for a subscription's predicates,
-/// parallel to [`routing_key`] but substituting the `*` single-word wildcard for
-/// any NULL (absent) predicate. `archetype` is intentionally absent: the routing
-/// key has no archetype segment (see the `event_subscription.archetype` PORT
-/// NOTE), so it cannot participate in topic binding.
+/// Build the topic **binding** key for a subscription's predicates, parallel to
+/// [`routing_key`] but substituting the `*` single-word wildcard for any NULL
+/// (absent) predicate. `archetype` is intentionally absent: the routing key has
+/// no archetype segment (see the `event_subscription.archetype` PORT NOTE), so
+/// it cannot participate in topic binding.
 #[must_use]
 pub fn subscription_binding_key(
     kind: Option<&str>,

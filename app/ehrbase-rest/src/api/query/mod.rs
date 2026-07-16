@@ -10,10 +10,7 @@
 //! and `RESULT_SET` rendering in [`response`].
 
 mod adhoc;
-mod dispatch;
-mod openapi_routes;
+pub(crate) mod dispatch;
+pub(crate) mod openapi_routes;
 mod response;
 mod stored;
-
-pub(crate) use dispatch::dispatch;
-pub(crate) use openapi_routes::routes;

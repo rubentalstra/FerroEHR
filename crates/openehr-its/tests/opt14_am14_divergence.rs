@@ -1,4 +1,4 @@
-//! opt14 ↔ am14 constraint-model divergence sentinel (F-09-02).
+//! opt14 ↔ am14 constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
 //! `openehr_am::am14` (the canonical logical model, canonical-JSON codec) and

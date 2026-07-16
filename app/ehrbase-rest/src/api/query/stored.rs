@@ -10,7 +10,7 @@
 //! `q`). This module normalizes both into an [`AqlQueryRequest`] and calls the
 //! [`QueryService`] stored seam (`version = None` → latest).
 //!
-//! [`QueryService`]: ehrbase_sm::QueryService
+//! [`QueryService`]: ehrbase::service::QueryService
 
 use http::HeaderMap;
 
@@ -19,7 +19,7 @@ use openehr_its::rest::generated::query::{
 };
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase_sm::{AqlQueryRequest, Platform, QueryOutcome};
+use ehrbase::service::query::request::{AqlQueryRequest, QueryOutcome};
 
 use super::response::{self, QueryScope};
 use crate::api::RequestParts;
@@ -30,8 +30,8 @@ use crate::state::AppState;
 /// Execute the four stored operations (latest + explicit version, `GET` +
 /// `POST`). The single wire `ehr_id` (query parameter or `openEHR-EHR-id`
 /// header) is collected into the one-element [`AqlQueryRequest::ehr_ids`] scope.
-pub(super) async fn execute<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn execute(
+    state: &AppState,
     op: &str,
     parts: &RequestParts,
     scope: &QueryScope,

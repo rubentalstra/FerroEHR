@@ -4,11 +4,12 @@
 //! This module owns two things:
 //!
 //! 1. **The golden normalizer** ([`Rule`], [`compare`]) — the documented
-//!    suppression layer a served `RESULT_SET` is diffed through. Design §6: *"a
-//!    diff suppressed by the normalizer must name its rule"* — every suppressed
-//!    difference records the [`Rule`] that justified it, so the suppression set
-//!    is auditable. Register 07 G-4 boundary: rules that are **version-specific**
-//!    (RM 1.2.0 `_type`, default-on `signature`, whole-number formatting,
+//!    suppression layer a served `RESULT_SET` is diffed through, under the
+//!    standing honesty rule that *a diff suppressed by the normalizer must
+//!    name its rule*: every suppressed difference records the [`Rule`] that
+//!    justified it, so the suppression set is auditable. Boundary: rules that
+//!    are **version-specific** (RM 1.2.0 `_type`, default-on `signature`,
+//!    whole-number formatting,
 //!    `meta._schema_version`) carry an edition-rung comment — they suppress a
 //!    *development-edition* wire shape and would be ladder assertions in a full
 //!    `RESULT_SET` wire adapter (register 90, not yet exposed).

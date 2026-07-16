@@ -1,6 +1,6 @@
 //! `AUDIT_DETAILS` — the commit provenance every version and contribution
 //! carries (S-20..S-23), and the `audit_change_type` terminology codes it is
-//! coded from (S-18).
+//! coded from.
 //!
 //! Spec: RM common `master04-generic_package.adoc` §Audit Details
 //! (`AUDIT_DETAILS` = `system_id`, `committer: PARTY_PROXY`, `time_committed`,
@@ -16,7 +16,7 @@
 use openehr_term::bundle::openehr;
 use serde_json::{Value, json};
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
 pub(crate) const OPENEHR: &str = "openehr";
@@ -61,7 +61,7 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
 
 /// The rubric (English display text) for an `audit_change_type` code; falls
 /// back to the code itself if the code is unknown to the bundle.
-pub(crate) fn change_type_rubric(code: &str) -> String {
+fn change_type_rubric(code: &str) -> String {
     openehr()
         .rubric(AUDIT_CHANGE_TYPE, code, "en")
         .unwrap_or(code)
@@ -85,10 +85,50 @@ pub(crate) struct AuditInput {
 }
 
 impl AuditInput {
-    /// The borrowed storage row shape ([`crate::storage::version_repo::AuditRow`])
+    /// Build the commit audit from the caller's `UPDATE_VERSION.audit`
+    /// envelope, merged with the server rules (ITS-REST overview
+    /// §"openehr-version and openehr-audit-details": provided attributes
+    /// "MUST be merged"; RM common master06 §Committal m4 defaults):
+    ///
+    /// - `change_type` is the OPERATION's — a direct create IS a creation, a
+    ///   PUT a modification, a DELETE a deletion — never client-overridable
+    ///   (the wire has no legal divergent value);
+    /// - `description` — the caller's when supplied, else the server default;
+    /// - `committer` — the caller's `PARTY_PROXY` (the protocol adapter has
+    ///   already defaulted an absent committer to the authenticated
+    ///   principal / system identity);
+    /// - `system_id` — the caller's when supplied, else this server's.
+    pub(crate) fn from_update(
+        update: &crate::service::version_update::UpdateAudit,
+        operation_change_type: &str,
+        default_description: &str,
+        fallback_system_id: &str,
+    ) -> Self {
+        let committer = serde_json::to_value(&update.committer).unwrap_or_else(
+            |_| serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" }),
+        );
+        Self {
+            system_id: update
+                .system_id
+                .clone()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| fallback_system_id.to_owned()),
+            change_type: operation_change_type.to_owned(),
+            description: Some(
+                update
+                    .description
+                    .clone()
+                    .filter(|d| !d.is_empty())
+                    .unwrap_or_else(|| default_description.to_owned()),
+            ),
+            committer,
+        }
+    }
+
+    /// The borrowed storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
     /// this audit persists as.
-    pub(crate) fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {
-        crate::storage::version_repo::AuditRow {
+    pub(crate) fn row(&self) -> crate::storage::version_repo::commit::AuditRow<'_> {
+        crate::storage::version_repo::commit::AuditRow {
             system_id: &self.system_id,
             change_type: &self.change_type,
             description: self.description.as_deref(),
@@ -135,19 +175,22 @@ pub(crate) fn audit_details(
 
 /// Validate a client-supplied commit `AUDIT_DETAILS`' non-terminology RM
 /// invariants before it is persisted (a CONTRIBUTION audit or a version
-/// `commit_audit`). Two invariants are enforced here as a service-layer `422`:
+/// `commit_audit`).
+///
+/// `change_type` is validated separately ([`change_type_code`]).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when either enforced invariant fails:
 ///
 /// - `AUDIT_DETAILS.System_id_valid`: `not system_id.is_empty` (RM common
 ///   master04 §Audit Details). Without this guard an empty client-supplied
 ///   `system_id` reaches the DB `System_id_valid` CHECK and surfaces as a
 ///   `500` — a validation failure must be `422`, not an internal error.
 /// - the committer `PARTY_PROXY`'s own `PARTY_IDENTIFIED`/`PARTY_RELATED`
-///   invariants `Basic_validity` + `Name_valid` (RM common master04 §Party
-///   Proxies). A PARTY that appears as *content* is validated by the
-///   RM-invariant pass, but the audit committer is stored verbatim, so it is
-///   checked here.
-///
-/// `change_type` is validated separately ([`change_type_code`]).
+///   invariants `Basic_validity` + `Name_valid` (+ `Relationship_valid` for
+///   `PARTY_RELATED`; RM common master04 §Party Proxies). A PARTY that appears
+///   as *content* is validated by the RM-invariant pass, but the audit
+///   committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(

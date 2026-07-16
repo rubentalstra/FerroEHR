@@ -90,7 +90,7 @@ impl Signer {
                 let passphrase = config
                     .key_passphrase
                     .as_ref()
-                    .map(ehrbase_sm::Secret::expose);
+                    .map(crate::config::secret::Secret::expose);
                 SignerMode::Pgp(Box::new(PgpKey::load(path, passphrase)?))
             }
         };

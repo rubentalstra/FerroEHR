@@ -6,14 +6,12 @@
 //! `AuditSourceIdentification`, `ParticipantObjectIdentification`; DICOM PS3.15
 //! §A.5); [`AuditMessage::to_xml`] renders canonical (indented) XML with
 //! `quick-xml`, which escapes all attribute/text values. The golden vector
-//! snapshotted in the tests is a PS3.15 §A.5 EHR-create success record (a
-//! worked example of that shape is also kept in the non-normative design record
-//! `docs/enterprise/atna-audit.md` §3).
+//! snapshotted in the tests is a PS3.15 §A.5 EHR-create success record.
 
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 
-use ehrbase_sm::AuditEvent;
+use crate::system_log::event::AuditEvent;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::{
@@ -22,7 +20,8 @@ use crate::system_log::codes::{
 };
 
 /// The server-side identity shared by every emitted record (the destination
-/// node + audit source). Built once by the sender from [`crate::AuditConfig`].
+/// node + audit source). Built once by the sender from
+/// [`super::config::AuditConfig`].
 #[derive(Debug, Clone)]
 pub struct AuditContext {
     /// `AuditSourceID` and the destination `ActiveParticipant.UserID`.
@@ -280,7 +279,7 @@ fn nonempty(value: &str, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::system_log::event::{EventActionCode, EventOutcome, ObjectClass};
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {
@@ -446,7 +445,7 @@ mod tests {
 
     #[test]
     fn ehr_extract_export_is_patient_and_uri_scoped() {
-        // G-7: EHR-Extract communication is patient-identifiable clinical data
+        // EHR-Extract communication is patient-identifiable clinical data
         // audited for non-repudiation — it carries both a Patient-Number and an
         // object-URI participant (DICOM PS3.15 §A.5 / RFC 3881 §5.5), like a
         // composition, under the Patient-Record EventID family.

@@ -10,16 +10,18 @@
 //! our own design over the greenfield `contribution` / `vo_version` / `audit`
 //! tables (`0001_baseline.sql`).
 
-use ehrbase_sm::PlatformService;
-
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::admin::types::StatTimeRange;
+use crate::service::error::ServiceError;
+use crate::service::platform_service::PlatformService;
+use crate::service::status::SmError;
 
 /// Whether a [`PlatformService`]'s CONTRIBUTIONs are EHR-scoped (`Some(true)` →
 /// `ehr_id IS NOT NULL`), ehr-less (`Some(false)` → `ehr_id IS NULL`), or the
 /// service is not a versioned-content service (`None` → statistics are trivially
 /// empty/0).
 ///
-/// PORT NOTE (already-correct — `platform_service.adoc`; G-A5): `a_service` is
+/// PORT NOTE (already-correct — `platform_service.adoc`): `a_service` is
 /// "Name of a versioned content service". Only `Ehr` (EHR-scoped) and
 /// `Demographic` (ehr-less) hold contributions in this CDR; the remaining
 /// members (`Admin`/`Definitions`/`Ehr_index`/`Message`/`Query`/`System_log`)
@@ -35,20 +37,25 @@ fn contribution_ehr_scoped(service: PlatformService) -> Option<bool> {
 }
 
 impl EhrbaseService {
-    /// `list_contributions`: the ids of all CONTRIBUTIONs of the named
+    /// SM `list_contributions`: the ids of all CONTRIBUTIONs of the named
     /// versioned-content service within the (optional) time range, ordered by
     /// commit time. A non-content service yields the empty list.
-    pub(super) async fn stat_list_contributions(
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
+    ///   valid ISO 8601 date-time.
+    /// - `exception` — a database fault while querying.
+    pub async fn admin_list_contributions(
         &self,
-        service: PlatformService,
-        lo: Option<String>,
-        hi: Option<String>,
-    ) -> Result<Vec<String>, ServiceError> {
-        let Some(ehr_scoped) = contribution_ehr_scoped(service) else {
+        a_service: PlatformService,
+        time_range: StatTimeRange,
+    ) -> Result<Vec<String>, SmError> {
+        let (lo, hi) = super::parse_range(time_range)?;
+        let Some(ehr_scoped) = contribution_ehr_scoped(a_service) else {
             return Ok(Vec::new());
         };
         // Static SQL; `$3` selects EHR-scoped vs ehr-less contributions.
-        Ok(sqlx::query_scalar(
+        let ids: Vec<String> = sqlx::query_scalar(
             "SELECT c.id::text FROM contribution c JOIN audit a ON a.id = c.audit_id \
              WHERE (($3 AND c.ehr_id IS NOT NULL) OR (NOT $3 AND c.ehr_id IS NULL)) \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
@@ -59,21 +66,28 @@ impl EhrbaseService {
         .bind(hi)
         .bind(ehr_scoped)
         .fetch_all(&self.pool)
-        .await?)
+        .await
+        .map_err(ServiceError::from)?;
+        Ok(ids)
     }
 
-    /// `contribution_count`: the count of all CONTRIBUTIONs of the named service
-    /// within the (optional) time range. A non-content service → 0.
-    pub(super) async fn stat_contribution_count(
+    /// SM `contribution_count`: the count of all CONTRIBUTIONs of the named
+    /// service within the (optional) time range. A non-content service → 0.
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
+    ///   valid ISO 8601 date-time.
+    /// - `exception` — a database fault while querying.
+    pub async fn admin_contribution_count(
         &self,
-        service: PlatformService,
-        lo: Option<String>,
-        hi: Option<String>,
-    ) -> Result<i64, ServiceError> {
-        let Some(ehr_scoped) = contribution_ehr_scoped(service) else {
+        a_service: PlatformService,
+        time_range: StatTimeRange,
+    ) -> Result<i64, SmError> {
+        let (lo, hi) = super::parse_range(time_range)?;
+        let Some(ehr_scoped) = contribution_ehr_scoped(a_service) else {
             return Ok(0);
         };
-        Ok(sqlx::query_scalar(
+        let count: i64 = sqlx::query_scalar(
             "SELECT count(*) FROM contribution c JOIN audit a ON a.id = c.audit_id \
              WHERE (($3 AND c.ehr_id IS NOT NULL) OR (NOT $3 AND c.ehr_id IS NULL)) \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
@@ -83,25 +97,32 @@ impl EhrbaseService {
         .bind(hi)
         .bind(ehr_scoped)
         .fetch_one(&self.pool)
-        .await?)
+        .await
+        .map_err(ServiceError::from)?;
+        Ok(count)
     }
 
-    /// `versioned_composition_count`: the count of distinct COMPOSITION versioned
-    /// objects with a version committed within the (optional) range.
+    /// SM `versioned_composition_count`: the count of distinct COMPOSITION
+    /// versioned objects with a version committed within the (optional) range.
     ///
-    /// PORT NOTE (already-correct — `platform_service.adoc`; G-A5): COMPOSITIONs
-    /// are EHR-scoped, so only `a_service = Ehr` yields a non-zero count; every
+    /// PORT NOTE (already-correct — `platform_service.adoc`): COMPOSITIONs are
+    /// EHR-scoped, so only `a_service = Ehr` yields a non-zero count; every
     /// other member → 0 (COMPOSITIONs are not in its scope).
-    pub(super) async fn stat_versioned_composition_count(
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
+    ///   valid ISO 8601 date-time.
+    /// - `exception` — a database fault while querying.
+    pub async fn versioned_composition_count(
         &self,
-        service: PlatformService,
-        lo: Option<String>,
-        hi: Option<String>,
-    ) -> Result<i64, ServiceError> {
-        if service != PlatformService::Ehr {
+        a_service: PlatformService,
+        time_range: StatTimeRange,
+    ) -> Result<i64, SmError> {
+        let (lo, hi) = super::parse_range(time_range)?;
+        if a_service != PlatformService::Ehr {
             return Ok(0);
         }
-        Ok(sqlx::query_scalar(
+        let count: i64 = sqlx::query_scalar(
             "SELECT count(DISTINCT v.vo_id) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.kind = 'COMPOSITION' \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
@@ -110,22 +131,29 @@ impl EhrbaseService {
         .bind(lo)
         .bind(hi)
         .fetch_one(&self.pool)
-        .await?)
+        .await
+        .map_err(ServiceError::from)?;
+        Ok(count)
     }
 
-    /// `composition_version_count`: the count of individual COMPOSITION version
-    /// rows committed within the (optional) range. Scope gate as
-    /// [`Self::stat_versioned_composition_count`].
-    pub(super) async fn stat_composition_version_count(
+    /// SM `composition_version_count`: the count of individual COMPOSITION
+    /// version rows committed within the (optional) range. Scope gate as
+    /// [`Self::versioned_composition_count`].
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — a bound of `time_range` is not a
+    ///   valid ISO 8601 date-time.
+    /// - `exception` — a database fault while querying.
+    pub async fn composition_version_count(
         &self,
-        service: PlatformService,
-        lo: Option<String>,
-        hi: Option<String>,
-    ) -> Result<i64, ServiceError> {
-        if service != PlatformService::Ehr {
+        a_service: PlatformService,
+        time_range: StatTimeRange,
+    ) -> Result<i64, SmError> {
+        let (lo, hi) = super::parse_range(time_range)?;
+        if a_service != PlatformService::Ehr {
             return Ok(0);
         }
-        Ok(sqlx::query_scalar(
+        let count: i64 = sqlx::query_scalar(
             "SELECT count(*) FROM vo_version v JOIN audit a ON a.id = v.audit_id \
              WHERE v.kind = 'COMPOSITION' \
                AND ($1::timestamptz IS NULL OR a.time_committed >= $1::timestamptz) \
@@ -134,6 +162,8 @@ impl EhrbaseService {
         .bind(lo)
         .bind(hi)
         .fetch_one(&self.pool)
-        .await?)
+        .await
+        .map_err(ServiceError::from)?;
+        Ok(count)
     }
 }

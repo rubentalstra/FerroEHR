@@ -1,5 +1,5 @@
 //! HTTP dispatch for the `admin` API group (physical EHR delete) over the
-//! [`AdminService`](ehrbase_sm::services::AdminService) seam.
+//! [`AdminService`](ehrbase::service::AdminService) seam.
 //!
 //! Maturity: the ITS-REST Admin API is **`DEVELOPMENT`** (`admin.openapi.yaml`
 //! `info.version: development`, `x-status: DEVELOPMENT`). It mounts exactly two
@@ -38,16 +38,11 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts};
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -55,8 +50,8 @@ pub(crate) fn dispatch<S: Platform>(
     })
 }
 
-async fn run<S: Platform>(
-    state: AppState<S>,
+async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

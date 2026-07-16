@@ -15,7 +15,7 @@
 //! Negative `If-Match` ids come from [`support::nonexistent_version_like`] over
 //! an OBSERVED id — the `::conformance::99` literal the legacy suite baked in is
 //! gone (register 08 G-1). The `I_PARTY_RELATIONSHIP` family (register 08 G-3)
-//! and `get_party_at_time` (G-2) are added here; the relationship wire is an
+//! and `get_party_at_time` are added here; the relationship wire is an
 //! ehrbase-rs extension (the ITS-REST demographic OAS declares **no**
 //! `party_relationship` path — only the schema), so those cases are
 //! `EccOriginal` against the extension route, never presented as ITS-REST-bound.

@@ -16,8 +16,8 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::EhrStatus;
 
-use ehrbase_sm::{CallStatusType, Platform};
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::status::CallStatusType;
 
 use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
@@ -26,8 +26,8 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 
 #[allow(clippy::too_many_lines)] // one arm per EHR_STATUS operation; a flat match is clearest
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -42,7 +42,7 @@ pub(super) async fn run<S: Platform>(
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
-            // F-01-03: the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
+            // the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
@@ -88,7 +88,7 @@ pub(super) async fn run<S: Platform>(
             // (representation); ETag + Location on both. 412 → latest version_uid.
             match state.backend().replace_ehr_status(ehr_id, uv).await {
                 Ok(uid) => {
-                    // G-4: apply the openehr-item-tag / openehr-version-item-tag
+                    // apply the openehr-item-tag / openehr-version-item-tag
                     // write-wrapper headers to the committed target
                     // (Requests_and_responses.md §…§Usage in Requests).
                     let stored_tags =

@@ -14,7 +14,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::{audit_details, change_type};
 use crate::versioning::change::Committed;
@@ -34,27 +34,16 @@ pub(crate) struct PendingAttest {
     pub(crate) partial: Value,
 }
 
-/// The located attestation target — the value contract from
-/// `crate::storage::version_repo::attestation_target`.
-///
-/// Mapped from the storage lookup (`version_repo::attestation_target`).
-#[derive(Debug, Clone)]
-pub(crate) struct AttestTarget {
-    /// The owning EHR of the target version (compared against the caller's).
-    pub(crate) ehr_id: Option<Uuid>,
-    /// The target version's storage ordinal.
-    pub(crate) ordinal: i32,
-    /// The target version's `creating_system_id` (carried into the outbox).
-    pub(crate) creating_system_id: String,
-}
-
 /// Attach an `ATTESTATION` to an **existing** `ORIGINAL_VERSION` (a
 /// `666|attestation|` version item; master06 §Contributions — no new version,
 /// `sys_period` untouched). Realizes `VERSIONED_OBJECT.commit_attestation`
-/// precondition `has_version_id` (master06 §Versioned Objects): the target
-/// `(vo_id, tree)` must exist and belong to `ehr_id`, else
-/// [`ServiceError::NotFound`]. `attestation` is the already-completed full RM
-/// `ATTESTATION`.
+/// precondition `has_version_id` (master06 §Versioned Objects). `attestation`
+/// is the already-completed full RM `ATTESTATION`.
+///
+/// # Errors
+/// [`ServiceError::NotFound`] when the target `(vo_id, tree, kind)` does not
+/// exist or does not belong to `ehr_id`; the storage errors of the target
+/// lookup / attestation insert.
 #[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
 pub(crate) async fn attest(
     tx: &mut PgConnection,
@@ -66,35 +55,33 @@ pub(crate) async fn attest(
     contribution_id: Uuid,
     time_committed: jiff::Timestamp,
 ) -> Result<Committed, ServiceError> {
-    let target = crate::storage::version_repo::attestation_target(
+    // The target lookup (`version_repo::attestation::attestation_target`) yields the owning
+    // EHR (compared against the caller's), the storage ordinal the attestation
+    // keys to, and the target's `creating_system_id` (carried into the outbox).
+    let target = crate::storage::version_repo::attestation::attestation_target(
         tx,
         vo_id,
         expected.columns(),
         kind.as_str(),
     )
-    .await?
-    .map(|row| AttestTarget {
-        ehr_id: row.ehr_id,
-        ordinal: row.sys_version,
-        creating_system_id: row.creating_system_id,
-    });
+    .await?;
     let Some(target) = target.filter(|t| t.ehr_id == ehr_id) else {
         return Err(ServiceError::NotFound(format!(
             "{} version {vo_id}::{expected}",
             kind.as_str()
         )));
     };
-    crate::storage::version_repo::insert_attestation(
+    crate::storage::version_repo::attestation::insert_attestation(
         tx,
         vo_id,
-        target.ordinal,
+        target.sys_version,
         contribution_id,
         attestation,
     )
     .await?;
     Ok(Committed {
         vo_id,
-        sys_version: target.ordinal,
+        sys_version: target.sys_version,
         tree: expected,
         creating_system_id: target.creating_system_id,
         kind,
@@ -112,6 +99,10 @@ pub(crate) async fn attest(
 /// (`UPDATE_VERSION.attestations`; master06 §Attestation "Signing content at
 /// committal"). Each partial `UPDATE_ATTESTATION` is completed into a full RM
 /// `ATTESTATION` and attached to the just-written version — same transaction.
+///
+/// # Errors
+/// The [`complete_attestation`] `Unprocessable` rejections; the storage error
+/// of the attestation insert.
 #[allow(clippy::too_many_arguments)] // the parts of an ATTESTATION + its target version
 pub(crate) async fn insert_accompanying_attestations(
     tx: &mut PgConnection,
@@ -125,7 +116,7 @@ pub(crate) async fn insert_accompanying_attestations(
 ) -> Result<(), ServiceError> {
     for partial in partials {
         let full = complete_attestation(partial, system_id, committer_fallback, now)?;
-        crate::storage::version_repo::insert_attestation(
+        crate::storage::version_repo::attestation::insert_attestation(
             tx,
             vo_id,
             sys_version,
@@ -143,13 +134,16 @@ pub(crate) async fn insert_accompanying_attestations(
 /// fields it owns — `system_id`, `time_committed`, and the `666|attestation|`
 /// `change_type` — exactly as `UPDATE_AUDIT` → `AUDIT_DETAILS` (master06
 /// §Version Update Semantics), then adds the `ATTESTATION`-specific attributes.
-///
-/// Validates the RM invariants: `reason` is mandatory (1..1) and, when coded,
-/// its `defining_code` must be in the openEHR `attestation reason` group
-/// (`ATTESTATION.Reason_valid`); `is_pending` is a mandatory `Boolean` (1..1);
-/// `items`, if present, must be non-empty (`ATTESTATION.Items_valid`).
 /// `committer` comes from the partial when present, else the CONTRIBUTION's
 /// committer (master06 §Committal).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] when an RM invariant fails:
+/// - `reason` absent (mandatory, 1..1), or a coded `reason` whose
+///   `defining_code` is not in the openEHR `attestation reason` group
+///   (`ATTESTATION.Reason_valid`);
+/// - `is_pending` absent or not a `Boolean` (mandatory, 1..1);
+/// - `items` present but not a non-empty list (`ATTESTATION.Items_valid`).
 pub(crate) fn complete_attestation(
     partial: &Value,
     system_id: &str,

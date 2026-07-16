@@ -53,7 +53,7 @@ impl Builder<'_> {
                 if let Some(expr) = self.ehr_id_typed_compare(lhs, *op, rhs)? {
                     return Ok(expr);
                 }
-                // G-12: a mixed-type (`Raw`) leaf compared to a numeric literal
+                // a mixed-type (`Raw`) leaf compared to a numeric literal
                 // is compared numerically (with a NULL-guard); otherwise the Raw
                 // set falls through to text, exactly as every other Text leaf
                 // (QUERY master03 §Comparison operators).
@@ -257,7 +257,7 @@ impl Builder<'_> {
     }
 
     /// Lower a comparison operand for the numeric branch of a mixed-type (`Raw`)
-    /// comparison (G-12): the path side extracts through the NULL-guarded numeric
+    /// comparison: the path side extracts through the NULL-guarded numeric
     /// mode, literals/params cast to `numeric` (QUERY master03 §Comparison operators).
     fn operand_value_raw_numeric(&mut self, op: &Operand) -> Result<Expr, AqlError> {
         match op {

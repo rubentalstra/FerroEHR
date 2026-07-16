@@ -15,12 +15,12 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{PartyKind, Platform};
+use ehrbase::service::demographic::types::PartyKind;
 use http::StatusCode;
 
 /// The per-kind `ITEM_TAG` operations (`tags_get`/`tags_update`/`tags_delete`).
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     kind: PartyKind,
     action: &str,
     parts: RequestParts,
@@ -42,7 +42,7 @@ pub(super) async fn run<S: Platform>(
                 .backend()
                 .party_tags_update(kind, p.uid_based_id, body)
                 .await?;
-            // G-4: person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
+            // person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
             // with the tag list on `Prefer: return=representation`; 204
             // (204_updated) when `Prefer` is missing or `return=minimal`.
             if negotiate::prefers_representation(h) {
@@ -67,8 +67,8 @@ pub(super) async fn run<S: Platform>(
 
 /// `GET /demographic/tags` — the kind-agnostic `ITEM_TAG` collection filter
 /// (`demographic_tags_get.yaml`).
-pub(super) async fn run_collection<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run_collection(
+    state: AppState,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;

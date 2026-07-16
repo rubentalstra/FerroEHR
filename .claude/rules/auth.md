@@ -24,8 +24,10 @@ maintenance and extension, not initial build.
   incl. `/.well-known/smart-configuration`) stay outside the auth layer.
 - SMART scope grammar/enforcement: the vendored
   `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` text (master08 is the
-  load-bearing scope grammar) + `docs/design/its-rest/smart.md`.
-  EHR-level access: `docs/design/ehr-access-scheme.md`.
+  load-bearing scope grammar). EHR-level access: the
+  `ehrbase.access_control.v1` scheme implemented in
+  `app/ehrbase/src/service/ehr/access_types.rs` (no openEHR spec defines a
+  concrete ACCESS_CONTROL_SETTINGS scheme — our own design).
 
 ## Rules
 

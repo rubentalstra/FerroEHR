@@ -1,13 +1,17 @@
-//! `sea-query` identifier definitions for the greenfield schema
-//! (`migrations/ehr/0001_baseline.sql`). No openEHR spec governs the SQL schema
-//! — this is our own PG18-native design (`docs/architecture.md` §Storage). One
-//! enum per table: the `Table` variant renders the table name, the rest the
-//! column names. This is the single typed name catalog — the AQL SQL generator
-//! consumes the `Table` variants, and dynamic SQL elsewhere addresses columns
-//! through these enums rather than string-duplicating names. The catalog is
-//! kept complete against the schema (every column that dynamic SQL addresses has
-//! a variant); a drifted catalog forces raw column strings, which this file
-//! exists to prevent.
+//! `sea-query` identifier vocabulary for the live schema
+//! (`migrations/ehr/0001_baseline.sql`). No openEHR spec governs the SQL
+//! schema — this is our own PG18-native design (`docs/architecture.md`
+//! §Storage).
+//!
+//! One enum per table, in the official `sea-query` derive shape: the `Table`
+//! variant carries an explicit `#[iden = "..."]` and renders the table name;
+//! every other variant renders its `snake_cased` column name. This is the
+//! single typed name catalog — the AQL SQL generator consumes the `Table`
+//! variants, and dynamic SQL elsewhere addresses columns through these enums
+//! rather than string-duplicating names. Every rendered name is pinned to the
+//! deployed DDL byte-for-byte (asserted by the tests below); the catalog is
+//! kept complete against the schema, because a drifted catalog forces raw
+//! column strings — exactly what this file exists to prevent.
 
 /// `ehr` — one row per EHR.
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
@@ -146,7 +150,7 @@ pub enum ItemTag {
     CreatedAt,
 }
 
-/// `archetype_store` — SM-2 ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
+/// `archetype_store` — ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum ArchetypeStore {
     #[iden = "archetype_store"]

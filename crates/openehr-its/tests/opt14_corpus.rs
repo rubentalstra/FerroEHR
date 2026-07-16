@@ -67,7 +67,7 @@ fn every_opt_template_parses() {
     assert_eq!(parsed, files.len());
 }
 
-/// Model-level losslessness gate (F-09-05): parse → `ToXml` → re-parse must be
+/// Model-level losslessness gate: parse → `ToXml` → re-parse must be
 /// structurally stable over the whole corpus. This is what actually exercises
 /// the generated `ToXml` impls (storage/GET serve verbatim XML, so nothing else
 /// does) and asserts the typed model loses nothing it captured on the way back
@@ -190,7 +190,7 @@ fn string_dictionary_order_preserved() {
 }
 
 /// `T_CONSTRAINT` (`<constraints>`) carries node `default_value` overlays
-/// (F-09-03); assert they are parsed into the typed model, not skipped, for a
+///; assert they are parsed into the typed model, not skipped, for a
 /// corpus file known to carry one.
 #[test]
 fn t_constraint_default_values_parsed() {

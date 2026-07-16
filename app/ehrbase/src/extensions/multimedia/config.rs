@@ -7,14 +7,14 @@
 //! **Off by default** (`enabled = false`): with externalization disabled the
 //! commit/read paths are byte-identical to today's inline behaviour and no
 //! object store is ever contacted. The secret access key is a shared
-//! [`ehrbase_sm::Secret`] (never rendered) with a `*_file` sibling.
+//! [`crate::config::secret::Secret`] (never rendered) with a `*_file` sibling.
 
 // openEHR/product identifiers (SeaweedFS, object_store, …) read as prose below.
 #![allow(clippy::doc_markdown)]
 
 use std::path::PathBuf;
 
-use ehrbase_sm::Secret;
+use crate::config::secret::Secret;
 use serde::{Deserialize, Serialize};
 
 /// Default offload threshold: a decoded (unencoded) `DV_MULTIMEDIA.data`
@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_THRESHOLD_BYTES: usize = 256 * 1024;
 
 /// The default bucket name when a deployment does not set one.
-pub const DEFAULT_BUCKET: &str = "openehr-multimedia";
+const DEFAULT_BUCKET: &str = "openehr-multimedia";
 
 /// DV_MULTIMEDIA externalization settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]

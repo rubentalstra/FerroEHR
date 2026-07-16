@@ -1,47 +1,44 @@
 # Current phase
 
-**The roadmap is `docs/blueprint/00-THE-BLUEPRINT.md`** — read it first. It is
-the single source of truth for the trajectory toward "first fully
-spec-compliant openEHR CDR". This file is the live pointer under it; the
-consolidated gap surface is the blueprint §2 (proven foundations + ECC
-breakdown + spec-area map).
-
 **Open items live in [`WORKLIST.md`](WORKLIST.md)** — one row per item,
-owner-mandated single tracker (2026-07-12).
+owner-mandated single tracker. The forward product roadmap is the root
+`ROADMAP.md`; the spec oracle is `docs/specs/openehr/` (never memory, never
+prior art alone). The historical build record is `docs/PROGRESS.md`.
+*(The former blueprint/design-doc layer was deleted 2026-07-16 (owner):
+implemented or stale — the specs + this pointer + the worklist are the
+navigation surface.)*
 
-## Active work — P20 optimization (owner go 2026-07-14)
+## Active work — W-14 full audit + platform rewrite
 
-**P20 — profile-driven optimization** on branch `claude/p20-optimization`,
-mission: flip the max-sustained row honestly (owner rule: **no false claims —
-measured numbers only**). The working tracker is
-[`p20-overhead-checklist.md`](p20-overhead-checklist.md) (32 items, receipts
-per item); the phase plan is
-[`phase-20-optimization.md`](phase-20-optimization.md).
+Branch `claude/w14-audit`. The audit register is
+[`w14-audit.md`](w14-audit.md) (155 endpoint ops probed; findings
+F-1..F-54 with spec triage each); the rewrite tracker is
+[`w14-service-rewrite.md`](w14-service-rewrite.md).
 
-State (2026-07-16): checklist items 1–21, 23–26, 28–35 done; v3.0.3
-released (the hot-path elimination items 33–35, the native utoipa-axum
-OpenAPI surface, the W-13 configuration redesign). **The v3.0.3 pair is
-measured (2026-07-16, official `scripts/benchmark.sh`, both knees first,
-then both hour runs): ehrbase-rs 631.6 req/s (L=64, p99 92 ms) vs upstream
-316.1 req/s (L=32, p99 200 ms) — 2.0×; all 14 operation classes lower at
-p50 and p99.** ECC zero-drift receipt committed (370·335·0,
-CORE+STANDARD PASS). Open: 22 (group-commit A/B), 27 (knee profiler
-automation).
+State (2026-07-16): the **full per-folder fresh rewrite of the platform is
+landed** — 13 folders re-authored from the governing spec sections (fresh
+files, old files deleted), the service error module split out, **zero
+re-exports across both app crates**, single convergence pass done: the
+whole workspace compiles all targets. Fix waves 1–2 (error-track defects +
+the write-path redesign) are done; wave 3/4 leftovers and the fleet-found
+defects (§4k) are the open fix surface.
+
+**Open before W-14 closes** (see the WORKLIST rows):
+
+1. S6 gates — workspace clippy + nextest, ECC **zero-drift vs 370·335·0**,
+   fresh benchmark pair.
+2. W-18 — the tracker-ID comment scrub (owner hard rule: no internal task
+   IDs in code; only `docs/specs/openehr/` citations).
+3. W-19 — stale doc references (code + instruction files citing the deleted
+   design docs).
 
 ## Then, in order
 
-1. **X1 publication** — the measured comparison page (ECC matrix from W-10 +
-   the benchmark ladder; per-case upstream failure triage) —
-   [`x1-comparison.md`](x1-comparison.md).
-2. **P17 interop audit** — SIM-B/SDF transformation-rule audit
-   ([`phase-17-flat-structured-ehrscape.md`](phase-17-flat-structured-ehrscape.md));
-   interleaves, not conformance-gated.
+1. **W-15** — the endpoint → function-chain map (`docs/endpoint-map.md`),
+   agent-fleet authored.
+2. **W-16 / W-17** — issue #95 (Accept-header format support) and issue #94
+   (full example generation).
+3. **W-2 / W-3 / W-4 / W-3d / FLAT** — per the worklist.
 
 Every phase still ends with an ECC run showing zero drift; the baseline only
-ratchets upward (blueprint §4 rule 4). Closed-phase plan files are pruned
-once their close is recorded in `docs/PROGRESS.md` (the W-1/W-3x/W-10/W-11/A1
-files were pruned 2026-07-14).
-
-**Read first:** `docs/blueprint/00-THE-BLUEPRINT.md`, then
-`docs/ADRs/ADR-011-app-crate-redesign.md` (current app-crate reality) +
-`docs/ADRs/ADR-008-greenfield-pg18-storage.md` (own PG18 internals).
+ratchets upward.

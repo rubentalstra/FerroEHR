@@ -24,7 +24,7 @@ use serde_json::{Map, Value, json};
 use super::defaults::{
     DEFAULT_SETTING_CODE, DEFAULT_SETTING_TERM, DEFAULT_SETTING_VALUE, DEFAULT_TIME,
 };
-// One shared `CODE_PHRASE` builder (F-13-22): `graph` owns the canonical RM-node
+// One shared `CODE_PHRASE` builder: `graph` owns the canonical RM-node
 // JSON builders; this module reuses it rather than re-inlining the shape.
 use super::graph::code_phrase;
 use super::mappers::FlatMap;
@@ -473,7 +473,7 @@ fn participations_from_ctx(flat: &Map<String, Value>) -> Vec<Value> {
         }
         p.insert("performer".into(), performer);
         if let Some(m) = mode {
-            // PORT NOTE (F-10-07): `ctx/participation_mode` carries a free-text
+            // PORT NOTE: `ctx/participation_mode` carries a free-text
             // mode value with no code, but `PARTICIPATION.mode` is a
             // `DV_CODED_TEXT` coded from the openEHR `participation_mode` group.
             // We default the code to the group's `193` "not specified" (a valid
@@ -595,7 +595,7 @@ fn walk_entry_defaults(node: &mut Value, ctx: &EntryDefaults<'_>) {
         }
         Some("ACTION") => {
             if let Some(s) = ctx.ism_state {
-                // PORT NOTE (F-10-07): `ISM_TRANSITION.current_state` is coded
+                // PORT NOTE: `ISM_TRANSITION.current_state` is coded
                 // from the openEHR `instruction_states` group; default the code
                 // to `524` "initial" (matching `graph::fill_structural_mandatory`
                 // and `from_flat`, the one source of truth) rather than the

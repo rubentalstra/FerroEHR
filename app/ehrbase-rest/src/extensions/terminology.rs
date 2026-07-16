@@ -1,5 +1,5 @@
 //! HTTP dispatch for the terminology extension API group over the
-//! [`TerminologyService`](ehrbase_sm::services::TerminologyService) seam.
+//! [`TerminologyService`](ehrbase::service::TerminologyService) seam.
 //!
 //! **Operation semantics — SM `I_TERMINOLOGY_SERVICE`**
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master12-terminology_service.adoc`,
@@ -52,7 +52,6 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -62,7 +61,7 @@ use crate::{negotiate, params};
 /// Group-relative paths (nested under the configured `base_path`); every
 /// operation is served through [`guarded_dispatch`] → [`dispatch`], so the
 /// wire behaviour is identical to the generated groups' `mount` adapter.
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // One `routes!` per PATH (handlers in a single call must share the path;
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
@@ -85,12 +84,12 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     get, path = "/terminology", tag = "terminology",
     responses((status = 200, description = "The known terminology ids.", body = serde_json::Value))
 )]
-pub(crate) async fn terminology_ids<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_ids(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "terminology_ids", parts, dispatch::<S>).await
+    guarded_dispatch(state, "terminology_ids", parts, dispatch).await
 }
 
 /// One terminology's descriptor (`get_terminology_description`; also the
@@ -103,12 +102,12 @@ pub(crate) async fn terminology_ids<S: Platform>(
         (status = 404, description = "Unknown terminology.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn terminology_description<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_description(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "terminology_description", parts, dispatch::<S>).await
+    guarded_dispatch(state, "terminology_description", parts, dispatch).await
 }
 
 /// A term definition (`get_term`). Optional `at_date`. 404 when unknown.
@@ -124,12 +123,12 @@ pub(crate) async fn terminology_description<S: Platform>(
         (status = 404, description = "Unknown terminology or code.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn terminology_get_term<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_get_term(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "terminology_get_term", parts, dispatch::<S>).await
+    guarded_dispatch(state, "terminology_get_term", parts, dispatch).await
 }
 
 /// Strict subsumption test (`subsumes`). Body: `{"subsumes": bool}`. 400 when a
@@ -146,12 +145,12 @@ pub(crate) async fn terminology_get_term<S: Platform>(
         (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn terminology_subsumes<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_subsumes(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "terminology_subsumes", parts, dispatch::<S>).await
+    guarded_dispatch(state, "terminology_subsumes", parts, dispatch).await
 }
 
 /// A value set's extract (`get_value_set`; also the `has_value_set` existence
@@ -167,12 +166,12 @@ pub(crate) async fn terminology_subsumes<S: Platform>(
         (status = 404, description = "Unknown terminology or value set.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn terminology_value_set<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_value_set(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "terminology_value_set", parts, dispatch::<S>).await
+    guarded_dispatch(state, "terminology_value_set", parts, dispatch).await
 }
 
 /// Value-set membership test (`value_set_validate`). Body: `{"valid": bool}`.
@@ -190,25 +189,15 @@ pub(crate) async fn terminology_value_set<S: Platform>(
         (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn terminology_value_set_validate<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn terminology_value_set_validate(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(
-        state,
-        "terminology_value_set_validate",
-        parts,
-        dispatch::<S>,
-    )
-    .await
+    guarded_dispatch(state, "terminology_value_set_validate", parts, dispatch).await
 }
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -216,8 +205,8 @@ pub(crate) fn dispatch<S: Platform>(
     })
 }
 
-async fn run<S: Platform>(
-    state: AppState<S>,
+async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -235,7 +224,7 @@ async fn run<S: Platform>(
 
     match op {
         "terminology_ids" => {
-            let ids = state.backend().get_terminology_ids().await?;
+            let ids = state.backend().get_terminology_ids()?;
             Ok(negotiate::respond(
                 h,
                 ok,
@@ -245,7 +234,7 @@ async fn run<S: Platform>(
         "terminology_description" => {
             let tid = path_get(&parts, "terminology_id")?;
             // A failed `Pre_has_terminology` → NotFound (404).
-            let desc = state.backend().get_terminology_description(&tid).await?;
+            let desc = state.backend().get_terminology_description(&tid)?;
             Ok(negotiate::respond(h, ok, &desc))
         }
         "terminology_get_term" => {

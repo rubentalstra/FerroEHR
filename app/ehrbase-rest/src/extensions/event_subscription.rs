@@ -1,5 +1,5 @@
 //! HTTP dispatch for the event-subscription admin extension API group over the
-//! [`EventSubscriptionAdapter`](ehrbase_sm::EventSubscriptionAdapter) seam.
+//! [`EventSubscriptionAdapter`](ehrbase::service::EventSubscriptionAdapter) seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (E1, eventing).**
 //! Event/subscription semantics have no SM or ITS-REST governance, so this
@@ -31,7 +31,6 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
 use crate::negotiate;
 use crate::state::AppState;
@@ -40,7 +39,7 @@ use crate::state::AppState;
 /// (group-relative paths; nested under `base_path`), mounted under `/admin`
 /// (the coarse RBAC gate classes it `Admin`). Served through [`guarded_dispatch`]
 /// → [`dispatch`]. No openEHR spec governs eventing — our own extension.
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // One `routes!` per PATH (handlers in a single call must share the path;
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
@@ -57,12 +56,12 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     get, path = "/admin/event_subscription", tag = "event-subscription",
     responses((status = 200, description = "The subscription records.", body = serde_json::Value))
 )]
-pub(crate) async fn event_subscription_list<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn event_subscription_list(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "event_subscription_list", parts, dispatch::<S>).await
+    guarded_dispatch(state, "event_subscription_list", parts, dispatch).await
 }
 
 /// Create a subscription. Body: `{name, kind?, change_type?, template_id?,
@@ -72,12 +71,12 @@ pub(crate) async fn event_subscription_list<S: Platform>(
     request_body(content = serde_json::Value, description = "The subscription definition."),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn event_subscription_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn event_subscription_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "event_subscription_create", parts, dispatch::<S>).await
+    guarded_dispatch(state, "event_subscription_create", parts, dispatch).await
 }
 
 /// Read one subscription by id. 404 when absent.
@@ -89,12 +88,12 @@ pub(crate) async fn event_subscription_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn event_subscription_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn event_subscription_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "event_subscription_get", parts, dispatch::<S>).await
+    guarded_dispatch(state, "event_subscription_get", parts, dispatch).await
 }
 
 /// Replace one subscription's predicates + enabled flag.
@@ -104,12 +103,12 @@ pub(crate) async fn event_subscription_get<S: Platform>(
     request_body(content = serde_json::Value, description = "The updated subscription definition."),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn event_subscription_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn event_subscription_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "event_subscription_update", parts, dispatch::<S>).await
+    guarded_dispatch(state, "event_subscription_update", parts, dispatch).await
 }
 
 /// Delete one subscription.
@@ -118,19 +117,15 @@ pub(crate) async fn event_subscription_update<S: Platform>(
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn event_subscription_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn event_subscription_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "event_subscription_delete", parts, dispatch::<S>).await
+    guarded_dispatch(state, "event_subscription_delete", parts, dispatch).await
 }
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -138,8 +133,8 @@ pub(crate) fn dispatch<S: Platform>(
     })
 }
 
-async fn run<S: Platform>(
-    state: AppState<S>,
+async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

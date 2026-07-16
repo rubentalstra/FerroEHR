@@ -14,11 +14,11 @@
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    CallStatusType, EhrCompositionService, EhrContributionService, EhrService, EhrStatusService,
-    Page, SmError,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::error::ServiceError;
+use ehrbase::service::status::{CallStatusType, SmError};
+
+use ehrbase::service::list::Page;
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
@@ -303,7 +303,8 @@ async fn attestation_error_cases() {
             uv(composition("v1"), "249", None),
         )
         .await
-        .expect("composition_create");
+        .expect("composition_create")
+        .version_uid();
     let ovid_v1 = v1;
 
     let attempt = |body: Value| {
@@ -866,7 +867,8 @@ async fn contribution_resolve_refs() {
     let comp_uid = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create")
+        .version_uid();
 
     let all = svc
         .list_contributions(ehr_uuid, None, Page::all())
@@ -966,9 +968,8 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         .create_composition(ghost, uv(composition("obs"), "249", None))
         .await
         .expect_err("unknown EHR rejected");
-    assert_eq!(
-        missing.status,
-        CallStatusType::VersionedObjectDoesNotExist,
+    assert!(
+        matches!(missing, ServiceError::NotFound(_)),
         "unknown ehr_id → 404, got {missing:?}"
     );
 
@@ -1006,15 +1007,10 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         .create_composition(ehr_uuid, uv(composition("obs2"), "249", None))
         .await
         .expect_err("non-modifiable EHR blocks content writes");
-    assert_eq!(
-        blocked.status,
-        CallStatusType::CompositionAlreadyExists,
-        "is_modifiable = false → 409 conflict, got {blocked:?}"
-    );
-    assert!(
-        blocked.message.contains("not modifiable"),
-        "got {blocked:?}"
-    );
+    let ServiceError::Conflict(message) = &blocked else {
+        panic!("is_modifiable = false → 409 conflict, got {blocked:?}");
+    };
+    assert!(message.contains("not modifiable"), "got {message}");
 }
 
 /// The temporal non-overlap invariant survives the removal of the `GiST`
@@ -1035,7 +1031,8 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     let created = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
-        .expect("create");
+        .expect("create")
+        .version_uid();
     let mut preceding = created;
     for i in 0..8 {
         preceding = svc
@@ -1050,7 +1047,8 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
                 uv(composition(&format!("obs-v{i}")), "251", Some(&preceding)),
             )
             .await
-            .expect("update");
+            .expect("update")
+            .version_uid();
     }
 
     let open_trunk: i64 = sqlx::query_scalar(

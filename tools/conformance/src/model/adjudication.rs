@@ -4,7 +4,7 @@
 //!
 //! Standing rule 3: a corpus/golden defect is never fixed by editing the case
 //! or the golden — it is adjudicated here with a spec citation, and the case
-//! reports `Skipped(adjudicated: …)`. Register 07 §4 (G-3) mandated moving
+//! reports `Skipped(adjudicated: …)`. Register 07 §4 mandated moving
 //! these rulings out of suite code into committed data. Two dispositions:
 //!
 //! - `corpus-dialect` → the vendored data contradicts the pinned spec (e.g.

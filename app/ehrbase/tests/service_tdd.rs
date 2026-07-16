@@ -25,9 +25,7 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    CallStatusType, DefinitionAdapter, EhrCompositionService, EhrService, TddService,
-};
+use ehrbase::service::status::CallStatusType;
 
 struct Pg {
     _container: ContainerAsync<Postgres>,

@@ -2,31 +2,40 @@
 //! `docs/enterprise/access-control.md`).
 //!
 //! Drives the assembled router (auth + RBAC + dispatch) with `tower`'s
-//! `oneshot`, backed by the `StubBackend`, and asserts the coarse role gate:
-//! an Admin-class operation is 403 for a `USER` and passes the gate for an
-//! `ADMIN`; a clinical operation needs a role; disabling RBAC restores today's
-//! behaviour; a deny is attributed to the caller and audited by the ATNA layer;
-//! and the deprecated `admin_scope` alias migrates (a `scope` named `ADMIN`
-//! surfaces as role `ADMIN`).
+//! `oneshot`, over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`
+//! is gone), and asserts the coarse role gate: an Admin-class operation is 403
+//! for a `USER` and clears the gate for an `ADMIN`; a clinical operation needs a
+//! role; disabling RBAC restores today's behaviour; a deny is attributed to the
+//! caller and audited by the ATNA layer; and the deprecated `admin_scope` alias
+//! migrates (a `scope` named `ADMIN` surfaces as role `ADMIN`).
+//!
+//! Where the old test asserted the exact post-gate status (`501`, the removed
+//! stub backend), it now asserts only that the gate did not reject (`!= 403`) —
+//! the concrete post-gate status is real-backend behaviour, not the gate's.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::access::authn::AuthConfig;
-use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser, OidcConfig};
-use ehrbase_rest::access::authz::AuthzConfig;
-use ehrbase_rest::{AdminConfig, AppConfig, AuthzHandle, ServerConfig};
+use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
+use ehrbase::config::authz::AuthzConfig;
+use ehrbase::config::server::AdminConfig;
+use ehrbase::config::server::ServerConfig;
+use ehrbase::service::EhrbaseService;
+use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
+use ehrbase::system_log::sender::{AuditSender, start};
+use ehrbase_rest::config::AppConfig;
+use ehrbase_rest::extensions::access::authz::AuthzHandle;
 
 mod common;
-use common::AuditSink;
-use ehrbase_sm::{EventOutcome, ObjectClass};
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::{Value, json};
+use tokio::net::UdpSocket;
 use tower::ServiceExt;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
@@ -47,7 +56,7 @@ fn hash_pw(pw: &str) -> String {
 fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
-        password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
+        password_hash: ehrbase::config::secret::Secret::new(hash_pw("pw")),
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }
@@ -71,7 +80,7 @@ fn rest_config() -> AppConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase_sm::Secret::new(HMAC_SECRET.to_owned())),
+                hmac_secret: Some(ehrbase::config::secret::Secret::new(HMAC_SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
@@ -79,8 +88,8 @@ fn rest_config() -> AppConfig {
             ..AuthConfig::default()
         },
         // The admin group must be reachable so the RBAC gate is what decides
-        // access (the admin tests assert 403 for USER / 501 for ADMIN at the
-        // dispatcher, not the config gate's 404).
+        // access (the admin tests assert 403 for USER vs a cleared gate for
+        // ADMIN at the dispatcher, not the config gate's 404).
         admin: AdminConfig { enabled: true },
         ..Default::default()
     }
@@ -92,20 +101,59 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
     AuthzHandle::from_config(&cfg, &rest_config().server.base_path).map(Arc::new)
 }
 
-fn app(rbac_enabled: bool, audit: Option<AuditSink>) -> Router {
-    // The ATNA audit emitter now lives in the backend's SM `SystemLog`;
-    // an in-memory sink on the mock records emitted events for assertions.
-    let backend = common::Mock::with(common::Hooks {
-        audit,
-        ..common::Hooks::default()
-    });
-    ehrbase_rest::build_full(
+/// A real service over a fresh DB, optionally wired with an ATNA audit sender.
+async fn service(name: &str, audit: Option<AuditSender>) -> (common::Pg, Arc<EhrbaseService>) {
+    let (pg, pool) = common::migrated_pool(name).await;
+    let mut svc = EhrbaseService::new(pool);
+    if let Some(sender) = audit {
+        svc = svc.with_audit(sender);
+    }
+    (pg, Arc::new(svc))
+}
+
+async fn app(name: &str, rbac_enabled: bool, audit: Option<AuditSender>) -> (common::Pg, Router) {
+    let (pg, svc) = service(name, audit).await;
+    let app = ehrbase_rest::build_full(
         rest_config(),
-        Arc::new(backend),
+        svc,
         authz(rbac_enabled),
-        ehrbase_rest::Observability::default(),
+        ehrbase_rest::extensions::management::Observability::default(),
     )
-    .expect("build app")
+    .expect("build app");
+    (pg, app)
+}
+
+// ── ATNA capture: a UDP listener + a sender pointed at it ──────────────────────
+
+/// Bind a UDP listener and build an [`AuditSender`] shipping DICOM records to it
+/// (fail-open, login events suppressed). The returned socket receives the RFC
+/// 5424 datagrams; each carries the DICOM `AuditMessage` XML in its `MSG` field.
+async fn audit_capture() -> (UdpSocket, AuditSender) {
+    let socket = UdpSocket::bind("127.0.0.1:0").await.expect("bind udp");
+    let port = socket.local_addr().expect("addr").port();
+    let cfg = AuditConfig {
+        enabled: true,
+        transport: Transport::Udp,
+        repository_host: "127.0.0.1".to_owned(),
+        repository_port: port,
+        suppress_login_events: true,
+        fail_mode: FailMode::Open,
+        queue_capacity: 64,
+        ..AuditConfig::default()
+    };
+    // The drain task is detached (we drop the handle); it runs while the sender
+    // — held by the service — is alive, which spans the whole test.
+    let (sender, _handle) = start(cfg, None).await.expect("audit start");
+    (socket, sender)
+}
+
+/// Receive one DICOM audit datagram (as UTF-8) within a short window.
+async fn recv_audit(socket: &UdpSocket) -> Option<String> {
+    let mut buf = vec![0u8; 65_536];
+    match tokio::time::timeout(Duration::from_secs(3), socket.recv_from(&mut buf)).await {
+        Ok(Ok((n, _))) => Some(String::from_utf8_lossy(&buf[..n]).into_owned()),
+        _ => None,
+    }
 }
 
 // ── credentials + requests ────────────────────────────────────────────────────
@@ -151,7 +199,7 @@ async fn status(app: &Router, request: Request<Body>) -> StatusCode {
 
 #[tokio::test]
 async fn admin_op_forbidden_for_user_role() {
-    let app = app(true, None);
+    let (_pg, app) = app("rbac_admin_user", true, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
@@ -162,29 +210,27 @@ async fn admin_op_forbidden_for_user_role() {
 
 #[tokio::test]
 async fn admin_op_passes_gate_for_admin_role() {
-    let app = app(true, None);
-    // ADMIN passes the RBAC gate; the admin group has no backend yet, so the op
-    // itself answers 501 — the point is the gate did NOT reject it with 403.
+    let (_pg, app) = app("rbac_admin_admin", true, None).await;
+    // ADMIN clears the RBAC gate; the concrete post-gate status is real-backend
+    // behaviour — the point is the gate did NOT reject it with 403.
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("root")),
     )
     .await;
     assert_ne!(s, StatusCode::FORBIDDEN, "ADMIN must clear the gate");
-    assert_eq!(s, StatusCode::NOT_IMPLEMENTED);
 }
 
 #[tokio::test]
 async fn clinical_op_allowed_for_user_role() {
-    let app = app(true, None);
+    let (_pg, app) = app("rbac_clinical_user", true, None).await;
     let s = status(&app, req("GET", &format!("/ehr/{EHR_ID}"), &basic("user"))).await;
     assert_ne!(s, StatusCode::FORBIDDEN, "USER may reach a clinical op");
-    assert_eq!(s, StatusCode::NOT_IMPLEMENTED); // StubBackend
 }
 
 #[tokio::test]
 async fn zero_role_principal_denied_clinical() {
-    let app = app(true, None);
+    let (_pg, app) = app("rbac_zero_role", true, None).await;
     let s = status(
         &app,
         req("GET", &format!("/ehr/{EHR_ID}"), &basic("noroles")),
@@ -201,14 +247,13 @@ async fn zero_role_principal_denied_clinical() {
 async fn rbac_disabled_restores_admin_access() {
     // With RBAC disabled the handle is None → the gate is skipped; a USER reaches
     // the admin op exactly as before this feature (auth-only behaviour).
-    let app = app(false, None);
+    let (_pg, app) = app("rbac_disabled", false, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
     )
     .await;
     assert_ne!(s, StatusCode::FORBIDDEN);
-    assert_eq!(s, StatusCode::NOT_IMPLEMENTED);
 }
 
 #[tokio::test]
@@ -216,7 +261,7 @@ async fn admin_scope_alias_migrates_via_scope_role() {
     // The deprecated `admin_scope` gate is subsumed: a token whose `scope`
     // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
     // non-admin scope is rejected — the automatic migration path (§5.2).
-    let app = app(true, None);
+    let (_pg, app) = app("rbac_scope_alias", true, None).await;
     let denied = status(
         &app,
         req(
@@ -237,19 +282,17 @@ async fn admin_scope_alias_migrates_via_scope_role() {
         StatusCode::FORBIDDEN,
         "scope ADMIN → role ADMIN clears the gate"
     );
-    assert_eq!(allowed, StatusCode::NOT_IMPLEMENTED);
 }
 
 #[tokio::test]
 async fn rbac_deny_is_audited() {
-    // A 403 from the RBAC gate carries the Principal on the response, so the
-    // ATNA audit layer records a failure audit for the denied caller (§7). The
-    // emitter now lives in the backend's SM `SystemLog`, so we assert
-    // on the recorded `AuditEvent` (a minor-failure outcome attributed to the
-    // caller); the DICOM `EventOutcomeIndicator="4"` / `UserID` rendering is
-    // covered by the `ehrbase::system_log` message tests.
-    let sink = AuditSink::recording();
-    let app = app(true, Some(sink.clone()));
+    // A 403 from the RBAC gate carries the Principal, so the ATNA audit layer
+    // records a failure audit for the denied caller (§7). The emitter ships a
+    // DICOM record over syslog/UDP; we assert on the datagram: an
+    // Application-Activity event (`csd-code="110100"`), a minor-failure outcome
+    // (`EventOutcomeIndicator="4"`), attributed to `user`.
+    let (socket, sender) = audit_capture().await;
+    let (_pg, app) = app("rbac_deny_audit", true, Some(sender)).await;
 
     let s = status(
         &app,
@@ -258,44 +301,26 @@ async fn rbac_deny_is_audited() {
     .await;
     assert_eq!(s, StatusCode::FORBIDDEN);
 
-    // The auth/RBAC 403 emits an Application-Activity failure record for `user`
-    // (the deny happens in the auth middleware before dispatch, so there is no
-    // operation record — only the auth-failure one).
-    let events = sink.events();
+    let xml = recv_audit(&socket)
+        .await
+        .expect("an audit datagram is emitted for the denied caller");
     assert!(
-        events
-            .iter()
-            .any(|e| e.outcome == EventOutcome::MinorFailure
-                && e.object == ObjectClass::ApplicationActivity
-                && e.user_id == "user"),
-        "expected an Application-Activity minor-failure audit for `user`, got {events:?}"
+        xml.contains(r#"csd-code="110100""#),
+        "Application-Activity event: {xml}"
+    );
+    assert!(
+        xml.contains(r#"EventOutcomeIndicator="4""#),
+        "minor-failure outcome: {xml}"
+    );
+    assert!(
+        xml.contains(r#"UserID="user""#),
+        "attributed to `user`: {xml}"
     );
 }
 
 // ── base64 helper ─────────────────────────────────────────────────────────────
 
 fn base64_encode(bytes: &[u8]) -> String {
-    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::new();
-    for chunk in bytes.chunks(3) {
-        let b = [
-            chunk[0],
-            *chunk.get(1).unwrap_or(&0),
-            *chunk.get(2).unwrap_or(&0),
-        ];
-        let n = u32::from(b[0]) << 16 | u32::from(b[1]) << 8 | u32::from(b[2]);
-        out.push(T[(n >> 18 & 63) as usize] as char);
-        out.push(T[(n >> 12 & 63) as usize] as char);
-        out.push(if chunk.len() > 1 {
-            T[(n >> 6 & 63) as usize] as char
-        } else {
-            '='
-        });
-        out.push(if chunk.len() > 2 {
-            T[(n & 63) as usize] as char
-        } else {
-            '='
-        });
-    }
-    out
+    use base64::Engine;
+    base64::engine::general_purpose::STANDARD.encode(bytes)
 }

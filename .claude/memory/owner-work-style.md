@@ -1,8 +1,10 @@
 ---
 name: owner-work-style
 description: "Durable owner rulings on HOW to work: defer nothing, no quick fixes (proper rewrites welcome), orchestrator codes context-heavy work itself, rerun ECC after runner/validation merges"
-metadata:
+metadata: 
+  node_type: memory
   type: feedback
+  originSessionId: 58d2e09d-1858-4a52-a5b7-e494a0472505
 ---
 
 Durable owner rulings distilled from the A1 audit era (2026-07-11/12), still
@@ -22,6 +24,25 @@ binding after A1 closed:
 - **Rerun ECC after merging anything that touches the runner or
   validation.** PR #69 left develop with a stale ECC baseline (92 phantom
   failures); the baseline is only trustworthy immediately after a rerun.
+- **"Rewrite" means FRESH FILES FROM THE SPEC, not in-place refactor
+  (owner, 2026-07-16, service-rewrite escalation).** When the owner orders a
+  "nuking complete rewrite" of a subsystem: design it anew from the governing
+  spec (module tree, call inventory, types), WRITE NEW FILES, port the
+  behaviour in, DELETE the old files. Parameter-threading, renames and
+  incremental edits to the existing shape do not qualify and will be
+  rejected. No cargo/clippy runs between steps — they are the "wild detour";
+  the compiler is consulted once, at the single convergence.
+- **Big-bang rewrites, converge ONCE at the end (owner, 2026-07-16, W-14
+  B+C ruling; same method as the W-3f platform redesign).** For structural
+  rewrites: land ALL code moves first, then one compile/test convergence
+  pass. NEVER stabilize intermediate steps — "then we create stubs to sort
+  of make it work"; compatibility shims between steps are banned. The
+  orchestrator (Fable) executes such rewrites in-session, not via workers.
+- **Specs over ADRs, always re-verify (owner, 2026-07-16).** When an
+  analysis leans on an ADR's characterization of a spec, re-read the
+  vendored spec text first-hand — an ADR-flavoured claim ("C contradicts
+  SM") was retracted after reading SM master02 directly (packaging is
+  implementer-free; conformance = tested call semantics).
 
 **How to apply:** treat these as standing defaults in every phase, not
 A1-specific. Related: [[autonomous-phase-flow]],

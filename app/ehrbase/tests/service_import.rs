@@ -38,10 +38,9 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    CallStatusType, EhrDirectoryService, EhrExtractService, EhrService, EhrStatusService,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::status::CallStatusType;
+
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -155,7 +154,7 @@ async fn seed_ehr(svc: &EhrbaseService) -> Uuid {
 /// The single-`EXTRACT` result of an `export_ehrs`, as a typed [`Extract`]
 /// (the wire shape the import calls receive).
 async fn export_one(svc: &EhrbaseService, ehr: Uuid) -> Extract {
-    let mut extracts = svc.export_ehrs(ehr).await.expect("export_ehrs");
+    let mut extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
     assert_eq!(extracts.len(), 1, "one EHR id → one EXTRACT");
     serde_json::from_value(extracts.remove(0))
         .expect("EXTRACT deserializes into the typed RM model")
@@ -207,7 +206,7 @@ async fn import_ehr_clone_into_fresh_target_reuses_source_id() {
     );
 
     // The clone also carries the source's EHR_ACCESS and directory FOLDER.
-    let re_export = target.export_ehrs(ehr).await.expect("re-export clone");
+    let re_export = target.extract_ehrs(ehr).await.expect("re-export clone");
     for xtype in [
         "X_VERSIONED_EHR_STATUS",
         "X_VERSIONED_EHR_ACCESS",
@@ -244,7 +243,7 @@ async fn import_ehr_into_fixed_fresh_id() {
     // The source id does not exist in the target; the fixed id does.
     assert_eq!(
         target
-            .export_ehrs(ehr)
+            .extract_ehrs(ehr)
             .await
             .expect_err("source id absent in target")
             .status,
@@ -290,7 +289,7 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
     // A FOLDER-only extract (item_list restricts to the directory container),
     // so importing it into an existing EHR that has no directory is a clean
     // Case-2 create (no EHR_STATUS/EHR_ACCESS singleton clash).
-    let whole = source.export_ehrs(src_ehr).await.expect("whole export");
+    let whole = source.extract_ehrs(src_ehr).await.expect("whole export");
     let folder_vo = find_by_xtype(&whole[0], "X_VERSIONED_FOLDER").expect("folder in export")
         ["item"]["uid"]["value"]
         .as_str()
@@ -348,7 +347,10 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         .expect("import the FOLDER into the existing EHR");
 
     // The target now carries the imported directory FOLDER with the source's data.
-    let re_export = target.export_ehrs(tgt_ehr).await.expect("re-export target");
+    let re_export = target
+        .extract_ehrs(tgt_ehr)
+        .await
+        .expect("re-export target");
     let imported_folder =
         find_by_xtype(&re_export[0], "X_VERSIONED_FOLDER").expect("folder now present in target");
     assert_eq!(

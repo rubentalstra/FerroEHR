@@ -967,7 +967,7 @@ async fn drive_leaf_rows(
 //
 // Each drives the value type's mandatory field on `Base::AllTypes`, self-skipping
 // when the corpus carries no such leaf (`data_type_mandatory`); the `of_schedule_rows`
-// literal is the register §2 truth-table row count (G-2). DV_SCALE / DV_EHR_URI
+// literal is the register §2 truth-table row count. DV_SCALE / DV_EHR_URI
 // have no all_types leaf and are handled by dedicated retyping run fns below.
 macro_rules! open_case {
     ($fn:ident, $ty:literal, $field:literal, $rows:expr) => {

@@ -4,17 +4,19 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHasher, SaltString};
 use axum::Router;
 use axum::body::Body;
-use ehrbase_rest::access::authn::config::{AuthConfig, BasicConfig, BasicUser};
-use ehrbase_rest::management::{
-    AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, ManagementConfig, Observability,
-};
-use ehrbase_rest::{AppConfig, ServerConfig};
+use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
+use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
+use ehrbase::config::server::ServerConfig;
+use ehrbase::telemetry::build_info::BuildInfo;
+use ehrbase::telemetry::health::HealthRegistry;
+use ehrbase_rest::config::AppConfig;
+use ehrbase_rest::extensions::management::Observability;
 
 mod common;
 use http::{Request, StatusCode, header};
@@ -39,7 +41,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
         basic: Some(BasicConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
-                password_hash: ehrbase_sm::Secret::new(hash("pw")),
+                password_hash: ehrbase::config::secret::Secret::new(hash("pw")),
                 roles: vec!["ADMIN".to_owned()],
             }],
         }),
@@ -51,7 +53,7 @@ fn auth_config(admin_scope: Option<&str>) -> AuthConfig {
 
 /// Build an app with the management surface enabled, one endpoint (`info`) set
 /// to `level`, and the given admin-scope configuration.
-fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
+async fn app_with(name: &str, level: AccessLevel, admin_scope: Option<&str>) -> Router {
     let config = AppConfig {
         server: ServerConfig {
             swagger_ui: false,
@@ -71,8 +73,8 @@ fn app_with(level: AccessLevel, admin_scope: Option<&str>) -> Router {
         },
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
-        .expect("build")
+    let (_pg, service) = common::test_service(name).await;
+    ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }
 
 async fn status_of(app: Router, req: Request<Body>) -> StatusCode {
@@ -96,7 +98,7 @@ fn get_auth(path: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn off_endpoint_is_404() {
-    let app = app_with(AccessLevel::Off, None);
+    let app = app_with("mgmt_off", AccessLevel::Off, None).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::NOT_FOUND
@@ -105,7 +107,7 @@ async fn off_endpoint_is_404() {
 
 #[tokio::test]
 async fn public_endpoint_needs_no_auth() {
-    let app = app_with(AccessLevel::Public, None);
+    let app = app_with("mgmt_public", AccessLevel::Public, None).await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::OK
@@ -114,7 +116,7 @@ async fn public_endpoint_needs_no_auth() {
 
 #[tokio::test]
 async fn private_endpoint_401_then_200() {
-    let app = app_with(AccessLevel::Private, None);
+    let app = app_with("mgmt_private", AccessLevel::Private, None).await;
     assert_eq!(
         status_of(app.clone(), get("/management/info")).await,
         StatusCode::UNAUTHORIZED
@@ -128,19 +130,29 @@ async fn private_endpoint_401_then_200() {
 #[tokio::test]
 async fn admin_only_401_403_200() {
     // 401 unauthenticated.
-    let app = app_with(AccessLevel::AdminOnly, Some("ehrbase:admin"));
+    let app = app_with(
+        "mgmt_admin_401",
+        AccessLevel::AdminOnly,
+        Some("ehrbase:admin"),
+    )
+    .await;
     assert_eq!(
         status_of(app, get("/management/info")).await,
         StatusCode::UNAUTHORIZED
     );
     // 403 authenticated (Basic → no scopes) but admin scope required.
-    let app = app_with(AccessLevel::AdminOnly, Some("ehrbase:admin"));
+    let app = app_with(
+        "mgmt_admin_403",
+        AccessLevel::AdminOnly,
+        Some("ehrbase:admin"),
+    )
+    .await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::FORBIDDEN
     );
     // 200 authenticated with no admin scope configured (authenticated is enough).
-    let app = app_with(AccessLevel::AdminOnly, None);
+    let app = app_with("mgmt_admin_200", AccessLevel::AdminOnly, None).await;
     assert_eq!(
         status_of(app, get_auth("/management/info")).await,
         StatusCode::OK
@@ -158,7 +170,7 @@ fn recorder() -> &'static PrometheusHandle {
     })
 }
 
-fn app_with_metrics() -> Router {
+async fn app_with_metrics(name: &str) -> Router {
     let config = AppConfig {
         server: ServerConfig {
             swagger_ui: false,
@@ -185,13 +197,13 @@ fn app_with_metrics() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
-        .expect("build")
+    let (_pg, service) = common::test_service(name).await;
+    ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }
 
 #[tokio::test]
 async fn prometheus_has_route_template_label_and_no_ids() {
-    let app = app_with_metrics();
+    let app = app_with_metrics("mgmt_metrics").await;
 
     // Drive an API request that matches a templated route carrying an id. The
     // HTTP metrics layer must label it by the *template*, never the raw id.
@@ -283,9 +295,8 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         },
         ..Observability::default()
     };
-    let main_app =
-        ehrbase_rest::build_full(config, Arc::new(common::Mock::new()), None, observability)
-            .expect("build");
+    let (_pg, service) = common::test_service("mgmt_separate_port").await;
+    let main_app = ehrbase_rest::build_full(config, service, None, observability).expect("build");
 
     // …the main app 404s the management route.
     assert_eq!(

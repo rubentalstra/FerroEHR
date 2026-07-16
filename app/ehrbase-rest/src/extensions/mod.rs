@@ -38,64 +38,37 @@ pub mod openapi;
 pub mod tenant_routes;
 pub mod terminology;
 
-/// The **single spec-version provenance source** every server *identity*
-/// surface reads, so the openEHR pins are stated once and cannot drift between
-/// endpoints.
-///
-/// No openEHR spec governs an endpoint that reports the server's own spec/build
-/// provenance — this is our own operational surface. What such endpoints
-/// *report* must nonetheless be one fact: management `/info`
-/// ([`management::info`]), the System Options manifest (`OPTIONS /`,
-/// `crate::api::system::options`), and `/status` (`crate::overview::status`)
-/// must all quote the same versions. Before this consolidation the pins were
-/// copied into all three; they now read the constants below.
-///
-/// The ITS-REST identity is **not** the released `1.0.3` label but the *tested*
-/// development-edition contract: the server implements the contract generated
-/// (`emit-rest`) from the vendored `-codegen` OAS pinned in
-/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` — openEHR
-/// `specifications-ITS-REST` `master` @ `e8a093e9d6da2ae68d7cfc29cf260a7edb065f47`,
-/// whose bundles self-stamp `info.version: latest` (openEHR's unreleased
-/// *development* line). This is the same identity the conformance instrument
-/// derives (`tools/conformance` `model::provenance::tested_its_rest`, which
-/// `include_str!`s that PROVENANCE.md) and the same tree the codegen consumes,
-/// so the reported version equals the one the ECC report claims. The released
-/// `1.0.3` spec *text* (`docs/specs/openehr/ITS-REST/`) is a separate vendored
-/// tree, the source of per-section citations only — not the tested contract.
-///
-/// All three identity surfaces now read these constants — the former
-/// per-endpoint copies are retired: management `/info` ([`management::info`]),
-/// the System Options manifest (`OPTIONS /`,
-/// [`crate::api::system::options::SystemOptionsConfig`], whose
-/// `restapi_specs_version` / `conformance_profile` defaults quote
-/// [`provenance::ITS_REST`] / [`provenance::CONFORMANCE_PROFILE`]), and
-/// `/status` ([`crate::overview::status`]) all quote [`provenance::ITS_REST`]
-/// for the tested-contract identity. Spec pins are `docs/VERSIONS.md` (the
-/// single source of truth for the pin values themselves).
-pub mod provenance {
-    /// The tested openEHR ITS-REST contract identity (development edition — see
-    /// the module doc for the derivation). Matches `tools/conformance`
-    /// `tested_its_rest()` and the committed conformance statement.
-    pub const ITS_REST: &str = "development@e8a093e";
-    /// The AQL (QUERY) specification version (`docs/VERSIONS.md`).
-    pub const AQL: &str = "1.1.0";
-    /// The openEHR Reference Model version (`docs/VERSIONS.md`).
-    pub const RM: &str = "1.2.0";
-    /// The openEHR BASE version (`docs/VERSIONS.md`).
-    pub const BASE: &str = "1.3.0";
-    /// The openEHR Archetype Model versions (`docs/VERSIONS.md`).
-    pub const AM: &str = "1.4.0 + 2.4.0";
-    /// The openEHR Terminology version (`docs/VERSIONS.md`).
-    pub const TERM: &str = "3.1.0";
-    /// The `PostgreSQL` version this server targets (`docs/VERSIONS.md`). No
-    /// openEHR spec governs the datastore — our own design.
-    pub const PG_TARGET: &str = "18.4+";
-    /// The last machine-computed ECC conformance verdict — the highest profile
-    /// obtained — advertised by the System Options manifest (`OPTIONS /`
-    /// `conformance_profile`). No openEHR spec governs the value; the
-    /// conformance instrument computes it (CNF master03 profiles). Updated at
-    /// each conformance re-baseline from the runner's machine verdict recorded
-    /// in `docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` §"Profile verdict"
-    /// (Core PASS · Standard PASS). The manifest MUST NOT out-claim it.
-    pub const CONFORMANCE_PROFILE: &str = "STANDARD";
-}
+// The **single spec-version provenance source** every server *identity*
+// surface reads, so the openEHR pins are stated once and cannot drift between
+// endpoints.
+//
+// No openEHR spec governs an endpoint that reports the server's own spec/build
+// provenance — this is our own operational surface. What such endpoints
+// *report* must nonetheless be one fact: management `/info`
+// ([`management::info`]), the System Options manifest (`OPTIONS /`,
+// `crate::api::system::options`), and `/status` (`crate::overview::status`)
+// must all quote the same versions. Before this consolidation the pins were
+// copied into all three; they now read the constants below.
+//
+// The ITS-REST identity is **not** the released `1.0.3` label but the *tested*
+// development-edition contract: the server implements the contract generated
+// (`emit-rest`) from the vendored `-codegen` OAS pinned in
+// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` — openEHR
+// `specifications-ITS-REST` `master` @ `e8a093e9d6da2ae68d7cfc29cf260a7edb065f47`,
+// whose bundles self-stamp `info.version: latest` (openEHR's unreleased
+// *development* line). This is the same identity the conformance instrument
+// derives (`tools/conformance` `model::provenance::tested_its_rest`, which
+// `include_str!`s that PROVENANCE.md) and the same tree the codegen consumes,
+// so the reported version equals the one the ECC report claims. The released
+// `1.0.3` spec *text* (`docs/specs/openehr/ITS-REST/`) is a separate vendored
+// tree, the source of per-section citations only — not the tested contract.
+//
+// All three identity surfaces now read these constants — the former
+// per-endpoint copies are retired: management `/info` ([`management::info`]),
+// the System Options manifest (`OPTIONS /`,
+// [`crate::api::system::options::SystemOptionsConfig`], whose
+// `restapi_specs_version` / `conformance_profile` defaults quote
+// [`provenance::ITS_REST`] / [`provenance::CONFORMANCE_PROFILE`]), and
+// `/status` ([`crate::overview::status`]) all quote [`provenance::ITS_REST`]
+// for the tested-contract identity. Spec pins are `docs/VERSIONS.md` (the
+// single source of truth for the pin values themselves).

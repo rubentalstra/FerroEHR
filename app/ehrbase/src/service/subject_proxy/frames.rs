@@ -6,8 +6,8 @@
 //! Dispatch is `model_type` × `call_name` (master10 §Specifying a Binding), not
 //! an invented enum tag: a `QUERY_CALL`/`aql_query` (or any `openehr…`
 //! `model_type`) routes to the openEHR AQL executor; an `API_CALL`/`fhir_get`
-//! and `HL7v2` frames are typed rejections for now (see the TODO on
-//! [`EhrbaseService::sp_dispatch_method`]).
+//! routes to the config-gated FHIR executor; `HL7v2` frames are typed
+//! rejections.
 //!
 //! PORT NOTE (pipeline outcome model, `data_frame.adoc`):
 //! - **dispatch-impossible** (no method, unknown `model_type`/`call_name`, or a
@@ -23,17 +23,15 @@
 //! variable context the `sp_sample` FK requires; a bare `get_frame` has no
 //! variable to attach a sample to.
 
-use async_trait::async_trait;
-
-use ehrbase_rest::AqlQueryRequest;
-use ehrbase_sm::{
-    CallStatusType, DataBinding, DataFrame, DataFrameSample, FramePayload, Sample, SmError,
-    SystemCall,
-};
 use serde_json::Value;
 
-use super::store::FrameRow;
 use crate::service::EhrbaseService;
+use crate::service::query::request::AqlQueryRequest;
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::subject_proxy::binding::{DataFrame, SystemCall};
+use crate::service::subject_proxy::sample::{DataFrameSample, FramePayload, Sample};
+
+use super::store::FrameRow;
 
 /// `not_implemented` — a dispatch-impossible outcome (no executor for the
 /// frame's `model_type`/`call_name`). Distinct from an executed-but-failed
@@ -42,9 +40,22 @@ fn not_implemented(message: impl Into<String>) -> SmError {
     SmError::new(CallStatusType::NotImplemented, message)
 }
 
-#[async_trait]
-impl DataBinding for EhrbaseService {
-    async fn get_frame(
+impl EhrbaseService {
+    /// SM `I_DATA_BINDING.get_frame`: execute the registered retrieve frame
+    /// `frame_id` for `subject_id`, running the primary→fallback pipeline and
+    /// returning the produced `DATA_FRAME_SAMPLE` (available, or unavailable
+    /// with the reason). Nothing is persisted here (see the module docs).
+    ///
+    /// # Errors
+    /// - `precondition_violation` (`400`) — no data frame with `frame_id` is
+    ///   registered.
+    /// - `not_implemented` — the frame is dispatch-impossible on every leg
+    ///   that ran: no retrieval method, an unknown `model_type`/`call_name`
+    ///   (e.g. `HL7v2`), or a FHIR call with no configured executor / no
+    ///   `system_id` / an unconfigured system.
+    /// - `exception` — a database fault while loading the frame or resolving
+    ///   the subject.
+    pub async fn get_frame(
         &self,
         subject_id: String,
         frame_id: String,
@@ -84,9 +95,7 @@ impl DataBinding for EhrbaseService {
         // No fallback: return the primary outcome (Ok-unavailable or Err).
         primary
     }
-}
 
-impl EhrbaseService {
     /// Dispatch one `SYSTEM_CALL` to its executor. `Ok` = the call executed and
     /// produced a `SAMPLE` (available or unavailable); `Err(not_implemented)` =
     /// no executor could be dispatched at all.

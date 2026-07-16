@@ -1,4 +1,4 @@
-//! The `PARTY_RELATIONSHIP` wire — **our own extension** (G-5).
+//! The `PARTY_RELATIONSHIP` wire — **our own extension**.
 //!
 //! No openEHR ITS-REST operation governs this: the vendored Demographic API
 //! (`demographic.openapi.yaml`) defines **no** `party_relationship` /
@@ -28,16 +28,16 @@ use crate::api::{RequestParts, guarded_dispatch};
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{Platform, ServiceResponse};
+use ehrbase::service::response::ServiceResponse;
 
 /// The `PARTY_RELATIONSHIP` extension routes as a native `utoipa-axum` router —
 /// **no ITS-REST contract** (see the module docs), realizing SM
 /// `I_PARTY_RELATIONSHIP` with our own wire. Group-relative paths (nested under
 /// `base_path`); every operation runs through [`guarded_dispatch`] with the
-/// demographic group [`dispatch`](super::dispatch), which routes relationship
+/// demographic group [`dispatch`](super::dispatch::dispatch), which routes relationship
 /// ops back into [`run`] — so the wire behaviour is identical to the former
 /// table-driven mount.
-pub(crate) fn relationship_routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
     // One `routes!` per PATH (the macro composes one method-router — handlers
     // in a single call must share the path; mixing paths panics at build with
     // "Overlapping method route").
@@ -56,7 +56,7 @@ pub(crate) fn relationship_routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
 
 // ── Handlers (our own wire; no ITS-REST operation governs these) ──────────────
 // Each snapshots the request and runs it through the demographic group
-// dispatcher (`super::dispatch`), which routes relationship ops into [`run`].
+// dispatcher (`super::dispatch::dispatch`), which routes relationship ops into [`run`].
 
 /// Create a `PARTY_RELATIONSHIP` (RM canonical JSON body). 201 with the created
 /// resource; ETag/Location headers.
@@ -65,8 +65,8 @@ pub(crate) fn relationship_routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     request_body(content = serde_json::Value, description = "An RM PARTY_RELATIONSHIP (canonical JSON)."),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn party_relationship_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -74,7 +74,7 @@ pub(crate) async fn party_relationship_create<S: Platform>(
         state,
         "party_relationship_create",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -88,12 +88,18 @@ pub(crate) async fn party_relationship_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn party_relationship_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "party_relationship_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(
+        state,
+        "party_relationship_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
 }
 
 /// Update a `PARTY_RELATIONSHIP` (If-Match required; RM canonical JSON body).
@@ -103,8 +109,8 @@ pub(crate) async fn party_relationship_get<S: Platform>(
     request_body(content = serde_json::Value, description = "The updated RM PARTY_RELATIONSHIP (canonical JSON)."),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn party_relationship_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -112,7 +118,7 @@ pub(crate) async fn party_relationship_update<S: Platform>(
         state,
         "party_relationship_update",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -123,8 +129,8 @@ pub(crate) async fn party_relationship_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn party_relationship_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -132,7 +138,7 @@ pub(crate) async fn party_relationship_delete<S: Platform>(
         state,
         "party_relationship_delete",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -143,8 +149,8 @@ pub(crate) async fn party_relationship_delete<S: Platform>(
     params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
     responses((status = 200, description = "The VERSIONED_PARTY_RELATIONSHIP (RM canonical JSON).", body = serde_json::Value))
 )]
-pub(crate) async fn versioned_party_relationship_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_party_relationship_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -152,7 +158,7 @@ pub(crate) async fn versioned_party_relationship_get<S: Platform>(
         state,
         "versioned_party_relationship_get",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -163,8 +169,8 @@ pub(crate) async fn versioned_party_relationship_get<S: Platform>(
     params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
     responses((status = 200, description = "The REVISION_HISTORY (RM canonical JSON).", body = serde_json::Value))
 )]
-pub(crate) async fn party_relationship_revision_history<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_revision_history(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -172,7 +178,7 @@ pub(crate) async fn party_relationship_revision_history<S: Platform>(
         state,
         "party_relationship_revision_history",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -186,8 +192,8 @@ pub(crate) async fn party_relationship_revision_history<S: Platform>(
     ),
     responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
 )]
-pub(crate) async fn party_relationship_version_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_version_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -195,7 +201,7 @@ pub(crate) async fn party_relationship_version_get_at_time<S: Platform>(
         state,
         "party_relationship_version_get_at_time",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -209,8 +215,8 @@ pub(crate) async fn party_relationship_version_get_at_time<S: Platform>(
     ),
     responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
 )]
-pub(crate) async fn party_relationship_version_get_by_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn party_relationship_version_get_by_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -218,7 +224,7 @@ pub(crate) async fn party_relationship_version_get_by_id<S: Platform>(
         state,
         "party_relationship_version_get_by_id",
         parts,
-        super::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -227,8 +233,8 @@ pub(crate) async fn party_relationship_version_get_by_id<S: Platform>(
 /// routes, one fixed `party_relationship` segment (our own wire; no ITS-REST
 /// operation governs it — see the module docs).
 #[allow(clippy::too_many_lines)] // one arm per relationship op, like party::run
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

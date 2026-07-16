@@ -9,9 +9,10 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use ehrbase::versioning::signature::{
-    KeyError, Mode, Signer, SigningConfig, SigningError, Verdict, VerifyOnRead,
-};
+use ehrbase::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+use ehrbase::versioning::signature::key::KeyError;
+use ehrbase::versioning::signature::signer::{Signer, SigningError};
+use ehrbase::versioning::signature::verify::Verdict;
 use pgp::composed::{ArmorOptions, KeyType, SecretKeyParamsBuilder, SignedSecretKey};
 use rand::rngs::OsRng;
 
@@ -49,7 +50,7 @@ fn pgp_signer(armored_key: &str, passphrase: Option<&str>) -> Result<Signer, Sig
         enabled: true,
         mode: Mode::Pgp,
         key_path: Some(temp_file(armored_key)),
-        key_passphrase: passphrase.map(ehrbase_sm::Secret::new),
+        key_passphrase: passphrase.map(ehrbase::config::secret::Secret::new),
         key_passphrase_file: None,
         verify_on_read: VerifyOnRead::Strict,
     };

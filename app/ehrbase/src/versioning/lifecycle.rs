@@ -1,5 +1,5 @@
 //! Version lifecycle: the `version_lifecycle_state` codes and the state-machine
-//! that governs transitions between them (S-29, S-30, S-33; closes G-01).
+//! that governs transitions between them.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Version Lifecycle.
 //! `ORIGINAL_VERSION.lifecycle_state` is coded from the openEHR
@@ -12,7 +12,7 @@
 //! the current state from the preceding version and rejecting a transition the
 //! spec does not sanction (previously any target state was accepted — G-01).
 
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 use openehr_term::bundle::openehr;
 
 /// The `version_lifecycle_state` openEHR terminology group id.
@@ -165,7 +165,7 @@ mod tests {
         assert!(resolve_lifecycle(Some("nonsense".into())).is_err());
     }
 
-    /// G-01: the master06 §Version Lifecycle state machine — legal transitions
+    /// the master06 §Version Lifecycle state machine — legal transitions
     /// pass, illegal ones are rejected.
     #[test]
     fn transition_state_machine() {
@@ -191,7 +191,7 @@ mod tests {
         // Ordinary same-state re-commit (a new version, unchanged state).
         assert!(validate_transition(Some(COMPLETE), COMPLETE).is_ok());
 
-        // Illegal transitions (G-01).
+        // Illegal transitions.
         assert!(validate_transition(Some(COMPLETE), ABANDONED).is_err());
         assert!(validate_transition(Some(COMPLETE), INCOMPLETE).is_err());
         assert!(validate_transition(Some(ABANDONED), COMPLETE).is_err());

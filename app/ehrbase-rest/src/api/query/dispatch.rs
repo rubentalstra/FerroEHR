@@ -16,17 +16,12 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts};
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
 use super::response::{self, QueryScope};
 use super::{adhoc, stored};
 use crate::state::AppState;
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
-    op: &'static str,
-    parts: RequestParts,
-) -> BoxResponse {
+pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -> BoxResponse {
     Box::pin(async move {
         run(state, op, parts)
             .await
@@ -34,8 +29,8 @@ pub(crate) fn dispatch<S: Platform>(
     })
 }
 
-async fn run<S: Platform>(
-    state: AppState<S>,
+async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

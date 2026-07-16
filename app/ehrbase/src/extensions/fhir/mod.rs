@@ -1,51 +1,75 @@
 //! The FHIR connector: mapping store + inbound ingest + read façade + outbound
-//! reverse-map (G-12-03, G-12-04).
+//! reverse-map.
 //!
 //! **No openEHR spec governs this — our own design/extension.** master14's
-//! integration model is archetype-to-archetype data conversion (`GENERIC_ENTRY` +
-//! `FEEDER_AUDIT`), not FHIR resources; this connector maps directly to
+//! integration model is archetype-to-archetype data conversion
+//! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not FHIR resources; this connector
+//! maps directly to
 //! *designed* templates (mapping-as-data), a different, spec-silent mechanism.
-//! Quarantined under `crate::extensions` (`docs/design/platform/12-extensions.md`).
 //! Gate: the `/fhir/r4/*` + `/admin/fhir_mapping` routes are config-gated in
 //! `ehrbase-rest`; the outbound emitter behind [`FhirOutboundConfig`].
 //!
-//! Concerns, all on [`EhrbaseService`]:
+//! Concerns, all on `EhrbaseService`:
 //! * the **mapping store** — CRUD over `fhir_mapping` (the deployable
 //!   "mapping-as-data" artefacts), mirroring the event-subscription store;
-//! * the **inbound ingest** — [`FhirConnectorAdapter::fhir_ingest`]: resolve a
+//! * the **inbound ingest** — [`EhrbaseService::fhir_ingest`]: resolve a
 //!   mapping by resource type + profile, build a COMPOSITION from it (the pure
-//!   transform in [`mapping`]), stamp `FEEDER_AUDIT` provenance ([`feeder_audit`]),
-//!   and commit it through the NORMAL validated create path;
-//! * the **read façade** ([`FhirConnectorAdapter::fhir_search`]) and the
-//!   **outbound reverse-map** ([`EhrbaseService::fhir_outbound_messages`]) — the
-//!   inverse transform ([`reverse`]).
+//!   transform in `mapping`), stamp `FEEDER_AUDIT` provenance
+//!   (`feeder_audit`), and commit it through the NORMAL validated create path;
+//! * the **read façade** ([`EhrbaseService::fhir_search`]) and the **outbound
+//!   reverse-map** (`EhrbaseService::fhir_outbound_messages`) — the inverse
+//!   transform (`reverse`).
 //
-// Cross-area seams (all landed): the `pub(crate)` `EhrbaseService.pool` field,
+// Cross-area seams: the `pub(crate)` `EhrbaseService.pool` field,
 // `service::query::execute_aql` and `service::ehr::create_composition`
 // (`pub(crate)`), and the storage `version_repo` reads.
 
-mod config;
+pub mod config;
 mod feeder_audit;
 mod mapping;
-mod outbound;
+pub mod outbound;
 mod reverse;
 
-pub use config::{FhirConfig, FhirOutboundConfig};
-pub use outbound::{FhirOutboundHandle, start, start_with_publisher};
-
-use async_trait::async_trait;
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::CallStatusType;
-use ehrbase_sm::{AqlQueryRequest, ServiceResponse, SubjectRef};
-use ehrbase_sm::{EhrService, FhirConnectorAdapter, SmError};
-
-use crate::service::{EhrbaseService, ServiceError};
+use crate::service::EhrbaseService;
+use crate::service::ehr_index::types::SubjectRef;
+use crate::service::error::ServiceError;
+use crate::service::query::request::AqlQueryRequest;
+use crate::service::response::ServiceResponse;
+use crate::service::status::{CallStatusType, SmError};
 use crate::storage::version_repo;
 
 use self::mapping::FhirMappingDefinition;
+
+/// The read-façade AQL: the version uid of every COMPOSITION of the mapped
+/// template in scope. The template id binds as a parameter (no string
+/// interpolation → no AQL injection).
+///
+/// PORT NOTE: the query selects the synthesized VERSION uid `v/uid/value`
+/// (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v CONTAINS
+/// COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is a
+/// (null) RM leaf on the AQL read path (the reassembled body carries no uid),
+/// whereas the VERSION variable's uid is the engine-synthesized object-version
+/// id. The COMPOSITION body is then loaded through the versioned read seam
+/// ([`version_repo::read::read_version_by_ordinal`]) by that uid, keeping the façade
+/// on the query seam and reusing the same read seam the outbound emitter uses.
+const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
+     CONTAINS VERSION v CONTAINS COMPOSITION c \
+     WHERE c/archetype_details/template_id/value = $templateId";
+
+/// The read-façade query scope resolved from the `patient` parameter.
+struct PatientScope {
+    /// The EHR id to scope to when `patient` is a UUID.
+    ehr_id: Option<Uuid>,
+    /// The subject external id to scope to when `patient` is not a UUID.
+    subject_scope: Option<String>,
+    /// The subject external id to reconstruct each resource's
+    /// `subject.reference` from (the looked-up EHR subject, or the param).
+    subject_id: Option<String>,
+}
 
 impl EhrbaseService {
     /// Map a `fhir_mapping` row to its JSON record.
@@ -188,7 +212,7 @@ impl EhrbaseService {
 
     /// Resolve-or-create the EHR whose `EHR_STATUS.subject` matches `subject`.
     async fn ensure_ehr_for_subject(&self, subject: SubjectRef) -> Result<Uuid, SmError> {
-        let existing = EhrService::get_ehrs_for_subject(self, subject.clone()).await?;
+        let existing = self.get_ehrs_for_subject(subject.clone()).await?;
         if let Some(summary) = existing.first() {
             return Uuid::parse_str(&summary.ehr_id).map_err(|e| {
                 SmError::new(
@@ -197,7 +221,7 @@ impl EhrbaseService {
                 )
             });
         }
-        EhrService::create_ehr_for_subject(self, subject, None).await
+        self.create_ehr_for_subject(subject, None).await
     }
 
     /// Every enabled mapping definition for a resource type, across all
@@ -245,11 +269,11 @@ impl EhrbaseService {
         }
     }
 
-    /// Assemble the FHIR `searchset` Bundle for the read façade: for each enabled
-    /// mapping of `resource_type`, run its template-bound COMPOSITION query
-    /// scoped to `patient`, reverse-map each hit, and collect the entries. A type
-    /// with no enabled mapping yields an empty Bundle (not an error). `count`
-    /// caps rows per mapping (`_count`).
+    /// Assemble the FHIR `searchset` Bundle for the read façade: for each
+    /// enabled mapping of `resource_type`, run its template-bound COMPOSITION
+    /// query scoped to `patient`, reverse-map each hit, and collect the
+    /// entries. A type with no enabled mapping yields an empty Bundle (not an
+    /// error). `count` caps rows per mapping (`_count`).
     async fn fhir_search_bundle(
         &self,
         resource_type: &str,
@@ -285,10 +309,11 @@ impl EhrbaseService {
                 .cloned()
                 .unwrap_or_default();
             for row in &rows {
-                // Row shape: [ <uid string> ] (SELECT c/uid/value). The synthesized
-                // uid is `<vo_id>::<system>::<ver>`; the COMPOSITION body carries no
-                // uid on the AQL read path, so the body is loaded through the
-                // versioned read seam by uid (see the FHIR_SEARCH_AQL PORT NOTE).
+                // Row shape: [ <uid string> ] (SELECT v/uid/value). The
+                // synthesized uid is `<vo_id>::<system>::<ver>`; the COMPOSITION
+                // body carries no uid on the AQL read path, so the body is
+                // loaded through the versioned read seam by uid (see the
+                // FHIR_SEARCH_AQL PORT NOTE).
                 let Some(uid) = row.get(0).and_then(Value::as_str) else {
                     continue;
                 };
@@ -301,12 +326,13 @@ impl EhrbaseService {
                     continue;
                 };
                 let Some(read) =
-                    version_repo::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+                    version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version)
+                        .await?
                 else {
                     continue;
                 };
-                // A logically deleted version reassembles to Value::Null (no node
-                // rows) — nothing to map.
+                // A logically deleted version reassembles to Value::Null (no
+                // node rows) — nothing to map.
                 if read.canonical.is_null() || !read.canonical.is_object() {
                     continue;
                 }
@@ -329,11 +355,11 @@ impl EhrbaseService {
                 }));
             }
         }
-        // PORT NOTE: `total` is the number of entries in
-        // this Bundle, not a separate full-match count — the façade is a
-        // stateless connector, not a FHIR Search engine, so with
-        // `_count` it reports the returned page size. No `Bundle.link`
-        // paging is emitted (explicit params only, by design).
+        // PORT NOTE: `total` is the number of entries in this Bundle, not a
+        // separate full-match count — the façade is a stateless connector, not
+        // a FHIR Search engine, so with `_count` it reports the returned page
+        // size. No `Bundle.link` paging is emitted (explicit params only, by
+        // design).
         Ok(json!({
             "resourceType": "Bundle",
             "type": "searchset",
@@ -341,9 +367,7 @@ impl EhrbaseService {
             "entry": entries,
         }))
     }
-}
 
-impl EhrbaseService {
     /// Reverse-map a committed COMPOSITION version for the **outbound emitter**:
     /// load the version at `(vo_id, sys_version)`, read its bound template from
     /// the canonical `archetype_details/template_id`, and for every enabled
@@ -352,15 +376,20 @@ impl EhrbaseService {
     ///
     /// Returns an empty vec (nothing to emit) when the version is absent, a
     /// logical delete (a deleted COMPOSITION has no content to map — a FHIR
-    /// delete notification is out of the starter scope), carries no template, or
-    /// its template has no enabled mapping. Reuses the versioned read seam
-    /// ([`version_repo::read_version_by_ordinal`]) and the reverse transform.
+    /// delete notification is out of the starter scope), carries no template,
+    /// or its template has no enabled mapping. Reuses the versioned read seam
+    /// ([`version_repo::read::read_version_by_ordinal`]) and the reverse transform.
     ///
-    /// PORT NOTE: the template is read from the COMPOSITION itself (as
-    /// the read façade's AQL also does), NOT from `vo_version.template_id` — that
+    /// PORT NOTE: the template is read from the COMPOSITION itself (as the
+    /// read façade's AQL also does), NOT from `vo_version.template_id` — that
     /// column is currently left NULL on the commit path, so relying on it would
     /// emit nothing. Deriving it from the canonical body avoids touching the
     /// versioning path.
+    ///
+    /// # Errors
+    /// A database failure on the version/mapping/subject reads, or
+    /// `Unprocessable` when a stored mapping definition no longer deserialises
+    /// or the reverse transform fails (a stored mapping/template defect).
     pub(crate) async fn fhir_outbound_messages(
         &self,
         ehr_id: Option<Uuid>,
@@ -369,7 +398,7 @@ impl EhrbaseService {
     ) -> Result<Vec<(String, String, Value)>, ServiceError> {
         // Load the exact committed version; skip absent / logically-deleted ones.
         let Some(read) =
-            version_repo::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
+            version_repo::read::read_version_by_ordinal(&self.pool, vo_id, sys_version).await?
         else {
             return Ok(Vec::new());
         };
@@ -432,33 +461,6 @@ impl EhrbaseService {
     }
 }
 
-/// The read-façade query scope resolved from the `patient` parameter.
-struct PatientScope {
-    /// The EHR id to scope to when `patient` is a UUID.
-    ehr_id: Option<Uuid>,
-    /// The subject external id to scope to when `patient` is not a UUID.
-    subject_scope: Option<String>,
-    /// The subject external id to reconstruct each resource's
-    /// `subject.reference` from (the looked-up EHR subject, or the param).
-    subject_id: Option<String>,
-}
-
-/// The read-façade AQL: the version uid of every COMPOSITION of the mapped
-/// template in scope. The template id binds as a parameter (no string
-/// interpolation → no AQL injection).
-///
-/// PORT NOTE: the query selects the synthesized VERSION
-/// uid `v/uid/value` (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v
-/// CONTAINS COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is
-/// a (null) RM leaf on the AQL read path (the reassembled body carries no uid),
-/// whereas the VERSION variable's uid is the engine-synthesized object-version
-/// id. The COMPOSITION body is then loaded through the versioned read seam
-/// ([`version_repo::read_version_by_ordinal`]) by that uid, keeping the façade on
-/// the query seam and reusing the same read seam the outbound emitter uses.
-const FHIR_SEARCH_AQL: &str = "SELECT v/uid/value FROM EHR e \
-     CONTAINS VERSION v CONTAINS COMPOSITION c \
-     WHERE c/archetype_details/template_id/value = $templateId";
-
 /// Read + validate `name`: non-empty, `[A-Za-z0-9_.-]` (a clean, addressable
 /// deployable identity).
 fn validated_name(body: &Value) -> Result<String, ServiceError> {
@@ -482,9 +484,8 @@ fn validated_name(body: &Value) -> Result<String, ServiceError> {
 }
 
 /// Validate the `definition` field: it must be present and deserialise into a
-/// [`FhirMappingDefinition`].
-/// Returns the raw JSON (stored verbatim) + the parsed form (for the column
-/// projection).
+/// [`FhirMappingDefinition`]. Returns the raw JSON (stored verbatim) + the
+/// parsed form (for the column projection).
 fn validated_definition(body: &Value) -> Result<(Value, FhirMappingDefinition), ServiceError> {
     let raw = body
         .get("definition")
@@ -512,21 +513,41 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     ServiceError::Database(e)
 }
 
-#[async_trait]
-impl FhirConnectorAdapter for EhrbaseService {
-    async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    /// List every stored FHIR mapping (newest first) as JSON records.
+    ///
+    /// # Errors
+    /// [`SmError`] wrapping a database failure.
+    pub async fn fhir_mapping_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_mappings().await?)
     }
 
-    async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
+    /// Create a FHIR mapping from `{name, enabled?, definition}` (the
+    /// definition validated on upload).
+    ///
+    /// # Errors
+    /// `BadRequest` when `name` is missing/invalid, the `definition` is absent
+    /// or malformed, or the `template_id` is unknown (FK); `Conflict` on a
+    /// duplicate name; otherwise a database failure.
+    pub async fn fhir_mapping_create(&self, a_mapping: Value) -> Result<Value, SmError> {
         Ok(self.create_mapping(&a_mapping).await?)
     }
 
-    async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
+    /// Fetch one FHIR mapping by id.
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn fhir_mapping_get(&self, a_mapping_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_mapping(a_mapping_id).await?)
     }
 
-    async fn fhir_mapping_update(
+    /// Replace a FHIR mapping's definition + `enabled` (the `name` is
+    /// immutable — it is the deployable identity).
+    ///
+    /// # Errors
+    /// `BadRequest` on a malformed definition or unknown `template_id`;
+    /// `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn fhir_mapping_update(
         &self,
         a_mapping_id: Uuid,
         a_mapping: Value,
@@ -534,11 +555,28 @@ impl FhirConnectorAdapter for EhrbaseService {
         Ok(self.update_mapping(a_mapping_id, &a_mapping).await?)
     }
 
-    async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
+    /// Delete a FHIR mapping by id.
+    ///
+    /// # Errors
+    /// `NotFound` when the id is unknown; otherwise a database failure.
+    pub async fn fhir_mapping_delete(&self, a_mapping_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_mapping(a_mapping_id).await?)
     }
 
-    async fn fhir_ingest(
+    /// Ingest a FHIR resource: resolve the enabled mapping for
+    /// `resource_type` + `profile`, resolve-or-create the target EHR from the
+    /// resource's subject, build the COMPOSITION (FLAT → canonical), stamp
+    /// `FEEDER_AUDIT` provenance, and commit through the NORMAL validated
+    /// create path.
+    ///
+    /// # Errors
+    /// `VersionedObjectDoesNotExist` (404) when no enabled mapping matches the
+    /// resource type; `precondition` when the resource lacks the mapped
+    /// subject or a required field; `ContentInvalid` (422) when the mapped
+    /// FLAT does not build a valid COMPOSITION or the committed COMPOSITION
+    /// fails validation; `Exception` when a stored mapping definition no
+    /// longer deserialises.
+    pub async fn fhir_ingest(
         &self,
         resource_type: String,
         profile: Option<String>,
@@ -589,10 +627,23 @@ impl FhirConnectorAdapter for EhrbaseService {
         // 5. Commit through the NORMAL validated path — a resource that maps to
         //    an invalid COMPOSITION is rejected here (content_invalid → 422),
         //    never partially stored.
-        Ok(self.create_composition(ehr_id, composition).await?)
+        let committed = self
+            .create_composition(
+                ehr_id,
+                crate::service::version_update::UpdateVersion::direct(composition),
+            )
+            .await?;
+        Ok(self.committed_response(ehr_id, &committed))
     }
 
-    async fn fhir_search(
+    /// The read façade: the FHIR `searchset` Bundle for `resource_type` scoped
+    /// to `patient` (an EHR uuid or a subject external id), reverse-mapped from
+    /// the stored COMPOSITIONs. `count` caps rows per mapping (`_count`).
+    ///
+    /// # Errors
+    /// `Exception` when a stored mapping definition is invalid or the reverse
+    /// transform fails; otherwise a database/query failure.
+    pub async fn fhir_search(
         &self,
         resource_type: String,
         patient: String,

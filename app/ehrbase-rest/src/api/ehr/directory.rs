@@ -15,8 +15,8 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Folder;
 
-use ehrbase_sm::{CallStatusType, Platform};
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::status::CallStatusType;
 
 use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
@@ -25,8 +25,8 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 
 #[allow(clippy::too_many_lines)] // one arm per DIRECTORY operation; a flat match is clearest
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -67,7 +67,7 @@ pub(super) async fn run<S: Platform>(
             // (representation); ETag + Location on both. 412 → latest version_uid.
             match state.backend().update_directory(ehr_id, uv).await {
                 Ok(uid) => {
-                    // G-4: apply item-tag write-wrapper headers to the new version.
+                    // apply item-tag write-wrapper headers to the new version.
                     let stored_tags =
                         super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &uid, h).await?;
                     let repr = if negotiate::prefers_representation(h) {
@@ -122,7 +122,7 @@ pub(super) async fn run<S: Platform>(
                 None,
             );
             let uid = state.backend().create_directory(ehr_id, uv).await?;
-            // G-4: apply item-tag write-wrapper headers to the committed FOLDER.
+            // apply item-tag write-wrapper headers to the committed FOLDER.
             let stored_tags =
                 super::apply_item_tag_headers(&state, ehr_id, "FOLDER", &uid, h).await?;
             let repr = if negotiate::prefers_representation(h) {

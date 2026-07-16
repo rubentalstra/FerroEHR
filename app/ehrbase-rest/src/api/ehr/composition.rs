@@ -22,11 +22,10 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
-use ehrbase_sm::{CallStatusType, Platform};
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
-use crate::overview::error::{RestError, sm_api_error};
+use crate::overview::error::RestError;
 use crate::overview::version_id::{
     object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_version_uid, require_if_match,
 };
@@ -34,8 +33,8 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 
 #[allow(clippy::too_many_lines)] // one arm per COMPOSITION operation; a flat match is clearest
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
@@ -66,8 +65,13 @@ pub(super) async fn run<S: Platform>(
                 "COMPOSITION creation",
                 None,
             );
-            let uid = state.backend().create_composition(ehr_id, uv).await?;
-            // G-4: apply the openehr-item-tag / openehr-version-item-tag
+            let uid = state
+                .backend()
+                .create_composition(ehr_id, uv)
+                .await
+                .map_err(|e| RestError::from(ApiError::from(e)))?
+                .version_uid();
+            // apply the openehr-item-tag / openehr-version-item-tag
             // write-wrapper headers to the committed COMPOSITION
             // (Requests_and_responses.md §…§Usage in Requests).
             let stored_tags =
@@ -172,9 +176,10 @@ pub(super) async fn run<S: Platform>(
                 .backend()
                 .update_composition(ehr_id, uid.vo_id, uv)
                 .await
+                .map(|c| c.version_uid())
             {
                 Ok(new_uid) => {
-                    // G-4: apply item-tag write-wrapper headers to the new version.
+                    // apply item-tag write-wrapper headers to the new version.
                     let stored_tags =
                         super::apply_item_tag_headers(&state, ehr_id, "COMPOSITION", &new_uid, h)
                             .await?;
@@ -186,7 +191,7 @@ pub(super) async fn run<S: Platform>(
                     }
                     Ok(resp)
                 }
-                Err(e) if e.status == CallStatusType::VersionMismatch => {
+                Err(e @ ehrbase::service::error::ServiceError::VersionConflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, uid.vo_id)
@@ -194,13 +199,13 @@ pub(super) async fn run<S: Platform>(
                         .ok()
                         .flatten();
                     Ok(negotiate::error_with_meta(
-                        sm_api_error(e),
+                        ApiError::from(e),
                         &base,
                         Some("composition"),
                         meta.as_ref(),
                     ))
                 }
-                Err(e) => Err(RestError::from(e)),
+                Err(e) => Err(RestError::from(ApiError::from(e))),
             }
         }
         "composition_delete" => {
@@ -215,7 +220,12 @@ pub(super) async fn run<S: Platform>(
                     p.uid_based_id
                 ))
             })?;
-            match state.backend().delete_composition(ehr_id, ovid).await {
+            match state
+                .backend()
+                .delete_composition(ehr_id, &ovid)
+                .await
+                .map(|c| c.version_uid())
+            {
                 Ok(uid) => {
                     // 204_COMPOSITION_deleted: ETag + Location of the deleted version.
                     let resp = ServiceResponse::deleted(ResourceMeta::new(p.ehr_id, uid));
@@ -225,8 +235,9 @@ pub(super) async fn run<S: Platform>(
                         &resp,
                     ))
                 }
-                // 409_COMPOSITION_with_uid_based_id (stale) → latest version_uid.
-                Err(e) if e.status == CallStatusType::CompositionAlreadyExists => {
+                // 409_COMPOSITION_with_uid_based_id (stale / not-modifiable) →
+                // decorated with the latest version_uid.
+                Err(e @ ehrbase::service::error::ServiceError::Conflict(_)) => {
                     let meta = state
                         .backend()
                         .composition_latest_meta(ehr_id, vo_id)
@@ -234,13 +245,13 @@ pub(super) async fn run<S: Platform>(
                         .ok()
                         .flatten();
                     Ok(negotiate::error_with_meta(
-                        sm_api_error(e),
+                        ApiError::from(e),
                         &base,
                         Some("composition"),
                         meta.as_ref(),
                     ))
                 }
-                Err(e) => Err(RestError::from(e)),
+                Err(e) => Err(RestError::from(ApiError::from(e))),
             }
         }
         "composition_tags_get" => {
@@ -280,8 +291,8 @@ pub(super) async fn run<S: Platform>(
 /// Render a COMPOSITION create/update response: FLAT/STRUCTURED interop bodies
 /// when requested (always the representation), else the canonical
 /// `ETag`/`Location` + `Prefer` write response.
-async fn composition_write_response<S: Platform>(
-    state: &AppState<S>,
+async fn composition_write_response(
+    state: &AppState,
     h: &http::HeaderMap,
     base: &str,
     ehr_id: Uuid,

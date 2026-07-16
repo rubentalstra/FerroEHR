@@ -25,10 +25,11 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::extensions::events::{EventError, EventPublisher, EventsConfig, start_with_publisher};
+use ehrbase::extensions::events::config::EventsConfig;
+use ehrbase::extensions::events::publisher::start_with_publisher;
+use ehrbase::extensions::events::{EventError, EventPublisher};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{EhrCompositionService, EhrExtractService, EhrService, EhrStatusService};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
@@ -567,7 +568,7 @@ async fn import_writes_one_phi_free_outbox_row() {
         .await
         .expect("status update");
 
-    let mut extracts = source.export_ehrs(ehr).await.expect("export");
+    let mut extracts = source.extract_ehrs(ehr).await.expect("export");
     let extract: openehr_rm::ehr_extract::common::extract::Extract =
         serde_json::from_value(extracts.remove(0)).expect("typed extract");
 

@@ -177,7 +177,7 @@ fn monomorphic_struct_slot_accepts_matching_and_absent_type() {
 fn unknown_keys_are_tolerated_on_deserialize() {
     // Deliberate tolerance (PORT NOTE in openehr-derive): unknown keys are
     // ignored, a documented superset of the schema's `additionalProperties:
-    // false`. The strict contract lives in `validate_canonical` (F-04-05).
+    // false`. The strict contract lives in `validate_canonical`.
     let dv: DataValue = serde_json::from_str(
         r#"{"_type":"DV_COUNT","magnitude":3,"an_unknown_extension_key":true}"#,
     )

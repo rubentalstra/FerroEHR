@@ -3,9 +3,8 @@
 //!
 //! No openEHR spec governs the `node` table — it is our own decomposed store
 //! (`docs/architecture.md` §Storage). This module is the single home for the
-//! `node` write and the `node`→canonical reload: the former lived in the
-//! service layer (G-S2) and the latter was duplicated between the version read
-//! path and the dump/load export (G-S1) — both now funnel here.
+//! `node` write and the `node`→canonical reload: the version read path, the
+//! dump/load export, and the AQL result assembly all funnel here.
 
 use std::collections::HashMap;
 
@@ -13,11 +12,12 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
 
+use crate::storage::codec::reassemble;
+use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
-use crate::storage::{StorageError, reassemble};
 
 /// Bulk-insert the decomposed node rows of one stored version. `rows` is the
-/// output of [`crate::storage::decompose`]; the storage context
+/// output of [`crate::storage::codec::decompose`]; the storage context
 /// (`vo_id`/`sys_version`/`ehr_id`) is supplied here and written onto every row.
 ///
 /// A logically-deleted version (data Void, RM common master06 §Logical
@@ -49,7 +49,7 @@ pub async fn write_nodes(
         "INSERT INTO node (vo_id, sys_version, num, num_cap, parent_num, citem_num, ehr_id, \
          rm_type, archetype, arch_entity, arch_concept, arch_major, name, path, data",
     );
-    for leaf in crate::storage::PROMOTED_LEAVES {
+    for leaf in crate::storage::promoted::PROMOTED_LEAVES {
         header.push_str(", ");
         header.push_str(leaf.column);
     }
@@ -75,10 +75,10 @@ pub async fn write_nodes(
         // value the AQL query-time cast accepted yields the same stored value,
         // and non-castable text becomes NULL rather than failing the write
         // (ext.openehr_timestamp, ext baseline).
-        for (i, leaf) in crate::storage::PROMOTED_LEAVES.iter().enumerate() {
+        for (i, leaf) in crate::storage::promoted::PROMOTED_LEAVES.iter().enumerate() {
             let raw = row.promoted.get(i).and_then(Clone::clone);
             match leaf.kind {
-                crate::storage::PromotedKind::Timestamp => {
+                crate::storage::promoted::PromotedKind::Timestamp => {
                     b.push("ext.openehr_timestamp(")
                         .push_bind_unseparated(raw)
                         .push_unseparated(")");
@@ -91,8 +91,8 @@ pub async fn write_nodes(
 }
 
 /// Fetch the lean read rows of one stored version, ordered by `num`. Selects
-/// **only** the five columns [`crate::storage::reassemble`] and the nested-set
-/// contract need (G-S6) — the promoted query columns are not read back.
+/// **only** the five columns [`crate::storage::codec::reassemble`] and the nested-set
+/// contract need — the promoted query columns are not read back.
 async fn read_rows(
     pool: &PgPool,
     vo_id: Uuid,
@@ -121,9 +121,8 @@ async fn read_rows(
 }
 
 /// Reassemble one stored version's canonical JSON from its `node` rows — the
-/// single consolidated node→canonical reload (G-S1: replaces the former
-/// duplicate in the version read path and the dump/load export; the
-/// message/admin export calls this by name).
+/// single consolidated node→canonical reload (the version read path and the
+/// message/admin exports all call this by name).
 ///
 /// A version with no stored nodes (a logical delete — data Void, RM common
 /// master06 §Logical Deletion) reassembles to [`Value::Null`], so callers need
@@ -169,10 +168,10 @@ pub struct SubtreeAnchor {
 ///
 /// This closes the AQL result-assembly N+1 — a P-row whole-object projection
 /// page (e.g. `SELECT c FROM EHR e CONTAINS COMPOSITION c` on a dashboard)
-/// previously issued P separate subtree SELECTs, one per candidate row (P20
-/// overhead checklist item 14). The rows of every anchor's subtree are now
-/// fetched by a single `unnest`-array join over the anchors, tagged by anchor
-/// index, then reassembled per anchor in memory.
+/// would otherwise issue P separate subtree SELECTs, one per candidate row.
+/// The rows of every anchor's subtree are instead fetched by a single
+/// `unnest`-array join over the anchors, tagged by anchor index, then
+/// reassembled per anchor in memory.
 ///
 /// Anchors are de-duplicated: a page may project the same version more than once
 /// (repeated rows, or two whole-object columns), and each distinct subtree is

@@ -196,7 +196,7 @@ fn excluded(name: &str) -> Option<&'static str> {
         }
         // RM-1.1-era EHRbase output that omits fields RM 1.2 makes mandatory on
         // LOCATABLE. Deserialization is strict here; leniency is a validation-layer
-        // concern (P11). Tracked as the RM 1.1↔1.2 divergence (docs/VERSIONS.md).
+        // concern. Tracked as the RM 1.1↔1.2 divergence (docs/VERSIONS.md).
         "folder/canonical_json/simple_empty_folder.json" => {
             reason("RM 1.1-era: FOLDER omits mandatory LOCATABLE.archetype_node_id (RM 1.2)")
         }

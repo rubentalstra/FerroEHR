@@ -11,7 +11,7 @@
 use std::io::IsTerminal;
 use std::sync::Arc;
 
-use ehrbase_rest::management::LogReload;
+use crate::telemetry::log_reload::LogReload;
 use opentelemetry_sdk::trace::SdkTracer;
 use tracing_subscriber::layer::{Layered, SubscriberExt};
 use tracing_subscriber::util::SubscriberInitExt;

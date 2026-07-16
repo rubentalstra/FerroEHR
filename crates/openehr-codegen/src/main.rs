@@ -34,7 +34,7 @@ const XSD_V1_DIR: &str = concat!(
 );
 /// v2 (namespace `.../v2`) XSD root (per-component release folders). Supplies the
 /// RM-instance types the v1 `ALL/` bundle lacks (EHR + demographic) or carries
-/// stale (extract) to the emit-xml input (F-05-01).
+/// stale (extract) to the emit-xml input.
 const XSD_V2_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
@@ -180,7 +180,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     // extract schemas, which supply the LOCATABLE subtypes the v1 bundle lacks —
     // resolving `archetype_node_id` as the required XML **attribute** for
     // EHR_STATUS/EHR_ACCESS, the demographic PARTY hierarchy, and the extract
-    // LOCATABLE subtypes (F-05-01). Same wire shape bar the root `xmlns`.
+    // LOCATABLE subtypes. Same wire shape bar the root `xmlns`.
     let v1 = xsd::XsdModel::parse_files(&xsd::xml_emit_files(
         Path::new(XSD_V1_DIR),
         Path::new(XSD_V2_DIR),

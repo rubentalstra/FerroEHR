@@ -3,7 +3,7 @@
 //! Operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):
 //! `definition_template_adl1.4_list` / `_upload` / `_get` / `_example_get`.
 //! Governing spec text: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md` (G-1/G-3/G-4/G-5).
+//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! The wire addresses OPTs by their `template_id` string; the SM `get_opt` is
 //! UUID-keyed, so retrieval runs through the `DefinitionAdapter` extension
@@ -25,7 +25,6 @@ use crate::api::RequestParts;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::Platform;
 
 use super::dispatch::list_filter_and_page;
 
@@ -34,12 +33,9 @@ use super::dispatch::list_filter_and_page;
 /// The wire decodes `template_id` (glob), `concept` (glob), `version`
 /// (version filter), `offset`, `fetch`
 /// (`operations/definition_template_adl1.4_list.yaml`); they are threaded to the
-/// adapter as a [`TemplateListFilter`](ehrbase_sm::extensions::adapters::TemplateListFilter)
-/// + [`Page`](ehrbase_sm::Page) (G-1).
-pub(super) async fn list<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+/// adapter as a [`TemplateListFilter`](ehrbase::service::adapters::TemplateListFilter)
+/// + [`Page`](ehrbase::service::list::Page).
+pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl14ListParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -54,10 +50,7 @@ pub(super) async fn list<S: Platform>(
 
 /// `POST …/definition/template/adl1.4` — ingest an OPT 1.4 canonical-XML
 /// template (`operations/definition_template_adl1.4_upload.yaml`).
-pub(super) async fn upload<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, parts.query.as_deref(), h)?;
     // The OPT 1.4 template arrives as canonical XML; the lenient reader hands it
@@ -89,13 +82,10 @@ pub(super) async fn upload<S: Platform>(
 ///
 /// Negotiates the `200_Template_adl1_4_retrieved` representations
 /// (`application/xml` canonical OPT + the `application/openehr.wt+json` web
-/// template EHRbase-compatible extension), sets the mandated `ETag` (G-4), and
-/// returns `406` for an `Accept` outside `Accept_Template` (G-5). An unknown
+/// template EHRbase-compatible extension), sets the mandated `ETag`, and
+/// returns `406` for an `Accept` outside `Accept_Template`. An unknown
 /// template → `404` (checked first, before negotiation).
-pub(super) async fn get<S: Platform>(
-    state: &AppState<S>,
-    parts: &RequestParts,
-) -> Result<Response, RestError> {
+pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
         params::build::<DefinitionTemplateAdl14GetParams>(&parts.path, parts.query.as_deref(), h)?;
@@ -127,8 +117,8 @@ pub(super) async fn get<S: Platform>(
 
 /// `GET …/definition/template/adl1.4/{template_id}/example` — a generated
 /// example COMPOSITION, negotiated across the four `Accept_LOCATABLE` forms.
-pub(super) async fn example_get<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn example_get(
+    state: &AppState,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -290,14 +280,11 @@ fn example_accept_supported(headers: &HeaderMap) -> bool {
 
 /// Serve the service-owned Better `WebTemplate` for `template_id` as
 /// `application/openehr.wt+json` (single resolution seam:
-/// [`ehrbase_sm::services::WebTemplateService`] — W2-K/F-13-02).
+/// [`ehrbase::service::WebTemplateService`] — W2-K/F-13-02).
 ///
 /// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
 /// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).
-async fn web_template_response<S: Platform>(
-    state: &AppState<S>,
-    template_id: &str,
-) -> Result<Response, RestError> {
+async fn web_template_response(state: &AppState, template_id: &str) -> Result<Response, RestError> {
     let built = state
         .backend()
         .web_template(template_id)

@@ -17,11 +17,13 @@ use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
 use crate::state::AppState;
 use crate::{negotiate, params};
-use ehrbase_sm::{CallStatusType, PartyKind, Platform, ServiceResponse};
+use ehrbase::service::demographic::types::PartyKind;
+use ehrbase::service::response::ServiceResponse;
+use ehrbase::service::status::CallStatusType;
 
 /// The per-kind CRUD operations (`create`/`get`/`update`/`delete`).
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     kind: PartyKind,
     action: &str,
     parts: RequestParts,
@@ -40,7 +42,7 @@ pub(super) async fn run<S: Platform>(
             // maps to 404, PreconditionViolation to 400, ContentInvalid to 422
             // (overview::error::sm_api_error) — `?` routes each to its status.
             let mut resp = state.backend().party_create(kind, body).await?;
-            // G-3: the incoming `openehr-item-tag` request header (person_create.yaml)
+            // the incoming `openehr-item-tag` request header (person_create.yaml)
             // carries ITEM_TAGs to persist. The party must exist first
             // (`item_tag.target_vo_id` FK), so tags are persisted after the create
             // and the stored set is reflected on the response metadata seam.
@@ -79,7 +81,7 @@ pub(super) async fn run<S: Platform>(
                 .await
             {
                 Ok(mut resp) => {
-                    // G-3: persist any `openehr-item-tag` request-header tags
+                    // persist any `openehr-item-tag` request-header tags
                     // against the updated party and reflect the stored set on the
                     // response metadata (person_update.yaml).
                     persist_request_tags(&state, kind, h, &mut resp).await?;
@@ -125,8 +127,8 @@ pub(super) async fn run<S: Platform>(
 /// G-3). The party must already exist (`item_tag.target_vo_id` FK), so this runs
 /// after the create/update write. A present-but-empty header clears all tags
 /// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
-async fn persist_request_tags<S: Platform>(
-    state: &AppState<S>,
+async fn persist_request_tags(
+    state: &AppState,
     kind: PartyKind,
     h: &HeaderMap,
     resp: &mut ServiceResponse,
@@ -151,13 +153,13 @@ async fn persist_request_tags<S: Platform>(
 /// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` +
 /// `ETag`/`Location` of the deleted version.
 ///
-/// G-2: `person_delete.yaml` places the `preceding_version_uid` to delete in the
+/// `person_delete.yaml` places the `preceding_version_uid` to delete in the
 /// **path** (`uid_based_id_as_version_uid` — an `OBJECT_VERSION_ID`), not in an
 /// `If-Match` header. Responses: `204_version_deleted`, `400_already_deleted`,
 /// `404`, `409_PERSON_with_uid_based_id` (supplied uid doesn't match the latest
 /// version; returns the latest `version_uid` in `ETag`).
-async fn run_delete<S: Platform>(
-    state: &AppState<S>,
+async fn run_delete(
+    state: &AppState,
     kind: PartyKind,
     base: &str,
     seg: &str,

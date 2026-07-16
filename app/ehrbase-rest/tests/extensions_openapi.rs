@@ -20,16 +20,18 @@ use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use serde_json::Value;
 use tower::ServiceExt;
 
-use ehrbase_rest::access::authn::config::AuthConfig;
+use ehrbase::config::auth::AuthConfig;
+use ehrbase::config::management::{AccessLevel, EndpointLevels, ManagementConfig};
+use ehrbase::config::server::{AdminConfig, ServerConfig, TenancyConfig};
+use ehrbase::config::smart::SmartConfig;
+use ehrbase::telemetry::build_info::BuildInfo;
+use ehrbase::telemetry::health::HealthRegistry;
+use ehrbase::telemetry::log_reload::LogReload;
+use ehrbase_rest::config::AppConfig;
+use ehrbase_rest::extensions::management::Observability;
 use ehrbase_rest::extensions::openapi::extensions_document;
-use ehrbase_rest::management::{
-    AccessLevel, BuildInfo, EndpointLevels, HealthRegistry, LogReload, ManagementConfig,
-    Observability,
-};
-use ehrbase_rest::{AdminConfig, AppConfig, ServerConfig, SmartConfig, TenancyConfig};
 
 mod common;
-use common::Mock;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 
@@ -43,8 +45,7 @@ const HTTP_METHODS: &[&str] = &[
 
 #[test]
 fn extensions_doc_is_non_empty() {
-    let doc =
-        serde_json::to_value(extensions_document::<Mock>(&app_config())).expect("serialise doc");
+    let doc = serde_json::to_value(extensions_document(&app_config())).expect("serialise doc");
     let paths = doc["paths"].as_object().expect("paths object");
     assert!(!paths.is_empty(), "the extension document has no paths");
 
@@ -85,7 +86,7 @@ fn extensions_doc_is_non_empty() {
 
 #[tokio::test]
 async fn every_documented_path_routes() {
-    let app = full_app();
+    let app = full_app("ext_openapi_routes").await;
 
     // Warm the HTTP metrics so `/management/metrics/{name}` has a real metric to
     // resolve (an unknown metric legitimately 404s — that would be a false
@@ -99,8 +100,7 @@ async fn every_documented_path_routes() {
         .expect("warmup response");
     let metric_name = first_metric_name(&app).await;
 
-    let doc =
-        serde_json::to_value(extensions_document::<Mock>(&app_config())).expect("serialise doc");
+    let doc = serde_json::to_value(extensions_document(&app_config())).expect("serialise doc");
     let paths = doc["paths"].as_object().expect("paths object");
 
     let mut checked = 0usize;
@@ -113,11 +113,19 @@ async fn every_documented_path_routes() {
                 .uri(&concrete)
                 .body(Body::empty())
                 .expect("request");
-            let status = app.clone().oneshot(req).await.expect("response").status();
-            assert_ne!(
-                status,
-                StatusCode::NOT_FOUND,
-                "documented op {} {template} (driven as {concrete}) is not mounted (404)",
+            let resp = app.clone().oneshot(req).await.expect("response");
+            let status = resp.status();
+            let body = resp.into_body().collect().await.expect("body").to_bytes();
+            // A documented op must be *mounted*. Under the real service a mounted
+            // handler may legitimately answer 404 for a missing resource (e.g. a
+            // stored query that does not exist) — that still means the route is
+            // mounted (the Mock backend previously masked this by answering 501
+            // everywhere). An *unmounted* path is axum's bare fallback 404 with an
+            // empty body; a mounted handler's 404 carries the openEHR
+            // `{error,message}` body. So "not mounted" = a 404 with an empty body.
+            assert!(
+                status != StatusCode::NOT_FOUND || !body.is_empty(),
+                "documented op {} {template} (driven as {concrete}) is not mounted (bare 404)",
                 method.to_uppercase()
             );
             checked += 1;
@@ -134,7 +142,7 @@ async fn every_documented_path_routes() {
 /// a fully-enabled server.
 #[tokio::test]
 async fn every_family_document_is_non_empty() {
-    let app = full_app();
+    let app = full_app("ext_openapi_family").await;
     // The family slugs offered by `FAMILIES` in `extensions::openapi` (private
     // there; the selector URLs are the stable public contract).
     for slug in [
@@ -170,6 +178,32 @@ async fn every_family_document_is_non_empty() {
             "family {slug} document has no paths (its selector criterion matched nothing)"
         );
     }
+}
+
+// ── Test 4: the once-built served document equals a fresh extensions_document ─
+
+/// the `OpenAPI` document is built once at router assembly and served as
+/// pre-serialized bytes. The served bytes must be byte-for-byte the same
+/// document `extensions_document(cfg)` produces fresh — the optimization is a
+/// pure serving-mechanics change, no content change.
+#[tokio::test]
+async fn served_openapi_json_equals_fresh_document() {
+    let app = full_app("ext_openapi_served").await;
+    let resp = app
+        .clone()
+        .oneshot(get("/ehrbase/rest/api-docs/openapi.json"))
+        .await
+        .expect("openapi.json response");
+    assert_eq!(resp.status(), StatusCode::OK);
+    let bytes = resp.into_body().collect().await.expect("body").to_bytes();
+    let served: Value = serde_json::from_slice(&bytes).expect("served openapi json");
+
+    let fresh = serde_json::to_value(extensions_document(&app_config()))
+        .expect("fresh extensions_document");
+    assert_eq!(
+        served, fresh,
+        "the once-built served OpenAPI document must equal a fresh extensions_document(cfg)"
+    );
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -273,7 +307,7 @@ fn app_config() -> AppConfig {
 
 /// A server with auth off and every extension surface enabled, so every
 /// documented path is mounted.
-fn full_app() -> Router {
+async fn full_app(name: &str) -> Router {
     let config = app_config();
     let public = EndpointLevels {
         health: AccessLevel::Public,
@@ -296,5 +330,6 @@ fn full_app() -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    ehrbase_rest::build_full(config, Arc::new(Mock::new()), None, observability).expect("build")
+    let (_pg, service) = common::test_service(name).await;
+    ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }

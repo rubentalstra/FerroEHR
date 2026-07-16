@@ -39,11 +39,10 @@ use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    AqlQueryRequest, CallStatusType, EhrCompositionService, EhrService, EhrStatusService,
-    QueryService, SmError,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::query::request::AqlQueryRequest;
+use ehrbase::service::status::{CallStatusType, SmError};
+
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
@@ -179,6 +178,7 @@ async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: 
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {magnitude}): {e:?}"))
+    .version_uid()
 }
 
 /// Commit a COMPOSITION whose content OBSERVATION carries `archetype` as its
@@ -198,6 +198,7 @@ async fn create_comp_arch(
     svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(c, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+        .version_uid()
 }
 
 /// Count the OBSERVATIONs in `ehr_id` matched by an archetype predicate.
@@ -659,7 +660,8 @@ async fn latest_versus_all_versions() {
                 uv(composition("v", magnitude), "251", Some(&current)),
             )
             .await
-            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"));
+            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"))
+            .version_uid();
     }
 
     // LATEST_VERSION (the default) sees one version.
@@ -1214,6 +1216,7 @@ async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name:
     svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(body, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+        .version_uid()
 }
 
 /// P20 + F6, end to end against real PG 18: the patient-dashboard shape orders
@@ -1332,7 +1335,7 @@ async fn dashboard_context_start_ordering_and_uid() {
     );
 }
 
-/// The AQL plan cache (P20) is transparent: a repeated query text reuses the
+/// The AQL plan cache is transparent: a repeated query text reuses the
 /// lowered plan (a cache hit) yet returns byte-identical results, and the
 /// per-request parameter values + paging window still bind correctly on top of
 /// the shared plan. No openEHR spec governs the cache — our own performance

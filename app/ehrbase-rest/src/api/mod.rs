@@ -13,7 +13,7 @@
 //! (`openehr_its::rest::generated::{ehr,query,definition,admin,demographic}`).
 //! The System API is not part of that contract (no `system` group is emitted),
 //! so its single `OPTIONS /` operation is hand-written in [`system`] and mounted
-//! by [`crate::router`], not here.
+//! by [`crate::router::router`], not here.
 //!
 //! ## The per-group modules
 //!
@@ -34,7 +34,7 @@
 //! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
 //!   as `admin::dispatch::dispatch` (the group publishes no re-export).
 //! - [`system`] — the System API manifest ([`system::SystemManifest`],
-//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router`].
+//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router::router`].
 //!
 //! Every group — the standardised ITS-REST groups above and the own-design
 //! extension surfaces ([`crate::extensions`]: terminology, event subscription,
@@ -59,7 +59,6 @@ use axum::Router;
 use axum::extract::{FromRequestParts, RawPathParams};
 use axum::response::Response;
 use bytes::Bytes;
-use ehrbase_sm::Platform;
 use http::HeaderMap;
 use indexmap::IndexMap;
 use utoipa_axum::router::OpenApiRouter;
@@ -72,7 +71,7 @@ use crate::state::AppState;
 pub(crate) type BoxResponse = Pin<Box<dyn Future<Output = Response> + Send>>;
 
 /// A group dispatcher: `(state, operation_id, request parts) → response`.
-type Dispatcher<S> = fn(AppState<S>, &'static str, RequestParts) -> BoxResponse;
+type Dispatcher = fn(AppState, &'static str, RequestParts) -> BoxResponse;
 
 /// The raw request sources a dispatcher needs to rebuild a `*Params` struct and
 /// decode a body.
@@ -118,11 +117,11 @@ pub(crate) async fn into_parts(request: axum::extract::Request) -> RequestParts 
 
 /// Build the API router covering every ITS-REST + extension route
 /// (group-relative paths; nested under the configured base path by
-/// [`crate::router`]). State is applied by the caller. This is the `Router` half
+/// [`crate::router::router`]). State is applied by the caller. This is the `Router` half
 /// of [`api_openapi_router`]; the `OpenApi` half feeds the served document
 /// ([`api_doc`]), so route and documentation are single-sourced.
-pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
-    api_openapi_router::<S>().into()
+pub(crate) fn api_router() -> Router<AppState> {
+    api_openapi_router().into()
 }
 
 /// Every API group as one native `utoipa-axum` router (group-relative paths), so
@@ -139,27 +138,27 @@ pub(crate) fn api_router<S: Platform>() -> Router<AppState<S>> {
 /// The extension groups are always mounted — their config gate is enforced inside
 /// the handler (a disabled group answers `404`). No openEHR spec governs an OAS
 /// layout or the extension surfaces — our own design.
-pub(crate) fn api_openapi_router<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .merge(ehr::routes::<S>())
-        .merge(demographic::routes::<S>())
-        .merge(demographic::relationship_routes::<S>())
-        .merge(definition::routes::<S>())
-        .merge(query::routes::<S>())
-        .merge(admin::routes::<S>())
-        .merge(terminology::routes::<S>())
-        .merge(event_subscription::routes::<S>())
-        .merge(tenant_routes::routes::<S>())
-        .merge(fhir::routes::<S>())
+        .merge(ehr::openapi_routes::routes())
+        .merge(demographic::openapi_routes::routes())
+        .merge(demographic::relationship::relationship_routes())
+        .merge(definition::openapi_routes::routes())
+        .merge(query::openapi_routes::routes())
+        .merge(admin::openapi_routes::routes())
+        .merge(terminology::routes())
+        .merge(event_subscription::routes())
+        .merge(tenant_routes::routes())
+        .merge(fhir::routes())
 }
 
 /// The full API surface's `OpenAPI` document, paths nested under `base_path` so
 /// they read as full server paths (e.g. `/ehrbase/rest/openehr/v1/ehr`). Built
 /// from the same [`api_openapi_router`] composition that mounts the routes, so
 /// the document cannot drift from the router.
-pub(crate) fn api_doc<S: Platform>(base_path: &str) -> utoipa::openapi::OpenApi {
-    OpenApiRouter::<AppState<S>>::new()
-        .nest(base_path, api_openapi_router::<S>())
+pub(crate) fn api_doc(base_path: &str) -> utoipa::openapi::OpenApi {
+    OpenApiRouter::<AppState>::new()
+        .nest(base_path, api_openapi_router())
         .into_openapi()
 }
 
@@ -172,11 +171,11 @@ pub(crate) fn api_doc<S: Platform>(base_path: &str) -> utoipa::openapi::OpenApi 
 /// and finally tag the response with the matched operation id for the ATNA audit
 /// layer. ABAC/`EHR_ACCESS` are inert unless wired (default-open); no openEHR
 /// spec governs the ABAC layer — our own extension.
-pub(crate) async fn guarded_dispatch<S: Platform>(
-    state: AppState<S>,
+pub(crate) async fn guarded_dispatch(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
-    dispatch: Dispatcher<S>,
+    dispatch: Dispatcher,
 ) -> Response {
     let mut resp = match ehr_access::enforce(&state, op, &parts).await {
         Ok(()) => match pep::pre_check(&state, op, &parts).await {

@@ -25,7 +25,7 @@
 //!
 //! [`router`] assembles these under the configured base path with the
 //! `tower-http` middleware stack. The adapter is generic over the platform
-//! service `S: Platform` (no trait objects, no stub backend by design) — the
+//! concrete `EhrbaseService` (W-14 B+C: no trait seam, no stub backend) — the
 //! `ehrbase` crate monomorphizes it over its DB-backed `EhrbaseService` via
 //! [`AppState::with_backend`], and the tests over a mock.
 //!
@@ -40,45 +40,27 @@ pub mod extensions;
 pub mod formats;
 mod overload;
 pub mod overview;
-mod router;
+pub mod router;
 pub mod smart;
-mod state;
+pub mod state;
 pub mod system_log;
 
 // `access` (authn + authz config the binary wires) and `management`
-// (observability the binary assembles) are part of the crate's public surface,
-// re-exported at the root so the binary + tests reach them as
-// `ehrbase_rest::access::…` / `ehrbase_rest::management::…`.
-pub use extensions::{access, management};
-// Crate-root path aliases the per-spec dispatchers resolve against
-// (`crate::negotiate`, `crate::params`); the two shared protocol helpers live
-// under `overview` and are reached through these short paths.
-use overview::{negotiate, params};
+// (observability the binary assembles) are part of the crate's public surface;
+// the binary + tests reach every item at its defining module —
+// `ehrbase_rest::extensions::access::…` / `ehrbase_rest::extensions::management::…`
+// (no re-exports). The two shared protocol helpers (`negotiate`, `params`)
+// live under `overview` and are imported here for the dispatcher glue below.
+use ehrbase::service::EhrbaseService;
 
-pub use access::authn::{AuthMethod, Authenticator, Principal};
-pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
-// The native API lives in `ehrbase-sm`; re-exported here for the
-// server's public surface (test mocks, the binary) — no local shim module.
-pub use api::system::SystemOptionsConfig;
-pub use config::{AdminConfig, AppConfig, ServerConfig, TenancyConfig};
-pub use ehrbase_sm::Platform;
-pub use ehrbase_sm::{
-    AdminArchive, AdminService, DefinitionAdl2Service, DefinitionAdl14Service,
-    DefinitionQueryService, DemographicService, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrIndexService, EhrService, EhrStatusService, ItemTagAdapter,
-    PartyRelationshipService, QueryService, StatTimeRange, SystemLog, TerminologyService,
-    ValidityChecker, VersionMetaAdapter, WebTemplateService,
-};
-pub use ehrbase_sm::{
-    AqlQueryRequest, EhrIndexEntry, EhrSummary, LocationDesc, Page, PartyKind, PlatformService,
-    QueryDescriptor, QueryOutcome, ResourceInstanceType, ResourceMeta, ResourceStatus,
-    ServiceResponse, SubjectRef,
-};
-pub use management::{ManagementConfig, Observability};
-pub use overview::error::RestError;
-pub use router::{management_router, router};
-pub use smart::config::SmartConfig;
-pub use state::AppState;
+use crate::config::AppConfig;
+use crate::extensions::access::authn::Authenticator;
+use crate::extensions::access::authz::AuthzHandle;
+use crate::extensions::access::authz::roles::default_role_claims;
+use crate::extensions::management::Observability;
+use crate::router::{management_router, router};
+use crate::state::AppState;
+use overview::{negotiate, params};
 
 /// Errors raised while starting the server.
 #[derive(Debug, thiserror::Error)]
@@ -96,9 +78,9 @@ pub enum ServeError {
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_with<S: Platform>(
+pub fn build_with(
     config: AppConfig,
-    backend: std::sync::Arc<S>,
+    backend: std::sync::Arc<EhrbaseService>,
 ) -> Result<axum::Router, ServeError> {
     let authenticator = Authenticator::new(config.auth.clone()).map_err(ServeError::Auth)?;
     let state = AppState::with_backend(config, backend);
@@ -115,9 +97,9 @@ pub fn build_with<S: Platform>(
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_with<S: Platform>(
+pub async fn serve_with(
     config: AppConfig,
-    backend: std::sync::Arc<S>,
+    backend: std::sync::Arc<EhrbaseService>,
 ) -> Result<(), ServeError> {
     let bind = config.server.bind.clone();
     let app = build_with(config, backend)?;
@@ -132,9 +114,9 @@ pub async fn serve_with<S: Platform>(
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
-pub fn build_full<S: Platform>(
+pub fn build_full(
     config: AppConfig,
-    backend: std::sync::Arc<S>,
+    backend: std::sync::Arc<EhrbaseService>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<axum::Router, ServeError> {
@@ -150,8 +132,7 @@ fn build_authenticator(
     config: &AppConfig,
     authz: Option<&AuthzHandle>,
 ) -> Result<std::sync::Arc<Authenticator>, ServeError> {
-    let role_claims =
-        authz.map_or_else(access::authz::default_role_claims, AuthzHandle::role_claims);
+    let role_claims = authz.map_or_else(default_role_claims, AuthzHandle::role_claims);
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 
@@ -163,9 +144,9 @@ fn build_authenticator(
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
-pub async fn serve_full<S: Platform>(
+pub async fn serve_full(
     config: AppConfig,
-    backend: std::sync::Arc<S>,
+    backend: std::sync::Arc<EhrbaseService>,
     authz: Option<std::sync::Arc<AuthzHandle>>,
     observability: Observability,
 ) -> Result<(), ServeError> {

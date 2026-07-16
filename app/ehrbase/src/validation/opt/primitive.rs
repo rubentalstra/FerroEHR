@@ -147,7 +147,7 @@ fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> Violation {
     )
 }
 
-// ─── C_DOMAIN_TYPE assumed-value + property (T10) ────────────────────────────────
+// ─── C_DOMAIN_TYPE assumed-value + property ────────────────────────────────
 
 /// `C_DEFINED_OBJECT` invariant `Assumed_value_valid` for the code-carrying
 /// domain types (`C_CODE_PHRASE` / `C_CODE_REFERENCE`): the assumed code must be

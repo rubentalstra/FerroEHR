@@ -51,8 +51,9 @@
 
 use axum::response::{IntoResponse, Response};
 
-use crate::extensions::access::authz::{
-    AccessMode, Attr, AuthzRequest, Decision, ResourceKind, access_of, kind_of,
+use crate::extensions::access::authz::classify::{access_of, kind_of};
+use crate::extensions::access::authz::request::{
+    AccessMode, Attr, AuthzRequest, Decision, ResourceKind,
 };
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
@@ -61,13 +62,12 @@ use crate::api::RequestParts;
 use crate::extensions::access::authn::{Principal, current_principal};
 use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
-use crate::smart::config::SmartConfig;
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
 use crate::smart::scope::SmartScope;
 use crate::state::AppState;
 use crate::{negotiate, params};
+use ehrbase::config::smart::SmartConfig;
 
 /// Whether an operation is ABAC-checked, and when.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -102,8 +102,8 @@ fn mode_of(op: &str) -> Mode {
 /// to thread into the SQL, and whether the executor should collect the touched
 /// EHR/template sets for the post-check. `Ok((None, false))` when ABAC is off.
 /// `Err(response)` is a ready 403 (a missing configured patient claim).
-pub(crate) fn query_pre<S: Platform>(
-    state: &AppState<S>,
+pub(crate) fn query_pre(
+    state: &AppState,
     op: &'static str,
 ) -> Result<(Option<String>, bool), Response> {
     let Some(handle) = state.authz() else {
@@ -126,10 +126,10 @@ pub(crate) fn query_pre<S: Platform>(
 /// touched template set. An empty result permits (v1 parity). The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
-pub(crate) async fn query_post<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn query_post(
+    state: &AppState,
     op: &'static str,
-    outcome: &ehrbase_sm::QueryOutcome,
+    outcome: &ehrbase::service::query::request::QueryOutcome,
 ) -> Result<(), Response> {
     let Some(handle) = state.authz() else {
         return Ok(());
@@ -161,8 +161,8 @@ pub(crate) async fn query_post<S: Platform>(
 
 /// Pre-check the request. `Err(response)` short-circuits the dispatch with a
 /// ready 403/500; `Ok(())` lets it proceed.
-pub(crate) async fn pre_check<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn pre_check(
+    state: &AppState,
     op: &'static str,
     parts: &RequestParts,
 ) -> Result<(), Response> {
@@ -223,11 +223,7 @@ pub(crate) async fn pre_check<S: Platform>(
 }
 
 /// Post-check a successful response using the resource ids the dispatch recorded.
-pub(crate) async fn post_check<S: Platform>(
-    state: &AppState<S>,
-    op: &'static str,
-    resp: Response,
-) -> Response {
+pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Response) -> Response {
     if !resp.status().is_success() {
         return resp;
     }
@@ -301,7 +297,7 @@ fn resolve_patient_claim(
     let Some(claim) = &abac.patient_claim else {
         return Ok(None);
     };
-    match crate::extensions::access::authz::claim_string(&principal.claims, claim) {
+    match crate::extensions::access::authz::roles::claim_string(&principal.claims, claim) {
         Some(v) => Ok(Some(v)),
         None => Err(forbidden(
             principal,
@@ -314,7 +310,7 @@ fn resolve_patient_claim(
 fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
     abac.organization_claim
         .as_ref()
-        .and_then(|c| crate::extensions::access::authz::claim_string(&principal.claims, c))
+        .and_then(|c| crate::extensions::access::authz::roles::claim_string(&principal.claims, c))
 }
 
 /// The full pre-check patient gate (§5.7): the subject match for target-EHR ops,
@@ -548,10 +544,10 @@ fn attr_single(attr: &Attr) -> Option<&str> {
 /// The SMART configuration for this server, or `None` when SMART is disabled.
 ///
 /// SMART is off by default and produces zero wire drift when disabled
-/// (`crate::smart::config::SmartConfig`), so the gate below is inert unless an
+/// (`ehrbase::config::smart::SmartConfig`), so the gate below is inert unless an
 /// operator opts in via `EHRBASE_REST_SMART__ENABLED` (the `smart` field on
 /// `crate::config::AppConfig`).
-fn smart_config<S: Platform>(state: &AppState<S>) -> Option<&SmartConfig> {
+fn smart_config(state: &AppState) -> Option<&SmartConfig> {
     let cfg = &state.config().smart;
     cfg.enabled.then_some(cfg)
 }
@@ -561,8 +557,8 @@ fn smart_config<S: Platform>(state: &AppState<S>) -> Option<&SmartConfig> {
 /// binds the launch context to the target EHR through the ABAC [`subject_gate`].
 /// Inert when SMART is disabled. Each deny carries the principal (audited by the
 /// ATNA layer).
-async fn smart_gate<S: Platform>(
-    state: &AppState<S>,
+async fn smart_gate(
+    state: &AppState,
     abac: &AbacGate,
     principal: &Principal,
     op: &str,

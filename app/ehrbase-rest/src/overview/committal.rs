@@ -60,7 +60,7 @@ use serde_json::json;
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase_sm::UpdateVersion;
+use ehrbase::service::version_update::UpdateVersion;
 
 /// New-form (development edition) header names — the attribute path lives in the
 /// value.
@@ -268,7 +268,7 @@ fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ehrbase_sm::UpdateAudit;
+    use ehrbase::service::version_update::UpdateAudit;
     use http::{HeaderValue, header};
 
     fn base_uv() -> UpdateVersion {

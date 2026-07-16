@@ -1,5 +1,5 @@
 #![allow(clippy::doc_markdown)] // prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)
-//! C14N byte-parity gate for canonical XML (F-05-03).
+//! C14N byte-parity gate for canonical XML.
 //!
 //! The other two XML gates (`xml_roundtrip`, `xml_ehrbase`) prove only internal
 //! `ToXml`↔`FromXml` self-consistency. This gate proves that our `ToXml` output

@@ -18,7 +18,7 @@ use super::primitive::{
     valid_date_pattern, valid_date_time_pattern, valid_duration_pattern, valid_time_pattern,
 };
 use super::validate_opt_artefact;
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
 
 fn manifest() -> &'static str {
     env!("CARGO_MANIFEST_DIR")

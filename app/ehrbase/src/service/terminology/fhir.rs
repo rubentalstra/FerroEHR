@@ -1,9 +1,9 @@
-//! [`FhirTerminologyProvider`] — a FHIR R4 terminology-server client that
-//! implements the SM `I_TERMINOLOGY_SERVICE` trait ([`ehrbase_sm::TerminologyService`])
-//! against a remote server, over `reqwest` (rustls).
+//! [`FhirTerminologyProvider`] — a FHIR R4 terminology-server client
+//! realizing the SM `I_TERMINOLOGY_SERVICE` calls against a remote server,
+//! over `reqwest` (rustls).
 //!
-//! The remote provider is one of the two the composing [`TerminologyService`]
-//! impl (in `super`) routes among; the in-process `openehr-term` bundle
+//! The remote provider is one of the two the routing layer
+//! ([`super::routing`]) selects among; the in-process `openehr-term` bundle
 //! ([`super::bundle`]) is the enumerable local default. `arch-overview
 //! master12-terminology.adoc` models this concrete backend as an external
 //! "terminology query server", so it belongs with the interface realization.
@@ -12,8 +12,6 @@
 //! `docs/design/terminology-server-integration.md` (the HAPI-FHIR/Snowstorm
 //! server it points at). SM contract:
 //! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`.
-//!
-//! [`TerminologyService`]: ehrbase_sm::TerminologyService
 //!
 //! # SM call → FHIR operation mapping
 //!
@@ -27,42 +25,45 @@
 //! PORT NOTE (enumerating calls — G-4): `get_terminology_ids`,
 //! `get_terminology_description` and `has_terminology` have no faithful FHIR
 //! operation — a FHIR TS is a validation/expansion backend, not an enumerable
-//! openEHR terminology bundle. They keep the trait's `NotImplemented` default;
-//! the composing impl routes them to the in-process `openehr-term` bundle, which
-//! remains the enumerable terminology.
+//! openEHR terminology bundle. The routing layer answers them from the
+//! in-process `openehr-term` bundle, which remains the enumerable
+//! terminology; this provider's [`FhirTerminologyProvider::get_terminology_description`]
+//! is an explicit `NotImplemented`.
 //!
 //! PORT NOTE (temporal — G-1): the SM `at_date` (`i_terminology_service.adoc`
 //! `has_term`/`get_term`/`value_set_validate`, an `Iso8601_date`) selects the
-//! terminology as it stood on a date. It is forwarded to the server as the FHIR
-//! `date` parameter of `$lookup`/`$validate-code`/`$expand`.
+//! terminology as it stood on a date. It is forwarded to the server as the
+//! FHIR `date` parameter of `$lookup`/`$validate-code`/`$expand`.
 //!
-//! PORT NOTE (hierarchy — G-2/G-5): a FHIR `ValueSet/$expand` may nest members
-//! under `contains`. We keep the flat `Terminology_extract._terms_` (the
-//! membership view) **and** preserve the tree in
+//! PORT NOTE (hierarchy — G-2/G-5): a FHIR `ValueSet/$expand` may nest
+//! members under `contains`. We keep the flat `Terminology_extract._terms_`
+//! (the membership view) **and** preserve the tree in
 //! `Terminology_extract._relationships_` as `Term_relationship`s under the
-//! [`CHILD_RELATION`] name (`terminology_extract.adoc` §Structured value set),
-//! defined in `_relations_` by the FHIR `child` concept property URI
+//! [`CHILD_RELATION`] name (`terminology_extract.adoc` §Structured value
+//! set), defined in `_relations_` by the FHIR `child` concept property URI
 //! ([`FHIR_CHILD_PROPERTY`]) — an `external_code` relation
 //! (`terminology_relation.adoc` `Inv_valid_definition`).
 //!
 //! PORT NOTE (errors): a value set / terminology / code the server does not
-//! know (HTTP `404`, or `$validate-code result=false` with no membership) is a
-//! `Pre_has_*` precondition failure → [`CallStatusType::VersionedObjectDoesNotExist`]
-//! (the `404` reading, matching the bundle provider in [`super::bundle`]). A
-//! transport fault (connect/read timeout, `5xx`, malformed body) →
-//! [`SmError::exception`] (`500`); the fail-open vs fail-closed decision belongs
-//! to the caller (the composition-validation walker,
-//! `ExternalTerminologyConfig::fail_on_error`), never to the raw provider.
+//! know (HTTP `404`, or `$validate-code result=false` with no membership) is
+//! a `Pre_has_*` precondition failure →
+//! [`CallStatusType::VersionedObjectDoesNotExist`] (the `404` reading,
+//! matching the bundle provider in [`super::bundle`]). A transport fault
+//! (connect/read timeout, `5xx`, malformed body) → [`SmError::exception`]
+//! (`500`); the fail-open vs fail-closed decision belongs to the caller (the
+//! composition-validation walker,
+//! [`super::ExternalTerminologyConfig::fail_on_error`]), never to the raw
+//! provider.
 
+use std::collections::BTreeMap;
 use std::time::Duration;
 
-use async_trait::async_trait;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 
-use ehrbase_sm::{
-    CallStatusType, DefinedTerm, SmError, TermCode, TermEntry, TermRelationship,
-    TerminologyDescription, TerminologyExtract, TerminologyRelation,
+use crate::service::status::{CallStatusType, SmError};
+use crate::service::terminology::types::{
+    DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    TerminologyRelation,
 };
 
 use super::config::{FhirOperation, FhirProviderConfig};
@@ -71,11 +72,12 @@ use super::config::{FhirOperation, FhirProviderConfig};
 /// parent→child `contains` nesting is preserved (`terminology_extract.adoc`).
 const CHILD_RELATION: &str = "child";
 /// The FHIR R4 concept-property URI that defines the parent→child relation,
-/// carried as the `Terminology_relation.external_code` (`terminology_relation.adoc`).
+/// carried as the `Terminology_relation.external_code`
+/// (`terminology_relation.adoc`).
 const FHIR_CHILD_PROPERTY: &str = "http://hl7.org/fhir/concept-properties#child";
 
-/// A FHIR R4 terminology-server client implementing the SM
-/// `I_TERMINOLOGY_SERVICE` interface against a remote server.
+/// A FHIR R4 terminology-server client realizing the SM
+/// `I_TERMINOLOGY_SERVICE` lookup/validation calls against a remote server.
 #[derive(Debug, Clone)]
 pub struct FhirTerminologyProvider {
     client: reqwest::Client,
@@ -91,8 +93,9 @@ impl FhirTerminologyProvider {
     /// Build a provider from its configuration.
     ///
     /// # Errors
-    /// [`SmError::exception`] if the URL is empty or the `reqwest` client cannot
-    /// be built (e.g. TLS backend init failure).
+    ///
+    /// [`SmError::exception`] if the URL is empty (after trimming) or the
+    /// `reqwest` client cannot be built (e.g. TLS backend init failure).
     pub fn new(name: &str, cfg: &FhirProviderConfig) -> Result<Self, SmError> {
         let base = cfg.url.trim().trim_end_matches('/').to_owned();
         if base.is_empty() {
@@ -119,10 +122,15 @@ impl FhirTerminologyProvider {
 
     /// GET a FHIR operation with query params, returning the parsed body.
     ///
-    /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition
-    /// caller maps to `VersionedObjectDoesNotExist`); any other non-2xx or a
-    /// transport/parse fault → `Err(SmError::exception)`.
-    async fn get<T: for<'de> Deserialize<'de>>(
+    /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition the
+    /// caller maps to `VersionedObjectDoesNotExist`).
+    ///
+    /// # Errors
+    ///
+    /// [`SmError::exception`] on an invalid operation URL, a transport fault
+    /// (connect/read timeout), any other non-2xx status, or a body that does
+    /// not parse as `T`.
+    pub async fn get<T: for<'de> Deserialize<'de>>(
         &self,
         op_path: &str,
         query: &[(&str, &str)],
@@ -166,6 +174,7 @@ impl FhirTerminologyProvider {
         Ok(Some(parsed))
     }
 
+    /// A classified transport-fault exception (timeout / connect / other).
     fn transport_error(&self, op_path: &str, e: &reqwest::Error) -> SmError {
         let kind = if e.is_timeout() {
             "timeout"
@@ -180,6 +189,7 @@ impl FhirTerminologyProvider {
         ))
     }
 
+    /// A `Pre_has_*` precondition failure (`VersionedObjectDoesNotExist`).
     fn not_found(&self, what: &str, id: &str) -> SmError {
         SmError::new(
             CallStatusType::VersionedObjectDoesNotExist,
@@ -190,8 +200,13 @@ impl FhirTerminologyProvider {
         )
     }
 
-    /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set is
-    /// unknown (`404`). Forwards `at_date` as the FHIR `date` parameter (G-1).
+    /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set
+    /// is unknown (`404`). Forwards `at_date` as the FHIR `date` parameter
+    ///.
+    ///
+    /// # Errors
+    ///
+    /// As [`FhirTerminologyProvider::get`].
     async fn expand(
         &self,
         value_set_url: &str,
@@ -203,18 +218,21 @@ impl FhirTerminologyProvider {
         }
         self.get("/ValueSet/$expand", &query).await
     }
-}
 
-#[async_trait]
-impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     /// `value_set_validate` → FHIR `ValueSet/$validate-code` (or `$expand` +
     /// membership when the provider is configured for `expand`).
     ///
     /// `terminology_id` is passed as the FHIR `system`; `value_set_id` as the
-    /// value-set `url`; `at_date` as the FHIR `date` (G-1). An unknown value set
-    /// → `VersionedObjectDoesNotExist` (`Pre_has_terminology`); a known value set
+    /// value-set `url`; `at_date` as the FHIR `date`. A known value set
     /// with a non-member code → `Ok(false)`.
-    async fn value_set_validate(
+    ///
+    /// # Errors
+    ///
+    /// Precondition on an empty `candidate_code`;
+    /// `VersionedObjectDoesNotExist` on an unknown value set (`404`);
+    /// exception on a transport fault or a `$validate-code` response with no
+    /// `result` parameter.
+    pub async fn value_set_validate(
         &self,
         terminology_id: &str,
         value_set_id: &str,
@@ -256,9 +274,15 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     }
 
     /// `get_value_set` → FHIR `ValueSet/$expand`, mapped to a
-    /// [`TerminologyExtract`] (flat `terms` for membership; the `contains` tree
-    /// preserved as `relationships` — G-2/G-5).
-    async fn get_value_set(
+    /// [`TerminologyExtract`] (flat `terms` for membership; the `contains`
+    /// tree preserved as `relationships` — G-2/G-5). `terminology_id` is
+    /// unused — the value set is identified by its URL (`value_set_code`).
+    ///
+    /// # Errors
+    ///
+    /// `VersionedObjectDoesNotExist` when `$expand` answers `404`; exception
+    /// on a transport fault / non-2xx / malformed response.
+    pub async fn get_value_set(
         &self,
         _terminology_id: &str,
         value_set_code: &str,
@@ -270,10 +294,16 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
         Ok(vs.into_extract(value_set_code))
     }
 
-    /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`, `codeB` =
-    /// `candidate_child_code`). True iff the outcome is `subsumes` — the SM's
-    /// *strict* subsumption (`equivalent` is excluded).
-    async fn subsumes(
+    /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`,
+    /// `codeB` = `candidate_child_code`). True iff the outcome is `subsumes`
+    /// — the SM's *strict* subsumption (`equivalent` is excluded).
+    ///
+    /// # Errors
+    ///
+    /// `VersionedObjectDoesNotExist` when the server answers `404` for the
+    /// terminology; exception on a transport fault or a response with no
+    /// `outcome` parameter.
+    pub async fn subsumes(
         &self,
         terminology_id: &str,
         ref_code: &str,
@@ -299,10 +329,15 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
         Ok(outcome == "subsumes")
     }
 
-    /// `has_term` → FHIR `CodeSystem/$lookup`: `true` when the lookup resolves
-    /// (`200`), `false` when the code is unknown (`404`). `at_date` → the FHIR
-    /// `date` parameter (G-1).
-    async fn has_term(
+    /// `has_term` → FHIR `CodeSystem/$lookup`: `true` when the lookup
+    /// resolves (`200`), `false` when the code is unknown (`404`). `at_date`
+    /// → the FHIR `date` parameter.
+    ///
+    /// # Errors
+    ///
+    /// Exception on a transport fault, any non-2xx status other than
+    /// `404`/`410`, or a malformed response body.
+    pub async fn has_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -317,15 +352,21 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     }
 
     /// `get_term` → FHIR `CodeSystem/$lookup`, mapped to a single-term
-    /// [`TerminologyExtract`] (the `display` becomes the term text). `at_date` →
-    /// the FHIR `date` parameter (G-1).
+    /// [`TerminologyExtract`] (the `display` becomes the term text; a lookup
+    /// with no `display` falls back to the code itself). `at_date` → the FHIR
+    /// `date` parameter.
     ///
-    /// PORT NOTE (attributes — G-3): the SM `attributes` allow-list filters the
-    /// meta-model attributes returned. `$lookup` returns only the concept
+    /// PORT NOTE (attributes — G-3): the SM `attributes` allow-list filters
+    /// the meta-model attributes returned. `$lookup` returns only the concept
     /// `display` (mapped to the term text), so there is nothing further to
     /// filter; `attributes` is accepted and has no effect on the returned
     /// extract.
-    async fn get_term(
+    ///
+    /// # Errors
+    ///
+    /// `VersionedObjectDoesNotExist` when `$lookup` answers `404` (unknown
+    /// term); exception on a transport fault / non-2xx / malformed response.
+    pub async fn get_term(
         &self,
         terminology_id: &str,
         code: &str,
@@ -361,8 +402,14 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
     }
 
     /// `has_value_set` → FHIR `ValueSet/$expand`: `true` when the value set
-    /// expands (`200`), `false` when it is unknown (`404`).
-    async fn has_value_set(
+    /// expands (`200`), `false` when it is unknown (`404`). `terminology_id`
+    /// is unused — the value set is identified by its URL.
+    ///
+    /// # Errors
+    ///
+    /// Exception on a transport fault, any non-2xx status other than
+    /// `404`/`410`, or a malformed response body.
+    pub async fn has_value_set(
         &self,
         _terminology_id: &str,
         value_set_code: &str,
@@ -370,9 +417,13 @@ impl ehrbase_sm::TerminologyService for FhirTerminologyProvider {
         Ok(self.expand(value_set_code, None).await?.is_some())
     }
 
-    /// `get_terminology_description` → not modelled for a FHIR TS (PORT NOTE at
-    /// module head — G-4).
-    async fn get_terminology_description(
+    /// `get_terminology_description` → not modelled for a FHIR TS (PORT NOTE
+    /// at module head — G-4; the routing layer answers this from the bundle).
+    ///
+    /// # Errors
+    ///
+    /// Always [`CallStatusType::NotImplemented`].
+    pub fn get_terminology_description(
         &self,
         _terminology_id: &str,
     ) -> Result<TerminologyDescription, SmError> {
@@ -454,16 +505,17 @@ struct FhirContains {
 }
 
 impl FhirValueSet {
-    /// Whether `code` appears anywhere in the (possibly hierarchical) expansion.
+    /// Whether `code` appears anywhere in the (possibly hierarchical)
+    /// expansion.
     fn contains_code(&self, code: &str) -> bool {
         self.expansion
             .as_ref()
             .is_some_and(|e| e.contains.iter().any(|c| c.contains_code(code)))
     }
 
-    /// Map the expansion into a [`TerminologyExtract`]: a flat `terms` map keyed
-    /// by code (the membership view) plus, when the expansion nests members, the
-    /// parent→child tree preserved as `relationships` (G-2/G-5).
+    /// Map the expansion into a [`TerminologyExtract`]: a flat `terms` map
+    /// keyed by code (the membership view) plus, when the expansion nests
+    /// members, the parent→child tree preserved as `relationships`.
     fn into_extract(self, terminology_id: &str) -> TerminologyExtract {
         let mut terms = BTreeMap::new();
         let mut relationships = Vec::new();
@@ -472,8 +524,8 @@ impl FhirValueSet {
                 c.collect(&mut terms, &mut relationships);
             }
         }
-        // The `child` relation is defined by the FHIR concept-property URI (an
-        // `external_code` relation; `terminology_relation.adoc`
+        // The `child` relation is defined by the FHIR concept-property URI
+        // (an `external_code` relation; `terminology_relation.adoc`
         // `Inv_valid_definition`), present only when a hierarchy was emitted.
         let relations = (!relationships.is_empty()).then(|| {
             let mut m = BTreeMap::new();
@@ -498,13 +550,14 @@ impl FhirValueSet {
 }
 
 impl FhirContains {
+    /// Whether `code` is this member or any descendant.
     fn contains_code(&self, code: &str) -> bool {
         self.code.as_deref() == Some(code) || self.contains.iter().any(|c| c.contains_code(code))
     }
 
-    /// Collect this member (and its descendants) into the flat `terms` map, and
-    /// record a `Term_relationship` from this member to each direct child so the
-    /// `$expand` hierarchy is not lost (G-2/G-5).
+    /// Collect this member (and its descendants) into the flat `terms` map,
+    /// and record a `Term_relationship` from this member to each direct child
+    /// so the `$expand` hierarchy is not lost.
     fn collect(&self, out: &mut BTreeMap<String, TermEntry>, rels: &mut Vec<TermRelationship>) {
         if let Some(code) = &self.code {
             let entry = match &self.display {
@@ -586,8 +639,9 @@ mod tests {
 
     #[test]
     fn expansion_hierarchy_preserved_as_relationships() {
-        // G-2/G-5: the parent→child `contains` tree survives as relationships,
-        // with the `child` relation defined by its FHIR property URI.
+        // G-2/G-5: the parent→child `contains` tree survives as
+        // relationships, with the `child` relation defined by its FHIR
+        // property URI.
         let vs: FhirValueSet = serde_json::from_str(
             r#"{"resourceType":"ValueSet","expansion":{"contains":[
                 {"system":"s","code":"L","display":"Lower","contains":[

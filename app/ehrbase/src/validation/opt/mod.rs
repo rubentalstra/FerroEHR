@@ -14,22 +14,26 @@
 //! alternation) and the shared context; the per-*kind of check* rules live in
 //! sibling modules along the AOM2/08 catalogue's own section axis:
 //!
-//! - [`invariants`] — AOM 1.4 constraint-model per-node-kind invariants
+//! - `invariants` — AOM 1.4 constraint-model per-node-kind invariants
 //!   (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
 //!   VDFAI, STCDC);
-//! - [`rm_conformance`] — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
+//! - `rm_conformance` — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
 //!   `openehr_rm::model`;
-//! - [`primitive`] — `C_PRIMITIVE` + temporal/duration patterns + the
+//! - `primitive` — `C_PRIMITIVE` + temporal/duration patterns + the
 //!   `C_DOMAIN_TYPE` assumed-value rules;
-//! - [`terminology`] — VATID/VTTBK/VTCBK/VTLC + code collection;
-//! - [`interval`] — the BASE interval / multiplicity primitives (T20).
+//! - `terminology` — VATID/VTTBK/VTCBK/VTLC + code collection;
+//! - `interval` — the BASE interval / multiplicity primitives.
 //!
 //! It does **not** run `valid_value` (that is instance-time — surface B in
 //! [`crate::validation`]). Every violation is reported through
-//! [`ServiceError::sm`] with `CallStatusType::PreconditionViolation` (→ ITS-REST
+//! `ServiceError::sm` with `CallStatusType::PreconditionViolation` (→ ITS-REST
 //! `400 Bad Request`), carrying the AOM2 rule code in the message. `400` is
 //! what the CNF `I_DEFINITION_ADL14` upload/validate suites assert for an
 //! invalid OPT (`CNF/tests/platform/robot/I_DEFINITION_ADL14/validate_opt/…`).
+//!
+//! The check sequence (terminology sets first, then the walk; per node:
+//! VCORM → VATID → per-kind invariants → recurse) reports the **first**
+//! violation found — the ordering is part of the behavioural contract.
 
 mod interval;
 mod invariants;
@@ -41,18 +45,17 @@ use std::collections::HashSet;
 
 use openehr_its::opt14::{CAttribute, CObject, Intervalofinteger, OperationalTemplate};
 
-use ehrbase_sm::CallStatusType;
-
-use crate::service::ServiceError;
+use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 
 /// One artefact-validity violation: the AOM2 rule code + a human detail.
-pub(super) struct Violation {
+struct Violation {
     code: &'static str,
     detail: String,
 }
 
 impl Violation {
-    pub(super) fn new(code: &'static str, detail: impl Into<String>) -> Self {
+    fn new(code: &'static str, detail: impl Into<String>) -> Self {
         Self {
             code,
             detail: detail.into(),
@@ -62,17 +65,89 @@ impl Violation {
 
 /// The per-walk validation context: the globally-collected code sets plus
 /// whether the artefact declares any `constraint_definitions` at all (which
-/// gates VACDF — see [`invariants::check_constraint_ref`]).
-pub(super) struct Ctx {
-    pub(super) defined_at: HashSet<String>,
-    pub(super) defined_ac: HashSet<String>,
-    pub(super) has_constraint_defs: bool,
+/// gates VACDF — see `invariants::check_constraint_ref`).
+struct Ctx {
+    defined_at: HashSet<String>,
+    defined_ac: HashSet<String>,
+    has_constraint_defs: bool,
+}
+
+/// The `C_OBJECT` fields every structural rule interrogates, extracted once
+/// per node — the `opt14` `C_OBJECT` family is a closed 13-variant set, so one
+/// exhaustive match here replaces a per-field accessor match per rule.
+struct NodeView<'a> {
+    rm_type: &'a str,
+    node_id: &'a str,
+    occurrences: &'a Intervalofinteger,
+    /// Empty for the leaf kinds (only `C_ARCHETYPE_ROOT` / `C_COMPLEX_OBJECT`
+    /// / `T_COMPLEX_OBJECT` carry attribute constraints).
+    attributes: &'a [CAttribute],
+}
+
+impl<'a> NodeView<'a> {
+    fn of(obj: &'a CObject) -> Self {
+        match obj {
+            CObject::ArchetypeInternalRef(o) => {
+                Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences)
+            }
+            CObject::ArchetypeSlot(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::ConstraintRef(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CArchetypeRoot(o) => Self {
+                rm_type: &o.rm_type_name,
+                node_id: &o.node_id,
+                occurrences: &o.occurrences,
+                attributes: &o.attributes,
+            },
+            CObject::CCodePhrase(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CCodeReference(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CComplexObject(o) => Self {
+                rm_type: &o.rm_type_name,
+                node_id: &o.node_id,
+                occurrences: &o.occurrences,
+                attributes: &o.attributes,
+            },
+            CObject::CDefinedObject(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CDvOrdinal(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CDvQuantity(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CDvState(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::CPrimitiveObject(o) => Self::leaf(&o.rm_type_name, &o.node_id, &o.occurrences),
+            CObject::TComplexObject(o) => Self {
+                rm_type: &o.rm_type_name,
+                node_id: &o.node_id,
+                occurrences: &o.occurrences,
+                attributes: &o.attributes,
+            },
+        }
+    }
+
+    fn leaf(rm_type: &'a str, node_id: &'a str, occurrences: &'a Intervalofinteger) -> Self {
+        Self {
+            rm_type,
+            node_id,
+            occurrences,
+            attributes: &[],
+        }
+    }
+}
+
+/// The child objects constrained under a `C_ATTRIBUTE` (single- and
+/// multiple-valued alike).
+fn attribute_children(attr: &CAttribute) -> &[CObject] {
+    match attr {
+        CAttribute::CSingleAttribute(a) => &a.children,
+        CAttribute::CMultipleAttribute(a) => &a.children,
+    }
 }
 
 /// Validate an uploaded OPT 1.4 artefact against the AOM2/08 standalone-artefact
 /// validity rules. The first violation found is returned as a `400` carrying the
 /// AOM2 rule code (`"<CODE>: <detail>"`); a fully valid artefact returns `Ok`.
-pub(crate) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
+///
+/// # Errors
+///
+/// `ServiceError::sm(PreconditionViolation, …)` — [`ServiceError::BadRequest`]
+/// on the wire (ITS-REST `400`) — for the first violation found.
+pub(super) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     check(opt).map_err(|v| {
         ServiceError::sm(
             CallStatusType::PreconditionViolation,
@@ -159,18 +234,17 @@ fn walk_attribute(attr: &CAttribute, parent_rm: &str, ctx: &Ctx) -> Result<(), V
 
 /// Check one child object node, then recurse into its own attributes.
 fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
-    let rm_type = co_rm_type(obj);
-    let node_id = co_node_id(obj);
+    let view = NodeView::of(obj);
 
     // VCORM: object constraint type-name existence. A primitive-object node
     // carries a foundation primitive type name (STRING, INTEGER, …) which is
     // intentionally absent from the RM model, so it is exempt.
     if !matches!(obj, CObject::CPrimitiveObject(_)) {
-        rm_conformance::check_object_type(rm_type, node_id)?;
+        rm_conformance::check_object_type(view.rm_type, view.node_id)?;
     }
 
     // VATID: every at-code used as a node_id must be defined in terminology.
-    terminology::check_node_id(node_id, &ctx.defined_at)?;
+    terminology::check_node_id(view.node_id, &ctx.defined_at)?;
 
     // AOM 1.4 per-node-kind invariants (the constraint-model class files).
     match obj {
@@ -183,95 +257,28 @@ fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
         CObject::ConstraintRef(r) => invariants::check_constraint_ref(r, ctx)?,
         CObject::CPrimitiveObject(p) => {
             if let Some(item) = &p.item {
-                primitive::check_primitive(item, node_id)?;
+                primitive::check_primitive(item, view.node_id)?;
             }
         }
         CObject::CCodePhrase(c) => {
-            invariants::check_code_list(&c.code_list, node_id)?;
-            primitive::check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
+            invariants::check_code_list(&c.code_list, view.node_id)?;
+            primitive::check_assumed_code(c.assumed_value.as_ref(), &c.code_list, view.node_id)?;
         }
         CObject::CCodeReference(c) => {
-            invariants::check_code_list(&c.code_list, node_id)?;
-            primitive::check_assumed_code(c.assumed_value.as_ref(), &c.code_list, node_id)?;
+            invariants::check_code_list(&c.code_list, view.node_id)?;
+            primitive::check_assumed_code(c.assumed_value.as_ref(), &c.code_list, view.node_id)?;
         }
-        CObject::CDvOrdinal(c) => primitive::check_dv_ordinal(c, node_id)?,
-        CObject::CDvQuantity(c) => primitive::check_dv_quantity(c, node_id)?,
+        CObject::CDvOrdinal(c) => primitive::check_dv_ordinal(c, view.node_id)?,
+        CObject::CDvQuantity(c) => primitive::check_dv_quantity(c, view.node_id)?,
         _ => {}
     }
 
     // Recurse into a nested C_ARCHETYPE_ROOT's terminology scope-wise via the
     // global set already collected; structurally we just descend its attributes.
-    for attr in co_attributes(obj) {
-        walk_attribute(attr, rm_type, ctx)?;
+    for attr in view.attributes {
+        walk_attribute(attr, view.rm_type, ctx)?;
     }
     Ok(())
-}
-
-// ─── C_OBJECT accessors (shared across the pass) ─────────────────────────────────
-
-pub(super) fn co_rm_type(obj: &CObject) -> &str {
-    match obj {
-        CObject::ArchetypeInternalRef(o) => &o.rm_type_name,
-        CObject::ArchetypeSlot(o) => &o.rm_type_name,
-        CObject::ConstraintRef(o) => &o.rm_type_name,
-        CObject::CArchetypeRoot(o) => &o.rm_type_name,
-        CObject::CCodePhrase(o) => &o.rm_type_name,
-        CObject::CCodeReference(o) => &o.rm_type_name,
-        CObject::CComplexObject(o) => &o.rm_type_name,
-        CObject::CDefinedObject(o) => &o.rm_type_name,
-        CObject::CDvOrdinal(o) => &o.rm_type_name,
-        CObject::CDvQuantity(o) => &o.rm_type_name,
-        CObject::CDvState(o) => &o.rm_type_name,
-        CObject::CPrimitiveObject(o) => &o.rm_type_name,
-        CObject::TComplexObject(o) => &o.rm_type_name,
-    }
-}
-
-pub(super) fn co_node_id(obj: &CObject) -> &str {
-    match obj {
-        CObject::ArchetypeInternalRef(o) => &o.node_id,
-        CObject::ArchetypeSlot(o) => &o.node_id,
-        CObject::ConstraintRef(o) => &o.node_id,
-        CObject::CArchetypeRoot(o) => &o.node_id,
-        CObject::CCodePhrase(o) => &o.node_id,
-        CObject::CCodeReference(o) => &o.node_id,
-        CObject::CComplexObject(o) => &o.node_id,
-        CObject::CDefinedObject(o) => &o.node_id,
-        CObject::CDvOrdinal(o) => &o.node_id,
-        CObject::CDvQuantity(o) => &o.node_id,
-        CObject::CDvState(o) => &o.node_id,
-        CObject::CPrimitiveObject(o) => &o.node_id,
-        CObject::TComplexObject(o) => &o.node_id,
-    }
-}
-
-pub(super) fn co_occurrences(obj: &CObject) -> &Intervalofinteger {
-    match obj {
-        CObject::ArchetypeInternalRef(o) => &o.occurrences,
-        CObject::ArchetypeSlot(o) => &o.occurrences,
-        CObject::ConstraintRef(o) => &o.occurrences,
-        CObject::CArchetypeRoot(o) => &o.occurrences,
-        CObject::CCodePhrase(o) => &o.occurrences,
-        CObject::CCodeReference(o) => &o.occurrences,
-        CObject::CComplexObject(o) => &o.occurrences,
-        CObject::CDefinedObject(o) => &o.occurrences,
-        CObject::CDvOrdinal(o) => &o.occurrences,
-        CObject::CDvQuantity(o) => &o.occurrences,
-        CObject::CDvState(o) => &o.occurrences,
-        CObject::CPrimitiveObject(o) => &o.occurrences,
-        CObject::TComplexObject(o) => &o.occurrences,
-    }
-}
-
-const NO_ATTRS: &[CAttribute] = &[];
-
-pub(super) fn co_attributes(obj: &CObject) -> &[CAttribute] {
-    match obj {
-        CObject::CArchetypeRoot(o) => &o.attributes,
-        CObject::CComplexObject(o) => &o.attributes,
-        CObject::TComplexObject(o) => &o.attributes,
-        _ => NO_ATTRS,
-    }
 }
 
 #[cfg(test)]

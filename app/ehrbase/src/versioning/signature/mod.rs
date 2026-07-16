@@ -11,7 +11,7 @@
 //! - **digest** — `sha256:` + radix-64(SHA-256(canonical_form)): a
 //!   data-integrity check that needs no key management. master07 §Digital
 //!   Signature: "the encryption step might be omitted, resulting in a digest
-//!   only", i.e. a pure integrity check (S-42). The default.
+//!   only", i.e. a pure integrity check. The default.
 //! - **pgp** — an `OpenPGP` RFC 4880 detached signature (rPGP), ASCII-armored,
 //!   with a server-held private key: authentication + non-repudiation
 //!   (master06 §Digital Signature: the signature "is generated according to the
@@ -25,12 +25,7 @@
 //! JSON, which is deterministic and signature-independent. This module is
 //! agnostic to how that string is produced — it only signs/verifies it.
 
-mod config;
-mod key;
-mod signer;
-mod verify;
-
-pub use config::{Mode, SigningConfig, VerifyOnRead};
-pub use key::{KeyError, PgpKey, PgpSignError};
-pub use signer::{SignError, Signer, SigningError};
-pub use verify::Verdict;
+pub mod config;
+pub mod key;
+pub mod signer;
+pub mod verify;

@@ -35,8 +35,8 @@ impl Default for QueryConfig {
 }
 
 impl QueryConfig {
-    /// The per-query execution budget as a [`Duration`], or `None` when disabled
-    /// (`timeout_ms == 0`).
+    /// The per-query execution budget as a [`Duration`], or `None` when
+    /// disabled (`timeout_ms == 0`).
     #[must_use]
     pub fn timeout(&self) -> Option<Duration> {
         (self.timeout_ms > 0).then(|| Duration::from_millis(self.timeout_ms))

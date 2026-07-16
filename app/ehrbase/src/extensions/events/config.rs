@@ -7,10 +7,10 @@
 //! spawns the publisher.
 //!
 //! The commit path only writes `event_outbox` rows when an outbox consumer is
-//! configured on (this publisher OR the FHIR outbound emitter), gated in
-//! `main.rs` from `events.enabled || fhir.outbound.enabled`.
+//! configured on (this publisher OR the FHIR outbound emitter), gated in the
+//! binary from `events.enabled || fhir.outbound.enabled`.
 
-use ehrbase_sm::SecretUrl;
+use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
 /// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
@@ -21,7 +21,7 @@ const DEFAULT_EXCHANGE: &str = "ehrbase.events";
 const DEFAULT_BATCH_SIZE: i64 = 128;
 /// Default poll interval when the outbox is idle (ms).
 const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
-/// Default published-row retention window (days)
+/// Default published-row retention window (days).
 const DEFAULT_RETENTION_DAYS: i64 = 7;
 /// Default retention-prune cadence (seconds).
 const DEFAULT_PRUNE_INTERVAL_SECS: u64 = 3_600;
@@ -52,8 +52,7 @@ pub struct EventsConfig {
     pub prune_interval_secs: u64,
     /// Per-row publish retry count before backing off.
     pub publish_max_retries: usize,
-    /// Mount the `/admin/event_subscription` CRUD routes (was the REST
-    /// `EventSubscriptionConfig` toggle; regrouped here per P-8).
+    /// Mount the `/admin/event_subscription` CRUD routes.
     pub admin_api: bool,
 }
 

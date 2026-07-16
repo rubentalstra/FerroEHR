@@ -22,11 +22,11 @@
 //!   event OR a summary) overrides the schedule's "no events, absent summary →
 //!   accepted" row (register 12 G-7): the RM invariant is spec-authoritative
 //!   over the printed schedule table.
-//! - **EVENT (5, ECC-VAL-029..033)** — `state` existence (2, like OBSERVATION)
-//!   + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract `EVENT` accepts
-//!     either). The valid `INTERVAL_EVENT` is fabricated from the base
-//!     `POINT_EVENT` + the mandatory `width`/`math_function` (register 12 G-8,
-//!     [`build_interval_event`]).
+//! - **EVENT (5, ECC-VAL-029..033)** — `state` existence (2, like
+//!   OBSERVATION) + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract
+//!   `EVENT` accepts either). The valid `INTERVAL_EVENT` is fabricated from
+//!   the base `POINT_EVENT` + the mandatory `width`/`math_function`
+//!   ([`build_interval_event`]).
 //! - **`ITEM_STRUCTURE` (5, ECC-VAL-034..038)** — type narrowing driven against
 //!   `clinical_content_validation` (four EVALUATION `data` slots narrowed to
 //!   `ITEM_SINGLE`/`TREE`/`LIST`/`TABLE`): the vendored composition accepted, a
@@ -684,7 +684,7 @@ async fn drive_hist(
             mutate::set_array_count(h, "events", count);
             mutate::remove_field(h, "summary");
         }
-        // Events_valid override (G-7): summary is absent on every row, so 0
+        // Events_valid override: summary is absent on every row, so 0
         // events is rejected by the RM invariant even where the archetype
         // cardinality would permit it.
         let accepted = count >= 1 && events_ok(card, count) && !summary_mand;

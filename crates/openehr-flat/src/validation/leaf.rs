@@ -131,7 +131,7 @@ fn check_code_phrase(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) 
 }
 
 /// `DV_ORDINAL` / `DV_SCALE` against a `C_DV_ORDINAL` / `C_DV_SCALE` list
-/// (F-07-06). The constraint is a list of `ORDINAL{symbol: CODE_PHRASE, value:
+///. The constraint is a list of `ORDINAL{symbol: CODE_PHRASE, value:
 /// Integer}` (Real for `DV_SCALE`) entries, and validity requires the instance's
 /// **(symbol, value) PAIR** to match one entry — not the symbol alone nor the
 /// value alone (AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.ordinal.adoc`
@@ -770,7 +770,7 @@ fn check_string_constraints(
 /// `fancy-regex` PCRE engine is the fallback for real-world patterns using
 /// features `regex` rejects (e.g. backreferences).
 ///
-/// PORT NOTE (F-07-11): fail-closed is spec-mandated for a *non-match*, but a
+/// PORT NOTE: fail-closed is spec-mandated for a *non-match*, but a
 /// pattern **neither** engine can compile cannot be evaluated at all. Rather
 /// than reject a value against an uninterpretable constraint (which would
 /// over-reject valid data on an engine limitation, not a spec violation), such a

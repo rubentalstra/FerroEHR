@@ -1,7 +1,7 @@
 //! End-to-end service tests against a real PostgreSQL 18 (testcontainers):
 //! the EHR / EHR_STATUS / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
 //! including versioning, optimistic concurrency, time-travel, and logical
-//! delete — driven through the `EhrService` envelope seam (W2-A) exactly as the
+//! delete — driven through the `EhrService` envelope seam exactly as the
 //! REST layer calls it, asserting both the RM payload (`.body`) and the resource
 //! metadata (`.meta`, from which the HTTP edge derives `ETag`/`Location`).
 #![allow(
@@ -17,16 +17,16 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
-use openehr_base::prelude::TerminologyCode;
+use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
-    CallStatusType, DefinitionAdapter, EhrCompositionService, EhrContributionService,
-    EhrDirectoryService, EhrService, EhrStatusService, ItemTagAdapter, SmError,
-};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::error::ServiceError;
+use ehrbase::service::status::{CallStatusType, SmError};
+use ehrbase::versioning::change::Committed;
+
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -152,7 +152,7 @@ fn composition(name: &str) -> Value {
 /// A COMPOSITION with **no** `template_id` but a terminology-invalid `category`
 /// code (`openehr::9999` is not in the `composition_category` group) — used to
 /// prove templateless compositions still get RM/terminology validation
-/// (F-07-01/F-07-02). Every other mandatory attribute is valid, so the category
+///. Every other mandatory attribute is valid, so the category
 /// code is the only defect.
 fn composition_with_bad_category() -> Value {
     let mut c = composition("Bad category");
@@ -246,7 +246,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .expect("status reactivate");
     assert!(status_v3_uid.ends_with("::3"));
 
-    // A specific EHR_STATUS version reads as the BARE EHR_STATUS (F-01-03), not
+    // A specific EHR_STATUS version reads as the BARE EHR_STATUS, not
     // an ORIGINAL_VERSION wrapper.
     let sp: Vec<&str> = status_ovid_v1.split("::").collect();
     let status_by_v = svc
@@ -260,7 +260,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let comp_ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("Encounter"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create")
+        .version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
     let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
@@ -277,7 +278,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
             uv(composition("Encounter v2"), "251", Some(&comp_ovid_v1)),
         )
         .await
-        .expect("composition_update");
+        .expect("composition_update")
+        .version_uid();
     assert!(comp_ovid_v2.ends_with("::2"));
 
     // current is v2; the pinned OBJECT_VERSION_ID still returns v1
@@ -345,17 +347,10 @@ async fn ehr_composition_lifecycle_end_to_end() {
 
     // ── logical delete (F-02-01/05, F-06-04) ─────────────────────────────────
     // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
-    let stale_delete = svc
-        .delete_composition(ehr_uuid, comp_ovid_v1.parse().expect("ovid"))
-        .await;
+    let comp_ovid_v1_id: ObjectVersionId = comp_ovid_v1.parse().expect("ovid");
+    let stale_delete = svc.delete_composition(ehr_uuid, &comp_ovid_v1_id).await;
     assert!(
-        matches!(
-            stale_delete,
-            Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
-                ..
-            })
-        ),
+        matches!(stale_delete, Err(ServiceError::Conflict(_))),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
     // PORT NOTE: the old "bare HIER_OBJECT_ID → 400" sub-check is
@@ -365,15 +360,17 @@ async fn ehr_composition_lifecycle_end_to_end() {
 
     // The correct latest version_uid deletes; the returned uid names the new
     // (deleted) version (204_COMPOSITION_deleted ETag/Location).
+    let comp_ovid_v2_id: ObjectVersionId = comp_ovid_v2.parse().expect("ovid");
     let deleted = svc
-        .delete_composition(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
+        .delete_composition(ehr_uuid, &comp_ovid_v2_id)
         .await
-        .expect("composition_delete");
+        .expect("composition_delete")
+        .version_uid();
     assert!(
         deleted.ends_with("::3"),
         "delete names the new (deleted) version, got {deleted}"
     );
-    // A deleted read is NOT an error/500 — it yields Null (→ 204) (F-02-01).
+    // A deleted read is NOT an error/500 — it yields Null (→ 204).
     let after_delete = svc
         .get_composition_latest(ehr_uuid, comp_vo_uuid)
         .await
@@ -385,12 +382,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // Re-deleting an already-deleted composition → 400 (400_already_deleted).
     assert!(
         matches!(
-            svc.delete_composition(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
-                .await,
-            Err(SmError {
-                status: CallStatusType::PreconditionViolation,
-                ..
-            })
+            svc.delete_composition(ehr_uuid, &comp_ovid_v2_id).await,
+            Err(ServiceError::BadRequest(_))
         ),
         "re-delete must be 400 already-deleted"
     );
@@ -458,7 +451,8 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     let comp_ovid = svc
         .create_composition(ehr_uuid, uv(composition("Active"), "249", None))
         .await
-        .expect("composition while active");
+        .expect("composition while active")
+        .version_uid();
     let comp_vo = comp_ovid
         .split("::")
         .next()
@@ -486,7 +480,12 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .await
         .expect("deactivating EHR_STATUS is allowed");
 
-    let is_blocked = |r: &Result<String, SmError>| {
+    // A blocked EHR-content write is 409 Conflict (SM `CompositionAlreadyExists`
+    // → `ServiceError::Conflict` on the composition write path; the directory
+    // write path still surfaces the raw `SmError`).
+    let comp_blocked =
+        |r: &Result<Committed, ServiceError>| matches!(r, Err(ServiceError::Conflict(_)));
+    let dir_blocked = |r: &Result<String, SmError>| {
         matches!(
             r,
             Err(SmError {
@@ -501,7 +500,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .create_composition(ehr_uuid, uv(composition("Blocked"), "249", None))
         .await;
     assert!(
-        is_blocked(&create),
+        comp_blocked(&create),
         "create must 409 when inactive: {create:?}"
     );
 
@@ -513,15 +512,14 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         )
         .await;
     assert!(
-        is_blocked(&update),
+        comp_blocked(&update),
         "update must 409 when inactive: {update:?}"
     );
 
-    let delete = svc
-        .delete_composition(ehr_uuid, comp_ovid.parse().expect("ovid"))
-        .await;
+    let comp_ovid_id: ObjectVersionId = comp_ovid.parse().expect("ovid");
+    let delete = svc.delete_composition(ehr_uuid, &comp_ovid_id).await;
     assert!(
-        is_blocked(&delete),
+        comp_blocked(&delete),
         "delete must 409 when inactive: {delete:?}"
     );
 
@@ -529,7 +527,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .update_directory(ehr_uuid, uv(folder, "251", Some(&dir_ovid)))
         .await;
     assert!(
-        is_blocked(&dir_update),
+        dir_blocked(&dir_update),
         "directory update must 409 when inactive: {dir_update:?}"
     );
 
@@ -854,7 +852,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
 
 #[tokio::test]
 async fn templateless_composition_still_gets_rm_and_terminology_validation() {
-    // F-07-02: a COMPOSITION without a declared template_id must still fail on
+    // a COMPOSITION without a declared template_id must still fail on
     // RM-invariant / RM-terminology violations (here: an invalid category code),
     // and a valid templateless composition must still commit.
     let pg = Pg::start().await;
@@ -867,13 +865,7 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
         .create_composition(ehr_uuid, uv(composition_with_bad_category(), "249", None))
         .await;
     assert!(
-        matches!(
-            bad,
-            Err(SmError {
-                status: CallStatusType::ContentInvalid,
-                ..
-            })
-        ),
+        matches!(bad, Err(ServiceError::ValidationFailed(_))),
         "templateless composition with bad category must 422, got {bad:?}"
     );
 
@@ -884,7 +876,7 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
 
 #[tokio::test]
 async fn contribution_rejects_an_invalid_composition() {
-    // F-07-01: the CONTRIBUTION commit path must run composition validation and
+    // the CONTRIBUTION commit path must run composition validation and
     // reject the whole contribution atomically.
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
@@ -1014,7 +1006,7 @@ async fn stored_query_crud() {
 
 #[tokio::test]
 async fn stored_query_semver_prefix_resolves_to_latest_match() {
-    // F-03-07: `parameters/path/version.yaml` — a partial `{major}` or
+    // `parameters/path/version.yaml` — a partial `{major}` or
     // `{major}.{minor}` version resolves to the HIGHEST stored version
     // matching the prefix.
     let pg = Pg::start().await;
@@ -1067,7 +1059,7 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
 
 #[tokio::test]
 async fn stored_query_list_matches_name_prefix() {
-    // F-03-08: `definition_query_list.yaml` — the qualified name is a PATTERN:
+    // `definition_query_list.yaml` — the qualified name is a PATTERN:
     // `org.openehr` "will list all versions of all queries with names starting
     // with `org.openehr`"; empty ⇒ wildcard.
     let pg = Pg::start().await;
@@ -1121,7 +1113,8 @@ async fn item_tag_crud() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition")
+        .version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let upserted = svc
@@ -1159,7 +1152,7 @@ async fn item_tag_crud() {
 
 #[tokio::test]
 async fn item_tag_wire_shape_matches_the_oas_schema() {
-    // F-03-06: the ITEM_TAG wire shape is the OAS `ItemTag` schema
+    // the ITEM_TAG wire shape is the OAS `ItemTag` schema
     // (`additionalProperties: false`): key/value/target_path plus
     // OBJECT_REF-shaped `target` and `owner_id`; no `id`, no `target_type`.
     let pg = Pg::start().await;
@@ -1170,7 +1163,8 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition")
+        .version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let put = svc
@@ -1209,7 +1203,7 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
 
 #[tokio::test]
 async fn item_tag_put_replaces_the_whole_collection() {
-    // F-03-05: PUT "updates the list of ALL ITEM_TAG resources … providing an
+    // PUT "updates the list of ALL ITEM_TAG resources … providing an
     // empty list will effectively remove all ITEM_TAG" — a full replace, not an
     // additive upsert.
     let pg = Pg::start().await;
@@ -1220,7 +1214,8 @@ async fn item_tag_put_replaces_the_whole_collection() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition")
+        .version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let two = svc
@@ -1283,7 +1278,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
 
 #[tokio::test]
 async fn ehr_creation_produces_an_ehr_access() {
-    // F-06-07: RM ehr § "EHR Creation" — creating an EHR yields a root EHR
+    // RM ehr § "EHR Creation" — creating an EHR yields a root EHR
     // object, an EHR_STATUS AND an EHR_ACCESS; `EHR.ehr_access` (1..1) is an
     // OBJECT_REF whose type is VERSIONED_EHR_ACCESS (invariant Ehr_access_valid).
     let pg = Pg::start().await;
@@ -1308,7 +1303,7 @@ async fn ehr_creation_produces_an_ehr_access() {
 
 #[tokio::test]
 async fn duplicate_subject_ehr_creation_conflicts() {
-    // F-01-04: ITS-REST `409_EHR.yaml` + CNF master06
+    // ITS-REST `409_EHR.yaml` + CNF master06
     // `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient` — a second EHR for the
     // same subject (external_ref id + namespace) must be rejected.
     let pg = Pg::start().await;
@@ -1423,7 +1418,8 @@ async fn version_get_at_time_returns_the_original_version() {
     let comp_ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition")
+        .version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
     let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
     svc.update_composition(
@@ -1704,7 +1700,8 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     let comp_ovid = svc
         .create_composition(ehr_uuid, uv(composition("Uri target"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create")
+        .version_uid();
     let comp_vo = comp_ovid.split("::").next().unwrap();
 
     // Latest-trunk form: ehr:/{ehr_id}/compositions/{vo_id}.

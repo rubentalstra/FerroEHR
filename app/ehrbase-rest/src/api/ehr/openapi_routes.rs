@@ -9,8 +9,6 @@ use axum::response::Response;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
-use ehrbase_sm::Platform;
-
 use crate::api::guarded_dispatch;
 use crate::state::AppState;
 
@@ -19,7 +17,7 @@ use crate::state::AppState;
 /// (nested under the configured `base_path`); every operation is served through
 /// [`guarded_dispatch`] → [`crate::api::ehr::dispatch::dispatch`], so the wire
 /// behaviour is identical to the former table-driven `mount` adapter.
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(ehr_get_by_subject, ehr_create))
         .routes(routes!(ehr_get_by_id, ehr_create_with_id))
@@ -71,8 +69,8 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_get_by_subject<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_get_by_subject(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -80,7 +78,7 @@ pub(crate) async fn ehr_get_by_subject<S: Platform>(
         state,
         "ehr_get_by_subject",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -90,8 +88,8 @@ pub(crate) async fn ehr_get_by_subject<S: Platform>(
     post, path = "/ehr", tag = "EHR",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn ehr_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -99,7 +97,7 @@ pub(crate) async fn ehr_create<S: Platform>(
         state,
         "ehr_create",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -113,8 +111,8 @@ pub(crate) async fn ehr_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_get_by_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_get_by_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -122,7 +120,7 @@ pub(crate) async fn ehr_get_by_id<S: Platform>(
         state,
         "ehr_get_by_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -133,8 +131,8 @@ pub(crate) async fn ehr_get_by_id<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Created/updated.", body = serde_json::Value))
 )]
-pub(crate) async fn ehr_create_with_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_create_with_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -142,7 +140,7 @@ pub(crate) async fn ehr_create_with_id<S: Platform>(
         state,
         "ehr_create_with_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -162,8 +160,8 @@ pub(crate) async fn ehr_create_with_id<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_status_get_by_version_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_get_by_version_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -171,7 +169,7 @@ pub(crate) async fn ehr_status_get_by_version_id<S: Platform>(
         state,
         "ehr_status_get_by_version_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -186,8 +184,8 @@ pub(crate) async fn ehr_status_get_by_version_id<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_status_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -195,7 +193,7 @@ pub(crate) async fn ehr_status_get_at_time<S: Platform>(
         state,
         "ehr_status_get_at_time",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -206,8 +204,8 @@ pub(crate) async fn ehr_status_get_at_time<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn ehr_status_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -215,7 +213,7 @@ pub(crate) async fn ehr_status_update<S: Platform>(
         state,
         "ehr_status_update",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -232,8 +230,8 @@ pub(crate) async fn ehr_status_update<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_ehr_status_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_ehr_status_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -241,7 +239,7 @@ pub(crate) async fn versioned_ehr_status_get<S: Platform>(
         state,
         "versioned_ehr_status_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -256,8 +254,8 @@ pub(crate) async fn versioned_ehr_status_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_ehr_status_revision_history<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_ehr_status_revision_history(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -265,7 +263,7 @@ pub(crate) async fn versioned_ehr_status_revision_history<S: Platform>(
         state,
         "versioned_ehr_status_revision_history",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -280,8 +278,8 @@ pub(crate) async fn versioned_ehr_status_revision_history<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_ehr_status_version_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_ehr_status_version_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -289,7 +287,7 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time<S: Platform>(
         state,
         "versioned_ehr_status_version_get_at_time",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -307,8 +305,8 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_ehr_status_version_get_by_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_ehr_status_version_get_by_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -316,7 +314,7 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id<S: Platform>(
         state,
         "versioned_ehr_status_version_get_by_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -329,8 +327,8 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn composition_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -338,7 +336,7 @@ pub(crate) async fn composition_create<S: Platform>(
         state,
         "composition_create",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -356,8 +354,8 @@ pub(crate) async fn composition_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn composition_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -365,7 +363,7 @@ pub(crate) async fn composition_get<S: Platform>(
         state,
         "composition_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -380,8 +378,8 @@ pub(crate) async fn composition_get<S: Platform>(
     ),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn composition_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -389,7 +387,7 @@ pub(crate) async fn composition_update<S: Platform>(
         state,
         "composition_update",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -404,8 +402,8 @@ pub(crate) async fn composition_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn composition_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -413,7 +411,7 @@ pub(crate) async fn composition_delete<S: Platform>(
         state,
         "composition_delete",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -433,8 +431,8 @@ pub(crate) async fn composition_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_composition_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_composition_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -442,7 +440,7 @@ pub(crate) async fn versioned_composition_get<S: Platform>(
         state,
         "versioned_composition_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -462,8 +460,8 @@ pub(crate) async fn versioned_composition_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_composition_revision_history<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_composition_revision_history(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -471,7 +469,7 @@ pub(crate) async fn versioned_composition_revision_history<S: Platform>(
         state,
         "versioned_composition_revision_history",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -491,8 +489,8 @@ pub(crate) async fn versioned_composition_revision_history<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_composition_version_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_composition_version_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -500,7 +498,7 @@ pub(crate) async fn versioned_composition_version_get_at_time<S: Platform>(
         state,
         "versioned_composition_version_get_at_time",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -521,8 +519,8 @@ pub(crate) async fn versioned_composition_version_get_at_time<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_composition_version_get_by_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_composition_version_get_by_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -530,7 +528,7 @@ pub(crate) async fn versioned_composition_version_get_by_id<S: Platform>(
         state,
         "versioned_composition_version_get_by_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -547,8 +545,8 @@ pub(crate) async fn versioned_composition_version_get_by_id<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn directory_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn directory_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -556,7 +554,7 @@ pub(crate) async fn directory_get_at_time<S: Platform>(
         state,
         "directory_get_at_time",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -567,8 +565,8 @@ pub(crate) async fn directory_get_at_time<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn directory_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn directory_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -576,7 +574,7 @@ pub(crate) async fn directory_update<S: Platform>(
         state,
         "directory_update",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -587,8 +585,8 @@ pub(crate) async fn directory_update<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn directory_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn directory_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -596,7 +594,7 @@ pub(crate) async fn directory_create<S: Platform>(
         state,
         "directory_create",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -607,8 +605,8 @@ pub(crate) async fn directory_create<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn directory_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn directory_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -616,7 +614,7 @@ pub(crate) async fn directory_delete<S: Platform>(
         state,
         "directory_delete",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -634,8 +632,8 @@ pub(crate) async fn directory_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn directory_get_by_version_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn directory_get_by_version_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -643,7 +641,7 @@ pub(crate) async fn directory_get_by_version_id<S: Platform>(
         state,
         "directory_get_by_version_id",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -656,8 +654,8 @@ pub(crate) async fn directory_get_by_version_id<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn contribution_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn contribution_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -665,7 +663,7 @@ pub(crate) async fn contribution_create<S: Platform>(
         state,
         "contribution_create",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -683,8 +681,8 @@ pub(crate) async fn contribution_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn contribution_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn contribution_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -692,7 +690,7 @@ pub(crate) async fn contribution_get<S: Platform>(
         state,
         "contribution_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -708,8 +706,8 @@ pub(crate) async fn contribution_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -717,7 +715,7 @@ pub(crate) async fn ehr_tags_get<S: Platform>(
         state,
         "ehr_tags_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -735,8 +733,8 @@ pub(crate) async fn ehr_tags_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn composition_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -744,7 +742,7 @@ pub(crate) async fn composition_tags_get<S: Platform>(
         state,
         "composition_tags_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -759,8 +757,8 @@ pub(crate) async fn composition_tags_get<S: Platform>(
     ),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn composition_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -768,7 +766,7 @@ pub(crate) async fn composition_tags_update<S: Platform>(
         state,
         "composition_tags_update",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -784,8 +782,8 @@ pub(crate) async fn composition_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn composition_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn composition_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -793,7 +791,7 @@ pub(crate) async fn composition_tags_delete<S: Platform>(
         state,
         "composition_tags_delete",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -811,8 +809,8 @@ pub(crate) async fn composition_tags_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn ehr_status_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -820,7 +818,7 @@ pub(crate) async fn ehr_status_tags_get<S: Platform>(
         state,
         "ehr_status_tags_get",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -835,8 +833,8 @@ pub(crate) async fn ehr_status_tags_get<S: Platform>(
     ),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn ehr_status_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -844,7 +842,7 @@ pub(crate) async fn ehr_status_tags_update<S: Platform>(
         state,
         "ehr_status_tags_update",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
@@ -860,8 +858,8 @@ pub(crate) async fn ehr_status_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn ehr_status_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn ehr_status_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -869,7 +867,7 @@ pub(crate) async fn ehr_status_tags_delete<S: Platform>(
         state,
         "ehr_status_tags_delete",
         parts,
-        crate::api::ehr::dispatch::dispatch::<S>,
+        crate::api::ehr::dispatch::dispatch,
     )
     .await
 }
