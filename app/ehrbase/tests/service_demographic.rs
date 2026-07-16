@@ -277,7 +277,7 @@ async fn person_lifecycle_end_to_end() {
 
     // create → v1
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"))
+        .party_create(PartyKind::Person, person("Jane"), None)
         .await
         .expect("create person");
     assert_eq!(created.body["_type"], "PERSON");
@@ -321,6 +321,7 @@ async fn person_lifecycle_end_to_end() {
             vo.clone(),
             ovid_v1.clone(),
             person("Jane Roe"),
+            None,
         )
         .await
         .expect("update person");
@@ -341,6 +342,7 @@ async fn person_lifecycle_end_to_end() {
             vo.clone(),
             ovid_v1.clone(),
             person("stale"),
+            None,
         )
         .await;
     assert!(
@@ -387,7 +389,7 @@ async fn person_lifecycle_end_to_end() {
     // delete (OBJECT_VERSION_ID on the path, no If-Match) → deleted;
     // subsequent get → 204 (Null)
     let deleted = svc
-        .party_delete(PartyKind::Person, ovid_v2.clone(), None)
+        .party_delete(PartyKind::Person, ovid_v2.clone(), None, None)
         .await
         .expect("delete");
     assert!(deleted.is_empty());
@@ -413,7 +415,7 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // create → the built-from-commit body equals a fresh read.
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"))
+        .party_create(PartyKind::Person, person("Jane"), None)
         .await
         .expect("create person");
     let ovid_v1 = ovid(&created.body).to_owned();
@@ -434,7 +436,7 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // update → the built-from-commit body equals a fresh read.
     let updated = svc
-        .party_update(PartyKind::Person, vo.clone(), ovid_v1, person("Jane Roe"))
+        .party_update(PartyKind::Person, vo.clone(), ovid_v1, person("Jane Roe"), None)
         .await
         .expect("update person");
     let fresh_v2 = svc
@@ -452,7 +454,7 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // ORGANISATION sibling — the same create path keyed by PartyKind.
     let created_org = svc
-        .party_create(PartyKind::Organisation, organisation("Acme"))
+        .party_create(PartyKind::Organisation, organisation("Acme"), None)
         .await
         .expect("create organisation");
     let vo_org = vo_uuid(&created_org.body);
@@ -476,7 +478,7 @@ async fn person_delete_by_versioned_uid_with_if_match() {
     let svc = EhrbaseService::new(pg.migrated_pool("demographic_delete_ifmatch").await);
 
     let created = svc
-        .party_create(PartyKind::Person, person("Jane"))
+        .party_create(PartyKind::Person, person("Jane"), None)
         .await
         .expect("create person");
     let ovid = ovid(&created.body).to_owned();
@@ -484,7 +486,7 @@ async fn person_delete_by_versioned_uid_with_if_match() {
 
     // Bare versioned-object uid on the path, `If-Match` = the current OVID.
     let deleted = svc
-        .party_delete(PartyKind::Person, vo.clone(), Some(ovid))
+        .party_delete(PartyKind::Person, vo.clone(), Some(ovid), None)
         .await
         .expect("delete by versioned uid + If-Match");
     assert!(deleted.is_empty());
@@ -503,7 +505,7 @@ async fn role_create_and_get() {
     let svc = EhrbaseService::new(pg.migrated_pool("demographic_role").await);
 
     let created = svc
-        .party_create(PartyKind::Role, role("Clinician"))
+        .party_create(PartyKind::Role, role("Clinician"), None)
         .await
         .expect("create role");
     assert_eq!(created.body["_type"], "ROLE");
@@ -587,7 +589,7 @@ async fn party_tags_crud() {
     let svc = EhrbaseService::new(pg.migrated_pool("demographic_tags").await);
 
     let created = svc
-        .party_create(PartyKind::Person, person("Tagged"))
+        .party_create(PartyKind::Person, person("Tagged"), None)
         .await
         .expect("create person");
     let vo = vo_uuid(&created.body);
