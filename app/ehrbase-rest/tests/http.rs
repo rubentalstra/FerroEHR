@@ -475,7 +475,9 @@ async fn authenticated_write_attributes_the_default_committer() {
         .unwrap();
     let resp = app.clone().oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK);
-    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let history: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     let audit = &history["items"][0]["audits"][0];
     assert_eq!(

@@ -128,7 +128,9 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
 /// overview merge requirement applies to every commit surface, not only the
 /// EHR APIs). `None` when no committal header is present, so a plain request
 /// keeps the server-default attribution path.
-pub(crate) fn committal_audit(headers: &HeaderMap) -> Option<ehrbase::service::version_update::UpdateAudit> {
+pub(crate) fn committal_audit(
+    headers: &HeaderMap,
+) -> Option<ehrbase::service::version_update::UpdateAudit> {
     if collect_attrs(headers).is_empty() {
         return None;
     }

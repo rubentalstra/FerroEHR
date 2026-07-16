@@ -436,7 +436,13 @@ async fn party_write_responses_match_a_fresh_read() {
 
     // update → the built-from-commit body equals a fresh read.
     let updated = svc
-        .party_update(PartyKind::Person, vo.clone(), ovid_v1, person("Jane Roe"), None)
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            ovid_v1,
+            person("Jane Roe"),
+            None,
+        )
         .await
         .expect("update person");
     let fresh_v2 = svc
