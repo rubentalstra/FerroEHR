@@ -56,7 +56,13 @@ findings register: `w14-audit.md` §4/§5.
    chapter; stale trait-era comments ("method-resolution priority",
    adapter-speak) deleted; the mass-inserted generic `# Errors` docs get
    real per-method text as each file is rewritten.
-10. **REST adapter converges** on the typed results (header building from
+10. **Visibility rationalization (owner directive 2026-07-16):** the
+    `pub(crate)` / `pub(in crate::service)` / `pub(super)` soup is rewritten
+    to deliberate visibility across the platform crate: plain `pub` for the
+    intentional API the adapter/binary consume, private (no qualifier) by
+    default, scoped visibility only where a genuine module boundary demands
+    it — every remaining scoped qualifier must be justifiable.
+11. **REST adapter converges** on the typed results (header building from
     `Committed`/`VersionMeta` instead of digging `ResourceMeta`), and the
     HTTP suite stays byte-identical on the wire (ECC zero-drift is the
     gate; the B+C baseline receipt is the comparison point).
@@ -84,7 +90,8 @@ findings register: `w14-audit.md` §4/§5.
       wrapper/inner merges and cleanup across demographic, definition,
       query, terminology, admin, message, ehr_index, subject_proxy,
       validity.
-- [ ] S5 REST adapter convergence + test convergence.
+- [ ] S5 REST adapter convergence + test convergence + the visibility
+      rationalization sweep (target 10).
 - [ ] S6 gates: workspace clippy/nextest green, fmt, ECC **zero-drift vs
       the B+C receipt**, register re-anchor pass (`w14-audit.md`
       post-rewrite item), fresh benchmark pair at W-14 close.
