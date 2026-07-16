@@ -34,7 +34,7 @@ use super::Violation;
 /// definition roots + every `component_ontologies` set), which is deliberately
 /// lenient about per-archetype scoping — it still catches a `node_id` that is
 /// defined nowhere while never mis-rejecting a correctly-scoped code.
-fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
+pub(super) fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Violation> {
     if !is_at_code(node_id) {
         return Ok(());
     }
@@ -49,7 +49,7 @@ fn check_node_id(node_id: &str, defined_at: &HashSet<String>) -> Result<(), Viol
 
 /// An addressable archetype term code: `at0000`, `at0001.1`, or the ADL2 `id`
 /// form. A bare, empty, or free-text `node_id` is not an at-code.
-fn is_at_code(code: &str) -> bool {
+pub(super) fn is_at_code(code: &str) -> bool {
     let rest = code
         .strip_prefix("at")
         .or_else(|| code.strip_prefix("id"))
@@ -64,7 +64,7 @@ fn is_at_code(code: &str) -> bool {
 /// flat archetype." (`AOM2/master07-terminology_package.adoc` line 77.) A `/`
 /// path key is accepted without full path resolution (conservative — never
 /// mis-reject a real flat path).
-fn check_term_bindings(
+pub(super) fn check_term_bindings(
     opt: &OperationalTemplate,
     defined_at: &HashSet<String>,
 ) -> Result<(), Violation> {
@@ -112,7 +112,7 @@ fn check_term_bindings(
 /// VTCBK: "terminology constraint binding key valid. Every constraint binding
 /// must be to a defined archetype constraint code ('ac-code')."
 /// (`AOM2/master07-terminology_package.adoc` line 80.)
-fn check_constraint_bindings(
+pub(super) fn check_constraint_bindings(
     opt: &OperationalTemplate,
     defined_ac: &HashSet<String>,
 ) -> Result<(), Violation> {
@@ -147,7 +147,7 @@ fn check_constraint_bindings(
 /// `Vec<ARCHETYPE_TERM>`, single-language) carry no language grouping, so VTLC
 /// is inert for a single-language OPT — the multi-language code sets live only
 /// in `ontology` / `component_ontologies`.
-fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), Violation> {
+pub(super) fn check_language_consistency(opt: &OperationalTemplate) -> Result<(), Violation> {
     for onto in flat_ontologies(opt) {
         language_consistent(&codes_by_language(&onto.term_definitions), "term")?;
         language_consistent(
@@ -195,7 +195,7 @@ fn language_consistent(by_lang: &[(String, HashSet<String>)], kind: &str) -> Res
 // ─── code collection + ontology / nested-root accessors ─────────────────────────
 
 /// Every archetype term (`at`/`id`) code defined anywhere in the flattened OPT.
-fn collect_defined_at_codes(opt: &OperationalTemplate) -> HashSet<String> {
+pub(super) fn collect_defined_at_codes(opt: &OperationalTemplate) -> HashSet<String> {
     let mut out = HashSet::new();
     out.extend(
         opt.definition
@@ -215,7 +215,7 @@ fn collect_defined_at_codes(opt: &OperationalTemplate) -> HashSet<String> {
 }
 
 /// Every archetype constraint (`ac`) code defined in the flattened OPT.
-fn collect_defined_ac_codes(opt: &OperationalTemplate) -> HashSet<String> {
+pub(super) fn collect_defined_ac_codes(opt: &OperationalTemplate) -> HashSet<String> {
     let mut out = HashSet::new();
     for onto in flat_ontologies(opt) {
         for set in &onto.constraint_definitions {
@@ -226,7 +226,7 @@ fn collect_defined_ac_codes(opt: &OperationalTemplate) -> HashSet<String> {
 }
 
 /// `ontology` + every `component_ontologies` entry.
-fn flat_ontologies(opt: &OperationalTemplate) -> Vec<&FlatArchetypeOntology> {
+pub(super) fn flat_ontologies(opt: &OperationalTemplate) -> Vec<&FlatArchetypeOntology> {
     opt.ontology
         .iter()
         .chain(opt.component_ontologies.iter())

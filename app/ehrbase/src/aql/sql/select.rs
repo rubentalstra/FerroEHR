@@ -18,7 +18,7 @@ use super::expr::{col, leaf_path_string, literal_value, order_coercion, to_jsonb
 use super::{Builder, CellKind, ColumnSpec, ValueMode};
 
 impl Builder<'_> {
-    fn build_select(&mut self) -> Result<Vec<ColumnSpec>, AqlError> {
+    pub(super) fn build_select(&mut self) -> Result<Vec<ColumnSpec>, AqlError> {
         let mut specs = Vec::with_capacity(self.ir.select.len());
         for (i, col) in self.ir.select.clone().iter().enumerate() {
             specs.push(self.emit_select_column(i, col)?);

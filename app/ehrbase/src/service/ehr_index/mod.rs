@@ -32,9 +32,9 @@ use uuid::Uuid;
 
 use crate::service::ServiceError;
 
-mod api;
-mod conflicts;
-mod index;
+pub(crate) mod api;
+pub(crate) mod conflicts;
+pub(crate) mod index;
 
 /// The precise EHR-index failure kind (G-8/G-9): `master07 §Errors` declares
 /// distinct `ehr_id_does_not_exist` and `subject_id_does_not_exist` statuses,

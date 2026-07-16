@@ -29,7 +29,7 @@ impl EhrbaseService {
     /// party / relationship objects (an EHR-kind type inside is rejected `422`
     /// by the engine's scope check). Returns the assembled CONTRIBUTION with its
     /// `ETag`/`Location` (the contribution uid).
-    async fn create_demographic_contribution(
+    pub(crate) async fn create_demographic_contribution(
         &self,
         body: Value,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -42,7 +42,7 @@ impl EhrbaseService {
     /// Retrieve a demographic (ehr-less) CONTRIBUTION by id. An EHR-scoped
     /// contribution uid here is `404` (the demographic surface only sees
     /// `ehr_id IS NULL` contributions).
-    async fn demographic_contribution(
+    pub(crate) async fn demographic_contribution(
         &self,
         contribution_id: Uuid,
     ) -> Result<Value, ServiceError> {

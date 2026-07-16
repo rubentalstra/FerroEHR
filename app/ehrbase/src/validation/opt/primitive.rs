@@ -21,7 +21,7 @@ use super::interval::{int_in_range, real_in_range};
 /// `Assumed_value_valid` for list/range-constrained primitives, and the
 /// `C_DATE`/`C_TIME`/`C_DATE_TIME` `Pattern_validity` + `C_DURATION` pattern
 /// syntax.
-fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_primitive(p: &CPrimitive, node_id: &str) -> Result<(), Violation> {
     match p {
         CPrimitive::CBoolean(b) => {
             // C_BOOLEAN (AOM1.4 c_boolean class file, Description): true_valid
@@ -152,7 +152,7 @@ fn pattern_violation(node_id: &str, pattern: &str, kind: &str) -> Violation {
 /// `C_DEFINED_OBJECT` invariant `Assumed_value_valid` for the code-carrying
 /// domain types (`C_CODE_PHRASE` / `C_CODE_REFERENCE`): the assumed code must be
 /// one of the constrained codes when the code list is closed and non-empty.
-fn check_assumed_code(
+pub(super) fn check_assumed_code(
     assumed: Option<&CodePhrase>,
     code_list: &[String],
     node_id: &str,
@@ -174,7 +174,7 @@ fn check_assumed_code(
 
 /// `C_DV_ORDINAL` `Assumed_value_valid` (AOM1.4 `c_defined_object` class file):
 /// the assumed ordinal must be one of the constrained (symbol, value) pairs.
-fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Violation> {
     if let Some(assumed) = &c.assumed_value
         && !c.list.is_empty()
         && !c.list.iter().any(|o| o.value == assumed.value)
@@ -194,7 +194,7 @@ fn check_dv_ordinal(c: &CDvOrdinal, node_id: &str) -> Result<(), Violation> {
 /// `C_DV_QUANTITY` `Property_valid` + `Assumed_value_valid` (UML `c_quantity`;
 /// RM support master05 §"Terms and Codes in the openEHR Reference Model",
 /// `Group_id_property`).
-fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Violation> {
+pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Violation> {
     // The measurement property must be a member of the openEHR `property`
     // terminology group — checked when the constraint codes it from the openEHR
     // terminology.
@@ -254,7 +254,7 @@ fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Violation> {
 /// `yyyy-<mm|??|XX>-<dd|??|XX>` with the field-ordering rule: optional (`??`)
 /// may be followed only by optional/disallowed; disallowed (`XX`) only by
 /// disallowed (ADL1.4 master05 lines 858–866).
-fn valid_date_pattern(p: &str) -> bool {
+pub(super) fn valid_date_pattern(p: &str) -> bool {
     let parts: Vec<&str> = p.split('-').collect();
     let [y, m, d] = parts.as_slice() else {
         return false;
@@ -266,7 +266,7 @@ fn valid_date_pattern(p: &str) -> bool {
 /// optional trailing timezone requirement (`Z` / `±hh` / `±hh:mm` / `±hhmm` —
 /// ADL1.4 master05 lines 852–854, 896–910: a timezone can be required, never
 /// prohibited).
-fn valid_time_pattern(p: &str) -> bool {
+pub(super) fn valid_time_pattern(p: &str) -> bool {
     let body = p
         .strip_suffix('Z')
         .or_else(|| strip_tz_offset(p))
@@ -284,7 +284,7 @@ fn valid_time_pattern(p: &str) -> bool {
 /// Unlike `C_TIME`, `C_DATE_TIME` has an `hour_validity`, so `??`/`XX` hours are
 /// legal here (e.g. `yyyy-??-??T??:??:??`, the CNF RIPPLE conformance
 /// template).
-fn valid_date_time_pattern(pattern: &str) -> bool {
+pub(super) fn valid_date_time_pattern(pattern: &str) -> bool {
     let Some((date, time)) = pattern.split_once('T') else {
         return false;
     };
@@ -338,7 +338,7 @@ fn strip_tz_offset(p: &str) -> Option<&str> {
 
 /// `P` followed by an in-order subset of `Y M W D`, optionally `T` + an
 /// in-order non-empty subset of `H M S`; at least one designator overall.
-fn valid_duration_pattern(p: &str) -> bool {
+pub(super) fn valid_duration_pattern(p: &str) -> bool {
     let Some(rest) = p.strip_prefix('P') else {
         return false;
     };

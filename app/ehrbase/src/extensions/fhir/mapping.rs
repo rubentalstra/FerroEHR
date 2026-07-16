@@ -44,7 +44,7 @@ use serde_json::{Map, Value, json};
 /// `fhir_mapping.definition`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct FhirMappingDefinition {
+pub(super) struct FhirMappingDefinition {
     /// The FHIR resource type this mapping consumes (`Observation`, `Patient`, …).
     pub resource_type: String,
     /// The FHIR profile canonical URL this mapping binds (matched against the
@@ -67,7 +67,7 @@ struct FhirMappingDefinition {
 /// How the connector resolves the target EHR's subject from the resource.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct SubjectMapping {
+pub(super) struct SubjectMapping {
     /// `FHIRPath`-lite path to the subject identifier string (e.g.
     /// `subject.reference` on an Observation, or `id` on a Patient).
     pub reference_path: String,
@@ -84,7 +84,7 @@ struct SubjectMapping {
 /// `transform`.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct MappingEntry {
+pub(super) struct MappingEntry {
     /// The template-relative openEHR FLAT path (the `id[:i]/…` key; a
     /// value-shaping transform appends the `|suffix`).
     pub openehr_path: String,
@@ -109,7 +109,7 @@ struct MappingEntry {
 /// How an entry's source value is shaped into FLAT leaf(s).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-enum Transform {
+pub(super) enum Transform {
     /// Plain scalar → the bare FLAT key (`DV_TEXT` value, or any bare leaf).
     #[default]
     Text,
@@ -141,7 +141,7 @@ enum Transform {
 
 /// A FHIR→openEHR mapping transform failure.
 #[derive(Debug, thiserror::Error)]
-enum FhirMapError {
+pub(super) enum FhirMapError {
     /// A required source field was absent (or not a scalar where one was
     /// expected).
     #[error("required FHIR field '{fhir_path}' (→ '{openehr_path}') is absent")]
@@ -189,7 +189,7 @@ enum FhirMapError {
 /// `component[0].valueQuantity.value`, `code.coding[0].code`,
 /// `subject.reference`, and `meta.profile[0]` all resolve. Anything richer
 /// (functions, filters, unions) is out of scope and yields `None`.
-fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
+pub(super) fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
     let mut cur = root;
     for seg in path.split('.') {
         let (name, index) = parse_segment(seg)?;
@@ -207,7 +207,7 @@ fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
 /// → `("component", Some(0))`, `reference` → `("reference", None)`. Returns
 /// `None` for a malformed segment (unbalanced/broken index). Shared with the
 /// reverse transform's writer ([`super::reverse::set_at`]).
-fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
+pub(super) fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
     match seg.split_once('[') {
         None => Some((seg, None)),
         Some((name, rest)) => {
@@ -220,7 +220,7 @@ fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
 
 /// Build the FLAT map for a resource under a mapping definition: the seed
 /// `context` keys, then each entry's produced leaf(s).
-fn build_flat(
+pub(super) fn build_flat(
     resource: &Value,
     def: &FhirMappingDefinition,
 ) -> Result<Map<String, Value>, FhirMapError> {
@@ -359,7 +359,7 @@ fn number(v: &Value, entry: &MappingEntry) -> Result<Value, FhirMapError> {
 
 /// Extract the target EHR subject from the resource per the mapping's
 /// `subject` rule.
-fn extract_subject(
+pub(super) fn extract_subject(
     resource: &Value,
     def: &FhirMappingDefinition,
 ) -> Result<SubjectRef, FhirMapError> {

@@ -36,7 +36,7 @@ const DV_MULTIMEDIA: &str = "DV_MULTIMEDIA";
 /// openEHR `Integrity check algorithms` code-set id (TERM 3.1.0).
 const INTEGRITY_ALGORITHM_TERMINOLOGY_ID: &str = "openehr_integrity_check_algorithms";
 /// The integrity-check algorithm we compute (openEHR code-set entry).
-const SHA256_CODE: &str = "SHA-256";
+pub(super) const SHA256_CODE: &str = "SHA-256";
 
 /// The base64 (standard, padded) engine openEHR canonical JSON uses for
 /// `Array<Octet>` fields (`data`, `integrity_check`).
@@ -89,7 +89,7 @@ fn walk_multimedia<F: FnMut(&mut Map<String, Value>)>(v: &mut Value, f: &mut F) 
 /// Read-only walk collecting keys of *our* externalized blobs referenced in the
 /// tree (`s3://<our-bucket>/<hex>` URIs). Used by GC and dump/load.
 #[must_use]
-fn referenced_keys(root: &Value, store: &BlobStore) -> Vec<String> {
+pub(super) fn referenced_keys(root: &Value, store: &BlobStore) -> Vec<String> {
     fn recurse(v: &Value, store: &BlobStore, out: &mut Vec<String>) {
         match v {
             Value::Object(map) => {
@@ -173,7 +173,7 @@ fn offload_one(
 /// The tree is fully rewritten synchronously; the async uploads are the
 /// caller's second phase (so no upload result is needed to finish the rewrite,
 /// and a failed upload aborts the commit before anything is stored).
-fn plan_offload(
+pub(super) fn plan_offload(
     root: &mut Value,
     threshold: usize,
     store: &BlobStore,
@@ -198,7 +198,7 @@ fn plan_offload(
 
 /// Collect the blob keys the read-path expansion must fetch: every
 /// `DV_MULTIMEDIA` that references one of *our* blobs and is not already inline.
-fn collect_expand_keys(root: &Value, store: &BlobStore) -> Vec<String> {
+pub(super) fn collect_expand_keys(root: &Value, store: &BlobStore) -> Vec<String> {
     fn recurse(v: &Value, store: &BlobStore, out: &mut Vec<String>) {
         match v {
             Value::Object(map) => {
@@ -233,7 +233,7 @@ fn collect_expand_keys(root: &Value, store: &BlobStore) -> Vec<String> {
 /// `key → base64(data)` map the caller fetched. The `uri` + integrity fields are
 /// kept (the value is now *expanded*: `is_inline` and `is_external` both true —
 /// spec-legal), so a subsequent commit of the same body re-offloads cleanly.
-fn apply_expand(root: &mut Value, fetched: &HashMap<String, String>, store: &BlobStore) {
+pub(super) fn apply_expand(root: &mut Value, fetched: &HashMap<String, String>, store: &BlobStore) {
     walk_multimedia(root, &mut |map| {
         if map.get("data").and_then(Value::as_str).is_some() {
             return;
@@ -256,7 +256,7 @@ fn apply_expand(root: &mut Value, fetched: &HashMap<String, String>, store: &Blo
 /// Verify fetched blob `bytes` hash to the expected `hex` key, returning the
 /// canonical base64 encoding **of the blob bytes** for re-inlining as
 /// `DV_MULTIMEDIA.data`. A mismatch is a hard error — never silent corruption.
-fn verify_and_encode(hex: &str, bytes: &[u8]) -> Result<String, MultimediaError> {
+pub(super) fn verify_and_encode(hex: &str, bytes: &[u8]) -> Result<String, MultimediaError> {
     let (actual, _) = sha256(bytes);
     if actual != hex {
         return Err(MultimediaError::Integrity {

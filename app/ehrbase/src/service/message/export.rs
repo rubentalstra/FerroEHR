@@ -443,7 +443,7 @@ impl EhrbaseService {
 
     /// SM `export_ehrs(an_ehr_id)` — the whole-EHR, latest-only export as a
     /// single-element `List<EXTRACT>` (`i_ehr_extract_service.adoc`).
-    async fn export_all_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
+    pub(super) async fn export_all_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
         if !self.extract_ehr_exists(an_ehr_id).await? {
             return Err(SmError::ehr_not_found(format!(
                 "no EHR with id {an_ehr_id}"
@@ -460,7 +460,7 @@ impl EhrbaseService {
     /// entity, honouring `EXTRACT_VERSION_SPEC` + the item-list selector
     /// (`i_ehr_extract_service.adoc`; `master09-semantics.adoc` §Creation
     /// Semantics).
-    async fn export_ehr_extracts_spec(
+    pub(super) async fn export_ehr_extracts_spec(
         &self,
         extract_spec: ExtractSpec,
     ) -> Result<Vec<Value>, SmError> {

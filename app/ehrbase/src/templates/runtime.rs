@@ -45,7 +45,7 @@ impl EhrbaseService {
     /// The cache is keyed by the §Composite Identifiers and Case canonical form
     /// of `template_id` (G-T04), so case variants of one stored template resolve
     /// to a single cached [`WebTemplate`].
-    async fn web_template_for(
+    pub(crate) async fn web_template_for(
         &self,
         template_id: &str,
     ) -> Result<Arc<WebTemplate>, ServiceError> {
@@ -118,7 +118,7 @@ impl EhrbaseService {
     /// rather than the `422` [`web_template_for`](Self::web_template_for) maps for
     /// an unknown template on a *commit* path; a stored-but-unbuildable template
     /// stays a `422` (`Unprocessable`).
-    async fn template_example(
+    pub(crate) async fn template_example(
         &self,
         template_id: &str,
         level: DetailLevel,

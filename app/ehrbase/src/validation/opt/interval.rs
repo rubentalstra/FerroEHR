@@ -22,7 +22,7 @@ use openehr_its::opt14::{Intervalofinteger, Intervalofreal};
 
 /// The effective lower bound of an `opt14` integer interval: an unbounded or
 /// absent lower limit reads as `0` (the AOM occurrence/existence floor).
-fn iv_lower(iv: &Intervalofinteger) -> i32 {
+pub(super) fn iv_lower(iv: &Intervalofinteger) -> i32 {
     if iv.lower_unbounded {
         0
     } else {
@@ -32,7 +32,7 @@ fn iv_lower(iv: &Intervalofinteger) -> i32 {
 
 /// The effective upper bound of an `opt14` integer interval: `None` for an
 /// unbounded upper limit (`{lower..*}`), else the declared `upper`.
-fn iv_upper(iv: &Intervalofinteger) -> Option<i32> {
+pub(super) fn iv_upper(iv: &Intervalofinteger) -> Option<i32> {
     if iv.upper_unbounded { None } else { iv.upper }
 }
 
@@ -45,7 +45,7 @@ fn iv_upper(iv: &Intervalofinteger) -> Option<i32> {
 /// always closed inclusive intervals, so the inclusion flags are set to
 /// `true` — an absent or unbounded limit still imposes no constraint on that
 /// side, matching `Interval.has`.
-fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
+pub(super) fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
     MultiplicityInterval {
         lower: r.lower,
         upper: r.upper,
@@ -70,7 +70,7 @@ fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
 /// `openehr-base`. The boundary algebra is therefore inlined here for `Real`,
 /// faithful to `Interval.has` (`master05-interval.adoc`): an absent/unbounded
 /// limit imposes no constraint; present limits compare inclusively.
-fn real_in_range(v: f64, r: &Intervalofreal) -> bool {
+pub(super) fn real_in_range(v: f64, r: &Intervalofreal) -> bool {
     let lower_ok = r.lower_unbounded || r.lower.is_none_or(|l| v >= l);
     let upper_ok = r.upper_unbounded || r.upper.is_none_or(|u| v <= u);
     lower_ok && upper_ok

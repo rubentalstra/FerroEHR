@@ -27,7 +27,7 @@ use super::ir::{
 
 /// Lowers one parsed [`SelectQuery`] into a [`QueryIr`] (without parameter-
 /// presence validation, which [`super::plan`] performs).
-fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
+pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
     let mut planner = Planner::default();
     let contains = planner.lower_from(&query.from, None)?;
 

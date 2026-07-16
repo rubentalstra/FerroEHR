@@ -18,7 +18,7 @@ use crate::service::{EhrbaseService, ServiceError};
 
 impl EhrbaseService {
     /// All demographic tags (ehr-less), optionally filtered by key/value/path.
-    async fn demographic_tags(
+    pub(crate) async fn demographic_tags(
         &self,
         key: Option<&str>,
         value: Option<&str>,
@@ -31,7 +31,7 @@ impl EhrbaseService {
     }
 
     /// The tags on one party.
-    async fn party_tags(&self, vo_id: Uuid) -> Result<Vec<Value>, ServiceError> {
+    pub(crate) async fn party_tags(&self, vo_id: Uuid) -> Result<Vec<Value>, ServiceError> {
         let rows =
             crate::storage::tag_repo::list_tags(&self.pool, None, Some(vo_id), None, None, None)
                 .await?;
@@ -41,7 +41,7 @@ impl EhrbaseService {
     /// Replace the whole tag collection of a party with the posted set (PUT
     /// full-collection semantics; an empty list clears all). Duplicate keys in
     /// the body are last-wins.
-    async fn replace_party_tags(
+    pub(crate) async fn replace_party_tags(
         &self,
         kind: PartyKind,
         vo_id: Uuid,
@@ -97,7 +97,7 @@ impl EhrbaseService {
     }
 
     /// Delete a tag by key from a party.
-    async fn delete_party_tag(
+    pub(crate) async fn delete_party_tag(
         &self,
         vo_id: Uuid,
         key: &str,

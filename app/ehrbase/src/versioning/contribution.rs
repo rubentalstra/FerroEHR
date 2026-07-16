@@ -28,7 +28,7 @@ use crate::versioning::{CommitEnv, Kind, PendingAttest, change, revision_history
 /// An optional `(lower, upper)` inclusive commit-time window — the simple
 /// realization of the SM `Interval<Iso8601_date_time>` (either side open when
 /// its bound is `None`; the whole `Option` `None` = unbounded).
-type TimeRange = Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>;
+pub(crate) type TimeRange = Option<(Option<jiff::Timestamp>, Option<jiff::Timestamp>)>;
 
 /// The storage branch an incoming VERSION maps to. Deliberately narrower than
 /// the `audit_change_type` group: many change kinds (amendment, modification,
@@ -168,7 +168,7 @@ fn classify(
 /// `Pre_has_ehr`): the target EHR must exist before committing, so a create-only
 /// CONTRIBUTION to a missing EHR is a clean `NotFound`, not a storage FK error.
 #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
-async fn commit_version_set(
+pub(crate) async fn commit_version_set(
     cx: &impl CommitEnv,
     ehr_id: Option<Uuid>,
     body: &Value,
@@ -741,7 +741,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 /// `OBJECT_REF`s of the versions it committed. With `resolve_refs` the
 /// `versions` list carries the resolved `ORIGINAL_VERSION` objects instead of
 /// `OBJECT_REF`s (ITS-REST `Prefer: resolve_refs`).
-async fn get_contribution(
+pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
     ehr_id: Uuid,
@@ -799,7 +799,7 @@ async fn get_contribution(
 /// SM `I_EHR_CONTRIBUTION.list_contributions` — the ids of the EHR's
 /// CONTRIBUTIONs, oldest-first, within the optional commit-time window, paged
 /// (SM `i_ehr_contribution.adoc`). A missing EHR is `NotFound`.
-async fn list_contributions(
+pub(crate) async fn list_contributions(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,
     time_range: TimeRange,
@@ -817,7 +817,7 @@ async fn list_contributions(
 
 /// SM `I_EHR_CONTRIBUTION.contribution_count` — the number of CONTRIBUTIONs in
 /// the EHR within the optional commit-time window. A missing EHR is `NotFound`.
-async fn count_contributions(
+pub(crate) async fn count_contributions(
     pool: &sqlx::PgPool,
     ehr_id: Uuid,
     time_range: TimeRange,

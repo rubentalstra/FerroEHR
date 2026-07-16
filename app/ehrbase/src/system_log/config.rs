@@ -109,22 +109,22 @@ impl Default for AuditConfig {
 }
 
 mod defaults {
-    fn host() -> String {
+    pub(super) fn host() -> String {
         "localhost".to_owned()
     }
-    const fn port() -> u16 {
+    pub(super) const fn port() -> u16 {
         514
     }
-    fn source_id() -> String {
+    pub(super) fn source_id() -> String {
         "ehrbase".to_owned()
     }
-    fn value_if_missing() -> String {
+    pub(super) fn value_if_missing() -> String {
         "UNKNOWN".to_owned()
     }
-    const fn yes() -> bool {
+    pub(super) const fn yes() -> bool {
         true
     }
-    const fn queue_capacity() -> usize {
+    pub(super) const fn queue_capacity() -> usize {
         1024
     }
 }

@@ -33,7 +33,7 @@ use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transfor
 /// for a COMPOSITION under a mapping definition. `subject_id` is the owning EHR's
 /// external subject id (placed back at the mapping's `subject.reference_path`,
 /// `strip_prefix` re-applied); `None` omits the subject.
-fn to_fhir(
+pub(super) fn to_fhir(
     resource_type: &str,
     composition: &Value,
     wt: &openehr_flat::WebTemplate,

@@ -106,16 +106,16 @@ pub fn as_value(cfg: &TelemetryConfig) -> Result<serde_json::Value, serde_json::
 }
 
 mod defaults {
-    fn filter() -> String {
+    pub(super) fn filter() -> String {
         "info,ehrbase=info".to_owned()
     }
-    fn service_name() -> String {
+    pub(super) fn service_name() -> String {
         "ehrbase".to_owned()
     }
-    fn environment() -> String {
+    pub(super) fn environment() -> String {
         "dev".to_owned()
     }
-    const fn sample_ratio() -> f64 {
+    pub(super) const fn sample_ratio() -> f64 {
         1.0
     }
 }

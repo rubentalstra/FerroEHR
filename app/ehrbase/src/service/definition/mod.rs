@@ -48,7 +48,7 @@ use super::ServiceError;
 /// A qualified query name decomposed per `master04-definition_package.adoc`
 /// §Registered Queries: `<namespace>::<query-name>` or the three-part
 /// `<namespace>::<formalism>::<query-name>`.
-struct QualifiedName {
+pub(super) struct QualifiedName {
     /// The namespace segment (`"misc"` when none was supplied — §Registered
     /// Queries, l.34).
     pub namespace: String,
@@ -63,7 +63,7 @@ impl QualifiedName {
     /// The canonical two-part `<namespace>::<query-name>` — the form the
     /// stored-query store keys on (so a three-part input round-trips to the same
     /// row and the formalism is never folded into the name, G-05-04).
-    fn qualified(&self) -> String {
+    pub(super) fn qualified(&self) -> String {
         format!("{}::{}", self.namespace, self.name)
     }
 }
@@ -75,7 +75,7 @@ impl QualifiedName {
 /// folded into the name — G-05-04); any other segment count keeps the first
 /// segment as the namespace and the remainder as the (possibly `::`-bearing)
 /// name.
-fn parse_qualified_name(raw: &str) -> QualifiedName {
+pub(super) fn parse_qualified_name(raw: &str) -> QualifiedName {
     let qualified = qualify(raw);
     let segments: Vec<&str> = qualified.split("::").collect();
     match segments.as_slice() {
@@ -100,7 +100,7 @@ fn parse_qualified_name(raw: &str) -> QualifiedName {
 /// Apply the SM `"misc"` default namespace: a name with no `::` becomes
 /// `misc::<name>` (`master04` §Registered Queries: "If no namespace is supplied,
 /// the namespace `"misc"` is assumed").
-fn qualify(name: &str) -> String {
+pub(super) fn qualify(name: &str) -> String {
     if name.contains("::") {
         name.to_owned()
     } else {
@@ -112,7 +112,7 @@ fn qualify(name: &str) -> String {
 /// semantic_id)` on the first `::`, so the SM and wire paths key `stored_query`
 /// rows identically. Callers pass the [`QualifiedName::qualified`] form, which is
 /// always two-part, so the formalism is never captured in `semantic_id`.
-fn split_qualified(qualified_name: &str) -> (&str, &str) {
+pub(super) fn split_qualified(qualified_name: &str) -> (&str, &str) {
     qualified_name
         .split_once("::")
         .unwrap_or(("", qualified_name))
@@ -120,7 +120,7 @@ fn split_qualified(qualified_name: &str) -> (&str, &str) {
 
 /// Apply an SM [`Page`] to an iterator: skip `offset`, take `limit` (`None` ⇒
 /// all — `master02-overview.adoc` §List Handling).
-fn paginate<T>(items: impl Iterator<Item = T>, page: Page) -> Vec<T> {
+pub(super) fn paginate<T>(items: impl Iterator<Item = T>, page: Page) -> Vec<T> {
     let offset = usize::try_from(page.offset()).unwrap_or(usize::MAX);
     let skipped = items.skip(offset);
     match page.limit() {
@@ -133,7 +133,7 @@ fn paginate<T>(items: impl Iterator<Item = T>, page: Page) -> Vec<T> {
 
 /// A [`Page`] as `(offset, limit)` SQL bind values; a `None` limit binds SQL
 /// `NULL` (`LIMIT NULL` = all rows in `PostgreSQL`).
-fn page_bounds(page: Page) -> (i64, Option<i64>) {
+pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
     let offset = i64::try_from(page.offset()).unwrap_or(i64::MAX);
     let limit = page.limit().and_then(|l| i64::try_from(l).ok());
     (offset, limit)
@@ -147,7 +147,7 @@ fn page_bounds(page: Page) -> (i64, Option<i64>) {
 /// unsupported — a pattern using them fails to compile and surfaces as
 /// `invalid_id_pattern`, the correct SM outcome for an unusable pattern (a
 /// narrower accept envelope, never a wrong status).
-fn compile_pattern(pattern: &str) -> Result<Regex, ServiceError> {
+pub(super) fn compile_pattern(pattern: &str) -> Result<Regex, ServiceError> {
     Regex::new(pattern).map_err(|e| {
         ServiceError::sm(
             CallStatusType::InvalidIdPattern,

@@ -56,17 +56,27 @@ use crate::service::EhrbaseService;
 /// concrete `ACTOR`/`PARTY` leaves — RM demographic) — as opposed to a
 /// `PARTY_RELATIONSHIP` or a clinical versioned object. Shared by the physical
 /// delete ([`delete`]) and archive ([`archive`]) party guards.
-fn is_party_kind(kind: &str) -> bool {
+pub(super) fn is_party_kind(kind: &str) -> bool {
     matches!(kind, "AGENT" | "GROUP" | "ORGANISATION" | "PERSON" | "ROLE")
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
         Ok(self
             .physical_ehr_delete(parse_uuid(&ehr_id, "EHR")?)
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
         // Any malformed id in the list → 400 (the whole bulk request is rejected
         // before any deletion runs).
@@ -77,6 +87,11 @@ impl EhrbaseService {
         Ok(self.physical_ehr_delete_all(&ids).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn admin_list_contributions(
         &self,
         a_service: PlatformService,
@@ -86,6 +101,11 @@ impl EhrbaseService {
         Ok(self.stat_list_contributions(a_service, lo, hi).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn admin_contribution_count(
         &self,
         a_service: PlatformService,
@@ -95,6 +115,11 @@ impl EhrbaseService {
         Ok(self.stat_contribution_count(a_service, lo, hi).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn versioned_composition_count(
         &self,
         a_service: PlatformService,
@@ -106,6 +131,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn composition_version_count(
         &self,
         a_service: PlatformService,
@@ -117,6 +147,11 @@ impl EhrbaseService {
             .await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self
             .party_physical_delete(parse_uuid(&a_party_id, "party")?)
@@ -125,6 +160,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
         let ids = ehr_ids
             .iter()
@@ -133,6 +173,11 @@ impl EhrbaseService {
         Ok(self.archive_ehr_vos(&ids).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn archive_parties(&self, party_ids: Vec<String>) -> Result<(), SmError> {
         let ids = party_ids
             .iter()
@@ -143,6 +188,11 @@ impl EhrbaseService {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn export_ehrs(
         &self,
         file_sys_loc: String,
@@ -151,6 +201,11 @@ impl EhrbaseService {
         self.export_ehrs_to(Path::new(&file_sys_loc), &spec).await
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn load_ehrs(
         &self,
         file_sys_loc: String,

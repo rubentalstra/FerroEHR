@@ -24,7 +24,7 @@ use crate::versioning::{
 impl EhrbaseService {
     /// The `VERSIONED_PARTY` for a party (any of the five kinds). A non-party id
     /// is `404`.
-    async fn versioned_party(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    pub(crate) async fn versioned_party(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         // `VERSIONED_OBJECT.time_created` is the commit time of the earliest
         // held version; for a locally-created party that earliest-held version
@@ -53,7 +53,7 @@ impl EhrbaseService {
     /// The `REVISION_HISTORY` of a party: one item per version with its
     /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
     /// §Revision History). A non-party id is `404`.
-    async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    pub(crate) async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         let metas = crate::storage::version_repo::all_version_meta(&self.pool, vo_id).await?;
 
@@ -81,7 +81,7 @@ impl EhrbaseService {
 
     /// An `ORIGINAL_VERSION` of a party at a specific version. A non-party id is
     /// `404`.
-    async fn party_version(
+    pub(crate) async fn party_version(
         &self,
         vo_id: Uuid,
         version: TreeId,
@@ -97,7 +97,7 @@ impl EhrbaseService {
 
     /// The `ORIGINAL_VERSION` of a party extant at `at`, or the latest when `at`
     /// is `None`, with `ETag`/`Location` metadata for the VERSION resource.
-    async fn party_version_at_time(
+    pub(crate) async fn party_version_at_time(
         &self,
         vo_id: Uuid,
         at: Option<jiff::Timestamp>,

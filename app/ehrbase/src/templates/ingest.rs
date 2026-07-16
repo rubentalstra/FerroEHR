@@ -37,7 +37,7 @@ use crate::service::ServiceError;
 /// is a semantic error on the artefact (→ ITS-REST `422`), not a transport
 /// error: the XML negotiated fine at the REST edge but does not decode as a
 /// well-formed OPT.
-fn parse_opt(xml: &str) -> Result<OperationalTemplate, ServiceError> {
+pub(crate) fn parse_opt(xml: &str) -> Result<OperationalTemplate, ServiceError> {
     openehr_its::opt14::from_xml(xml)
         .map_err(|e| ServiceError::Unprocessable(format!("invalid OPT 1.4 XML: {e}")))
 }

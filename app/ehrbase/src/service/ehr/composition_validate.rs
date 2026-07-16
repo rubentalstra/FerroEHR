@@ -25,7 +25,7 @@ impl EhrbaseService {
     /// (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
     /// We adopt the CNF criterion (`create_composition-same_opt_twice`). Only
     /// persistent COMPOSITIONs with a declared template are constrained.
-    async fn reject_duplicate_persistent(
+    pub(super) async fn reject_duplicate_persistent(
         &self,
         ehr_id: Uuid,
         composition: &Value,
@@ -78,7 +78,7 @@ impl EhrbaseService {
     /// The template lookup goes through
     /// [`web_template_for`](Self::web_template_for) and the passes through
     /// `openehr_flat::validate_*`.
-    async fn validate_composition_for_commit(
+    pub(super) async fn validate_composition_for_commit(
         &self,
         composition: &Value,
         incomplete: bool,
@@ -133,7 +133,7 @@ impl EhrbaseService {
     ///
     /// The demographic arms (party roots + `PARTY_RELATIONSHIP`) dispatch to the
     /// demographic register (`service/demographic/`).
-    async fn validate_for_commit(
+    pub(in crate::service) async fn validate_for_commit(
         &self,
         kind: Kind,
         data: &Value,
@@ -173,7 +173,7 @@ impl EhrbaseService {
 /// (`crate::versioning::commit_version_set`) through the
 /// [`crate::versioning::CommitEnv::pre_composition_modify`] hook — each in its
 /// own commit transaction.
-async fn check_versioned_composition_invariants(
+pub(in crate::service) async fn check_versioned_composition_invariants(
     tx: &mut PgConnection,
     vo_id: Uuid,
     canonical: &Value,
@@ -219,7 +219,7 @@ async fn check_versioned_composition_invariants(
 
 /// The OPT `template_id` a COMPOSITION declares
 /// (`archetype_details.template_id.value`), if any.
-fn composition_template_id(composition: &Value) -> Option<&str> {
+pub(super) fn composition_template_id(composition: &Value) -> Option<&str> {
     composition
         .pointer("/archetype_details/template_id/value")
         .and_then(Value::as_str)

@@ -74,16 +74,31 @@ fn is_fhir_service_api(service_api: &str) -> bool {
 // ─── SM `I_TERMINOLOGY_SERVICE` on the service (provider routing) ─────────────
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn get_terminology_ids(&self) -> Result<Vec<String>, SmError> {
         // Enumeration is the bundle's (G-4).
         Ok(bundle::terminology_ids())
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn has_terminology(&self, terminology_id: &str) -> Result<bool, SmError> {
         // Enumeration is the bundle's (G-4).
         Ok(bundle::has_terminology(terminology_id))
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub fn get_terminology_description(
         &self,
         terminology_id: &str,
@@ -92,6 +107,11 @@ impl EhrbaseService {
         bundle::terminology_description(terminology_id)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_term(
         &self,
         terminology_id: &str,
@@ -108,6 +128,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_term(
         &self,
         terminology_id: &str,
@@ -126,6 +151,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn subsumes(
         &self,
         terminology_id: &str,
@@ -142,6 +172,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn value_set_validate(
         &self,
         terminology_id: &str,
@@ -159,6 +194,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_value_set(
         &self,
         terminology_id: &str,
@@ -173,6 +213,11 @@ impl EhrbaseService {
         }
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_value_set(
         &self,
         terminology_id: &str,

@@ -18,7 +18,7 @@
 use std::collections::BTreeMap;
 
 /// The ODIN subset ADL2 `language`/`terminology` sections use.
-enum OdinValue {
+pub(super) enum OdinValue {
     /// `attr = <…>` pairs at one level.
     Attrs(BTreeMap<String, OdinValue>),
     /// `["key"] = <…>` pairs at one level.
@@ -35,7 +35,7 @@ enum OdinValue {
 
 impl OdinValue {
     /// Parse a section body as a top-level attribute list.
-    fn parse(src: &str) -> Option<Self> {
+    pub(super) fn parse(src: &str) -> Option<Self> {
         let mut p = OdinParser {
             src: src.as_bytes(),
             pos: 0,
@@ -43,14 +43,14 @@ impl OdinValue {
         p.attrs_block()
     }
 
-    fn attr(&self, name: &str) -> Option<&OdinValue> {
+    pub(super) fn attr(&self, name: &str) -> Option<&OdinValue> {
         match self {
             OdinValue::Attrs(map) => map.get(name),
             _ => None,
         }
     }
 
-    fn keyed_entries(&self) -> impl Iterator<Item = (&str, &OdinValue)> {
+    pub(super) fn keyed_entries(&self) -> impl Iterator<Item = (&str, &OdinValue)> {
         let map = match self {
             OdinValue::Keyed(map) => Some(map),
             _ => None,
@@ -58,21 +58,21 @@ impl OdinValue {
         map.into_iter().flatten().map(|(k, v)| (k.as_str(), v))
     }
 
-    fn keys(&self) -> std::collections::HashSet<String> {
+    pub(super) fn keys(&self) -> std::collections::HashSet<String> {
         match self {
             OdinValue::Keyed(map) => map.keys().cloned().collect(),
             _ => std::collections::HashSet::new(),
         }
     }
 
-    fn code_string(&self) -> Option<String> {
+    pub(super) fn code_string(&self) -> Option<String> {
         match self {
             OdinValue::Code(c) => Some(c.clone()),
             _ => None,
         }
     }
 
-    fn string_items(&self) -> Vec<&String> {
+    pub(super) fn string_items(&self) -> Vec<&String> {
         match self {
             OdinValue::Strings(items) => items.iter().collect(),
             _ => Vec::new(),

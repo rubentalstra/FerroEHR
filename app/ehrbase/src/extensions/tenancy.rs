@@ -213,18 +213,38 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
 }
 
 impl EhrbaseService {
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_tenants().await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
         Ok(self.create_tenant(&a_tenant).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_tenant(a_tenant_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_update(
         &self,
         a_tenant_id: Uuid,
@@ -233,10 +253,20 @@ impl EhrbaseService {
         Ok(self.update_tenant(a_tenant_id, &a_tenant).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_delete(&self, a_tenant_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_tenant(a_tenant_id).await?)
     }
 
+    /// See the SM interface doc for this call (module doc cites the chapter).
+    ///
+    /// # Errors
+    /// Returns the SM call-status error ([`SmError`]-mapped at the
+    /// protocol adapter) for the failure conditions of this call.
     pub async fn tenant_resolve(&self, key: &str) -> Result<Option<TenantContext>, SmError> {
         Ok(self.resolve_tenant(key).await?)
     }

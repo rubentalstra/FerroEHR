@@ -45,7 +45,7 @@ impl EhrbaseService {
     /// ("409 Conflict is returned when a template with same `template_id` …
     /// already exists") and the CNF Robot case
     /// `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict`.
-    async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
+    pub(crate) async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
         let opt = ingest::parse_opt(xml)?;
         // Structural well-formedness the tolerant codec would otherwise accept
         // (foreign / duplicated top-level elements) — S-05.
@@ -130,7 +130,7 @@ impl EhrbaseService {
 
     /// The metadata descriptor for one stored template, addressed by
     /// `template_id` (case-insensitive, G-T04). Absent → `NotFound` (`404`).
-    async fn get_template_meta(&self, template_id: &str) -> Result<Value, ServiceError> {
+    pub(crate) async fn get_template_meta(&self, template_id: &str) -> Result<Value, ServiceError> {
         // §Composite Identifiers and Case: compare case-insensitively (G-T04).
         let row = sqlx::query(
             "SELECT template_id, concept, root_archetype, created_at \
@@ -146,7 +146,7 @@ impl EhrbaseService {
     /// The stored OPT 1.4 XML for a template (the canonical retrieval artifact),
     /// addressed by `template_id` (case-insensitive, G-T04). Absent → `NotFound`
     /// (`404`).
-    async fn get_template_xml(&self, template_id: &str) -> Result<String, ServiceError> {
+    pub(crate) async fn get_template_xml(&self, template_id: &str) -> Result<String, ServiceError> {
         // §Composite Identifiers and Case: compare case-insensitively (G-T04).
         sqlx::query_scalar::<_, String>(
             "SELECT content FROM template_store WHERE lower(template_id) = lower($1)",
@@ -158,7 +158,7 @@ impl EhrbaseService {
     }
 
     /// List every stored template's metadata descriptor (by `template_id`).
-    async fn template_summaries(&self) -> Result<Vec<Value>, ServiceError> {
+    pub(crate) async fn template_summaries(&self) -> Result<Vec<Value>, ServiceError> {
         let rows = sqlx::query(
             "SELECT template_id, concept, root_archetype, created_at \
              FROM template_store ORDER BY template_id",
