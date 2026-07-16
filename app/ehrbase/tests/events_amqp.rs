@@ -29,8 +29,7 @@ use testcontainers_modules::rabbitmq::RabbitMq;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::events::{EventsConfig, start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{EhrCompositionService, EhrService, EventSubscriptionAdapter};
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
@@ -141,7 +140,7 @@ async fn version_count(pool: &PgPool) -> i64 {
 fn events_config(url: String) -> EventsConfig {
     EventsConfig {
         enabled: true,
-        url: ehrbase_sm::SecretUrl::new(url),
+        url: ehrbase::config::SecretUrl::new(url),
         exchange: EXCHANGE.to_owned(),
         poll_interval_ms: 50,
         publish_max_retries: 1,

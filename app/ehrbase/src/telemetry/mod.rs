@@ -20,9 +20,15 @@ mod layers;
 pub mod prometheus;
 pub mod samplers;
 
+pub mod build_info;
+pub mod provenance;
+pub mod health;
+pub mod log_reload;
+
 pub use config::{LogConfig, LogFormat, OtelConfig, TelemetryConfig};
 
-use ehrbase_rest::management::{BuildInfo, LogReload};
+use build_info::BuildInfo;
+use log_reload::LogReload;
 use metrics_exporter_prometheus::PrometheusHandle;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::Meter;

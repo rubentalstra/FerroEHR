@@ -8,7 +8,7 @@
 use serde_json::Value;
 use sqlx::Row;
 
-use ehrbase_sm::{
+use crate::service::{
     DataFrame, DataFrameSample, SmError, SubjectVariable, SystemCall, VariableSample,
 };
 

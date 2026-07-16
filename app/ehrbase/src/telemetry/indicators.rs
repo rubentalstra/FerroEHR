@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::system_log::AuditSender;
 use async_trait::async_trait;
-use ehrbase_rest::management::{Health, HealthIndicator};
+use crate::telemetry::health::{Health, HealthIndicator};
 use sqlx::PgPool;
 
 /// `db` — a bounded `SELECT 1` liveness ping. Required for readiness.

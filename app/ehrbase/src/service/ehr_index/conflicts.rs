@@ -5,7 +5,7 @@
 //! design (advisory, never a hard reject: the N:M states are legal-but-flagged
 //! per `resource_instance_type.adoc` `Duplicate`).
 
-use ehrbase_sm::{EhrIndexEntry, SubjectRef};
+use crate::service::{EhrIndexEntry, SubjectRef};
 use sqlx::Row;
 use uuid::Uuid;
 

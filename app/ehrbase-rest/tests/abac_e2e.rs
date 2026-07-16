@@ -25,7 +25,7 @@ use ehrbase_rest::access::authz::request::{AuthzRequest, Decision};
 use ehrbase_rest::{
     AppConfig, AuthzHandle, AuthzResolvers, Observability, ResolveError, ServerConfig, build_full,
 };
-use ehrbase_sm::EventOutcome;
+use ehrbase::system_log::EventOutcome;
 use http::{Request, StatusCode};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde_json::json;
@@ -98,7 +98,7 @@ fn rest_config() -> AppConfig {
                 issuer: ISSUER.to_owned(),
                 audiences: vec![],
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase_sm::Secret::new(HMAC_SECRET.to_owned())),
+                hmac_secret: Some(ehrbase::config::Secret::new(HMAC_SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             }),

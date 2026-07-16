@@ -13,7 +13,6 @@
 
 use axum::extract::State;
 use axum::response::Response;
-use ehrbase_sm::Platform;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
@@ -21,7 +20,7 @@ use crate::api::guarded_dispatch;
 use crate::state::AppState;
 
 /// The Admin API group as a native `utoipa-axum` router (group-relative paths).
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(admin_ehr_delete_all))
         .routes(routes!(admin_ehr_delete))
@@ -33,8 +32,8 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     params(("ehr_id" = Vec<String>, Query, description = "The EHR ids to delete.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn admin_ehr_delete_all<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn admin_ehr_delete_all(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -42,7 +41,7 @@ pub(crate) async fn admin_ehr_delete_all<S: Platform>(
         state,
         "admin_ehr_delete_all",
         parts,
-        super::dispatch::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }
@@ -53,8 +52,8 @@ pub(crate) async fn admin_ehr_delete_all<S: Platform>(
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn admin_ehr_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn admin_ehr_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -62,7 +61,7 @@ pub(crate) async fn admin_ehr_delete<S: Platform>(
         state,
         "admin_ehr_delete",
         parts,
-        super::dispatch::dispatch::<S>,
+        super::dispatch::dispatch,
     )
     .await
 }

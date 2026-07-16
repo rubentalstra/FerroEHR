@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 use async_trait::async_trait;
 
-use ehrbase_sm::{CallStatusType, DefinitionAdl2Service, Page, SmError};
+use crate::service::{CallStatusType, Page, SmError};
 use openehr_base::prelude::ArchetypeId;
 use sqlx::Row;
 
@@ -264,43 +264,42 @@ fn valid_adl2_hrid(hrid: &str) -> bool {
 
 // ── SM Definitions native API (I_DEFINITION_ADL2) ────────────────────────────
 
-#[async_trait]
-impl DefinitionAdl2Service for EhrbaseService {
-    async fn has_artefact(&self, an_id: String) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn has_artefact(&self, an_id: String) -> Result<bool, SmError> {
         Ok(self.adl2_exists(&an_id).await?)
     }
 
-    async fn valid_artefact(&self, adl2: String) -> Result<bool, SmError> {
+    pub async fn valid_artefact(&self, adl2: String) -> Result<bool, SmError> {
         Ok(Self::valid_adl2_source(&adl2))
     }
 
-    async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
+    pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         // Replace-if-exists (same HRID); invalid source → 422 invalid_artefact.
         self.adl2_upload(&adl2).await?;
         Ok(())
     }
 
-    async fn get_artefact(&self, an_id: String) -> Result<String, SmError> {
+    pub async fn get_artefact(&self, an_id: String) -> Result<String, SmError> {
         Ok(self.adl2_get(&an_id).await?)
     }
 
-    async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_artefacts(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list(page).await?)
     }
 
-    async fn list_archetypes(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_archetypes_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("archetype", page).await?)
     }
 
-    async fn list_templates(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_templates_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("template", page).await?)
     }
 
-    async fn list_opts(&self, page: Page) -> Result<Vec<String>, SmError> {
+    pub async fn list_opts_adl2(&self, page: Page) -> Result<Vec<String>, SmError> {
         Ok(self.adl2_list_by_kind("operational_template", page).await?)
     }
 
-    async fn list_matching_artefacts(
+    pub async fn list_matching_artefacts(
         &self,
         id_pattern: String,
         page: Page,
@@ -308,23 +307,23 @@ impl DefinitionAdl2Service for EhrbaseService {
         Ok(self.adl2_list_matching(&id_pattern, page).await?)
     }
 
-    async fn delete_artefact(&self, an_id: String) -> Result<(), SmError> {
+    pub async fn delete_artefact(&self, an_id: String) -> Result<(), SmError> {
         Ok(self.adl2_delete(&an_id).await?)
     }
 
-    async fn artefacts_count(&self) -> Result<i64, SmError> {
+    pub async fn artefacts_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count().await?)
     }
 
-    async fn archetypes_count(&self) -> Result<i64, SmError> {
+    pub async fn archetypes_count_adl2(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("archetype").await?)
     }
 
-    async fn templates_count(&self) -> Result<i64, SmError> {
+    pub async fn templates_count(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("template").await?)
     }
 
-    async fn opts_count(&self) -> Result<i64, SmError> {
+    pub async fn opts_count_adl2(&self) -> Result<i64, SmError> {
         Ok(self.adl2_count_by_kind("operational_template").await?)
     }
 }

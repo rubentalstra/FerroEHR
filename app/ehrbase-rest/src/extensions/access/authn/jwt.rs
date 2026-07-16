@@ -247,7 +247,7 @@ mod tests {
                 issuer: ISSUER.to_owned(),
                 audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
                 algorithms: vec!["HS256".to_owned()],
-                hmac_secret: Some(ehrbase_sm::Secret::new(SECRET.to_owned())),
+                hmac_secret: Some(ehrbase::config::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             },

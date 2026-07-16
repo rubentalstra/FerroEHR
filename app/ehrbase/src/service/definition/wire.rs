@@ -10,25 +10,24 @@ use async_trait::async_trait;
 use regex::Regex;
 use serde_json::Value;
 
-use ehrbase_sm::extensions::adapters::TemplateListFilter;
-use ehrbase_sm::{CallStatusType, DefinitionAdapter, Page, SmError};
+use crate::service::definition::types::TemplateListFilter;
+use crate::service::{CallStatusType, Page, SmError};
 use openehr_flat::{DetailLevel, ExampleType};
 
 use crate::service::EhrbaseService;
 
-#[async_trait]
-impl DefinitionAdapter for EhrbaseService {
-    async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
+impl EhrbaseService {
+    pub async fn template_adl14_upload(&self, opt_xml: String) -> Result<Value, SmError> {
         // The OPT 1.4 canonical XML is parsed + stored through the templates
         // layer; the wire `201` body is the created template summary.
         Ok(self.store_template(&opt_xml).await?)
     }
 
-    async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError> {
+    pub async fn template_adl14_get(&self, template_id: String) -> Result<String, SmError> {
         Ok(self.opt_get_by_template_id(&template_id).await?)
     }
 
-    async fn template_adl14_list(
+    pub async fn template_adl14_list(
         &self,
         filter: TemplateListFilter,
         page: Page,
@@ -38,13 +37,13 @@ impl DefinitionAdapter for EhrbaseService {
         // (`operations/definition_template_adl1.4_list.yaml`). Filter + paginate
         // the stored template descriptors (from the templates layer) here.
         Ok(filter_templates(
-            self.list_templates().await?,
+            self.list_templates_response().await?,
             &filter,
             page,
         ))
     }
 
-    async fn template_adl14_example(
+    pub async fn template_adl14_example(
         &self,
         template_id: String,
         detail_level: Option<String>,
@@ -60,7 +59,7 @@ impl DefinitionAdapter for EhrbaseService {
         Ok(self.template_example(&template_id, level, kind).await?)
     }
 
-    async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
+    pub async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
         // ADL2 operational-template source (text/plain). Store it and return the
         // stored ARCHETYPE_HRID; the dispatcher builds `Location` + the `Prefer`
         // body from it (`201_Template_adl2_upload`). Invalid source → 422.
@@ -82,7 +81,7 @@ impl DefinitionAdapter for EhrbaseService {
         Ok(self.adl2_upload(&source).await?)
     }
 
-    async fn template_adl2_list(
+    pub async fn template_adl2_list(
         &self,
         filter: TemplateListFilter,
         page: Page,
@@ -99,11 +98,11 @@ impl DefinitionAdapter for EhrbaseService {
         ))
     }
 
-    async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
+    pub async fn query_list(&self, qualified_query_name: String) -> Result<Vec<Value>, SmError> {
         Ok(self.list_stored_queries(&qualified_query_name).await?)
     }
 
-    async fn query_version_get(
+    pub async fn query_version_get(
         &self,
         qualified_query_name: String,
         version: String,
@@ -113,7 +112,7 @@ impl DefinitionAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn query_store(
+    pub async fn query_store(
         &self,
         qualified_query_name: String,
         version: Option<String>,
@@ -133,7 +132,7 @@ impl DefinitionAdapter for EhrbaseService {
         }
         // The effective version is recovered by the dispatcher through the list
         // seam for the `Location` header; the store itself is bodyless.
-        self.store_query(&qualified_query_name, version.as_deref(), body)
+        self.store_query_response(&qualified_query_name, version.as_deref(), body)
             .await?;
         Ok(())
     }

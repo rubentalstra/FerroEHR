@@ -7,7 +7,6 @@
 
 use axum::extract::State;
 use axum::response::Response;
-use ehrbase_sm::Platform;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
@@ -15,7 +14,7 @@ use crate::api::guarded_dispatch;
 use crate::state::AppState;
 
 /// The Query API group as a native `utoipa-axum` router (group-relative paths).
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(
             query_execute_adhoc_query,
@@ -36,8 +35,8 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     get, path = "/query/aql", tag = "Query",
     responses((status = 200, description = "The RESULT_SET.", body = serde_json::Value))
 )]
-pub(crate) async fn query_execute_adhoc_query<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_adhoc_query(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -45,7 +44,7 @@ pub(crate) async fn query_execute_adhoc_query<S: Platform>(
         state,
         "query_execute_adhoc_query",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -55,8 +54,8 @@ pub(crate) async fn query_execute_adhoc_query<S: Platform>(
     post, path = "/query/aql", tag = "Query",
     responses((status = 200, description = "The RESULT_SET.", body = serde_json::Value))
 )]
-pub(crate) async fn query_execute_adhoc_query_body<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_adhoc_query_body(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -64,7 +63,7 @@ pub(crate) async fn query_execute_adhoc_query_body<S: Platform>(
         state,
         "query_execute_adhoc_query_body",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -78,8 +77,8 @@ pub(crate) async fn query_execute_adhoc_query_body<S: Platform>(
         (status = 404, description = "Unknown stored query.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn query_execute_stored_query<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_stored_query(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -87,7 +86,7 @@ pub(crate) async fn query_execute_stored_query<S: Platform>(
         state,
         "query_execute_stored_query",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -101,8 +100,8 @@ pub(crate) async fn query_execute_stored_query<S: Platform>(
         (status = 404, description = "Unknown stored query.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn query_execute_stored_query_body<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_stored_query_body(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -110,7 +109,7 @@ pub(crate) async fn query_execute_stored_query_body<S: Platform>(
         state,
         "query_execute_stored_query_body",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -127,8 +126,8 @@ pub(crate) async fn query_execute_stored_query_body<S: Platform>(
         (status = 404, description = "Unknown stored query version.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn query_execute_stored_query_version<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_stored_query_version(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -136,7 +135,7 @@ pub(crate) async fn query_execute_stored_query_version<S: Platform>(
         state,
         "query_execute_stored_query_version",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -153,8 +152,8 @@ pub(crate) async fn query_execute_stored_query_version<S: Platform>(
         (status = 404, description = "Unknown stored query version.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn query_execute_stored_query_version_body<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn query_execute_stored_query_version_body(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -162,7 +161,7 @@ pub(crate) async fn query_execute_stored_query_version_body<S: Platform>(
         state,
         "query_execute_stored_query_version_body",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }

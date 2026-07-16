@@ -52,7 +52,6 @@ use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
-use ehrbase_sm::Platform;
 
 use crate::api::system;
 use crate::extensions::access::authn::{self, Authenticator};
@@ -71,7 +70,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// layer) nested under the base path, the public status/health + SMART-discovery
 /// endpoints, the System Options manifest, the optional Swagger UI, and the
 /// shared `tower-http` middleware stack.
-pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>) -> Router {
+pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
     let observability = state.observability().clone();
     let rest_root = cfg
@@ -89,7 +88,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // see [`crate::overview::error::not_implemented_handler`]; axum routes by
     // path+method and offers no distinct "unrecognised method" seam, so a blanket
     // `501` fallback would wrongly convert genuine `404`s.)
-    let api = crate::api::api_router::<S>()
+    let api = crate::api::api_router()
         .method_not_allowed_fallback(error::method_not_allowed_handler);
     // Tenant resolution sits inside the auth layer so it runs *after*
     // authentication (the principal + its claims are established) and scopes the
@@ -98,7 +97,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     let api = if cfg.tenancy.enabled {
         api.layer(from_fn_with_state(
             state.clone(),
-            crate::extensions::access::tenant::middleware::<S>,
+            crate::extensions::access::tenant::middleware,
         ))
     } else {
         api
@@ -115,7 +114,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // per request.
     let api = api.layer(from_fn_with_state(
         state.clone(),
-        crate::system_log::middleware::middleware::<S>,
+        crate::system_log::middleware::middleware,
     ));
     let api = api
         .layer(axum::middleware::from_fn(management::http_metrics))
@@ -131,7 +130,7 @@ pub fn router<S: Platform>(state: AppState<S>, authenticator: Arc<Authenticator>
     // spec governs server overload — our own design (RFC 9110 §15.6.4).
     let api = crate::overload::shed_layer(api, cfg.server.max_in_flight);
 
-    let inner = mount_public_surface::<S>(&cfg, api, &rest_root);
+    let inner = mount_public_surface(&cfg, api, &rest_root);
 
     let cors = if cfg.server.cors_permissive {
         CorsLayer::very_permissive()
@@ -234,14 +233,14 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
 /// pre-auth, SMART master04 §Service Discovery; an empty router when SMART is
 /// disabled, so the merge is a no-op and the path is absent), and the
 /// config-gated Swagger UI + `OpenAPI` documents.
-fn mount_public_surface<S: Platform>(
+fn mount_public_surface(
     cfg: &crate::config::AppConfig,
-    api: Router<AppState<S>>,
+    api: Router<AppState>,
     rest_root: &str,
-) -> Router<AppState<S>> {
+) -> Router<AppState> {
     // The SMART discovery document is a pure function of static configuration
     // (the openEHR/FHIR base URLs + OIDC issuer), built once inside the router.
-    let discovery = smart::discovery::router::<S>(cfg, rest_root);
+    let discovery = smart::discovery::router(cfg, rest_root);
 
     let mut inner = Router::new()
         .nest(&cfg.server.base_path, api)
@@ -249,15 +248,15 @@ fn mount_public_surface<S: Platform>(
         .merge(discovery);
 
     if cfg.server.swagger_ui {
-        inner = inner.merge(openapi::swagger_router::<S>(cfg));
+        inner = inner.merge(openapi::swagger_router(cfg));
     }
     inner
 }
 
 /// Build the standalone management router (separate-port mode). The binary
 /// serves this on the management listener when `management.port` is set.
-pub fn management_router<S: Platform>(
-    state: &AppState<S>,
+pub fn management_router(
+    state: &AppState,
     authenticator: Arc<Authenticator>,
 ) -> Router {
     management::router(ManagementState::from_observability(

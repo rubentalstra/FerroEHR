@@ -29,7 +29,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use ehrbase_sm::SmError;
+use crate::service::SmError;
 
 /// Default per-system connect timeout (ms).
 const DEFAULT_CONNECT_TIMEOUT_MS: u64 = 2_000;

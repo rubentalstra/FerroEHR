@@ -12,8 +12,8 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::extensions::adapters::TemplateListFilter;
-use ehrbase_sm::{CallStatusType, DefinitionAdapter, DefinitionAdl14Service, Page, SmError};
+use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::{CallStatusType, Page, SmError};
 
 struct Pg {
     _container: ContainerAsync<Postgres>,
@@ -87,7 +87,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // List includes the uploaded template.
     let list = svc
-        .template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all())
+        .template_adl14_list(TemplateListFilter::default(), ehrbase::service::Page::all())
         .await
         .expect("list");
     assert!(
@@ -134,7 +134,7 @@ async fn template_upload_list_get_roundtrip() {
 
     // The original template is untouched and there is still exactly one row.
     let list2 = svc
-        .template_adl14_list(TemplateListFilter::default(), ehrbase_sm::Page::all())
+        .template_adl14_list(TemplateListFilter::default(), ehrbase::service::Page::all())
         .await
         .expect("list after conflicting re-upload");
     assert_eq!(

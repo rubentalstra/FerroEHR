@@ -24,7 +24,7 @@ use axum::body::Body;
 use ehrbase_rest::AppConfig;
 use ehrbase_rest::access::authn::AuthConfig;
 use ehrbase_rest::access::authn::config::{BasicConfig, BasicUser};
-use ehrbase_sm::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
+use ehrbase::service::{AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass};
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::json;
@@ -94,7 +94,7 @@ fn rest_config() -> AppConfig {
             basic: Some(BasicConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
-                    password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
+                    password_hash: ehrbase::config::Secret::new(hash_pw("pw")),
                     roles: vec!["USER".to_owned()],
                 }],
             }),

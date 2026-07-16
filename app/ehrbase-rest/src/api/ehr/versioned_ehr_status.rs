@@ -16,7 +16,6 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{EhrStatus, OriginalVersion, RevisionHistory, VersionedEhrStatus};
 
-use ehrbase_sm::Platform;
 
 use crate::api::RequestParts;
 use crate::overview::error::RestError;
@@ -24,8 +23,8 @@ use crate::overview::version_id::{parse_ehr_id, parse_version_uid};
 use crate::state::AppState;
 use crate::{negotiate, params};
 
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

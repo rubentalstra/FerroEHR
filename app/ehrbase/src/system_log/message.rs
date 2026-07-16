@@ -13,7 +13,7 @@
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 
-use ehrbase_sm::AuditEvent;
+use crate::system_log::AuditEvent;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::{
@@ -280,7 +280,7 @@ fn nonempty(value: &str, fallback: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::service::{EventActionCode, EventOutcome, ObjectClass};
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {

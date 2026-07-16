@@ -16,7 +16,7 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 
-use ehrbase_sm::{AuditEvent, EmitOutcome};
+use super::event::{AuditEvent, EmitOutcome};
 
 use crate::system_log::AuditError;
 use crate::system_log::config::{AuditConfig, FailMode};
@@ -192,7 +192,7 @@ async fn drain(
 mod tests {
     use super::*;
     use crate::system_log::config::Transport as ConfigTransport;
-    use ehrbase_sm::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::service::{EventActionCode, EventOutcome, ObjectClass};
 
     fn udp_config() -> AuditConfig {
         AuditConfig {

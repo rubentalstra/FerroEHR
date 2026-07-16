@@ -10,7 +10,7 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
-use ehrbase_rest::Page;
+use crate::service::Page;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

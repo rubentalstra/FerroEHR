@@ -15,8 +15,8 @@ use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::extensions::adapters::TemplateListFilter;
-use ehrbase_sm::{
+use ehrbase::service::adapters::TemplateListFilter;
+use ehrbase::service::{
     CallStatusType, DefinitionAdapter, DefinitionAdl2Service, DefinitionAdl14Service,
     DefinitionQueryService, Page, SmError,
 };

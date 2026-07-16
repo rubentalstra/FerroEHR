@@ -12,7 +12,7 @@
 //! SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10 storage
 //! seam — our own design).
 
-use ehrbase_sm::{ItemTagAdapter, SmError};
+use crate::service::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -167,9 +167,8 @@ impl EhrbaseService {
     }
 }
 
-#[async_trait::async_trait]
-impl ItemTagAdapter for EhrbaseService {
-    async fn ehr_tags_get(
+impl EhrbaseService {
+    pub async fn ehr_tags_get(
         &self,
         an_ehr_id: Uuid,
         key: Option<String>,
@@ -186,7 +185,7 @@ impl ItemTagAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn target_tags_get(
+    pub async fn target_tags_get(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,
@@ -195,7 +194,7 @@ impl ItemTagAdapter for EhrbaseService {
         Ok(self.target_tags(an_ehr_id, vo_id).await?)
     }
 
-    async fn target_tags_replace(
+    pub async fn target_tags_replace(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,
@@ -208,7 +207,7 @@ impl ItemTagAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn target_tag_delete(
+    pub async fn target_tag_delete(
         &self,
         an_ehr_id: Uuid,
         uid_based_id: String,

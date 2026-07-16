@@ -22,14 +22,13 @@ use utoipa_axum::routes;
 
 use crate::api::guarded_dispatch;
 use crate::state::AppState;
-use ehrbase_sm::Platform;
 
 /// The standard Demographic API group as a native `utoipa-axum` router.
 /// Group-relative paths (nested under the configured `base_path`); every
 /// operation runs through [`guarded_dispatch`] with the demographic group
 /// [`dispatch`](super::dispatch), so the wire behaviour is identical to the
 /// former table-driven `mount` adapter.
-pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
+pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(agent_create))
         .routes(routes!(agent_get, agent_update, agent_delete))
@@ -77,12 +76,12 @@ pub(crate) fn routes<S: Platform>() -> OpenApiRouter<AppState<S>> {
     post, path = "/demographic/agent", tag = "AGENT",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn agent_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_create", parts, super::dispatch).await
 }
 
 /// Read an `AGENT` by uid-based id. 404 when absent.
@@ -94,12 +93,12 @@ pub(crate) async fn agent_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn agent_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_get", parts, super::dispatch).await
 }
 
 /// Update an `AGENT` (If-Match required). 200 with the updated resource.
@@ -108,12 +107,12 @@ pub(crate) async fn agent_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn agent_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_update", parts, super::dispatch).await
 }
 
 /// Delete an `AGENT` (If-Match required).
@@ -122,12 +121,12 @@ pub(crate) async fn agent_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn agent_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_delete", parts, super::dispatch).await
 }
 
 // ── GROUP ─────────────────────────────────────────────────────────────────
@@ -137,12 +136,12 @@ pub(crate) async fn agent_delete<S: Platform>(
     post, path = "/demographic/group", tag = "GROUP",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn group_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_create", parts, super::dispatch).await
 }
 
 /// Read a `GROUP` by uid-based id. 404 when absent.
@@ -154,12 +153,12 @@ pub(crate) async fn group_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn group_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_get", parts, super::dispatch).await
 }
 
 /// Update a `GROUP` (If-Match required). 200 with the updated resource.
@@ -168,12 +167,12 @@ pub(crate) async fn group_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn group_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_update", parts, super::dispatch).await
 }
 
 /// Delete a `GROUP` (If-Match required).
@@ -182,12 +181,12 @@ pub(crate) async fn group_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn group_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_delete", parts, super::dispatch).await
 }
 
 // ── ORGANISATION ────────────────────────────────────────────────────────────
@@ -197,12 +196,12 @@ pub(crate) async fn group_delete<S: Platform>(
     post, path = "/demographic/organisation", tag = "ORGANISATION",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn organisation_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "organisation_create", parts, super::dispatch).await
 }
 
 /// Read an `ORGANISATION` by uid-based id. 404 when absent.
@@ -214,12 +213,12 @@ pub(crate) async fn organisation_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn organisation_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "organisation_get", parts, super::dispatch).await
 }
 
 /// Update an `ORGANISATION` (If-Match required). 200 with the updated resource.
@@ -228,12 +227,12 @@ pub(crate) async fn organisation_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn organisation_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "organisation_update", parts, super::dispatch).await
 }
 
 /// Delete an `ORGANISATION` (If-Match required).
@@ -242,12 +241,12 @@ pub(crate) async fn organisation_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn organisation_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "organisation_delete", parts, super::dispatch).await
 }
 
 // ── PERSON ────────────────────────────────────────────────────────────────
@@ -257,12 +256,12 @@ pub(crate) async fn organisation_delete<S: Platform>(
     post, path = "/demographic/person", tag = "PERSON",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn person_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_create", parts, super::dispatch).await
 }
 
 /// Read a `PERSON` by uid-based id. 404 when absent.
@@ -274,12 +273,12 @@ pub(crate) async fn person_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn person_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_get", parts, super::dispatch).await
 }
 
 /// Update a `PERSON` (If-Match required). 200 with the updated resource.
@@ -288,12 +287,12 @@ pub(crate) async fn person_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn person_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_update", parts, super::dispatch).await
 }
 
 /// Delete a `PERSON` (If-Match required).
@@ -302,12 +301,12 @@ pub(crate) async fn person_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn person_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_delete", parts, super::dispatch).await
 }
 
 // ── ROLE ────────────────────────────────────────────────────────────────────
@@ -317,12 +316,12 @@ pub(crate) async fn person_delete<S: Platform>(
     post, path = "/demographic/role", tag = "ROLE",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn role_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_create", parts, super::dispatch).await
 }
 
 /// Read a `ROLE` by uid-based id. 404 when absent.
@@ -334,12 +333,12 @@ pub(crate) async fn role_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn role_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_get", parts, super::dispatch).await
 }
 
 /// Update a `ROLE` (If-Match required). 200 with the updated resource.
@@ -348,12 +347,12 @@ pub(crate) async fn role_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn role_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_update", parts, super::dispatch).await
 }
 
 /// Delete a `ROLE` (If-Match required).
@@ -362,12 +361,12 @@ pub(crate) async fn role_update<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn role_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_delete", parts, super::dispatch).await
 }
 
 // ── VERSIONED_PARTY ──────────────────────────────────────────────────────────
@@ -381,12 +380,12 @@ pub(crate) async fn role_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_party_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_party_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "versioned_party_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "versioned_party_get", parts, super::dispatch).await
 }
 
 /// The party's `REVISION_HISTORY`. 404 when absent.
@@ -398,8 +397,8 @@ pub(crate) async fn versioned_party_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_party_revision_history<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_party_revision_history(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -407,7 +406,7 @@ pub(crate) async fn versioned_party_revision_history<S: Platform>(
         state,
         "versioned_party_revision_history",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -421,8 +420,8 @@ pub(crate) async fn versioned_party_revision_history<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_party_version_get_at_time<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_party_version_get_at_time(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -430,7 +429,7 @@ pub(crate) async fn versioned_party_version_get_at_time<S: Platform>(
         state,
         "versioned_party_version_get_at_time",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -447,8 +446,8 @@ pub(crate) async fn versioned_party_version_get_at_time<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn versioned_party_version_get_by_id<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn versioned_party_version_get_by_id(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -456,7 +455,7 @@ pub(crate) async fn versioned_party_version_get_by_id<S: Platform>(
         state,
         "versioned_party_version_get_by_id",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -468,12 +467,12 @@ pub(crate) async fn versioned_party_version_get_by_id<S: Platform>(
     post, path = "/demographic/contribution", tag = "CONTRIBUTION",
     responses((status = 201, description = "Created.", body = serde_json::Value))
 )]
-pub(crate) async fn contribution_create<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn contribution_create(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "contribution_create", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "contribution_create", parts, super::dispatch).await
 }
 
 /// Read a demographic `CONTRIBUTION` by uid. 404 when absent.
@@ -485,12 +484,12 @@ pub(crate) async fn contribution_create<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn contribution_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn contribution_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "contribution_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "contribution_get", parts, super::dispatch).await
 }
 
 // ── ITEM_TAG sub-resources ───────────────────────────────────────────────────
@@ -503,12 +502,12 @@ pub(crate) async fn contribution_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn demographic_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn demographic_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "demographic_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "demographic_tags_get", parts, super::dispatch).await
 }
 
 /// Read an `AGENT`'s `ITEM_TAGs`. 404 when absent.
@@ -520,12 +519,12 @@ pub(crate) async fn demographic_tags_get<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn agent_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_tags_get", parts, super::dispatch).await
 }
 
 /// Upsert an `AGENT`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -534,12 +533,12 @@ pub(crate) async fn agent_tags_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn agent_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_tags_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_tags_update", parts, super::dispatch).await
 }
 
 /// Delete one `ITEM_TAG` from an `AGENT` by key.
@@ -551,12 +550,12 @@ pub(crate) async fn agent_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn agent_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn agent_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "agent_tags_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "agent_tags_delete", parts, super::dispatch).await
 }
 
 /// Read a `GROUP`'s `ITEM_TAGs`. 404 when absent.
@@ -568,12 +567,12 @@ pub(crate) async fn agent_tags_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn group_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_tags_get", parts, super::dispatch).await
 }
 
 /// Upsert a `GROUP`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -582,12 +581,12 @@ pub(crate) async fn group_tags_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn group_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_tags_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_tags_update", parts, super::dispatch).await
 }
 
 /// Delete one `ITEM_TAG` from a `GROUP` by key.
@@ -599,12 +598,12 @@ pub(crate) async fn group_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn group_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn group_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "group_tags_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "group_tags_delete", parts, super::dispatch).await
 }
 
 /// Read an `ORGANISATION`'s `ITEM_TAGs`. 404 when absent.
@@ -616,12 +615,12 @@ pub(crate) async fn group_tags_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn organisation_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "organisation_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "organisation_tags_get", parts, super::dispatch).await
 }
 
 /// Upsert an `ORGANISATION`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -630,8 +629,8 @@ pub(crate) async fn organisation_tags_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn organisation_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -639,7 +638,7 @@ pub(crate) async fn organisation_tags_update<S: Platform>(
         state,
         "organisation_tags_update",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -653,8 +652,8 @@ pub(crate) async fn organisation_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn organisation_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn organisation_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
@@ -662,7 +661,7 @@ pub(crate) async fn organisation_tags_delete<S: Platform>(
         state,
         "organisation_tags_delete",
         parts,
-        super::dispatch::<S>,
+        super::dispatch,
     )
     .await
 }
@@ -676,12 +675,12 @@ pub(crate) async fn organisation_tags_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn person_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_tags_get", parts, super::dispatch).await
 }
 
 /// Upsert a `PERSON`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -690,12 +689,12 @@ pub(crate) async fn person_tags_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn person_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_tags_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_tags_update", parts, super::dispatch).await
 }
 
 /// Delete one `ITEM_TAG` from a `PERSON` by key.
@@ -707,12 +706,12 @@ pub(crate) async fn person_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn person_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn person_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "person_tags_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "person_tags_delete", parts, super::dispatch).await
 }
 
 /// Read a `ROLE`'s `ITEM_TAGs`. 404 when absent.
@@ -724,12 +723,12 @@ pub(crate) async fn person_tags_delete<S: Platform>(
         (status = 404, description = "Not found.", body = serde_json::Value)
     )
 )]
-pub(crate) async fn role_tags_get<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_tags_get(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_tags_get", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_tags_get", parts, super::dispatch).await
 }
 
 /// Upsert a `ROLE`'s `ITEM_TAGs`. 200 with the stored tags.
@@ -738,12 +737,12 @@ pub(crate) async fn role_tags_get<S: Platform>(
     params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
     responses((status = 200, description = "Updated.", body = serde_json::Value))
 )]
-pub(crate) async fn role_tags_update<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_tags_update(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_tags_update", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_tags_update", parts, super::dispatch).await
 }
 
 /// Delete one `ITEM_TAG` from a `ROLE` by key.
@@ -755,10 +754,10 @@ pub(crate) async fn role_tags_update<S: Platform>(
     ),
     responses((status = 204, description = "Deleted."))
 )]
-pub(crate) async fn role_tags_delete<S: Platform>(
-    State(state): State<AppState<S>>,
+pub(crate) async fn role_tags_delete(
+    State(state): State<AppState>,
     request: axum::extract::Request,
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
-    guarded_dispatch(state, "role_tags_delete", parts, super::dispatch::<S>).await
+    guarded_dispatch(state, "role_tags_delete", parts, super::dispatch).await
 }

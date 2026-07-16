@@ -22,7 +22,7 @@ use tower::ServiceExt;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AdminConfig, AppConfig, ServerConfig};
-use ehrbase_sm::SmError;
+use ehrbase::service::SmError;
 
 mod common;
 use common::{Hooks, Mock};

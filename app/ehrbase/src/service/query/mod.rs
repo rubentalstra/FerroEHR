@@ -18,5 +18,8 @@ mod execute;
 mod plan_cache;
 mod result_set;
 
+pub mod request;
+pub use request::*;
+
 pub use config::QueryConfig;
 pub use plan_cache::{PlanCache, PlanCacheStats};

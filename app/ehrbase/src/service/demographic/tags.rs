@@ -10,7 +10,7 @@
 //! owns the SQL — README cross-register ruling); the RM `ITEM_TAG` invariant
 //! checks (`Inv_key_valid`/`Inv_value_valid`) stay in the domain here.
 
-use ehrbase_sm::PartyKind;
+use crate::service::PartyKind;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

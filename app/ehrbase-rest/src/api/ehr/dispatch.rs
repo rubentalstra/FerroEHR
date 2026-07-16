@@ -10,14 +10,13 @@
 
 use axum::response::{IntoResponse, Response};
 
-use ehrbase_sm::Platform;
 
 use crate::api::{BoxResponse, RequestParts};
 use crate::overview::error::RestError;
 use crate::state::AppState;
 
-pub(crate) fn dispatch<S: Platform>(
-    state: AppState<S>,
+pub(crate) fn dispatch(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> BoxResponse {
@@ -31,8 +30,8 @@ pub(crate) fn dispatch<S: Platform>(
 /// Route a generated operation id to its owning resource module (the spec's own
 /// resource boundaries: EHR / `EHR_STATUS` / `VERSIONED_EHR_STATUS` / COMPOSITION /
 /// `VERSIONED_COMPOSITION` / DIRECTORY / CONTRIBUTION).
-async fn run<S: Platform>(
-    state: AppState<S>,
+async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {

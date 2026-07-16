@@ -10,6 +10,8 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+http.workspace = true
+secrecy.workspace = true
 urlencoding.workspace = true
 anyhow.workspace = true
 async-trait.workspace = true
@@ -88,10 +90,9 @@ openehr-lang = { path = "../../crates/openehr-lang" }
 openehr-am = { path = "../../crates/openehr-am" }
 openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
-ehrbase-rest = { path = "../ehrbase-rest" }
-ehrbase-sm = { path = "../ehrbase-sm" }
 
 [dev-dependencies]
+serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.
 assert_fs.workspace = true
 # Hermetic FHIR terminology-server mock for the external-terminology provider
@@ -110,7 +111,6 @@ tower.workspace = true
 http.workspace = true
 http-body-util.workspace = true
 insta.workspace = true
-ehrbase-rest = { path = "../ehrbase-rest" }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-opentelemetry.workspace = true

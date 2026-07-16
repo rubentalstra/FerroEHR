@@ -29,7 +29,7 @@ use ehrbase_rest::{AppConfig, ServerConfig};
 
 mod common;
 use common::{Hooks, Mock};
-use ehrbase_sm::EhrAccessSettings;
+use ehrbase::service::EhrAccessSettings;
 use http::{Request, StatusCode};
 use serde_json::{Value, json};
 use tower::ServiceExt;
@@ -50,7 +50,7 @@ fn hash_pw(pw: &str) -> String {
 fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
-        password_hash: ehrbase_sm::Secret::new(hash_pw("pw")),
+        password_hash: ehrbase::config::Secret::new(hash_pw("pw")),
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }

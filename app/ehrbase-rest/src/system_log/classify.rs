@@ -7,7 +7,7 @@
 //! `C`/`R`/`U`/`D`/`E`) and the resource `ObjectClass` that drives the
 //! `EventID`/participant-object rendering in the platform emitter. The
 //! transport-agnostic event model + emit seam is the SM `System Log` component
-//! (`ehrbase_sm::SystemLog`); the DICOM/syslog rendering is the platform crate
+//! (`ehrbase::service::SystemLog`); the DICOM/syslog rendering is the platform crate
 //! (`ehrbase::system_log`). openEHR itself is silent on audit-record shape — the
 //! only normative line is "System Log | IHE ATNA-compliant system log"
 //! (SM `master02-overview.adoc` §openEHR Platform Model) — so the DICOM/IHE
@@ -32,7 +32,7 @@
 //! operation is left *unaudited* only by an **explicit** [`Classification::Unaudited`]
 //! entry — a deliberate, reviewable opt-out, not an omission.
 
-use ehrbase_sm::{EventActionCode, ObjectClass};
+use ehrbase::service::{EventActionCode, ObjectClass};
 
 /// The audit classification of an ITS-REST operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

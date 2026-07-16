@@ -7,7 +7,7 @@
 //!
 //! `WebTemplate` resolution is **not** this layer's concern: the service owns
 //! the one cache and exposes it through the
-//! [`WebTemplateService`](ehrbase_sm::services::WebTemplateService) seam
+//! [`WebTemplateService`](ehrbase::service::WebTemplateService) seam
 //! (W2-K / finding F-13-02) — the same `WebTemplate` composition validation
 //! uses. For FLAT specifically:
 //!
@@ -28,7 +28,6 @@ use serde_json::{Map, Value};
 use openehr_its::rest::runtime::ApiError;
 
 use crate::overview::error::RestError;
-use ehrbase_sm::Platform;
 
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -78,8 +77,8 @@ pub(super) fn request_template_id(query: Option<&str>, headers: &HeaderMap) -> O
 }
 
 /// Parse a FLAT request body into a canonical-JSON `COMPOSITION`.
-pub(crate) async fn composition_from_flat<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn composition_from_flat(
+    state: &AppState,
     query: Option<&str>,
     headers: &HeaderMap,
     body: &Bytes,
@@ -110,8 +109,8 @@ pub(crate) async fn composition_from_flat<S: Platform>(
 
 /// Render a canonical-JSON composition as a FLAT `application/openehr.wt.flat+json`
 /// response (its template id read from `archetype_details/template_id`).
-pub(crate) async fn composition_flat_response<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn composition_flat_response(
+    state: &AppState,
     status: StatusCode,
     comp: &Value,
 ) -> Result<Response, RestError> {
@@ -134,8 +133,8 @@ pub(crate) async fn composition_flat_response<S: Platform>(
 /// Parse a STRUCTURED (structSDT) request body into a canonical-JSON
 /// `COMPOSITION` via `openehr_flat::from_structured` (template id resolved as
 /// for FLAT: query param or `openEHR-TEMPLATE_ID` header).
-pub(crate) async fn composition_from_structured<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn composition_from_structured(
+    state: &AppState,
     query: Option<&str>,
     headers: &HeaderMap,
     body: &Bytes,
@@ -158,8 +157,8 @@ pub(crate) async fn composition_from_structured<S: Platform>(
 
 /// Render a canonical-JSON composition as a STRUCTURED
 /// `application/openehr.wt.structured+json` response.
-pub(crate) async fn composition_structured_response<S: Platform>(
-    state: &AppState<S>,
+pub(crate) async fn composition_structured_response(
+    state: &AppState,
     status: StatusCode,
     comp: &Value,
 ) -> Result<Response, RestError> {

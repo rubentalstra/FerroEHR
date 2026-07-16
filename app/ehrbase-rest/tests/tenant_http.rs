@@ -22,7 +22,7 @@ use uuid::Uuid;
 
 use ehrbase_rest::access::authn::config::AuthConfig;
 use ehrbase_rest::{AppConfig, ServerConfig, TenancyConfig};
-use ehrbase_sm::{CallStatusType, SmError};
+use ehrbase::service::{CallStatusType, SmError};
 
 mod common;
 use common::{Hooks, Mock};

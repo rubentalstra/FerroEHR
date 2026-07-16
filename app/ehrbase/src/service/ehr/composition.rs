@@ -9,7 +9,7 @@
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 
-use ehrbase_sm::{EhrCompositionService, ResourceMeta, ServiceResponse, SmError, UpdateVersion};
+use crate::service::{ResourceMeta, ServiceResponse, SmError, UpdateVersion};
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
 use uuid::Uuid;
@@ -27,7 +27,7 @@ use super::composition_validate::{
 impl EhrbaseService {
     /// Create a COMPOSITION in an EHR, returning it with its `uid` set and the
     /// version metadata (the `ETag`/`Location` for `201_COMPOSITION`).
-    pub(crate) async fn create_composition(
+    pub(crate) async fn create_composition_response(
         &self,
         ehr_id: Uuid,
         composition: Value,
@@ -123,7 +123,7 @@ impl EhrbaseService {
     }
 
     /// The `REVISION_HISTORY` of a COMPOSITION.
-    pub(in crate::service) async fn composition_revision_history(
+    pub(in crate::service) async fn composition_revision_history_response(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -149,7 +149,7 @@ impl EhrbaseService {
     /// `at` is `None` (`GET …/versioned_composition/{uid}/version`, F-02-04). A
     /// deleted version still returns `200` with the deleted-lifecycle
     /// `ORIGINAL_VERSION` (no `data`).
-    pub(in crate::service) async fn composition_version_at_time(
+    pub(in crate::service) async fn composition_version_at_time_response(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -179,7 +179,7 @@ impl EhrbaseService {
     /// template root fragment, and the EHR's `is_modifiable` flag — so this write
     /// runs no further pre-read (the former `If-Match` meta read, modify
     /// pre-read, and `is_modifiable` side-SELECT are one statement now).
-    pub(in crate::service) async fn update_composition(
+    pub(in crate::service) async fn update_composition_response(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -303,7 +303,7 @@ impl EhrbaseService {
     /// is the version tree id carried by the mandatory `preceding_version_uid`
     /// (`composition_delete.yaml`). A stale precondition → `409`; an
     /// already-deleted target → `400` (F-02-05).
-    pub(in crate::service) async fn delete_composition(
+    pub(in crate::service) async fn delete_composition_response(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -404,9 +404,8 @@ impl EhrbaseService {
     }
 }
 
-#[async_trait::async_trait]
-impl EhrCompositionService for EhrbaseService {
-    async fn has_composition(
+impl EhrbaseService {
+    pub async fn has_composition(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: ObjectVersionId,
@@ -419,7 +418,7 @@ impl EhrCompositionService for EhrbaseService {
         }
     }
 
-    async fn get_composition_latest(
+    pub async fn get_composition_latest(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
@@ -430,7 +429,7 @@ impl EhrCompositionService for EhrbaseService {
             .body)
     }
 
-    async fn get_composition_at_time(
+    pub async fn get_composition_at_time(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
@@ -452,7 +451,7 @@ impl EhrCompositionService for EhrbaseService {
         }
     }
 
-    async fn get_composition_at_version(
+    pub async fn get_composition_at_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: ObjectVersionId,
@@ -464,7 +463,7 @@ impl EhrCompositionService for EhrbaseService {
             .body)
     }
 
-    async fn get_versioned_composition(
+    pub async fn get_versioned_composition(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
@@ -474,16 +473,16 @@ impl EhrCompositionService for EhrbaseService {
             .await?)
     }
 
-    async fn create_composition(
+    pub async fn create_composition(
         &self,
         an_ehr_id: Uuid,
         a_comp: UpdateVersion,
     ) -> Result<String, SmError> {
         // Inherent `create_composition` (Value) wins by method-resolution priority.
-        super::version_uid(self.create_composition(an_ehr_id, a_comp.data).await?)
+        super::version_uid(self.create_composition_response(an_ehr_id, a_comp.data).await?)
     }
 
-    async fn update_composition(
+    pub async fn update_composition(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
@@ -528,7 +527,7 @@ impl EhrCompositionService for EhrbaseService {
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
         super::version_uid(
-            self.update_composition(
+            self.update_composition_response(
                 an_ehr_id,
                 a_versioned_object_uid,
                 a_comp.data,
@@ -539,7 +538,7 @@ impl EhrCompositionService for EhrbaseService {
         )
     }
 
-    async fn delete_composition(
+    pub async fn delete_composition(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: ObjectVersionId,
@@ -548,20 +547,20 @@ impl EhrCompositionService for EhrbaseService {
         // than the SM's `UUID` for `delete_composition` — the SM is internally
         // inconsistent (`has_composition` takes OBJECT_VERSION_ID). Kept.
         let (vo_id, version) = components(&a_version_uid)?;
-        super::version_uid(self.delete_composition(an_ehr_id, vo_id, version).await?)
+        super::version_uid(self.delete_composition_response(an_ehr_id, vo_id, version).await?)
     }
 
-    async fn composition_revision_history(
+    pub async fn composition_revision_history(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
     ) -> Result<Value, SmError> {
         Ok(self
-            .composition_revision_history(an_ehr_id, a_versioned_object_uid)
+            .composition_revision_history_response(an_ehr_id, a_versioned_object_uid)
             .await?)
     }
 
-    async fn composition_version_at_time(
+    pub async fn composition_version_at_time(
         &self,
         an_ehr_id: Uuid,
         a_versioned_object_uid: Uuid,
@@ -569,12 +568,12 @@ impl EhrCompositionService for EhrbaseService {
     ) -> Result<Value, SmError> {
         let at = a_time.as_deref().map(super::parse_at_time).transpose()?;
         Ok(self
-            .composition_version_at_time(an_ehr_id, a_versioned_object_uid, at)
+            .composition_version_at_time_response(an_ehr_id, a_versioned_object_uid, at)
             .await?
             .body)
     }
 
-    async fn composition_original_version(
+    pub async fn composition_original_version(
         &self,
         an_ehr_id: Uuid,
         a_version_uid: ObjectVersionId,
@@ -586,9 +585,8 @@ impl EhrCompositionService for EhrbaseService {
 
 // ── ITS-REST MultimediaAdapter (adapter-support extension) ────────────────────
 
-#[async_trait::async_trait]
-impl ehrbase_sm::MultimediaAdapter for EhrbaseService {
-    async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
+impl EhrbaseService {
+    pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         // Off by default: no engine ⇒ serve the stored form unchanged.
         let Some(engine) = &self.multimedia else {
             return Ok(body);

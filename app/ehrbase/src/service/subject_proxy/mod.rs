@@ -18,15 +18,33 @@ mod frames;
 mod freshness;
 mod store;
 
+pub mod binding;
+pub mod variable;
+pub mod sample;
+pub mod data_set;
+pub mod value;
+pub use binding::*;
+pub use variable::*;
+pub use sample::*;
+pub use data_set::*;
+pub use value::*;
+
 pub use config::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};
 
 use async_trait::async_trait;
 use serde_json::Value;
 use sqlx::PgPool;
 
-use ehrbase_sm::{
-    DataBinding, DataFrameSample, DataSetResult, EnvBinding, Sample, SmError, SubjectDataSet,
-    SubjectProxyService, SubjectVariable, VariableSample, VariableValue,
+use crate::service::{
+    DataFrameSample,
+    DataSetResult,
+    EnvBinding,
+    Sample,
+    SmError,
+    SubjectDataSet,
+    SubjectVariable,
+    VariableSample,
+    VariableValue,
 };
 
 use super::EhrbaseService;
@@ -153,9 +171,8 @@ fn build_variable_sample(frame_sample: &DataFrameSample, var: &SubjectVariable) 
     }
 }
 
-#[async_trait]
-impl SubjectProxyService for EhrbaseService {
-    async fn register_subject(
+impl EhrbaseService {
+    pub async fn register_subject(
         &self,
         subject_id: String,
         subject_category: Option<String>,
@@ -178,7 +195,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn add_subject_variable(
+    pub async fn add_subject_variable(
         &self,
         subject_id: String,
         var: SubjectVariable,
@@ -192,7 +209,7 @@ impl SubjectProxyService for EhrbaseService {
         self.sp_upsert_variable(&subject_id, &var, true).await
     }
 
-    async fn register_application_data_set(
+    pub async fn register_application_data_set(
         &self,
         definition: SubjectDataSet,
     ) -> Result<(), SmError> {
@@ -259,7 +276,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn remove_application_data_set(
+    pub async fn remove_application_data_set(
         &self,
         subject_id: String,
         application_id: String,
@@ -297,7 +314,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn remove_subject(&self, subject_id: String) -> Result<(), SmError> {
+    pub async fn remove_subject_proxy(&self, subject_id: String) -> Result<(), SmError> {
         // __Pre_subject_valid__: has_subject.
         if !self.sp_has_subject(&subject_id).await? {
             return Err(SmError::precondition(format!(
@@ -313,7 +330,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn remove_application(&self, application_id: String) -> Result<(), SmError> {
+    pub async fn remove_application(&self, application_id: String) -> Result<(), SmError> {
         // __Pre_application_valid__: has_application.
         if !self.sp_has_application(&application_id).await? {
             return Err(SmError::precondition(format!(
@@ -335,7 +352,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn get_variable(
+    pub async fn get_variable(
         &self,
         subject_id: String,
         var_name: String,
@@ -363,7 +380,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(sample.result.unwrap_or_else(VariableValue::none))
     }
 
-    async fn get_data_set(
+    pub async fn get_data_set(
         &self,
         subject_id: String,
         data_set_id: String,
@@ -394,15 +411,15 @@ impl SubjectProxyService for EhrbaseService {
         })
     }
 
-    async fn has_subject(&self, subject_id: String) -> Result<bool, SmError> {
+    pub async fn has_subject(&self, subject_id: String) -> Result<bool, SmError> {
         self.sp_has_subject(&subject_id).await
     }
 
-    async fn has_application(&self, application_id: String) -> Result<bool, SmError> {
+    pub async fn has_application(&self, application_id: String) -> Result<bool, SmError> {
         self.sp_has_application(&application_id).await
     }
 
-    async fn get_variable_defs(&self, subject_id: String) -> Result<Vec<String>, SmError> {
+    pub async fn get_variable_defs(&self, subject_id: String) -> Result<Vec<String>, SmError> {
         // "a list of variable definitions each of the form 'name: Type', where
         // 'name' is the canonical name" (i_subject_proxy_service.adoc).
         let rows: Vec<(String, String)> = sqlx::query_as(
@@ -419,7 +436,7 @@ impl SubjectProxyService for EhrbaseService {
             .collect())
     }
 
-    async fn register_binding(&self, binding: EnvBinding) -> Result<(), SmError> {
+    pub async fn register_binding(&self, binding: EnvBinding) -> Result<(), SmError> {
         // __Pre_new_env__: not has_binding(binding.env_id).
         if self.sp_has_binding(&binding.env_id).await? {
             return Err(SmError::precondition(format!(
@@ -441,10 +458,10 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn add_binding_frame(
+    pub async fn add_binding_frame(
         &self,
         env_id: String,
-        frame: ehrbase_sm::DataFrame,
+        frame: crate::service::DataFrame,
     ) -> Result<(), SmError> {
         // __Pre_valid_binding__: has_binding(env_id).
         if !self.sp_has_binding(&env_id).await? {
@@ -458,11 +475,11 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn has_binding(&self, env_id: String) -> Result<bool, SmError> {
+    pub async fn has_binding(&self, env_id: String) -> Result<bool, SmError> {
         self.sp_has_binding(&env_id).await
     }
 
-    async fn reset(&self) -> Result<(), SmError> {
+    pub async fn reset(&self) -> Result<(), SmError> {
         // "Set back to virgin state … remove all subjects, variables and
         // bindings" (master10 §Persistence). Subjects cascade to variables,
         // data sets and samples; bindings cascade to data frames.
@@ -479,7 +496,7 @@ impl SubjectProxyService for EhrbaseService {
         Ok(())
     }
 
-    async fn notify_variable_sample(
+    pub async fn notify_variable_sample(
         &self,
         subject_id: String,
         var_name: String,
@@ -512,7 +529,7 @@ impl SubjectProxyService for EhrbaseService {
             .await
     }
 
-    async fn get_subject_variable(
+    pub async fn get_subject_variable(
         &self,
         subject_id: String,
         var_name: String,

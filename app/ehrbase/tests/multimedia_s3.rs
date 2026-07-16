@@ -36,8 +36,7 @@ use uuid::Uuid;
 use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::multimedia::{BlobStore, MultimediaConfig, MultimediaEngine};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::MultimediaAdapter;
-use ehrbase_sm::{AdminDumpLoad, AdminService, EhrService, EhrStatusService, ExportSpec};
+use ehrbase::service::ExportSpec;
 
 const BUCKET: &str = "openehr-multimedia";
 /// S3-gateway port SeaweedFS listens on.
@@ -362,7 +361,7 @@ async fn corrupted_blob_fails_integrity_on_expand() {
     let err = svc.expand_multimedia(stored).await.expect_err("must fail");
     assert_eq!(
         err.status,
-        ehrbase_sm::CallStatusType::Exception,
+        ehrbase::service::CallStatusType::Exception,
         "integrity failure maps to a server fault (500)"
     );
 }

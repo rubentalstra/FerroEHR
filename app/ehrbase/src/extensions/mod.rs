@@ -59,3 +59,6 @@ pub mod events;
 pub mod fhir;
 pub mod multimedia;
 pub mod tenancy;
+
+pub mod tenant_context;
+pub use tenant_context::{TenantContext, current};

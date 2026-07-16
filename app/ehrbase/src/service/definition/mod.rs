@@ -36,9 +36,12 @@ mod adl2;
 mod query_store;
 mod wire;
 
+pub mod types;
+pub use types::*;
+
 use regex::Regex;
 
-use ehrbase_sm::{CallStatusType, Page};
+use crate::service::{CallStatusType, Page};
 
 use super::ServiceError;
 

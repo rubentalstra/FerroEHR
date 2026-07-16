@@ -8,7 +8,7 @@
 //! claims are established), resolves the request's tenant from the configured
 //! claim — or an optional dev header override — via the platform's
 //! [`TenantAdapter::tenant_resolve`], and opens the
-//! [`ehrbase_sm::tenant`] task-local scope around the rest of the request. The
+//! [`ehrbase::service::tenant`] task-local scope around the rest of the request. The
 //! application's tenant-scoped pool then reads that scope on every acquired
 //! connection to set `ehrbase.tenant_id` for RLS.
 //!
@@ -21,15 +21,14 @@ use axum::extract::{Request, State};
 use axum::middleware::Next;
 use axum::response::Response;
 
-use ehrbase_sm::Platform;
 
 use crate::extensions::access::authn::current_principal;
 use crate::extensions::access::authz::roles::claim_string;
 use crate::state::AppState;
 
 /// Resolve and scope the request's tenant. See the module docs.
-pub async fn middleware<S: Platform>(
-    State(state): State<AppState<S>>,
+pub async fn middleware(
+    State(state): State<AppState>,
     req: Request,
     next: Next,
 ) -> Response {
@@ -55,7 +54,7 @@ pub async fn middleware<S: Platform>(
     };
 
     match ctx {
-        Some(ctx) => ehrbase_sm::tenant::scope(ctx, next.run(req)).await,
+        Some(ctx) => ehrbase::extensions::scope(ctx, next.run(req)).await,
         None => next.run(req).await,
     }
 }

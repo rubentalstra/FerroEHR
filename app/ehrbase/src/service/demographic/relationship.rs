@@ -18,7 +18,7 @@
 //!   PARTY's `valid_content`; both reduce to the same structural check here
 //!   ([`typed_check`]), so the normalization is behaviour-preserving.
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
+use crate::service::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use uuid::Uuid;
 

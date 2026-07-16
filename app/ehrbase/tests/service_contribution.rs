@@ -14,11 +14,11 @@
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_sm::{
+use ehrbase::service::{
     CallStatusType, EhrCompositionService, EhrContributionService, EhrService, EhrStatusService,
     Page, SmError,
 };
-use ehrbase_sm::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};

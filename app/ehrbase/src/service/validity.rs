@@ -1,5 +1,5 @@
 //! The **Validity Checking** component of the platform crate: the SM
-//! `I_VALIDITY_CHECKER` interface ([`ehrbase_sm::ValidityChecker`]) realized on
+//! `I_VALIDITY_CHECKER` interface ([`crate::service::ValidityChecker`]) realized on
 //! [`EhrbaseService`]'s existing validation choke points.
 //!
 //! Spec: `docs/specs/openehr/SM/docs/openehr_platform/
@@ -18,7 +18,7 @@
 use async_trait::async_trait;
 use serde_json::Value;
 
-use ehrbase_sm::{SmError, ValidityChecker};
+use crate::service::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::Kind;
@@ -33,9 +33,8 @@ use crate::versioning::Kind;
 /// runs the same per-`Kind` structural validation every commit runs
 /// ([`EhrbaseService::validate_for_commit`]); an unrecognized root `_type` is
 /// `false`.
-#[async_trait]
-impl ValidityChecker for EhrbaseService {
-    async fn definitions_valid(&self, a_content: &Value) -> Result<bool, SmError> {
+impl EhrbaseService {
+    pub async fn definitions_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let template_id = a_content
             .pointer("/archetype_details/template_id/value")
             .and_then(Value::as_str);
@@ -45,7 +44,7 @@ impl ValidityChecker for EhrbaseService {
         }
     }
 
-    async fn content_valid(&self, a_content: &Value) -> Result<bool, SmError> {
+    pub async fn content_valid(&self, a_content: &Value) -> Result<bool, SmError> {
         let rm_type = a_content.get("_type").and_then(Value::as_str).unwrap_or("");
         let Some(kind) = Kind::from_type(rm_type) else {
             return Ok(false);

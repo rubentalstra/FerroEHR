@@ -8,12 +8,12 @@
 //! (`POST`, `AdhocQueryExecute`); this module normalizes both into an
 //! [`AqlQueryRequest`] and calls the [`QueryService`] ad-hoc seam.
 //!
-//! [`QueryService`]: ehrbase_sm::QueryService
+//! [`QueryService`]: ehrbase::service::QueryService
 
 use openehr_its::rest::generated::query::{AdhocQueryExecute, QueryExecuteAdhocQueryParams};
 use openehr_its::rest::runtime::ApiError;
 
-use ehrbase_sm::{AqlQueryRequest, Platform, QueryOutcome};
+use ehrbase::service::{AqlQueryRequest, QueryOutcome};
 
 use super::response::{self, QueryScope};
 use crate::api::RequestParts;
@@ -25,8 +25,8 @@ use crate::state::AppState;
 /// or `openEHR-EHR-id` header) is collected into the one-element
 /// [`AqlQueryRequest::ehr_ids`] scope (the SM `List<UUID>` is realized as an
 /// extension; the conformant wire binds one `ehr_id`).
-pub(super) async fn execute<S: Platform>(
-    state: &AppState<S>,
+pub(super) async fn execute(
+    state: &AppState,
     op: &str,
     parts: &RequestParts,
     scope: &QueryScope,

@@ -23,8 +23,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase_sm::EventSubscriptionAdapter;
-use ehrbase_sm::SmError;
+use crate::service::SmError;
 
 use crate::service::{EhrbaseService, ServiceError};
 
@@ -189,21 +188,20 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     ServiceError::Database(e)
 }
 
-#[async_trait]
-impl EventSubscriptionAdapter for EhrbaseService {
-    async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError> {
+impl EhrbaseService {
+    pub async fn event_subscription_list(&self) -> Result<Vec<Value>, SmError> {
         Ok(self.list_subscriptions().await?)
     }
 
-    async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError> {
+    pub async fn event_subscription_create(&self, a_subscription: Value) -> Result<Value, SmError> {
         Ok(self.create_subscription(&a_subscription).await?)
     }
 
-    async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError> {
+    pub async fn event_subscription_get(&self, a_subscription_id: Uuid) -> Result<Value, SmError> {
         Ok(self.get_subscription(a_subscription_id).await?)
     }
 
-    async fn event_subscription_update(
+    pub async fn event_subscription_update(
         &self,
         a_subscription_id: Uuid,
         a_subscription: Value,
@@ -213,7 +211,7 @@ impl EventSubscriptionAdapter for EhrbaseService {
             .await?)
     }
 
-    async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
+    pub async fn event_subscription_delete(&self, a_subscription_id: Uuid) -> Result<(), SmError> {
         Ok(self.delete_subscription(a_subscription_id).await?)
     }
 }

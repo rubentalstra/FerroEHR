@@ -8,7 +8,7 @@ use regex::Regex;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use ehrbase_sm::AqlQueryRequest;
+use crate::service::AqlQueryRequest;
 
 use crate::aql::{ParamValue, Params, QueryResult};
 

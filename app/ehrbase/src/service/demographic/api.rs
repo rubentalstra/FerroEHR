@@ -12,10 +12,8 @@ use async_trait::async_trait;
 use serde_json::Value;
 use uuid::Uuid;
 
-use ehrbase_rest::{ResourceMeta, ServiceResponse};
-use ehrbase_sm::{
-    CallStatusType, DemographicService, PartyKind, PartyRelationshipService, SmError, UpdateVersion,
-};
+use crate::service::{ResourceMeta, ServiceResponse};
+use crate::service::{CallStatusType, PartyKind, SmError, UpdateVersion};
 
 use crate::service::{EhrbaseService, ServiceError};
 use crate::versioning::{
@@ -111,18 +109,17 @@ fn ensure_full_ovid_if_match(
     }
 }
 
-#[async_trait]
-impl DemographicService for EhrbaseService {
+impl EhrbaseService {
     // ── I_DEMOGRAPHIC_SERVICE + I_PARTY (the SM core) ───────────────────────
-    async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
+    pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
-        let resp = EhrbaseService::create_party(self, kind, a_version.data).await?;
+        let resp = self.create_party_response(kind, a_version.data).await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
     }
 
-    async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
+    pub async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
         // True iff a *live* party of some kind exists (a logically deleted party
         // reads `Null`, satisfying the delete post-condition `not has_party`).
         match self.party_kind_at(a_versioned_party_id).await {
@@ -139,7 +136,7 @@ impl DemographicService for EhrbaseService {
         }
     }
 
-    async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
+    pub async fn has_party_version_id(&self, a_party_version_id: String) -> Result<bool, SmError> {
         let Ok((vo_id, tree)) = parse_version_uid(&a_party_version_id) else {
             return Ok(false);
         };
@@ -150,7 +147,7 @@ impl DemographicService for EhrbaseService {
         }
     }
 
-    async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
             .read_party(kind, a_versioned_party_id, None, None)
@@ -165,7 +162,7 @@ impl DemographicService for EhrbaseService {
         Ok(resp.body)
     }
 
-    async fn get_party_at_time(
+    pub async fn get_party_at_time(
         &self,
         a_versioned_party_id: Uuid,
         a_time: String,
@@ -178,7 +175,7 @@ impl DemographicService for EhrbaseService {
         Ok(resp.body)
     }
 
-    async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
+    pub async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
         let (vo_id, tree) = parse_version_uid(&a_party_version_id)?;
         match self.party_version(vo_id, tree).await {
             Ok(v) => Ok(v),
@@ -190,7 +187,7 @@ impl DemographicService for EhrbaseService {
         }
     }
 
-    async fn update_party(
+    pub async fn update_party(
         &self,
         a_versioned_party_id: Uuid,
         a_version: UpdateVersion,
@@ -200,28 +197,22 @@ impl DemographicService for EhrbaseService {
             Some(ovid) => Some(components(ovid)?.1),
             None => None,
         };
-        let resp = EhrbaseService::update_party(
-            self,
-            kind,
-            a_versioned_party_id,
-            a_version.data,
-            expected,
-        )
-        .await?;
+        let resp = self.update_party_response(kind, a_versioned_party_id, a_version.data, expected)
+            .await?;
         Ok(version_uid(resp))
     }
 
-    async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
+    pub async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
         // The SM `delete_party` has no version argument — delete the current
         // version unconditionally.
         let kind = self.party_kind_at(a_versioned_party_id).await?;
-        let resp = EhrbaseService::delete_party(self, kind, a_versioned_party_id, None).await?;
+        let resp = self.delete_party_response(kind, a_versioned_party_id, None).await?;
         Ok(version_uid(resp))
     }
 
     // ── PARTY CRUD (wire seam) ────────────────────────────────────────────────
-    async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
-        let mut resp = self.create_party(kind, body).await?;
+    pub async fn party_create(&self, kind: PartyKind, body: Value) -> Result<ServiceResponse, SmError> {
+        let mut resp = self.create_party_response(kind, body).await?;
         // Surface the party's stored ITEM_TAGs on the response seam for the
         // `openehr-item-tag`/`openehr-version-item-tag` response headers
         // (person_create.yaml). A fresh party has none yet; the wire adapter
@@ -233,7 +224,7 @@ impl DemographicService for EhrbaseService {
         Ok(resp)
     }
 
-    async fn party_get(
+    pub async fn party_get(
         &self,
         kind: PartyKind,
         uid_based_id: String,
@@ -248,7 +239,7 @@ impl DemographicService for EhrbaseService {
         Ok(resp)
     }
 
-    async fn party_update(
+    pub async fn party_update(
         &self,
         kind: PartyKind,
         uid_based_id: String,
@@ -268,7 +259,7 @@ impl DemographicService for EhrbaseService {
         Ok(self.commit_party_update(current, body, expected).await?)
     }
 
-    async fn party_delete(
+    pub async fn party_delete(
         &self,
         kind: PartyKind,
         uid_based_id: String,
@@ -297,7 +288,7 @@ impl DemographicService for EhrbaseService {
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────
-    async fn versioned_party_get(
+    pub async fn versioned_party_get(
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
@@ -305,7 +296,7 @@ impl DemographicService for EhrbaseService {
         Ok(ServiceResponse::plain(self.versioned_party(vo_id).await?))
     }
 
-    async fn versioned_party_revision_history(
+    pub async fn versioned_party_revision_history(
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
@@ -315,7 +306,7 @@ impl DemographicService for EhrbaseService {
         ))
     }
 
-    async fn versioned_party_version_get_at_time(
+    pub async fn versioned_party_version_get_at_time(
         &self,
         versioned_object_uid: String,
         version_at_time: Option<String>,
@@ -325,7 +316,7 @@ impl DemographicService for EhrbaseService {
         Ok(self.party_version_at_time(vo_id, at).await?)
     }
 
-    async fn versioned_party_version_get_by_id(
+    pub async fn versioned_party_version_get_by_id(
         &self,
         versioned_object_uid: String,
         version_uid: String,
@@ -338,14 +329,14 @@ impl DemographicService for EhrbaseService {
     }
 
     // ── demographic CONTRIBUTION ─────────────────────────────────────────────
-    async fn demographic_contribution_create(
+    pub async fn demographic_contribution_create(
         &self,
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
         Ok(self.create_demographic_contribution(body).await?)
     }
 
-    async fn demographic_contribution_get(
+    pub async fn demographic_contribution_get(
         &self,
         contribution_uid: String,
     ) -> Result<ServiceResponse, SmError> {
@@ -358,7 +349,7 @@ impl DemographicService for EhrbaseService {
     }
 
     // ── demographic item tags ────────────────────────────────────────────────
-    async fn demographic_tags_get(
+    pub async fn demographic_tags_get(
         &self,
         tag_key: Option<String>,
         tag_value: Option<String>,
@@ -374,7 +365,7 @@ impl DemographicService for EhrbaseService {
         Ok(tags_response(tags))
     }
 
-    async fn party_tags_get(
+    pub async fn party_tags_get(
         &self,
         _kind: PartyKind,
         uid_based_id: String,
@@ -383,7 +374,7 @@ impl DemographicService for EhrbaseService {
         Ok(tags_response(self.party_tags(vo_id).await?))
     }
 
-    async fn party_tags_update(
+    pub async fn party_tags_update(
         &self,
         kind: PartyKind,
         uid_based_id: String,
@@ -395,7 +386,7 @@ impl DemographicService for EhrbaseService {
         ))
     }
 
-    async fn party_tags_delete(
+    pub async fn party_tags_delete(
         &self,
         _kind: PartyKind,
         uid_based_id: String,
@@ -406,7 +397,7 @@ impl DemographicService for EhrbaseService {
         Ok(ServiceResponse::plain(Value::Null))
     }
 
-    async fn demographic_latest_meta(
+    pub async fn demographic_latest_meta(
         &self,
         kind: PartyKind,
         uid_based_id: String,
@@ -416,16 +407,15 @@ impl DemographicService for EhrbaseService {
     }
 }
 
-#[async_trait]
-impl PartyRelationshipService for EhrbaseService {
+impl EhrbaseService {
     // ── I_PARTY_RELATIONSHIP + create factory (the SM core) ─────────────────
-    async fn create_party_relationship(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
+    pub async fn create_party_relationship(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
         let resp = self.create_relationship(a_version.data).await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
     }
 
-    async fn has_party_relationship(
+    pub async fn has_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
     ) -> Result<bool, SmError> {
@@ -441,7 +431,7 @@ impl PartyRelationshipService for EhrbaseService {
         }
     }
 
-    async fn get_party_relationship(
+    pub async fn get_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
     ) -> Result<Value, SmError> {
@@ -457,7 +447,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(resp.body)
     }
 
-    async fn get_party_relationship_at_time(
+    pub async fn get_party_relationship_at_time(
         &self,
         a_versioned_party_rel_id: Uuid,
         a_time: String,
@@ -469,7 +459,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(resp.body)
     }
 
-    async fn get_party_relationship_at_version(
+    pub async fn get_party_relationship_at_version(
         &self,
         a_party_rel_version_id: String,
     ) -> Result<Value, SmError> {
@@ -483,7 +473,7 @@ impl PartyRelationshipService for EhrbaseService {
         }
     }
 
-    async fn update_party_relationship(
+    pub async fn update_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
         a_version: UpdateVersion,
@@ -498,7 +488,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(version_uid(resp))
     }
 
-    async fn delete_party_relationship(
+    pub async fn delete_party_relationship(
         &self,
         a_versioned_party_rel_id: Uuid,
     ) -> Result<String, SmError> {
@@ -521,11 +511,11 @@ impl PartyRelationshipService for EhrbaseService {
     }
 
     // ── the relationship wire seam ────────────────────────────────────────────
-    async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
+    pub async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
         Ok(self.create_relationship(body).await?)
     }
 
-    async fn party_relationship_get(
+    pub async fn party_relationship_get(
         &self,
         uid_based_id: String,
         version_at_time: Option<String>,
@@ -535,7 +525,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(self.read_relationship(vo_id, version, at).await?)
     }
 
-    async fn party_relationship_update(
+    pub async fn party_relationship_update(
         &self,
         uid_based_id: String,
         if_match: String,
@@ -548,7 +538,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(self.update_relationship(vo_id, body, expected).await?)
     }
 
-    async fn party_relationship_delete(
+    pub async fn party_relationship_delete(
         &self,
         uid_based_id: String,
         if_match: Option<String>,
@@ -570,7 +560,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(self.delete_relationship(vo_id, expected).await?)
     }
 
-    async fn versioned_party_relationship_get(
+    pub async fn versioned_party_relationship_get(
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
@@ -580,7 +570,7 @@ impl PartyRelationshipService for EhrbaseService {
         ))
     }
 
-    async fn party_relationship_revision_history(
+    pub async fn party_relationship_revision_history(
         &self,
         versioned_object_uid: String,
     ) -> Result<ServiceResponse, SmError> {
@@ -590,7 +580,7 @@ impl PartyRelationshipService for EhrbaseService {
         ))
     }
 
-    async fn party_relationship_version_get_at_time(
+    pub async fn party_relationship_version_get_at_time(
         &self,
         versioned_object_uid: String,
         version_at_time: Option<String>,
@@ -600,7 +590,7 @@ impl PartyRelationshipService for EhrbaseService {
         Ok(self.relationship_version_at_time(vo_id, at).await?)
     }
 
-    async fn party_relationship_version_get_by_id(
+    pub async fn party_relationship_version_get_by_id(
         &self,
         versioned_object_uid: String,
         version_uid: String,
@@ -612,7 +602,7 @@ impl PartyRelationshipService for EhrbaseService {
         ))
     }
 
-    async fn party_relationship_latest_meta(
+    pub async fn party_relationship_latest_meta(
         &self,
         uid_based_id: String,
     ) -> Result<Option<ResourceMeta>, SmError> {

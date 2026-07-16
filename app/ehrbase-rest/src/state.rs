@@ -1,9 +1,9 @@
 //! Shared application state.
 //!
 //! [`AppState`] is the router state every group dispatcher in [`crate::api`]
-//! receives. It is generic over the concrete platform service `S: Platform`
+//! receives. It holds the concrete platform service (`EhrbaseService`)
 //! (no trait objects, no stub backend — the binary monomorphizes it
-//! over the DB-backed `EhrbaseService`, the tests over a mock). It is cheap to
+//! over the DB-backed `EhrbaseService`). It is cheap to
 //! clone (an `Arc` inside) and carries the configuration, the service `S` the
 //! dispatchers call into, the optional authorization handle, and the
 //! [`Observability`] bundle (management surface + telemetry handles + health
@@ -14,11 +14,12 @@
 //!
 //! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
 //! resolution is a single service-owned concern reached through
-//! [`ehrbase_sm::services::WebTemplateService`] (W2-K / finding F-13-02).
+//! [`ehrbase::service::WebTemplateService`] (W2-K / finding F-13-02).
 
 use std::sync::Arc;
 
-use ehrbase_sm::Platform;
+use ehrbase::service::EhrbaseService;
+
 
 use crate::config::AppConfig;
 use crate::extensions::access::authz::AuthzHandle;
@@ -28,13 +29,13 @@ use crate::extensions::management::Observability;
 /// the configuration, the service the HTTP dispatcher calls into, and the
 /// observability bundle.
 #[derive(Debug)]
-pub struct AppState<S: Platform> {
-    inner: Arc<Inner<S>>,
+pub struct AppState {
+    inner: Arc<Inner>,
 }
 
 // Hand-written so `Clone` does not spuriously require `S: Clone` — the state is
 // always shared through the inner `Arc`.
-impl<S: Platform> Clone for AppState<S> {
+impl Clone for AppState {
     fn clone(&self) -> Self {
         Self {
             inner: Arc::clone(&self.inner),
@@ -43,9 +44,9 @@ impl<S: Platform> Clone for AppState<S> {
 }
 
 #[derive(Debug)]
-struct Inner<S: Platform> {
+struct Inner {
     config: AppConfig,
-    backend: Arc<S>,
+    backend: Arc<EhrbaseService>,
     /// The authorization handle (the RBAC gate), when access control is wired in
     /// (the binary supplies it); `None` restores authentication-only behaviour.
     authz: Option<Arc<AuthzHandle>>,
@@ -53,11 +54,11 @@ struct Inner<S: Platform> {
     observability: Observability,
 }
 
-impl<S: Platform> AppState<S> {
+impl AppState {
     /// Construct state with a concrete service (the `ehrbase` application injects
     /// its DB-backed service here).
     #[must_use]
-    pub fn with_backend(config: AppConfig, backend: Arc<S>) -> Self {
+    pub fn with_backend(config: AppConfig, backend: Arc<EhrbaseService>) -> Self {
         Self::with_parts(config, backend, None, Observability::default())
     }
 
@@ -66,7 +67,7 @@ impl<S: Platform> AppState<S> {
     #[must_use]
     pub fn with_parts(
         config: AppConfig,
-        backend: Arc<S>,
+        backend: Arc<EhrbaseService>,
         authz: Option<Arc<AuthzHandle>>,
         observability: Observability,
     ) -> Self {
@@ -87,7 +88,7 @@ impl<S: Platform> AppState<S> {
     }
 
     /// The service the group dispatchers call into.
-    pub(crate) fn backend(&self) -> &S {
+    pub(crate) fn backend(&self) -> &EhrbaseService {
         &self.inner.backend
     }
 

@@ -16,8 +16,8 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::EhrStatus;
 
-use ehrbase_sm::{CallStatusType, Platform};
-use ehrbase_sm::{ResourceMeta, ServiceResponse};
+use ehrbase::service::{CallStatusType};
+use ehrbase::service::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
 use crate::overview::error::{RestError, sm_api_error};
@@ -26,8 +26,8 @@ use crate::state::AppState;
 use crate::{negotiate, params};
 
 #[allow(clippy::too_many_lines)] // one arm per EHR_STATUS operation; a flat match is clearest
-pub(super) async fn run<S: Platform>(
-    state: AppState<S>,
+pub(super) async fn run(
+    state: AppState,
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
