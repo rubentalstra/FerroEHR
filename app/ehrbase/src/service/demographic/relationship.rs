@@ -27,6 +27,7 @@ use crate::service::demographic::support;
 use crate::service::demographic::validate::validate_relationship_body;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::version_update::UpdateAudit;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
 use crate::versioning::change::{create, delete, update};
@@ -137,11 +138,12 @@ impl EhrbaseService {
     pub(super) async fn create_relationship(
         &self,
         body: Value,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_relationship_body(&body)?;
 
         let audit =
-            self.demographic_audit(None, change_type::CREATION, "PARTY_RELATIONSHIP creation");
+            self.demographic_audit(update_audit, change_type::CREATION, "PARTY_RELATIONSHIP creation");
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -191,12 +193,13 @@ impl EhrbaseService {
         vo_id: Uuid,
         body: Value,
         expected: Option<TreeId>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .relationship_current(vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
-        self.commit_relationship_update(current, body, expected)
+        self.commit_relationship_update(current, body, expected, update_audit)
             .await
     }
 
@@ -208,6 +211,7 @@ impl EhrbaseService {
         current: CurrentRelationship,
         body: Value,
         expected: Option<TreeId>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::NotFound(format!(
@@ -218,7 +222,7 @@ impl EhrbaseService {
         validate_relationship_body(&body)?;
 
         let audit =
-            self.demographic_audit(None, change_type::MODIFICATION, "PARTY_RELATIONSHIP update");
+            self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY_RELATIONSHIP update");
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -254,6 +258,7 @@ impl EhrbaseService {
         &self,
         current: CurrentRelationship,
         expected: Option<TreeId>,
+        update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::BadRequest(format!(
@@ -270,7 +275,7 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = self.demographic_audit(None, change_type::DELETED, "PARTY_RELATIONSHIP delete");
+        let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY_RELATIONSHIP delete");
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(

@@ -248,7 +248,10 @@ pub(super) async fn run(
         "party_relationship_create" => {
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
             let body = negotiate::rm_value::<PartyRelationship>(h, &parts.body)?;
-            let resp = state.backend().party_relationship_create(body).await?;
+            let resp = state
+                .backend()
+                .party_relationship_create(body, crate::overview::committal::committal_audit(h))
+                .await?;
             Ok(write_relationship(
                 h,
                 &base,
@@ -275,7 +278,12 @@ pub(super) async fn run(
             let body = negotiate::rm_value::<PartyRelationship>(h, &parts.body)?;
             match state
                 .backend()
-                .party_relationship_update(p.uid_based_id, p.if_match, body)
+                .party_relationship_update(
+                    p.uid_based_id,
+                    p.if_match,
+                    body,
+                    crate::overview::committal::committal_audit(h),
+                )
                 .await
             {
                 Ok(resp) => Ok(write_relationship(
@@ -307,7 +315,11 @@ pub(super) async fn run(
             let p = params::build::<AgentGetParams>(&parts.path, q, h)?;
             let resp = state
                 .backend()
-                .party_relationship_delete(p.uid_based_id, super::if_match_of(h))
+                .party_relationship_delete(
+                    p.uid_based_id,
+                    super::if_match_of(h),
+                    crate::overview::committal::committal_audit(h),
+                )
                 .await?;
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
             super::set_headers(&mut out, &base, SEG, resp.meta.as_ref());
