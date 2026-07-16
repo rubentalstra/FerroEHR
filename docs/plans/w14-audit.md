@@ -106,13 +106,13 @@ verdict; ☐ = unprobed.
 
 | # | Op | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| EHR-1 | GET BP/ehr (by subject) | `:74` | ☐ | ☐ | |
-| EHR-2 | POST BP/ehr | `:93` | ☐ | ☐ | |
+| EHR-1 | GET BP/ehr (by subject) | `:74` | ◐ | ✓ | P-5: subject lookup indexed + then the F-7 4-read summary; 404 correct |
+| EHR-2 | POST BP/ehr | `:93` | ✓ | ✓ | P-5 CLEAN (F-30): ~6 folded writes 1 tx, zero happy-path reads; 409/422 correct |
 | EHR-3 | GET BP/ehr/{ehr_id} | `:116` | ◐ | ☐ | L probed → F-7 (§4b); seed: ehr-read p99 91 ms |
 | EHR-4 | PUT BP/ehr/{ehr_id} | `:136` | ☐ | ☐ | |
 | EHR-5 | GET …/ehr_status/{version_uid} | `:165` | ☐ | ☐ | |
 | EHR-6 | GET …/ehr_status (at time) | `:189` | ☐ | ☐ | |
-| EHR-7 | PUT …/ehr_status | `:209` | ☐ | ☐ | seed: status-update p99 49 ms |
+| EHR-7 | PUT …/ehr_status | `:209` | ◐ | ✓ | P-5: meta(1)+engine(~5)+sync(1); F-1 applies; statuses correct; seed 49 ms |
 | EHR-8 | GET …/versioned_ehr_status | `:235` | ☐ | ☐ | |
 | EHR-9 | GET …/versioned_ehr_status/revision_history | `:259` | ☐ | ☐ | |
 | EHR-10 | GET …/versioned_ehr_status/version (at time) | `:283` | ☐ | ☐ | |
@@ -130,14 +130,14 @@ verdict; ☐ = unprobed.
 | EHR-22 | POST …/directory | `:590` | ☐ | ☐ | |
 | EHR-23 | DELETE …/directory | `:610` | ☐ | ☐ | |
 | EHR-24 | GET …/directory/{version_uid} | `:637` | ☐ | ☐ | |
-| EHR-25 | POST …/contribution | `:659` | ☐ | ☐ | seed: contribution-commit p99 75.3 |
+| EHR-25 | POST …/contribution | `:659` | ◐ | ✓ | P-5 → **F-24** (per-version serial N+1); E clean (400/409/422 verified); seed 75.3 |
 | EHR-26 | GET …/contribution/{contribution_uid} | `:686` | ☐ | ☐ | |
-| EHR-27 | GET …/tags | `:711` | ☐ | ☐ | |
+| EHR-27 | GET …/tags | `:711` | ✓ | ✓ | P-5: single filtered SELECT; statuses correct |
 | EHR-28 | GET …/composition/{id}/tags | `:738` | ☐ | ☐ | |
-| EHR-29 | PUT …/composition/{id}/tags | `:762` | ☐ | ☐ | |
+| EHR-29 | PUT …/composition/{id}/tags | `:762` | ◐ | ✓ | P-5 → F-27 (serial insert per tag) |
 | EHR-30 | DELETE …/composition/{id}/tags/{key} | `:787` | ☐ | ☐ | |
 | EHR-31 | GET …/ehr_status/{id}/tags | `:814` | ☐ | ☐ | |
-| EHR-32 | PUT …/ehr_status/{id}/tags | `:838` | ☐ | ☐ | |
+| EHR-32 | PUT …/ehr_status/{id}/tags | `:838` | ◐ | ✓ | P-5 → F-27 |
 | EHR-33 | DELETE …/ehr_status/{id}/tags/{key} | `:863` | ☐ | ☐ | |
 
 ### 1c. QUERY API (6 ops, `api/query/openapi_routes.rs`)
@@ -155,8 +155,8 @@ verdict; ☐ = unprobed.
 
 | # | Op | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| DEF-1 | GET BP/definition/template/adl1.4 | `:52` | ☐ | ☐ | tpl-list class n=0 in hour run — measure separately |
-| DEF-2 | POST BP/definition/template/adl1.4 | `:71` | ☐ | ☐ | opt-upload n=0 — measure |
+| DEF-1 | GET BP/definition/template/adl1.4 | `:52` | ◐ | ✓ | P-5: lean projection (no XML per row); `*_matching` variant = F-26 |
+| DEF-2 | POST BP/definition/template/adl1.4 | `:71` | ◐ | ✓ | P-5: 3 RT + parse/validate CPU; 409/422 correct |
 | DEF-3 | GET …/adl1.4/{template_id} | `:94` | ☐ | ☐ | |
 | DEF-4 | GET …/adl1.4/{template_id}/example | `:117` | ☐ | ☐ | example generation cost |
 | DEF-5 | GET BP/definition/template/adl2 | `:136` | ☐ | ☐ | |
@@ -164,8 +164,8 @@ verdict; ☐ = unprobed.
 | DEF-7 | GET …/adl2/{template_id} | `:178` | ☐ | ☐ | |
 | DEF-8 | GET …/adl2/{template_id}/example | `:201` | ☐ | ☐ | |
 | DEF-9 | GET …/adl2/{template_id}/{version} | `:227` | ☐ | ☐ | |
-| DEF-10 | GET BP/definition/query/{name} | `:250` | ☐ | ☐ | |
-| DEF-11 | PUT BP/definition/query/{name} | `:264` | ☐ | ☐ | |
+| DEF-10 | GET BP/definition/query/{name} | `:250` | ◐ | ◐ | P-5 → F-26 (full query_text per row), F-29 (lossy decode defaults) |
+| DEF-11 | PUT BP/definition/query/{name} | `:264` | ◐ | ✓ | P-5: 2 RT (redundant EXISTS+ON CONFLICT = F-28); 400/409 correct |
 | DEF-12 | GET BP/definition/query/{name}/{version} | `:290` | ☐ | ☐ | |
 | DEF-13 | PUT BP/definition/query/{name}/{version} | `:313` | ☐ | ☐ | |
 
@@ -177,7 +177,7 @@ shared path once (DEM-P), spot-check per-kind divergence. Same for tags
 
 | # | Op group | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| DEM-P | POST/GET/PUT/DELETE party ×5 kinds (20 ops, `openapi_routes.rs:80-365`) | `party.rs` | ☐ | ☐ | |
+| DEM-P | POST/GET/PUT/DELETE party ×5 kinds (20 ops, `openapi_routes.rs:80-365`) | `party.rs` | ◐ | ✓ | P-5: same commit engine (F-1 applies); F-28 (+1 tag read per create/get); 412/404/400/422 verified; regex LazyLock clean |
 | DEM-V | versioned_party get / revision_history / version-at-time / version-by-id (4 ops, `:384-450`) | `versioned.rs` | ☐ | ☐ | |
 | DEM-C | POST/GET contribution (2 ops, `:471,488`) | `contribution.rs` | ☐ | ☐ | |
 | DEM-T | tags collection + per-kind get/update/delete (16 ops, `:506-758`) | `tags.rs` | ☐ | ☐ | |
@@ -187,8 +187,8 @@ shared path once (DEM-P), spot-check per-kind divergence. Same for tags
 
 | # | Op group | Where | L | E | Receipt |
 |---|---|---|---|---|---|
-| ADM-1 | DELETE BP/admin/ehr/all (raw query walk for repeated ehr_id) | `api/admin/openapi_routes.rs:36` | ☐ | ☐ | |
-| ADM-2 | DELETE BP/admin/ehr/{ehr_id} | `:56` | ☐ | ☐ | ties to Q-3/Q-4 delete loops |
+| ADM-1 | DELETE BP/admin/ehr/all (raw query walk for repeated ehr_id) | `api/admin/openapi_routes.rs:36` | ◐ | ✓ | P-5 → **F-25** (unbatched per-EHR loop + blob-GC full scans) |
+| ADM-2 | DELETE BP/admin/ehr/{ehr_id} | `:56` | ◐ | ✓ | P-5: ~4 RT + cascade + F-25 blob GC; 404 correct |
 | TRM-1..6 | terminology ext (6 ops) | `extensions/terminology.rs:88-193` | ☐ | ☐ | |
 | EVT-1..5 | event_subscription ext (5 ops) | `extensions/event_subscription.rs:60-121` | ☐ | ☐ | |
 | TEN-1..5 | tenant ext (5 ops) | `extensions/tenant_routes.rs:55-115` | ☐ | ☐ | whole-map cache clear on write (C-5) |
@@ -343,6 +343,18 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 | F-15 | Note: SM-level `AuthFailure` always → 403; no 401 route exists from the service layer (401 only from authn middleware). Matches "authenticated-but-unauthorized → 403" discipline — verify intent, then PORT-NOTE. | `overview/error.rs:71` | ☐ | ☐ |
 | F-16 | CLEAN: every other status mapping spec-correct (404/412/409/422/400/501 rows verified against `Requests_and_responses.md:218-235`); 408 for execution timeout is the SPEC'S OWN code (`:229` — 504/503 absent from the spec subset); Success/FileNotWritable/Exception→500 defensible. Unwrap sweep of the 7 worst-density files (negotiate, offload, bundle, object_version_id, contribution, authn, codec): **exactly one defect** (F-12); all other hits infallible/optional-header/server-data/test-only. | probe P-3 | n/a | note |
 | F-17 | **Instrument finding (tools/benchmark)**: error counting is asymmetric — successes are warmup-filtered, errors are counted unconditionally (`measure.rs:106-127`), slightly overstating error_rate; and "error" conflates server-side non-expected status with generator-side 2 s dependency-misses (`drive.rs:38,874-878`). Split server vs generator errors + warmup-filter both, or the W-14 close pair mis-attributes. | `tools/benchmark/src/{measure.rs,drive.rs}` | **S** (our instrument) | ☐ |
+
+### 4f. Remaining API families (probe P-5, 2026-07-16 — contribution, status, demographic, definition, tags, admin, ehr-create, subject lookup)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-24 | **OPT (major): contribution commit is a per-version serial N+1** — pre-tx `require_kind` read per modify/delete version, in-tx `first_version_root` read per COMPOSITION modify, then 5–6 serial RT per modify/delete inside `apply_change`; the F-1 signing split applies **per version** (K versions = K reassemble+sign passes + K extra RT). One tx overall (good), but K-version commits scale linearly in serial round-trips. Batch the pre-reads (one `= ANY($1)` read), fold the in-tx per-version reads. | `versioning/contribution.rs:226-376,433-468`, `change.rs:552,817-838` | ☐ RM common master06 semantics preserved (atomicity already 1-tx); read batching spec-silent | ☐ |
+| F-25 | **OPT (major): admin DELETE-all is an unbatched per-EHR tx loop, and blob GC full-scans the node table per candidate blob** (`position($1 in data::text)` unindexed substring match, O(blobs × table-scan), post-commit); party-relationship discovery is an unindexed jsonb path scan. Redesign: batched deletes + a blob-reference table or indexed lookup. | `service/admin/delete.rs:38-231` | **S** (admin extension — spec-silent; flag own-design) | ☐ |
+| F-26 | OPT: definition/query `*_matching` list ops load ALL rows then regex-filter + paginate in memory; stored-query lists project **full `query_text` per row**. Push LIMIT/filter into SQL, project columns. | `definition/query_store.rs:101-155,366-371`, `adl14.rs:197-215` | **S** | ☐ |
+| F-27 | OPT: ITEM_TAG PUT = DELETE-all + **serial INSERT per tag** (3+N+1 RT for N tags, incl. a post-write re-read). Batch to one multi-row insert; build response without re-read. | `storage/tag_repo.rs:84-113`, `service/ehr/tags.rs:65` | **S** (ITEM_TAG semantics ITS-REST-governed; RT shape silent) | ☐ |
+| F-28 | OPT (minor): party create/get each pay +1 tag read (`attach_party_item_tags`); discrete EHR_STATUS mutators read-modify-write with 2 extra reads vs PUT; stored-query store runs redundant EXISTS + ON CONFLICT (2 RT). | `demographic/api.rs:71,223,236`, `ehr/status.rs:116`, `query_store.rs:275-290` | **S** | ☐ |
+| F-29 | **DEFECT (minor, lossy): `try_get().unwrap_or_default()` on row decodes** turns column-decode errors into silently-empty fields (stored-query semver/version/saved-time, template meta). Surface decode errors. | `query_store.rs:385,396,414,427`, `templates/store.rs:172` | **S** | ☐ |
+| F-30 | CLEAN: status codes across families verified (contribution body-target-missing→400 intentional per ITS-REST 400_CONTRIBUTION; 412/409/404/422 all correct); the §3c "swallow" candidates in `committal.rs`/`demographic/mod.rs`/`api/query/response.rs` are deliberate spec-default merges (PORT-NOTEd) or benign — NOT defects; template LIST projects lean columns (no XML per row); template upload = 3 RT + CPU (lazy WebTemplate correct); EHR create = ~6 folded writes, zero happy-path reads, response from memory; subject lookup indexed (`uq_ehr_subject`); EHR_STATUS sync folded into one UPDATE; blob-GC error swallows are documented post-commit best-effort. Open: DEF-4 example-generation cost not located this probe — carry to next wave. | probe P-5 | n/a | note |
 
 ### 4e. Background paths + caches (probe P-4, 2026-07-16)
 
