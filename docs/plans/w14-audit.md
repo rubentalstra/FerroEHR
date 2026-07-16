@@ -344,6 +344,19 @@ signing-fold and F-2 trio findings apply to its commit too (shared `update` path
 | F-16 | CLEAN: every other status mapping spec-correct (404/412/409/422/400/501 rows verified against `Requests_and_responses.md:218-235`); 408 for execution timeout is the SPEC'S OWN code (`:229` — 504/503 absent from the spec subset); Success/FileNotWritable/Exception→500 defensible. Unwrap sweep of the 7 worst-density files (negotiate, offload, bundle, object_version_id, contribution, authn, codec): **exactly one defect** (F-12); all other hits infallible/optional-header/server-data/test-only. | probe P-3 | n/a | note |
 | F-17 | **Instrument finding (tools/benchmark)**: error counting is asymmetric — successes are warmup-filtered, errors are counted unconditionally (`measure.rs:106-127`), slightly overstating error_rate; and "error" conflates server-side non-expected status with generator-side 2 s dependency-misses (`drive.rs:38,874-878`). Split server vs generator errors + warmup-filter both, or the W-14 close pair mis-attributes. | `tools/benchmark/src/{measure.rs,drive.rs}` | **S** (our instrument) | ☐ |
 
+### 4d. Structural track — crate-layout overhead (owner question 2026-07-16)
+
+Owner hypothesis: merge `ehrbase` + `ehrbase-sm` into one crate, keep
+`ehrbase-rest` separate ("we are creating a lot of stubs and it feels janky";
+the ITS-REST↔SM interface seam must survive — ITS-REST endpoints bind to the
+SM service interfaces). Audit in flight: dependency-direction reality (does
+`ehrbase-sm` exist to break a rest↔platform cycle?), LoC + forwarding-stub
+count, who actually consumes the traits (dyn/generic/concrete; any mocks/second
+impl), build-graph impact, ADR-010/011 stated rationale vs SM-spec packaging
+(the SM spec defines service *interfaces*, not crate packaging — packaging is
+our own design). **Decision gate: owner sign-off required before any merge
+executes** — findings + options land here first.
+
 ## 5. Fix waves
 
 Filed after the probe pass; each wave lists its rows, the change, the gate
