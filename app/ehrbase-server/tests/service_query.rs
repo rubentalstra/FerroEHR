@@ -24,7 +24,7 @@ use tower::ServiceExt;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
-use ehrbase_rest::AppConfig;
+use ehrbase_rest::config::AppConfig;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";

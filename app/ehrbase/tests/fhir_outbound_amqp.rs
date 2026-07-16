@@ -26,7 +26,8 @@ use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::extensions::fhir::{FhirOutboundConfig, start};
+use crate::extensions::fhir::config::FhirOutboundConfig;
+use crate::extensions::fhir::outbound::start;
 use ehrbase::service::EhrbaseService;
 
 /// The separate PHI exchange the outbound emitter publishes to.

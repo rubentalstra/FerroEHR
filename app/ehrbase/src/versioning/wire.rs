@@ -19,7 +19,7 @@ use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
 use crate::versioning::read::VersionRead;
-use crate::versioning::signature::Signer;
+use crate::versioning::signature::signer::Signer;
 
 /// The `REVISION_HISTORY` of a versioned object: one item per version, each with
 /// its version id and the `AUDIT_DETAILS` of the change that produced it plus
@@ -41,7 +41,7 @@ pub(crate) async fn revision_history(
     ehr_id: Uuid,
     vo_id: Uuid,
 ) -> Result<Value, ServiceError> {
-    let rows = crate::storage::version_repo::all_version_meta(pool, vo_id).await?;
+    let rows = crate::storage::version_repo::meta::all_version_meta(pool, vo_id).await?;
     let first = rows
         .first()
         .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
@@ -52,7 +52,7 @@ pub(crate) async fn revision_history(
     }
 
     // Attestations for the object, keyed by version, in commit order.
-    let att_rows = crate::storage::version_repo::read_attestations_all(pool, vo_id).await?;
+    let att_rows = crate::storage::version_repo::attestation::read_attestations_all(pool, vo_id).await?;
     let mut attestations: std::collections::HashMap<i32, Vec<Value>> =
         std::collections::HashMap::new();
     for (sys_version, data) in att_rows {
@@ -104,14 +104,14 @@ pub(crate) async fn revision_history(
 ///
 /// # Errors
 /// [`ServiceError::NotFound`] when the object has no stored version; the
-/// storage read error of `version_repo::time_created`.
+/// storage read error of `version_repo::meta::time_created`.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     ehr_id: Uuid,
     rm_type: &str,
 ) -> Result<Value, ServiceError> {
-    let time_created = crate::storage::version_repo::time_created(pool, vo_id)
+    let time_created = crate::storage::version_repo::meta::time_created(pool, vo_id)
         .await?
         .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
     Ok(json!({

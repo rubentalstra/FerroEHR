@@ -25,7 +25,7 @@
 //! `__Pre_…__` clauses and no error codes; every unmet precondition surfaces as
 //! `SmError(PreconditionViolation, …)` (→ `400`).
 
-pub(crate) mod config;
+pub mod config;
 mod extract;
 mod frames;
 mod freshness;
@@ -38,4 +38,3 @@ pub mod sample;
 pub mod value;
 pub mod variable;
 
-pub use config::{SpFhirSystem, SubjectProxyConfig, SubjectProxyFhir};

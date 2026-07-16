@@ -55,10 +55,10 @@ pub(crate) async fn attest(
     contribution_id: Uuid,
     time_committed: jiff::Timestamp,
 ) -> Result<Committed, ServiceError> {
-    // The target lookup (`version_repo::attestation_target`) yields the owning
+    // The target lookup (`version_repo::attestation::attestation_target`) yields the owning
     // EHR (compared against the caller's), the storage ordinal the attestation
     // keys to, and the target's `creating_system_id` (carried into the outbox).
-    let target = crate::storage::version_repo::attestation_target(
+    let target = crate::storage::version_repo::attestation::attestation_target(
         tx,
         vo_id,
         expected.columns(),
@@ -71,7 +71,7 @@ pub(crate) async fn attest(
             kind.as_str()
         )));
     };
-    crate::storage::version_repo::insert_attestation(
+    crate::storage::version_repo::attestation::insert_attestation(
         tx,
         vo_id,
         target.sys_version,
@@ -116,7 +116,7 @@ pub(crate) async fn insert_accompanying_attestations(
 ) -> Result<(), ServiceError> {
     for partial in partials {
         let full = complete_attestation(partial, system_id, committer_fallback, now)?;
-        crate::storage::version_repo::insert_attestation(
+        crate::storage::version_repo::attestation::insert_attestation(
             tx,
             vo_id,
             sys_version,

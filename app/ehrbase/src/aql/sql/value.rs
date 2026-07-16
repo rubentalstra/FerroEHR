@@ -18,7 +18,7 @@ use sea_query::{Alias, Expr, ExprTrait as _, Order, Query};
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{Coercion, EhrField, LeafPath, OrderKey, PathTarget, Source, VersionField};
 use crate::db::iden::Node;
-use crate::storage::{PROMOTED_LEAVES, PromotedKind};
+use crate::storage::promoted::{PROMOTED_LEAVES, PromotedKind};
 
 use super::expr::{as_text, call, cast, col, extract_base, order_coercion};
 use super::from::is_vo_root_type;

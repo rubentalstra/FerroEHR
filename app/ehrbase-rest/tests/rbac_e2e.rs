@@ -27,8 +27,9 @@ use ehrbase::config::server::AdminConfig;
 use ehrbase::config::server::ServerConfig;
 use ehrbase::service::EhrbaseService;
 use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
-use ehrbase::system_log::{AuditSender, start};
-use ehrbase_rest::{AppConfig, AuthzHandle};
+use ehrbase::system_log::sender::{AuditSender, start};
+use crate::config::AppConfig;
+use crate::extensions::access::authz::AuthzHandle;
 
 mod common;
 use http::{Request, StatusCode};
@@ -116,7 +117,7 @@ async fn app(name: &str, rbac_enabled: bool, audit: Option<AuditSender>) -> (com
         rest_config(),
         svc,
         authz(rbac_enabled),
-        ehrbase_rest::Observability::default(),
+        crate::extensions::management::Observability::default(),
     )
     .expect("build app");
     (pg, app)

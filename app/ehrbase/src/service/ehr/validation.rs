@@ -18,7 +18,8 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{Kind, lifecycle, read_current};
+use crate::versioning::{Kind, lifecycle};
+use crate::versioning::read::read_current;
 
 impl EhrbaseService {
     /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may
@@ -49,7 +50,7 @@ impl EhrbaseService {
         // PERF(port): scans the EHR's live COMPOSITIONs and reassembles each to
         // read its category + template (template_id is not promoted onto
         // vo_version). An EHR holds few persistent compositions.
-        let vo_ids = crate::storage::version_repo::current_vo_ids(
+        let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
             &self.pool,
             ehr_id,
             "COMPOSITION",
@@ -166,10 +167,10 @@ impl EhrbaseService {
             Kind::EhrAccess => validate_ehr_access(data),
             Kind::Folder => validate_folder(data),
             Kind::Agent | Kind::Group | Kind::Organisation | Kind::Person | Kind::Role => {
-                crate::service::demographic::validate_party_kind_for_commit(kind, data)
+                crate::service::demographic::validate::validate_party_kind_for_commit(kind, data)
             }
             Kind::PartyRelationship => {
-                crate::service::demographic::validate_relationship_for_commit(data)
+                crate::service::demographic::validate::validate_relationship_for_commit(data)
             }
         }
     }
@@ -191,7 +192,7 @@ impl EhrbaseService {
 ///
 /// Both write flows run this: the direct update path
 /// ([`composition`](super::composition)) inline, and the CONTRIBUTION path
-/// (`crate::versioning::commit_version_set`) through the
+/// (`crate::versioning::contribution::commit_version_set`) through the
 /// [`crate::versioning::CommitEnv::pre_composition_modify`] hook — each in its
 /// own commit transaction.
 ///
@@ -541,7 +542,8 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::{validate_ehr_access, validate_ehr_status, validate_folder};
-    use crate::service::ehr::{default_ehr_access, default_ehr_status};
+    use crate::service::ehr::access::default_ehr_access;
+    use crate::service::ehr::service::default_ehr_status;
 
     /// `EHR_STATUS.other_details` must be a concrete `ITEM_STRUCTURE`
     /// (RM ehr `ehr_status.adoc`): the four concrete subtypes pass, a foreign

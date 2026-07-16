@@ -17,10 +17,11 @@ use crate::service::version_update::UpdateAudit;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::versioning::change::WriteEnvelope;
-use crate::versioning::{
-    CommitEnv, TreeId, VersionRead, change_type, create, delete, demographic_current, object_kind,
-    object_version_id, update,
-};
+use crate::versioning::CommitEnv;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::{create, delete, update};
+use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::read::{VersionRead, demographic_current, object_kind};
 
 /// The current version of a demographic party, resolved in ONE lean
 /// `vo_version`⋈`audit` read (no node reassembly). Carries the kind-checked

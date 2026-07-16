@@ -27,7 +27,8 @@ use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::extensions::events::{EventsConfig, start, subscription_queue_name};
+use crate::extensions::events::config::EventsConfig;
+use crate::extensions::events::publisher::{start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;

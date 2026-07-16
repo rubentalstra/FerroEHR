@@ -25,12 +25,8 @@
 //! JSON, which is deterministic and signature-independent. This module is
 //! agnostic to how that string is produced — it only signs/verifies it.
 
-mod config;
-mod key;
-mod signer;
-mod verify;
+pub mod config;
+pub mod key;
+pub mod signer;
+pub mod verify;
 
-pub use config::{Mode, SigningConfig, VerifyOnRead};
-pub use key::{KeyError, PgpKey, PgpSignError};
-pub use signer::{SignError, Signer, SigningError};
-pub use verify::Verdict;

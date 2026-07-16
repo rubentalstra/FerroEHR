@@ -6,7 +6,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use ehrbase::telemetry::prometheus::{MetricKind, catalog};
-use ehrbase_rest::management::{Health, HealthIndicator, HealthStatus};
+use ehrbase::telemetry::health::{Health, HealthIndicator, HealthStatus};
 
 /// The full metric catalog as a stable text table: `name kind [buckets]`. A
 /// snapshot pins it so any rename/bucket change is reviewed deliberately (§1.2).

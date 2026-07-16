@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use ehrbase::storage::{decompose, reassemble};
+use ehrbase::storage::codec::{decompose, reassemble};
 use serde_json::Value;
 
 #[test]

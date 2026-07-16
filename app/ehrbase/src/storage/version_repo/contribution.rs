@@ -9,7 +9,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 
 /// A CONTRIBUTION's own audit row (`contribution` ⋈ `audit`), flattened.
 #[derive(Debug, Clone)]

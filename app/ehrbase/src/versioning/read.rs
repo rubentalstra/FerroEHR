@@ -58,11 +58,11 @@ impl VersionRead {
 }
 
 /// Compose a [`VersionRead`] from the storage read shape
-/// ([`crate::storage::version_repo::StoredVersion`]): the tree id is rebuilt
+/// ([`crate::storage::version_repo::read::StoredVersion`]): the tree id is rebuilt
 /// from its column ints and the flattened audit becomes the `commit_audit`.
 /// A deleted version (lifecycle `523`) stores no node rows, so storage already
 /// yields `canonical = Value::Null` (master06 §Logical Deletion).
-fn version_read(stored: crate::storage::version_repo::StoredVersion) -> VersionRead {
+fn version_read(stored: crate::storage::version_repo::read::StoredVersion) -> VersionRead {
     VersionRead {
         vo_id: stored.vo_id,
         ehr_id: stored.ehr_id,
@@ -96,12 +96,12 @@ fn version_read(stored: crate::storage::version_repo::StoredVersion) -> VersionR
 /// deleted read (RM common master06 §Logical Deletion).
 ///
 /// # Errors
-/// The storage read error of `version_repo::read_current`.
+/// The storage read error of `version_repo::read::read_current`.
 pub(crate) async fn read_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::read_current(pool, vo_id)
+    Ok(crate::storage::version_repo::read::read_current(pool, vo_id)
         .await?
         .map(version_read))
 }
@@ -111,14 +111,14 @@ pub(crate) async fn read_current(
 /// extract export iteration), never for wire version ids.
 ///
 /// # Errors
-/// The storage read error of `version_repo::read_version_by_ordinal`.
+/// The storage read error of `version_repo::read::read_version_by_ordinal`.
 pub(crate) async fn read_version_by_ordinal(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     ordinal: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     Ok(
-        crate::storage::version_repo::read_version_by_ordinal(pool, vo_id, ordinal)
+        crate::storage::version_repo::read::read_version_by_ordinal(pool, vo_id, ordinal)
             .await?
             .map(version_read),
     )
@@ -128,7 +128,7 @@ pub(crate) async fn read_version_by_ordinal(
 /// (`.../version/{version_uid}` — trunk or branch).
 ///
 /// # Errors
-/// The storage read error of `version_repo::read_version`.
+/// The storage read error of `version_repo::read::read_version`.
 pub(crate) async fn read_version(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
@@ -136,7 +136,7 @@ pub(crate) async fn read_version(
 ) -> Result<Option<VersionRead>, ServiceError> {
     let (t, b, v) = tree.columns();
     Ok(
-        crate::storage::version_repo::read_version(pool, vo_id, t, b, v)
+        crate::storage::version_repo::read::read_version(pool, vo_id, t, b, v)
             .await?
             .map(version_read),
     )
@@ -147,13 +147,13 @@ pub(crate) async fn read_version(
 /// reconstructable): the row whose `sys_period` contains `at`.
 ///
 /// # Errors
-/// The storage read error of `version_repo::version_at`.
+/// The storage read error of `version_repo::read::version_at`.
 pub(crate) async fn version_at(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
-    Ok(crate::storage::version_repo::version_at(pool, vo_id, at)
+    Ok(crate::storage::version_repo::read::version_at(pool, vo_id, at)
         .await?
         .map(version_read))
 }
@@ -162,12 +162,12 @@ pub(crate) async fn version_at(
 /// exist.
 ///
 /// # Errors
-/// The storage read error of `version_repo::object_kind`.
+/// The storage read error of `version_repo::meta::object_kind`.
 pub(crate) async fn object_kind(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<Kind>, ServiceError> {
-    Ok(crate::storage::version_repo::object_kind(pool, vo_id)
+    Ok(crate::storage::version_repo::meta::object_kind(pool, vo_id)
         .await?
         .and_then(|kind| Kind::from_type(&kind)))
 }
@@ -193,12 +193,12 @@ pub(crate) struct DemographicCurrent {
 /// has no current version (or the stored kind is unrecognized).
 ///
 /// # Errors
-/// The storage read error of `version_repo::current_demographic_meta`.
+/// The storage read error of `version_repo::meta::current_demographic_meta`.
 pub(crate) async fn demographic_current(
     pool: &sqlx::PgPool,
     vo_id: Uuid,
 ) -> Result<Option<DemographicCurrent>, ServiceError> {
-    let Some(m) = crate::storage::version_repo::current_demographic_meta(pool, vo_id).await? else {
+    let Some(m) = crate::storage::version_repo::meta::current_demographic_meta(pool, vo_id).await? else {
         return Ok(None);
     };
     let Some(kind) = Kind::from_type(&m.kind) else {

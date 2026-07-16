@@ -99,7 +99,7 @@ impl ResourceSelector {
 }
 
 /// The resource family axis, used by the enforcement layer to map an operation's
-/// [`crate::extensions::access::authz::ResourceKind`] onto the SMART grammar.
+/// [`crate::extensions::access::authz::request::ResourceKind`] onto the SMART grammar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceFamily {
     /// Operational templates (`template-…`).

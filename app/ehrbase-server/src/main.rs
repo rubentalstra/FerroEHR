@@ -13,17 +13,21 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
-use ehrbase::system_log::{AuditConfig, AuditHandle, AuditSender, SubjectResolver};
-use ehrbase::versioning::signature::Signer;
+use ehrbase::system_log::config::AuditConfig;
+use ehrbase::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
+use ehrbase::versioning::signature::signer::Signer;
 use ehrbase_rest::config::AppConfig;
-use ehrbase_rest::management::{BuildInfo, HealthIndicator, HealthRegistry};
-use ehrbase_rest::{AuthzHandle, Observability};
+use ehrbase::telemetry::build_info::BuildInfo;
+use ehrbase::telemetry::health::{HealthIndicator, HealthRegistry};
+use ehrbase_rest::extensions::access::authz::AuthzHandle;
+use ehrbase_rest::extensions::management::Observability;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use ehrbase::db;
 use ehrbase::service::EhrbaseService;
-use ehrbase::telemetry::{self, TelemetryConfig, indicators};
+use ehrbase::telemetry::{self, indicators};
+use ehrbase::telemetry::config::TelemetryConfig;
 
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
@@ -146,7 +150,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     };
 
     // ASCII banner before telemetry/log init (skipped under `json` logging).
-    if telemetry_config.log.format != ehrbase::telemetry::LogFormat::Json {
+    if telemetry_config.log.format != ehrbase::telemetry::config::LogFormat::Json {
         ehrbase::banner::print();
     }
 
@@ -181,7 +185,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
-        Some(ehrbase::extensions::events::start(
+        Some(ehrbase::extensions::events::publisher::start(
             config.events.clone(),
             pool.clone(),
         ))
@@ -275,7 +279,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
             exchange = %config.fhir.outbound.exchange,
             "FHIR outbound emitter enabled (publishes clinical FHIR resources)"
         );
-        Some(ehrbase::extensions::fhir::start(
+        Some(ehrbase::extensions::fhir::outbound::start(
             config.fhir.outbound.clone(),
             pool.clone(),
             service.clone(),
@@ -340,7 +344,7 @@ async fn start_audit(
     let resolver = config
         .resolve_subject
         .then(|| subject_resolver(pool.clone()));
-    match ehrbase::system_log::start(config.clone(), resolver).await {
+    match ehrbase::system_log::sender::start(config.clone(), resolver).await {
         Ok((sender, handle)) => (Some(sender), Some(handle)),
         Err(e) => {
             tracing::error!("ATNA audit failed to start ({e}); continuing without auditing");

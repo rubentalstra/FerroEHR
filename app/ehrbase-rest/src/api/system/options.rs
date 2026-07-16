@@ -13,7 +13,7 @@
 //! this one standalone operation is hand-written here, correctly.
 //!
 //! This module owns the manifest's *shape and content*; the wiring layer
-//! (`crate::router`) constructs the [`SystemManifest`] from config plus the
+//! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the
 //! live mounted-group set and mounts [`route`] at the API base-path root. The
 //! register the redesign closes is `docs/design/its-rest/system.md` §1
 //! (G-1..G-6).
@@ -37,7 +37,7 @@ const ALLOW_METHODS: &str = "GET, POST, PUT, DELETE, OPTIONS";
 /// (`system-codegen.openapi.yaml` lines 116-121).
 ///
 /// This is the spec-defined **default** only. G-1 requires the *live* list —
-/// exactly the groups the router mounts — so [`crate::router`] passes its
+/// exactly the groups the router mounts — so [`crate::router::router`] passes its
 /// actual mounted-group set to [`SystemManifest::new`] rather than relying on
 /// this constant.
 pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/query", "/admin"];
@@ -144,7 +144,7 @@ impl SystemManifest {
 /// `MethodRouter<S>` composes with a router of any state type. It is generic
 /// so the wiring layer can mount it on the `AppState`-typed application router.
 ///
-/// [`crate::router`] wires this:
+/// [`crate::router::router`] wires this:
 ///   1. it builds a [`SystemManifest`] from the server config
 ///      ([`SystemOptionsConfig`]) and the **live** mounted-group list — the
 ///      groups `crate::api::api_router` actually merges (`/ehr`,
@@ -157,7 +157,7 @@ impl SystemManifest {
 ///      probes (`docs/design/its-rest/system.md` §2.4);
 ///   4. both mounts sit **above** the `CorsLayer` (that layer treats every
 ///      `OPTIONS` as a CORS preflight and short-circuits it), which is why the
-///      handler is added after the middleware stack in `crate::router`.
+///      handler is added after the middleware stack in `crate::router::router`.
 pub fn route<S>(manifest: Arc<SystemManifest>) -> MethodRouter<S>
 where
     S: Clone + Send + Sync + 'static,

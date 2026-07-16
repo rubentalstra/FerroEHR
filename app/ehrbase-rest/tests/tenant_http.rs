@@ -23,7 +23,7 @@ use uuid::Uuid;
 
 use ehrbase::config::auth::AuthConfig;
 use ehrbase::config::server::{ServerConfig, TenancyConfig};
-use ehrbase_rest::AppConfig;
+use crate::config::AppConfig;
 
 mod common;
 

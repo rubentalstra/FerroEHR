@@ -11,7 +11,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
 /// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details). `committer`

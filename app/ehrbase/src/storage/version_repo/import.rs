@@ -10,7 +10,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
 /// One `vo_version` row to insert with an **explicit** `sys_period`

@@ -21,10 +21,12 @@ use crate::service::version_update::UpdateAudit;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::storage::version_repo;
-use crate::versioning::{
-    AuditInput, CommitEnv, Committed, Kind, TreeId, VersionRead, audit_details, object_version_id,
-    original_version, read_current, read_version, version_at,
-};
+use crate::versioning::{CommitEnv, Kind};
+use crate::versioning::audit::{AuditInput, audit_details};
+use crate::versioning::change::Committed;
+use crate::versioning::object_version_id::{TreeId, object_version_id};
+use crate::versioning::read::{VersionRead, read_current, read_version, version_at};
+use crate::versioning::wire::original_version;
 
 /// The versioned-object [`Kind`] for a REST [`PartyKind`].
 pub(super) fn kind_of(kind: PartyKind) -> Kind {
@@ -148,7 +150,7 @@ pub(super) fn record_commit() {
 /// One `REVISION_HISTORY_ITEM` for a stored version row: its
 /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
 /// §Revision History).
-fn revision_history_item(vo_id: Uuid, meta: &version_repo::VersionMeta) -> Value {
+fn revision_history_item(vo_id: Uuid, meta: &version_repo::meta::VersionMeta) -> Value {
     let tree = TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
     json!({
         "_type": "REVISION_HISTORY_ITEM",
@@ -217,7 +219,7 @@ impl EhrbaseService {
         ref_type: &str,
         label: &str,
     ) -> Result<Value, ServiceError> {
-        let time_created = version_repo::time_created(&self.pool, vo_id)
+        let time_created = version_repo::meta::time_created(&self.pool, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{label} {vo_id}")))?;
         Ok(json!({
@@ -244,7 +246,7 @@ impl EhrbaseService {
         &self,
         vo_id: Uuid,
     ) -> Result<Value, ServiceError> {
-        let metas = version_repo::all_version_meta(&self.pool, vo_id).await?;
+        let metas = version_repo::meta::all_version_meta(&self.pool, vo_id).await?;
         let items: Vec<Value> = metas
             .iter()
             .map(|meta| revision_history_item(vo_id, meta))

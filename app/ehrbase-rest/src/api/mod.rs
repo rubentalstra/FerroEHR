@@ -13,7 +13,7 @@
 //! (`openehr_its::rest::generated::{ehr,query,definition,admin,demographic}`).
 //! The System API is not part of that contract (no `system` group is emitted),
 //! so its single `OPTIONS /` operation is hand-written in [`system`] and mounted
-//! by [`crate::router`], not here.
+//! by [`crate::router::router`], not here.
 //!
 //! ## The per-group modules
 //!
@@ -34,7 +34,7 @@
 //! - [`admin`] — the Admin API (physical EHR delete), whose dispatcher is reached
 //!   as `admin::dispatch::dispatch` (the group publishes no re-export).
 //! - [`system`] — the System API manifest ([`system::SystemManifest`],
-//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router`].
+//!   [`system::SystemOptionsConfig`]), assembled and mounted by [`crate::router::router`].
 //!
 //! Every group — the standardised ITS-REST groups above and the own-design
 //! extension surfaces ([`crate::extensions`]: terminology, event subscription,
@@ -117,7 +117,7 @@ pub(crate) async fn into_parts(request: axum::extract::Request) -> RequestParts 
 
 /// Build the API router covering every ITS-REST + extension route
 /// (group-relative paths; nested under the configured base path by
-/// [`crate::router`]). State is applied by the caller. This is the `Router` half
+/// [`crate::router::router`]). State is applied by the caller. This is the `Router` half
 /// of [`api_openapi_router`]; the `OpenApi` half feeds the served document
 /// ([`api_doc`]), so route and documentation are single-sourced.
 pub(crate) fn api_router() -> Router<AppState> {

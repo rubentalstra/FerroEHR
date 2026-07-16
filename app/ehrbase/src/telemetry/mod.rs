@@ -25,7 +25,6 @@ pub mod health;
 pub mod log_reload;
 pub mod provenance;
 
-pub use config::{LogConfig, LogFormat, OtelConfig, TelemetryConfig};
 
 use build_info::BuildInfo;
 use log_reload::LogReload;

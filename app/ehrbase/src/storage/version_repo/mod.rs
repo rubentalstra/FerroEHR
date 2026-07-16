@@ -6,21 +6,21 @@
 //! this module is pure plumbing. All **semantics** (change classification,
 //! version-tree placement, lifecycle, signing, attestation policy, import
 //! policy) stay in the versioning layer, which hands these functions plain
-//! value inputs and consumes the [`StoredVersion`] read shape. The change
+//! value inputs and consumes the [`read::StoredVersion`] read shape. The change
 //! control law these rows realize is RM common master06 (§Contributions,
 //! §Committal and Audits, §Version tree, §Copying); `AUDIT_DETAILS`/
 //! `ATTESTATION` are master04. Every write runs inside a caller-owned `sqlx`
 //! transaction so a version + nodes + contribution + audit (+ outbox) commit
 //! atomically (master06 §Committal: "similar to nested transactions").
 //!
-//! One file per concern, all surfaced here (the module is the seam the
-//! versioning/service layers import from):
+//! One file per concern; consumers import each item from its defining
+//! submodule (no re-exports):
 //! - [`commit`] — the local write path: audit/contribution inserts, the
 //!   folded one-statement version commit, lineage-tip close, and the
 //!   ride-along folder-membership + event-outbox writes.
 //! - [`import`] — the EHR-Extract / archive-load write path: explicit
 //!   `sys_period` version rows, lineage close-at, container-state read.
-//! - [`read`] — the full version reads ([`StoredVersion`]: metadata + body +
+//! - [`read`] — the full version reads ([`read::StoredVersion`]: metadata + body +
 //!   attestations) by current / ordinal / tree id / instant.
 //! - [`placement`] — the version-tree placement reads (lineage tip, next
 //!   ordinal, transaction timestamp); the placement *decision* stays in
@@ -37,38 +37,13 @@
 // `TreeId::columns()` → the three tree ints). Storage never depends upward on
 // versioning — this decoupling is deliberate and stays.
 
-mod attestation;
-mod commit;
-mod contribution;
-mod import;
-mod meta;
-mod placement;
-mod read;
-
-pub use attestation::{
-    AttestTargetRow, attestation_target, insert_attestation, read_attestations_all,
-};
-pub use commit::{
-    AuditRow, FoldedVersion, VersionRow, advisory_lock, close_ordinal_at_now, commit_new_version,
-    commit_version_into, insert_audit, insert_audit_at, insert_contribution,
-    insert_ehr_folder_rank, write_contribution, write_outbox,
-};
-pub use contribution::{
-    ContributionAudit, contribution_audit, contribution_version_refs, count_contributions,
-    ehr_contribution_count, list_contributions,
-};
-pub use import::{
-    ContainerStateRow, ImportedVersionRow, VerbatimVersionRow, close_lineage_at,
-    imported_container_state, insert_imported_vo_version, insert_version_verbatim,
-};
-pub use meta::{
-    CurrentCompositionMeta, CurrentDemographicMeta, CurrentMeta, CurrentVoRow, VersionMeta,
-    all_version_meta, composition_count, current_composition_meta, current_demographic_meta,
-    current_version_meta_by_kind, current_version_meta_scoped, current_vo, current_vo_ids,
-    ehr_exists, object_kind, object_kinds, time_created, vo_owner,
-};
-pub use placement::{Placement, TipRow, lineage_tip, next_branch_number, next_placement, tx_now};
-pub use read::{StoredVersion, read_current, read_version, read_version_by_ordinal, version_at};
+pub mod attestation;
+pub mod commit;
+pub mod contribution;
+pub mod import;
+pub mod meta;
+pub mod placement;
+pub mod read;
 
 /// `other_input_version_uids` stores NULL when empty (`Is_merged_validity`),
 /// else the JSON array.

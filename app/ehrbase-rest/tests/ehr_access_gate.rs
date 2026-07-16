@@ -31,7 +31,8 @@ use axum::body::Body;
 use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase::config::server::ServerConfig;
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
-use ehrbase_rest::{AppConfig, Observability};
+use crate::config::AppConfig;
+use crate::extensions::management::Observability;
 
 mod common;
 use http::{Request, StatusCode};

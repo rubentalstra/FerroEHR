@@ -5,7 +5,7 @@
 //! deterministic function of the query **text**: no request parameter *value*,
 //! paging window (REST `fetch`/`offset` or AQL `LIMIT`/`OFFSET`), EHR scope,
 //! or system id is baked into the IR — those all bind at SQL-build time
-//! ([`crate::aql::build_sql`]). So a repeated query text can reuse one lowered
+//! ([`crate::aql::sql::build`]). So a repeated query text can reuse one lowered
 //! plan; only the per-request binding differs. This cache holds that lowered
 //! plan keyed on the exact query text, sparing every repeat the parse + path
 //! analysis + IR lowering.
@@ -25,7 +25,7 @@
 //! * **Terminology-resolving plans are never cached.** A query whose `WHERE`
 //!   uses `TERMINOLOGY(…)` (QUERY master03 §TERMINOLOGY) has its value lists
 //!   resolved through the terminology service at plan time
-//!   ([`crate::aql::expand_matches`]); that resolution may differ on a later
+//!   ([`crate::aql::terminology::expand_matches`]); that resolution may differ on a later
 //!   execution, so such a plan is *not* a pure function of the query text and
 //!   is excluded from the cache by the caller. This is the "expansion stays
 //!   out of the cached prefix" choice: no staleness window, rather than a TTL
@@ -36,7 +36,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use moka::future::Cache;
 
-use crate::aql::QueryIr;
+use crate::aql::ir::QueryIr;
 use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 
 /// The default maximum number of distinct query plans held. Bounded so a
@@ -63,7 +63,7 @@ pub struct PlanCacheStats {
 /// query text. `moka`'s [`Cache`] is `Arc`-backed, so every clone of the
 /// owning service shares one cache (mirroring
 /// [`openehr_flat::cache::WebTemplateCache`] and
-/// [`crate::service::ehr::EhrAccessCache`]); the hit/miss counters are shared
+/// [`crate::service::ehr::access::EhrAccessCache`]); the hit/miss counters are shared
 /// the same way.
 #[derive(Clone)]
 pub struct PlanCache {

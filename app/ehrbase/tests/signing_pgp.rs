@@ -9,9 +9,10 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use ehrbase::versioning::signature::{
-    KeyError, Mode, Signer, SigningConfig, SigningError, Verdict, VerifyOnRead,
-};
+use crate::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+use crate::versioning::signature::key::KeyError;
+use crate::versioning::signature::signer::{Signer, SigningError};
+use crate::versioning::signature::verify::Verdict;
 use pgp::composed::{ArmorOptions, KeyType, SecretKeyParamsBuilder, SignedSecretKey};
 use rand::rngs::OsRng;
 

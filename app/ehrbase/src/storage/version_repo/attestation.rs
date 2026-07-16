@@ -10,7 +10,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 
 /// Insert one `ATTESTATION` row for a version (master06 §Attestation). Stores
 /// the completed canonical `ATTESTATION` verbatim in `data` (no synthetic

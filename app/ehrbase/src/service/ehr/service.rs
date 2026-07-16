@@ -17,9 +17,10 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{
-    Change, Kind, TreeId, change_type, commit_contribution, object_version_id,
-};
+use crate::versioning::Kind;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::{Change, commit_contribution};
+use crate::versioning::object_version_id::{TreeId, object_version_id};
 
 use super::status_for_subject;
 
@@ -78,7 +79,7 @@ impl EhrbaseService {
                     "EHR {ehr_id} already exists"
                 )));
             }
-            Err(crate::storage::StorageError::SubjectInUse(id, ns)) => {
+            Err(crate::storage::error::StorageError::SubjectInUse(id, ns)) => {
                 return Err(ServiceError::Conflict(format!(
                     "an EHR already exists for subject {id}@{ns}"
                 )));
@@ -148,7 +149,7 @@ impl EhrbaseService {
     /// Assemble the RM `EHR` wire body for a just-created EHR straight from the
     /// CONTRIBUTION commit results — no storage reads. The status/access
     /// version identities come from the
-    /// [`Committed`](crate::versioning::Committed) rows (`EHR_STATUS` then
+    /// [`Committed`](crate::versioning::change::Committed) rows (`EHR_STATUS` then
     /// `EHR_ACCESS`, RM ehr master04 §EHR Creation), the status ref carries its
     /// `OBJECT_VERSION_ID` (the stored per-version `creating_system_id`,
     /// master06 §Distributed Versioning), and a fresh EHR has no
@@ -159,7 +160,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         time_created: jiff::Timestamp,
-        committed: &[crate::versioning::Committed],
+        committed: &[crate::versioning::change::Committed],
     ) -> Value {
         let status_ref = committed
             .iter()
@@ -327,9 +328,9 @@ impl EhrbaseService {
         let ehr_status = self.status_at(ehr_id, None).await?.body;
 
         let contribution_count =
-            crate::storage::version_repo::ehr_contribution_count(&self.pool, ehr_id).await?;
+            crate::storage::version_repo::contribution::ehr_contribution_count(&self.pool, ehr_id).await?;
         let composition_count =
-            crate::storage::version_repo::composition_count(&self.pool, ehr_id).await?;
+            crate::storage::version_repo::meta::composition_count(&self.pool, ehr_id).await?;
 
         Ok(EhrSummary {
             ehr_id: ehr_id.to_string(),
@@ -556,10 +557,10 @@ mod tests {
 
     /// The default `EHR_STATUS` must be a valid structure root for the storage
     /// codec (one root node — the decomposition granularity of
-    /// `crate::storage::decompose`).
+    /// `crate::storage::codec::decompose`).
     #[test]
     fn default_status_decomposes() {
-        let rows = crate::storage::decompose(default_ehr_status()).expect("decompose");
+        let rows = crate::storage::codec::decompose(default_ehr_status()).expect("decompose");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rm_type, "EHR_STATUS");
     }

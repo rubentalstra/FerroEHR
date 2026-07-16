@@ -25,7 +25,9 @@ use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 
 use ehrbase::db::{self, DbConfig};
-use ehrbase::extensions::events::{EventError, EventPublisher, EventsConfig, start_with_publisher};
+use ehrbase::extensions::events::{EventError, EventPublisher};
+use crate::extensions::events::config::EventsConfig;
+use crate::extensions::events::publisher::start_with_publisher;
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;

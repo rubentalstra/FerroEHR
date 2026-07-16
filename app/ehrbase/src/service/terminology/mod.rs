@@ -23,7 +23,7 @@
 //! - [`routing`] — the 9 SM calls on `EhrbaseService`, routing between the
 //!   two providers (the G-4 rule below).
 //! - [`expander`] — the AQL `TERMINOLOGY()` seam
-//!   ([`crate::aql::TerminologyExpander`] on `EhrbaseService`).
+//!   ([`crate::aql::terminology::TerminologyExpander`] on `EhrbaseService`).
 //! - [`config`] — the `[terminology]` config section (no openEHR spec governs
 //!   configuration — our own design).
 //!
@@ -42,14 +42,10 @@
 //!   byte-identical to a bundle-only service.
 
 mod bundle;
-mod config;
+pub mod config;
 mod expander;
-mod fhir;
+pub mod fhir;
 mod routing;
 
 pub mod types;
 
-pub use config::{
-    ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind, TerminologyConfig,
-};
-pub use fhir::FhirTerminologyProvider;

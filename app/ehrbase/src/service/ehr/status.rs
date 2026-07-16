@@ -18,10 +18,12 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{
-    Kind, TreeId, change_type, expected_from_if_match, original_version, parse_tree_id,
-    read_current, read_version, revision_history, update, version_at, versioned_object,
-};
+use crate::versioning::Kind;
+use crate::versioning::audit::change_type;
+use crate::versioning::change::update;
+use crate::versioning::object_version_id::{TreeId, expected_from_if_match, parse_tree_id};
+use crate::versioning::read::{read_current, read_version, version_at};
+use crate::versioning::wire::{original_version, revision_history, versioned_object};
 
 use super::{ensure_if_match, parse_at_time};
 
@@ -78,7 +80,7 @@ impl EhrbaseService {
     /// caller's `If-Match` meta pre-read, so the `current_vo` JOIN is not
     /// re-run here); `if_match` is the `OBJECT_VERSION_ID` (or bare version)
     /// the client believes is current. The result is the commit's own
-    /// [`Committed`](crate::versioning::Committed) (the written version
+    /// [`Committed`](crate::versioning::change::Committed) (the written version
     /// identity + commit instant, RM common master06 §Committal) — the write
     /// path never re-reads the row it just wrote; a
     /// `Prefer: return=representation` body is read back at the protocol
@@ -89,7 +91,7 @@ impl EhrbaseService {
         vo_id: Uuid,
         version: UpdateVersion,
         if_match: &str,
-    ) -> Result<crate::versioning::Committed, ServiceError> {
+    ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (audit, envelope) = super::resolve_envelope(
             &version,
             change_type::MODIFICATION,
@@ -144,7 +146,7 @@ impl EhrbaseService {
         &self,
         ehr_id: Uuid,
         mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
-    ) -> Result<crate::versioning::Committed, ServiceError> {
+    ) -> Result<crate::versioning::change::Committed, ServiceError> {
         // Resolve the current EHR_STATUS versioned object once and read its
         // body; the resolved `vo_id` threads into `commit_status` so its commit
         // skips a second `current_vo` resolution.

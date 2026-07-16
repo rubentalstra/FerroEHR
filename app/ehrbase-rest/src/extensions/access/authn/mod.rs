@@ -35,7 +35,7 @@ mod jwt;
 
 use std::sync::Arc;
 
-use crate::extensions::access::authz::RbacDecision;
+use crate::extensions::access::authz::roles::RbacDecision;
 use axum::extract::{FromRequestParts, MatchedPath, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
@@ -46,7 +46,6 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::extensions::access::authz::AuthzHandle;
 use crate::overview::error::RestError;
-pub use ehrbase::config::auth::AuthConfig;
 use jwt::JwtValidator;
 
 /// The state the [`middleware`] runs on: the authenticator plus the optional

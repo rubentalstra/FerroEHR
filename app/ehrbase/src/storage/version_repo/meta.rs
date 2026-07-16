@@ -2,7 +2,7 @@
 //! instant is needed): the `ETag`/`If-Match` identity reads, revision-history
 //! enumeration, and the existence/kind/ownership/count lookups — none of them
 //! pays the node reassembly or attestation aggregation the full
-//! [`crate::storage::version_repo::read_current`] does.
+//! [`crate::storage::version_repo::read::read_current`] does.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
 //! §Storage). The version identity these reads serve is RM common master06
@@ -13,7 +13,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 
 // ── revision-history enumeration ──────────────────────────────────────────────
 
@@ -216,7 +216,7 @@ pub async fn current_vo(
 /// `ETag`/`If-Match` full-`OBJECT_VERSION_ID` compare needs (`VERSION_TREE_ID`
 /// column ints + the stored per-version `creating_system_id` + the audit
 /// `time_committed`), **without** node reassembly or the attestation read the
-/// full [`crate::storage::version_repo::read_current`] pays. `None` when the
+/// full [`crate::storage::version_repo::read::read_current`] pays. `None` when the
 /// object has no current trunk version. The version identity is RM common
 /// master06 §Version Identification; the commit instant is master06 §Committal.
 #[derive(Debug, Clone)]
@@ -245,7 +245,7 @@ fn current_meta_row(row: &PgRow) -> Result<CurrentMeta, StorageError> {
 /// The current trunk version's metadata for an EHR's object of `kind`, resolved
 /// and read in **one** `vo_version`⋈`audit` statement (no node/attestation
 /// reads) — the metadata-only replacement for [`current_vo`] +
-/// [`crate::storage::version_repo::read_current`] on the `ETag`/`If-Match`
+/// [`crate::storage::version_repo::read::read_current`] on the `ETag`/`If-Match`
 /// path.
 ///
 /// # Errors
@@ -308,7 +308,7 @@ pub async fn current_version_meta_scoped(
 /// statement — `kind` + `lifecycle_state` alongside the `ETag`/`If-Match`
 /// identity parts (`VERSION_TREE_ID` ints + the stored per-version
 /// `creating_system_id`) and the commit instant, **without** the node
-/// reassembly the full [`crate::storage::version_repo::read_current`] pays.
+/// reassembly the full [`crate::storage::version_repo::read::read_current`] pays.
 /// `ehr_id IS NULL` scopes the read to the demographic repository (a party /
 /// `PARTY_RELATIONSHIP` has no owning EHR — our own design; no openEHR spec
 /// governs the SQL). The caller gates the route on `kind` (a wrong-kind or
@@ -377,7 +377,7 @@ pub async fn current_demographic_meta(
 /// - the **root node fragment** (`num = 0`, children pruned) from which the
 ///   modify path reads the declared `archetype_details.template_id.value` —
 ///   **without** reassembling every node the full
-///   [`crate::storage::version_repo::read_current`] pays.
+///   [`crate::storage::version_repo::read::read_current`] pays.
 ///
 /// `root_data` is `None` for a deleted current (a logical delete stores no node
 /// rows). `None` when the object has no current trunk version (a COMPOSITION

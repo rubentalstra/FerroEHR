@@ -26,7 +26,9 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{Kind, TreeId, components, read_current, read_version};
+use crate::versioning::Kind;
+use crate::versioning::object_version_id::{TreeId, components};
+use crate::versioning::read::{read_current, read_version};
 
 impl EhrbaseService {
     /// Resolve an `ehr:` URI to the single canonical-JSON node it addresses.

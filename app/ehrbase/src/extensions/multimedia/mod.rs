@@ -40,12 +40,10 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
-mod config;
+pub mod config;
 mod offload;
-mod store;
+pub mod store;
 
-pub use config::{DEFAULT_THRESHOLD_BYTES, MultimediaConfig};
-pub use store::BlobStore;
 
 /// A failure in the multimedia externalization path.
 #[derive(Debug, thiserror::Error)]

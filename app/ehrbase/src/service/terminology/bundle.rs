@@ -64,7 +64,7 @@ use crate::service::status::{CallStatusType, SmError};
 use crate::service::terminology::types::{
     DefinedTerm, TermCode, TermEntry, TerminologyDescription, TerminologyExtract,
 };
-use crate::versioning::OPENEHR;
+use crate::versioning::audit::OPENEHR;
 
 /// The published identifying URI for the internal openEHR terminology.
 const OPENEHR_TERM_URI: &str = "https://github.com/openEHR/terminology";

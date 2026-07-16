@@ -9,11 +9,11 @@ use std::collections::BTreeMap;
 
 use async_trait::async_trait;
 
-use crate::aql::TerminologyExpander;
+use crate::aql::terminology::TerminologyExpander;
 use crate::aql::error::{AqlError, AqlFeatureError, ExecError};
 use crate::service::EhrbaseService;
 use crate::service::status::{CallStatusType, SmError};
-use crate::versioning::OPENEHR;
+use crate::versioning::audit::OPENEHR;
 
 use super::bundle;
 

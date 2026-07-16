@@ -7,6 +7,4 @@
 //! `ehrbase-sm` native API.
 
 pub mod dispatch;
-mod openapi_routes;
-
-pub(crate) use openapi_routes::routes;
+pub(crate) mod openapi_routes;

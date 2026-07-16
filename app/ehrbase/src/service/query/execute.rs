@@ -16,7 +16,10 @@ use uuid::Uuid;
 
 use openehr_query::parser::parse_str;
 
-use crate::aql::{self, AqlError, ExecError, Params, QueryIr, SqlCtx};
+use crate::aql;
+use crate::aql::error::{AqlError, ExecError};
+use crate::aql::ir::{Params, QueryIr};
+use crate::aql::sql::SqlCtx;
 use crate::service::EhrbaseService;
 use crate::service::query::request::{AqlQueryRequest, QueryOutcome};
 use crate::service::status::{QUERY_TIMEOUT_TAG, SmError};
@@ -150,7 +153,7 @@ impl EhrbaseService {
         // when set, the DB execution is bounded so an over-long query is
         // reported as `408 Request Timeout` rather than hanging until the
         // global request timeout. Default off → zero drift.
-        let exec = aql::execute(&self.pool, &ir, &params, &ctx);
+        let exec = crate::aql::exec::execute(&self.pool, &ir, &params, &ctx);
         let result = match self.query_timeout {
             Some(budget) => tokio::time::timeout(budget, exec)
                 .await
@@ -184,7 +187,7 @@ impl EhrbaseService {
     /// is independent of them.
     ///
     /// A plan whose `matches` operands were resolved through the terminology
-    /// service (`aql::expand_matches` reported an expansion) is **not**
+    /// service (`crate::aql::terminology::expand_matches` reported an expansion) is **not**
     /// cached: the resolution may differ on a later execution (QUERY master03
     /// §TERMINOLOGY), so such a query always re-parses and re-expands.
     ///
@@ -207,7 +210,7 @@ impl EhrbaseService {
         // used in a `matches` operand through the terminology-service seam
         // and merge the codes into the value list, before planning
         // (QUERY master03 lines 756–759).
-        let expanded = aql::expand_matches(&mut ast, self)
+        let expanded = crate::aql::terminology::expand_matches(&mut ast, self)
             .await
             .map_err(Failure::plan)?;
         let ir = Arc::new(aql::lower_query(&ast).map_err(Failure::plan)?);

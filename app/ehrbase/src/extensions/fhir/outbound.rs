@@ -36,7 +36,8 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
-use crate::extensions::events::{AmqpPublisher, EventError, EventPublisher};
+use crate::extensions::events::{EventError, EventPublisher};
+use crate::extensions::events::amqp::AmqpPublisher;
 use crate::service::EhrbaseService;
 
 use super::config::FhirOutboundConfig;

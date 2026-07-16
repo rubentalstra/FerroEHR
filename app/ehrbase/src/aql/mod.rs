@@ -25,15 +25,10 @@ use std::collections::BTreeSet;
 
 use openehr_query::ast::SelectQuery;
 
-pub use error::{AnalysisError, AqlError, AqlFeatureError, ExecError, SqlError};
-pub use exec::{ColumnMeta, QueryResult, execute};
-pub use ir::{ParamValue, Params, QueryIr};
-pub use sql::{SqlCtx, build as build_sql};
-pub use terminology::{TerminologyExpander, expand_matches};
-
+use error::{AqlError, AqlFeatureError};
 use ir::{
-    ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, PathTarget,
-    SelectValue, Source, VersionScope,
+    ArchetypeConstraint, Bind, Expr, NameConstraint, NodeConstraint, Operand, Params, PathTarget,
+    QueryIr, SelectValue, Source, VersionScope,
 };
 
 /// Plan an AQL query: analyse and lower it into a typed [`QueryIr`], validating
@@ -61,7 +56,7 @@ pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
 /// This is the request-independent half of [`plan`]: the IR is a pure,
 /// deterministic function of the query AST (no parameter *value*, paging
 /// window, EHR scope, or system id is baked in — those bind at SQL-build time,
-/// [`build_sql`]). That purity is what lets the query service cache the lowered
+/// [`sql::build`]). That purity is what lets the query service cache the lowered
 /// IR keyed on the query text ([`crate::service::query`] plan cache); the
 /// per-request [`check_params`] then runs against the caller's [`Params`].
 ///

@@ -40,29 +40,19 @@ pub mod extensions;
 pub mod formats;
 mod overload;
 pub mod overview;
-mod router;
+pub mod router;
 pub mod smart;
-mod state;
+pub mod state;
 pub mod system_log;
 
 // `access` (authn + authz config the binary wires) and `management`
-// (observability the binary assembles) are part of the crate's public surface,
-// re-exported at the root so the binary + tests reach them as
-// `ehrbase_rest::access::…` / `ehrbase_rest::management::…`.
-pub use extensions::{access, management};
-// Crate-root path aliases the per-spec dispatchers resolve against
-// (`crate::negotiate`, `crate::params`); the two shared protocol helpers live
-// under `overview` and are reached through these short paths.
+// (observability the binary assembles) are part of the crate's public surface;
+// the binary + tests reach every item at its defining module —
+// `ehrbase_rest::extensions::access::…` / `ehrbase_rest::extensions::management::…`
+// (no re-exports). The two shared protocol helpers (`negotiate`, `params`)
+// live under `overview` and are imported here for the dispatcher glue below.
 use ehrbase::service::EhrbaseService;
 use overview::{negotiate, params};
-
-pub use access::authn::{AuthMethod, Authenticator, Principal};
-pub use access::authz::{AuthzHandle, AuthzResolvers, ResolveError, build_engine};
-pub use config::AppConfig;
-pub use management::{ManagementConfig, Observability};
-pub use overview::error::RestError;
-pub use router::{management_router, router};
-pub use state::AppState;
 
 /// Errors raised while starting the server.
 #[derive(Debug, thiserror::Error)]

@@ -20,9 +20,7 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::versioning::{
-    commit_version_set, count_contributions, get_contribution, list_contributions,
-};
+use crate::versioning::contribution::{commit_version_set, count_contributions, get_contribution, list_contributions};
 
 use super::parse_time_range;
 
@@ -39,7 +37,7 @@ impl EhrbaseService {
     /// or a member inheriting `committer`/`system_id` from the CONTRIBUTION
     /// audit (RM common master06 §Committal m4). This raw-body seam carries
     /// the full-fidelity EHR CONTRIBUTION commit; all RM `change_control`
-    /// semantics stay in `crate::versioning::commit_version_set` (over the
+    /// semantics stay in `crate::versioning::contribution::commit_version_set` (over the
     /// [`crate::versioning::CommitEnv`] impl `EhrbaseService` provides).
     ///
     /// # Errors

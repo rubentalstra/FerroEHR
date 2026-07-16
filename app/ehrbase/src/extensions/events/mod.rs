@@ -20,7 +20,7 @@
 //!   provenance metadata only, never clinical content. The per-version entry
 //!   is built by `crate::versioning` (`Committed::envelope_entry`) and the row
 //!   is written inside the commit transaction by
-//!   `crate::storage::version_repo::write_outbox`; this module drains that row.
+//!   `crate::storage::version_repo::commit::write_outbox`; this module drains that row.
 //! - **Broker abstraction, AMQP first.** [`EventPublisher`] is the seam;
 //!   [`AmqpPublisher`] is the `RabbitMQ` (lapin) implementation.
 //! - **Topology declared on connect/change only.** Subscription queues are
@@ -38,15 +38,12 @@
 
 pub mod config;
 
-mod amqp;
-mod publisher;
+pub mod amqp;
+pub mod publisher;
 mod subscription;
 
 use async_trait::async_trait;
 
-pub use amqp::AmqpPublisher;
-pub use config::EventsConfig;
-pub use publisher::{EventsHandle, start, start_with_publisher, subscription_queue_name};
 
 /// Placeholder routing-key segment for an absent value.
 const ABSENT: &str = "-";

@@ -20,7 +20,7 @@
 //! exchange drops unroutable messages).
 //!
 //! The outbox row itself is written **inside the commit transaction** by
-//! `crate::storage::version_repo::write_outbox`, from the PHI-free per-version
+//! `crate::storage::version_repo::commit::write_outbox`, from the PHI-free per-version
 //! envelope built by `crate::versioning` (`Committed::envelope_entry`); this
 //! module only drains what storage recorded.
 

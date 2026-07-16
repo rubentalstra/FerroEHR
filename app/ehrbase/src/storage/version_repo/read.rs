@@ -13,7 +13,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::storage::StorageError;
+use crate::storage::error::StorageError;
 use crate::storage::node_repo::read_version_canonical;
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
@@ -65,7 +65,7 @@ pub struct StoredVersion {
 /// per versioned read (empty in the common case → `[]`). The aggregate's
 /// `ORDER BY time_committed, id` is the same commit order the per-object
 /// attestation read
-/// ([`crate::storage::version_repo::read_attestations_all`]) applies.
+/// ([`crate::storage::version_repo::attestation::read_attestations_all`]) applies.
 macro_rules! version_select {
     ($tail:literal) => {
         concat!(
