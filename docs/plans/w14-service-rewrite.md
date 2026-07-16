@@ -62,7 +62,12 @@ findings register: `w14-audit.md` §4/§5.
     intentional API the adapter/binary consume, private (no qualifier) by
     default, scoped visibility only where a genuine module boundary demands
     it — every remaining scoped qualifier must be justifiable.
-11. **REST adapter converges** on the typed results (header building from
+11. **The whole platform crate is in scope (owner directive 2026-07-16):**
+    the rewrite is preferred to reach OUTSIDE `service/` wherever trait-era /
+    stub-era bloat lives — `versioning/`, `storage/`, `extensions/`,
+    `system_log/`, `templates/`, `validation/` — same bar: best native Rust,
+    no compatibility shapes kept for their own sake.
+12. **REST adapter converges** on the typed results (header building from
     `Committed`/`VersionMeta` instead of digging `ResourceMeta`), and the
     HTTP suite stays byte-identical on the wire (ECC zero-drift is the
     gate; the B+C baseline receipt is the comparison point).
