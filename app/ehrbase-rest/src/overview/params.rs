@@ -110,7 +110,7 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 }
 
 // ── openehr-item-tag / openehr-version-item-tag headers (overview §"openehr- ─
-// item-tag and openehr-version-item-tag") ──────────────────────────────────
+//    item-tag and openehr-version-item-tag") ──────────────────────────────────
 //
 // Lightweight wrappers over the dedicated ITEM_TAG operations:
 // `openehr-item-tag` targets a VERSIONED_OBJECT, `openehr-version-item-tag` a

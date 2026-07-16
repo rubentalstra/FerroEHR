@@ -6,21 +6,21 @@
 //!
 //! **Spec-governed areas** (each maps to its openEHR oracle):
 //! - [`versioning`] — change control + integrity (RM common
-//! `master06-change_control_package` + `master04-generic_package`; BASE
-//! `base_types/master05-identification_package`; digital signature per RM
-//! common master06 §Digital Signature lives inside it as
-//! `versioning::signature`).
+//!   `master06-change_control_package` + `master04-generic_package`; BASE
+//!   `base_types/master05-identification_package`; digital signature per RM
+//!   common master06 §Digital Signature lives inside it as
+//!   `versioning::signature`).
 //! - [`service`] — the SM Platform Service Model realization, one folder per
-//! SM chapter (`SM/docs/openehr_platform/`).
+//!   SM chapter (`SM/docs/openehr_platform/`).
 //! - [`aql`] — the AQL 1.1 execution engine (QUERY `master03-syntax`; the
-//! lowering internals are our own design).
+//!   lowering internals are our own design).
 //! - [`validation`] — archetype/template artefact validity along the AOM
-//! constraint model (AM AOM 1.4 + AOM 2).
+//!   constraint model (AM AOM 1.4 + AOM 2).
 //! - [`templates`] — OPT ingestion, the template store, and derived runtime
-//! artefacts (BASE `resource/master02-resource_package`; AM OPT).
+//!   artefacts (BASE `resource/master02-resource_package`; AM OPT).
 //! - [`system_log`] — the SM System Log component ("IHE ATNA-compliant
-//! system log", SM `master02-overview`; rendered per DICOM PS3.15 §A.5 over
-//! RFC 5424/5425 syslog).
+//!   system log", SM `master02-overview`; rendered per DICOM PS3.15 §A.5 over
+//!   RFC 5424/5425 syslog).
 //!
 //! **Spec-silent internals and extensions** (no openEHR spec governs these —
 //! our own design, each flagged in its module docs):
@@ -28,8 +28,8 @@
 //! - [`db`] — pool, settings, migrators.
 //! - [`telemetry`] — observability infrastructure.
 //! - [`extensions`] — quarantined enterprise extensions (eventing, FHIR
-//! connector, multimedia offload, tenancy), each off by default behind its
-//! own config gate.
+//!   connector, multimedia offload, tenancy), each off by default behind its
+//!   own config gate.
 
 pub mod aql;
 pub mod banner;

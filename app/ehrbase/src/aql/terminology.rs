@@ -9,7 +9,7 @@
 //! ```text
 //! WHERE …/code_string matches TERMINOLOGY('expand', 'hl7.org/fhir/4.0', '<vs-url>')
 //! WHERE …/code_string matches {'http://snomed.info/id/442031002',
-//! TERMINOLOGY('expand', 'hl7.org/fhir/4.0', '<vs-url>')}
+//!                              TERMINOLOGY('expand', 'hl7.org/fhir/4.0', '<vs-url>')}
 //! ```
 //!
 //! This module is the semantic-analysis pre-pass that realises that merge: it
@@ -24,11 +24,11 @@
 //!
 //! * `expand` as (or inside) a `matches` operand — merged into the value list;
 //! * the **Boolean value expression** (`TERMINOLOGY('validate', …) = true`) —
-//! evaluated once (the arguments are constant strings) and the comparison
-//! replaced with its constant truth value;
+//!   evaluated once (the arguments are constant strings) and the comparison
+//!   replaced with its constant truth value;
 //! * the **terminology-URI operand** (`matches { terminology://… }`,
-//! master03 §matches/URI) — expanded through the same seam into an explicit
-//! value list (a URI operand identifies a set; matching = membership).
+//!   master03 §matches/URI) — expanded through the same seam into an explicit
+//!   value list (a URI operand identifies a set; matching = membership).
 //!
 //! Operations with no defined comparison semantics in AQL (`lookup`, `map`)
 //! remain typed rejects at the seam implementation.
@@ -61,10 +61,10 @@ pub trait TerminologyExpander: Send + Sync {
     /// # Errors
     ///
     /// * [`AqlError::Feature`] with `UnknownTerminologyService` — `service_api`
-    /// names no configured service; or `TerminologyValueSetNotFound` —
-    /// `params_uri` names no known value set (both → 400).
+    ///   names no configured service; or `TerminologyValueSetNotFound` —
+    ///   `params_uri` names no known value set (both → 400).
     /// * [`AqlError::Exec`] with `ExecError::Terminology` — the upstream
-    /// terminology server call failed (→ 500).
+    ///   terminology server call failed (→ 500).
     async fn expand(&self, service_api: &str, params_uri: &str) -> Result<Vec<String>, AqlError>;
 
     /// Evaluate a Boolean `TERMINOLOGY()` operation (`validate`, `subsumes`)

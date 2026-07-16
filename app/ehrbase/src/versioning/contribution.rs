@@ -51,15 +51,15 @@ enum Action {
 /// (RM common master06 §Contributions):
 ///
 /// - *addition of new item* → a **new** `VERSIONED_OBJECT`, `249|creation|`
-/// (so `249` with a preceding is invalid, and any non-`249` needs an existing
-/// object);
+///   (so `249` with a preceding is invalid, and any non-`249` needs an existing
+///   object);
 /// - *deletion* → a new version whose data is Void, `523|deleted|` (so data
-/// alongside `523` is invalid);
+///   alongside `523` is invalid);
 /// - *modification* → `250|amendment|` / `251|modification|` / `252` / `253` /
-/// `816` / `817`, content-carrying commits against an existing object;
+///   `816` / `817`, content-carrying commits against an existing object;
 /// - *attestation* → `666|attestation|` attaches to an existing
-/// `ORIGINAL_VERSION` — **not** a new version; requires a preceding and no
-/// data.
+///   `ORIGINAL_VERSION` — **not** a new version; requires a preceding and no
+///   data.
 ///
 /// # Errors
 /// [`ServiceError::BadRequest`] for a change-control mismatch the ITS-REST

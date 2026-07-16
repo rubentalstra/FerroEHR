@@ -7,11 +7,11 @@
 //! (`Template.xsd` + its includes). The generate/resolve partition:
 //!
 //! - a complexType that `openehr-base`/`openehr-rm` already export (with a
-//! generated `ToXml`/`FromXml`) **resolves** to that crate's prelude — the RM
-//! instance types (`CODE_PHRASE`, `DV_TEXT`, `DATA_VALUE`, …) are never
-//! re-generated;
+//!   generated `ToXml`/`FromXml`) **resolves** to that crate's prelude — the RM
+//!   instance types (`CODE_PHRASE`, `DV_TEXT`, `DATA_VALUE`, …) are never
+//!   re-generated;
 //! - every other complexType (the AOM/OPT constraint model + the OPT envelope +
-//! the `IntervalOf*` helpers) is **generated** into `opt14`.
+//!   the `IntervalOf*` helpers) is **generated** into `opt14`.
 //!
 //! Abstract types used as polymorphic slots (`C_OBJECT`, `C_ATTRIBUTE`,
 //! `C_PRIMITIVE`, `EXPR_ITEM`, `STATE`) become untagged enums that dispatch on
@@ -31,19 +31,19 @@
 //! the **AOM 1.4 BMM** logical model that drives `am14`:
 //!
 //! - **Different domain-type sets.** OPT-XML has `C_CODE_PHRASE`,
-//! `C_CODE_REFERENCE`, `C_DV_ORDINAL`, `C_DV_QUANTITY`, `C_DV_STATE`; the BMM
-//! `openehr_archetype_profile` has `C_CODED_TEXT`, `C_ORDINAL`, `C_QUANTITY`.
-//! `C_DV_STATE` and `C_CODE_REFERENCE` have no `am14` counterpart at all.
+//!   `C_CODE_REFERENCE`, `C_DV_ORDINAL`, `C_DV_QUANTITY`, `C_DV_STATE`; the BMM
+//!   `openehr_archetype_profile` has `C_CODED_TEXT`, `C_ORDINAL`, `C_QUANTITY`.
+//!   `C_DV_STATE` and `C_CODE_REFERENCE` have no `am14` counterpart at all.
 //! - **Different leaf shapes.** OPT-XML carries typed `assumed_value`
-//! (`DV_QUANTITY`/`DV_ORDINAL`/`DV_STATE`/`CODE_PHRASE`) and `C_DV_ORDINAL.list`
-//! of `DV_ORDINAL`; the BMM has `assumed_value: Any` (monomorphized to
-//! `serde_json::Value`) and `C_ORDINAL.list` of the constraint type `ORDINAL`.
+//!   (`DV_QUANTITY`/`DV_ORDINAL`/`DV_STATE`/`CODE_PHRASE`) and `C_DV_ORDINAL.list`
+//!   of `DV_ORDINAL`; the BMM has `assumed_value: Any` (monomorphized to
+//!   `serde_json::Value`) and `C_ORDINAL.list` of the constraint type `ORDINAL`.
 //! - **Different `Interval` representation.** OPT-XML uses the XSD
-//! `IntervalOf*` shape (generated as `Intervalof*` here); the BMM uses
-//! `openehr_base::Interval<T>`.
+//!   `IntervalOf*` shape (generated as `Intervalof*` here); the BMM uses
+//!   `openehr_base::Interval<T>`.
 //! - **OPT-envelope-only types** with no BMM/AOM-1.4 counterpart
-//! (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`,
-//! `T_ATTRIBUTE`, `T_CONSTRAINT`, `FLAT_ARCHETYPE_ONTOLOGY`, `STATE_MACHINE`).
+//!   (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`,
+//!   `T_ATTRIBUTE`, `T_CONSTRAINT`, `FLAT_ARCHETYPE_ONTOLOGY`, `STATE_MACHINE`).
 //!
 //! Resolving the shared `C_*` to `am14` (the way RM leaves resolve to
 //! `openehr_rm`/`openehr_base`) would force lossy mapping in both directions and

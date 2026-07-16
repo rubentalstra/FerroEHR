@@ -82,10 +82,10 @@ fn reserialize(ty: &str, json: &str) -> Result<serde_json::Value, String> {
 ///
 /// 1. object key order (compared structurally, not textually);
 /// 2. fields we omit that the input stated as empty (`null` / `[]`) — our
-/// `OpenEhrType` serialize drops `None`/empty, which is equivalent;
+///    `OpenEhrType` serialize drops `None`/empty, which is equivalent;
 /// 3. fields we materialize that the input left implicit — the always-present
-/// `_type`, and the `Interval` `*_included`/`*_unbounded` flags at their
-/// canonical defaults.
+///    `_type`, and the `Interval` `*_included`/`*_unbounded` flags at their
+///    canonical defaults.
 ///
 /// Anything else — an input value we dropped, or a genuine value mismatch — is a
 /// real fidelity defect and is reported with its JSON path.

@@ -8,11 +8,11 @@
 //! Three case modules over shared authoring/driving machinery:
 //!
 //! - [`composition`] — master15 COMPOSITION.content cardinality ×
-//! COMPOSITION.context occurrences (12 cases, ECC-VAL-001..012).
+//!   COMPOSITION.context occurrences (12 cases, ECC-VAL-001..012).
 //! - [`entry`] — master16 OBSERVATION / HISTORY / EVENT / `ITEM_STRUCTURE`
-//! (26 cases, ECC-VAL-013..038).
+//!   (26 cases, ECC-VAL-013..038).
 //! - [`data_types`] — master17.x `DATA_VALUE` leaf value constraints (register
-//! 13; authored by the sibling worker; 81 cases, ECC-VAL-039..119).
+//!   13; authored by the sibling worker; 81 cases, ECC-VAL-039..119).
 //!
 //! The shared machinery ([`author`], [`drive`], [`mutate`]) realises master15
 //! §Implementation notes ("we suggest to automate the archetype/template test

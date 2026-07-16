@@ -4,12 +4,12 @@
 //!
 //! Covers the spec-mandated write semantics fixed in the W1-C audit wave:
 //! - a versioned store returns `200 OK` + a `Location` header
-//! (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`),
-//! not `204`;
+//!   (`responses/200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`),
+//!   not `204`;
 //! - re-storing an existing `(name, version)` returns `409 Conflict`
-//! (`responses/409_StoredQuery_version.yaml`), never a silent overwrite;
+//!   (`responses/409_StoredQuery_version.yaml`), never a silent overwrite;
 //! - the no-version store path upserts (spec: "stores a new query, or updates
-//! an existing query", `operations/definition_query_store.yaml`, no `409`).
+//!   an existing query", `operations/definition_query_store.yaml`, no `409`).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use axum::Router;

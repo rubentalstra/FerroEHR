@@ -3,14 +3,14 @@
 //!
 //! What it measures (the storage design's open questions):
 //! 1. **Node granularity** — fine (every structure node incl. `ELEMENT` gets
-//! a row) vs coarse (`ELEMENT`/`FEEDER_AUDIT` stay inline in their parent
-//! fragment): row counts, fragment sizes, table+index size.
+//!    a row) vs coarse (`ELEMENT`/`FEEDER_AUDIT` stay inline in their parent
+//!    fragment): row counts, fragment sizes, table+index size.
 //! 2. **The load-bearing queries** — CONTAINS as a nested-set interval join,
-//! typed leaf extraction, magnitude ORDER BY via the `ext` function, a
-//! promoted-column predicate, and a GIN `jsonb_ops` `$.**` anchor —
-//! timings + whether plans use the intended indexes.
+//!    typed leaf extraction, magnitude ORDER BY via the `ext` function, a
+//!    promoted-column predicate, and a GIN `jsonb_ops` `$.**` anchor —
+//!    timings + whether plans use the intended indexes.
 //! 3. **The temporal versioning model** — `PRIMARY KEY … WITHOUT OVERLAPS`
-//! (PG18) + a `upper_inf` partial index for the current version.
+//!    (PG18) + a `upper_inf` partial index for the current version.
 //!
 //! Run explicitly (it is a measurement harness, not a CI gate):
 //! `SPIKE_SCALE=200 cargo nextest run -p ehrbase storage_spike --run-ignored all --no-capture`

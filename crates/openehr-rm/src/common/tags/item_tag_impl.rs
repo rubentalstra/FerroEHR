@@ -3,7 +3,7 @@
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`:
 //! - `Inv_key_valid`: `not key.is_empty and key.is_justified` (no leading or
-//! trailing whitespace).
+//!   trailing whitespace).
 //! - `Inv_value_valid`: `value /= Void implies not value.is_empty`.
 
 use crate::common::tags::item_tag::ItemTag;

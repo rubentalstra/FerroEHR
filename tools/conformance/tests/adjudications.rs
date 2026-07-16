@@ -3,7 +3,7 @@
 //!
 //! Two register kinds live under `adjudications/`:
 //! - `ecc-own.toml` — the own-corpus register (vendored-data defects,
-//! spec-cited; standing rule 3).
+//!   spec-cited; standing rule 3).
 //! - `<sut>*.toml` — foreign-SUT fairness registers (X1 absorption).
 #![allow(clippy::expect_used)]
 

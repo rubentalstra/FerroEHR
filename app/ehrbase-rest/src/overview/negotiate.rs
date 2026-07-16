@@ -7,20 +7,20 @@
 //!
 //! - **JSON** is wired end to end for every operation (request and response).
 //! - **XML request bodies** are decoded for the RM-typed write paths: the bytes
-//! are parsed into the concrete `openehr-rm` type and re-emitted as the
-//! canonical JSON `Value` the trait expects, so a handler never sees the wire
-//! format. See [`rm_value`].
+//!   are parsed into the concrete `openehr-rm` type and re-emitted as the
+//!   canonical JSON `Value` the trait expects, so a handler never sees the wire
+//!   format. See [`rm_value`].
 //! - **XML responses** for the spec-typed RM objects are served by
-//! [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
-//! `Accept` the value is re-typed into its concrete `openehr-rm` type at the
-//! response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
-//! request path. This covers the single objects (composition, `ehr_status`,
-//! ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
-//! `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
-//! (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates.
-//! Responses that are genuinely not a spec-typed RM value (collections, item
-//! tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
-//! spec-defined canonical-XML shape and stay JSON-only via [`respond`].
+//!   [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
+//!   `Accept` the value is re-typed into its concrete `openehr-rm` type at the
+//!   response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
+//!   request path. This covers the single objects (composition, `ehr_status`,
+//!   ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
+//!   `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
+//!   (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates.
+//!   Responses that are genuinely not a spec-typed RM value (collections, item
+//!   tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
+//!   spec-defined canonical-XML shape and stay JSON-only via [`respond`].
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;

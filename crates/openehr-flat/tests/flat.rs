@@ -9,13 +9,13 @@
 //! — real `(composition, OPT)` pairs.
 //!
 //! * **FLAT → RM → FLAT round-trip stable** — for each paired composition:
-//! `to_flat` (flat0) → `from_flat` (rm1) → `to_flat` (flat1); assert
-//! `flat0 == flat1` (modulo key order). Also counts how many `rm1`
-//! deserialise as an `openehr-rm` `Composition` (the reverse output is valid
-//! canonical RM).
+//!   `to_flat` (flat0) → `from_flat` (rm1) → `to_flat` (flat1); assert
+//!   `flat0 == flat1` (modulo key order). Also counts how many `rm1`
+//!   deserialise as an `openehr-rm` `Composition` (the reverse output is valid
+//!   canonical RM).
 //! * **insta goldens** — deterministic flat snapshots for representative pairs.
 //! * **targeted key assertions** — Better flat key shape (`|magnitude`,
-//! `|unit` singular, `|code`).
+//!   `|unit` singular, `|code`).
 #![allow(clippy::doc_markdown)] // prose with many proper nouns (EHRbase, simSDT, …)
 
 use std::collections::BTreeMap;

@@ -4,19 +4,19 @@
 //! `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
 //!
 //! - §Archetype Identifiers — `ARCHETYPE_ID` is a multi-axial *immutable*
-//! identifier (`rm_originator-rm_name-rm_entity.domain_concept.vN`); the
-//! version segment is part of identity, so two versions are two distinct
-//! archetypes.
+//!   identifier (`rm_originator-rm_name-rm_entity.domain_concept.vN`); the
+//!   version segment is part of identity, so two versions are two distinct
+//!   archetypes.
 //! - `TEMPLATE_ID` (§Class Descriptions) — "Identifier for templates. Lexical
-//! form to be determined." The generated [`openehr_base::prelude::TemplateId`]
-//! carries only the opaque `value`; we therefore treat a `TEMPLATE_ID` as an
-//! opaque composite identifier governed by the case rule below, and do **not**
-//! attempt a multi-axial decomposition the spec has not yet fixed.
+//!   form to be determined." The generated [`openehr_base::prelude::TemplateId`]
+//!   carries only the opaque `value`; we therefore treat a `TEMPLATE_ID` as an
+//!   opaque composite identifier governed by the case rule below, and do **not**
+//!   attempt a multi-axial decomposition the spec has not yet fixed.
 //! - **§Composite Identifiers and Case** — the case law that governs G-T04:
-//! composite identifiers are *case-preserving* ("not change case due to
-//! persistence, copying, transfer or other computation processes") **and**
-//! *case-insensitive* ("two identifiers identical apart from case are
-//! considered to be identical, and therefore to identify the same thing").
+//!   composite identifiers are *case-preserving* ("not change case due to
+//!   persistence, copying, transfer or other computation processes") **and**
+//!   *case-insensitive* ("two identifiers identical apart from case are
+//!   considered to be identical, and therefore to identify the same thing").
 //!
 //! Coordination note: the SM `I_DEFINITION_ADL14` provisioning surface
 //! (`service/definition/adl14.rs`) enforces the same rule at its SQL boundary

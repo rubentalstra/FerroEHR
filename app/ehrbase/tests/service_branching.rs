@@ -10,15 +10,15 @@
 //!
 //! Covers (A1 rm-common-change-control R7/R19/R50):
 //! 1. modifying an imported version created by ANOTHER system forks a branch
-//! (`t.1.1`, local `creating_system_id`) while the imported trunk version
-//! stays the container current;
+//!    (`t.1.1`, local `creating_system_id`) while the imported trunk version
+//!    stays the container current;
 //! 2. continuing one's own branch tip advances it (`t.1.2`) and supersedes
-//! the previous tip; every branch version stays addressable by its full
-//! `OBJECT_VERSION_ID`, with the true `preceding_version_uid` served;
+//!    the previous tip; every branch version stays addressable by its full
+//!    `OBJECT_VERSION_ID`, with the true `preceding_version_uid` served;
 //! 3. `other_input_version_uids` round-trips the CONTRIBUTION wire and is
-//! served on the `ORIGINAL_VERSION`;
+//!    served on the `ORIGINAL_VERSION`;
 //! 4. an exported version tree containing branches re-imports whole
-//! (branch import is first-class).
+//!    (branch import is first-class).
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 

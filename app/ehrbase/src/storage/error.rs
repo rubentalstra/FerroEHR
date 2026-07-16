@@ -91,12 +91,12 @@ impl From<StorageError> for crate::service::status::SmError {
 /// Unavailable`).
 ///
 /// - **SQLSTATE class 23** (`integrity_constraint_violation` — unique, foreign
-/// key, check, not-null, exclusion) → [`CallStatusType::Conflict`] (`409`).
+///   key, check, not-null, exclusion) → [`CallStatusType::Conflict`] (`409`).
 /// - **40001** (`serialization_failure`) / **40P01** (`deadlock_detected`) →
-/// [`CallStatusType::Conflict`] (`409`, retryable).
+///   [`CallStatusType::Conflict`] (`409`, retryable).
 /// - **[`sqlx::Error::PoolTimedOut`]** (pool exhausted under load) →
-/// [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the W-12
-/// admission contract).
+///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the W-12
+///   admission contract).
 /// - anything else → [`CallStatusType::Exception`] (`500`, a genuine fault).
 pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
     use crate::service::status::{CallStatusType, SmError};

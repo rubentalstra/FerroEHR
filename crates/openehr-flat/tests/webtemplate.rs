@@ -1,16 +1,16 @@
 //! `WebTemplate` builder tests.
 //!
 //! * **smoke gate** — every `.opt` in the 91-file service corpus AND the full
-//! vendored Better `web-template-tests` set (63 templates) is exercised: each
-//! that the `openehr_its::opt14` parser can read MUST build a `WebTemplate`
-//! without panicking, and the tree root's `rmType` must round-trip the OPT's
-//! own root type. Templates that `opt14` cannot yet parse are reported as
-//! pre-existing P13 parser gaps (not a WebTemplate-builder failure).
+//!   vendored Better `web-template-tests` set (63 templates) is exercised: each
+//!   that the `openehr_its::opt14` parser can read MUST build a `WebTemplate`
+//!   without panicking, and the tree root's `rmType` must round-trip the OPT's
+//!   own root type. Templates that `opt14` cannot yet parse are reported as
+//!   pre-existing P13 parser gaps (not a WebTemplate-builder failure).
 //! * **insta goldens** — deterministic snapshots for representative templates.
 //! * **targeted assertions** — ports of Better `BuilderTest`/`CodedTextTest`/
-//! `OrdinalWebTemplateInputBuilder`-style checks (coded-text `|code` + list,
-//! quantity `|magnitude`+`|unit`, ordinal integers, min/max, snake-cased ids,
-//! archetype/`atNNNN` predicates, sibling-id de-duplication).
+//!   `OrdinalWebTemplateInputBuilder`-style checks (coded-text `|code` + list,
+//!   quantity `|magnitude`+`|unit`, ordinal integers, min/max, snake-cased ids,
+//!   archetype/`atNNNN` predicates, sibling-id de-duplication).
 
 use std::path::{Path, PathBuf};
 

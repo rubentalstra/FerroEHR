@@ -59,10 +59,10 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
-    /// (`Pre_has_terminology`); `at_date` is a no-op on the single pinned
-    /// bundle version (G-1 bundle PORT NOTE);
+    ///   (`Pre_has_terminology`); `at_date` is a no-op on the single pinned
+    ///   bundle version (G-1 bundle PORT NOTE);
     /// - FHIR path: exception on a transport fault / non-2xx / malformed
-    /// response.
+    ///   response.
     pub async fn has_term(
         &self,
         terminology_id: &str,
@@ -86,10 +86,10 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
-    /// or an unknown code (`Pre_has_terminology` + `Pre_has_term`);
+    ///   or an unknown code (`Pre_has_terminology` + `Pre_has_term`);
     /// - FHIR path: `VersionedObjectDoesNotExist` when `$lookup` answers
-    /// `404`; exception on a transport fault / non-2xx / malformed
-    /// response.
+    ///   `404`; exception on a transport fault / non-2xx / malformed
+    ///   response.
     pub async fn get_term(
         &self,
         terminology_id: &str,
@@ -114,10 +114,10 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
-    /// (`Pre_has_terminology`);
+    ///   (`Pre_has_terminology`);
     /// - FHIR path: `VersionedObjectDoesNotExist` when the server answers
-    /// `404`; exception on a transport fault / a response with no
-    /// `outcome`.
+    ///   `404`; exception on a transport fault / a response with no
+    ///   `outcome`.
     pub async fn subsumes(
         &self,
         terminology_id: &str,
@@ -142,11 +142,11 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
-    /// (`Pre_has_terminology`); an unknown value set answers `false` (no
-    /// precondition on the membership test itself);
+    ///   (`Pre_has_terminology`); an unknown value set answers `false` (no
+    ///   precondition on the membership test itself);
     /// - FHIR path: precondition on an empty `candidate_code`;
-    /// `VersionedObjectDoesNotExist` on an unknown value set; exception on
-    /// a transport fault / a `$validate-code` response with no `result`.
+    ///   `VersionedObjectDoesNotExist` on an unknown value set; exception on
+    ///   a transport fault / a `$validate-code` response with no `result`.
     pub async fn value_set_validate(
         &self,
         terminology_id: &str,
@@ -193,10 +193,10 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
-    /// or an unknown value set (`Pre_has_terminology` + `Pre_has_value_set`);
+    ///   or an unknown value set (`Pre_has_terminology` + `Pre_has_value_set`);
     /// - FHIR path: `VersionedObjectDoesNotExist` when `$expand` answers
-    /// `404`; exception on a transport fault / non-2xx / malformed
-    /// response.
+    ///   `404`; exception on a transport fault / non-2xx / malformed
+    ///   response.
     pub async fn get_value_set(
         &self,
         terminology_id: &str,

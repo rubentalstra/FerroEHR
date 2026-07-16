@@ -5,23 +5,23 @@
 //! instance (independent of the archetype / `WebTemplate`):
 //!
 //! 1. **openEHR terminology *group* codes** (`has_code_for_group_id`): the code
-//! must be a member of a specific openEHR group fixed by the owning RM type —
-//! e.g. `COMPOSITION.category` (`composition_category`), `EVENT_CONTEXT.setting`
-//! (`setting`), `ISM_TRANSITION.current_state`/`transition`,
-//! `PARTICIPATION.function`/`mode`, `EVENT.math_function`,
-//! `TERM_MAPPING.purpose`, `AUDIT_DETAILS.change_type`, `ATTESTATION.reason`,
-//! `PARTY_RELATED.relationship`, `null_flavour`. These carry
-//! `terminology_id = "openehr"`; a non-`openehr` terminology is out of scope
-//! for the group check and is skipped.
+//!    must be a member of a specific openEHR group fixed by the owning RM type —
+//!    e.g. `COMPOSITION.category` (`composition_category`), `EVENT_CONTEXT.setting`
+//!    (`setting`), `ISM_TRANSITION.current_state`/`transition`,
+//!    `PARTICIPATION.function`/`mode`, `EVENT.math_function`,
+//!    `TERM_MAPPING.purpose`, `AUDIT_DETAILS.change_type`, `ATTESTATION.reason`,
+//!    `PARTY_RELATED.relationship`, `null_flavour`. These carry
+//!    `terminology_id = "openehr"`; a non-`openehr` terminology is out of scope
+//!    for the group check and is skipped.
 //! 2. **openEHR / ISO / IANA code-set codes** (`code_set(id).has_code`): the code
-//! must be a member of an external or internal code set fixed by the RM
-//! invariant — `COMPOSITION.language` / `ENTRY.language` / `DV_TEXT.language`
-//! (ISO 639-1 `languages`), `COMPOSITION.territory` (ISO 3166-1 `countries`),
-//! `ENTRY.encoding` / `DV_TEXT.encoding` (IANA `character_sets`),
-//! `DV_MULTIMEDIA.media_type` (IANA `media_types`), `DV_ORDERED.normal_status`
-//! (`normal_statuses`). The RM invariant here is `code_set(...).has_code(code)`
-//! with **no** `terminology_id` guard, so the code value is validated against
-//! the code set directly.
+//!    must be a member of an external or internal code set fixed by the RM
+//!    invariant — `COMPOSITION.language` / `ENTRY.language` / `DV_TEXT.language`
+//!    (ISO 639-1 `languages`), `COMPOSITION.territory` (ISO 3166-1 `countries`),
+//!    `ENTRY.encoding` / `DV_TEXT.encoding` (IANA `character_sets`),
+//!    `DV_MULTIMEDIA.media_type` (IANA `media_types`), `DV_ORDERED.normal_status`
+//!    (`normal_statuses`). The RM invariant here is `code_set(...).has_code(code)`
+//!    with **no** `terminology_id` guard, so the code value is validated against
+//!    the code set directly.
 //!
 //! Spec: the RM invariant tables under
 //! `docs/specs/openehr/RM/docs/UML/classes/` (`composition`, `entry`, `dv_text`,
@@ -181,7 +181,7 @@ impl Validator {
             }
         }
         // Slots that may appear on any node, independent of its `_type`:
-        // `null_flavour` (any LOCATABLE), `normal_status` (any DV_ORDERED).
+        //   `null_flavour` (any LOCATABLE), `normal_status` (any DV_ORDERED).
         if let Some(nf) = null_flavour {
             let base = path.len();
             let _ = write!(path, "/null_flavour");

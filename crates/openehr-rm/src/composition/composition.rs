@@ -23,7 +23,7 @@ pub struct Composition {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g. `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -35,9 +35,9 @@ pub struct Composition {
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
     pub feeder_audit: Option<FeederAudit>,
-    /// Mandatory indicator of the localised language in which this Composition is written. Coded from openEHR Code Set `languages`. The language of an Entry if different from the Composition is indicated in `ENTRY._language_`.
+    /// Mandatory indicator of the localised language in which this Composition is written. Coded from openEHR Code Set  `languages`. The language of an Entry if different from the Composition is indicated in `ENTRY._language_`.
     pub language: CodePhrase,
-    /// Name of territory in which this Composition was written. Coded from openEHR countries code set, which is an expression of the ISO 3166 standard.
+    /// Name of territory in which this Composition was written. Coded from openEHR  countries  code set, which is an expression of the ISO 3166 standard.
     pub territory: CodePhrase,
     /// Temporal category of this Composition, i.e.
     ///
@@ -49,7 +49,7 @@ pub struct Composition {
     pub category: DvCodedText,
     /// The clinical session context of this Composition, i.e. the contextual attributes of the clinical session.
     pub context: Option<EventContext>,
-    /// The person primarily responsible for the content of the Composition (but not necessarily its committal into the EHR system). This is the identifier which should appear on the screen. It may or may not be the person who entered the data. When it is the patient, the special self instance of `PARTY_PROXY` will be used.
+    /// The person primarily responsible for the content of the Composition (but not necessarily its committal into the EHR system). This is the identifier which should appear on the screen. It may or may not be the person who entered the data. When it is the patient, the special self  instance of `PARTY_PROXY` will be used.
     pub composer: PartyProxy,
     /// The content of this Composition.
     pub content: Vec<ContentItem>,

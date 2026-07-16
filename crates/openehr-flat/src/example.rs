@@ -6,17 +6,17 @@
 //! (no randomness, no current-time), at one of three [`DetailLevel`]s:
 //!
 //! * [`Required`](DetailLevel::Required) — only the mandatory skeleton (nodes on
-//! a fully-mandatory chain, plus whatever a min-cardinality forces). Intended
-//! to be committable as-is.
+//!   a fully-mandatory chain, plus whatever a min-cardinality forces). Intended
+//!   to be committable as-is.
 //! * [`Medium`](DetailLevel::Medium) — the fully-populated single-instance
-//! document: every optional branch descended to its leaves, one occurrence of
-//! each node, the first alternative of any choice. Intended to be committable
-//! as-is. (A former cut at "one level of optional elements" produced *empty*
-//! `content` for the common template shape whose whole content chain is
-//! optional — a populated example is the level's entire point.)
+//!   document: every optional branch descended to its leaves, one occurrence of
+//!   each node, the first alternative of any choice. Intended to be committable
+//!   as-is. (A former cut at "one level of optional elements" produced *empty*
+//!   `content` for the common template shape whose whole content chain is
+//!   optional — a populated example is the level's entire point.)
 //! * [`Complete`](DetailLevel::Complete) — everything `medium` emits, plus a
-//! second occurrence of each repeating node (demonstrating repetition); not
-//! necessarily committable.
+//!   second occurrence of each repeating node (demonstrating repetition); not
+//!   necessarily committable.
 //!
 //! The set of populated leaves is monotonic across the levels
 //! (`required ⊆ medium ⊆ complete`).

@@ -4,16 +4,16 @@
 //! layer:
 //!
 //! - [`root_span`] — replaces the default `tower-http` `TraceLayer` span-maker.
-//! Names the root span by **route template** (`MatchedPath`), records the
-//! `OTel` HTTP semantic-convention attributes plus `request_id`, extracts the
-//! W3C `traceparent` on ingress, and (only when the `OTel` export layer is
-//! installed) records `trace_id`/`span_id` on the span and returns the
-//! `x-trace-id` response header. Cardinality-safe: the raw path with ids
-//! never enters the span *name*.
+//!   Names the root span by **route template** (`MatchedPath`), records the
+//!   `OTel` HTTP semantic-convention attributes plus `request_id`, extracts the
+//!   W3C `traceparent` on ingress, and (only when the `OTel` export layer is
+//!   installed) records `trace_id`/`span_id` on the span and returns the
+//!   `x-trace-id` response header. Cardinality-safe: the raw path with ids
+//!   never enters the span *name*.
 //! - [`http_metrics`] — records the §1.2 HTTP metric family over the `metrics`
-//! facade: request duration by `(http_route, http_request_method,
-//! status_class)`, an active-requests gauge, and request/response body sizes,
-//! all keyed by the route *template* only.
+//!   facade: request duration by `(http_route, http_request_method,
+//!   status_class)`, an active-requests gauge, and request/response body sizes,
+//!   all keyed by the route *template* only.
 //!
 //! **PHI rule (§8.4):** every label value here is a closed set — route
 //! templates, method, status class. No ids ever become a label.
@@ -34,7 +34,7 @@ use tracing::Instrument;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // ── Metric names (§1.2) — the single source of truth for the emitters here and
-// the bucket-ladder / description registration in `ehrbase::telemetry`. ────
+//    the bucket-ladder / description registration in `ehrbase::telemetry`. ────
 
 /// The label value used when a request did not match any route template (the
 /// fallback that keeps the `http_route` label a closed set).

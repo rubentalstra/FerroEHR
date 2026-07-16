@@ -1,12 +1,12 @@
 //! The ECC conformance CLI (W-10 redesign).
 //!
 //! ```text
-//! conformance run --base-url URL [--sut ehrbase-rs|ehrbase-java|byo] [--sut-name NAME]
-//! [--sut-version VER] [--auth SPEC] [--admin-auth SPEC] [--admin-base-url URL]
-//! [--edition auto|development|1.0.3] [--filter S]
-//! [--profile core|standard|options] [--format json|xml|both] [--out DIR]
-//! [--fairness-register FILE] [--own-adjudications FILE] [--tx-server-url URL]
-//! conformance report --from results.json [--out DIR]
+//! conformance run     --base-url URL [--sut ehrbase-rs|ehrbase-java|byo] [--sut-name NAME]
+//!                     [--sut-version VER] [--auth SPEC] [--admin-auth SPEC] [--admin-base-url URL]
+//!                     [--edition auto|development|1.0.3] [--filter S]
+//!                     [--profile core|standard|options] [--format json|xml|both] [--out DIR]
+//!                     [--fairness-register FILE] [--own-adjudications FILE] [--tx-server-url URL]
+//! conformance report  --from results.json [--out DIR]
 //! conformance compare --from a.json --from b.json [--from …] [--out FILE]
 //! conformance catalog [--from results.json] [--out FILE]
 //! ```

@@ -180,11 +180,11 @@ impl EhrbaseService {
 /// FIRST stored version's root (RM ehr `versioned_composition.adoc`):
 ///
 /// - `Archetype_node_id_valid`: every version's `data.archetype_node_id`
-/// equals the first version's — a versioned composition cannot switch
-/// archetype;
+///   equals the first version's — a versioned composition cannot switch
+///   archetype;
 /// - `Persistent_validity`: every version's `is_persistent` equals the first
-/// version's — the persistence category (`431|persistent|`) is fixed for
-/// the container's life.
+///   version's — the persistence category (`431|persistent|`) is fixed for
+///   the container's life.
 ///
 /// A violating modification is a `422` naming the invariant. Lifted out of the
 /// versioning write path — the EHR chapter owns it. The first-version root
@@ -272,15 +272,15 @@ fn is_persistent(composition: &Value) -> bool {
 /// - `archetype_node_id` present and non-empty (`Archetype_node_id_valid`);
 /// - `is_queryable` / `is_modifiable` present booleans (both 1..1);
 /// - `subject` present and a `PARTY_SELF` (`EHR_STATUS.subject` 1..1
-/// `PARTY_SELF`; monomorphic, so a foreign concrete `_type` is invalid —
-/// enforced via the generated `PartySelf`'s `_type` check). An empty `{}`
-/// subject is a valid **anonymous** subject (RM ehr master04 §EHR Status:
-/// `PARTY_SELF` "enabling it to be made completely anonymous");
+///   `PARTY_SELF`; monomorphic, so a foreign concrete `_type` is invalid —
+///   enforced via the generated `PartySelf`'s `_type` check). An empty `{}`
+///   subject is a valid **anonymous** subject (RM ehr master04 §EHR Status:
+///   `PARTY_SELF` "enabling it to be made completely anonymous");
 /// - a present `subject.external_ref` is a valid `PARTY_REF` (non-empty
-/// `id.value` — `Id_exists`; non-empty `namespace` — `Namespace_valid`); a
-/// NULL `external_ref` is permitted;
+///   `id.value` — `Id_exists`; non-empty `namespace` — `Namespace_valid`); a
+///   NULL `external_ref` is permitted;
 /// - a present `other_details` is a concrete `ITEM_STRUCTURE` (RM ehr
-/// `ehr_status.adoc` `other_details`; RM `data_structures` master04).
+///   `ehr_status.adoc` `other_details`; RM `data_structures` master04).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule (→ 422).
@@ -404,12 +404,12 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
 /// `ehr_access.adoc`:
 ///
 /// - a LOCATABLE: `name` (1..1) and a non-empty `archetype_node_id`
-/// (`Archetype_node_id_valid`);
+///   (`Archetype_node_id_valid`);
 /// - a foreign `_type` in this slot is invalid (the container holds
-/// `EHR_ACCESS` only);
+///   `EHR_ACCESS` only);
 /// - `settings` (0..1) is a subtype of the ABSTRACT `ACCESS_CONTROL_SETTINGS`
-/// — the RM defines no concrete scheme, so a present `settings` must carry a
-/// non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
+///   — the RM defines no concrete scheme, so a present `settings` must carry a
+///   non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule (→ 422).
@@ -462,11 +462,11 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// RM ehr master04 §Folders:
 ///
 /// - each node is a `FOLDER` (foreign `_type` rejected) with `name` (1..1) and
-/// a non-empty `archetype_node_id` (`Archetype_node_id_valid`);
+///   a non-empty `archetype_node_id` (`Archetype_node_id_valid`);
 /// - `items` members are `OBJECT_REF`s — "Folder structures do not contain
-/// Compositions, only references to them" (master04 §Folders): a member must
-/// carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
-/// rejected;
+///   Compositions, only references to them" (master04 §Folders): a member must
+///   carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
+///   rejected;
 /// - `folders` members recurse.
 ///
 /// # Errors

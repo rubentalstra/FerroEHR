@@ -13,19 +13,19 @@
 //! Validation runs three independent collecting passes over the instance:
 //!
 //! 1. **RM-invariant pass** — recurse the whole instance; for every node with a
-//! `_type`, run its RM class invariants ([`validate_rm_value`]). This is
-//! independent of the (compacted) `WebTemplate`, so class invariants on nodes
-//! the `WebTemplate` folds away (ELEMENT / `ITEM_TREE` / HISTORY / EVENT) are
-//! still checked. Paths are RM *instance* paths (`/content[0]/…`).
+//!    `_type`, run its RM class invariants ([`validate_rm_value`]). This is
+//!    independent of the (compacted) `WebTemplate`, so class invariants on nodes
+//!    the `WebTemplate` folds away (ELEMENT / `ITEM_TREE` / HISTORY / EVENT) are
+//!    still checked. Paths are RM *instance* paths (`/content[0]/…`).
 //! 2. **Terminology pass** — recurse the instance; validate the RM-mandated
-//! openEHR-terminology-group codes (composition `category`, context
-//! `setting`, `null_flavour`, `ISM_TRANSITION` `current_state`, PARTICIPATION
-//! `function`/`mode`, …) against [`openehr_term::bundle`].
+//!    openEHR-terminology-group codes (composition `category`, context
+//!    `setting`, `null_flavour`, `ISM_TRANSITION` `current_state`, PARTICIPATION
+//!    `function`/`mode`, …) against [`openehr_term::bundle`].
 //! 3. **`WebTemplate` (archetype-conformance) pass** — walk the instance guided by
-//! the `WebTemplate` tree, matching by `aql_path` + `archetype_node_id`, and
-//! check type conformance, occurrences, cardinality, and leaf domain
-//! constraints (coded lists / numeric ranges / string patterns). Paths are
-//! the archetype `aqlPath` of the constraining node.
+//!    the `WebTemplate` tree, matching by `aql_path` + `archetype_node_id`, and
+//!    check type conformance, occurrences, cardinality, and leaf domain
+//!    constraints (coded lists / numeric ranges / string patterns). Paths are
+//!    the archetype `aqlPath` of the constraining node.
 //!
 //! # `// PORT NOTE:` fidelity
 //!
@@ -178,9 +178,9 @@ pub fn validate_archetype_conformance_incomplete(
 /// Suffix"; master05 §"When a `DV_CODED_TEXT` becomes a `DV_TEXT`"):
 ///
 /// * `|other` MUST NOT co-occur with `|code`/`|value`/`|terminology`/
-/// `|preferred_term` on the same leaf path;
+///   `|preferred_term` on the same leaf path;
 /// * `|other` MUST be rejected when the leaf's WT constraint is a **closed**
-/// coded list (`listOpen: false`).
+///   coded list (`listOpen: false`).
 ///
 /// Returns one [`ValidationMessage`] per violation (empty = the input satisfies
 /// the `|other` rules this check covers).
@@ -422,11 +422,11 @@ impl Validator {
     /// present-empty list are both an empty `Vec`):
     ///
     /// - `COMPOSITION.Content_valid`: `content /= Void implies not
-    /// content.is_empty` (`composition.adoc`);
+    ///   content.is_empty` (`composition.adoc`);
     /// - `EVENT_CONTEXT.Participations_validity` (`event_context.adoc`);
     /// - `SECTION.Items_valid` (`section.adoc`);
     /// - `ENTRY.Other_participations_valid` (`entry.adoc`, every concrete
-    /// ENTRY subtype);
+    ///   ENTRY subtype);
     /// - `INSTRUCTION.Activities_valid` (`instruction.adoc`).
     fn check_nonempty_lists(
         &mut self,
@@ -521,14 +521,14 @@ impl Validator {
     /// JSON-level data-structure shape duties the typed model cannot express:
     ///
     /// - `CLUSTER.items` is 1..1 (RM `data_structures` `cluster.adoc`; the
-    /// ITS-JSON CLUSTER schema lists `items` as required) — after
-    /// deserialize an absent list collapses into an empty `Vec`, so
-    /// presence is only checkable here;
+    ///   ITS-JSON CLUSTER schema lists `items` as required) — after
+    ///   deserialize an absent list collapses into an empty `Vec`, so
+    ///   presence is only checkable here;
     /// - one `HISTORY`'s events all carry the SAME `ITEM_STRUCTURE` subtype
-    /// in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
-    /// type of the data at each Event to be of type `ITEM_LIST` and nothing
-    /// else" (RM `data_structures` master06; `history.adoc` generic
-    /// parameter) — the monomorphized runtime type cannot see `T`.
+    ///   in `data` — "A History of type `HISTORY<ITEM_LIST>` … constrains the
+    ///   type of the data at each Event to be of type `ITEM_LIST` and nothing
+    ///   else" (RM `data_structures` master06; `history.adoc` generic
+    ///   parameter) — the monomorphized runtime type cannot see `T`.
     fn check_data_structure_shapes(
         &mut self,
         obj: &serde_json::Map<String, Value>,
@@ -1016,16 +1016,16 @@ impl Validator {
 /// paths. Three cases on the group's identity segment `id_seg`:
 ///
 /// * **name-qualified, name-differentiated** (`Some` name, identity in `names`):
-/// strict `(archetype_node_id, name)` match with the id-only fallback OFF —
-/// the sibling set relies on the name, so widening to id-only would claim a
-/// sibling's instances.
+///   strict `(archetype_node_id, name)` match with the id-only fallback OFF —
+///   the sibling set relies on the name, so widening to id-only would claim a
+///   sibling's instances.
 /// * **unqualified, name-differentiated** (no name, identity in `names`): match
-/// by `archetype_node_id` minus the instances the name-qualified siblings
-/// claim ([`path::select_children_excluding_names`]) — the residual arm.
+///   by `archetype_node_id` minus the instances the name-qualified siblings
+///   claim ([`path::select_children_excluding_names`]) — the residual arm.
 /// * **not name-differentiated** (identity absent from `names`): strict match
-/// with the id-only fallback ON, tolerating a runtime-renamed instance when
-/// the archetype does not constrain the name (master03 §"The `LOCATABLE`
-/// class" L35).
+///   with the id-only fallback ON, tolerating a runtime-renamed instance when
+///   the archetype does not constrain the name (master03 §"The `LOCATABLE`
+///   class" L35).
 fn select_group_children<'a>(
     container: &'a Value,
     id_seg: &openehr_rm::paths::PathSegment,

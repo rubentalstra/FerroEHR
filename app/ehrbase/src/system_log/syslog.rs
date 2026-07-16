@@ -6,7 +6,7 @@
 //! - **RFC 5424** — the `SYSLOG-MSG` header/structure.
 //! - **RFC 5426** — one UDP datagram per `SYSLOG-MSG` (no extra framing).
 //! - **RFC 5425** — TLS transport with **octet-counting** framing
-//! (`MSG-LEN SP SYSLOG-MSG`), the mandatory TLS framing (RFC 5425 §4.3).
+//!   (`MSG-LEN SP SYSLOG-MSG`), the mandatory TLS framing (RFC 5425 §4.3).
 //!
 //! Header field choices not fixed by RFC 5424 follow the IHE ATNA convention
 //! (recorded inline with the citing RFC section).

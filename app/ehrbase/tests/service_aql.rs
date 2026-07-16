@@ -950,12 +950,12 @@ async fn executed_aql_substitutes_bound_parameters() {
 ///
 /// Asserts only what the schema requires:
 /// * `rows` is present and an array — the sole `required` field of
-/// `docs/specs/openehr/ITS-REST/specifications/schemas/query/ResultSet.yaml`.
+///   `docs/specs/openehr/ITS-REST/specifications/schemas/query/ResultSet.yaml`.
 /// * every `columns[]` entry carries a `name` — the sole `required` field of
-/// `schemas/query/ResultSetColumn.yaml`.
+///   `schemas/query/ResultSetColumn.yaml`.
 /// * each row is an array whose length equals the number of columns —
-/// `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
-/// RESULT_SET row, one cell for each column."
+///   `schemas/query/ResultSetRow.yaml`: "A set of cells representing a
+///   RESULT_SET row, one cell for each column."
 #[tokio::test]
 async fn result_set_carries_the_its_rest_shape() {
     let pg = Pg::start().await;

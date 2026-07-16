@@ -89,11 +89,11 @@ pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, Service
 ///
 /// | from | allowed to |
 /// |---|---|
-/// | `complete` | `complete` (edit), `inactive` (deactivate), `deleted` (delete) |
+/// | `complete`   | `complete` (edit), `inactive` (deactivate), `deleted` (delete) |
 /// | `incomplete` | `incomplete` (edit), `complete` (complete), `abandoned` (abandon), `deleted` (delete) |
-/// | `inactive` | `inactive`, `complete` (reactivate), `incomplete` (retrieve), `deleted` (delete) |
-/// | `abandoned` | `abandoned`, `incomplete` (retrieve), `deleted` (delete) |
-/// | `deleted` | `complete`/`incomplete` (restoration, `816`) |
+/// | `inactive`   | `inactive`, `complete` (reactivate), `incomplete` (retrieve), `deleted` (delete) |
+/// | `abandoned`  | `abandoned`, `incomplete` (retrieve), `deleted` (delete) |
+/// | `deleted`    | `complete`/`incomplete` (restoration, `816`) |
 ///
 /// A transition outside this table is a `422` naming the state machine — e.g.
 /// `complete -> abandoned` (must pass through `incomplete`), `abandoned ->

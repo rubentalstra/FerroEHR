@@ -54,8 +54,8 @@ impl EhrbaseService {
     /// # Errors
     ///
     /// - Source failing the registration validator, a malformed
-    /// `ARCHETYPE_HRID`, or a VACSD specialisation-depth violation →
-    /// `invalid_artefact` (`422`).
+    ///   `ARCHETYPE_HRID`, or a VACSD specialisation-depth violation →
+    ///   `invalid_artefact` (`422`).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
         self.adl2_upload(&adl2).await?;

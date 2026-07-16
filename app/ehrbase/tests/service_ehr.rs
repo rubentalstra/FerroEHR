@@ -1936,15 +1936,15 @@ async fn directory_versioned_and_has_version() {
 /// to be identical to what a fresh read yields.
 ///
 /// - Fix E: the EHR create representation is assembled from the commit `Committed`
-/// rows (`ehr_created_object`, from the create-time stash) and MUST be
-/// byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
+///   rows (`ehr_created_object`, from the create-time stash) and MUST be
+///   byte-identical to a fresh `ehr_summary` read (`ehr_object`) for a new EHR.
 /// - Fix D: the DIRECTORY create/update response `OBJECT_VERSION_ID`
-/// (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
-/// master06 §Committal: the written version identity).
+///   (`committed_response`) MUST equal the `uid` a fresh read injects (RM common
+///   master06 §Committal: the written version identity).
 /// - Item 34: the EHR_STATUS update response `OBJECT_VERSION_ID`
-/// (`committed_response`, replacing the discarded post-commit reassembly) MUST
-/// equal a fresh read's `uid`, and the mutation MUST persist (the folded
-/// subject/is_queryable sync rides the write's UPDATE).
+///   (`committed_response`, replacing the discarded post-commit reassembly) MUST
+///   equal a fresh read's `uid`, and the mutation MUST persist (the folded
+///   subject/is_queryable sync rides the write's UPDATE).
 #[tokio::test]
 async fn write_responses_match_a_fresh_read() {
     let pg = Pg::start().await;

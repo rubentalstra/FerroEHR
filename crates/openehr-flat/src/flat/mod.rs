@@ -29,8 +29,8 @@
 //!
 //! - [`to_flat`] — canonical-JSON `COMPOSITION` → flat map (`RawToFlat`).
 //! - [`from_flat`] — flat map → canonical-JSON `COMPOSITION` (the composition
-//! builder), re-materialising the compacted RM structure so the result
-//! deserialises as an `openehr-rm` `Composition`.
+//!   builder), re-materialising the compacted RM structure so the result
+//!   deserialises as an `openehr-rm` `Composition`.
 //!
 //! [`WebTemplate`]: crate::webtemplate::WebTemplate
 
