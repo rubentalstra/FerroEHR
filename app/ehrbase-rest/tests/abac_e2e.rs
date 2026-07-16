@@ -243,11 +243,10 @@ async fn audit_capture() -> (UdpSocket, AuditSender) {
 async fn drain_audit(socket: &UdpSocket) -> Vec<String> {
     let mut out = Vec::new();
     let mut buf = vec![0u8; 65_536];
-    loop {
-        match tokio::time::timeout(Duration::from_millis(800), socket.recv_from(&mut buf)).await {
-            Ok(Ok((n, _))) => out.push(String::from_utf8_lossy(&buf[..n]).into_owned()),
-            _ => break,
-        }
+    while let Ok(Ok((n, _))) =
+        tokio::time::timeout(Duration::from_millis(800), socket.recv_from(&mut buf)).await
+    {
+        out.push(String::from_utf8_lossy(&buf[..n]).into_owned());
     }
     out
 }
