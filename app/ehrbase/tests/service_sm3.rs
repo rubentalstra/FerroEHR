@@ -290,7 +290,12 @@ async fn relationship_lifecycle_end_to_end() {
 
     // stale If-Match → 412
     let stale = svc
-        .party_relationship_update(vo.clone(), ovid_v1.clone(), relationship("stale", src, tgt), None)
+        .party_relationship_update(
+            vo.clone(),
+            ovid_v1.clone(),
+            relationship("stale", src, tgt),
+            None,
+        )
         .await;
     assert!(
         matches!(

@@ -142,8 +142,11 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         validate_relationship_body(&body)?;
 
-        let audit =
-            self.demographic_audit(update_audit, change_type::CREATION, "PARTY_RELATIONSHIP creation");
+        let audit = self.demographic_audit(
+            update_audit,
+            change_type::CREATION,
+            "PARTY_RELATIONSHIP creation",
+        );
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -221,8 +224,11 @@ impl EhrbaseService {
         }
         validate_relationship_body(&body)?;
 
-        let audit =
-            self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY_RELATIONSHIP update");
+        let audit = self.demographic_audit(
+            update_audit,
+            change_type::MODIFICATION,
+            "PARTY_RELATIONSHIP update",
+        );
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -275,7 +281,11 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY_RELATIONSHIP delete");
+        let audit = self.demographic_audit(
+            update_audit,
+            change_type::DELETED,
+            "PARTY_RELATIONSHIP delete",
+        );
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(

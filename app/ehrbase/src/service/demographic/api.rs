@@ -436,7 +436,9 @@ impl EhrbaseService {
         };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        Ok(self.commit_party_delete(current, expected, update_audit.as_ref()).await?)
+        Ok(self
+            .commit_party_delete(current, expected, update_audit.as_ref())
+            .await?)
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────
@@ -829,7 +831,9 @@ impl EhrbaseService {
         body: Value,
         update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        Ok(self.create_relationship(body, update_audit.as_ref()).await?)
+        Ok(self
+            .create_relationship(body, update_audit.as_ref())
+            .await?)
     }
 
     /// Read a relationship by uid-based id, optionally time-travelled to
@@ -918,7 +922,9 @@ impl EhrbaseService {
         };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
-        Ok(self.commit_relationship_delete(current, expected, update_audit.as_ref()).await?)
+        Ok(self
+            .commit_relationship_delete(current, expected, update_audit.as_ref())
+            .await?)
     }
 
     /// The `VERSIONED_OBJECT` wrapper for a relationship.

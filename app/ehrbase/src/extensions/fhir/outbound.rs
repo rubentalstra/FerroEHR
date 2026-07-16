@@ -305,15 +305,10 @@ async fn process_batch(
             };
             for (resource_type, template_id, resource) in &messages {
                 let routing_key = routing_key(resource_type, template_id);
-                // A serialization failure is a mapping fault for THIS row —
-                // surfaced (and poison-parked after its retry budget), never
-                // published as an empty message.
-                let payload = match serde_json::to_vec(resource) {
+                let payload = match resource_payload(resource_type, resource) {
                     Ok(bytes) => bytes,
                     Err(e) => {
-                        outcome = Err(ProcessError::Map(format!(
-                            "serialize {resource_type}: {e}"
-                        )));
+                        outcome = Err(e);
                         break 'rows;
                     }
                 };
@@ -379,6 +374,17 @@ async fn read_cursor(pool: &PgPool) -> Result<i64, sqlx::Error> {
 }
 
 /// Advance the emitter's delivery cursor to `seq`.
+/// Serialize one mapped FHIR resource for publishing. A serialization failure
+/// is a mapping fault for the row (surfaced, and poison-parked after its retry
+/// budget) — never published as an empty message.
+fn resource_payload(
+    resource_type: &str,
+    resource: &serde_json::Value,
+) -> Result<Vec<u8>, ProcessError> {
+    serde_json::to_vec(resource)
+        .map_err(|e| ProcessError::Map(format!("serialize {resource_type}: {e}")))
+}
+
 async fn write_cursor(pool: &PgPool, seq: i64) -> Result<(), sqlx::Error> {
     // Monotonic guard: a concurrent emitter (or a delayed pass) must never
     // move the cursor backwards — regression would re-emit every version
