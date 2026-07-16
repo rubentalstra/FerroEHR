@@ -35,73 +35,73 @@ text { fill: #c3c2b7; }
 <line class="grid" x1="620.0" y1="58" x2="620.0" y2="542.0"/>
 <text class="muted" x="620.0" y="558.0" text-anchor="middle">1.0s</text>
 <text x="160.0" y="75.0" text-anchor="end">aql-patient</text>
-<rect class="s1" x="170" y="62.0" width="110.3" height="10" rx="4"/>
-<text class="muted" x="284.3" y="71.0">30.9ms</text>
-<rect class="s2" x="170" y="74.0" width="128.2" height="10" rx="4"/>
-<text class="muted" x="302.2" y="83.0">37.1ms</text>
+<rect class="s1" x="170" y="62.0" width="102.2" height="10" rx="4"/>
+<text class="muted" x="276.2" y="71.0">28.5ms</text>
+<rect class="s2" x="170" y="74.0" width="160.3" height="10" rx="4"/>
+<text class="muted" x="334.3" y="83.0">51.6ms</text>
 <text x="160.0" y="109.0" text-anchor="end">aql-ward</text>
-<rect class="s1" x="170" y="96.0" width="127.3" height="10" rx="4"/>
-<text class="muted" x="301.3" y="105.0">36.8ms</text>
-<rect class="s2" x="170" y="108.0" width="101.2" height="10" rx="4"/>
-<text class="muted" x="275.2" y="117.0">28.2ms</text>
+<rect class="s1" x="170" y="96.0" width="65.6" height="10" rx="4"/>
+<text class="muted" x="239.6" y="105.0">19.6ms</text>
+<rect class="s2" x="170" y="108.0" width="109.9" height="10" rx="4"/>
+<text class="muted" x="283.9" y="117.0">30.8ms</text>
 <text x="160.0" y="143.0" text-anchor="end">comp-create-large</text>
-<rect class="s1" x="170" y="130.0" width="195.6" height="10" rx="4"/>
-<text class="muted" x="369.6" y="139.0">74.0ms</text>
-<rect class="s2" x="170" y="142.0" width="246.0" height="10" rx="4"/>
-<text class="muted" x="420.0" y="151.0">124.0ms</text>
+<rect class="s1" x="170" y="130.0" width="202.7" height="10" rx="4"/>
+<text class="muted" x="376.7" y="139.0">79.6ms</text>
+<rect class="s2" x="170" y="142.0" width="236.6" height="10" rx="4"/>
+<text class="muted" x="410.6" y="151.0">112.6ms</text>
 <text x="160.0" y="177.0" text-anchor="end">comp-create-small</text>
-<rect class="s1" x="170" y="164.0" width="110.7" height="10" rx="4"/>
-<text class="muted" x="284.7" y="173.0">31.1ms</text>
-<rect class="s2" x="170" y="176.0" width="140.3" height="10" rx="4"/>
-<text class="muted" x="314.3" y="185.0">42.0ms</text>
+<rect class="s1" x="170" y="164.0" width="135.3" height="10" rx="4"/>
+<text class="muted" x="309.3" y="173.0">39.9ms</text>
+<rect class="s2" x="170" y="176.0" width="165.6" height="10" rx="4"/>
+<text class="muted" x="339.6" y="185.0">54.4ms</text>
 <text x="160.0" y="211.0" text-anchor="end">comp-read-latest</text>
-<rect class="s1" x="170" y="198.0" width="72.5" height="10" rx="4"/>
-<text class="muted" x="246.5" y="207.0">21.0ms</text>
-<rect class="s2" x="170" y="210.0" width="92.9" height="10" rx="4"/>
-<text class="muted" x="266.9" y="219.0">25.9ms</text>
+<rect class="s1" x="170" y="198.0" width="77.1" height="10" rx="4"/>
+<text class="muted" x="251.1" y="207.0">22.0ms</text>
+<rect class="s2" x="170" y="210.0" width="121.8" height="10" rx="4"/>
+<text class="muted" x="295.8" y="219.0">34.8ms</text>
 <text x="160.0" y="245.0" text-anchor="end">comp-read-version</text>
-<rect class="s1" x="170" y="232.0" width="65.4" height="10" rx="4"/>
-<text class="muted" x="239.4" y="241.0">19.5ms</text>
-<rect class="s2" x="170" y="244.0" width="82.6" height="10" rx="4"/>
-<text class="muted" x="256.6" y="253.0">23.3ms</text>
+<rect class="s1" x="170" y="232.0" width="70.1" height="10" rx="4"/>
+<text class="muted" x="244.1" y="241.0">20.5ms</text>
+<rect class="s2" x="170" y="244.0" width="114.0" height="10" rx="4"/>
+<text class="muted" x="288.0" y="253.0">32.1ms</text>
 <text x="160.0" y="279.0" text-anchor="end">comp-update</text>
-<rect class="s1" x="170" y="266.0" width="129.0" height="10" rx="4"/>
-<text class="muted" x="303.0" y="275.0">37.4ms</text>
-<rect class="s2" x="170" y="278.0" width="164.2" height="10" rx="4"/>
-<text class="muted" x="338.2" y="287.0">53.7ms</text>
+<rect class="s1" x="170" y="266.0" width="138.5" height="10" rx="4"/>
+<text class="muted" x="312.5" y="275.0">41.2ms</text>
+<rect class="s2" x="170" y="278.0" width="169.6" height="10" rx="4"/>
+<text class="muted" x="343.6" y="287.0">56.7ms</text>
 <text x="160.0" y="313.0" text-anchor="end">contribution-commit</text>
-<rect class="s1" x="170" y="300.0" width="114.9" height="10" rx="4"/>
-<text class="muted" x="288.9" y="309.0">32.4ms</text>
-<rect class="s2" x="170" y="312.0" width="142.3" height="10" rx="4"/>
-<text class="muted" x="316.3" y="321.0">42.9ms</text>
+<rect class="s1" x="170" y="300.0" width="117.5" height="10" rx="4"/>
+<text class="muted" x="291.5" y="309.0">33.3ms</text>
+<rect class="s2" x="170" y="312.0" width="153.3" height="10" rx="4"/>
+<text class="muted" x="327.3" y="321.0">48.0ms</text>
 <text x="160.0" y="347.0" text-anchor="end">dir-read</text>
-<rect class="s1" x="170" y="334.0" width="38.5" height="10" rx="4"/>
-<text class="muted" x="212.5" y="343.0">14.8ms</text>
-<rect class="s2" x="170" y="346.0" width="77.5" height="10" rx="4"/>
-<text class="muted" x="251.5" y="355.0">22.1ms</text>
+<rect class="s1" x="170" y="334.0" width="58.1" height="10" rx="4"/>
+<text class="muted" x="232.1" y="343.0">18.1ms</text>
+<rect class="s2" x="170" y="346.0" width="91.8" height="10" rx="4"/>
+<text class="muted" x="265.8" y="355.0">25.6ms</text>
 <text x="160.0" y="381.0" text-anchor="end">dir-update</text>
-<rect class="s1" x="170" y="368.0" width="131.2" height="10" rx="4"/>
-<text class="muted" x="305.2" y="377.0">38.3ms</text>
-<rect class="s2" x="170" y="380.0" width="119.9" height="10" rx="4"/>
-<text class="muted" x="293.9" y="389.0">34.1ms</text>
+<rect class="s1" x="170" y="368.0" width="110.7" height="10" rx="4"/>
+<text class="muted" x="284.7" y="377.0">31.0ms</text>
+<rect class="s2" x="170" y="380.0" width="151.5" height="10" rx="4"/>
+<text class="muted" x="325.5" y="389.0">47.1ms</text>
 <text x="160.0" y="415.0" text-anchor="end">ehr-create</text>
-<rect class="s1" x="170" y="402.0" width="144.6" height="10" rx="4"/>
-<text class="muted" x="318.6" y="411.0">43.9ms</text>
-<rect class="s2" x="170" y="414.0" width="142.9" height="10" rx="4"/>
-<text class="muted" x="316.9" y="423.0">43.2ms</text>
+<rect class="s1" x="170" y="402.0" width="125.5" height="10" rx="4"/>
+<text class="muted" x="299.5" y="411.0">36.1ms</text>
+<rect class="s2" x="170" y="414.0" width="193.6" height="10" rx="4"/>
+<text class="muted" x="367.6" y="423.0">72.5ms</text>
 <text x="160.0" y="449.0" text-anchor="end">ehr-read</text>
-<rect class="s1" x="170" y="436.0" width="173.6" height="10" rx="4"/>
-<text class="muted" x="347.6" y="445.0">59.1ms</text>
-<rect class="s2" x="170" y="448.0" width="182.3" height="10" rx="4"/>
-<text class="muted" x="356.3" y="457.0">64.6ms</text>
+<rect class="s1" x="170" y="436.0" width="206.1" height="10" rx="4"/>
+<text class="muted" x="380.1" y="445.0">82.4ms</text>
+<rect class="s2" x="170" y="448.0" width="239.9" height="10" rx="4"/>
+<text class="muted" x="413.9" y="457.0">116.5ms</text>
 <text x="160.0" y="483.0" text-anchor="end">history-read</text>
-<rect class="s1" x="170" y="470.0" width="23.2" height="10" rx="4"/>
-<text class="muted" x="197.2" y="479.0">12.7ms</text>
-<rect class="s2" x="170" y="482.0" width="106.2" height="10" rx="4"/>
-<text class="muted" x="280.2" y="491.0">29.6ms</text>
+<rect class="s1" x="170" y="470.0" width="29.1" height="10" rx="4"/>
+<text class="muted" x="203.1" y="479.0">13.5ms</text>
+<rect class="s2" x="170" y="482.0" width="114.7" height="10" rx="4"/>
+<text class="muted" x="288.7" y="491.0">32.4ms</text>
 <text x="160.0" y="517.0" text-anchor="end">status-update</text>
-<rect class="s1" x="170" y="504.0" width="145.1" height="10" rx="4"/>
-<text class="muted" x="319.1" y="513.0">44.2ms</text>
-<rect class="s2" x="170" y="516.0" width="154.0" height="10" rx="4"/>
-<text class="muted" x="328.0" y="525.0">48.4ms</text>
+<rect class="s1" x="170" y="504.0" width="107.0" height="10" rx="4"/>
+<text class="muted" x="281.0" y="513.0">29.9ms</text>
+<rect class="s2" x="170" y="516.0" width="153.3" height="10" rx="4"/>
+<text class="muted" x="327.3" y="525.0">48.0ms</text>
 </svg>
