@@ -456,6 +456,12 @@ SM service interfaces). **Measured 2026-07-16 (probe P-5s):**
 **Decision gate: owner sign-off required — no merge executes until the owner
 picks.** Recommendation: A.
 
+### 4i. Issue-driven (GitHub #95, filed 2026-07-15, owner-directed into W-14)
+
+| # | Finding | Evidence | Triage | Fix |
+|---|---|---|---|---|
+| F-42 | **Issue #95: the `format` query parameter is silently ignored** (no handler parses one). Spec state: the vendored OAS selects the example representation via the `Accept` header (`Accept_LOCATABLE` enum: json / xml / wt.flat+json / wt.structured+json — `definition-codegen.openapi.yaml` `/definition/template/adl1.4/{template_id}/example`), and the ADL1.4 example endpoint ALREADY serves all four via Accept (`template_adl14.rs:146-169`); **no openEHR spec defines a `format` query param — EHRbase-Java prior-art convenience.** Fix (extension, own-design flag): accept `?format=FLAT\|STRUCTURED\|JSON\|XML` (case-insensitive) on the LOCATABLE-returning endpoints (template example + composition GET/write responses), mapping onto the existing Accept negotiation; explicit `format` wins over `Accept`; unknown value → 400. Silently ignoring a recognized-but-unsupported parameter is the defect. ADL2 example stays the PORT-NOTEd 501 (W-4 example generator). | issue #95; `formats/dispatch.rs`, `negotiate.rs:140-154`, `template_adl14.rs:130-170` | **S** (triaged — spec-silent; Accept path is the spec mechanism and stays primary) | ☐ Wave 1c |
+
 ## 5. Fix waves
 
 Probe phase closed 2026-07-16 (P-1..P-7): 41 findings, all §1/§2/§3 rows
@@ -473,6 +479,8 @@ line; scoped gates per wave, full gates + fresh pair + ECC at phase close.
 - [ ] F-34 CatchPanic + ATNA fail-closed emit the openEHR error body.
 - [ ] F-29 surface row-decode errors instead of `unwrap_or_default`.
 - [ ] F-20 count ATNA serialize-drops.
+- [ ] F-42 (issue #95) `?format=` extension on LOCATABLE endpoints — Wave 1c,
+      lands when an implementer slot frees; closes the issue in the PR.
 
 **Wave 2 — the write-path redesign (the big rock; orchestrator-owned):**
 - [ ] F-1 signing redesign: assign `time_committed` app-side (RM common
