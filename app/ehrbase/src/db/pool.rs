@@ -15,7 +15,7 @@ use crate::db::{DbConfig, DbError};
 /// in `ehr`, the AQL support functions and the `"C"`/`en_US` collations in
 /// `ext`. Set on every physical connection so queries may use unqualified table
 /// names.
-pub(crate) const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
+const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
 
 /// The pool options common to both the plain and the tenant-scoped pool: the
 /// sizing/timeout from settings and the standard search path on every physical

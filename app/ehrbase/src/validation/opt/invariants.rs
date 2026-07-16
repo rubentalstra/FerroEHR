@@ -31,7 +31,7 @@ use super::{Ctx, Violation, co_node_id, co_occurrences};
 
 /// `C_ATTRIBUTE` invariant `Rm_attribute_name_valid`: `not rm_attribute_name.
 /// is_empty` (AOM1.4 `c_attribute` class file, Invariants).
-pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(), Violation> {
+fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(), Violation> {
     if attr_name.is_empty() {
         return Err(Violation::new(
             "Rm_attribute_name_valid",
@@ -43,7 +43,7 @@ pub(super) fn check_attribute_name(attr_name: &str, parent_rm: &str) -> Result<(
 
 /// `C_ATTRIBUTE` invariant `Existence_set`: `existence.lower >= 0 and
 /// existence.upper <= 1` (AOM1.4 `c_attribute` class file, Invariants).
-pub(super) fn check_existence_set(
+fn check_existence_set(
     attr_name: &str,
     parent_rm: &str,
     existence: &openehr_its::opt14::Intervalofinteger,
@@ -70,7 +70,7 @@ pub(super) fn check_existence_set(
 /// cADL: occurrences upper > 1 only under a container attribute, AOM1.4
 /// `c_object` class file, `occurrences`). Called only for a single-valued
 /// attribute (no cardinality).
-pub(super) fn check_members_valid(
+fn check_members_valid(
     attr_name: &str,
     parent_rm: &str,
     children: &[CObject],
@@ -99,7 +99,7 @@ pub(super) fn check_members_valid(
 /// the identifier's first segment (ADL1.4 master08 line 556; composite
 /// identifiers compare case-insensitively, BASE `base_types` master05
 /// §"Composite Identifiers and Case").
-pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Violation> {
+fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Violation> {
     if !is_archetype_id_shaped(id) {
         return Err(Violation::new(
             "VARID",
@@ -180,7 +180,7 @@ fn is_archetype_id_shaped(id: &str) -> bool {
 /// and is deferred to runtime slot admission (the `WebTemplate` instance walk,
 /// blueprint 03-am F-07-10) — that surface is out of scope for the artefact
 /// pass here (cADL §Archetype Slots, `ADL1.4/master05-cadl.adoc` L535-601).
-pub(super) fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {
+fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {
     for assertion in slot.includes.iter().chain(&slot.excludes) {
         let Some(pattern) = slot_assertion_pattern(assertion) else {
             continue;
@@ -251,7 +251,7 @@ fn regex_literal(alt: &str) -> Option<String> {
 /// ADL1.4 master08 line 576). (Flattened OPTs expand internal refs, so this
 /// fires only on a malformed artefact — the whole vendored corpus carries
 /// none.)
-pub(super) fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violation> {
+fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violation> {
     if r.target_path.is_empty() || !r.target_path.starts_with('/') {
         return Err(Violation::new(
             "Target_path_valid",
@@ -277,7 +277,7 @@ pub(super) fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violati
 /// vendored RIPPLE/Better corpus templates). VACDF is therefore enforced only
 /// when the artefact declares a constraint vocabulary; an artefact with none
 /// is tolerated.
-pub(super) fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), Violation> {
+fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), Violation> {
     if ctx.has_constraint_defs && !ctx.defined_ac.contains(&r.reference) {
         return Err(Violation::new(
             "VACDF",
@@ -295,7 +295,7 @@ pub(super) fn check_constraint_ref(r: &ConstraintRef, ctx: &Ctx) -> Result<(), V
 /// Duplicate codes in a terminology-code code list are invalid (ADL2
 /// master04.6 STCDC — "constraint code list contains duplicate codes"; the
 /// same defect in an OPT 1.4 `C_CODE_PHRASE` list).
-pub(super) fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), Violation> {
+fn check_code_list(code_list: &[String], node_id: &str) -> Result<(), Violation> {
     let mut seen = HashSet::new();
     for code in code_list {
         // Empty entries are tooling noise, not codes (Ocean exports emit

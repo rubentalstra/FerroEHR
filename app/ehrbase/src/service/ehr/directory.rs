@@ -29,7 +29,7 @@ use super::{ensure_if_match, parse_at_time};
 
 impl EhrbaseService {
     /// Create the EHR's directory (its root FOLDER). Conflicts if one exists.
-    pub(in crate::service) async fn commit_new_directory(
+    async fn commit_new_directory(
         &self,
         ehr_id: Uuid,
         version: crate::service::version_update::UpdateVersion,
@@ -80,7 +80,7 @@ impl EhrbaseService {
     /// The EHR's directory FOLDER (current, or at an instant when `at` is given),
     /// optionally navigated to a sub-folder `path` (`/a/b`). A deleted directory
     /// resolves to `Value::Null` (→ 204).
-    pub(in crate::service) async fn directory_at_time(
+    async fn directory_at_time(
         &self,
         ehr_id: Uuid,
         at: Option<jiff::Timestamp>,
@@ -113,7 +113,7 @@ impl EhrbaseService {
     }
 
     /// A specific version of the directory (from a `version_uid`).
-    pub(in crate::service) async fn directory_version(
+    async fn directory_version(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -130,7 +130,7 @@ impl EhrbaseService {
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's directory (`get_versioned_directory`).
-    pub(in crate::service) async fn versioned_directory(
+    async fn versioned_directory(
         &self,
         ehr_id: Uuid,
     ) -> Result<Value, ServiceError> {
@@ -141,7 +141,7 @@ impl EhrbaseService {
     /// Whether `version` of the directory versioned object `vo_id` exists for
     /// this EHR (`has_directory_version`). A logically deleted version still
     /// counts as existing.
-    pub(in crate::service) async fn directory_version_exists(
+    async fn directory_version_exists(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -161,7 +161,7 @@ impl EhrbaseService {
     /// re-run here); `is_modifiable` is the EHR's content-write flag from that
     /// same merged pre-read (so the writability probe is not re-run either);
     /// `expected` (from `If-Match`) enforces optimistic concurrency.
-    pub(in crate::service) async fn commit_directory_update(
+    async fn commit_directory_update(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -210,7 +210,7 @@ impl EhrbaseService {
     /// `ETag`/`Location`, so the response carries no metadata. `is_modifiable` is
     /// the EHR's content-write flag from the caller's merged pre-read (so the
     /// writability probe is not re-run here).
-    pub(in crate::service) async fn delete_directory_at(
+    async fn delete_directory_at(
         &self,
         ehr_id: Uuid,
         vo_id: Uuid,
@@ -245,7 +245,7 @@ impl EhrbaseService {
     /// `ETag`/`Location`). Resolves `EHR.directory` (= `folders.item(1)`, RM ehr
     /// §EHR Class `Directory_in_folders`) rather than assuming a single FOLDER
     /// versioned object.
-    pub(in crate::service) async fn directory_meta(
+    async fn directory_meta(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<crate::service::response::ResourceMeta>, ServiceError> {
@@ -265,7 +265,7 @@ impl EhrbaseService {
     /// `is_modifiable` back to the caller lets the inner write skip re-running
     /// the slot JOIN and the writability probe. `None` when the EHR indexes no
     /// directory hierarchy.
-    pub(in crate::service) async fn directory_meta_with_vo(
+    async fn directory_meta_with_vo(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<(Uuid, bool, crate::service::response::ResourceMeta)>, ServiceError> {
@@ -295,7 +295,7 @@ impl EhrbaseService {
     /// The `ehr_folder` ⋈ `vo_version` resolution is a storage seam
     /// ([`crate::storage::ehr_repo::directory_vo`]; no openEHR spec governs the
     /// SQL — our own design).
-    pub(in crate::service) async fn directory_vo_opt(
+    async fn directory_vo_opt(
         &self,
         ehr_id: Uuid,
     ) -> Result<Option<Uuid>, ServiceError> {
@@ -321,7 +321,7 @@ impl EhrbaseService {
 ///   carry `id` + `namespace` + `type`, and a LOCATABLE-by-value payload is
 ///   rejected;
 /// - `folders` members recurse.
-pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
+fn validate_folder(folder: &Value) -> Result<(), ServiceError> {
     fn walk(node: &Value, path: &str) -> Result<(), ServiceError> {
         let unproc = |m: String| ServiceError::Unprocessable(m);
         let obj = node
@@ -402,22 +402,12 @@ fn select_subfolder(folder: &Value, path: &str) -> Option<Value> {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_directory(&self, an_ehr_id: Uuid) -> Result<bool, SmError> {
         // EHR.directory (= folders[1]) — resolve the directory slot rather than
         // assuming a single FOLDER (RM ehr master04 §Folders).
         Ok(self.directory_vo_opt(an_ehr_id).await?.is_some())
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_path(&self, an_ehr_id: Uuid, a_path: String) -> Result<bool, SmError> {
         match self.directory_at_time(an_ehr_id, None, Some(&a_path)).await {
             Ok(resp) => Ok(!resp.body.is_null()),
@@ -426,11 +416,6 @@ impl EhrbaseService {
         }
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn create_directory(
         &self,
         an_ehr_id: Uuid,
@@ -442,11 +427,6 @@ impl EhrbaseService {
         )
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_directory_at_time(
         &self,
         an_ehr_id: Uuid,
@@ -460,11 +440,6 @@ impl EhrbaseService {
             .body)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn update_directory(
         &self,
         an_ehr_id: Uuid,
@@ -491,11 +466,6 @@ impl EhrbaseService {
         )
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn delete_directory(
         &self,
         an_ehr_id: Uuid,
@@ -515,11 +485,6 @@ impl EhrbaseService {
         Ok(())
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_directory_at_version(
         &self,
         an_ehr_id: Uuid,
@@ -532,11 +497,6 @@ impl EhrbaseService {
             .body)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn has_directory_version(
         &self,
         an_ehr_id: Uuid,
@@ -548,11 +508,6 @@ impl EhrbaseService {
             .await?)
     }
 
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_versioned_directory(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
         Ok(self.versioned_directory(an_ehr_id).await?)
     }

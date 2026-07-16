@@ -26,7 +26,7 @@ impl EhrbaseService {
     /// `archive_ehrs`: mark every versioned object of each EHR as archived
     /// (idempotent). Any unknown EHR → `ehr_id_does_not_exist`
     /// ([`ServiceError::NotFound`], → `404`) and nothing is archived.
-    pub(super) async fn archive_ehr_vos(&self, ehr_ids: &[Uuid]) -> Result<(), ServiceError> {
+    async fn archive_ehr_vos(&self, ehr_ids: &[Uuid]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         for &ehr_id in ehr_ids {
             let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
@@ -60,7 +60,7 @@ impl EhrbaseService {
     /// related `PARTY_RELATIONSHIP`s. While archival is a read-neutral marker
     /// (G-A2) this has no observable effect; the relationship marker set is
     /// extended when the storage-tier movement (G-A2) is realised.
-    pub(super) async fn archive_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
+    async fn archive_party_vos(&self, party_ids: &[Uuid]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         for &party_id in party_ids {
             let kind: Option<String> = sqlx::query_scalar(

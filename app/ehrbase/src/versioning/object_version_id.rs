@@ -31,17 +31,17 @@ use crate::service::ServiceError;
 /// the `(branch_number, branch_version)` pair (both `>= 1` per BASE
 /// `VERSION_TREE_ID`; RM common master06 §Version tree).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct TreeId {
+struct TreeId {
     /// The trunk version this id sits on (first lexical part).
-    pub(crate) trunk: i32,
+    trunk: i32,
     /// `None` for a trunk version; `Some((branch_number, branch_version))` for a
     /// branch version.
-    pub(crate) branch: Option<(i32, i32)>,
+    branch: Option<(i32, i32)>,
 }
 
 impl TreeId {
     /// A trunk version id.
-    pub(crate) const fn trunk(version: i32) -> Self {
+    const fn trunk(version: i32) -> Self {
         Self {
             trunk: version,
             branch: None,
@@ -49,7 +49,7 @@ impl TreeId {
     }
 
     /// A branch version id (`trunk.branch_number.branch_version`).
-    pub(crate) const fn branch(trunk: i32, branch_number: i32, branch_version: i32) -> Self {
+    const fn branch(trunk: i32, branch_number: i32, branch_version: i32) -> Self {
         Self {
             trunk,
             branch: Some((branch_number, branch_version)),
@@ -57,13 +57,13 @@ impl TreeId {
     }
 
     /// Whether this is a trunk version id.
-    pub(crate) const fn is_trunk(self) -> bool {
+    const fn is_trunk(self) -> bool {
         self.branch.is_none()
     }
 
     /// The storage triple `(trunk_version, branch_number, branch_version)` —
     /// `(t, 0, 0)` for a trunk row.
-    pub(crate) const fn columns(self) -> (i32, i32, i32) {
+    const fn columns(self) -> (i32, i32, i32) {
         match self.branch {
             None => (self.trunk, 0, 0),
             Some((b, v)) => (self.trunk, b, v),
@@ -71,7 +71,7 @@ impl TreeId {
     }
 
     /// A [`TreeId`] from the storage triple; `(t, 0, 0)` is a trunk id.
-    pub(crate) const fn from_columns(trunk: i32, branch_number: i32, branch_version: i32) -> Self {
+    const fn from_columns(trunk: i32, branch_number: i32, branch_version: i32) -> Self {
         if branch_number == 0 {
             Self::trunk(trunk)
         } else {
@@ -114,7 +114,7 @@ impl fmt::Display for TreeId {
 /// creating_system_id :: version_tree_id`; BASE master05 §Syntaxes). The single
 /// place the versioning builders synthesize a version id, so its shape is
 /// consistent with what [`parse_object_version_id`] accepts.
-pub(crate) fn object_version_id(vo_id: Uuid, creating_system_id: &str, tree: TreeId) -> String {
+fn object_version_id(vo_id: Uuid, creating_system_id: &str, tree: TreeId) -> String {
     format!("{vo_id}::{creating_system_id}::{tree}")
 }
 
@@ -136,7 +136,7 @@ pub(crate) fn object_version_id(vo_id: Uuid, creating_system_id: &str, tree: Tre
 /// case-fold is a storage-boundary concern cross-checked in
 /// `docs/spec-audit/rm-common-change-control`; versioning enforces the
 /// case-insensitive *equality* here.
-pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
+fn eq_composite_id(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }
 
@@ -145,7 +145,7 @@ pub(crate) fn eq_composite_id(a: &str, b: &str) -> bool {
 /// [`crate::service::status::SmError`] (`400`, SM catalog arguments) at each call site's
 /// natural severity.
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum VersionIdError {
+enum VersionIdError {
     /// Not a well-formed BASE `OBJECT_VERSION_ID` (wrong part count, empty
     /// component, malformed `version_tree_id`).
     #[error("malformed OBJECT_VERSION_ID {raw:?}: {source}")]
@@ -185,7 +185,7 @@ impl From<VersionIdError> for crate::service::status::SmError {
 
 /// Parse a bare `VERSION_TREE_ID` lexical value (`N` or `N.B.V`) into a
 /// [`TreeId`] — the SM catalog's version argument form.
-pub(crate) fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
+fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
     let tree =
         VersionTreeId::from_str(raw).map_err(|_| VersionIdError::OutOfRange(raw.to_owned()))?;
     TreeId::from_version_tree(&tree, raw)
@@ -193,7 +193,7 @@ pub(crate) fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
 
 /// Parse a full `OBJECT_VERSION_ID` (`{object_id}::{creating_system_id}::{version_tree_id}`)
 /// into the storage key pair (`vo_id`, [`TreeId`]).
-pub(crate) fn parse_version_uid(raw: &str) -> Result<(Uuid, TreeId), VersionIdError> {
+fn parse_version_uid(raw: &str) -> Result<(Uuid, TreeId), VersionIdError> {
     let (vo_id, _, tree) = parse_object_version_id(raw)?;
     Ok((vo_id, tree))
 }
@@ -206,7 +206,7 @@ pub(crate) fn parse_version_uid(raw: &str) -> Result<(Uuid, TreeId), VersionIdEr
 /// master06 §"Distributed Versioning": "if the version was imported,
 /// `creating_system_id` will already have been set to the identifier of the
 /// system of original creation").
-pub(crate) fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, TreeId), VersionIdError> {
+fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, TreeId), VersionIdError> {
     let ovid = ObjectVersionId::from_str(raw).map_err(|source| VersionIdError::Malformed {
         raw: raw.to_owned(),
         source,
@@ -223,7 +223,7 @@ pub(crate) fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, TreeId
 
 /// Decompose an already-parsed [`ObjectVersionId`] (the SM catalog's native
 /// version-id argument) into the storage key pair (`vo_id`, [`TreeId`]).
-pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(Uuid, TreeId), VersionIdError> {
+fn components(ovid: &ObjectVersionId) -> Result<(Uuid, TreeId), VersionIdError> {
     let raw = ovid.value.clone();
     let Uid::Uuid(object_id) = ovid.object_id() else {
         return Err(VersionIdError::NotAUuid(raw));
@@ -235,7 +235,7 @@ pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(Uuid, TreeId), Versi
 /// Parse a `uid_based_id`/`versioned_object_uid` path parameter: either a bare
 /// `HIER_OBJECT_ID` (a UUID, → no version) or a full `OBJECT_VERSION_ID`
 /// (strict three-part, → its [`TreeId`]).
-pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(Uuid, Option<TreeId>), VersionIdError> {
+fn parse_uid_based_id(raw: &str) -> Result<(Uuid, Option<TreeId>), VersionIdError> {
     if raw.contains("::") {
         let (vo_id, tree) = parse_version_uid(raw)?;
         Ok((vo_id, Some(tree)))
@@ -266,7 +266,7 @@ pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(Uuid, Option<TreeId>), Ve
 /// same choice `ehrbase-rest::overview::version_id::require_if_match` makes for
 /// the required-`If-Match` endpoints. `VersionIdError` converts into that `400`
 /// at each caller's error type.
-pub(crate) fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, VersionIdError> {
+fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, VersionIdError> {
     let token = if_match.trim().trim_matches('"');
     // RFC 9110 §If-Match: `*` matches any current representation — no specific
     // version precondition to extract.

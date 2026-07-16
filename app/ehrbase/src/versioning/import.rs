@@ -34,23 +34,23 @@ use crate::versioning::object_version_id::TreeId;
 /// A lineage key: the trunk (`("", 0, 0)`) or one specific branch of one system
 /// (`(creating_system_id, trunk_version, branch_number)`). Versions on the same
 /// lineage supersede each other; distinct lineages coexist.
-pub(crate) type Lineage = (String, i32, i32);
+type Lineage = (String, i32, i32);
 
 /// The current state of a to-be-imported container in the target store —
 /// mapped from the storage aggregate read
 /// (`crate::storage::version_repo::imported_container_state`).
 #[derive(Debug, Clone, Default)]
-pub(crate) struct ContainerState {
+struct ContainerState {
     /// The stored kind, if the `vo_id` already exists.
-    pub(crate) kind: Option<Kind>,
+    kind: Option<Kind>,
     /// The owning EHR of the existing container.
-    pub(crate) owner: Option<Uuid>,
+    owner: Option<Uuid>,
     /// The highest trunk version currently held.
-    pub(crate) max_trunk: i32,
+    max_trunk: i32,
     /// The highest storage ordinal currently held.
-    pub(crate) max_ordinal: i32,
+    max_ordinal: i32,
     /// Whether a still-open current TRUNK version exists.
-    pub(crate) trunk_open: bool,
+    trunk_open: bool,
 }
 
 /// Read + map the container state through the storage row I/O; an existing
@@ -78,32 +78,32 @@ async fn container_state(
 /// One received `ORIGINAL_VERSION` to import into the local store (SM
 /// `I_EHR_EXTRACT_SERVICE.import_ehr`; master06 §Copying).
 #[derive(Debug)]
-pub(crate) struct ImportVersion {
+struct ImportVersion {
     /// The `version_tree_id` of the wrapped original (trunk or branch; branch
     /// import is first-class — master06 §Version tree).
-    pub(crate) tree: TreeId,
+    tree: TreeId,
     /// The wrapped original's `creating_system_id` — per VERSION, not per
     /// container: a copied version tree legitimately mixes systems (master06
     /// §Distributed Versioning).
-    pub(crate) creating_system_id: String,
+    creating_system_id: String,
     /// The wrapped original's `preceding_version_uid`, preserved verbatim.
-    pub(crate) preceding_version_uid: Option<String>,
+    preceding_version_uid: Option<String>,
     /// The wrapped original's `other_input_version_uids` (merge provenance),
     /// preserved verbatim.
-    pub(crate) other_input_version_uids: Vec<String>,
+    other_input_version_uids: Vec<String>,
     /// The wrapped original's resolved `version_lifecycle_state` code.
-    pub(crate) lifecycle_state: String,
+    lifecycle_state: String,
     /// The wrapped original's `commit_audit`, preserved verbatim.
-    pub(crate) commit_audit: AuditInput,
+    commit_audit: AuditInput,
     /// The wrapped original's `commit_audit.time_committed`, preserved verbatim.
-    pub(crate) commit_time: jiff::Timestamp,
+    commit_time: jiff::Timestamp,
     /// The version data (`Value::Null` for a `523|deleted|` version — no nodes).
-    pub(crate) data: Value,
+    data: Value,
     /// The wrapped original's `VERSION.signature` (preserved, never re-signed).
-    pub(crate) signature: Option<String>,
+    signature: Option<String>,
     /// The wrapped original's `ATTESTATION`s (already full RM objects),
     /// preserved.
-    pub(crate) attestations: Vec<Value>,
+    attestations: Vec<Value>,
 }
 
 impl ImportVersion {
@@ -120,17 +120,17 @@ impl ImportVersion {
 /// `vo_id` (the received `uid.object_id()` — master06 §Copying: "a new
 /// `VERSIONED_OBJECT` is created, with its uid set to the same value as the
 /// received `VERSION._uid.object_id()`"), its kind, and its versions.
-pub(crate) struct ImportContainer {
-    pub(crate) vo_id: Uuid,
-    pub(crate) kind: Kind,
-    pub(crate) versions: Vec<ImportVersion>,
+struct ImportContainer {
+    vo_id: Uuid,
+    kind: Kind,
+    versions: Vec<ImportVersion>,
 }
 
 /// Replay a set of received `ORIGINAL_VERSION`s into an EHR as
 /// `IMPORTED_VERSION`s under **one** local import CONTRIBUTION (master06
 /// §Copying, §Committal). The `import_audit` records the local act of committal
 /// (`249|creation|`, master06 §Contributions "import of item").
-pub(crate) async fn commit_import(
+async fn commit_import(
     tx: &mut PgConnection,
     ehr_id: Uuid,
     import_audit: &AuditInput,
@@ -152,7 +152,7 @@ pub(crate) async fn commit_import(
 /// own (ehr-less) import CONTRIBUTION (master09 §Creation Semantics — demographic
 /// content is not EHR-owned). A party whose version container already exists
 /// locally is SKIPPED — parties are shared continuants across extracts.
-pub(crate) async fn commit_demographic_import(
+async fn commit_demographic_import(
     tx: &mut PgConnection,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,

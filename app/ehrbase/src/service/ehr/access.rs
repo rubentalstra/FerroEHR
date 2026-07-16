@@ -26,7 +26,7 @@ impl EhrbaseService {
     /// [`crate::versioning::CommitEnv`] `invalidate_ehr_access` hook, called after
     /// any `EHR_ACCESS` commit so the next access decision reflects the new
     /// version (the settings are change-controlled — RM ehr master04 §EHR Access).
-    pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
+    async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
         self.ehr_access.invalidate(ehr_id).await;
     }
 
@@ -36,7 +36,7 @@ impl EhrbaseService {
     /// RM ehr master04 §EHR Access), so a fresh EHR is unconditionally
     /// default-open; seeding that entry saves the first-access DB miss. A later
     /// `EHR_ACCESS` commit evicts it through [`Self::invalidate_ehr_access`].
-    pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: Uuid) {
+    async fn prewarm_ehr_access_open(&self, ehr_id: Uuid) {
         self.ehr_access.insert(ehr_id, None).await;
     }
 
@@ -63,11 +63,6 @@ impl EhrbaseService {
 /// `EHR_ACCESS` settings through this seam. The SM defines no `I_EHR_ACCESS`
 /// interface — no openEHR spec governs this adapter, our own extension.
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn current_ehr_access_settings(
         &self,
         ehr_id: Uuid,
@@ -91,7 +86,7 @@ impl EhrbaseService {
 /// Creation; finding F-06-07). `EHR_ACCESS` is a LOCATABLE with only the optional
 /// `settings`; with no access-control scheme configured (Stage 1 has no RBAC),
 /// it is committed with none.
-pub(in crate::service) fn default_ehr_access() -> Value {
+fn default_ehr_access() -> Value {
     json!({
         "_type": "EHR_ACCESS",
         "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
@@ -110,7 +105,7 @@ pub(in crate::service) fn default_ehr_access() -> Value {
 /// - `settings` (0..1) is a subtype of the ABSTRACT `ACCESS_CONTROL_SETTINGS` —
 ///   the RM defines no concrete scheme, so a present `settings` must carry a
 ///   non-empty concrete `_type`, which `scheme()` names (`Scheme_valid`).
-pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
+fn validate_ehr_access(access: &Value) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(m);
     let obj = access
         .as_object()
@@ -167,7 +162,7 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
 /// `Cache` is `Arc`-backed, so every clone of the owning service shares one
 /// cache (mirroring `openehr_flat::cache::WebTemplateCache`).
 #[derive(Debug, Clone)]
-pub(in crate::service) struct EhrAccessCache {
+struct EhrAccessCache {
     inner: Cache<Uuid, Arc<Option<EhrAccessSettings>>>,
 }
 
@@ -185,7 +180,7 @@ impl EhrAccessCache {
     /// # Errors
     /// Propagates the `init` error (shared across concurrent callers as an
     /// `Arc<SmError>`).
-    pub(in crate::service) async fn get_or_load<Fut>(
+    async fn get_or_load<Fut>(
         &self,
         ehr_id: Uuid,
         init: Fut,
@@ -207,7 +202,7 @@ impl EhrAccessCache {
     /// per new EHR; seeding the known-default-open entry at creation turns the
     /// first access into a hit. Any later `EHR_ACCESS` commit evicts this entry
     /// via [`Self::invalidate`], so a subsequently-restricted EHR is re-read.
-    pub(in crate::service) async fn insert(
+    async fn insert(
         &self,
         ehr_id: Uuid,
         settings: Option<EhrAccessSettings>,
@@ -218,7 +213,7 @@ impl EhrAccessCache {
     /// Drop the cached settings for `ehr_id` — called on every `EHR_ACCESS`
     /// commit so the next read reflects the new version (evicts a positive OR a
     /// pre-warmed default-open negative entry alike).
-    pub(in crate::service) async fn invalidate(&self, ehr_id: Uuid) {
+    async fn invalidate(&self, ehr_id: Uuid) {
         self.inner.invalidate(&ehr_id).await;
     }
 }

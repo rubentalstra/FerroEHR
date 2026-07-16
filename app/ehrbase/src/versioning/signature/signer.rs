@@ -16,7 +16,7 @@ use super::verify::{self, Verdict};
 /// hash is not ambiguous. master06 §Digital Signature: signature "algorithms
 /// are self-describing"; our documented concretization of that self-description
 /// for the digest form (S-42, G-10 PORT NOTE).
-pub(crate) const DIGEST_PREFIX: &str = "sha256:";
+const DIGEST_PREFIX: &str = "sha256:";
 
 /// A failure constructing a [`Signer`] at boot.
 #[derive(Debug, thiserror::Error)]
@@ -38,7 +38,7 @@ pub enum SignError {
 }
 
 /// The resolved signing mode, holding the loaded key for `pgp`.
-pub(crate) enum SignerMode {
+enum SignerMode {
     /// SHA-256 digest, radix-64 encoded.
     Digest,
     /// `OpenPGP` RFC 4880 detached signature with the loaded key.
@@ -50,7 +50,7 @@ pub(crate) enum SignerMode {
 pub struct Signer {
     enabled: bool,
     verify_on_read: VerifyOnRead,
-    pub(crate) mode: SignerMode,
+    mode: SignerMode,
 }
 
 impl std::fmt::Debug for Signer {
@@ -146,7 +146,7 @@ impl Signer {
 }
 
 /// The digest signature for `canonical`: `sha256:` + radix-64(SHA-256(bytes)).
-pub(crate) fn digest_signature(canonical: &str) -> String {
+fn digest_signature(canonical: &str) -> String {
     let hash = Sha256::digest(canonical.as_bytes());
     format!(
         "{DIGEST_PREFIX}{}",

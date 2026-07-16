@@ -60,16 +60,16 @@ use crate::versioning::{
     read_current, read_version, version_at,
 };
 
-pub(crate) mod api;
-pub(crate) mod contribution;
-pub(crate) mod party;
-pub(crate) mod relationship;
-pub(crate) mod tags;
-pub(crate) mod versioned;
+mod api;
+mod contribution;
+mod party;
+mod relationship;
+mod tags;
+mod versioned;
 
 // The commit-path validators the CONTRIBUTION engine (`validate_for_commit`)
 // dispatches to once the [`Kind`] is known from the payload `_type`.
-pub(crate) use relationship::validate_relationship_for_commit;
+use relationship::validate_relationship_for_commit;
 
 /// The versioned-object [`Kind`] for a REST [`PartyKind`].
 fn kind_of(kind: PartyKind) -> Kind {
@@ -269,7 +269,7 @@ fn validate_party_body(kind: PartyKind, body: &Value) -> Result<(), ServiceError
 /// invariant checks remain). The `CommitEnv::validate_for_commit`
 /// implementation on [`EhrbaseService`] (`ehr/composition_validate.rs`)
 /// dispatches a demographic-party `Kind` here.
-pub(crate) fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result<(), ServiceError> {
+fn validate_party_kind_for_commit(kind: Kind, data: &Value) -> Result<(), ServiceError> {
     typed_check(kind.as_str(), data)
 }
 
@@ -348,7 +348,7 @@ impl EhrbaseService {
     /// `I_PARTY` calls (which address parties by versioned-object id only). A
     /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`
     /// (`versioned_object_does_not_exist`).
-    pub(crate) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
+    async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
         object_kind(&self.pool, vo_id)
             .await?
             .and_then(party_kind_of)

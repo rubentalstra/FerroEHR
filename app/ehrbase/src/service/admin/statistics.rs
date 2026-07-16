@@ -38,7 +38,7 @@ impl EhrbaseService {
     /// `list_contributions`: the ids of all CONTRIBUTIONs of the named
     /// versioned-content service within the (optional) time range, ordered by
     /// commit time. A non-content service yields the empty list.
-    pub(super) async fn stat_list_contributions(
+    async fn stat_list_contributions(
         &self,
         service: PlatformService,
         lo: Option<String>,
@@ -64,7 +64,7 @@ impl EhrbaseService {
 
     /// `contribution_count`: the count of all CONTRIBUTIONs of the named service
     /// within the (optional) time range. A non-content service → 0.
-    pub(super) async fn stat_contribution_count(
+    async fn stat_contribution_count(
         &self,
         service: PlatformService,
         lo: Option<String>,
@@ -92,7 +92,7 @@ impl EhrbaseService {
     /// PORT NOTE (already-correct — `platform_service.adoc`; G-A5): COMPOSITIONs
     /// are EHR-scoped, so only `a_service = Ehr` yields a non-zero count; every
     /// other member → 0 (COMPOSITIONs are not in its scope).
-    pub(super) async fn stat_versioned_composition_count(
+    async fn stat_versioned_composition_count(
         &self,
         service: PlatformService,
         lo: Option<String>,
@@ -116,7 +116,7 @@ impl EhrbaseService {
     /// `composition_version_count`: the count of individual COMPOSITION version
     /// rows committed within the (optional) range. Scope gate as
     /// [`Self::stat_versioned_composition_count`].
-    pub(super) async fn stat_composition_version_count(
+    async fn stat_composition_version_count(
         &self,
         service: PlatformService,
         lo: Option<String>,

@@ -40,11 +40,6 @@ fn not_implemented(message: impl Into<String>) -> SmError {
 }
 
 impl EhrbaseService {
-    /// See the SM interface doc for this call (module doc cites the chapter).
-    ///
-    /// # Errors
-    /// Returns the SM call-status error ([`SmError`]-mapped at the
-    /// protocol adapter) for the failure conditions of this call.
     pub async fn get_frame(
         &self,
         subject_id: String,

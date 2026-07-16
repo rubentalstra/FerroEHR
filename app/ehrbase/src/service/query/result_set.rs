@@ -18,7 +18,7 @@ const RESULT_SET_SCHEMA_VERSION: &str = "1.0.3";
 /// Build the typed [`Params`] from the request's `query_parameters` map (values
 /// arrive as JSON scalars; complex values degrade to their JSON text — the
 /// documented widening on `AqlQueryRequest`).
-pub(super) fn build_params(request: &AqlQueryRequest) -> Params {
+fn build_params(request: &AqlQueryRequest) -> Params {
     let mut params = Params::new();
     for (name, value) in &request.parameters {
         params.insert(name.clone(), param_value(value));
@@ -57,7 +57,7 @@ static PARAM_REF: LazyLock<Regex> = LazyLock::new(|| {
 /// literal (embedded `'` doubled), `Int`/`Real`/`Bool` render as their literal
 /// form, `Null` as `NULL`; a `$name` with no binding is left verbatim (the
 /// engine already rejects an unbound parameter at planning time).
-pub(super) fn substitute_params(aql: &str, params: &Params) -> String {
+fn substitute_params(aql: &str, params: &Params) -> String {
     PARAM_REF
         .replace_all(aql, |caps: &regex::Captures<'_>| {
             match params.get(&caps[1]) {
@@ -91,7 +91,7 @@ fn render_param(value: &ParamValue) -> String {
 /// ITS-REST 1.0.3 `ResultSet` schema omits it; we emit it additively so the SM
 /// requirement is met without breaking the ITS-REST shape (an extra field a
 /// 1.0.3 client ignores).
-pub(super) fn result_set_json(
+fn result_set_json(
     aql: &str,
     executed: &str,
     name: Option<&str>,

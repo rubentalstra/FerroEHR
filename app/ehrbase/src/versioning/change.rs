@@ -74,7 +74,7 @@ impl Committed {
 /// `532|complete|`. `523|deleted|` is reserved to [`Change::Delete`]. Its
 /// legality against the preceding version's state is checked in [`apply_change`]
 /// (G-01).
-pub(crate) enum Change {
+enum Change {
     /// Create a new versioned object.
     Create {
         kind: Kind,
@@ -113,7 +113,7 @@ pub(crate) enum Change {
 
 impl Change {
     /// The versioned-object [`Kind`] this change writes.
-    pub(crate) fn kind(&self) -> Kind {
+    fn kind(&self) -> Kind {
         match *self {
             Change::Create { kind, .. }
             | Change::Modify { kind, .. }
@@ -125,22 +125,22 @@ impl Change {
 /// One `vo_version` row to insert (validity `[now, ∞)` for a live write; an
 /// explicit period for import). The write-side value contract to
 /// `crate::storage::version_repo`.
-pub(crate) struct NewVersionRow<'a> {
-    pub(crate) vo_id: Uuid,
-    pub(crate) kind: Kind,
-    pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) ordinal: i32,
-    pub(crate) tree: TreeId,
-    pub(crate) lifecycle_state: &'a str,
-    pub(crate) creating_system_id: &'a str,
+struct NewVersionRow<'a> {
+    vo_id: Uuid,
+    kind: Kind,
+    ehr_id: Option<Uuid>,
+    ordinal: i32,
+    tree: TreeId,
+    lifecycle_state: &'a str,
+    creating_system_id: &'a str,
     /// `ORIGINAL_VERSION.preceding_version_uid` (`None` for a first version).
-    pub(crate) preceding_version_uid: Option<&'a str>,
+    preceding_version_uid: Option<&'a str>,
     /// `ORIGINAL_VERSION.other_input_version_uids` (empty → stored NULL,
     /// `Is_merged_validity`).
-    pub(crate) other_input_version_uids: &'a [String],
-    pub(crate) contribution_id: Uuid,
-    pub(crate) audit_id: Uuid,
-    pub(crate) signature: Option<&'a str>,
+    other_input_version_uids: &'a [String],
+    contribution_id: Uuid,
+    audit_id: Uuid,
+    signature: Option<&'a str>,
 }
 
 impl NewVersionRow<'_> {
@@ -149,7 +149,7 @@ impl NewVersionRow<'_> {
 
     /// The imported-row analogue with an explicit `sys_period` `[lower, upper)`
     /// (master06 §Copying — the synthetic local period chain).
-    pub(crate) fn imported_row(
+    fn imported_row(
         &self,
         lower: jiff::Timestamp,
         upper: Option<jiff::Timestamp>,
@@ -179,17 +179,17 @@ impl NewVersionRow<'_> {
 /// The preceding lineage tip read for a tree-placement decision — mapped from
 /// the storage row (`crate::storage::version_repo::lineage_tip`).
 #[derive(Debug, Clone)]
-pub(crate) struct PrecedingTip {
-    pub(crate) ehr_id: Option<Uuid>,
-    pub(crate) kind: Kind,
-    pub(crate) ordinal: i32,
-    pub(crate) tree: TreeId,
-    pub(crate) creating_system_id: String,
+struct PrecedingTip {
+    ehr_id: Option<Uuid>,
+    kind: Kind,
+    ordinal: i32,
+    tree: TreeId,
+    creating_system_id: String,
     /// The preceding version's lifecycle state — the "from" state of the
     /// transition (G-01).
-    pub(crate) lifecycle_state: String,
+    lifecycle_state: String,
     /// Whether the tip is still open (`upper_inf(sys_period)`).
-    pub(crate) open: bool,
+    open: bool,
 }
 
 /// The resolved placement of a new version in the version tree.
@@ -692,14 +692,14 @@ async fn commit_resolved(
 /// signature, and accompanying attestations. `Default` = the plain server
 /// commit (532|complete|, server-signed, none).
 #[derive(Debug, Default)]
-pub(crate) struct WriteEnvelope {
+struct WriteEnvelope {
     /// `UPDATE_VERSION.lifecycle_state` (None → 532|complete|, G-01-checked).
-    pub(crate) lifecycle_state: Option<String>,
+    lifecycle_state: Option<String>,
     /// A client-supplied `VERSION.signature`, stored verbatim (master06
     /// §Digital Signature).
-    pub(crate) signature: Option<String>,
+    signature: Option<String>,
     /// `UPDATE_VERSION.attestations` committed with the version.
-    pub(crate) attestations: Vec<Value>,
+    attestations: Vec<Value>,
 }
 
 /// Write the one PHI-free event-outbox row a single-object commit announces,
@@ -727,7 +727,7 @@ async fn write_single_outbox(
 
 /// Create the first version of a new versioned object under its own
 /// contribution.
-pub(crate) async fn create(
+async fn create(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     kind: Kind,
@@ -761,7 +761,7 @@ pub(crate) async fn create(
 
 /// Commit a new version of an existing object under its own contribution.
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
-pub(crate) async fn update(
+async fn update(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
@@ -800,7 +800,7 @@ pub(crate) async fn update(
 
 /// Logically delete an object under its own contribution (master06 §Logical
 /// Deletion).
-pub(crate) async fn delete(
+async fn delete(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     vo_id: Uuid,
@@ -841,7 +841,7 @@ pub(crate) async fn delete(
 /// inherits them from the CONTRIBUTION audit (S-21) — realized by the callers
 /// building each version `AuditInput`; the attestation committer likewise
 /// defaults to the CONTRIBUTION committer here.
-pub(crate) async fn commit_contribution(
+async fn commit_contribution(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
     supplied_uid: Option<Uuid>,

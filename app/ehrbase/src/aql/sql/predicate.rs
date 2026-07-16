@@ -23,7 +23,7 @@ use super::{Builder, ValueMode};
 impl Builder<'_> {
     // ── WHERE ──────────────────────────────────────────────────────────────────
 
-    pub(super) fn build_where(&mut self) -> Result<(), AqlError> {
+    fn build_where(&mut self) -> Result<(), AqlError> {
         let Some(filter) = self.ir.filter.clone() else {
             return Ok(());
         };
@@ -32,7 +32,7 @@ impl Builder<'_> {
         Ok(())
     }
 
-    pub(super) fn where_expr(&mut self, expr: &IrExpr) -> Result<Expr, AqlError> {
+    fn where_expr(&mut self, expr: &IrExpr) -> Result<Expr, AqlError> {
         match expr {
             IrExpr::And(a, b) => Ok(self.where_expr(a)?.and(self.where_expr(b)?)),
             IrExpr::Or(a, b) => Ok(self.where_expr(a)?.or(self.where_expr(b)?)),
@@ -172,7 +172,7 @@ impl Builder<'_> {
     /// `PostgreSQL`. Arity was validated at lowering; argument typing follows each
     /// function's declared signature (string args extract as text, numeric args
     /// through the magnitude coercion).
-    pub(super) fn scalar_fn_expr(
+    fn scalar_fn_expr(
         &mut self,
         func: ScalarFn,
         args: &[Operand],
@@ -243,7 +243,7 @@ impl Builder<'_> {
         })
     }
 
-    pub(super) fn operand_value(
+    fn operand_value(
         &mut self,
         op: &Operand,
         coercion: Coercion,
@@ -272,7 +272,7 @@ impl Builder<'_> {
 
     // ── source / node predicates ───────────────────────────────────────────────
 
-    pub(super) fn archetype_cond(
+    fn archetype_cond(
         &self,
         node: &str,
         a: &ArchetypeConstraint,
@@ -284,7 +284,7 @@ impl Builder<'_> {
         Ok(archetype_predicate(node, &value))
     }
 
-    pub(super) fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
+    fn name_cond(&self, node: &str, n: &NameConstraint) -> Result<Expr, AqlError> {
         match n {
             NameConstraint::Value(s) => Ok(col(node, "name").eq(Expr::val(s.clone()))),
             NameConstraint::Param(p) => Ok(col(node, "name").eq(Expr::val(self.param_str(p)?))),
@@ -298,14 +298,14 @@ impl Builder<'_> {
         }
     }
 
-    pub(super) fn std_cond(&self, node: &str, sp: &StdPredicate) -> Result<Expr, AqlError> {
+    fn std_cond(&self, node: &str, sp: &StdPredicate) -> Result<Expr, AqlError> {
         let jp = jsonpath(&sp.path);
         let lhs = as_text(jsonb_path(col(node, "data"), &jp));
         let rhs = cast(Expr::val(self.bind_value(&sp.value)?), "text");
         Ok(lhs.binary(binoper(sp.op), rhs))
     }
 
-    pub(super) fn node_constraint_conds(
+    fn node_constraint_conds(
         &self,
         node: &str,
         c: &NodeConstraint,

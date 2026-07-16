@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 use crate::service::ServiceError;
 
 /// The openEHR internal terminology id (`Terminology_id_openehr`).
-pub(crate) const OPENEHR: &str = "openehr";
+const OPENEHR: &str = "openehr";
 
 /// The `audit_change_type` openEHR terminology group id.
 const AUDIT_CHANGE_TYPE: &str = "audit_change_type";
@@ -30,17 +30,17 @@ const AUDIT_CHANGE_TYPE: &str = "audit_change_type";
 /// conversion`, `253 unknown` (RM common master06 §Contributions); membership
 /// checks go through [`change_type_code`], so only the codes handled by name
 /// get a constant here.
-pub(crate) mod change_type {
+mod change_type {
     /// `249|creation|` — first version of a versioned object.
-    pub(crate) const CREATION: &str = "249";
+    const CREATION: &str = "249";
     /// `251|modification|` — a content change to an existing object.
-    pub(crate) const MODIFICATION: &str = "251";
+    const MODIFICATION: &str = "251";
     /// `523|deleted|` — a logical deletion.
-    pub(crate) const DELETED: &str = "523";
+    const DELETED: &str = "523";
     /// `666|attestation|` — attaches an `ATTESTATION` to an existing
     /// `ORIGINAL_VERSION` (adds no new version — RM common master06
     /// §Contributions; the contribution path's `Action::Attest`).
-    pub(crate) const ATTESTATION: &str = "666";
+    const ATTESTATION: &str = "666";
 }
 
 /// Resolve an inbound audit `change_type` token — either a numeric group code
@@ -48,7 +48,7 @@ pub(crate) mod change_type {
 /// `None` when the token is not a member of the `audit_change_type` group
 /// (RM common master04 `AUDIT_DETAILS.Change_type_valid` — callers must reject,
 /// never store, an out-of-group change type).
-pub(crate) fn change_type_code(token: &str) -> Option<String> {
+fn change_type_code(token: &str) -> Option<String> {
     let t = openehr();
     if t.is_valid_audit_change_type(token) {
         return Some(token.to_owned());
@@ -61,7 +61,7 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
 
 /// The rubric (English display text) for an `audit_change_type` code; falls
 /// back to the code itself if the code is unknown to the bundle.
-pub(crate) fn change_type_rubric(code: &str) -> String {
+fn change_type_rubric(code: &str) -> String {
     openehr()
         .rubric(AUDIT_CHANGE_TYPE, code, "en")
         .unwrap_or(code)
@@ -72,16 +72,16 @@ pub(crate) fn change_type_rubric(code: &str) -> String {
 /// attributes the service owns at write time (RM common master04 §Audit
 /// Details).
 #[derive(Debug, Clone)]
-pub(crate) struct AuditInput {
+struct AuditInput {
     /// `AUDIT_DETAILS.system_id` (1..1, non-empty — `System_id_valid`).
-    pub(crate) system_id: String,
+    system_id: String,
     /// The numeric `audit_change_type` group code (`249`/`251`/`523`/…) — never
     /// a rubric string (`AUDIT_DETAILS.Change_type_valid`).
-    pub(crate) change_type: String,
+    change_type: String,
     /// `AUDIT_DETAILS.description` (0..1).
-    pub(crate) description: Option<String>,
+    description: Option<String>,
     /// Canonical `PARTY_PROXY` of the committer (`AUDIT_DETAILS.committer`, 1..1).
-    pub(crate) committer: Value,
+    committer: Value,
 }
 
 impl AuditInput {
@@ -98,7 +98,7 @@ impl AuditInput {
     ///   already defaulted an absent committer to the authenticated
     ///   principal / system identity);
     /// - `system_id` — the caller's when supplied, else this server's.
-    pub(crate) fn from_update(
+    fn from_update(
         update: &crate::service::version_update::UpdateAudit,
         operation_change_type: &str,
         default_description: &str,
@@ -126,7 +126,7 @@ impl AuditInput {
 
     /// The borrowed storage row shape ([`crate::storage::version_repo::AuditRow`])
     /// this audit persists as.
-    pub(crate) fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {
+    fn row(&self) -> crate::storage::version_repo::AuditRow<'_> {
         crate::storage::version_repo::AuditRow {
             system_id: &self.system_id,
             change_type: &self.change_type,
@@ -141,7 +141,7 @@ impl AuditInput {
 /// emitted `DV_CODED_TEXT` carries the code as `defining_code.code_string`
 /// (RM common master04 `AUDIT_DETAILS.Change_type_valid`) and the group rubric
 /// — resolved from the `openehr-term` bundle — as its `value`.
-pub(crate) fn audit_details(
+fn audit_details(
     system_id: &str,
     change_type: &str,
     description: Option<&str>,
@@ -187,7 +187,7 @@ pub(crate) fn audit_details(
 ///   checked here.
 ///
 /// `change_type` is validated separately ([`change_type_code`]).
-pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
+fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
         return Err(ServiceError::Unprocessable(
             "AUDIT_DETAILS.system_id is mandatory and non-void \

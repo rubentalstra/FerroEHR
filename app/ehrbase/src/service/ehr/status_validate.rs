@@ -28,7 +28,7 @@ use crate::service::ServiceError;
 ///   NULL `external_ref` is permitted;
 /// - a present `other_details` is a concrete `ITEM_STRUCTURE` (RM ehr
 ///   `ehr_status.adoc` `other_details`; RM `data_structures` master04).
-pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
+fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(m);
     let obj = status
         .as_object()

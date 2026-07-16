@@ -34,7 +34,7 @@
 /// ASCII by grammar (§Archetype Identifiers), so ASCII case folding is exact and
 /// matches `PostgreSQL` `lower()` on the same values.
 #[must_use]
-pub(crate) fn canonical_key(id: &str) -> String {
+fn canonical_key(id: &str) -> String {
     id.trim().to_ascii_lowercase()
 }
 
