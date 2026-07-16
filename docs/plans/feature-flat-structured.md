@@ -1,16 +1,24 @@
-# Phase 17 — EhrScape + admin compatibility surface
+# Feature — FLAT + STRUCTURED interop depth (+ EhrScape compatibility)
 
-> **Rescoped (2026-07-06):** WebTemplate + FLAT (simSDT) + STRUCTURED (structSDT)
-> conversion moved into **P14** (built there, full Better parity). P17 now covers
-> only the **EhrScape (`/rest/ecis/v1/*`) + admin** compatibility endpoints in
-> `ehrbase-rest` (feature-gated `ehrscape` module — the `ehrbase-compat` crate was deleted 2026-07-09, ADR-010), reusing the `openehr-flat` converters P14 delivered.
->
-> **App-crate reality (ADR-011, 2026-07-09):** the application is three crates —
-> `app/{ehrbase, ehrbase-rest, ehrbase-sm}` (`ehrbase-audit`/`ehrbase-signing`
-> dissolved into `ehrbase::{system_log, signing}`; authz → `ehrbase-rest::access`).
-> EhrScape is the `ehrbase-rest::ehrscape` feature module.
+*Renamed from the old "phase 17" file (owner, 2026-07-16): this is a feature
+track, not a build phase.* Two halves:
 
-- Status: not-started (Stage-1 app build, step 9 of 13)
+1. **SIM-B/SDF transformation-rule audit** — verify the FLAT (simSDT) /
+   STRUCTURED (structSDT) converters in `openehr-flat` against the SM
+   simplified-format spec tables (`docs/specs/openehr/SM/docs/simplified_im_b/`
+   §Transformation Rules + the `ctx/` vocabulary), accept SDF-normative leaf
+   encodings, and document any deliberate quantity-encoding divergence.
+   Interop quality — not conformance-gated.
+2. **EhrScape (`/rest/ecis/v1/*`) + admin compatibility endpoints** in
+   `ehrbase-rest` (feature-gated `ehrscape` module), reusing the existing
+   `openehr-flat` converters.
+
+> App-crate reality (2026-07-16): the application is `app/{ehrbase,
+> ehrbase-rest, ehrbase-server}`; the REST adapter calls the concrete
+> `EhrbaseService` directly. EhrScape lands as the `ehrbase-rest::ehrscape`
+> feature module.
+
+- Status: not-started
 - Consumes: `openehr-flat` (WebTemplate/FLAT/STRUCTURED, P14), P15 (validation), P12 (service)
 - Compile required: yes (compiling, tested increment)
 - Decisions: ADR-006; serialization rule (Better semantics + `ehrbase-quirks` flag)

@@ -83,33 +83,35 @@ findings register: `w14-audit.md` §4/§5.
       every direct helper, `AuditInput::from_update` (ITS-REST committal
       MUST merge), lifecycle 553 relaxes validation, verbatim signature +
       attestations threaded on composition create/update + status update.
-- [~] S2 common types — RE-SCOPED (honest finding): `ResourceMeta` is
-      already a small typed struct (uid/ehr_id/last_modified), not JSON
-      digging — the write paths now return typed `Committed` (composition,
-      status, mutators) and further envelope retirement is wire-seam work in
-      S5; `CommitEnv` already lives in `versioning` (tracker error);
-      `service/mod.rs` split happens during convergence with compiler
-      feedback.
-- [ ] S3 chapter `ehr` — PARTIAL: F-4 done (one indexed EXISTS over the
-      promoted `template_id`), F-7 done (`ehr_summary_read`, one statement),
-      composition/status envelope threading done. OPEN: the wrapper/inner
-      `*_response` merges, directory envelope threading, DELETE-path
-      committal headers, real per-method docs, stale-comment scrub.
-- [ ] S4 chapters — PARTIAL: F-37 done (relationship writes respond from the
-      in-hand body). OPEN: party/relationship envelope threading, the
-      wrapper/inner merges and cleanup across demographic, definition,
-      query, terminology, admin, message, ehr_index, subject_proxy,
-      validity.
-- [ ] S5 THE CONVERGENCE (started 2026-07-16): compiler-driven — minimal
-      visibility re-adds (622 qualifiers stripped; each survivor is proven),
-      real per-method `# Errors`/docs where clippy demands, REST/test
-      call-site fixes for the typed results and renamed primitives,
-      `service/mod.rs` split, then full gates.
-      NOTE (2026-07-16): the strip-and-readd visibility experiment was
-      REVERTED — rustc emits no definition spans for E0624/E0616, so
-      error-driven re-adding cannot resolve private methods/fields. The
-      visibility rationalization ships in the polish wave with real tooling
-      (rust-analyzer-assisted or an unreachable-pub audit), not blind regex.
-- [ ] S6 gates: workspace clippy/nextest green, fmt, ECC **zero-drift vs
-      the B+C receipt**, register re-anchor pass (`w14-audit.md`
-      post-rewrite item), fresh benchmark pair at W-14 close.
+- [x] S2 common types — RE-SCOPED, then completed by the fleet: typed
+      `Committed` returns on every write path; `service/mod.rs` split
+      (owner-mandated `error.rs`; `commit_env.rs`; mod.rs = struct +
+      builders only).
+- [x] S3/S4 ALL chapters — completed by the per-folder fresh-rewrite fleet
+      (2026-07-16): 13 agents, one per folder (service chapters + versioning
+      + storage + extensions + system_log/telemetry + templates + validation
+      + db), each designing fresh files from the governing spec sections,
+      porting behaviour exactly (the S1 write-path fixes marked load-bearing
+      and verified ported), deleting the old files. Per-agent reports:
+      contracts held name-for-name; dead items deleted with justification;
+      suspected pre-existing defects reported not fixed → registered as
+      `w14-audit.md` §4k.
+- [x] S5 THE CONVERGENCE (2026-07-16): single pass — `ServiceError` →
+      `service::error` propagated to 50 consumers; **every re-export façade
+      dissolved across both app crates** (zero `pub use`; every import names
+      its defining module — the fleet had left ~25 façades); integration
+      tests repointed to external-crate paths; duplicate `delete_party`
+      resolved; unused imports removed (cargo fix); fmt; the whole workspace
+      compiles all targets.
+      NOTE: the earlier strip-and-readd visibility experiment stays
+      REVERTED (no definition spans for E0624/E0616); the fleet set
+      deliberate visibility per folder instead.
+- [ ] S6 gates: workspace clippy/nextest green, ECC **zero-drift vs the B+C
+      receipt (370·335·0)**, fresh benchmark pair at W-14 close. Register
+      refreshed 2026-07-16 (`w14-audit.md`: wave state + §4k fleet
+      findings + the issue #94/#95 plans).
+- [ ] S7 (owner 2026-07-16, parked on the agent rate limit): finish the
+      global tracker-ID comment scrub — no F-nn/S-nn/G-nn/W-nn/etc. anywhere
+      in code; only `docs/specs/openehr/` citations. Partial slice landed
+      (iden.rs, benchmark, conformance composition suite); six scrub agents
+      relaunch when the session limit resets.
