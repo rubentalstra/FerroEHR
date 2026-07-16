@@ -518,7 +518,8 @@ impl EhrbaseService {
         ensure_if_match(a_status.preceding_version_uid.as_ref(), Some(&latest))?;
         let if_match = a_status
             .preceding_version_uid
-            .map(|o| o.value)
+            .as_ref()
+            .map(|o| o.value.clone())
             .unwrap_or_default();
         Ok(self
             .commit_status(an_ehr_id, vo_id, a_status, &if_match)

@@ -178,6 +178,7 @@ async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: 
     )
     .await
     .unwrap_or_else(|e| panic!("create_composition ({name}, {magnitude}): {e:?}"))
+    .version_uid()
 }
 
 /// Commit a COMPOSITION whose content OBSERVATION carries `archetype` as its
@@ -197,6 +198,7 @@ async fn create_comp_arch(
     svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(c, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+        .version_uid()
 }
 
 /// Count the OBSERVATIONs in `ehr_id` matched by an archetype predicate.
@@ -658,7 +660,7 @@ async fn latest_versus_all_versions() {
                 uv(composition("v", magnitude), "251", Some(&current)),
             )
             .await
-            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}"));
+            .unwrap_or_else(|e| panic!("update_composition {magnitude}: {e:?}")).version_uid();
     }
 
     // LATEST_VERSION (the default) sees one version.
@@ -1213,6 +1215,7 @@ async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name:
     svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(body, "249", None))
         .await
         .unwrap_or_else(|e| panic!("create_composition ({name}): {e:?}"))
+        .version_uid()
 }
 
 /// P20 + F6, end to end against real PG 18: the patient-dashboard shape orders

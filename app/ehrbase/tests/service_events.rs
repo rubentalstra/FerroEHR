@@ -255,7 +255,7 @@ async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row
     // (a) A direct composition commit writes exactly one more row.
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("create_composition");
+        .expect("create_composition").version_uid();
     assert_eq!(
         total_count(&pool).await,
         after_ehr + 1,
@@ -321,7 +321,7 @@ async fn outbox_disabled_writes_no_rows() {
 
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("create_composition");
+        .expect("create_composition").version_uid();
     assert_eq!(
         total_count(&pool).await,
         0,
@@ -459,10 +459,10 @@ async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
     let ehr = create_ehr(&svc).await;
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("comp 1");
+        .expect("comp 1").version_uid();
     svc.create_composition(ehr, uv(composition("v2"), "249"))
         .await
-        .expect("comp 2");
+        .expect("comp 2").version_uid();
     let committed = total_count(&pool).await;
     assert_eq!(committed, 3);
 

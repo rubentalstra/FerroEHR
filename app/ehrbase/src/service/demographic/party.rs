@@ -67,14 +67,14 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         body: Value,
-        update: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         validate_party_body(kind, &body)?;
 
         // The caller's UPDATE_VERSION audit attributes merge with the server
         // rules (ITS-REST committal MUST); the wire party seam passes them
         // when the request carried committal headers.
-        let audit = match update {
+        let audit = match update_audit {
             Some(u) => crate::versioning::AuditInput::from_update(
                 u,
                 change_type::CREATION,
@@ -171,13 +171,13 @@ impl EhrbaseService {
         vo_id: Uuid,
         body: Value,
         expected: Option<TreeId>,
-        update: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_update(current, body, expected, update).await
+        self.commit_party_update(current, body, expected, update_audit).await
     }
 
     /// Commit a new version of an already-resolved party. `current` is the lean
@@ -191,7 +191,7 @@ impl EhrbaseService {
         current: CurrentParty,
         body: Value,
         expected: Option<TreeId>,
-        update: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let kind = current.kind;
         if current.deleted {
@@ -203,7 +203,7 @@ impl EhrbaseService {
         }
         validate_party_body(kind, &body)?;
 
-        let audit = match update {
+        let audit = match update_audit {
             Some(u) => crate::versioning::AuditInput::from_update(
                 u,
                 change_type::MODIFICATION,
@@ -256,13 +256,13 @@ impl EhrbaseService {
         kind: PartyKind,
         vo_id: Uuid,
         expected: Option<TreeId>,
-        update: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         let current = self
             .party_current(kind, vo_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        self.commit_party_delete(current, expected, update).await
+        self.commit_party_delete(current, expected, update_audit).await
     }
 
     /// Commit the logical delete of an already-resolved party (see
@@ -272,7 +272,7 @@ impl EhrbaseService {
         &self,
         current: CurrentParty,
         expected: Option<TreeId>,
-        update: Option<&crate::service::version_update::UpdateAudit>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
             return Err(ServiceError::BadRequest(format!(
@@ -290,7 +290,7 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = match update {
+        let audit = match update_audit {
             Some(u) => crate::versioning::AuditInput::from_update(
                 u,
                 change_type::DELETED,

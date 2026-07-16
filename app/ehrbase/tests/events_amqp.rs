@@ -296,7 +296,7 @@ async fn end_to_end_publish_and_consume() {
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("create_composition");
+        .expect("create_composition").version_uid();
 
     // Start the real publisher; it drains + publishes to the broker.
     let handle = start(events_config(url), pool.clone());
@@ -340,7 +340,7 @@ async fn broker_down_then_up_delivers_without_loss() {
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("create_composition");
+        .expect("create_composition").version_uid();
     let committed = pending_count(&pool).await;
     assert_eq!(committed, 2, "EHR creation + composition ⇒ two rows");
     // Per-version fan-out: EHR creation commits
@@ -417,7 +417,7 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     let ehr = svc.create_ehr(None).await.expect("create_ehr");
     svc.create_composition(ehr, uv(composition("v1"), "249"))
         .await
-        .expect("create_composition");
+        .expect("create_composition").version_uid();
     let expected_all = version_count(&pool).await; // 3 per-version messages
 
     // Start the publisher: each cycle re-syncs (declares/binds) the subscription

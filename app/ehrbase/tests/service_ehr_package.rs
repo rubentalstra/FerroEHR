@@ -140,7 +140,7 @@ async fn versioned_composition_cannot_switch_archetype() {
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
         .await
-        .expect("v1");
+        .expect("v1").version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
@@ -169,7 +169,7 @@ async fn versioned_composition_cannot_switch_archetype() {
         uv(composition(ENCOUNTER, "433", "event"), "251", Some(&v1)),
     )
     .await
-    .expect("same-archetype update");
+    .expect("same-archetype update").version_uid();
 }
 
 /// `VERSIONED_COMPOSITION.Persistent_validity`: flipping the category between
@@ -182,7 +182,7 @@ async fn versioned_composition_cannot_flip_persistence() {
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
         .await
-        .expect("v1");
+        .expect("v1").version_uid();
     let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
@@ -224,7 +224,7 @@ async fn tag_targets_must_be_within_the_same_ehr() {
             uv(composition(ENCOUNTER, "433", "event"), "249", None),
         )
         .await
-        .expect("composition in A");
+        .expect("composition in A").version_uid();
     let vo_a: Uuid = v1.split("::").next().unwrap().parse().unwrap();
 
     let tag = json!([{ "key": "clin-proj-27a" }]);

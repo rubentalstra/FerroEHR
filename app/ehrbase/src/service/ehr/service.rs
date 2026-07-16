@@ -314,16 +314,6 @@ impl EhrbaseService {
         })
     }
 
-    /// The LIVE folder hierarchies of an EHR in `rank` order — the members of
-    /// `EHR.folders` (RM ehr, EHR class `Folders_valid`; RM ehr master04
-    /// §Folders). "Live" = the current trunk version exists and is not logically
-    /// deleted (lifecycle `523`). Empty when the EHR indexes no live hierarchy.
-    pub(in crate::service) async fn live_folder_hierarchies(
-        &self,
-        ehr_id: Uuid,
-    ) -> Result<Vec<Uuid>, ServiceError> {
-        Ok(ehr_repo::live_folder_hierarchies(&self.pool, ehr_id).await?)
-    }
 }
 
 /// The default `EHR_STATUS` for a new EHR (queryable, modifiable, `PARTY_SELF`).

@@ -222,10 +222,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     assert!(
         matches!(
             stale,
-            Err(SmError {
-                status: CallStatusType::VersionMismatch,
-                ..
-            })
+            Err(ServiceError::VersionConflict(_))
         ),
         "stale update must 412, got {stale:?}"
     );
@@ -258,7 +255,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let comp_ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("Encounter"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create").version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
     let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
 
@@ -275,7 +272,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
             uv(composition("Encounter v2"), "251", Some(&comp_ovid_v1)),
         )
         .await
-        .expect("composition_update");
+        .expect("composition_update").version_uid();
     assert!(comp_ovid_v2.ends_with("::2"));
 
     // current is v2; the pinned OBJECT_VERSION_ID still returns v1
@@ -349,10 +346,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     assert!(
         matches!(
             stale_delete,
-            Err(SmError {
-                status: CallStatusType::CompositionAlreadyExists,
-                ..
-            })
+            Err(ServiceError::Conflict(_))
         ),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
@@ -366,7 +360,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let deleted = svc
         .delete_composition(ehr_uuid, comp_ovid_v2.parse().expect("ovid"))
         .await
-        .expect("composition_delete");
+        .expect("composition_delete").version_uid();
     assert!(
         deleted.ends_with("::3"),
         "delete names the new (deleted) version, got {deleted}"
@@ -456,7 +450,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     let comp_ovid = svc
         .create_composition(ehr_uuid, uv(composition("Active"), "249", None))
         .await
-        .expect("composition while active");
+        .expect("composition while active").version_uid();
     let comp_vo = comp_ovid
         .split("::")
         .next()
@@ -571,7 +565,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     // Reactivated → content writes work again.
     svc.create_composition(ehr_uuid, uv(composition("Reactivated"), "249", None))
         .await
-        .expect("content writes resume once reactivated");
+        .expect("content writes resume once reactivated").version_uid();
 }
 
 #[tokio::test]
@@ -877,7 +871,7 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
 
     svc.create_composition(ehr_uuid, uv(composition("valid"), "249", None))
         .await
-        .expect("a valid templateless composition still commits");
+        .expect("a valid templateless composition still commits").version_uid();
 }
 
 #[tokio::test]
@@ -1119,7 +1113,7 @@ async fn item_tag_crud() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition").version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let upserted = svc
@@ -1168,7 +1162,7 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition").version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let put = svc
@@ -1218,7 +1212,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition").version_uid();
     let vo_id = comp.split("::").next().unwrap().to_owned();
 
     let two = svc
@@ -1421,7 +1415,7 @@ async fn version_get_at_time_returns_the_original_version() {
     let comp_ovid_v1 = svc
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
-        .expect("composition");
+        .expect("composition").version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
     let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
     svc.update_composition(
@@ -1430,7 +1424,7 @@ async fn version_get_at_time_returns_the_original_version() {
         uv(composition("v2"), "251", Some(&comp_ovid_v1)),
     )
     .await
-    .expect("update");
+    .expect("update").version_uid();
 
     let comp_version = svc
         .composition_version_at_time(ehr_uuid, comp_vo_uuid, None)
@@ -1702,7 +1696,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     let comp_ovid = svc
         .create_composition(ehr_uuid, uv(composition("Uri target"), "249", None))
         .await
-        .expect("composition_create");
+        .expect("composition_create").version_uid();
     let comp_vo = comp_ovid.split("::").next().unwrap();
 
     // Latest-trunk form: ehr:/{ehr_id}/compositions/{vo_id}.
@@ -1837,7 +1831,7 @@ async fn ehr_status_discrete_mutators() {
     // Reactivated: content writes now succeed.
     svc.create_composition(ehr_uuid, uv(composition("allowed"), "249", None))
         .await
-        .expect("content write after reactivation");
+        .expect("content write after reactivation").version_uid();
 
     // update_other_details replaces the ITEM_TREE.
     let details = json!({

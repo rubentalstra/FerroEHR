@@ -226,10 +226,3 @@ impl EhrbaseService {
     }
 }
 
-/// The `OBJECT_VERSION_ID` of a committed COMPOSITION response.
-fn version_uid(resp: &ServiceResponse) -> Result<String, SmError> {
-    resp.meta
-        .as_ref()
-        .map(|m| m.uid.clone())
-        .ok_or_else(|| SmError::exception("committed COMPOSITION carried no version id"))
-}
