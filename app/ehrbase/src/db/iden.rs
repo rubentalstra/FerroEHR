@@ -150,7 +150,7 @@ pub enum ItemTag {
     CreatedAt,
 }
 
-/// `archetype_store` — SM-2 ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
+/// `archetype_store` — ADL 1.4 source archetypes (`I_DEFINITION_ADL14`).
 #[derive(Debug, Clone, Copy, sea_query::Iden)]
 pub enum ArchetypeStore {
     #[iden = "archetype_store"]

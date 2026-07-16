@@ -56,7 +56,7 @@ pub const PATIENT_AQL: &str = "SELECT c/uid/value, c/name/value, \
      ORDER BY c/context/start_time/value DESC LIMIT 20";
 
 /// Ward-population AQL (E8): no `ehr_id` filter, ORDER BY + LIMIT — the ECC
-/// `AqlAdvanced` (G-2) form, accepted by both engines.
+/// `AqlAdvanced` form, accepted by both engines.
 pub const WARD_AQL: &str = "SELECT e/ehr_id/value FROM EHR e ORDER BY e/ehr_id/value ASC LIMIT 50";
 
 /// Diurnal-curve resolution (5-minute buckets over the compressed day).

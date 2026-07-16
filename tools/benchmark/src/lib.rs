@@ -1,4 +1,4 @@
-//! The hospital-day stress instrument (W-11 rewrite).
+//! The hospital-day stress instrument.
 //!
 //! Implements the pre-registered workload of
 //! `docs/design/benchmark/00-workload-model.md` and the measurement set of
