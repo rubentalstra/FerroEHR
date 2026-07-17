@@ -43,7 +43,6 @@ use std::collections::HashMap;
 
 use sea_query::{Alias, PostgresQueryBuilder, Query, SelectStatement, Value};
 use sea_query_sqlx::{SqlxBinder as _, SqlxValues};
-use uuid::Uuid;
 
 use super::error::{AqlError, SqlError};
 use super::ir::{Bind, Coercion, ParamValue, Params, QueryIr};

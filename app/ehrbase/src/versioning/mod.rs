@@ -211,7 +211,7 @@ pub(crate) trait CommitEnv {
         &self,
         ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, i32)>, ServiceError>;
+    ) -> Result<Option<(VoId, i32)>, ServiceError>;
     /// Drop the cached `EHR_ACCESS` settings after an `EHR_ACCESS` commit.
     async fn invalidate_ehr_access(&self, ehr_id: EhrId);
     /// Whether the EHR already holds a LIVE folder hierarchy whose root

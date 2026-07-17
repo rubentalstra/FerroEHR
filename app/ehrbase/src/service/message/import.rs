@@ -43,7 +43,7 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::ids::EhrId;
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
@@ -78,7 +78,7 @@ impl EhrbaseService {
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr(
         &self,
-        an_ehr_id: Option<Uuid>,
+        an_ehr_id: Option<EhrId>,
         an_extract: Extract,
     ) -> Result<(), SmError> {
         let (containers, parties) = parse_import_containers(&an_extract)?;
@@ -242,7 +242,7 @@ fn kind_from_x_versioned(xtype: &str) -> Option<Kind> {
 /// The source EHR id an `import_ehr` clone reuses when no fixed id is given —
 /// `EXTRACT_SPEC.manifest.entities[0].ehr_id` (a whole-EHR export always names
 /// it). master06 §Copying Case 1.
-fn source_ehr_id(extract: &Extract) -> Result<Uuid, SmError> {
+fn source_ehr_id(extract: &Extract) -> Result<EhrId, SmError> {
     let raw = extract
         .specification
         .as_ref()
@@ -288,8 +288,8 @@ fn parse_import_containers(
 ) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
     let value = serde_json::to_value(extract).map_err(ServiceError::from)?;
     let empty: Vec<Value> = Vec::new();
-    let mut by_container: BTreeMap<Uuid, ImportContainer> = BTreeMap::new();
-    let mut parties: BTreeMap<Uuid, ImportContainer> = BTreeMap::new();
+    let mut by_container: BTreeMap<VoId, ImportContainer> = BTreeMap::new();
+    let mut parties: BTreeMap<VoId, ImportContainer> = BTreeMap::new();
 
     for chapter in value
         .get("chapters")
@@ -434,7 +434,7 @@ fn parse_import_containers(
 /// is never modified"; `ehr_extract` master05
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
 #[allow(clippy::too_many_lines)] // the ORIGINAL_VERSION field-by-field parse
-fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> {
+fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
     // A member typed anything other than ORIGINAL_VERSION (e.g. an
     // already-wrapped IMPORTED_VERSION) is invalid — the received instance "is
     // never modified" and is re-wrapped as IMPORTED_VERSION by the importer
@@ -453,6 +453,8 @@ fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> 
         .and_then(Value::as_str)
         .ok_or_else(|| SmError::precondition("imported ORIGINAL_VERSION has no uid.value"))?;
     let (vo_id, creating_system_id, tree) = parse_object_version_id(uid)?;
+    // The imported `ORIGINAL_VERSION.uid.object_id` names a versioned object.
+    let vo_id = VoId(vo_id);
     // preceding_version_uid + other_input_version_uids preserved verbatim
     // (master06 §Copying / §Version Merging).
     let preceding_version_uid = ov

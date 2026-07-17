@@ -14,7 +14,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::{audit_details, change_type};
@@ -48,7 +48,7 @@ pub(crate) struct PendingAttest {
 #[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
 pub(crate) async fn attest(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     vo_id: VoId,
     kind: Kind,
     expected: TreeId,

@@ -34,7 +34,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::error::ServiceError;
@@ -212,10 +212,10 @@ impl EhrbaseService {
     }
 
     /// Resolve-or-create the EHR whose `EHR_STATUS.subject` matches `subject`.
-    async fn ensure_ehr_for_subject(&self, subject: SubjectRef) -> Result<Uuid, SmError> {
+    async fn ensure_ehr_for_subject(&self, subject: SubjectRef) -> Result<EhrId, SmError> {
         let existing = self.get_ehrs_for_subject(subject.clone()).await?;
         if let Some(summary) = existing.first() {
-            return Uuid::parse_str(&summary.ehr_id).map_err(|e| {
+            return Uuid::parse_str(&summary.ehr_id).map(EhrId).map_err(|e| {
                 SmError::new(
                     CallStatusType::Exception,
                     format!("stored ehr id invalid: {e}"),
@@ -320,7 +320,7 @@ impl EhrbaseService {
                 };
                 let mut parts = uid.split("::");
                 let (Some(vo_id), _system, Some(sys_version)) = (
-                    parts.next().and_then(|s| Uuid::parse_str(s).ok()),
+                    parts.next().and_then(|s| Uuid::parse_str(s).ok()).map(VoId),
                     parts.next(),
                     parts.next().and_then(|v| v.parse::<i32>().ok()),
                 ) else {

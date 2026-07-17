@@ -24,7 +24,7 @@ use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::ids::EhrId;
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
@@ -81,11 +81,11 @@ impl EhrbaseService {
             )));
         }
         // A relative URI (no ehr_id) carries no EHR context to resolve against.
-        let ehr_id = uri.ehr_id.ok_or_else(|| {
+        let ehr_id = EhrId(uri.ehr_id.ok_or_else(|| {
             ServiceError::BadRequest(
                 "relative ehr: URI (no ehr_id) has no EHR context to resolve against".to_owned(),
             )
-        })?;
+        })?);
         self.ensure_ehr_exists(ehr_id).await?;
 
         // A bare `ehr:/ehr_id` "refers to an EHR" (master11 §"EHR Location") —
@@ -178,13 +178,14 @@ impl EhrbaseService {
 /// Decode a versioned-object reference into the storage key pair (`vo_id`,
 /// optional exact version). A bare uid → latest trunk (version `None`); an
 /// exact `OBJECT_VERSION_ID` → its [`TreeId`].
-fn resolve_object_ref(object: &VersionLocator) -> Result<(Uuid, Option<TreeId>), ServiceError> {
+fn resolve_object_ref(object: &VersionLocator) -> Result<(VoId, Option<TreeId>), ServiceError> {
     match object {
         VersionLocator::VersionedObject(uid) => {
             let vo_id = Uuid::parse_str(uid).map_err(|_| {
                 ServiceError::BadRequest(format!("ehr: locator uid {uid:?} is not a UUID"))
             })?;
-            Ok((vo_id, None))
+            // A locator uid names a versioned object.
+            Ok((VoId(vo_id), None))
         }
         VersionLocator::Version(ovid) => {
             let (vo_id, tree) = components(ovid)?;

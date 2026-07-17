@@ -35,7 +35,10 @@ impl EhrbaseService {
     ///   (`ehr_id_does_not_exist`); nothing is archived.
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn archive_ehrs(&self, ehr_ids: Vec<String>) -> Result<(), SmError> {
-        let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
+        let ids: Vec<EhrId> = super::parse_uuid_list(&ehr_ids, "EHR")?
+            .into_iter()
+            .map(EhrId)
+            .collect();
         Ok(self.mark_ehr_vos_archived(&ids).await?)
     }
 

@@ -12,7 +12,7 @@
 
 use uuid::Uuid;
 
-use crate::ids::EhrId;
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
@@ -27,7 +27,9 @@ impl EhrbaseService {
     ///   (`has_ehr` false → `ehr_id_does_not_exist`).
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
-        Ok(self.delete_ehr(super::parse_uuid(&ehr_id, "EHR")?).await?)
+        Ok(self
+            .delete_ehr(EhrId(super::parse_uuid(&ehr_id, "EHR")?))
+            .await?)
     }
 
     /// The `admin_ehr_delete_all` extension: physically delete a set of EHRs
@@ -41,7 +43,10 @@ impl EhrbaseService {
     ///   (the whole bulk request is rejected before any deletion runs).
     /// - `exception` — a database fault while deleting.
     pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
-        let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
+        let ids: Vec<EhrId> = super::parse_uuid_list(&ehr_ids, "EHR")?
+            .into_iter()
+            .map(EhrId)
+            .collect();
         Ok(self.delete_ehr_set(&ids).await?)
     }
 
@@ -57,7 +62,7 @@ impl EhrbaseService {
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self
-            .physical_delete_party(super::parse_uuid(&a_party_id, "party")?)
+            .physical_delete_party(VoId(super::parse_uuid(&a_party_id, "party")?))
             .await?)
     }
 
@@ -145,7 +150,7 @@ impl EhrbaseService {
         const CHUNK: usize = 128;
         // An empty selector = the full EHR set (see `admin_ehr_delete_all`); a
         // non-empty selector deletes exactly the named EHRs.
-        let targets: Vec<Uuid> = if ehr_ids.is_empty() {
+        let targets: Vec<EhrId> = if ehr_ids.is_empty() {
             sqlx::query_scalar("SELECT id FROM ehr")
                 .fetch_all(&self.pool)
                 .await?
@@ -306,7 +311,7 @@ impl EhrbaseService {
         // not LOCATABLE children), so their `id.value` — the party's
         // versioned-object id — is matched with a jsonb path extraction.
         let party_txt = party_id.to_string();
-        let rel_ids: Vec<Uuid> = sqlx::query_scalar(
+        let rel_ids: Vec<VoId> = sqlx::query_scalar(
             "SELECT DISTINCT n.vo_id FROM node n \
              JOIN vo_version v ON v.vo_id = n.vo_id AND v.sys_version = n.sys_version \
              WHERE v.kind = 'PARTY_RELATIONSHIP' \

@@ -396,7 +396,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
     /// the subject already owns an EHR (409-equivalent), or storage fails.
-    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
+    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<EhrId, SmError> {
         // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
         // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
         // the id-only create paths. `POST /ehr` intentionally accepts a
@@ -422,7 +422,7 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<EhrId, SmError> {
         // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
         self.commit_new_ehr(an_ehr_id, status).await?;
@@ -439,7 +439,7 @@ impl EhrbaseService {
         &self,
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<EhrId, SmError> {
         let ehr_id = EhrId::new();
         let status = status_for_subject(
             an_ehr_status.unwrap_or_else(default_ehr_status),
@@ -460,7 +460,7 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<EhrId, SmError> {
         let status = status_for_subject(
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
@@ -500,6 +500,7 @@ impl EhrbaseService {
                     .pointer("/ehr_id/value")
                     .and_then(Value::as_str)
                     .and_then(|v| Uuid::parse_str(v).ok())
+                    .map(EhrId)
                     .ok_or_else(|| SmError::exception("EHR body carries no ehr_id"))?;
                 Ok(vec![self.summarize_ehr(ehr_id).await?])
             }

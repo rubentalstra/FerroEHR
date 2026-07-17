@@ -194,9 +194,10 @@ pub(crate) fn parse_tree_id(raw: &str) -> Result<TreeId, VersionIdError> {
 
 /// Parse a full `OBJECT_VERSION_ID` (`{object_id}::{creating_system_id}::{version_tree_id}`)
 /// into the storage key pair (`vo_id`, [`TreeId`]).
-pub(crate) fn parse_version_uid(raw: &str) -> Result<(Uuid, TreeId), VersionIdError> {
+pub(crate) fn parse_version_uid(raw: &str) -> Result<(VoId, TreeId), VersionIdError> {
     let (vo_id, _, tree) = parse_object_version_id(raw)?;
-    Ok((vo_id, tree))
+    // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
+    Ok((VoId(vo_id), tree))
 }
 
 /// Parse a full `OBJECT_VERSION_ID` into all three components:
@@ -224,25 +225,27 @@ pub(crate) fn parse_object_version_id(raw: &str) -> Result<(Uuid, String, TreeId
 
 /// Decompose an already-parsed [`ObjectVersionId`] (the SM catalog's native
 /// version-id argument) into the storage key pair (`vo_id`, [`TreeId`]).
-pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(Uuid, TreeId), VersionIdError> {
+pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(VoId, TreeId), VersionIdError> {
     let raw = ovid.value.clone();
     let Uid::Uuid(object_id) = ovid.object_id() else {
         return Err(VersionIdError::NotAUuid(raw));
     };
     let tree = TreeId::from_version_tree(&ovid.version_tree_id(), &raw)?;
-    Ok((object_id.value, tree))
+    // The `object_id` of an `OBJECT_VERSION_ID` is a versioned-object id.
+    Ok((VoId(object_id.value), tree))
 }
 
 /// Parse a `uid_based_id`/`versioned_object_uid` path parameter: either a bare
 /// `HIER_OBJECT_ID` (a UUID, → no version) or a full `OBJECT_VERSION_ID`
 /// (strict three-part, → its [`TreeId`]).
-pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(Uuid, Option<TreeId>), VersionIdError> {
+pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(VoId, Option<TreeId>), VersionIdError> {
     if raw.contains("::") {
         let (vo_id, tree) = parse_version_uid(raw)?;
         Ok((vo_id, Some(tree)))
     } else {
         let vo_id = Uuid::parse_str(raw).map_err(|_| VersionIdError::NotAUuid(raw.to_owned()))?;
-        Ok((vo_id, None))
+        // A bare UID-based id names a versioned object.
+        Ok((VoId(vo_id), None))
     }
 }
 
@@ -308,7 +311,7 @@ mod tests {
     fn version_uid_strict_three_part() {
         let raw = format!("{VO}::ehrbase-rs.local::3");
         let (vo_id, tree) = parse_version_uid(&raw).unwrap();
-        assert_eq!(vo_id, Uuid::parse_str(VO).unwrap());
+        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
         assert_eq!(tree, TreeId::trunk(3));
 
         // Two parts (the old `rsplit`/`nth(1)` splitters disagreed here).
@@ -342,7 +345,7 @@ mod tests {
         assert_eq!(csid, "sourceSystem.example.org");
         assert_eq!(tree, TreeId::trunk(4));
         // Round-trips through the wire formatter.
-        assert_eq!(object_version_id(vo_id, &csid, tree), raw);
+        assert_eq!(object_version_id(VoId(vo_id), &csid, tree), raw);
 
         assert!(matches!(
             parse_object_version_id("not-a-uuid::sys::1"),
@@ -356,7 +359,7 @@ mod tests {
     #[test]
     fn branch_ids_are_first_class() {
         let (vo_id, tree) = parse_version_uid(&format!("{VO}::sys::2.1.4")).unwrap();
-        assert_eq!(vo_id, Uuid::parse_str(VO).unwrap());
+        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
         assert_eq!(tree, TreeId::branch(2, 1, 4));
         assert_eq!(tree.columns(), (2, 1, 4));
         assert_eq!(tree.to_string(), "2.1.4");
@@ -371,11 +374,11 @@ mod tests {
     #[test]
     fn uid_based_id_accepts_bare_hier_object_id() {
         let (vo_id, version) = parse_uid_based_id(VO).unwrap();
-        assert_eq!(vo_id, Uuid::parse_str(VO).unwrap());
+        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
         assert_eq!(version, None);
 
         let (vo_id, version) = parse_uid_based_id(&format!("{VO}::sys::2")).unwrap();
-        assert_eq!(vo_id, Uuid::parse_str(VO).unwrap());
+        assert_eq!(vo_id, VoId(Uuid::parse_str(VO).unwrap()));
         assert_eq!(version, Some(TreeId::trunk(2)));
 
         // A `::`-carrying id must be a *valid* OBJECT_VERSION_ID.

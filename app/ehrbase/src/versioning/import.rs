@@ -44,7 +44,7 @@ struct ContainerState {
     /// The stored kind, if the `vo_id` already exists.
     kind: Option<Kind>,
     /// The owning EHR of the existing container.
-    owner: Option<Uuid>,
+    owner: Option<EhrId>,
     /// The highest trunk version currently held.
     max_trunk: i32,
     /// The highest storage ordinal currently held.
@@ -195,7 +195,7 @@ pub(crate) async fn commit_demographic_import(
 #[allow(clippy::too_many_lines)] // one linear import transaction; splitting would obscure the replay order
 async fn commit_import_scoped(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
     skip_existing: bool,

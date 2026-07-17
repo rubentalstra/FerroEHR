@@ -121,7 +121,7 @@ pub(in crate::service) fn default_ehr_access() -> Value {
 /// cache (mirroring `openehr_flat::cache::WebTemplateCache`).
 #[derive(Debug, Clone)]
 pub(in crate::service) struct EhrAccessCache {
-    inner: Cache<Uuid, Arc<Option<EhrAccessSettings>>>,
+    inner: Cache<EhrId, Arc<Option<EhrAccessSettings>>>,
 }
 
 impl EhrAccessCache {

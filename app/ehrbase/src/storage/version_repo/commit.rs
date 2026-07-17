@@ -39,7 +39,7 @@ pub struct AuditRow<'a> {
 pub struct VersionRow<'a> {
     pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
     pub trunk_version: i32,
@@ -144,7 +144,7 @@ pub async fn insert_audit_at(
 /// [`write_contribution`].)
 pub async fn insert_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     audit_id: Uuid,
 ) -> Result<Uuid, StorageError> {
     let inserted: Option<Uuid> = sqlx::query_scalar(
@@ -186,7 +186,7 @@ pub async fn insert_contribution(
 /// else [`StorageError::Database`] on a driver/insert failure.
 pub async fn write_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     audit: &AuditRow<'_>,
     supplied: Option<Uuid>,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
@@ -262,7 +262,7 @@ pub async fn close_ordinal_at_now(
 pub struct FoldedVersion<'a> {
     pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub sys_version: i32,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -458,7 +458,7 @@ pub async fn insert_ehr_folder_rank(
 pub async fn write_outbox(
     tx: &mut PgConnection,
     contribution_id: Uuid,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     committed_at: jiff::Timestamp,
     versions: Vec<Value>,
 ) -> Result<(), StorageError> {

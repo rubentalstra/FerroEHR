@@ -286,7 +286,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn ehr_status_meta_with_vo(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(VoId, ResourceMeta)>, ServiceError> {
         self.latest_version_meta_with_vo(ehr_id, Kind::EhrStatus)
             .await
     }
@@ -461,7 +461,7 @@ impl EhrbaseService {
     pub async fn has_ehr_status_version(
         &self,
         an_ehr_id: EhrId,
-        a_version_uid: Uuid,
+        a_version_uid: VoId,
     ) -> Result<bool, SmError> {
         // An EHR holds exactly one EHR_STATUS versioned object; the version
         // exists iff that object's `vo_id` matches.
@@ -505,7 +505,7 @@ impl EhrbaseService {
     pub async fn get_ehr_status_at_version(
         &self,
         an_ehr_id: EhrId,
-        a_version_uid: Uuid,
+        a_version_uid: VoId,
         a_version: &str,
     ) -> Result<Value, SmError> {
         let tree = parse_tree_id(a_version)?;
@@ -683,7 +683,7 @@ impl EhrbaseService {
     pub async fn ehr_status_original_version(
         &self,
         an_ehr_id: EhrId,
-        a_version_uid: Uuid,
+        a_version_uid: VoId,
         a_version: &str,
     ) -> Result<Value, SmError> {
         let tree = parse_tree_id(a_version)?;

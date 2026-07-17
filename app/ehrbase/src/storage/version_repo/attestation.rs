@@ -10,7 +10,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
 /// Insert one `ATTESTATION` row for a version (master06 §Attestation). Stores
@@ -45,7 +45,7 @@ pub async fn insert_attestation(
 /// version's owner, ordinal and `creating_system_id`.
 #[derive(Debug, Clone)]
 pub struct AttestTargetRow {
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub sys_version: i32,
     pub creating_system_id: String,
 }

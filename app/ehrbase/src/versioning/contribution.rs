@@ -170,7 +170,7 @@ fn classify(
 struct PlannedVersion {
     action: Action,
     /// The parsed `preceding_version_uid` target (modify/delete/attest).
-    target: Option<(Uuid, TreeId)>,
+    target: Option<(VoId, TreeId)>,
     /// `data` (`null` ≙ absent — the deleted-version shape).
     data: Option<Value>,
     audit: AuditInput,
@@ -206,7 +206,7 @@ struct PlannedVersion {
 #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
 pub(crate) async fn commit_version_set(
     cx: &impl CommitEnv,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     body: &Value,
     party_only: bool,
 ) -> Result<Uuid, ServiceError> {
@@ -337,13 +337,13 @@ pub(crate) async fn commit_version_set(
     }
 
     // ── ONE batched target read ────────────────────────────────────────────
-    let mut target_ids: Vec<Uuid> = plan
+    let mut target_ids: Vec<VoId> = plan
         .iter()
         .filter_map(|v| v.target.map(|(vo_id, _)| vo_id))
         .collect();
     target_ids.sort_unstable();
     target_ids.dedup();
-    let target_kinds: std::collections::HashMap<Uuid, Kind> =
+    let target_kinds: std::collections::HashMap<VoId, Kind> =
         crate::storage::version_repo::meta::object_kinds(cx.pool(), &target_ids)
             .await
             .map_err(ServiceError::from)?
@@ -744,7 +744,7 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 /// # Errors
 /// [`ServiceError::Unprocessable`] when absent/`null` on a modify/delete/attest
 /// item, or when the value is not a valid `OBJECT_VERSION_ID`.
-fn parse_preceding(version: &Value) -> Result<(Uuid, TreeId), ServiceError> {
+fn parse_preceding(version: &Value) -> Result<(VoId, TreeId), ServiceError> {
     let raw = version
         .get("preceding_version_uid")
         // Treat a JSON `null` as absent (the SM glue serializes `None` to

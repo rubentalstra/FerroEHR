@@ -11,7 +11,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
 /// The preceding lineage-tip row read for the version-tree placement decision:
@@ -20,7 +20,7 @@ use crate::storage::error::StorageError;
 /// them onto its `PrecedingTip` (tree id + kind + lifecycle).
 #[derive(Debug, Clone)]
 pub struct TipRow {
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub kind: String,
     pub sys_version: i32,
     pub trunk_version: i32,

@@ -156,7 +156,8 @@ impl EhrbaseService {
         let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
 
         let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
-        let mut exported_ehrs: Vec<Uuid> = Vec::with_capacity(extract_spec.manifest.entities.len());
+        let mut exported_ehrs: Vec<EhrId> =
+            Vec::with_capacity(extract_spec.manifest.entities.len());
         for (idx, entity) in extract_spec.manifest.entities.iter().enumerate() {
             let ehr_id =
                 resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
@@ -167,7 +168,7 @@ impl EhrbaseService {
             // an AQL primary-set query): AQL criteria selection lands with the
             // `$ehr`-bound AQL export wave. Until then it is a typed reject,
             // never a silent over-export.
-            let vo_kinds: Vec<(Uuid, String)> = if entity.item_list.is_empty() {
+            let vo_kinds: Vec<(VoId, String)> = if entity.item_list.is_empty() {
                 if criteria_present {
                     return Err(SmError::precondition(
                         "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
@@ -201,7 +202,7 @@ impl EhrbaseService {
                 resolved
             };
 
-            let mut included: Vec<Uuid> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
+            let mut included: Vec<VoId> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
             let mut items = Vec::with_capacity(vo_kinds.len());
             for (vo_id, kind) in vo_kinds {
                 items.push(
@@ -269,7 +270,7 @@ impl EhrbaseService {
     async fn ehr_versioned_objects(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Vec<(Uuid, String)>, ServiceError> {
+    ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT vo_id, kind FROM vo_version \
              WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
@@ -287,7 +288,11 @@ impl EhrbaseService {
 
     /// The kind of a version container, if it belongs to `ehr_id` (resolves an
     /// `EXTRACT_ENTITY_MANIFEST.item_list` reference).
-    async fn ehr_vo_kind(&self, ehr_id: EhrId, vo_id: VoId) -> Result<Option<String>, ServiceError> {
+    async fn ehr_vo_kind(
+        &self,
+        ehr_id: EhrId,
+        vo_id: VoId,
+    ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
             "SELECT kind FROM vo_version \
              WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
@@ -406,16 +411,17 @@ impl EhrbaseService {
         content_items: &[Value],
         sel: VersionSelection,
     ) -> Result<Vec<Value>, ServiceError> {
-        fn collect_party_ids(value: &Value, out: &mut Vec<Uuid>) {
+        fn collect_party_ids(value: &Value, out: &mut Vec<VoId>) {
             match value {
                 Value::Object(map) => {
                     if map.get("_type").and_then(Value::as_str) == Some("PARTY_REF")
                         && map.get("namespace").and_then(Value::as_str) == Some("demographic")
                         && let Some(raw) = value.pointer("/id/value").and_then(Value::as_str)
                         && let Ok(uuid) = raw.parse::<Uuid>()
-                        && !out.contains(&uuid)
+                        && !out.contains(&VoId(uuid))
                     {
-                        out.push(uuid);
+                        // A demographic PARTY_REF id names a party versioned object.
+                        out.push(VoId(uuid));
                     }
                     for v in map.values() {
                         collect_party_ids(v, out);
@@ -696,18 +702,19 @@ fn strip_inline_multimedia(value: &mut Value) {
 /// Every UUID mentioned in a `LOCATABLE.links[].target` URI across the built
 /// content items — the candidate same-EHR link targets for `link_depth`
 /// following (`DV_EHR_URI` values carry the container/version uids).
-fn link_target_uuids(items: &[Value]) -> Vec<Uuid> {
-    fn collect(value: &Value, out: &mut Vec<Uuid>) {
+fn link_target_uuids(items: &[Value]) -> Vec<VoId> {
+    fn collect(value: &Value, out: &mut Vec<VoId>) {
         match value {
             Value::Object(map) => {
                 if let Some(links) = map.get("links").and_then(Value::as_array) {
                     for link in links {
                         if let Some(uri) = link.pointer("/target/value").and_then(Value::as_str) {
                             for token in uri.split(|c: char| !c.is_ascii_hexdigit() && c != '-') {
+                                // A DV_LINK target uri names a versioned object.
                                 if let Ok(uuid) = token.parse::<Uuid>()
-                                    && !out.contains(&uuid)
+                                    && !out.contains(&VoId(uuid))
                                 {
-                                    out.push(uuid);
+                                    out.push(VoId(uuid));
                                 }
                             }
                         }
@@ -759,9 +766,9 @@ async fn resolve_entity_ehr(
     svc: &EhrbaseService,
     ehr_id: Option<&str>,
     subject_id: Option<&str>,
-) -> Result<Uuid, SmError> {
+) -> Result<EhrId, SmError> {
     if let Some(raw) = ehr_id {
-        let id: Uuid = raw.parse().map_err(|_| {
+        let id: EhrId = raw.parse().map_err(|_| {
             SmError::precondition(format!(
                 "EXTRACT_ENTITY_MANIFEST.ehr_id {raw:?} is not a UUID"
             ))
@@ -772,7 +779,7 @@ async fn resolve_entity_ehr(
         return Err(SmError::ehr_not_found(format!("no EHR with id {id}")));
     }
     if let Some(subject) = subject_id {
-        let id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE subject_id = $1")
+        let id: Option<EhrId> = sqlx::query_scalar("SELECT id FROM ehr WHERE subject_id = $1")
             .bind(subject)
             .fetch_optional(&svc.pool)
             .await

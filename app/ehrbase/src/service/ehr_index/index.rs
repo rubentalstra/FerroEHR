@@ -20,8 +20,10 @@ use super::{IndexError, location_json, parse_valid_time, require_association, ro
 /// Parse an `ehr_id` UUID. An unparseable id is a `400` precondition failure;
 /// a well-formed-but-unknown id surfaces as `ehr_id_does_not_exist` at the DB
 /// check (`i_ehr_index.adoc §Errors`).
-fn parse_ehr_id(raw: &str) -> Result<Uuid, SmError> {
-    Uuid::parse_str(raw).map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
+fn parse_ehr_id(raw: &str) -> Result<EhrId, SmError> {
+    Uuid::parse_str(raw)
+        .map(EhrId)
+        .map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
 }
 
 impl EhrbaseService {

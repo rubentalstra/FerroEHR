@@ -99,7 +99,7 @@ struct FolderRankRow {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EhrRow {
-    id: Uuid,
+    id: EhrId,
     system_id: String,
     time_created: String,
     subject_id: Option<String>,

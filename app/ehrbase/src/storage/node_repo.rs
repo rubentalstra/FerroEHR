@@ -12,7 +12,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
@@ -36,7 +36,7 @@ pub async fn write_nodes(
     tx: &mut PgConnection,
     vo_id: VoId,
     sys_version: i32,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     rows: &[NodeRow],
 ) -> Result<(), StorageError> {
     if rows.is_empty() {
@@ -205,7 +205,7 @@ pub async fn read_subtrees_canonical(
     let idx: Vec<i32> = (0..distinct.len())
         .map(|i| i32::try_from(i).unwrap_or(i32::MAX))
         .collect();
-    let vo_ids: Vec<Uuid> = distinct.iter().map(|a| a.vo_id).collect();
+    let vo_ids: Vec<Uuid> = distinct.iter().map(|a| a.vo_id.0).collect();
     let sys_versions: Vec<i32> = distinct.iter().map(|a| a.sys_version).collect();
     let anums: Vec<i32> = distinct.iter().map(|a| a.num).collect();
     let acaps: Vec<i32> = distinct.iter().map(|a| a.num_cap).collect();
@@ -279,7 +279,7 @@ pub async fn read_subtrees_canonical(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn first_version_root(
     tx: &mut sqlx::PgConnection,
-    vo_id: uuid::Uuid,
+    vo_id: VoId,
 ) -> Result<Option<serde_json::Value>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT data FROM node WHERE vo_id = $1 AND num = 0 ORDER BY sys_version LIMIT 1",

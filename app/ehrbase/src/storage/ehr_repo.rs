@@ -132,7 +132,7 @@ pub async fn ehr_id_by_subject(
     pool: &PgPool,
     subject_id: &str,
     namespace: &str,
-) -> Result<Option<Uuid>, StorageError> {
+) -> Result<Option<EhrId>, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT id FROM ehr WHERE subject_id = $1 AND subject_namespace = $2")
             .bind(subject_id)
@@ -211,7 +211,7 @@ pub async fn ehr_summary_read(
     else {
         return Ok(None);
     };
-    let status = match row.try_get::<Option<Uuid>, _>("status_vo")? {
+    let status = match row.try_get::<Option<VoId>, _>("status_vo")? {
         None => None,
         Some(vo_id) => Some(EhrStatusIdentity {
             vo_id,
@@ -274,7 +274,7 @@ pub struct EhrStatusIdentity {
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<Uuid>, StorageError> {
+pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT f.vo_id FROM ehr_folder f \
          JOIN vo_version v ON v.vo_id = f.vo_id \

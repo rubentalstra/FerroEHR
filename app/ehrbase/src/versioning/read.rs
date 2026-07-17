@@ -12,7 +12,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::AuditInput;
@@ -24,7 +24,7 @@ use crate::versioning::object_version_id::TreeId;
 #[derive(Debug, Clone)]
 pub(crate) struct VersionRead {
     pub(crate) vo_id: VoId,
-    pub(crate) ehr_id: Option<Uuid>,
+    pub(crate) ehr_id: Option<EhrId>,
     pub(crate) tree: TreeId,
     pub(crate) preceding_version_uid: Option<String>,
     pub(crate) other_input_version_uids: Vec<String>,

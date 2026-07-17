@@ -52,7 +52,7 @@ use crate::service::status::{CallStatusType, SmError};
 pub enum IndexError {
     /// `ehr_id_does_not_exist` — the addressed EHR is unknown.
     #[error("EHR {0} does not exist (ehr_id_does_not_exist)")]
-    EhrDoesNotExist(Uuid),
+    EhrDoesNotExist(EhrId),
     /// `subject_id_does_not_exist` — no such subject / association.
     #[error("subject {}@{} is not associated (subject_id_does_not_exist)", .0.id, .0.namespace)]
     SubjectDoesNotExist(SubjectRef),
@@ -187,7 +187,7 @@ mod tests {
     /// `versioned_object_does_not_exist`.
     #[test]
     fn index_errors_map_to_dedicated_statuses() {
-        let ehr = Uuid::now_v7();
+        let ehr = EhrId::new();
         let ehr_sm: SmError = IndexError::EhrDoesNotExist(ehr).into();
         assert_eq!(ehr_sm.status, CallStatusType::EhrIdDoesNotExist);
 

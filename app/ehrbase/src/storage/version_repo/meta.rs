@@ -23,7 +23,7 @@ use crate::storage::error::StorageError;
 /// enumeration, where reassembling every body would be wasted work.
 #[derive(Debug, Clone)]
 pub struct VersionMeta {
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub kind: String,
     pub sys_version: i32,
     pub trunk_version: i32,
@@ -179,8 +179,8 @@ pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, S
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn object_kinds(
     pool: &PgPool,
-    vo_ids: &[Uuid],
-) -> Result<Vec<(Uuid, String)>, StorageError> {
+    vo_ids: &[VoId],
+) -> Result<Vec<(VoId, String)>, StorageError> {
     if vo_ids.is_empty() {
         return Ok(Vec::new());
     }
@@ -201,7 +201,7 @@ pub async fn object_kinds(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<Uuid>>, StorageError> {
+pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<EhrId>>, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
             .bind(vo_id)
@@ -425,7 +425,7 @@ pub async fn current_demographic_meta(
 /// spec governs the SQL — our own design.
 #[derive(Debug, Clone)]
 pub struct CurrentCompositionMeta {
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub lifecycle_state: String,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -502,7 +502,7 @@ pub async fn current_vo_ids(
     ehr_id: EhrId,
     kind: &str,
     exclude_lifecycle: Option<&str>,
-) -> Result<Vec<Uuid>, StorageError> {
+) -> Result<Vec<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = $2 \
          AND upper_inf(sys_period) AND branch_number = 0 \

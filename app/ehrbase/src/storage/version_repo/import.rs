@@ -23,7 +23,7 @@ use crate::storage::version_repo::optional_json_array;
 pub struct ImportedVersionRow<'a> {
     pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub sys_version: i32,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -200,7 +200,7 @@ pub struct ContainerStateRow {
     /// The stored kind text, if the `vo_id` already exists.
     pub kind: Option<String>,
     /// The owning EHR of the existing container.
-    pub owner: Option<Uuid>,
+    pub owner: Option<EhrId>,
     /// The highest trunk version currently held.
     pub max_trunk: i32,
     /// The highest storage ordinal currently held.

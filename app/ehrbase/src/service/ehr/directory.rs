@@ -319,7 +319,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_meta_with_vo(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<(Uuid, bool, crate::service::response::ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(VoId, bool, crate::service::response::ResourceMeta)>, ServiceError> {
         let Some((m, is_modifiable)) =
             crate::storage::ehr_repo::directory_current_meta(&self.pool, ehr_id).await?
         else {
@@ -352,12 +352,12 @@ impl EhrbaseService {
     pub(in crate::service) async fn directory_vo_opt(
         &self,
         ehr_id: EhrId,
-    ) -> Result<Option<Uuid>, ServiceError> {
+    ) -> Result<Option<VoId>, ServiceError> {
         Ok(crate::storage::ehr_repo::directory_vo(&self.pool, ehr_id).await?)
     }
 
     /// The EHR's directory versioned-object id, or `NotFound`.
-    async fn directory_vo(&self, ehr_id: EhrId) -> Result<Uuid, ServiceError> {
+    async fn directory_vo(&self, ehr_id: EhrId) -> Result<VoId, ServiceError> {
         self.directory_vo_opt(ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))

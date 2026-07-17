@@ -24,8 +24,10 @@ use uuid::Uuid;
 ///
 /// # Errors
 /// [`ApiError::BadRequest`] if `raw` is not a UUID.
-pub(crate) fn parse_ehr_id(raw: &str) -> Result<Uuid, ApiError> {
-    Uuid::parse_str(raw).map_err(|_| ApiError::BadRequest(format!("invalid EHR id: {raw}")))
+pub(crate) fn parse_ehr_id(raw: &str) -> Result<EhrId, ApiError> {
+    Uuid::parse_str(raw)
+        .map(EhrId)
+        .map_err(|_| ApiError::BadRequest(format!("invalid EHR id: {raw}")))
 }
 
 /// Parse a UUID path parameter (a bare `HIER_OBJECT_ID`: a versioned-object or
@@ -52,7 +54,7 @@ pub(crate) fn parse_version_uid(raw: &str) -> Result<ObjectVersionId, ApiError> 
 /// carried a version (`{object_id}::{system}::{version}`).
 pub(crate) struct UidBasedId {
     /// The versioned-object UUID (`object_id`).
-    pub(crate) vo_id: Uuid,
+    pub(crate) vo_id: VoId,
     /// The full version id, when the segment named a specific version.
     pub(crate) version: Option<ObjectVersionId>,
 }
@@ -72,12 +74,12 @@ pub(crate) fn parse_uid_based_id(raw: &str) -> Result<UidBasedId, ApiError> {
             ))
         })?;
         Ok(UidBasedId {
-            vo_id,
+            vo_id: VoId(vo_id),
             version: Some(ovid),
         })
     } else {
         Ok(UidBasedId {
-            vo_id: parse_uuid(raw, "versioned_object_uid")?,
+            vo_id: VoId(parse_uuid(raw, "versioned_object_uid")?),
             version: None,
         })
     }

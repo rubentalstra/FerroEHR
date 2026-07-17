@@ -57,7 +57,7 @@ impl CommitEnv for EhrbaseService {
         &self,
         ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, i32)>, ServiceError> {
+    ) -> Result<Option<(VoId, i32)>, ServiceError> {
         Ok(EhrbaseService::current_vo(self, ehr_id, kind)
             .await?
             .map(|(vo_id, tree)| (vo_id, tree.trunk)))

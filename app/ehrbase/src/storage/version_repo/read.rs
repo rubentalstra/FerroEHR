@@ -13,7 +13,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::node_repo::read_version_canonical;
 
@@ -28,7 +28,7 @@ pub struct StoredVersion {
     /// `FOLDER` / …).
     pub kind: String,
     /// The owning EHR, or `None` for a demographic party (no EHR scope).
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal.
     pub sys_version: i32,
     pub trunk_version: i32,

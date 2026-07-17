@@ -130,7 +130,7 @@ impl EhrbaseService {
     ///   exhaustion, or a storage/database fault).
     /// - [`SmError`] `precondition_violation` — the committed version uid does
     ///   not parse (defensive; the uid is server-generated).
-    pub async fn create_party(&self, a_version: UpdateVersion) -> Result<Uuid, SmError> {
+    pub async fn create_party(&self, a_version: UpdateVersion) -> Result<VoId, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
         // Reuse the wire-seam domain logic (validation + versioned create).
         let resp = self
@@ -660,7 +660,7 @@ impl EhrbaseService {
     pub async fn create_party_relationship(
         &self,
         a_version: UpdateVersion,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<VoId, SmError> {
         let resp = self
             .create_relationship(a_version.data, Some(&a_version.audit))
             .await?;

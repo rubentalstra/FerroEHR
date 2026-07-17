@@ -43,7 +43,7 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
+    ) -> Result<Option<(VoId, TreeId)>, ServiceError> {
         Ok(
             crate::storage::version_repo::meta::current_vo(&self.pool, ehr_id, kind.as_str())
                 .await?
@@ -185,7 +185,7 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(VoId, ResourceMeta)>, ServiceError> {
         let Some(m) = crate::storage::version_repo::meta::current_version_meta_by_kind(
             &self.pool,
             ehr_id,

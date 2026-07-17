@@ -15,7 +15,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
-use crate::ids::VoId;
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::storage::codec::{decompose, reassemble};
 use crate::storage::row::NodeRow;
@@ -158,7 +158,7 @@ pub(crate) struct WriteEnvelope {
 /// the storage row (`crate::storage::version_repo::placement::next_placement`).
 #[derive(Debug, Clone)]
 struct PrecedingTip {
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     kind: Kind,
     ordinal: i32,
     tree: TreeId,
@@ -229,7 +229,7 @@ struct NextVersion {
 ///   does not exist or has been superseded (a closed lineage tip).
 async fn next_version(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
@@ -329,7 +329,7 @@ enum ContributionCtx {
 struct ResolvedWrite {
     kind: Kind,
     vo_id: VoId,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal.
     ordinal: i32,
     tree: TreeId,
@@ -385,7 +385,7 @@ struct ResolvedWrite {
 #[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
 async fn apply_change(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     contribution: ContributionCtx,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
@@ -686,7 +686,7 @@ async fn write_single_outbox(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
     contribution_id: Uuid,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     committed: &Committed,
 ) -> Result<(), ServiceError> {
     if ctx.outbox_enabled {
@@ -712,7 +712,7 @@ async fn write_single_outbox(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn create(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     kind: Kind,
     canonical: Value,
     template_id: Option<&str>,
@@ -752,7 +752,7 @@ pub(crate) async fn create(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn update(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     vo_id: VoId,
     kind: Kind,
     canonical: Value,
@@ -797,7 +797,7 @@ pub(crate) async fn update(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn delete(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
@@ -843,7 +843,7 @@ pub(crate) async fn delete(
 /// target; the storage errors of the contribution/outbox writes.
 pub(crate) async fn commit_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     supplied_uid: Option<Uuid>,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,
