@@ -76,7 +76,7 @@ pub(crate) type TenantCache = moka::future::Cache<String, Option<TenantContext>>
 pub(crate) fn tenant_cache() -> TenantCache {
     moka::future::Cache::builder()
         .max_capacity(10_000)
-        .time_to_live(std::time::Duration::from_secs(5 * 60))
+        .time_to_live(std::time::Duration::from_mins(5))
         .build()
 }
 
