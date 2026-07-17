@@ -285,6 +285,7 @@ mod tests {
             ClassRecord {
                 count: 50,
                 errors: 1,
+                dep_misses: 0,
                 p50_us: 4000,
                 p90_us: 6000,
                 p99_us: 9000,

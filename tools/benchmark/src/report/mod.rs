@@ -136,6 +136,7 @@ mod tests {
             ClassRecord {
                 count: 1,
                 errors: 0,
+                dep_misses: 0,
                 p50_us: 1,
                 p90_us: 1,
                 p99_us: 1,

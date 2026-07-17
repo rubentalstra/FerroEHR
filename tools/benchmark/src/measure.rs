@@ -36,6 +36,10 @@ pub struct ClassSummary {
     pub count: u64,
     /// Errors observed for this class (excluded from the distribution).
     pub errors: u64,
+    /// Generator-side schedule-dependency misses (never attributed to the
+    /// SUT; reported beside, not inside, the error rate).
+    #[serde(default)]
+    pub dep_misses: u64,
     /// 50th percentile latency (µs).
     pub p50_us: u64,
     /// 90th percentile latency (µs).
@@ -61,6 +65,7 @@ pub struct Recorder {
     /// from here.
     overall: Histogram<u64>,
     errors: BTreeMap<OpClass, u64>,
+    dep_misses: BTreeMap<OpClass, u64>,
     warmup: Duration,
 }
 
@@ -88,6 +93,7 @@ impl Recorder {
             hists: BTreeMap::new(),
             overall: make_hist(),
             errors: BTreeMap::new(),
+            dep_misses: BTreeMap::new(),
             warmup: Duration::ZERO,
         }
     }
@@ -120,10 +126,24 @@ impl Recorder {
     }
 
     /// Record an error for a class (excluded from the latency distribution).
-    /// Warmup filtering for errors is the caller's responsibility — it holds
-    /// the planned-send time; the counter is unconditional here.
-    pub fn error(&mut self, class: OpClass) {
+    /// Count a SERVER-attributed error (unexpected status / transport /
+    /// malformed success body). Warmup-gated exactly like [`Recorder::record`],
+    /// so successes and errors face the same discard window.
+    pub fn error(&mut self, class: OpClass, planned_send: Duration) {
+        if planned_send < self.warmup {
+            return;
+        }
         *self.errors.entry(class).or_insert(0) += 1;
+    }
+
+    /// Count a GENERATOR-side schedule-dependency miss (a prerequisite id
+    /// never arrived) — reported beside, never inside, the server error rate.
+    /// Warmup-gated like [`Recorder::record`].
+    pub fn dep_miss(&mut self, class: OpClass, planned_send: Duration) {
+        if planned_send < self.warmup {
+            return;
+        }
+        *self.dep_misses.entry(class).or_insert(0) += 1;
     }
 
     /// Per-class summaries, keyed by [`OpClass::key`], for every class in report
@@ -133,10 +153,12 @@ impl Recorder {
         let mut out = BTreeMap::new();
         for class in OpClass::ALL {
             let errors = self.errors.get(&class).copied().unwrap_or(0);
+            let dep_misses = self.dep_misses.get(&class).copied().unwrap_or(0);
             let summary = match self.hists.get(&class) {
                 Some(hist) => ClassSummary {
                     count: hist.len(),
                     errors,
+                    dep_misses,
                     p50_us: hist.value_at_quantile(0.50),
                     p90_us: hist.value_at_quantile(0.90),
                     p99_us: hist.value_at_quantile(0.99),
@@ -147,6 +169,7 @@ impl Recorder {
                 None => ClassSummary {
                     count: 0,
                     errors,
+                    dep_misses,
                     p50_us: 0,
                     p90_us: 0,
                     p99_us: 0,
@@ -331,12 +354,27 @@ mod tests {
     fn errors_counted_and_excluded() {
         let mut r = Recorder::new();
         r.record(OpClass::AqlWard, ms(0), ms(5));
-        r.error(OpClass::AqlWard);
-        r.error(OpClass::AqlWard);
+        r.error(OpClass::AqlWard, ms(0));
+        r.error(OpClass::AqlWard, ms(0));
         let s = &r.summaries()["aql-ward"];
         assert_eq!(s.count, 1);
         assert_eq!(s.errors, 2);
         assert_eq!(r.total_errors(), 2);
+    }
+
+    #[test]
+    fn errors_and_misses_face_the_same_warmup_window_and_split() {
+        let mut r = Recorder::new();
+        r.set_warmup(ms(10));
+        // Inside the warmup window: discarded on BOTH sides, symmetrically.
+        r.error(OpClass::AqlWard, ms(1));
+        r.dep_miss(OpClass::AqlWard, ms(1));
+        // Measured window: one server error, one generator miss — separate.
+        r.error(OpClass::AqlWard, ms(20));
+        r.dep_miss(OpClass::AqlWard, ms(20));
+        let s = &r.summaries()["aql-ward"];
+        assert_eq!(s.errors, 1, "server errors exclude the warmup window");
+        assert_eq!(s.dep_misses, 1, "misses split from errors, same window");
     }
 
     #[test]
