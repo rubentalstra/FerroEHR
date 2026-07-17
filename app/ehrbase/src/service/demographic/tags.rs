@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
@@ -30,7 +31,7 @@ impl EhrbaseService {
     }
 
     /// The tags on one party.
-    pub(super) async fn party_tags(&self, vo_id: Uuid) -> Result<Vec<Value>, ServiceError> {
+    pub(super) async fn party_tags(&self, vo_id: VoId) -> Result<Vec<Value>, ServiceError> {
         let rows = tag_repo::list_tags(&self.pool, None, Some(vo_id), None, None, None).await?;
         Ok(rows.iter().map(party_tag_json).collect())
     }
@@ -43,7 +44,7 @@ impl EhrbaseService {
     pub(super) async fn replace_party_tags(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
         self.ensure_party(kind, vo_id).await?;
@@ -95,7 +96,7 @@ impl EhrbaseService {
     /// Delete a tag by key from a party. An unknown key is `404`.
     pub(super) async fn delete_party_tag(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         key: &str,
     ) -> Result<(), ServiceError> {
         if !tag_repo::delete_tag(&self.pool, None, vo_id, key).await? {

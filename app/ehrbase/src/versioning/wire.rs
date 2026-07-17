@@ -13,6 +13,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::versioning::audit::{AuditInput, OPENEHR, audit_details};
 use crate::versioning::integrity;
@@ -38,8 +39,8 @@ use crate::versioning::signature::signer::Signer;
 /// queries.
 pub(crate) async fn revision_history(
     pool: &sqlx::PgPool,
-    ehr_id: Uuid,
-    vo_id: Uuid,
+    ehr_id: EhrId,
+    vo_id: VoId,
 ) -> Result<Value, ServiceError> {
     let rows = crate::storage::version_repo::meta::all_version_meta(pool, vo_id).await?;
     let first = rows
@@ -108,8 +109,8 @@ pub(crate) async fn revision_history(
 /// storage read error of `version_repo::meta::time_created`.
 pub(crate) async fn versioned_object(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
-    ehr_id: Uuid,
+    vo_id: VoId,
+    ehr_id: EhrId,
     rm_type: &str,
 ) -> Result<Value, ServiceError> {
     let time_created = crate::storage::version_repo::meta::time_created(pool, vo_id)
@@ -181,7 +182,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 #[allow(clippy::too_many_arguments)] // the ORIGINAL_VERSION's attributes; a struct would not read clearer
 pub(crate) fn build_original_version(
     creating_system_id: &str,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: TreeId,
     preceding_version_uid: Option<&str>,
     other_input_version_uids: &[String],

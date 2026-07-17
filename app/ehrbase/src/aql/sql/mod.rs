@@ -38,11 +38,11 @@ mod predicate;
 mod select;
 mod value;
 
+use crate::ids::EhrId;
 use std::collections::HashMap;
 
 use sea_query::{Alias, PostgresQueryBuilder, Query, SelectStatement, Value};
 use sea_query_sqlx::{SqlxBinder as _, SqlxValues};
-use uuid::Uuid;
 
 use super::error::{AqlError, SqlError};
 use super::ir::{Bind, Coercion, ParamValue, Params, QueryIr};
@@ -61,7 +61,7 @@ pub struct SqlCtx {
     /// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`). The
     /// ITS-REST single `ehr_id` parameter is the one-element case. Empty = no
     /// explicit scope (the population gate over `is_queryable` EHRs applies).
-    pub ehr_ids: Vec<Uuid>,
+    pub ehr_ids: Vec<EhrId>,
     /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
     /// §6.4 — no openEHR spec governs this, our own extension): when set, every
     /// VO root is restricted to EHRs whose `subject_id` equals it, so rows the

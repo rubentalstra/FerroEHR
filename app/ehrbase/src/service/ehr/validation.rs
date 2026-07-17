@@ -16,6 +16,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::versioning::read::read_current;
@@ -38,7 +39,7 @@ impl EhrbaseService {
     /// a storage failure.
     pub(super) async fn reject_duplicate_persistent(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         composition: &Value,
     ) -> Result<(), ServiceError> {
         if !is_persistent(composition) {
@@ -201,7 +202,7 @@ impl EhrbaseService {
 /// [`ServiceError::Database`] if the first-version root read fails.
 pub(in crate::service) async fn check_versioned_composition_invariants(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     canonical: &Value,
 ) -> Result<(), ServiceError> {
     const PERSISTENT: &str = "431";

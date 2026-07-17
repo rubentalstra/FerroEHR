@@ -14,6 +14,7 @@
 //! ([`crate::storage::version_repo`]; no openEHR spec governs the SQL — our
 //! own design).
 
+use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -40,9 +41,9 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the current-row read fails.
     pub(in crate::service) async fn current_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, TreeId)>, ServiceError> {
+    ) -> Result<Option<(VoId, TreeId)>, ServiceError> {
         Ok(
             crate::storage::version_repo::meta::current_vo(&self.pool, ehr_id, kind.as_str())
                 .await?
@@ -63,7 +64,7 @@ impl EhrbaseService {
     /// every write consumer uses only the metadata.
     pub(crate) fn committed_response(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         committed: &crate::versioning::change::Committed,
     ) -> ServiceResponse {
         let meta = self.version_meta(
@@ -85,8 +86,8 @@ impl EhrbaseService {
     #[allow(clippy::unused_self)] // call-site ergonomics: every caller holds the service
     pub(crate) fn version_meta(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         creating_system_id: &str,
         version: TreeId,
         at: jiff::Timestamp,
@@ -105,7 +106,7 @@ impl EhrbaseService {
     pub(in crate::service) fn with_uid(
         &self,
         mut canonical: Value,
-        vo_id: Uuid,
+        vo_id: VoId,
         creating_system_id: &str,
         version: TreeId,
     ) -> Value {
@@ -126,8 +127,8 @@ impl EhrbaseService {
     /// headers.
     pub(in crate::service) fn version_response(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         read: VersionRead,
     ) -> ServiceResponse {
         let meta = self.version_meta(
@@ -160,7 +161,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn latest_version_meta(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         kind: Kind,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         Ok(self
@@ -182,9 +183,9 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn latest_version_meta_with_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
+    ) -> Result<Option<(VoId, ResourceMeta)>, ServiceError> {
         let Some(m) = crate::storage::version_repo::meta::current_version_meta_by_kind(
             &self.pool,
             ehr_id,
@@ -253,8 +254,8 @@ impl EhrbaseService {
     /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn composition_latest_meta(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
     ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self
             .composition_current_meta(an_ehr_id, a_versioned_object_uid)
@@ -268,7 +269,7 @@ impl EhrbaseService {
     /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn ehr_status_latest_meta(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
     ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self.ehr_status_meta(an_ehr_id).await?)
     }
@@ -280,7 +281,7 @@ impl EhrbaseService {
     /// [`SmError`](crate::service::status::SmError) if the metadata read fails.
     pub async fn directory_latest_meta(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
     ) -> Result<Option<ResourceMeta>, crate::service::status::SmError> {
         Ok(self.directory_meta(an_ehr_id).await?)
     }

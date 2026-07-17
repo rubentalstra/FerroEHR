@@ -11,6 +11,7 @@
 //! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
+use crate::ids::EhrId;
 use crate::service::list::Page;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
@@ -47,7 +48,7 @@ impl EhrbaseService {
     /// validation, the optimistic lock, or its storage commit.
     pub async fn create_ehr_contribution(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         body: Value,
     ) -> Result<ServiceResponse, SmError> {
         let contribution_id = commit_version_set(self, Some(ehr_id), &body, false).await?;
@@ -68,7 +69,7 @@ impl EhrbaseService {
     /// EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn ehr_contribution(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         contribution_id: Uuid,
         resolve_refs: bool,
     ) -> Result<Value, ServiceError> {
@@ -94,7 +95,7 @@ impl EhrbaseService {
     /// `Ok(false)`).
     pub async fn has_contribution(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_contrib_id: Uuid,
     ) -> Result<bool, SmError> {
         match self.ehr_contribution(an_ehr_id, a_contrib_id, false).await {
@@ -112,7 +113,7 @@ impl EhrbaseService {
     /// (404-equivalent) or a read fails.
     pub async fn get_contribution(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_contrib_id: Uuid,
     ) -> Result<Value, SmError> {
         Ok(self
@@ -128,7 +129,7 @@ impl EhrbaseService {
     /// (404-equivalent) or a read fails.
     pub async fn get_contribution_resolved(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_contrib_id: Uuid,
     ) -> Result<Value, SmError> {
         Ok(self.ehr_contribution(an_ehr_id, a_contrib_id, true).await?)
@@ -143,7 +144,7 @@ impl EhrbaseService {
     /// storage write.
     pub async fn commit_contribution(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         versions: Vec<UpdateVersion>,
         an_audit: UpdateAudit,
     ) -> Result<String, SmError> {
@@ -178,7 +179,7 @@ impl EhrbaseService {
     /// read failure.
     pub async fn list_contributions(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         time_range: crate::service::ehr::handle::TimeRange,
         page: Page,
     ) -> Result<Vec<String>, SmError> {
@@ -197,7 +198,7 @@ impl EhrbaseService {
     /// read failure.
     pub async fn contribution_count(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         time_range: crate::service::ehr::handle::TimeRange,
     ) -> Result<i64, SmError> {
         let time_range = parse_time_range(time_range)?;
@@ -213,7 +214,7 @@ impl EhrbaseService {
     /// validation, the optimistic lock, or its storage commit.
     pub async fn ehr_contribution_commit(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_contribution: Value,
         representation: bool,
     ) -> Result<ServiceResponse, SmError> {

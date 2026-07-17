@@ -8,6 +8,7 @@
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::ehr_index::types::{EhrIndexEntry, SubjectRef};
 
@@ -32,7 +33,7 @@ pub enum IndexConflict {
     /// One EHR is associated with more than one subject (the
     /// "records merged … multiple subject ids" case).
     EhrWithMultipleSubjects {
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         entries: Vec<EhrIndexEntry>,
     },
 }
@@ -78,7 +79,7 @@ impl EhrbaseService {
         .fetch_all(&self.pool)
         .await?;
         for row in &ehr_rows {
-            let ehr_id: Uuid = row.try_get("ehr_id")?;
+            let ehr_id: EhrId = row.try_get("ehr_id")?;
             let rows = sqlx::query(
                 "SELECT ehr_id, subject_id, subject_namespace, subject_type, instance_type, \
                  start_valid_time, end_valid_time, notes, location FROM ehr_index \
