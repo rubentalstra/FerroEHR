@@ -113,6 +113,27 @@ impl CdrClient {
         Self::finish(Self::authorize(request, credential)).await
     }
 
+    /// PUT a text body to `url` as `credential` (stored-query writes use
+    /// `text/plain` AQL per the Definition API).
+    ///
+    /// # Errors
+    /// [`AdminUiError::CdrUnreachable`] on transport failure.
+    pub async fn put_text(
+        &self,
+        credential: &Credential,
+        url: &str,
+        content_type: &str,
+        body: String,
+    ) -> Result<CdrResponse, AdminUiError> {
+        let request = self
+            .http
+            .put(url)
+            .header(http::header::CONTENT_TYPE, content_type)
+            .header(http::header::ACCEPT, "application/json")
+            .body(body);
+        Self::finish(Self::authorize(request, credential)).await
+    }
+
     /// Map a non-2xx [`CdrResponse`] into the normalized error, extracting
     /// the diagnostic from the openEHR error body when present. 2xx passes
     /// through.

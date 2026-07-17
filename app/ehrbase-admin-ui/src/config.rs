@@ -16,6 +16,22 @@ pub struct AdminUiConfig {
     pub auth: AuthConfig,
     /// Session behaviour.
     pub session: SessionConfig,
+    /// Path of the console-local query-groups JSON store (empty = the
+    /// default `./admin-ui-groups.json`). No openEHR spec governs query
+    /// groups — our own design/extension.
+    pub groups_file: String,
+}
+
+impl AdminUiConfig {
+    /// The query-groups store path (the configured value or the default).
+    #[must_use]
+    pub fn groups_file(&self) -> String {
+        if self.groups_file.is_empty() {
+            "admin-ui-groups.json".to_owned()
+        } else {
+            self.groups_file.clone()
+        }
+    }
 }
 
 /// Where and how to reach the CDR.
