@@ -13,6 +13,7 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::meta::CurrentMeta;
 
@@ -41,7 +42,7 @@ use crate::storage::version_repo::meta::CurrentMeta;
 /// else [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_ehr(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     system_id: &str,
     subject_id: Option<&str>,
     subject_namespace: Option<&str>,
@@ -100,7 +101,7 @@ pub async fn insert_ehr(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn sync_status_flags(tx: &mut PgConnection, ehr_id: Uuid) -> Result<(), StorageError> {
+pub async fn sync_status_flags(tx: &mut PgConnection, ehr_id: EhrId) -> Result<(), StorageError> {
     sqlx::query(
         "UPDATE ehr e SET \
            is_queryable = COALESCE(s.is_queryable, true), \
@@ -149,7 +150,7 @@ pub async fn ehr_id_by_subject(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn ehr_header(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
 ) -> Result<Option<(String, jiff::Timestamp)>, StorageError> {
     let Some(row) = sqlx::query("SELECT system_id, time_created FROM ehr WHERE id = $1")
         .bind(ehr_id)
@@ -176,7 +177,7 @@ pub async fn ehr_header(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn ehr_summary_read(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
 ) -> Result<Option<EhrSummaryRead>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT e.system_id, e.time_created, \
@@ -254,7 +255,7 @@ pub struct EhrSummaryRead {
 #[derive(Debug)]
 pub struct EhrStatusIdentity {
     /// The `EHR_STATUS` versioned object.
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     /// `VERSION_TREE_ID` trunk.
     pub trunk_version: i32,
     /// `VERSION_TREE_ID` branch number (0 = trunk).
@@ -273,7 +274,7 @@ pub struct EhrStatusIdentity {
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn directory_vo(pool: &PgPool, ehr_id: Uuid) -> Result<Option<Uuid>, StorageError> {
+pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<Uuid>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT f.vo_id FROM ehr_folder f \
          JOIN vo_version v ON v.vo_id = f.vo_id \
@@ -306,7 +307,7 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: Uuid) -> Result<Option<Uuid>, S
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn directory_current_meta(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
 ) -> Result<Option<(CurrentMeta, bool)>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
@@ -348,7 +349,7 @@ pub async fn directory_current_meta(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: Uuid) -> Result<Option<bool>, StorageError> {
+pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bool>, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT is_modifiable FROM ehr WHERE id = $1")
             .bind(ehr_id)
@@ -370,7 +371,7 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: Uuid) -> Result<Option<boo
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn ehr_writability(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
 ) -> Result<(bool, Option<bool>), StorageError> {
     let is_modifiable: Option<bool> =
         sqlx::query_scalar("SELECT is_modifiable FROM ehr WHERE id = $1")
@@ -390,7 +391,7 @@ pub async fn ehr_writability(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn live_folder_root_exists(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     root_archetype_node_id: &str,
     root_name: &str,
 ) -> Result<bool, StorageError> {

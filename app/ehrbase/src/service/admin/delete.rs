@@ -12,6 +12,7 @@
 
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
@@ -80,7 +81,7 @@ impl EhrbaseService {
     /// only abstractly (`ehr_id_does_not_exist`) with no HTTP binding): we map it
     /// to `NotFound` → HTTP `404`, the natural REST reading of an operation on a
     /// non-existent resource.
-    async fn delete_ehr(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+    async fn delete_ehr(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         // Our own extension (no openEHR spec governs multimedia offload): when
         // DV_MULTIMEDIA externalization is on, collect the blob keys this EHR's
         // nodes reference *before* deletion, so we can GC the ones no other node
@@ -138,7 +139,7 @@ impl EhrbaseService {
     /// bulk call, so the idempotent skip-missing semantics + returned count are
     /// our own design (no openEHR spec governs bulk-delete internals); a
     /// partial success is observable at the REST edge.
-    async fn delete_ehr_set(&self, ehr_ids: &[Uuid]) -> Result<u64, ServiceError> {
+    async fn delete_ehr_set(&self, ehr_ids: &[EhrId]) -> Result<u64, ServiceError> {
         // Chunking bounds each transaction's lock/WAL footprint on a
         // full-store wipe.
         const CHUNK: usize = 128;
@@ -188,7 +189,7 @@ impl EhrbaseService {
     /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
     /// (empty when externalization is disabled) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
-    async fn collect_blob_keys_for(&self, ehr_ids: &[Uuid]) -> Result<Vec<String>, ServiceError> {
+    async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -209,7 +210,7 @@ impl EhrbaseService {
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
-    async fn collect_ehr_blob_keys(&self, ehr_id: Uuid) -> Result<Vec<String>, ServiceError> {
+    async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -285,7 +286,7 @@ impl EhrbaseService {
     /// (guarded — a row shared with a survivor is kept), and any `vo_archive`
     /// markers. `audit` has no FK from `vo_version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
-    async fn physical_delete_party(&self, party_id: Uuid) -> Result<(), ServiceError> {
+    async fn physical_delete_party(&self, party_id: VoId) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
 
         // The target must be a demographic PARTY (ehr-less; any version exists).

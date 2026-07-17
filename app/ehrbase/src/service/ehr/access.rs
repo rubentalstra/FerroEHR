@@ -14,6 +14,7 @@
 
 use std::sync::Arc;
 
+use crate::ids::EhrId;
 use crate::service::ehr::access_types::EhrAccessSettings;
 use crate::service::status::SmError;
 use moka::future::Cache;
@@ -30,7 +31,7 @@ impl EhrbaseService {
     /// after any `EHR_ACCESS` commit so the next access decision reflects the
     /// new version (the settings are change-controlled — RM ehr master04 §EHR
     /// Access).
-    pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
+    pub(in crate::service) async fn invalidate_ehr_access(&self, ehr_id: EhrId) {
         self.ehr_access.invalidate(ehr_id).await;
     }
 
@@ -41,7 +42,7 @@ impl EhrbaseService {
     /// default-open; seeding that entry saves the first-access DB miss. A
     /// later `EHR_ACCESS` commit evicts it through
     /// [`Self::invalidate_ehr_access`].
-    pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: Uuid) {
+    pub(in crate::service) async fn prewarm_ehr_access_open(&self, ehr_id: EhrId) {
         self.ehr_access.insert(ehr_id, None).await;
     }
 
@@ -51,7 +52,7 @@ impl EhrbaseService {
     /// default-open.
     async fn load_ehr_access_settings(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<EhrAccessSettings>, SmError> {
         let Some((vo_id, _)) = self.current_vo(ehr_id, Kind::EhrAccess).await? else {
             return Ok(None);
@@ -76,7 +77,7 @@ impl EhrbaseService {
     /// the single-flight load.
     pub async fn current_ehr_access_settings(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<EhrAccessSettings>, SmError> {
         // Clone the (cheap, Arc-backed) service into an owned, `'static` load
         // future so `moka`'s single-flight `try_get_with` can drive it.
@@ -139,7 +140,7 @@ impl EhrAccessCache {
     /// `Arc<SmError>`).
     pub(in crate::service) async fn get_or_load<Fut>(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         init: Fut,
     ) -> Result<Arc<Option<EhrAccessSettings>>, Arc<SmError>>
     where
@@ -162,7 +163,7 @@ impl EhrAccessCache {
     /// re-read.
     pub(in crate::service) async fn insert(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         settings: Option<EhrAccessSettings>,
     ) {
         self.inner.insert(ehr_id, Arc::new(settings)).await;
@@ -171,7 +172,7 @@ impl EhrAccessCache {
     /// Drop the cached settings for `ehr_id` — called on every `EHR_ACCESS`
     /// commit so the next read reflects the new version (evicts a positive OR
     /// a pre-warmed default-open negative entry alike).
-    pub(in crate::service) async fn invalidate(&self, ehr_id: Uuid) {
+    pub(in crate::service) async fn invalidate(&self, ehr_id: EhrId) {
         self.inner.invalidate(&ehr_id).await;
     }
 }

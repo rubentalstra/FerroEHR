@@ -32,6 +32,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::ehr_index::types::{
     EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
@@ -132,7 +133,7 @@ fn require_association(affected: u64, subject: &SubjectRef) -> Result<(), IndexE
 
 /// Reassemble one [`EhrIndexEntry`] from an `ehr_index` row.
 fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Error> {
-    let ehr_id: Uuid = row.try_get("ehr_id")?;
+    let ehr_id: EhrId = row.try_get("ehr_id")?;
     let subject = SubjectRef {
         id: row.try_get("subject_id")?,
         namespace: row.try_get("subject_namespace")?,

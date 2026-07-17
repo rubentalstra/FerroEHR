@@ -53,6 +53,7 @@ use serde_json::Value;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::versioning::signature::signer::Signer;
 
@@ -201,18 +202,18 @@ pub(crate) trait CommitEnv {
         incomplete: bool,
     ) -> Result<(), ServiceError>;
     /// the target EHR must exist before a CONTRIBUTION is committed to it.
-    async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
+    async fn ensure_ehr_exists(&self, ehr_id: EhrId) -> Result<(), ServiceError>;
     /// The `EHR_STATUS` `is_modifiable = False` content-write guard.
-    async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError>;
+    async fn ensure_content_writable(&self, ehr_id: EhrId) -> Result<(), ServiceError>;
     /// The current versioned object of `kind` in `ehr_id`, if any (for the
     /// EHR-singleton create guard).
     async fn current_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         kind: Kind,
     ) -> Result<Option<(Uuid, i32)>, ServiceError>;
     /// Drop the cached `EHR_ACCESS` settings after an `EHR_ACCESS` commit.
-    async fn invalidate_ehr_access(&self, ehr_id: Uuid);
+    async fn invalidate_ehr_access(&self, ehr_id: EhrId);
     /// Whether the EHR already holds a LIVE folder hierarchy whose root
     /// carries the `(archetype_node_id, name)` LOCATABLE identity pair — the
     /// CONTRIBUTION-route duplicate-directory rejection (CNF schedule master08
@@ -222,7 +223,7 @@ pub(crate) trait CommitEnv {
     /// paths semantics).
     async fn folder_root_exists(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         archetype_node_id: &str,
         name: &str,
     ) -> Result<bool, ServiceError>;
@@ -235,7 +236,7 @@ pub(crate) trait CommitEnv {
     async fn pre_composition_modify(
         &self,
         tx: &mut sqlx::PgConnection,
-        vo_id: Uuid,
+        vo_id: VoId,
         canonical: &Value,
     ) -> Result<(), ServiceError>;
     /// Keep the EHR's promoted subject columns (`ehr.subject_id` /
@@ -247,7 +248,7 @@ pub(crate) trait CommitEnv {
     async fn post_status_commit(
         &self,
         tx: &mut sqlx::PgConnection,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         status: &Value,
     ) -> Result<(), ServiceError>;
 }

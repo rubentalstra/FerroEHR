@@ -15,6 +15,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::error::ServiceError;
 use crate::storage::codec::{decompose, reassemble};
 use crate::storage::row::NodeRow;
@@ -29,7 +30,7 @@ use crate::versioning::{Kind, SigningCtx, integrity};
 #[derive(Debug, Clone)]
 #[allow(clippy::struct_field_names)] // `time_committed` is the master06 domain term, not a suffix echo
 pub struct Committed {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     /// The per-vo storage commit ordinal of the written row (the node /
     /// attestation key) — NOT the wire version number.
     pub sys_version: i32,
@@ -103,7 +104,7 @@ pub(crate) enum Change {
     },
     /// Commit a new version of an existing object.
     Modify {
-        vo_id: Uuid,
+        vo_id: VoId,
         kind: Kind,
         canonical: Value,
         expected: Option<TreeId>,
@@ -119,7 +120,7 @@ pub(crate) enum Change {
     /// Logically delete an object (a content-less `deleted` version — master06
     /// §Logical Deletion).
     Delete {
-        vo_id: Uuid,
+        vo_id: VoId,
         kind: Kind,
         expected: Option<TreeId>,
         signature: Option<String>,
@@ -229,7 +230,7 @@ struct NextVersion {
 async fn next_version(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
     local_system_id: &str,
@@ -327,7 +328,7 @@ enum ContributionCtx {
 /// placement) and the input to the shared write ([`commit_resolved`]).
 struct ResolvedWrite {
     kind: Kind,
-    vo_id: Uuid,
+    vo_id: VoId,
     ehr_id: Option<Uuid>,
     /// The per-vo storage commit ordinal.
     ordinal: i32,
@@ -419,7 +420,7 @@ async fn apply_change(
             };
             ResolvedWrite {
                 kind,
-                vo_id: Uuid::now_v7(),
+                vo_id: VoId::new(),
                 ehr_id,
                 ordinal: 1,
                 tree: TreeId::trunk(1),
@@ -752,7 +753,7 @@ pub(crate) async fn create(
 pub(crate) async fn update(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    vo_id: VoId,
     kind: Kind,
     canonical: Value,
     expected: Option<TreeId>,
@@ -797,7 +798,7 @@ pub(crate) async fn update(
 pub(crate) async fn delete(
     tx: &mut PgConnection,
     ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
     audit: &AuditInput,

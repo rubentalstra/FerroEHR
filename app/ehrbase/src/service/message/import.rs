@@ -43,6 +43,7 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
@@ -156,7 +157,7 @@ impl EhrbaseService {
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr_extract(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         an_extract: Extract,
     ) -> Result<(), SmError> {
         if !self.import_ehr_exists(an_ehr_id).await? {
@@ -213,7 +214,7 @@ impl EhrbaseService {
 
     /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of
     /// `import_ehr_extract`; `i_ehr_extract_service.adoc`).
-    async fn import_ehr_exists(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+    async fn import_ehr_exists(&self, ehr_id: EhrId) -> Result<bool, ServiceError> {
         Ok(
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
                 .bind(ehr_id)

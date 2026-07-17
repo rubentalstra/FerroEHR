@@ -12,6 +12,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, QueryBuilder, Row};
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::storage::codec::reassemble;
 use crate::storage::error::StorageError;
 use crate::storage::row::{NodeRow, ReadRow};
@@ -33,7 +34,7 @@ use crate::storage::row::{NodeRow, ReadRow};
 // pure row-writer over pre-decomposed rows.
 pub async fn write_nodes(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     sys_version: i32,
     ehr_id: Option<Uuid>,
     rows: &[NodeRow],
@@ -95,7 +96,7 @@ pub async fn write_nodes(
 /// contract need — the promoted query columns are not read back.
 async fn read_rows(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     sys_version: i32,
 ) -> Result<Vec<ReadRow>, StorageError> {
     let rows = sqlx::query(
@@ -134,7 +135,7 @@ async fn read_rows(
 /// form one tree rooted at `num = 0`.
 pub async fn read_version_canonical(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     sys_version: i32,
 ) -> Result<Value, StorageError> {
     let rows = read_rows(pool, vo_id, sys_version).await?;
@@ -152,7 +153,7 @@ pub async fn read_version_canonical(
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubtreeAnchor {
     /// The versioned object id.
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     /// The stored version number.
     pub sys_version: i32,
     /// The anchor node's pre-order number (subtree lower bound).

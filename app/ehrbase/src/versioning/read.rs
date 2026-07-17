@@ -12,6 +12,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::AuditInput;
@@ -22,7 +23,7 @@ use crate::versioning::object_version_id::TreeId;
 /// JSON (with attestations attached).
 #[derive(Debug, Clone)]
 pub(crate) struct VersionRead {
-    pub(crate) vo_id: Uuid,
+    pub(crate) vo_id: VoId,
     pub(crate) ehr_id: Option<Uuid>,
     pub(crate) tree: TreeId,
     pub(crate) preceding_version_uid: Option<String>,
@@ -97,7 +98,7 @@ fn version_read(stored: crate::storage::version_repo::read::StoredVersion) -> Ve
 /// The storage read error of `version_repo::read::read_current`.
 pub(crate) async fn read_current(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<VersionRead>, ServiceError> {
     Ok(
         crate::storage::version_repo::read::read_current(pool, vo_id)
@@ -114,7 +115,7 @@ pub(crate) async fn read_current(
 /// The storage read error of `version_repo::read::read_version_by_ordinal`.
 pub(crate) async fn read_version_by_ordinal(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     ordinal: i32,
 ) -> Result<Option<VersionRead>, ServiceError> {
     Ok(
@@ -131,7 +132,7 @@ pub(crate) async fn read_version_by_ordinal(
 /// The storage read error of `version_repo::read::read_version`.
 pub(crate) async fn read_version(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: TreeId,
 ) -> Result<Option<VersionRead>, ServiceError> {
     let (t, b, v) = tree.columns();
@@ -150,7 +151,7 @@ pub(crate) async fn read_version(
 /// The storage read error of `version_repo::read::version_at`.
 pub(crate) async fn version_at(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     at: jiff::Timestamp,
 ) -> Result<Option<VersionRead>, ServiceError> {
     Ok(
@@ -167,7 +168,7 @@ pub(crate) async fn version_at(
 /// The storage read error of `version_repo::meta::object_kind`.
 pub(crate) async fn object_kind(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<Kind>, ServiceError> {
     Ok(crate::storage::version_repo::meta::object_kind(pool, vo_id)
         .await?
@@ -198,7 +199,7 @@ pub(crate) struct DemographicCurrent {
 /// The storage read error of `version_repo::meta::current_demographic_meta`.
 pub(crate) async fn demographic_current(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<DemographicCurrent>, ServiceError> {
     let Some(m) = crate::storage::version_repo::meta::current_demographic_meta(pool, vo_id).await?
     else {

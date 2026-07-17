@@ -24,6 +24,7 @@ use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
@@ -108,7 +109,7 @@ impl EhrbaseService {
     /// addressed version (its `uid` injected), verifying EHR ownership.
     async fn resolve_locator(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         locator: &TopLevelLocator,
     ) -> Result<Value, ServiceError> {
         let (vo_id, version) = if let Some(object) = &locator.object {

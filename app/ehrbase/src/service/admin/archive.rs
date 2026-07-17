@@ -19,6 +19,7 @@
 
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
@@ -61,7 +62,7 @@ impl EhrbaseService {
 
     /// Mark every versioned object of each EHR archived, all-or-nothing: every
     /// EHR is existence-checked before any marker is written.
-    async fn mark_ehr_vos_archived(&self, ehr_ids: &[Uuid]) -> Result<(), ServiceError> {
+    async fn mark_ehr_vos_archived(&self, ehr_ids: &[EhrId]) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
         for &ehr_id in ehr_ids {
             let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")

@@ -11,12 +11,13 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::storage::error::StorageError;
 
 /// One `item_tag` row.
 #[derive(Debug, Clone)]
 pub struct TagRow {
-    pub target_vo_id: Uuid,
+    pub target_vo_id: VoId,
     pub target_type: String,
     pub key: String,
     pub value: Option<String>,
@@ -84,7 +85,7 @@ pub async fn list_tags(
 pub async fn replace_tags(
     tx: &mut PgConnection,
     ehr_scope: Option<Uuid>,
-    target_vo_id: Uuid,
+    target_vo_id: VoId,
     tags: &[NewTag<'_>],
 ) -> Result<(), StorageError> {
     sqlx::query("DELETE FROM item_tag WHERE ehr_id IS NOT DISTINCT FROM $1 AND target_vo_id = $2")
@@ -138,7 +139,7 @@ pub async fn replace_tags(
 pub async fn delete_tag(
     pool: &PgPool,
     ehr_scope: Option<Uuid>,
-    target_vo_id: Uuid,
+    target_vo_id: VoId,
     key: &str,
 ) -> Result<bool, StorageError> {
     let deleted = sqlx::query(

@@ -13,6 +13,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
 // ── revision-history enumeration ──────────────────────────────────────────────
@@ -43,7 +44,7 @@ pub struct VersionMeta {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn all_version_meta(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Vec<VersionMeta>, StorageError> {
     let rows = sqlx::query(
         "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
@@ -86,7 +87,7 @@ pub async fn all_version_meta(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn time_created(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<jiff::Timestamp>, StorageError> {
     Ok(sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(
         "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
@@ -108,7 +109,7 @@ pub async fn time_created(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn template_id_of(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: Option<(i32, i32, i32)>,
 ) -> Result<Option<Option<String>>, StorageError> {
     let row = match tree {
@@ -144,7 +145,7 @@ pub async fn template_id_of(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn ehr_exists(pool: &PgPool, ehr_id: Uuid) -> Result<bool, StorageError> {
+pub async fn ehr_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
             .bind(ehr_id)
@@ -158,7 +159,7 @@ pub async fn ehr_exists(pool: &PgPool, ehr_id: Uuid) -> Result<bool, StorageErro
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn object_kind(pool: &PgPool, vo_id: Uuid) -> Result<Option<String>, StorageError> {
+pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) \
          AND branch_number = 0",
@@ -200,7 +201,7 @@ pub async fn object_kinds(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn vo_owner(pool: &PgPool, vo_id: Uuid) -> Result<Option<Option<Uuid>>, StorageError> {
+pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<Uuid>>, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
             .bind(vo_id)
@@ -217,7 +218,7 @@ pub async fn vo_owner(pool: &PgPool, vo_id: Uuid) -> Result<Option<Option<Uuid>>
 /// such object. Mapping the ints to a `TreeId` is the caller's.
 #[derive(Debug, Clone)]
 pub struct CurrentVoRow {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub trunk_version: i32,
     pub branch_number: i32,
     pub branch_version: i32,
@@ -229,7 +230,7 @@ pub struct CurrentVoRow {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_vo(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentVoRow>, StorageError> {
     let Some(row) = sqlx::query(
@@ -260,7 +261,7 @@ pub async fn current_vo(
 /// master06 §Version Identification; the commit instant is master06 §Committal.
 #[derive(Debug, Clone)]
 pub struct CurrentMeta {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub trunk_version: i32,
     pub branch_number: i32,
     pub branch_version: i32,
@@ -291,7 +292,7 @@ fn current_meta_row(row: &PgRow) -> Result<CurrentMeta, StorageError> {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_version_meta_by_kind(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentMeta>, StorageError> {
     let Some(row) = sqlx::query(
@@ -322,8 +323,8 @@ pub async fn current_version_meta_by_kind(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_version_meta_scoped(
     pool: &PgPool,
-    vo_id: Uuid,
-    ehr_id: Uuid,
+    vo_id: VoId,
+    ehr_id: EhrId,
 ) -> Result<Option<CurrentMeta>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
@@ -371,7 +372,7 @@ pub struct CurrentDemographicMeta {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_demographic_meta(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<CurrentDemographicMeta>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
@@ -441,7 +442,7 @@ pub struct CurrentCompositionMeta {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_composition_meta(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<CurrentCompositionMeta>, StorageError> {
     let Some(row) = sqlx::query(
         "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
@@ -482,7 +483,7 @@ pub async fn current_composition_meta(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn composition_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+pub async fn composition_count(pool: &PgPool, ehr_id: EhrId) -> Result<i64, StorageError> {
     Ok(sqlx::query_scalar(
         "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
@@ -498,7 +499,7 @@ pub async fn composition_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, Stora
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn current_vo_ids(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     kind: &str,
     exclude_lifecycle: Option<&str>,
 ) -> Result<Vec<Uuid>, StorageError> {

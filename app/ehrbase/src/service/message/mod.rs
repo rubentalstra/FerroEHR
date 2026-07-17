@@ -47,6 +47,7 @@ mod tdd;
 
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};
 
@@ -67,7 +68,7 @@ impl EhrbaseService {
     /// by the [`EventActionCode`] (`Read` out / `Create` in). The native
     /// service layer has no HTTP principal, so `user_id` stays empty and the
     /// ATNA renderer supplies `UNKNOWN`.
-    pub(super) fn emit_extract_audit(&self, ehr_id: Uuid, action: EventActionCode) {
+    pub(super) fn emit_extract_audit(&self, ehr_id: EhrId, action: EventActionCode) {
         if !self.audit_enabled() {
             return;
         }

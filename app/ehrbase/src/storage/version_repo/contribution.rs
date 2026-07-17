@@ -9,6 +9,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::storage::error::StorageError;
 
 /// A CONTRIBUTION's own audit row (`contribution` ⋈ `audit`), flattened.
@@ -104,7 +105,7 @@ pub async fn contribution_version_refs(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn list_contributions(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     lower: Option<jiff::Timestamp>,
     upper: Option<jiff::Timestamp>,
     offset: i64,
@@ -135,7 +136,7 @@ pub async fn list_contributions(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn count_contributions(
     pool: &PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     lower: Option<jiff::Timestamp>,
     upper: Option<jiff::Timestamp>,
 ) -> Result<i64, StorageError> {
@@ -157,7 +158,7 @@ pub async fn count_contributions(
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
-pub async fn ehr_contribution_count(pool: &PgPool, ehr_id: Uuid) -> Result<i64, StorageError> {
+pub async fn ehr_contribution_count(pool: &PgPool, ehr_id: EhrId) -> Result<i64, StorageError> {
     Ok(
         sqlx::query_scalar("SELECT count(*) FROM contribution WHERE ehr_id = $1")
             .bind(ehr_id)

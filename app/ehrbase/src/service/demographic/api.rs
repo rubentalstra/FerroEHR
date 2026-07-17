@@ -12,6 +12,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::party::CurrentParty;
 use crate::service::demographic::relationship::CurrentRelationship;
@@ -100,7 +101,7 @@ impl EhrbaseService {
     /// [`SmError`] on a storage/database fault reading the tag store.
     async fn attach_party_item_tags(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         resp: &mut ServiceResponse,
     ) -> Result<(), SmError> {
         if resp.meta.is_none() {
@@ -147,7 +148,7 @@ impl EhrbaseService {
     ///   storage/database fault while resolving the party kind or reading its
     ///   current version. A *not-found* on either resolves to `Ok(false)`, not
     ///   an error.
-    pub async fn has_party(&self, a_versioned_party_id: Uuid) -> Result<bool, SmError> {
+    pub async fn has_party(&self, a_versioned_party_id: VoId) -> Result<bool, SmError> {
         // True iff a *live* party of some kind exists (a logically deleted party
         // reads `Null`, satisfying the delete post-condition `not has_party`).
         match self.party_kind_at(a_versioned_party_id).await {
@@ -190,7 +191,7 @@ impl EhrbaseService {
     ///   deleted / absent (the read is empty).
     /// - [`SmError`] `conflict` / `service_overloaded` / `exception` — a
     ///   storage/database fault during kind resolution or read.
-    pub async fn get_party(&self, a_versioned_party_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_party(&self, a_versioned_party_id: VoId) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
         let resp = self
             .read_party(kind, a_versioned_party_id, None, None)
@@ -217,7 +218,7 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault during kind resolution or read.
     pub async fn get_party_at_time(
         &self,
-        a_versioned_party_id: Uuid,
+        a_versioned_party_id: VoId,
         a_time: String,
     ) -> Result<Value, SmError> {
         let kind = self.party_kind_at(a_versioned_party_id).await?;
@@ -264,7 +265,7 @@ impl EhrbaseService {
     ///   concurrency), or the write transaction fails.
     pub async fn update_party(
         &self,
-        a_versioned_party_id: Uuid,
+        a_versioned_party_id: VoId,
         a_version: UpdateVersion,
     ) -> Result<String, SmError> {
         let kind = party_kind_from_body(&a_version.data)?;
@@ -294,7 +295,7 @@ impl EhrbaseService {
     ///   with this id exists.
     /// - [`SmError`] mapped from `400` — the party is already deleted.
     /// - [`SmError`] on a storage/database fault during the delete transaction.
-    pub async fn delete_party(&self, a_versioned_party_id: Uuid) -> Result<String, SmError> {
+    pub async fn delete_party(&self, a_versioned_party_id: VoId) -> Result<String, SmError> {
         // The SM `delete_party` has no version argument — delete the current
         // version unconditionally.
         let kind = self.party_kind_at(a_versioned_party_id).await?;
@@ -676,7 +677,7 @@ impl EhrbaseService {
     /// version. A *not-found* resolves to `Ok(false)`, not an error.
     pub async fn has_party_relationship(
         &self,
-        a_versioned_party_rel_id: Uuid,
+        a_versioned_party_rel_id: VoId,
     ) -> Result<bool, SmError> {
         // True iff a *live* relationship exists (a logically deleted one reads
         // `Null`, satisfying the delete post-condition).
@@ -700,7 +701,7 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn get_party_relationship(
         &self,
-        a_versioned_party_rel_id: Uuid,
+        a_versioned_party_rel_id: VoId,
     ) -> Result<Value, SmError> {
         let resp = self
             .read_relationship(a_versioned_party_rel_id, None, None)
@@ -726,7 +727,7 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault during the read.
     pub async fn get_party_relationship_at_time(
         &self,
-        a_versioned_party_rel_id: Uuid,
+        a_versioned_party_rel_id: VoId,
         a_time: String,
     ) -> Result<Value, SmError> {
         let at = parse_at_time(&a_time)?;
@@ -770,7 +771,7 @@ impl EhrbaseService {
     /// - [`SmError`] mapped from `409` — the preceding version is stale.
     pub async fn update_party_relationship(
         &self,
-        a_versioned_party_rel_id: Uuid,
+        a_versioned_party_rel_id: VoId,
         a_version: UpdateVersion,
     ) -> Result<String, SmError> {
         let expected = match &a_version.preceding_version_uid {
@@ -800,7 +801,7 @@ impl EhrbaseService {
     /// - [`SmError`] on a storage/database fault during the delete transaction.
     pub async fn delete_party_relationship(
         &self,
-        a_versioned_party_rel_id: Uuid,
+        a_versioned_party_rel_id: VoId,
     ) -> Result<String, SmError> {
         // The SM `delete_party_relationship` has no version argument — resolve
         // the current version once and delete it unconditionally.

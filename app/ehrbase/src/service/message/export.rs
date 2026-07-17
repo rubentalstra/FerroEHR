@@ -32,6 +32,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
@@ -115,7 +116,7 @@ impl EhrbaseService {
     /// # Errors
     /// - `ehr_id_does_not_exist` — no EHR with `an_ehr_id` (`has_ehr` false).
     /// - `exception` — a database/codec fault while building the extract.
-    pub async fn extract_ehrs(&self, an_ehr_id: Uuid) -> Result<Vec<Value>, SmError> {
+    pub async fn extract_ehrs(&self, an_ehr_id: EhrId) -> Result<Vec<Value>, SmError> {
         if !self.extract_ehr_exists(an_ehr_id).await? {
             return Err(SmError::ehr_not_found(format!(
                 "no EHR with id {an_ehr_id}"
@@ -184,7 +185,7 @@ impl EhrbaseService {
                         .ok_or_else(|| {
                             SmError::precondition("item_list OBJECT_REF has no id.value")
                         })?;
-                    let vo_id: Uuid = raw.parse().map_err(|_| {
+                    let vo_id: VoId = raw.parse().map_err(|_| {
                         SmError::precondition(format!(
                             "item_list id {raw:?} is not a version-container UUID"
                         ))
@@ -253,7 +254,7 @@ impl EhrbaseService {
 
     /// Whether an EHR with `ehr_id` exists (the `has_ehr` precondition of both
     /// export calls; `i_ehr_extract_service.adoc`).
-    async fn extract_ehr_exists(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+    async fn extract_ehr_exists(&self, ehr_id: EhrId) -> Result<bool, ServiceError> {
         Ok(
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
                 .bind(ehr_id)
@@ -267,7 +268,7 @@ impl EhrbaseService {
     /// ordered by id for a deterministic extract.
     async fn ehr_versioned_objects(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Vec<(Uuid, String)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT vo_id, kind FROM vo_version \
@@ -286,7 +287,7 @@ impl EhrbaseService {
 
     /// The kind of a version container, if it belongs to `ehr_id` (resolves an
     /// `EXTRACT_ENTITY_MANIFEST.item_list` reference).
-    async fn ehr_vo_kind(&self, ehr_id: Uuid, vo_id: Uuid) -> Result<Option<String>, ServiceError> {
+    async fn ehr_vo_kind(&self, ehr_id: EhrId, vo_id: VoId) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
             "SELECT kind FROM vo_version \
              WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
@@ -300,7 +301,7 @@ impl EhrbaseService {
 
     /// The `sys_version`s of a version container, in order, each flagged with
     /// whether it is the current (`upper_inf`, trunk) version.
-    async fn vo_version_numbers(&self, vo_id: Uuid) -> Result<Vec<(i32, bool)>, ServiceError> {
+    async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
              FROM vo_version WHERE vo_id = $1 ORDER BY sys_version",
@@ -322,8 +323,8 @@ impl EhrbaseService {
     /// the included ones.
     async fn build_openehr_content_item(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         kind: &str,
         sel: VersionSelection,
         is_primary: bool,
@@ -520,7 +521,7 @@ impl EhrbaseService {
 
     /// A synthetic `EXTRACT_SPEC` describing a whole-EHR, latest-only export (for
     /// `export_ehrs`, which takes no spec) — one entity keyed by the EHR id.
-    fn whole_ehr_spec(ehr_id: Uuid) -> Value {
+    fn whole_ehr_spec(ehr_id: EhrId) -> Value {
         json!({
             "_type": "EXTRACT_SPEC",
             "version_spec": {
@@ -561,7 +562,7 @@ impl EhrbaseService {
     /// rewrite content refs to the extract-local namespace.
     async fn export_whole_ehr(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         sequence_nr: i32,
     ) -> Result<Value, ServiceError> {
         let sel = VersionSelection::latest_only();

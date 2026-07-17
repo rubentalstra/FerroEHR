@@ -10,6 +10,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::storage::error::StorageError;
 
 /// Insert one `ATTESTATION` row for a version (master06 §Attestation). Stores
@@ -22,7 +23,7 @@ use crate::storage::error::StorageError;
 /// Returns [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_attestation(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     sys_version: i32,
     contribution_id: Uuid,
     data: &Value,
@@ -56,7 +57,7 @@ pub struct AttestTargetRow {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn attestation_target(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: (i32, i32, i32),
     kind: &str,
 ) -> Result<Option<AttestTargetRow>, StorageError> {
@@ -92,7 +93,7 @@ pub async fn attestation_target(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn read_attestations_all(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Vec<(i32, Value)>, StorageError> {
     let rows = sqlx::query(
         "SELECT sys_version, data FROM vo_attestation WHERE vo_id = $1 \

@@ -15,6 +15,7 @@
 //! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
 //! §Folders). Multi-hierarchy write management is owned by WORKLIST W-6.
 
+use crate::ids::{EhrId, VoId};
 use crate::service::response::ServiceResponse;
 use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
@@ -44,7 +45,7 @@ impl EhrbaseService {
     /// has a directory; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn commit_new_directory(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         version: UpdateVersion,
     ) -> Result<ServiceResponse, ServiceError> {
         let (audit, envelope) = resolve_envelope(
@@ -100,7 +101,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn directory_at_time(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         at: Option<jiff::Timestamp>,
         path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -138,8 +139,8 @@ impl EhrbaseService {
     /// to another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn directory_version(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = read_version(&self.pool, vo_id, version)
@@ -160,7 +161,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn versioned_directory(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Value, ServiceError> {
         let vo_id = self.directory_vo(ehr_id).await?;
         versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_FOLDER").await
@@ -174,8 +175,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if a storage read fails.
     pub(in crate::service) async fn directory_version_exists(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<bool, ServiceError> {
         // The id must name THIS EHR's directory versioned object.
@@ -201,8 +202,8 @@ impl EhrbaseService {
     /// failure.
     pub(in crate::service) async fn commit_directory_update(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: UpdateVersion,
         expected: Option<TreeId>,
         is_modifiable: bool,
@@ -256,8 +257,8 @@ impl EhrbaseService {
     /// failure.
     pub(in crate::service) async fn delete_directory_at(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         expected: Option<TreeId>,
         is_modifiable: bool,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -294,7 +295,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn directory_meta(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<crate::service::response::ResourceMeta>, ServiceError> {
         Ok(self
             .directory_meta_with_vo(ehr_id)
@@ -317,7 +318,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the merged read fails.
     pub(in crate::service) async fn directory_meta_with_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<(Uuid, bool, crate::service::response::ResourceMeta)>, ServiceError> {
         let Some((m, is_modifiable)) =
             crate::storage::ehr_repo::directory_current_meta(&self.pool, ehr_id).await?
@@ -350,13 +351,13 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the slot resolution fails.
     pub(in crate::service) async fn directory_vo_opt(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<Uuid>, ServiceError> {
         Ok(crate::storage::ehr_repo::directory_vo(&self.pool, ehr_id).await?)
     }
 
     /// The EHR's directory versioned-object id, or `NotFound`.
-    async fn directory_vo(&self, ehr_id: Uuid) -> Result<Uuid, ServiceError> {
+    async fn directory_vo(&self, ehr_id: EhrId) -> Result<Uuid, ServiceError> {
         self.directory_vo_opt(ehr_id)
             .await?
             .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))
@@ -387,7 +388,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// [`SmError`] if the directory-slot resolution fails.
-    pub async fn has_directory(&self, an_ehr_id: Uuid) -> Result<bool, SmError> {
+    pub async fn has_directory(&self, an_ehr_id: EhrId) -> Result<bool, SmError> {
         // EHR.directory (= folders[1]) — resolve the directory slot rather than
         // assuming a single FOLDER (RM ehr master04 §Folders).
         Ok(self.directory_vo_opt(an_ehr_id).await?.is_some())
@@ -399,7 +400,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] if a directory read fails (a missing directory or path is
     /// `Ok(false)`).
-    pub async fn has_path(&self, an_ehr_id: Uuid, a_path: String) -> Result<bool, SmError> {
+    pub async fn has_path(&self, an_ehr_id: EhrId, a_path: String) -> Result<bool, SmError> {
         match self.directory_at_time(an_ehr_id, None, Some(&a_path)).await {
             Ok(resp) => Ok(!resp.body.is_null()),
             Err(ServiceError::NotFound(_)) => Ok(false),
@@ -416,7 +417,7 @@ impl EhrbaseService {
     /// has a directory (409-equivalent), or the commit fails.
     pub async fn create_directory(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
         super::version_uid(self.commit_new_directory(an_ehr_id, a_dir_struct).await?)
@@ -430,7 +431,7 @@ impl EhrbaseService {
     /// directory/version/path (404-equivalent), or a read failure.
     pub async fn get_directory_at_time(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_time: Option<String>,
         a_path: Option<String>,
     ) -> Result<Value, SmError> {
@@ -451,7 +452,7 @@ impl EhrbaseService {
     /// (409-equivalent), or the commit fails.
     pub async fn update_directory(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_dir_struct: UpdateVersion,
     ) -> Result<String, SmError> {
         // Resolve the directory-slot vo_id + its current version metadata + the
@@ -485,7 +486,7 @@ impl EhrbaseService {
     /// the EHR is not modifiable (409-equivalent), or the commit fails.
     pub async fn delete_directory(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         preceding_version_uid: Option<ObjectVersionId>,
     ) -> Result<(), SmError> {
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
@@ -510,7 +511,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a read failure.
     pub async fn get_directory_at_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
@@ -527,7 +528,7 @@ impl EhrbaseService {
     /// [`SmError`] for a malformed `OBJECT_VERSION_ID` or a failing read.
     pub async fn has_directory_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<bool, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
@@ -542,7 +543,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no directory (404-equivalent) or a read
     /// fails.
-    pub async fn get_versioned_directory(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_versioned_directory(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         Ok(self.versioned_directory(an_ehr_id).await?)
     }
 }

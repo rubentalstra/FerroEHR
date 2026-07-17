@@ -13,6 +13,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::list::Page;
 use crate::versioning::attestation::PendingAttest;
@@ -354,7 +355,7 @@ pub(crate) async fn commit_version_set(
     // `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
     // declares `404` only for an unknown `ehr_id` (the URI resource), never for
     // content the committed CONTRIBUTION refers to.
-    let require_kind = |vo_id: Uuid| -> Result<Kind, ServiceError> {
+    let require_kind = |vo_id: VoId| -> Result<Kind, ServiceError> {
         target_kinds.get(&vo_id).copied().ok_or_else(|| {
             ServiceError::BadRequest(format!(
                 "modification target does not exist: versioned object {vo_id} \
@@ -582,7 +583,7 @@ pub(crate) async fn commit_version_set(
 /// already-live same-identity folder hierarchy; the `CommitEnv` lookup errors.
 async fn reject_duplicate_singleton(
     cx: &impl CommitEnv,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     kind: Kind,
     data: &Value,
 ) -> Result<(), ServiceError> {
@@ -783,7 +784,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     contribution_id: Uuid,
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
@@ -850,7 +851,7 @@ pub(crate) async fn get_contribution(
 /// error of the list query.
 pub(crate) async fn list_contributions(
     pool: &sqlx::PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     time_range: TimeRange,
     page: Page,
 ) -> Result<Vec<Uuid>, ServiceError> {
@@ -874,7 +875,7 @@ pub(crate) async fn list_contributions(
 /// error of the count query.
 pub(crate) async fn count_contributions(
     pool: &sqlx::PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     time_range: TimeRange,
 ) -> Result<i64, ServiceError> {
     ensure_ehr_exists(pool, ehr_id).await?;
@@ -890,7 +891,7 @@ pub(crate) async fn count_contributions(
 ///
 /// Storage exposes the read (`version_repo::meta::ehr_exists`) so versioning stays
 /// self-contained.
-async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: Uuid) -> Result<(), ServiceError> {
+async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: EhrId) -> Result<(), ServiceError> {
     if crate::storage::version_repo::meta::ehr_exists(pool, ehr_id).await? {
         Ok(())
     } else {

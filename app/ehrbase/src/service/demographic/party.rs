@@ -9,6 +9,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::support;
 use crate::service::demographic::types::PartyKind;
@@ -32,7 +33,7 @@ use crate::versioning::read::{VersionRead, demographic_current, object_kind};
 /// Deletion.
 pub(super) struct CurrentParty {
     kind: PartyKind,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: TreeId,
     creating_system_id: String,
     time_committed: jiff::Timestamp,
@@ -60,7 +61,7 @@ impl EhrbaseService {
     async fn load_party_version(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<VersionRead, ServiceError> {
@@ -82,7 +83,7 @@ impl EhrbaseService {
     pub(super) async fn ensure_party(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<(), ServiceError> {
         let read = self.load_party_version(kind, vo_id, None, None).await?;
         if read.deleted() {
@@ -98,7 +99,7 @@ impl EhrbaseService {
     /// `I_PARTY` calls (which address parties by versioned-object id only). A
     /// non-party id (COMPOSITION, `PARTY_RELATIONSHIP`, …) or unknown id is `404`
     /// (`versioned_object_does_not_exist`).
-    pub(super) async fn party_kind_at(&self, vo_id: Uuid) -> Result<PartyKind, ServiceError> {
+    pub(super) async fn party_kind_at(&self, vo_id: VoId) -> Result<PartyKind, ServiceError> {
         object_kind(&self.pool, vo_id)
             .await?
             .and_then(support::party_kind_of)
@@ -108,7 +109,7 @@ impl EhrbaseService {
     /// Confirm `vo_id` is some party (any of the five kinds) — the check for the
     /// kind-agnostic `versioned_party` reads. A non-party id (COMPOSITION, …) or
     /// unknown id is `404` (`versioned_object_does_not_exist`).
-    pub(super) async fn ensure_any_party(&self, vo_id: Uuid) -> Result<(), ServiceError> {
+    pub(super) async fn ensure_any_party(&self, vo_id: VoId) -> Result<(), ServiceError> {
         match object_kind(&self.pool, vo_id).await? {
             Some(k) if k.is_party() => Ok(()),
             _ => Err(ServiceError::NotFound(format!("versioned party {vo_id}"))),
@@ -176,7 +177,7 @@ impl EhrbaseService {
     pub(super) async fn read_party(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -195,7 +196,7 @@ impl EhrbaseService {
     pub(super) async fn party_current(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Option<CurrentParty>, ServiceError> {
         let Some(current) = demographic_current(&self.pool, vo_id).await? else {
             return Ok(None);
@@ -222,7 +223,7 @@ impl EhrbaseService {
     pub(super) async fn update_party_version(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
         body: Value,
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
@@ -298,7 +299,7 @@ impl EhrbaseService {
     pub(super) async fn delete_party_version(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -364,7 +365,7 @@ impl EhrbaseService {
     pub(super) async fn party_current_meta(
         &self,
         kind: PartyKind,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         Ok(self
             .party_current(kind, vo_id)

@@ -25,6 +25,7 @@ use openehr_base::prelude::{ObjectVersionId, Uid};
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::error::ServiceError;
 
 /// A decoded `VERSION_TREE_ID`: the trunk version plus, for a branch version,
@@ -114,7 +115,7 @@ impl fmt::Display for TreeId {
 /// creating_system_id :: version_tree_id`; BASE master05 §Syntaxes). The single
 /// place the versioning builders synthesize a version id, so its shape is
 /// consistent with what [`parse_object_version_id`] accepts.
-pub(crate) fn object_version_id(vo_id: Uuid, creating_system_id: &str, tree: TreeId) -> String {
+pub(crate) fn object_version_id(vo_id: VoId, creating_system_id: &str, tree: TreeId) -> String {
     format!("{vo_id}::{creating_system_id}::{tree}")
 }
 

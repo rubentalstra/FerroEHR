@@ -34,6 +34,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::error::ServiceError;
@@ -393,7 +394,7 @@ impl EhrbaseService {
     pub(crate) async fn fhir_outbound_messages(
         &self,
         ehr_id: Option<Uuid>,
-        vo_id: Uuid,
+        vo_id: VoId,
         sys_version: i32,
     ) -> Result<Vec<(String, String, Value)>, ServiceError> {
         // Load the exact committed version; skip absent / logically-deleted ones.

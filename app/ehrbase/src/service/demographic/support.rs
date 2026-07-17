@@ -15,6 +15,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
@@ -57,7 +58,7 @@ pub(super) fn party_kind_of(kind: Kind) -> Option<PartyKind> {
 /// copied from its enclosing VERSION.
 pub(super) fn inject_uid(
     mut canonical: Value,
-    vo_id: Uuid,
+    vo_id: VoId,
     creating_system_id: &str,
     tree: TreeId,
 ) -> Value {
@@ -83,7 +84,7 @@ pub(super) fn inject_uid(
 /// [`ServiceError`] on a storage/database fault during the version read.
 pub(super) async fn load_ehrless(
     pool: &sqlx::PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     version: Option<TreeId>,
     at: Option<jiff::Timestamp>,
 ) -> Result<Option<VersionRead>, ServiceError> {
@@ -99,7 +100,7 @@ pub(super) async fn load_ehrless(
 /// canonical body with the `uid` injected (PARTY `Uid_mandatory`) plus the
 /// resource metadata (an empty `ehr_id` — demographic objects are not
 /// EHR-scoped).
-pub(super) fn version_response(vo_id: Uuid, read: VersionRead) -> ServiceResponse {
+pub(super) fn version_response(vo_id: VoId, read: VersionRead) -> ServiceResponse {
     let meta = ResourceMeta::new(
         String::new(),
         object_version_id(vo_id, &read.creating_system_id, read.tree),
@@ -150,7 +151,7 @@ pub(super) fn record_commit() {
 /// One `REVISION_HISTORY_ITEM` for a stored version row: its
 /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
 /// §Revision History).
-fn revision_history_item(vo_id: Uuid, meta: &version_repo::meta::VersionMeta) -> Value {
+fn revision_history_item(vo_id: VoId, meta: &version_repo::meta::VersionMeta) -> Value {
     let tree = TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
     json!({
         "_type": "REVISION_HISTORY_ITEM",
@@ -214,7 +215,7 @@ impl EhrbaseService {
     /// - [`ServiceError`] on a storage/database fault reading `time_created`.
     pub(super) async fn versioned_wrapper(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         type_name: &str,
         ref_type: &str,
         label: &str,
@@ -244,7 +245,7 @@ impl EhrbaseService {
     /// [`ServiceError`] on a storage/database fault reading the version spine.
     pub(super) async fn demographic_revision_history(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Value, ServiceError> {
         let metas = version_repo::meta::all_version_meta(&self.pool, vo_id).await?;
         let items: Vec<Value> = metas
@@ -265,7 +266,7 @@ impl EhrbaseService {
     ///   `ORIGINAL_VERSION` assembly/signing fails.
     pub(super) async fn demographic_original_version(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: TreeId,
         label: &str,
     ) -> Result<Value, ServiceError> {
@@ -287,7 +288,7 @@ impl EhrbaseService {
     ///   `ORIGINAL_VERSION` assembly/signing fails.
     pub(super) async fn demographic_original_version_at(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         at: Option<jiff::Timestamp>,
         label: &str,
     ) -> Result<ServiceResponse, ServiceError> {

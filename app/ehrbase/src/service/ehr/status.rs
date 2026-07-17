@@ -9,6 +9,7 @@
 //! (master04 §EHR Active Status), so its own commits are never gated by the
 //! content-write guard — that is how a deactivated EHR is flipped back on.
 
+use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
@@ -36,7 +37,7 @@ impl EhrbaseService {
     /// none existed at `at`; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_at(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
@@ -60,8 +61,8 @@ impl EhrbaseService {
     /// another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_by_version(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = read_version(&self.pool, vo_id, version)
@@ -87,8 +88,8 @@ impl EhrbaseService {
     /// layer, matching the COMPOSITION/DIRECTORY write paths.
     async fn commit_status(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: UpdateVersion,
         if_match: &str,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
@@ -144,7 +145,7 @@ impl EhrbaseService {
     /// validation; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_mutate(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         // Resolve the current EHR_STATUS versioned object once and read its
@@ -182,7 +183,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn versioned_status(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Value, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
@@ -198,7 +199,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_revision_history(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Value, ServiceError> {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
@@ -214,8 +215,8 @@ impl EhrbaseService {
     /// another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_version(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
         let read = read_version(&self.pool, vo_id, version)
@@ -235,7 +236,7 @@ impl EhrbaseService {
     /// none existed at `at`; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn status_version_at_time(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         let (vo_id, _) = self
@@ -267,7 +268,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn ehr_status_meta(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         self.latest_version_meta(ehr_id, Kind::EhrStatus).await
     }
@@ -284,7 +285,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn ehr_status_meta_with_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<Option<(Uuid, ResourceMeta)>, ServiceError> {
         self.latest_version_meta_with_vo(ehr_id, Kind::EhrStatus)
             .await
@@ -300,7 +301,7 @@ impl EhrbaseService {
     /// The column read is a storage seam
     /// ([`crate::storage::ehr_repo::ehr_is_modifiable`]; no openEHR spec
     /// governs the promoted column — our own storage design).
-    async fn ehr_is_modifiable(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+    async fn ehr_is_modifiable(&self, ehr_id: EhrId) -> Result<bool, ServiceError> {
         Ok(
             crate::storage::ehr_repo::ehr_is_modifiable(&self.pool, ehr_id)
                 .await?
@@ -331,7 +332,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the flag read fails.
     pub(in crate::service) async fn ensure_content_writable(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<(), ServiceError> {
         if self.ehr_is_modifiable(ehr_id).await? {
             Ok(())
@@ -346,7 +347,7 @@ impl EhrbaseService {
     /// choice. Shared with the combined
     /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
     /// single-sourced.
-    pub(in crate::service) fn not_modifiable_error(ehr_id: Uuid) -> ServiceError {
+    pub(in crate::service) fn not_modifiable_error(ehr_id: EhrId) -> ServiceError {
         ServiceError::Conflict(format!(
             "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
              contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
@@ -380,7 +381,7 @@ impl EhrbaseService {
     pub(in crate::service) async fn sync_ehr_subject(
         &self,
         tx: &mut PgConnection,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         canonical: &Value,
     ) -> Result<(), ServiceError> {
         // The same promoted-column extraction the EHR-create path folds into
@@ -459,7 +460,7 @@ impl EhrbaseService {
     /// [`SmError`] if the current-object resolution fails.
     pub async fn has_ehr_status_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: Uuid,
     ) -> Result<bool, SmError> {
         // An EHR holds exactly one EHR_STATUS versioned object; the version
@@ -476,7 +477,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
     /// a read fails.
-    pub async fn get_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_ehr_status(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         Ok(self.status_at(an_ehr_id, None).await?.body)
     }
 
@@ -488,7 +489,7 @@ impl EhrbaseService {
     /// at that instant (404-equivalent), or a read failure.
     pub async fn get_ehr_status_at_time(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
         let at = a_time.as_deref().map(parse_at_time).transpose()?;
@@ -503,7 +504,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a read failure.
     pub async fn get_ehr_status_at_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: Uuid,
         a_version: &str,
     ) -> Result<Value, SmError> {
@@ -521,7 +522,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
     /// a read fails.
-    pub async fn get_versioned_ehr_status(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn get_versioned_ehr_status(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         Ok(self.versioned_status(an_ehr_id).await?)
     }
 
@@ -531,7 +532,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` or the commit
     /// fails.
-    pub async fn set_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn set_ehr_queryable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
             .status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(true));
@@ -546,7 +547,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` or the commit
     /// fails.
-    pub async fn clear_ehr_queryable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn clear_ehr_queryable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
             .status_mutate(an_ehr_id, |m| {
                 m.insert("is_queryable".to_owned(), Value::Bool(false));
@@ -562,7 +563,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` or the commit
     /// fails.
-    pub async fn set_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn set_ehr_modifiable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
             .status_mutate(an_ehr_id, |m| {
                 m.insert("is_modifiable".to_owned(), Value::Bool(true));
@@ -578,7 +579,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` or the commit
     /// fails.
-    pub async fn clear_ehr_modifiable(&self, an_ehr_id: Uuid) -> Result<String, SmError> {
+    pub async fn clear_ehr_modifiable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
         Ok(self
@@ -598,7 +599,7 @@ impl EhrbaseService {
     /// 422-equivalent), or the commit fails.
     pub async fn update_other_details(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_details: Value,
     ) -> Result<String, SmError> {
         Ok(self
@@ -619,7 +620,7 @@ impl EhrbaseService {
     /// (422-equivalent), or the commit fails.
     pub async fn replace_ehr_status(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_status: UpdateVersion,
     ) -> Result<String, SmError> {
         // PORT NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
@@ -653,7 +654,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent) or
     /// a read fails.
-    pub async fn ehr_status_revision_history(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_status_revision_history(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         Ok(self.status_revision_history(an_ehr_id).await?)
     }
 
@@ -666,7 +667,7 @@ impl EhrbaseService {
     /// at that instant (404-equivalent), or a read failure.
     pub async fn ehr_status_version_at_time(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
         let at = a_time.as_deref().map(parse_at_time).transpose()?;
@@ -681,7 +682,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a read failure.
     pub async fn ehr_status_original_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: Uuid,
         a_version: &str,
     ) -> Result<Value, SmError> {
