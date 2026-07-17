@@ -1,7 +1,7 @@
-//! Shared E2E journey harness (design doc §8d): env-gated WebDriver setup
-//! (skip-with-reason when the stack isn't up), step screenshots, explicit
-//! waits, and the standing browser-console gate — every journey fails on
-//! any console error (the cheapest hydration-bug detector).
+//! Shared E2E journey harness: env-gated WebDriver setup (skip-with-reason
+//! when the stack isn't up), step screenshots, explicit waits, and the
+//! standing browser-console gate — every journey fails on any console
+//! error (the cheapest hydration-bug detector).
 
 use std::time::Duration;
 
@@ -98,7 +98,7 @@ impl Harness {
         panic!("URL never contained `{fragment}` (last: {url})");
     }
 
-    /// Numbered step screenshot: `j{NN}-{step}-{slug}.png` (§8d naming).
+    /// Numbered step screenshot: `{journey}-{step}-{slug}.png`.
     ///
     /// # Panics
     /// On capture/IO failure.

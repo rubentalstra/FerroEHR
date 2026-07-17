@@ -6,20 +6,20 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! E2E journeys J1 (login), J2 (hydration proof), J7 (auth discipline) —
-//! design doc §8d. Driven by `scripts/ui-e2e.sh`; each test skips with a
-//! printed reason when the harness env is absent.
+//! End-to-end login and access-control journeys, driven by
+//! `scripts/ui-e2e.sh`; each test skips with a printed reason when the
+//! harness environment is absent.
 
 mod common;
 
 use common::{Harness, env, login_basic};
 
-/// J1 (Basic half): the Basic form logs in and lands on the dashboard with
-/// the authenticated chrome; wrong credentials render an inline error and
-/// do NOT create a session.
+/// The Basic form logs in and lands on the dashboard with the
+/// authenticated chrome; wrong credentials render an inline error and do
+/// NOT create a session.
 #[tokio::test]
-async fn j01_login_basic() {
-    let Some(h) = Harness::start("j01").await else {
+async fn login_basic_authenticates_and_rejects_bad_credentials() {
+    let Some(h) = Harness::start("login-basic").await else {
         return;
     };
     // Wrong password first: error surface, still on /login.
@@ -67,16 +67,15 @@ async fn j01_login_basic() {
     h.finish().await;
 }
 
-/// J1 (OIDC half): the OIDC button starts the Keycloak redirect flow; after
-/// authenticating at Keycloak the browser lands back on the console with a
-/// session (identity visible in the user menu trigger).
+/// The OIDC button starts the Keycloak redirect flow; after authenticating
+/// at Keycloak the browser lands back on the console with a session.
 #[tokio::test]
-async fn j01_login_oidc() {
-    let Some(h) = Harness::start("j01-oidc").await else {
+async fn login_oidc_round_trips_through_keycloak() {
+    let Some(h) = Harness::start("login-oidc").await else {
         return;
     };
     let (Some(user), Some(pass)) = (env("UI_E2E_OIDC_USER"), env("UI_E2E_OIDC_PASS")) else {
-        println!("SKIP j01_login_oidc: UI_E2E_OIDC_USER/PASS unset");
+        println!("SKIP login_oidc: UI_E2E_OIDC_USER/PASS unset");
         h.finish().await;
         return;
     };
@@ -117,11 +116,11 @@ async fn j01_login_oidc() {
     h.finish().await;
 }
 
-/// J2: hydration proof — after first paint, an interaction actually mutates
-/// the DOM (WASM attached), and the console log carries no hydration error.
+/// Hydration proof: after first paint an interaction actually mutates the
+/// DOM (WASM attached), and the console log carries no hydration error.
 #[tokio::test]
-async fn j02_hydration_interactivity() {
-    let Some(h) = Harness::start("j02").await else {
+async fn hydration_attaches_interactivity() {
+    let Some(h) = Harness::start("hydration").await else {
         return;
     };
     login_basic(&h).await;
@@ -138,11 +137,11 @@ async fn j02_hydration_interactivity() {
     h.finish().await;
 }
 
-/// J7 (first half): an unauthenticated deep link redirects to `/login`; the
-/// login page renders (the streaming-SSR client redirect completes).
+/// An unauthenticated deep link redirects to `/login`; the login page
+/// renders (the streaming-SSR client redirect completes).
 #[tokio::test]
-async fn j07_unauthenticated_redirect() {
-    let Some(h) = Harness::start("j07").await else {
+async fn unauthenticated_deep_link_redirects_to_login() {
+    let Some(h) = Harness::start("auth-redirect").await else {
         return;
     };
     h.goto("/system").await;
