@@ -7,6 +7,38 @@
   are historical). `ehrbase-rest` implements the generated traits with our own
   idiomatic logic (ADR-006/008), not "ported EHRbase Java logic".
 - **Date:** 2026-07-04
+
+> ## ⚠️ AMENDMENT (2026-07-17, owner ruling): the vendored OAS is a codegen
+> ## input + behavioural oracle — NEVER part of `ehrbase-rest`
+>
+> §4's presentation-side framing is superseded by what actually shipped.
+> The split, precisely:
+>
+> - **The vendored ITS-REST OAS bundles** (`crates/openehr-its/vendor/rest-oas/`,
+>   spec text at `docs/specs/openehr/ITS-REST/`) are exactly two things:
+>   (1) the **codegen input** for the generated group contract in
+>   `openehr-its` (`emit-rest`), and (2) the **behavioural/conformance
+>   oracle** for wire semantics (media types, headers, status codes) that
+>   the implementation and the ECC verify against.
+> - **They are never imported into, served by, or rendered from
+>   `ehrbase-rest`.** The server's OpenAPI documents are generated
+>   **natively from its own code** — every handler carries a
+>   `#[utoipa::path]` declaration and the complete document is composed in
+>   `app/ehrbase-rest/src/extensions/openapi.rs` (owner hard rule recorded
+>   there: *the Swagger spec selector shows only documents this server
+>   generates itself — never a vendored OAS*). Route and document are
+>   single-sourced from the same handler attribute, so the served
+>   `openapi.json` cannot drift from the router.
+> - Consequence for every surface change (media types, headers, params):
+>   the vendored OAS tells you what the behaviour must be; **our own
+>   `#[utoipa::path]` declarations in `ehrbase-rest` are where the served
+>   documentation changes** — in the same PR as the behaviour.
+> - The "optional `utoipa` pass … diffed against the vendored upstream as a
+>   CI drift-check" sketched in §4 was **never built and is retired**: the
+>   two documents legitimately differ (ours documents the full native
+>   surface incl. own-design extensions; the vendored one is the spec), so
+>   a diff gate is the wrong instrument — conformance is verified
+>   behaviourally by the ECC suite.
 - **Extends:** ADR-004 (spec-driven codegen of the RM/BASE/AM crates from BMM).
 - **Supersedes (in part):** the "ITS-XML is hand-written, the schema is a
   *validation target, not a codegen source*" rule in

@@ -15,6 +15,33 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The FLAT and STRUCTURED (Simplified Formats) layer was rewritten against
+  the official openEHR ITS-REST Simplified Formats specification: exact
+  node-id generation, per-type attribute suffixes, the full `ctx/`
+  vocabulary with its documented defaults, `|raw` embedding, and the
+  `|other` open-value-set rules (invalid combinations are now rejected with
+  `422` instead of being silently ignored). Unknown field identifiers in a
+  simplified payload are now rejected rather than dropped.
+- Format selection is done exclusively via the `Accept` and `Content-Type`
+  headers on every endpoint that supports the simplified media types
+  (`application/openehr.wt.flat+json`, `…wt.structured+json`, and
+  `application/openehr.wt+json` for template rendering), with proper
+  RFC 9110 q-value negotiation, `406`/`415` answers naming the supported
+  formats, and simplified support on CONTRIBUTION payloads
+  (`versions[].data`) with the envelope staying canonical.
+- Committing a composition in a simplified format now requires the
+  `openehr-template-id` request header (`422` without it); the undocumented
+  `template_id` query parameter is no longer read.
+
+### Removed
+
+- The `ehrbase-quirks` cargo feature and its vendor-specific behaviours
+  (alternate duplicate-id spelling, the non-standard `|unit_system` /
+  `|unit_display_name` quantity suffixes) — the specification-defined
+  behaviour is now the only behaviour.
+
 ### Fixed
 
 - A tenant-resolution failure (tenant registry unreachable) now fails the

@@ -35,9 +35,9 @@ impl WebTemplateCache {
         &self,
         template_id: &str,
         build: F,
-    ) -> Result<Arc<WebTemplate>, Arc<crate::FlatError>>
+    ) -> Result<Arc<WebTemplate>, Arc<crate::error::FlatError>>
     where
-        F: FnOnce() -> Result<WebTemplate, crate::FlatError>,
+        F: FnOnce() -> Result<WebTemplate, crate::error::FlatError>,
     {
         self.inner
             .try_get_with_by_ref(template_id, async { build().map(Arc::new) })
