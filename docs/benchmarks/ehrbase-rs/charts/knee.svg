@@ -28,39 +28,36 @@ text { fill: #c3c2b7; }
 <text class="muted" x="56.0" y="52.0" text-anchor="end">100.0s</text>
 <line class="s2s" x1="64" y1="129.0" x2="660" y2="129.0" stroke-dasharray="4 3"/>
 <text class="muted" x="620.0" y="125.0">SLO 1s</text>
-<text class="muted" x="660" y="228.0" text-anchor="end">632 req/s</text>
-<polyline class="s1s" fill="none" stroke-width="2" points="73.5,169.5 83.0,187.1 101.9,190.1 140.0,192.1 215.5,198.7 362.4,196.3 660.0,170.9 574.4,69.4 620.1,69.5 507.0,69.8 610.7,70.1"/>
-<circle class="s1" cx="73.5" cy="169.5" r="3.5"/>
-<text x="79.5" y="165.5">L=1</text>
-<text class="muted" x="79.5" y="181.5">100.0ms</text>
-<circle class="s1" cx="83.0" cy="187.1" r="3.5"/>
-<text x="89.0" y="183.1">L=2</text>
-<text class="muted" x="89.0" y="199.1">36.7ms</text>
-<circle class="s1" cx="101.9" cy="190.1" r="3.5"/>
-<text x="107.9" y="186.1">L=4</text>
-<text class="muted" x="107.9" y="202.1">31.0ms</text>
-<circle class="s1" cx="140.0" cy="192.1" r="3.5"/>
-<text x="146.0" y="188.1">L=8</text>
-<text class="muted" x="146.0" y="204.1">27.6ms</text>
-<circle class="s1" cx="215.5" cy="198.7" r="3.5"/>
-<text x="221.5" y="194.7">L=16</text>
-<text class="muted" x="221.5" y="210.7">19.0ms</text>
-<circle class="s1" cx="362.4" cy="196.3" r="3.5"/>
-<text x="368.4" y="192.3">L=32</text>
-<text class="muted" x="368.4" y="208.3">21.8ms</text>
-<circle class="s1" cx="660.0" cy="170.9" r="3.5"/>
-<text x="666.0" y="166.9">L=64</text>
-<text class="muted" x="666.0" y="182.9">92.2ms</text>
-<circle class="s1" cx="574.4" cy="69.4" r="3.5"/>
-<text x="580.4" y="65.4">L=72</text>
-<text class="muted" x="580.4" y="81.4">29.5s</text>
-<circle class="s1" cx="620.1" cy="69.5" r="3.5"/>
-<text x="626.1" y="65.5">L=80</text>
-<text class="muted" x="626.1" y="81.5">29.5s</text>
-<circle class="s1" cx="507.0" cy="69.8" r="3.5"/>
-<text x="513.0" y="65.8">L=96</text>
-<text class="muted" x="513.0" y="81.8">29.0s</text>
-<circle class="s1" cx="610.7" cy="70.1" r="3.5"/>
-<text x="616.7" y="66.1">L=128</text>
-<text class="muted" x="616.7" y="82.1">28.5s</text>
+<text class="muted" x="660" y="228.0" text-anchor="end">631 req/s</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="73.5,178.4 83.0,186.0 101.9,189.8 140.1,193.0 215.7,200.4 362.8,197.8 513.1,152.9 587.0,164.6 602.0,70.9 660.0,92.9"/>
+<circle class="s1" cx="73.5" cy="178.4" r="3.5"/>
+<text x="79.5" y="174.4">L=1</text>
+<text class="muted" x="79.5" y="190.4">60.4ms</text>
+<circle class="s1" cx="83.0" cy="186.0" r="3.5"/>
+<text x="89.0" y="182.0">L=2</text>
+<text class="muted" x="89.0" y="198.0">39.2ms</text>
+<circle class="s1" cx="101.9" cy="189.8" r="3.5"/>
+<text x="107.9" y="185.8">L=4</text>
+<text class="muted" x="107.9" y="201.8">31.6ms</text>
+<circle class="s1" cx="140.1" cy="193.0" r="3.5"/>
+<text x="146.1" y="189.0">L=8</text>
+<text class="muted" x="146.1" y="205.0">26.3ms</text>
+<circle class="s1" cx="215.7" cy="200.4" r="3.5"/>
+<text x="221.7" y="196.4">L=16</text>
+<text class="muted" x="221.7" y="212.4">17.2ms</text>
+<circle class="s1" cx="362.8" cy="197.8" r="3.5"/>
+<text x="368.8" y="193.8">L=32</text>
+<text class="muted" x="368.8" y="209.8">20.0ms</text>
+<circle class="s1" cx="513.1" cy="152.9" r="3.5"/>
+<text x="519.1" y="148.9">L=48</text>
+<text class="muted" x="519.1" y="164.9">256.6ms</text>
+<circle class="s1" cx="587.0" cy="164.6" r="3.5"/>
+<text x="593.0" y="160.6">L=56</text>
+<text class="muted" x="593.0" y="176.6">132.5ms</text>
+<circle class="s1" cx="602.0" cy="70.9" r="3.5"/>
+<text x="608.0" y="66.9">L=60</text>
+<text class="muted" x="608.0" y="82.9">27.2s</text>
+<circle class="s1" cx="660.0" cy="92.9" r="3.5"/>
+<text x="666.0" y="88.9">L=64</text>
+<text class="muted" x="666.0" y="104.9">7.8s</text>
 </svg>
