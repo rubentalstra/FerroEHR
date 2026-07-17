@@ -414,9 +414,9 @@ async fn versioned_party_relationship_is_mounted() {
 /// The ITS-REST overview committal-header merge requirement holds on the
 /// demographic wire exactly as on the EHR APIs: attributes supplied via
 /// `openEHR-AUDIT_DETAILS.*` request headers "MUST be merged with the default
-/// VERSION and VERSION.audit_details attributes on commit runtime". The
-/// persisted ORIGINAL_VERSION's commit_audit must reflect the caller's
-/// description and committer (change_type stays operation-owned).
+/// `VERSION` and `VERSION.audit_details` attributes on commit runtime". The
+/// persisted `ORIGINAL_VERSION`'s `commit_audit` must reflect the caller's
+/// description and committer (`change_type` stays operation-owned).
 #[tokio::test]
 async fn demographic_committal_headers_merge_into_the_commit() {
     let (_pg, app) = app("dem_committal_merge").await;
