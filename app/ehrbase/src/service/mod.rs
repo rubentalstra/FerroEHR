@@ -44,8 +44,7 @@ use crate::service::terminology::fhir::FhirTerminologyProvider;
 
 mod commit_env;
 
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Duration;
 
 use serde_json::Value;
@@ -65,7 +64,21 @@ use status::SmError;
 /// across service clones (single registry view); cleared wholesale on any
 /// tenant CRUD write. Multi-tenancy is spec-silent — our own extension
 /// ([`crate::extensions::tenancy`]).
-pub(crate) type TenantCache = Arc<RwLock<HashMap<String, TenantContext>>>;
+///
+/// Bounded + TTL'd, and it caches the NEGATIVE outcome too (`None` = the key
+/// resolves to no tenant), so a request stream carrying a bogus tenant key
+/// costs one registry read per TTL window, not one per request.
+pub(crate) type TenantCache = moka::future::Cache<String, Option<TenantContext>>;
+
+/// Build the tenant resolver cache: capacity-bounded (the registry is small —
+/// the bound is a hostile-key guard) with a TTL that also serves as the
+/// convergence window for renames across instances.
+pub(crate) fn tenant_cache() -> TenantCache {
+    moka::future::Cache::builder()
+        .max_capacity(10_000)
+        .time_to_live(std::time::Duration::from_secs(300))
+        .build()
+}
 
 /// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
 /// audit rows. Configurable per deployment (the binary wires it from config).
@@ -154,7 +167,7 @@ impl EhrbaseService {
             external_terminology: None,
             multimedia: None,
             subject_proxy_fhir: None,
-            tenant_cache: TenantCache::default(),
+            tenant_cache: tenant_cache(),
             ehr_access: EhrAccessCache::default(),
             plan_cache: PlanCache::default(),
             query_timeout: None,

@@ -159,34 +159,33 @@ impl EhrbaseService {
     /// Resolve a claim/header value (a tenant name or uuid string) to its
     /// [`TenantContext`], caching the hit in-process.
     async fn resolve_tenant(&self, key: &str) -> Result<Option<TenantContext>, ServiceError> {
-        if let Ok(cache) = self.tenant_cache.read()
-            && let Some(ctx) = cache.get(key)
-        {
-            return Ok(Some(ctx.clone()));
+        if let Some(outcome) = self.tenant_cache.get(key).await {
+            return Ok(outcome);
         }
         let row = sqlx::query("SELECT id, system_id FROM tenant WHERE name = $1 OR id::text = $1")
             .bind(key)
             .fetch_optional(&self.pool)
             .await?;
-        let Some(row) = row else {
-            return Ok(None);
+        let outcome = match row {
+            Some(row) => Some(TenantContext {
+                tenant_id: row.try_get("id")?,
+                system_id: row.try_get("system_id")?,
+            }),
+            // The negative outcome is cached too: an unknown key answers from
+            // memory for the TTL window instead of one registry read per
+            // request carrying a bogus tenant header.
+            None => None,
         };
-        let ctx = TenantContext {
-            tenant_id: row.try_get("id")?,
-            system_id: row.try_get("system_id")?,
-        };
-        if let Ok(mut cache) = self.tenant_cache.write() {
-            cache.insert(key.to_owned(), ctx.clone());
-        }
-        Ok(Some(ctx))
+        self.tenant_cache.insert(key.to_owned(), outcome.clone()).await;
+        Ok(outcome)
     }
 
     /// Drop the whole resolver cache after any tenant CRUD write (a rename /
-    /// `system_id` change / delete can invalidate a cached `name→context` entry).
+    /// `system_id` change / delete can invalidate a cached `name→context`
+    /// entry). Tenant writes are rare admin operations; the TTL bounds the
+    /// convergence window across instances either way.
     fn invalidate_tenant_cache(&self) {
-        if let Ok(mut cache) = self.tenant_cache.write() {
-            cache.clear();
-        }
+        self.tenant_cache.invalidate_all();
     }
 }
 

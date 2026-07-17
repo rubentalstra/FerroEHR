@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A tenant-resolution failure (tenant registry unreachable) now fails the
+  request with `503` instead of silently serving it under the default
+  tenant; unknown tenant keys keep the documented unscoped behaviour and
+  are negative-cached.
 - Audits for authenticated writes that carry no committal headers are now
   attributed to the authenticated user (Basic username / token subject, with
   the mechanism recorded as the identifier type) instead of the generic
