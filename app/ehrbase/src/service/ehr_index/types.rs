@@ -5,7 +5,7 @@
 /// OBJECT_REF`). The realization of the `OBJECT_REF` the EHR Index keys its
 /// associations by: `id` = `OBJECT_ID.value`, `namespace`, `type`.
 ///
-/// PORT NOTE: the SM types the subject as a full `OBJECT_REF`; we carry the
+/// NOTE: the SM types the subject as a full `OBJECT_REF`; we carry the
 /// three fields the index actually keys on (`(id, namespace)` is the
 /// association key, `type` defaults to `PERSON` — the common MPI case).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -70,7 +70,7 @@ impl ResourceInstanceType {
 /// `RESOURCE_STATUS` — "Object describing the status of a reference to a
 /// resource" (`resource_status.adoc`).
 ///
-/// PORT NOTE: `start_valid_time`/`end_valid_time` are typed `@@` (an
+/// NOTE: `start_valid_time`/`end_valid_time` are typed `@@` (an
 /// unresolved placeholder) in the SM — a recorded spec defect; implemented as
 /// ISO date-time strings (stored `timestamptz`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -90,7 +90,7 @@ pub struct ResourceStatus {
 /// `LOCATION_DESC` — "A descriptor containing location information for the
 /// EHR with which this descriptor is associated" (`location_desc.adoc`).
 ///
-/// PORT NOTE: the SM class is an **empty stub** (no attributes defined) — a
+/// NOTE: the SM class is an **empty stub** (no attributes defined) — a
 /// recorded spec defect; the designed contract `{system_id, uri?,
 /// description?}` makes the optional location descriptor carry usable data.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -105,7 +105,7 @@ pub struct LocationDesc {
 
 /// One EHR Index record: a subject↔EHR association with its status and
 /// optional location descriptor. Returned by the design-filled read calls
-/// (`ehr_subjects` / `subject_ehrs` — the SM defines no reads; PORT NOTE on
+/// (`ehr_subjects` / `subject_ehrs` — the SM defines no reads; NOTE on
 /// those methods).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EhrIndexEntry {

@@ -22,7 +22,7 @@
 //! | `subsumes` | `CodeSystem/$subsumes` (outcome `subsumes`) |
 //! | `has_term` / `get_term` | `CodeSystem/$lookup` |
 //!
-//! PORT NOTE (enumerating calls — G-4): `get_terminology_ids`,
+//! NOTE (enumerating calls — G-4): `get_terminology_ids`,
 //! `get_terminology_description` and `has_terminology` have no faithful FHIR
 //! operation — a FHIR TS is a validation/expansion backend, not an enumerable
 //! openEHR terminology bundle. The routing layer answers them from the
@@ -30,12 +30,12 @@
 //! terminology; this provider's [`FhirTerminologyProvider::get_terminology_description`]
 //! is an explicit `NotImplemented`.
 //!
-//! PORT NOTE (temporal — G-1): the SM `at_date` (`i_terminology_service.adoc`
+//! NOTE (temporal — G-1): the SM `at_date` (`i_terminology_service.adoc`
 //! `has_term`/`get_term`/`value_set_validate`, an `Iso8601_date`) selects the
 //! terminology as it stood on a date. It is forwarded to the server as the
 //! FHIR `date` parameter of `$lookup`/`$validate-code`/`$expand`.
 //!
-//! PORT NOTE (hierarchy — G-2/G-5): a FHIR `ValueSet/$expand` may nest
+//! NOTE (hierarchy — G-2/G-5): a FHIR `ValueSet/$expand` may nest
 //! members under `contains`. We keep the flat `Terminology_extract._terms_`
 //! (the membership view) **and** preserve the tree in
 //! `Terminology_extract._relationships_` as `Term_relationship`s under the
@@ -44,7 +44,7 @@
 //! ([`FHIR_CHILD_PROPERTY`]) — an `external_code` relation
 //! (`terminology_relation.adoc` `Inv_valid_definition`).
 //!
-//! PORT NOTE (errors): a value set / terminology / code the server does not
+//! NOTE (errors): a value set / terminology / code the server does not
 //! know (HTTP `404`, or `$validate-code result=false` with no membership) is
 //! a `Pre_has_*` precondition failure →
 //! [`CallStatusType::VersionedObjectDoesNotExist`] (the `404` reading,
@@ -393,7 +393,7 @@ impl FhirTerminologyProvider {
     /// with no `display` falls back to the code itself). `at_date` → the FHIR
     /// `date` parameter.
     ///
-    /// PORT NOTE (attributes — G-3): the SM `attributes` allow-list filters
+    /// NOTE (attributes — G-3): the SM `attributes` allow-list filters
     /// the meta-model attributes returned. `$lookup` returns only the concept
     /// `display` (mapped to the term text), so there is nothing further to
     /// filter; `attributes` is accepted and has no effect on the returned
@@ -454,7 +454,7 @@ impl FhirTerminologyProvider {
         Ok(self.expand(value_set_code, None).await?.is_some())
     }
 
-    /// `get_terminology_description` → not modelled for a FHIR TS (PORT NOTE
+    /// `get_terminology_description` → not modelled for a FHIR TS (NOTE
     /// at module head — G-4; the routing layer answers this from the bundle).
     ///
     /// # Errors

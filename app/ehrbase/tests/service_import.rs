@@ -35,7 +35,6 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract::Extract;
@@ -124,7 +123,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
 /// Seed an EHR with an `EHR_STATUS` (create → update = two versions), a directory
 /// `FOLDER`, and the auto-created `EHR_ACCESS` — the same shape the export tests
 /// seed. Returns the EHR id.
-async fn seed_ehr(svc: &EhrbaseService) -> Uuid {
+async fn seed_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     let mut status = svc
@@ -159,7 +158,7 @@ async fn seed_ehr(svc: &EhrbaseService) -> Uuid {
 
 /// The single-`EXTRACT` result of an `export_ehrs`, as a typed [`Extract`]
 /// (the wire shape the import calls receive).
-async fn export_one(svc: &EhrbaseService, ehr: Uuid) -> Extract {
+async fn export_one(svc: &EhrbaseService, ehr: ehrbase::ids::EhrId) -> Extract {
     let mut extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
     assert_eq!(extracts.len(), 1, "one EHR id → one EXTRACT");
     serde_json::from_value(extracts.remove(0))
@@ -239,7 +238,7 @@ async fn import_ehr_into_fixed_fresh_id() {
 
     // A caller-provided fixed id (the SM's "same patient in other EHR services"
     // case): the clone lands under `fixed`, not the source id.
-    let fixed = Uuid::now_v7();
+    let fixed = ehrbase::ids::EhrId::new();
     let extract = export_one(&source, ehr).await;
     target
         .import_ehr(Some(fixed), extract)

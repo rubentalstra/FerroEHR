@@ -575,7 +575,7 @@ fn serde_de_error(msg: &str) -> serde_json::Error {
 /// be built, or `from_flat` fails.
 pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, FixtureError> {
     /// Fixed `ctx/time` default for the FLAT→canonical fixture build (ITS-REST
-    /// simplified_formats master04 §Context). A constant keeps the derived
+    /// `simplified_formats` master04 §Context). A constant keeps the derived
     /// fixture reproducible, which the zero-drift ECC baseline requires.
     const FIXTURE_NOW: &str = "2024-01-01T00:00:00Z";
     let what = format!("{opt_key} + {flat_key}");
@@ -617,7 +617,7 @@ pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, Fixture
 /// defect in an `ehr-status.invalid` fixture is left untouched — those are
 /// posted verbatim).
 ///
-// PORT NOTE: this is the fixture overlay in code rather than a copied file, so
+// NOTE: this is the fixture overlay in code rather than a copied file, so
 // the vendored corpus stays read-only; the change (added `_type` tags + unique
 // subject) is recorded here as the provenance. RM ehr master04 §EHR Status:
 // `EHR_STATUS.subject` is typed PARTY_SELF (monomorphic) — the subject identity

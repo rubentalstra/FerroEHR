@@ -6,7 +6,7 @@
 //! handler forwards to the group dispatcher through [`guarded_dispatch`], so the
 //! wire behaviour is identical to the former table-driven `mount` adapter.
 //!
-//! PORT NOTE (operation ids): a few generated operation ids carry `.` (e.g.
+//! NOTE (operation ids): a few generated operation ids carry `.` (e.g.
 //! `definition_template_adl1.4_list`, `definition_query_store.yaml`) — invalid
 //! Rust identifiers, so the handler fn names sanitise `.` to `_` while the op
 //! string passed to the dispatcher is the verbatim generated id it matches on.
@@ -87,15 +87,11 @@ pub(crate) async fn definition_template_adl1_4_upload(
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (
-            status = 200, description = "The template.", body = serde_json::Value,
+            status = 200, description = "The template.", 
             // The canonical OPT is application/xml; the Web Template document is
             // application/openehr.wt+json (Accept_template; a bare application/json
             // also returns the Web Template — the only JSON projection of an OPT).
-            content_type = [
-                "application/xml",
-                "application/openehr.wt+json",
-                "application/json"
-            ]
+            content((serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt+json"), (serde_json::Value = "application/json"))
         ),
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )
@@ -120,15 +116,10 @@ pub(crate) async fn definition_template_adl1_4_get(
     params(("template_id" = String, Path, description = "The template id.")),
     responses(
         (
-            status = 200, description = "An example COMPOSITION.", body = serde_json::Value,
+            status = 200, description = "An example COMPOSITION.", 
             // The example is generated as canonical RM and serialized per Accept
             // in any of the four LOCATABLE forms (Accept_LOCATABLE).
-            content_type = [
-                "application/json",
-                "application/xml",
-                "application/openehr.wt.flat+json",
-                "application/openehr.wt.structured+json"
-            ]
+            content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
         (status = 404, description = "Unknown template.", body = serde_json::Value)
     )

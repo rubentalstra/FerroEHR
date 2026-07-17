@@ -49,7 +49,6 @@ use std::time::Duration;
 
 use serde_json::Value;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 use crate::extensions::tenant_context::TenantContext;
 use crate::ids::EhrId;

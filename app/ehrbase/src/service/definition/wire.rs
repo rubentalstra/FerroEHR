@@ -96,7 +96,7 @@ impl EhrbaseService {
     /// dispatcher builds `Location` + the `Prefer` body from it
     /// (`201_Template_adl2_upload`).
     ///
-    /// PORT NOTE: duplicate handling diverges by surface. The REST
+    /// NOTE: duplicate handling diverges by surface. The REST
     /// contract declares `409_template_already_exists` on this endpoint
     /// (`definition-codegen.openapi.yaml` /definition/template/adl2 POST),
     /// while the SM native `upload_artefact` says "replace it"

@@ -69,7 +69,7 @@ use crate::pack;
 use crate::{BenchError, TemplateKind};
 
 /// Fixed `ctx/time` default for the FLAT rebuild direction (ITS-REST
-/// simplified_formats master04 §Context). The benchmark renders deterministic
+/// `simplified_formats` master04 §Context). The benchmark renders deterministic
 /// skeletons, so a constant instant keeps a rebuild reproducible.
 const NOW: &str = "2024-01-01T00:00:00Z";
 
@@ -118,7 +118,7 @@ pub struct TemplateSource {
 /// The ECC-corpus source for a template kind, or `None` for the CKM-pack kinds
 /// (which are sourced from [`crate::pack`], not the conformance fixtures).
 ///
-/// PORT NOTE: no openEHR spec governs the benchmark's template selection. The
+/// NOTE: no openEHR spec governs the benchmark's template selection. The
 /// ECC-corpus kinds are retained as proven both-server-accepted payloads; the
 /// CKM-pack kinds (E1–E4/E7/E9 clinical events) are the official openEHR CKM
 /// templates in `templates/ckm/`.

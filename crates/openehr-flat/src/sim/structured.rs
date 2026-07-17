@@ -9,7 +9,7 @@
 //! `"vital_signs": { … }`, not an array); everything below it is
 //! array-wrapped.
 //!
-//! PORT NOTE: the spec's STRUCTURED chapter shows no `ctx` entry with
+//! NOTE: the spec's STRUCTURED chapter shows no `ctx` entry with
 //! instance indices or suffixed parts (participations, `work_flow_id`) —
 //! no openEHR spec governs that nesting. Convention here: a `ctx` child is
 //! a scalar (bare single), an object of `"|suffix"` properties (suffixed
@@ -91,9 +91,8 @@ fn parse_child_property(node: &mut SimNode, key: &str, value: &Value) -> Result<
         return Ok(());
     }
     if let Some(chain) = key.strip_prefix('|') {
-        // Validate the suffix chain syntax by parsing it as a key tail.
-        let parsed = FlatKey::parse(&format!("x|{chain}"))?;
-        let _ = parsed;
+        // Validate the suffix-chain syntax by parsing it as a key tail.
+        FlatKey::parse(&format!("x|{chain}"))?;
         node.attrs.insert(chain.to_owned(), value.clone());
         return Ok(());
     }

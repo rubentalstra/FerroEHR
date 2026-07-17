@@ -3,7 +3,7 @@
 //! `Match_valid` (archie `TermMapping.VALID_MATCH_CODES`): `match` must be one
 //! of `< = > ?`.
 //!
-//! PORT NOTE: archie also has `Purpose_valid` (the purpose `DV_CODED_TEXT` must
+//! NOTE: archie also has `Purpose_valid` (the purpose `DV_CODED_TEXT` must
 //! belong to the openEHR "term mapping purpose" group) — a terminology-bound
 //! check deferred to the composition validator + `openehr-term` (this crate has
 //! no terminology dependency). The spec's "purpose is DV_CODED_TEXT" is a

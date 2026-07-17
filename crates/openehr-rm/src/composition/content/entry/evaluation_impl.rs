@@ -1,7 +1,7 @@
 //! Hand-written RM class invariants for `EVALUATION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
-//! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE on the
+//! `Archetype_node_id_valid`). See `observation_impl` for the NOTE on the
 //! deferred terminology-bound `Entry` invariants.
 
 use crate::composition::content::entry::evaluation::Evaluation;

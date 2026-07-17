@@ -20,7 +20,7 @@
 //! `party_relationship` path — only the schema), so those cases are
 //! `EccOriginal` against the extension route, never presented as ITS-REST-bound.
 //
-// PORT NOTE: register 08 G-4 (RM wire version ladder) is only partially met —
+// NOTE: register 08 G-4 (RM wire version ladder) is only partially met —
 // party/relationship request payloads are authored at RM 1.2.0; a per-edition
 // request-payload provider (RM 1.0.2 minimum, master03-overview §API
 // Conformance) belongs to the register-90 wire adapter, not yet exposed. The

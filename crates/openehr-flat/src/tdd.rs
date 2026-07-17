@@ -45,7 +45,7 @@
 //!   re-serialised to canonical XML with the web-template-declared concrete type
 //!   as `xsi:type` and parsed as an [`openehr_rm::prelude::DataValue`].
 //!
-//! # Scope this wave (`// PORT NOTE`s below)
+//! # Scope this wave (`// NOTE`s below)
 //!
 //! The vendored corpus pairs (`persistent_minimal.en.v1`, `nested.en.v1`)
 //! convert and validate. Documented limits, none of which affect canonical
@@ -89,7 +89,7 @@ const RM_VERSION: &str = "1.2.0";
 
 /// RM-mandatory temporal default for wrapper nodes whose instance value the TDD
 /// leaves in a compacted wrapper this wave does not carry (see the module
-/// `PORT NOTE`). Matches the FLAT converter's `DEFAULT_TIME`.
+/// `NOTE`). Matches the FLAT converter's `DEFAULT_TIME`.
 const DEFAULT_TIME: &str = "1970-01-01T00:00:00Z";
 
 // ── generic XML tree ─────────────────────────────────────────────────────────

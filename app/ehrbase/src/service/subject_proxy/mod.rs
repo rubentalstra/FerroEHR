@@ -21,7 +21,7 @@
 //!   `SUBJECT_DATA_SET`/`DATA_SET_RESULT`, `SAMPLE<T>`, `VARIABLE_VALUE`,
 //!   `SUBJECT_VARIABLE`).
 //!
-//! PORT NOTE (design-filled preconditions/errors). The SM declares only
+//! NOTE (design-filled preconditions/errors). The SM declares only
 //! `__Pre_…__` clauses and no error codes; every unmet precondition surfaces as
 //! `SmError(PreconditionViolation, …)` (→ `400`).
 

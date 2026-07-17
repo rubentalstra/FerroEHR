@@ -82,7 +82,7 @@ pub(super) async fn run(
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
             let body = state
                 .backend()
-                .ehr_status_original_version(ehr_id, vo_id, &version)
+                .ehr_status_original_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
             Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
                 h,

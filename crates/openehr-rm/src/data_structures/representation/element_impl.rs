@@ -6,7 +6,7 @@
 //! - `Inv_null_reason_valid`: a `null_reason` implies `value` is absent.
 //! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
 //!
-//! PORT NOTE: archie's `Inv_null_flavour_valid` (the null flavour code belongs
+//! NOTE: archie's `Inv_null_flavour_valid` (the null flavour code belongs
 //! to the openEHR "null flavours" group) is terminology-bound — deferred to the
 //! composition validator + `openehr-term`.
 

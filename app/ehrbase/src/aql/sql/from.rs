@@ -64,7 +64,7 @@ impl Builder<'_> {
             // over the shared anchor, combined with `OR`. A top-level `OR` with
             // no enclosing object is rejected (there is no row scope to
             // correlate to). Variables bound only inside an `OR` branch are
-            // containment-filter-only — see the module PORT NOTE.
+            // containment-filter-only — see the module NOTE.
             ContainsTree::Or(a, b) => {
                 let anchor = match (&vo, ehr) {
                     (Some(g), _) => ExistsAnchor::Vo(g.node.clone()),

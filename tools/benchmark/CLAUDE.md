@@ -11,8 +11,7 @@ percentiles, resource footprint — `docs/plans/x1-comparison.md`).
   host class; document any asymmetry rather than hiding it.
 - Report percentiles (p50/p95/p99), not means alone; include resource
   footprint (CPU/RSS) when the plan calls for it.
-- Benchmarks are `PERF(port)`-adjacent: they inform P20 optimization but
-  never justify weakening conformance (correctness > speed, blueprint
-  discipline).
+- Benchmarks are `PERF(port)`-adjacent: they inform performance
+  optimization but never justify weakening conformance (correctness > speed).
 - Gates: `cargo clippy -p benchmark --all-targets` +
   `cargo nextest run -p benchmark`.

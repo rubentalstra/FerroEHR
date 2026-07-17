@@ -183,7 +183,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let svc = EhrbaseService::new(pg.migrated_pool("lifecycle").await);
 
     // ── EHR create + retrieve ────────────────────────────────────────────────
-    // PORT NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR`
+    // NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR`
     // body is read via `ehr_object`. The old create-envelope ETag/Location meta
     // (ehr_id == uid) is exactly that returned uuid — the adapter builds the
     // header — so the meta assertions are folded into the uuid/body checks.
@@ -207,7 +207,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let mut status_v2_body = status_v1.clone();
     status_v2_body.as_object_mut().unwrap().remove("uid");
     status_v2_body["is_modifiable"] = json!(false);
-    // PORT NOTE: `replace_ehr_status` returns the new version_uid (the
+    // NOTE: `replace_ehr_status` returns the new version_uid (the
     // old `.meta.uid`); the content is re-read to assert it.
     let status_v2_uid = svc
         .replace_ehr_status(ehr_uuid, uv(status_v2_body, "251", Some(&status_ovid_v1)))
@@ -269,7 +269,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .expect("composition_create")
         .version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
-    let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let comp_vo_uuid = comp_vo_id.parse::<ehrbase::ids::VoId>().expect("vo uuid");
 
     let got = svc
         .get_composition_latest(ehr_uuid, comp_vo_uuid)
@@ -359,7 +359,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         matches!(stale_delete, Err(ServiceError::Conflict(_))),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
-    // PORT NOTE: the old "bare HIER_OBJECT_ID → 400" sub-check is
+    // NOTE: the old "bare HIER_OBJECT_ID → 400" sub-check is
     // dropped — `delete_composition` now takes a typed `ObjectVersionId`, so a
     // bare id cannot be constructed as an argument; that decode + 400 moved to
     // the protocol adapter (`ehrbase-rest`), where it is exercised.
@@ -463,7 +463,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
         .split("::")
         .next()
         .unwrap()
-        .parse::<uuid::Uuid>()
+        .parse::<ehrbase::ids::VoId>()
         .expect("vo uuid");
     let folder = json!({ "_type": "FOLDER", "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1", "name": { "_type": "DV_TEXT", "value": "root" } });
     let dir_ovid = svc
@@ -585,7 +585,7 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("conflict").await);
 
-    let id = uuid::Uuid::now_v7();
+    let id = ehrbase::ids::EhrId::new();
     svc.create_ehr_with_id(id, None)
         .await
         .expect("first create");
@@ -597,7 +597,7 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
 async fn unknown_ehr_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("missing").await);
-    let missing = uuid::Uuid::now_v7();
+    let missing = ehrbase::ids::EhrId::new();
     assert!(svc.ehr_object(missing).await.is_err());
 }
 
@@ -699,7 +699,7 @@ async fn contribution_commits_a_composition_atomically() {
     let svc = EhrbaseService::new(pg.migrated_pool("contribution").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let body = json!({
         "audit": {
@@ -746,7 +746,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     let svc = EhrbaseService::new(pg.migrated_pool("contribamend").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let created = svc
         .create_ehr_contribution(
@@ -865,7 +865,7 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
     let svc = EhrbaseService::new(pg.migrated_pool("templateless").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let bad = svc
         .create_composition(ehr_uuid, uv(composition_with_bad_category(), "249", None))
@@ -888,7 +888,7 @@ async fn contribution_rejects_an_invalid_composition() {
     let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let body = json!({
         "audit": {
@@ -919,7 +919,7 @@ async fn revision_history_lists_every_version() {
     let svc = EhrbaseService::new(pg.migrated_pool("revhistory").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let mut status = svc
         .get_ehr_status_at_time(ehr_uuid, None)
@@ -1115,7 +1115,7 @@ async fn item_tag_crud() {
     let svc = EhrbaseService::new(pg.migrated_pool("itemtags").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
@@ -1165,7 +1165,7 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     let svc = EhrbaseService::new(pg.migrated_pool("tagshape").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
@@ -1216,7 +1216,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
     let svc = EhrbaseService::new(pg.migrated_pool("tagreplace").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp = svc
         .create_composition(ehr_uuid, uv(composition("Tagged"), "249", None))
         .await
@@ -1373,10 +1373,10 @@ async fn version_get_at_time_returns_the_original_version() {
     let svc = EhrbaseService::new(pg.migrated_pool("attime").await);
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // EHR_STATUS: no version_at_time → the latest VERSION.
-    // PORT NOTE: the reads return the ORIGINAL_VERSION `Value`; the
+    // NOTE: the reads return the ORIGINAL_VERSION `Value`; the
     // ETag/Location uid the old `.meta` carried is the ORIGINAL_VERSION's own
     // `uid.value`.
     let status_version = svc
@@ -1427,7 +1427,7 @@ async fn version_get_at_time_returns_the_original_version() {
         .expect("composition")
         .version_uid();
     let comp_vo_id = comp_ovid_v1.split("::").next().unwrap().to_owned();
-    let comp_vo_uuid = comp_vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let comp_vo_uuid = comp_vo_id.parse::<ehrbase::ids::VoId>().expect("vo uuid");
     svc.update_composition(
         ehr_uuid,
         comp_vo_uuid,

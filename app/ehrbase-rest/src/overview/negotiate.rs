@@ -188,11 +188,7 @@ fn quality_of(range: &str) -> f64 {
             .strip_prefix("q=")
             .or_else(|| param.strip_prefix("Q="))
         {
-            return v
-                .trim()
-                .parse::<f64>()
-                .map(|q| q.clamp(0.0, 1.0))
-                .unwrap_or(1.0);
+            return v.trim().parse::<f64>().map_or(1.0, |q| q.clamp(0.0, 1.0));
         }
     }
     1.0
@@ -563,7 +559,7 @@ pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid
 }
 
 /// The `ETag` header value for a resource identifier: the weak form `W/"{uid}"`
-/// (overview §"ETag and Last-Modified" — the `W/` weakness indicator is a MUST).
+/// (overview §"`ETag` and Last-Modified" — the `W/` weakness indicator is a MUST).
 pub(crate) fn resource_etag(uid: &str) -> Option<HeaderValue> {
     HeaderValue::from_str(&format!("W/\"{uid}\"")).ok()
 }

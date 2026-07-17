@@ -31,7 +31,7 @@
 //!    master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
 //!    failure is `content_invalid` — never a silent partial COMPOSITION.
 //!
-//! PORT NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
+//! NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
 //! `import_tdds` is a design-filled `(UUID, Vec<String>) -> Vec<String>`,
 //! all-or-nothing — every TDD is parsed and converted before any is committed,
 //! so a single unconvertible TDD rejects the whole batch with nothing committed.
@@ -44,7 +44,6 @@
 use quick_xml::Reader;
 use quick_xml::events::Event;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;

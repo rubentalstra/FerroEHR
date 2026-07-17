@@ -122,10 +122,6 @@ fn compositions() -> Vec<(String, String, Value)> {
     out
 }
 
-fn to_map(m: &indexmap::IndexMap<String, Value>) -> serde_json::Map<String, Value> {
-    m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
 /// Drop every `:index` from a flat key, leaving path + `|suffix`.
 fn strip_indices(key: &str) -> String {
     let mut out = String::with_capacity(key.len());
@@ -250,7 +246,7 @@ fn flat_structured_exact_inverses() {
             continue;
         };
         paired += 1;
-        let f = to_map(&flat);
+        let f = flat.clone();
 
         let s = flat_to_structured(&f).expect("flat_to_structured");
         // structured → flat → structured is exact by construction.
@@ -293,7 +289,7 @@ fn structured_and_flat_carry_identical_leaves() {
             continue;
         };
         let via_structured = structured_to_flat(&structured).expect("structured_to_flat");
-        let a = index_normalised(&to_map(&flat));
+        let a = index_normalised(&flat);
         let b = index_normalised(&via_structured);
         assert_eq!(
             a, b,

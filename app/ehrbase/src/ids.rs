@@ -6,7 +6,7 @@
 //! that mixup uncompilable (the API-guidelines C-NEWTYPE discipline: newtypes
 //! provide static distinctions). The wire shapes are unchanged — both
 //! serialize as the bare UUID (`#[serde(transparent)]`), and both bind to
-//! PostgreSQL `uuid` columns directly (`#[sqlx(transparent)]`).
+//! `PostgreSQL` `uuid` columns directly (`#[sqlx(transparent)]`).
 //!
 //! Spec identities: the EHR id is RM ehr §EHR `ehr_id` (a `HIER_OBJECT_ID`);
 //! the versioned-object id is RM common master06 §Version Identification —

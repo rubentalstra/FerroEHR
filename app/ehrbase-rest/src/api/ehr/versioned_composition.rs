@@ -39,7 +39,7 @@ pub(super) async fn run(
             let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
             let body = state
                 .backend()
-                .get_versioned_composition(ehr_id, vo_id)
+                .get_versioned_composition(ehr_id, ehrbase::ids::VoId(vo_id))
                 .await?;
             // VERSIONED_OBJECT container — canonical JSON or XML.
             Ok(negotiate::respond_rm::<VersionedComposition>(
@@ -55,7 +55,7 @@ pub(super) async fn run(
             let vo_id = parse_uuid(&p.versioned_object_uid, "versioned_object_uid")?;
             let body = state
                 .backend()
-                .composition_revision_history(ehr_id, vo_id)
+                .composition_revision_history(ehr_id, ehrbase::ids::VoId(vo_id))
                 .await?;
             Ok(negotiate::respond_rm::<RevisionHistory>(
                 h,
@@ -73,7 +73,7 @@ pub(super) async fn run(
             let segment = format!("versioned_composition/{}/version", p.versioned_object_uid);
             let body = state
                 .backend()
-                .composition_version_at_time(ehr_id, vo_id, p.version_at_time)
+                .composition_version_at_time(ehr_id, ehrbase::ids::VoId(vo_id), p.version_at_time)
                 .await?;
             let resp = super::read_resp(&p.ehr_id, body);
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.

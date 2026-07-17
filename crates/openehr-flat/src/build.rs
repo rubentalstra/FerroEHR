@@ -712,13 +712,11 @@ fn apply_composition_ctx(
     defaults: &ctx::CtxDefaults,
     explicit_event_context: bool,
 ) {
-    if let Some(language) = &defaults.language {
-        comp.entry("language".to_owned())
-            .or_insert_with(|| code_phrase("ISO_639-1", language));
+    if let Some(language) = defaults.language_code_phrase() {
+        comp.entry("language".to_owned()).or_insert(language);
     }
-    if let Some(territory) = &defaults.territory {
-        comp.entry("territory".to_owned())
-            .or_insert_with(|| code_phrase("ISO_3166-1", territory));
+    if let Some(territory) = defaults.territory_code_phrase() {
+        comp.entry("territory".to_owned()).or_insert(territory);
     }
     if let Some(composer) = &defaults.composer {
         comp.entry("composer".to_owned())
@@ -785,6 +783,7 @@ fn apply_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     walk_entry_defaults(value, defaults);
 }
 
+#[allow(clippy::too_many_lines)] // one recursive walk over the ENTRY-default families
 fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
     match value {
         Value::Array(items) => {
@@ -807,9 +806,8 @@ fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
                     | "ADMIN_ENTRY"
                     | "GENERIC_ENTRY"
             ) {
-                if let Some(language) = &defaults.language {
-                    obj.entry("language".to_owned())
-                        .or_insert_with(|| code_phrase("ISO_639-1", language));
+                if let Some(language) = defaults.language_code_phrase() {
+                    obj.entry("language".to_owned()).or_insert(language);
                 }
                 obj.entry("encoding".to_owned())
                     .or_insert_with(|| code_phrase("IANA_character-sets", "UTF-8"));

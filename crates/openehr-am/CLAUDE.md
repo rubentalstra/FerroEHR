@@ -2,7 +2,7 @@
 
 The Archetype Model, both versions as separate namespaces: `am14`
 (ADL 1.4 / OPT 1.4) and `am24` (ADL 2 / AOM 2.4). **Generated from the
-vendored BMM** by `openehr-codegen -- emit` (ADR-004).
+vendored BMM** by `openehr-codegen -- emit`.
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
   Change the emitter and regenerate (`/regen-codegen`); `codegen-drift` CI

@@ -2,7 +2,7 @@
 
 The LANG component: the BMM object model + the `*.bmm.json` loader that
 **feeds codegen**, and the hand-rolled ODIN reader (for ADL/ODIN
-*instance* parsing — deliberately off the codegen path, ADR-004).
+*instance* parsing — deliberately off the codegen path).
 
 - **This crate is upstream of everything generated.** A change to the BMM
   loader can silently change what `openehr-codegen` emits across five

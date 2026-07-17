@@ -137,7 +137,7 @@ pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Vio
 /// - the version may be multi-part numeric (`v1.0.0`) — the ADL2-era archetype
 ///   HRID form appears in deployed OPT 1.4 exports (the vendored
 ///   `Request_for_Pancreas_Special_Urgency_Listing` corpus template);
-/// - PORT NOTE: concept segments tolerate `(`/`)` and digit-leading segments —
+/// - NOTE: concept segments tolerate `(`/`)` and digit-leading segments —
 ///   Ocean/LANIT tooling emits concept names like
 ///   `t_neurologist_examination(1-17)_lanit` (vendored Better corpus); the
 ///   strict grammar would refuse real-world templates.
@@ -177,7 +177,7 @@ fn is_archetype_id_shaped(id: &str) -> bool {
 /// metacharacters) is decidable as an identifier; genuine regexes are left to
 /// runtime slot admission.
 ///
-/// PORT NOTE: this decides only the *literal id-shape* case; a genuine PERL
+/// NOTE: this decides only the *literal id-shape* case; a genuine PERL
 /// regex include/exclude expression is not a decidable identifier at upload
 /// and is deferred to runtime slot admission (the `WebTemplate` instance walk,
 /// blueprint 03-am F-07-10) — that surface is out of scope for the artefact
@@ -273,7 +273,7 @@ pub(super) fn check_internal_ref(r: &ArchetypeInternalRef) -> Result<(), Violati
 /// defined in the `constraint_definitions` part of the ontology (ADL1.4
 /// master08 line 566).
 ///
-/// PORT NOTE (flattened-OPT tolerance): deployed OPT 1.4 exports routinely
+/// NOTE (flattened-OPT tolerance): deployed OPT 1.4 exports routinely
 /// carry `CONSTRAINT_REF` nodes with NO `constraint_definitions` sets at all
 /// (Ocean Template Designer drops the constraint vocabulary on flatten — the
 /// vendored RIPPLE/Better corpus templates). VACDF is therefore enforced only

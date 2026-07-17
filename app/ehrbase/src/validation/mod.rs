@@ -19,7 +19,7 @@
 //!   package.adoc` §`Valid_value`) runs at commit time over the compacted
 //!   `WebTemplate`. It lives in `openehr-flat` (a spec crate) and is invoked from
 //!   the EHR commit choke point (`service::ehr::composition_validate`). Its
-//!   closed-world semantics are recorded as a spec-cited PORT NOTE below.
+//!   closed-world semantics are recorded as a spec-cited NOTE below.
 //! - **Surface C — per-kind RM structural validators (a seam, NOT here).** The
 //!   RM-invariant checks on template-less commit bodies (`EHR_STATUS`,
 //!   `EHR_ACCESS`, FOLDER, party roots) live with their kinds under
@@ -48,7 +48,7 @@
 //!   routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/
 //!   party-relationship) to its per-kind RM validator, so no commit path
 //!   bypasses validation (F-07-01 single seam).
-//! - **PORT NOTE — surface-B closed-world semantics.** The
+//! - **NOTE — surface-B closed-world semantics.** The
 //!   closed-world check lives in `openehr-flat::validation` (a spec crate,
 //!   outside this crate's ownership). AOM 1.4 defines only the positive
 //!   `valid_value` cascade (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
@@ -57,9 +57,9 @@
 //!   unlisted archetype-rooted fillers under slotless attributes — follows the
 //!   AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
 //!   (`AM/docs/AOM2/master08-validation.adoc` §Phase 2, lines 96–101).
-//!   Re-expressing the `openehr-flat` PORT NOTE against those spec sections
+//!   Re-expressing the `openehr-flat` NOTE against those spec sections
 //!   (it presently cites an ADR) is the future work this note records.
-//! - **PORT NOTE — terminology binding resolution.** VTTBK/VTCBK
+//! - **NOTE — terminology binding resolution.** VTTBK/VTCBK
 //!   here check binding *keys* only; resolving ac-code value sets against the
 //!   live terminology service (`TerminologyService`) at ingestion is unwired,
 //!   to land with the `CONSTRAINT_REF` policy

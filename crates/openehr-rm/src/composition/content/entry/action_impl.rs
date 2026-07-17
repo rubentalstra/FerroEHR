@@ -1,7 +1,7 @@
 //! Hand-written RM class invariants for `ACTION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
-//! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.
+//! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 
 use crate::composition::content::entry::action::Action;
 use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};

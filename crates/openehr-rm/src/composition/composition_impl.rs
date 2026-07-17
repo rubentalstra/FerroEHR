@@ -5,7 +5,7 @@
 //!   `archetype_details` must be present.
 //! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
 //!
-//! PORT NOTE: archie's `Category_validity`, `Territory_valid`, `Language_valid`
+//! NOTE: archie's `Category_validity`, `Territory_valid`, `Language_valid`
 //! are terminology-bound (deferred to the composition validator + `openehr-term`),
 //! and its `Content valid` invariant is `ignored`. The openEHR spec constraints
 //! that archie does **not** enforce (composer present, persistent-category ⇒

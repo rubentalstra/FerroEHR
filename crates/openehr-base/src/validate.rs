@@ -9,7 +9,7 @@
 //! `validation` spec covers archetype validation, not RM-instance validation);
 //! these are the openEHR **Reference Model class invariants** — the checks a
 //! value must satisfy independent of any archetype — mirroring the reference
-//! implementation's invariant set. See `// PORT NOTE:` markers in the impls for
+//! implementation's invariant set. See `// NOTE:` markers in the impls for
 //! spec-underdetermined choices.
 
 /// An RM class-invariant violation: a human-readable message plus the RM

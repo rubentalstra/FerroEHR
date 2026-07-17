@@ -6,7 +6,7 @@
 //! versioned object in the demographics repository, but it is *not* a PARTY (it
 //! has its own `versioned_party_relationship` read surface).
 //!
-//! PORT NOTEs on the SM spec asymmetries this module normalizes to the PARTY
+//! NOTEs on the SM spec asymmetries this module normalizes to the PARTY
 //! pattern (register `docs/design/platform/04-service-demographic-ehr-index.md`):
 //! - `i_party_relationship.adoc` gives **no** `has_party_relationship`
 //!   precondition on `get_party_relationship`, yet lists a
@@ -20,7 +20,6 @@
 //!   behaviour-preserving.
 
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;
@@ -315,7 +314,7 @@ impl EhrbaseService {
     /// is `404`.
     ///
     /// No ITS-REST demographic contract governs this — our own extension by
-    /// analogy with the EHR group (assembly + G-6 owner PORT NOTE in
+    /// analogy with the EHR group (assembly + G-6 owner NOTE in
     /// `support::versioned_wrapper`).
     pub(super) async fn versioned_relationship(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;

@@ -1,6 +1,6 @@
 //! A minimal ODIN reader for the ADL2 `language`/`terminology` subset.
 //!
-//! PORT NOTE (why a local reader — G-09-04 re-verified 2026-07-12): the openEHR
+//! NOTE (why a local reader — G-09-04 re-verified 2026-07-12): the openEHR
 //! ODIN object syntax has a normative grammar (`AM/docs/ADL2/master08-adl.adoc`
 //! §ODIN), but there is no shared runtime ODIN parser to consume. `openehr-lang`
 //! holds only the BMM / `P_BMM` object model generated from the meta-model; its

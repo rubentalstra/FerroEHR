@@ -72,7 +72,7 @@ mod tests {
 /// `terminology_id = name-str [ '(' name-str ')' ]` with
 /// `name-str = letter { letter | digit | '_' | '-' | '/' | '+' }`.
 ///
-/// PORT NOTE (CNF corpus adjudication): the CNF's own valid data sets carry
+/// NOTE (CNF corpus adjudication): the CNF's own valid data sets carry
 /// `"SNOMED CT"` — a space inside the name, which the strict `name-str`
 /// production forbids. The CNF data outranks the prose reading, so interior
 /// spaces (and `.`, common in versioned names like `ISO_639-1`) are accepted;

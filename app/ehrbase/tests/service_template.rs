@@ -23,7 +23,7 @@ use ehrbase::service::list::Page;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 /// Fixed `ctx/time` default for the FLAT rebuild directions (ITS-REST
-/// simplified_formats master04 §Context) so round-trips stay deterministic.
+/// `simplified_formats` master04 §Context) so round-trips stay deterministic.
 const NOW: &str = "2024-01-01T00:00:00Z";
 
 struct Pg {
@@ -110,7 +110,7 @@ async fn template_upload_list_get_roundtrip() {
     );
 
     // Retrieve returns the stored OPT XML verbatim.
-    // PORT NOTE: the SM `I_DEFINITION_ADL14::get_opt` is UUID-keyed
+    // NOTE: the SM `I_DEFINITION_ADL14::get_opt` is UUID-keyed
     // (OPTs are stored UUID-keyed; `list_matching_opts` still matches on
     // `template_id`), and returns the OPT XML as a `String` (the old generated
     // `DefinitionApi::..get` was template_id-keyed and returned a JSON-string
@@ -177,7 +177,7 @@ async fn template_upload_list_get_roundtrip() {
 async fn get_unknown_template_is_not_found() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("tpl_missing").await);
-    // PORT NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown
+    // NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown
     // OPT is expressed as an absent (well-formed) uuid → 404
     // (`versioned_object_does_not_exist`); the template_id → uuid resolution the
     // old template_id-keyed GET did is now an adapter concern.

@@ -14,7 +14,7 @@
 //! template. Its `entries` each read a value out of the incoming FHIR resource
 //! (a **`FHIRPath`-lite** dot-path — see [`resolve`]) and write it to a
 //! template-relative **openEHR FLAT path** (the `id[:i]/…|suffix` key
-//! `openehr-flat` consumes, ITS-REST simplified_formats master04 §Field
+//! `openehr-flat` consumes, ITS-REST `simplified_formats` master04 §Field
 //! Identifiers). The resulting flat map is handed to
 //! [`composition_from_flat`](openehr_flat::convert::composition_from_flat) with
 //! the template's `WebTemplate` to build a canonical COMPOSITION, which then
@@ -23,7 +23,7 @@
 //! here; the orchestration (mapping-store lookup, EHR resolution, commit)
 //! lives in the parent [`super`] module on `EhrbaseService`.
 //!
-//! PORT NOTE: the FHIR side is a deliberate **subset** of `FHIRPath` —
+//! NOTE: the FHIR side is a deliberate **subset** of `FHIRPath` —
 //! object-field navigation and array indexing only
 //! (`code.coding[0].code`, `component[1].valueQuantity.value`) — NOT the full
 //! `FHIRPath` language (no functions, filters, `where()`, `resolve()`, unions,
@@ -177,7 +177,7 @@ pub(super) enum FhirMapError {
 
 /// Resolve a **`FHIRPath`-lite** dot-path against a JSON value.
 ///
-/// Grammar (a deliberate subset of `FHIRPath` — see the module PORT NOTE):
+/// Grammar (a deliberate subset of `FHIRPath` — see the module NOTE):
 ///
 /// ```text
 /// path    := segment ('.' segment)*

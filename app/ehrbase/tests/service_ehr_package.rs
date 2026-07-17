@@ -148,7 +148,7 @@ async fn versioned_composition_cannot_switch_archetype() {
         .await
         .expect("v1")
         .version_uid();
-    let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
+    let vo: ehrbase::ids::VoId = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
         .update_composition(
@@ -188,7 +188,7 @@ async fn versioned_composition_cannot_flip_persistence() {
         .await
         .expect("v1")
         .version_uid();
-    let vo: Uuid = v1.split("::").next().unwrap().parse().unwrap();
+    let vo: ehrbase::ids::VoId = v1.split("::").next().unwrap().parse().unwrap();
 
     let err = svc
         .update_composition(

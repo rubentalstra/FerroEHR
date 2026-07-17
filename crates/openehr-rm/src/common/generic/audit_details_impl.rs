@@ -3,7 +3,7 @@
 //! `System_id_valid` (archie `AuditDetails`, `nullOrNotEmpty`): `system_id` must
 //! be non-empty.
 //!
-//! PORT NOTE: archie's `Change_type_valid` (the change-type code belongs to the
+//! NOTE: archie's `Change_type_valid` (the change-type code belongs to the
 //! openEHR "audit change type" group) is terminology-bound — deferred to the
 //! composition validator + `openehr-term`.
 

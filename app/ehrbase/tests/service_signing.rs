@@ -123,7 +123,7 @@ fn contribution_audit(change_code: &str, committer_name: &str) -> UpdateAudit {
 }
 
 /// Split an `OBJECT_VERSION_ID` into `(object_id uuid, trunk version)`.
-fn version_components(ovid: &str) -> (uuid::Uuid, String) {
+fn version_components(ovid: &str) -> (ehrbase::ids::VoId, String) {
     let parts: Vec<&str> = ovid.split("::").collect();
     (parts[0].parse().expect("vo uuid"), parts[2].to_owned())
 }
@@ -208,7 +208,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_comp").await);
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // Create a composition, then commit a second version.
     let ovid_v1 = svc
@@ -217,7 +217,7 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
         .expect("create_composition")
         .version_uid();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
-    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let vo_uuid = vo_id.parse::<ehrbase::ids::VoId>().expect("vo uuid");
     let ovid_v2 = svc
         .update_composition(
             ehr_uuid,
@@ -243,7 +243,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
     let pool = pg.migrated_pool("signing_status").await;
     let svc = EhrbaseService::new(pool.clone());
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // Update EHR_STATUS → v2, then read the ORIGINAL_VERSION of v1.
     let mut body = svc
@@ -303,7 +303,7 @@ async fn contribution_versions_are_signed() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_contrib").await);
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let contribution_uid = svc
         .commit_contribution(
@@ -313,7 +313,7 @@ async fn contribution_versions_are_signed() {
         )
         .await
         .expect("commit_contribution");
-    // PORT NOTE: `commit_contribution` returns the contribution_uid;
+    // NOTE: `commit_contribution` returns the contribution_uid;
     // the created version's OBJECT_VERSION_ID is read back from the CONTRIBUTION.
     let contribution = svc
         .get_contribution(ehr_uuid, contribution_uid.parse().expect("contrib uuid"))
@@ -340,7 +340,7 @@ async fn client_supplied_signature_is_stored_verbatim() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("signing_client").await);
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let mut version = uv(composition("Client signed"), "249", None);
     version.signature = Some(CLIENT_SIG.to_owned());
@@ -389,7 +389,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let signer = Signer::from_config(&config).expect("strict signer");
     let svc = EhrbaseService::new(pool.clone()).with_signer(Arc::new(signer));
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("tamper"), "249", None))
@@ -413,7 +413,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let tampered = svc
         .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
         .await;
-    // PORT NOTE: a signing/integrity failure surfaces at the SM boundary
+    // NOTE: a signing/integrity failure surfaces at the SM boundary
     // as `SmError { status: Exception }` (the adapter maps it to the same wire 5xx
     // the old `ApiError::Internal` produced).
     assert!(
@@ -497,7 +497,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     let pool = pg.migrated_pool("signing_off_fold").await;
     let svc = signing_disabled(pool.clone());
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // CREATE → the folded path: audit + contribution + vo_version in one CTE.
     let ovid_v1 = svc
@@ -622,14 +622,14 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // Commit a composition under system id "sys-origin".
     let svc_a = EhrbaseService::new(pool.clone()).with_system_id("sys-origin");
     let ehr_id = create_ehr(&svc_a).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let ovid = svc_a
         .create_composition(ehr_uuid, uv(composition("v1"), "249", None))
         .await
         .expect("create_composition")
         .version_uid();
     let vo_id = ovid.split("::").next().unwrap().to_owned();
-    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let vo_uuid = vo_id.parse::<ehrbase::ids::VoId>().expect("vo uuid");
     // The uid's middle part is the creating system id.
     assert_eq!(
         ovid.split("::").nth(1),

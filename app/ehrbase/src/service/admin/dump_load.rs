@@ -20,7 +20,7 @@
 //! already exists is reported in a `DUMP_LOAD_FAIL_REPORT` and skipped ("import
 //! EHRs with duplicate EHR ids will fail"), never a crash.
 //!
-//! PORT NOTE (re-verify — `export_ehrs(an_ehr_id)` is EHR-scoped; the archive
+//! NOTE (re-verify — `export_ehrs(an_ehr_id)` is EHR-scoped; the archive
 //! carries EHR-owned content only): `ehr`, `audit`, `contribution`,
 //! `vo_version`, `node`, `ehr_folder` (the `EHR.folders` membership rows — RM
 //! ehr master04 §Folders), `item_tag`, and any `vo_archive` markers for the
@@ -208,7 +208,7 @@ impl EhrbaseService {
     /// `file_sys_loc`. Returns a per-entity report; an empty list means every
     /// EHR was dumped successfully (the report carries only failures).
     ///
-    /// PORT NOTE (re-verify — `export_format.adoc` /
+    /// NOTE (re-verify — `export_format.adoc` /
     /// `compression_format.adoc`): only `openehr_canonical_json` and no
     /// compression are supported this wave. The storage IS verbatim canonical
     /// JSON, so JSON export is translation-free, whereas

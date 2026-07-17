@@ -21,6 +21,7 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
+use ehrbase::ids::{EhrId, VoId};
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
@@ -194,7 +195,7 @@ pub(super) async fn run(
                 .and_then(Value::as_str)
             {
                 let body_vo = body_uid.split("::").next().unwrap_or(body_uid);
-                if body_vo.parse::<Uuid>() != Ok(uid.vo_id) {
+                if body_vo.parse::<Uuid>() != Ok(uid.vo_id.0) {
                     return Err(ApiError::BadRequest(format!(
                         "the body COMPOSITION.uid {body_uid:?} does not identify the \
                          versioned object addressed by the request path ({})",
@@ -278,7 +279,7 @@ pub(super) async fn run(
                 Err(e @ ehrbase::service::error::ServiceError::Conflict(_)) => {
                     let meta = state
                         .backend()
-                        .composition_latest_meta(ehr_id, vo_id)
+                        .composition_latest_meta(ehr_id, VoId(vo_id))
                         .await
                         .ok()
                         .flatten();
@@ -333,7 +334,7 @@ async fn composition_write_response(
     state: &AppState,
     h: &http::HeaderMap,
     base: &str,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     uid: String,
     minimal: StatusCode,
     repr: StatusCode,

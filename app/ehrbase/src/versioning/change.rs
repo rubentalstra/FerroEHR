@@ -61,7 +61,7 @@ impl Committed {
     /// The per-version entry for the PHI-free event-outbox envelope: identity +
     /// provenance metadata only, never clinical content.
     ///
-    /// PORT NOTE: no openEHR spec governs eventing — our own extension. The
+    /// NOTE: no openEHR spec governs eventing — our own extension. The
     /// outbox row is written inside the commit transaction by storage; this
     /// only builds the payload (README cross-ruling: extensions build payloads).
     pub(crate) fn envelope_entry(&self) -> Value {

@@ -671,10 +671,12 @@ fn existence_empty_array_counts_as_absent() {
 
 #[test]
 fn segment_parsing_respects_brackets() {
-    // Parsing now routes through the single `openehr_rm::paths` implementation
-    // via `openehr_flat::path`; this asserts the validator sees the same segments.
-    let segs =
-        openehr_flat::path::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
+    // Parsing routes through the single `openehr_rm::paths` implementation;
+    // this asserts the validator sees the same segments.
+    let segs = "/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value"
+        .parse::<openehr_rm::paths::RmPath>()
+        .expect("well-formed RM path")
+        .segments;
     assert_eq!(segs.len(), 3);
     assert_eq!(segs[0].attribute, "content");
     assert_eq!(
@@ -1533,7 +1535,7 @@ fn measure_ips_validation_full_cost() {
     let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
         .expect("read IPS OPT");
     let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
-    let wt = openehr_flat::build_web_template(&opt).expect("build IPS WebTemplate");
+    let wt = openehr_flat::webtemplate::build_web_template(&opt).expect("build IPS WebTemplate");
     let comp: Value = serde_json::from_str(
         &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
             .expect("read IPS example"),

@@ -40,7 +40,7 @@
 //! [`UpdateAudit::system_id`]; the server default is asserted at the versioning
 //! seam, not here.
 //!
-//! PORT NOTE (wire, spec-silent): the per-attribute value grammar is given only
+//! NOTE (wire, spec-silent): the per-attribute value grammar is given only
 //! by example — the spec states no formal ABNF for the `attr.key="value"` list,
 //! its quoting, or escaping. We parse a tolerant comma-separated list of
 //! `path="value"` (or bare `path=value`) pairs, treating a quoted value as
@@ -48,7 +48,7 @@
 //! does not yield the attribute it targets is ignored (the server default
 //! stands), never an error — the spec only says "merge whatever is provided".
 //!
-//! PORT NOTE (wire, spec-silent): the `committer` `external_ref.id` is wrapped
+//! NOTE (wire, spec-silent): the `committer` `external_ref.id` is wrapped
 //! as a `HIER_OBJECT_ID` (the spec example is a UUID and gives no `OBJECT_ID`
 //! subtype); if the assembled `PARTY_IDENTIFIED` fails to type, the committer is
 //! left at the server default.
@@ -231,7 +231,7 @@ fn scalar(pairs: &[(String, String)]) -> Option<String> {
 /// Parse a tolerant comma-separated list of `key="value"` (or bare `key=value`)
 /// attribute pairs. A double-quoted value is read opaquely (may contain commas);
 /// a bare value runs to the next top-level comma. Whitespace around separators
-/// and keys is trimmed. See the module PORT NOTE — the grammar is example-only.
+/// and keys is trimmed. See the module NOTE — the grammar is example-only.
 fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let bytes = input.as_bytes();

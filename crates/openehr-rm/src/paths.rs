@@ -40,7 +40,7 @@
 //!   [`PathError::UnsupportedPredicate`] — the accept-set here is the
 //!   archetype-id / name / uid / positional subset the spec's own
 //!   top-level-structure and uniqueness examples use.
-//! - PORT NOTE: the `//` pattern and the positional predicate `[n]` are part of
+//! - NOTE: the `//` pattern and the positional predicate `[n]` are part of
 //!   the master11 *path* grammar (realised here), but are **not** part of the
 //!   AQL 1.1 path grammar (QUERY `master03` §"Predicates" enumerates only the
 //!   standard/archetype/node predicates) — this module is the RM/URI path
@@ -277,7 +277,7 @@ impl fmt::Display for RmPath {
 
 impl Predicate {
     /// Render this predicate in its canonical bracketed form (a normalised
-    /// re-emission of the parsed shortcuts — see the module PORT NOTE on
+    /// re-emission of the parsed shortcuts — see the module NOTE on
     /// round-trip stability). Emits nothing when empty.
     fn render(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {

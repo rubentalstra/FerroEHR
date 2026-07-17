@@ -7,7 +7,6 @@
 use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;
-use uuid::Uuid;
 
 use openehr_its::rest::generated::ehr::{
     EhrCreateParams, EhrCreateWithIdParams, EhrGetByIdParams, EhrGetBySubjectParams,
@@ -16,6 +15,7 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{Ehr, EhrStatus};
 
+use ehrbase::ids::EhrId;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
@@ -89,7 +89,7 @@ async fn ehr_write_response(
     state: &AppState,
     h: &http::HeaderMap,
     base: &str,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
 ) -> Result<Response, RestError> {
     let ehr_id_str = ehr_id.to_string();
     let body = if negotiate::prefers_representation(h) {

@@ -1,6 +1,6 @@
 # `ehrbase` — the platform library
 
-The application core (consolidated per ADR-018): storage, the service layer
+The application core (three app crates, zero re-exports): storage, the service layer
 (one module per SM chapter — concrete `EhrbaseService` methods, no trait
 catalog), AQL engine, versioning, the full configuration tree
 (`ehrbase::config`), telemetry, plus the `signing` (VERSION.signature) and
@@ -13,8 +13,10 @@ its defining module.**
 - **Spec first:** every spec-facing behaviour (versioning/change-control,
   validation, AQL semantics) is implemented from the vendored text under
   `docs/specs/openehr/` (`/spec-lookup`) — never from memory or EHRbase
-  behaviour. Cite spec file + section in comments; NEVER cite an ADR in code.
-- **Storage is ADR-008 greenfield PG18:** one `node` table (nested-set
+  behaviour. Cite spec file + section in comments; the only citable
+  references are the vendored specs and official external docs — NEVER an
+  internal doc.
+- **Storage is greenfield PG18:** one `node` table (nested-set
   interval index, canonical JSON fragments — no aliasing, no synthetic
   fields) + one temporal `vo_version` table (`WITHOUT OVERLAPS`;
   `ALL_VERSIONS` supported). Every write emits contribution + audit in the

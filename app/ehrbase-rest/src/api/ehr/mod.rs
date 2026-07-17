@@ -51,6 +51,7 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{PartyProxy, PartySelf};
 
+use ehrbase::ids::EhrId;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
@@ -188,7 +189,7 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// (spec: "these headers will also be unsupported").
 pub(super) async fn apply_item_tag_headers(
     state: &AppState,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     target_type: &str,
     version_uid: &str,
     headers: &HeaderMap,
@@ -207,7 +208,7 @@ pub(super) async fn apply_item_tag_headers(
     if version_tags.is_some() {
         present.push(H_VERSION_ITEM_TAG);
     }
-    // PORT NOTE (wire): the storage seam (`ItemTagAdapter::target_tags_replace`)
+    // NOTE (wire): the storage seam (`ItemTagAdapter::target_tags_replace`)
     // is keyed by VERSIONED_OBJECT (the vo_id parsed from the version_uid).
     // openEHR distinguishes `openehr-item-tag` (VERSIONED_OBJECT target) from
     // `openehr-version-item-tag` (a specific VERSION target) via the tag's

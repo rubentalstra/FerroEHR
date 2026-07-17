@@ -21,7 +21,7 @@ use crate::validate::{InvariantViolation, Validate};
 /// TDD"; every `..__full` COMPOSITION/TDD sets `external_ref.type = "ANY"`). Per
 /// By the CNF-outranks-prose rule the positive case wins over the strict enumeration, so
 /// `ANY` is admitted; an *unknown* type string (e.g. a typo) is still rejected.
-// PORT NOTE (spec vs CNF): the normative invariant lists a closed set that does
+// NOTE (spec vs CNF): the normative invariant lists a closed set that does
 // not include `ANY`; the CNF positive corpus commits `type="ANY"`. Admitting
 // exactly `ANY` (the universal supertype) reconciles the two without opening the
 // invariant to arbitrary strings — the intent the Description states.

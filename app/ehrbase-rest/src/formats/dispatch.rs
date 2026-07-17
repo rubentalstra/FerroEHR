@@ -23,7 +23,7 @@
 //!
 //! CONTRIBUTION keeps the envelope canonical (`contribution_create.yaml`
 //! §Simplified Formats) — only each `versions[i].data` COMPOSITION is
-//! simplified. Non-templated resources (EHR, EHR_STATUS, FOLDER, demographic
+//! simplified. Non-templated resources (EHR, `EHR_STATUS`, FOLDER, demographic
 //! parties) have no Simplified-Formats mapping and are rejected uniformly
 //! ([`guard_non_templated`]).
 
@@ -54,7 +54,7 @@ pub(crate) fn header_template_id(headers: &HeaderMap) -> Option<String> {
 }
 
 /// A UTC ISO 8601 timestamp for the `ctx/time` default (Simplified Formats
-/// `master04 §Context`: "defaults to the current server time (now())").
+/// `master04 §Context`: "defaults to the current server time (`now()`)").
 fn now() -> String {
     jiff::Timestamp::now().to_string()
 }
@@ -190,7 +190,7 @@ pub(crate) async fn composition_structured_response(
 
 // ── CONTRIBUTION: envelope canonical, inner payload simplified ─────────────
 
-// PORT NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
+// NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
 // §scope): the mapping chapter covers COMPOSITION and every class reachable
 // from it, and nothing else. `contribution_create.yaml` §Simplified Formats
 // permits `versions[i].data` to be a COMPOSITION, EHR_STATUS, or FOLDER in
@@ -319,12 +319,12 @@ pub(crate) async fn contribution_to_simplified(
 // ── Non-templated resources: uniform reject ────────────────────────────────
 
 /// Reject Simplified-Formats negotiation on a resource that has no
-/// Simplified-Formats mapping — EHR, EHR_STATUS, FOLDER, and the demographic
+/// Simplified-Formats mapping — EHR, `EHR_STATUS`, FOLDER, and the demographic
 /// PARTY types. `415` when the request `Content-Type` is a simplified type
 /// (input), `406` when the `Accept` cannot be satisfied by canonical JSON/XML
 /// (output). Canonical requests pass through untouched.
 ///
-/// PORT NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
+/// NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
 /// §scope + `master02-overview.adoc` §Relationship to Other Specifications):
 /// simplified field identifiers are generated from an Operational Template, and
 /// master05 defines mappings only for COMPOSITION and the classes it contains.

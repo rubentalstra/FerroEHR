@@ -19,7 +19,7 @@
 //! returns — then its content references are rewritten to the extract-local
 //! namespace per the Creation-Semantics algorithm (see [`rewrite_content_refs`]).
 //!
-//! PORT NOTE (synthetic archetype ids — master05 class tables + BASE
+//! NOTE (synthetic archetype ids — master05 class tables + BASE
 //! `data_structures` `LOCATABLE.archetype_node_id` 1..1): the extract wrapper
 //! classes (`EXTRACT`, `EXTRACT_CHAPTER`, `OPENEHR_CONTENT_ITEM`) are
 //! `LOCATABLE`s whose `archetype_node_id` must be present, yet this server
@@ -164,7 +164,7 @@ impl EhrbaseService {
                     .await?;
 
             // The primary set: an explicit item_list, else every VO of the EHR.
-            // PORT NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
+            // NOTE (`master04-common_package.adoc` `EXTRACT_SPEC.criteria`,
             // an AQL primary-set query): AQL criteria selection lands with the
             // `$ehr`-bound AQL export wave. Until then it is a typed reject,
             // never a silent over-export.
@@ -600,7 +600,7 @@ fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
     let Some(vs) = spec.version_spec.as_ref() else {
         return Ok(VersionSelection::latest_only());
     };
-    // PORT NOTE (`extract_version_spec.adoc`
+    // NOTE (`extract_version_spec.adoc`
     // `EXTRACT_VERSION_SPEC.commit_time_interval`): commit-time-window version
     // selection lands with the AQL export wave; a typed reject until then,
     // never a silent full export.

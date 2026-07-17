@@ -4,10 +4,9 @@
 //! change-control machinery with `ehr_id = None` (no EHR scope — our own
 //! design; a party has no owning EHR). ITS-REST 1.0.3 defines no demographic
 //! wire contract, so status/`ETag`/`Location`/`If-Match`/deleted-read semantics
-//! follow the EHR group by analogy (module PORT NOTE in [`super`]).
+//! follow the EHR group by analogy (module NOTE in [`super`]).
 
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;

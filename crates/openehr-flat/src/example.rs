@@ -34,7 +34,7 @@
 //! [`composition_to_flat`](crate::convert::composition_to_flat) and deserialises
 //! as an `openehr-rm` `Composition`.
 //!
-//! # PORT NOTE (non-normative)
+//! # NOTE (non-normative)
 //!
 //! The endpoint spec is a **post-1.0.3 dev-OAS** addition (absent from the pinned
 //! ITS-REST 1.0.3 contract) and states the example-generation algorithm is
@@ -366,7 +366,7 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
             // (RM data_types §DV_MULTIMEDIA `Size_valid`), so 0 is valid —
             // but a referenced resource of zero bytes is unreal, and the
             // reference implementation's known `size > 0` quirk rejects it
-            // (the DV_MULTIMEDIA PORT NOTE); a realistic example avoids both.
+            // (the DV_MULTIMEDIA NOTE); a realistic example avoids both.
             put(out, base, "size", json!(1024));
         }
         "DV_PARSABLE" => {
@@ -375,7 +375,7 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         }
         // PARTY_PROXY / PARTY_IDENTIFIED value leaves carry no FLAT round-trip
         // shape (they are rebuilt from `ctx/…`, not tree data); skip rather than
-        // fabricate an incomplete party. See the module PORT NOTE.
+        // fabricate an incomplete party. See the module NOTE.
         _ => return false,
     }
     true

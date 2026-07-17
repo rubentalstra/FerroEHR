@@ -276,7 +276,7 @@ fn run_store_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// valid_query-bad_formalism: a non-AQL body (SQL) is rejected at store time.
 //
-// PORT NOTE: no vendored "non-AQL formalism" corpus exists (register 80 owns AQL
+// NOTE: no vendored "non-AQL formalism" corpus exists (register 80 owns AQL
 // classes only), so the bad-formalism data set is an inline SQL literal — the
 // one hand-authored body in this suite, kept because it is a formalism the
 // corpus deliberately does not carry.
@@ -323,7 +323,7 @@ fn run_has_query<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// list_queries-non_empty (D2 rebind): after a store, the named list resource
 /// `GET /definition/query/{name}` returns the query versions (200).
 //
-// PORT NOTE (register 02 G-2): this lists a single named query, not "all stored
+// NOTE (register 02 G-2): this lists a single named query, not "all stored
 // queries" — the SM bare-collection semantics have no ITS-REST binding, so the
 // "list all" / select_items post-conditions are covered only by the skipped
 // bare-list cases.

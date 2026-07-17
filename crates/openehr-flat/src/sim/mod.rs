@@ -12,7 +12,7 @@
 //!
 //! - **Datum parts** (`attrs`): the `|suffix` values of a node, keyed by the
 //!   printed suffix chain (`"magnitude"`, `"meaning|code"`, `"issuer:0"`).
-//!   The bare, suffix-less value uses the `""` key. PORT NOTE: the wire
+//!   The bare, suffix-less value uses the `""` key. NOTE: the wire
 //!   convention for a bare value alongside suffixed parts in STRUCTURED (an
 //!   `""` property) is not stated by the spec — no openEHR spec governs
 //!   that corner; the `""` key matches the ecosystem's established wire.
@@ -106,7 +106,7 @@ impl SimNode {
     /// survive — compacting them would silently renumber index-correlated
     /// key families (`master06 §Participation` correlates
     /// `participation_name:i` / `participation_identifiers:i` by index).
-    /// PORT NOTE: no openEHR spec addresses index gaps — preserving the
+    /// NOTE: no openEHR spec addresses index gaps — preserving the
     /// client's numbering is our own, least-surprising posture.
     pub fn prune_empty(&mut self) {
         for child in self.children.values_mut() {

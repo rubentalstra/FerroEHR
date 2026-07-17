@@ -1,7 +1,7 @@
 //! Hand-written RM class invariants for `INSTRUCTION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
-//! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.
+//! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 //! archie's own `Instruction.Activities_valid` is `ignored`.
 
 use crate::composition::content::entry::instruction::Instruction;

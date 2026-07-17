@@ -259,7 +259,7 @@ async fn process_batch(
             // Only COMPOSITION versions can map to a FHIR resource
             // (EHR_STATUS/FOLDER carry no mappable template). The template is
             // read from the COMPOSITION body by the service (the envelope's
-            // template_id is currently NULL — see the service PORT NOTE).
+            // template_id is currently NULL — see the service NOTE).
             if version.get("kind").and_then(Value::as_str) != Some("COMPOSITION") {
                 continue;
             }

@@ -637,7 +637,7 @@ impl Validator {
     /// format can never be the root of an archetyped structure — must NOT carry
     /// `archetype_details`.
     ///
-    /// PORT NOTE: the converse arm ("an archetype-HRID node must carry
+    /// NOTE: the converse arm ("an archetype-HRID node must carry
     /// `archetype_details`") is NOT enforced — the reference object model derives
     /// `is_archetype_root` from `archetype_details` presence (making that reading
     /// tautological), and the CNF's own valid data sets + the canonical-JSON
@@ -884,7 +884,7 @@ impl Validator {
     /// wholly-unconstrained attributes are never recorded, so stay open (closed-world capture
     /// rule 2). A rejected node is not descended into (the walk already skips it).
     ///
-    /// PORT NOTE: AOM 1.4 `valid_value`
+    /// NOTE: AOM 1.4 `valid_value`
     /// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`
     /// L60-62) is a positive-only cascade, silent on unmatched instance nodes;
     /// closed-world rejection follows the AOM2 direction + de-facto CDR behaviour
@@ -912,7 +912,7 @@ impl Validator {
                     if ca.allowed_ids.iter().any(|a| a == nid) {
                         continue; // Matches a fixed sibling alternative.
                     }
-                    // PORT NOTE (the closed-world admission rule): an unmatched *archetype-rooted*
+                    // NOTE (the closed-world admission rule): an unmatched *archetype-rooted*
                     // child (`openEHR-…` id) is tolerated when the attribute
                     // carries no ARCHETYPE_SLOT constraint — OPT 1.4 flattening
                     // does not enumerate the full slot-fill universe, and the
@@ -1084,7 +1084,7 @@ impl Validator {
         // `action_archetype_id`, …) are governed by RM cardinality/invariants,
         // not archetype occurrences, so they are not occurrence-checked here.
         //
-        // PORT NOTE: `ism_transition` careflow steps are modelled by the
+        // NOTE: `ism_transition` careflow steps are modelled by the
         // WebTemplate builder as separate per-state nodes (careflow synthesis is
         // a documented builder scope gap), yet an ACTION instance carries a
         // single ISM_TRANSITION — occurrence-checking them would spuriously demand
@@ -1149,7 +1149,7 @@ impl Validator {
 
     /// Emit occurrence violations for a matched-node `count` against `[min, max]`
     /// (`max == -1` is unbounded).
-    // PORT NOTE (BASE primitives): occurrence/cardinality evaluation here uses
+    // NOTE (BASE primitives): occurrence/cardinality evaluation here uses
     // the WebTemplate's flattened `(min, max)` integers (`max = -1` =
     // unbounded). This is behaviorally equivalent to BASE
     // `Multiplicity_interval.has(count)` for OPT 1.4, whose occurrence
@@ -1313,7 +1313,7 @@ fn children_under_attr<'a>(node: &'a Value, attr: &str) -> Vec<&'a Value> {
 /// to the slot's `rm_type`, the id must match at least one `includes` regex (an
 /// empty `includes` = open to the type), and match no `excludes` regex. A blanket
 /// match-all (`.*`) exclude is ignored when `includes` is non-empty — the ADL 1.4
-/// closed-slot idiom (AOM 1.4 has no `is_closed`; PORT NOTE: includes then win,
+/// closed-slot idiom (AOM 1.4 has no `is_closed`; NOTE: includes then win,
 /// matching de-facto CDR behaviour).
 fn slot_admits(slot: &WebTemplateArchetypeSlot, child_type: &str, archetype_id: &str) -> bool {
     if !slot.rm_type.is_empty() && !subtype::conforms(child_type, &slot.rm_type) {
@@ -1359,6 +1359,12 @@ fn norm_path(p: &str) -> String {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions + the #[ignore] measurement harnesses' report output
 mod tests {
     //! Per-rule unit tests for the composition validator, built on hand-shaped
     //! `WebTemplate` nodes + minimal instances (no OPT parsing) so each rule is

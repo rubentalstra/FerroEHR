@@ -12,7 +12,7 @@
 //!   parser classifies a `name(args)` call. Structurally-distinct calls
 //!   (aggregates, `terminology(...)`) keep dedicated keyword tokens because
 //!   their argument grammar differs.
-//! - `// PORT NOTE:` quoted temporal literals (`DATE`/`TIME`/`DATETIME` in the
+//! - `// NOTE:` quoted temporal literals (`DATE`/`TIME`/`DATETIME` in the
 //!   grammar) are lexed as [`Token::String`]; typing them as temporals is a
 //!   later semantic concern (the parser accepts a string where a primitive is
 //!   expected). This keeps the lexer free of the fiddly ISO 8601-vs-string
@@ -21,7 +21,7 @@
 //!   context in the semantic pass, not from the literal — so an untyped
 //!   `Token::String` is the faithful carrier here (all temporal literals are
 //!   indistinguishable from strings at this layer, by design).
-//! - `// PORT NOTE:` the grammar's single-row function-id groups
+//! - `// NOTE:` the grammar's single-row function-id groups
 //!   (`STRING_FUNCTION_ID`/`NUMERIC_FUNCTION_ID`/`DATE_TIME_FUNCTION_ID` —
 //!   `length`, `abs`, `now`, …) are **not** reserved here: they lex as
 //!   [`Token::Identifier`] and the parser classifies a `name(args)` call
@@ -240,7 +240,7 @@ pub enum Token {
     Integer(String),
 
     // Single- or double-quoted string (also carries quoted temporals; see the
-    // module PORT NOTE). Escapes are preserved in the slice, unescaped later.
+    // module NOTE). Escapes are preserved in the slice, unescaped later.
     #[regex(r"'([^'\\]|\\.)*'", |lex| lex.slice().to_owned())]
     #[regex(r#""([^"\\]|\\.)*""#, |lex| lex.slice().to_owned())]
     String(String),

@@ -148,10 +148,10 @@ async fn composition_validation_gates_persistence() {
         .expect("upload IPS OPT");
 
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // ── valid composition → committed and retrievable ────────────────────────
-    // PORT NOTE: `create_composition` returns the new version_uid.
+    // NOTE: `create_composition` returns the new version_uid.
     let ovid = svc
         .create_composition(ehr_uuid, uv(composition("ips_canonical.json"), "249", None))
         .await
@@ -230,7 +230,7 @@ async fn composition_update_is_validated() {
         .await
         .expect("upload IPS OPT");
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr").to_string();
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     // Seed a valid v1.
     let ovid_v1 = svc
@@ -239,7 +239,7 @@ async fn composition_update_is_validated() {
         .expect("valid v1")
         .version_uid();
     let vo_id = ovid_v1.split("::").next().unwrap().to_owned();
-    let vo_uuid = vo_id.parse::<uuid::Uuid>().expect("vo uuid");
+    let vo_uuid = vo_id.parse::<ehrbase::ids::VoId>().expect("vo uuid");
 
     // An update whose body fails template validation is rejected (422) and the
     // stored current version stays at v1.
