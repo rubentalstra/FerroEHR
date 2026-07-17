@@ -218,15 +218,24 @@ impl TelemetryGuard {
         let meter = self.meter_provider.take();
         self.shut = true;
         // Provider shutdown is a blocking flush; keep it off the async worker.
-        let _ = tokio::task::spawn_blocking(move || {
-            if let Some(t) = tracer {
-                let _ = t.shutdown();
+        // A flush failure at shutdown is logged — telemetry loss is
+        // acceptable, silent loss is not.
+        let flushed = tokio::task::spawn_blocking(move || {
+            if let Some(t) = tracer
+                && let Err(e) = t.shutdown()
+            {
+                tracing::warn!(error = %e, "tracer flush at shutdown failed");
             }
-            if let Some(m) = meter {
-                let _ = m.shutdown();
+            if let Some(m) = meter
+                && let Err(e) = m.shutdown()
+            {
+                tracing::warn!(error = %e, "meter flush at shutdown failed");
             }
         })
         .await;
+        if let Err(e) = flushed {
+            tracing::warn!(error = %e, "telemetry shutdown flush task failed");
+        }
     }
 }
 
@@ -239,11 +248,15 @@ impl Drop for TelemetryGuard {
             tracing::warn!(
                 "TelemetryGuard dropped without shutdown(); flushing exporters best-effort"
             );
-            if let Some(t) = self.tracer_provider.take() {
-                let _ = t.shutdown();
+            if let Some(t) = self.tracer_provider.take()
+                && let Err(e) = t.shutdown()
+            {
+                tracing::warn!(error = %e, "tracer flush in Drop failed");
             }
-            if let Some(m) = self.meter_provider.take() {
-                let _ = m.shutdown();
+            if let Some(m) = self.meter_provider.take()
+                && let Err(e) = m.shutdown()
+            {
+                tracing::warn!(error = %e, "meter flush in Drop failed");
             }
         }
     }

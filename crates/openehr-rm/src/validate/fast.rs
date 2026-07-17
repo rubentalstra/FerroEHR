@@ -605,6 +605,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
 }
 
 #[cfg(test)]
+#[allow(clippy::panic, clippy::print_stderr)] // test assertions/diagnostics
 mod tests {
     use super::*;
     use serde_json::json;

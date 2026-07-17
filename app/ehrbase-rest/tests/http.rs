@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests: routing, authentication (401/403), and content
 //! negotiation, exercised through the assembled router over a **real**
 //! `EhrbaseService` on a real `PostgreSQL` (the `common` fixture).

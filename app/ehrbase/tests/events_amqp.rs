@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end contribution-outbox eventing against a **real broker**
 //! (testcontainers `RabbitMQ`) + a real `PostgreSQL` 18 — the broker half of
 //! Our own extension (task 3/5b).

@@ -689,6 +689,12 @@ fn ensure_template_id(comp: &mut Map<String, Value>, root: &WebTemplateNode, tem
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::{CodedName, name_value};
     use serde_json::json;

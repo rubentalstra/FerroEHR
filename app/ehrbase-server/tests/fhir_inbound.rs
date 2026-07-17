@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end inbound FHIR connector tests against a real `PostgreSQL` 18
 //! (testcontainers), driven through the assembled `ehrbase-rest` router over the
 //! real DB-backed `EhrbaseService` (our own extension — no openEHR spec governs this; E3).

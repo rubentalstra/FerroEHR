@@ -14,7 +14,7 @@
 /// into the container environment. These keep their historical single-`_`
 /// spelling by design — `EHRBASE_CONFIG` is a file pointer, not a config key,
 /// so it never joins the uniform `EHRBASE__` grammar.
-pub const ALLOWLIST: &[&str] = &[
+pub(super) const ALLOWLIST: &[&str] = &[
     "EHRBASE_CONFIG",
     "EHRBASE_HEALTHCHECK_URL",
     "EHRBASE_GIT_SHA",
@@ -29,7 +29,7 @@ pub const ALLOWLIST: &[&str] = &[
 
 /// The eighteen top-level section names — the did-you-mean candidate set for an
 /// unknown `EHRBASE__<SECTION>__…` variable.
-pub const SECTIONS: &[&str] = &[
+pub(super) const SECTIONS: &[&str] = &[
     "server",
     "db",
     "log",
@@ -53,7 +53,7 @@ pub const SECTIONS: &[&str] = &[
 /// The two PERMANENT conventional aliases (§P-3) — 12-factor ecosystem names,
 /// not legacy: they sit BELOW their `EHRBASE__` forms within the env layer.
 /// `(external_name, canonical EHRBASE__ env form)`.
-pub const CONVENTIONAL: &[(&str, &str)] = &[
+pub(super) const CONVENTIONAL: &[(&str, &str)] = &[
     ("DATABASE_URL", "EHRBASE__DB__URL"),
     ("RUST_LOG", "EHRBASE__LOG__FILTER"),
 ];
@@ -61,7 +61,7 @@ pub const CONVENTIONAL: &[(&str, &str)] = &[
 /// List-typed key paths — env values for these are comma-separated
 /// (`config`'s `with_list_parse_key`), so a scalar value containing a comma is
 /// never mis-split.
-pub const LIST_KEYS: &[&str] = &[
+pub(super) const LIST_KEYS: &[&str] = &[
     "auth.oidc.audiences",
     "auth.oidc.algorithms",
     "authz.rbac.role_claims",
@@ -78,7 +78,7 @@ pub const LIST_KEYS: &[&str] = &[
 /// fields (not full paths), so it cannot reconstruct env provenance yet.
 #[cfg(test)]
 #[must_use]
-pub fn env_name_for(key_path: &str) -> String {
+pub(super) fn env_name_for(key_path: &str) -> String {
     let tail = key_path
         .split('.')
         .map(str::to_ascii_uppercase)
@@ -88,6 +88,12 @@ pub fn env_name_for(key_path: &str) -> String {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

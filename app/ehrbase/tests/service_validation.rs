@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end composition-validation tests against a real PostgreSQL 18
 //! (testcontainers): a COMPOSITION committed via the ITS-REST create/update
 //! path is validated against its operational template *before* persistence.

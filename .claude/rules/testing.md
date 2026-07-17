@@ -60,8 +60,13 @@ applies to every crate — generated (ADR-004) and hand-written alike.
 ## Where tests live
 
 Unit tests live beside the code they test (`#[cfg(test)] mod tests` in the
-same file). Integration and cross-crate tests live in the owning crate's
-`tests/` directory (`crates/*/tests/`, `app/*/tests/`, `tools/*/tests/`).
+same file) — and ONLY there: **dedicated test FILES under `src/` are banned**
+(owner ruling 2026-07-17; the four historical ones were relocated). A test
+that drives the public API belongs in the owning crate's `tests/` directory
+(`crates/*/tests/`, `app/*/tests/`, `tools/*/tests/`) with a descriptive
+file name; a test of private internals stays a small inline module next to
+the code it tests. If an internals test grows large, that is a design signal
+to test through the public seam, not to split the tests into a src file.
 Do not invent a third location.
 
 ## Target

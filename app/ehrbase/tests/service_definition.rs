@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! SM-2 end-to-end tests for the Definitions native API against a real
 //! `PostgreSQL` 18 (testcontainers): ADL 1.4 source archetypes
 //! (`I_DEFINITION_ADL14`), OPTs (delegated to `template_store`), and registered

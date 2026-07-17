@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Verify `Hash<String,String>` (`StringDictionaryItem`) XML round-trips.
 use openehr_base::prelude::TranslationDetails;
 use openehr_its::xml::{from_xml, to_canonical_xml};

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end AQL `TERMINOLOGY('expand', …)` tests (B4 stage (a)) against a real
 //! PostgreSQL 18 (testcontainers): seed COMPOSITIONs with a coded ELEMENT leaf,
 //! then run `matches TERMINOLOGY('expand', …)` / `matches {…, TERMINOLOGY(…)}`

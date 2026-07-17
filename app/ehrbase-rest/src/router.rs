@@ -269,9 +269,14 @@ pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) ->
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
-    #![allow(clippy::unwrap_used, clippy::expect_used)]
-
     use axum::body::to_bytes;
     use http::StatusCode;
 

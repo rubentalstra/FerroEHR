@@ -15,6 +15,13 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Release builds now abort on integer arithmetic overflow instead of
+  silently wrapping (`overflow-checks` enabled in the release profile) — a
+  corrupted-value class of fault becomes a crash-and-restart instead of
+  wrong clinical data.
+
 ### Fixed
 
 - A tenant-resolution failure (tenant registry unreachable) now fails the

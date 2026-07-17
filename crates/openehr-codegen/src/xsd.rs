@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 /// A parsed XSD type model: openEHR complexType name → [`XsdType`].
-pub struct XsdModel {
+pub(crate) struct XsdModel {
     /// Target XML namespace (`http://schemas.openehr.org/v1` or `…/v2`).
     pub namespace: String,
     pub types: BTreeMap<String, XsdType>,
@@ -24,7 +24,7 @@ pub struct XsdModel {
 
 /// One `xs:complexType` (its *local* attributes/elements — inheritance is via
 /// [`XsdType::base`], resolved by [`XsdModel::flattened`]).
-pub struct XsdType {
+pub(crate) struct XsdType {
     pub name: String,
     pub is_abstract: bool,
     /// The `xs:extension`/`xs:restriction` base type, if any.
@@ -37,7 +37,7 @@ pub struct XsdType {
 
 #[derive(Clone)]
 #[allow(dead_code)] // type_name/required consumed by the emit-xml emitter (landing next)
-pub struct XsdAttr {
+pub(crate) struct XsdAttr {
     pub name: String,
     pub type_name: String,
     pub required: bool,
@@ -45,7 +45,7 @@ pub struct XsdAttr {
 
 #[derive(Clone)]
 #[allow(dead_code)] // type_name/optional/multiple consumed by the emit-xml emitter (landing next)
-pub struct XsdElem {
+pub(crate) struct XsdElem {
     pub name: String,
     pub type_name: String,
     pub optional: bool,
@@ -58,7 +58,7 @@ impl XsdModel {
     ///
     /// # Errors
     /// Returns an error if a file cannot be read or parsed as XML.
-    pub fn parse_files(paths: &[std::path::PathBuf]) -> Result<Self, String> {
+    pub(crate) fn parse_files(paths: &[std::path::PathBuf]) -> Result<Self, String> {
         let mut types: BTreeMap<String, XsdType> = BTreeMap::new();
         let mut namespace = String::new();
         for path in paths {
@@ -86,7 +86,7 @@ impl XsdModel {
     /// each, ancestors come first (matching the flattened generated struct
     /// field order).
     #[must_use]
-    pub fn flattened(&self, name: &str) -> (Vec<XsdAttr>, Vec<XsdElem>) {
+    pub(crate) fn flattened(&self, name: &str) -> (Vec<XsdAttr>, Vec<XsdElem>) {
         // Collect the chain root→…→self, then concatenate in that order.
         let mut chain: Vec<&XsdType> = Vec::new();
         let mut cur = self.types.get(name);
@@ -107,7 +107,7 @@ impl XsdModel {
     /// The concrete descendants of `name` (types whose `base` chain reaches
     /// `name`), i.e. the valid `xsi:type` values for a slot declared as `name`.
     #[must_use]
-    pub fn descendants(&self, name: &str) -> Vec<String> {
+    pub(crate) fn descendants(&self, name: &str) -> Vec<String> {
         self.types
             .values()
             .filter(|t| !t.is_abstract && self.is_a(&t.name, name))
@@ -117,7 +117,7 @@ impl XsdModel {
 
     /// Whether `sub` is `sup` or transitively extends it.
     #[must_use]
-    pub fn is_a(&self, sub: &str, sup: &str) -> bool {
+    pub(crate) fn is_a(&self, sub: &str, sup: &str) -> bool {
         let mut cur = Some(sub.to_string());
         while let Some(n) = cur {
             if n == sup {
@@ -213,7 +213,7 @@ fn push_attr(node: roxmltree::Node, out: &mut Vec<XsdAttr>) {
 
 /// The RM *instance* XSD file basenames per lineage (order = merge order).
 /// Excludes the OPT/AOM constraint schemas that redefine RM type names.
-pub const RM_FILES_V1: &[&str] = &[
+pub(crate) const RM_FILES_V1: &[&str] = &[
     "BaseTypes.xsd",
     "Structure.xsd",
     "Content.xsd",
@@ -225,7 +225,7 @@ pub const RM_FILES_V1: &[&str] = &[
 
 /// Resolve the v1 RM-instance file paths under the `ALL/` bundle dir.
 #[must_use]
-pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
+pub(crate) fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
 
@@ -239,7 +239,7 @@ pub fn v1_files(all_dir: &Path) -> Vec<std::path::PathBuf> {
 /// `LOCATABLE` subtype). The extract family is drawn from the v2 `EhrExtract.xsd`
 /// (see [`RM_FILES_V2_SUPPLEMENT`]) so its LOCATABLE ancestry — and the
 /// `archetype_node_id` **attribute** — resolves correctly.
-pub const RM_FILES_V1_SERVED: &[&str] = &[
+pub(crate) const RM_FILES_V1_SERVED: &[&str] = &[
     "BaseTypes.xsd",
     "Structure.xsd",
     "Content.xsd",
@@ -258,7 +258,7 @@ pub const RM_FILES_V1_SERVED: &[&str] = &[
 /// these types via the flatten walk — supplies the `archetype_node_id` attribute
 /// and canonical element order for `EHR_STATUS`/`EHR_ACCESS`, the demographic
 /// PARTY hierarchy, and the extract LOCATABLE subtypes. This closes F-05-01.
-pub const RM_FILES_V2_SUPPLEMENT: &[&str] = &[
+pub(crate) const RM_FILES_V2_SUPPLEMENT: &[&str] = &[
     "RM/Release-1.1.0/Ehr.xsd",
     "RM/Release-1.1.0/Demographic.xsd",
     "RM/Release-1.1.0/EhrExtract.xsd",
@@ -269,7 +269,7 @@ pub const RM_FILES_V2_SUPPLEMENT: &[&str] = &[
 /// extract supplement under `v2_root` (the `its-xml-2.0.0-nsv2` root). Order is
 /// load-bearing — v1 first so served types win (`.or_insert`).
 #[must_use]
-pub fn xml_emit_files(v1_all_dir: &Path, v2_root: &Path) -> Vec<std::path::PathBuf> {
+pub(crate) fn xml_emit_files(v1_all_dir: &Path, v2_root: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V1_SERVED
         .iter()
         .map(|f| v1_all_dir.join(f))
@@ -283,7 +283,7 @@ pub fn xml_emit_files(v1_all_dir: &Path, v2_root: &Path) -> Vec<std::path::PathB
 /// `C_ARCHETYPE_ROOT`, …) win. `Resource.xsd` + `BaseTypes.xsd` overlap the
 /// RM-instance set — those types resolve to the already-generated `openehr-rm`/
 /// `openehr-base` XML impls; the AOM/OPT constraint types are generated fresh.
-pub const AM_FILES_V1: &[&str] = &[
+pub(crate) const AM_FILES_V1: &[&str] = &[
     "Template.xsd",
     "OpenehrProfile.xsd",
     "Archetype.xsd",
@@ -293,7 +293,7 @@ pub const AM_FILES_V1: &[&str] = &[
 
 /// Resolve the v1 AM/OPT constraint-schema file paths under the `ALL/` bundle dir.
 #[must_use]
-pub fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
+pub(crate) fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
     AM_FILES_V1.iter().map(|f| all_dir.join(f)).collect()
 }
 
@@ -302,7 +302,7 @@ pub fn am_files_v1(all_dir: &Path) -> Vec<std::path::PathBuf> {
 /// Reserved for a future v2-specific trait; the v1 shape currently
 /// serves both lineages (they differ only by root `xmlns`).
 #[allow(dead_code)]
-pub const RM_FILES_V2: &[&str] = &[
+pub(crate) const RM_FILES_V2: &[&str] = &[
     "BASE/Release-1.2.0/BaseTypes.xsd",
     "BASE/Release-1.2.0/Resource.xsd",
     "RM/Release-1.1.0/Common.xsd",
@@ -316,6 +316,6 @@ pub const RM_FILES_V2: &[&str] = &[
 /// Resolve the v2 RM-instance file paths under the `its-xml-2.0.0-nsv2/` root.
 #[must_use]
 #[allow(dead_code)] // reserved for a future v2-specific trait
-pub fn v2_files(root: &Path) -> Vec<std::path::PathBuf> {
+pub(crate) fn v2_files(root: &Path) -> Vec<std::path::PathBuf> {
     RM_FILES_V2.iter().map(|f| root.join(f)).collect()
 }

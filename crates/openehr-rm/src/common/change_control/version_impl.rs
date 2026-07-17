@@ -104,9 +104,14 @@ impl<T: Serialize> Version<T> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
-
     use super::*;
 
     /// A representative `ORIGINAL_VERSION` JSON whose `data` is a real corpus

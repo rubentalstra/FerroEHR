@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the DEFINITION stored-query store surface against a
 //! real `PostgreSQL` 18 (testcontainers), driven through the assembled
 //! `ehrbase-rest` router (auth disabled) with `tower`'s `oneshot`.
