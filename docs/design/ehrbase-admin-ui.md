@@ -1016,6 +1016,42 @@ file — never through the database.
   waits on elements/conditions — never `sleep`), **never** `#[ignore]`d,
   retried-by-default, or deleted to get green.
 
+## 8e. Published page screenshots — the website shows every screen *(owner mandate 2026-07-17)*
+
+People evaluating the console want to **see** it. The operator docs
+(`website/book`) therefore carry **one canonical screenshot per §7A route
+screen**, and a machine-enforced rule keeps them from rotting.
+
+### Capture (a deterministic harness pass, not hand-made)
+
+- After J1–J8, `scripts/ui-e2e.sh --docs-shots` runs a dedicated capture
+  pass over the same seeded compose stack: **fixed viewport 1440×900, light
+  theme, the same corpus fixtures** — one full-page PNG per §7A screen
+  (login, dashboard, templates, template-detail, queries, query-builder,
+  ehrs, ehr-detail, composition-viewer, system — 10 shots; the shell is
+  visible in all of them), slug-named after the route.
+- Output is **committed** at `website/book/src/admin-ui/img/{slug}.png` —
+  never hand-cropped, never mocked up; what ships is what the harness saw.
+- The book gains an **Admin console** chapter: one page per screen embedding
+  its screenshot with operator-facing text derived from the §7A entry.
+
+### The refresh rule (machine-enforced — the changelog-guard pattern)
+
+- **CI job `ui-screenshot-guard`** (lands with the console in the §12 PR,
+  same shape as `changelog-guard`): a PR that touches
+  `app/ehrbase-admin-ui/{src,style}/**` must **also** touch
+  `website/book/src/admin-ui/img/**` — i.e. UI change ⇒ screenshots
+  re-captured in the same PR (`--docs-shots` + commit). Escape hatch: the
+  **`no-ui-visual-change`** label for genuinely invisible changes (BFF-only
+  logic, comments, tests) — mirroring `no-changelog`.
+- The guard checks **freshness, not pixels** — consistent with owner
+  decision 6 (§10): screenshots are for humans; pixel-diff assertions flake
+  and stay banned. Review of the refreshed images happens on the PR (they
+  render inline in the GitHub diff).
+- Rule recorded in `.claude/rules/leptos-ui.md` §10 (testing gates) and in
+  the `ui-implementer` done-definition: a visual change ships with its
+  re-captured screenshots.
+
 ## 9. Risks & honest tradeoffs
 
 - **Pre-1.0 ecosystem.** Leptos (→1.0), `thaw`, `leptos-struct-table`,
@@ -1072,6 +1108,10 @@ file — never through the database.
    `docs/plans/WORKLIST.md` with this file as the governing plan (deleted
    in the implementing PR); Cabolabs EHRServer is an **idea source only —
    never a 1:1 port** (revision block item 6).
+9. *(2026-07-17)* **Website screenshots:** every §7A screen gets a canonical,
+   harness-captured screenshot published in the `website/book` admin-console
+   chapter, with the **`ui-screenshot-guard`** CI job enforcing re-capture on
+   any UI-touching PR (§8e; escape label `no-ui-visual-change`).
 
 ---
 
@@ -1080,9 +1120,10 @@ file — never through the database.
 *(rev. 2026-07-17b — the ADR bullet is gone: the ADR layer was abolished
 2026-07-17; this doc is the plan and is deleted at close.)*
 
-- `CHANGELOG.md` `[Unreleased]` entry + a `website/book` operator page for
-  the console (deploy, config, auth setup) — both standing same-PR rules
-  for user-visible surfaces.
+- `CHANGELOG.md` `[Unreleased]` entry + the `website/book` **admin-console
+  chapter**: an operator page (deploy, config, auth setup) plus **one page
+  per §7A screen embedding its harness-captured screenshot** (§8e) — all
+  standing same-PR rules for user-visible surfaces.
 - `containers.yml` + the quickstart compose gain the third image/service
   (§8); Helm chart addition if the owner wants it charted at v1 —
   compose-only otherwise (ask at convergence).
@@ -1131,7 +1172,7 @@ task (no re-exports, no `use X as Y`, deny-tier lints, TODO-form comments,
 | **W2 — shell + login + system panel** | §7A.0 shell, §7A.1 login, §7A.10 system panel (minus scope-previewer, feature-gated per §7.4's open point). | 2 × `ui-implementer` in parallel (shell+login / system) |
 | **W3 — browse surfaces** | §7A.3/7A.4 Template Manager + detail; §7A.7/7A.8/7A.9 EHR finder, EHR detail, composition viewer (the shared format-viewer component built once, in the template-detail task, reused). | 2 × `ui-implementer`, two sequential pairs |
 | **W4 — Query Builder + queries + dashboard** | Orchestrator: the builder-state model + AST lowering + its exhaustive unit tests (component-free, §8b). Workers: the §7A.6 widget surface (criteria widgets per `DV_*`, stepper, result pane), §7A.5 stored queries/groups, §7A.2 dashboard tiles. | Orchestrator core + 2 × `ui-implementer` |
-| **W5 — E2E harness + journeys** | `scripts/ui-e2e.sh` (compose: postgres + ehrbase + console + Keycloak), realm + OPT fixtures, J1–J8 (§8d matrix), screenshot plumbing, the `ui-e2e` CI job + `ui-e2e-screenshots` artifact upload. | Orchestrator (harness pattern = `conformance.sh`); journey bodies may fan to `implementer` |
+| **W5 — E2E harness + journeys** | `scripts/ui-e2e.sh` (compose: postgres + ehrbase + console + Keycloak), realm + OPT fixtures, J1–J8 (§8d matrix), screenshot plumbing, the `--docs-shots` capture pass (§8e), the `ui-e2e` CI job + `ui-e2e-screenshots` artifact upload, and the `ui-screenshot-guard` CI job. | Orchestrator (harness pattern = `conformance.sh`); journey bodies may fan to `implementer` |
 | **W6 — convergence** | The full battery in order: `/ui-gates` (both-target clippy, nextest, leptosfmt+fmt, cargo-leptos build) → workspace gates (`clippy --workspace --all-targets`, `nextest run --workspace`, fmt, audit/deny) → `scripts/ui-e2e.sh` full J1–J8 → `leptos-reviewer` whole-crate pass → §11 obligations (changelog, book page, compose/CI, README credit, CLAUDE.md edits) → PROGRESS entry + worklist close + **delete this file** → PR. | Orchestrator |
 
 Reviewer cadence: `leptos-reviewer` after W2, W3, W4 (scoped diffs), and the
@@ -1151,9 +1192,12 @@ whole crate at W6 — findings block the next stage, mirroring how
    spot-check that no Cabolabs code/markup was ported (idea-source rule).
 5. Every §7A server fn implemented, auth-guarded, and listed in the §7A.11
    catalog (catalog drift = a finding).
-6. §11 obligations all landed in the PR (changelog, book page, compose +
+6. §11 obligations all landed in the PR (changelog, book chapter, compose +
    `containers.yml`, README credit, CLAUDE.md edits, PROGRESS + worklist
    close, this file deleted).
+7. The §8e screenshot set captured by `--docs-shots` and committed under
+   `website/book/src/admin-ui/img/` (all 10 screens), embedded in the book
+   chapter, with the `ui-screenshot-guard` job live in CI.
 
 ---
 
