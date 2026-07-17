@@ -47,7 +47,7 @@ pub enum ReportError {
 /// list is maintained here for the capability matrix; a capability with no
 /// cases renders as a logged coverage bound (`NoCases`), never silently
 /// dropped.
-pub const ALL_CAPABILITIES: [Capability; 28] = [
+pub const ALL_CAPABILITIES: [Capability; 29] = [
     Capability::Adl14ArchetypeProvisioning,
     Capability::Adl14OptProvisioning,
     Capability::Adl2Provisioning,
@@ -76,6 +76,7 @@ pub const ALL_CAPABILITIES: [Capability; 28] = [
     Capability::AnonymousEhrs,
     Capability::Authentication,
     Capability::Terminology,
+    Capability::SimplifiedFormats,
 ];
 
 // ── Shared capability / profile accounting ──────────────────────────────────

@@ -166,6 +166,9 @@ pub enum Capability {
     /// Terminology-server integration (ehrbase-rs extension + generic
     /// FHIR-tx cases; reported, never profile-gating).
     Terminology,
+    /// Simplified Formats wire surface — FLAT / STRUCTURED / Web Template
+    /// (Resources.md §Simplified Formats: SHOULD, i.e. an OPTIONS capability).
+    SimplifiedFormats,
 }
 
 /// A wire format a case runs under (profiles master03 §Other Non-Functional).

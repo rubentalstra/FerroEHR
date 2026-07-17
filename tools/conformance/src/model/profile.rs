@@ -75,6 +75,7 @@ pub const OPTIONAL_CAPABILITIES: &[Capability] = &[
     Capability::AdminDemographicArchive,
     Capability::MessagingEhrExtract,
     Capability::MessagingTds,
+    Capability::SimplifiedFormats,
 ];
 
 /// How a capability was evidenced in a run.
