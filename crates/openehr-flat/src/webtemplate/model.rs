@@ -1,34 +1,41 @@
-//! The Better `web-template` JSON model (format version `"2.3"`).
+//! The Web Template JSON model.
 //!
-//! Field names and JSON shape match Better's `builder/model/*.kt` exactly — this
-//! is an interop contract, so `#[serde(rename = ...)]` mirrors Better's
-//! `@JsonProperty`/`@JsonPropertyOrder` and the `skip_serializing_if` guards
-//! mirror Better's `@JsonInclude(NON_NULL|NON_EMPTY)`.
+//! The wire shape is the Web Template metadata document of `ITS-REST
+//! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata"
+//! (`templateId`/`semVer`/`version`/`defaultLanguage`/`languages`/`tree`, each
+//! node carrying `id`/`name`/`localizedName`/`rmType`/`nodeId`/`min`/`max`/
+//! `aqlPath`/`inputs`/`children`/`inContext`/`termBindings`/`annotations`/…).
+//! It is served as `application/openehr.wt+json`, so the `#[serde(rename = ...)]`
+//! names, field order, and `skip_serializing_if` guards are a fixed wire contract
+//! and must not change.
 //!
 //! A [`WebTemplateNode`] doubles as the mutable tree the builder shapes: fields
 //! marked `#[serde(skip)]` are build-time scratch (the full dedup id chain, the
-//! polymorphic alternate id, the cardinality RM path) and never serialized.
+//! polymorphic alternate id, the cardinality RM path) and captured constraints
+//! for validation — never serialized.
 //!
 //! Relationship to the vendored ITS-REST schema: the normative
 //! `schemas/web_template/{WebTemplate,Tree,Child,Input,…}.yaml` describe a
-//! *subset* of the fuller Better 2.3 shape emitted here. The impl carries
-//! additive Better fields the ITS-REST schema does not list (`cardinalities`,
-//! `inContext`, `proportionTypes`, `termBindings`, `dependsOn` on nodes;
-//! `listOpen`, `terminology` on inputs; `ordinal`/`scale`/`localizedLabels`/
-//! `termBindings` on coded values; `semVer`/`otherDetails`/`version` on the
-//! root). Those schemas set no `additionalProperties: false`, so the extras are
-//! schema-legal and carry information consumers need. The one place the schema
-//! is *stricter* than a naive render is its `Tree.required` list — satisfied by
-//! [`serialize_root`].
+//! *subset* of the metadata document. The model carries additive fields the
+//! master04 example and the ITS-REST schema do not list (`cardinalities`,
+//! `proportionTypes`, `dependsOn` resolution on nodes; `listOpen`, `terminology`
+//! on inputs; `ordinal`/`scale`/`termBindings` on coded values; `otherDetails`
+//! on the root) — no openEHR spec governs these fields; they are our own
+//! design/extension, consumed by validation and by interop consumers, and
+//! schema-legal because those schemas set no `additionalProperties: false`. The
+//! one place the schema is *stricter* than a naive render is its `Tree.required`
+//! list — satisfied by [`serialize_root`].
 
 use indexmap::IndexMap;
 use serde::{Serialize, Serializer};
 
-/// A single template rendered in the Better web format.
+/// A single Web Template metadata document (`ITS-REST simplified_formats
+/// master04 §"Web Template Metadata"`).
 ///
-/// `@JsonInclude(NON_EMPTY)`, order `templateId, semVer, version, defaultLanguage,
-/// languages, tree, otherDetails`. `version` is the **format** version (`"2.3"`),
-/// not the template version.
+/// Member order `templateId, semVer, version, defaultLanguage, languages, tree,
+/// otherDetails`; empty members are omitted. `version` is the **format** version
+/// string, not the template version (`otherDetails` is an additive field — no
+/// openEHR spec governs it; our own design/extension).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplate {
     #[serde(rename = "templateId")]
@@ -57,7 +64,8 @@ pub struct WebTemplate {
 /// members a sparse root would otherwise omit (empty rubric maps, an unbounded
 /// `min`, an empty `nodeId`, no children), so a strict JSON-Schema validator
 /// accepts the `WebTemplate`. Children keep the looser `Child`-schema shape
-/// (Better parity). Missing scalars default to spec-valid placeholders
+/// (`schemas/web_template/Child.yaml`). Missing scalars default to spec-valid
+/// placeholders
 /// (`name`/`localizedName` ← the node `id`, `nodeId` ← `""`, `min` ← `0`).
 fn serialize_root<S: Serializer>(node: &WebTemplateNode, s: S) -> Result<S::Ok, S::Error> {
     // Serialize via the derived (Child-shaped) impl, then ensure the

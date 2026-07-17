@@ -83,7 +83,7 @@ pub(crate) async fn migrated_pool(name: &str) -> (Pg, PgPool) {
 ///
 /// `name` must be a unique, SQL-identifier-safe string per test (it becomes
 /// the database name).
-pub async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
+pub(crate) async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
     let (pg, pool) = migrated_pool(name).await;
     (pg, Arc::new(EhrbaseService::new(pool)))
 }
@@ -91,7 +91,7 @@ pub async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
 /// The assembled router over a real service with the given configuration —
 /// the same wiring as [`ehrbase_rest::build_with`], split open so tests can
 /// hand-tune `AppConfig` (auth modes, admin/extension toggles).
-pub fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Router {
+pub(crate) fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Router {
     let authenticator = Authenticator::new(config.auth.clone()).expect("test auth config is valid");
     let state = AppState::with_backend(config, service);
     ehrbase_rest::router::router(state, authenticator)
