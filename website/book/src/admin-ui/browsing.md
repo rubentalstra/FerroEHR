@@ -21,7 +21,6 @@ EHR status, the folder directory, the composition list, and contribution
 lookup.
 
 ![EHRs](img/ehrs.png)
-![EHR detail](img/ehr-detail.png)
 
 ## Composition viewer
 
@@ -29,5 +28,3 @@ Any composition renders in canonical JSON, canonical XML, FLAT, or
 STRUCTURED — switch freely; the CDR converts. The version dropdown walks
 the revision history, and each version's audit (committer, time, change
 type) is shown alongside.
-
-![Composition viewer](img/composition-viewer.png)
