@@ -41,6 +41,14 @@ serde_json.workspace = true
 # the theme to `localStorage`.
 leptos-use = { workspace = true }
 
+# Pure-Rust SVG charts (no JS) for the dashboard commit-activity trend.
+# Isomorphic: it renders a "Loading…" placeholder server-side and draws the
+# chart after the client measures the container. Its own `ssr` feature MUST
+# ride the `ssr` gate below (see the feature list) so the leptos-use timers it
+# uses compile the native path server-side instead of panicking at SSR — the
+# same reason `leptos-use/ssr` is required.
+leptos-chartistry = { workspace = true }
+
 # JsFuture for the browser-side OPT file read (thaw Upload custom_request);
 # compiles on both targets, only ever runs in the browser.
 wasm-bindgen-futures.workspace = true
@@ -86,6 +94,8 @@ ssr = [
     # implemented on non-wasm32 targets") — caught by the W2 live smoke.
     "leptos-use/ssr",
     "leptos-use/axum",
+    # chartistry embeds its own leptos-use; give it the ssr path server-side.
+    "leptos-chartistry/ssr",
     "dep:leptos_axum",
     "dep:axum",
     "dep:tokio",

@@ -3,8 +3,7 @@
 //! under the session-guarded [`crate::pages::shell::AppShell`] layout, which
 //! renders the matched child through its `<Outlet/>`.
 //!
-//! Screens not yet built render a small [`Placeholder`] card. Every routed
-//! view — placeholders included — sets its own `<Title/>`.
+//! Every routed view sets its own `<Title/>`.
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -48,10 +47,7 @@ pub fn App() -> impl IntoView {
                 <Routes fallback=|| view! { <NotFound /> }>
                     <Route path=path!("/login") view=crate::pages::login::LoginPage />
                     <ParentRoute path=path!("") view=crate::pages::shell::AppShell>
-                        <Route
-                            path=path!("")
-                            view=|| view! { <Placeholder title="Dashboard" /> }
-                        />
+                        <Route path=path!("") view=crate::pages::dashboard::DashboardPage />
                         <Route
                             path=path!("templates")
                             view=crate::pages::templates::TemplatesPage
@@ -60,17 +56,14 @@ pub fn App() -> impl IntoView {
                             path=path!("templates/:template_id")
                             view=crate::pages::template_detail::TemplateDetailPage
                         />
-                        <Route
-                            path=path!("queries")
-                            view=|| view! { <Placeholder title="Stored queries" /> }
-                        />
+                        <Route path=path!("queries") view=crate::pages::queries::QueriesPage />
                         <Route
                             path=path!("queries/builder")
-                            view=|| view! { <Placeholder title="Query builder" /> }
+                            view=crate::pages::query_builder::QueryBuilderPage
                         />
                         <Route
                             path=path!("queries/aql")
-                            view=|| view! { <Placeholder title="Raw AQL" /> }
+                            view=crate::pages::query_aql::QueryAqlPage
                         />
                         <Route path=path!("ehrs") view=crate::pages::ehrs::EhrsPage />
                         <Route
@@ -86,32 +79,6 @@ pub fn App() -> impl IntoView {
                 </Routes>
             </Router>
         </thaw::ConfigProvider>
-    }
-}
-
-/// Interim screen for a route whose real UI is not built yet. Renders a
-/// `thaw` Card naming the screen and sets the page `<Title/>` so the
-/// routed-page title rule holds even before the screen exists.
-#[component]
-fn Placeholder(
-    /// The screen's display name (also the page title stem).
-    #[prop(into)]
-    title: String,
-) -> impl IntoView {
-    let page_title = format!("{title} · ehrbase-admin");
-    let heading = view! {
-        <thaw::CardHeader>
-            <thaw::Body1>{title}</thaw::Body1>
-        </thaw::CardHeader>
-    }
-    .into_any();
-    let note =
-        view! { <p class="text-sm opacity-70">"This screen is not available yet."</p> }.into_any();
-    view! {
-        <Title text=page_title />
-        <div class="p-6">
-            <thaw::Card>{heading}{note}</thaw::Card>
-        </div>
     }
 }
 
