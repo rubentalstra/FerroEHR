@@ -68,6 +68,13 @@ workflow refuses a tag that has no matching section here.
   request's tenant for the row-level-security policies. Previously the
   binary always built the plain pool, so all requests fell through to the
   default tenant regardless of configuration.
+- Multi-tenancy: a connection freshly opened by the pool while serving a
+  request (pool growth under load) could miss the tenant stamp and run as
+  the reserved default tenant — reads returning nothing and writes landing
+  outside the caller's tenant. The tenant-scoped pool now stamps
+  `ehrbase.tenant_id` both when a connection is opened and on every
+  checkout, so every connection carries the caller's tenant. Deployments
+  with `tenancy.enabled = true` should upgrade.
 - The demographic APIs (party and relationship writes) now honour the
   `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal headers exactly
   as the EHR APIs do — a caller-supplied committer, description, and
