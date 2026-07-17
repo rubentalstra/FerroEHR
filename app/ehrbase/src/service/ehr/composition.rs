@@ -400,7 +400,7 @@ impl EhrbaseService {
         Ok(crate::storage::version_repo::meta::template_id_of(
             &self.pool,
             vo_id,
-            tree.map(|t| t.columns()),
+            tree.map(crate::versioning::object_version_id::TreeId::columns),
         )
         .await?
         .flatten())
