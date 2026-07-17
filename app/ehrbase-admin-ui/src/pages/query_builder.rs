@@ -33,7 +33,7 @@ use crate::builder::model::{
     SelectedColumn,
 };
 use crate::error::AdminUiError;
-use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, error_bar, table_skeleton};
+use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, table_skeleton};
 use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};
@@ -168,12 +168,12 @@ fn template_step_section(
                 <Suspense fallback=move || {
                     view! { <span class="text-sm text-neutral-500">"Loading templates…"</span> }
                 }>
-                    <ErrorBoundary fallback=error_bar>
-                        {move || Suspend::new(async move {
-                            let rows = templates.await?;
-                            Ok::<_, AdminUiError>(template_select(ctx, ran, rows))
-                        })}
-                    </ErrorBoundary>
+                    {move || Suspend::new(async move {
+                        match templates.await {
+                            Ok(rows) => template_select(ctx, ran, rows),
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
+                    })}
                 </Suspense>
             </div>
         </thaw::Card>
@@ -229,34 +229,25 @@ fn picker_section(
     let shape_is_dv = Signal::derive(move || ctx.query.with(|q| q.shape == QueryShape::DataValues));
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let root = catalog.await?;
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(
-                        match root {
-                            None => {
-                                view! {
-                                    <p class="text-sm text-neutral-500">
-                                        "Pick a template to browse its paths."
-                                    </p>
-                                }
-                                    .into_any()
-                            }
-                            Some(node) => {
-                                view! {
-                                    <ul class="text-sm">
-                                        {picker_node(&node, ctx, shape_is_dv, 0)}
-                                    </ul>
-                                }
-                                    .into_any()
-                            }
-                        },
-                    )
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match catalog.await {
+                    Ok(None) => {
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! {
+                            <p class="text-sm text-neutral-500">
+                                "Pick a template to browse its paths."
+                            </p>
+                        }
+                            .into_any()
+                    }
+                    Ok(Some(node)) => {
+                        view! { <ul class="text-sm">{picker_node(&node, ctx, shape_is_dv, 0)}</ul> }
+                            .into_any()
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()
@@ -1488,35 +1479,28 @@ fn results_section(
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let page = results.await?;
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(
-                        match page {
-                            None => ().into_any(),
-                            Some(page) => {
-                                let is_count = ctx
-                                    .query
-                                    .with_untracked(|q| q.shape == QueryShape::Count);
-                                let controls = paging_buttons(offset, page.rows.len());
-                                let body = results_view(&page, is_count);
-                                view! {
-                                    <thaw::Card>
-                                        <thaw::CardHeader>
-                                            <div class="text-sm font-semibold">"Results"</div>
-                                        </thaw::CardHeader>
-                                        <div class="p-3">{body}{controls}</div>
-                                    </thaw::Card>
-                                }
-                                    .into_any()
-                            }
-                        },
-                    )
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match results.await {
+                    Ok(None) => ().into_any(),
+                    Ok(Some(page)) => {
+                        let is_count = ctx.query.with_untracked(|q| q.shape == QueryShape::Count);
+                        let controls = paging_buttons(offset, page.rows.len());
+                        let body = results_view(&page, is_count);
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! {
+                            <thaw::Card>
+                                <thaw::CardHeader>
+                                    <div class="text-sm font-semibold">"Results"</div>
+                                </thaw::CardHeader>
+                                <div class="p-3">{body}{controls}</div>
+                            </thaw::Card>
+                        }
+                            .into_any()
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()

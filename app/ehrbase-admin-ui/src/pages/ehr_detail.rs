@@ -26,7 +26,7 @@ use serde_json::Value;
 
 use crate::components::format_view::DocumentPane;
 use crate::error::AdminUiError;
-use crate::pages::ehrs::{ResultPage, cell_text, error_bar, paging_controls, table_skeleton};
+use crate::pages::ehrs::{ResultPage, cell_text, paging_controls, table_skeleton};
 // Server-side helpers, compiled only where the #[server] bodies exist.
 #[cfg(feature = "ssr")]
 use crate::pages::ehrs::{aql_request_body, parse_result_set};
@@ -215,14 +215,18 @@ fn status_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView
     );
     view! {
         <Suspense fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    match resource.await? {
+            {move || Suspend::new(async move {
+                let rendered = resource
+                    .await
+                    .and_then(|opt| match opt {
                         Some(body) => status_body(&body),
                         None => Ok(().into_any()),
-                    }
-                })}
-            </ErrorBoundary>
+                    });
+                match rendered {
+                    Ok(view) => view,
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()
@@ -309,12 +313,15 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
     );
     view! {
         <Suspense fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    match resource.await? {
+            {move || Suspend::new(async move {
+                let rendered = resource
+                    .await
+                    .and_then(|opt| match opt {
                         Some(body) => directory_body(&body),
                         None => {
                             Ok(
+                                // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
+                                // mismatches at hydration in leptos 0.8 (E2E console gate).
                                 view! {
                                     <p class="text-sm text-neutral-500">
                                         "No directory for this EHR."
@@ -323,9 +330,12 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
                                     .into_any(),
                             )
                         }
-                    }
-                })}
-            </ErrorBoundary>
+                    });
+                match rendered {
+                    Ok(view) => view,
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()
@@ -412,16 +422,13 @@ fn compositions_section(
     );
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    match resource.await? {
-                        Some(page) => {
-                            Ok::<_, AdminUiError>(compositions_table(&page, &ehr_id.get()))
-                        }
-                        None => Ok(().into_any()),
-                    }
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(Some(page)) => compositions_table(&page, &ehr_id.get()),
+                    Ok(None) => ().into_any(),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()
@@ -545,23 +552,22 @@ fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> 
     .into_any();
     let result = view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    match resource.await? {
-                        Some(body) => Ok::<_, AdminUiError>(contribution_body(&body)),
-                        None => {
-                            Ok(
-                                view! {
-                                    <p class="text-sm text-neutral-500">
-                                        "Enter a contribution uid to look it up."
-                                    </p>
-                                }
-                                    .into_any(),
-                            )
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(Some(body)) => contribution_body(&body),
+                    Ok(None) => {
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! {
+                            <p class="text-sm text-neutral-500">
+                                "Enter a contribution uid to look it up."
+                            </p>
                         }
+                            .into_any()
                     }
-                })}
-            </ErrorBoundary>
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any();

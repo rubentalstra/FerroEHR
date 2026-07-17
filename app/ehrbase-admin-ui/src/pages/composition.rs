@@ -233,14 +233,17 @@ fn toolbar_section(
         <Suspense fallback=|| {
             view! { <thaw::Spinner size=thaw::SpinnerSize::Tiny /> }
         }>
-            <ErrorBoundary fallback=|_| {
-                view! { <span class="text-xs text-red-600">"versions unavailable"</span> }
-            }>
-                {move || Suspend::new(async move {
-                    let entries = versions.await?;
-                    Ok::<_, AdminUiError>(version_select(entries, selected_version))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match versions.await {
+                    Ok(entries) => version_select(entries, selected_version),
+                    Err(_) => {
+                        // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! { <span class="text-xs text-red-600">"versions unavailable"</span> }
+                            .into_any()
+                    }
+                }
+            })}
         </Suspense>
     }
     .into_any();
@@ -293,30 +296,18 @@ fn document_section(document: Resource<Result<String, AdminUiError>>) -> AnyView
                 </thaw::Skeleton>
             }
         }>
-            <ErrorBoundary fallback=|errors| {
-                view! {
-                    <div class="py-2">
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>
-                                {move || {
-                                    errors
-                                        .get()
-                                        .into_iter()
-                                        .map(|(_, e)| e.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join("; ")
-                                }}
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    </div>
+            {move || Suspend::new(async move {
+                match document.await {
+                    Ok(body) => {
+                        let body_sig = RwSignal::new(body);
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! { <DocumentPane body=body_sig /> }
+                            .into_any()
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
                 }
-            }>
-                {move || Suspend::new(async move {
-                    let body = document.await?;
-                    let body_sig = RwSignal::new(body);
-                    Ok::<_, AdminUiError>(view! { <DocumentPane body=body_sig /> }.into_any())
-                })}
-            </ErrorBoundary>
+            })}
         </Transition>
     }
     .into_any()
@@ -330,17 +321,17 @@ fn audit_section(
 ) -> AnyView {
     view! {
         <div class="mt-3">
-            <Suspense fallback=|| ().into_any()>
-                <ErrorBoundary fallback=|_| {
-                    ().into_any()
-                }>
-                    {move || Suspend::new(async move {
-                        let entries = versions.await?;
-                        let stored = StoredValue::new(entries);
-                        Ok::<
-                            _,
-                            AdminUiError,
-                        >(
+            <Suspense fallback=|| {
+                ().into_any()
+            }>
+                {move || Suspend::new(async move {
+                    match versions.await {
+                        Ok(entries) => {
+                            let stored = StoredValue::new(entries);
+                            // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
+                            // mismatches at hydration in leptos 0.8 (E2E console gate). A
+                            // failed history renders nothing here (the document/toolbar
+                            // sections surface the error).
                             view! {
                                 {move || {
                                     let chosen = selected.get();
@@ -355,10 +346,11 @@ fn audit_section(
                                         })
                                 }}
                             }
-                                .into_any(),
-                        )
-                    })}
-                </ErrorBoundary>
+                                .into_any()
+                        }
+                        Err(_) => ().into_any(),
+                    }
+                })}
             </Suspense>
         </div>
     }

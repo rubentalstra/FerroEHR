@@ -10,8 +10,11 @@
 //! [`require_session`](crate::session::require_session) first (a server fn is a
 //! public HTTP API — rules §0); the CDR credential never reaches client-visible
 //! state. Each tile/section is an `.into_any()`-erased local with its own
-//! `<Suspense>`/`<Transition>` skeleton and `<ErrorBoundary>`, so one failing
-//! section never blanks the dashboard (rules §1/§6).
+//! `<Suspense>`/`<Transition>` skeleton that resolves its `Result` inside the
+//! suspense (rendering [`inline_error`](crate::components::format_view::inline_error)
+//! on failure) rather than through an `<ErrorBoundary>` — an SSR'd
+//! `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so one
+//! failing section never blanks the dashboard (rules §1/§6).
 
 use leptos::prelude::*;
 use leptos::{component, server};
@@ -22,7 +25,6 @@ use leptos_meta::Title;
 use leptos_router::components::A;
 
 use crate::error::AdminUiError;
-use crate::pages::ehrs::error_bar;
 use crate::queries_api::QueryGroup;
 
 /// Total EHRs — a fixed count AQL. Validated by [`tests::dashboard_aql_consts_parse`].
@@ -246,20 +248,22 @@ fn counts_section() -> AnyView {
     view! {
         <Suspense fallback=tiles_skeleton>
             {move || Suspend::new(async move {
-                // Resolve the Result INSIDE the suspense and render either
-                // branch as one erased view: hydrating an SSR'd
-                // ErrorBoundary fallback mismatches in leptos 0.8 (caught
-                // by the E2E console gate), and this keeps server/client
-                // structure identical while errors stay visible.
                 match resource.await {
-                    Ok((ehrs, compositions, templates)) => view! {
-                        <>
-                            {stat_tile("EHRs", ehrs.to_string())}
-                            {stat_tile("Compositions", compositions.to_string())}
-                            {stat_tile("Templates", templates.to_string())}
-                        </>
+                    Ok((ehrs, compositions, templates)) => {
+                        // Resolve the Result INSIDE the suspense and render either
+                        // branch as one erased view: hydrating an SSR'd
+                        // ErrorBoundary fallback mismatches in leptos 0.8 (caught
+                        // by the E2E console gate), and this keeps server/client
+                        // structure identical while errors stay visible.
+                        view! {
+                            <>
+                                {stat_tile("EHRs", ehrs.to_string())}
+                                {stat_tile("Compositions", compositions.to_string())}
+                                {stat_tile("Templates", templates.to_string())}
+                            </>
+                        }
+                            .into_any()
                     }
-                        .into_any(),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -277,13 +281,15 @@ fn stored_queries_tile() -> AnyView {
     );
     view! {
         <Suspense fallback=tile_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let rows = resource.await?;
-                    let count = u32::try_from(rows.len()).unwrap_or(u32::MAX);
-                    Ok::<_, AdminUiError>(stat_tile("Stored queries", count.to_string()))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(rows) => {
+                        let count = u32::try_from(rows.len()).unwrap_or(u32::MAX);
+                        stat_tile("Stored queries", count.to_string())
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()
@@ -297,12 +303,12 @@ fn groups_section() -> AnyView {
     );
     view! {
         <Transition fallback=tile_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let groups = resource.await?;
-                    Ok::<_, AdminUiError>(groups_tiles(groups))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(groups) => groups_tiles(groups),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()
@@ -345,13 +351,17 @@ fn group_tile(group: QueryGroup) -> AnyView {
                         <Suspense fallback=|| {
                             view! { <span class="text-neutral-400">"…"</span> }
                         }>
-                            <ErrorBoundary fallback=|_| {
-                                view! { <span class="text-sm text-red-600">"error"</span> }
-                            }>
-                                {move || Suspend::new(async move {
-                                    count.await.map(|total| total.to_string())
-                                })}
-                            </ErrorBoundary>
+                            {move || Suspend::new(async move {
+                                match count.await {
+                                    Ok(total) => total.to_string().into_any(),
+                                    Err(_) => {
+                                        // Resolve inside the Suspense: an SSR'd ErrorBoundary
+                                        // fallback mismatches at hydration in leptos 0.8.
+                                        view! { <span class="text-sm text-red-600">"error"</span> }
+                                            .into_any()
+                                    }
+                                }
+                            })}
                         </Suspense>
                     </div>
                     <div class="text-xs text-neutral-500 mt-1">
@@ -377,12 +387,12 @@ fn trend_section() -> AnyView {
                         </thaw::Skeleton>
                     }
                 }>
-                    <ErrorBoundary fallback=error_bar>
-                        {move || Suspend::new(async move {
-                            let pairs = resource.await?;
-                            Ok::<_, AdminUiError>(trend_chart(&pairs))
-                        })}
-                    </ErrorBoundary>
+                    {move || Suspend::new(async move {
+                        match resource.await {
+                            Ok(pairs) => trend_chart(&pairs),
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
+                    })}
                 </Suspense>
             </div>
         </thaw::Card>
