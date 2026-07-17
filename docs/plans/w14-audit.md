@@ -613,7 +613,12 @@ full platform rewrite):**
       dedupe preserved; 2026-07-17). — [x] F-37 relationship writes aligned with
       the lean `CurrentRelationship` threading + in-memory responses
       (demographic rewrite). — [ ] F-28 minor extra-read trio.
-- [ ] F-26 push matching-list filters into SQL. — [x] F-38 template example
+- [x] F-26 re-triaged 2026-07-17, resolved by analysis: the stored-query
+      list projections of `query_text` are LOAD-BEARING (the OAS `StoredQuery`
+      item schema carries `q`); and the matching lists' in-memory regex is the
+      deliberate RE2-dialect choice (pushing `~` into PG would change the
+      accepted pattern dialect to POSIX ERE) over registry-sized tables —
+      no code change. — [x] F-38 template example
       cold-cache double read eliminated (templates rewrite; store write path
       also folded 3→1 statements). — [x] F-21/F-33 tenant seam redesigned (2026-07-17): bounded moka
       cache (10k, TTL 300 s) with NEGATIVE entries (a bogus key = one
@@ -624,7 +629,10 @@ full platform rewrite):**
       TTL response cache at the FHIR provider seam (config knobs, wiremock
       expect(1) test; 2026-07-17 — also the safe form of F-10's win: the
       remote round trips are what re-expansion cost).
-- [ ] F-10 plan-cache for terminology queries (post-expansion keying).
+- [x] F-10 addressed via the F-39 provider cache (2026-07-17): the remote
+      TS round trips were the re-expansion cost; plans with terminology
+      operands stay deliberately out of the text-keyed plan cache (a resolved
+      expansion may change — correctness over cache hits).
 
 **Wave 4 — background/admin + instrument:**
 - [x] F-19 FHIR outbound poison-row parking (retry budget + dead-letter to
