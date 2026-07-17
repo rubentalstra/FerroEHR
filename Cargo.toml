@@ -166,7 +166,11 @@ leptos = "0.8.20"
 leptos_axum = "0.8.10"
 leptos_meta = "0.8.6"
 leptos_router = "0.8.14"
-thaw = "=0.5.0-beta"                # the ONLY Leptos-0.8 line on crates.io (stable 0.4.8 = Leptos 0.7); exact-pinned; ssr/hydrate enabled per-target by the crate
+# thaw: the crates.io `0.5.0-beta` (2025-05-03, the only Leptos-0.8 release) lacks
+# `#![recursion_limit = "256"]` and fails plain (non-erase_components) codegen on
+# rustc 1.96 — thaw main carries the fix, so we pin a main rev (the design doc's
+# planned fallback, 2026-07-17). Re-pin to crates.io when 0.5 stable ships.
+thaw = { git = "https://github.com/thaw-ui/thaw", rev = "0726a3d6788f07e929996e77399d83655ffaacde" }
 leptos-use = "0.19.0"
 leptos-struct-table = "0.19.0"
 leptos-chartistry = "0.2.3"
