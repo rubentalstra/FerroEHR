@@ -25,7 +25,7 @@ use leptos_router::hooks::use_navigate;
 use crate::components::format_view::DocumentPane;
 use crate::error::AdminUiError;
 use crate::pages::dashboard::split_query_ref;
-use crate::pages::ehrs::{error_bar, table_skeleton};
+use crate::pages::ehrs::table_skeleton;
 use crate::queries_api::{
     QueryGroup, StoredQueryRow, fetch_stored_query, list_groups, list_stored_queries, save_group,
 };
@@ -100,12 +100,12 @@ fn stored_table(
 ) -> AnyView {
     view! {
         <Suspense fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let rows = stored.await?;
-                    Ok::<_, AdminUiError>(stored_rows_view(rows, selected))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match stored.await {
+                    Ok(rows) => stored_rows_view(rows, selected),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()
@@ -187,20 +187,13 @@ fn stored_detail(detail: Resource<Result<Option<String>, AdminUiError>>) -> AnyV
             <Transition fallback=|| {
                 view! { <p class="text-sm text-neutral-500">"Loading query…"</p> }
             }>
-                <ErrorBoundary fallback=error_bar>
-                    {move || Suspend::new(async move {
-                        let aql = detail.await?;
-                        Ok::<
-                            _,
-                            AdminUiError,
-                        >(
-                            match aql {
-                                Some(text) => detail_panel(text),
-                                None => ().into_any(),
-                            },
-                        )
-                    })}
-                </ErrorBoundary>
+                {move || Suspend::new(async move {
+                    match detail.await {
+                        Ok(Some(text)) => detail_panel(text),
+                        Ok(None) => ().into_any(),
+                        Err(e) => crate::components::format_view::inline_error(&e),
+                    }
+                })}
             </Transition>
         </div>
     }
@@ -348,12 +341,12 @@ fn member_checkboxes(
         <Suspense fallback=|| {
             view! { <p class="text-xs text-neutral-500">"Loading queries…"</p> }
         }>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let rows = stored.await?;
-                    Ok::<_, AdminUiError>(checkbox_list(&rows, selected))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match stored.await {
+                    Ok(rows) => checkbox_list(&rows, selected),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()
@@ -410,15 +403,12 @@ fn groups_list(
         <Transition fallback=|| {
             view! { <p class="text-sm text-neutral-500">"Loading groups…"</p> }
         }>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let loaded = groups.await?;
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(groups_list_view(loaded, save, name, selected, pending_delete))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match groups.await {
+                    Ok(loaded) => groups_list_view(loaded, save, name, selected, pending_delete),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()

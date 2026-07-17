@@ -203,24 +203,22 @@ fn wt_tab(
                 </thaw::CardHeader>
                 <div class="p-3 overflow-auto max-h-[70vh]">
                     <Transition fallback=tree_skeleton>
-                        <ErrorBoundary fallback=catalog_error>
-                            {move || Suspend::new(async move {
-                                let Some(root) = catalog.await? else {
-                                    return Ok::<_, AdminUiError>(().into_any());
-                                };
-                                Ok::<
-                                    _,
-                                    AdminUiError,
-                                >(
+                        {move || Suspend::new(async move {
+                            match catalog.await {
+                                Ok(None) => ().into_any(),
+                                Ok(Some(root)) => {
+                                    // Resolve inside the Transition: an SSR'd ErrorBoundary
+                                    // fallback mismatches at hydration in leptos 0.8.
                                     view! {
                                         <ul class="text-sm">
                                             <CatalogTreeNode node=root selected=selected depth=0 />
                                         </ul>
                                     }
-                                        .into_any(),
-                                )
-                            })}
-                        </ErrorBoundary>
+                                        .into_any()
+                                }
+                                Err(e) => catalog_error_view(&e),
+                            }
+                        })}
                     </Transition>
                 </div>
             </thaw::Card>
@@ -247,19 +245,16 @@ fn tree_skeleton() -> impl IntoView {
 }
 
 /// The catalog error state (e.g. a `404` unknown template, or a `WebTemplate`
-/// build failure naming the offending node) with a back link to the list.
-fn catalog_error(errors: ArcRwSignal<Errors>) -> impl IntoView {
+/// build failure naming the offending node) with a back link to the list. Used
+/// by the tabs that resolve their `Result` inside the `<Transition>` — an SSR'd
+/// `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so the error
+/// (with its back link) renders directly from the resolved `Err` branch.
+fn catalog_error_view(error: &AdminUiError) -> AnyView {
+    let message = error.to_string();
     view! {
         <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
             <thaw::MessageBarBody>
-                {move || {
-                    errors
-                        .get()
-                        .into_iter()
-                        .map(|(_, e)| e.to_string())
-                        .collect::<Vec<_>>()
-                        .join("; ")
-                }} " — "
+                {message} " — "
                 <leptos_router::components::A
                     href="/templates"
                     attr:class="text-blue-600 hover:underline"
@@ -269,6 +264,7 @@ fn catalog_error(errors: ArcRwSignal<Errors>) -> impl IntoView {
             </thaw::MessageBarBody>
         </thaw::MessageBar>
     }
+    .into_any()
 }
 
 /// One node of the path catalog: a disclosure toggle (for branches), a
@@ -470,20 +466,18 @@ fn code_chip_section(node: &CatalogNode) -> AnyView {
 fn opt_tab(opt: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
     view! {
         <Transition fallback=tree_skeleton>
-            <ErrorBoundary fallback=catalog_error>
-                {move || Suspend::new(async move {
-                    let Some(xml) = opt.await? else {
-                        return Ok::<_, AdminUiError>(().into_any());
-                    };
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(
+            {move || Suspend::new(async move {
+                match opt.await {
+                    Ok(None) => ().into_any(),
+                    Ok(Some(xml)) => {
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! { <crate::components::format_view::DocumentPane body=xml /> }
-                            .into_any(),
-                    )
-                })}
-            </ErrorBoundary>
+                            .into_any()
+                    }
+                    Err(e) => catalog_error_view(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()
@@ -506,24 +500,22 @@ fn example_tab(
         <div class="space-y-3">
             <crate::components::format_view::FormatSelector offered=offered selected=format />
             <Transition fallback=tree_skeleton>
-                <ErrorBoundary fallback=catalog_error>
-                    {move || Suspend::new(async move {
-                        let Some(raw) = example.await? else {
-                            return Ok::<_, AdminUiError>(().into_any());
-                        };
-                        let pretty = crate::components::format_view::pretty_body(
-                            &raw,
-                            format.get_untracked(),
-                        );
-                        Ok::<
-                            _,
-                            AdminUiError,
-                        >(
+                {move || Suspend::new(async move {
+                    match example.await {
+                        Ok(None) => ().into_any(),
+                        Ok(Some(raw)) => {
+                            let pretty = crate::components::format_view::pretty_body(
+                                &raw,
+                                format.get_untracked(),
+                            );
+                            // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                            // mismatches at hydration in leptos 0.8 (E2E console gate).
                             view! { <crate::components::format_view::DocumentPane body=pretty /> }
-                                .into_any(),
-                        )
-                    })}
-                </ErrorBoundary>
+                                .into_any()
+                        }
+                        Err(e) => catalog_error_view(&e),
+                    }
+                })}
             </Transition>
         </div>
     }

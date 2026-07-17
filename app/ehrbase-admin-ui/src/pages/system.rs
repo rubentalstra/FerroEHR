@@ -8,11 +8,13 @@
 //! `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`.
 //!
 //! Each card is an `.into_any()`-erased section local (rules §1) with its own
-//! [`Resource`] + `<Suspense>` skeleton + `<ErrorBoundary>` error bar, so one
-//! failing card never blanks the page. Every co-located `#[server]` fn guards
-//! with [`require_session`](crate::session::require_session) first — server
-//! functions are a public HTTP API (rules §0), and the CDR credential never
-//! reaches client-visible state.
+//! [`Resource`] + `<Suspense>` skeleton that resolves its `Result` inside the
+//! suspense (rendering an error bar on failure) rather than through an
+//! `<ErrorBoundary>` — an SSR'd `ErrorBoundary` fallback mismatches at hydration
+//! in leptos 0.8 — so one failing card never blanks the page. Every co-located
+//! `#[server]` fn guards with [`require_session`](crate::session::require_session)
+//! first — server functions are a public HTTP API (rules §0), and the CDR
+//! credential never reaches client-visible state.
 
 use leptos::prelude::*;
 use leptos::{component, server};
@@ -120,40 +122,52 @@ fn card_skeleton() -> impl IntoView {
     }
 }
 
-/// Status card: `fetch_status` JSON → a definition list. A transport failure
-/// surfaces through the `<ErrorBoundary>` as an explicit DOWN state.
+/// Status card: `fetch_status` JSON → a definition list. A transport or parse
+/// failure resolves inside the `<Suspense>` (an SSR'd `ErrorBoundary` fallback
+/// mismatches at hydration in leptos 0.8) as an explicit DOWN state.
 fn status_card() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { crate::auth::fetch_status().await });
     let body = view! {
         <Suspense fallback=card_skeleton>
-            <ErrorBoundary fallback=move |errors| {
-                view! {
-                    <div class="p-4">
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>
-                                <span class="font-semibold">"● DOWN — "</span>
-                                {move || {
-                                    errors
-                                        .get()
-                                        .into_iter()
-                                        .map(|(_, e)| e.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join("; ")
-                                }}
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    </div>
+            {move || Suspend::new(async move {
+                match resource.await.and_then(|body| status_body(&body)) {
+                    Ok(view) => view,
+                    Err(e) => {
+                        // Resolve inside the Suspense (E2E console gate): render the parsed
+                        // status, or the explicit DOWN bar on transport/parse failure.
+                        view! {
+                            <div class="p-4">
+                                <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
+                                    <thaw::MessageBarBody>
+                                        <span class="font-semibold">"● DOWN — "</span>
+                                        {e.to_string()}
+                                    </thaw::MessageBarBody>
+                                </thaw::MessageBar>
+                            </div>
+                        }
+                            .into_any()
+                    }
                 }
-            }>
-                {move || Suspend::new(async move {
-                    let body = resource.await?;
-                    status_body(&body)
-                })}
-            </ErrorBoundary>
+            })}
         </Suspense>
     }
     .into_any();
     card_shell("Status", false, body)
+}
+
+/// The uniform card error state: the domain-error message in a padded error
+/// `MessageBar` (the same shape the removed per-card `ErrorBoundary` fallbacks
+/// rendered).
+fn card_error(error: &AdminUiError) -> AnyView {
+    let message = error.to_string();
+    view! {
+        <div class="p-4">
+            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
+                <thaw::MessageBarBody>{message}</thaw::MessageBarBody>
+            </thaw::MessageBar>
+        </div>
+    }
+    .into_any()
 }
 
 /// Render the parsed `/ehrbase/rest/status` document: an UP/DOWN pill plus every
@@ -197,29 +211,12 @@ fn smart_card() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { fetch_smart_config().await });
     let body = view! {
         <Suspense fallback=card_skeleton>
-            <ErrorBoundary fallback=move |errors| {
-                view! {
-                    <div class="p-4">
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>
-                                {move || {
-                                    errors
-                                        .get()
-                                        .into_iter()
-                                        .map(|(_, e)| e.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join("; ")
-                                }}
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    </div>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(config) => smart_body(config),
+                    Err(e) => card_error(&e),
                 }
-            }>
-                {move || Suspend::new(async move {
-                    let config = resource.await?;
-                    Ok::<_, AdminUiError>(smart_body(config))
-                })}
-            </ErrorBoundary>
+            })}
         </Suspense>
     }
     .into_any();
@@ -331,31 +328,19 @@ fn openapi_card() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { fetch_openapi().await });
     let body = view! {
         <Suspense fallback=card_skeleton>
-            <ErrorBoundary fallback=move |errors| {
-                view! {
-                    <div class="p-4">
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>
-                                {move || {
-                                    errors
-                                        .get()
-                                        .into_iter()
-                                        .map(|(_, e)| e.to_string())
-                                        .collect::<Vec<_>>()
-                                        .join("; ")
-                                }}
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    </div>
+            {move || Suspend::new(async move {
+                let rendered = resource
+                    .await
+                    .and_then(|doc_str| {
+                        let doc = serde_json::from_str::<serde_json::Value>(&doc_str)
+                            .map_err(|e| AdminUiError::Internal(format!("openapi JSON: {e}")))?;
+                        Ok::<_, AdminUiError>(openapi_body(&doc))
+                    });
+                match rendered {
+                    Ok(view) => view,
+                    Err(e) => card_error(&e),
                 }
-            }>
-                {move || Suspend::new(async move {
-                    let doc_str = resource.await?;
-                    let doc = serde_json::from_str::<serde_json::Value>(&doc_str)
-                        .map_err(|e| AdminUiError::Internal(format!("openapi JSON: {e}")))?;
-                    Ok::<_, AdminUiError>(openapi_body(&doc))
-                })}
-            </ErrorBoundary>
+            })}
         </Suspense>
     }
     .into_any();

@@ -230,35 +230,21 @@ fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyV
 }
 
 /// The template table: the list resource read under `<Transition>` (keep the
-/// current rows visible while a refetch runs — rules §6), an `<ErrorBoundary>`
-/// for CDR failures, then the filtered rows.
+/// current rows visible while a refetch runs — rules §6), resolving its
+/// `Result` inside the transition (an SSR'd `ErrorBoundary` fallback mismatches
+/// at hydration in leptos 0.8), then the filtered rows.
 fn templates_table(
     filter: RwSignal<String>,
     list: Resource<Result<Vec<TemplateRow>, AdminUiError>>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=|errors| {
-                view! {
-                    <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                        <thaw::MessageBarBody>
-                            {move || {
-                                errors
-                                    .get()
-                                    .into_iter()
-                                    .map(|(_, e)| e.to_string())
-                                    .collect::<Vec<_>>()
-                                    .join("; ")
-                            }}
-                        </thaw::MessageBarBody>
-                    </thaw::MessageBar>
+            {move || Suspend::new(async move {
+                match list.await {
+                    Ok(rows) => rows_view(rows, filter),
+                    Err(e) => crate::components::format_view::inline_error(&e),
                 }
-            }>
-                {move || Suspend::new(async move {
-                    let rows = list.await?;
-                    Ok::<_, AdminUiError>(rows_view(rows, filter))
-                })}
-            </ErrorBoundary>
+            })}
         </Transition>
     }
     .into_any()

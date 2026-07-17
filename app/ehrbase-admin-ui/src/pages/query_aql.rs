@@ -21,7 +21,7 @@ use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
 use crate::error::AdminUiError;
-use crate::pages::ehrs::{ResultPage, error_bar, table_skeleton};
+use crate::pages::ehrs::{ResultPage, table_skeleton};
 use crate::pages::query_builder::{paging_buttons, results_view};
 use crate::queries_api::{run_aql, store_query, validate_aql};
 
@@ -262,32 +262,27 @@ fn results_section(
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let page = results.await?;
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(
-                        match page {
-                            None => ().into_any(),
-                            Some(page) => {
-                                let controls = paging_buttons(offset, page.rows.len());
-                                let body = results_view(&page, false);
-                                view! {
-                                    <thaw::Card>
-                                        <thaw::CardHeader>
-                                            <div class="text-sm font-semibold">"Results"</div>
-                                        </thaw::CardHeader>
-                                        <div class="p-3">{body}{controls}</div>
-                                    </thaw::Card>
-                                }
-                                    .into_any()
-                            }
-                        },
-                    )
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match results.await {
+                    Ok(None) => ().into_any(),
+                    Ok(Some(page)) => {
+                        let controls = paging_buttons(offset, page.rows.len());
+                        let body = results_view(&page, false);
+                        // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
+                        // mismatches at hydration in leptos 0.8 (E2E console gate).
+                        view! {
+                            <thaw::Card>
+                                <thaw::CardHeader>
+                                    <div class="text-sm font-semibold">"Results"</div>
+                                </thaw::CardHeader>
+                                <div class="p-3">{body}{controls}</div>
+                            </thaw::Card>
+                        }
+                            .into_any()
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()

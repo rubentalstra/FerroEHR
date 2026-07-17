@@ -203,8 +203,9 @@ fn finder_section() -> AnyView {
 }
 
 /// The recent-EHRs table section: an AQL-backed [`Resource`] under a
-/// `<Transition>` (old rows stay visible across paging — rules §6), an
-/// `<ErrorBoundary>` for CDR failures, and prev/next links.
+/// `<Transition>` (old rows stay visible across paging — rules §6) that
+/// resolves its `Result` inside the transition (an SSR'd `ErrorBoundary`
+/// fallback mismatches at hydration in leptos 0.8), and prev/next links.
 fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
     let resource = Resource::new(
         move || offset.get(),
@@ -212,12 +213,12 @@ fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
     );
     view! {
         <Transition fallback=table_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let page = resource.await?;
-                    Ok::<_, AdminUiError>(ehrs_table(&page))
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(page) => ehrs_table(&page),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Transition>
     }
     .into_any()
@@ -323,27 +324,6 @@ pub(crate) fn table_skeleton() -> impl IntoView {
             <thaw::SkeletonItem class="h-4 mb-2" />
             <thaw::SkeletonItem class="h-4" />
         </thaw::Skeleton>
-    }
-}
-
-/// The shared error bar for a failed data section: the joined domain-error
-/// messages in a `thaw` error `MessageBar`.
-pub(crate) fn error_bar(errors: ArcRwSignal<Errors>) -> impl IntoView {
-    view! {
-        <div class="py-2">
-            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                <thaw::MessageBarBody>
-                    {move || {
-                        errors
-                            .get()
-                            .into_iter()
-                            .map(|(_, e)| e.to_string())
-                            .collect::<Vec<_>>()
-                            .join("; ")
-                    }}
-                </thaw::MessageBarBody>
-            </thaw::MessageBar>
-        </div>
     }
 }
 
