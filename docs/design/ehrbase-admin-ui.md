@@ -1,9 +1,15 @@
 # `ehrbase-admin-ui` — a pure-Rust admin console over the ITS-REST API
 
-- **Status:** design — framework + ecosystem selection, architecture, feature
-  map. **Not an ADR** (owner instruction 2026-07-13); an ADR follows only after
-  this design is approved.
-- **Date:** 2026-07-13 · **revised 2026-07-17** (see the revision block below)
+- **Status:** design + **build plan** — framework + ecosystem selection,
+  architecture, feature map, **screen catalog (§7A)**, **E2E validation
+  matrix (§8d)**, and the **orchestrated build plan (§12)**. This file is the
+  governing plan for the `ADMIN-UI` row in `docs/plans/WORKLIST.md` and is
+  **deleted in the PR that implements it** (owner lifecycle rule 2026-07-17 —
+  the ADR layer is abolished; the durable record is `docs/PROGRESS.md`,
+  `CHANGELOG.md`, and `docs/architecture.md`).
+- **Date:** 2026-07-13 · revised 2026-07-17 · **audited + extended
+  2026-07-17b** (all versions re-verified live against crates.io + GitHub;
+  stale references fixed; owner decisions 5–8 recorded in §10)
 - **Prior art:** [Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver)
   — the owner cited its **Template Manager**, its point-and-click **Query
   Builder** ("query creation in seconds, no programming needed"), and its
@@ -41,7 +47,7 @@ the sections that follow (each marked *(rev. 2026-07-17)*):
    crate-root re-exports; the vendor-quirks feature flag is gone). It joins
    the §6 domain-reuse table — and its served WebTemplate document replaces
    OPT-walking for the Query Builder's path catalog (§7.2).
-3. **The served OpenAPI is the server's own** (ADR-005 amendment,
+3. **The served OpenAPI is the server's own** (owner hard rule,
    2026-07-17): `ehrbase-rest` serves only documents it generates natively
    from its `#[utoipa::path]` handlers — the vendored ITS-REST OAS is codegen
    input + behavioural oracle, never served. The console's endpoint knowledge
@@ -65,6 +71,37 @@ the sections that follow (each marked *(rev. 2026-07-17)*):
    every endpoint to its SQL (useful when designing BFF calls), and the
    platform passed a full per-folder rewrite (W-14) — the SM component map in
    `docs/architecture.md` is current.
+
+## Revision 2026-07-17b — audit + build plan (this revision)
+
+1. **Every version fact re-verified live** (crates.io API + GitHub releases,
+   2026-07-17): leptos 0.8.20, cargo-leptos 0.3.7, leptos-struct-table
+   0.19.0, leptos-chartistry 0.2.3 (leptos-use `^0.18` dep confirmed),
+   leptos-use 0.19.0, thirtyfour 0.37.2 — all unchanged and current.
+   Corrections: **Tailwind standalone is now v4.3.3** (released 2026-07-16);
+   **`thaw` has exactly one 0.8-compatible release on crates.io,
+   `0.5.0-beta` (2025-05-03)** — there is no `beta.N` series, and stable
+   0.4.8 (2025-08-03) remains Leptos-0.7-only; explicit pins added for
+   `leptos_axum` 0.8.10 and `leptosfmt` 0.1.33.
+2. **Stale references purged:** the deleted `docs/design/its-rest/smart.md`,
+   `container-images.md`, "blueprint row" pointers, and all ADR-flow language
+   (the ADR layer was abolished 2026-07-17 — this doc is the plan and dies
+   with the implementing PR).
+3. **§7A screen catalog added** — per-screen routes, wireframes, component
+   trees, `#[server]` fn → CDR-endpoint data tables, loading/empty/error
+   states, and the E2E journey that proves each screen.
+4. **§8d expanded into the E2E validation matrix** — journey → assertions →
+   fixtures, the browser-console failure gate, and **step screenshots as CI
+   artifacts** (owner decision 2026-07-17; no pixel-diff assertions).
+5. **§12 build plan added** — Fable 5 orchestrates, `ui-implementer`
+   subagents implement (max 2 concurrent, owner cap), `leptos-reviewer`
+   gates; **one big-bang PR** with a single convergence (owner decision
+   2026-07-17).
+6. **Prior-art discipline (owner, 2026-07-17):** the Cabolabs EHRServer repo
+   is an **idea source only — never a 1:1 port**. No code, markup, schema, or
+   copy is translated from it; we take feature *concepts* (Appendix A) and
+   design every screen and interaction fresh for our stack. The §11 README
+   credit records the inspiration honestly.
 
 ## Owner constraints (2026-07-13, binding)
 
@@ -142,16 +179,19 @@ Same server stack, same `tower`/`tracing` idioms.
 
 ## 4. The Rust-only stack (all verified pure-Rust / CSS, no authored JS)
 
-| Concern | Choice | Version (verified live 2026-07-13) | No-JS status |
+| Concern | Choice | Version (re-verified live 2026-07-17) | No-JS status |
 |---|---|---|---|
-| UI framework | `leptos` (SSR/full-stack) | 0.8.20 | Rust → WASM |
+| UI framework | `leptos` (SSR/full-stack) | 0.8.20 (2026-06-25) | Rust → WASM |
+| Server integration | `leptos_axum` | 0.8.10 (2026-06-25) | native (the SSR/axum glue; versions on its own line — pin explicitly, don't assume it equals the `leptos` version) |
 | Build / bundler | `cargo-leptos` | 0.3.7 (2026-07-03) | Builds both binaries (native server + WASM client); **bundles the Tailwind standalone binary — no Node/npm**. ([cargo-leptos](https://github.com/leptos-rs/cargo-leptos)) |
-| Styling | Tailwind CSS v4 (via `cargo-leptos` standalone) | v4.2.x (pin with `LEPTOS_TAILWIND_VERSION`) | CSS, no JS |
-| Component kit | [`thaw`](https://github.com/thaw-ui/thaw) (Fluent-design) | **`0.5.0-beta`** — leptos req `^0.8.0` (crates.io index) | Rust → WASM. **Owner decision (2026-07-13): use the 0.5 beta.** The "stable" 0.4.8 is pinned to Leptos **^0.7.7** and is *not* 0.8-compatible, so the beta is the only 0.8 line. Published 2025-08-03 — nearly a year old; the main branch is the active 0.8 line. Pin the newest `0.5.0-beta.N` published at scaffold time; fall back to a pinned git rev of main only if the beta fails against Leptos 0.8.20. (Leptonic is stale — last release Feb 2024 — **do not use**.) |
+| Styling | Tailwind CSS v4 (via `cargo-leptos` standalone) | **v4.3.3** (released 2026-07-16; pin with `LEPTOS_TAILWIND_VERSION`) | CSS, no JS |
+| Component kit | [`thaw`](https://github.com/thaw-ui/thaw) (Fluent-design) | **`=0.5.0-beta`** (2025-05-03) — leptos req `^0.8.0` (crates.io index, re-verified 2026-07-17) | Rust → WASM. **Owner decision (2026-07-13): use the 0.5 beta.** The "stable" 0.4.8 (2025-08-03) is pinned to Leptos **^0.7.7** and is *not* 0.8-compatible, so the beta is the only published 0.8 line. **There is exactly one beta on crates.io — `0.5.0-beta`, no `beta.N` series — and it is 14 months old**, so pin it exactly (`=0.5.0-beta`) and treat a pinned git rev of `thaw-ui/thaw` main (the active 0.8 branch) as the *likely* real path if the beta fails against Leptos 0.8.20; smoke-test the beta at scaffold time (W0, §12) before any screen work. (Leptonic is stale — last release Feb 2024 — **do not use**.) |
 | Data grid / tables | [`leptos-struct-table`](https://docs.rs/leptos-struct-table) | 0.19.0 (2026-06-23), leptos `^0.8`, leptos-use `^0.19` | Rust → WASM. Async data from a REST source, virtualization, pagination, multi-column sort, column hide/reorder, headless (our CSS). Exactly the RESULT_SET / EHR-list widget. |
 | Charts | [`leptos-chartistry`](https://github.com/feral-dot-io/leptos-chartistry) | 0.2.3 (2026-01-23), leptos `^0.8` | **Pure Rust + SVG — "no JS, no canvas."** Has an SSR feature. Dashboard tiles. Note: depends on leptos-use `^0.18` while struct-table wants `^0.19` — cargo resolves both (pre-1.0 minors are distinct), at the cost of a duplicated leptos-use in the WASM bundle until chartistry bumps. Accepted. |
 | Reactive utils | `leptos-use` | 0.19.0 (2026-06-22) | Rust → WASM (storage, debounce, clipboard, etc.) |
 | Server→CDR HTTP | `reqwest` 0.13 (rustls) | workspace pin | Server-side only; the BFF's call into the CDR (§5). |
+| Formatter | `leptosfmt` | 0.1.33 (dev tooling, CI + `/ui-gates`) | n/a — formats the `view!` macro; runs alongside `cargo fmt`. |
+| E2E driver | `thirtyfour` | 0.37.2 (2026-07-05) | dev-dep only; the §8d WebDriver client. |
 
 Everything above is already the kind of dependency this workspace uses
 (`reqwest` 0.13 and `axum` 0.8 are pinned today).
@@ -247,7 +287,7 @@ The BFF therefore:
 > Endpoint paths (Definition/Query/EHR/Composition APIs, base
 > `/ehrbase/rest/openehr/v1`) must be taken from the **generated ITS-REST
 > contract in `openehr-its`** — and can be cross-checked against the **running
-> server's own generated `openapi.json`** (ADR-005 as amended 2026-07-17: the
+> server's own generated `openapi.json`** (owner hard rule 2026-07-17: the
 > served document is composed natively from the handlers and advertises the
 > simplified media types; the vendored OAS is the behavioural oracle, never
 > served). The feature map (§7) names the API *groups*; the exact routes come
@@ -343,9 +383,12 @@ Cabolabs' point-and-click flow, and how each step lands on our stack:
 
 > **Not adopted here:** Cabolabs' SNOMED-CT-expression criteria
 > (`validateSnomedExpression`, the external SNQUERY tool). That maps to our AQL
-> **terminology family** (`TERMINOLOGY()` / `matches {uri}`), which is a **CDR**
-> capability (blueprint row 12) — the builder gains a terminology-constraint
-> widget only once/if that lands CDR-side. Recorded, not built at v1.
+> **terminology family** (`TERMINOLOGY()` / `matches {uri}`,
+> `docs/specs/openehr/QUERY/AQL/`), which is a **CDR** capability with no
+> open worklist row today (the blueprint that tracked it was deleted
+> 2026-07-16 — register a row if/when wanted) — the builder gains a
+> terminology-constraint widget only once/if that lands CDR-side. Recorded,
+> not built at v1.
 
 ### 7.3 Defer / out of scope — these are CDR or Stage-2 concerns, not the UI
 
@@ -369,9 +412,9 @@ have (differently) or explicitly park:
 
 Not a Cabolabs feature — this comes from the **openEHR spec**. The CDR already
 implements the openEHR **SMART App Launch** *resource-server* role
-(`app/ehrbase-rest/src/smart/`; spec
-`docs/specs/openehr/ITS-REST/docs/smart_app_launch/` master02–09; design
-`docs/design/its-rest/smart.md`). What exists today, verified in source:
+(`app/ehrbase-rest/src/smart/` — `discovery.rs` / `scope.rs` / `enforce.rs`;
+spec `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` master02–09).
+What exists today, verified in source:
 
 - **`GET /.well-known/smart-configuration`** discovery document (master04),
   served **pre-auth**, **config-gated — off by default** (disabled → `404`,
@@ -410,7 +453,397 @@ advertises.
 
 ---
 
-## 8. Packaging — a third OCI image (extends `container-images.md`)
+## 7A. Screen catalog — routes, wireframes, data, states *(added 2026-07-17b)*
+
+The binding per-screen specification. A `ui-implementer` subagent builds a
+screen from its entry here **without inventing layout, data flow, or state
+handling**; anything a screen needs that this catalog doesn't answer goes
+back to the orchestrator, not into improvisation. Conventions that apply to
+**every** screen (stated once):
+
+- **Routing:** `leptos_router` under the shell layout (§7A.0); route params
+  in the tables below use `{braces}`. All routes except `/login` sit behind
+  the session guard — no session → redirect to `/login?next=…`.
+- **Data:** every read is a `Resource` calling a named `#[server]` fn;
+  every mutation is a `ServerAction` + `<ActionForm>` (degrades to a plain
+  HTML form pre-hydration, §5.1). Server fns are named in each table —
+  they are the BFF's complete CDR-facing API and each one **enforces the
+  session check itself** (§5.1 security correction). Endpoint paths come
+  from the generated `openehr-its` REST contract (§5.3 note); the tables
+  name representative operations, base `/ehrbase/rest/openehr/v1`.
+- **States:** every data region renders all four: **loading** (`<Suspense>`
+  skeleton — `thaw` Skeleton, never blank), **empty** (explanatory empty
+  state with the action that fills it), **error** (the BFF's normalized
+  error: HTTP status + CDR diagnostic body, rendered in a `thaw`
+  MessageBar, never a raw debug string), **forbidden** (401/403 from the
+  CDR → distinct "insufficient scope" surface, journey J7).
+- **i18n:** all labels through the i18n layer (single `en` catalog at v1;
+  keys, not literals, in components).
+- **Spec grounding:** the console is our own extension (no openEHR spec
+  governs an admin UI); what IS spec-bound is every wire interaction —
+  representations and negotiation per
+  `docs/specs/openehr/ITS-REST/docs/simplified_formats/` + the vendored
+  OAS (`crates/openehr-its/vendor/rest-oas/`), AQL per
+  `docs/specs/openehr/QUERY/AQL/`, SMART per
+  `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`.
+
+### 7A.0 App shell (layout, not a route)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ ehrbase-admin   [CDR: https://cdr:8080 ● UP]        user ▾   ☾  │  topbar
+├────────────┬─────────────────────────────────────────────────────┤
+│ Dashboard  │                                                     │
+│ Templates  │                                                     │
+│ Queries    │                <Outlet/> — routed screen            │
+│ EHRs       │                                                     │
+│ System     │                                                     │
+│            │                                                     │
+├────────────┴─────────────────────────────────────────────────────┤
+│ console vX.Y.Z · CDR vX.Y.Z (from /rest/status) · scopes chip    │  footer
+└──────────────────────────────────────────────────────────────────┘
+```
+
+- Components: `thaw` Layout + NavDrawer (collapses to a hamburger < 768 px
+  — the mobile-friendly mandate), topbar CDR-health pill (polled
+  `fetch_status` every 30 s via `leptos-use` `use_interval_fn`), user menu
+  (session identity, **scopes/launch-context panel** — the §7.4 "what can I
+  do right now" drawer — and logout), dark-mode toggle (`thaw` theme +
+  `leptos-use` storage persistence).
+- Server fns: `fetch_status` (GET `/rest/status` — extension endpoint, no
+  openEHR spec governs it), `current_session` (session introspection,
+  BFF-local), `logout` (session destroy).
+- E2E: every journey traverses the shell; J2 (hydration) asserts on the
+  theme toggle specifically.
+
+### 7A.1 `/login`
+
+```
+┌───────────────────────────────┐
+│         ehrbase-admin         │
+│  ┌─────────────────────────┐  │
+│  │  Username  [_________]  │  │
+│  │  Password  [_________]  │  │
+│  │  [ Sign in ]            │  │
+│  ├────────── or ───────────┤  │
+│  │  [ Sign in with OIDC ]  │  │
+│  └─────────────────────────┘  │
+│  CDR: https://cdr:8080 ● UP   │
+└───────────────────────────────┘
+```
+
+- Purpose: dual auth (§5.4/§10). Basic form posts to `login_basic`
+  (validates against the CDR by calling `GET /rest/status` — or any cheap
+  authenticated op — with the supplied credentials; on success stores them
+  in the server-side session). OIDC button starts the authorization-code
+  flow (`openidconnect`); the callback route `/auth/callback` is a plain
+  axum handler on the BFF, not a Leptos route.
+- Components: `thaw` Card + Field + Input + Button; `<ActionForm>` for the
+  Basic path (works pre-hydration — journey J6 depends on this).
+- States: error = wrong credentials (401 from CDR probe) or OIDC failure,
+  shown in a MessageBar; `next` query param honoured on success.
+- E2E: **J1** (both variants), **J6** (no-JS Basic login), **J7**
+  (unauthenticated redirect lands here).
+
+### 7A.2 `/` — Dashboard
+
+```
+┌───────────────────────────────────────────────────────┐
+│  EHRs        Compositions     Templates    Queries    │
+│  [ 1 284 ]   [ 45 902 ]       [ 37 ]       [ 12 ]     │   stat tiles
+├───────────────────────────────────────────────────────┤
+│  Query-group tiles (one per saved group, §7.1)        │
+│  ┌───────────────┐ ┌───────────────┐ ┌─────────────┐  │
+│  │ Diabetics     │ │ Hypertension  │ │ …           │  │
+│  │    412        │ │     97        │ │             │  │
+│  └───────────────┘ └───────────────┘ └─────────────┘  │
+├───────────────────────────────────────────────────────┤
+│  Compositions committed (30 d)   ▁▂▄▆█▆▄  chartistry  │
+└───────────────────────────────────────────────────────┘
+```
+
+- Server fns: `dashboard_counts` (POST `/query/aql` — one aggregate AQL per
+  tile, `SELECT COUNT(…)`), `query_group_counts` (executes each saved query
+  in the group via the Query API, concurrent server-side), `commit_trend`
+  (AQL over `context/start_time` bucketed per day).
+- Components: `thaw` Card grid; `leptos-chartistry` line/bar for the trend.
+- States: empty = fresh CDR ("no data yet — upload a template to begin",
+  links to `/templates`); a failing tile renders its error in-tile, never
+  blanks the whole dashboard.
+- E2E: **J8** asserts tiles render with numeric content and the chart SVG
+  exists.
+
+### 7A.3 `/templates` — Template Manager (list)
+
+```
+┌───────────────────────────────────────────────────────┐
+│ Templates                    [ Upload OPT ▲ ]         │
+│ [filter: ______ ]                                     │
+├───────────────┬──────────────┬──────────┬─────────────┤
+│ template_id   │ concept      │ created  │ actions     │
+├───────────────┼──────────────┼──────────┼─────────────┤
+│ vitals.v1     │ Vital signs  │ 2026-…   │ view · wt   │
+│ IPS.v1        │ Intl Patient…│ 2026-…   │ view · wt   │
+└───────────────┴──────────────┴──────────┴─────────────┘
+```
+
+- Server fns: `list_templates` (GET `/definition/template/adl1.4`),
+  `upload_template` (POST `/definition/template/adl1.4`,
+  `Content-Type: application/xml`, the raw OPT body; surfaces the CDR's
+  validation errors verbatim on 400/409/422).
+- Components: `leptos-struct-table` (sort/filter/paginate); `thaw` Upload
+  dialog for the OPT file (file → server fn as bytes; no JS file handling —
+  `web-sys` File API via the component).
+- States: empty = "no templates — upload your first OPT"; upload error =
+  the CDR diagnostic (e.g. duplicate template id → 409) in the dialog.
+- E2E: **J3** (upload corpus OPT → appears in list → open detail).
+- Note: ADL 1.4 only at v1 (§10 decision 4); activate/deactivate from
+  Cabolabs is **not** in ITS-REST — omitted (idea-source, not 1:1; the CDR
+  has no such state).
+
+### 7A.4 `/templates/{template_id}` — Template detail
+
+```
+┌───────────────────────────────────────────────────────┐
+│ ← Templates    vitals.v1          [OPT] [WT] [Example]│  tab bar
+├──────────────────────────┬────────────────────────────┤
+│ Path catalog (WT tree)   │  Node inspector            │
+│ ▸ vitals                 │  aqlPath: /content[…]      │
+│   ▾ body_temperature     │  rmType: DV_QUANTITY       │
+│     ▸ any_event          │  card: 0..*                │
+│       • temperature ◀    │  inputs: magnitude+unit    │
+│       • time             │  units: [°C, °F]           │
+└──────────────────────────┴────────────────────────────┘
+```
+
+- Server fns: `fetch_template_opt` (GET `…/adl1.4/{id}`,
+  `Accept: application/xml` — the raw OPT), `fetch_webtemplate` (same URL,
+  `Accept: application/openehr.wt+json` → `openehr_flat::webtemplate`
+  typed tree), `fetch_example` (GET `…/{id}/example`, format per the §5.3
+  selector).
+- Tabs: **OPT** (canonical XML viewer), **WT** (the tree above — the same
+  component the Query Builder reuses for path picking), **Example** (the
+  CDR-generated example composition, format-switchable).
+- Components: `thaw` Tree + Card; the format viewer component (§7A.9's
+  viewer, shared).
+- States: 404 = unknown template id (link back to list); WT parse failure
+  = error state naming the node (never a panic — deny-tier lints).
+- E2E: **J3** (path catalog renders, node inspector shows `aqlPath` +
+  `rmType` for a known node).
+
+### 7A.5 `/queries` — Stored queries + groups
+
+```
+┌───────────────────────────────────────────────────────┐
+│ Queries                        [ New query (builder) ]│
+├───────────────────┬───────────────────────────────────┤
+│ Stored queries    │ Groups                            │
+│ name    ver  run  │ ┌──────────────┐ [ New group ]    │
+│ q.vitals 1.0  ▶   │ │ chronic-care │ q.diab, q.hyp    │
+│ q.diab   2.1  ▶   │ └──────────────┘                  │
+└───────────────────┴───────────────────────────────────┘
+```
+
+- Server fns: `list_stored_queries` (GET `/definition/query/{qualified_name}`
+  + the list form), `fetch_stored_query` (GET
+  `/definition/query/{name}/{version}`), `store_query` (PUT same — versioned
+  per the contract), `run_stored_query` (GET/POST `/query/{name}/{version}`).
+  Groups are **console-local** (BFF session-store/TOML-config persisted —
+  ITS-REST has no query-group resource; flagged: our own extension, no
+  openEHR spec governs it).
+- Components: `leptos-struct-table` for the query list; group cards.
+- States: empty = "no stored queries — build one"; run ▶ navigates to the
+  builder in *loaded* mode with the RESULT_SET pane active.
+- E2E: **J4** (save from builder → appears here → re-run from saved).
+
+### 7A.6 `/queries/builder` — the Query Builder (the star, §7.2)
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ 1 Template   2 Paths   3 Criteria   4 Shape      [Builder|AQL] │  stepper + mode
+├──────────────────┬─────────────────────────────────────────────┤
+│ WT path tree     │  SELECT  [+ column]                         │
+│ (7A.4 component, │   • temperature (DV_QUANTITY) magnitude     │
+│  checkboxes)     │  WHERE   [+ criterion] [AND|OR group]       │
+│                  │   ┌ AND ────────────────────────────┐       │
+│                  │   │ temperature.magnitude between    │       │
+│                  │   │   [36.0] and [38.5] °C           │       │
+│                  │   │ OR ┌ code = [_____] (DV_CODED)  ││       │
+│                  │   └──────────────────────────────────┘       │
+├──────────────────┴─────────────────────────────────────────────┤
+│ AQL preview (read-only in builder mode, editable in AQL mode)  │
+│ SELECT c/content[…]… FROM EHR e CONTAINS COMPOSITION c …       │
+│ [ Validate ]  [ ▶ Run ]  [ Save as stored query… ]             │
+├────────────────────────────────────────────────────────────────┤
+│ RESULT_SET   [table | chart]  [Export CSV] [Export JSON]       │
+│ (leptos-struct-table over columns … / chartistry when grouped) │
+└────────────────────────────────────────────────────────────────┘
+```
+
+- Flow (§7.2): pick template → tick paths from the WT tree (each node
+  carries `aqlPath` + `rmType` + `inputs`) → per-`DV_*` typed criterion
+  widgets (§7.2 step 3 catalog: DV_QUANTITY magnitude+unit range,
+  DV_CODED_TEXT code picker, DV_DATE_TIME range, DV_ORDINAL, DV_COUNT,
+  DV_PROPORTION, DV_BOOLEAN, DV_TEXT contains/=) → AND/OR tree (§7.2
+  step 4) → shape (compositions vs data points; grouping → table vs chart,
+  §7.2 steps 5–6).
+- **Core discipline:** the builder state lowers to an `openehr-query` AST
+  and pretty-prints — **AQL is never string-concatenated** (§6). The
+  builder-state → AST lowering module is component-free plain Rust with
+  exhaustive unit tests (§8b) and is **orchestrator-built** (§12).
+- Server fns: `validate_aql` (parse via `openehr-query`, BFF-local),
+  `run_aql` (POST `/query/aql` with query + `query_parameters`;
+  `fetch=`/`offset=` paging honoured), `store_query` (§7A.5), `export_csv`
+  / `export_json` (BFF streams the RESULT_SET transformed server-side).
+- Raw **AQL mode**: same screen, editable text area replaces the builder
+  panes (one-way builder→AQL handoff; hand-edited AQL does not lift back
+  into builder state at v1 — flagged in-UI).
+- States: criteria widget for an unsupported `rmType` = explicit
+  "unsupported at v1" chip (never a silent skip); CDR query errors (bad
+  AQL → 400 with diagnostics) render under the preview; result paging
+  loading state on the table.
+- E2E: **J4** end-to-end (template → path → criterion → run → rows →
+  save → re-run), plus an AQL-mode validate/run assertion.
+
+### 7A.7 `/ehrs` — EHR finder
+
+```
+┌───────────────────────────────────────────────────────┐
+│ EHRs      [ehr_id or subject id: ________ ] [Find]    │
+├───────────────────────────────────────────────────────┤
+│ Recent / listed EHRs (AQL: SELECT e/ehr_id/value …)   │
+│ ehr_id                        │ created   │ status    │
+│ 7d44…                        │ 2026-…    │ queryable │
+└───────────────────────────────────────────────────────┘
+```
+
+- Server fns: `find_ehr` (GET `/ehr/{ehr_id}`, or GET
+  `/ehr?subject_id=…&subject_namespace=…`), `list_ehrs` (AQL over EHRs —
+  ITS-REST has no unpaged EHR list; flagged: listing via AQL is the
+  spec-honest route).
+- States: not-found = inline "no EHR with that id"; the list pages via
+  AQL `fetch`/`offset`.
+- E2E: **J5** entry point.
+
+### 7A.8 `/ehrs/{ehr_id}` — EHR detail
+
+```
+┌───────────────────────────────────────────────────────┐
+│ ← EHRs   EHR 7d44…        [Status|Directory|Comps|Contribs]
+├───────────────────────────────────────────────────────┤
+│ Status: queryable ✓ modifiable ✓   subject: …         │  Status tab
+│ ── or ──                                              │
+│ 📁 root  ▸ episodes  ▸ 2026-07  • items…              │  Directory tab
+│ ── or ──                                              │
+│ compositions table (name, template, time, versions)   │  Compositions tab
+│ ── or ──                                              │
+│ contributions table (id, time, audit, versions in it) │  Contributions tab
+└───────────────────────────────────────────────────────┘
+```
+
+- Server fns: `fetch_ehr` + `fetch_ehr_status` (GET `/ehr/{id}`,
+  `/ehr/{id}/ehr_status`), `fetch_directory` (GET `/ehr/{id}/directory`,
+  FOLDER tree), `list_compositions` (AQL:
+  `SELECT c/uid/value, c/name/value, c/archetype_details/template_id/value,
+  c/context/start_time/value FROM EHR e[ehr_id/value=$id] CONTAINS
+  COMPOSITION c` — paged), `list_contributions` (GET
+  `/ehr/{id}/contribution/{uid}` per row after an AQL/versioned listing).
+- Components: `thaw` TabList; Tree for directory; `leptos-struct-table`
+  for the two tables.
+- States: EHR_STATUS with `is_queryable=false` renders a warning banner;
+  no directory = empty state (the CDR 404s — render "no directory").
+- E2E: **J5** (navigate status → compositions → open one).
+
+### 7A.9 `/ehrs/{ehr_id}/compositions/{versioned_object_uid}` — Composition viewer
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ ← EHR 7d44…   Vital signs 2026-07-12                       │
+│ Format: [JSON][XML][FLAT][STRUCTURED]   Version: [2 ▾] ⏱   │
+├────────────────────────────────────────────────────────────┤
+│ {                                                          │
+│   "_type": "COMPOSITION",                                  │
+│   "name": { "_type": "DV_TEXT", "value": "Vital signs" },  │
+│   …                                                        │
+├────────────────────────────────────────────────────────────┤
+│ Version timeline: v1 ── v2(current)   audit: creation by … │
+└────────────────────────────────────────────────────────────┘
+```
+
+- Server fns: `fetch_composition` (GET
+  `/ehr/{id}/composition/{uid}` with the §5.3 `Accept` per selector:
+  canonical JSON, canonical XML, `…wt.flat+json`, `…wt.structured+json` —
+  the CDR converts; the BFF forwards bytes and pretty-prints),
+  `fetch_versions` (GET `/ehr/{id}/versioned_composition/{uid}` +
+  `/revision_history`), `fetch_at_version` (GET
+  `…/versioned_composition/{uid}/version/{version_uid}` or
+  `?version_at_time=`).
+- Components: the shared **format viewer** (syntax-highlighted read-only
+  view — pure-Rust lexing for JSON/XML token classes, no JS highlighter;
+  copy button via `leptos-use` clipboard), `thaw` Toolbar + Select;
+  timeline strip; `AUDIT_DETAILS` card per version
+  (committer, time, change type, description — RM 1.2.0 types via
+  `openehr-rm`).
+- States: format 406 (a representation the CDR declines) renders the
+  CDR's supported-set diagnostic; deleted version = tombstone state.
+- E2E: **J5** asserts the JSON ⇄ XML toggle round-trip (both render,
+  content-bearing) and the version dropdown switches content; FLAT
+  render asserted on the corpus composition.
+
+### 7A.10 `/system` — System panel
+
+```
+┌───────────────────────────────────────────────────────┐
+│ System                                                │
+│ ┌ Status ───────────┐ ┌ SMART ─────────────────────┐  │
+│ │ ● UP  CDR v3.1.1  │ │ enabled ✓  platform: …     │  │
+│ │ PG 18.4 · uptime  │ │ auth endpoints ↗ jwks ↗    │  │
+│ └───────────────────┘ └────────────────────────────┘  │
+│ ┌ Served OpenAPI ───────────────────────────────────┐ │
+│ │ (rendered from the CDR's own /…/openapi.json)     │ │
+│ └───────────────────────────────────────────────────┘ │
+│ ┌ Scope previewer ──────────┐ ┌ Activity log ──────┐  │
+│ │ [scope string ______ ] ▶  │ │ ATNA events table  │  │
+│ └───────────────────────────┘ └────────────────────┘  │
+└───────────────────────────────────────────────────────┘
+```
+
+- Server fns: `fetch_status` (shared with the shell), `fetch_smart_config`
+  (GET `/.well-known/smart-configuration`; 404 = SMART disabled — that IS
+  the status, render "disabled"), `fetch_openapi` (the CDR's natively
+  served `openapi.json` — rendered as a grouped endpoint list by our own
+  component, **not** Swagger-UI-in-an-iframe), `preview_scope` (master08
+  grammar — **§7.4's open design point stands**: needs the grammar lifted
+  out of `ehrbase-rest` or a CDR debug endpoint; the tile ships only when
+  that lands, behind a feature gate until then), `fetch_activity_log`
+  (the CDR's system-log read surface, read-only).
+- States: SMART-disabled and log-endpoint-absent are first-class rendered
+  states, not errors.
+- E2E: **J8** (status card content, SMART tile in both enabled and
+  disabled compose variants, OpenAPI list renders > 0 endpoint groups).
+
+### 7A.11 Screen → journey traceability
+
+| Screen | Server fns (BFF surface) | Proven by |
+|---|---|---|
+| Shell | `fetch_status`, `current_session`, `logout` | all, J2 |
+| `/login` | `login_basic`, OIDC callback | J1, J6, J7 |
+| `/` dashboard | `dashboard_counts`, `query_group_counts`, `commit_trend` | J8 |
+| `/templates` | `list_templates`, `upload_template` | J3 |
+| `/templates/{id}` | `fetch_template_opt`, `fetch_webtemplate`, `fetch_example` | J3 |
+| `/queries` | `list_stored_queries`, `store_query`, `run_stored_query` | J4 |
+| `/queries/builder` | `validate_aql`, `run_aql`, `export_*` | J4 |
+| `/ehrs` | `find_ehr`, `list_ehrs` | J5 |
+| `/ehrs/{id}` | `fetch_ehr`, `fetch_ehr_status`, `fetch_directory`, `list_compositions`, `list_contributions` | J5 |
+| `…/compositions/{uid}` | `fetch_composition`, `fetch_versions`, `fetch_at_version` | J5 |
+| `/system` | `fetch_smart_config`, `fetch_openapi`, `fetch_activity_log`, (`preview_scope`) | J8 |
+
+Every server fn in this table is the **complete** BFF API — a new fn means
+a catalog update in the same change.
+
+---
+
+## 8. Packaging — a third OCI image (follows the shipped compose/Helm/CI pattern)
 
 Follow the existing distroless pattern exactly; the console is a normal Rust
 binary with embedded/served assets.
@@ -484,7 +917,8 @@ Verified against the official Claude Code memory documentation
   files are touched.
 
 **Executed 2026-07-13 (repo-wide, not only the console):** every existing
-crate got a nested `CLAUDE.md` — `app/{ehrbase,ehrbase-rest,ehrbase-sm}`,
+crate got a nested `CLAUDE.md` — `app/{ehrbase,ehrbase-rest,ehrbase-sm}`
+*(historical note: `ehrbase-sm` was deleted in the 2026-07-16 consolidation)*,
 `crates/openehr-{base,rm,am,term,lang,its,query,flat,codegen,derive}`,
 `tools/{conformance,benchmark}` — each ~20–35 lines: crate role,
 generated-vs-hand-written split, never-do rules, gates, pointers (backticked
@@ -525,6 +959,7 @@ tests can't see the BFF↔CDR path; only E2E sees the product. It is a
 | Browser | Headless Chromium + chromedriver (geckodriver as the cross-check, non-gating) | Standard WebDriver endpoints; no vendored browser tooling. |
 | Test runner | `cargo nextest` — journeys are plain `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs` | Follows `testing.md` (tests live in the owning crate); no new runner. `cucumber-rs` (Gherkin journeys) is an optional later layer if owner-readable specs are wanted — pure Rust too. |
 | Stack under test | `scripts/ui-e2e.sh`: docker compose up **postgres + ehrbase + ehrbase-admin-ui + Keycloak** → chromedriver → nextest → teardown | Mirrors the proven `scripts/conformance.sh` pattern exactly. Keycloak is in the compose because auth v1 is dual (§10) — the OIDC journey is gated, not deferred. |
+| Screenshots | `thirtyfour` `screenshot()` per journey step → `target/ui-e2e/screenshots/j{NN}-{step}-{slug}.png`, uploaded as the `ui-e2e-screenshots` CI artifact | **Owner decision 2026-07-17:** every journey saves step screenshots for human review; **no pixel-diff assertions** (they flake). On failure, an additional full-page capture + the DOM snapshot land next to it. |
 
 **Skip-with-reason seam** (the B4 `--tx-server-url` precedent): the e2e tests
 read `UI_E2E_BASE_URL` (+ `UI_E2E_WEBDRIVER_URL`); when unset they skip with
@@ -532,29 +967,34 @@ a printed reason, so a plain `cargo nextest run --workspace` without Docker
 stays green. The CI job always sets them — skipping is impossible in the
 gate.
 
-### The v1 journey set (each one merge-gating)
+### The v1 journey matrix (each row merge-gating) *(expanded 2026-07-17b)*
 
-1. **Login (Basic)** → dashboard renders; **login (OIDC)** → Keycloak
-   redirect → code exchange → session established.
-2. **Hydration proof:** after first paint, interact (click a counter/filter)
-   and assert the DOM updated — proves WASM loaded and hydration attached,
-   not just that SSR emitted HTML.
-3. **Template Manager:** upload a corpus OPT → appears in the list →
-   inspect its path catalog.
-4. **Query Builder:** point-and-click template → archetype → path → typed
-   criterion → run → RESULT_SET rows render in the table; save as stored
-   query; re-run from saved.
-5. **Composition browser:** open an EHR → composition → **JSON ⇄ XML
-   toggle** round-trip renders both canonical forms.
-6. **Progressive enhancement:** one journey with JavaScript disabled in the
-   browser profile — `<ActionForm>` mutation still works via plain form
-   POST + redirect (the Leptos degradation contract, §5.1).
-7. **Auth discipline:** unauthenticated request → login redirect;
-   insufficient scope → 403 surface renders.
+Journey ids (J1–J8) are the same ones the §7A screen catalog traces to.
+Fixture setup is **REST-only** (the boundary, §5.2): the harness seeds the
+CDR through its own API in a `#[ctor]`-free explicit setup fn per journey
+file — never through the database.
 
-**Standing assertion on every journey:** read the browser console log
-(WebDriver `goog:loggingPrefs`) and **fail on any hydration error or panic**
-— the cheapest possible detector for the §8-class bugs, applied everywhere.
+| # | Journey | Key assertions | Fixtures |
+|---|---|---|---|
+| J1 | **Login, both modes**: Basic form → dashboard; OIDC → Keycloak redirect → code exchange → session | dashboard URL reached; session cookie `HttpOnly`+`SameSite`; user menu shows identity; wrong password → MessageBar error, no session | Keycloak realm import `tests/fixtures/keycloak-realm.json` (one admin user, the console client, the CDR audience); Basic creds from the compose env |
+| J2 | **Hydration proof**: after first paint, toggle the theme + open/close the nav drawer | DOM class actually flips post-interaction (proves WASM attached, not just SSR HTML); zero console errors | none (shell only) |
+| J3 | **Template Manager**: upload OPT → list row appears → open detail → path catalog | upload succeeds (201); row visible without manual reload (resource refetch); WT tree renders; node inspector shows the known `aqlPath` + `rmType` of a fixture node; duplicate re-upload → 409 surfaced in-dialog | 2 corpus OPTs in `app/ehrbase-admin-ui/tests/fixtures/opt/`: one single-archetype vitals, one multi-archetype (IPS-class) — taken from the vendored conformance template set |
+| J4 | **Query Builder end-to-end**: pick template → tick path → DV_QUANTITY range criterion → run → rows; save as stored query; re-run from `/queries`; AQL mode validate | AQL preview contains `CONTAINS COMPOSITION` + the path; RESULT_SET table shows the seeded row count; stored query GET-able via the CDR after save (asserted over REST, not just UI); invalid AQL in raw mode → 400 diagnostic rendered | J3's templates + 3 seeded compositions with known magnitudes (committed over REST in setup) |
+| J5 | **EHR + composition browser**: find seeded EHR → status tab → compositions tab → open composition → **JSON ⇄ XML ⇄ FLAT toggle** → version dropdown | all format tabs render content-bearing output (JSON has `"_type": "COMPOSITION"`, XML has the `http://schemas.openehr.org/v1` namespace, FLAT has the flat-key prefix); v1→v2 switch changes displayed content; audit card shows committer | 1 seeded EHR, 1 composition committed then updated (2 versions) over REST |
+| J6 | **Progressive enhancement**: fresh profile with JavaScript disabled → Basic login via plain form POST → a `<ActionForm>` mutation (template upload) still works | login + upload succeed with JS off (server-rendered redirect flow) — the Leptos degradation contract (§5.1) holds | J1 + J3 fixtures |
+| J7 | **Auth discipline**: unauthenticated deep link → login redirect with `next=`; post-login lands on the deep link; a low-scope OIDC user hits a 403 surface | redirect chain exact; forbidden state renders the "insufficient scope" surface (§7A states), not a blank page or raw error | second Keycloak user with reduced scopes in the same realm fixture |
+| J8 | **Dashboard + system panel**: stat tiles numeric; trend chart SVG present; `/system` status card, SMART tile (both compose variants: enabled + disabled), served-OpenAPI list | tile values match the seeded corpus counts; SMART tile renders "disabled" on the 404 variant and endpoint links on the enabled one; OpenAPI component lists > 0 endpoint groups | J4/J5 seeds; a second compose profile flag flipping the CDR's SMART config |
+
+**Standing assertions on every journey:**
+
+- read the browser console log (WebDriver `goog:loggingPrefs`) and **fail on
+  any hydration error or panic** — the cheapest possible detector for the
+  §8-class bugs, applied everywhere;
+- screenshot each numbered step (`j{NN}-{step}-{slug}.png`, the §8d stack
+  table row) — CI uploads the folder as the `ui-e2e-screenshots` artifact
+  on success *and* failure;
+- explicit waits on elements/conditions only — a bare `sleep` in a journey
+  is a review-rejected defect (flake discipline below).
 
 ### Gating (how it's enforced)
 
@@ -562,7 +1002,11 @@ gate.
   `app/ehrbase-admin-ui/**` (plus the compose/e2e script paths), **required
   for merge** on PRs touching them, and always run on release tags. Runs
   `scripts/ui-e2e.sh` on the standard runner (Docker + chromium +
-  chromedriver are stock on `ubuntu-latest`-class runners).
+  chromedriver are stock on `ubuntu-latest`-class runners). Uploads
+  `target/ui-e2e/screenshots/` as the **`ui-e2e-screenshots` artifact on
+  every run** (success and failure) for human review — the owner-decided
+  substitute for pixel-diff assertions (2026-07-17). Chromium gates;
+  the geckodriver cross-check job is `continue-on-error` (informational).
 - **`/ui-gates` skill** gains the E2E battery as its final stage (runs when
   Docker is available; reports SKIPPED(no docker) locally, never in CI).
 - **`.claude/rules/leptos-ui.md` §10** lists the e2e gate; the
@@ -615,27 +1059,101 @@ gate.
    first version (§5.4), not phased.
 4. **Templates (v1):** **ADL 1.4 only**, matching the CDR's current Definition
    surface; ADL2 added when the CDR's ADL2 path lands.
+5. *(2026-07-17)* **View specs:** full wireframe-level screen catalog (§7A) — routes,
+   wireframes, component trees, server-fn → endpoint data tables, states;
+   subagents build to it without layout guesses.
+6. *(2026-07-17)* **E2E gating:** Chromium/chromedriver journeys merge-gate; **every
+   journey saves step screenshots as CI artifacts** (human review — no
+   pixel-diff assertions); geckodriver cross-check stays non-gating.
+7. *(2026-07-17)* **Delivery:** **one big-bang PR** on `claude/admin-ui` — the owner's
+   standing single-convergence style; the E2E harness lands inside that
+   same PR (§12).
+8. *(2026-07-17)* **Tracking + prior art:** registered as the `ADMIN-UI` row in
+   `docs/plans/WORKLIST.md` with this file as the governing plan (deleted
+   in the implementing PR); Cabolabs EHRServer is an **idea source only —
+   never a 1:1 port** (revision block item 6).
 
 ---
 
-## 11. Follow-ups (after approval — not started here)
+## 11. Same-PR obligations (land inside the §12 PR, not after)
 
-- Write the ADR (owner said not yet) recording the framework + BFF decision.
-- Scaffold `app/ehrbase-admin-ui` (workspace member, `openehr-*` deps only).
-- Extend `container-images.md` + `containers.yml` + the quickstart compose.
-- Build the E2E harness (§8d): `scripts/ui-e2e.sh` (compose stack incl.
-  Keycloak + chromedriver), the `e2e_*.rs` journey tests, and the
-  merge-gating `ui-e2e` CI job — landing with the first UI feature PR, not
-  after.
-- `CHANGELOG.md` `[Unreleased]` entry + a `website/book` operator page (both are
-  standing same-PR rules for user-visible surfaces).
+*(rev. 2026-07-17b — the ADR bullet is gone: the ADR layer was abolished
+2026-07-17; this doc is the plan and is deleted at close.)*
+
+- `CHANGELOG.md` `[Unreleased]` entry + a `website/book` operator page for
+  the console (deploy, config, auth setup) — both standing same-PR rules
+  for user-visible surfaces.
+- `containers.yml` + the quickstart compose gain the third image/service
+  (§8); Helm chart addition if the owner wants it charted at v1 —
+  compose-only otherwise (ask at convergence).
+- The §8c CLAUDE.md edits: `app/ehrbase-admin-ui/CLAUDE.md` + the root
+  repo-map bullet ("three crates" → four) + the gate battery mention.
 - **Acknowledgement in the root `README.md`.** Add a credit that the admin
   console's feature set (Template Manager, point-and-click Query Builder,
   saved/grouped/cohort queries) is **inspired by
   [Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver)** by Pablo
   Pazos / CaboLabs Health Informatics (Apache-2.0). We reimplement the *UX*
-  fresh in Rust over our own AQL engine — no code is copied — but the design
-  lineage is credited. Land this in the same PR that introduces the console.
+  fresh in Rust over our own AQL engine — **no code is copied, nothing is a
+  1:1 port** (owner rule, revision block item 6) — but the design lineage is
+  credited.
+- Worklist close: `docs/PROGRESS.md` entry, `ADMIN-UI` row → Closed table
+  with the PR link, **this file deleted** — all in the same PR.
+
+---
+
+## 12. Build plan — Fable 5 orchestrates, subagents implement *(added 2026-07-17b)*
+
+**Delivery shape (owner decision 7, §10): ONE PR** on branch
+`claude/admin-ui`, single convergence at the end — no intermediate stubs,
+nothing deferred. The plan below is the work order *inside* that one PR.
+
+### 12.1 Roles (per the root `CLAUDE.md` orchestration section)
+
+| Role | Who | Owns |
+|---|---|---|
+| **Orchestrator** | Fable 5 (this session tier), effort `high` | Architecture + all design judgement; the **BFF auth core** (session, Basic + OIDC flows, the server-fn auth guard — §5.4); the **query-builder state → `openehr-query` AST lowering** (§7A.6, the correctness core); screen-catalog conformance review of everything the workers return; **every cargo invocation** (one `./target`, owner rule — subagents never build); the single convergence. |
+| **`ui-implementer`** (Opus) | max **2 concurrent** (owner cap) | Bounded screen/component tasks from the §7A catalog: each prompt carries the catalog section, `.claude/rules/leptos-ui.md`, the relevant spec paths, and the fixture list. Delivers code only; the orchestrator runs the gates. |
+| **`leptos-reviewer`** (read-only) | after each subsystem lands on the branch | Diff review against `.claude/rules/leptos-ui.md` (no-JS, REST boundary, server-fn auth, hydration safety, `<For>` keys, form/async idioms). Findings fixed before the next subsystem starts. |
+| **`spec-researcher`** | on demand | Any "what does ITS-REST say" question (negotiation, status codes, versioned-object semantics) — answered from `docs/specs/openehr/` with citations, never memory. |
+
+Standing discipline for every subagent prompt: hard rules travel with the
+task (no re-exports, no `use X as Y`, deny-tier lints, TODO-form comments,
+`urlencoding` for percent codecs, **Cabolabs = ideas only, never code**);
+`/leptos-lookup` for any Leptos question the rule file doesn't settle;
+`/spec-lookup` before touching any wire-facing format.
+
+### 12.2 Work order (W0 → W6, inside the one PR)
+
+| Stage | Work | Executor |
+|---|---|---|
+| **W0 — scaffold + risk retirement** | `/crate-scaffold` for `app/ehrbase-admin-ui` (+ nested `CLAUDE.md`, §8c); cargo-leptos config (Tailwind v4.3.3 pin, `wasm-release` profile §8); **thaw `=0.5.0-beta` smoke test against leptos 0.8.20** — a page with the components §7A actually uses (Layout, NavDrawer, Table, Tree, Tabs, Upload, MessageBar, Skeleton). Beta fails → pin the git rev of main **now**, before any screen work. | Orchestrator |
+| **W1 — BFF core** | Session store (`tower-sessions`), Basic + OIDC login flows, the auth guard every server fn calls, the CDR `reqwest` client (base-URL config via the console's TOML, §8), error normalization, content-negotiation helper (§5.3 `Accept` matrix). | Orchestrator (auth is the risk center) |
+| **W2 — shell + login + system panel** | §7A.0 shell, §7A.1 login, §7A.10 system panel (minus scope-previewer, feature-gated per §7.4's open point). | 2 × `ui-implementer` in parallel (shell+login / system) |
+| **W3 — browse surfaces** | §7A.3/7A.4 Template Manager + detail; §7A.7/7A.8/7A.9 EHR finder, EHR detail, composition viewer (the shared format-viewer component built once, in the template-detail task, reused). | 2 × `ui-implementer`, two sequential pairs |
+| **W4 — Query Builder + queries + dashboard** | Orchestrator: the builder-state model + AST lowering + its exhaustive unit tests (component-free, §8b). Workers: the §7A.6 widget surface (criteria widgets per `DV_*`, stepper, result pane), §7A.5 stored queries/groups, §7A.2 dashboard tiles. | Orchestrator core + 2 × `ui-implementer` |
+| **W5 — E2E harness + journeys** | `scripts/ui-e2e.sh` (compose: postgres + ehrbase + console + Keycloak), realm + OPT fixtures, J1–J8 (§8d matrix), screenshot plumbing, the `ui-e2e` CI job + `ui-e2e-screenshots` artifact upload. | Orchestrator (harness pattern = `conformance.sh`); journey bodies may fan to `implementer` |
+| **W6 — convergence** | The full battery in order: `/ui-gates` (both-target clippy, nextest, leptosfmt+fmt, cargo-leptos build) → workspace gates (`clippy --workspace --all-targets`, `nextest run --workspace`, fmt, audit/deny) → `scripts/ui-e2e.sh` full J1–J8 → `leptos-reviewer` whole-crate pass → §11 obligations (changelog, book page, compose/CI, README credit, CLAUDE.md edits) → PROGRESS entry + worklist close + **delete this file** → PR. | Orchestrator |
+
+Reviewer cadence: `leptos-reviewer` after W2, W3, W4 (scoped diffs), and the
+whole crate at W6 — findings block the next stage, mirroring how
+`spec-conformance-reviewer` gates CDR subsystems.
+
+### 12.3 Done-definition (the PR merges when ALL hold)
+
+1. `/ui-gates` green: clippy native **and** wasm32, nextest, leptosfmt +
+   cargo fmt, cargo-leptos release build.
+2. Workspace gates green (the console is a member: `--workspace` clippy +
+   nextest + fmt + audit/deny pass with it in).
+3. **J1–J8 all green under `scripts/ui-e2e.sh`** with zero
+   console-log-detected hydration errors and the screenshot artifact
+   populated.
+4. `leptos-reviewer` whole-crate pass with no unresolved findings;
+   spot-check that no Cabolabs code/markup was ported (idea-source rule).
+5. Every §7A server fn implemented, auth-guarded, and listed in the §7A.11
+   catalog (catalog drift = a finding).
+6. §11 obligations all landed in the PR (changelog, book page, compose +
+   `containers.yml`, README credit, CLAUDE.md edits, PROGRESS + worklist
+   close, this file deleted).
 
 ---
 
@@ -674,7 +1192,7 @@ is the §7 disposition.
 | **Query Groups** — dashboard of match counts | `QueryGroup.executeCount` (async parallel) | **Adopt** |
 | **EHR / cohort queries** — match a set of conditions; boolean or EHR set | `EhrQuery`, `EhrQueryController` | **Adopt** → AQL over EHRs |
 | Query sharing | `QueryShare` | Adopt (nice-to-have) |
-| SNOMED-CT expression constraints | `QuerySnomedService`, `validateSnomedExpression` (external SNQUERY) | **Defer** → our AQL `TERMINOLOGY()` family (CDR, blueprint row 12) |
+| SNOMED-CT expression constraints | `QuerySnomedService`, `validateSnomedExpression` (external SNQUERY) | **Defer** → our AQL `TERMINOLOGY()` family (CDR-side, no open worklist row) |
 | Raw query escape hatch | `QueryController.hql` | Adopt → raw AQL editor |
 
 ### A.4 Platform / operations (mostly CDR- or Stage-2-side)
@@ -699,7 +1217,10 @@ ITS-REST. A.4's platform machinery is CDR-side or Stage-2 and is *consumed*
 
 ---
 
-*Sources for the version/tooling facts above (verified July 2026):*
+*Sources for the version/tooling facts above (first verified 2026-07-13;
+**all crate pins re-verified 2026-07-17** against the crates.io API
+(`max_stable_version` + per-version dependency reqs) and Tailwind against
+the `tailwindlabs/tailwindcss` GitHub releases API — v4.3.3, 2026-07-16):*
 [Leptos vs Dioxus 2026](https://rustify.rs/articles/leptos-vs-dioxus-rust-frontend-2026) ·
 [Leptos 0.8](https://github.com/leptos-rs/leptos/releases/tag/v0.8.0) ·
 [Dioxus 0.7](https://dioxuslabs.com/blog/release-070/) ·
