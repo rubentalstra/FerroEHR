@@ -424,7 +424,7 @@ fn relationship(name: &str, source: &str, target: &str) -> Value {
 /// Create a PERSON and return its bare versioned-object UUID string.
 async fn make_person(svc: &EhrbaseService, name: &str) -> String {
     let created = svc
-        .party_create(PartyKind::Person, person(name))
+        .party_create(PartyKind::Person, person(name), None)
         .await
         .expect("create person");
     created.body["uid"]["value"]
@@ -596,7 +596,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     // R1: p1 → p2 (references p1 as source). R2: p2 → p1 (references p1 as
     // target). R3: p2 → p3 (does NOT reference p1).
     let r1 = svc
-        .party_relationship_create(relationship("r1", &p1, &p2))
+        .party_relationship_create(relationship("r1", &p1, &p2), None)
         .await
         .expect("r1");
     let r1 = r1.body["uid"]["value"]
@@ -607,7 +607,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r2 = svc
-        .party_relationship_create(relationship("r2", &p2, &p1))
+        .party_relationship_create(relationship("r2", &p2, &p1), None)
         .await
         .expect("r2");
     let r2 = r2.body["uid"]["value"]
@@ -618,7 +618,7 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         .unwrap()
         .to_owned();
     let r3 = svc
-        .party_relationship_create(relationship("r3", &p2, &p3))
+        .party_relationship_create(relationship("r3", &p2, &p3), None)
         .await
         .expect("r3");
     let r3 = r3.body["uid"]["value"]

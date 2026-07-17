@@ -306,3 +306,86 @@ async fn tenants_are_isolated_end_to_end() {
         "unset ⇒ the reserved default tenant"
     );
 }
+
+/// The PRODUCTION seam, end to end: [`db::connect_tenant_scoped`]'s
+/// `before_acquire` hook stamps every checked-out connection with the tenant
+/// from the request task-local ([`tenant_context::scope`]) — no manual
+/// `set_config` anywhere — and the service layer's reads/writes come back
+/// tenant-filtered by the same RLS policies proven above. This is the wiring
+/// the binary uses when `tenancy.enabled = true`.
+#[tokio::test]
+async fn scoped_pool_isolates_tenants_through_the_service() {
+    use ehrbase::extensions::tenant_context::{self, TenantContext};
+    use ehrbase::service::EhrbaseService;
+
+    let pg = Pg::start().await;
+    let db_name = "rls_seam";
+    let pool = pg.migrated_pool(db_name).await;
+
+    let (tenant_a, tenant_b) = (Uuid::now_v7(), Uuid::now_v7());
+    sqlx::query(
+        "INSERT INTO tenant (id, name, system_id) VALUES ($1, 'seam-a', 'sys-a'), ($2, 'seam-b', 'sys-b')",
+    )
+    .bind(tenant_a)
+    .bind(tenant_b)
+    .execute(&pool)
+    .await
+    .expect("seed tenants");
+    sqlx::query("CREATE ROLE rls_seam_app LOGIN PASSWORD 'testpw' IN ROLE ehrbase_app")
+        .execute(&pool)
+        .await
+        .expect("create app role");
+
+    let scoped = DbConfig::new(format!(
+        "postgres://rls_seam_app:testpw@{}:{}/{db_name}",
+        pg.host, pg.port
+    ));
+    let service = EhrbaseService::new(
+        db::connect_tenant_scoped(&scoped)
+            .await
+            .expect("tenant-scoped pool"),
+    );
+    let ctx = |id: Uuid, sys: &str| TenantContext {
+        tenant_id: id,
+        system_id: sys.to_owned(),
+    };
+
+    // Tenant A creates an EHR through the service and sees it.
+    let ehr_a = tenant_context::scope(ctx(tenant_a, "sys-a"), service.create_ehr(None))
+        .await
+        .expect("create EHR under tenant a");
+    assert!(
+        tenant_context::scope(ctx(tenant_a, "sys-a"), service.has_ehr(ehr_a))
+            .await
+            .expect("has_ehr a/a"),
+        "tenant a sees its own EHR"
+    );
+
+    // Tenant B and the unscoped (default-tenant) caller must not.
+    assert!(
+        !tenant_context::scope(ctx(tenant_b, "sys-b"), service.has_ehr(ehr_a))
+            .await
+            .expect("has_ehr b/a"),
+        "tenant b must NOT see tenant a's EHR"
+    );
+    assert!(
+        !service.has_ehr(ehr_a).await.expect("has_ehr unscoped"),
+        "the reserved default tenant must NOT see tenant a's EHR"
+    );
+
+    // And the reverse direction holds for tenant B's own data.
+    let ehr_b = tenant_context::scope(ctx(tenant_b, "sys-b"), service.create_ehr(None))
+        .await
+        .expect("create EHR under tenant b");
+    assert!(
+        tenant_context::scope(ctx(tenant_b, "sys-b"), service.has_ehr(ehr_b))
+            .await
+            .expect("has_ehr b/b")
+    );
+    assert!(
+        !tenant_context::scope(ctx(tenant_a, "sys-a"), service.has_ehr(ehr_b))
+            .await
+            .expect("has_ehr a/b"),
+        "tenant a must NOT see tenant b's EHR"
+    );
+}

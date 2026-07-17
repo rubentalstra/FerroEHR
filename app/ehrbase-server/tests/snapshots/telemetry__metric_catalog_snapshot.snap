@@ -1,5 +1,6 @@
 ---
-source: app/ehrbase/tests/telemetry.rs
+source: app/ehrbase-server/tests/telemetry.rs
+assertion_line: 28
 expression: "lines.join(\"\\n\")"
 ---
 http_server_request_duration_seconds histogram buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
@@ -21,6 +22,7 @@ atna_audit_emitted_total counter
 atna_audit_dropped_total counter
 atna_audit_sent_total counter
 atna_audit_send_failed_total counter
+atna_audit_serialize_failed_total counter
 process_start_time_seconds gauge
 ehrbase_build_info gauge
 tokio_workers gauge

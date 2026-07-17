@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Audits for authenticated writes that carry no committal headers are now
+  attributed to the authenticated user (Basic username / token subject, with
+  the mechanism recorded as the identifier type) instead of the generic
+  system identity.
+- Multi-tenant deployments now actually run on the tenant-scoped connection
+  pool: with `tenancy.enabled = true` every database connection carries the
+  request's tenant for the row-level-security policies. Previously the
+  binary always built the plain pool, so all requests fell through to the
+  default tenant regardless of configuration.
+- The demographic APIs (party and relationship writes) now honour the
+  `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal headers exactly
+  as the EHR APIs do — a caller-supplied committer, description, and
+  system id are merged into the stored version's audit.
 - Direct COMPOSITION create/update/delete now honour the ITS-REST committal
   headers (`openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*`): a
   caller-supplied committer, audit description, change type, lifecycle
@@ -30,6 +43,24 @@ workflow refuses a tag that has no matching section here.
   subscription change (previously every poll cycle re-declared each queue),
   and the FHIR outbound emitter parks a persistently failing row after a
   bounded retry budget instead of blocking the stream forever.
+- A FLAT/STRUCTURED composition body that parses as JSON but does not conform
+  to its target template now returns `422 Unprocessable Entity` instead of
+  `500 Internal Server Error` — such an input is client data, not a server
+  fault. Output conversion of stored compositions remains a `500` on failure.
+- Panicking request handlers and audit fail-closed (`503`) responses now
+  carry the standard openEHR `{ error, message }` JSON error body (the audit
+  `503` also carries `Retry-After`), instead of a plain-text body.
+- A malformed `If-Match` header on a state-changing request is now rejected
+  with `400 Bad Request` instead of being silently ignored — an unparseable
+  precondition previously ran as if no `If-Match` was sent, opening a
+  lost-update window. `If-Match: *` and valid version ids are unaffected.
+- Database constraint and serialization/deadlock failures now surface as
+  `409 Conflict`, and connection-pool exhaustion under load as `503 Service
+  Unavailable` with `Retry-After`, instead of collapsing every database error
+  to `500 Internal Server Error`.
+- Stored-query and template metadata list/read endpoints no longer silently
+  blank a field when a database column fails to decode; a decode failure now
+  surfaces as `500` with a real error instead of an empty value.
 
 ### Changed
 
@@ -49,34 +80,10 @@ workflow refuses a tag that has no matching section here.
   is computed before any insert); version-tree placement is one read instead
   of three, and contribution commits batch their target pre-reads. Fewer
   round trips per write, identical wire behaviour and stored semantics.
-
-### Changed
-
 - The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
   spec-selector family documents) and the SMART `.well-known/smart-configuration`
   discovery document are now built once at server startup instead of being
   regenerated on every request. No change to the document content.
-
-### Fixed
-
-- A FLAT/STRUCTURED composition body that parses as JSON but does not conform
-  to its target template now returns `422 Unprocessable Entity` instead of
-  `500 Internal Server Error` — such an input is client data, not a server
-  fault. Output conversion of stored compositions remains a `500` on failure.
-- Panicking request handlers and audit fail-closed (`503`) responses now
-  carry the standard openEHR `{ error, message }` JSON error body (the audit
-  `503` also carries `Retry-After`), instead of a plain-text body.
-- A malformed `If-Match` header on a state-changing request is now rejected
-  with `400 Bad Request` instead of being silently ignored — an unparseable
-  precondition previously ran as if no `If-Match` was sent, opening a
-  lost-update window. `If-Match: *` and valid version ids are unaffected.
-- Database constraint and serialization/deadlock failures now surface as
-  `409 Conflict`, and connection-pool exhaustion under load as `503 Service
-  Unavailable` with `Retry-After`, instead of collapsing every database error
-  to `500 Internal Server Error`.
-- Stored-query and template metadata list/read endpoints no longer silently
-  blank a field when a database column fails to decode; a decode failure now
-  surfaces as `500` with a real error instead of an empty value.
 
 ### Added
 
