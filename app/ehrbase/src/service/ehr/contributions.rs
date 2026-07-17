@@ -32,7 +32,7 @@ impl EhrbaseService {
     /// atomically and return the stored `CONTRIBUTION` with its resource
     /// metadata (the `contribution_uid` for the `201` `ETag`/`Location`).
     ///
-    /// PORT NOTE: the SM native `commit_contribution(Vec<UpdateVersion>,
+    /// NOTE: the SM native `commit_contribution(Vec<UpdateVersion>,
     /// UpdateAudit)` is a *typed subset* of the wire CONTRIBUTION —
     /// `UPDATE_VERSION` mandates `data` + `lifecycle_state` (SM
     /// `update_version.adoc`, both 1..1) and a committer, so it cannot
@@ -153,12 +153,12 @@ impl EhrbaseService {
         // lifecycle_state, attestations, signature } … ], audit }`. The typed
         // shapes serialize to exactly those field names.
         //
-        // PORT NOTE: this typed → wire-JSON → re-parse round-trip is a known
+        // NOTE: this typed → wire-JSON → re-parse round-trip is a known
         // glue seam. The typed shapes differ from the raw wire in two ways
         // `commit_version_set` tolerates explicitly: `preceding_version_uid:
         // None` serializes to JSON `null` (not absent), and `change_type` is a
         // `Terminology_code` (`{terminology_id, code_string}`, SM
-        // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the PORT NOTEs in
+        // `update_audit.adoc`), not a `DV_CODED_TEXT` (see the NOTEs in
         // `versioning/contribution.rs` `coded_value`/`classify`). A native
         // typed path skipping the JSON round-trip is a future cleanup.
         let versions_json =

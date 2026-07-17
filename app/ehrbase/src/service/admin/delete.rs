@@ -82,7 +82,7 @@ impl EhrbaseService {
     /// Row-count 0 on the EHR delete means the EHR did not exist (`has_ehr`
     /// false) → [`ServiceError::NotFound`].
     ///
-    /// PORT NOTE (already-correct — `i_admin_service.adoc` defines the failure
+    /// NOTE (already-correct — `i_admin_service.adoc` defines the failure
     /// only abstractly (`ehr_id_does_not_exist`) with no HTTP binding): we map it
     /// to `NotFound` → HTTP `404`, the natural REST reading of an operation on a
     /// non-existent resource.
@@ -140,7 +140,7 @@ impl EhrbaseService {
     /// (idempotent bulk delete); the count of EHRs actually deleted is
     /// returned.
     ///
-    /// PORT NOTE (keep — spec-silent extension): `i_admin_service.adoc` has no
+    /// NOTE (keep — spec-silent extension): `i_admin_service.adoc` has no
     /// bulk call, so the idempotent skip-missing semantics + returned count are
     /// our own design (no openEHR spec governs bulk-delete internals); a
     /// partial success is observable at the REST edge.

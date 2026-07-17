@@ -26,7 +26,7 @@
 //! realized via `GET /composition/{uid}` (200 = TRUE) per the CNF guide's
 //! abstract-call → REST mapping.
 //
-// PORT NOTE: register 04 G-6 (RM wire version ladder) is only partially met —
+// NOTE: register 04 G-6 (RM wire version ladder) is only partially met —
 // positive bodies are the vendored RM-1.2.0-canonical fixtures; a per-edition
 // COMPOSITION payload provider (RM 1.0.2 minimum, master03-overview §API
 // Conformance) belongs to the register-90 wire adapter and is not yet exposed.

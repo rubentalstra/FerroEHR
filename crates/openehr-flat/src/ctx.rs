@@ -18,6 +18,8 @@
 //! action_ism_transition_current_state) and resolve through the openEHR
 //! terminology bundle via [`crate::map::coded_from_group`].
 
+use std::collections::BTreeMap;
+
 use serde_json::{Map, Value, json};
 
 use crate::error::FlatError;
@@ -160,7 +162,7 @@ pub(crate) fn resolve(ctx: Option<&SimNode>, now: &str) -> Result<CtxDefaults, F
     out.language = bare_str("language").map(str::to_owned);
     out.territory = bare_str("territory").map(str::to_owned);
     if let Some(t) = bare_str("time") {
-        out.time = t.to_owned();
+        t.clone_into(&mut out.time);
     }
     out.end_time = bare_str("end_time").map(str::to_owned);
     out.history_origin = bare_str("history_origin").map(str::to_owned);
@@ -351,11 +353,11 @@ fn resolve_participations(ctx: &SimNode, d: &CtxDefaults) -> Result<Vec<Value>, 
         // The performer is a PARTY_IDENTIFIED (master06 §Participation); its
         // identifiers make it identified even without a name.
         let mut performer = party_identified(name, id, d, "PERSON");
-        if let Value::Object(pm) = &mut performer {
-            if !identifiers.is_empty() {
-                pm.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
-                pm.insert("identifiers".to_owned(), Value::Array(identifiers));
-            }
+        if let Value::Object(pm) = &mut performer
+            && !identifiers.is_empty()
+        {
+            pm.insert("_type".to_owned(), json!("PARTY_IDENTIFIED"));
+            pm.insert("identifiers".to_owned(), Value::Array(identifiers));
         }
         p.insert("performer".to_owned(), performer);
         if let Some(m) = mode {
@@ -375,7 +377,6 @@ fn participation_identifiers(node: &SimNode, index: usize) -> Result<Vec<Value>,
         return parse_compact_identifiers(compact, index);
     }
     // Non-compact form: `|<field>:j` attrs grouped by `j`.
-    use std::collections::BTreeMap;
     let mut by_index: BTreeMap<u32, Map<String, Value>> = BTreeMap::new();
     for (key, value) in &node.attrs {
         let Some((field, j)) = key.split_once(':') else {
@@ -547,7 +548,7 @@ pub(crate) fn emit(composition: &Value, out: &mut SimNode) {
 }
 
 fn emit_participation(p: &Value, i: usize, out: &mut SimNode) {
-    let idx = i as u32;
+    let idx = u32::try_from(i).unwrap_or(u32::MAX);
     if let Some(name) = p.pointer("/performer/name").filter(|v| !v.is_null()) {
         set_indexed(out, "participation_name", idx, name.clone());
     }
@@ -566,7 +567,7 @@ fn emit_participation(p: &Value, i: usize, out: &mut SimNode) {
         .pointer("/performer/identifiers")
         .and_then(Value::as_array)
     {
-        let node = out.occurrence_mut("participation_identifiers", idx);
+        let node = out.occurrence_mut("participation_identifiers", Some(idx));
         for (j, ident) in ids.iter().enumerate() {
             for field in ["id", "issuer", "assigner", "type"] {
                 if let Some(v) = ident.get(field).filter(|v| !v.is_null()) {
@@ -820,10 +821,10 @@ mod tests {
         assert_eq!(d.territory.as_deref(), Some("US"));
         assert_eq!(d.time, "2021-12-21T14:19:31+01:00");
         assert_eq!(d.setting["defining_code"]["code_string"], json!("238"));
-        assert_eq!(d.composer.unwrap()["name"], json!("Silvia Blake"));
         assert_eq!(
             d.language_code_phrase().unwrap()["code_string"],
             json!("en")
         );
+        assert_eq!(d.composer.unwrap()["name"], json!("Silvia Blake"));
     }
 }

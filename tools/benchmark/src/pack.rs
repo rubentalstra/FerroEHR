@@ -12,7 +12,7 @@
 //! §4/§6). This module only reads the vendored files and hands the raw OPT XML
 //! and the parsed skeleton to [`crate::render`] / [`crate::drive`].
 //!
-//! PORT NOTE: no openEHR spec governs the benchmark template selection. The
+//! NOTE: no openEHR spec governs the benchmark template selection. The
 //! pack membership and the `template_id`s below are stable vendored facts from
 //! CKM (PROVENANCE.md's table); they are hardcoded as constants because a CKM
 //! OPT export registers under a fixed `template_id`.

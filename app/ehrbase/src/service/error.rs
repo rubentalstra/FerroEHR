@@ -143,7 +143,7 @@ impl From<ServiceError> for SmError {
     /// EHR-index chapter's `IndexError`). `Conflict` maps to a representative
     /// already-exists status (all 409s).
     ///
-    /// PORT NOTE (wire): the structured per-path violations of `ValidationFailed`
+    /// NOTE (wire): the structured per-path violations of `ValidationFailed`
     /// (the ITS-REST `Error.validationErrors[]` array) do **not** survive the SM
     /// boundary — `SmError` carries only a status + message (the SM `I_STATUS`
     /// shape). The violations are joined into the message so the detail is not

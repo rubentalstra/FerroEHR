@@ -7,6 +7,8 @@
 //! `master04 §Conversion Between Formats`, expressed against the shared
 //! [`SimNode`] tree instead of a second ad-hoc structure.
 
+use std::fmt::Write;
+
 use serde_json::{Map, Value};
 
 use crate::error::FlatError;
@@ -99,7 +101,7 @@ fn print_suffix_chain(key: &FlatKey) -> String {
         }
         chain.push_str(&suffix.name);
         if let Some(idx) = suffix.index {
-            chain.push_str(&format!(":{idx}"));
+            let _ = write!(chain, ":{idx}");
         }
     }
     chain

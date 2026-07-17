@@ -16,7 +16,7 @@
 //! `FHIRPath`-lite target, building the FHIR JSON. `code_map` is applied in
 //! reverse (`terminology_id` → FHIR system URL).
 //!
-//! PORT NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
+//! NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
 //! leaf inbound with no FHIR source, so it contributes nothing to the
 //! reconstructed resource (round-trip fidelity is defined over the FHIR-sourced
 //! mapped fields). The `subject` is reconstructed from the owning EHR's subject
@@ -56,7 +56,7 @@ pub(super) fn to_fhir(
         );
     }
     for entry in &def.entries {
-        // A constant has no FHIR source (see the module PORT NOTE).
+        // A constant has no FHIR source (see the module NOTE).
         if entry.constant.is_some() {
             continue;
         }

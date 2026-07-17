@@ -132,7 +132,7 @@ pub(crate) fn object_version_id(vo_id: VoId, creating_system_id: &str, tree: Tre
 /// is the correct fold; the Turkish `I/i` caveat (master05 §Composite
 /// Identifiers and Case) does not apply to an ASCII system id.
 ///
-/// PORT NOTE (G-09, master05 §Composite Identifiers and Case): storage keeps
+/// NOTE (G-09, master05 §Composite Identifiers and Case): storage keeps
 /// `creating_system_id` verbatim, and the DB uniqueness that also needs the
 /// case-fold is a storage-boundary concern cross-checked in
 /// `docs/spec-audit/rm-common-change-control`; versioning enforces the

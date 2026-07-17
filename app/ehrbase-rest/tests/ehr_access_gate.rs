@@ -110,7 +110,7 @@ fn coded(code: &str, value: &str) -> Value {
 
 /// Commit a new `EHR_ACCESS` version carrying `scheme` as its settings, updating
 /// the EHR's default (settings-less, default-open) `EHR_ACCESS`.
-async fn seed_scheme(svc: &EhrbaseService, ehr_id: Uuid, scheme: &Value) {
+async fn seed_scheme(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId, scheme: &Value) {
     let ehr = svc.ehr_object(ehr_id).await.expect("ehr object");
     let access_vo = ehr["ehr_access"]["id"]["value"]
         .as_str()
@@ -144,7 +144,7 @@ async fn seed_scheme(svc: &EhrbaseService, ehr_id: Uuid, scheme: &Value) {
 async fn app(name: &str, auth_enabled: bool, scheme: Option<Value>) -> (common::Pg, Router) {
     let (pg, pool) = common::migrated_pool(name).await;
     let svc = EhrbaseService::new(pool);
-    let ehr_id: Uuid = EHR_ID.parse().expect("valid ehr uuid");
+    let ehr_id: ehrbase::ids::EhrId = EHR_ID.parse().expect("valid ehr uuid");
     svc.create_ehr_with_id(ehr_id, None)
         .await
         .expect("create ehr");

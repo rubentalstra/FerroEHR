@@ -24,7 +24,7 @@
 //!   through the storage codec (`node_repo::read_version_canonical` /
 //!   `decompose` + `write_nodes`).
 //! - **[`archive`]** marks EHR/party versioned objects archived; the physical
-//!   cold-tier storage movement is a spec-silent PERF(port) item (see the PORT
+//!   cold-tier storage movement is a spec-silent TODO(perf) item (see the PORT
 //!   NOTE there).
 
 mod archive;
@@ -64,7 +64,7 @@ fn parse_uuid_list(raw: &[String], label: &str) -> Result<Vec<Uuid>, SmError> {
 /// (SM `Interval<Iso8601_date_time>`; the invalid-date failure is the
 /// boundary's).
 ///
-/// PORT NOTE (`i_admin_service.adoc` types the range as
+/// NOTE (`i_admin_service.adoc` types the range as
 /// `Interval<Iso8601_date_time>` with no inclusivity stated): the interval is
 /// treated as **closed** `[lo, hi]` — the default openEHR `Interval` bound
 /// inclusivity — an SM-silent, documented realization of our own.

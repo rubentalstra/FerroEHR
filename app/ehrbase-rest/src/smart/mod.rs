@@ -17,7 +17,7 @@
 //!
 //! Registration (master03), token issuance/grants/PKCE (master06), and
 //! launch-sequence UI (master07) are Authorization-Server/Launcher duties —
-//! out of scope for a CDR, recorded as PORT NOTEs in the register.
+//! out of scope for a CDR, recorded as NOTEs in the register.
 //! Config-gated ([`config`]): off by default, zero wire drift when disabled.
 
 pub mod discovery;

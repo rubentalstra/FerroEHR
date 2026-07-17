@@ -25,7 +25,7 @@ pub const RFC_3881: &str = "RFC-3881";
 // the CDR varies the `originalText` per resource
 // (composition/contribution/directory/query) while keeping the DICOM `csd-code`
 // 110110 — the varied-display pattern the DICOM EventID coding permits.
-// PORT NOTE: query execution could use the distinct DICOM EventID 110112
+// NOTE: query execution could use the distinct DICOM EventID 110112
 // ("Query", DICOM PS3.15 §A.5.1); we group it under the data-op "Patient
 // Record" family with originalText="query" so all clinical-data access shares
 // one EventID and is distinguished by display text.
@@ -192,13 +192,13 @@ impl AtnaObject for ObjectClass {
             ObjectClass::Contribution => (EVENT_PATIENT_RECORD_CODE, "contribution"),
             ObjectClass::Directory => (EVENT_PATIENT_RECORD_CODE, "directory"),
             ObjectClass::Query => (EVENT_PATIENT_RECORD_CODE, "query"),
-            // PORT NOTE: DICOM PS3.15 §A.5.1 lists no EventID for template
+            // NOTE: DICOM PS3.15 §A.5.1 lists no EventID for template
             // provisioning; templates are definitional metadata, not patient
             // data, so they use the Application-Activity code (110100) with
             // `originalText="template"` — the varied-display pattern DICOM
             // EventID coding permits.
             ObjectClass::Template => (EVENT_APPLICATION_ACTIVITY_CODE, "template"),
-            // PORT NOTE: demographic parties are person-identifiable, so they
+            // NOTE: demographic parties are person-identifiable, so they
             // use the Patient-Record code (110110, DICOM PS3.15 §A.5.1) with
             // `originalText="demographic"` (same varied-display pattern).
             ObjectClass::Demographic => (EVENT_PATIENT_RECORD_CODE, "demographic"),
@@ -209,7 +209,7 @@ impl AtnaObject for ObjectClass {
             // emits this class on a completed export/import
             // (`EhrbaseService::emit_extract_audit`), carrying the direction in
             // the event's `EventActionCode` (`Read` out / `Create` in).
-            // PORT NOTE: DICOM PS3.15 §A.5.1 also defines dedicated Export
+            // NOTE: DICOM PS3.15 §A.5.1 also defines dedicated Export
             // (110106) / Import (110107) EventIDs; a direction-aware `EventID`
             // rendering could adopt them, but `ObjectClass` carries no direction
             // and the action code already records it, so we keep the single

@@ -27,7 +27,6 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
@@ -140,7 +139,7 @@ async fn tdd_import_rejects_unknown_ehr() {
     let svc = EhrbaseService::new(pg.migrated_pool("tdd_no_ehr").await);
 
     let err = svc
-        .import_tdd(Uuid::now_v7(), tdd("persistent_minimal.en.v1__full.xml"))
+        .import_tdd(ehrbase::ids::EhrId::new(), tdd("persistent_minimal.en.v1__full.xml"))
         .await
         .expect_err("a TDD for a non-existent EHR must be rejected");
     assert_eq!(
@@ -217,7 +216,7 @@ async fn tdd_import_commits_composition() {
         .split("::")
         .next()
         .unwrap()
-        .parse::<Uuid>()
+        .parse::<ehrbase::ids::VoId>()
         .expect("vo uuid");
     let comp = svc
         .get_composition_latest(ehr, vo_uuid)

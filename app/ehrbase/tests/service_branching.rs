@@ -198,7 +198,7 @@ fn first_version_uid(contribution: &Value) -> String {
 /// `EXTRACT_VERSION_SPEC.include_all_versions`) — the full-tree copy the
 /// latest-only `export_ehrs` deliberately is not (latest = the latest TRUNK
 /// version, master06).
-fn all_versions_spec(ehr: Uuid) -> Value {
+fn all_versions_spec(ehr: ehrbase::ids::EhrId) -> Value {
     json!({
         "_type": "EXTRACT_SPEC",
         "version_spec": {
@@ -266,8 +266,12 @@ async fn foreign_extract(svc: &EhrbaseService) -> (Value, String) {
 
 /// Import the foreign extract into a fresh EHR id on `svc`, returning
 /// (target ehr id, composition vo id).
-async fn import_foreign(svc: &EhrbaseService, extract: Value, vo: &str) -> (Uuid, Uuid) {
-    let target = Uuid::now_v7();
+async fn import_foreign(
+    svc: &EhrbaseService,
+    extract: Value,
+    vo: &str,
+) -> (ehrbase::ids::EhrId, ehrbase::ids::VoId) {
+    let target = ehrbase::ids::EhrId::new();
     svc.import_ehr(
         Some(target),
         serde_json::from_value(extract).expect("EXTRACT deserializes"),
@@ -443,7 +447,7 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
         "the exported version tree must include the branch version"
     );
     let third_svc = EhrbaseService::new(pg.migrated_pool("branch_reimport_third").await);
-    let third = Uuid::now_v7();
+    let third = ehrbase::ids::EhrId::new();
     third_svc
         .import_ehr(
             Some(third),

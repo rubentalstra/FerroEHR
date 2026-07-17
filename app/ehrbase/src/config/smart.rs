@@ -23,7 +23,7 @@ use serde::{Deserialize, Serialize};
 /// and enforces the master08 resource-scope grammar, and binds the master07/09
 /// launch context to the patient compartment. It never issues tokens, registers
 /// clients, or runs the `OAuth2` endpoints (those are Authorization-Server duties
-/// — recorded as PORT NOTEs in `docs/design/its-rest/smart.md` §6).
+/// — recorded as NOTEs in `docs/design/its-rest/smart.md` §6).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SmartConfig {
@@ -67,7 +67,7 @@ pub struct SmartConfig {
     /// `context-openehr-episode` and accepts the `launch/episode` scope +
     /// `episodeId` claim, but applies **no** episode-scoped filtering (openEHR
     /// has no first-class Episode resource yet; master09 states the semantics
-    /// are "currently implementation-defined"). PORT NOTE, `smart.md` §6.
+    /// are "currently implementation-defined"). NOTE, `smart.md` §6.
     #[serde(default)]
     pub episode: EpisodeConfig,
 

@@ -6,7 +6,7 @@
 //! keyed by the input `suffix` / `type`: coded-value membership (unless the list
 //! is open or the code is from an external terminology), numeric range (honoring
 //! `minOp`/`maxOp`), and string patterns. Temporal ranges and decimal precision
-//! are intentionally not checked here (`// PORT NOTE:` — RM well-formedness of
+//! are intentionally not checked here (`// NOTE:` — RM well-formedness of
 //! date/time/duration values is covered by the RM-invariant pass; precise
 //! temporal-range and precision semantics are deferred).
 
@@ -770,7 +770,7 @@ fn check_string_constraints(
 /// `fancy-regex` PCRE engine is the fallback for real-world patterns using
 /// features `regex` rejects (e.g. backreferences).
 ///
-/// PORT NOTE: fail-closed is spec-mandated for a *non-match*, but a
+/// NOTE: fail-closed is spec-mandated for a *non-match*, but a
 /// pattern **neither** engine can compile cannot be evaluated at all. Rather
 /// than reject a value against an uninterpretable constraint (which would
 /// over-reject valid data on an engine limitation, not a spec violation), such a
@@ -807,7 +807,7 @@ fn as_f64(v: &Value) -> Option<f64> {
 
 /// Whether `value` satisfies a `WebTemplate` numeric range (honoring the
 /// inclusive/exclusive `minOp`/`maxOp`; missing bounds are unbounded).
-// PORT NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
+// NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
 // boundary openness as `minOp`/`maxOp` (`>`/`<` = excluded bound), so this
 // check realizes BASE `Interval.has(v)` semantics
 // (org.openehr.base.foundation_types.interval.adoc) over the WebTemplate range

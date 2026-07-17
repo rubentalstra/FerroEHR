@@ -152,7 +152,7 @@ async fn archetype_errors() {
     let svc = EhrbaseService::new(pg.migrated_pool("def_arch_err").await);
 
     // Invalid ADL → 422 invalid_archetype.
-    // PORT NOTE: the SM-specific Definition statuses (invalid_archetype,
+    // NOTE: the SM-specific Definition statuses (invalid_archetype,
     // artefact_does_not_exist, invalid_id_pattern, …) are flattened through the
     // service's `ServiceError::sm()` → `From<ServiceError> for SmError` round-trip
     // to the generic `content_invalid` (422) / `versioned_object_does_not_exist`
@@ -249,7 +249,7 @@ async fn opt_upload_has_get_list_match_delete() {
     assert_eq!(got, xml, "stored OPT XML is byte-identical");
 
     // list_matching_opts matches on the template_id (spec return-type defect —
-    // we return template ids, per the PORT NOTE).
+    // we return template ids, per the NOTE).
     let matched = svc
         .list_matching_opts("IDCR.*Allergies".to_owned(), Page::all())
         .await
@@ -415,7 +415,7 @@ async fn opt_errors() {
         .upload_opt("<not-a-template/>".to_owned())
         .await
         .expect_err("invalid opt");
-    // PORT NOTE: the OPT ingestion path returns `ServiceError::Unprocessable`,
+    // NOTE: the OPT ingestion path returns `ServiceError::Unprocessable`,
     // flattened at the SM boundary to `content_invalid`.
     assert!(
         matches!(
@@ -821,7 +821,7 @@ async fn query_valid_store_list_match_delete() {
 async fn query_store_set_not_implemented() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("def_query_set").await);
-    // store_query_set is a spec TODO → 501 (trait default, PORT NOTE).
+    // store_query_set is a spec TODO → 501 (trait default, NOTE).
     let err = svc.store_query_set(None).expect_err("not implemented");
     assert!(
         matches!(

@@ -37,7 +37,7 @@
 //! same `template_store` table directly; this module deliberately does **not**
 //! duplicate them.
 //!
-//! # PORT NOTE residue (register: `docs/design/platform/10-templates.md`)
+//! # NOTE residue (register: `docs/design/platform/10-templates.md`)
 //!
 //! - **G-T06** — the `WebTemplate` JSON *format* is the Better `web-template`
 //!   SDT format, **not** openEHR-normative; kept in `openehr-flat`, never

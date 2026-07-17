@@ -12,7 +12,7 @@
 //!   `term_code.adoc`, `defined_term.adoc`, `term_relationship.adoc`,
 //!   `terminology_relation.adoc` — the extract data model.
 //!
-//! PORT NOTE (temporal): the SM `at_date` parameter (an `Iso8601_date`)
+//! NOTE (temporal): the SM `at_date` parameter (an `Iso8601_date`)
 //! selects the terminology as it stood on a date. Our default provider is the
 //! compile-time, spec-pinned `openehr-term` bundle (a single version — TERM
 //! 3.1.0), so `at_date` is accepted and validated in shape by the caller but
@@ -60,7 +60,7 @@ pub struct DefinedTerm {
     /// `text` (1..1) — text of term.
     pub text: String,
     /// `language` (0..1) — code representing the language (ISO 639 / IETF
-    /// RFC 5646). PORT NOTE: the SM types this as `Terminology_code`; we
+    /// RFC 5646). NOTE: the SM types this as `Terminology_code`; we
     /// carry the bare code string (the native API resolves rubrics per
     /// language directly against the `openehr-term` bundle).
     pub language: Option<String>,
@@ -112,7 +112,7 @@ pub struct TerminologyRelation {
     /// `local_code` (0..1) — local code defining this relation.
     pub local_code: Option<String>,
     /// `external_code` (0..1) — code from another terminology that defines a
-    /// relation used by this terminology. PORT NOTE: the SM types this as
+    /// relation used by this terminology. NOTE: the SM types this as
     /// `Terminology_code`; carried here as the bare code string.
     pub external_code: Option<String>,
 }

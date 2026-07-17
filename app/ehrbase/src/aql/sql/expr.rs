@@ -198,7 +198,7 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 /// predicate is the case-folded equality on `archetype`, served by the
 /// `idx_node_archetype_lower` functional index — unchanged.
 //
-// PORT NOTE: QUERY master03 §Archetype predicate literally equates the predicate
+// NOTE: QUERY master03 §Archetype predicate literally equates the predicate
 // to `archetype_node_id = '<literal>'` string equality; we implement the BASE/AM
 // subsumption + interface-reference semantics instead, because a query naming a
 // parent archetype MUST retrieve data created with its specialisation children

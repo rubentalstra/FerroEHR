@@ -216,7 +216,7 @@ pub(crate) async fn enforce(
     let subject = principal.as_ref().map(|p| p.subject.as_str());
     let roles = principal.as_ref().map_or(&[][..], |p| p.roles.as_slice());
 
-    let settings = match state.backend().current_ehr_access_settings(ehr_id).await {
+    let settings = match state.backend().current_ehr_access_settings(ehrbase::ids::EhrId(ehr_id)).await {
         Ok(s) => s,
         Err(e) => {
             return Err(server_error(

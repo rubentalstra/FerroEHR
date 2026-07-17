@@ -14,7 +14,7 @@
 //! `*_invalid` pair plus mutations of valid corpus compositions) must be rejected
 //! with a sensible path + kind.
 //!
-//! PORT NOTE — why the CNF `test_data_sets` are not vendored here: the openEHR
+//! NOTE — why the CNF `test_data_sets` are not vendored here: the openEHR
 //! `specifications-CNF` repository is licensed **CC BY-SA 3.0** (a copyleft /
 //! share-alike license — checked at vendoring time), which is incompatible with
 //! vendoring verbatim into this workspace's fixture tree the way the existing

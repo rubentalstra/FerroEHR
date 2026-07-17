@@ -8,7 +8,7 @@
 //!   computed function satisfies by construction).
 //! - Inherited LOCATABLE `Archetype_node_id_valid`.
 //!
-//! PORT NOTE: `Math_function_validity` (the `math_function` code must belong
+//! NOTE: `Math_function_validity` (the `math_function` code must belong
 //! to the openEHR `event math function` group) is terminology-bound and is
 //! deferred to the composition validator + `openehr-term` (this crate has no
 //! terminology dependency), consistent with the crate-wide policy in

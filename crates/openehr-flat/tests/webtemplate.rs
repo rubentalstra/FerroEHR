@@ -192,15 +192,10 @@ fn every_opt_builds_a_web_template() {
 fn golden(name: &str) {
     let path = better_fixtures_dir().join(name);
     let wt = build_from_file(&path).unwrap_or_else(|e| panic!("build {name}: {e}"));
-    // WebTemplate output is deterministic — no volatile fields to redact. The
-    // `ehrbase-quirks` feature changes the duplicate-id suffix form at compile
-    // time (`name_1` spec form vs Better-compatible `name2` — webtemplate/id.rs),
-    // so each configuration pins its own snapshot.
-    let snapshot = if cfg!(feature = "ehrbase-quirks") {
-        format!("{}__quirks", name.replace(['.', ' '], "_"))
-    } else {
-        name.replace(['.', ' '], "_")
-    };
+    // WebTemplate output is deterministic — no volatile fields to redact.
+    // Duplicate ids take the spec suffix form (`name_1`, master04 §Node ID
+    // Generation Rules); there is no vendor-quirk variant.
+    let snapshot = name.replace(['.', ' '], "_");
     insta::assert_json_snapshot!(snapshot, wt);
 }
 

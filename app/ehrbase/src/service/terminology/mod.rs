@@ -32,7 +32,7 @@
 //! - **Enumeration** (`get_terminology_ids`, `has_terminology`,
 //!   `get_terminology_description`) is answered **only by the bundle** — a
 //!   FHIR TS is a validation/expansion backend, not an enumerable openEHR
-//!   terminology (`fhir.rs` PORT NOTE). A FHIR-only deployment still answers
+//!   terminology (`fhir.rs` NOTE). A FHIR-only deployment still answers
 //!   these.
 //! - **Lookup / validation** (`has_term`, `get_term`, `subsumes`,
 //!   `value_set_validate`, `has_value_set`, `get_value_set`) is answered by

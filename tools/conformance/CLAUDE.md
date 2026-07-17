@@ -1,9 +1,9 @@
 # `conformance` — the ECC runner (tooling, not part of the app)
 
 **Our own conformance framework** (ECC): own case numbering/taxonomy, own
-generated data sets, latest-spec-versions-only. It is the ADR-008
-acceptance instrument — never map cases to, or import from, the legacy
-Robot/Python CNF suites.
+generated data sets, latest-spec-versions-only. It is the project's
+acceptance instrument for openEHR conformance — never map cases to, or
+import from, the legacy Robot/Python CNF suites.
 
 - **Spine-first authoring (owner ruling):** every case's expectation
   traces to the CNF schedule / ITS-REST spec text
@@ -12,7 +12,7 @@ Robot/Python CNF suites.
   outcome, not a bug in the case.
 - **Corpus/golden defects are handled ONLY via the adjudication registers**
   (`adjudications/`, skip-with-reason, recorded in the report) — never by
-  editing a case to pass (blueprint §4 rule 3).
+  editing a case to pass.
 - Every case carries citation + schedule trace + binding (the derivation-
   square guard enforces this); no id literals, no silent fallbacks.
 - Runs against a deployed SUT over HTTP only (`scripts/conformance.sh`;

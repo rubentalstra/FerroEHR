@@ -15,7 +15,7 @@
 //!   performance and to guarantee only validated artefacts run. Our derived
 //!   form is the [`WebTemplate`], memoised in a `moka` cache.
 //!
-//! PORT NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
+//! NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
 //! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
 //! `web-template` SDT format and lives entirely in `openehr-flat` (a
 //! hand-written spec-adjacent crate). This module only *stores, resolves, and
@@ -97,7 +97,7 @@ impl EhrbaseService {
     /// Generate an example COMPOSITION for a stored operational template
     /// (`GET /definition/template/adl1.4/{template_id}/example`).
     ///
-    /// PORT NOTE: example generation is **not spec-mandated** — it is a
+    /// NOTE: example generation is **not spec-mandated** — it is a
     /// convenience surface. The example is produced from the template's (cached)
     /// [`WebTemplate`] by
     /// [`example_composition`](openehr_flat::example::example_composition) at the

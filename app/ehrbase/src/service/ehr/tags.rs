@@ -15,7 +15,6 @@
 use crate::ids::{EhrId, VoId};
 use crate::service::status::SmError;
 use serde_json::{Value, json};
-use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;

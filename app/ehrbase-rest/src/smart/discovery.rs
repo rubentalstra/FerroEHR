@@ -7,7 +7,7 @@
 //! required `org.openehr.rest`), the SMART `capabilities`, and the enforced
 //! scope set. The document is **assembled from [`super::config::SmartConfig`]**
 //! — the CDR advertises only what it (or its configured AS) actually offers; it
-//! implements none of the `OAuth2` endpoints (`smart.md` §1/§6 PORT NOTEs).
+//! implements none of the `OAuth2` endpoints (`smart.md` §1/§6 NOTEs).
 //!
 //! The response is `application/json` (master04 §Service Discovery, R-02) and is
 //! served **pre-auth**, on the same seam as the status router

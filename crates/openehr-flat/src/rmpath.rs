@@ -56,7 +56,7 @@ pub(crate) fn navigate<'a>(roots: &[&'a Value], segs: &[PathSegment]) -> Vec<&'a
 
 /// One template-path step with a conditional name fallback.
 ///
-/// PORT NOTE (template-name predicates): the paths fed here are
+/// NOTE (template-name predicates): the paths fed here are
 /// **template-derived** (`WebTemplateNode.aqlPath`), so a `[atNNNN,'name']`
 /// name conjunct carries the *template's* term text. RM `LOCATABLE.name` is a
 /// runtime attribute an instance may legitimately redefine when the archetype

@@ -15,7 +15,6 @@ use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
@@ -382,7 +381,7 @@ impl EhrbaseService {
     /// (`N` or `N.B.V`); `None` = the current version. The ABAC template
     /// attribute for the access pre-checks / any per-version resolver.
     ///
-    /// PERF(port): goes through the full version read-back for spec fidelity;
+    /// TODO(perf): goes through the full version read-back for spec fidelity;
     /// a direct `SELECT template_id FROM vo_version` is a cheaper equivalent
     /// if this ever shows on a hot path.
     ///
@@ -410,7 +409,7 @@ impl EhrbaseService {
     /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a
     /// `523|deleted|` version of the addressed COMPOSITION (RM common master06
     /// §Logical Deletion), returning the (now deleted) version identity
-    /// (`204_COMPOSITION_deleted`). PORT NOTE: takes the full
+    /// (`204_COMPOSITION_deleted`). NOTE: takes the full
     /// `OBJECT_VERSION_ID` — the mandatory `preceding_version_uid`
     /// (`composition_delete.yaml`) — stronger than the SM's `UUID`; the SM is
     /// internally inconsistent (`has_composition` takes `OBJECT_VERSION_ID`).

@@ -32,7 +32,7 @@ pub(super) fn emit_identifier(rm: &Value, out: &mut SimNode) {
 /// A DV_IDENTIFIER from `|id` (or, per master05 §DV_IDENTIFIER "for the input
 /// |id might be left out", the bare value) plus the optional `|issuer` /
 /// `|assigner` / `|type`.
-pub(super) fn build_identifier(node: &SimNode) -> Option<Value> {
+pub(super) fn build_identifier(node: &SimNode) -> Value {
     let id = node
         .attrs
         .get("id")
@@ -49,14 +49,14 @@ pub(super) fn build_identifier(node: &SimNode) -> Option<Value> {
             o.insert(field.to_owned(), v.clone());
         }
     }
-    Some(Value::Object(o))
+    Value::Object(o)
 }
 
 // ── OBJECT_REF (master05 §OBJECT_REF) ─────────────────────────────────────────
 
 /// OBJECT_REF → `|type`/`|id`/`|id_scheme`/`|namespace` attrs on `out`.
 ///
-/// PORT NOTE: master05 §OBJECT_REF's table row is `|scheme` (→ `id.scheme`), but
+/// NOTE: master05 §OBJECT_REF's table row is `|scheme` (→ `id.scheme`), but
 /// every spec example carries `|id_scheme` (e.g. INSTRUCTION `_guideline_id`,
 /// master05 §INSTRUCTION). The example blocks are the wire authority, so this
 /// emits `|id_scheme`; [`build_object_ref`] accepts either.
@@ -124,7 +124,10 @@ pub(super) fn emit_party(p: &Value, out: &mut SimNode) {
     }
     if let Some(ids) = p.get("identifiers").and_then(Value::as_array) {
         for (i, id) in ids.iter().enumerate() {
-            emit_identifier(id, out.occurrence_mut("_identifier", Some(i as u32)));
+            emit_identifier(
+                id,
+                out.occurrence_mut("_identifier", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+            );
         }
     }
     if let Some(rel) = p.get("relationship").filter(|v| !v.is_null()) {
@@ -215,7 +218,7 @@ fn build_party_identifiers(node: &SimNode) -> Vec<Value> {
             c.occurrences
                 .iter()
                 .filter(|o| !o.is_empty())
-                .filter_map(build_identifier)
+                .map(build_identifier)
                 .collect()
         })
         .unwrap_or_default()
@@ -387,7 +390,7 @@ mod tests {
         assert_eq!(out.attrs.get("type"), Some(&json!("Prescription")));
 
         let bare = node_of(&[("", json!("A123"))]);
-        let dv = build_identifier(&bare).unwrap();
+        let dv = build_identifier(&bare);
         assert_eq!(dv["id"], json!("A123"));
     }
 

@@ -18,7 +18,7 @@
 //! function `openehr_rm::…::version_impl::canonical_form_of_json`, so a mismatch
 //! is a genuine integrity finding.
 //
-// PORT NOTE: register 11 G-3 (canonical-form version ladder) is unmet — the
+// NOTE: register 11 G-3 (canonical-form version ladder) is unmet — the
 // recompute basis is RM 1.2.0-shaped; a SUT signing an RM-1.1.0-era version
 // would fail the recompute even if its digest is internally correct. A
 // per-edition recompute basis belongs to the register-90 wire adapter.

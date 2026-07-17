@@ -14,13 +14,13 @@
 //!   `TEMPLATE_ID` identifies a template; equality follows the §Composite
 //!   Identifiers and Case rule (G-T04, see [`crate::templates::identity`]).
 //!
-//! PORT NOTE (G-T07 — dual identity): the `template_store` row carries **both**
+//! NOTE (G-T07 — dual identity): the `template_store` row carries **both**
 //! a surrogate `UUID` handle (the SM `I_DEFINITION_ADL14` OPT key,
 //! `service/definition/adl14.rs`) and the wire `template_id` string (the
 //! ITS-REST `adl1.4/{template_id}` address). Both are load-bearing; the DB
 //! schema is spec-silent by construction ("no openEHR spec governs SQL").
 //!
-//! PORT NOTE: the `template_store` DDL is owned by the storage layer
+//! NOTE: the `template_store` DDL is owned by the storage layer
 //! (`crate::storage`, register 02). This module only reads/writes rows.
 
 use serde_json::{Value, json};

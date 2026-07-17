@@ -50,7 +50,7 @@ pub(super) async fn run(
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
-                .get_ehr_status_at_version(ehr_id, vo_id, &version)
+                .get_ehr_status_at_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
             let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
             Ok(negotiate::read_rm::<EhrStatus>(

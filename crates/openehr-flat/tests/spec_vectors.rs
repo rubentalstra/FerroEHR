@@ -31,6 +31,7 @@
 //! numbers, and timestamps). Tests are deterministic — the one building
 //! direction uses a fixed `NOW`.
 #![allow(
+    clippy::panic,
     clippy::doc_markdown,
     clippy::too_many_lines,
     clippy::unreadable_literal,
@@ -115,7 +116,7 @@ fn assert_structured_vector(json: &str) {
 /// `composition_from_flat` seam without a full OPT.
 fn coded_leaf_wt(list_open: bool) -> WebTemplate {
     let mut root = WebTemplateNode::new("COMPOSITION".to_owned(), String::new());
-    root.id = "test".to_owned();
+    "test".clone_into(&mut root.id);
     root.min = Some(1);
     root.max = 1;
 
@@ -125,7 +126,7 @@ fn coded_leaf_wt(list_open: bool) -> WebTemplate {
          /data[at0003]/items[at0004]/value"
             .to_owned(),
     );
-    leaf.id = "coded".to_owned();
+    "coded".clone_into(&mut leaf.id);
     leaf.min = Some(0);
     leaf.max = 1;
     let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("code"));

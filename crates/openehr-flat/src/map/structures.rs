@@ -33,7 +33,10 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
         }
         if let Some(links) = rm.get("links").and_then(Value::as_array) {
             for (i, link) in links.iter().enumerate() {
-                emit_link(link, out.occurrence_mut("_link", Some(i as u32)));
+                emit_link(
+                    link,
+                    out.occurrence_mut("_link", Some(u32::try_from(i).unwrap_or(u32::MAX))),
+                );
             }
         }
         if let Some(fa) = rm.get("feeder_audit").filter(|v| !v.is_null()) {
@@ -74,7 +77,10 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
                 for (i, p) in parts.iter().enumerate() {
                     parties::emit_participation(
                         p,
-                        out.occurrence_mut("_other_participation", Some(i as u32)),
+                        out.occurrence_mut(
+                            "_other_participation",
+                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
+                        ),
                     );
                 }
             }
@@ -105,7 +111,13 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
         "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
             if let Some(ids) = rm.get("identifiers").and_then(Value::as_array) {
                 for (i, id) in ids.iter().enumerate() {
-                    parties::emit_identifier(id, out.occurrence_mut("_identifier", Some(i as u32)));
+                    parties::emit_identifier(
+                        id,
+                        out.occurrence_mut(
+                            "_identifier",
+                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
+                        ),
+                    );
                 }
             }
         }
@@ -116,7 +128,7 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
                         r,
                         "DV_TEXT",
                         None,
-                        out.occurrence_mut("_reason", Some(i as u32)),
+                        out.occurrence_mut("_reason", Some(u32::try_from(i).unwrap_or(u32::MAX))),
                     );
                 }
             }
@@ -146,7 +158,10 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
                 for (i, p) in parts.iter().enumerate() {
                     parties::emit_participation(
                         p,
-                        out.occurrence_mut("_participation", Some(i as u32)),
+                        out.occurrence_mut(
+                            "_participation",
+                            Some(u32::try_from(i).unwrap_or(u32::MAX)),
+                        ),
                     );
                 }
             }
@@ -216,7 +231,10 @@ fn emit_feeder_audit(fa: &Value, out: &mut SimNode) {
     ] {
         if let Some(ids) = fa.get(arr_key).and_then(Value::as_array) {
             for (i, id) in ids.iter().enumerate() {
-                parties::emit_identifier(id, out.occurrence_mut(seg, Some(i as u32)));
+                parties::emit_identifier(
+                    id,
+                    out.occurrence_mut(seg, Some(u32::try_from(i).unwrap_or(u32::MAX))),
+                );
             }
         }
     }
@@ -321,10 +339,7 @@ pub(super) fn build_rm_attr(
             .map(|v| ("wf_definition".to_owned(), v)),
         "identifier" => Some((
             "identifiers".to_owned(),
-            Value::Array(build_each(occurrences, |o| {
-                parties::build_identifier(o)
-                    .unwrap_or_else(|| json!({"_type": "DV_IDENTIFIER", "id": ""}))
-            })),
+            Value::Array(build_each(occurrences, parties::build_identifier)),
         )),
         "reason" => Some((
             "reason".to_owned(),
@@ -455,10 +470,7 @@ fn build_feeder_audit(node: &SimNode) -> Value {
         ("feeder_system_item_id", "feeder_system_item_ids"),
     ] {
         if let Some(child) = node.children.get(seg) {
-            let ids = build_each(&child.occurrences, |o| {
-                parties::build_identifier(o)
-                    .unwrap_or_else(|| json!({"_type": "DV_IDENTIFIER", "id": ""}))
-            });
+            let ids = build_each(&child.occurrences, parties::build_identifier);
             if !ids.is_empty() {
                 fa.insert(key.to_owned(), Value::Array(ids));
             }

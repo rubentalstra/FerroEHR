@@ -124,11 +124,7 @@ fn compositions() -> Vec<(String, String, Value)> {
     out
 }
 
-fn to_map(m: &indexmap::IndexMap<String, Value>) -> serde_json::Map<String, Value> {
-    m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
-fn sorted(m: &indexmap::IndexMap<String, Value>) -> BTreeMap<String, Value> {
+fn sorted(m: &serde_json::Map<String, Value>) -> BTreeMap<String, Value> {
     m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
@@ -158,7 +154,7 @@ fn flat_roundtrip_stable() {
                 continue;
             }
         };
-        let rm1 = match composition_from_flat(&to_map(&flat0), wt, NOW) {
+        let rm1 = match composition_from_flat(&flat0, wt, NOW) {
             Ok(v) => v,
             Err(e) => {
                 failures.push(format!("{name}: from_flat: {e}"));
@@ -327,7 +323,7 @@ fn instruction_activity_from_flat_is_valid_rm() {
         .expect("minimal_instruction web template");
     let comp = load("minimal_instruction.json");
     let rm =
-        composition_from_flat(&to_map(&composition_to_flat(&comp, wt).unwrap()), wt, NOW).unwrap();
+        composition_from_flat(&composition_to_flat(&comp, wt).unwrap(), wt, NOW).unwrap();
     assert!(
         is_valid_rm(&rm),
         "minimal_instruction from_flat must deserialise as openehr-rm: {rm}"
@@ -356,7 +352,7 @@ fn ctx_participation_shortcuts_round_trip() {
         "participation ctx emitted: {:?}",
         flat0.keys().collect::<Vec<_>>()
     );
-    let rm = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
+    let rm = composition_from_flat(&flat0, wt, NOW).unwrap();
     assert!(
         rm.pointer("/context/participations/0/performer").is_some(),
         "participations rebuilt in context: {rm}"
@@ -383,7 +379,7 @@ fn ctx_health_care_facility_round_trips() {
         flat0.contains_key("ctx/health_care_facility|name"),
         "health_care_facility ctx emitted"
     );
-    let rm = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
+    let rm = composition_from_flat(&flat0, wt, NOW).unwrap();
     assert_eq!(
         rm.pointer("/context/health_care_facility/name"),
         comp.pointer("/context/health_care_facility/name"),
@@ -410,7 +406,7 @@ fn multimedia_and_parsable_leaves_are_valid_rm() {
         "DV_MULTIMEDIA emits |size: {:?}",
         flat.keys().collect::<Vec<_>>()
     );
-    let rm = composition_from_flat(&to_map(&flat), wt, NOW).unwrap();
+    let rm = composition_from_flat(&flat, wt, NOW).unwrap();
     assert!(is_valid_rm(&rm), "multimedia from_flat valid RM: {rm}");
 }
 
@@ -453,15 +449,15 @@ fn terse_coded_text_parses() {
         .unwrap_or("")
         .to_owned();
     let mut terse = flat0.clone();
-    terse.shift_remove(&code_key);
-    terse.shift_remove(&format!("{base}|terminology"));
-    terse.shift_remove(&format!("{base}|value"));
+    terse.remove(&code_key);
+    terse.remove(&format!("{base}|terminology"));
+    terse.remove(&format!("{base}|value"));
     terse.insert(
         base.clone(),
         serde_json::Value::String(format!("{terminology}::{code}|{value}|")),
     );
-    let rm = composition_from_flat(&to_map(&terse), wt, NOW).expect("terse coded form parses");
-    let rm_regular = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
+    let rm = composition_from_flat(&terse, wt, NOW).expect("terse coded form parses");
+    let rm_regular = composition_from_flat(&flat0, wt, NOW).unwrap();
     assert_eq!(
         rm, rm_regular,
         "the terse and regular coded forms build the identical RM"
@@ -511,7 +507,7 @@ fn persistent_composition_round_trip_synthesises_no_context() {
 
     let wt = persistent_wt();
     let flat = composition_to_flat(&comp, &wt).expect("to_flat");
-    let rebuilt = composition_from_flat(&to_map(&flat), &wt, NOW).expect("from_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("431".to_owned())),

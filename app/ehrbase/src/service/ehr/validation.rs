@@ -14,7 +14,6 @@
 
 use serde_json::Value;
 use sqlx::PgConnection;
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
@@ -26,7 +25,7 @@ impl EhrbaseService {
     /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may
     /// hold only one *live* persistent COMPOSITION per template.
     ///
-    /// PORT NOTE: the openEHR RM does **not** define this cardinality — the CNF
+    /// NOTE: the openEHR RM does **not** define this cardinality — the CNF
     /// schedule records it as "under debate in the openEHR SEC … due to the
     /// lack of information in the openEHR specifications"
     /// (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
@@ -48,7 +47,7 @@ impl EhrbaseService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // PERF(port): scans the EHR's live COMPOSITIONs and reassembles each to
+        // TODO(perf): scans the EHR's live COMPOSITIONs and reassembles each to
         // read its category + template (template_id is not promoted onto
         // vo_version). An EHR holds few persistent compositions.
         let vo_ids = crate::storage::version_repo::meta::current_vo_ids(

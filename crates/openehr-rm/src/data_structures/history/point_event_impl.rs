@@ -5,7 +5,7 @@
 //! `POINT_EVENT` declares no own invariants; the inherited LOCATABLE
 //! `Archetype_node_id_valid` applies.
 //!
-//! PORT NOTE: the inherited `EVENT.Offset_validity1`
+//! NOTE: the inherited `EVENT.Offset_validity1`
 //! (`offset = time.diff(parent.origin)`) constrains the *computed* `offset()`
 //! function against the (unstored) parent origin — with `offset` realised as
 //! [`Event::offset_from`](crate::data_structures::history::event::Event)

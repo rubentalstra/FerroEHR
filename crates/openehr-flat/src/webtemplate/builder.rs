@@ -237,7 +237,7 @@ pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crat
 
     Ok(WebTemplate {
         template_id,
-        // PORT NOTE: OPT 1.4 has no semantic-version field (semVer is an ADL2/OPT2
+        // NOTE: OPT 1.4 has no semantic-version field (semVer is an ADL2/OPT2
         // concept), so the 1.4 adapter always emits `null` — matching what stock
         // tooling produces for a 1.4 template. A value would only appear for OPT 2.
         sem_ver: None,
@@ -897,7 +897,7 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
 /// node — master04 §"Field Identifiers" — and is matched by the archetype-node
 /// predicate instead).
 ///
-/// PORT NOTE: AOM 1.4 (`master04-constraint_model_package.adoc` §existence) makes
+/// NOTE: AOM 1.4 (`master04-constraint_model_package.adoc` §existence) makes
 /// existence "always required" with an unstated default of `{1..1}`; the OPT XML
 /// always serialises it, and we honour the declared value (biasing toward
 /// confident violations — an unstated/`{0..1}` existence is not enforced).

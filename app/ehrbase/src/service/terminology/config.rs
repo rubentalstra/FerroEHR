@@ -118,7 +118,7 @@ pub struct FhirProviderConfig {
     /// Optional name of an `OAuth2` client-credentials client to authenticate
     /// to the TS with.
     ///
-    /// PORT NOTE: `OAuth2` client-credentials + mutual-TLS to the TS
+    /// NOTE: `OAuth2` client-credentials + mutual-TLS to the TS
     /// (`docs/terminology-validation.md` §3) are a follow-up on top of this
     /// core `$validate-code`/`$expand`/`$subsumes`/`$lookup` provider; the
     /// field is accepted so config written for the full design parses, but no

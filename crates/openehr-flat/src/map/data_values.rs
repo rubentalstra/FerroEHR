@@ -182,7 +182,7 @@ pub(super) fn emit_leaf(rm: &Value, rm_type: &str, list_open: Option<bool>, out:
         // `/_thumbnail`, `/_charset`, `/_language` are `_`-attribute sub-paths.
         "DV_MULTIMEDIA" => emit_multimedia(rm, out),
         // master05 §DV_INTERVAL: a leaf interval whose `/lower`/`/upper`
-        // endpoints are sub-paths (children). PORT NOTE: this is the one leaf
+        // endpoints are sub-paths (children). NOTE: this is the one leaf
         // type whose datum is not attrs-only — `emit_leaf` emits its endpoint
         // children here, since master05 §DV_INTERVAL models them as sub-paths.
         "DV_INTERVAL" => {
@@ -268,7 +268,7 @@ fn emit_text_meta(rm: &Value, out: &mut SimNode) {
     emit_code_phrase_sub(rm.get("encoding"), "_encoding", out);
     if let Some(maps) = rm.get("mappings").and_then(Value::as_array) {
         for (i, m) in maps.iter().enumerate() {
-            let child = out.occurrence_mut("_mapping", Some(i as u32));
+            let child = out.occurrence_mut("_mapping", Some(u32::try_from(i).unwrap_or(u32::MAX)));
             put(child, "match", m.get("match"));
             emit_code_phrase_sub(m.get("target"), "target", child);
             if let Some(purpose) = m.get("purpose").filter(|v| !v.is_null()) {
@@ -299,7 +299,10 @@ fn emit_reference_ranges(rm: &Value, t: &str, out: &mut SimNode) {
     }
     if let Some(ranges) = rm.get("other_reference_ranges").and_then(Value::as_array) {
         for (i, r) in ranges.iter().enumerate() {
-            let child = out.occurrence_mut("_other_reference_ranges", Some(i as u32));
+            let child = out.occurrence_mut(
+                "_other_reference_ranges",
+                Some(u32::try_from(i).unwrap_or(u32::MAX)),
+            );
             if let Some(range) = r.get("range") {
                 emit_interval(range, t, child);
             }
@@ -490,7 +493,7 @@ fn build_core(
         "DV_DURATION" => build_amount_temporal(node, base, true),
         "DV_DATE_TIME" | "DV_DATE" | "DV_TIME" => build_amount_temporal(node, base, false),
         "DV_URI" | "DV_EHR_URI" => bare_typed(node, base),
-        "DV_IDENTIFIER" => parties::build_identifier(node),
+        "DV_IDENTIFIER" => Some(parties::build_identifier(node)),
         "DV_MULTIMEDIA" => build_multimedia(node),
         "DV_PARSABLE" => build_parsable(node),
         "DV_INTERVAL" => Some(build_interval(

@@ -9,7 +9,7 @@
 //! factors, `[...]` atom segments, `{...}` annotations, parentheses), not
 //! whether an atom is a registered UCUM unit.
 //!
-//! PORT NOTE (CNF corpus adjudication): commit-time REJECTION of non-UCUM
+//! NOTE (CNF corpus adjudication): commit-time REJECTION of non-UCUM
 //! `DV_QUANTITY.units` is deliberately NOT wired — the CNF's own valid data
 //! sets carry non-UCUM units (`°C`, `mmHg`, `pH`), and the RM declares no
 //! `Units_valid` invariant on `DV_QUANTITY`; template-declared unit

@@ -26,7 +26,7 @@ use openehr_rm::prelude::{DvEhrUri, DvMultimedia, DvText, PartyProxy};
 /// must belong to the openEHR terminology *audit change type* group —
 /// enforced at the service boundary via `openehr-term`, not in this type.
 ///
-/// PORT NOTE (wire): ITS-REST `UpdateAudit.yaml` types `description` as
+/// NOTE (wire): ITS-REST `UpdateAudit.yaml` types `description` as
 /// `UDvText` (plain string or `DV_TEXT`); the SM types it `String [0..1]`.
 /// The native type keeps the SM shape; the adapter coerces a `DV_TEXT`
 /// description to its `value` string.
@@ -57,7 +57,7 @@ pub struct UpdateAudit {
 /// (ITS-REST `specifications/schemas/common/UpdateAttestation.yaml`; extends
 /// `UpdateAudit`).
 ///
-/// PORT NOTE (wire): the SM says attestations are supplied "in their full
+/// NOTE (wire): the SM says attestations are supplied "in their full
 /// form" as RM `ATTESTATION` (master03 §Version Update Semantics), but the
 /// ITS-REST wire carries this **partial** form — the server completes it into
 /// a full RM `ATTESTATION` (adding `time_committed`/`system_id`, like
@@ -102,7 +102,7 @@ pub struct UpdateAttestation {
 /// The spec's per-content derivations (`UV_COMPOSITION` etc.) are the
 /// instantiations of the generic parameter `T`.
 ///
-/// PORT NOTEs (wire; oracle ITS-REST
+/// NOTEs (wire; oracle ITS-REST
 /// `specifications/schemas/common/UpdateVersion.yaml`):
 /// - the wire field for [`Self::audit`] is **`commit_audit`** (serde rename
 ///   below); the native name keeps the SM's `audit`;

@@ -26,7 +26,7 @@
 //! Allocation"); `import_ehr_extract` lands versioned objects into an existing
 //! EHR (Cases 2/3).
 //!
-//! PORT NOTE (re-verify — import scope): imported COMPOSITION content is
+//! NOTE (re-verify — import scope): imported COMPOSITION content is
 //! stored verbatim without re-linking its operational template
 //! (`vo_version.template_id` stays NULL) or re-running WebTemplate/RM validation
 //! — the OPT must already be provisioned in the target through the DEFINITION
@@ -41,7 +41,6 @@
 use std::collections::BTreeMap;
 
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
@@ -101,7 +100,7 @@ impl EhrbaseService {
         // `ehr_create_fail_duplicate_id`. The EHR is created locally, so its
         // immutable `system_id` is ours (master06 §Distributed Versioning — the
         // committing system is the local one).
-        // PORT NOTE (clone-target EHR-row creation; no openEHR spec governs the
+        // NOTE (clone-target EHR-row creation; no openEHR spec governs the
         // storage SQL — our own design): the row insert is inlined here as the
         // master06 §Copying Case-1 clone step rather than routed through the EHR
         // service's `create_ehr`, because a clone must reuse the source EHR id
@@ -303,7 +302,7 @@ fn parse_import_containers(
         {
             match item.get("_type").and_then(Value::as_str) {
                 Some("OPENEHR_CONTENT_ITEM") => {}
-                // PORT NOTE (keep — `master06-generic_extract_package.adoc`
+                // NOTE (keep — `master06-generic_extract_package.adoc`
                 // `GENERIC_CONTENT_ITEM`): ISO 13606 / CDA generic content is
                 // out of this CDR's openEHR-only import scope; a typed reject,
                 // tied to the deferred integration-IM behaviour (BASE

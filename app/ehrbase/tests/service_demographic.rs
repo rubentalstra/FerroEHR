@@ -22,7 +22,6 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
@@ -200,8 +199,8 @@ async fn party_sm_calls_round_trip() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("demographic_sm_calls").await);
 
-    // create_party(UV_PARTY) → the new VERSIONED_OBJECT's UUID.
-    let vo_id: Uuid = svc
+    // create_party(UV_PARTY) → the new VERSIONED_OBJECT's id.
+    let vo_id = svc
         .create_party(uv(&person("Jane"), None))
         .await
         .expect("create_party");
@@ -270,7 +269,7 @@ async fn party_sm_calls_round_trip() {
     );
 
     // A never-seen id: has_party false, get_party 404.
-    let never = Uuid::now_v7();
+    let never = ehrbase::ids::VoId::new();
     assert!(!svc.has_party(never).await.expect("has_party unknown"));
     assert!(svc.get_party(never).await.is_err(), "unknown party → error");
 }

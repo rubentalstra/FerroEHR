@@ -9,7 +9,7 @@
 //! [`types`] = the SM information structures (`RESOURCE_STATUS`,
 //! `RESOURCE_INSTANCE_TYPE`, `LOCATION_DESC`, the `OBJECT_REF` subject key).
 //!
-//! PORT NOTE: index entries are **not** versioned objects — the SM defines no
+//! NOTE: index entries are **not** versioned objects — the SM defines no
 //! versioning for the index — so these are plain SQL writes over the
 //! `ehr_index` table, emitting no CONTRIBUTION/version. No openEHR spec governs
 //! the storage mechanism (our own design); master07 governs the operation
@@ -30,7 +30,6 @@ pub mod types;
 
 use serde_json::{Value, json};
 use sqlx::Row;
-use uuid::Uuid;
 
 use crate::ids::EhrId;
 use crate::service::ehr_index::types::{
@@ -93,7 +92,7 @@ impl From<IndexError> for SmError {
 /// Parse an ISO-8601 date-time string into a Postgres `timestamptz` binding, or
 /// `None`. An unparseable value is a `400`.
 ///
-/// PORT NOTE: `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are typed
+/// NOTE: `RESOURCE_STATUS.start_valid_time`/`end_valid_time` are typed
 /// `@@` (an unresolved placeholder) in the SM — a recorded spec defect
 /// (`resource_status.adoc:20,24`); implemented as ISO date-time strings.
 fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, ServiceError> {
@@ -109,7 +108,7 @@ fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, S
 
 /// Render a [`LocationDesc`] as the stored canonical JSON, or SQL NULL.
 ///
-/// PORT NOTE: `LOCATION_DESC` is an attribute-less stub in the SM
+/// NOTE: `LOCATION_DESC` is an attribute-less stub in the SM
 /// (`location_desc.adoc`) — a recorded spec defect; the designed contract
 /// `{system_id, uri?, description?}` is our own design.
 fn location_json(loc: Option<&LocationDesc>) -> Option<Value> {

@@ -200,7 +200,7 @@ pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Vi
     // terminology.
     if let Some(property) = &c.property
         && property.terminology_id.value.eq_ignore_ascii_case("openehr")
-        // PORT NOTE (prior-art OPT tolerance): Ocean Template Designer emits the
+        // NOTE (prior-art OPT tolerance): Ocean Template Designer emits the
         // placeholder property code "0" for an unconstrained property (the
         // vendored `action test` corpus template) — a placeholder is "no
         // constraint", not a foreign code.

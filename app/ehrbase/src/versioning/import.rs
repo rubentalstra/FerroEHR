@@ -8,7 +8,7 @@
 //! `lifecycle_state`, data, `signature`, `attestations` — is preserved verbatim
 //! ("the `ORIGINAL_VERSION` instance is never modified", master06 §Copying).
 //!
-//! PORT NOTE (G-03, master06 §Committal): the greenfield store holds one row per
+//! NOTE (G-03, master06 §Committal): the greenfield store holds one row per
 //! version (identity + `commit_audit` + data), not a distinct
 //! `IMPORTED_VERSION` wrapper object; the served form is the `ORIGINAL_VERSION`.
 //! The "import" is expressed as (a) the preserved original `commit_audit` +
@@ -186,7 +186,7 @@ pub(crate) async fn commit_demographic_import(
     Ok(())
 }
 
-/// PORT NOTE (local temporal periods, master06 §Copying): all versions of an
+/// NOTE (local temporal periods, master06 §Copying): all versions of an
 /// imported container are committed in the single local import act, so they get
 /// a synthetic strictly-increasing local `sys_period` chain (base = import time,
 /// 1 µs steps) **per lineage** with only each lineage's highest version open.

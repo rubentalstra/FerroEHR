@@ -258,7 +258,7 @@ CREATE TABLE vo_version (
     preceding_version_uid text,
     -- VERSION.signature (RM common §"Digital Signature"): 0..1, opaque radix-64
     -- (OpenPGP RFC 4880 or a SHA-256 digest). Canonicalisation is spec-TBD
-    -- (review doc 03 S2) — PORT NOTE territory. Historical versions may carry none.
+    -- (review doc 03 S2) — NOTE territory. Historical versions may carry none.
     signature       text,
     -- ORIGINAL_VERSION.other_input_version_uids: merge provenance (RM common
     -- master06 §Version Merging), accepted on the wire and on import. NULL when
@@ -329,7 +329,7 @@ COMMENT ON COLUMN vo_version.sys_period IS 'Validity interval [committed, supers
 COMMENT ON COLUMN vo_version.creating_system_id IS 'Immutable per-version creating-system id — the OBJECT_VERSION_ID middle segment (RM common master06 §Distributed versioning). Reconstructed from storage, never live config; never an empty-string sentinel.';
 COMMENT ON COLUMN vo_version.preceding_version_uid IS 'ORIGINAL_VERSION.preceding_version_uid (0..1, full OBJECT_VERSION_ID) — stored at commit from the actual preceding row; preserved verbatim on import; NULL for a first version.';
 COMMENT ON COLUMN vo_version.lifecycle_state IS 'version_lifecycle_state code (req 1.5). 523 = logical delete (content-less version). 553 relaxes content validity.';
-COMMENT ON COLUMN vo_version.signature IS 'VERSION.signature (0..1), opaque radix-64. Canonicalisation is spec-TBD (review doc 03 S2 — PORT NOTE).';
+COMMENT ON COLUMN vo_version.signature IS 'VERSION.signature (0..1), opaque radix-64. Canonicalisation is spec-TBD (review doc 03 S2 — NOTE).';
 COMMENT ON COLUMN vo_version.other_input_version_uids IS 'ORIGINAL_VERSION merge provenance (master06 §Version Merging); NULL when not a merge; is_merged = derived (Is_merged_validity).';
 
 -- ── ehr_folder ───────────────────────────────────────────────────────────────
@@ -533,7 +533,7 @@ CREATE TABLE item_tag (
 );
 
 COMMENT ON TABLE item_tag IS 'Item tags (ITS-REST experimental; review doc 03 req 5.3). Mutable, EHR-scoped, outside the version chain.';
-COMMENT ON COLUMN item_tag.target_vo_id IS 'PORT NOTE: intentionally FK-less (RM common master07: ITEM_TAG.target may reference a container OR a specific VERSION), so it is deliberately outside the version chain.';
+COMMENT ON COLUMN item_tag.target_vo_id IS 'NOTE: intentionally FK-less (RM common master07: ITEM_TAG.target may reference a container OR a specific VERSION), so it is deliberately outside the version chain.';
 
 -- ── archetype_store (SM-2, I_DEFINITION_ADL14) ───────────────────────────────
 -- ADL 1.4 source archetypes, keyed by their human-readable ARCHETYPE_ID (not a
@@ -581,7 +581,7 @@ CREATE TABLE ehr_index (
     start_valid_time  timestamptz,
     end_valid_time    timestamptz,
     notes             text,
-    -- LOCATION_DESC {system_id, uri?, description?}, canonical JSON (PORT NOTE).
+    -- LOCATION_DESC {system_id, uri?, description?}, canonical JSON (NOTE).
     location          jsonb,
     created_at        timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT pk_ehr_index PRIMARY KEY (ehr_id, subject_id, subject_namespace),

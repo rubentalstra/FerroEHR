@@ -1,7 +1,7 @@
 # `openehr-rm` — RM 1.2.0 (GENERATED) — the domain model
 
 The Reference Model everything consumes, **generated from the vendored
-BMM** by `openehr-codegen -- emit` (ADR-004). Versioned by the spec
+BMM** by `openehr-codegen -- emit`. Versioned by the spec
 (1.2.0).
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**

@@ -35,7 +35,7 @@
 //!   event ([`EhrbaseService::emit_extract_audit`]) for non-repudiation (BASE
 //!   `architecture_overview/master07-security.adoc` §Non-repudiation).
 //! - **`crate::aql`** — `EXTRACT_SPEC.criteria` / `commit_time_interval` remain
-//!   typed rejects pending the `$ehr`-bound AQL export wave (see the PORT NOTEs
+//!   typed rejects pending the `$ehr`-bound AQL export wave (see the NOTEs
 //!   in [`export`]).
 //! - **The extension REST wire lives in `ehrbase-rest`**, not here (ITS-REST
 //!   vends no message endpoints — a message/admin extension route is
@@ -45,7 +45,6 @@ mod export;
 mod import;
 mod tdd;
 
-use uuid::Uuid;
 
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;

@@ -131,7 +131,7 @@ impl Default for TenancyConfig {
 
 /// Configuration of the ADMIN API group (`[admin]`, §3.7; SM `I_ADMIN_SERVICE`).
 ///
-/// PORT NOTE: gating the admin surface behind an opt-in flag — when inactive
+/// NOTE: gating the admin surface behind an opt-in flag — when inactive
 /// the admin controllers are not registered, so the routes are absent (`404`),
 /// never a `403`. Physical, irreversible deletion is dangerous, so the group
 /// stays off by default. No openEHR spec governs this gate — our own design.

@@ -173,7 +173,7 @@ BEGIN
             RETURN (dv->>'value')::numeric;
         WHEN 'DV_PROPORTION' THEN
             denom := (dv->>'denominator')::numeric;
-            IF denom = 0 THEN RETURN NULL; END IF; -- PORT NOTE: NULL, not MAX
+            IF denom = 0 THEN RETURN NULL; END IF; -- NOTE: NULL, not MAX
             RETURN (dv->>'numerator')::numeric / denom;
         WHEN 'DV_DATE' THEN
             RETURN openehr_date_days(dv->>'value');

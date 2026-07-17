@@ -5,7 +5,7 @@
 //! forwards to the group dispatcher through [`guarded_dispatch`], so the wire
 //! behaviour is identical to the former table-driven `mount` adapter.
 //!
-//! PORT NOTE (path): the generated `admin_ehr_delete_all` route carries an
+//! NOTE (path): the generated `admin_ehr_delete_all` route carries an
 //! RFC 6570 query-expansion suffix (`/admin/ehr/all{?ehr_id*}`) that is not part
 //! of the resource path; the mounted/documented path is the plain
 //! `/admin/ehr/all` (the `ehr_id` list is read from the query string), matching

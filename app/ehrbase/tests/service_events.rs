@@ -243,7 +243,7 @@ fn assert_phi_free(envelope: &Value) {
     }
 }
 
-async fn create_ehr(svc: &EhrbaseService) -> uuid::Uuid {
+async fn create_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
     svc.create_ehr(None).await.expect("create_ehr")
 }
 

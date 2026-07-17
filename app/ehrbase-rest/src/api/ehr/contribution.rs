@@ -43,7 +43,7 @@ pub(super) async fn run(
         "contribution_create" => {
             let p = params::build::<ContributionCreateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            // PORT NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
+            // NOTE: a CONTRIBUTION commit is a wrapper DTO (a version set +
             // audit), not a single canonical RM value with a defined canonical-XML
             // shape — so it is accepted as JSON only.
             //
@@ -51,7 +51,7 @@ pub(super) async fn run(
             // seam, not the typed SM `commit_contribution`: the typed
             // `UpdateVersion` envelope cannot represent attestation-only (666) or
             // delete (523) members, or committer/system_id inheritance from the
-            // CONTRIBUTION audit (see the trait's PORT NOTE; RM common master06
+            // CONTRIBUTION audit (see the trait's NOTE; RM common master06
             // §Committal m4).
             //
             // The envelope is canonical JSON; a Simplified `Content-Type`

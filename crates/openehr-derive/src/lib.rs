@@ -14,7 +14,7 @@
 //!   an abstract polymorphic slot and rejects a `_type`-less value rather
 //!   than guessing structurally. Unknown wire keys are ignored; this
 //!   deliberate tolerance (a superset of the ITS-JSON schema's
-//!   `additionalProperties: false`) is documented as a `PORT NOTE` on the
+//!   `additionalProperties: false`) is documented as a `NOTE` on the
 //!   shadow struct below.
 //!
 //! Usage (emitted by `openehr-codegen`):
@@ -248,7 +248,7 @@ fn expand(input: &DeriveInput) -> syn::Result<proc_macro2::TokenStream> {
         const _: () = {
             #(#default_fns)*
 
-            // PORT NOTE: unknown wire keys are deliberately *ignored*
+            // NOTE: unknown wire keys are deliberately *ignored*
             // (no `#[serde(deny_unknown_fields)]`), a documented superset of the
             // ITS-JSON schema's `additionalProperties: false`. Two reasons make
             // strict rejection the wrong default at the deserialize layer:

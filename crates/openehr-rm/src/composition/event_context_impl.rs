@@ -3,7 +3,7 @@
 //! `Location_validity` (archie `EventContext`, `nullOrNotEmpty`): if present,
 //! `location` must be non-empty.
 //!
-//! PORT NOTE: archie's `Setting_valid` is terminology-bound (deferred), and its
+//! NOTE: archie's `Setting_valid` is terminology-bound (deferred), and its
 //! `Participations_validity` is `ignored`. archie does **not** enforce
 //! "start_time present" (it is structurally guaranteed here — `start_time` is a
 //! required field).

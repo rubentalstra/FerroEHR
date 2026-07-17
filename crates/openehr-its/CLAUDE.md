@@ -1,7 +1,7 @@
 # `openehr-its` — canonical JSON/XML + the ITS-REST contract (MIXED)
 
-Three surfaces in one crate, with a strict generated/hand-written split
-(ADR-005). Know which half you are touching before editing anything:
+Three surfaces in one crate, with a strict generated/hand-written split.
+Know which half you are touching before editing anything:
 
 | Part | Status | To change it |
 |---|---|---|

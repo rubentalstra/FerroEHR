@@ -1,7 +1,7 @@
 # `openehr-codegen` — the BMM/XSD/OAS → Rust generator (hand-written tooling)
 
-The single deterministic generator behind the whole spec layer
-(ADR-004/005). Subcommands: `emit` (BMM → `openehr-base/rm/am` + the
+The single deterministic generator behind the whole spec layer.
+Subcommands: `emit` (BMM → `openehr-base/rm/am` + the
 `openehr-rm` model), `emit-xml` (XSD+BMM → `ToXml`/`FromXml` in
 `openehr-its`), `emit-rest` (OAS → the ITS-REST contract in `openehr-its`),
 `check`/`check-xsd` (input validation).

@@ -160,8 +160,8 @@ async fn relationship_sm_calls_round_trip() {
     let src = "11111111-1111-4111-8111-111111111111";
     let tgt = "22222222-2222-4222-8222-222222222222";
 
-    // create_party_relationship(UV) → the new VERSIONED_OBJECT's UUID.
-    let vo_id: Uuid = svc
+    // create_party_relationship(UV) → the new VERSIONED_OBJECT's id.
+    let vo_id = svc
         .create_party_relationship(uv(&relationship("parent-of", src, tgt), None))
         .await
         .expect("create_party_relationship");

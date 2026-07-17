@@ -16,6 +16,7 @@
 
 use std::str::FromStr;
 
+use ehrbase::ids::{EhrId, VoId};
 use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
@@ -101,7 +102,7 @@ pub(crate) fn object_id_uuid(ovid: &ObjectVersionId) -> Option<Uuid> {
 /// is the full quoted `OBJECT_VERSION_ID`; a malformed or empty value is a
 /// client error rather than a silently-skipped precondition.
 ///
-/// PORT NOTE (wire, spec-silent): ITS-REST defines only the "received and the
+/// NOTE (wire, spec-silent): ITS-REST defines only the "received and the
 /// condition evaluates to false → `412`" case; it says nothing about a
 /// syntactically invalid `If-Match`. We map an unparseable required `If-Match`
 /// to `400 Bad Request` (the general "malformed request syntax" rule), never to

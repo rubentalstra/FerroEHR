@@ -44,7 +44,7 @@ mod common;
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const FLAT_MIME: &str = "application/openehr.wt.flat+json";
 /// The IPS template id, supplied through the `openehr-template-id` request
-/// header on a simplified commit (Requests_and_responses §openehr-template-id —
+/// header on a simplified commit (`Requests_and_responses` §openehr-template-id —
 /// the header, not a query parameter, is the mechanism).
 const TEMPLATE_ID: &str = "International Patient Summary";
 const TEMPLATE_ID_HEADER: &str = "openehr-template-id";
@@ -255,7 +255,7 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
 }
 
 /// A simplified COMPOSITION commit with no `openehr-template-id` header is a
-/// `422` (Requests_and_responses §openehr-template-id makes the header the
+/// `422` (`Requests_and_responses` §openehr-template-id makes the header the
 /// mechanism; a well-formed-but-unprocessable request). This deliberately
 /// supersedes the prior `400` expectation — the earlier build resolved the
 /// template id from a `template_id` query parameter, which the spec does not
@@ -311,7 +311,7 @@ async fn get_composition_deprecated_schema_accept_is_406() {
     assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
 }
 
-/// EHR_STATUS is not templated → a simplified `Accept` on its retrieval is a
+/// `EHR_STATUS` is not templated → a simplified `Accept` on its retrieval is a
 /// `406`, and a simplified `Content-Type` on its update a `415`
 /// (`formats::dispatch::guard_non_templated`; master05 defines no mapping for
 /// non-templated resources).
