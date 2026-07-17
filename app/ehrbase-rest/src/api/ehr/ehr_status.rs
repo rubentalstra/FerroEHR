@@ -37,6 +37,10 @@ pub(super) async fn run(
     let no_content = StatusCode::NO_CONTENT;
     let base = state.config().server.base_path.clone();
 
+    // EHR_STATUS is not templated → no Simplified-Formats mapping; reject a
+    // simplified Content-Type/Accept uniformly (see `formats::dispatch`).
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match op {
         "ehr_status_get_by_version_id" => {
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;

@@ -418,11 +418,12 @@ async fn post_template(
 
 /// Extract the composition template id from the request body: the canonical
 /// pointer `/archetype_details/template_id/value` (JSON or XML), or the
-/// `templateId` query param for a FLAT/STRUCTURED body.
+/// `openehr-template-id` request header for a FLAT/STRUCTURED body
+/// (Requests_and_responses §openehr-template-id).
 fn composition_template(parts: &RequestParts) -> Option<String> {
     let h = &parts.headers;
-    if negotiate::is_flat_body(h) || negotiate::is_structured_body(h) {
-        return params::query_param(parts.query.as_deref(), "templateId");
+    if crate::formats::dispatch::is_simplified_body(h) {
+        return crate::formats::dispatch::header_template_id(h);
     }
     let value = negotiate::rm_value::<Composition>(h, &parts.body).ok()?;
     value

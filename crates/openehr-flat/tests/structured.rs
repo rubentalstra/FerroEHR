@@ -1,8 +1,9 @@
 //! STRUCTURED (structSDT) `RM ⇄ STRUCTURED` converter tests.
 //!
 //! STRUCTURED composes the pure nesting transform
-//! ([`openehr_flat::flat_to_structured`] / [`openehr_flat::structured_to_flat`])
-//! with the FLAT converter, so the same `(composition, OPT)` corpus pairs used
+//! ([`openehr_flat::convert::flat_to_structured`] /
+//! [`openehr_flat::convert::structured_to_flat`]) with the FLAT converter, so
+//! the same `(composition, OPT)` corpus pairs used
 //! by `flat.rs` drive these gates:
 //!
 //! * **STRUCTURED → RM → STRUCTURED stable** — `to_structured` (s0) →
@@ -19,12 +20,17 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use openehr_flat::{
-    WebTemplate, build_web_template, flat_to_structured, from_structured, structured_to_flat,
-    to_flat, to_structured,
+use openehr_flat::convert::{
+    composition_from_structured, composition_to_flat, composition_to_structured,
+    flat_to_structured, structured_to_flat,
 };
+use openehr_flat::webtemplate::{WebTemplate, build_web_template};
 use openehr_its::opt14;
 use serde_json::Value;
+
+/// Fixed `ctx/time` default for the STRUCTURED build direction (ITS-REST
+/// simplified_formats master04 §Context) so round-trips are deterministic.
+const NOW: &str = "2024-01-01T00:00:00Z";
 
 fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -163,21 +169,21 @@ fn structured_roundtrip_and_rm_validation() {
         let Some(wt) = wts.get(tid) else { continue };
         paired += 1;
 
-        let s0 = match to_structured(comp, wt) {
+        let s0 = match composition_to_structured(comp, wt) {
             Ok(s) => s,
             Err(e) => {
                 failures.push(format!("{name}: to_structured: {e}"));
                 continue;
             }
         };
-        let rm1 = match from_structured(&s0, wt) {
+        let rm1 = match composition_from_structured(&s0, wt, NOW) {
             Ok(v) => v,
             Err(e) => {
                 failures.push(format!("{name}: from_structured: {e}"));
                 continue;
             }
         };
-        let s1 = match to_structured(&rm1, wt) {
+        let s1 = match composition_to_structured(&rm1, wt) {
             Ok(s) => s,
             Err(e) => {
                 failures.push(format!("{name}: to_structured(rm1): {e}"));
@@ -234,20 +240,21 @@ fn flat_structured_exact_inverses() {
 
     for (_name, tid, comp) in &comps {
         let Some(wt) = wts.get(tid) else { continue };
-        let Ok(flat) = to_flat(comp, wt) else {
+        let Ok(flat) = composition_to_flat(comp, wt) else {
             continue;
         };
         paired += 1;
         let f = to_map(&flat);
 
-        let s = flat_to_structured(&f);
+        let s = flat_to_structured(&f).expect("flat_to_structured");
         // structured → flat → structured is exact by construction.
-        let s2 = flat_to_structured(&structured_to_flat(&s));
+        let s2 = flat_to_structured(&structured_to_flat(&s).expect("structured_to_flat"))
+            .expect("flat_to_structured");
         if s == s2 {
             structured_exact += 1;
         }
         // flat → structured → flat is exact up to single-occurrence `:0` drop.
-        if structured_to_flat(&s) == f {
+        if structured_to_flat(&s).expect("structured_to_flat") == f {
             flat_exact += 1;
         }
     }
@@ -273,13 +280,13 @@ fn structured_and_flat_carry_identical_leaves() {
 
     for (name, tid, comp) in &comps {
         let Some(wt) = wts.get(tid) else { continue };
-        let Ok(flat) = to_flat(comp, wt) else {
+        let Ok(flat) = composition_to_flat(comp, wt) else {
             continue;
         };
-        let Ok(structured) = to_structured(comp, wt) else {
+        let Ok(structured) = composition_to_structured(comp, wt) else {
             continue;
         };
-        let via_structured = structured_to_flat(&structured);
+        let via_structured = structured_to_flat(&structured).expect("structured_to_flat");
         let a = index_normalised(&to_map(&flat));
         let b = index_normalised(&via_structured);
         assert_eq!(
@@ -305,7 +312,8 @@ fn golden_structured(comp_file: &str, template_id: &str, snap: &str) {
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
-    let structured = to_structured(&comp, wt).unwrap_or_else(|e| panic!("to_structured: {e}"));
+    let structured =
+        composition_to_structured(&comp, wt).unwrap_or_else(|e| panic!("to_structured: {e}"));
     insta::assert_json_snapshot!(snap, structured);
 }
 

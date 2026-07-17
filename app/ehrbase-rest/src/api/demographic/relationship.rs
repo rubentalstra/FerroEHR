@@ -244,6 +244,10 @@ pub(super) async fn run(
     let q = parts.query.as_deref();
     let base = state.config().server.base_path.clone();
 
+    // PARTY_RELATIONSHIP is not templated → no Simplified-Formats mapping;
+    // reject a simplified Content-Type/Accept uniformly.
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match op {
         "party_relationship_create" => {
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;

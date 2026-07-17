@@ -13,10 +13,11 @@
 //! A mapping definition binds one FHIR R4 resource profile to one openEHR
 //! template. Its `entries` each read a value out of the incoming FHIR resource
 //! (a **`FHIRPath`-lite** dot-path — see [`resolve`]) and write it to a
-//! template-relative **openEHR FLAT path** (the Better/simSDT `id[:i]/…|suffix`
-//! key `openehr-flat` consumes — `crates/openehr-flat/src/flat/sub.rs`). The
-//! resulting flat map is handed to [`openehr_flat::from_flat`] with the
-//! template's `WebTemplate` to build a canonical COMPOSITION, which then
+//! template-relative **openEHR FLAT path** (the `id[:i]/…|suffix` key
+//! `openehr-flat` consumes, ITS-REST simplified_formats master04 §Field
+//! Identifiers). The resulting flat map is handed to
+//! [`composition_from_flat`](openehr_flat::convert::composition_from_flat) with
+//! the template's `WebTemplate` to build a canonical COMPOSITION, which then
 //! commits through the platform's NORMAL validated path. This module is
 //! protocol-free and DB-free: it is the deterministic transform, unit tested
 //! here; the orchestration (mapping-store lookup, EHR resolution, commit)
@@ -383,7 +384,8 @@ pub(super) fn extract_subject(
 mod tests {
     use std::path::PathBuf;
 
-    use openehr_flat::{WebTemplate, build_web_template, from_flat};
+    use openehr_flat::convert::composition_from_flat;
+    use openehr_flat::webtemplate::{WebTemplate, build_web_template};
     use openehr_its::opt14;
     use serde_json::json;
 
@@ -598,7 +600,10 @@ mod tests {
         });
 
         let flat = build_flat(&resource, &d).expect("build_flat");
-        let mut comp = from_flat(&flat, &wt).expect("from_flat builds a composition");
+        // Fixed ctx/time (ITS-REST simplified_formats master04 §Context) so the
+        // built composition is deterministic under test.
+        let mut comp = composition_from_flat(&flat, &wt, "2024-01-01T00:00:00Z")
+            .expect("from_flat builds a composition");
         inject_feeder_audit(
             &mut comp,
             feeder_audit(

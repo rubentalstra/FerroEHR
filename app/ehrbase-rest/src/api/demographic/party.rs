@@ -33,6 +33,10 @@ pub(super) async fn run(
     let base = state.config().server.base_path.clone();
     let seg = kind.segment();
 
+    // Demographic PARTY types are not templated → no Simplified-Formats
+    // mapping; reject a simplified Content-Type/Accept uniformly.
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match action {
         "create" => {
             // All per-kind `*CreateParams` are field-identical; reuse one.

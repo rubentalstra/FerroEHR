@@ -5,9 +5,8 @@
 //! composition_update,composition_delete,composition_tags_get,
 //! composition_tags_update,composition_tags_delete}.yaml`.
 //!
-//! The FLAT/STRUCTURED converters are reached through the group-level
-//! `super::flat` alias onto the `pub(crate)` `crate::formats::dispatch`
-//! converters (see the parent module).
+//! The FLAT/STRUCTURED converters live in `crate::formats::dispatch` (the
+//! Simplified-Formats wire adapter) and are called by their full path.
 
 use axum::response::Response;
 use http::StatusCode;
@@ -25,12 +24,52 @@ use openehr_rm::prelude::Composition;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
 use crate::api::RequestParts;
+use crate::negotiate::WireFormat;
 use crate::overview::error::RestError;
 use crate::overview::version_id::{
     object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_version_uid, require_if_match,
 };
 use crate::state::AppState;
 use crate::{negotiate, params};
+
+/// The representations a COMPOSITION endpoint negotiates: canonical JSON/XML
+/// plus the two Simplified data-instance forms (`Accept_LOCATABLE` /
+/// `ContentType_LOCATABLE`). The mapping tables (`simplified_formats/master05`)
+/// govern COMPOSITION content, so all four are supported here.
+const COMPOSITION_FORMATS: &[WireFormat] = &[
+    WireFormat::CanonicalJson,
+    WireFormat::CanonicalXml,
+    WireFormat::Flat,
+    WireFormat::Structured,
+];
+
+/// Decode a COMPOSITION request body per its `Content-Type`: canonical JSON/XML
+/// through the RM decoder, FLAT/STRUCTURED through the Simplified-Formats
+/// adapter. A `Content-Type` outside `ContentType_LOCATABLE` (e.g. the
+/// Web Template media type, a deprecated `…schema+json`, or an unknown type) is
+/// `415` (Resources.md §Simplified Formats MUST).
+async fn decode_composition_body(
+    state: &AppState,
+    h: &http::HeaderMap,
+    body: &bytes::Bytes,
+) -> Result<Value, RestError> {
+    match negotiate::content_type_format(h) {
+        Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
+            Ok(negotiate::rm_value::<Composition>(h, body)?)
+        }
+        Some(WireFormat::Flat) => {
+            crate::formats::dispatch::composition_from_flat(state, h, body).await
+        }
+        Some(WireFormat::Structured) => {
+            crate::formats::dispatch::composition_from_structured(state, h, body).await
+        }
+        _ => Err(RestError(ApiError::UnsupportedMediaType(
+            "a COMPOSITION is committed as application/json, application/xml, \
+             application/openehr.wt.flat+json, or application/openehr.wt.structured+json"
+                .to_owned(),
+        ))),
+    }
+}
 
 #[allow(clippy::too_many_lines)] // one arm per COMPOSITION operation; a flat match is clearest
 pub(super) async fn run(
@@ -50,14 +89,9 @@ pub(super) async fn run(
             let p = params::build::<CompositionCreateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             // A FLAT/STRUCTURED (wt.flat/structured+json) body is rebuilt into a
-            // canonical composition.
-            let body = if negotiate::is_flat_body(h) {
-                super::flat::composition_from_flat(&state, q, h, &parts.body).await?
-            } else if negotiate::is_structured_body(h) {
-                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
-            } else {
-                negotiate::rm_value::<Composition>(h, &parts.body)?
-            };
+            // canonical composition; canonical JSON/XML pass through the RM
+            // decoder; any other Content-Type is 415.
+            let body = decode_composition_body(&state, h, &parts.body).await?;
             let uv = super::mk_update_version(
                 h,
                 body,
@@ -104,7 +138,7 @@ pub(super) async fn run(
                     .await?
             };
             // A deleted version resolves to a null body → 204 No Content
-            // (composition_get.yaml 204_because_deleted*; F-02-01).
+            // (composition_get.yaml `204_because_deleted*`).
             if body.is_null() {
                 return Ok(negotiate::empty(no_content));
             }
@@ -118,11 +152,21 @@ pub(super) async fn run(
             } else {
                 body
             };
-            if negotiate::wants_flat(h) {
-                return super::flat::composition_flat_response(&state, ok, &body).await;
-            }
-            if negotiate::wants_structured(h) {
-                return super::flat::composition_structured_response(&state, ok, &body).await;
+            // Negotiate the representation across `Accept_LOCATABLE`: FLAT /
+            // STRUCTURED via the adapter, else canonical JSON/XML through
+            // `read_rm` (which answers 406 for an unfulfillable Accept).
+            match negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson) {
+                Some(WireFormat::Flat) => {
+                    return crate::formats::dispatch::composition_flat_response(&state, ok, &body)
+                        .await;
+                }
+                Some(WireFormat::Structured) => {
+                    return crate::formats::dispatch::composition_structured_response(
+                        &state, ok, &body,
+                    )
+                    .await;
+                }
+                _ => {}
             }
             // 200_COMPOSITION_retrieved: ETag(version_uid) + Location.
             let resp = super::read_resp(&p.ehr_id, body);
@@ -138,13 +182,7 @@ pub(super) async fn run(
             let p = params::build::<CompositionUpdateParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let uid = parse_uid_based_id(&p.uid_based_id)?;
-            let body = if negotiate::is_flat_body(h) {
-                super::flat::composition_from_flat(&state, q, h, &parts.body).await?
-            } else if negotiate::is_structured_body(h) {
-                super::flat::composition_from_structured(&state, q, h, &parts.body).await?
-            } else {
-                negotiate::rm_value::<Composition>(h, &parts.body)?
-            };
+            let body = decode_composition_body(&state, h, &parts.body).await?;
             // A body-supplied COMPOSITION.uid must identify the same
             // versioned object as the path `uid_based_id` (ITS-REST
             // `composition_update`: "the uid, if present, must match") —
@@ -301,18 +339,28 @@ async fn composition_write_response(
     repr: StatusCode,
 ) -> Result<Response, RestError> {
     let ehr_id_str = ehr_id.to_string();
-    // FLAT/STRUCTURED Accept returns the Better representation (interop format),
-    // which needs the stored body regardless of Prefer.
-    if negotiate::wants_flat(h) || negotiate::wants_structured(h) {
-        let ovid = parse_version_uid(&uid)?;
-        let body = state
-            .backend()
-            .get_composition_at_version(ehr_id, ovid)
-            .await?;
-        if negotiate::wants_flat(h) {
-            return super::flat::composition_flat_response(state, repr, &body).await;
+    // A FLAT/STRUCTURED Accept returns the simplified representation (which
+    // needs the stored body regardless of `Prefer`); canonical JSON/XML (or an
+    // unfulfillable Accept) fall through to the `Prefer`-aware canonical write.
+    match negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson) {
+        Some(WireFormat::Flat) => {
+            let ovid = parse_version_uid(&uid)?;
+            let body = state
+                .backend()
+                .get_composition_at_version(ehr_id, ovid)
+                .await?;
+            return crate::formats::dispatch::composition_flat_response(state, repr, &body).await;
         }
-        return super::flat::composition_structured_response(state, repr, &body).await;
+        Some(WireFormat::Structured) => {
+            let ovid = parse_version_uid(&uid)?;
+            let body = state
+                .backend()
+                .get_composition_at_version(ehr_id, ovid)
+                .await?;
+            return crate::formats::dispatch::composition_structured_response(state, repr, &body)
+                .await;
+        }
+        _ => {}
     }
     let body = if negotiate::prefers_representation(h) {
         let ovid = parse_version_uid(&uid)?;

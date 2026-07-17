@@ -37,8 +37,11 @@ mod common;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const FLAT_MIME: &str = "application/openehr.wt.flat+json";
-/// The IPS template id, percent-encoded for the `template_id` query parameter.
-const TEMPLATE_ID_ENC: &str = "International%20Patient%20Summary";
+/// The IPS template id, supplied through the `openehr-template-id` request
+/// header on a simplified commit (Requests_and_responses §openehr-template-id —
+/// the header, not a query parameter, is the mechanism).
+const TEMPLATE_ID: &str = "International Patient Summary";
+const TEMPLATE_ID_HEADER: &str = "openehr-template-id";
 
 fn opt_xml() -> String {
     std::fs::read_to_string(
@@ -63,9 +66,9 @@ fn canonical_composition() -> Value {
 }
 
 /// The IPS `WebTemplate` (built from the vendored OPT).
-fn web_template() -> openehr_flat::WebTemplate {
+fn web_template() -> openehr_flat::webtemplate::WebTemplate {
     let opt = openehr_its::opt14::from_xml(&opt_xml()).expect("parse OPT");
-    openehr_flat::build_web_template(&opt).expect("build web template")
+    openehr_flat::webtemplate::build_web_template(&opt).expect("build web template")
 }
 
 fn config() -> AppConfig {
@@ -203,7 +206,7 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
 
     // Derive a real flat body from the canonical composition + its template.
     let wt = web_template();
-    let flat = openehr_flat::to_flat(&canonical_composition(), &wt).unwrap();
+    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
     let flat_body = serde_json::to_string(&flat_map).unwrap();
 
@@ -211,10 +214,9 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
         &app,
         Request::builder()
             .method("POST")
-            .uri(format!(
-                "{BASE}/ehr/{ehr}/composition?template_id={TEMPLATE_ID_ENC}"
-            ))
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
             .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
             .body(Body::from(flat_body))
             .unwrap(),
     )
@@ -246,8 +248,15 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
     );
 }
 
+/// A simplified COMPOSITION commit with no `openehr-template-id` header is a
+/// `422` (Requests_and_responses §openehr-template-id makes the header the
+/// mechanism; a well-formed-but-unprocessable request). This deliberately
+/// supersedes the prior `400` expectation — the earlier build resolved the
+/// template id from a `template_id` query parameter, which the spec does not
+/// define; only the header (and the payload-embedded `archetype_details`) are
+/// read now.
 #[tokio::test]
-async fn post_flat_without_template_id_is_400() {
+async fn post_flat_without_template_id_is_422() {
     let (_pg, app, ehr) = app_with_ehr("flat_post_no_tid").await;
     let req = Request::builder()
         .method("POST")
@@ -256,25 +265,99 @@ async fn post_flat_without_template_id_is_400() {
         .body(Body::from("{\"ctx/language\":\"en\"}"))
         .unwrap();
     let (status, _h, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+/// A COMPOSITION commit with an unrecognized `Content-Type` (here the deprecated
+/// `…wt.flat.schema+json`) is a `415` — the deprecated `.schema+json` names are
+/// not recognized (Resources.md §Simplified Formats NOTE).
+#[tokio::test]
+async fn post_composition_deprecated_schema_content_type_is_415() {
+    let (_pg, app, ehr) = app_with_ehr("flat_post_schema_ct").await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr}/composition"))
+        .header(
+            header::CONTENT_TYPE,
+            "application/openehr.wt.flat.schema+json",
+        )
+        .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+        .body(Body::from("{}"))
+        .unwrap();
+    let (status, _h, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+}
+
+/// A COMPOSITION GET whose `Accept` names only the deprecated
+/// `…wt.flat.schema+json` is a `406` — that media type is not recognized
+/// (Resources.md §Simplified Formats NOTE), so no representation is acceptable.
+#[tokio::test]
+async fn get_composition_deprecated_schema_accept_is_406() {
+    let (_pg, app, ehr) = app_with_ehr("flat_get_schema_accept").await;
+    let vo = commit_canonical(&app, &ehr, &canonical_composition()).await;
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/ehr/{ehr}/composition/{vo}"))
+        .header(header::ACCEPT, "application/openehr.wt.flat.schema+json")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
+}
+
+/// EHR_STATUS is not templated → a simplified `Accept` on its retrieval is a
+/// `406`, and a simplified `Content-Type` on its update a `415`
+/// (`formats::dispatch::guard_non_templated`; master05 defines no mapping for
+/// non-templated resources).
+#[tokio::test]
+async fn ehr_status_simplified_is_rejected() {
+    let (_pg, app, ehr) = app_with_ehr("flat_ehr_status_reject").await;
+
+    // Simplified Accept on the EHR_STATUS retrieval → 406.
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr}/ehr_status"))
+            .header(header::ACCEPT, FLAT_MIME)
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
+
+    // Simplified Content-Type on the EHR_STATUS update → 415.
+    let (status, _h, _b) = send(
+        &app,
+        Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/ehr/{ehr}/ehr_status"))
+            .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(header::IF_MATCH, "does-not-matter")
+            .body(Body::from("{}"))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
 }
 
 #[tokio::test]
 async fn flat_round_trips_through_http() {
     let (_pg, app, ehr) = app_with_ehr("flat_roundtrip").await;
     let wt = web_template();
-    let flat_in = openehr_flat::to_flat(&canonical_composition(), &wt).unwrap();
+    let flat_in =
+        openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_in_map: serde_json::Map<String, Value> = flat_in.clone().into_iter().collect();
 
     // POST the flat body → the service stores the rebuilt canonical composition.
+    // The template id is supplied via the `openehr-template-id` header.
     let (status, h, body) = send(
         &app,
         Request::builder()
             .method("POST")
-            .uri(format!(
-                "{BASE}/ehr/{ehr}/composition?templateId={TEMPLATE_ID_ENC}"
-            ))
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
             .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
             .body(Body::from(serde_json::to_string(&flat_in_map).unwrap()))
             .unwrap(),
     )

@@ -23,14 +23,16 @@
 //!
 //! # How it works
 //!
-//! Rather than re-implement the RM housekeeping ([`crate::from_flat`] already
+//! Rather than re-implement the RM housekeeping
+//! ([`composition_from_flat`](crate::convert::composition_from_flat) already
 //! materialises the compacted RM structure and fills every RM-mandatory field
 //! FLAT never surfaces — language / territory / category / composer / context /
 //! ENTRY-mandatory fields / event & history scaffolding), the generator walks the
 //! tree to emit a **FLAT map** of deterministic example values and reuses
-//! [`from_flat`](crate::from_flat) to assemble the canonical COMPOSITION. The
-//! result therefore round-trips cleanly through [`to_flat`](crate::to_flat) and
-//! deserialises as an `openehr-rm` `Composition`.
+//! [`composition_from_flat`](crate::convert::composition_from_flat) to assemble
+//! the canonical COMPOSITION. The result therefore round-trips cleanly through
+//! [`composition_to_flat`](crate::convert::composition_to_flat) and deserialises
+//! as an `openehr-rm` `Composition`.
 //!
 //! # PORT NOTE (non-normative)
 //!
@@ -47,12 +49,18 @@ use std::collections::HashSet;
 
 use serde_json::{Map, Value, json};
 
-use crate::from_flat;
+use crate::convert::composition_from_flat;
 use crate::webtemplate::{
     WebTemplate, WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
 };
 
 /// Fixed example instants used for the RM temporal leaves (deterministic).
+///
+/// [`EXAMPLE_DATE_TIME`] doubles as the `now` supplied to
+/// [`composition_from_flat`](crate::convert::composition_from_flat) for the
+/// `ctx/time` default, so a generated example is reproducible across calls. No
+/// openEHR spec governs an example's timestamps — our own design (examples must
+/// be deterministic).
 const EXAMPLE_DATE_TIME: &str = "2022-02-03T04:05:06Z";
 const EXAMPLE_DURATION: &str = "PT1H";
 
@@ -134,9 +142,9 @@ pub fn example_composition(wt: &WebTemplate, level: DetailLevel) -> Value {
     // honoured by the per-container cardinality pass in `walk`.
     walk(&wt.tree, &wt.tree.id, 0, level, false, &mut flat);
 
-    match from_flat(&flat, wt) {
+    match composition_from_flat(&flat, wt, EXAMPLE_DATE_TIME) {
         Ok(value) => value,
-        // `from_flat` does not fail for a well-formed tree; keep a total function.
+        // The build does not fail for a well-formed tree; keep a total function.
         Err(_) => Value::Object(Map::new()),
     }
 }
@@ -295,9 +303,10 @@ fn is_repeating(node: &WebTemplateNode) -> bool {
     node.max == -1 || node.max > 1
 }
 
-/// The flat path segment for a node: `id:0` for a repeating node (Better's
-/// `isRepeating`: `max == -1 || max > 1`), else the bare `id` — matching
-/// [`to_flat`](crate::to_flat) so the example round-trips.
+/// The flat path segment for a node: `id:0` for a repeating node (`max == -1 ||
+/// max > 1`), else the bare `id` — matching
+/// [`composition_to_flat`](crate::convert::composition_to_flat) so the example
+/// round-trips.
 fn seg_for(node: &WebTemplateNode) -> String {
     if is_repeating(node) {
         format!("{}:0", node.id)
@@ -787,7 +796,7 @@ fn fnv1a64(data: &[u8], basis: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::build_web_template;
+    use crate::webtemplate::build_web_template;
 
     fn web_template(opt_rel: &str) -> WebTemplate {
         let path = format!("{}/{opt_rel}", env!("CARGO_MANIFEST_DIR"));
