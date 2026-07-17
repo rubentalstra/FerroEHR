@@ -53,6 +53,14 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   client-compiled paths (monomorphization bloat — factor a concrete inner
   fn). `--cfg=erase_components` in dev only (cargo-leptos ≥0.2.40 does it
   automatically), never release.
+- **Section-boundary type erasure (learned W0, 2026-07-17):** plain
+  `cargo build`/`cargo test` runs have NO `erase_components`, and deeply
+  nested thaw view trees then blow rustc's layout-recursion depth at
+  codegen (thaw main needs `#![recursion_limit = "256"]` for its own
+  `Layout` alone). Every screen therefore breaks its view into sections
+  bound to locals erased with `.into_any()` (see `app.rs::SmokeTest`) —
+  never one monolithic `view!` tree — so `cargo nextest`/CI builds stay
+  compilable regardless of cfg.
 
 ## 2. Reactivity
 

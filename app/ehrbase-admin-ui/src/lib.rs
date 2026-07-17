@@ -9,6 +9,20 @@
 //! console's own session auth itself.
 
 pub mod app;
+pub mod auth;
+pub mod error;
+pub mod format;
+
+#[cfg(feature = "ssr")]
+pub mod cdr;
+#[cfg(feature = "ssr")]
+pub mod config;
+#[cfg(feature = "ssr")]
+pub mod oidc;
+#[cfg(feature = "ssr")]
+pub mod session;
+#[cfg(feature = "ssr")]
+pub mod state;
 
 /// WASM entry point: attaches interactivity to the server-rendered DOM.
 #[cfg(feature = "hydrate")]

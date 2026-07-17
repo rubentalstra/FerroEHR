@@ -50,30 +50,44 @@ pub fn App() -> impl IntoView {
 /// Leptos 0.8 — the pinned-beta risk is retired here, before screen work.
 #[component]
 fn SmokeTest() -> impl IntoView {
+    // NOTE: each section is type-erased with `.into_any()` — under plain
+    // `cargo build`/`cargo test` (no `erase_components` cfg, which only
+    // cargo-leptos dev builds pass) the fully structural thaw view types
+    // nest deep enough to blow rustc's layout recursion depth. Every screen
+    // keeps this section-boundary erasure pattern.
     let clicks = RwSignal::new(0u32);
-    view! {
-        <thaw::Layout>
-            <thaw::MessageBar>
-                <thaw::MessageBarBody>"thaw 0.5.0-beta smoke test"</thaw::MessageBarBody>
-            </thaw::MessageBar>
-            <thaw::Button on_click=move |_| {
-                clicks.update(|c| *c += 1);
-            }>{move || format!("clicked {}", clicks.get())}</thaw::Button>
-            <thaw::Skeleton>
-                <thaw::SkeletonItem />
-            </thaw::Skeleton>
-            <thaw::Table>
-                <thaw::TableHeader>
-                    <thaw::TableRow>
-                        <thaw::TableHeaderCell>"column"</thaw::TableHeaderCell>
-                    </thaw::TableRow>
-                </thaw::TableHeader>
-                <thaw::TableBody>
-                    <thaw::TableRow>
-                        <thaw::TableCell>"cell"</thaw::TableCell>
-                    </thaw::TableRow>
-                </thaw::TableBody>
-            </thaw::Table>
-        </thaw::Layout>
+    let banner = view! {
+        <thaw::MessageBar>
+            <thaw::MessageBarBody>"thaw 0.5.0-beta smoke test"</thaw::MessageBarBody>
+        </thaw::MessageBar>
     }
+    .into_any();
+    let counter = view! {
+        <thaw::Button on_click=move |_| {
+            clicks.update(|c| *c += 1);
+        }>{move || format!("clicked {}", clicks.get())}</thaw::Button>
+    }
+    .into_any();
+    let skeleton = view! {
+        <thaw::Skeleton>
+            <thaw::SkeletonItem />
+        </thaw::Skeleton>
+    }
+    .into_any();
+    let table = view! {
+        <thaw::Table>
+            <thaw::TableHeader>
+                <thaw::TableRow>
+                    <thaw::TableHeaderCell>"column"</thaw::TableHeaderCell>
+                </thaw::TableRow>
+            </thaw::TableHeader>
+            <thaw::TableBody>
+                <thaw::TableRow>
+                    <thaw::TableCell>"cell"</thaw::TableCell>
+                </thaw::TableRow>
+            </thaw::TableBody>
+        </thaw::Table>
+    }
+    .into_any();
+    view! { <thaw::Layout>{banner}{counter}{skeleton}{table}</thaw::Layout> }
 }
