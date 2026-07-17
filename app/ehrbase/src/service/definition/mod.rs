@@ -19,7 +19,7 @@
 //! - [`types`] — the shared data shapes ([`types::TemplateListFilter`],
 //!   [`types::QueryDescriptor`]) the REST adapter consumes.
 //!
-//! PORT NOTE (interchange form): the SM `I_DEFINITION_*` signatures take/return
+//! NOTE (interchange form): the SM `I_DEFINITION_*` signatures take/return
 //! AOM object types (`ARCHETYPE`, `AUTHORED_ARCHETYPE`). openEHR publishes no
 //! BMM meta-model for AOM *instances*, so the interchange form is the artefact's
 //! serialization — ADL 1.4 / ADL2 source text and OPT 1.4 canonical XML — which
@@ -72,7 +72,7 @@ pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
 /// Compile an id-pattern regex; an uncompilable pattern is `invalid_id_pattern`
 /// (`400`).
 ///
-/// PORT NOTE: the SM spells these "PERL regular expression"; the
+/// NOTE: the SM spells these "PERL regular expression"; the
 /// `regex` crate is RE2-class, so PERL backreferences / lookaround are
 /// unsupported — a pattern using them fails to compile and surfaces as
 /// `invalid_id_pattern`, the correct SM outcome for an unusable pattern (a

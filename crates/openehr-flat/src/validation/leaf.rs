@@ -1,12 +1,12 @@
-//! Leaf domain-constraint validation (the `C_DV`_* / `C_PRIMITIVE` checks archie
-//! runs on a `DATA_VALUE` against its archetype constraint), approximated from the
-//! `WebTemplate` `inputs`.
+//! Leaf domain-constraint validation — the `C_DV_*` / `C_PRIMITIVE` leaf
+//! constraint checks (AOM 1.4 `master04-constraint_model_package.adoc`) applied
+//! to a `DATA_VALUE`, approximated from the WebTemplate `inputs`.
 //!
 //! For each input we validate the corresponding datum of the instance value,
 //! keyed by the input `suffix` / `type`: coded-value membership (unless the list
 //! is open or the code is from an external terminology), numeric range (honoring
 //! `minOp`/`maxOp`), and string patterns. Temporal ranges and decimal precision
-//! are intentionally not checked here (`// PORT NOTE:` — RM well-formedness of
+//! are intentionally not checked here (`// NOTE:` — RM well-formedness of
 //! date/time/duration values is covered by the RM-invariant pass; precise
 //! temporal-range and precision semantics are deferred).
 
@@ -35,7 +35,7 @@ pub(super) fn check_inputs(v: &mut Validator, instance: &Value, wt: &WebTemplate
         "DV_DURATION" => check_duration(v, instance, wt),
         _ => {}
     }
-    // Constraints captured outside the Better `inputs` mapping (builder
+    // Constraints captured outside the `inputs` mapping (builder
     // `capture_leaf_constraints`): C_INTEGER/C_REAL lists on numeric data and
     // C_CODE_PHRASE lists on coded attributes (e.g. DV_MULTIMEDIA.media_type).
     check_numeric_lists(v, instance, wt);
@@ -763,14 +763,14 @@ fn check_string_constraints(
 /// AOM 1.4 `C_STRING.valid_value` (`AM/docs/UML/classes/org.openehr.am.aom14.c_string.adoc`
 /// §`valid_value`; `master04-constraint_model_package.adoc` §`Valid_value` L60-62) is
 /// affirmative — a value is valid **iff** it matches the pattern, so a non-match
-/// must be reported (F-07-11: the former code returned `true` on a *compile*
-/// failure, silently accepting a value against a pattern it never evaluated).
+/// must be reported; a pattern that fails to *compile* must not be treated as a
+/// silent pass (that would accept a value against a constraint never evaluated).
 /// The ADL regex dialect is a proper subset of Perl (`ADL1.4/master05-cadl.adoc`
 /// §Regular Expression L687) — the Rust `regex` crate covers it; the
 /// `fancy-regex` PCRE engine is the fallback for real-world patterns using
 /// features `regex` rejects (e.g. backreferences).
 ///
-/// PORT NOTE: fail-closed is spec-mandated for a *non-match*, but a
+/// NOTE: fail-closed is spec-mandated for a *non-match*, but a
 /// pattern **neither** engine can compile cannot be evaluated at all. Rather
 /// than reject a value against an uninterpretable constraint (which would
 /// over-reject valid data on an engine limitation, not a spec violation), such a
@@ -807,11 +807,11 @@ fn as_f64(v: &Value) -> Option<f64> {
 
 /// Whether `value` satisfies a `WebTemplate` numeric range (honoring the
 /// inclusive/exclusive `minOp`/`maxOp`; missing bounds are unbounded).
-// PORT NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
+// NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
 // boundary openness as `minOp`/`maxOp` (`>`/`<` = excluded bound), so this
 // check realizes BASE `Interval.has(v)` semantics
-// (org.openehr.base.foundation_types.interval.adoc) over the Better wire
-// representation; the reference implementation + tests are
+// (org.openehr.base.foundation_types.interval.adoc) over the WebTemplate range
+// representation; the spec-cited reference semantics + tests live in
 // `openehr-base` `interval_impl.rs`.
 fn in_range(value: f64, range: &WebTemplateRange) -> bool {
     if let Some(min) = range.min.as_ref().and_then(as_f64) {

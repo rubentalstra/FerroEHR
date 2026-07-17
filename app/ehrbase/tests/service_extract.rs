@@ -28,7 +28,6 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
@@ -111,7 +110,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
 /// Seed an EHR with an `EHR_STATUS` (create → update = two versions), a directory
 /// `FOLDER`, and the auto-created `EHR_ACCESS`. Returns the EHR id and the
 /// `EHR_STATUS` version-container uid.
-async fn seed_ehr(svc: &EhrbaseService) -> (Uuid, String) {
+async fn seed_ehr(svc: &EhrbaseService) -> (ehrbase::ids::EhrId, String) {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     let mut status = svc
@@ -311,7 +310,7 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
     let pg = Pg::start().await;
     let svc = EhrbaseService::new(pg.migrated_pool("extract_missing").await);
     let err = svc
-        .extract_ehrs(Uuid::now_v7())
+        .extract_ehrs(ehrbase::ids::EhrId::new())
         .await
         .expect_err("unknown EHR must fail");
     assert_eq!(
@@ -375,7 +374,7 @@ async fn extract_spec_flags_are_honoured() {
     extract["chapters"][0]["items"][0]["is_masked"] = json!(true);
     let err = svc
         .import_ehr(
-            Some(uuid::Uuid::now_v7()),
+            Some(ehrbase::ids::EhrId::new()),
             serde_json::from_value(extract).expect("extract"),
         )
         .await

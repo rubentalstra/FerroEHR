@@ -1,9 +1,8 @@
 # EHRbase-rs — product roadmap
 
 *Last revised: 2026-07-14. This is the forward-looking product roadmap; the
-historical build record lives in `docs/PROGRESS.md`, the spec-compliance
-ledger in `docs/blueprint/00-THE-BLUEPRINT.md`, and the live work tracker in
-`docs/plans/WORKLIST.md`. Everything under "Shipped" is measured or
+historical build record lives in `docs/PROGRESS.md` and the live work tracker
+in `docs/plans/WORKLIST.md`. Everything under "Shipped" is measured or
 machine-verified — the project's standing rule is **no false claims**.*
 
 ## Where the product stands (v3.0.x)
@@ -29,11 +28,10 @@ A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18:
   per composition (`docs/benchmarks/COMPARISON.md`; both directions always
   published).
 
-## Now — performance (P20)
+## Now — performance
 
 Goal: **hold the best max-sustained-throughput number honestly** on the
-fully-populated clinical workload. Tracker:
-`docs/plans/p20-overhead-checklist.md` (32 receipts).
+fully-populated clinical workload.
 
 - [x] Write-path folding (~4 statements/commit), plan cache, index diet,
   admission/pool parity, validation-cost rewrites (items 30/31/32:
@@ -51,20 +49,22 @@ fully-populated clinical workload. Tracker:
 
 ## Next — publication & compliance depth
 
-1. **v3.0.3 released** (2026-07-16) — the P20 wins, the native OpenAPI
-   surface, the configuration redesign, and the honest comparison surfaces.
-2. **X1 — the public comparison page** (`docs/plans/x1-comparison.md`): the
-   ECC matrix (ours vs upstream 2.34.0), the benchmark ladder + overlay
-   curves, per-case upstream failure triage. Measured numbers only.
+1. **v3.0.3 released** (2026-07-16) — the performance wins, the native
+   OpenAPI surface, the configuration redesign, and the honest comparison
+   surfaces.
+2. **X1 — the public comparison page**: the ECC matrix (ours vs upstream
+   2.34.0), the benchmark ladder + overlay curves, per-case upstream failure
+   triage. Measured numbers only.
 3. **W-2 — ECC skip elimination** (owner ruling: a case passes, fails,
    errors, or is N/A — never "skipped"): wire the remaining native-API-only
    surfaces or adjudicate N/A with citations; zero skipped outcomes.
 4. **W-4 — full ADL2** (spec-exact, no deviation): ADL2/cADL2/ODIN source
    parser, the complete AOM2 semantic-validation catalogue, specialisation
    flattening, OPT2, template semantics.
-5. **W-3d — SM chapter-register gap closure**: the remaining G-rows across
-   the platform-service audit registers (`docs/design/sm-platform/`).
-6. **P17 — SIM-B/SDF interop audit**: FLAT/STRUCTURED transformation-rule
+5. **W-3d — SM chapter-register gap closure**: the remaining gaps across
+   the platform-service audit, re-derived from the SM spec text
+   (`docs/specs/openehr/SM/`).
+6. **SIM-B/SDF interop audit**: FLAT/STRUCTURED transformation-rule
    verification against the SDF spec tables; interop quality, not
    conformance-gated.
 
@@ -86,9 +86,9 @@ the CDR itself stays headless — the console is a client, never a bypass).
 - **Operational maturity** — HA/scale-out guidance, PITR/backup drills,
   upgrade rehearsals, cache tier re-evaluation (Valkey noted for
   multi-instance Stage-2 deployments; single-node stays in-process).
-- **Stage-2/3 enterprise archaeology** — remaining items tracked in the
-  blueprint; features land only with spec grounding or an explicit
-  our-own-design flag.
+- **Stage-2/3 enterprise archaeology** — remaining items tracked in
+  `docs/plans/WORKLIST.md`; features land only with spec grounding or an
+  explicit our-own-design flag.
 
 ## Standing rules (apply to every row above)
 

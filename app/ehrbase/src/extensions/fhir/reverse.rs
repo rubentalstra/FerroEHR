@@ -6,15 +6,17 @@
 //! behind [`FhirOutboundConfig`](super::FhirOutboundConfig).
 //!
 //! The exact inverse of [`build_flat`](super::mapping::build_flat): the
-//! COMPOSITION is flattened to the same simSDT FLAT map
-//! [`openehr_flat::from_flat`] consumes (via [`openehr_flat::to_flat`], so the
+//! COMPOSITION is flattened to the same FLAT map
+//! [`composition_from_flat`](openehr_flat::convert::composition_from_flat)
+//! consumes (via
+//! [`composition_to_flat`](openehr_flat::convert::composition_to_flat), so the
 //! leaf keys — `path|magnitude`, `path|unit`, `path|code`, `path|terminology`,
 //! `path|value` — are byte-identical to what an entry wrote inbound), then each
 //! mapping entry reads its leaf(s) back out and writes them to its
 //! `FHIRPath`-lite target, building the FHIR JSON. `code_map` is applied in
 //! reverse (`terminology_id` → FHIR system URL).
 //!
-//! PORT NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
+//! NOTE: a `constant` entry is NOT reversed — it injected a fixed openEHR
 //! leaf inbound with no FHIR source, so it contributes nothing to the
 //! reconstructed resource (round-trip fidelity is defined over the FHIR-sourced
 //! mapped fields). The `subject` is reconstructed from the owning EHR's subject
@@ -35,12 +37,12 @@ use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transfor
 pub(super) fn to_fhir(
     resource_type: &str,
     composition: &Value,
-    wt: &openehr_flat::WebTemplate,
+    wt: &openehr_flat::webtemplate::WebTemplate,
     def: &FhirMappingDefinition,
     subject_id: Option<&str>,
 ) -> Result<Value, FhirMapError> {
-    let flat =
-        openehr_flat::to_flat(composition, wt).map_err(|e| FhirMapError::Reverse(e.to_string()))?;
+    let flat = openehr_flat::convert::composition_to_flat(composition, wt)
+        .map_err(|e| FhirMapError::Reverse(e.to_string()))?;
     let mut resource = json!({ "resourceType": resource_type });
     if let Some(sid) = subject_id {
         let reference = match &def.subject.strip_prefix {
@@ -54,7 +56,7 @@ pub(super) fn to_fhir(
         );
     }
     for entry in &def.entries {
-        // A constant has no FHIR source (see the module PORT NOTE).
+        // A constant has no FHIR source (see the module NOTE).
         if entry.constant.is_some() {
             continue;
         }
@@ -126,8 +128,9 @@ fn reverse_code_map(code_map: &BTreeMap<String, String>, terminology: &str) -> O
 }
 
 /// A minimal FLAT-map lookup seam so [`reverse_entry`] can be exercised against
-/// both [`openehr_flat::to_flat`]'s map and a plain map in unit tests without
-/// naming the crate-private `FlatMap` alias.
+/// both
+/// [`composition_to_flat`](openehr_flat::convert::composition_to_flat)'s map and
+/// a plain map in unit tests without naming the crate-private `FlatMap` alias.
 trait FlatLookup {
     /// The value stored at the exact FLAT key, if any.
     fn lookup(&self, key: &str) -> Option<&Value>;
@@ -204,7 +207,8 @@ fn place(cur: &mut Value, segments: &[(&str, Option<usize>)], value: Value) {
 mod tests {
     use std::path::PathBuf;
 
-    use openehr_flat::{WebTemplate, build_web_template, from_flat};
+    use openehr_flat::convert::composition_from_flat;
+    use openehr_flat::webtemplate::{WebTemplate, build_web_template};
     use openehr_its::opt14;
     use serde_json::json;
 
@@ -310,9 +314,10 @@ mod tests {
             ]
         });
 
-        // FHIR → inbound build → COMPOSITION.
+        // FHIR → inbound build → COMPOSITION. Fixed ctx/time (ITS-REST
+        // simplified_formats master04 §Context) keeps the build deterministic.
         let flat = build_flat(&original, &d).expect("build_flat");
-        let comp = from_flat(&flat, &wt).expect("from_flat");
+        let comp = composition_from_flat(&flat, &wt, "2024-01-01T00:00:00Z").expect("from_flat");
 
         // COMPOSITION → reverse → FHIR (subject id is the post-strip subject).
         let reversed = to_fhir("Observation", &comp, &wt, &d, Some("p-1")).expect("reverse maps");

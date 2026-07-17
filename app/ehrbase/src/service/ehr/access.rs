@@ -19,7 +19,6 @@ use crate::service::ehr::access_types::EhrAccessSettings;
 use crate::service::status::SmError;
 use moka::future::Cache;
 use serde_json::{Value, json};
-use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::versioning::Kind;

@@ -51,7 +51,7 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 /// `POST …/definition/template/adl2` — ingest an ADL2 operational-template
 /// `text/plain` source (`operations/definition_template_adl2_upload.yaml`).
 ///
-/// PORT NOTE: the `at_version` (`version`) query parameter is
+/// NOTE: the `at_version` (`version`) query parameter is
 /// `deprecated: true` (`parameters/query/at_version.yaml`); dropping it is
 /// spec-permitted, so only `Prefer` is read. Recorded as residue, not a defect
 /// (`docs/design/its-rest/definition.md` G-7).
@@ -93,7 +93,7 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
     let p =
         params::build::<DefinitionTemplateAdl2GetParams>(&parts.path, parts.query.as_deref(), h)?;
     if !accepts_text(h) {
-        // PORT NOTE: `Accept_Template_adl2` also enumerates
+        // NOTE: `Accept_Template_adl2` also enumerates
         // `application/json` (the `OperationalTemplateV2` JSON projection) and
         // `application/xml`; neither is produced until the cADL parser lands, so
         // an Accept naming only those is a `406`, not a wrong-format body.
@@ -109,7 +109,7 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
 
 /// `GET …/definition/template/adl2/{template_id}/example` — `501`.
 ///
-/// PORT NOTE: needs an example generator over a cADL/AOM2 source
+/// NOTE: needs an example generator over a cADL/AOM2 source
 /// model (none in the tree). ADL2 is OPTIONAL for CNF; the example generator
 /// lands with WORKLIST W-4 (`docs/design/its-rest/definition.md` G-6).
 pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
@@ -123,7 +123,7 @@ pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
 
 /// `GET …/definition/template/adl2/{template_id}/version/{version}` — `501`.
 ///
-/// PORT NOTE: needs a cADL source parser for the JSON
+/// NOTE: needs a cADL source parser for the JSON
 /// `OperationalTemplateV2` form; the operation is `deprecated: true`
 /// (`operations/definition_template_adl2_version_get.yaml`) and ADL2 is OPTIONAL
 /// for CNF (`docs/design/its-rest/definition.md` G-6).

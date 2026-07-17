@@ -17,7 +17,7 @@
 //!   `*_included` boundary flags (used by `REFERENCE_RANGE.is_in_range` and
 //!   `DV_ORDERED.is_normal`).
 //!
-//! PORT NOTE: archie reports the boundary-flag invariants under the base type
+//! NOTE: archie reports the boundary-flag invariants under the base type
 //! `INTERVAL` (its `DvInterval` composes an inner `Interval`); our `DvInterval`
 //! is flat, so we report the concrete type `DV_INTERVAL`. The indexed SQL
 //! realisation of the same ordering is the P16 `openehr_magnitude` function

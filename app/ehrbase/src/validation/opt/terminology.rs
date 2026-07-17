@@ -69,7 +69,7 @@ pub(super) fn check_term_bindings(
     defined_at: &HashSet<String>,
 ) -> Result<(), Violation> {
     let check = |code: &str| -> Result<(), Violation> {
-        // PORT NOTE (flattened-OPT tolerance): a *specialised* at-code
+        // NOTE (flattened-OPT tolerance): a *specialised* at-code
         // (`at0.23`, dot-notation — AOM2 §specialisation depth) may be bound
         // without a re-emitted local term definition: archie-era flattening
         // keeps parent-archetype bindings whose definitions live in the parent
@@ -143,7 +143,7 @@ pub(super) fn check_constraint_bindings(
 /// `FlatArchetypeOntology` whose `term_definitions` / `constraint_definitions`
 /// are grouped per language: every language must define the same code set.
 ///
-/// PORT NOTE: the per-`C_ARCHETYPE_ROOT` `term_definitions` (a flat
+/// NOTE: the per-`C_ARCHETYPE_ROOT` `term_definitions` (a flat
 /// `Vec<ARCHETYPE_TERM>`, single-language) carry no language grouping, so VTLC
 /// is inert for a single-language OPT — the multi-language code sets live only
 /// in `ontology` / `component_ontologies`.

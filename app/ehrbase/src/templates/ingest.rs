@@ -10,7 +10,7 @@
 //! §Meta-data), carries the S-01/S-02/S-03 meta-data (original language +
 //! translations, `RESOURCE_DESCRIPTION`, revision history).
 //!
-//! PORT NOTE (G-T11 — OPT 1.4 has no prose master): there is **no normative
+//! NOTE (G-T11 — OPT 1.4 has no prose master): there is **no normative
 //! prose chapter** for the OPT 1.4 wire structure (the OPT2 masters describe the
 //! ADL2 successor; blueprint `docs/blueprint/03-am.md` §Spec defects). The OPT
 //! 1.4 canonical XML this module ingests is governed by the **ITS-XML v1
@@ -21,7 +21,7 @@
 //! (`crate::validation::structure::validate_opt_structure`) — the store calls
 //! it before every ingest (see [`crate::templates::store`]).
 //!
-//! PORT NOTE (G-T12 — meta-data parsed, not surfaced): the S-01/S-02/S-03
+//! NOTE (G-T12 — meta-data parsed, not surfaced): the S-01/S-02/S-03
 //! meta-data (`language` / `description` / `translations` / `revision_history`)
 //! is parsed by the codec but we index only `template_id` / `concept` / root
 //! archetype for lookup and listing (see [`crate::templates::store`]); the spec

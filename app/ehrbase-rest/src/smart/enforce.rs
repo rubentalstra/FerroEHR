@@ -80,7 +80,7 @@ impl ScopeOutcome {
 /// §Resource Scopes: `template-…`, `composition-…`, `aql-…`).
 ///
 /// `None` for operation families the master08 grammar defines **no** resource
-/// scope for — EHR, `EHR_STATUS`, CONTRIBUTION, DIRECTORY. PORT NOTE
+/// scope for — EHR, `EHR_STATUS`, CONTRIBUTION, DIRECTORY. NOTE
 /// (`smart.md` §6): master08 lists only three resource types, so those
 /// operations are governed by the compartment binding + the existing RBAC/ABAC
 /// layers, not by a SMART resource scope; the SMART gate does not deny them.
@@ -153,7 +153,7 @@ pub const fn permission_of_access(access: AccessMode) -> Permission {
 ///
 /// - `family` is the operation's SMART resource family ([`family_of_op`]);
 ///   `None` means no master08 resource scope governs it → [`ScopeDecision::Allow`]
-///   with no compartment binding (the PORT NOTE on [`family_of_op`]).
+///   with no compartment binding (the NOTE on [`family_of_op`]).
 /// - `permission` is the CRUDS operation ([`permission_of_op`]).
 /// - `resource_id` is the resolved template id / query name, or `None` when it
 ///   could not be resolved (e.g. an ad-hoc query, or a body the PEP did not

@@ -60,7 +60,7 @@ impl EhrbaseService {
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
     ///   (`Pre_has_terminology`); `at_date` is a no-op on the single pinned
-    ///   bundle version (G-1 bundle PORT NOTE);
+    ///   bundle version (G-1 bundle NOTE);
     /// - FHIR path: exception on a transport fault / non-2xx / malformed
     ///   response.
     pub async fn has_term(
@@ -108,7 +108,7 @@ impl EhrbaseService {
 
     /// `subsumes` — whether `candidate_child_code` is in the **strict**
     /// subsumption of `ref_code`. The flat bundle always answers `false`
-    /// (bundle PORT NOTE); hierarchical subsumption is the FHIR provider's
+    /// (bundle NOTE); hierarchical subsumption is the FHIR provider's
     /// `CodeSystem/$subsumes`.
     ///
     /// # Errors

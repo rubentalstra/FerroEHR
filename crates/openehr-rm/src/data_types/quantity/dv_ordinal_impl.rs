@@ -7,7 +7,7 @@
 //! machinery in `dv_ordered_impl`). The comparison functions
 //! (`less_than` / `is_strictly_comparable_to`) live in `dv_ordered_impl`.
 //!
-//! PORT NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
+//! NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
 //! is deferred to the composition validator + `openehr-term`; archie's
 //! `Reference_range_valid` (symbol resolution) is archetype-level.
 

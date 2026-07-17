@@ -11,7 +11,7 @@
 //!   every read/update/query of composition or directory state is scheduled
 //!   strictly after the op that creates that state — standing patients are
 //!   bootstrapped in the warmup window, new admits at their (measured) admission
-//!   time. See the [`event`](crate::model::event) module PORT NOTE.
+//!   time. See the [`event`](crate::model::event) module NOTE.
 //! - **Arrival shape.** `hour`/`smoke` spread occurrences uniformly over the
 //!   active window; `day` samples from the diurnal weight curve (register 00 §3
 //!   peaks ~08:00/14:00, bumps 07:00/15:00/23:00, night trough).

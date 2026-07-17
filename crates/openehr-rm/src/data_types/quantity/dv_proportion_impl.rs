@@ -17,7 +17,7 @@ const PK_INTEGER_FRACTION: i32 = 4;
 /// The DV_PROPORTION own-invariant core over the projected inputs — one
 /// source for the typed impl and the value-level fast path (`validate::fast`).
 /// The inherited DV_AMOUNT / DV_ORDERED invariants are pushed by the callers.
-// PORT NOTE: openEHR/archie compare denominator against 0/1/100 by exact
+// NOTE: openEHR/archie compare denominator against 0/1/100 by exact
 // value (`denominator.equals(0d)` etc.), so exact float comparison is the
 // intended semantics here.
 #[allow(clippy::float_cmp)]

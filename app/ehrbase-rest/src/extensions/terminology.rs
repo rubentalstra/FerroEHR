@@ -22,14 +22,14 @@
 //! If/when openEHR publishes a contract, `emit-rest` takes over and these
 //! routes migrate.
 //!
-//! PORT NOTE (mount path): the extension groups (like the ADMIN group) are
+//! NOTE (mount path): the extension groups (like the ADMIN group) are
 //! mounted inside the ITS-REST API router, so the full path is
 //! `{base_path}/terminology/...` — i.e. `/ehrbase/rest/openehr/v1/terminology`.
 //! Nesting them here keeps the auth / ATNA-audit / ABAC middleware stack
 //! uniform across the whole HTTP surface (our decision; the SM defines only the
 //! abstract interface, not a URL layout).
 //!
-//! PORT NOTE (existence calls): the boolean `has_terminology` / `has_term` /
+//! NOTE (existence calls): the boolean `has_terminology` / `has_term` /
 //! `has_value_set` calls are surfaced implicitly through the `200`-vs-`404` of
 //! their `get`/description counterparts (the idiomatic REST existence check)
 //! rather than as separate boolean endpoints — mirroring the ADMIN group's
@@ -241,7 +241,7 @@ async fn run(
             let tid = path_get(&parts, "terminology_id")?;
             let code = path_get(&parts, "code")?;
             let at_date = params::query_param(q, "at_date");
-            // PORT NOTE: the SM `get_term.attributes` allow-list is not surfaced
+            // NOTE: the SM `get_term.attributes` allow-list is not surfaced
             // on the wire — its `Hash<String, String>` shape is ambiguous against
             // the SM's `List<String>`, and the bundle provider ignores it
             // (`ehrbase::service::api::terminology`). Passed as `None`; add a

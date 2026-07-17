@@ -31,7 +31,7 @@
 -- multi-tenant-only perf concern deferred to P20 (RLS cost "paid only in
 -- multi-tenant mode").
 --
--- PORT NOTE: the pre-existing service-wide UNIQUE
+-- NOTE: the pre-existing service-wide UNIQUE
 -- constraints (uq_ehr_subject, uq_template_store_template_id,
 -- pk_stored_query, uq_event_subscription_name, uq_sp_data_frame_frame_id)
 -- remain GLOBAL, not tenant-scoped, in this pass. RLS isolates row visibility

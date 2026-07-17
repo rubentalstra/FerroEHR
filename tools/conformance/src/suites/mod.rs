@@ -28,6 +28,7 @@ pub mod query;
 pub mod query_golden;
 pub mod security;
 pub mod signing;
+pub mod simplified_formats;
 pub mod support;
 pub mod terminology;
 
@@ -50,5 +51,6 @@ pub fn entries() -> Vec<CaseEntry> {
     out.extend(security::entries());
     out.extend(signing::entries());
     out.extend(terminology::entries());
+    out.extend(simplified_formats::entries());
     out
 }

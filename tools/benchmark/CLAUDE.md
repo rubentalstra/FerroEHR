@@ -1,7 +1,7 @@
 # `benchmark` — the benchmark harness (tooling, not part of the app)
 
-Load/latency measurement for the CDR; being overhauled for X1 (multi-SUT,
-percentiles, resource footprint — `docs/plans/x1-comparison.md`).
+Load/latency measurement for the CDR; being overhauled for the X1 public
+comparison (multi-SUT, percentiles, resource footprint).
 
 - **Owner rule: no false claims — measured numbers only.** Every published
   number traces to a run with recorded environment (hardware, SUT
@@ -11,8 +11,7 @@ percentiles, resource footprint — `docs/plans/x1-comparison.md`).
   host class; document any asymmetry rather than hiding it.
 - Report percentiles (p50/p95/p99), not means alone; include resource
   footprint (CPU/RSS) when the plan calls for it.
-- Benchmarks are `PERF(port)`-adjacent: they inform P20 optimization but
-  never justify weakening conformance (correctness > speed, blueprint
-  discipline).
+- Benchmarks inform performance optimization but never justify weakening
+  conformance (correctness > speed).
 - Gates: `cargo clippy -p benchmark --all-targets` +
   `cargo nextest run -p benchmark`.

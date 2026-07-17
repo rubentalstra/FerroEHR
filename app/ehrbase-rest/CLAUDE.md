@@ -3,7 +3,7 @@
 Implements the **generated** ITS-REST contract (server traits + DTOs from
 `openehr-its`) over axum 0.8, plus auth, the `access` authz module
 (RBAC/ABAC PEP), the `smart` module (SMART App Launch resource-server
-role), ATNA audit middleware, and the EhrScape adapter.
+role), and ATNA audit middleware.
 
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
   `Last-Modified`, `openEHR-VERSION.*` committal merge, `Prefer`), and

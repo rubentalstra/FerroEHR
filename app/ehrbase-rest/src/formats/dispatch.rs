@@ -1,24 +1,31 @@
-//! FLAT (simSDT) + STRUCTURED (structSDT) glue for the COMPOSITION endpoints.
+//! The Simplified-Formats payload adapter (ITS-REST
+//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE).
 //!
-//! Both are Better/EHRbase interop formats (`openehr-flat`), served as
-//! `application/openehr.wt.flat+json` and `application/openehr.wt.structured+json`.
-//! STRUCTURED is the pure nesting of the FLAT map (`openehr_flat::to_structured`
-//! / `from_structured`); the template-id resolution is shared with FLAT.
+//! This is the wire seam between the negotiation core
+//! ([`crate::overview::negotiate`], which classifies the media type) and the
+//! `openehr-flat` conversion engine. It handles, in both directions, the
+//! FLAT (`application/openehr.wt.flat+json`) and STRUCTURED
+//! (`application/openehr.wt.structured+json`) representations of a versioned
+//! object:
 //!
-//! `WebTemplate` resolution is **not** this layer's concern: the service owns
-//! the one cache and exposes it through the
-//! [`WebTemplateService`](ehrbase::service::WebTemplateService) seam
-//! (W2-K / finding F-13-02) — the same `WebTemplate` composition validation
-//! uses. For FLAT specifically:
+//! * **request** — parse the simplified body per its media type, resolve the
+//!   template id from the `openehr-template-id` request header
+//!   (`Requests_and_responses.md §openehr-template-id`: the header is THE
+//!   mechanism for a simplified COMPOSITION commit, since the payload carries
+//!   no `archetype_details.template_id`), and build the canonical-JSON
+//!   COMPOSITION;
+//! * **response** — serialize a stored canonical COMPOSITION into the
+//!   negotiated simplified form (its template id read from
+//!   `archetype_details/template_id`).
 //!
-//! * **input** (`Content-Type` FLAT on create/update): the flat map is rebuilt
-//!   into a canonical-JSON `COMPOSITION` via `openehr_flat::from_flat`, driven
-//!   by the target template's `WebTemplate`. The template id — which a flat body
-//!   does not carry — comes from the `template_id`/`templateId` query parameter
-//!   or the `openEHR-TEMPLATE_ID` header (EHRbase-compatible).
-//! * **output** (`Accept` FLAT on get/create/update): the stored canonical
-//!   composition is converted via `openehr_flat::to_flat` (its template id is
-//!   read from `archetype_details/template_id`).
+//! `WebTemplate` resolution is not this layer's concern: the service owns the
+//! one cache and exposes it through `state.backend().web_template(..)`.
+//!
+//! CONTRIBUTION keeps the envelope canonical (`contribution_create.yaml`
+//! §Simplified Formats) — only each `versions[i].data` COMPOSITION is
+//! simplified. Non-templated resources (EHR, `EHR_STATUS`, FOLDER, demographic
+//! parties) have no Simplified-Formats mapping and are rejected uniformly
+//! ([`guard_non_templated`]).
 
 use axum::response::Response;
 use bytes::Bytes;
@@ -27,155 +34,334 @@ use serde_json::{Map, Value};
 
 use openehr_its::rest::runtime::ApiError;
 
+use crate::negotiate;
+use crate::negotiate::WireFormat;
 use crate::overview::error::RestError;
-
 use crate::state::AppState;
-use crate::{negotiate, params};
+
+/// The `openehr-template-id` request header (`Requests_and_responses.md
+/// §openehr-template-id`). HTTP header names are case-insensitive; the deprecated
+/// `openEHR-TEMPLATE_ID` spelling (§Deprecated headers — "remain available for
+/// backward compatibility") is accepted as a fallback. The former
+/// `template_id`/`templateId` **query parameter is not read** — the spec defines
+/// only the header.
+pub(crate) fn header_template_id(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get("openehr-template-id")
+        .or_else(|| headers.get("openEHR-TEMPLATE_ID"))
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned)
+}
+
+/// A UTC ISO 8601 timestamp for the `ctx/time` default (Simplified Formats
+/// `master04 §Context`: "defaults to the current server time (`now()`)").
+fn now() -> String {
+    jiff::Timestamp::now().to_string()
+}
 
 fn internal(msg: impl Into<String>) -> RestError {
     RestError(ApiError::Internal(msg.into()))
 }
 
-fn bad_request(msg: impl Into<String>) -> RestError {
-    RestError(ApiError::BadRequest(msg.into()))
+/// The `422` for a simplified COMPOSITION commit that supplies no template id.
+/// `Requests_and_responses.md §openehr-template-id` makes the header the
+/// mechanism; without it the payload cannot be resolved to a template — a
+/// well-formed-but-unprocessable request (`Requests_and_responses.md §HTTP
+/// status codes`, row `422`).
+fn missing_template_id() -> RestError {
+    RestError(ApiError::Unprocessable(
+        "a Simplified-Format COMPOSITION commit requires the target template id \
+         in the `openehr-template-id` request header (Requests_and_responses \
+         §openehr-template-id)"
+            .to_owned(),
+    ))
 }
 
-/// A FLAT/STRUCTURED **output** conversion failure: the server failed to render
-/// a *stored* canonical composition into the requested simplified format. Stored
-/// data is the server's own and should always convert, so a failure here is a
-/// server fault → `500 Internal Server Error` (ITS-REST
-/// `Requests_and_responses.md` §HTTP status codes, row `500`).
-fn flat_err(e: &openehr_flat::FlatError) -> RestError {
-    RestError(ApiError::Internal(format!("FLAT conversion failed: {e}")))
-}
-
-/// A FLAT/STRUCTURED **input** conversion failure: the request body parsed as
-/// JSON but does not conform to the target template's simplified-data-template
-/// shape (the simSDT/structSDT formats, SM `simplified_im_b`). That is
-/// well-formed-but-semantically-invalid *client* content, not a server fault →
-/// `422 Unprocessable Entity` (ITS-REST `Requests_and_responses.md` §HTTP status
-/// codes, row `422` — "The request was well-formed but was unable to be followed
-/// due to semantic errors"; syntactically-invalid JSON is caught earlier as a
-/// `400`).
-fn flat_input_err(e: &openehr_flat::FlatError) -> RestError {
+/// A Simplified-Format **input** conversion failure: the body parsed as JSON
+/// but does not conform to the target template's simplified-data-template shape
+/// — well-formed-but-semantically-invalid client content → `422`
+/// (`Requests_and_responses.md §HTTP status codes`, row `422`).
+fn flat_input_err(e: &openehr_flat::error::FlatError) -> RestError {
     RestError(ApiError::Unprocessable(format!(
-        "FLAT conversion failed: {e}"
+        "Simplified-Format conversion failed: {e}"
     )))
 }
 
-/// The template id for a FLAT request: the `template_id` (or `templateId`) query
-/// parameter, else the `openEHR-TEMPLATE_ID` header.
-pub(super) fn request_template_id(query: Option<&str>, headers: &HeaderMap) -> Option<String> {
-    params::query_param(query, "template_id")
-        .or_else(|| params::query_param(query, "templateId"))
-        .or_else(|| {
-            headers
-                .get("openEHR-TEMPLATE_ID")
-                .and_then(|v| v.to_str().ok())
-                .map(str::to_owned)
-        })
+/// A Simplified-Format **output** conversion failure: the server failed to
+/// render its own stored canonical COMPOSITION into the requested simplified
+/// form. Stored data is the server's own and should always convert, so this is
+/// a server fault → `500` (`Requests_and_responses.md §HTTP status codes`, row
+/// `500`).
+fn flat_output_err(e: &openehr_flat::error::FlatError) -> RestError {
+    RestError(ApiError::Internal(format!(
+        "Simplified-Format conversion failed: {e}"
+    )))
 }
 
-/// Parse a FLAT request body into a canonical-JSON `COMPOSITION`.
+// ── COMPOSITION: request side ──────────────────────────────────────────────
+
+/// Parse a FLAT request body into a canonical-JSON COMPOSITION, driven by the
+/// template named in the `openehr-template-id` header.
 pub(crate) async fn composition_from_flat(
     state: &AppState,
-    query: Option<&str>,
     headers: &HeaderMap,
     body: &Bytes,
 ) -> Result<Value, RestError> {
-    let template_id = request_template_id(query, headers).ok_or_else(|| {
-        bad_request(
-            "FLAT composition input requires a template id via the `template_id` \
-             (or `templateId`) query parameter or the `openEHR-TEMPLATE_ID` header",
-        )
-    })?;
-    let flat: Map<String, Value> =
-        serde_json::from_slice(body).map_err(|e| bad_request(format!("invalid FLAT JSON: {e}")))?;
+    let template_id = header_template_id(headers).ok_or_else(missing_template_id)?;
+    let flat: Map<String, Value> = serde_json::from_slice(body)
+        .map_err(|e| RestError(ApiError::BadRequest(format!("invalid FLAT JSON: {e}"))))?;
     let wt = state
         .backend()
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    // Enforce the `|other` open-value-set MUST-rules on the FLAT input before
-    // conversion (master02/master04 §"Open Value-Sets and the `|other` Suffix";
-    // master05 §"When a `DV_CODED_TEXT` becomes a `DV_TEXT`"): `|other` must not
-    // co-occur with `|code`/`|value`/`|terminology`/`|preferred_term`, and must
-    // be rejected on a closed value-set.
-    if let Some(v) = openehr_flat::validate_flat_other(&flat, &wt).first() {
-        return Err(bad_request(format!("{}: {}", v.path, v.message)));
-    }
-    openehr_flat::from_flat(&flat, &wt).map_err(|e| flat_input_err(&e))
+    openehr_flat::convert::composition_from_flat(&flat, &wt, &now()).map_err(|e| flat_input_err(&e))
 }
 
-/// Render a canonical-JSON composition as a FLAT `application/openehr.wt.flat+json`
-/// response (its template id read from `archetype_details/template_id`).
+/// Parse a STRUCTURED request body into a canonical-JSON COMPOSITION.
+pub(crate) async fn composition_from_structured(
+    state: &AppState,
+    headers: &HeaderMap,
+    body: &Bytes,
+) -> Result<Value, RestError> {
+    let template_id = header_template_id(headers).ok_or_else(missing_template_id)?;
+    let structured: Value = serde_json::from_slice(body).map_err(|e| {
+        RestError(ApiError::BadRequest(format!(
+            "invalid STRUCTURED JSON: {e}"
+        )))
+    })?;
+    let wt = state
+        .backend()
+        .web_template(&template_id)
+        .await
+        .map_err(RestError::from)?;
+    openehr_flat::convert::composition_from_structured(&structured, &wt, &now())
+        .map_err(|e| flat_input_err(&e))
+}
+
+// ── COMPOSITION: response side ─────────────────────────────────────────────
+
+/// The template id a stored COMPOSITION declares
+/// (`archetype_details/template_id/value`).
+fn composition_template_id(comp: &Value) -> Result<String, RestError> {
+    comp.pointer("/archetype_details/template_id/value")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| internal("composition has no archetype_details/template_id"))
+}
+
+/// Render a canonical-JSON COMPOSITION as a FLAT
+/// `application/openehr.wt.flat+json` response.
 pub(crate) async fn composition_flat_response(
     state: &AppState,
     status: StatusCode,
     comp: &Value,
 ) -> Result<Response, RestError> {
-    let template_id = comp
-        .pointer("/archetype_details/template_id/value")
-        .and_then(Value::as_str)
-        .ok_or_else(|| internal("composition has no archetype_details/template_id"))?
-        .to_owned();
     let wt = state
         .backend()
-        .web_template(&template_id)
+        .web_template(&composition_template_id(comp)?)
         .await
         .map_err(RestError::from)?;
-    let flat = openehr_flat::to_flat(comp, &wt).map_err(|e| flat_err(&e))?;
+    let flat =
+        openehr_flat::convert::composition_to_flat(comp, &wt).map_err(|e| flat_output_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
     Ok(negotiate::flat_json_body(status, json))
 }
 
-/// Parse a STRUCTURED (structSDT) request body into a canonical-JSON
-/// `COMPOSITION` via `openehr_flat::from_structured` (template id resolved as
-/// for FLAT: query param or `openEHR-TEMPLATE_ID` header).
-pub(crate) async fn composition_from_structured(
-    state: &AppState,
-    query: Option<&str>,
-    headers: &HeaderMap,
-    body: &Bytes,
-) -> Result<Value, RestError> {
-    let template_id = request_template_id(query, headers).ok_or_else(|| {
-        bad_request(
-            "STRUCTURED composition input requires a template id via the `template_id` \
-             (or `templateId`) query parameter or the `openEHR-TEMPLATE_ID` header",
-        )
-    })?;
-    let structured: Value = serde_json::from_slice(body)
-        .map_err(|e| bad_request(format!("invalid STRUCTURED JSON: {e}")))?;
-    let wt = state
-        .backend()
-        .web_template(&template_id)
-        .await
-        .map_err(RestError::from)?;
-    openehr_flat::from_structured(&structured, &wt).map_err(|e| flat_input_err(&e))
-}
-
-/// Render a canonical-JSON composition as a STRUCTURED
+/// Render a canonical-JSON COMPOSITION as a STRUCTURED
 /// `application/openehr.wt.structured+json` response.
 pub(crate) async fn composition_structured_response(
     state: &AppState,
     status: StatusCode,
     comp: &Value,
 ) -> Result<Response, RestError> {
-    let template_id = comp
-        .pointer("/archetype_details/template_id/value")
-        .and_then(Value::as_str)
-        .ok_or_else(|| internal("composition has no archetype_details/template_id"))?
-        .to_owned();
+    let wt = state
+        .backend()
+        .web_template(&composition_template_id(comp)?)
+        .await
+        .map_err(RestError::from)?;
+    let structured = openehr_flat::convert::composition_to_structured(comp, &wt)
+        .map_err(|e| flat_output_err(&e))?;
+    let json = serde_json::to_string(&structured)
+        .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
+    Ok(negotiate::structured_json_body(status, json))
+}
+
+// ── CONTRIBUTION: envelope canonical, inner payload simplified ─────────────
+
+// NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
+// §scope): the mapping chapter covers COMPOSITION and every class reachable
+// from it, and nothing else. `contribution_create.yaml` §Simplified Formats
+// permits `versions[i].data` to be a COMPOSITION, EHR_STATUS, or FOLDER in
+// simplified form, but master05 defines no mapping for EHR_STATUS/FOLDER
+// (their field identifiers would come from an OPT they do not have, master02
+// §Relationship to Other Specifications). Decision: only COMPOSITION inner
+// payloads are simplifiable — a non-COMPOSITION inner payload is rejected
+// (create: the conversion cannot produce it → `422`; get: `406` naming
+// COMPOSITION).
+
+/// Convert a simplified CONTRIBUTION request into a canonical envelope: the
+/// envelope stays canonical JSON; each present `versions[i].data` is rebuilt
+/// from the simplified `format` into a canonical COMPOSITION using the
+/// `openehr-template-id` header. Missing header → `422`.
+pub(crate) async fn contribution_from_simplified(
+    state: &AppState,
+    headers: &HeaderMap,
+    body: &Bytes,
+    format: WireFormat,
+) -> Result<Value, RestError> {
+    let template_id = header_template_id(headers).ok_or_else(missing_template_id)?;
+    let mut envelope: Value = serde_json::from_slice(body).map_err(|e| {
+        RestError(ApiError::BadRequest(format!(
+            "invalid CONTRIBUTION envelope JSON: {e}"
+        )))
+    })?;
     let wt = state
         .backend()
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    let structured = openehr_flat::to_structured(comp, &wt).map_err(|e| flat_err(&e))?;
-    let json = serde_json::to_string(&structured)
-        .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
-    Ok(negotiate::structured_json_body(status, json))
+    let now = now();
+    let Some(versions) = envelope.get_mut("versions").and_then(Value::as_array_mut) else {
+        return Ok(envelope);
+    };
+    for version in versions.iter_mut() {
+        let Some(obj) = version.as_object_mut() else {
+            continue;
+        };
+        let Some(data) = obj.get("data") else {
+            continue; // attestation-only / delete members carry no data
+        };
+        let comp = match format {
+            WireFormat::Flat => {
+                let map = data.as_object().ok_or_else(|| {
+                    RestError(ApiError::Unprocessable(
+                        "a FLAT CONTRIBUTION versions[].data must be a JSON object".to_owned(),
+                    ))
+                })?;
+                openehr_flat::convert::composition_from_flat(map, &wt, &now)
+            }
+            WireFormat::Structured => {
+                openehr_flat::convert::composition_from_structured(data, &wt, &now)
+            }
+            _ => {
+                return Err(internal(
+                    "non-simplified format routed to CONTRIBUTION converter",
+                ));
+            }
+        }
+        .map_err(|e| flat_input_err(&e))?;
+        obj.insert("data".to_owned(), comp);
+    }
+    Ok(envelope)
+}
+
+/// Render a stored CONTRIBUTION body in a simplified `format`: the envelope
+/// stays canonical JSON; each present `versions[i].data` COMPOSITION is
+/// serialized into the simplified form. A present non-COMPOSITION inner payload
+/// → `406` naming COMPOSITION as the only simplifiable kind.
+pub(crate) async fn contribution_to_simplified(
+    state: &AppState,
+    status: StatusCode,
+    body: &Value,
+    format: WireFormat,
+) -> Result<Response, RestError> {
+    let mut envelope = body.clone();
+    if let Some(versions) = envelope.get_mut("versions").and_then(Value::as_array_mut) {
+        for version in versions.iter_mut() {
+            let Some(obj) = version.as_object_mut() else {
+                continue;
+            };
+            // Clone the inner payload so no borrow of `obj` is held across the
+            // async WebTemplate resolution or the final re-insert.
+            let Some(data) = obj.get("data").cloned() else {
+                continue; // an OBJECT_REF version (unresolved) has no inner payload
+            };
+            let kind = data.pointer("/_type").and_then(Value::as_str);
+            if kind != Some("COMPOSITION") {
+                return Err(RestError(ApiError::NotAcceptable(
+                    "only COMPOSITION version payloads can be serialized in a Simplified \
+                     Format; request application/json for this CONTRIBUTION"
+                        .to_owned(),
+                )));
+            }
+            let wt = state
+                .backend()
+                .web_template(&composition_template_id(&data)?)
+                .await
+                .map_err(RestError::from)?;
+            let simplified = match format {
+                WireFormat::Flat => {
+                    openehr_flat::convert::composition_to_flat(&data, &wt).map(Value::Object)
+                }
+                WireFormat::Structured => {
+                    openehr_flat::convert::composition_to_structured(&data, &wt)
+                }
+                _ => {
+                    return Err(internal(
+                        "non-simplified format routed to CONTRIBUTION renderer",
+                    ));
+                }
+            }
+            .map_err(|e| flat_output_err(&e))?;
+            obj.insert("data".to_owned(), simplified);
+        }
+    }
+    let json = serde_json::to_string(&envelope)
+        .map_err(|e| internal(format!("CONTRIBUTION serialization: {e}")))?;
+    Ok(match format {
+        WireFormat::Structured => negotiate::structured_json_body(status, json),
+        _ => negotiate::flat_json_body(status, json),
+    })
+}
+
+// ── Non-templated resources: uniform reject ────────────────────────────────
+
+/// Reject Simplified-Formats negotiation on a resource that has no
+/// Simplified-Formats mapping — EHR, `EHR_STATUS`, FOLDER, and the demographic
+/// PARTY types. `415` when the request `Content-Type` is a simplified type
+/// (input), `406` when the `Accept` cannot be satisfied by canonical JSON/XML
+/// (output). Canonical requests pass through untouched.
+///
+/// NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
+/// §scope + `master02-overview.adoc` §Relationship to Other Specifications):
+/// simplified field identifiers are generated from an Operational Template, and
+/// master05 defines mappings only for COMPOSITION and the classes it contains.
+/// The OAS declares the simplified media types on these endpoints via
+/// `Accept_LOCATABLE`/`ContentType_LOCATABLE`, but no spec governs their
+/// simplified serialization — so we reject rather than guess. If a future
+/// ITS-REST release defines these mappings, this reject branch is replaced.
+pub(crate) fn guard_non_templated(headers: &HeaderMap) -> Result<(), RestError> {
+    if let Some(WireFormat::Flat | WireFormat::Structured | WireFormat::WebTemplate) =
+        negotiate::content_type_format(headers)
+    {
+        return Err(RestError(ApiError::UnsupportedMediaType(
+            "Simplified Formats are not defined for this resource; supported request \
+             Content-Type: application/json, application/xml"
+                .to_owned(),
+        )));
+    }
+    if negotiate::resolve_accept(headers, negotiate::CANONICAL, WireFormat::CanonicalJson).is_none()
+    {
+        return Err(RestError(ApiError::NotAcceptable(
+            "Simplified Formats are not defined for this resource; supported response \
+             formats: application/json, application/xml"
+                .to_owned(),
+        )));
+    }
+    Ok(())
+}
+
+/// Whether the request body arrived in a simplified data-instance format
+/// (`application/openehr.wt.flat+json` / `…structured+json`) — used by callers
+/// that must resolve the template id from the header rather than the canonical
+/// payload (e.g. the authz PEP's composition-template extraction).
+pub(crate) fn is_simplified_body(headers: &HeaderMap) -> bool {
+    matches!(
+        negotiate::content_type_format(headers),
+        Some(WireFormat::Flat | WireFormat::Structured)
+    )
 }
 
 #[cfg(test)]
@@ -187,27 +373,79 @@ pub(crate) async fn composition_structured_response(
 )] // test assertions/diagnostics/fixtures
 mod tests {
     use axum::response::IntoResponse;
-    use http::StatusCode;
+    use http::{HeaderMap, HeaderValue, StatusCode, header};
 
-    use super::{flat_err, flat_input_err};
+    use super::{flat_input_err, flat_output_err, guard_non_templated, header_template_id};
 
-    /// a FLAT/STRUCTURED **input** conversion failure is client data →
-    /// `422`, not a `500` server fault (ITS-REST `Requests_and_responses.md`
-    /// §HTTP status codes). `openehr_flat::from_flat` is presently infallible in
-    /// practice, so this asserts the mapping directly at the seam.
+    fn headers(pairs: &[(&str, &str)]) -> HeaderMap {
+        let mut h = HeaderMap::new();
+        for (k, v) in pairs {
+            h.insert(
+                header::HeaderName::from_bytes(k.as_bytes()).unwrap(),
+                HeaderValue::from_str(v).unwrap(),
+            );
+        }
+        h
+    }
+
+    /// An input conversion failure is client data → `422` (`Requests_and_responses`
+    /// §HTTP status codes).
     #[test]
     fn input_conversion_failure_maps_to_422() {
-        let e = openehr_flat::FlatError::Conversion("bad leaf".to_owned());
+        let e = openehr_flat::error::FlatError::Conversion("bad leaf".to_owned());
         let status = flat_input_err(&e).into_response().status();
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     }
 
-    /// an **output** conversion failure (rendering stored server data)
-    /// stays a `500` — the server should always be able to convert its own data.
+    /// An output conversion failure (rendering stored server data) stays `500`.
     #[test]
     fn output_conversion_failure_stays_500() {
-        let e = openehr_flat::FlatError::Conversion("bad leaf".to_owned());
-        let status = flat_err(&e).into_response().status();
+        let e = openehr_flat::error::FlatError::Conversion("bad leaf".to_owned());
+        let status = flat_output_err(&e).into_response().status();
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    /// The template id is read from the `openehr-template-id` header
+    /// (case-insensitive) — never a query parameter (`Requests_and_responses`
+    /// §openehr-template-id).
+    #[test]
+    fn template_id_from_header_case_insensitive() {
+        assert_eq!(
+            header_template_id(&headers(&[("openehr-template-id", "T1")])).as_deref(),
+            Some("T1")
+        );
+        assert_eq!(
+            header_template_id(&headers(&[("OPENEHR-TEMPLATE-ID", "T2")])).as_deref(),
+            Some("T2")
+        );
+        assert!(header_template_id(&HeaderMap::new()).is_none());
+    }
+
+    /// A simplified `Content-Type` on a non-templated resource → `415`; a
+    /// simplified `Accept` → `406`; canonical requests pass.
+    #[test]
+    fn guard_non_templated_rejects_simplified() {
+        assert_eq!(
+            guard_non_templated(&headers(&[(
+                "content-type",
+                "application/openehr.wt.flat+json"
+            )]))
+            .unwrap_err()
+            .0
+            .status(),
+            StatusCode::UNSUPPORTED_MEDIA_TYPE
+        );
+        assert_eq!(
+            guard_non_templated(&headers(&[(
+                "accept",
+                "application/openehr.wt.structured+json"
+            )]))
+            .unwrap_err()
+            .0
+            .status(),
+            StatusCode::NOT_ACCEPTABLE
+        );
+        assert!(guard_non_templated(&headers(&[("content-type", "application/json")])).is_ok());
+        assert!(guard_non_templated(&headers(&[("accept", "application/xml")])).is_ok());
     }
 }

@@ -5,12 +5,12 @@ the per-phase files for detail. Status values: `not-started`, `in-progress`,
 `blocked`, `done`. Phase files were **renumbered (2026-07-04) into one clean
 `00→20, 99` sequence** so number = order.
 
-> **Three pivots shape this (read the ADRs):**
-> - **ADR-004** — the openEHR **spec layer is generated** from BMM, not
->   hand-transcribed (`openehr-base/rm/am/term/lang`).
-> - **ADR-005** — the **ITS layer is generated** (canonical XML `ToXml`/`FromXml`
+> **Three pivots shape this record:**
+> - The openEHR **spec layer is generated** from BMM, not hand-transcribed
+>   (`openehr-base/rm/am/term/lang`).
+> - The **ITS layer is generated** (canonical XML `ToXml`/`FromXml`
 >   + the ITS-REST contract, in `openehr-its`); JSON validation + fidelity gates green.
-> - **ADR-006** — the **EHRbase application** is a *modern idiomatic Rust service
+> - The **application** is a *modern idiomatic Rust service
 >   on top of the generated `openehr-*` crates* (not a 1:1 Java-structure port),
 >   with Basic + OAuth2/OIDC auth in Stage 1 (RBAC in Stage 2). App phases build
 >   as **compiling, tested increments**.
@@ -111,6 +111,7 @@ Spec-grounded enterprise features from the B8 roadmap; each closed with ECC
 | — | Docs cleanup: 45 historical files pruned, references repointed | 2026-07-11 | #51 |
 | W1 | Public documentation website — mdBook on Pages: landing, versioned book (dev · latest · v3.0.0 via the `docs-dist` archive), offline OpenAPI reference (7 API groups), link + OAS-drift gates (both negative-tested), same-PR docs discipline | 2026-07-11 | #52, #54, #56, #57, #60, #62, #63 |
 
+| FLAT | Simplified Formats spec-exact greenfield rewrite — `openehr-flat` re-authored from the STABLE ITS-REST `simplified_formats` chapters (one internal sim tree, FLAT/STRUCTURED as pure codecs, typed FlatKey model, master05 table-driven codecs, master06 ctx vocabulary, template-driven walkers with level re-materialisation, in-context WT children per the master04 example, non-conforming stored values via `|raw`); REST negotiation rebuilt (one WireFormat core, RFC 9110 q-values, full endpoint matrix incl. CONTRIBUTION inner payloads, `openehr-template-id` enforcement, strict 406/415 incl. all four retired media types, native utoipa OpenAPI advertising the formats); the `ehrbase-quirks` flag and every vendor-oracle framing deleted; 75 spec-example vectors + corpus round-trips 37/37 stable; new ECC-SF area (16 cases, all passing) — ECC **386/351/0** CORE+STANDARD PASS, OPTIONS OBTAINED (up from 370/335/0, zero drift); resolves issue #95 | 2026-07-17 | #108 |
 | W-3f | Platform-crate redesign — the `ehrbase` crate rebuilt spec-first: 12 design registers (spec-onto-code, `docs/design/platform/`), big-bang rewrite into versioning/ (signing dissolved per RM common master06 §Digital Signature) + storage/ (node/version/ehr/tag repos — the semantics/SQL seam) + service/<10 SM chapters> + aql/sql/ split + validation/ + templates/ + extensions/ quarantine; CommitEnv hooks close the CONTRIBUTION-path guard gap; OR-CONTAINS implemented (the blueprint's B6 claim was false); lifecycle state machine, case-insensitive identifiers (+migration 0007), Extract audit events; all 127 register G-rows closed; 1440/1440 nextest, ehrbase clippy-zero, ECC 341/315/0 held exactly (CORE+STANDARD PASS) with the instrument's bare-ETag parsing fixed and the E.2 directory guard restored | 2026-07-13 | (this PR) |
 | A1 | Full spec audit — 24-chapter register (1,126 requirements) verified + fixed, zero deferrals: version-tree branching/merge provenance, the AOM 1.4 + ADL2 artefact validators, the AQL single-row function set + TERMINOLOGY boolean/URI forms, RM invariant completion (DV_TEXT family, identifiers, lists, tables), terminology constants + strict subsumption, protocol tail (resolve_refs, body-uid cross-check, supplied contribution uid, ADL2 wire 409); spec-only citation rule enforced on every touched file | 2026-07-12 | (this PR) |
 | W-11 | Benchmark rewritten as the hospital-day stress instrument: ward-simulated clinical workload on official CKM templates (byte-identical across SUTs), 16-class CO-corrected latency histograms, CPU/RSS/storage/cold-start sampling, saturation-knee ladder (generator-bound + died-under-load detection), SVG-charted reports + cross-SUT COMPARISON; committed hour-profile pair (rs: 47/188 MB, 0.9% CPU, p99 wins every headline class; upstream: 515/606 MB, 1.7% CPU; knee: upstream 643 vs ours 161 req/s — published, P20 fuel); found + fixed en route: 2 example-generator defects (structural stubs at0017, openEHR rubric labels — both spec-cited, ECC-TPL-017 added), the W-12 overload OOM (shed layer, 503 + Retry-After), 6 instrument defects | 2026-07-14 | (this PR) |

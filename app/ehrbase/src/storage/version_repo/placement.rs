@@ -9,7 +9,6 @@
 
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;

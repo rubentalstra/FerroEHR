@@ -24,7 +24,7 @@ use openehr_rm::model;
 use super::interval::{iv_lower, iv_upper};
 use super::{NodeView, Violation};
 
-/// LOCATABLE meta attributes tolerated on any RM class (see the PORT NOTE in
+/// LOCATABLE meta attributes tolerated on any RM class (see the NOTE in
 /// [`check_attribute`]: archie-era OPTs constrain these on PATHABLE-only
 /// classes).
 const LOCATABLE_META_ATTRS: &[&str] = &[
@@ -37,7 +37,7 @@ const LOCATABLE_META_ATTRS: &[&str] = &[
 ];
 
 /// Legacy `(class, attribute)` pairs tolerated for prior-art OPT compatibility
-/// (PORT NOTE): `ELEMENT.null_flavor` is the archetype-tooling (US) spelling of
+/// (NOTE): `ELEMENT.null_flavor` is the archetype-tooling (US) spelling of
 /// RM `null_flavour` (`org.openehr.rm.data_structures` ELEMENT), and
 /// `ITEM_TABLE.rotated` is an RM 1.0.x attribute removed from later RM
 /// releases — both appear in widely-deployed OPT 1.4 artifacts (the vendored
@@ -101,7 +101,7 @@ pub(super) fn check_attribute(
         return Ok(());
     }
     match model::attribute(parent_rm, attr_name) {
-        // PORT NOTE (prior-art OPT tolerance): archie/openEHR-SDK tooling
+        // NOTE (prior-art OPT tolerance): archie/openEHR-SDK tooling
         // models every constrainable node as Locatable, so published OPTs
         // (incl. the vendored IPS template) constrain LOCATABLE meta attributes
         // (`name`, `archetype_node_id`, …) on classes the RM derives from
@@ -168,7 +168,7 @@ fn rm_conformance(
     }
 
     // VCACA: "archetype attribute reference model cardinality conformance …"
-    // (line 162). PORT NOTE: the static RM model (`openehr_rm::model`) exposes an
+    // (line 162). NOTE: the static RM model (`openehr_rm::model`) exposes an
     // attribute's *container kind* (`None`/`List`/`Set`/`Hash`) but not the RM's
     // numeric cardinality bounds, and cADL itself hedges that RM-cardinality
     // enforcement "may depend somewhat on knowledge of the software system"

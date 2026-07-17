@@ -19,7 +19,7 @@
 //!
 //! The bytes signed are the `VERSION.canonical_form()` produced by `openehr-rm`
 //! (canonical openEHR JSON per RFC 8785, signature attribute Void during
-//! serialization — master06 §Digital Signature, S-40). PORT NOTE (G-10,
+//! serialization — master06 §Digital Signature, S-40). NOTE (G-10,
 //! master06 §Digital Signature `[.tbd]`): the exact canonical serialization is
 //! openEHR-TBD (ODIN preferred, XML libraries differ); we use canonical openEHR
 //! JSON, which is deterministic and signature-independent. This module is

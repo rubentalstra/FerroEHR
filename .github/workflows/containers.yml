@@ -94,7 +94,10 @@ jobs:
           shared-key: containers-${{ matrix.platform }}
 
       - name: Build (release, native)
-        run: cargo build --release --locked -p ehrbase
+        # The binary is produced by the ehrbase-server package (bin name
+        # `ehrbase`) since the crate consolidation; `-p ehrbase` is the
+        # platform LIBRARY and yields no binary to strip.
+        run: cargo build --release --locked -p ehrbase-server
 
       - name: Strip
         run: strip target/release/ehrbase

@@ -2,7 +2,7 @@
 name: run-conformance
 description: >
   Runs the ECC conformance suite (scripts/conformance.sh) — our own
-  conformance framework and the ADR-008 acceptance instrument — against the
+  conformance framework and the acceptance instrument — against the
   Docker-composed server (or any BYO SUT). Use when the user asks to check
   conformance, run the conformance/ECC suite, verify spec compliance, or at
   phase close for the zero-drift gate.
@@ -43,7 +43,7 @@ Rewritten 2026-07-13 for the multi-SUT instrument (w10).
    adjudication register applies to foreign SUTs only.
 3. **Compare against the committed baseline**
    (`docs/conformance/ehrbase-rs/results.json`): the only permitted delta is
-   newly-green cases — **zero drift** (blueprint §4 rule 4). Report:
+   newly-green cases — **zero drift**. Report:
    executed / passed / failed / adjudicated-skip counts, the machine
    verdicts, and any drift case-by-case.
 4. **Diagnose failures** from the case's own citation + schedule trace

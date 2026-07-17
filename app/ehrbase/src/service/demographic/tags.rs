@@ -10,7 +10,6 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Value, json};
-use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;
@@ -108,7 +107,7 @@ impl EhrbaseService {
 
 /// One demographic `ITEM_TAG` in its wire shape (RM `common.item_tag`).
 ///
-/// PORT NOTE: `owner_id` references the tagged party itself — there is no
+/// NOTE: `owner_id` references the tagged party itself — there is no
 /// owning EHR for a demographic tag (no openEHR spec governs the owner of an
 /// ehr-less demographic tag — our own design).
 fn party_tag_json(row: &tag_repo::TagRow) -> Value {

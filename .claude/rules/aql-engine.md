@@ -4,18 +4,18 @@ paths: ["crates/openehr-query/**", "app/ehrbase/src/aql/**"]
 
 # AQL engine rules
 
-The AQL engine is the crown jewel — **built (P16, extended through B2–B6)**;
-this rule governs maintenance and extension. It spans two locations:
+The AQL engine is the crown jewel — **built and extended**; this rule
+governs maintenance and extension. It spans two locations:
 
 - `crates/openehr-query/` — the spec crate: AQL 1.1.0 **lexer + AST + parser**
   (`logos` + `chumsky`, corpus-validated). Semantic path analysis consumes
   this AST inside the engine.
 - `app/ehrbase/src/aql/` — the **execution engine**: AST → **our own typed
-  query IR** → PostgreSQL, designed fresh per ADR-008 over the node model,
+  query IR** → PostgreSQL, designed fresh over the node model,
   with path analysis driven by the **BMM-generated RM attribute model** (no
   reflection, no hand tables). The AQL terminology family
   (`TERMINOLOGY('expand')` merged into `matches` at semantic analysis; later
-  stages typed rejects) landed at B4. EHRbase's engine is prior art only.
+  stages typed rejects) is implemented. EHRbase's engine is prior art only.
 - **Every unsupported construct is a typed, citable reject** — never a
   silent wrong answer, never a generic 500.
 
@@ -25,7 +25,7 @@ The parser is `logos` + `chumsky` (`openehr-query`), reimplemented from the
 QUERY 1.1.0 grammar — **no ANTLR runtime is ever a dependency of the server.**
 This is done; don't revisit it.
 
-## The pipeline (our design, ADR-008)
+## The pipeline (our design)
 
 parse (`openehr-query`, done) → path analysis + typing against the
 **BMM-generated RM attribute model** (+ WebTemplate where template context is
@@ -38,9 +38,9 @@ assemble `RESULT_SET` (schema 1.0.3). Keep the IR a distinct pass — that is
 what keeps the hard cases tractable — and do **not** collapse it away.
 
 Versioning semantics: `LATEST_VERSION` = the current partial index;
-`ALL_VERSIONS` = the temporal table unfiltered (supported — ADR-008). A pure
+`ALL_VERSIONS` = the temporal table unfiltered (supported). A pure
 perf tuning of the SQL that isn't needed for correctness is a
-`// PERF(port):` for P20 (Optimization).
+`// TODO(perf):` for later optimization work.
 
 ## Spec sources (the oracle)
 

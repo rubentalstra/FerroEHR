@@ -2,7 +2,7 @@
 //!
 //! `ATTESTATION` extends `AUDIT_DETAILS` and inherits `System_id_valid`.
 //!
-//! PORT NOTE: archie's own `Attestation` invariants (`Items_valid`,
+//! NOTE: archie's own `Attestation` invariants (`Items_valid`,
 //! `Reason_valid`) are both `ignored` (never checked), so only the inherited
 //! `System_id_valid` applies. The inherited `Change_type_valid` is
 //! terminology-bound (deferred).

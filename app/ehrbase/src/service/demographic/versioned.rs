@@ -10,7 +10,6 @@
 //! §Versioned Objects govern the wire shapes.
 
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;
@@ -21,7 +20,7 @@ use crate::versioning::object_version_id::TreeId;
 impl EhrbaseService {
     /// The `VERSIONED_PARTY` for a party (any of the five kinds). A non-party id
     /// is `404`. `time_created` is the commit time of the earliest held version
-    /// (for a locally-created party, v1); the G-6 `owner_id` PORT NOTE lives in
+    /// (for a locally-created party, v1); the G-6 `owner_id` NOTE lives in
     /// `support::versioned_wrapper`.
     pub(super) async fn versioned_party(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;

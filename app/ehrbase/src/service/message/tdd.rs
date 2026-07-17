@@ -20,7 +20,7 @@
 //!    `..__invalid_opt_doesnt_exist` case; a stored-but-unbuildable template
 //!    surfaces through [`EhrbaseService::web_template_for`]).
 //! 2. **Body conversion** — the OPT-guided TDD-body → canonical-COMPOSITION walk
-//!    ([`openehr_flat::from_tdd`]): the template node names are matched to the
+//!    ([`openehr_flat::tdd::from_tdd`]): the template node names are matched to the
 //!    `WebTemplate` node tree to supply `archetype_node_id`s, re-materialise the
 //!    `HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT` wrappers the template compacts, and
 //!    parse each `rm:`-namespaced leaf into its RM datatype. A body that does not
@@ -31,7 +31,7 @@
 //!    master06 §Contributions), returning its `OBJECT_VERSION_ID`. A validation
 //!    failure is `content_invalid` — never a silent partial COMPOSITION.
 //!
-//! PORT NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
+//! NOTE (keep — `i_tdd_service.adoc` declares no `import_tdds` signature):
 //! `import_tdds` is a design-filled `(UUID, Vec<String>) -> Vec<String>`,
 //! all-or-nothing — every TDD is parsed and converted before any is committed,
 //! so a single unconvertible TDD rejects the whole batch with nothing committed.
@@ -44,7 +44,6 @@
 use quick_xml::Reader;
 use quick_xml::events::Event;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;
@@ -236,7 +235,7 @@ impl EhrbaseService {
         // OPT-guided body → canonical COMPOSITION. A body that does not conform
         // to the template is a typed precondition_violation (never a silent
         // partial COMPOSITION).
-        openehr_flat::from_tdd(tdd, &web_template).map_err(|e| {
+        openehr_flat::tdd::from_tdd(tdd, &web_template).map_err(|e| {
             SmError::precondition(format!(
                 "TDD body does not conform to operational template {:?}: {e}",
                 envelope.template_id

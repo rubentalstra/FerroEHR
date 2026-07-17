@@ -7,10 +7,10 @@
 //! machinery in `dv_ordered_impl`). The comparison functions
 //! (`less_than` / `is_strictly_comparable_to`) live in `dv_ordered_impl`.
 //!
-//! PORT NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
+//! NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
 //! is deferred to the composition validator + `openehr-term`.
 //!
-//! PORT NOTE (spec tension, `dv_scale.adoc` symbol vs `code_phrase.adoc`
+//! NOTE (spec tension, `dv_scale.adoc` symbol vs `code_phrase.adoc`
 //! `Code_string_valid`): `dv_scale.adoc` permits an UNCODED scale point — a
 //! symbol whose `defining_code.code_string` is blank — while the CODE_PHRASE
 //! invariant `Code_string_valid: not code_string.is_empty` forbids any empty

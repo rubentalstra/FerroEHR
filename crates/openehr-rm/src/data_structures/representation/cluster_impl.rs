@@ -2,7 +2,7 @@
 //!
 //! Only the inherited LOCATABLE `Archetype_node_id_valid`.
 //!
-//! PORT NOTE: openEHR's CLUSTER spec has an "items not empty" invariant, but the
+//! NOTE: openEHR's CLUSTER spec has an "items not empty" invariant, but the
 //! reference implementation archie does **not** enforce it (no `@Invariant`), so
 //! we do not either — enforcing it would over-reject relative to the reference.
 

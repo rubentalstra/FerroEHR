@@ -10,7 +10,7 @@
 //! resource), so the coarse RBAC gate fail-safe classes it as `Admin` (requires
 //! the admin role when RBAC is on), matching the physical-delete ADMIN group.
 //!
-//! PORT NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
+//! NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
 //! [`EventSubscriptionAdapter`] extension, not an SM interface. Like the
 //! terminology extension it carries no ABAC resource kind (the generic PEP
 //! `Skip`s it) and no ATNA audit-table entry (subscriptions are configuration,

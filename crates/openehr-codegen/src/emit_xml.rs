@@ -583,7 +583,7 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
             // canonical-XML wire; its RM-XML shape is not spec-defined here.
             let _ = writeln!(
                 b,
-                "// PORT NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
+                "// NOTE: Hash<String, {}> field `{rust}` is off the RM canonical-XML wire (resource metadata); not serialized.",
                 f.map_value.as_deref().unwrap_or("?")
             );
         }

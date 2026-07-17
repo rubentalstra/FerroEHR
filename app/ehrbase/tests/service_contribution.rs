@@ -502,7 +502,7 @@ async fn contribution_listing_count_and_ehr_summary() {
     // CONTRIBUTIONs, one of them a COMPOSITION.
     let ehr_id = create_ehr(&svc).await; // contribution #1
 
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let status_uid = svc
         .get_ehr_status_at_time(ehr_uuid, None)
         .await
@@ -869,7 +869,7 @@ async fn contribution_resolve_refs() {
     let svc = EhrbaseService::new(pg.migrated_pool("contribution_resolve").await);
 
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let comp_uid = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
@@ -921,7 +921,7 @@ async fn contribution_supplied_uid() {
     let svc = EhrbaseService::new(pg.migrated_pool("contribution_uid").await);
 
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
     let wanted = uuid::Uuid::now_v7();
     let mut body = serde_json::json!({
@@ -968,7 +968,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     // (1) Unknown EHR → 404 VersionedObjectDoesNotExist (the existence signal of
     // the folded query), never a conflict and never a driver error.
     let ghost = "00000000-0000-7000-8000-0000000000fe"
-        .parse::<uuid::Uuid>()
+        .parse::<ehrbase::ids::EhrId>()
         .expect("uuid");
     let missing = svc
         .create_composition(ghost, uv(composition("obs"), "249", None))
@@ -982,7 +982,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     // A live, modifiable EHR accepts a composition (the fold does not falsely
     // block — is_modifiable = None/true → writable).
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await
         .expect("modifiable EHR accepts a composition");
@@ -1033,7 +1033,7 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     let svc = EhrbaseService::new(pool.clone());
 
     let ehr_id = create_ehr(&svc).await;
-    let ehr_uuid = ehr_id.parse::<uuid::Uuid>().expect("ehr uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
     let created = svc
         .create_composition(ehr_uuid, uv(composition("obs"), "249", None))
         .await

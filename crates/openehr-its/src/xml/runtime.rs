@@ -218,7 +218,7 @@ impl ToXml for f64 {
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         // openEHR emits a decimal point on whole reals (`120.0`, not `120`);
         // Rust's default `f64` Display drops it.
-        // PERF(port): revisit against the fidelity corpus for exact number parity.
+        // TODO(perf): revisit against the fidelity corpus for exact number parity.
         let s = if self.fract() == 0.0 && self.is_finite() {
             format!("{self:.1}")
         } else {

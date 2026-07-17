@@ -270,7 +270,7 @@ pub(crate) async fn commit_version_set(
             .and_then(|a| a.get("change_type"))
             .and_then(coded_value);
         let data = version.get("data").cloned().filter(|d| !d.is_null());
-        // PORT NOTE: a first version legitimately carries no
+        // NOTE: a first version legitimately carries no
         // `preceding_version_uid` (SM `update_version.adoc` types it `0..1`;
         // master03 common_package: "must be specified, except … a first
         // version"). The SM glue serializes a `None` preceding to JSON `null`,
@@ -289,7 +289,7 @@ pub(crate) async fn commit_version_set(
         };
         // m4: default committer/system_id from the CONTRIBUTION audit when the
         // version item omits them (a "should be copied", so an explicit
-        // per-version value is honoured — PORT NOTE: SHOULD, not MUST).
+        // per-version value is honoured — NOTE: SHOULD, not MUST).
         let audit = parse_audit(
             version.get("commit_audit"),
             code,
@@ -692,7 +692,7 @@ fn coded_value(dv: &Value) -> Option<String> {
     dv.get("defining_code")
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
-        // PORT NOTE: `UPDATE_AUDIT.change_type` is a `Terminology_code`
+        // NOTE: `UPDATE_AUDIT.change_type` is a `Terminology_code`
         // (`{terminology_id, code_string}`), not a `DV_CODED_TEXT` (SM
         // `update_audit.adoc`). The SM glue serializes it to that shape, so read
         // a top-level `code_string` too; otherwise the client's change type is

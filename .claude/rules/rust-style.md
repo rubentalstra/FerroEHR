@@ -2,13 +2,13 @@
 paths: ["crates/**/*.rs", "app/**/*.rs", "tools/**/*.rs"]
 ---
 
-# Rust style — idiomatic application code (ADR-006)
+# Rust style — idiomatic application code
 
 Applies to hand-written `.rs`: the application (`ehrbase`, `ehrbase-rest`,
 `ehrbase-sm`), the tools (`conformance`, `benchmark`), the hand-written spec
 crates (`openehr-its`, `openehr-flat`, `openehr-term`, `openehr-query`, the
 tooling crates), and `*_impl.rs` behaviour files. **The application is modern idiomatic Rust of our own design, built on the
-generated `openehr-*` crates** (ADR-006/008). The openEHR specifications are
+generated `openehr-*` crates**. The openEHR specifications are
 the authority; EHRbase and other CDRs are prior art only.
 
 **Generated files are off-limits.** The openEHR spec/ITS crates (`openehr-base`,
@@ -27,28 +27,32 @@ change the emitter and regenerate (`cargo run -p openehr-codegen -- emit`/
   `argon2`, `utoipa`, `moka`, `jiff`, `uuid`. Add deps only from
   `Cargo.toml [workspace.dependencies]` (`dep.workspace = true`).
 - **Every crate you touch compiles + is clippy-clean + tested before you move
-  on** (ADR-006 retired the "phases need not compile" gate for the app layer).
+  on.**
 - **Read the vendored spec first for any spec-facing behaviour** — the
   normative text + CNF schedule live at `docs/specs/openehr/` (use
   `/spec-lookup`; full rule in `spec-adherence.md`).
 - **The specs are the authority; design the bespoke logic ourselves** (AQL
-  engine, versioning, validation, node codec — ADR-008), verified by the CNF
+  engine, versioning, validation, node codec), verified by the CNF
   conformance suite + corpus tests. Consult prior art (upstream EHRbase, other
   CDRs) when useful; never port it blindly.
 
 ## Annotation vocabulary (grep-able, where relevant)
 
-`// TODO(port):` unfinished work · `// PERF(port):` optimize after conformance ·
-`// PORT NOTE:` a deliberate spec-gap or design decision (with the reason)
-· `// SAFETY:` justification for any `unsafe` (expect almost none — this is a
-web service). No PORT STATUS trailer on application code (that was the retired
-1:1-port convention).
+Use ONLY the official comment forms (owner ruling 2026-07-17 — the bespoke
+`(port)` vocabulary is deleted and banned): `// TODO:` for unfinished work ·
+`// TODO(perf):` for a performance optimization to do later · `// NOTE:` for a
+deliberate spec-silent design decision (carry the spec citation, or the
+explicit flag "no openEHR spec governs this — our own design/extension") ·
+`// SAFETY:` for any `unsafe` (expect almost none — this is a web service).
+There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
+`PERF(port)` — those retired conventions must not reappear.
 
 ## Type and error conventions
 
 - `thiserror` error enums in library crates; `anyhow` only in the `ehrbase`
-  binary. No `unwrap`/`expect` outside `#[cfg(test)]`; use `todo!("<why>")`
-  where a dependency isn't ready, but keep the crate compiling.
+  binary. No `unwrap`/`expect` outside `#[cfg(test)]`; `todo!()` is denied
+  workspace-wide (owner rule 2026-07-12) — an unready dependency gets a typed
+  error or real code, never a panic placeholder.
 - Closed openEHR subtype sets are already Rust `enum`s in `openehr-rm`; consume
   them. Trait objects only for genuinely open, runtime polymorphism.
 - Back-references use `Weak<..>` or an index, never an owning reference; recursive
@@ -68,5 +72,5 @@ web service). No PORT STATUS trailer on application code (that was the retired
 
 - Do not port JVM plumbing (classloaders, Spring context internals, PF4J) —
   design the idiomatic Rust equivalent (tower middleware, axum state, a Rust
-  plugin model) or defer to Stage 2 with a `// PORT NOTE:`.
+  plugin model) or defer to Stage 2 with a `// NOTE:`.
 - Do not hand-edit generated code; do not re-model what `openehr-*` provides.

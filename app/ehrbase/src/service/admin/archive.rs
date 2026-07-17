@@ -4,7 +4,7 @@
 //! `archive_ehrs` "Move selected EHRs to archival storage", `archive_parties`
 //! "Move selected Parties and relationships to archival storage".
 //!
-//! PORT NOTE (re-verify — `i_admin_archive.adoc` says "Move … to archival
+//! NOTE (re-verify — `i_admin_archive.adoc` says "Move … to archival
 //! storage"): the *archival storage tier* is spec-silent — openEHR defines no
 //! storage mechanics — so this is our own design. This wave realises the
 //! "move" as a `vo_archive` marker only: serving reads are unchanged (zero
@@ -12,7 +12,7 @@
 //! All-or-nothing — an unknown id aborts the transaction before any marker is
 //! written.
 //!
-//! PERF(port): the physical movement of `vo_archive`-marked rows to a cold
+//! TODO(perf): the physical movement of `vo_archive`-marked rows to a cold
 //! storage tier (and any read-path effect) is deferred to P20 optimization —
 //! no openEHR spec governs storage mechanics, so the tiering is our own design
 //! and purely a performance concern, not a conformance one.
@@ -45,7 +45,7 @@ impl EhrbaseService {
     /// SM `archive_parties`: mark each party's versioned object as archived
     /// (idempotent).
     ///
-    /// PORT NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
+    /// NOTE (keep — `i_admin_archive.adoc` "Move selected Parties and
     /// relationships"): only the party VO is marked this wave, not the related
     /// `PARTY_RELATIONSHIP`s. While archival is a read-neutral marker this has
     /// no observable effect; the relationship marker set is extended when the

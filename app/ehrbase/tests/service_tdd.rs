@@ -18,7 +18,7 @@
 //!
 //! These tests assert the typed envelope rejections (malformed payload, wrong
 //! namespace, unknown EHR, unknown template) and the full happy path: a
-//! well-formed TDD for a provisioned template is converted (`openehr_flat::from_tdd`)
+//! well-formed TDD for a provisioned template is converted (`openehr_flat::tdd::from_tdd`)
 //! and committed through the validated `create_composition` path, then read back
 //! via the composition surface.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
@@ -27,7 +27,6 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
-use uuid::Uuid;
 
 use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
@@ -140,7 +139,10 @@ async fn tdd_import_rejects_unknown_ehr() {
     let svc = EhrbaseService::new(pg.migrated_pool("tdd_no_ehr").await);
 
     let err = svc
-        .import_tdd(Uuid::now_v7(), tdd("persistent_minimal.en.v1__full.xml"))
+        .import_tdd(
+            ehrbase::ids::EhrId::new(),
+            tdd("persistent_minimal.en.v1__full.xml"),
+        )
         .await
         .expect_err("a TDD for a non-existent EHR must be rejected");
     assert_eq!(
@@ -171,7 +173,7 @@ async fn tdd_import_rejects_unknown_template() {
 }
 
 /// A well-formed TDD for a **provisioned** template is converted (OPT-guided
-/// body walk, `openehr_flat::from_tdd`) and committed through the validated
+/// body walk, `openehr_flat::tdd::from_tdd`) and committed through the validated
 /// `create_composition` path, then read back via the composition surface.
 ///
 /// This upgrades the former `..._body_deferred` expectation: the OPT-guided
@@ -217,7 +219,7 @@ async fn tdd_import_commits_composition() {
         .split("::")
         .next()
         .unwrap()
-        .parse::<Uuid>()
+        .parse::<ehrbase::ids::VoId>()
         .expect("vo uuid");
     let comp = svc
         .get_composition_latest(ehr, vo_uuid)

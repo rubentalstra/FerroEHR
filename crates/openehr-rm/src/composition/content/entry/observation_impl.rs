@@ -5,7 +5,7 @@
 //!   must be present.
 //! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
 //!
-//! PORT NOTE: archie's `Entry.Language_valid` / `Encoding_valid` are
+//! NOTE: archie's `Entry.Language_valid` / `Encoding_valid` are
 //! terminology-bound (deferred), and `Subject_validity` /
 //! `Other_participations_valid` are `ignored`. `OBSERVATION` has no own
 //! invariant.

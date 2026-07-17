@@ -27,9 +27,14 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use openehr_flat::{WebTemplate, build_web_template, from_flat, to_flat};
+use openehr_flat::convert::{composition_from_flat, composition_to_flat};
+use openehr_flat::webtemplate::{WebTemplate, build_web_template};
 use openehr_its::opt14;
 use serde_json::Value;
+
+/// Fixed `ctx/time` default for the FLAT build direction (ITS-REST
+/// simplified_formats master04 §Context) so round-trips are deterministic.
+const NOW: &str = "2024-01-01T00:00:00Z";
 
 fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -119,11 +124,7 @@ fn compositions() -> Vec<(String, String, Value)> {
     out
 }
 
-fn to_map(m: &indexmap::IndexMap<String, Value>) -> serde_json::Map<String, Value> {
-    m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
-fn sorted(m: &indexmap::IndexMap<String, Value>) -> BTreeMap<String, Value> {
+fn sorted(m: &serde_json::Map<String, Value>) -> BTreeMap<String, Value> {
     m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
@@ -146,24 +147,24 @@ fn flat_roundtrip_stable() {
         let Some(wt) = wts.get(tid) else { continue };
         paired += 1;
 
-        let flat0 = match to_flat(comp, wt) {
+        let flat0 = match composition_to_flat(comp, wt) {
             Ok(f) => f,
             Err(e) => {
                 failures.push(format!("{name}: to_flat: {e}"));
                 continue;
             }
         };
-        let rm1 = match from_flat(&to_map(&flat0), wt) {
+        let rm1 = match composition_from_flat(&flat0, wt, NOW) {
             Ok(v) => v,
             Err(e) => {
                 failures.push(format!("{name}: from_flat: {e}"));
                 continue;
             }
         };
-        let flat1 = match to_flat(&rm1, wt) {
+        let flat1 = match composition_to_flat(&rm1, wt) {
             Ok(f) => f,
             Err(e) => {
-                failures.push(format!("{name}: to_flat(rm1): {e}"));
+                failures.push(format!("{name}: composition_to_flat(rm1): {e}"));
                 continue;
             }
         };
@@ -243,7 +244,8 @@ fn golden_flat(comp_file: &str, template_id: &str, snap: &str) {
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
-    let flat = to_flat(&comp, wt).unwrap_or_else(|e| panic!("to_flat {comp_file}: {e}"));
+    let flat =
+        composition_to_flat(&comp, wt).unwrap_or_else(|e| panic!("to_flat {comp_file}: {e}"));
     let map: BTreeMap<String, Value> = flat.into_iter().collect();
     insta::assert_json_snapshot!(snap, map);
 }
@@ -270,7 +272,7 @@ fn demo_vitals_flat_key_shape() {
     let wt = wts.get("Demo Vitals").expect("Demo Vitals web template");
     let text = std::fs::read_to_string(composition_dir().join("demo_vitals_352.json")).unwrap();
     let comp: Value = serde_json::from_str(&text).unwrap();
-    let flat = to_flat(&comp, wt).expect("to_flat");
+    let flat = composition_to_flat(&comp, wt).expect("to_flat");
 
     // ctx keys present.
     assert!(flat.contains_key("ctx/language"), "ctx/language present");
@@ -320,7 +322,7 @@ fn instruction_activity_from_flat_is_valid_rm() {
         .get("minimal_instruction.en.v1")
         .expect("minimal_instruction web template");
     let comp = load("minimal_instruction.json");
-    let rm = from_flat(&to_map(&to_flat(&comp, wt).unwrap()), wt).unwrap();
+    let rm = composition_from_flat(&composition_to_flat(&comp, wt).unwrap(), wt, NOW).unwrap();
     assert!(
         is_valid_rm(&rm),
         "minimal_instruction from_flat must deserialise as openehr-rm: {rm}"
@@ -336,53 +338,117 @@ fn instruction_activity_from_flat_is_valid_rm() {
 /// `context.participations` on input, round-trip stable.
 #[test]
 fn ctx_participation_shortcuts_round_trip() {
+    // Output uses the lossless master05 §EVENT_CONTEXT path rows
+    // (`context/_participation:i|…`); the master06 ctx/ shortcuts remain
+    // accepted on input (they are lossy — no scheme key — so they are not
+    // the emission form).
     let wts = web_templates();
     let wt = wts
         .get("minimal_observation.en.v1")
         .expect("minimal_observation web template");
     let comp = load("minimal_observation.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     assert!(
         flat0
             .keys()
-            .any(|k| k.starts_with("ctx/participation_name")),
-        "participation ctx emitted: {:?}",
+            .any(|k| k.contains("context/_participation:0|name")),
+        "participations emit as the lossless path form: {:?}",
         flat0.keys().collect::<Vec<_>>()
     );
-    let rm = from_flat(&to_map(&flat0), wt).unwrap();
+    let rm = composition_from_flat(&flat0, wt, NOW).unwrap();
     assert!(
         rm.pointer("/context/participations/0/performer").is_some(),
         "participations rebuilt in context: {rm}"
     );
     assert!(is_valid_rm(&rm), "participation round-trip valid RM: {rm}");
-    let flat1 = to_flat(&rm, wt).unwrap();
+    let flat1 = composition_to_flat(&rm, wt).unwrap();
     assert_eq!(
         sorted(&flat0),
         sorted(&flat1),
-        "ctx participation round-trip not stable"
+        "participation round-trip not stable"
+    );
+
+    // The master06 §Participation ctx shortcuts still build the same RM on
+    // input.
+    let root = &wt.tree.id;
+    let mut shortcut = serde_json::Map::new();
+    shortcut.insert("ctx/language".to_owned(), Value::String("en".into()));
+    shortcut.insert("ctx/territory".to_owned(), Value::String("US".into()));
+    shortcut.insert("ctx/time".to_owned(), Value::String(NOW.into()));
+    shortcut.insert(
+        "ctx/participation_name:0".to_owned(),
+        Value::String("Dr. Marcus Johnson".into()),
+    );
+    shortcut.insert(
+        "ctx/participation_function:0".to_owned(),
+        Value::String("requester".into()),
+    );
+    let _ = root;
+    let rm = composition_from_flat(&shortcut, wt, NOW).expect("ctx shortcuts build");
+    assert_eq!(
+        rm.pointer("/context/participations/0/performer/name")
+            .and_then(Value::as_str),
+        Some("Dr. Marcus Johnson"),
+        "ctx participation shortcut lands in EVENT_CONTEXT.participations: {rm}"
     );
 }
 
 /// `ctx/health_care_facility` (name + id) round-trips.
 #[test]
 fn ctx_health_care_facility_round_trips() {
+    // Output uses the lossless master05 §EVENT_CONTEXT path row
+    // (`context/_health_care_facility|…` — it carries |id_scheme, which the
+    // master06 ctx shortcut cannot); the ctx/ shortcut stays input-only.
     let wts = web_templates();
     let Some(wt) = wts.get("cardinality_of_section") else {
         return; // template not present in this checkout
     };
     let comp = load("cardinality_of_section__full.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     assert!(
-        flat0.contains_key("ctx/health_care_facility|name"),
-        "health_care_facility ctx emitted"
+        flat0
+            .keys()
+            .any(|k| k.contains("context/_health_care_facility|name")),
+        "health_care_facility emits as the lossless path form: {:?}",
+        flat0.keys().collect::<Vec<_>>()
     );
-    let rm = from_flat(&to_map(&flat0), wt).unwrap();
+    let rm = composition_from_flat(&flat0, wt, NOW).unwrap();
     assert_eq!(
         rm.pointer("/context/health_care_facility/name"),
         comp.pointer("/context/health_care_facility/name"),
         "health_care_facility name rebuilt"
     );
-    assert_eq!(sorted(&flat0), sorted(&to_flat(&rm, wt).unwrap()));
+    assert_eq!(
+        sorted(&flat0),
+        sorted(&composition_to_flat(&rm, wt).unwrap())
+    );
+
+    // The master06 §health_care_facility ctx shortcut still builds on input.
+    let root = &wt.tree.id;
+    let mut shortcut = serde_json::Map::new();
+    shortcut.insert("ctx/language".to_owned(), Value::String("en".into()));
+    shortcut.insert("ctx/territory".to_owned(), Value::String("US".into()));
+    shortcut.insert("ctx/time".to_owned(), Value::String(NOW.into()));
+    shortcut.insert(
+        "ctx/health_care_facility|name".to_owned(),
+        Value::String("Hospital".into()),
+    );
+    shortcut.insert(
+        "ctx/health_care_facility|id".to_owned(),
+        Value::String("9091".into()),
+    );
+    shortcut.insert(
+        "ctx/id_namespace".to_owned(),
+        Value::String("HOSPITAL-NS".into()),
+    );
+    let _ = root;
+    let rm = composition_from_flat(&shortcut, wt, NOW).expect("ctx facility shortcut builds");
+    assert_eq!(
+        rm.pointer("/context/health_care_facility/name")
+            .and_then(Value::as_str),
+        Some("Hospital"),
+        "ctx facility shortcut lands in the EVENT_CONTEXT: {rm}"
+    );
 }
 
 /// DV_MULTIMEDIA (`|size` + uri) and DV_PARSABLE (`|formalism`) leaves rebuild
@@ -394,13 +460,13 @@ fn multimedia_and_parsable_leaves_are_valid_rm() {
         .get("minimal_action_3.en.v1")
         .expect("a web template with a DV_MULTIMEDIA leaf");
     let comp = load("minimal_with_optional_attribute.json");
-    let flat = to_flat(&comp, wt).unwrap();
+    let flat = composition_to_flat(&comp, wt).unwrap();
     assert!(
         flat.keys().any(|k| k.ends_with("|size")),
         "DV_MULTIMEDIA emits |size: {:?}",
         flat.keys().collect::<Vec<_>>()
     );
-    let rm = from_flat(&to_map(&flat), wt).unwrap();
+    let rm = composition_from_flat(&flat, wt, NOW).unwrap();
     assert!(is_valid_rm(&rm), "multimedia from_flat valid RM: {rm}");
 }
 
@@ -408,16 +474,19 @@ fn multimedia_and_parsable_leaves_are_valid_rm() {
 /// full DV_CODED_TEXT (SIM-B master04 §S_DV_CODED_TEXT; the regular
 /// `|code`/`|terminology`/`|value` form stays the emitted shape).
 #[test]
-fn terse_coded_text_parses() {
+fn terse_coded_text_string_is_rejected() {
+    // The terse coded-string form ("terminology::code|value|") is the
+    // DEVELOPMENT-state SM serial-data-formats encoding, not the STABLE
+    // ITS-REST wire: master05 §DV_CODED_TEXT defines only the
+    // |code/|value/|terminology suffixes (+ |other, master04 §Open
+    // Value-Sets). A bare string on a closed coded leaf is rejected, never
+    // silently coerced.
     let wts = web_templates();
     let wt = wts
         .get("Corona_Anamnese")
         .expect("Corona_Anamnese web template");
     let comp = load("compo_corona.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
-    // Find a TREE coded leaf's |code key (not a special-cased `ctx/…` or
-    // root-level `category`/`language`/`territory` shortcut) and replace the
-    // trio with the terse form.
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     let code_key = flat0
         .keys()
         .find(|k| {
@@ -426,9 +495,8 @@ fn terse_coded_text_parses() {
                 && !k.ends_with("/category|code")
                 && !k.ends_with("/language|code")
                 && !k.ends_with("/territory|code")
-                && k.matches('/').count() >= 2
         })
-        .expect("a coded tree leaf in the fixture")
+        .expect("a coded tree leaf")
         .clone();
     let base = code_key.trim_end_matches("|code").to_owned();
     let code = flat0[&code_key].as_str().unwrap().to_owned();
@@ -443,18 +511,19 @@ fn terse_coded_text_parses() {
         .unwrap_or("")
         .to_owned();
     let mut terse = flat0.clone();
-    terse.shift_remove(&code_key);
-    terse.shift_remove(&format!("{base}|terminology"));
-    terse.shift_remove(&format!("{base}|value"));
+    terse.remove(&code_key);
+    terse.remove(&format!("{base}|terminology"));
+    terse.remove(&format!("{base}|value"));
     terse.insert(
         base.clone(),
         serde_json::Value::String(format!("{terminology}::{code}|{value}|")),
     );
-    let rm = from_flat(&to_map(&terse), wt).expect("terse coded form parses");
-    let rm_regular = from_flat(&to_map(&flat0), wt).unwrap();
-    assert_eq!(
-        rm, rm_regular,
-        "the terse and regular coded forms build the identical RM"
+    let err = composition_from_flat(&terse, wt, NOW)
+        .expect_err("the terse coded-string form is not part of the STABLE wire");
+    let msg = err.to_string();
+    assert!(
+        msg.contains(base.rsplit('/').next().unwrap_or(&base)) || msg.contains("invalid value"),
+        "the rejection names the offending leaf: {msg}"
     );
 }
 
@@ -500,8 +569,8 @@ fn persistent_composition_round_trip_synthesises_no_context() {
     assert!(comp.get("context").is_none(), "fixture carries no context");
 
     let wt = persistent_wt();
-    let flat = to_flat(&comp, &wt).expect("to_flat");
-    let rebuilt = from_flat(&to_map(&flat), &wt).expect("from_flat");
+    let flat = composition_to_flat(&comp, &wt).expect("to_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("431".to_owned())),
@@ -533,7 +602,7 @@ fn persistent_composition_keeps_explicitly_supplied_context() {
         "ctx/participation_name:0".to_owned(),
         Value::String("Dr Explicit".into()),
     );
-    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("431".to_owned()))
@@ -548,9 +617,12 @@ fn persistent_composition_keeps_explicitly_supplied_context() {
 }
 
 #[test]
-fn event_composition_still_gets_a_context() {
-    // Regression guard: a non-persistent Composition still gets the mandatory
-    // Event context filled from the ctx defaults.
+fn event_composition_context_follows_explicit_ctx_input() {
+    // RM `COMPOSITION.context` is optional with no category-coupled
+    // invariant (RM UML composition class: Category_validity constrains only
+    // the category code), so no Event context is fabricated from the
+    // category alone — it is built exactly when the client expressed
+    // event-context content (master06: time/setting/... ctx keys).
     let wt = persistent_wt();
     let root = &wt.tree.id;
     let mut flat = serde_json::Map::new();
@@ -559,13 +631,32 @@ fn event_composition_still_gets_a_context() {
         format!("{root}/category|value"),
         Value::String("event".into()),
     );
-    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("433".to_owned()))
     );
     assert!(
-        rebuilt.pointer("/context/start_time/value").is_some(),
-        "an event Composition still carries a synthesised Event context: {rebuilt:?}"
+        rebuilt.pointer("/context").is_none(),
+        "no Event context is fabricated without event-context input: {rebuilt:?}"
+    );
+
+    // With an explicit ctx/time the context IS built, defaults filled
+    // (master06 §§time, setting).
+    flat.insert("ctx/time".to_owned(), Value::String(NOW.into()));
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat with ctx/time");
+    assert_eq!(
+        rebuilt
+            .pointer("/context/start_time/value")
+            .and_then(Value::as_str),
+        Some(NOW),
+        "explicit ctx/time builds the Event context: {rebuilt:?}"
+    );
+    assert_eq!(
+        rebuilt
+            .pointer("/context/setting/defining_code/code_string")
+            .and_then(Value::as_str),
+        Some("238"),
+        "setting defaults to openehr 238 other care (master06 §setting)"
     );
 }

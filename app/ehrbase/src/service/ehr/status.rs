@@ -15,7 +15,6 @@ use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
 use serde_json::Value;
 use sqlx::PgConnection;
-use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
@@ -319,7 +318,7 @@ impl EhrbaseService {
     /// [`crate::versioning::CommitEnv`] `ensure_content_writable` hook
     /// (G-6-adjacent).
     ///
-    /// PORT NOTE (wire): ITS-REST 1.0.3 does not enumerate a status code for a
+    /// NOTE (wire): ITS-REST 1.0.3 does not enumerate a status code for a
     /// write to a non-modifiable EHR (`composition_create.yaml` lists only
     /// 201/400/404/422; the CNF schedule `master06-func_tc_ehr.adoc` tests the
     /// flag flip, not the write-block outcome), so the code is
@@ -343,7 +342,7 @@ impl EhrbaseService {
 
     /// The `409 Conflict` for a content write to a deactivated EHR
     /// (`EHR_STATUS.is_modifiable = false`) — see
-    /// [`Self::ensure_content_writable`] for the PORT NOTE on the status-code
+    /// [`Self::ensure_content_writable`] for the NOTE on the status-code
     /// choice. Shared with the combined
     /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
     /// single-sourced.
@@ -623,7 +622,7 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_status: UpdateVersion,
     ) -> Result<String, SmError> {
-        // PORT NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
+        // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
         // — the aggregate of the five discrete SM mutators above (formal
         // equivalence, `master02-overview.adoc` §Interface Calls). The
         // optimistic `preceding_version_uid` rides in UpdateVersion; a mismatch

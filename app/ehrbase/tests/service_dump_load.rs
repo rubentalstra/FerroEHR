@@ -126,7 +126,7 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
 /// directory `FOLDER` — the same fixture shape as `service_admin.rs` (avoids
 /// `COMPOSITION`, which needs a template the shared fixtures do not supply, so the
 /// dump/load path is exercised without a `template_store` dependency).
-async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
+async fn seed_full_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     let mut updated = svc
@@ -185,7 +185,7 @@ async fn counts(pool: &PgPool, ehr_id: Uuid) -> (i64, i64, i64, i64) {
 /// Read the current `EHR_STATUS` and directory `FOLDER` of `ehr_id` as canonical
 /// JSON, serialized in storage (jsonb-normalized) key order — the byte-equal
 /// comparison surface.
-async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: Uuid) -> (String, String) {
+async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId) -> (String, String) {
     let status = svc
         .get_ehr_status_at_time(ehr_id, None)
         .await
@@ -215,8 +215,8 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
     // Snapshot the source canonical content before export.
     let src1 = canonical_snapshot(&source, ehr1).await;
     let src2 = canonical_snapshot(&source, ehr2).await;
-    let src_counts1 = counts(&src_pool, ehr1).await;
-    let src_counts2 = counts(&src_pool, ehr2).await;
+    let src_counts1 = counts(&src_pool, ehr1.into()).await;
+    let src_counts2 = counts(&src_pool, ehr2.into()).await;
 
     // Export to a canonical-JSON archive (small segment size forces multiple
     // segment files, exercising the segmenting path).
@@ -255,8 +255,8 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
     );
 
     // And the storage shape (version/node/contribution/tag counts) matches.
-    assert_eq!(counts(&dst_pool, ehr1).await, src_counts1);
-    assert_eq!(counts(&dst_pool, ehr2).await, src_counts2);
+    assert_eq!(counts(&dst_pool, ehr1.into()).await, src_counts1);
+    assert_eq!(counts(&dst_pool, ehr2.into()).await, src_counts2);
 
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -280,7 +280,7 @@ async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
     // First load into the empty target: both EHRs land, no failures.
     let first = target.load_ehrs(dir.clone()).await.expect("first load");
     assert!(first.is_empty(), "first load is clean, got {first:?}");
-    let after_first = counts(&dst_pool, ehr1).await;
+    let after_first = counts(&dst_pool, ehr1.into()).await;
 
     // Second load of the same archive: every EHR id now already exists, so each
     // is recorded in a DUMP_LOAD_FAIL_REPORT (dump_status = false) and skipped —
@@ -302,7 +302,7 @@ async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
 
     // The repository is unchanged by the failed re-load (idempotent skip).
     assert_eq!(
-        counts(&dst_pool, ehr1).await,
+        counts(&dst_pool, ehr1.into()).await,
         after_first,
         "a duplicate re-load must not add or remove rows"
     );

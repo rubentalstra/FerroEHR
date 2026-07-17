@@ -2,7 +2,7 @@
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature —
 //! the signature "is generated according to the openPGP standard (IETF RFC
-//! 4880)". PORT NOTE (master06 §Digital Signature): an RFC 4880 signature
+//! 4880)". NOTE (master06 §Digital Signature): an RFC 4880 signature
 //! internally hashes the signed data, so a detached signature over the
 //! `canonical_form` bytes is the standard-conformant realisation of the spec's
 //! "digital signature … created from the hash".

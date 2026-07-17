@@ -3,7 +3,7 @@
 //! from the source retrieve frame, reprocessing if necessary to obtain
 //! intended type (single, list, `time_series`)").
 //!
-//! PORT NOTE (selector grammar). The SM leaves `frame_path` undefined ("Path
+//! NOTE (selector grammar). The SM leaves `frame_path` undefined ("Path
 //! within `last_frame` result"); the documented grammar here is our own
 //! realization:
 //!
@@ -147,7 +147,7 @@ fn coerce(raw: Raw, type_name: &str) -> Result<VariableValue, String> {
 
 /// Type check one extracted value against `type_name`.
 ///
-/// PORT NOTE: the SM does not standardise the `type_name` vocabulary ("Formal
+/// NOTE: the SM does not standardise the `type_name` vocabulary ("Formal
 /// type name from defining model"); the families below cover the master10
 /// examples (`Date`, `Quantity`, `Boolean`) plus the common scalar names.
 /// Unknown names (and `Any`) pass through unchecked.

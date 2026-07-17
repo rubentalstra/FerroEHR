@@ -33,6 +33,10 @@ pub(super) async fn run(
     let base = state.config().server.base_path.clone();
     let seg = kind.segment();
 
+    // Demographic PARTY types are not templated → no Simplified-Formats
+    // mapping; reject a simplified Content-Type/Accept uniformly.
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match action {
         "create" => {
             // All per-kind `*CreateParams` are field-identical; reuse one.
@@ -179,7 +183,7 @@ async fn run_delete(
     // version_uid). All per-kind delete params are field-identical; reuse one.
     let p = params::build::<AgentDeleteParams>(&parts.path, parts.query.as_deref(), h)?;
     let preceding = p.uid_based_id.clone();
-    // PORT NOTE (wire, compatibility): `person_delete.yaml` declares no `If-Match`
+    // NOTE (wire, compatibility): `person_delete.yaml` declares no `If-Match`
     // and takes the preceding version from the path `uid_based_id` (an
     // `OBJECT_VERSION_ID`, design its-rest/demographic.md §2.2), which is passed
     // positionally to `party_delete` below; `If-Match` is retained only as a

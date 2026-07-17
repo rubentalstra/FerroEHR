@@ -24,7 +24,7 @@
 //! and, for partial/malformed temporal values, an unavailable magnitude — both
 //! are surfaced as `Option::None` rather than a panic (no-`unwrap` rule).
 //!
-//! PORT NOTE: the *indexed* query-path realisation of these ordering
+//! NOTE: the *indexed* query-path realisation of these ordering
 //! semantics is the P16 `openehr_magnitude` SQL function; this module is the
 //! in-process RM authority the interval/reference-range invariants use, and the
 //! two must stay semantically aligned.

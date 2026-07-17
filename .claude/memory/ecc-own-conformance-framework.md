@@ -28,4 +28,4 @@ CNF is design-time reading + input payloads only.
 guards (`REGEN_CATALOG=1` to allocate); reports are catalogue-driven; keep
 the crate clippy-clean; check the v4 build-out list in the phase file before
 starting. (The spec-adherence mandate + greenfield pivot now live in
-CLAUDE.md hard rules + ADR-008.) Related: [[owner-work-style]].
+CLAUDE.md hard rules.) Related: [[owner-work-style]].

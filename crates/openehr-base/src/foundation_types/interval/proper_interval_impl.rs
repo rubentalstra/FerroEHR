@@ -8,7 +8,7 @@
 use super::proper_interval::ProperIntervalData;
 use crate::validate::{InvariantViolation, Validate};
 
-// PORT NOTE: `Limits_consistent` needs an ordering on `T`. For BASE intervals
+// NOTE: `Limits_consistent` needs an ordering on `T`. For BASE intervals
 // `T` is an ordered foundation type, so we bound on `PartialOrd`. (RM
 // `DV_INTERVAL<T: DV_ORDERED>` cannot use this — openEHR ordered-magnitude
 // comparison is the P16 `openehr_magnitude` concern — so it checks only the

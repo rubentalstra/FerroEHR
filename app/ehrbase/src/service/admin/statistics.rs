@@ -21,7 +21,7 @@ use crate::service::status::SmError;
 /// service is not a versioned-content service (`None` → statistics are trivially
 /// empty/0).
 ///
-/// PORT NOTE (already-correct — `platform_service.adoc`): `a_service` is
+/// NOTE (already-correct — `platform_service.adoc`): `a_service` is
 /// "Name of a versioned content service". Only `Ehr` (EHR-scoped) and
 /// `Demographic` (ehr-less) hold contributions in this CDR; the remaining
 /// members (`Admin`/`Definitions`/`Ehr_index`/`Message`/`Query`/`System_log`)
@@ -105,7 +105,7 @@ impl EhrbaseService {
     /// SM `versioned_composition_count`: the count of distinct COMPOSITION
     /// versioned objects with a version committed within the (optional) range.
     ///
-    /// PORT NOTE (already-correct — `platform_service.adoc`): COMPOSITIONs are
+    /// NOTE (already-correct — `platform_service.adoc`): COMPOSITIONs are
     /// EHR-scoped, so only `a_service = Ehr` yields a non-zero count; every
     /// other member → 0 (COMPOSITIONs are not in its scope).
     ///

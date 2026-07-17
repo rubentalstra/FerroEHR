@@ -13,7 +13,7 @@
 //!   attributes except signature, suitable for generating reliable hashes and
 //!   signatures."
 //!
-//! PORT NOTE (design `docs/design/version-signing.md` §3.1): the spec leaves the
+//! NOTE (design `docs/design/version-signing.md` §3.1): the spec leaves the
 //! exact serialization `[.tbd]` ("not yet defined by openEHR; ODIN might be
 //! preferred"). We serialise the Version to canonical openEHR JSON (the ITS-JSON
 //! encoding the `OpenEhrType` derive produces — `_type`-tagged, nulls/empties

@@ -1,7 +1,7 @@
 //! Hand-written RM class invariants for `ADMIN_ENTRY`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
-//! `Archetype_node_id_valid`). See `observation_impl` for the PORT NOTE.
+//! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 
 use crate::composition::content::entry::admin_entry::AdminEntry;
 use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};

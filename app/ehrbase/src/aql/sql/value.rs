@@ -283,7 +283,7 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
             }
         }
         ValueMode::Value(Coercion::Boolean) => cast(as_text(base), "boolean"),
-        // PORT NOTE: temporal comparison casts the ISO-8601 leaf text to
+        // NOTE: temporal comparison casts the ISO-8601 leaf text to
         // timestamptz — precise for full timestamps; partial-precision temporals
         // (`2019`, `12:00`) are a documented gap (QUERY master03 §Built-in
         // Types/Dates and Times).

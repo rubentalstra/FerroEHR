@@ -1,5 +1,6 @@
 ---
 source: crates/openehr-flat/tests/structured.rs
+assertion_line: 319
 expression: structured
 ---
 {
@@ -8,11 +9,7 @@ expression: structured
     "territory": "SI",
     "composer_name": "Jane Nurse",
     "time": "2020-10-26T15:39:53.668+01:00",
-    "setting": {
-      "|code": "238",
-      "|value": "other care",
-      "|terminology": "openehr"
-    }
+    "setting": "238"
   },
   "vitals": {
     "vitals": [
@@ -36,6 +33,9 @@ expression: structured
                 ],
                 "description_of_thermal_stress": [
                   "Test description of symptoms"
+                ],
+                "time": [
+                  "2020-10-26T15:39:53.668+01:00"
                 ]
               }
             ]

@@ -40,7 +40,7 @@ pub struct AuthConfig {
     /// identically-named (upper-cased) role via scope→role extraction, so the
     /// RBAC `admin_role` gate subsumes it. Still consulted by the management
     /// surface's `AdminOnly` access level. Unset by default.
-    // PORT NOTE: `docs/design/configuration.md` §4 retires `admin_scope`; it is
+    // NOTE: `docs/design/configuration.md` §4 retires `admin_scope`; it is
     // kept for one transition while the management AdminOnly gate still reads it
     // — retiring it fully is a follow-up that rewires that gate to the RBAC
     // admin role. No openEHR spec governs authorization (SM places it out of

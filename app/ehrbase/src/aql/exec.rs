@@ -23,7 +23,7 @@ use crate::storage::node_repo::SubtreeAnchor;
 /// path**", and the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
 /// archetype/node codes inline in `path` (never a separate `archetype_id`), so a
 /// distinct field has no pinned semantics or golden to validate against.
-// PORT NOTE: no `archetype_id` field is emitted (the decision is recorded in
+// NOTE: no `archetype_id` field is emitted (the decision is recorded in
 // the register): SM `result_set_column.adoc` marks it "check on whether needed
 // or inside the path", the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
 // archetype/node codes inline in `path`, and no golden pins a standalone field.

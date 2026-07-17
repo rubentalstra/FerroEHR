@@ -3,7 +3,7 @@ paths: ["crates/openehr-its/**", "crates/openehr-flat/**"]
 ---
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
-(rewritten 2026-07-13; the patched-in ADR-002/005 supersession notes are folded in)
+(rewritten 2026-07-13)
 
 ## Spec sources (the oracle)
 
@@ -12,11 +12,14 @@ The vendored normative text is the authority for every wire shape
 `docs/specs/openehr/ITS-JSON/components/` (canonical-JSON schemas — the pin is
 recorded in `docs/VERSIONS.md`), `docs/specs/openehr/ITS-XML/` + the vendored
 XSDs at `crates/openehr-its/schemas/xml/` (canonical XML),
-`docs/specs/openehr/SM/docs/serial_data_formats/` + `SM/docs/simplified_im_b/`
-(SDT — FLAT/STRUCTURED semantics), and the CNF content chapters
+**`docs/specs/openehr/ITS-REST/docs/simplified_formats/` (STABLE — the
+FLAT/STRUCTURED wire authority: `master04` syntax + algorithms, `master05`
+per-type tables, `master06` ctx vocabulary)**, and the CNF content chapters
 (`docs/specs/openehr/CNF/docs/platform_test_schedule/master15`–`master17.x`)
 with the canonical fixtures under `CNF/tests/platform/robot/_resources/` as
-reference material.
+reference material. The SM `serial_data_formats` + `simplified_im_b` docs are
+DEVELOPMENT-state model documents (their terse string encodings conflict with
+the STABLE suffix encoding — never implement them); the SDT spec is retired.
 
 ## The `_type` mechanism (generated — do not improvise)
 
@@ -67,17 +70,22 @@ entry points.
 
 ## FLAT / STRUCTURED / Web Template (`openehr-flat`, hand-written)
 
-- Better's `web-template` semantics
-  (`github.com/better-care/web-template` + `web-template-tests`) are the
-  primary interop oracle while SDT remains development-status; SDF-normative
-  divergences carry a `// PORT NOTE:` and are reconciled by the P17 interop
-  audit.
-- `DV_QUANTITY` uses `|unit` (singular) — verified against Better + the
-  corpus (2026-07); genuine Better-only extras (`|unit_system`,
-  `|unit_display_name`) live behind the `ehrbase-quirks` feature flag, never
-  in the default path.
-- MIME types: `application/openehr.wt+json`, `…wt.flat+json`,
-  `…wt.structured+json`.
+- **The oracle is the STABLE ITS-REST Simplified Formats spec**
+  (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`): `master04`
+  (field-identifier syntax, node-id generation, level removal, `|raw`,
+  `|other`, the FLAT⇄STRUCTURED algorithms), `master05` (per-RM-type
+  suffix tables — e.g. `DV_QUANTITY` `|magnitude`/`|unit`), `master06`
+  (the `ctx/` vocabulary + defaults). Vendor implementations are prior
+  art only; there is no quirks feature flag — spec behaviour is the only
+  behaviour.
+- Architecture: one internal tree (`sim::SimNode`); FLAT and STRUCTURED
+  are pure codecs; RM conversion is written once (`flatten.rs`/`build.rs`,
+  entry points in `convert.rs`). Spec-example JSON blocks are the primary
+  test vectors; the OPT corpus is regression.
+- MIME types (`master02 §MIME Types` + the OAS `Resources.md`):
+  `application/openehr.wt+json`, `…wt.flat+json`, `…wt.structured+json`;
+  the deprecated `.schema+json` names and the legacy
+  `application/openehr.nc.flat+json` are NOT implemented.
 
 ## Acceptance instruments
 
@@ -85,13 +93,15 @@ entry points.
   `openehr-its/tests/` (deserialize → re-serialize → normalized value
   equality + ITS-JSON schema validation) — real corpus data, not hand-built
   fixtures.
-- **XML:** the round-trip + C14N gates; **FLAT:** `insta` golden vectors +
-  the Better test corpus.
+- **XML:** the round-trip + C14N gates; **FLAT/STRUCTURED:** the
+  spec-example vectors (every JSON block in `simplified_formats`
+  `master04`/`master05`/`master06`) + `insta` golden vectors + the OPT
+  corpus round-trips (regression).
 - Redact volatile fields (timestamps, generated UUIDs) before committing
   any snapshot. Never weaken a gate to get green (testing.md).
 - At the wire, the ECC suite (`tools/conformance`) is the end-to-end
   acceptance instrument.
 
-Hand-written files here follow `rust-style.md` (annotation vocabulary; **no
-PORT STATUS trailer — that convention is retired**). Generated files carry
-`// @generated` and are never hand-edited.
+Hand-written files here follow `rust-style.md` (the official
+comment-annotation forms; there is no PORT STATUS trailer). Generated files
+carry `// @generated` and are never hand-edited.

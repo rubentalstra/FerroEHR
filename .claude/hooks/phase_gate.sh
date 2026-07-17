@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # .claude/hooks/phase_gate.sh
 #
-# Claude Code Stop hook: blocks ending a session in which no phase checkbox was
-# ticked and no commit was made (CLAUDE.md six-step loop, steps 4-5).
+# Claude Code Stop hook: blocks ending a session in which the worklist was not
+# touched and no commit was made (CLAUDE.md worklist workflow).
 #
 # Uses .claude/.session-start-head written by inject_phase_context.sh at
 # SessionStart. Exit 2 blocks the stop once; a second stop attempt (with
@@ -31,10 +31,11 @@ if [ "$(cat "$marker")" != "$head_now" ]; then
   exit 0 # at least one commit was made this session
 fi
 
-# No commit yet: allow the stop only if a checkbox was ticked in the working tree.
-if git diff HEAD -- docs/plans 2>/dev/null | grep -qE '^\+.*- \[x\]'; then
+# No commit yet: allow the stop only if the worklist/plans were edited in the
+# working tree (a row updated, an item recorded).
+if ! git diff HEAD --quiet -- docs/plans 2>/dev/null; then
   exit 0
 fi
 
-echo "phase gate: no phase checkbox was ticked and no commit was made this session. Follow the six-step loop (CLAUDE.md): tick the finished task in the current phase file under docs/plans/ and commit as 'phase-NN: <task>' on a claude/* branch. If this session was purely informational, stop again to end anyway." >&2
+echo "worklist gate: no commit was made and docs/plans/WORKLIST.md was not touched this session. Follow the worklist workflow (CLAUDE.md): record/close the worklist row for what you did and commit on a claude/* branch. If this session was purely informational, stop again to end anyway." >&2
 exit 2
