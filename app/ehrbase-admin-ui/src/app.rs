@@ -1,12 +1,10 @@
 //! The root Leptos application: the HTML document shell, the theme provider,
-//! and the §7A route tree. `/login` is public; every other screen is nested
+//! and the route tree. `/login` is public; every other screen is nested
 //! under the session-guarded [`crate::pages::shell::AppShell`] layout, which
 //! renders the matched child through its `<Outlet/>`.
 //!
-//! Screens not yet built (dashboard, templates, queries, EHRs and their
-//! detail routes) render a small [`Placeholder`] card naming the stage that
-//! delivers them (W3 browse surfaces, W4 query-builder + dashboard). Every
-//! routed view — placeholders included — sets its own `<Title/>`.
+//! Screens not yet built render a small [`Placeholder`] card. Every routed
+//! view — placeholders included — sets its own `<Title/>`.
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
@@ -52,39 +50,36 @@ pub fn App() -> impl IntoView {
                     <ParentRoute path=path!("") view=crate::pages::shell::AppShell>
                         <Route
                             path=path!("")
-                            view=|| view! { <Placeholder title="Dashboard" stage="W4" /> }
+                            view=|| view! { <Placeholder title="Dashboard" /> }
                         />
                         <Route
                             path=path!("templates")
-                            view=|| view! { <Placeholder title="Templates" stage="W3" /> }
+                            view=crate::pages::templates::TemplatesPage
                         />
                         <Route
                             path=path!("templates/:template_id")
-                            view=|| view! { <Placeholder title="Template detail" stage="W3" /> }
+                            view=crate::pages::template_detail::TemplateDetailPage
                         />
                         <Route
                             path=path!("queries")
-                            view=|| view! { <Placeholder title="Stored queries" stage="W4" /> }
+                            view=|| view! { <Placeholder title="Stored queries" /> }
                         />
                         <Route
                             path=path!("queries/builder")
-                            view=|| view! { <Placeholder title="Query builder" stage="W4" /> }
+                            view=|| view! { <Placeholder title="Query builder" /> }
                         />
                         <Route
                             path=path!("queries/aql")
-                            view=|| view! { <Placeholder title="Raw AQL" stage="W4" /> }
+                            view=|| view! { <Placeholder title="Raw AQL" /> }
                         />
-                        <Route
-                            path=path!("ehrs")
-                            view=|| view! { <Placeholder title="EHRs" stage="W3" /> }
-                        />
+                        <Route path=path!("ehrs") view=crate::pages::ehrs::EhrsPage />
                         <Route
                             path=path!("ehrs/:ehr_id")
-                            view=|| view! { <Placeholder title="EHR detail" stage="W3" /> }
+                            view=crate::pages::ehr_detail::EhrDetailPage
                         />
                         <Route
                             path=path!("ehrs/:ehr_id/compositions/:uid")
-                            view=|| view! { <Placeholder title="Composition viewer" stage="W3" /> }
+                            view=crate::pages::composition::CompositionPage
                         />
                         <Route path=path!("system") view=crate::pages::system::SystemPage />
                     </ParentRoute>
@@ -94,19 +89,14 @@ pub fn App() -> impl IntoView {
     }
 }
 
-/// Interim screen for a route whose real UI lands in a later stage. Renders a
-/// `thaw` Card naming the screen and its delivering stage, and sets the page
-/// `<Title/>` so the routed-page title rule holds even before the screen
-/// exists.
+/// Interim screen for a route whose real UI is not built yet. Renders a
+/// `thaw` Card naming the screen and sets the page `<Title/>` so the
+/// routed-page title rule holds even before the screen exists.
 #[component]
 fn Placeholder(
     /// The screen's display name (also the page title stem).
     #[prop(into)]
     title: String,
-    /// The delivery stage label (`"W3"` browse surfaces, `"W4"` builder +
-    /// dashboard).
-    #[prop(into)]
-    stage: String,
 ) -> impl IntoView {
     let page_title = format!("{title} · ehrbase-admin");
     let heading = view! {
@@ -115,8 +105,8 @@ fn Placeholder(
         </thaw::CardHeader>
     }
     .into_any();
-    let note = view! { <p class="text-sm opacity-70">{format!("This screen is delivered in stage {stage}.")}</p> }
-    .into_any();
+    let note =
+        view! { <p class="text-sm opacity-70">"This screen is not available yet."</p> }.into_any();
     view! {
         <Title text=page_title />
         <div class="p-6">

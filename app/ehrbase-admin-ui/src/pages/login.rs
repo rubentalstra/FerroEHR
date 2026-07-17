@@ -1,4 +1,4 @@
-//! The §7A.1 `/login` screen: dual Basic + OIDC authentication.
+//! The `/login` screen: dual Basic + OIDC authentication.
 //!
 //! The Basic path is an `<ActionForm>` bound to the [`crate::auth::LoginBasic`]
 //! server action, so it submits and redirects even before WASM loads

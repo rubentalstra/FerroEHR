@@ -11,6 +11,7 @@
 pub mod app;
 pub mod auth;
 pub mod builder;
+pub mod components;
 pub mod error;
 pub mod format;
 pub mod pages;
