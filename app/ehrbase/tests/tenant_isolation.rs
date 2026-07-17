@@ -395,3 +395,58 @@ async fn scoped_pool_isolates_tenants_through_the_service() {
         "tenant a must NOT see tenant b's EHR"
     );
 }
+
+/// A connection opened by `acquire` itself (pool growth) gets only the
+/// `after_connect` hook — `before_acquire` fires solely for previously idle
+/// connections (docs.rs, `sqlx::pool::PoolOptions::before_acquire`: "This is
+/// _not_ invoked for new connections. Use `after_connect` for those."). The
+/// scoped pool must therefore stamp `ehrbase.tenant_id` in BOTH hooks;
+/// stamping only `before_acquire` lets a pool-growth acquire run as the
+/// reserved default tenant. This test forces pool growth inside a tenant
+/// scope by holding more connections than physically exist, then asserts the
+/// GUC on every one.
+#[tokio::test]
+async fn scoped_pool_stamps_connections_opened_during_acquire() {
+    use ehrbase::extensions::tenant_context::{self, TenantContext};
+
+    let pg = Pg::start().await;
+    // No migrations needed: GUC stamping is a pure pool-hook property.
+    let scoped = DbConfig::new(format!(
+        "postgres://postgres:postgres@{}:{}/postgres",
+        pg.host, pg.port
+    ));
+    let pool = db::connect_tenant_scoped(&scoped)
+        .await
+        .expect("tenant-scoped pool");
+
+    let tenant = Uuid::now_v7();
+    let ctx = TenantContext {
+        tenant_id: tenant,
+        system_id: "sys-fresh".to_owned(),
+    };
+    tenant_context::scope(ctx, async {
+        // Hold one connection more than the pool currently has, without
+        // releasing any: at least one acquire must open a NEW connection
+        // inside this tenant scope.
+        let target = pool.size() as usize + 1;
+        let mut held = Vec::with_capacity(target);
+        for _ in 0..target {
+            held.push(pool.acquire().await.expect("acquire under scope"));
+        }
+        for conn in &mut held {
+            let guc: Option<String> =
+                sqlx::query_scalar("SELECT current_setting('ehrbase.tenant_id', true)")
+                    .fetch_one(&mut **conn)
+                    .await
+                    .expect("read tenant GUC");
+            assert_eq!(
+                guc.as_deref(),
+                Some(tenant.to_string().as_str()),
+                "every checked-out connection must carry the scoped tenant GUC \
+                 (a fresh in-acquire connection missing it would run as the \
+                 reserved default tenant)"
+            );
+        }
+    })
+    .await;
+}

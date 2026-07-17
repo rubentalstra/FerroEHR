@@ -31,18 +31,17 @@ use crate::config::secret::SecretUrl;
 // ---------------------------------------------------------------------------
 
 /// The zero-config dev DSN (matches the compose dev stack). Production MUST
-/// override it (`docs/design/configuration.md` §3.16 checklist); the boot
-/// path warns prominently when [`DbConfig::is_dev_default`] holds.
+/// override it; the boot path warns prominently when
+/// [`DbConfig::is_dev_default`] holds.
 pub const DEFAULT_URL: &str = "postgres://ehrbase:ehrbase@localhost:5432/ehrbase";
 
 /// Connection settings for the application `PostgreSQL` database — the `[db]`
 /// section of the one config tree ([`crate::config::EhrbaseConfig`]), with no
 /// loader of its own.
 ///
-/// No openEHR spec governs persistence — our own design
-/// (`docs/design/configuration.md` §3.2). The DSN is a [`SecretUrl`]: its
-/// embedded credentials are redacted from every rendering (`Debug`,
-/// `/management/env`, `config check`).
+/// No openEHR spec governs persistence — our own design. The DSN is a
+/// [`SecretUrl`]: its embedded credentials are redacted from every rendering
+/// (`Debug`, `/management/env`, `config check`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct DbConfig {
@@ -82,9 +81,8 @@ impl DbConfig {
     }
 
     /// Whether the DSN is the built-in dev default (no operator override). The
-    /// boot path logs a prominent warning in this case
-    /// (`docs/design/configuration.md` §3.16) so a production deployment never
-    /// silently runs against the dev database.
+    /// boot path logs a prominent warning in this case so a production
+    /// deployment never silently runs against the dev database.
     #[must_use]
     pub fn is_dev_default(&self) -> bool {
         self.url.expose() == DEFAULT_URL
@@ -159,9 +157,23 @@ pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
     Ok(pool)
 }
 
-/// Create the **tenant-scoped** application pool: [`connect`] plus a
-/// `before_acquire` hook that stamps the `ehrbase.tenant_id` session GUC on
-/// every checked-out connection from the current request's tenant context
+/// Stamp the `ehrbase.tenant_id` session GUC on a connection from the
+/// current task's tenant context ([`crate::extensions::tenant_context::current`])
+/// — `''` (⇒ the reserved default tenant) when no tenant is in scope (a
+/// background worker, or a request that resolved no tenant).
+async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
+    let tenant = crate::extensions::tenant_context::current()
+        .map_or_else(String::new, |t| t.tenant_id.to_string());
+    sqlx::query("SELECT set_config('ehrbase.tenant_id', $1, false)")
+        .bind(tenant)
+        .execute(&mut *conn)
+        .await?;
+    Ok(())
+}
+
+/// Create the **tenant-scoped** application pool: [`connect`] plus hooks that
+/// stamp the `ehrbase.tenant_id` session GUC on every checked-out connection
+/// from the current request's tenant context
 /// ([`crate::extensions::tenant_context::current`]). Multi-tenancy is our own
 /// deployment extension — no openEHR spec governs it.
 ///
@@ -171,9 +183,20 @@ pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
 /// policy (and the `tenant_id` column DEFAULT) read. A connection returning
 /// to the pool keeps its session-level GUC, so every acquire re-stamps it —
 /// to the request's tenant, or to `''` (⇒ the reserved default tenant) when
-/// no tenant is in scope (a background worker, or a request that resolved no
-/// tenant) — so a reused connection never leaks the previous request's
-/// tenant.
+/// no tenant is in scope — so a reused connection never leaks the previous
+/// request's tenant.
+///
+/// The GUC is stamped in **both** pool hooks, and both are required
+/// (docs.rs, `sqlx::pool::PoolOptions::before_acquire`: "This is _not_
+/// invoked for new connections. Use `after_connect` for those."):
+///
+/// * `after_connect` — covers a connection freshly opened by `acquire`
+///   itself (pool growth under load). Without it, that acquire would run
+///   with the GUC unset, i.e. as the reserved default tenant. A connection
+///   opened by the background `min_connections` maintainer has no request
+///   context and is stamped `''`; it is re-stamped on checkout.
+/// * `before_acquire` — re-stamps a previously idle connection on every
+///   checkout, replacing whatever tenant its session carried before.
 ///
 /// Only intended to be wired when tenancy is on; the extra per-acquire
 /// statement is the multi-tenant cost, paid only in multi-tenant mode.
@@ -186,14 +209,17 @@ pub async fn connect(settings: &DbConfig) -> Result<PgPool, DbError> {
 /// statement fails on that first connection.
 pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbError> {
     let pool = pool_options(settings)
+        // Replaces the base `after_connect` (the setter overwrites), so the
+        // search path is applied here as well.
+        .after_connect(|conn, _meta| {
+            Box::pin(async move {
+                sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
+                stamp_tenant_guc(conn).await
+            })
+        })
         .before_acquire(|conn, _meta| {
             Box::pin(async move {
-                let tenant = crate::extensions::tenant_context::current()
-                    .map_or_else(String::new, |t| t.tenant_id.to_string());
-                sqlx::query("SELECT set_config('ehrbase.tenant_id', $1, false)")
-                    .bind(tenant)
-                    .execute(&mut *conn)
-                    .await?;
+                stamp_tenant_guc(conn).await?;
                 Ok(true)
             })
         })
