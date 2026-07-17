@@ -102,6 +102,10 @@ ssr = [
 
 [dev-dependencies]
 indexmap.workspace = true
+# E2E journeys (tests/e2e_*.rs): Rust-native WebDriver + the async runtime;
+# the console gate reads the browser log via thirtyfour's legacy-log API.
+thirtyfour.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 
 [lints]
 workspace = true
