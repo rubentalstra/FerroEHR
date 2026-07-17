@@ -138,19 +138,9 @@ pub(super) fn emit_rm_attrs(rm: &Value, rm_type: &str, out: &mut SimNode) {
         // `crate::ctx`); these emit only when a walker renders an EVENT_CONTEXT
         // node through the tree instead.
         "EVENT_CONTEXT" => {
-            if let Some(et) = rm.get("end_time").filter(|v| !v.is_null()) {
-                data_values::emit_leaf(
-                    et,
-                    "DV_DATE_TIME",
-                    None,
-                    out.occurrence_mut("_end_time", None),
-                );
-            }
-            if let Some(loc) = rm.get("location").filter(|v| !v.is_null()) {
-                out.occurrence_mut("_location", None)
-                    .attrs
-                    .insert(String::new(), loc.clone());
-            }
+            // end_time/location surface as the lossless ctx/ scalars
+            // (master06 §§end_time, location) — not re-emitted here; the
+            // `_end_time`/`_location` path forms stay accepted on input.
             if let Some(hcf) = rm.get("health_care_facility").filter(|v| !v.is_null()) {
                 parties::emit_party(hcf, out.occurrence_mut("_health_care_facility", None));
             }

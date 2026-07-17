@@ -351,6 +351,11 @@ mod tests {
         });
         let tree = parse_structured(&structured).unwrap();
         let flat = emit_flat(&tree);
+        // A single-item STRUCTURED array carries no `:i` in its property name,
+        // so the template-free transform cannot recover a repeating `:0`
+        // (master04 §Conversion Between Formats — indices live in property
+        // names; cardinality is a template fact). `any_event` (two items)
+        // keeps its indices.
         let expect: Map<String, Value> = [
             ("ctx/language", json!("en")),
             ("ctx/territory", json!("US")),
@@ -359,19 +364,19 @@ mod tests {
             ("ctx/work_flow_id|id", json!("567")),
             ("ctx/work_flow_id|type", json!("ORGANISATION")),
             (
-                "vital_signs/body_temperature:0/any_event:0/temperature|magnitude",
+                "vital_signs/body_temperature/any_event:0/temperature|magnitude",
                 json!(37.5),
             ),
             (
-                "vital_signs/body_temperature:0/any_event:0/temperature|unit",
+                "vital_signs/body_temperature/any_event:0/temperature|unit",
                 json!("°C"),
             ),
             (
-                "vital_signs/body_temperature:0/any_event:1/temperature|magnitude",
+                "vital_signs/body_temperature/any_event:1/temperature|magnitude",
                 json!(38.1),
             ),
             (
-                "vital_signs/body_temperature:0/any_event:1/temperature|unit",
+                "vital_signs/body_temperature/any_event:1/temperature|unit",
                 json!("°C"),
             ),
         ]

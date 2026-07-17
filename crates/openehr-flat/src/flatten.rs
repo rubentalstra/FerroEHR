@@ -68,22 +68,12 @@ fn covered_by_ctx(node: &WebTemplateNode, child: &WebTemplateNode) -> bool {
         if matches!(child.id.as_str(), "language" | "territory" | "composer") {
             return true;
         }
-        // The `context` node the WebTemplate synthesizes for the standard
-        // EVENT_CONTEXT (`ITS-REST simplified_formats master04 §"Web Template
-        // Metadata"`, the `inContext` marker) round-trips entirely through the
-        // `ctx/` vocabulary (`master06-context_information.adoc`): its
-        // EVENT_CONTEXT fields and `_`-prefixed RM attributes are the `ctx/`
-        // shortcuts, not tree data. A `context` that constrains archetyped
-        // `other_context` IS tree data and is walked (its `other_context`
-        // content surfaces; the EVENT_CONTEXT step then skips the ctx/ fields).
-        if child.rm_type == "EVENT_CONTEXT"
-            && !child
-                .children
-                .iter()
-                .any(|c| c.aql_path.contains("other_context"))
-        {
-            return true;
-        }
+        // The `context` child is ALWAYS walked: its standard EVENT_CONTEXT
+        // leaf fields surface as ctx/ scalars (the inner EVENT_CONTEXT rule
+        // below keeps them out of the tree), while its archetyped
+        // `other_context` content and the lossless `_`-attribute families
+        // (`_health_care_facility`, `_participation:i` — master05
+        // §EVENT_CONTEXT) emit as path keys.
     }
     // Standard EVENT_CONTEXT fields (start_time, setting, participations, …)
     // surface via ctx/; only archetyped other_context content is tree data.
@@ -124,6 +114,15 @@ fn is_default_entry_context(child: &WebTemplateNode, rm: &Value) -> bool {
 
 fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     if node.has_input() {
+        // A stored value whose `_type` does not conform to the template's
+        // declared leaf type cannot be decomposed faithfully into that
+        // type's suffixes — embed it verbatim as `|raw` instead
+        // (master04 §Raw canonical JSON: pre-existing canonical data /
+        // shapes the simplified form cannot express). Lossless both ways.
+        if !leaf_type_conforms(rm, &node.rm_type) {
+            out.attrs.insert("raw".to_owned(), rm.clone());
+            return;
+        }
         let list_open = node.inputs.iter().find_map(|i| i.list_open);
         map::emit_leaf(rm, &node.rm_type, list_open, out);
         // Value-level `_` RM attributes of the leaf value itself
@@ -142,8 +141,16 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
         let rel = rmpath::relative(&node.aql_path, &child.aql_path);
         let matches = rmpath::resolve(rm, &rel);
         // Polymorphic choice alternatives share one aqlPath; emit only under
-        // the alternative whose rm type matches this value's `_type`.
-        let matches: Vec<&Value> = if child.alt_json_id.is_some() {
+        // the alternative whose rm type matches this value's `_type`. The
+        // filter must apply to EVERY member of a choice group — the first
+        // alternative carries no `alt_json_id`, so sharing an aqlPath with a
+        // sibling is the group marker.
+        let in_choice = child.alt_json_id.is_some()
+            || node
+                .children
+                .iter()
+                .any(|c| c.id != child.id && c.aql_path == child.aql_path);
+        let matches: Vec<&Value> = if in_choice {
             matches
                 .into_iter()
                 .filter(|m| type_matches(m, &child.rm_type))
@@ -197,4 +204,29 @@ fn element_of<'a>(
 /// The base (generic-stripped) RM type name.
 fn base_type(rm_type: &str) -> &str {
     rm_type.split('<').next().unwrap_or(rm_type)
+}
+
+/// Whether an RM leaf value's `_type` conforms to the template's declared
+/// leaf type, including the specialisations the simplified mappings handle
+/// natively: DV_TEXT ⇄ DV_CODED_TEXT (the `|other` open-value-set pair,
+/// master04 §Open Value-Sets) and the PARTY_PROXY family (master05
+/// §PARTY_PROXY dispatches on the concrete party type). Anything else is a
+/// non-conforming stored value and is embedded as `|raw`.
+fn leaf_type_conforms(rm: &Value, declared: &str) -> bool {
+    let Some(actual) = rm.get("_type").and_then(Value::as_str) else {
+        return true;
+    };
+    let declared = base_type(declared);
+    if actual == declared {
+        return true;
+    }
+    matches!(
+        (declared, actual),
+        ("DV_TEXT", "DV_CODED_TEXT")
+            | ("DV_CODED_TEXT", "DV_TEXT")
+            | (
+                "PARTY_PROXY",
+                "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED"
+            )
+    )
 }
