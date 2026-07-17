@@ -14,6 +14,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::{audit_details, change_type};
@@ -24,7 +25,7 @@ use crate::versioning::object_version_id::TreeId;
 /// CONTRIBUTION (master06 §Contributions — adds no new version). Carried
 /// alongside the change set so it commits in the same transaction.
 pub(crate) struct PendingAttest {
-    pub(crate) vo_id: Uuid,
+    pub(crate) vo_id: VoId,
     pub(crate) kind: Kind,
     /// The target version to attest (from `preceding_version_uid` — trunk or
     /// branch).
@@ -47,8 +48,8 @@ pub(crate) struct PendingAttest {
 #[allow(clippy::too_many_arguments)] // the parts of an attestation act + its commit instant
 pub(crate) async fn attest(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    ehr_id: Option<EhrId>,
+    vo_id: VoId,
     kind: Kind,
     expected: TreeId,
     attestation: &Value,
@@ -106,7 +107,7 @@ pub(crate) async fn attest(
 #[allow(clippy::too_many_arguments)] // the parts of an ATTESTATION + its target version
 pub(crate) async fn insert_accompanying_attestations(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     sys_version: i32,
     contribution_id: Uuid,
     system_id: &str,

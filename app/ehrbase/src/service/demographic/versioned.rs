@@ -12,6 +12,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::response::ServiceResponse;
@@ -22,7 +23,7 @@ impl EhrbaseService {
     /// is `404`. `time_created` is the commit time of the earliest held version
     /// (for a locally-created party, v1); the G-6 `owner_id` PORT NOTE lives in
     /// `support::versioned_wrapper`.
-    pub(super) async fn versioned_party(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    pub(super) async fn versioned_party(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         self.versioned_wrapper(vo_id, "VERSIONED_PARTY", "PARTY", "versioned party")
             .await
@@ -31,7 +32,7 @@ impl EhrbaseService {
     /// The `REVISION_HISTORY` of a party: one item per version with its
     /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
     /// §Revision History). A non-party id is `404`.
-    pub(super) async fn party_revision_history(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    pub(super) async fn party_revision_history(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
         self.demographic_revision_history(vo_id).await
     }
@@ -40,7 +41,7 @@ impl EhrbaseService {
     /// `404`.
     pub(super) async fn party_version(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;
@@ -52,7 +53,7 @@ impl EhrbaseService {
     /// is `None`, with `ETag`/`Location` metadata for the VERSION resource.
     pub(super) async fn party_version_at_time(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_any_party(vo_id).await?;

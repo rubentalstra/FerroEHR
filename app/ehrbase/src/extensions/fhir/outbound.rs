@@ -36,6 +36,8 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
+use crate::ids::VoId;
+
 use crate::extensions::events::amqp::AmqpPublisher;
 use crate::extensions::events::{EventError, EventPublisher};
 use crate::service::EhrbaseService;
@@ -265,7 +267,8 @@ async fn process_batch(
                 version
                     .get("vo_id")
                     .and_then(Value::as_str)
-                    .and_then(|s| Uuid::parse_str(s).ok()),
+                    .and_then(|s| Uuid::parse_str(s).ok())
+                    .map(VoId),
                 version
                     .get("sys_version")
                     .and_then(Value::as_i64)

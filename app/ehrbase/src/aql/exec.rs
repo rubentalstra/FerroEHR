@@ -13,6 +13,7 @@ use uuid::Uuid;
 use super::error::{AqlError, ExecError};
 use super::ir::{Params, QueryIr};
 use super::sql::{CellKind, ColumnSpec, SqlCtx};
+use crate::ids::VoId;
 use crate::storage::node_repo::SubtreeAnchor;
 
 /// One `RESULT_SET` column's metadata (`schemas/query/ResultSetColumn`).
@@ -185,7 +186,7 @@ fn whole_object_anchor(
     row: &sqlx::postgres::PgRow,
     spec: &ColumnSpec,
 ) -> Result<Option<SubtreeAnchor>, AqlError> {
-    let vo_id: Option<Uuid> = row
+    let vo_id: Option<VoId> = row
         .try_get(spec.sql_cols[0].as_str())
         .map_err(ExecError::from)?;
     let Some(vo_id) = vo_id else {

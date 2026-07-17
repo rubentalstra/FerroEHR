@@ -12,6 +12,7 @@
 //! Not an SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10
 //! storage seam — our own design).
 
+use crate::ids::{EhrId, VoId};
 use crate::service::status::SmError;
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -27,7 +28,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the tag listing fails.
     pub(in crate::service) async fn ehr_tags(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         key: Option<&str>,
         value: Option<&str>,
         target_path: Option<&str>,
@@ -50,8 +51,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the tag listing fails.
     pub(in crate::service) async fn target_tags(
         &self,
-        ehr_id: Uuid,
-        target_vo_id: Uuid,
+        ehr_id: EhrId,
+        target_vo_id: VoId,
     ) -> Result<Vec<Value>, ServiceError> {
         let rows = crate::storage::tag_repo::list_tags(
             &self.pool,
@@ -77,8 +78,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn replace_tags(
         &self,
-        ehr_id: Uuid,
-        target_vo_id: Uuid,
+        ehr_id: EhrId,
+        target_vo_id: VoId,
         target_type: &str,
         tags: Vec<Value>,
     ) -> Result<Vec<Value>, ServiceError> {
@@ -140,8 +141,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn delete_tag(
         &self,
-        ehr_id: Uuid,
-        target_vo_id: Uuid,
+        ehr_id: EhrId,
+        target_vo_id: VoId,
         key: &str,
     ) -> Result<(), ServiceError> {
         if !crate::storage::tag_repo::delete_tag(&self.pool, Some(ehr_id), target_vo_id, key)
@@ -157,7 +158,7 @@ impl EhrbaseService {
     /// `target` (the tagged versioned object, its RM type in `type`) and
     /// `owner_id` (the owning EHR). No extra fields — the schema is
     /// `additionalProperties: false` (`_type` is its discriminator).
-    fn tag_json(ehr_id: Uuid, row: &crate::storage::tag_repo::TagRow) -> Value {
+    fn tag_json(ehr_id: EhrId, row: &crate::storage::tag_repo::TagRow) -> Value {
         let target_vo_id = row.target_vo_id;
         let mut tag = json!({
             "_type": "ITEM_TAG",
@@ -194,7 +195,7 @@ impl EhrbaseService {
     /// [`SmError`] if the tag listing fails.
     pub async fn ehr_tags_get(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         key: Option<String>,
         value: Option<String>,
         target_path: Option<String>,
@@ -216,7 +217,7 @@ impl EhrbaseService {
     /// failing tag listing.
     pub async fn target_tags_get(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         uid_based_id: String,
     ) -> Result<Vec<Value>, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
@@ -232,7 +233,7 @@ impl EhrbaseService {
     /// failure.
     pub async fn target_tags_replace(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         uid_based_id: String,
         target_type: &str,
         tags: Vec<Value>,
@@ -250,7 +251,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a storage failure.
     pub async fn target_tag_delete(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         uid_based_id: String,
         key: String,
     ) -> Result<(), SmError> {

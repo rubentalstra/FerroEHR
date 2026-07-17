@@ -11,6 +11,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
 /// The preceding lineage-tip row read for the version-tree placement decision:
@@ -19,7 +20,7 @@ use crate::storage::error::StorageError;
 /// them onto its `PrecedingTip` (tree id + kind + lifecycle).
 #[derive(Debug, Clone)]
 pub struct TipRow {
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub kind: String,
     pub sys_version: i32,
     pub trunk_version: i32,
@@ -63,7 +64,7 @@ macro_rules! tip_select {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn lineage_tip(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     expected: Option<(i32, i32, i32)>,
 ) -> Result<Option<TipRow>, StorageError> {
     let row = match expected {
@@ -115,7 +116,7 @@ pub struct Placement {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn next_placement(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     expected: Option<(i32, i32, i32)>,
 ) -> Result<Placement, StorageError> {
     macro_rules! placement_select {
@@ -201,7 +202,7 @@ pub async fn tx_now(tx: &mut PgConnection) -> Result<jiff::Timestamp, StorageErr
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn next_branch_number(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     trunk_version: i32,
 ) -> Result<i32, StorageError> {
     Ok(sqlx::query_scalar(
