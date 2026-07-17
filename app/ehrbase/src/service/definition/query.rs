@@ -24,7 +24,7 @@ use super::{compile_pattern, page_bounds, paginate};
 /// "stores a new query, or updates an existing query"
 /// (`definition_query_store.yaml`), so it upserts at this default version.
 ///
-/// PORT NOTE (residue re-verified): a coherent auto-increment scheme for
+/// NOTE (residue re-verified): a coherent auto-increment scheme for
 /// repeated no-version stores of *different* text (1.0.0 → 1.0.1 → …) is not
 /// attempted; the sanctioned "stores or updates" semantics is an upsert at this
 /// version, which is what a no-version store does.
@@ -82,7 +82,7 @@ impl EhrbaseService {
     /// `store_query_set (a_query_set_name: String [0..1]): UUID` — "Register
     /// a query set. TODO: determine details."
     ///
-    /// PORT NOTE: an explicit spec TODO with no defined semantics
+    /// NOTE: an explicit spec TODO with no defined semantics
     /// (`i_definition_query.adoc`) — `NotImplemented` (→ `501`) until the
     /// spec defines it.
     ///
@@ -144,7 +144,7 @@ impl EhrbaseService {
 
     /// `queries_count` — total count of queries.
     ///
-    /// PORT NOTE: counts distinct *qualified names* (a query with N stored
+    /// NOTE: counts distinct *qualified names* (a query with N stored
     /// versions counts once) — the natural reading of "total count of queries".
     ///
     /// # Errors
@@ -181,7 +181,7 @@ impl EhrbaseService {
     /// and the name-borne formalism, when present, is the effective formalism —
     /// otherwise `a_type` is (`master04` §Query Formalism).
     ///
-    /// PORT NOTE (G-05-09, spec naming): the SM precondition names
+    /// NOTE (G-05-09, spec naming): the SM precondition names
     /// `is_valid_query` though the function is `valid_query`; we enforce
     /// `valid_query` and reject an invalid query as `invalid_query` (`422`).
     async fn register_query(
@@ -256,7 +256,7 @@ impl EhrbaseService {
     /// referenced artefacts match `artefact_id_pattern` (`None` = match any),
     /// then paged.
     ///
-    /// PORT NOTE (register 05 G-05-05): `artefact_id_pattern` is spec'd against
+    /// NOTE (register 05 G-05-05): `artefact_id_pattern` is spec'd against
     /// "archetype / template identifiers referenced in the query". Until the AQL
     /// engine exposes a query's analysed FROM/CONTAINS artefact-id set
     /// (`openehr_query`), we approximate by regex-scanning the stored source

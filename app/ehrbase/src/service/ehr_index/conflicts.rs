@@ -6,7 +6,6 @@
 //! per `resource_instance_type.adoc` `Duplicate`).
 
 use sqlx::Row;
-use uuid::Uuid;
 
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;

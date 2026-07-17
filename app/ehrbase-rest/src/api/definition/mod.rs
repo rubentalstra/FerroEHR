@@ -2,7 +2,7 @@
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/` + the
 //! `definition-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
 //!
-//! Register (gap rows + target design): `docs/design/its-rest/definition.md`.
+//! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
 //! The group is split along the three spec resources the OAS `tags` name —
 //! `ADL1.4`, `ADL2`, and `Query` — one module each, with [`dispatch`] as the
 //! operation-id `match` that fans out to them:
@@ -22,9 +22,5 @@ mod template_adl14;
 mod template_adl2;
 
 // The `adl1.4/{id}/example` handler negotiates the Simplified-Formats
-// (FLAT/STRUCTURED) representations through the shared converter seam, exactly
-// as the `ehr` group does; the group-level alias lets `template_adl14`'s
-// `super::flat::…` resolve to that converter module. The shared converters
-// (`crate::formats::dispatch::{composition_flat_response,composition_structured_response}`)
-// are `pub(crate)`, so this cross-group call resolves directly.
-use crate::formats::dispatch as flat;
+// (FLAT/STRUCTURED) representations through the shared `crate::formats::dispatch`
+// adapter, called by its full path (no module alias).

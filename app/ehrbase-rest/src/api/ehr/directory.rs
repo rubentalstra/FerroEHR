@@ -37,6 +37,10 @@ pub(super) async fn run(
     let no_content = StatusCode::NO_CONTENT;
     let base = state.config().server.base_path.clone();
 
+    // DIRECTORY (FOLDER) is not templated → no Simplified-Formats mapping;
+    // reject a simplified Content-Type/Accept uniformly (see `formats::dispatch`).
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match op {
         "directory_get_at_time" => {
             let p = params::build::<DirectoryGetAtTimeParams>(&parts.path, q, h)?;

@@ -15,7 +15,7 @@
 //! among — the enumerable local default; the remote FHIR TS ([`super::fhir`])
 //! is the other (`arch-overview master12` "terminology query server").
 //!
-//! # Bundle mapping (design decisions, each documented as a PORT NOTE)
+//! # Bundle mapping (design decisions, each documented as a NOTE)
 //!
 //! - **Terminologies.** The primary terminology id is **`"openehr"`** — the
 //!   internal openEHR vocabulary (all `<group>`s + internal `<codeset>`s).
@@ -24,7 +24,7 @@
 //!   additionally exposed as separate terminologies, each addressed by its
 //!   `external_id` (`"ISO_639-1"`, …) — `get_terminology_ids` lists
 //!   `"openehr"` + those four.
-//! - **Terms vs value sets (PORT NOTE).** openEHR terminology codes are
+//! - **Terms vs value sets (NOTE).** openEHR terminology codes are
 //!   *group-scoped* (code `532` is `complete` in `version_lifecycle_state`
 //!   but `completed` in `instruction_states` — SPECPR-51). The code-only
 //!   `has_term`/`get_term` calls treat `"openehr"` as a flat terminology: a
@@ -38,20 +38,20 @@
 //!   internal code set by `openehr_id`. For an external terminology, the
 //!   code set is its own single value set (addressed by its id).
 //!   `value_set_validate` is set membership.
-//! - **`subsumes` (PORT NOTE).** The openEHR vocabulary is flat (no
+//! - **`subsumes` (NOTE).** The openEHR vocabulary is flat (no
 //!   subsumption hierarchy), so `subsumes` answers identity only — and,
 //!   being **strict** (`i_terminology_service.adoc` `subsumes`), even the
 //!   identity case is `false`. Hierarchical subsumption is the FHIR
 //!   provider's `$subsumes`.
-//! - **`at_date` (PORT NOTE — G-1 bundle side).** The bundle is a single
+//! - **`at_date` (NOTE — G-1 bundle side).** The bundle is a single
 //!   pinned version (TERM 3.1.0), so `at_date` never changes the answer
 //!   here; the temporal parameter is threaded to (and honoured by) the FHIR
 //!   provider.
-//! - **`attributes` (PORT NOTE — G-3 bundle side).** No meta-model
+//! - **`attributes` (NOTE — G-3 bundle side).** No meta-model
 //!   attributes are defined for the openEHR bundle
 //!   (`Terminology_description.attributes` is `None`), so the `get_term`
 //!   `attributes` allow-list has nothing to filter.
-//! - **URI (PORT NOTE).** The TERM spec defines no canonical machine URI for
+//! - **URI (NOTE).** The TERM spec defines no canonical machine URI for
 //!   the internal terminology; we publish the openEHR terminology repository
 //!   URI (`TERM/docs/SupportTerminology/master00-amendment_record.adoc` cites
 //!   `https://github.com/openEHR/terminology`). External sets publish their
@@ -160,7 +160,7 @@ fn extract_from_members(
         terminology_version: bundle_version(),
         terms: Some(terms),
         // The openEHR bundle is flat (no subsumption/relationship
-        // meta-model), so no `Term_relationship`s are emitted (PORT NOTE,
+        // meta-model), so no `Term_relationship`s are emitted (NOTE,
         // module head).
         relationships: None,
         relations: None,
@@ -225,7 +225,7 @@ pub(super) fn has_term(terminology_id: &str, code: &str) -> Result<bool, SmError
     }
     if terminology_id == OPENEHR {
         // A term is any concept id present in any group (flat view — see the
-        // module PORT NOTE on group-scoping).
+        // module NOTE on group-scoping).
         Ok(openehr()
             .terminology()
             .vocabularies

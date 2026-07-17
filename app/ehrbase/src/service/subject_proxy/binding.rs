@@ -33,7 +33,7 @@ pub struct SystemCallBody {
 /// `SYSTEM_CALL` class), with the two descendants shown in master10
 /// §Specifying a Binding: `API_CALL` and `QUERY_CALL`.
 ///
-/// PORT NOTE: the PROC/Task Planning spec is **not vendored** in this
+/// NOTE: the PROC/Task Planning spec is **not vendored** in this
 /// workspace, so `SYSTEM_CALL` is modelled as exactly the descendant set and
 /// attribute set master10's own binding examples exercise — re-checked on any
 /// future PROC vendoring. The spec's YAML examples use informal `!!API_CALL`
@@ -71,7 +71,7 @@ impl SystemCall {
 /// retrieval methods (i.e. calls, or parameters for standard calls), and most
 /// recent result" (`data_frame.adoc`).
 ///
-/// PORT NOTE: the runtime "most recent result" is not persisted with the
+/// NOTE: the runtime "most recent result" is not persisted with the
 /// frame configuration (master10 §Persistence) — retrieval results live in
 /// the sample store, surfaced as `SUBJECT_VARIABLE.last_frame`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     /// The master10 §Specifying a Binding example (adapted to the `_type`
-    /// discriminator — see the `SystemCall` PORT NOTE), ingested from YAML,
+    /// discriminator — see the `SystemCall` NOTE), ingested from YAML,
     /// round-tripped through JSON.
     #[test]
     fn master10_binding_yaml_round_trips() {

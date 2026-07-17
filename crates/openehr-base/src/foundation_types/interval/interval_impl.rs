@@ -16,7 +16,7 @@
 //!
 //! The truth tables are derived from the `has` post-condition and the
 //! open/closed-boundary prose; `intersects`/`contains` follow the standard
-//! boundary-aware interval algebra consistent with `has` (see the PORT NOTEs).
+//! boundary-aware interval algebra consistent with `has` (see the NOTEs).
 
 use std::cmp::Ordering;
 
@@ -24,7 +24,7 @@ use super::interval::Interval;
 use super::point_interval::PointInterval;
 use super::proper_interval::{ProperInterval, ProperIntervalData};
 
-// PORT NOTE: BASE intervals range over an ordered foundation type, so the
+// NOTE: BASE intervals range over an ordered foundation type, so the
 // algebra is bounded on `T: PartialOrd` (matching `proper_interval_impl.rs`).
 // RM `DV_INTERVAL<T: DV_ORDERED>` ordering is the separate `openehr_magnitude`
 // concern and is out of scope here.
@@ -138,7 +138,7 @@ impl<T: PartialOrd> BoundaryView<'_, T> {
     /// `intersects` (`org.openehr.base.foundation_types.interval.adoc`,
     /// `intersects`): true if there is any overlap between the two intervals.
     ///
-    /// PORT NOTE: the spec's elaborating sentence ("at least one limit of
+    /// NOTE: the spec's elaborating sentence ("at least one limit of
     /// `other` is strictly inside the limits of this interval") is informal and
     /// fails for equal intervals (whose limits coincide rather than lie strictly
     /// inside); the operative definition is "any overlap". We implement the
@@ -151,7 +151,7 @@ impl<T: PartialOrd> BoundaryView<'_, T> {
     /// `contains` (`org.openehr.base.foundation_types.interval.adoc`,
     /// `contains`): true if every point of `inner` (`other`) lies inside `self`.
     ///
-    /// PORT NOTE: the spec heading says "properly contains" but the operative
+    /// NOTE: the spec heading says "properly contains" but the operative
     /// definition is "all points of `_other_` are inside the current interval",
     /// which is reflexive (an interval contains itself). We implement the
     /// operative (reflexive) definition, not strict/proper subset containment.
@@ -239,7 +239,7 @@ impl<T: PartialOrd> ProperIntervalData<T> {
 impl<T> Interval<T> {
     /// Lower bound value, if any.
     ///
-    /// PORT NOTE: the generated `Proper_interval<T>` closed-subtype enum
+    /// NOTE: the generated `Proper_interval<T>` closed-subtype enum
     /// includes `Multiplicity_interval` (an `Interval<Integer>`) as a variant
     /// for every `T`, because the BMM closed-subtype expansion is type-erased.
     /// A real clinical `Interval<T>` value is never that variant; for it the
@@ -334,7 +334,7 @@ impl<T: PartialEq> Interval<T> {
 impl<T: PartialOrd> Interval<T> {
     /// `Interval.has` (`org.openehr.base.foundation_types.interval.adoc`).
     ///
-    /// PORT NOTE: the `Multiplicity_interval` variant (an `Interval<Integer>`,
+    /// NOTE: the `Multiplicity_interval` variant (an `Interval<Integer>`,
     /// see [`Interval::lower`]) cannot be evaluated against a `T` value and
     /// returns `false`; it is unreachable for a genuine clinical `Interval<T>`.
     #[must_use]

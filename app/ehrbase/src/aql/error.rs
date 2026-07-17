@@ -136,7 +136,7 @@ pub enum AqlFeatureError {
     UnsupportedSourceClass(String),
 
     /// Branch (non-trunk) version addressing. Trunk-only per the storage design
-    /// PORT NOTE. QUERY §Predicates/Standard predicate (version).
+    /// NOTE. QUERY §Predicates/Standard predicate (version).
     #[error("branch version addressing is not supported (trunk-only; QUERY §Predicates)")]
     BranchVersionAddressing,
 

@@ -22,7 +22,7 @@
 //! message verbatim (see [`invariant_failed`]) so a violation is identifiable
 //! by archie's own invariant name.
 //!
-//! What we deliberately do **not** implement here (`// PORT NOTE:`):
+//! What we deliberately do **not** implement here (`// NOTE:`):
 //! - **Terminology-bound invariants** (archie's `Language_valid`,
 //!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
 //!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
@@ -144,7 +144,7 @@ pub(crate) fn push_temporal_value_valid(
 
 // ── ISO-8601 value validation ────────────────────────────────────────────────
 //
-// PORT NOTE: archie has no `@Invariant` for DV_DATE/DV_TIME/DV_DATE_TIME/
+// NOTE: archie has no `@Invariant` for DV_DATE/DV_TIME/DV_DATE_TIME/
 // DV_DURATION value well-formedness — it enforces it structurally by parsing
 // `value` into a typed `java.time` object at construction. In our model the
 // value is a `String`, so we express the same guarantee as an explicit RM class
@@ -245,7 +245,7 @@ fn is_valid_tz(tz: &str) -> bool {
     // Max_timezone_hour = 14, Min_timezone_hour = 12): `+` offsets go to
     // +14:00, `-` offsets only to -12:00 (reject `-13:00`).
     //
-    // PORT NOTE (corpus adjudication): the invariants literally require
+    // NOTE (corpus adjudication): the invariants literally require
     // `hour > 0` when signed, but the canonical corpus + CNF data sets carry
     // `+00:00`/`-00:00` UTC forms in 42 files — the corpus outranks the prose
     // reading, so hour 0 is accepted with either sign (≡ `Z`).
@@ -405,7 +405,7 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 /// Like [`run`], but deserialize `T` from a copy of `value` whose nested
 /// RM-node child collections have been emptied ([`prune_child_nodes`]).
 ///
-/// PERF(port): the RM-invariant pass ([`validate_rm_value`]) is called once per
+/// TODO(perf): the RM-invariant pass ([`validate_rm_value`]) is called once per
 /// `_type` node while the composition validator recurses the live JSON tree, so
 /// deserializing each node's *whole* subtree (as `T::deserialize` does for a
 /// concrete container type) re-parses every descendant once per ancestor —
@@ -425,7 +425,7 @@ fn run<T: DeserializeOwned + Validate>(value: &Value, out: &mut Vec<InvariantVio
 /// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
 /// deserialize.
 ///
-/// PORT NOTE: emptying a child *collection* here means a malformation *inside*
+/// NOTE: emptying a child *collection* here means a malformation *inside*
 /// an array element is no longer reported at this ancestor's path — it is
 /// reported at that element's own recursion step instead (each collection member
 /// is a separate `_type` node the composition validator visits and dispatches).
@@ -477,7 +477,7 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// (returns without appending). The composition validator calls this per
 /// node and prefixes the absolute RM path onto each [`InvariantViolation`].
 ///
-/// Two tiers (PERF: the RM-invariant pass visits every `_type` node of a
+/// Two tiers (performance: the RM-invariant pass visits every `_type` node of a
 /// commit, ~1.5k for a populated composition, so the per-node cost is
 /// load-bearing — measured via `openehr-flat`'s
 /// `measure_ips_validation_walk_cost` harness):

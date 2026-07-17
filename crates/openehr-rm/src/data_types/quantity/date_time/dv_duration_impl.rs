@@ -3,7 +3,7 @@
 //! `Value_valid`: `value` is a valid ISO-8601 duration (openEHR permits a
 //! leading sign and a `W` designator mixed with the others). Plus the inherited
 //! DV_AMOUNT / DV_QUANTIFIED invariants (`DV_DURATION` extends `DV_AMOUNT`). See
-//! `dv_date_impl` for the PORT NOTE on why value well-formedness is explicit.
+//! `dv_date_impl` for the NOTE on why value well-formedness is explicit.
 
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::quantity::dv_ordered::DvOrdered;

@@ -30,7 +30,7 @@ impl EhrbaseService {
     /// SM `add_ehr_subject` (I1): associate `subject` with `ehr_id` with an
     /// optional status + location. The EHR must exist.
     ///
-    /// PORT NOTE: "Add" is realized as an idempotent upsert
+    /// NOTE: "Add" is realized as an idempotent upsert
     /// (`ON CONFLICT DO UPDATE`) — re-adding the same subject refreshes its
     /// status/location rather than erroring; the `0..1` cardinality of
     /// `add_ehr_subject` permits this. Status defaults to a `Primary` instance

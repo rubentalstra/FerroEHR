@@ -14,7 +14,6 @@
 
 use serde_json::Value;
 use sqlx::PgConnection;
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
@@ -26,7 +25,7 @@ impl EhrbaseService {
     /// Enforce the CNF persistent-COMPOSITION uniqueness convention: an EHR may
     /// hold only one *live* persistent COMPOSITION per template.
     ///
-    /// PORT NOTE: the openEHR RM does **not** define this cardinality — the CNF
+    /// NOTE: the openEHR RM does **not** define this cardinality — the CNF
     /// schedule records it as "under debate in the openEHR SEC … due to the
     /// lack of information in the openEHR specifications"
     /// (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
@@ -48,7 +47,7 @@ impl EhrbaseService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // PERF(port): scans the EHR's live COMPOSITIONs and reassembles each to
+        // TODO(perf): scans the EHR's live COMPOSITIONs and reassembles each to
         // read its category + template (template_id is not promoted onto
         // vo_version). An EHR holds few persistent compositions.
         let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
@@ -89,7 +88,7 @@ impl EhrbaseService {
     /// wrong").
     ///
     /// The template lookup goes through `web_template_for` and the passes
-    /// through `openehr_flat::validate_*`.
+    /// through `openehr_flat::validation::validate_*`.
     ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
@@ -100,7 +99,7 @@ impl EhrbaseService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = openehr_flat::validate_rm_and_terminology(composition);
+        let mut messages = openehr_flat::validation::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
         if let Some(template_id) = composition
             .pointer("/archetype_details/template_id/value")
@@ -108,9 +107,12 @@ impl EhrbaseService {
         {
             let wt = self.web_template_for(template_id).await?;
             messages.extend(if incomplete {
-                openehr_flat::validate_archetype_conformance_incomplete(composition, &wt)
+                openehr_flat::validation::validate_archetype_conformance_incomplete(
+                    composition,
+                    &wt,
+                )
             } else {
-                openehr_flat::validate_archetype_conformance(composition, &wt)
+                openehr_flat::validation::validate_archetype_conformance(composition, &wt)
             });
         }
         let template_failures = messages.len() - rm_terminology_failures;

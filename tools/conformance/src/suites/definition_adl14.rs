@@ -33,7 +33,7 @@
 //!   parameter is non-standard (§upload_opt-valid_opt_twice NOTE,
 //!   SPECBASE-30/SPECITS-42); ITS-REST ADL 1.4 exposes no version-addressed
 //!   template resource. The three version cases assert only what the wire +
-//!   spec determine and carry a `// PORT NOTE:` that the schedule's
+//!   spec determine and carry a `// NOTE:` that the schedule's
 //!   two-coexisting-versions / latest / specific post-conditions are
 //!   structurally unrealizable on the ADL 1.4 REST binding.
 //! - **G-5 / D2 (`delete_opt` skip).** The SM `I_DEFINITION_ADL14.delete_opt()`
@@ -97,7 +97,7 @@ const EXAMPLE_CITATION: &str = "ITS-REST development definition_template_adl1.4_
      master15-content_tc_composition.adoc L38 (a generated instance must be RM/template-valid); \
      AM 1.4 master04-constraint_model_package.adoc §Valid_value";
 
-// PORT NOTE: the CNF schedule contains NO example-generation or example-commit
+// NOTE: the CNF schedule contains NO example-generation or example-commit
 // test case, and the ITS-REST example operation is itself declared non-normative
 // ("vendors may produce different results"). This case is therefore ECC-derived
 // (not schedule-derived) — spec-silence flagged — asserting only the operation's
@@ -587,7 +587,7 @@ fn run_upload_twice_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// §upload_opt-valid_opt_twice_no_conflict: the schedule's post-condition is
 /// "two new OPTs with different versions coexist".
 //
-// PORT NOTE: master04 §upload_opt-valid_opt_twice NOTE admits the version
+// NOTE: master04 §upload_opt-valid_opt_twice NOTE admits the version
 // parameter is non-standard (SPECBASE-30 / SPECITS-42), and ITS-REST ADL 1.4
 // exposes NO version-addressed template resource — `POST /definition/template/
 // adl1.4` takes an OPT body and no version parameter. So the schedule's
@@ -618,7 +618,7 @@ fn run_upload_twice_no_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// same as the uploaded one") is realized as identity on the identifying
 /// `template_id` field (register 01 G-3).
 //
-// PORT NOTE: full byte-for-byte equality of uploaded vs retrieved OPT is
+// NOTE: full byte-for-byte equality of uploaded vs retrieved OPT is
 // server-canonicalisation-sensitive (a conformant server may re-serialise the
 // OPT), so the round-trip check asserts the identifying `template_id` matches;
 // the schedule's stronger "exactly the same" is bounded to semantic identity on
@@ -656,7 +656,7 @@ fn run_get_fail<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// §get_opt-retrieve_latest_version: the latest version is returned.
 //
-// PORT NOTE: ITS-REST ADL 1.4 is not version-addressed (register 01 G-2), so
+// NOTE: ITS-REST ADL 1.4 is not version-addressed (register 01 G-2), so
 // "latest version" collapses to the single stored OPT — this asserts that a
 // provisioned `template_id` retrieves (200) and its identity is preserved; the
 // two-versions-loaded precondition and the which-version-returned post-condition
@@ -679,7 +679,7 @@ fn run_get_latest<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// §get_opt-retrieve_specific_version: a specific, non-latest version returns
 /// that version.
 //
-// PORT NOTE: ITS-REST ADL 1.4 OPTs are not version-addressed (register 01 G-2);
+// NOTE: ITS-REST ADL 1.4 OPTs are not version-addressed (register 01 G-2);
 // a `/{template_id}/{version}` GET is either aliased to the single stored OPT
 // (200) or unsupported (404) — both conformant. The schedule's specific-version
 // post-condition is structurally unrealizable on this binding and is recorded,
@@ -717,7 +717,7 @@ fn run_get_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// §get_opts-retrieve_all_no_opts: an empty server returns an empty set with no
 /// failure.
 //
-// PORT NOTE: the schedule precondition "no OPTs should be loaded" cannot hold on
+// NOTE: the schedule precondition "no OPTs should be loaded" cannot hold on
 // a shared SUT (register 01 G-4; same class as register 03 G-4) — other cases
 // provision OPTs. The list endpoint must still succeed (200) with a well-formed
 // (JSON array) body; the empty-set body is not asserted because the precondition

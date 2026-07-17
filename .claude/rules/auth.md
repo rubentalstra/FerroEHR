@@ -4,9 +4,9 @@ paths: ["app/ehrbase-rest/**", "app/ehrbase/src/config/**", "app/ehrbase/src/**/
 
 # Authentication & authorization (rewritten 2026-07-13 — authn + access module are SHIPPED)
 
-**State:** Basic + OAuth2/OIDC authentication shipped at P11 and is live.
+**State:** Basic + OAuth2/OIDC authentication is shipped and live.
 Authorization lives in the **`ehrbase-rest::access` module** (the RBAC/ABAC
-policy-enforcement point; ADR-011 dissolved the old `ehrbase-authz` crate into
+policy-enforcement point; the old `ehrbase-authz` crate was dissolved into
 it), with **SMART resource-scope enforcement** (`ehrbase-rest::smart`)
 AND-composed onto that PEP — config-gated, off by default. This rule governs
 maintenance and extension, not initial build.
@@ -16,7 +16,7 @@ maintenance and extension, not initial build.
 - ITS-REST §Authentication + SM `master02` place authorization largely **out
   of band** — fine-grained authz is our own extension where the spec is
   silent; flag it as such in comments ("no openEHR spec governs this"),
-  never cite an ADR (spec-adherence.md).
+  never cite an internal doc (spec-adherence.md).
 - **401 vs 403 discipline:** unauthenticated → 401, authenticated-but-
   unauthorized → 403, per the ITS-REST text — verified by the ECC SEC cases
   (`ECC-SEC-*` in `tools/conformance`), not by comparison with any other
@@ -39,9 +39,9 @@ maintenance and extension, not initial build.
 - **Auth is a `tower`/axum middleware + extractor** on the generated router
   — one place, never per-handler. The authenticated principal goes into
   request extensions; the `access` PEP consumes it.
-- **Config-driven** (figment `EHRBASE_*`): enabled modes, OIDC issuer/JWKS,
-  audience, the Basic user store. Config changes are user-visible → same-PR
-  website-book + changelog entries.
+- **Config-driven** (one TOML file, `ehrbase.toml`, with environment-variable
+  overrides): enabled modes, OIDC issuer/JWKS, audience, the Basic user store.
+  Config changes are user-visible → same-PR website-book + changelog entries.
 - **Layer order is load-bearing:** authn → `access` (RBAC/ABAC) → SMART
   scopes (AND-composed — SMART can only narrow, never widen). Disabled
   SMART must produce zero wire drift.

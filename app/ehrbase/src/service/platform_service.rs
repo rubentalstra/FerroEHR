@@ -10,7 +10,7 @@
 /// `composition_version_count`) each take a `PLATFORM_SERVICE` naming the
 /// versioned-content service whose contributions/versions to count.
 ///
-/// PORT NOTE (spec defect): `platform_service.adoc` is named by the master03
+/// NOTE (spec defect): `platform_service.adoc` is named by the master03
 /// §Overview but **not** `include::`d in its §Class Definitions, and its
 /// enumeration lists exactly these eight members, omitting `Terminology` and
 /// `Subject_proxy` (the SM defines both interfaces but the enum forgot their

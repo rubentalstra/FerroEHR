@@ -37,6 +37,10 @@ pub(super) async fn run(
     let no_content = StatusCode::NO_CONTENT;
     let base = state.config().server.base_path.clone();
 
+    // EHR_STATUS is not templated → no Simplified-Formats mapping; reject a
+    // simplified Content-Type/Accept uniformly (see `formats::dispatch`).
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match op {
         "ehr_status_get_by_version_id" => {
             let p = params::build::<EhrStatusGetByVersionIdParams>(&parts.path, q, h)?;
@@ -46,7 +50,7 @@ pub(super) async fn run(
             // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
             let body = state
                 .backend()
-                .get_ehr_status_at_version(ehr_id, vo_id, &version)
+                .get_ehr_status_at_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
             let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
             Ok(negotiate::read_rm::<EhrStatus>(

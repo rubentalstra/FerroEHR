@@ -289,7 +289,7 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
 }
 
 /// Resolve the patient claim, if the gate is configured. A configured-but-missing
-/// claim is a 403 (v1 threw 500 — PORT NOTE: the improvement).
+/// claim is a 403 (v1 threw 500 — NOTE: the improvement).
 fn resolve_patient_claim(
     abac: &AbacGate,
     principal: &Principal,
@@ -418,11 +418,12 @@ async fn post_template(
 
 /// Extract the composition template id from the request body: the canonical
 /// pointer `/archetype_details/template_id/value` (JSON or XML), or the
-/// `templateId` query param for a FLAT/STRUCTURED body.
+/// `openehr-template-id` request header for a FLAT/STRUCTURED body
+/// (`Requests_and_responses` §openehr-template-id).
 fn composition_template(parts: &RequestParts) -> Option<String> {
     let h = &parts.headers;
-    if negotiate::is_flat_body(h) || negotiate::is_structured_body(h) {
-        return params::query_param(parts.query.as_deref(), "templateId");
+    if crate::formats::dispatch::is_simplified_body(h) {
+        return crate::formats::dispatch::header_template_id(h);
     }
     let value = negotiate::rm_value::<Composition>(h, &parts.body).ok()?;
     value
@@ -580,7 +581,7 @@ async fn smart_gate(
         // passes the gate vacuously (no EHR to bind); per-row patient scoping then
         // stays with the ABAC query subject-scope pre-filter.
         //
-        // PORT NOTE: the context value prefers the `ehrId` claim then the SMART
+        // NOTE: the context value prefers the `ehrId` claim then the SMART
         // `patient` claim (master07 token-response table); it is matched against
         // the EHR *subject* external ref, so an operator binds SMART patient
         // compartments by configuring the launch-context claim to carry the
@@ -631,7 +632,7 @@ fn smart_decide(
         })
 }
 
-// PORT NOTE (SMART coverage boundary, master08 §Resource Scopes): the SMART
+// NOTE (SMART coverage boundary, master08 §Resource Scopes): the SMART
 // gate above rides the ABAC pre/post checks, which cover the COMPOSITION family
 // (`mode_of` → `Pre`/`Post`). The AQL and template families are ABAC-`Skip`
 // (query is handled in the query path via `query_pre`/`query_post`; template

@@ -11,7 +11,6 @@
 use serde_json::Value;
 use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;

@@ -9,7 +9,7 @@
 //! [`crate::versioning`]; the FOLDER-tree commit validation lives in
 //! [`validation`](super::validation).
 //!
-//! PORT NOTE: the read side is multi-hierarchy (the `ehr_summary`
+//! NOTE: the read side is multi-hierarchy (the `ehr_summary`
 //! folder refs); the write side manages the single directory slot
 //! (= `folders[1]`) only. Additional hierarchies are committed via
 //! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
@@ -21,7 +21,6 @@ use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
-use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;

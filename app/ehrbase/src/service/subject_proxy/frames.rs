@@ -9,7 +9,7 @@
 //! routes to the config-gated FHIR executor; `HL7v2` frames are typed
 //! rejections.
 //!
-//! PORT NOTE (pipeline outcome model, `data_frame.adoc`):
+//! NOTE (pipeline outcome model, `data_frame.adoc`):
 //! - **dispatch-impossible** (no method, unknown `model_type`/`call_name`, or a
 //!   not-yet-wired executor) ⇒ `Err(SmError::not_implemented)`;
 //! - **executed but failed** (backend down, no `query_text`, subject

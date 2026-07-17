@@ -1,26 +1,28 @@
-//! RM-type → `inputs` mapping (Better `builder/input/*`).
+//! RM-type → `inputs` mapping.
 //!
 //! Each leaf `DATA_VALUE` / PARTY node is given its `inputs` (and, for
-//! `DV_PROPORTION`, the node's `proportionTypes`). The dispatch and per-builder
-//! shape follow `WebTemplateInputBuilderDelegator` and the individual
-//! `*WebTemplateInputBuilder`s: suffixes, input types, coded lists, and
-//! validation ranges are transcribed verbatim (`|unit` is singular, per Better).
+//! `DV_PROPORTION`, the node's `proportionTypes`), the `inputs[]` array of
+//! `ITS-REST simplified_formats master04 §"Web Template Metadata"`. The per-type
+//! suffix set follows master04 §"Attribute Suffixes" and the class sections
+//! (`DV_QUANTITY` → `magnitude`/`unit`, `DV_CODED_TEXT` → `code`/`value`/…), each
+//! input carrying its `type`, coded `list`, and `validation`.
 //!
-//! Deliberate scope of this mapping (design decisions matching Better, the interop
-//! oracle — the `inputs` describe the *constraint*, not resolved runtime values):
+//! Deliberate scope of this mapping (the `inputs` describe the *constraint*, not
+//! resolved runtime values):
 //!
-//! * **No `defaultValue` synthesis from assumed/RM-default values** — Better emits
-//!   `defaultValue` only from an explicit archetype assumed value; RM defaults are
-//!   a composition-build concern (`flat::graph::fill_structural_mandatory`), not a
-//!   template-input concern.
+//! * **No `defaultValue` synthesis from assumed/RM-default values** —
+//!   `defaultValue` comes only from an explicit archetype assumed value; RM
+//!   defaults are a composition-build concern
+//!   (`flat::graph::fill_structural_mandatory`), not a template-input concern.
 //! * **External `otherTerminologies` are not expanded into coded lists** — only
-//!   the archetype-`local` value sets become `codedValues`; bindings to external
-//!   terminologies are surfaced as `termBindings` (wired in [`super::builder`]),
-//!   and external code validation is the terminology service's job
-//!   (`ehrbase-sm` `TerminologyService`), not the template builder's.
+//!   the archetype-`local` value sets become coded `list` entries; bindings to
+//!   external terminologies are surfaced as `termBindings` (wired in
+//!   [`super::builder`]), and external code validation is the terminology
+//!   service's job, not the template builder's.
 //! * **Rubric source is the archetype ontology** ([`Labels`]); a code whose rubric
 //!   the archetype does not define (unknown code, or a non-`local` terminology)
-//!   uses the code string as its label — the same fallback Better applies.
+//!   uses the code string as its label — no openEHR spec governs the label
+//!   fallback (our own design/extension).
 
 use indexmap::IndexMap;
 use openehr_its::opt14::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};
@@ -37,8 +39,8 @@ pub(crate) trait Labels {
     fn text(&self, terminology: &str, code: &str) -> Option<String>;
     fn localized(&self, terminology: &str, code: &str) -> IndexMap<String, String>;
     /// External terminology bindings for `code` (the archetype ontology's
-    /// `term_bindings`), keyed by terminology — Better `findTermBindings` +
-    /// `getBindingCodedValue`, populating each coded value's `termBindings`.
+    /// `term_bindings`), keyed by terminology — populating each coded value's
+    /// `termBindings` (master04 §"Web Template Metadata").
     fn term_bindings(&self, code: &str) -> IndexMap<String, WebTemplateBindingCodedValue>;
 }
 
@@ -176,7 +178,7 @@ fn coded_text_inputs(
             }
         }
         // No `defining_code` constraint (or some other object): free-text coded
-        // input pair (Better `addExternalTerminologyInputs(null)`).
+        // input pair (`code`/`value`, per master04 §"Attribute Suffixes").
         None | Some(_) => inputs.extend(external_terminology_inputs(None)),
     }
 
@@ -220,9 +222,9 @@ fn coded_values(
         .iter()
         .map(|code| {
             let mut cv = coded_value(term, code, labels, group);
-            // Per-coded-value external term bindings (Better
-            // `CodePhraseWebTemplateInputBuilder.ConvertToWebTemplateCodedValueFunction`):
-            // the coded-text path adds them; ordinals/scales do not.
+            // Per-coded-value external term bindings (master04 §"Web Template
+            // Metadata": a `list[]` entry's `termBindings`): the coded-text path
+            // adds them; ordinals/scales do not.
             cv.term_bindings = labels.term_bindings(code);
             cv
         })
@@ -237,8 +239,8 @@ fn coded_value(
 ) -> WebTemplateCodedValue {
     // Label resolution order: the artefact's own term definitions, then — for
     // `openehr`-terminology codes, which no archetype defines — the TERM 3.1.0
-    // rubric (`433` → `event`); the bare code is the last resort (the Better
-    // fallback). `DV_CODED_TEXT.value` is the displayable text of the defining
+    // rubric (`433` → `event`); the bare code is the last resort (no openEHR spec
+    // governs the label fallback). `DV_CODED_TEXT.value` is the displayable text of the defining
     // code (RM data_types §DV_CODED_TEXT), so a code-as-label leaks wrong
     // instance data out of every consumer that renders from the list.
     //
@@ -388,7 +390,8 @@ fn temporal_input(co: &CObject, ty: WebTemplateInputType) -> WebTemplateInput {
 
 // ── DV_DURATION ──────────────────────────────────────────────────────────────
 
-/// Better `FULL_DURATION` order (note DAY precedes WEEK).
+/// The `DV_DURATION` per-field input order (note DAY precedes WEEK). No openEHR
+/// spec governs the per-field split or its order — our own design/extension.
 const DURATION_FIELDS: [(&str, char); 7] = [
     ("year", 'Y'),
     ("month", 'M'),

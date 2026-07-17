@@ -121,7 +121,7 @@ impl EhrbaseService {
 
     /// Delete a subscription by id. `NotFound` if the id is unknown.
     ///
-    /// PORT NOTE: the broker queue the deleted subscription bound is not torn
+    /// NOTE: the broker queue the deleted subscription bound is not torn
     /// down here — the service is broker-free. A durable queue simply stops
     /// being (re)bound; operators reap orphaned queues out of band. Re-binding
     /// of the *remaining* subscriptions is the drainer's job.
@@ -231,7 +231,7 @@ impl EhrbaseService {
     }
 
     /// Delete an event subscription by id (the broker queue is not torn down —
-    /// see the PORT NOTE on the private helper).
+    /// see the NOTE on the private helper).
     ///
     /// # Errors
     /// `NotFound` when the id is unknown; otherwise a database failure.

@@ -42,9 +42,15 @@ binding after A1 closed:
   running nextest/clippy on freshly-authored foundation modules mid-rewrite
   and NOT fixing lint/test fallout per-file — author ALL the code first,
   then resolve everything in the single convergence pass.
-- **Specs over ADRs, always re-verify (owner, 2026-07-16).** When an
-  analysis leans on an ADR's characterization of a spec, re-read the
-  vendored spec text first-hand — an ADR-flavoured claim ("C contradicts
+- **No ADRs, no kept design docs (owner, 2026-07-17: the ADR layer is
+  DELETED — "causing more confusion than good"); plan/design markdowns are
+  deleted in the PR that implements them.** The only citable references are
+  docs/specs/openehr/ and OFFICIAL external docs (PostgreSQL, Rust,
+  docs.rs) — never internal markdown (it moves or dies). Decisions live in
+  root CLAUDE.md, docs/architecture.md, and the code.
+- **Specs over decision docs, always re-verify (owner, 2026-07-16).** When
+  an analysis leans on a doc's characterization of a spec, re-read the
+  vendored spec text first-hand — a doc-flavoured claim ("C contradicts
   SM") was retracted after reading SM master02 directly (packaging is
   implementer-free; conformance = tested call semantics).
 

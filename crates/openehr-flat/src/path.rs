@@ -1,221 +1,243 @@
-//! RM-path parsing + navigation shared across the FLAT converters and the
-//! composition validator.
+//! The simplified-path (FLAT key) model.
 //!
-//! This is a thin, FLAT-local layer over the canonical single implementation in
-//! [`openehr_rm::paths`] (the BASE `master11-paths` parser + `PATHABLE`
-//! navigation over canonical-JSON RM trees). It adds only the two conveniences
-//! the SDT pipeline needs and the RM primitive does not carry: taking the
-//! *relative* path between a parent and child [`WebTemplateNode`](crate::webtemplate::WebTemplateNode)
-//! `aqlPath`, and multi-root navigation over a slice of parsed segments.
+//! A FLAT key is a hierarchical field identifier (ITS-REST
+//! `simplified_formats/master04-basic_concepts.adoc` §Field Identifiers):
+//! `/`-separated segments, zero-based `:i` instance indices on repeating
+//! segments, and pipe-separated attribute suffixes on the final segment —
+//! `vital_signs/body_temperature:0/any_event:0/temperature|magnitude`.
+//! Optional RM attributes not constrained in the template appear as
+//! `_`-prefixed segments (§RM Attributes prefix), and suffixes may
+//! themselves chain and carry indices (§RM Attributes prefix example:
+//! `path/observation:0/_link:0|meaning|code`; master06 participation
+//! identifiers: `ctx/participation_identifiers:1|issuer:0`).
 //!
-//! A `WebTemplateNode`'s `aqlPath` is the full RM path from the versioned-object
-//! root (compacted intermediates kept), so the path between a parent web-template
-//! node and one of its children is the sequence of RM attribute steps
-//! (`/attr[predicate]`) that locates the child's RM value inside the parent's,
-//! including the structural nodes (`HISTORY`, `ITEM_TREE`, a single `EVENT`, the
-//! `ELEMENT` wrapper) the web-template compacted away.
+//! This module is pure syntax: parsing and printing. What a path *means*
+//! (template resolution, `ctx/` interpretation, suffix semantics) belongs to
+//! the layers above.
 
-use openehr_rm::paths::{PathSegment, RmPath, select_children};
-use serde_json::Value;
+use std::fmt::{Display, Formatter};
 
-/// Parse a relative RM path (`/attr[pred]/attr2/…`) into its segments.
-///
-/// The `aqlPath`s fed here are template-derived and always well-formed; a parse
-/// error (an unterminated predicate, or a general-comparison predicate that
-/// belongs to AQL rather than a `PATHABLE` path) resolves to no segments — the
-/// caller then treats the path as locating nothing, never panicking.
-#[must_use]
-pub fn parse(rel: &str) -> Vec<PathSegment> {
-    rel.parse::<RmPath>()
-        .map(|p| p.segments)
-        .unwrap_or_default()
+use crate::error::FlatError;
+
+/// One `/`-separated path step: a name plus an optional zero-based instance
+/// index (`master04 §Instance Indexing`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Segment {
+    /// The node identifier (a Web-Template node id, `ctx`, or a `_`-prefixed
+    /// RM attribute name).
+    pub name: String,
+    /// The `:i` instance index, when present.
+    pub index: Option<u32>,
 }
 
-/// The segments from `parent_aql` to `child_aql` (the child path extends the
-/// parent). When `child_aql` is not a suffix-extension of `parent_aql` the whole
-/// child path is parsed (matching the prior FLAT behaviour).
-pub(crate) fn relative(parent_aql: &str, child_aql: &str) -> Vec<PathSegment> {
-    parse(child_aql.strip_prefix(parent_aql).unwrap_or(child_aql))
-}
-
-/// Follow `segs` from each of `roots`, returning the reached nodes in document
-/// order. Each step is [`openehr_rm::paths::select_children`], so array
-/// attributes branch (filtered by the segment predicate) and single-valued
-/// attributes descend (predicate re-checked, per BASE `master11-paths`).
-///
-pub(crate) fn navigate<'a>(roots: &[&'a Value], segs: &[PathSegment]) -> Vec<&'a Value> {
-    let mut current: Vec<&Value> = roots.to_vec();
-    for seg in segs {
-        current = current
-            .iter()
-            .flat_map(|n| select_children(n, seg))
-            .collect();
+impl Segment {
+    /// Whether this segment addresses an optional RM attribute
+    /// (`master04 §RM Attributes prefix`).
+    #[must_use]
+    pub fn is_rm_attribute(&self) -> bool {
+        self.name.starts_with('_')
     }
-    current
 }
 
-/// One template-path step with a conditional name fallback.
-///
-/// PORT NOTE (template-name predicates): the paths fed here are
-/// **template-derived** (`WebTemplateNode.aqlPath`), so a `[atNNNN,'name']`
-/// name conjunct carries the *template's* term text. RM `LOCATABLE.name` is a
-/// runtime attribute an instance may legitimately redefine when the archetype
-/// does not constrain it (RM common, `LOCATABLE.name`), so a strict
-/// name-conjunct match (BASE `master11-paths` semantics — correct for
-/// instance-authored AQL/RM paths) can silently locate nothing and skip the
-/// downstream check. The fallback (retry by `archetype_node_id` alone when the
-/// strict match finds nothing) is only sound when the name is **redundant** —
-/// i.e. the archetype id is unique among the template siblings being matched
-/// (`allow_name_fallback`, computed by the caller from its sibling set). Where
-/// a template distinguishes same-id siblings *by name* (the corona-corpus
-/// shape), the fallback must stay off or it would claim the wrong siblings.
-pub(crate) fn select_children_matched<'a>(
-    container: &'a Value,
-    seg: &PathSegment,
-    allow_name_fallback: bool,
-) -> Vec<&'a Value> {
-    let strict = select_children(container, seg);
-    if strict.is_empty() && allow_name_fallback && seg.predicate.name_value.is_some() {
-        let mut id_only = seg.clone();
-        id_only.predicate.name_value = None;
-        return select_children(container, &id_only);
+/// One `|`-separated attribute suffix part, with an optional `:i` index
+/// (`master06 §Participation`: `ctx/participation_identifiers:1|issuer:0`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Suffix {
+    /// The suffix name (without the pipe).
+    pub name: String,
+    /// The `:i` index, when present.
+    pub index: Option<u32>,
+}
+
+/// A parsed FLAT key: the segment path plus any suffix chain.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FlatKey {
+    /// The `/`-separated segments, in order.
+    pub segments: Vec<Segment>,
+    /// The `|`-separated suffix chain on the final segment (usually zero or
+    /// one entry; `_link:0|meaning|code` produces two).
+    pub suffixes: Vec<Suffix>,
+}
+
+impl FlatKey {
+    /// Whether this key belongs to the context namespace
+    /// (`master04 §Context`: context fields MUST use the `ctx/` prefix).
+    #[must_use]
+    pub fn is_ctx(&self) -> bool {
+        self.segments.first().is_some_and(|s| s.name == "ctx")
     }
-    strict
+
+    /// Parse a FLAT key.
+    ///
+    /// # Errors
+    /// [`FlatError::MalformedPath`] on empty keys, empty segments or suffix
+    /// names, or a non-numeric `:index`.
+    pub fn parse(key: &str) -> Result<Self, FlatError> {
+        let malformed = |reason: &str| FlatError::MalformedPath {
+            path: key.to_owned(),
+            reason: reason.to_owned(),
+        };
+        if key.is_empty() {
+            return Err(malformed("empty key"));
+        }
+        let mut pipe_parts = key.split('|');
+        let segment_part = pipe_parts.next().unwrap_or_default();
+        let mut segments = Vec::new();
+        for raw in segment_part.split('/') {
+            if raw.is_empty() {
+                return Err(malformed("empty path segment"));
+            }
+            let (name, index) = split_index(raw, key)?;
+            segments.push(Segment {
+                name: name.to_owned(),
+                index,
+            });
+        }
+        let mut suffixes = Vec::new();
+        for raw in pipe_parts {
+            if raw.is_empty() {
+                return Err(malformed("empty attribute suffix"));
+            }
+            let (name, index) = split_index(raw, key)?;
+            suffixes.push(Suffix {
+                name: name.to_owned(),
+                index,
+            });
+        }
+        Ok(Self { segments, suffixes })
+    }
 }
 
-/// Select the children matching an **unqualified** identity segment (one with an
-/// `archetype_node_id` but no `name/value` conjunct) that shares its
-/// `archetype_node_id` with one or more *name-qualified* sibling constraints,
-/// excluding the instances those siblings claim.
-///
-/// This is the residual/catch-all arm of name-based sibling differentiation
-/// (RM common `master03-archetyped_package.adoc` §"The `LOCATABLE` class": a
-/// runtime `name` distinguishes sibling nodes that share an `archetype_node_id`;
-/// AOM 1.4 `master04-constraint_model_package.adoc` §`node_id` — node ids
-/// "guarantee sibling node unique identification", which templates realise for
-/// repeated same-archetype fills via a fixed `name/value` `C_STRING` on all but
-/// one sibling). The unqualified sibling carries no name constraint, so its
-/// `LOCATABLE.name` is unconstrained (redefinable at runtime, master03 §"The
-/// `LOCATABLE` class" L35); it therefore admits every instance of the shared
-/// `archetype_node_id` **except** those whose `name/value` matches a
-/// name-qualified sibling — those belong to that sibling, never here.
-pub(crate) fn select_children_excluding_names<'a>(
-    container: &'a Value,
-    seg: &PathSegment,
-    excluded_names: &[String],
-) -> Vec<&'a Value> {
-    select_children(container, seg)
-        .into_iter()
-        .filter(|node| {
-            node.get("name")
-                .and_then(|n| n.get("value"))
-                .and_then(Value::as_str)
-                .is_none_or(|name| !excluded_names.iter().any(|e| e == name))
-        })
-        .collect()
+impl Display for FlatKey {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        for (i, seg) in self.segments.iter().enumerate() {
+            if i > 0 {
+                f.write_str("/")?;
+            }
+            f.write_str(&seg.name)?;
+            if let Some(idx) = seg.index {
+                write!(f, ":{idx}")?;
+            }
+        }
+        for suffix in &self.suffixes {
+            write!(f, "|{}", suffix.name)?;
+            if let Some(idx) = suffix.index {
+                write!(f, ":{idx}")?;
+            }
+        }
+        Ok(())
+    }
 }
 
-/// Resolve the RM value(s) a full relative path reaches from `rm` (an empty
-/// segment list resolves to `rm` itself).
-pub(crate) fn resolve<'a>(rm: &'a Value, segs: &[PathSegment]) -> Vec<&'a Value> {
-    navigate(&[rm], segs)
+/// The largest accepted `:i` instance index. The spec sets no bound; an
+/// unbounded index would let one tiny key allocate billions of placeholder
+/// occurrences, so the parser rejects anything above this (no openEHR spec
+/// governs this — our own resource-safety bound).
+pub const MAX_INSTANCE_INDEX: u32 = 65_535;
+
+/// Split a trailing `:<digits>` index off a segment or suffix part. A colon
+/// followed by anything non-numeric is malformed — node ids cannot contain
+/// `:` (`master04 §Node ID Generation Rules` limits ids to alphabetics,
+/// digits, `_`, `.`, `-`).
+fn split_index<'a>(raw: &'a str, whole_key: &str) -> Result<(&'a str, Option<u32>), FlatError> {
+    match raw.split_once(':') {
+        None => Ok((raw, None)),
+        Some((name, idx)) => {
+            if name.is_empty() {
+                return Err(FlatError::MalformedPath {
+                    path: whole_key.to_owned(),
+                    reason: "empty name before ':'".to_owned(),
+                });
+            }
+            let parsed = idx.parse::<u32>().map_err(|_| FlatError::MalformedPath {
+                path: whole_key.to_owned(),
+                reason: format!("non-numeric instance index {idx:?}"),
+            })?;
+            if parsed > MAX_INSTANCE_INDEX {
+                return Err(FlatError::MalformedPath {
+                    path: whole_key.to_owned(),
+                    reason: format!(
+                        "instance index {parsed} exceeds the supported maximum {MAX_INSTANCE_INDEX}"
+                    ),
+                });
+            }
+            Ok((name, Some(parsed)))
+        }
+    }
 }
 
 #[cfg(test)]
-#[allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    let_underscore_drop
-)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
     #[test]
-    fn parses_segments() {
-        let segs = parse(
-            "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.lab_test-hba1c.v1]/data[at0001]/value",
-        );
-        assert_eq!(segs.len(), 4);
-        assert_eq!(segs[0].attribute, "content");
+    fn parses_plain_leaf_with_suffix() {
+        // master04 §Flat format example key.
+        let k = FlatKey::parse("vital_signs/body_temperature:0/any_event:0/temperature|magnitude")
+            .unwrap();
+        assert_eq!(k.segments.len(), 4);
+        assert_eq!(k.segments[1].name, "body_temperature");
+        assert_eq!(k.segments[1].index, Some(0));
+        assert_eq!(k.segments[3].name, "temperature");
+        assert_eq!(k.segments[3].index, None);
+        assert_eq!(k.suffixes.len(), 1);
+        assert_eq!(k.suffixes[0].name, "magnitude");
+        assert!(!k.is_ctx());
+    }
+
+    #[test]
+    fn parses_rm_attribute_and_suffix_chain() {
+        // master04 §RM Attributes prefix example: a chained suffix on an
+        // indexed `_link` RM attribute.
+        let k = FlatKey::parse("path/observation:0/_link:0|meaning|code").unwrap();
+        assert_eq!(k.segments[2].name, "_link");
+        assert_eq!(k.segments[2].index, Some(0));
+        assert!(k.segments[2].is_rm_attribute());
         assert_eq!(
-            segs[0].predicate.archetype_node_id.as_deref(),
-            Some("openEHR-EHR-SECTION.ispek_dialog.v1")
-        );
-        assert_eq!(segs[0].predicate.name_value.as_deref(), Some("Vitals"));
-        assert_eq!(segs[2].attribute, "data");
-        assert_eq!(
-            segs[2].predicate.archetype_node_id.as_deref(),
-            Some("at0001")
-        );
-        assert_eq!(segs[3].attribute, "value");
-        assert!(segs[3].predicate.is_empty());
-    }
-
-    #[test]
-    fn relative_strips_parent() {
-        let rel = relative(
-            "/content[openEHR-EHR-OBSERVATION.x.v1]",
-            "/content[openEHR-EHR-OBSERVATION.x.v1]/data[at0001]/events[at0002]",
-        );
-        assert_eq!(rel.len(), 2);
-        assert_eq!(rel[0].attribute, "data");
-        assert_eq!(rel[1].attribute, "events");
-    }
-
-    #[test]
-    fn matched_step_falls_back_to_id_only_for_renamed_instances() {
-        // Template step names the node 'Template Name'; the instance renamed it
-        // (LOCATABLE.name is runtime-redefinable when unconstrained) — with the
-        // fallback allowed (id unambiguous among siblings) the step still
-        // locates the node by its archetype_node_id.
-        let rm = serde_json::json!({
-            "content": [
-                {"archetype_node_id": "openEHR-EHR-EVALUATION.a.v1",
-                 "name": {"value": "Runtime Name"},
-                 "data": {"archetype_node_id": "at0001", "_type": "ITEM_LIST"}}
+            k.suffixes,
+            vec![
+                Suffix {
+                    name: "meaning".to_owned(),
+                    index: None
+                },
+                Suffix {
+                    name: "code".to_owned(),
+                    index: None
+                }
             ]
-        });
-        let segs = parse("/content[openEHR-EHR-EVALUATION.a.v1,'Template Name']/data[at0001]");
-        let step = select_children_matched(&rm, &segs[0], true);
-        assert_eq!(step.len(), 1);
-        assert_eq!(step[0]["name"]["value"], "Runtime Name");
-        // Fallback disallowed (same-id siblings distinguished by name): strict
-        // only, nothing matches.
-        assert!(select_children_matched(&rm, &segs[0], false).is_empty());
+        );
     }
 
     #[test]
-    fn matched_step_still_disambiguates_matching_siblings() {
-        // Two same-id siblings with distinct (template-constrained) names: the
-        // strict match succeeds and must NOT widen to both, fallback or not.
-        let rm = serde_json::json!({
-            "content": [
-                {"archetype_node_id": "openEHR-EHR-OBSERVATION.x.v1",
-                 "name": {"value": "First"}, "tag": 1},
-                {"archetype_node_id": "openEHR-EHR-OBSERVATION.x.v1",
-                 "name": {"value": "Second"}, "tag": 2}
-            ]
-        });
-        let segs = parse("/content[openEHR-EHR-OBSERVATION.x.v1,'Second']");
-        let found = select_children_matched(&rm, &segs[0], true);
-        assert_eq!(found.len(), 1);
-        assert_eq!(found[0]["tag"], 2);
+    fn parses_ctx_suffix_index() {
+        // master06 §Participation non-compact identifiers.
+        let k = FlatKey::parse("ctx/participation_identifiers:1|issuer:0").unwrap();
+        assert!(k.is_ctx());
+        assert_eq!(k.segments[1].index, Some(1));
+        assert_eq!(k.suffixes[0].name, "issuer");
+        assert_eq!(k.suffixes[0].index, Some(0));
     }
 
     #[test]
-    fn resolves_through_arrays_and_objects() {
-        let rm = serde_json::json!({
-            "data": {
-                "events": [
-                    {"archetype_node_id": "at0002", "value": {"_type": "DV_TEXT", "value": "a"}},
-                    {"archetype_node_id": "at0009", "value": {"_type": "DV_TEXT", "value": "b"}}
-                ]
-            }
-        });
-        let segs = parse("/data/events[at0002]/value");
-        let found = resolve(&rm, &segs);
-        assert_eq!(found.len(), 1);
-        assert_eq!(found[0]["value"], "a");
+    fn display_round_trips() {
+        for key in [
+            "ctx/language",
+            "vital_signs/body_temperature:0/any_event:0/temperature|magnitude",
+            "path/observation:0/_link:0|meaning|code",
+            "ctx/participation_identifiers:1|issuer:0",
+            "vital_signs/temperature:0/value/_normal_range/lower|magnitude",
+        ] {
+            assert_eq!(FlatKey::parse(key).unwrap().to_string(), key);
+        }
+    }
+
+    #[test]
+    fn rejects_malformed() {
+        for bad in ["", "a//b", "a|", "a:x", "a/:0", "a|code:x"] {
+            assert!(
+                matches!(FlatKey::parse(bad), Err(FlatError::MalformedPath { .. })),
+                "expected malformed: {bad}"
+            );
+        }
     }
 }

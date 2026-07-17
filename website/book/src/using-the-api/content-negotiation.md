@@ -32,13 +32,51 @@ curl -u ehrbase:ehrbase \
   http://localhost:8080/ehrbase/rest/openehr/v1/ehr/$EHR_ID/composition
 ```
 
-For compositions and templates, several endpoints additionally accept the Better
-**WebTemplate**, **FLAT** (simSDT), and **STRUCTURED** (structSDT) JSON media
-types — `application/openehr.wt+json`, `application/openehr.wt.flat+json`, and
-`application/openehr.wt.structured+json`. These are covered in
-[Templates & validation](../templates-validation.md).
+## Simplified formats (FLAT and STRUCTURED)
 
-The query API is **JSON only** — it does not accept XML or the WebTemplate
+Beyond the canonical formats, the server implements the openEHR **Simplified
+Formats** — template-driven JSON representations that use friendly field
+identifiers (`vital_signs/body_temperature:0/any_event:0/temperature|magnitude`)
+instead of full RM paths. Select them the same way as JSON/XML, with these
+media types:
+
+| Media type | Meaning |
+|---|---|
+| `application/openehr.wt.flat+json` | FLAT — one flat JSON object of `path: value` pairs |
+| `application/openehr.wt.structured+json` | STRUCTURED — the same data as nested JSON |
+| `application/openehr.wt+json` | A template rendered as Web Template JSON (template endpoints only) |
+
+Where they work:
+
+- **Compositions** — full round-trip: commit with
+  `Content-Type: application/openehr.wt.flat+json` (or `…structured…`) and
+  read back with the matching `Accept`.
+- **Template examples** — `GET …/definition/template/adl1.4/{id}/example`
+  (and the ADL2 form) return the generated example in any of the four
+  formats, chosen via `Accept`.
+- **Template definitions** — `GET …/definition/template/adl1.4/{id}` with
+  `Accept: application/openehr.wt+json` returns the Web Template document.
+- **Contributions** — the CONTRIBUTION envelope itself stays canonical JSON;
+  a simplified media type applies only to each composition payload inside
+  `versions[].data`.
+
+Two rules to know when committing a composition in a simplified format:
+
+- A FLAT/STRUCTURED payload cannot carry its own template id, so the
+  **`openehr-template-id` request header is required** — the commit is
+  rejected with `422` without it.
+- There is **no `?format=` query parameter**: format selection is done
+  exclusively through the standard `Accept` and `Content-Type` headers.
+
+Requests naming a media type the endpoint does not support are answered with
+**415 Unsupported Media Type** (request body) or **406 Not Acceptable**
+(response format), with a body naming the formats that endpoint does
+support. EHR, EHR_STATUS, directory, and demographic resources have no
+simplified representation (the format is generated from an operational
+template, which those resources do not have) — they speak canonical JSON/XML
+only.
+
+The query API is **JSON only** — it does not accept XML or the simplified
 media types.
 
 ## The `Prefer` header

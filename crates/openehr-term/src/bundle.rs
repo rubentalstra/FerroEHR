@@ -512,7 +512,7 @@ impl OpenehrTerminology {
 
 /// The shared, cached openEHR terminology bundle (TERM 3.1.0), parsed on first use.
 static OPENEHR: LazyLock<OpenehrTerminology> = LazyLock::new(|| {
-    // PORT NOTE: the terminology assets are vendored, spec-pinned (TERM 3.1.0),
+    // NOTE: the terminology assets are vendored, spec-pinned (TERM 3.1.0),
     // and embedded at compile time, so a parse failure is a corrupt build
     // artifact — a build-time invariant, not a runtime condition. We therefore
     // panic here (once) rather than thread a `Result` through every lookup.

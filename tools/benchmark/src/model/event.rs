@@ -3,7 +3,7 @@
 //! carries a per-patient-day rate. [`schedule`](crate::model::schedule) assigns
 //! arrival times and renders payloads; this module is the catalogue's data.
 //!
-//! PORT NOTE: no openEHR spec governs the benchmark workload; this is our own
+//! NOTE: no openEHR spec governs the benchmark workload; this is our own
 //! pre-registered clinical-day model (register 00). E1's admission sequence is
 //! extended beyond the register's literal "POST /ehr → GET /ehr → admission
 //! composition" to also seed an initial vitals composition and establish the
@@ -267,7 +267,7 @@ impl ClinicalEvent {
 /// the admission-assessment (CKM IPS — large/deep) composition, seed the
 /// per-patient correction target (CKM clinical synopsis) so E7 corrections have
 /// something to version, and establish the patient directory. See the module
-/// PORT NOTE.
+/// NOTE.
 #[must_use]
 pub fn admission_steps() -> Vec<Step> {
     vec![

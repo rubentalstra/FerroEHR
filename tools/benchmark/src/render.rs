@@ -59,11 +59,19 @@ use rand::rngs::StdRng;
 use serde_json::{Map, Value};
 
 use conformance::testdata::fixtures;
-use openehr_flat::webtemplate::{WebTemplate, WebTemplateNode, WebTemplateRange};
-use openehr_flat::{build_web_template, from_flat, to_flat, validate_composition};
+use openehr_flat::convert::{composition_from_flat, composition_to_flat};
+use openehr_flat::validation::validate_composition;
+use openehr_flat::webtemplate::{
+    WebTemplate, WebTemplateNode, WebTemplateRange, build_web_template,
+};
 
 use crate::pack;
 use crate::{BenchError, TemplateKind};
+
+/// Fixed `ctx/time` default for the FLAT rebuild direction (ITS-REST
+/// `simplified_formats` master04 §Context). The benchmark renders deterministic
+/// skeletons, so a constant instant keeps a rebuild reproducible.
+const NOW: &str = "2024-01-01T00:00:00Z";
 
 /// The subject-id namespace stamped into every rendered `EHR_STATUS`
 /// (our own value — no openEHR spec governs the benchmark subject namespace).
@@ -110,7 +118,7 @@ pub struct TemplateSource {
 /// The ECC-corpus source for a template kind, or `None` for the CKM-pack kinds
 /// (which are sourced from [`crate::pack`], not the conformance fixtures).
 ///
-/// PORT NOTE: no openEHR spec governs the benchmark's template selection. The
+/// NOTE: no openEHR spec governs the benchmark's template selection. The
 /// ECC-corpus kinds are retained as proven both-server-accepted payloads; the
 /// CKM-pack kinds (E1–E4/E7/E9 clinical events) are the official openEHR CKM
 /// templates in `templates/ckm/`.
@@ -269,11 +277,11 @@ fn build_template(kind: TemplateKind) -> Result<WebTemplate, BenchError> {
 /// faithful round-trip is the precondition for jittering in FLAT space and
 /// reassembling without distorting the committed payload.
 fn is_faithful(skeleton: &Value, wt: &WebTemplate) -> bool {
-    let Ok(flat) = to_flat(skeleton, wt) else {
+    let Ok(flat) = composition_to_flat(skeleton, wt) else {
         return false;
     };
     let map: Map<String, Value> = flat.into_iter().collect();
-    let Ok(rebuilt) = from_flat(&map, wt) else {
+    let Ok(rebuilt) = composition_from_flat(&map, wt, NOW) else {
         return false;
     };
     if dv_leaf_count(&rebuilt) != dv_leaf_count(skeleton) {
@@ -363,11 +371,11 @@ fn render_flat(
     params: &VaryParams,
     salt: u64,
 ) -> Result<Value, BenchError> {
-    let flat = to_flat(skeleton, wt).map_err(|e| BenchError::Fixture(e.to_string()))?;
+    let flat = composition_to_flat(skeleton, wt).map_err(|e| BenchError::Fixture(e.to_string()))?;
     let mut map: Map<String, Value> = flat.into_iter().collect();
     let mut rng = StdRng::seed_from_u64(derive_seed(params, salt));
     jitter_flat(&mut map, wt, params, &mut rng);
-    from_flat(&map, wt).map_err(|e| BenchError::Fixture(e.to_string()))
+    composition_from_flat(&map, wt, NOW).map_err(|e| BenchError::Fixture(e.to_string()))
 }
 
 /// Structure-preserving render: stamp only the composition-context times and the
@@ -779,12 +787,12 @@ fn resolve<'a>(
 // ── validation-message set helpers (faithfulness gate + tests) ─────────────────
 
 /// A comparable signature for a validation message (path + kind + text).
-fn message_signature(m: &openehr_flat::ValidationMessage) -> String {
+fn message_signature(m: &openehr_flat::validation::ValidationMessage) -> String {
     format!("{}|{:?}|{}", m.path, m.kind, m.message)
 }
 
 /// The set of message signatures for a validation result.
-fn message_set(msgs: &[openehr_flat::ValidationMessage]) -> HashSet<String> {
+fn message_set(msgs: &[openehr_flat::validation::ValidationMessage]) -> HashSet<String> {
     msgs.iter().map(message_signature).collect()
 }
 

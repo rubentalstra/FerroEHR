@@ -26,8 +26,8 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_flat::webtemplate::WebTemplateNode;
-use openehr_flat::{DetailLevel, WebTemplate, build_web_template, example_composition};
+use openehr_flat::example::{DetailLevel, example_composition};
+use openehr_flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template};
 use openehr_its::opt14;
 use serde_json::Value;
 

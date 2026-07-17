@@ -8,8 +8,7 @@ metadata:
 ---
 
 **The served OpenAPI is OURS, generated from OUR code.** Owner correction
-(2026-07-17, angrily, after both ADR-005's stale §4 framing and a worker's
-misreading): `ehrbase-rest` never imports, serves, renders, or drift-gates
+(2026-07-17, angrily, after stale decision-doc framing misled a worker): `ehrbase-rest` never imports, serves, renders, or drift-gates
 the vendored ITS-REST OAS yaml. Every handler carries `#[utoipa::path]`;
 the complete document is composed natively in
 `app/ehrbase-rest/src/extensions/openapi.rs` (single-sourced with the
@@ -23,6 +22,6 @@ documents legitimately differ (ours includes the own-design extensions).
 **How to apply:** when changing anything wire-visible (media types,
 headers, params, status codes), read the vendored OAS for the required
 BEHAVIOUR, then update OUR `#[utoipa::path]` declarations in the same PR so
-the served document advertises it. ADR-005 carries the 2026-07-17
-amendment; root CLAUDE.md's OpenAPI note was rewritten the same day. Never
+the served document advertises it. Root CLAUDE.md's OpenAPI note carries
+the rule (the ADR layer itself was deleted 2026-07-17). Never
 resurrect the "code→OAS drift-check" idea. Related: [[owner-work-style]].

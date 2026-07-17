@@ -1,7 +1,7 @@
 //! The transport-agnostic audit **event model** for the SM System Log
 //! component (`I_SYSTEM_LOG`).
 //!
-//! PORT NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
+//! NOTE: the vendored SM `I_SYSTEM_LOG` interface is an empty stub —
 //! `docs/specs/openehr/SM/docs/UML/classes/i_system_log.adoc` names the
 //! interface with no methods and no description; the only normative statement
 //! is the platform overview's one line "System Log | IHE ATNA-compliant system

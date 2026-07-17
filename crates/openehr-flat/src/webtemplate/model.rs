@@ -261,9 +261,9 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub name_coded: Option<CodedName>,
 
-    /// Pre-parsed archetype-conformance walk plan (P20 item 31): the constraint
+    /// Pre-parsed archetype-conformance walk plan: the constraint
     /// paths and sibling groups this node's validation walk needs, parsed ONCE at
-    /// build time ([`crate::build_web_template`] calls `prepare_walk`) instead of
+    /// build time ([`crate::webtemplate::build_web_template`] calls `prepare_walk`) instead of
     /// re-parsing every constraint path on every instance-node visit. A hand-built
     /// node with no plan is handled by the walk building the plan on the fly.
     /// Validation-only (`#[serde(skip)]`) — no openEHR spec governs the
@@ -530,8 +530,8 @@ pub struct WebTemplateStructuralStub {
     pub name: Option<String>,
 }
 
-/// A closed-archetype constraint on one attribute (F-07-05 + F-07-10;
-/// validation-only, never serialized). Under the constrained attribute at
+/// A closed-archetype constraint on one attribute (validation-only, never
+/// serialized). Under the constrained attribute at
 /// absolute archetype `path`, an instance child bearing an `archetype_node_id`
 /// is admissible iff it matches one of `allowed_ids` (a fixed at-code /
 /// archetype-id sibling alternative) **or** an open `ARCHETYPE_SLOT` in `slots`.

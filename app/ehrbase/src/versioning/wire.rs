@@ -28,7 +28,7 @@ use crate::versioning::signature::signer::Signer;
 /// "there will always be at least one commit audit … there may also be further
 /// attestations").
 ///
-/// PORT NOTE (G-12, master04 §Revision History): the `REVISION_HISTORY` is
+/// NOTE (G-12, master04 §Revision History): the `REVISION_HISTORY` is
 /// assembled directly as canonical JSON rather than through a typed
 /// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
 /// spec-correct.
@@ -98,7 +98,7 @@ pub(crate) async fn revision_history(
 /// `time_created` (1..1) — the commit time of the object's first version
 /// (`VERSIONED_OBJECT.time_created`, RM common master06 §Versioned Objects).
 ///
-/// PORT NOTE (EHR-Extract import, master06 §Copying): the earliest **held**
+/// NOTE (EHR-Extract import, master06 §Copying): the earliest **held**
 /// version is used, not a hardcoded `sys_version = 1`. A latest-only clone
 /// (`import_ehr` over an `export_ehrs` extract) legitimately holds a partial
 /// trunk history whose lowest version is `> 1`; `time_created` is then the

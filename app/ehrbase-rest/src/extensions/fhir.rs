@@ -32,7 +32,7 @@
 //!   event-subscription/tenant extensions (the coarse RBAC gate classes it
 //!   `Admin`).
 //!
-//! PORT NOTE: every error on this surface is a FHIR
+//! NOTE: every error on this surface is a FHIR
 //! `OperationOutcome` (`severity`/`code`/`diagnostics`), NOT the openEHR error
 //! body — this is the FHIR boundary. Validator rejections surface the openEHR
 //! validator's message verbatim in `diagnostics` (the CDR's rules win: a

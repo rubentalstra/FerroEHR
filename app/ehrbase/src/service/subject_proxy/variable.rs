@@ -45,7 +45,7 @@ pub struct SubjectVariable {
     /// this variable.
     pub frame_id: String,
     /// `frame_path [1]` — path within the frame result at which the value
-    /// sits. PORT NOTE: the SM leaves the semantics undefined ("Path within
+    /// sits. NOTE: the SM leaves the semantics undefined ("Path within
     /// `last_frame` result"); the documented selector grammar lives with the
     /// extraction engine (`docs/design/sm-platform/10-subject-proxy.md` §2.2).
     pub frame_path: String,
@@ -85,7 +85,7 @@ impl SubjectVariable {
     }
 
     /// `is_global (): Boolean` with `__Post_result__: Result = (namespace =
-    /// Void)`. PORT NOTE: the prose ("True if `namespace` is set") contradicts
+    /// Void)`. NOTE: the prose ("True if `namespace` is set") contradicts
     /// the post-condition; the post-condition is the consistent reading —
     /// *global* means **no** namespace (master10 §Subject Variable Naming:
     /// "If `namespace` is not set, the variable is understood to be in the

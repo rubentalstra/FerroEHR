@@ -171,7 +171,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::AuthoredResource {
         if let Some(v) = &self.description {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
-        // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
+        // NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
         if let Some(v) = &self.uid {
             v.write_xml(w, "uid", Some("UUID"))?;
         }
@@ -1809,7 +1809,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceAnnotations {
             __e.push_attribute((*k, v.as_str()));
         }
         w.write_start(__e)?;
-        // PORT NOTE: Hash<String, Hash> field `documentation` is off the RM canonical-XML wire (resource metadata); not serialized.
+        // NOTE: Hash<String, Hash> field `documentation` is off the RM canonical-XML wire (resource metadata); not serialized.
         w.write_end(tag)?;
         Ok(())
     }
@@ -1877,7 +1877,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
                 w.write_kv_element("other_details", k, v)?;
             }
         }
-        // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
+        // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         if let Some(v) = &self.title {
@@ -4139,7 +4139,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::AuthoredResource {
         if let Some(v) = &self.description {
             v.write_xml(w, "description", Some("RESOURCE_DESCRIPTION"))?;
         }
-        // PORT NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
+        // NOTE: Hash<String, TRANSLATION_DETAILS> field `translations` is off the RM canonical-XML wire (resource metadata); not serialized.
         if let Some(v) = &self.revision_history {
             v.write_xml(w, "revision_history", Some("REVISION_HISTORY"))?;
         }
@@ -14974,7 +14974,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
                 w.write_kv_element("other_details", k, v)?;
             }
         }
-        // PORT NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
+        // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
         self.parent_resource
             .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         w.write_end(tag)?;

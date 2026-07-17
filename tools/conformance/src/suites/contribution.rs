@@ -466,7 +466,7 @@ fn set_preceding(body: &mut Value, i: usize, uid: &str) {
 
 /// A `DV_CODED_TEXT` for an openEHR `audit change type` group code + rubric.
 ///
-// PORT NOTE: the codes 249=creation / 251=modification / 253=deleted are the
+// NOTE: the codes 249=creation / 251=modification / 253=deleted are the
 // openEHR Terminology `audit change type` group (master08 §Data Set
 // Considerations) — edition-invariant. Register 05 G-8 wants them sourced from
 // `openehr-term` rather than as literals; `tools/conformance` does not depend on
@@ -486,7 +486,7 @@ fn change_type(code: &str, rubric: &str) -> Value {
 
 /// Normalize `versions[i].commit_audit.change_type` to `251|modification|`.
 ///
-// PORT NOTE (fixture adaptation): the vendored `*.contribution.modification`
+// NOTE (fixture adaptation): the vendored `*.contribution.modification`
 // fixtures are labelled `value:"modification"` but carry `code_string:"249"`
 // (creation) — an internally-inconsistent RM-1.0.x-era fixture. The server
 // treats `defining_code` as authoritative, so this corrects the code to the

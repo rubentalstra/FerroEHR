@@ -2,7 +2,7 @@
 
 The canonical-JSON `_type` discipline for every generated spec type:
 a manual `Serialize` that emits `_type` first and omits `None`/empty, and
-a tolerant `Deserialize` that validates `_type` when present (ADR-004).
+a tolerant `Deserialize` that validates `_type` when present.
 
 - **This macro defines wire behaviour for the entire spec layer.** Any
   change to what it emits or accepts is a canonical-JSON conformance

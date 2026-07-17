@@ -12,7 +12,7 @@
 //!   equivalent).
 //! - Inherited LOCATABLE `Archetype_node_id_valid`.
 //!
-//! PORT NOTE: `Periodic_validity` (`is_periodic xor period = Void`) holds by
+//! NOTE: `Periodic_validity` (`is_periodic xor period = Void`) holds by
 //! construction with `is_periodic()` computed from `period` (archie marks it
 //! `ignored` for the same reason). `Period_consistency` is a distinct,
 //! non-ignored invariant per the spec and IS enforced here — the spec is the

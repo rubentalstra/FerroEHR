@@ -2,7 +2,7 @@
 //! Templates): ADL 1.4 source archetypes keyed by `ARCHETYPE_ID` (on
 //! `archetype_store`) and OPTs keyed by `UUID` (on `template_store`).
 //!
-//! PORT NOTE (G-05-01, no AOM 1.4 source parser): the tree has no ADL 1.4
+//! NOTE (G-05-01, no AOM 1.4 source parser): the tree has no ADL 1.4
 //! *source* parser (OPT XML is ingested by the templates seam; ADL2 has its own
 //! registration validator). ADL 1.4 archetype "validity" is therefore a
 //! lightweight *structural* check — the source must open with the `archetype`
@@ -186,7 +186,7 @@ impl EhrbaseService {
     /// `list_matching_opts` — OPTs whose `template_id` matches `id_pattern`
     /// (a regex), cursored by `page`.
     ///
-    /// PORT NOTE (G-05-08, spec defect): the SM types this `List<ARCHETYPE_ID>`
+    /// NOTE (G-05-08, spec defect): the SM types this `List<ARCHETYPE_ID>`
     /// though OPTs are UUID-keyed; we return the OPTs' `template_id` strings
     /// (the meaningful identifier a pattern is useful against).
     ///

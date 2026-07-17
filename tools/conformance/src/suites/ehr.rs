@@ -16,7 +16,7 @@
 //! `EHR_STATUS` payloads are authored at the RM 1.2.0 canonical shape (the
 //! pinned development edition).
 //
-// PORT NOTE: register 03 G-3 (RM wire version ladder) is only partially met:
+// NOTE: register 03 G-3 (RM wire version ladder) is only partially met:
 // EHR_STATUS request payloads are authored at RM 1.2.0 (PARTY_SELF subject,
 // RM ehr master04 §EHR Status). A per-edition request-payload provider
 // (RM 1.0.2 minimum, master03-overview §API Conformance) belongs to the
@@ -821,7 +821,7 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
         // subject, so it must be ACCEPTED (2xx). The exception is detected by
         // the fixture's shape (spec fact), not a filename.
         //
-        // PORT NOTE: register 03 G-2 wants per-fixture expected-outcome to live
+        // NOTE: register 03 G-2 wants per-fixture expected-outcome to live
         // in the runner's adjudication register; that seam is not yet exposed
         // to the suites, so the single spec-valid-anonymous exception is
         // encoded here with its spec citation (replacing the legacy hardcoded

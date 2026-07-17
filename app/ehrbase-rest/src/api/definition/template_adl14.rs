@@ -3,7 +3,7 @@
 //! Operations (`docs/specs/openehr/ITS-REST/specifications/operations/`):
 //! `definition_template_adl1.4_list` / `_upload` / `_get` / `_example_get`.
 //! Governing spec text: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md`.
+//! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
 //!
 //! The wire addresses OPTs by their `template_id` string; the SM `get_opt` is
 //! UUID-keyed, so retrieval runs through the `DefinitionAdapter` extension
@@ -22,11 +22,31 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
 use crate::api::RequestParts;
+use crate::negotiate::WireFormat;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
 use super::dispatch::list_filter_and_page;
+
+/// The four `Accept_LOCATABLE` representations of a generated example
+/// COMPOSITION: canonical JSON/XML + FLAT/STRUCTURED.
+const EXAMPLE_FORMATS: &[WireFormat] = &[
+    WireFormat::CanonicalJson,
+    WireFormat::CanonicalXml,
+    WireFormat::Flat,
+    WireFormat::Structured,
+];
+
+/// The template-definition GET representations (`Accept_template` +
+/// `200_Template_adl1_4_retrieved`): the canonical OPT is `application/xml`;
+/// `application/openehr.wt+json` (and a bare `application/json`, the only JSON
+/// projection the server holds) return the Web Template document.
+const TEMPLATE_DEF_FORMATS: &[WireFormat] = &[
+    WireFormat::CanonicalXml,
+    WireFormat::WebTemplate,
+    WireFormat::CanonicalJson,
+];
 
 /// `GET …/definition/template/adl1.4` — list the stored OPT 1.4 templates.
 ///
@@ -92,10 +112,12 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
     let template_id = p.template_id.clone();
     // Resolve the `Accept` before touching storage so an unsupported one is a
     // clean `406` (`operations/definition_template_adl1.4_get.yaml` `406`).
-    let Some(accept) = negotiate_accept(h) else {
+    // Absent / `*/*` default to the canonical OPT (application/xml).
+    let Some(fmt) = negotiate::resolve_accept(h, TEMPLATE_DEF_FORMATS, WireFormat::CanonicalXml)
+    else {
         return Err(RestError(ApiError::NotAcceptable(
-            "the template is available as application/xml (canonical OPT) or \
-             application/openehr.wt+json (web template)"
+            "the template is available as application/xml (canonical OPT), \
+             application/openehr.wt+json, or application/json (web template)"
                 .to_owned(),
         )));
     };
@@ -105,13 +127,15 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
         .backend()
         .template_adl14_get(template_id.clone())
         .await?;
-    match accept {
-        TemplateAccept::WebTemplate => web_template_response(state, &template_id).await,
-        TemplateAccept::Xml => {
+    match fmt {
+        WireFormat::CanonicalXml => {
             let mut resp = negotiate::xml_body(StatusCode::OK, xml);
             set_template_etag(&mut resp, &template_id);
             Ok(resp)
         }
+        // `application/openehr.wt+json` and a bare `application/json` both serve
+        // the Web Template document (the only JSON projection of an OPT).
+        _ => web_template_response(state, &template_id).await,
     }
 }
 
@@ -136,66 +160,30 @@ pub(super) async fn example_get(
     // Negotiate the four representations the dev-OAS `Accept_LOCATABLE`
     // enumerates (json / xml / wt.flat+json / wt.structured+json). Any other
     // media type is a `406` (the endpoint's `406` response).
-    if negotiate::wants_flat(h) {
-        return super::flat::composition_flat_response(state, StatusCode::OK, &comp).await;
-    }
-    if negotiate::wants_structured(h) {
-        return super::flat::composition_structured_response(state, StatusCode::OK, &comp).await;
-    }
-    if !example_accept_supported(h) {
-        return Err(RestError(ApiError::NotAcceptable(
+    match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {
+        Some(WireFormat::Flat) => {
+            crate::formats::dispatch::composition_flat_response(state, StatusCode::OK, &comp).await
+        }
+        Some(WireFormat::Structured) => {
+            crate::formats::dispatch::composition_structured_response(state, StatusCode::OK, &comp)
+                .await
+        }
+        // JSON (default) or canonical XML, via the single spec-typed COMPOSITION
+        // path (`respond_rm` re-types the value so the generated `ToXml` runs).
+        Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
+            Ok(negotiate::respond_rm::<Composition>(
+                h,
+                StatusCode::OK,
+                &comp,
+                "composition",
+            ))
+        }
+        _ => Err(RestError(ApiError::NotAcceptable(
             "the template example is available as application/json, application/xml, \
              application/openehr.wt.flat+json, or application/openehr.wt.structured+json"
                 .to_owned(),
-        )));
+        ))),
     }
-    // JSON (default) or canonical XML, via the single spec-typed COMPOSITION
-    // path (`respond_rm` re-types the value so the generated `ToXml` runs).
-    Ok(negotiate::respond_rm::<Composition>(
-        h,
-        StatusCode::OK,
-        &comp,
-        "composition",
-    ))
-}
-
-/// The representation the ADL1.4 template GET should serve for a request's
-/// `Accept`. `None` = an `Accept` outside `Accept_Template` → `406`.
-enum TemplateAccept {
-    /// The canonical `application/xml` OPT.
-    Xml,
-    /// The `application/openehr.wt+json` web template (EHRbase-compatible
-    /// extension; also served for a bare `application/json`, the only JSON
-    /// projection the server holds — the OPT canonical form is XML).
-    WebTemplate,
-}
-
-/// Resolve a request `Accept` against the `Accept_Template` enum
-/// (`parameters/header/Accept_Template.yaml`: `application/json`,
-/// `application/xml`, `application/openehr.wt+json`) plus the `200`-response
-/// content (`200_Template_adl1_4_retrieved.yaml`: xml + wt+json). Absent / `*/*`
-/// / `application/*` default to the canonical XML; anything outside the enum is
-/// `None` (→ `406`).
-fn negotiate_accept(headers: &HeaderMap) -> Option<TemplateAccept> {
-    let Some(accept) = headers.get(header::ACCEPT).and_then(|v| v.to_str().ok()) else {
-        return Some(TemplateAccept::Xml); // absent → canonical XML
-    };
-    let mut acceptable: Option<TemplateAccept> = None;
-    for range in accept.split(',') {
-        let media = range.split(';').next().unwrap_or(range).trim();
-        match media {
-            "" | "*/*" | "application/*" | "application/xml" | "text/xml" => {
-                return Some(TemplateAccept::Xml);
-            }
-            "application/openehr.wt+json" | "application/json" => {
-                // Keep looking for a canonical-XML preference, but remember the
-                // web-template match so a pure JSON/wt Accept still resolves.
-                acceptable.get_or_insert(TemplateAccept::WebTemplate);
-            }
-            _ => {}
-        }
-    }
-    acceptable
 }
 
 /// Set the weak `ETag` the retrieved/uploaded template responses mandate
@@ -213,14 +201,9 @@ fn set_template_etag(resp: &mut Response, template_id: &str) {
 
 /// Render the `201_Template_adl1_4_upload` response per `Prefer`:
 /// `return=representation` → the OPT XML; `return=identifier` → the JSON
-/// `TemplateIdentifier` object `{"template_id": <id>}` (G-3 — matching the ADL2
-/// upload, `schemas/others/TemplateIdentifier.yaml`); missing / `return=minimal`
-/// → an empty body. `Location` + the weak `ETag` are set on every case.
-///
-/// This ADL1.4-local responder is the sole template-upload builder: the former
-/// shared `overview::negotiate::template_upload_response` (which returned the
-/// `return=identifier` body as a `text/plain` scalar — the G-3 defect) has been
-/// removed, so no `text/plain` identifier path remains.
+/// `TemplateIdentifier` object `{"template_id": <id>}`
+/// (`schemas/others/TemplateIdentifier.yaml`); missing / `return=minimal` → an
+/// empty body. `Location` + the weak `ETag` are set on every case.
 fn upload_response(
     headers: &HeaderMap,
     location: &str,
@@ -251,36 +234,9 @@ fn upload_response(
     resp
 }
 
-/// Whether the request's `Accept` names one of the four representations the
-/// `adl1.4/{id}/example` endpoint supports (dev-OAS `Accept_LOCATABLE`:
-/// `application/json`, `application/xml`, `application/openehr.wt.flat+json`,
-/// `application/openehr.wt.structured+json`). An absent `Accept` (or `*/*`)
-/// defaults to JSON; anything else is a `406`.
-///
-/// The FLAT/STRUCTURED media types are resolved before this call, so here they
-/// only need to keep a mixed `Accept` from being rejected.
-fn example_accept_supported(headers: &HeaderMap) -> bool {
-    let Some(accept) = headers.get(header::ACCEPT).and_then(|v| v.to_str().ok()) else {
-        return true; // absent → canonical JSON
-    };
-    accept.split(',').any(|range| {
-        let media = range.split(';').next().unwrap_or(range).trim();
-        matches!(
-            media,
-            "" | "*/*"
-                | "application/*"
-                | "application/json"
-                | "application/xml"
-                | "text/xml"
-                | "application/openehr.wt.flat+json"
-                | "application/openehr.wt.structured+json"
-        )
-    })
-}
-
 /// Serve the service-owned Better `WebTemplate` for `template_id` as
-/// `application/openehr.wt+json` (single resolution seam:
-/// [`ehrbase::service::WebTemplateService`] — W2-K/F-13-02).
+/// `application/openehr.wt+json` (single resolution seam via
+/// `state.backend().web_template(..)`).
 ///
 /// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
 /// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).

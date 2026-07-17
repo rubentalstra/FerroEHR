@@ -23,7 +23,7 @@ use crate::system_log::config::AuditConfig;
 
 // PRI = facility*8 + severity (RFC 5424 §6.2.1). IHE ATNA logs security/audit
 // events: facility 10 ("security/authorization messages") and severity 5
-// ("Notice"). PORT NOTE: RFC 5424 §6.2.1 does not fix the ATNA severity; 5
+// ("Notice"). NOTE: RFC 5424 §6.2.1 does not fix the ATNA severity; 5
 // (Notice) is the common IHE choice for a normal audit record — review if the
 // deployment expects a different priority.
 /// Syslog facility 10 — security/authorization messages (RFC 5424 §6.2.1).
@@ -35,7 +35,7 @@ pub const SYSLOG_PRI: u16 = (SYSLOG_FACILITY as u16) * 8 + SYSLOG_SEVERITY as u1
 /// RFC 5424 SYSLOG version.
 pub const SYSLOG_VERSION: u8 = 1;
 /// The IHE ATNA `MSGID` for a DICOM audit record.
-// PORT NOTE: RFC 5424 §6.2.7 leaves MSGID application-defined; IHE ATNA uses
+// NOTE: RFC 5424 §6.2.7 leaves MSGID application-defined; IHE ATNA uses
 // "IHE+DICOM" for the DICOM Audit-Trail-Message-Format profile.
 pub const SYSLOG_MSGID: &str = "IHE+DICOM";
 /// UTF-8 byte-order mark that RFC 5424 §6.4 recommends prefixing a UTF-8 `MSG`.

@@ -20,8 +20,7 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_flat::build_web_template;
-use openehr_flat::webtemplate::{WebTemplateInputType, WebTemplateNode};
+use openehr_flat::webtemplate::{WebTemplateInputType, WebTemplateNode, build_web_template};
 use openehr_its::opt14;
 
 fn manifest_dir() -> PathBuf {
@@ -55,7 +54,7 @@ fn opt_files(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// Parse an `OPT` and build a `WebTemplate`, returning any error as a string.
-fn build_from_file(path: &Path) -> Result<openehr_flat::WebTemplate, String> {
+fn build_from_file(path: &Path) -> Result<openehr_flat::webtemplate::WebTemplate, String> {
     let xml = std::fs::read_to_string(path).map_err(|e| format!("read: {e}"))?;
     let opt = opt14::from_xml(&xml).map_err(|e| format!("opt14 parse: {e}"))?;
     build_web_template(&opt).map_err(|e| format!("build: {e}"))
@@ -193,15 +192,10 @@ fn every_opt_builds_a_web_template() {
 fn golden(name: &str) {
     let path = better_fixtures_dir().join(name);
     let wt = build_from_file(&path).unwrap_or_else(|e| panic!("build {name}: {e}"));
-    // WebTemplate output is deterministic — no volatile fields to redact. The
-    // `ehrbase-quirks` feature changes the duplicate-id suffix form at compile
-    // time (`name_1` spec form vs Better-compatible `name2` — webtemplate/id.rs),
-    // so each configuration pins its own snapshot.
-    let snapshot = if cfg!(feature = "ehrbase-quirks") {
-        format!("{}__quirks", name.replace(['.', ' '], "_"))
-    } else {
-        name.replace(['.', ' '], "_")
-    };
+    // WebTemplate output is deterministic — no volatile fields to redact.
+    // Duplicate ids take the spec suffix form (`name_1`, master04 §Node ID
+    // Generation Rules); there is no vendor-quirk variant.
+    let snapshot = name.replace(['.', ' '], "_");
     insta::assert_json_snapshot!(snapshot, wt);
 }
 

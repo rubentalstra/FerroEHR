@@ -2,7 +2,7 @@
 //!
 //! This module owns the platform crate's template surface: OPT 1.4 XML
 //! ingestion, the `template_store` repository access, and the cached derived
-//! [`WebTemplate`](openehr_flat::WebTemplate) runtime form. It is decomposed
+//! [`WebTemplate`](openehr_flat::webtemplate::WebTemplate) runtime form. It is decomposed
 //! the way the spec itself layers the material — **resource identity →
 //! operational form → derived runtime artefact**:
 //!
@@ -37,7 +37,7 @@
 //! same `template_store` table directly; this module deliberately does **not**
 //! duplicate them.
 //!
-//! # PORT NOTE residue (register: `docs/design/platform/10-templates.md`)
+//! # NOTE residue (register: `docs/design/platform/10-templates.md`)
 //!
 //! - **G-T06** — the `WebTemplate` JSON *format* is the Better `web-template`
 //!   SDT format, **not** openEHR-normative; kept in `openehr-flat`, never

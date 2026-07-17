@@ -1,7 +1,7 @@
 [package]
 name = "openehr-flat"
 version.workspace = true
-description = "FLAT / STRUCTURED / Web Template formats (Better semantics, EHRbase quirks)"
+description = "openEHR Simplified Formats: FLAT / STRUCTURED data instances and the Web Template model (ITS-REST simplified_formats)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -22,14 +22,10 @@ thiserror = { workspace = true }
 regex = { workspace = true }
 fancy-regex = { workspace = true }
 quick-xml = { workspace = true }
-jiff = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
-
-[features]
-ehrbase-quirks = []
 
 [lints]
 workspace = true

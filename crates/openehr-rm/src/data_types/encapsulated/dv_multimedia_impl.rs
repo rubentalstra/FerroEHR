@@ -6,12 +6,12 @@
 //!   algorithm.
 //! - `Size_valid`: `size >= 0`.
 //!
-//! PORT NOTE: openEHR's `Size_valid` is `size >= 0`; archie implements it as
+//! NOTE: openEHR's `Size_valid` is `size >= 0`; archie implements it as
 //! `size > 0` (a known reference quirk that rejects a legitimately empty
 //! multimedia). We follow the **spec** (`>= 0`) — by design the openEHR
 //! spec, not a specific reference implementation, the conformance target.
 //!
-//! PORT NOTE: the terminology-bound invariants (`Media_type_valid`,
+//! NOTE: the terminology-bound invariants (`Media_type_valid`,
 //! `Compression_algorithm_valid`, `Integrity_check_algorithm_validity`,
 //! `Charset_valid`, `Language_valid`) are deferred to the composition validator
 //! + `openehr-term`.

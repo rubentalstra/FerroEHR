@@ -41,7 +41,7 @@
 //! wins** (the phase sequence in [`validate_adl2_source`] is therefore part of
 //! the behavioural contract, not an implementation detail).
 //!
-//! PORT NOTE: the cADL-semantic and specialisation-flattening rules (the
+//! NOTE: the cADL-semantic and specialisation-flattening rules (the
 //! RM-conformance `VCxxx` family on parsed constraints, the `VSxxx` redefinition
 //! family against a flat parent, the Sxxx cADL syntax codes, tuple/slot
 //! constraint semantics) bind the compiler/flattener the product does not

@@ -92,7 +92,7 @@ fn render_param(value: &ParamValue) -> String {
 /// `RESULT_SET.id [1..1]` (`result_set.adoc`: "unique identifier of this
 /// result set") is emitted additively as a `uuidv7()`-derived id (G-05-03q).
 ///
-/// PORT NOTE (G-05-03q): the SM `RESULT_SET` makes `id` mandatory, but the
+/// NOTE (G-05-03q): the SM `RESULT_SET` makes `id` mandatory, but the
 /// ITS-REST 1.0.3 `ResultSet` schema omits it; we emit it additively so the
 /// SM requirement is met without breaking the ITS-REST shape (an extra field
 /// a 1.0.3 client ignores).
@@ -106,7 +106,7 @@ pub(super) fn result_set_json(
         .columns
         .iter()
         .map(|c| match &c.path {
-            // PORT NOTE (G-05-05b; SM `result_set_column.adoc`):
+            // NOTE (G-05-05b; SM `result_set_column.adoc`):
             // `RESULT_SET_COLUMN.archetype_id [0..1]` is optional and omitted —
             // the engine's `ColumnMeta` carries name + path only, and the spec
             // itself flags it "check on whether needed". If a future path pass

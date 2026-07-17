@@ -6,7 +6,7 @@
 /// the SM `time_interval: Interval<Iso8601_date_time> [0..1]` parameter of the
 /// four `i_admin_service.adoc` statistics calls.
 ///
-/// PORT NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
+/// NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
 /// default openEHR `Interval` bound inclusivity — matched against each
 /// CONTRIBUTION/version audit `time_committed`. An invalid ISO bound is a `400`
 /// (rejected at the service boundary before the query runs).
@@ -60,7 +60,7 @@ impl CompressionFormat {
 /// (`docs/specs/openehr/SM/docs/UML/classes/export_spec.adoc`): "the details for
 /// an export operation".
 ///
-/// PORT NOTE: `EXPORT_SPEC` carries `logical_format [0..1]`,
+/// NOTE: `EXPORT_SPEC` carries `logical_format [0..1]`,
 /// `compression_format [0..1]`, `encoding: ENCODING_FORMAT [0..1]`, and
 /// `segment_split_size: Integer [1..1]` (kb). The `I_ADMIN_DUMP_LOAD.export_ehrs`
 /// signature instead passes the three format enums *loose* and omits

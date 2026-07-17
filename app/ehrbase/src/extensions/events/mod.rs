@@ -99,12 +99,12 @@ pub trait EventPublisher: Send + Sync {
 /// Build the topic routing key for one committed version:
 /// `<kind>.<change_type>.<template_id|->` on the topic exchange.
 ///
-/// PORT NOTE: AMQP topic keys use `.` as the word separator, so a
+/// NOTE: AMQP topic keys use `.` as the word separator, so a
 /// `template_id` containing dots (e.g. `openEHR-EHR-COMPOSITION.encounter.v1`)
 /// is sanitised — every non-`[A-Za-z0-9_-]` char collapses to `_` — to keep the
 /// key exactly three fields. An absent/empty `template_id` renders as `-`.
 ///
-/// PORT NOTE: a CONTRIBUTION may carry several versions of
+/// NOTE: a CONTRIBUTION may carry several versions of
 /// differing kinds (e.g. EHR creation commits `EHR_STATUS` + `EHR_ACCESS`).
 /// Each version is published as **its own message** under its own routing key,
 /// carrying the shared envelope plus a `version_index` naming which entry it is
@@ -121,7 +121,7 @@ pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> 
 /// Build the topic **binding** key for a subscription's predicates, parallel to
 /// [`routing_key`] but substituting the `*` single-word wildcard for any NULL
 /// (absent) predicate. `archetype` is intentionally absent: the routing key has
-/// no archetype segment (see the `event_subscription.archetype` PORT NOTE), so
+/// no archetype segment (see the `event_subscription.archetype` NOTE), so
 /// it cannot participate in topic binding.
 #[must_use]
 pub fn subscription_binding_key(

@@ -167,7 +167,7 @@ fn composition(name: &str, magnitude: f64) -> Value {
 }
 
 async fn create_ehr(svc: &EhrbaseService) -> String {
-    // PORT NOTE: the SM `create_ehr` returns the new `UUID`, not the
+    // NOTE: the SM `create_ehr` returns the new `UUID`, not the
     // old `ServiceResponse` RM `EHR` envelope; the EHR's `ehr_id.value` is that
     // uuid, so the string form is the same id the old test read from `.body`.
     svc.create_ehr(None).await.expect("create_ehr").to_string()
@@ -175,7 +175,7 @@ async fn create_ehr(svc: &EhrbaseService) -> String {
 
 /// Create a composition in `ehr_id`, returning its `OBJECT_VERSION_ID`.
 async fn create_comp(svc: &EhrbaseService, ehr_id: &str, name: &str, magnitude: f64) -> String {
-    // PORT NOTE: the SM `create_composition` returns the new
+    // NOTE: the SM `create_composition` returns the new
     // `version_uid` directly (what the old test extracted from `.body.uid.value`
     // / `.meta.uid`).
     svc.create_composition(
@@ -227,7 +227,7 @@ async fn run_aql(svc: &EhrbaseService, aql: &str, request: AqlQueryRequest) -> V
 async fn set_not_queryable(svc: &EhrbaseService, ehr_id: &str) {
     // Read the current EHR_STATUS — its body carries the `uid` we need for the
     // optimistic-concurrency precondition, plus the mandatory RM fields we keep.
-    let ehr_uuid: Uuid = ehr_id.parse().expect("ehr_id uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse().expect("ehr_id uuid"));
     let mut body = svc
         .get_ehr_status_at_time(ehr_uuid, None)
         .await
@@ -404,7 +404,7 @@ async fn aql_acceptance_set() {
         .execute_ad_hoc_query(aql, req)
         .await
         .expect_err("fetch + AQL LIMIT must conflict");
-    // PORT NOTE: the paging conflict is now the SM
+    // NOTE: the paging conflict is now the SM
     // `precondition_violation` (`SmError::precondition`), which the adapter maps
     // to the same wire `400` the old `ApiError::BadRequest` produced.
     assert!(
@@ -653,11 +653,11 @@ async fn latest_versus_all_versions() {
 
     // Update the composition twice → sys_version 2 and 3. Each update supplies
     // the current version_uid as `If-Match` (optimistic concurrency).
-    let ehr_uuid: Uuid = ehr_id.parse().expect("ehr_id uuid");
-    let vo_uuid: Uuid = vo_id.parse().expect("vo_id uuid");
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse().expect("ehr_id uuid"));
+    let vo_uuid: ehrbase::ids::VoId = vo_id.parse().expect("vo_id uuid");
     let mut current = ovid.clone();
     for magnitude in [20.0, 30.0] {
-        // PORT NOTE: the SM `update_composition` returns the new
+        // NOTE: the SM `update_composition` returns the new
         // `version_uid` directly (the old `.meta.uid`).
         current = svc
             .update_composition(

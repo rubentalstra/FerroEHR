@@ -365,3 +365,19 @@ ECC-ADM-013	ADM	active	adm/physical-party-delete	Admin physical party delete
 ECC-ADM-014	ADM	active	adm/archive-parties	Admin archive parties
 ECC-TPL-017	TPL	active	tpl/adl14-example-roundtrip	Example COMPOSITION round-trips (ADL 1.4 example → commit)
 ECC-QRY-025	QRY	active	qry/uid-projection-value	AQL uid projection — c/uid/value returns the version id
+ECC-SF-001	SF	active	sf/flat-commit-read-back	FLAT commit then read-back as FLAT, canonical JSON, and STRUCTURED
+ECC-SF-002	SF	active	sf/structured-commit-read-back	STRUCTURED commit then read-back as STRUCTURED, canonical JSON, and FLAT
+ECC-SF-003	SF	active	sf/negotiation-qvalue	Accept q-values select the highest-weight simplified format; every non-204 carries Content-Type
+ECC-SF-004	SF	active	sf/reject-retired-media-type-accept	Deprecated + legacy simplified media types are rejected on Accept (406)
+ECC-SF-005	SF	active	sf/reject-retired-media-type-content-type	Deprecated + legacy simplified media types are rejected on write Content-Type (415)
+ECC-SF-006	SF	active	sf/flat-missing-template-id	FLAT commit without openehr-template-id (and no payload template id) → 422
+ECC-SF-007	SF	active	sf/flat-reject-unknown-field	FLAT commit with an unknown field identifier → 422
+ECC-SF-008	SF	active	sf/flat-reject-other-with-code	FLAT commit with |other combined with |code on one coded leaf → 422
+ECC-SF-009	SF	active	sf/template-web-template-get	GET a template as a Web Template document (Accept application/openehr.wt+json)
+ECC-SF-010	SF	active	sf/template-example-accept-forms	GET a template example in each of the four Accept forms (json, xml, flat, structured)
+ECC-SF-011	SF	active	sf/template-example-unsupported-accept	GET a template example with an unsupported Accept → 406
+ECC-SF-012	SF	active	sf/contribution-flat-commit-read-back	CONTRIBUTION with a FLAT COMPOSITION inner payload: canonical envelope in, simplified read-back
+ECC-SF-013	SF	active	sf/non-templated-ehr-status-reject	EHR_STATUS has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415
+ECC-SF-014	SF	active	sf/non-templated-directory-reject	DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415
+ECC-SF-015	SF	active	sf/non-templated-demographic-reject	Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415
+ECC-SF-016	SF	active	sf/ctx-observability	FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238

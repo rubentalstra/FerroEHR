@@ -49,7 +49,7 @@ use self::mapping::FhirMappingDefinition;
 /// template in scope. The template id binds as a parameter (no string
 /// interpolation → no AQL injection).
 ///
-/// PORT NOTE: the query selects the synthesized VERSION uid `v/uid/value`
+/// NOTE: the query selects the synthesized VERSION uid `v/uid/value`
 /// (`<vo_id>::<system>::<ver>`) via a `CONTAINS VERSION v CONTAINS
 /// COMPOSITION c` chain — a COMPOSITION variable's own `c/uid/value` is a
 /// (null) RM leaf on the AQL read path (the reassembled body carries no uid),
@@ -314,7 +314,7 @@ impl EhrbaseService {
                 // synthesized uid is `<vo_id>::<system>::<ver>`; the COMPOSITION
                 // body carries no uid on the AQL read path, so the body is
                 // loaded through the versioned read seam by uid (see the
-                // FHIR_SEARCH_AQL PORT NOTE).
+                // FHIR_SEARCH_AQL NOTE).
                 let Some(uid) = row.get(0).and_then(Value::as_str) else {
                     continue;
                 };
@@ -356,7 +356,7 @@ impl EhrbaseService {
                 }));
             }
         }
-        // PORT NOTE: `total` is the number of entries in this Bundle, not a
+        // NOTE: `total` is the number of entries in this Bundle, not a
         // separate full-match count — the façade is a stateless connector, not
         // a FHIR Search engine, so with `_count` it reports the returned page
         // size. No `Bundle.link` paging is emitted (explicit params only, by
@@ -381,7 +381,7 @@ impl EhrbaseService {
     /// or its template has no enabled mapping. Reuses the versioned read seam
     /// ([`version_repo::read::read_version_by_ordinal`]) and the reverse transform.
     ///
-    /// PORT NOTE: the template is read from the COMPOSITION itself (as the
+    /// NOTE: the template is read from the COMPOSITION itself (as the
     /// read façade's AQL also does), NOT from `vo_version.template_id` — that
     /// column is currently left NULL on the commit path, so relying on it would
     /// emit nothing. Deriving it from the canonical body avoids touching the
@@ -605,23 +605,27 @@ impl EhrbaseService {
             .map_err(|e| SmError::precondition(e.to_string()))?;
         let ehr_id = self.ensure_ehr_for_subject(subject).await?;
 
-        // 3. Build the FLAT map + the canonical COMPOSITION.
+        // 3. Build the FLAT map + the canonical COMPOSITION. `now` supplies the
+        //    ctx/time default (ITS-REST simplified_formats master04 §Context) and
+        //    the FEEDER_AUDIT provenance instant — one ingestion instant for both.
         let wt = self.web_template_for(&def.template_id).await?;
         let flat = mapping::build_flat(&a_resource, &def)
             .map_err(|e| SmError::precondition(e.to_string()))?;
-        let mut composition = openehr_flat::from_flat(&flat, &wt).map_err(|e| {
-            SmError::new(
-                CallStatusType::ContentInvalid,
-                format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
-            )
-        })?;
+        let now = feeder_audit::now_iso();
+        let mut composition = openehr_flat::convert::composition_from_flat(&flat, &wt, &now)
+            .map_err(|e| {
+                SmError::new(
+                    CallStatusType::ContentInvalid,
+                    format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
+                )
+            })?;
 
         // 4. Stamp FEEDER_AUDIT provenance.
         let feeder = feeder_audit::feeder_audit(
             &resource_type,
             &feeder_audit::resource_id(&a_resource, &resource_type),
             feeder_audit::resource_version(&a_resource).as_deref(),
-            &feeder_audit::now_iso(),
+            &now,
         );
         feeder_audit::inject_feeder_audit(&mut composition, feeder);
 

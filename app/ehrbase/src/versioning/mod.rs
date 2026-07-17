@@ -51,7 +51,6 @@
 
 use serde_json::Value;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;

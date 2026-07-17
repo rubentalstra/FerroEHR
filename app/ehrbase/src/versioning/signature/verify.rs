@@ -6,7 +6,7 @@
 //! - an armored PGP signature is verified against the configured key (if any);
 //! - anything else is a foreign/opaque client signature — served as-is.
 //!
-//! PORT NOTE (RM common `master06-change_control_package.adoc` §Digital
+//! NOTE (RM common `master06-change_control_package.adoc` §Digital
 //! Signature): the spec models `VERSION.signature` as a stored fact carried
 //! with the data (a signature "created by the committer", potentially in
 //! another agreed serialization — S-44). Client-supplied signatures are

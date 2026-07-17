@@ -58,7 +58,7 @@ async fn run(
     // Config gate: the ADMIN API is opt-in. When disabled every admin route
     // answers 404 (as if unmounted) without consulting the backend.
     //
-    // PORT NOTE: mirrors EHRbase's `ADMINAPI_ACTIVE` prior art — an inactive
+    // NOTE: mirrors EHRbase's `ADMINAPI_ACTIVE` prior art — an inactive
     // admin surface simply has no such endpoint (a 404), never a 403.
     if !state.config().admin.enabled {
         return Err(RestError(ApiError::NotFound(

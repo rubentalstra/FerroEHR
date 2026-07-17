@@ -574,16 +574,21 @@ fn serde_de_error(msg: &str) -> serde_json::Error {
 /// [`FixtureError::Convert`] if the OPT does not parse, the `WebTemplate` cannot
 /// be built, or `from_flat` fails.
 pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, FixtureError> {
+    /// Fixed `ctx/time` default for the FLAT→canonical fixture build (ITS-REST
+    /// `simplified_formats` master04 §Context). A constant keeps the derived
+    /// fixture reproducible, which the zero-drift ECC baseline requires.
+    const FIXTURE_NOW: &str = "2024-01-01T00:00:00Z";
     let what = format!("{opt_key} + {flat_key}");
     let xml = read(opt_key)?;
     let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| FixtureError::Convert {
         what: what.clone(),
         detail: format!("opt14 parse: {e}"),
     })?;
-    let wt = openehr_flat::build_web_template(&opt).map_err(|e| FixtureError::Convert {
-        what: what.clone(),
-        detail: format!("build_web_template: {e}"),
-    })?;
+    let wt =
+        openehr_flat::webtemplate::build_web_template(&opt).map_err(|e| FixtureError::Convert {
+            what: what.clone(),
+            detail: format!("build_web_template: {e}"),
+        })?;
     let flat_path = single_file_path(flat_key)?;
     let flat_text = read_path(&flat_path)?;
     let flat: serde_json::Map<String, Value> =
@@ -591,9 +596,11 @@ pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, Fixture
             path: flat_path.display().to_string(),
             source,
         })?;
-    openehr_flat::from_flat(&flat, &wt).map_err(|e| FixtureError::Convert {
-        what,
-        detail: format!("from_flat: {e}"),
+    openehr_flat::convert::composition_from_flat(&flat, &wt, FIXTURE_NOW).map_err(|e| {
+        FixtureError::Convert {
+            what,
+            detail: format!("from_flat: {e}"),
+        }
     })
 }
 
@@ -610,7 +617,7 @@ pub fn flat_to_canonical(opt_key: &str, flat_key: &str) -> Result<Value, Fixture
 /// defect in an `ehr-status.invalid` fixture is left untouched — those are
 /// posted verbatim).
 ///
-// PORT NOTE: this is the fixture overlay in code rather than a copied file, so
+// NOTE: this is the fixture overlay in code rather than a copied file, so
 // the vendored corpus stays read-only; the change (added `_type` tags + unique
 // subject) is recorded here as the provenance. RM ehr master04 §EHR Status:
 // `EHR_STATUS.subject` is typed PARTY_SELF (monomorphic) — the subject identity

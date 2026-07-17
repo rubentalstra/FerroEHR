@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.0.3 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-17T06:14:05.832371Z
+- **Run date:** 2026-07-17T14:27:42.936399Z
 
 ## System Under Test (SUT)
 
@@ -17,7 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-17T06:14:05.832371Z |
+| Date | 2026-07-17T14:27:42.936399Z |
 
 ## Scope of Test
 
@@ -395,6 +395,22 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-007 — TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500) | skipped | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-008 — TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500) | skipped | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-009 — TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500) | skipped | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type application/openehr.wt.flat+json) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept flat/json/structured) | ECC-SF-001 — FLAT commit then read-back as FLAT, canonical JSON, and STRUCTURED | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type application/openehr.wt.structured+json) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept structured/json/flat) | ECC-SF-002 — STRUCTURED commit then read-back as STRUCTURED, canonical JSON, and FLAT | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept with q-values) | ECC-SF-003 — Accept q-values select the highest-weight simplified format; every non-204 carries Content-Type | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/composition/{uid_based_id} + GET /definition/template/adl1.4/{template_id}/example (Accept a retired type) | ECC-SF-004 — Deprecated + legacy simplified media types are rejected on Accept (406) | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition + POST /ehr/{ehr_id}/contribution (Content-Type a retired type) | ECC-SF-005 — Deprecated + legacy simplified media types are rejected on write Content-Type (415) | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type flat, no openehr-template-id header) | ECC-SF-006 — FLAT commit without openehr-template-id (and no payload template id) → 422 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type flat, unknown field id) | ECC-SF-007 — FLAT commit with an unknown field identifier → 422 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type flat, |other + |code on one leaf) | ECC-SF-008 — FLAT commit with |other combined with |code on one coded leaf → 422 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /definition/template/adl1.4/{template_id} (Accept application/openehr.wt+json) | ECC-SF-009 — GET a template as a Web Template document (Accept application/openehr.wt+json) | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /definition/template/adl1.4/{template_id}/example (Accept json/xml/flat/structured) | ECC-SF-010 — GET a template example in each of the four Accept forms (json, xml, flat, structured) | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /definition/template/adl1.4/{template_id}/example (Accept application/openehr.wt+json) | ECC-SF-011 — GET a template example with an unsupported Accept → 406 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/contribution (Content-Type flat) → GET /ehr/{ehr_id}/contribution/{contribution_uid} (Accept flat) | ECC-SF-012 — CONTRIBUTION with a FLAT COMPOSITION inner payload: canonical envelope in, simplified read-back | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/ehr_status (Accept flat) + PUT /ehr/{ehr_id}/ehr_status (Content-Type flat) | ECC-SF-013 — EHR_STATUS has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/directory (Accept flat) + POST /ehr/{ehr_id}/directory (Content-Type flat) | ECC-SF-014 — DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /demographic/person/{uid} (Accept flat) + POST /demographic/person (Content-Type flat) | ECC-SF-015 — Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 | pass | — |
+| Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type flat, ctx/time set) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept application/json) | ECC-SF-016 — FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238 | pass | — |
 
 ## Profile Report
 
@@ -447,4 +463,5 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | AdminDemographicArchive | OPT | not evidenced |
 | MessagingEhrExtract | OPT | not evidenced |
 | MessagingTds | OPT | not evidenced |
+| SimplifiedFormats | OPT | pass |
 

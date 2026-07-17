@@ -199,7 +199,7 @@ impl EhrbaseService {
     /// `id.value` + `namespace`). Served from the promoted `ehr.subject_*`
     /// columns (unique per subject — `ehr_subject_uq`).
     ///
-    /// PORT NOTE (G-4, `i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
+    /// NOTE (G-4, `i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
     /// constraint narrows the SM `List<EHR_SUMMARY>` to ≤1. CNF
     /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for
     /// the same subject, which supports the one-EHR-per-subject rule (RM ehr
@@ -260,7 +260,7 @@ impl EhrbaseService {
             "system_id": { "_type": "HIER_OBJECT_ID", "value": stored_system_id },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
             // Ehr_status_valid: ehr_status.type.is_equal("VERSIONED_EHR_STATUS")
-            // (RM ehr `ehr.adoc` invariants — normative). PORT NOTE (spec
+            // (RM ehr `ehr.adoc` invariants — normative). NOTE (spec
             // defect): the non-normative ITS-REST example shows `type:
             // EHR_STATUS`; the RM invariant wins for `type`, the id keeps the
             // OBJECT_VERSION_ID form clients use to address the current version.
@@ -397,7 +397,7 @@ impl EhrbaseService {
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
     /// the subject already owns an EHR (409-equivalent), or storage fails.
     pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<EhrId, SmError> {
-        // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
+        // NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
         // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
         // the id-only create paths. `POST /ehr` intentionally accepts a
         // subject-bearing status (the ITS-REST `ehr` schema carries an optional

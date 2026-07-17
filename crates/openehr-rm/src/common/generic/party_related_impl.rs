@@ -3,7 +3,7 @@
 //! `PARTY_RELATED` extends `PARTY_IDENTIFIED` and so inherits `Basic_validity`
 //! and `Name_valid`.
 //!
-//! PORT NOTE: archie's own `PartyRelated` invariant `Relationship_valid` (the
+//! NOTE: archie's own `PartyRelated` invariant `Relationship_valid` (the
 //! relationship code belongs to the openEHR "subject relationship" group) is
 //! terminology-bound — deferred to the composition validator + `openehr-term`.
 

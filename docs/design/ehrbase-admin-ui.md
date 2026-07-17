@@ -3,7 +3,7 @@
 - **Status:** design — framework + ecosystem selection, architecture, feature
   map. **Not an ADR** (owner instruction 2026-07-13); an ADR follows only after
   this design is approved.
-- **Date:** 2026-07-13
+- **Date:** 2026-07-13 · **revised 2026-07-17** (see the revision block below)
 - **Prior art:** [Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver)
   — the owner cited its **Template Manager**, its point-and-click **Query
   Builder** ("query creation in seconds, no programming needed"), and its
@@ -11,12 +11,60 @@
   2026-07-13** (Grails/Groovy; controllers, domain model, services, views) —
   the complete feature inventory is **Appendix A**, and §7 maps each feature to
   *adopt / adapt / defer* for our stack.
-- **Pairs with:** `docs/design/container-images.md` (the two-image model this
-  extends to a third image) and `docs/architecture.md` (workspace layout, the
-  ITS-REST base path).
+- **Pairs with:** `docs/architecture.md` (workspace layout, the ITS-REST base
+  path) and the live deployment artifacts (`deploy/`, the quickstart compose,
+  `.github/workflows/containers.yml`). *(The former
+  `docs/design/container-images.md` was deleted in the 2026-07-16 design-doc
+  purge — the shipped compose/Helm/CI files are now the packaging reference.)*
 - **No openEHR spec governs an admin UI** — this is **our own design /
   product extension**, not a conformance surface. Its one hard spec-facing
   constraint is the boundary in §1.
+
+## Revision 2026-07-17 — platform reality this design now builds on
+
+The CDR moved substantially since 2026-07-13; the deltas below are folded into
+the sections that follow (each marked *(rev. 2026-07-17)*):
+
+1. **Simplified Formats are now first-class and spec-exact.** The FLAT /
+   STRUCTURED / Web-Template surface was rewritten against the STABLE ITS-REST
+   Simplified Formats specification: strict `Accept`/`Content-Type`
+   negotiation with RFC 9110 q-values (there is **no `?format=` parameter**),
+   media types `application/openehr.wt.flat+json`,
+   `…wt.structured+json`, and `application/openehr.wt+json` (the Web-Template
+   rendering of a template), the `openehr-template-id` request header on
+   simplified commits, and `406`/`415` with diagnostics elsewhere. The console
+   gains a **FLAT/STRUCTURED view + commit** dimension beyond the original
+   JSON ⇄ XML toggle (§5.3, §6, §7).
+2. **The `openehr-flat` crate is now a clean, spec-cited workspace citizen**
+   (one internal simplified tree; FLAT/STRUCTURED as pure codecs;
+   `convert::`/`webtemplate::`/`validation::` module-pathed API, zero
+   crate-root re-exports; the vendor-quirks feature flag is gone). It joins
+   the §6 domain-reuse table — and its served WebTemplate document replaces
+   OPT-walking for the Query Builder's path catalog (§7.2).
+3. **The served OpenAPI is the server's own** (ADR-005 amendment,
+   2026-07-17): `ehrbase-rest` serves only documents it generates natively
+   from its `#[utoipa::path]` handlers — the vendored ITS-REST OAS is codegen
+   input + behavioural oracle, never served. The console's endpoint knowledge
+   can therefore be verified against the *running server's* `openapi.json`
+   (which advertises the simplified media types), and a **served-OpenAPI
+   viewer** is a natural system-panel tile (§7.1).
+4. **App layout is three crates** (`ehrbase`, `ehrbase-rest`,
+   `ehrbase-server`) — the former `ehrbase-sm` trait catalog is deleted; §5.2's
+   dependency ban list is updated accordingly.
+5. **Reliability rules are machine-enforced workspace-wide**
+   (`.claude/rules/reliability.md`): deny-tier lints (no
+   unwrap/expect/panic/dead code in production code), `unsafe_code = forbid`,
+   release-profile overflow checks, no dedicated test files under `src/`,
+   zero re-exports. The console crate inherits all of it via
+   `[lints] workspace = true`. Server-side `EhrId`/`VoId` newtypes are
+   wire-transparent (bare UUIDs on the wire) — no console impact.
+6. **CDR configuration is one TOML file** (`ehrbase.toml`, the 2026-07-15
+   configuration redesign) rather than an `EHRBASE_*` env matrix; §8's
+   console-config note is aligned.
+7. **Navigation instruments that now exist:** `docs/endpoint-map.md` traces
+   every endpoint to its SQL (useful when designing BFF calls), and the
+   platform passed a full per-folder rewrite (W-14) — the SM component map in
+   `docs/architecture.md` is current.
 
 ## Owner constraints (2026-07-13, binding)
 
@@ -158,28 +206,52 @@ plain HTML forms before WASM loads.
 
 - **May depend on** `crates/openehr-*` (spec types — see §6). These are the
   domain model and serialization; using them is *not* reaching around REST.
-- **Must NOT depend on** `app/ehrbase`, `app/ehrbase-sm`, or `app/ehrbase-rest`.
-  Linking the service layer in-process would defeat the entire point and couple
-  the console to CDR internals. The dependency arrow is
+- **Must NOT depend on** `app/ehrbase` or `app/ehrbase-rest` *(rev.
+  2026-07-17: the former `app/ehrbase-sm` no longer exists — the app is three
+  crates)*. Linking the service layer in-process would defeat the entire point
+  and couple the console to CDR internals. The dependency arrow is
   `app/ehrbase-admin-ui → crates/openehr-*` and **network → CDR**, never
   `app → app`.
 
-### 5.3 XML + JSON
+### 5.3 XML + JSON + the Simplified Formats *(rev. 2026-07-17)*
 
 openEHR ITS-REST negotiates representation via `Accept` / `Content-Type` with
 `application/json` (canonical JSON) and `application/xml` (canonical XML), plus
-`Prefer: return=representation|minimal`. The BFF:
+`Prefer: return=representation|minimal`. Since the 2026-07-17 rewrite the CDR
+additionally implements the **Simplified Formats** spec-exactly:
 
-- exposes a **format toggle** so an operator can view/submit either form;
-- sets the outbound `Accept` accordingly and forwards the chosen representation;
+- `application/openehr.wt.flat+json` (FLAT) and
+  `application/openehr.wt.structured+json` (STRUCTURED) on compositions,
+  template examples, and CONTRIBUTION inner payloads;
+- `application/openehr.wt+json` — the **Web Template** rendering of a
+  template (the machine model the Query Builder consumes, §7.2);
+- negotiation is strict RFC 9110 q-values; there is **no `?format=`
+  parameter**; unsupported types answer `415`/`406` with a body naming the
+  supported set;
+- a FLAT/STRUCTURED composition **commit requires the `openehr-template-id`
+  request header** (`422` without it) — the BFF must send it.
+
+The BFF therefore:
+
+- exposes a **format selector** — canonical JSON, canonical XML, FLAT,
+  STRUCTURED — on composition views (and FLAT/STRUCTURED on commit forms;
+  FLAT is *the* form-friendly clinician-facing shape: one flat key/value
+  object);
+- sets the outbound `Accept`/`Content-Type` accordingly and forwards the
+  chosen representation;
 - when it needs to *render or validate* a payload (not just proxy bytes),
-  parses via `openehr-its` (both canonical forms) into `openehr-rm` types.
+  parses via `openehr-its` (both canonical forms) into `openehr-rm` types,
+  and uses `openehr-flat` for FLAT ⇄ STRUCTURED transforms and Web-Template
+  introspection (§6).
 
 > Endpoint paths (Definition/Query/EHR/Composition APIs, base
 > `/ehrbase/rest/openehr/v1`) must be taken from the **generated ITS-REST
-> contract in `openehr-its`** and the vendored OAS, not asserted from memory —
-> standing docs-first rule. The feature map (§7) names the API *groups*; the
-> exact routes come from the contract.
+> contract in `openehr-its`** — and can be cross-checked against the **running
+> server's own generated `openapi.json`** (ADR-005 as amended 2026-07-17: the
+> served document is composed natively from the handlers and advertises the
+> simplified media types; the vendored OAS is the behavioural oracle, never
+> served). The feature map (§7) names the API *groups*; the exact routes come
+> from the contract.
 
 ### 5.4 Auth
 
@@ -204,6 +276,7 @@ advantage over a JS/React admin and it directly powers the headline features:
 | `openehr-am` (OPT / ADL) | **Template Manager** — parse and introspect uploaded operational templates for display (constraints, occurrences, terminology bindings). |
 | `openehr-its` (canonical JSON + XML) | The XML/JSON viewer + any client-side parse/validate; identical serialization to the server, so round-trips are byte-consistent. |
 | `openehr-rm` (RM 1.2.0) | Typed rendering of EHR_STATUS, COMPOSITION, CONTRIBUTION, VERSION, etc. |
+| `openehr-flat` *(rev. 2026-07-17 — rewritten spec-exact against ITS-REST `simplified_formats`)* | **FLAT/STRUCTURED rendering + form building** (`convert::` — the pure FLAT ⇄ STRUCTURED transforms need no template), the **Web Template model** (`webtemplate::` — deserialize the CDR's `application/openehr.wt+json` document into the typed tree that drives the Query Builder path catalog and form generation), and pre-submit **validation** (`validation::`). Module-pathed API, no crate-root re-exports. |
 
 ---
 
@@ -239,9 +312,15 @@ Cabolabs' point-and-click flow, and how each step lands on our stack:
 
 1. **Pick a template** → the builder lists activated OPTs (Definition API).
 2. **Pick archetype → path** → Cabolabs serves these from its **OPT path index**
-   (`getArchetypesInTemplate` → `getArchetypePaths`). We build the same path
-   catalog by walking the OPT with **`openehr-am`**, typed by the **BMM-generated
-   RM model** — no separate index table needed.
+   (`getArchetypesInTemplate` → `getArchetypePaths`). *(rev. 2026-07-17)* We get
+   the same catalog **directly from the CDR**: `GET
+   …/definition/template/adl1.4/{id}` with
+   `Accept: application/openehr.wt+json` returns the **Web Template** document
+   — every node already carries its `aqlPath`, RM type, multiplicity, and
+   typed `inputs` (the per-datatype widget spec, exactly what step 3 needs) —
+   deserialized with `openehr_flat::webtemplate`. Walking the raw OPT with
+   `openehr-am` remains the fallback for non-templated introspection; no
+   separate index table either way.
 3. **Typed criteria widget per RM datatype** → Cabolabs' `getCriteriaSpec`
    returns operators/inputs keyed by `DV_*` type (it has a `DataCriteriaDV_*`
    class per datatype: `DV_QUANTITY` magnitude+unit `between`, `DV_CODED_TEXT`
@@ -345,9 +424,11 @@ binary with embedded/served assets.
   `[profile.wasm-release]` `opt-level='z'` + `lto` + `codegen-units=1`, wired
   via `lib-profile-release`; the server serves compressed WASM
   (`tower-http` compression is already in the stack).
-- **Config = env only** (mirror `EHRBASE_*` convention), minimally: CDR base URL,
-  auth mode/credentials or OIDC issuer, bind address. **No DB** — it is stateless
-  bar its own session store.
+- **Config** *(rev. 2026-07-17)*: follow the CDR's current convention — **one
+  TOML file** (the CDR moved from the `EHRBASE_*` env matrix to a single
+  `ehrbase.toml` in the 2026-07 configuration redesign), with env overrides
+  for container use. Minimally: CDR base URL, auth mode/credentials or OIDC
+  issuer, bind address. **No DB** — it is stateless bar its own session store.
 - **Healthcheck:** a `healthcheck` subcommand (no shell in distroless), as the
   server binary already does.
 - **Compose:** add an `ehrbase-admin-ui` service to the quickstart, `depends_on`

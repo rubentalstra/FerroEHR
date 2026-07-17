@@ -49,15 +49,14 @@ use std::time::Duration;
 
 use serde_json::Value;
 use sqlx::PgPool;
-use uuid::Uuid;
 
 use crate::extensions::tenant_context::TenantContext;
 use crate::ids::EhrId;
 use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
 use crate::versioning::signature::signer::Signer;
-use openehr_flat::WebTemplate;
 use openehr_flat::cache::WebTemplateCache;
+use openehr_flat::webtemplate::WebTemplate;
 use status::SmError;
 
 /// In-process cache of resolved tenants, keyed by the claim/header value (a

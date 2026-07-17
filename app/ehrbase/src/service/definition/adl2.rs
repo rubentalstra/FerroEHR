@@ -2,7 +2,7 @@
 //! template / `operational_template`) keyed by `ARCHETYPE_HRID`, on the
 //! `adl2_artefact` store.
 //!
-//! PORT NOTE (G-05-02, registration-subset validity): `valid_artefact` /
+//! NOTE (G-05-02, registration-subset validity): `valid_artefact` /
 //! `upload_artefact` run the *registration* subset of the AOM2 validation
 //! catalogue that is decidable on an uploaded source; the full AOM2 catalogue
 //! validation is a validation-seam concern (register 09/10). The service seam
@@ -35,7 +35,7 @@ impl EhrbaseService {
     }
 
     /// `valid_artefact` — registration-subset structural validity of ADL2
-    /// source plus a well-formed `ARCHETYPE_HRID` (module PORT NOTE G-05-02).
+    /// source plus a well-formed `ARCHETYPE_HRID` (module NOTE G-05-02).
     /// Stateless.
     ///
     /// # Errors
@@ -346,7 +346,7 @@ impl EhrbaseService {
     /// and OPTs as `{template_id, created_timestamp}` metadata objects.
     /// Spec-silent wire shape (ITS-REST `TemplateList`), not an SM op.
     ///
-    /// PORT NOTE: the OAS `TemplateMetadata` also carries `concept`/`archetype_id`
+    /// NOTE: the OAS `TemplateMetadata` also carries `concept`/`archetype_id`
     /// derived from the cADL body; with no ADL2/cADL source parser yet those are
     /// omitted and `template_id` is the `ARCHETYPE_HRID`. Lists the `template`
     /// and `operational_template` kinds (the "templates" under
@@ -384,7 +384,7 @@ impl EhrbaseService {
 // ── stateless helpers ─────────────────────────────────────────────────────────
 
 /// `valid_artefact` core — registration-subset structural validity of ADL2
-/// source plus a well-formed HRID (module PORT NOTE G-05-02).
+/// source plus a well-formed HRID (module NOTE G-05-02).
 fn valid_adl2_source(adl2: &str) -> bool {
     crate::validation::validate_adl2_source(adl2).is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
 }
@@ -406,7 +406,7 @@ fn store_kind(kind: &str) -> &str {
 /// Structural check for an `ARCHETYPE_HRID`: an optional `namespace::` prefix
 /// followed by an openEHR HRID (BASE `master05` §Archetype Identifiers).
 ///
-/// PORT NOTE: reuses [`ArchetypeId::from_str`], whose lexical form accepts the
+/// NOTE: reuses [`ArchetypeId::from_str`], whose lexical form accepts the
 /// HRID shape (a superset of the ADL 1.4 `ARCHETYPE_ID`, tolerating the full
 /// multi-part `.vN.N.N` version). A stricter AOM2 `ARCHETYPE_HRID` grammar
 /// (`version_status` / `build_count` suffixes) awaits the ADL2 parser

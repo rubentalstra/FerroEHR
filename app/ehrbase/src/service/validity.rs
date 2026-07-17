@@ -15,7 +15,7 @@
 //! shared choke points [`EhrbaseService::web_template_for`] and
 //! [`EhrbaseService::validate_for_commit`].
 //!
-//! PORT NOTE: `definitions_valid` checks **template** identifiers only — the
+//! NOTE: `definitions_valid` checks **template** identifiers only — the
 //! spec says "archetype and template identifiers", but there is no ADL2
 //! archetype store to resolve bare archetype ids against, so content that
 //! declares no template resolves `true` (nothing to look up). `content_valid`
@@ -34,7 +34,7 @@ impl EhrbaseService {
     /// `definitions_valid` (`i_validity_checker.adoc`): "Return `True` if the
     /// definition identifiers (i.e. archetype and template identifiers) are
     /// known in the local `definitions` service." Content that declares no
-    /// `archetype_details.template_id` resolves `true` (module PORT NOTE);
+    /// `archetype_details.template_id` resolves `true` (module NOTE);
     /// otherwise `true` iff the declared template resolves to a stored OPT.
     ///
     /// # Errors

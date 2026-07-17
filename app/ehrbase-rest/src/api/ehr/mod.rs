@@ -2,7 +2,7 @@
 //! `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` + the
 //! `ehr-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
 //!
-//! Register (gap rows + target design): `docs/design/its-rest/ehr.md`.
+//! Governing spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/`.
 //!
 //! [`dispatch`] is the operation-id → resource-module router; the 33 EHR-group
 //! operations are implemented in one module per spec resource boundary
@@ -38,15 +38,9 @@ pub mod openapi_routes;
 pub mod versioned_composition;
 pub mod versioned_ehr_status;
 
-// COMPOSITION create/get/update negotiate the Simplified-Formats
-// (FLAT/STRUCTURED) representations through the shared converter seam; the
-// group-level alias lets the `composition` module's `super::flat::…` resolve to
-// that converter module (the same pattern the `definition` group uses). The
-// shared converters
-// `crate::formats::dispatch::{composition_from_flat,composition_from_structured,
-// composition_flat_response,composition_structured_response}` are `pub(crate)`,
-// so these cross-group calls resolve.
-use crate::formats::dispatch as flat;
+// COMPOSITION + CONTRIBUTION negotiate the Simplified-Formats (FLAT/STRUCTURED)
+// representations through the shared `crate::formats::dispatch` adapter, called
+// by its full path (no module alias — every import names its defining module).
 
 use axum::response::Response;
 use http::{HeaderMap, HeaderName};
@@ -57,6 +51,7 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::{PartyProxy, PartySelf};
 
+use ehrbase::ids::EhrId;
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
@@ -165,7 +160,7 @@ pub(super) fn mk_update_version(
 /// Decompose an [`ObjectVersionId`] into the `(versioned-object uuid,
 /// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
 /// are first-class (RM common master06 §Version tree; the former trunk-only
-/// rejection F-06-09 is retired).
+/// rejection is retired).
 pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String), ApiError> {
     let vo = crate::overview::version_id::object_id_uuid(ovid).ok_or_else(|| {
         ApiError::BadRequest(format!(
@@ -194,7 +189,7 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// (spec: "these headers will also be unsupported").
 pub(super) async fn apply_item_tag_headers(
     state: &AppState,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     target_type: &str,
     version_uid: &str,
     headers: &HeaderMap,
@@ -213,7 +208,7 @@ pub(super) async fn apply_item_tag_headers(
     if version_tags.is_some() {
         present.push(H_VERSION_ITEM_TAG);
     }
-    // PORT NOTE (wire): the storage seam (`ItemTagAdapter::target_tags_replace`)
+    // NOTE (wire): the storage seam (`ItemTagAdapter::target_tags_replace`)
     // is keyed by VERSIONED_OBJECT (the vo_id parsed from the version_uid).
     // openEHR distinguishes `openehr-item-tag` (VERSIONED_OBJECT target) from
     // `openehr-version-item-tag` (a specific VERSION target) via the tag's

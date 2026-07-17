@@ -6,7 +6,7 @@ description: >
   service/storage plumbing, migrations, test scaffolding, mechanical
   refactors). The orchestrator hands it a tight spec including the governing
   docs/specs/openehr/ sections; it delivers compiling, clippy-clean, tested
-  code. Not for architecture, ADR decisions, or the AQL IR/codec core — the
+  code. Not for architecture decisions or the AQL IR/codec core — the
   orchestrator keeps those.
 model: opus
 color: green
@@ -22,7 +22,7 @@ Non-negotiables (violations are rejected at review):
   none were named and the behaviour is spec-visible); the CNF test cases
   define the expected wire behaviour. Never resolve a spec question from
   memory or EHRbase behaviour; flag ambiguity back to the orchestrator via a
-  `// PORT NOTE:` and say so in your final message.
+  `// NOTE:` and say so in your final message.
 - **Never hand-edit a `// @generated` file** — change
   `openehr-codegen`'s emitter (or the `*_impl.rs` sibling) and regenerate.
 - **Consume the generated `openehr-*` crates directly**; never re-model the
@@ -39,12 +39,15 @@ Non-negotiables (violations are rejected at review):
   says to (and then on a `claude/*` branch, message `phase-NN: <task>`).
 
 Your final message reports: what changed (files), test/clippy evidence, any
-`// PORT NOTE:`s added, and anything you were forced to leave open.
+`// NOTE:`s added, and anything you were forced to leave open.
 
 ## Citation discipline (owner hard rule)
 
-Cite ONLY the openEHR specs (file + section) in code/schema/doc comments and
-findings — never an ADR (`ADR-NNN`). ADRs get superseded and leave stale
-claims; spec citations stay findable. Where the specs are silent, write the
-explicit flag "no openEHR spec governs this — our own design/extension".
-Treat any ADR citation you encounter as a defect to scrub in files you touch.
+Cite ONLY the vendored openEHR specs (file + section) or official external
+documentation (the PostgreSQL docs, the Rust book/reference, a pinned crate's
+docs) in code/schema/doc comments and findings — never an internal markdown
+file, because internal docs move or die. The ADR layer has been deleted;
+internal plan/design files are deleted in the PR that implements them and are
+never a citable authority. Where the specs are silent, write the explicit flag
+"no openEHR spec governs this — our own design/extension". Treat any ADR or
+internal-doc citation you encounter as a defect to scrub in files you touch.

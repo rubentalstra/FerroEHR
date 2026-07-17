@@ -3,7 +3,7 @@
 //! `Value_valid`: `value` is a valid (possibly partial) ISO-8601 date. Plus the
 //! inherited DV_QUANTIFIED `Magnitude_status_valid`.
 //!
-//! PORT NOTE: archie has no `@Invariant` for date well-formedness — it enforces
+//! NOTE: archie has no `@Invariant` for date well-formedness — it enforces
 //! it at parse time via a typed temporal parse. Our `value` is a `String`, so we
 //! express that guarantee explicitly (see `crate::validate` ISO-8601 helpers).
 

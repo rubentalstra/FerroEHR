@@ -183,13 +183,13 @@ async fn ehr_rows(pool: &PgPool, ehr_id: Uuid) -> EhrRows {
 /// must cascade through: `EHR_STATUS` (two versions) + `EHR_ACCESS` from
 /// creation, a directory FOLDER, and an item tag on the `EHR_STATUS`.
 ///
-/// PORT NOTE: this deliberately avoids COMPOSITION. On this base commit,
+/// NOTE: this deliberately avoids COMPOSITION. On this base commit,
 /// COMPOSITION validation is stricter than the shared test fixtures supply, so
 /// the pre-existing `service_ehr::ehr_composition_lifecycle_end_to_end` fails
 /// identically (a base issue, not the admin change). `EHR_STATUS`/FOLDER writes
 /// populate the same `vo_version`/`node`/`contribution`/`audit`/`item_tag`
 /// tables, so the cascade contract is fully covered without COMPOSITION.
-async fn seed_full_ehr(svc: &EhrbaseService) -> Uuid {
+async fn seed_full_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     // A second EHR_STATUS version (create → update): a multi-version vo.
@@ -248,8 +248,8 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
     let ehr2 = seed_full_ehr(&svc).await;
 
     // Both EHRs have content in every table before the delete.
-    let before1 = ehr_rows(pool, ehr1).await;
-    let before2 = ehr_rows(pool, ehr2).await;
+    let before1 = ehr_rows(pool, ehr1.into()).await;
+    let before2 = ehr_rows(pool, ehr2.into()).await;
     assert!(!before1.is_empty(), "ehr1 must be populated: {before1:?}");
     // EHR_STATUS v1+v2, EHR_ACCESS v1, FOLDER v1 → ≥4 versions; ≥3 contributions
     // (ehr create, status update, directory create); 1 item tag.
@@ -262,14 +262,14 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
         .expect("admin delete");
 
     // Every trace of ehr1 is physically gone (CNF cascade contract).
-    let after1 = ehr_rows(pool, ehr1).await;
+    let after1 = ehr_rows(pool, ehr1.into()).await;
     assert!(
         after1.is_empty(),
         "physical delete must clear every table for the EHR, got {after1:?}"
     );
 
     // ehr2 is entirely untouched.
-    let after2 = ehr_rows(pool, ehr2).await;
+    let after2 = ehr_rows(pool, ehr2.into()).await;
     assert_eq!(after2, before2, "the other EHR must be untouched");
 }
 

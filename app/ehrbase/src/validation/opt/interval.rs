@@ -60,7 +60,7 @@ pub(super) fn int_in_range(v: i32, r: &Intervalofinteger) -> bool {
 /// Real membership `v ∈ interval`, inlining the same `Interval.has` boundary
 /// algebra for `Real` bounds.
 ///
-/// PORT NOTE: the BASE constraint-evaluation primitive built at
+/// NOTE: the BASE constraint-evaluation primitive built at
 /// `crates/openehr-base/src/foundation_types/interval/` exposes
 /// `Multiplicity_interval` (an `Interval<Integer>`) for integer membership,
 /// which [`int_in_range`] consumes. There is no ergonomic BASE entry point for

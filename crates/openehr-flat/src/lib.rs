@@ -1,40 +1,35 @@
-//! FLAT (simSDT), STRUCTURED (structSDT), and Web Template formats following
-//! Better `web-template` semantics, with `EHRbase` deviations behind the
-//! `ehrbase-quirks` feature.
+//! openEHR **Simplified Formats**: FLAT and STRUCTURED data instances and
+//! the Web Template model.
 //!
-//! The **`WebTemplate` builder** ([`build_web_template`]) turns a parsed OPT 1.4
-//! operational template ([`openehr_its::opt14::OperationalTemplate`]) into the
-//! Better `web-template` JSON model (format version `"2.3"`). Better's reference
-//! implementation (`github.com/better-care/web-template`, Apache-2.0) is the
-//! interop oracle: field names, the `id`/`aqlPath` derivation, the RM-type →
-//! `inputs` mapping, and the compaction/post-processing shape match it.
+//! The wire authority is the ITS-REST Simplified Formats specification
+//! (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE):
+//! field-identifier syntax and node-id generation (`master04`), the
+//! per-RM-type mapping tables (`master05`), the `ctx/` context vocabulary
+//! (`master06`), and the FLAT ↔ STRUCTURED conversion algorithms
+//! (`master04 §Conversion Between Formats`). Media types
+//! (`master02 §MIME Types`): `application/openehr.wt.flat+json`,
+//! `application/openehr.wt.structured+json`, and (for the template
+//! resource) `application/openehr.wt+json`.
 //!
-//! FLAT / STRUCTURED build on the same [`webtemplate`] model.
+//! Both wire variants are codecs over one internal tree ([`sim::SimNode`]);
+//! the template-driven RM conversion is written once against it.
 //!
 //! Doc prose here is dense with openEHR spec class names (`COMPOSITION`,
-//! `DV_QUANTITY`, `FEEDER_AUDIT`, `PARTY_IDENTIFIED`, …); backticking every
-//! occurrence is noise, so `clippy::doc_markdown` is allowed crate-wide (matching
-//! the tests' existing allow).
+//! `DV_QUANTITY`, `PARTY_IDENTIFIED`, …); backticking every occurrence is
+//! noise, so `clippy::doc_markdown` is allowed crate-wide.
 #![allow(clippy::doc_markdown)]
 
+pub mod build;
 pub mod cache;
+pub mod convert;
+pub(crate) mod ctx;
 pub mod error;
 pub mod example;
-pub mod flat;
+pub mod flatten;
+pub(crate) mod map;
 pub mod path;
-pub mod structured;
+pub(crate) mod rmpath;
+pub mod sim;
 pub mod tdd;
 pub mod validation;
 pub mod webtemplate;
-
-pub use error::FlatError;
-pub use example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
-pub use flat::{from_flat, to_flat};
-pub use structured::{flat_to_structured, from_structured, structured_to_flat, to_structured};
-pub use tdd::from_tdd;
-pub use validation::{
-    ValidationKind, ValidationMessage, validate_archetype_conformance,
-    validate_archetype_conformance_incomplete, validate_composition, validate_flat_other,
-    validate_rm_and_terminology,
-};
-pub use webtemplate::{WebTemplate, build_web_template};

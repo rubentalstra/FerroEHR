@@ -3,7 +3,7 @@
 //! composer on written compositions. Membership is deterministic in the
 //! `WorkloadSpec` (subject ids and staff names are stable across runs).
 //!
-//! PORT NOTE: no openEHR spec governs the benchmark ward; this is our own model.
+//! NOTE: no openEHR spec governs the benchmark ward; this is our own model.
 
 use crate::model::WorkloadSpec;
 

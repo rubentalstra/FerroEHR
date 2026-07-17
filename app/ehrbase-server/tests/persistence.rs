@@ -373,7 +373,7 @@ async fn template_id_is_read_back_from_vo_version() {
     // Current version.
     assert_eq!(
         service
-            .template_of_version(vo, None)
+            .template_of_version(ehrbase::ids::VoId(vo), None)
             .await
             .expect("read template")
             .as_deref(),
@@ -382,7 +382,7 @@ async fn template_id_is_read_back_from_vo_version() {
     // Explicit version 1.
     assert_eq!(
         service
-            .template_of_version(vo, Some("1"))
+            .template_of_version(ehrbase::ids::VoId(vo), Some("1"))
             .await
             .expect("read template v1")
             .as_deref(),
@@ -391,7 +391,7 @@ async fn template_id_is_read_back_from_vo_version() {
     // Unknown object → None (not an error).
     assert_eq!(
         service
-            .template_of_version(Uuid::now_v7(), None)
+            .template_of_version(ehrbase::ids::VoId::new(), None)
             .await
             .expect("unknown ok"),
         None

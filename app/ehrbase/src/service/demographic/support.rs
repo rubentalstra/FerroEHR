@@ -13,7 +13,6 @@
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
 use serde_json::{Value, json};
-use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;
@@ -78,7 +77,7 @@ pub(super) fn inject_uid(
 /// the version extant `at` an instant, or the current one when both are `None`.
 /// `None` when the version does not exist or the object is EHR-scoped — a
 /// demographic surface never serves an EHR-owned object (`ehr_id = None` is
-/// the demographics repository's scope, module PORT NOTE).
+/// the demographics repository's scope, module NOTE).
 ///
 /// # Errors
 /// [`ServiceError`] on a storage/database fault during the version read.
@@ -203,7 +202,7 @@ impl EhrbaseService {
     /// for the `404`. `VERSIONED_OBJECT.time_created` is the commit time of
     /// the earliest held version (for a locally-created object, v1).
     ///
-    /// PORT NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner
+    /// NOTE: `VERSIONED_OBJECT.owner_id` (1..1) has no EHR owner
     /// for a demographic versioned object (no openEHR spec governs the owner
     /// of an ehr-less demographic versioned object — our own design); we
     /// reference the object's own versioned-object id (the demographics
