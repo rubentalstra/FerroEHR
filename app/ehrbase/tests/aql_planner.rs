@@ -1,4 +1,3 @@
-#![allow(clippy::panic)] // test assertions panic by design
 //! Unit tests for the AQL planner (path analysis + IR lowering). No DB.
 //!
 //! Queries are parsed by `openehr_query` and planned by [`ehrbase::aql::plan`]; each
