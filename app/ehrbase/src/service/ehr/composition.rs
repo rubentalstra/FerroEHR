@@ -393,14 +393,17 @@ impl EhrbaseService {
         vo_id: Uuid,
         version: Option<&str>,
     ) -> Result<Option<String>, ServiceError> {
-        let read = match version {
-            Some(v) => {
-                let tree = parse_tree_id(v)?;
-                read_version(&self.pool, vo_id, tree).await?
-            }
-            None => read_current(&self.pool, vo_id).await?,
-        };
-        Ok(read.and_then(|r| r.template_id))
+        // One scalar read of the promoted `vo_version.template_id` column —
+        // this resolver runs per authorization check, so it must never pay a
+        // node reassembly.
+        let tree = version.map(parse_tree_id).transpose()?;
+        Ok(crate::storage::version_repo::meta::template_id_of(
+            &self.pool,
+            vo_id,
+            tree.map(|t| t.columns()),
+        )
+        .await?
+        .flatten())
     }
 
     /// `delete_composition` (SM `i_ehr_composition.adoc`): commit a

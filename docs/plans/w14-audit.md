@@ -602,7 +602,10 @@ full platform rewrite):**
 
 **Wave 3 — read-path + N+1 + caches — LARGELY DONE (rewrite), remainder open:**
 - [x] F-7 EHR GET: `ehr_summary_read` — one merged statement.
-- [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
+- [x] F-8 (2026-07-17): `template_id` was already promoted to the version
+      row by the rewrite — the ABAC resolver now reads that scalar
+      (`template_id_of`) instead of a full version read + reassembly per
+      authorization check; the versioning read struct dropped its dead field.
 - [~] F-9: the redundant reassemble re-sort is gone (linear is_sorted
       check; both producers deliver num order — 2026-07-17). OPEN: the
       2-round-trip version-row + node fetch merge (one CTE/LATERAL).
