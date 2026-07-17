@@ -113,14 +113,17 @@ pub struct CodedName {
     pub incoherent: bool,
 }
 
-/// One node of the web-template tree.
+/// One node of the Web Template tree (`ITS-REST simplified_formats master04
+/// §"Web Template Metadata"`, the `tree`/`children` shape).
 ///
-/// `@JsonInclude(NON_NULL)`; collection members are `NON_EMPTY`. `id` is the
-/// **local** json-id segment (not the full path); `aqlPath` is the archetype
-/// path root→node. `max == -1` means unbounded.
+/// Null members are omitted, as are empty collection members. `id` is the
+/// **local** json-id segment (not the full path; master04 §"Node ID Generation
+/// Rules"); `aqlPath` is the archetype path root→node. `max == -1` means
+/// unbounded.
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateNode {
-    /// The local json-id segment (Better `jsonId`, serialized as `id`).
+    /// The local json-id segment, serialized as `id` (master04 §"Node ID
+    /// Generation Rules").
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -130,10 +133,11 @@ pub struct WebTemplateNode {
     pub rm_type: String,
     #[serde(rename = "nodeId", skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
-    /// Occurrences lower bound (Better `occurences.min`, `@JsonUnwrapped`).
+    /// Occurrences lower bound (master04 §"Web Template Metadata": `min`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min: Option<i32>,
-    /// Occurrences upper bound; `-1` = unbounded (Better `getJsonMax()`).
+    /// Occurrences upper bound; `-1` = unbounded (master04 §"Web Template
+    /// Metadata": `max`, where `max = -1` marks an unbounded occurrence).
     pub max: i32,
     #[serde(rename = "inContext", skip_serializing_if = "Option::is_none")]
     pub in_context: Option<bool>,
@@ -162,17 +166,17 @@ pub struct WebTemplateNode {
     pub children: Vec<WebTemplateNode>,
 
     /// AOM 1.4 `C_ATTRIBUTE.existence` constraints on this node's mandatory RM
-    /// attributes — captured for the validation walk, **not** part of the Better
-    /// web-template JSON, so `#[serde(skip)]`.
+    /// attributes — captured for the validation walk, **not** part of the Web
+    /// Template metadata document, so `#[serde(skip)]`.
     #[serde(skip)]
     pub existence: Vec<WebTemplateExistence>,
 
     /// **Every** constraining `C_MULTIPLE_ATTRIBUTE.cardinality` on this node
     /// (AOM 1.4 `master04-constraint_model_package.adoc` §cardinality) — a
-    /// superset of the serialized Better `cardinalities`, which keeps only the
-    /// intervals Better surfaces in the interop JSON. The validation walk
-    /// enforces this set so `0..1`/`1..1`/`1..*` container bounds are checked
-    /// too. `#[serde(skip)]` — validation-only.
+    /// superset of the serialized `cardinalities`, which keeps only the intervals
+    /// surfaced in the metadata document. The validation walk enforces this set
+    /// so `0..1`/`1..1`/`1..*` container bounds are checked too. `#[serde(skip)]`
+    /// — validation-only.
     #[serde(skip)]
     pub card_all: Vec<WebTemplateCardinality>,
 
@@ -184,14 +188,14 @@ pub struct WebTemplateNode {
     pub slots: Vec<WebTemplateSlot>,
 
     /// `C_INTEGER.list`/`C_REAL.list` constraints on a leaf's numeric datum
-    /// (`magnitude`, `value`, …), keyed by RM attribute name — the Better input
-    /// JSON does not carry these lists, so they are validation-only.
+    /// (`magnitude`, `value`, …), keyed by RM attribute name — the `inputs`
+    /// document does not carry these lists, so they are validation-only.
     #[serde(skip)]
     pub numeric_lists: Vec<(String, Vec<f64>)>,
 
     /// `C_DURATION.range` (ISO-8601 duration bounds) on a `DV_DURATION` leaf's
-    /// `value` — Better encodes only the allowed-field split into per-field
-    /// inputs, so the range is validation-only.
+    /// `value` — the `inputs` document encodes only the allowed-field split into
+    /// per-field inputs, so the range is validation-only.
     #[serde(skip)]
     pub duration_range: Option<WebTemplateRange>,
 
@@ -241,7 +245,10 @@ pub struct WebTemplateNode {
     /// Full `parent/segment` id chain, used to scope dedup and cardinality ids.
     #[serde(skip)]
     pub full_id: String,
-    /// Polymorphic alternate json-id (`value`/`value2`) — Better `alternativeJsonId`.
+    /// Polymorphic alternate json-id (`value`/`value2`) for a choice ELEMENT's
+    /// alternative `DV_*` children. No openEHR spec governs choice-ELEMENT ids —
+    /// our own design/extension; consumed by the FLAT converters and the
+    /// validation walk.
     #[serde(skip)]
     pub alt_json_id: Option<String>,
     /// The RM name-constraint code, when the node is name-constrained.
@@ -310,15 +317,15 @@ impl WebTemplateNode {
         !self.inputs.is_empty()
     }
 
-    /// The first input's suffix, if any (Better `getInput().suffix`).
+    /// The first input's type, if any.
     pub(crate) fn first_input_type(&self) -> Option<WebTemplateInputType> {
         self.inputs.first().map(|i| i.input_type)
     }
 }
 
-/// The web-template `type` enum. Serializes as the SCREAMING constant name
-/// (`"TEXT"`, `"CODED_TEXT"`, `"DATETIME"`, …), matching Jackson's default enum
-/// rendering in `WebTemplateInputType.kt`.
+/// The Web Template input `type` enum. Serializes as the SCREAMING constant name
+/// (`"TEXT"`, `"CODED_TEXT"`, `"DATETIME"`, …), the `inputs[].type` values of the
+/// master04 §"Web Template Metadata" example.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WebTemplateInputType {
@@ -336,7 +343,11 @@ pub enum WebTemplateInputType {
     Proportion,
 }
 
-/// A leaf input descriptor. `@JsonInclude(NON_EMPTY)`, order `suffix, type`.
+/// A leaf input descriptor (master04 §"Web Template Metadata": `inputs[]`).
+/// Member order `suffix, type`; empty members omitted. `listOpen`, `terminology`,
+/// and `defaultValue` are additive fields the master04 example does not list —
+/// no openEHR spec governs them; our own design/extension (`listOpen` also drives
+/// the master04 §"Open Value-Sets and the `|other` Suffix" behaviour).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateInput {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -370,11 +381,11 @@ impl WebTemplateInput {
     }
 }
 
-/// A coded option. `@JsonInclude(NON_NULL)`, order
-/// `value, label, localizedLabels, localizedDescriptions, termBindings, validation,
-/// ordinal|scale`. Better splits these into `WebTemplateCodedValue` /
-/// `WebTemplateOrdinalCodedValue` / `WebTemplateScaleCodedValue`; we fold
-/// `ordinal`/`scale` as optional fields (identical JSON, omitted when absent).
+/// A coded option (master04 §"Web Template Metadata": an `inputs[].list[]`
+/// entry). Null members omitted, member order `value, label, localizedLabels,
+/// localizedDescriptions, termBindings, validation, ordinal|scale`. `ordinal`
+/// (for `DV_ORDINAL`) and `scale` (for `DV_SCALE`) are optional fields, omitted
+/// when absent — no openEHR spec governs them here; our own design/extension.
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateCodedValue {
     pub value: String,
@@ -412,7 +423,8 @@ impl WebTemplateCodedValue {
     }
 }
 
-/// A terminology binding (`{value, terminologyId}`; Better forces `label` null).
+/// A terminology binding (master04 §"Web Template Metadata": a `termBindings`
+/// entry, `{value, terminologyId}`).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateBindingCodedValue {
     pub value: String,
@@ -420,7 +432,8 @@ pub struct WebTemplateBindingCodedValue {
     pub terminology_id: String,
 }
 
-/// `@JsonInclude(NON_NULL)`: `pattern`, `range`, `precision`.
+/// A leaf input's `validation` (master04 §"Web Template Metadata":
+/// `inputs[].validation`): `pattern`, `range`, `precision`; null members omitted.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct WebTemplateValidation {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -437,10 +450,10 @@ impl WebTemplateValidation {
     }
 }
 
-/// A validation range: `minOp, min, maxOp, max`. Covers Better's
-/// `WebTemplateValidationIntegerRange` / `WebTemplateDecimalRange` /
-/// `WebTemplateTemporalRange` — `min`/`max` are numbers or ISO strings, so they
-/// are held as [`serde_json::Value`].
+/// A validation range (master04 §"Web Template Metadata": the `range`/`precision`
+/// object): `minOp, min, maxOp, max`. Serves integer, decimal, and temporal
+/// ranges alike — `min`/`max` are numbers or ISO strings, so they are held as
+/// [`serde_json::Value`].
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct WebTemplateRange {
     #[serde(rename = "minOp", skip_serializing_if = "Option::is_none")]
@@ -457,7 +470,7 @@ pub struct WebTemplateRange {
 /// (whether the attribute *field* is present at all — distinct from `cardinality`
 /// = container membership and `occurrences` = per-object-block count; AOM 1.4
 /// `master04-constraint_model_package.adoc` §existence). Captured for the
-/// validation walk only; not part of the Better web-template JSON.
+/// validation walk only; not part of the Web Template metadata document.
 ///
 /// `path` is the absolute archetype path of the constrained attribute
 /// (`{node aqlPath}/{rm_attribute_name}`); `min`/`max` are the existence bounds

@@ -9,6 +9,8 @@
 
 #![allow(
     clippy::panic,
+    clippy::expect_used,
+    clippy::unwrap_used,
     clippy::print_stdout,
     clippy::print_stderr,
     let_underscore_drop

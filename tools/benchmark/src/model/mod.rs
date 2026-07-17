@@ -186,8 +186,8 @@ mod tests {
         assert!(!w.ops.is_empty());
         assert!(w.ops.windows(2).all(|p| p[0].at <= p[1].at));
         assert_eq!(w.lock.len(), 64);
-        assert_eq!(w.window, Duration::from_secs(3600));
-        assert_eq!(w.warmup, Duration::from_secs(300));
+        assert_eq!(w.window, Duration::from_hours(1));
+        assert_eq!(w.warmup, Duration::from_mins(5));
     }
 
     #[test]

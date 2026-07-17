@@ -422,13 +422,8 @@ mod tests {
 
     fn build(spec: &WorkloadSpec) -> Vec<PlannedOp> {
         let ward = Ward::new(spec);
-        build_ops(
-            spec,
-            &ward,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
-        )
-        .expect("schedule builds")
+        build_ops(spec, &ward, Duration::from_hours(1), Duration::from_mins(5))
+            .expect("schedule builds")
     }
 
     #[test]
@@ -518,7 +513,7 @@ mod tests {
         let mut reads = 0u64;
         let mut writes = 0u64;
         for op in &ops {
-            if op.at < Duration::from_secs(300) {
+            if op.at < Duration::from_mins(5) {
                 continue; // warmup discarded
             }
             if op.class.is_read() {

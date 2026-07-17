@@ -1,14 +1,17 @@
-//! OPT 1.4 → Better `web-template` walk.
+//! OPT 1.4 → Web Template walk.
 //!
-//! Port of Better `builder/WebTemplateBuilder.kt` + the `compactor`/`postprocess`
-//! packages, driven by [`openehr_its::opt14`] instead of Better's `AmNode` tree:
+//! Walks the OPT 1.4 constraint tree ([`openehr_its::opt14`]) into the Web
+//! Template metadata document (`ITS-REST simplified_formats master04
+//! §"Web Template Metadata"`):
 //!
 //! 1. **build** a node per constraint object (rm type, node id, aql path,
-//!    occurrences, rubric names, term bindings), giving `DATA_VALUE/PARTY` leaves
+//!    occurrences, rubric names, term bindings), giving `DATA_VALUE`/PARTY leaves
 //!    their `inputs` and running the per-rm post-processors;
-//! 2. **compact** the tree (Medium compactor: hoist `ITEM_*`/`HISTORY`/single
-//!    `EVENT`; promote an `ELEMENT/DATA_VALUE` single child; drop empties);
-//! 3. **assign ids** (see [`super::id`]).
+//! 2. **compact** the tree per master04 §"Level Removal": elide the container
+//!    attribute names, collapse the always-collapsed wrapper types
+//!    (`ITEM_*`/`ITEM_STRUCTURE`/`HISTORY`) and a conditionally-collapsed single
+//!    `EVENT`, promote an `ELEMENT`/`DATA_VALUE` single child, and drop empties;
+//! 3. **assign ids** (see [`super::id`], master04 §"Node ID Generation Rules").
 //!
 //! Deliberate shape boundaries of the builder (design decisions, not omissions).
 //! The `web-template` mirrors the *constraint* tree of the OPT; RM structure that
@@ -28,7 +31,8 @@
 //!   composition builders, not expanded into careflow nodes in the tree.
 //! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
 //!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
-//!   expansion (matching Better, the interop oracle).
+//!   expansion. No openEHR spec governs the shape of an unconstrained value node —
+//!   our own design/extension.
 //! * **Archetype internal-reference (`use_node`) target resolution**: an internal
 //!   reference is emitted as its own node rather than resolved to its target
 //!   subtree; full ADL/AOM reference resolution is part of the ADL2 work
@@ -68,7 +72,9 @@ const ALWAYS_COMPACTABLE: [&str; 6] = [
 /// RM types compacted only when singular and without a matching sibling.
 const SINGLE_COMPACTABLE: [&str; 3] = ["POINT_EVENT", "INTERVAL_EVENT", "EVENT"];
 
-/// RM types dropped when they end up empty (Better `SKIP_IF_EMPTY`).
+/// RM types dropped when they end up empty (master04 §"Level Removal": a
+/// structural wrapper carrying no content collapses out). No openEHR spec
+/// enumerates this exact set — our own design/extension.
 const SKIP_IF_EMPTY: [&str; 12] = [
     "CLUSTER",
     "ELEMENT",
@@ -117,10 +123,10 @@ impl Ctx {
     }
 
     /// The external term bindings for `code` within `arch_id`'s archetype
-    /// (Better `findTermBindings` + `getBindingCodedValue`): for every terminology
-    /// whose binding set has an item matching `code`, the bound code phrase as a
-    /// `{value, terminologyId}`. Keyed by terminology, first match per terminology
-    /// wins, in binding-set order.
+    /// (master04 §"Web Template Metadata": a node/coded-value `termBindings` map):
+    /// for every terminology whose binding set has an item matching `code`, the
+    /// bound code phrase as a `{value, terminologyId}`. Keyed by terminology,
+    /// first match per terminology wins, in binding-set order.
     fn term_bindings_for(
         &self,
         arch_id: &str,
@@ -147,10 +153,10 @@ impl Ctx {
     }
 }
 
-/// Better `CodePhraseUtils.getBindingCodedValue`: the bound code phrase's code
-/// string with its terminology id (falling back to the binding item's own code
-/// when the code phrase carries no terminology). `None` when the bound code
-/// string is blank.
+/// The bound code phrase's code string with its terminology id (falling back to
+/// the binding item's own code when the code phrase carries no terminology).
+/// `None` when the bound code string is blank. Feeds the `termBindings` map of
+/// master04 §"Web Template Metadata".
 fn binding_coded_value(item: &TermBindingItem) -> Option<WebTemplateBindingCodedValue> {
     let code_phrase = &item.value;
     if code_phrase.code_string.trim().is_empty() {
@@ -196,9 +202,11 @@ impl Labels for ArchetypeLabels<'_> {
 
 /// Build a [`WebTemplate`] from a parsed OPT 1.4 operational template.
 ///
-/// Better is the interop oracle: field names, `id`/`aqlPath` derivation, the
-/// RM-type → `inputs` mapping, and the compaction shape match its reference
-/// implementation. `version` is the format version (`"2.3"`).
+/// The document shape (field names, `tree`/`children`, `inputs`, `aqlPath`), the
+/// node-id derivation, and the compaction are governed by `ITS-REST
+/// simplified_formats master04-basic_concepts.adoc` (§"Web Template Metadata",
+/// §"Node ID Generation Rules", §"Level Removal"). `version` is the format
+/// version string.
 ///
 /// # Errors
 /// [`crate::FlatError::InvalidTemplate`] if the template lacks a template id.
@@ -326,8 +334,8 @@ fn create_node(
         Some(name_code.to_owned())
     };
     // Node-level external term bindings: the archetype root's `term_bindings`
-    // whose item code matches this node's constraint node id (Better
-    // `WebTemplateBuilder.setTermBindings` via `amNode.nodeId`).
+    // whose item code matches this node's constraint node id (master04
+    // §"Web Template Metadata": the node-level `termBindings` map).
     node.term_bindings = ctx.term_bindings_for(arch_id, name_code);
     node
 }
@@ -347,7 +355,9 @@ fn build_children(
         for attr in inputs::attributes(co) {
             let attr_name = inputs::attribute_name(attr);
             if attr_name == "name" {
-                continue; // Better SKIP_PATHS.
+                // The `name` attribute is never a child node — it names the node
+                // (master04 §"Field Identifiers": names generate the node id).
+                continue;
             }
             // The openEHR terminology group a child's coded value binds to, fixed
             // by (this node's RM type, the attribute) — used to resolve rubrics
@@ -404,7 +414,7 @@ fn has_inputs(rm_type: &str) -> bool {
         || rm_type == "CODE_PHRASE"
 }
 
-// ── post-processing (Better `postprocess/*`) ─────────────────────────────────
+// ── post-processing ──────────────────────────────────────────────────────────
 
 fn post_process(node: &mut WebTemplateNode) {
     match node.rm_type.as_str() {
@@ -477,7 +487,7 @@ fn post_process_observation(node: &mut WebTemplateNode) {
     }
 }
 
-// ── compaction (Better `compactor/*`) ────────────────────────────────────────
+// ── compaction (master04 §"Level Removal") ───────────────────────────────────
 
 fn compact(mut node: WebTemplateNode, depth: usize) -> Option<WebTemplateNode> {
     // Medium: hoist ALWAYS/SINGLE-compactable wrapper children into this node.
@@ -594,7 +604,9 @@ fn is_skippable(rm_type: &str) -> bool {
 }
 
 /// Merge a two-child `DV_CODED_TEXT` + `DV_TEXT` pair with equal paths into a
-/// coded-text-with-`other` (Better `compactCodedTextWithOther`, equal-path case).
+/// coded-text-with-`other` — the open-value-set discriminator of master04
+/// §"Open Value-Sets and the `|other` Suffix" (`listOpen: true` plus an `other`
+/// free-text input).
 fn compact_coded_text_with_other(children: &mut Vec<WebTemplateNode>) {
     if children.len() != 2 {
         return;
@@ -618,25 +630,23 @@ fn compact_coded_text_with_other(children: &mut Vec<WebTemplateNode>) {
 }
 
 /// Merge multiple sibling coded-text alternatives that share an aql path into a
-/// single coded node (Better `WebTemplateCompactor.compactMultipleCodedTexts`):
-/// when an ELEMENT `value` is a choice of coded texts, one node carries the
-/// union of the alternatives' coded values rather than several sibling nodes
-/// with polymorphic (`value`/`value2`) ids.
+/// single coded node: when an ELEMENT `value` is a choice of coded texts, one
+/// node carries the union of the alternatives' coded values rather than several
+/// sibling nodes with polymorphic (`value`/`value2`) ids. No openEHR spec governs
+/// how a choice of coded texts is presented as a single `inputs[].list` — our own
+/// design/extension.
 ///
-/// Better's rule, ported: children are grouped by path; a group of exactly two
-/// coded-text nodes is compacted — if one carries a validation-constrained input
-/// and the other does not, the constrained one is kept and the other dropped;
-/// otherwise the two coded lists are unioned (dedup by code, order preserved)
-/// onto the first node and the second is dropped.
+/// The rule: children are grouped by path; a group of exactly two coded-text
+/// nodes is compacted — if one carries a validation-constrained input and the
+/// other does not, the constrained one is kept and the other dropped; otherwise
+/// the two coded lists are unioned (dedup by code, order preserved) onto the
+/// first node and the second is dropped.
 ///
-/// PORT NOTE: our coded-text nodes fold `defining_code` into the node's `inputs`
-/// (Better keeps each `C_CODE_PHRASE` as its own `.../defining_code` node), so the
-/// qualifying pair is two same-path `DV_CODED_TEXT`/`CODE_PHRASE` siblings — the
-/// equivalent of Better's `path.endsWith("defining_code")` — and the coded lists
-/// are unioned directly rather than through Better's separate-node `mergeInputs`.
+/// Our coded-text nodes fold `defining_code` into the node's `inputs`, so the
+/// qualifying pair is two same-path `DV_CODED_TEXT`/`CODE_PHRASE` siblings and the
+/// coded lists are unioned directly.
 fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
-    // Group child indices by aql path, in first-seen order (Better
-    // `mergeChildrenWithMatchingPaths`).
+    // Group child indices by aql path, in first-seen order.
     let mut groups: IndexMap<String, Vec<usize>> = IndexMap::new();
     for (i, child) in children.iter().enumerate() {
         groups.entry(child.aql_path.clone()).or_default().push(i);
@@ -647,7 +657,7 @@ fn compact_multiple_coded_texts(children: &mut Vec<WebTemplateNode>) {
     let mut merges: Vec<(usize, usize)> = Vec::new();
     for idxs in groups.values() {
         if idxs.len() != 2 {
-            continue; // Better only compacts an exact pair.
+            continue; // Only an exact pair is compacted.
         }
         let (a, b) = (idxs[0], idxs[1]);
         if !is_coded_text(&children[a]) || !is_coded_text(&children[b]) {
@@ -692,13 +702,14 @@ fn is_coded_text(node: &WebTemplateNode) -> bool {
     matches!(node.rm_type.as_str(), "DV_CODED_TEXT" | "CODE_PHRASE")
 }
 
-/// Better `isConstrained`: the node's first input carries a validation.
+/// Whether the node's first input carries a validation.
 fn is_input_constrained(node: &WebTemplateNode) -> bool {
     node.inputs.first().is_some_and(|i| i.validation.is_some())
 }
 
-/// Copy the skipped wrapper's identity/occurrences onto the promoted child
-/// (Better `copyValues`).
+/// Copy the collapsed wrapper's identity/occurrences onto the promoted child
+/// (master04 §"Level Removal": the parent connects directly to the wrapper's
+/// contents, so the surviving node inherits the collapsed node's identity).
 fn copy_values(from: &WebTemplateNode, to: &mut WebTemplateNode) {
     to.name.clone_from(&from.name);
     to.localized_name.clone_from(&from.localized_name);
@@ -761,7 +772,7 @@ fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
 /// Capture **every** constraining multiple-attribute cardinality for the
 /// validation walk (AOM 1.4 `master04-constraint_model_package.adoc`
 /// §cardinality): any interval with a lower bound `>= 1` or a bounded upper
-/// bound constrains the container. This is the superset of the Better-filtered
+/// bound constrains the container. This is the superset of the serialized
 /// [`requires_cardinality`] selection, which drops `0..1`/`1..1`/`1..*` — those
 /// intervals are still real archetype constraints (master15/16 truth tables)
 /// and are enforced from [`WebTemplateNode::card_all`], never serialized.
@@ -783,8 +794,8 @@ fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinalit
     out
 }
 
-/// Capture the leaf value constraints the Better `inputs` mapping does not
-/// carry, onto the node's validation-only fields:
+/// Capture the leaf value constraints the `inputs` mapping does not carry, onto
+/// the node's validation-only fields:
 ///
 /// - `C_INTEGER.list` / `C_REAL.list` on a numeric datum (`magnitude`, `value`)
 ///   → [`WebTemplateNode::numeric_lists`] (AOM 1.4 §`C_INTEGER/§C_REAL`);
