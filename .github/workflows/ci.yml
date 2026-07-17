@@ -17,12 +17,15 @@ env:
   # REQUIRED. (The historical PORT_STRICT advisory switch is gone.)
 
 jobs:
-  # ── Change detection: docs-only changes skip every cargo job ────────────────
-  # A change is "code" unless EVERY changed file is documentation-shaped
-  # (docs/, website/, .claude/, any *.md, LICENSE, .gitignore). Workflow and
-  # script changes deliberately count as code (conservative). Jobs gated on
-  # this are skipped for docs-only PRs — GitHub treats a skipped required
-  # check as satisfied, so branch protection is unaffected.
+  # ── Change detection: cargo jobs run ONLY when build-relevant paths change ──
+  # Allowlist (owner ruling 2026-07-17: no Rust-affecting change → no cargo
+  # jobs, workflow-only and docs-only PRs included): app/, crates/, tools/,
+  # scripts/, .cargo/, .config/, Cargo.toml, Cargo.lock, rust-toolchain.toml,
+  # rustfmt.toml, clippy.toml, deny.toml. Everything else (docs/, website/,
+  # .claude/, .github/, markdown, compose files, assets) skips the nine cargo
+  # jobs. GitHub treats a skipped required check as satisfied, so branch
+  # protection is unaffected; a workflow-gating bug surfaces on the next
+  # code-touching PR, which is acceptable.
   changes:
     name: change detection
     runs-on: ubuntu-latest
@@ -57,10 +60,10 @@ jobs:
           if [ -z "$changed" ]; then
             echo "code=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if echo "$changed" | grep -qvE '^(docs/|website/|\.claude/|LICENSE|\.gitignore$)|\.md$' ; then
+          if echo "$changed" | grep -qE '^(app/|crates/|tools/|scripts/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Docs-only change — cargo jobs will be skipped."
+            echo "No build-relevant paths touched — cargo jobs will be skipped."
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
