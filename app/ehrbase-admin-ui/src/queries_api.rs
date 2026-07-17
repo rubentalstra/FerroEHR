@@ -206,7 +206,11 @@ pub async fn store_query(name: String, aql: String) -> Result<(), AdminUiError> 
 pub async fn list_groups() -> Result<Vec<QueryGroup>, AdminUiError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
-    crate::groups::read_groups(&state.config.groups_file())
+    let path = state.config.groups_file();
+    // File I/O off the async runtime (reliability rule: no sync I/O on it).
+    tokio::task::spawn_blocking(move || crate::groups::read_groups(&path))
+        .await
+        .map_err(|e| AdminUiError::Internal(format!("groups task: {e}")))?
 }
 
 /// Create/replace a console-local query group (empty `members` deletes it).
@@ -222,7 +226,10 @@ pub async fn save_group(name: String, members: Vec<String>) -> Result<(), AdminU
         return Err(AdminUiError::Invalid("the group needs a name".to_owned()));
     }
     let state: crate::state::AppState = leptos::prelude::expect_context();
-    crate::groups::write_group(&state.config.groups_file(), &name, members)
+    let path = state.config.groups_file();
+    tokio::task::spawn_blocking(move || crate::groups::write_group(&path, &name, members))
+        .await
+        .map_err(|e| AdminUiError::Internal(format!("groups task: {e}")))?
 }
 
 /// Run one stored query (`GET query/{name}/{version}`) and return its match

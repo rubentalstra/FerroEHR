@@ -16,6 +16,7 @@ pub mod error;
 pub mod format;
 pub mod pages;
 pub mod queries_api;
+pub mod urlq;
 
 #[cfg(feature = "ssr")]
 pub mod groups;

@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      admin_ui: ${{ steps.filter.outputs.admin_ui }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -65,6 +66,13 @@ jobs:
           else
             echo "No build-relevant paths touched — cargo jobs will be skipped."
             echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Admin-console E2E trigger: the console crate, its harness, or the
+          # composed stack it drives.
+          if echo "$changed" | grep -qE '^(app/ehrbase-admin-ui/|scripts/ui-e2e\.sh$|docker-compose\.yml$|docker/admin-ui/|docker/keycloak/)' ; then
+            echo "admin_ui=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "admin_ui=false" >> "$GITHUB_OUTPUT"
           fi
 
   # ── Required for code changes: formatting ───────────────────────────────────
@@ -268,6 +276,66 @@ jobs:
         with:
           tool: cargo-machete
       - run: cargo machete
+
+  # ── Admin-console E2E (merge gate for console-touching changes) ─────────────
+  # Runs the full composed journey battery (scripts/ui-e2e.sh): postgres +
+  # ehrbase + Keycloak via compose, the console built by cargo-leptos on the
+  # host, chromedriver journeys with the browser-console gate. Screenshots
+  # upload on success AND failure (human review — no pixel-diff assertions).
+  ui-e2e:
+    name: ui-e2e
+    needs: changes
+    if: needs.changes.outputs.admin_ui == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,cargo-leptos@0.3.7
+      - name: Run the E2E journey battery
+        run: bash scripts/ui-e2e.sh
+      - name: Upload journey screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-e2e-screenshots
+          path: target/ui-e2e/screenshots/
+          if-no-files-found: ignore
+
+  # Screenshot-freshness guard (the changelog-guard pattern): a PR that
+  # changes the console UI must re-capture the published book screenshots in
+  # the same PR (freshness, not pixels — owner decision). Escape hatch: the
+  # `no-ui-visual-change` label for BFF-only/comment/test changes.
+  ui-screenshot-guard:
+    name: ui-screenshot-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Require refreshed screenshots for UI changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-ui-visual-change') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-ui-visual-change label set — guard skipped."; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          if ! echo "$changed" | grep -qE '^app/ehrbase-admin-ui/(src|style)/'; then
+            echo "No console UI paths touched — guard not required."; exit 0
+          fi
+          if echo "$changed" | grep -qE '^website/book/src/admin-ui/img/'; then
+            echo "Screenshots refreshed — OK."; exit 0
+          fi
+          echo "::error::This PR changes the admin-console UI but does not refresh website/book/src/admin-ui/img/ (run scripts/ui-e2e.sh with UI_E2E_DOCS_SHOTS=1 and commit the captures), and does not carry the 'no-ui-visual-change' label." >&2
+          exit 1
 
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in

@@ -360,5 +360,12 @@ project. The openEHR specifications and the machine-readable models this
 project generates from are published by the
 [openEHR Foundation](https://www.openehr.org/).
 
+The admin console's feature set — the Template Manager, the point-and-click
+Query Builder, and saved/grouped/cohort queries — is inspired by
+[Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver) by Pablo
+Pazos / CaboLabs Health Informatics (Apache-2.0). The UX is reimplemented
+fresh in Rust over this project's own AQL engine — no code is copied — but
+the design lineage is gratefully credited.
+
 Licensed under the [Apache License 2.0](LICENSE), the same license as
 upstream EHRbase.

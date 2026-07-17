@@ -15,6 +15,32 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **`ehrbase-admin-ui` — the admin console**, a new standalone web
+  application (its own binary and OCI image,
+  `ghcr.io/rubentalstra/ehrbase-rs-admin-ui`) that manages any
+  ITS-REST-1.0.3 CDR strictly over its REST API. Pure Rust end to end
+  (Leptos SSR + WASM, zero hand-written JavaScript). Feature set:
+  dual Basic + OIDC login (credentials held server-side in the BFF),
+  a dashboard (count tiles, query-group tiles, a commit-activity trend
+  chart), a Template Manager (list/filter/upload OPTs with the CDR's
+  validation diagnostics verbatim; per-template path-catalog tree, raw-OPT
+  view, and format-switchable generated example), an EHR browser (finder,
+  status/directory/compositions/contributions, and a composition viewer
+  with canonical JSON/XML + FLAT/STRUCTURED toggle, version history, and
+  audit details), a **point-and-click Query Builder** that assembles the
+  real AQL AST (typed per-datatype criteria from the template's
+  constrained value sets, nested AND/OR/NOT groups, projection columns,
+  live AQL preview) and runs it via the Query API, a raw AQL editor with
+  BFF-side grammar validation and parameter bindings, stored-query
+  management with console-local query groups, and a system panel (CDR
+  status, SMART discovery, the served OpenAPI rendered natively).
+  Configured by one `ehrbase-admin-ui.toml` (+ `EHRBASE_ADMIN__*` env);
+  ships in the quickstart compose as the `ehrbase-admin-ui` service on
+  port 3000. Verified by a Rust-native browser E2E journey suite
+  (merge-gating in CI, screenshots published as artifacts).
+
 ## [3.1.1] - 2026-07-17
 
 ### Fixed

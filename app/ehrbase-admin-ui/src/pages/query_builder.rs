@@ -1389,7 +1389,10 @@ fn preview_run_section(
             <div class="p-3 space-y-3">
                 {move || match preview.get() {
                     Ok(aql) => {
-                        let href = format!("/queries/aql?aql={}", encode_query_value(&aql));
+                        let href = format!(
+                            "/queries/aql?aql={}",
+                            crate::urlq::encode_query_value(&aql),
+                        );
                         view! {
                             <div class="space-y-2">
                                 <pre class="overflow-auto rounded border border-neutral-300 dark:border-neutral-700 p-3 text-xs whitespace-pre-wrap">
@@ -1657,27 +1660,6 @@ fn default_kind_for(rm_type: &str) -> CriterionKind {
         "DV_BOOLEAN" => CriterionKind::BooleanIs { value: true },
         _ => CriterionKind::Exists,
     }
-}
-
-/// A UI-local percent-encoder for a single query-string VALUE (the `aql=` link
-/// to the raw editor). It keeps the RFC 3986 unreserved set (`A-Za-z0-9-._~`)
-/// and percent-encodes every other byte of the UTF-8 encoding.
-///
-/// NOTE: this is deliberately distinct from the owner's wire-percent-codec rule
-/// (`urlencoding`, server-side): it is a tiny browser-side helper for building a
-/// client route link and pulls in no server-only dependency — no openEHR spec
-/// governs an admin UI's internal links (our own design / product extension).
-fn encode_query_value(value: &str) -> String {
-    use std::fmt::Write;
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~') {
-            out.push(char::from(byte));
-        } else {
-            let _ = write!(out, "%{byte:02X}");
-        }
-    }
-    out
 }
 
 /// Human-readable one-line summary of a leaf condition, used on the card.
@@ -2003,8 +1985,8 @@ fn set_leaf_kind(query: &mut BuilderQuery, path: &[usize], kind: CriterionKind) 
 #[allow(clippy::panic)] // test assertions on tree shapes
 mod tests {
     use super::{
-        add_group_at, add_leaf_at, criterion_sentence, default_kind_for, encode_query_value,
-        node_at, remove_at, set_leaf_kind, strip_stars, toggle_negated, toggle_op,
+        add_group_at, add_leaf_at, criterion_sentence, default_kind_for, node_at, remove_at,
+        set_leaf_kind, strip_stars, toggle_negated, toggle_op,
     };
     use crate::builder::catalog::{CatalogNode, CodeOption};
     use crate::builder::model::{BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode};
@@ -2036,11 +2018,17 @@ mod tests {
 
     #[test]
     fn encoder_keeps_unreserved_and_escapes_the_rest() {
-        assert_eq!(encode_query_value("abcXYZ012-._~"), "abcXYZ012-._~");
+        assert_eq!(
+            crate::urlq::encode_query_value("abcXYZ012-._~"),
+            "abcXYZ012-._~"
+        );
         // Space, ampersand, equals, percent, hash, question mark, plus.
-        assert_eq!(encode_query_value(" &=%#?+"), "%20%26%3D%25%23%3F%2B");
+        assert_eq!(
+            crate::urlq::encode_query_value(" &=%#?+"),
+            "%20%26%3D%25%23%3F%2B"
+        );
         // Multi-byte UTF-8 is encoded byte-by-byte (°C).
-        assert_eq!(encode_query_value("°C"), "%C2%B0C");
+        assert_eq!(crate::urlq::encode_query_value("°C"), "%C2%B0C");
     }
 
     #[test]
