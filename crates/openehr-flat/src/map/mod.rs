@@ -305,8 +305,11 @@ fn is_known_suffix(base: &str, suffix: &str) -> bool {
             "accuracy",
             "accuracy_is_percent",
         ],
-        "DV_ORDINAL" => &["code", "value", "ordinal"],
-        "DV_SCALE" => &["code", "value", "scale"],
+        // `|terminology` is not in the master05 §DV_ORDINAL examples but the
+        // symbol is a full CODE_PHRASE — accepting (and emitting) it keeps a
+        // non-`local` symbol terminology round-trip-safe.
+        "DV_ORDINAL" => &["code", "value", "ordinal", "terminology"],
+        "DV_SCALE" => &["code", "value", "scale", "terminology"],
         "DV_DATE" | "DV_DATE_TIME" | "DV_TIME" => &["magnitude_status", "normal_status"],
         "DV_IDENTIFIER" => &["id", "issuer", "assigner", "type"],
         "DV_PARSABLE" => &["value", "formalism"],

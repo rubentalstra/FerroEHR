@@ -525,69 +525,29 @@ pub(crate) fn emit(composition: &Value, out: &mut SimNode) {
     {
         set_bare(out, "location", loc.clone());
     }
-    if let Some(hcf) = context
-        .and_then(|c| c.get("health_care_facility"))
-        .filter(|v| !v.is_null())
-    {
-        let facility = out.occurrence_mut("health_care_facility", None);
-        if let Some(name) = hcf.get("name").filter(|v| !v.is_null()) {
-            facility.attrs.insert("name".to_owned(), name.clone());
-        }
-        if let Some(id) = hcf.pointer("/external_ref/id/value") {
-            facility.attrs.insert("id".to_owned(), id.clone());
-        }
-    }
-    if let Some(parts) = context
-        .and_then(|c| c.get("participations"))
-        .and_then(Value::as_array)
-    {
-        for (i, p) in parts.iter().enumerate() {
-            emit_participation(p, i, out);
-        }
-    }
-}
-
-fn emit_participation(p: &Value, i: usize, out: &mut SimNode) {
-    let idx = u32::try_from(i).unwrap_or(u32::MAX);
-    if let Some(name) = p.pointer("/performer/name").filter(|v| !v.is_null()) {
-        set_indexed(out, "participation_name", idx, name.clone());
-    }
-    if let Some(f) = p.pointer("/function/value").filter(|v| !v.is_null()) {
-        set_indexed(out, "participation_function", idx, f.clone());
-    }
-    if let Some(m) = p.pointer("/mode/value").filter(|v| !v.is_null()) {
-        set_indexed(out, "participation_mode", idx, m.clone());
-    }
-    if let Some(id) = p.pointer("/performer/external_ref/id/value") {
-        set_indexed(out, "participation_id", idx, id.clone());
-    }
-    // Performer identifiers → the non-compact `|<field>:j` attrs on the indexed
-    // `participation_identifiers` child (master06 §Participation).
-    if let Some(ids) = p
-        .pointer("/performer/identifiers")
-        .and_then(Value::as_array)
-    {
-        let node = out.occurrence_mut("participation_identifiers", Some(idx));
-        for (j, ident) in ids.iter().enumerate() {
-            for field in ["id", "issuer", "assigner", "type"] {
-                if let Some(v) = ident.get(field).filter(|v| !v.is_null()) {
-                    node.attrs.insert(format!("{field}:{j}"), v.clone());
-                }
-            }
-        }
-    }
+    // NOTE: health_care_facility and participations are NOT emitted as ctx/
+    // shortcuts — the master06 shortcut vocabulary is lossy for them (no
+    // id_scheme key, no full PARTY shape), so the lossless master05
+    // §EVENT_CONTEXT path rows (`context/_health_care_facility`,
+    // `context/_participation:i`) own the output; the ctx/ shortcuts stay
+    // accepted on input only.
 }
 
 /// Emit a party's `external_ref` id/namespace/scheme as `ctx/composer_id` +
-/// `ctx/id_namespace`/`ctx/id_scheme` (master06 §Composer).
+/// `ctx/id_namespace`/`ctx/id_scheme` (master06 §Composer). Namespace and
+/// scheme emit only when an id value exists — a ref without an id cannot be
+/// rebuilt from the shortcuts (master06 §Composer: `composer_id` sets
+/// `external_ref.id.value`), so emitting its satellites alone would break
+/// the round-trip.
 fn emit_external_ref(party: &Value, out: &mut SimNode) {
-    if let Some(id) = party
+    let Some(id) = party
         .pointer("/external_ref/id/value")
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
-    {
-        set_bare(out, "composer_id", json!(id));
-    }
+    else {
+        return;
+    };
+    set_bare(out, "composer_id", json!(id));
     if let Some(ns) = party
         .pointer("/external_ref/namespace")
         .and_then(Value::as_str)
@@ -606,12 +566,6 @@ fn emit_external_ref(party: &Value, out: &mut SimNode) {
 
 fn set_bare(out: &mut SimNode, name: &str, value: Value) {
     out.occurrence_mut(name, None)
-        .attrs
-        .insert(String::new(), value);
-}
-
-fn set_indexed(out: &mut SimNode, name: &str, index: u32, value: Value) {
-    out.occurrence_mut(name, Some(index))
         .attrs
         .insert(String::new(), value);
 }

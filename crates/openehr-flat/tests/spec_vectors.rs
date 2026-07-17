@@ -383,7 +383,10 @@ fn master04_level_removal_flat_key() {
         Some(0),
         "the repeating inner CLUSTER carries :0"
     );
-    assert!(k.suffixes.is_empty());
+    // master04 §Level Removal: "`ELEMENT.value` is replaced by the
+    // `|magnitude` attribute suffix" — the key carries exactly that suffix.
+    assert_eq!(k.suffixes.len(), 1);
+    assert_eq!(k.suffixes[0].name, "magnitude");
     assert_eq!(
         &k.to_string(),
         "laboratory_test_report/laboratory_test/laboratory_test_panel/laboratory_result:0/result_value|magnitude"

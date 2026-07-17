@@ -197,14 +197,16 @@ fn build(node: &WebTemplateNode, sim: &SimNode, path: &str) -> Result<Value, Fla
             continue;
         }
         // Composition-level in-context attributes arrive via ctx resolution
-        // (`ctx::resolve` also reads their path spellings); `context` comes from
-        // `apply_composition_ctx` (master06 §Context). `category` is real tree
-        // data (master05 §COMPOSITION) and still builds.
+        // (`ctx::resolve` also reads their path spellings). The `context`
+        // child IS built when path keys address it — archetyped
+        // `other_context` content and the `_`-attribute families
+        // (`_health_care_facility`, `_participation:i`, `_end_time`,
+        // `_location` — master05 §EVENT_CONTEXT) are tree data; the standard
+        // leaf fields (start_time/setting) still come from ctx/ (the
+        // EVENT_CONTEXT rule above) via `apply_composition_ctx`.
+        // `category` is real tree data (master05 §COMPOSITION) and builds.
         if node.rm_type == "COMPOSITION"
-            && matches!(
-                child.id.as_str(),
-                "language" | "territory" | "composer" | "context"
-            )
+            && matches!(child.id.as_str(), "language" | "territory" | "composer")
         {
             continue;
         }
@@ -554,7 +556,16 @@ pub(crate) fn dv_coded_text(value: &str, terminology: &str, code: &str) -> Value
 }
 
 fn empty_item_tree() -> Value {
-    json!({"_type": "ITEM_TREE", "name": {"_type": "DV_TEXT", "value": "Tree"}, "items": []})
+    // The `at0001` "Any" placeholder keeps the synthesized filler a valid
+    // LOCATABLE (`archetype_node_id` is mandatory; ADL 1.4 master05-cadl
+    // §"Any" Constraints — an unconstrained attribute admits any RM-valid
+    // value).
+    json!({
+        "_type": "ITEM_TREE",
+        "archetype_node_id": "at0001",
+        "name": {"_type": "DV_TEXT", "value": "Tree"},
+        "items": []
+    })
 }
 
 /// Fill the mandatory identity/occurrence fields for a built locatable node.
@@ -746,16 +757,14 @@ fn apply_composition_ctx(
         comp.entry("composer".to_owned())
             .or_insert_with(|| composer.clone());
     }
-    // An event composition carries an EVENT_CONTEXT; a persistent one gets
-    // it only when explicit context content was supplied (RM ehr master05
-    // §"Persistent Compositions may optionally have an Event context").
-    let is_event = comp
-        .get("category")
-        .and_then(|c| c.get("defining_code"))
-        .and_then(|d| d.get("code_string"))
-        .and_then(Value::as_str)
-        == Some("433");
-    if !is_event && !explicit_event_context && !comp.contains_key("context") {
+    // An EVENT_CONTEXT is built only when the client expressed event-context
+    // content (explicit ctx/ keys per master06, or archetyped other_context
+    // tree data) — never fabricated from the category alone. NOTE: no openEHR
+    // spec mandates synthesizing a context; the master06 time/setting
+    // defaults apply when a context is being expressed, and round-trip
+    // stability requires not inventing one (RM ehr master05 §"Persistent
+    // Compositions may optionally have an Event context").
+    if !explicit_event_context && !comp.contains_key("context") {
         return;
     }
     let context = comp
@@ -843,10 +852,13 @@ fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
                     obj.entry("workflow_id".to_owned())
                         .or_insert_with(|| wf.clone());
                 }
-                if !defaults.participations.is_empty() {
-                    obj.entry("other_participations".to_owned())
-                        .or_insert_with(|| json!(defaults.participations));
-                }
+                // NOTE: ctx participations land on the EVENT_CONTEXT only.
+                // master06 §Participation names ENTRY.other_participations as
+                // a second landing site, but the entry-level path form
+                // (`_other_participation:i`, master05 per-entry tables) is the
+                // explicit spelling for entry participations — defaulting the
+                // ctx list onto every entry would duplicate the data on
+                // round-trip, so the path form takes precedence.
             }
             match rm_type.as_str() {
                 "OBSERVATION" => {
