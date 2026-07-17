@@ -317,6 +317,8 @@ fn fhir_provider(base: &str) -> FhirTerminologyProvider {
         connect_timeout_ms: 800,
         request_timeout_ms: 1_500,
         oauth2_client: None,
+        cache_ttl_secs: 0,
+        cache_capacity: 1024,
     };
     FhirTerminologyProvider::new("test-fhir", &cfg).expect("build provider")
 }
