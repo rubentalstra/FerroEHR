@@ -228,41 +228,41 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
         CriterionKind::QuantityRange { min, max, units } => {
             let mut parts = Vec::new();
             if let Some(min) = min {
-                parts.push(compare_real(&at("value/magnitude"), CompOp::Ge, *min)?);
+                parts.push(compare_real(&at("magnitude"), CompOp::Ge, *min)?);
             }
             if let Some(max) = max {
-                parts.push(compare_real(&at("value/magnitude"), CompOp::Le, *max)?);
+                parts.push(compare_real(&at("magnitude"), CompOp::Le, *max)?);
             }
             if !units.is_empty() {
-                parts.push(compare_str(&at("value/units"), CompOp::Eq, units)?);
+                parts.push(compare_str(&at("units"), CompOp::Eq, units)?);
             }
             all_of(parts)
         }
         CriterionKind::CodedIn { codes, terminology } => {
-            coded_in(&at("value/defining_code"), codes, terminology)
+            coded_in(&at("defining_code"), codes, terminology)
         }
-        CriterionKind::TextEquals { text } => compare_str(&at("value/value"), CompOp::Eq, text),
+        CriterionKind::TextEquals { text } => compare_str(&at("value"), CompOp::Eq, text),
         CriterionKind::TextLike { pattern } => Ok(WhereExpr::Identified(IdentifiedExpr::Like {
-            path: parse_path(COMP_VAR, &at("value/value"))?,
+            path: parse_path(COMP_VAR, &at("value"))?,
             operand: openehr_query::ast::LikeOperand::String(escape_string(pattern)),
         })),
         CriterionKind::DateTimeRange { from, to } => {
             let mut parts = Vec::new();
             if !from.is_empty() {
-                parts.push(compare_str(&at("value/value"), CompOp::Ge, from)?);
+                parts.push(compare_str(&at("value"), CompOp::Ge, from)?);
             }
             if !to.is_empty() {
-                parts.push(compare_str(&at("value/value"), CompOp::Le, to)?);
+                parts.push(compare_str(&at("value"), CompOp::Le, to)?);
             }
             all_of(parts)
         }
         CriterionKind::CountRange { min, max } => {
             let mut parts = Vec::new();
             if let Some(min) = min {
-                parts.push(compare_int(&at("value/magnitude"), CompOp::Ge, *min)?);
+                parts.push(compare_int(&at("magnitude"), CompOp::Ge, *min)?);
             }
             if let Some(max) = max {
-                parts.push(compare_int(&at("value/magnitude"), CompOp::Le, *max)?);
+                parts.push(compare_int(&at("magnitude"), CompOp::Le, *max)?);
             }
             all_of(parts)
         }
@@ -271,7 +271,7 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
                 return Err(BuilderError::EmptyOrdinalList);
             }
             Ok(WhereExpr::Identified(IdentifiedExpr::Matches {
-                path: parse_path(COMP_VAR, &at("value/value"))?,
+                path: parse_path(COMP_VAR, &at("value"))?,
                 operand: MatchesOperand::ValueList(
                     values
                         .iter()
@@ -281,17 +281,17 @@ fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
             }))
         }
         CriterionKind::BooleanIs { value } => Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
-            lhs: CompareOperand::Path(parse_path(COMP_VAR, &at("value/value"))?),
+            lhs: CompareOperand::Path(parse_path(COMP_VAR, &at("value"))?),
             op: CompOp::Eq,
             rhs: Terminal::Primitive(Primitive::Boolean(*value)),
         })),
         CriterionKind::ProportionNumeratorRange { min, max } => {
             let mut parts = Vec::new();
             if let Some(min) = min {
-                parts.push(compare_real(&at("value/numerator"), CompOp::Ge, *min)?);
+                parts.push(compare_real(&at("numerator"), CompOp::Ge, *min)?);
             }
             if let Some(max) = max {
-                parts.push(compare_real(&at("value/numerator"), CompOp::Le, *max)?);
+                parts.push(compare_real(&at("numerator"), CompOp::Le, *max)?);
             }
             all_of(parts)
         }
@@ -401,7 +401,7 @@ mod tests {
         SelectedColumn,
     };
 
-    const TEMP_PATH: &str = "content[openEHR-EHR-OBSERVATION.body_temperature.v2]/data[at0002]/events[at0003]/data[at0001]/items[at0004]";
+    const TEMP_PATH: &str = "content[openEHR-EHR-OBSERVATION.body_temperature.v2]/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value";
 
     fn leaf(kind: CriterionKind) -> CriterionNode {
         CriterionNode::Leaf(Criterion {
@@ -425,9 +425,9 @@ mod tests {
             format!(
                 "SELECT c FROM EHR e CONTAINS COMPOSITION c \
                  WHERE c/archetype_details/template_id/value='vitals.v1' \
-                 AND c/{TEMP_PATH}/value/magnitude>=36.0 \
-                 AND c/{TEMP_PATH}/value/magnitude<=38.5 \
-                 AND c/{TEMP_PATH}/value/units='°C' LIMIT 50"
+                 AND c/{TEMP_PATH}/magnitude>=36.0 \
+                 AND c/{TEMP_PATH}/magnitude<=38.5 \
+                 AND c/{TEMP_PATH}/units='°C' LIMIT 50"
             )
         );
         // And the emitted text is grammar-valid.
@@ -439,7 +439,7 @@ mod tests {
         let mut q = BuilderQuery::new(String::new());
         q.shape = QueryShape::DataValues;
         q.columns = vec![SelectedColumn {
-            aql_path: format!("{TEMP_PATH}/value/magnitude"),
+            aql_path: format!("{TEMP_PATH}/magnitude"),
             alias: "temperature".to_owned(),
         }];
         q.order_by = vec![OrderRule {
@@ -451,7 +451,7 @@ mod tests {
         assert_eq!(
             aql,
             format!(
-                "SELECT c/{TEMP_PATH}/value/magnitude AS temperature \
+                "SELECT c/{TEMP_PATH}/magnitude AS temperature \
                  FROM EHR e CONTAINS COMPOSITION c \
                  ORDER BY c/context/start_time/value DESC"
             )
@@ -487,9 +487,9 @@ mod tests {
             aql,
             format!(
                 "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c \
-                 WHERE c/{TEMP_PATH}/value/defining_code/code_string MATCHES {{'at0037', 'at0038'}} \
-                 AND c/{TEMP_PATH}/value/defining_code/terminology_id/value='local' \
-                 AND NOT (c/{TEMP_PATH}/value/value=true OR EXISTS c/{TEMP_PATH})"
+                 WHERE c/{TEMP_PATH}/defining_code/code_string MATCHES {{'at0037', 'at0038'}} \
+                 AND c/{TEMP_PATH}/defining_code/terminology_id/value='local' \
+                 AND NOT (c/{TEMP_PATH}/value=true OR EXISTS c/{TEMP_PATH})"
             )
         );
         openehr_query::parser::parse_str(&aql).unwrap();

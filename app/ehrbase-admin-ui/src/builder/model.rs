@@ -55,9 +55,13 @@ pub enum CriterionNode {
 /// One leaf condition: a path plus a typed constraint.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Criterion {
-    /// The archetype path relative to the COMPOSITION root (Web Template
-    /// `aqlPath`), pointing at the VALUE node the constraint applies to
-    /// (e.g. `…/value/magnitude` is appended per-kind, not stored here).
+    /// The Web Template leaf's `aqlPath` (COMPOSITION-relative). Per the
+    /// Simplified Formats level-removal rules
+    /// (`docs/specs/openehr/ITS-REST/docs/simplified_formats/master04` §Level
+    /// Removal) the promoted leaf IS the `DATA_VALUE` node, so this path
+    /// already ends at the DV instance (e.g. `…/items[at0004]/value`); each
+    /// [`CriterionKind`] appends its DV-attribute suffix (`magnitude`,
+    /// `defining_code/code_string`, …).
     pub aql_path: String,
     /// `NOT` this single condition.
     pub negated: bool,
@@ -74,14 +78,14 @@ pub enum CriterionKind {
     /// optional) + optional units equality — independent `AND`-joined
     /// conditions.
     QuantityRange {
-        /// Lower bound on `…/value/magnitude` (`>=`).
+        /// Lower bound on `…/magnitude` (`>=`).
         min: Option<f64>,
         /// Upper bound (`<=`).
         max: Option<f64>,
-        /// Required `…/value/units` (empty = unconstrained).
+        /// Required `…/units` (empty = unconstrained).
         units: String,
     },
-    /// `DV_CODED_TEXT`: `…/value/defining_code/code_string MATCHES {codes}`
+    /// `DV_CODED_TEXT`: `…/defining_code/code_string MATCHES {codes}`
     /// with optional terminology-id equality.
     CodedIn {
         /// The accepted code strings (at least one).
@@ -89,44 +93,44 @@ pub enum CriterionKind {
         /// Required `…/defining_code/terminology_id/value` (empty = any).
         terminology: String,
     },
-    /// `DV_TEXT`: exact `…/value/value = text`.
+    /// `DV_TEXT`: exact `…/value = text`.
     TextEquals {
         /// The compared text.
         text: String,
     },
-    /// `DV_TEXT`: `…/value/value LIKE pattern` (AQL `*`/`?` wildcards; the
+    /// `DV_TEXT`: `…/value LIKE pattern` (AQL `*`/`?` wildcards; the
     /// UI passes the pattern through verbatim).
     TextLike {
         /// The LIKE pattern.
         pattern: String,
     },
     /// `DV_DATE_TIME` / `DV_DATE` / `DV_TIME`: ISO-8601 string range on
-    /// `…/value/value` (inclusive; either side optional).
+    /// `…/value` (inclusive; either side optional).
     DateTimeRange {
         /// Lower bound (`>=`), ISO-8601 text.
         from: String,
         /// Upper bound (`<=`), ISO-8601 text; empty = open.
         to: String,
     },
-    /// `DV_COUNT`: integer range on `…/value/magnitude`.
+    /// `DV_COUNT`: integer range on `…/magnitude`.
     CountRange {
         /// Lower bound (`>=`).
         min: Option<i64>,
         /// Upper bound (`<=`).
         max: Option<i64>,
     },
-    /// `DV_ORDINAL`: `…/value/value MATCHES {values}` (the ordinal ints).
+    /// `DV_ORDINAL`: `…/value MATCHES {values}` (the ordinal ints).
     OrdinalIn {
         /// Accepted ordinal values (at least one).
         values: Vec<i64>,
     },
-    /// `DV_BOOLEAN`: `…/value/value = b`.
+    /// `DV_BOOLEAN`: `…/value = b`.
     BooleanIs {
         /// The required value.
         value: bool,
     },
     /// `DV_PROPORTION`: numeric range on the computed
-    /// `…/value/numerator` (v1 keeps numerator-only, the common vital-sign
+    /// `…/numerator` (v1 keeps numerator-only, the common vital-sign
     /// use; denominator/type constraints are a recorded follow-up).
     ProportionNumeratorRange {
         /// Lower bound (`>=`).
