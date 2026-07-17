@@ -348,6 +348,15 @@ the REST-only boundary (§5.2) intact.
 
 ### 7.2 Adapt — the Query Builder (the amazing feature), our way
 
+> **Deep UX study (2026-07-17): `docs/design/cabolabs-query-builder-ux.md`**
+> — the full behaviour-level study of the EHRServer builder read from source
+> (end-to-end flow, the exhaustive 13-datatype criteria-widget catalog with
+> operators + inputs + quirks, the binary AND/OR tree mechanics, save/share,
+> a keep/fix synthesis, and the per-widget AQL WHERE mapping incl. the
+> no-clean-AQL flags: `age_in_*`, `in_snomed_exp`, DV_DURATION seconds).
+> It is the W4 input document — ideas only, never a code port — and is
+> deleted with this plan when the console lands.
+
 Cabolabs' point-and-click flow, and how each step lands on our stack:
 
 1. **Pick a template** → the builder lists activated OPTs (Definition API).
@@ -695,9 +704,17 @@ back to the orchestrator, not into improvisation. Conventions that apply to
   `run_aql` (POST `/query/aql` with query + `query_parameters`;
   `fetch=`/`offset=` paging honoured), `store_query` (§7A.5), `export_csv`
   / `export_json` (BFF streams the RESULT_SET transformed server-side).
-- Raw **AQL mode**: same screen, editable text area replaces the builder
-  panes (one-way builder→AQL handoff; hand-edited AQL does not lift back
-  into builder state at v1 — flagged in-UI).
+- Raw **AQL editor** *(owner 2026-07-17: a first-class surface, not just a
+  mode)*: its own route **`/queries/aql`** — the Queries section renders as
+  three tabs: **Stored** (§7A.5) | **Builder** (this screen) | **Raw AQL**.
+  The raw editor shares the builder's validate/run/save/result components:
+  an editable AQL text area (`openehr-query`-validated on the fly, parse
+  errors inline), `query_parameters` key/value rows, the same RESULT_SET
+  pane and "Save as stored query". "Open in editor" on the builder hands
+  its generated AQL across (one-way builder→AQL; hand-edited AQL does not
+  lift back into builder state at v1 — flagged in-UI). Covered by the J4
+  AQL-mode assertions and the §8e screenshot set (slug `query-aql`, 11
+  shots total).
 - States: criteria widget for an unsupported `rmType` = explicit
   "unsupported at v1" chip (never a silent skip); CDR query errors (bad
   AQL → 400 with diagnostics) render under the preview; result paging
@@ -833,6 +850,7 @@ back to the orchestrator, not into improvisation. Conventions that apply to
 | `/templates/{id}` | `fetch_template_opt`, `fetch_webtemplate`, `fetch_example` | J3 |
 | `/queries` | `list_stored_queries`, `store_query`, `run_stored_query` | J4 |
 | `/queries/builder` | `validate_aql`, `run_aql`, `export_*` | J4 |
+| `/queries/aql` (raw editor tab) | `validate_aql`, `run_aql`, `store_query`, `export_*` (shared) | J4 |
 | `/ehrs` | `find_ehr`, `list_ehrs` | J5 |
 | `/ehrs/{id}` | `fetch_ehr`, `fetch_ehr_status`, `fetch_directory`, `list_compositions`, `list_contributions` | J5 |
 | `…/compositions/{uid}` | `fetch_composition`, `fetch_versions`, `fetch_at_version` | J5 |
