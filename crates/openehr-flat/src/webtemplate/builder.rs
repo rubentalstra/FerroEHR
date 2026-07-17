@@ -210,7 +210,9 @@ impl Labels for ArchetypeLabels<'_> {
 ///
 /// # Errors
 /// [`crate::error::FlatError::InvalidTemplate`] if the template lacks a template id.
-pub fn build_web_template(opt: &OperationalTemplate) -> Result<WebTemplate, crate::error::FlatError> {
+pub fn build_web_template(
+    opt: &OperationalTemplate,
+) -> Result<WebTemplate, crate::error::FlatError> {
     let template_id = opt.template_id.value.clone();
     if template_id.is_empty() {
         return Err(crate::error::FlatError::InvalidTemplate(

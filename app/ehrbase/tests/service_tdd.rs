@@ -139,7 +139,10 @@ async fn tdd_import_rejects_unknown_ehr() {
     let svc = EhrbaseService::new(pg.migrated_pool("tdd_no_ehr").await);
 
     let err = svc
-        .import_tdd(ehrbase::ids::EhrId::new(), tdd("persistent_minimal.en.v1__full.xml"))
+        .import_tdd(
+            ehrbase::ids::EhrId::new(),
+            tdd("persistent_minimal.en.v1__full.xml"),
+        )
         .await
         .expect_err("a TDD for a non-existent EHR must be rejected");
     assert_eq!(

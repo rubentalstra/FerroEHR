@@ -44,7 +44,6 @@ mod common;
 use http::{Request, StatusCode};
 use serde_json::{Value, json};
 use tower::ServiceExt;
-use uuid::Uuid;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const EHR_ID: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";

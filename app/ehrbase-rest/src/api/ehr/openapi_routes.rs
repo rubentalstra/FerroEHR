@@ -326,7 +326,7 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
     post, path = "/ehr/{ehr_id}/composition", tag = "COMPOSITION",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     request_body(
-        
+
         // COMPOSITION content negotiates canonical JSON/XML + the two Simplified
         // Formats (Resources.md §Simplified Formats; simplified_formats/master05).
         content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json")),
@@ -334,7 +334,7 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
                        (the `openehr-template-id` header is required for a simplified body)."
     ),
     responses((
-        status = 201, description = "Created.", 
+        status = 201, description = "Created.",
         content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
     ))
 )]
@@ -362,7 +362,7 @@ pub(crate) async fn composition_create(
     ),
     responses(
         (
-            status = 200, description = "The COMPOSITION.", 
+            status = 200, description = "The COMPOSITION.",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
         (status = 404, description = "Not found.", body = serde_json::Value)
@@ -391,13 +391,13 @@ pub(crate) async fn composition_get(
         ("uid_based_id" = String, Path, description = "The composition uid.")
     ),
     request_body(
-        
+
         content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json")),
         description = "A COMPOSITION in canonical JSON/XML or a Simplified Format \
                        (the `openehr-template-id` header is required for a simplified body)."
     ),
     responses((
-        status = 200, description = "Updated.", 
+        status = 200, description = "Updated.",
         content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
     ))
 )]
@@ -676,7 +676,7 @@ pub(crate) async fn directory_get_by_version_id(
     post, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(("ehr_id" = String, Path, description = "The EHR id.")),
     request_body(
-        
+
         // The envelope is always canonical JSON; a Simplified media type selects
         // the inner `versions[i].data` COMPOSITION form (contribution_create.yaml
         // §Simplified Formats). No canonical-XML CONTRIBUTION wire shape exists.
@@ -685,7 +685,7 @@ pub(crate) async fn directory_get_by_version_id(
                        may be a Simplified Format with the `openehr-template-id` header)."
     ),
     responses((
-        status = 201, description = "Created.", 
+        status = 201, description = "Created.",
         content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
     ))
 )]
@@ -713,7 +713,7 @@ pub(crate) async fn contribution_create(
     ),
     responses(
         (
-            status = 200, description = "The CONTRIBUTION.", 
+            status = 200, description = "The CONTRIBUTION.",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
         (status = 404, description = "Not found.", body = serde_json::Value)
