@@ -634,7 +634,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "benchmark"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -1292,7 +1292,7 @@ dependencies = [
 
 [[package]]
 name = "conformance"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -2053,7 +2053,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "assert_fs",
  "async-trait",
@@ -2116,7 +2116,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-rest"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "arc-swap",
  "argon2",
@@ -2165,7 +2165,7 @@ dependencies = [
 
 [[package]]
 name = "ehrbase-server"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -4393,7 +4393,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-codegen"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "roxmltree",
  "serde_json",
@@ -4402,7 +4402,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-derive"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4413,7 +4413,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-flat"
-version = "3.0.3"
+version = "3.1.0"
 dependencies = [
  "fancy-regex",
  "indexmap 2.14.0",
