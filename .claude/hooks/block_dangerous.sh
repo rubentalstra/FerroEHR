@@ -4,7 +4,7 @@
 # Claude Code PreToolUse hook (matcher: Bash). Blocks destructive commands:
 #   - rm -rf / rm -fr (delete specific files, use git rm, or work under /tmp)
 #   - force-pushes touching main/master/develop, and bare force-pushes
-#   - deletion of docs/plans/current-phase.md or README.md (the live pointer + guide)
+#   - deletion of docs/plans/WORKLIST.md or README.md (the single tracker + guide)
 #   - deletion of the read-only reference/v1 ref (Stage 2 archaeology source)
 #
 # Reads the tool-call JSON on stdin. Exit 2 blocks; exit 0 allows.
@@ -43,8 +43,8 @@ fi
 
 # Never delete the live phase pointer or the plans guide. Completed phase files
 # may be pruned once their close is recorded in docs/PROGRESS.md.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])(git[[:space:]]+rm|rm)[^;|&]*docs/plans/(current-phase\.md|README\.md)'; then
-  echo "BLOCKED: docs/plans/current-phase.md and docs/plans/README.md are the live pointer + guide and must not be deleted. Completed phase files may be pruned once recorded in docs/PROGRESS.md." >&2
+if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])(git[[:space:]]+rm|rm)[^;|&]*docs/plans/(WORKLIST\.md|README\.md)'; then
+  echo "BLOCKED: docs/plans/WORKLIST.md and docs/plans/README.md are the single tracker + guide and must not be deleted. Implemented plan files are deleted in the PR that lands them." >&2
   exit 2
 fi
 

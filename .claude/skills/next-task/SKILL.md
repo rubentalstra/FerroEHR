@@ -1,26 +1,25 @@
 ---
 name: next-task
 description: >
-  Reads the current phase file, picks the first unchecked task, and restates
-  it as a concrete in-session work plan naming the files and crates involved.
-  Use when the user asks "what's next" or "what should I work on".
+  Reads the worklist, picks the top open row (or the row the user names),
+  and restates it as a concrete in-session work plan naming the files and
+  crates involved. Use when the user asks "what's next" or "what should I
+  work on".
 allowed-tools: [Read, Grep, Glob]
 argument-hint: (none)
 ---
 
 # /next-task
 
-Turns the top of the current phase's task list into an actionable plan —
-step 2 of the six-step loop (`CLAUDE.md`). Does not do the work itself; that
+Turns the top open worklist row into an actionable plan — the planning step
+of the worklist workflow (`CLAUDE.md`). Does not do the work itself; that
 is a separate step the caller takes after seeing the plan.
 
 ## Steps
 
-1. **Read `docs/plans/current-phase.md`** to find the active phase file.
-2. **Read that phase file** and find the first unchecked (`- [ ]`) line
-   under `## Tasks`. If every task is checked but `## Exit criteria` has
-   unchecked lines, surface those instead and suggest `/phase-done` once
-   they are all verified.
+1. **Read `docs/plans/WORKLIST.md`** and take the first row of the `## Open`
+   table (or the row the user named). If the row points at an open plan
+   file, read that file too; its unchecked (`- [ ]`) tasks are the queue.
 3. **Turn the task into a plan**, stating:
    - **What** the task requires, in one or two sentences.
    - **Which files** are involved — search for them (Grep/Glob under
@@ -45,5 +44,5 @@ is a separate step the caller takes after seeing the plan.
    - **What "done" looks like** for this task specifically, distinct from
      the phase's overall exit criteria — including which ECC cases, fidelity
      gates, or corpus tests prove it.
-4. **Do not tick the checkbox or commit** — that happens after the work is
-   actually done (steps 4-5 of the loop), not as part of planning it.
+4. **Do not update the worklist row or commit** — that happens after the
+   work is actually done, not as part of planning it.

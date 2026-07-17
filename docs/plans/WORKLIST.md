@@ -1,8 +1,10 @@
 # Worklist — the single open-items tracker
 
 Owner-requested (2026-07-12): every open work item lives HERE, one row each,
-with status + the governing plan/branch. `current-phase.md` points at this
-file; close a row by linking the merged PR. Never track work only in chat.
+with status + the governing plan/branch. **This file is the single entry
+point** (the former `current-phase.md` pointer was retired 2026-07-17);
+close a row by linking the merged PR, and delete the row's plan file in the
+PR that implements it. Never track work only in chat.
 Fully refreshed 2026-07-16 (post platform-rewrite; stale rows pruned to the
 closed table at the bottom).
 

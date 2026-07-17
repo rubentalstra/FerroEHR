@@ -38,16 +38,16 @@ change.
 - **NOT generated** (hand-written): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-query` (AQL lexer/parser/AST), `openehr-flat` (Simplified Formats), and the `ehrbase-*` application crates (idiomatic Rust of our own design on the generated crates).
 - **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md`). These are the latest published spec versions — the conformance target.
 
-## Phase workflow (the loop)
+## Worklist workflow (the loop)
 
-1. Read `docs/plans/current-phase.md`.
-2. Pick the next unchecked task in the referenced phase file.
+1. Read `docs/plans/WORKLIST.md` — the single entry point and open-items tracker.
+2. Pick the top open row (or the row the user names); if it points at a plan file, its unchecked tasks are the queue.
 3. Do the work. **First read the governing spec sections** under `docs/specs/openehr/` for anything spec-facing (`/spec-lookup`; hard rule below). The orchestrator keeps the critical path in-session (build in the open so it can be watched and corrected) and may fan bounded implementation/research out per the Model-orchestration section, handing each agent the relevant spec paths. For the openEHR **spec** layer, change the generator and regenerate (never hand-write spec classes — see Code generation above). For the **application** (`ehrbase-*`), build **idiomatic modern Rust of our own design on the generated `openehr-*` crates**, with the openEHR specs as the authority (EHRbase/other CDRs as prior art via their upstream repos when useful). Build compiling, tested increments.
-4. Tick the task `- [ ]` to `- [x]` and add a one-line note.
-5. Commit as `phase-NN: <task>` on a `claude/phase-NN-*` branch.
-6. When the phase's exit criteria are all met, run `/phase-done`, update `docs/PROGRESS.md`, and advance `current-phase.md`.
+4. Update the worklist row (and tick plan-file checkboxes) with a one-line note.
+5. Commit on a `claude/*` branch with a descriptive subject.
+6. When the row's exit criteria are all met, run `/phase-done`: record the close in `docs/PROGRESS.md`, move the row to the WORKLIST Closed table with the PR link, and DELETE the implemented plan file in that same PR.
 
-Checkboxes on disk survive `/clear` and `/compact`; the built-in todo tool is session-scoped, so the phase files are the durable layer.
+The worklist on disk survives `/clear` and `/compact`; the built-in todo tool is session-scoped, so `docs/plans/` is the durable layer.
 
 ## Model orchestration (workflows & subagents)
 
@@ -195,19 +195,18 @@ integration, conformance, optimization, cutover.
 - **Delete a plan/design markdown in the PR that implements it (owner hard rule, 2026-07-17).** Internal markdown is working material, not a record: once its content has landed, the file goes — the durable record is `docs/PROGRESS.md`, `CHANGELOG.md`, git history, and the living reference docs (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`). Keeping implemented docs breeds stale claims and conflicts.
 - **Never hand-edit a `// @generated` file.** The generated spec crates (`openehr-base`, `openehr-rm`, `openehr-am`) are produced by `openehr-codegen`; edit the emitter or the `*_impl.rs` sibling and regenerate, never the generated file itself.
 - **Pending work is marked ONLY with the official `TODO` form (owner hard rule, 2026-07-17):** `// TODO:` or a scoped `// TODO(perf):` etc. — tool-recognized, IDE-highlighted, CI-greppable. The retired bespoke `(port)` vocabulary (`TODO(port)`, `PERF(port)`, `PORT NOTE`, `PORT STATUS`) is banned and CI-enforced (the `comment-markers` guard). A deliberate spec-silent design decision is a plain `// NOTE:` comment carrying the spec citation or the explicit "no openEHR spec governs this — our own design/extension" flag — it is documentation, never pending work. `// SAFETY:` stays reserved for `unsafe` (which is `forbid`den anyway).
-- **Branches are `claude/*`.** Never force-push `main`. Never delete `docs/plans/current-phase.md` or `docs/plans/README.md`; completed phase files may be pruned once their close is recorded in `docs/PROGRESS.md`.
+- **Branches are `claude/*`.** Never force-push `main`. Never delete `docs/plans/WORKLIST.md` or `docs/plans/README.md` (the single tracker + the lifecycle guide); implemented plan files are DELETED in the PR that lands them, with the close recorded in `docs/PROGRESS.md`.
 - **NEVER add AI/Claude attribution to commits or PRs. This is an absolute rule with no exceptions.** Do not add a `Co-Authored-By: Claude` trailer (or any co-author trailer). Do not write "Generated with Claude Code", "🤖 Generated with...", "Co-authored-by: Claude", or any similar line, emoji, or footer in a commit message, commit body, commit trailer, PR title, PR description, PR comment, issue, or code comment. Commit messages and PR text describe only the change itself. If you ever find yourself about to add such a line, stop and remove it. When configuring git or opening PRs, do not pass any flag or template that injects attribution.
 - **Keep the changelog** (`CHANGELOG.md`, Keep a Changelog 1.1.0): every PR with user-visible changes adds an `[Unreleased]` entry in the same PR — CI (`changelog-guard`) enforces it; releases are cut from the changelog (see `.claude/rules/changelog.md`). The `openehr-*` spec crates are versioned by the spec they implement; the product/workspace follows its own SemVer (3.x).
 - **User docs track the product.** Any PR that changes the REST surface, configuration (`EHRBASE_*`), the CLI, deployment artifacts (compose/Helm/containers), or other user-visible behaviour must update the matching `website/book/src` page in the same PR (see `.claude/rules/docs-website.md`). Never hand-edit `website/api/spec/**` — run `scripts/assemble-oas.sh` (CI drift gate).
 - **Never weaken, skip, or delete a test** to make a build pass, and never edit a test to route around a bug it exposes.
 - **Reliability hard rules are machine-enforced** (`.claude/rules/reliability.md`, owner 2026-07-17): every safety rule pairs with the lint/CI check that fails on violation — a rule without a failing check is a wish. Register: `docs/plans/design-principles.md`.
-- **Tick the phase checkbox and commit before ending a session.** A `Stop` hook enforces this.
+- **Update the worklist and commit before ending a session.** A `Stop` hook enforces this.
 - **Application phases build as compiling, tested increments** on top of the generated `openehr-*` crates — do not defer compilation. (The old "phases need not compile" rule applied only to the retired hand-transcription era.)
 - The v1 enterprise code (RBAC and others) is a Stage 2 concern. Do not build it during Stage 1; it lives only as the read-only `reference/v1` git ref until then.
 
 ## References
 
-- @docs/plans/current-phase.md (what's next + the goal)
 - @docs/architecture.md (the current design)
 - @docs/VERSIONS.md + @docs/postgres-features.md (pins + the PG 17/18 features we use)
 - @ROADMAP.md (the product roadmap) + @docs/plans/WORKLIST.md (the single open-items tracker)
