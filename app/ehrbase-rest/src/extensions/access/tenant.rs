@@ -19,7 +19,7 @@
 
 use axum::extract::{Request, State};
 use axum::middleware::Next;
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 
 use crate::extensions::access::authn::current_principal;
 use crate::extensions::access::authz::roles::claim_string;
@@ -41,10 +41,19 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         .map(str::to_owned)
         .or_else(|| current_principal().and_then(|p| claim_string(&p.claims, &cfg.claim)));
 
-    // Resolve to a context. A resolution error or an unknown key leaves the
-    // request unscoped (default tenant) — an engine-level empty set, not a 403.
+    // Resolve to a context. An UNKNOWN key leaves the request unscoped
+    // (default tenant) — an engine-level empty set, not a 403 (documented
+    // policy; the resolver negative-caches the outcome). A resolution ERROR
+    // (registry unreachable ≠ unknown tenant) must NEVER silently fall
+    // through to the default tenant — it answers 503 like any other
+    // dependency failure, with the standard openEHR error body.
     let ctx = match key {
-        Some(k) => state.backend().tenant_resolve(&k).await.ok().flatten(),
+        Some(k) => match state.backend().tenant_resolve(&k).await {
+            Ok(ctx) => ctx,
+            Err(e) => {
+                return crate::overview::error::RestError::from(e).into_response();
+            }
+        },
         None => None,
     };
 

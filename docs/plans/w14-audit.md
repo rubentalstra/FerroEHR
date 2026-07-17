@@ -531,7 +531,7 @@ open rows feed the next fix wave.
 | F-49 | DEFECT (minor, fhir outbound): cursor write is last-writer-wins (`UPDATE … SET last_seq = $1` without `WHERE last_seq < $1`) — two emitter instances can regress the cursor (unbounded duplicate emission; at-least-once still holds). Add the monotonic guard. | `extensions/fhir/outbound.rs` cursor advance | **S** | ☐ |
 | F-50 | DEFECT (minor): `serde_json::to_vec(...).unwrap_or_default()` in events `build_payload` + fhir outbound would publish a zero-byte message on a (practically unreachable) serialization failure — silent. Surface the error instead. Same pattern: `adl2_template_list` blanks a row field on decode failure (the one F-29 site the rewrite kept). | `extensions/events/`, `extensions/fhir/outbound.rs`, `service/definition/adl2.rs` | **S** | ☐ |
 | F-51 | Demographic asymmetries observed (ported as-is, decide once): (a) relationship create/update serve the in-memory body with no multimedia-externalization gate (party paths re-read when offloading is on — a relationship's `details` CAN carry DV_MULTIMEDIA); (b) `party_relationship_latest_meta` carries no `last_modified` while the party variant does (adapter emits Last-Modified for one, not the other); (c) `get_party_at_time` returns a `Null` body instead of the not-found error when the version at that instant is deleted; (d) `party_tags_get`/`party_tags_delete` ignore their kind argument (tags on a PERSON readable via the /agent route). | `service/demographic/{relationship,api,versioned,tags}.rs` (agent report, demographic) | (a)(b) **S**; (c)(d) triage against ITS-REST demographic + SM master04 before fixing | ☐ |
-| F-52 | Versioning/import: the synthetic `sys_period` chain anchors on the app clock (`Timestamp::now()`) while contribution audits use the DB transaction timestamp — clock skew can produce an invalid tstzrange on `close_lineage_at` or a chain inconsistent with `import_time`. Derive the base from the DB `tx_now`. Also: `AuditInput::from_update`'s committer-serialize fallback silently masks a failure (unreachable today; make it an error). | `versioning/import.rs`, `versioning/audit.rs` | **S** (storage mechanics; import semantics RM ehr_extract-adjacent — re-check §Import on fix) | ☐ |
+| F-52 | Versioning/import: the synthetic `sys_period` chain anchors on the app clock (`Timestamp::now()`) while contribution audits use the DB transaction timestamp — clock skew can produce an invalid tstzrange on `close_lineage_at` or a chain inconsistent with `import_time`. Derive the base from the DB `tx_now`. Also: `AuditInput::from_update`'s committer-serialize fallback silently masks a failure (unreachable today; make it an error). | `versioning/import.rs`, `versioning/audit.rs` | **S** | ✅ fixed 2026-07-17: the import chain anchors on the DB transaction timestamp (the audit insert's returned import_time), never the app clock; the committer-serialize fallback logs at error level |
 | F-53 | Telemetry: `atna_audit_serialize_failed_total` (the F-20 counter) missing from `prometheus::catalog()` whose doc claims completeness — the counter is now cataloged and the snapshot moved with its test (✅ 2026-07-17). STILL OPEN (minor): `telemetry::samplers::acquire` is an unadopted seam — `db_pool_acquire_duration_seconds` never records until a hot path adopts it. | `telemetry/prometheus.rs`, `telemetry/samplers.rs` | **S** | ◐ |
 | F-55 | **DEFECT (spec MUST, found by the W-15 endpoint-map trace 2026-07-16): the demographic WIRE seam drops the committal headers** — `api/demographic/*` write dispatch passes `update_audit = None` into `commit_party_update`/`commit_party_delete`, so `openEHR-VERSION.*`/`openEHR-AUDIT_DETAILS.*` merge only on the SM-native `create_party/update_party(UpdateVersion)` path, never on the REST wire (a doc comment on `commit_new_party` claims otherwise). Same class as the fixed composition defect; fix = thread the parsed committal envelope through the demographic dispatcher like the EHR-API paths do, with a wire test per shape. Also from the same trace: per-kind `tags_get`/`tags_delete` skip the party-existence gate (extends the demographic-asymmetry row), `replace_party_tags`' `ensure_party` pays a full node reassembly where the lean meta resolve would do, and by-id relationship version reads set no ETag while at-time reads do. | `api/demographic/` dispatch → `service/demographic/api.rs`; the trace: `docs/endpoint-map.md` §Demographic | **M** — ITS-REST overview committal-header MUST; demographic wire is our extension surface but carries the same overview contract | ✅ fixed 2026-07-17 (audit threaded through party + relationship wire and SM seams; wire test `demographic_committal_headers_merge_into_the_commit`); the tags/ensure_party/ETag sub-items stay open |
 | F-56 | OPT (found by the W-15 trace): `versioned_composition_get` pays a FULL `read_current` (body reassembly included, then discarded) purely as an ownership gate before its 1-statement `time_created` read — the only metadata-shaped response on the surface paying a body read; the EHR_STATUS counterpart already uses the lean `current_vo` resolve. Swap in the lean resolve. | `service/ehr/composition.rs` versioned-composition read; trace: `docs/endpoint-map.md` §EHR | **S** | ✅ fixed 2026-07-17 (`vo_owner` scalar gate) |
@@ -602,7 +602,10 @@ full platform rewrite):**
 
 **Wave 3 — read-path + N+1 + caches — LARGELY DONE (rewrite), remainder open:**
 - [x] F-7 EHR GET: `ehr_summary_read` — one merged statement.
-- [ ] F-8 promote template_id to the version row; kill the ABAC double-read.
+- [x] F-8 (2026-07-17): `template_id` was already promoted to the version
+      row by the rewrite — the ABAC resolver now reads that scalar
+      (`template_id_of`) instead of a full version read + reassembly per
+      authorization check; the versioning read struct dropped its dead field.
 - [~] F-9: the redundant reassemble re-sort is gone (linear is_sorted
       check; both producers deliver num order — 2026-07-17). OPEN: the
       2-round-trip version-row + node fetch merge (one CTE/LATERAL).
@@ -610,12 +613,26 @@ full platform rewrite):**
       dedupe preserved; 2026-07-17). — [x] F-37 relationship writes aligned with
       the lean `CurrentRelationship` threading + in-memory responses
       (demographic rewrite). — [ ] F-28 minor extra-read trio.
-- [ ] F-26 push matching-list filters into SQL. — [x] F-38 template example
+- [x] F-26 re-triaged 2026-07-17, resolved by analysis: the stored-query
+      list projections of `query_text` are LOAD-BEARING (the OAS `StoredQuery`
+      item schema carries `q`); and the matching lists' in-memory regex is the
+      deliberate RE2-dialect choice (pushing `~` into PG would change the
+      accepted pattern dialect to POSIX ERE) over registry-sized tables —
+      no code change. — [x] F-38 template example
       cold-cache double read eliminated (templates rewrite; store write path
-      also folded 3→1 statements). — [ ] F-21/F-33 tenant seam redesign
-      (negative cache, targeted invalidation, error ≠ unscoped). — [ ] F-39
-      TTL cache on the FHIR terminology provider.
-- [ ] F-10 plan-cache for terminology queries (post-expansion keying).
+      also folded 3→1 statements). — [x] F-21/F-33 tenant seam redesigned (2026-07-17): bounded moka
+      cache (10k, TTL 300 s) with NEGATIVE entries (a bogus key = one
+      registry read per window), and a resolution ERROR answers 503 with
+      the openEHR body instead of silently proceeding on the default
+      tenant; CRUD writes still invalidate all (rare admin ops, TTL bounds
+      convergence). — [x] F-39
+      TTL response cache at the FHIR provider seam (config knobs, wiremock
+      expect(1) test; 2026-07-17 — also the safe form of F-10's win: the
+      remote round trips are what re-expansion cost).
+- [x] F-10 addressed via the F-39 provider cache (2026-07-17): the remote
+      TS round trips were the re-expansion cost; plans with terminology
+      operands stay deliberately out of the text-keyed plan cache (a resolved
+      expansion may change — correctness over cache hits).
 
 **Wave 4 — background/admin + instrument:**
 - [x] F-19 FHIR outbound poison-row parking (retry budget + dead-letter to

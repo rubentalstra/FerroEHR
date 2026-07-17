@@ -87,6 +87,11 @@ pub struct FhirTerminologyProvider {
     operation: FhirOperation,
     /// The configured provider name (for error/log context).
     name: String,
+    /// TTL-bounded response cache keyed by the full operation URL (`None`
+    /// when disabled). Caches the decoded JSON of successful responses —
+    /// including the 404 "unknown resource" outcome — so a validation burst
+    /// over the same codes costs one remote round trip per TTL window.
+    cache: Option<moka::future::Cache<String, Option<serde_json::Value>>>,
 }
 
 impl FhirTerminologyProvider {
@@ -112,11 +117,18 @@ impl FhirTerminologyProvider {
                     "building terminology client for provider '{name}': {e}"
                 ))
             })?;
+        let cache = (cfg.cache_ttl_secs > 0).then(|| {
+            moka::future::Cache::builder()
+                .max_capacity(cfg.cache_capacity)
+                .time_to_live(Duration::from_secs(cfg.cache_ttl_secs))
+                .build()
+        });
         Ok(Self {
             client,
             base,
             operation: cfg.operation,
             name: name.to_owned(),
+            cache,
         })
     }
 
@@ -147,6 +159,20 @@ impl FhirTerminologyProvider {
                 pairs.append_pair(k, v);
             }
         }
+        if let Some(cache) = &self.cache
+            && let Some(hit) = cache.get(url.as_str()).await
+        {
+            return match hit {
+                Some(body) => serde_json::from_value(body).map(Some).map_err(|e| {
+                    SmError::exception(format!(
+                        "terminology provider '{}' {op_path}: cached response decode: {e}",
+                        self.name
+                    ))
+                }),
+                None => Ok(None),
+            };
+        }
+        let cache_key = url.as_str().to_owned();
         let response = self
             .client
             .get(url)
@@ -156,6 +182,9 @@ impl FhirTerminologyProvider {
             .map_err(|e| self.transport_error(op_path, &e))?;
         let status = response.status();
         if status == reqwest::StatusCode::NOT_FOUND || status == reqwest::StatusCode::GONE {
+            if let Some(cache) = &self.cache {
+                cache.insert(cache_key, None).await;
+            }
             return Ok(None);
         }
         if !status.is_success() {
@@ -165,13 +194,21 @@ impl FhirTerminologyProvider {
                 status.as_u16()
             )));
         }
-        let parsed = response.json::<T>().await.map_err(|e| {
+        let body = response.json::<serde_json::Value>().await.map_err(|e| {
             SmError::exception(format!(
                 "terminology provider '{}' {op_path}: malformed FHIR response: {e}",
                 self.name
             ))
         })?;
-        Ok(Some(parsed))
+        if let Some(cache) = &self.cache {
+            cache.insert(cache_key, Some(body.clone())).await;
+        }
+        serde_json::from_value(body).map(Some).map_err(|e| {
+            SmError::exception(format!(
+                "terminology provider '{}' {op_path}: malformed FHIR response: {e}",
+                self.name
+            ))
+        })
     }
 
     /// A classified transport-fault exception (timeout / connect / other).
@@ -683,6 +720,8 @@ mod tests {
             connect_timeout_ms: 100,
             request_timeout_ms: 100,
             oauth2_client: None,
+            cache_ttl_secs: 0,
+            cache_capacity: 1024,
         };
         assert!(FhirTerminologyProvider::new("p", &cfg).is_err());
     }
