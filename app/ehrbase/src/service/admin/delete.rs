@@ -139,6 +139,9 @@ impl EhrbaseService {
     /// our own design (no openEHR spec governs bulk-delete internals); a
     /// partial success is observable at the REST edge.
     async fn delete_ehr_set(&self, ehr_ids: &[Uuid]) -> Result<u64, ServiceError> {
+        // Chunking bounds each transaction's lock/WAL footprint on a
+        // full-store wipe.
+        const CHUNK: usize = 128;
         // An empty selector = the full EHR set (see `admin_ehr_delete_all`); a
         // non-empty selector deletes exactly the named EHRs.
         let targets: Vec<Uuid> = if ehr_ids.is_empty() {
@@ -148,12 +151,10 @@ impl EhrbaseService {
         } else {
             ehr_ids.to_vec()
         };
-        // Batched: three set statements per CHUNK instead of a per-EHR
-        // transaction loop. Chunking bounds each transaction's lock/WAL
-        // footprint on a full-store wipe; a missing id simply deletes zero
-        // rows (idempotent bulk, same semantics as before). `DELETE …
-        // RETURNING id` counts the EHRs actually removed.
-        const CHUNK: usize = 128;
+        // Batched: three set statements per chunk instead of a per-EHR
+        // transaction loop; a missing id simply deletes zero rows (idempotent
+        // bulk, same semantics as before). `DELETE … RETURNING id` counts the
+        // EHRs actually removed.
         let mut deleted = 0u64;
         for chunk in targets.chunks(CHUNK) {
             let candidate_blobs = self.collect_blob_keys_for(chunk).await?;
