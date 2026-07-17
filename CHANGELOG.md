@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-07-17
+
+### Fixed
+
+- The release pipeline attaches the per-architecture server binary tarballs
+  again: since the crate consolidation the binary is produced by the
+  `ehrbase-server` package (the executable is still named `ehrbase`), but
+  the release asset build still compiled the `ehrbase` platform library and
+  failed — v3.1.0 published without binary assets. Container images were
+  not affected. Use v3.1.1 for downloadable binaries.
+
 ## [3.1.0] - 2026-07-17
 
 ### Changed
@@ -694,7 +705,8 @@ but has not yet run in production.
 - Helm chart with security-hardened defaults (non-root, read-only rootfs,
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.3...v3.1.0
 [3.0.3]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.1...v3.0.2
