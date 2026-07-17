@@ -32,8 +32,13 @@ workflow refuses a tag that has no matching section here.
   formats, and simplified support on CONTRIBUTION payloads
   (`versions[].data`) with the envelope staying canonical.
 - Committing a composition in a simplified format now requires the
-  `openehr-template-id` request header (`422` without it); the undocumented
-  `template_id` query parameter is no longer read.
+  `openehr-template-id` request header (`422` without it, previously `400`);
+  the undocumented `template_id` query parameter is no longer read.
+- Content negotiation is strict everywhere: an `Accept` header that none of
+  an endpoint's supported formats can satisfy is answered with `406`
+  (previously some JSON-only endpoints leniently returned JSON), and the
+  server's own generated OpenAPI now advertises the simplified media types
+  on the composition, contribution, and template endpoints.
 
 ### Removed
 
