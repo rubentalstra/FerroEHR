@@ -305,12 +305,8 @@ mod tests {
             load_factor: 1.0,
             seed: 3,
         };
-        let w = build_capacity(
-            &smoke_spec,
-            Duration::from_mins(2),
-            Duration::from_secs(15),
-        )
-        .expect("capacity");
+        let w = build_capacity(&smoke_spec, Duration::from_mins(2), Duration::from_secs(15))
+            .expect("capacity");
         assert!(
             measured_small_writes(&w) > 200,
             "capacity must use the Hour rate shape, not the fixed smoke counts"

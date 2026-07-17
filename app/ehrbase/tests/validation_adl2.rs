@@ -74,9 +74,8 @@ terminology
 "#;
 
 fn expect_code(src: &str, code: &str) {
-    let Adl2Violation { code: got, detail } = validate_adl2_source(src)
-        .err()
-        .expect("expected a violation");
+    let Adl2Violation { code: got, detail } =
+        validate_adl2_source(src).expect_err("expected a violation");
     assert_eq!(got, code, "expected {code}, got {got}: {detail}");
 }
 
