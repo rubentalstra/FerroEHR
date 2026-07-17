@@ -74,6 +74,10 @@ pub async fn login_basic(
 
 /// Destroy the session and land on `/login`.
 ///
+/// NOTE: deliberately not guarded by `require_session` — flushing the
+/// caller's own cookie-scoped session is idempotent and leaks nothing; an
+/// unauthenticated call is a harmless no-op redirect.
+///
 /// # Errors
 /// [`AdminUiError::Internal`] on a session-store failure.
 #[server]

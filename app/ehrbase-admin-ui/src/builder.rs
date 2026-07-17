@@ -7,5 +7,6 @@
 //! API. Compiles on both targets; the UI manipulates this state in WASM
 //! and the BFF validates through the same code.
 
+pub mod catalog;
 pub mod lower;
 pub mod model;

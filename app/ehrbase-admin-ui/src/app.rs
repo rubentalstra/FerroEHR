@@ -1,9 +1,16 @@
-//! The root Leptos application: HTML shell, router, and (for now) the W0
-//! thaw smoke-test page — replaced by the real §7A shell in W2.
+//! The root Leptos application: the HTML document shell, the theme provider,
+//! and the §7A route tree. `/login` is public; every other screen is nested
+//! under the session-guarded [`crate::pages::shell::AppShell`] layout, which
+//! renders the matched child through its `<Outlet/>`.
+//!
+//! Screens not yet built (dashboard, templates, queries, EHRs and their
+//! detail routes) render a small [`Placeholder`] card naming the stage that
+//! delivers them (W3 browse surfaces, W4 query-builder + dashboard). Every
+//! routed view — placeholders included — sets its own `<Title/>`.
 
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
-use leptos_router::components::{Route, Router, Routes};
+use leptos_router::components::{ParentRoute, Route, Router, Routes};
 use leptos_router::path;
 
 /// The full HTML document shell rendered by the server.
@@ -26,7 +33,11 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
     }
 }
 
-/// The root component: meta context, theme provider, routes.
+/// The root component: meta context, the `thaw` theme/config provider, and the
+/// router. The `theme_id` is fixed (never the component's default random
+/// UUID) so the server pass and client hydration emit an identical
+/// `data-thaw-id` and generated-style selector — a hydration-determinism
+/// requirement (rules §8).
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn App() -> impl IntoView {
@@ -34,60 +45,104 @@ pub fn App() -> impl IntoView {
     view! {
         <Stylesheet id="leptos" href="/pkg/ehrbase-admin-ui.css" />
         <Title text="ehrbase-admin" />
-        <thaw::ConfigProvider>
+        <thaw::ConfigProvider theme_id="ehrbase-admin".to_owned()>
             <Router>
-                <Routes fallback=|| "Not found.">
-                    <Route path=path!("/") view=SmokeTest />
+                <Routes fallback=|| view! { <NotFound /> }>
+                    <Route path=path!("/login") view=crate::pages::login::LoginPage />
+                    <ParentRoute path=path!("") view=crate::pages::shell::AppShell>
+                        <Route
+                            path=path!("")
+                            view=|| view! { <Placeholder title="Dashboard" stage="W4" /> }
+                        />
+                        <Route
+                            path=path!("templates")
+                            view=|| view! { <Placeholder title="Templates" stage="W3" /> }
+                        />
+                        <Route
+                            path=path!("templates/:template_id")
+                            view=|| view! { <Placeholder title="Template detail" stage="W3" /> }
+                        />
+                        <Route
+                            path=path!("queries")
+                            view=|| view! { <Placeholder title="Stored queries" stage="W4" /> }
+                        />
+                        <Route
+                            path=path!("queries/builder")
+                            view=|| view! { <Placeholder title="Query builder" stage="W4" /> }
+                        />
+                        <Route
+                            path=path!("queries/aql")
+                            view=|| view! { <Placeholder title="Raw AQL" stage="W4" /> }
+                        />
+                        <Route
+                            path=path!("ehrs")
+                            view=|| view! { <Placeholder title="EHRs" stage="W3" /> }
+                        />
+                        <Route
+                            path=path!("ehrs/:ehr_id")
+                            view=|| view! { <Placeholder title="EHR detail" stage="W3" /> }
+                        />
+                        <Route
+                            path=path!("ehrs/:ehr_id/compositions/:uid")
+                            view=|| view! { <Placeholder title="Composition viewer" stage="W3" /> }
+                        />
+                        <Route path=path!("system") view=crate::pages::system::SystemPage />
+                    </ParentRoute>
                 </Routes>
             </Router>
         </thaw::ConfigProvider>
     }
 }
 
-/// W0 smoke test: exercises every thaw component family the §7A screen
-/// catalog depends on (Layout/NavDrawer, Table, Tree, TabList, Upload,
-/// MessageBar, Skeleton, Button/Input/Field) against `thaw =0.5.0-beta` on
-/// Leptos 0.8 — the pinned-beta risk is retired here, before screen work.
+/// Interim screen for a route whose real UI lands in a later stage. Renders a
+/// `thaw` Card naming the screen and its delivering stage, and sets the page
+/// `<Title/>` so the routed-page title rule holds even before the screen
+/// exists.
 #[component]
-fn SmokeTest() -> impl IntoView {
-    // NOTE: each section is type-erased with `.into_any()` — under plain
-    // `cargo build`/`cargo test` (no `erase_components` cfg, which only
-    // cargo-leptos dev builds pass) the fully structural thaw view types
-    // nest deep enough to blow rustc's layout recursion depth. Every screen
-    // keeps this section-boundary erasure pattern.
-    let clicks = RwSignal::new(0u32);
-    let banner = view! {
-        <thaw::MessageBar>
-            <thaw::MessageBarBody>"thaw 0.5.0-beta smoke test"</thaw::MessageBarBody>
-        </thaw::MessageBar>
+fn Placeholder(
+    /// The screen's display name (also the page title stem).
+    #[prop(into)]
+    title: String,
+    /// The delivery stage label (`"W3"` browse surfaces, `"W4"` builder +
+    /// dashboard).
+    #[prop(into)]
+    stage: String,
+) -> impl IntoView {
+    let page_title = format!("{title} · ehrbase-admin");
+    let heading = view! {
+        <thaw::CardHeader>
+            <thaw::Body1>{title}</thaw::Body1>
+        </thaw::CardHeader>
     }
     .into_any();
-    let counter = view! {
-        <thaw::Button on_click=move |_| {
-            clicks.update(|c| *c += 1);
-        }>{move || format!("clicked {}", clicks.get())}</thaw::Button>
-    }
+    let note = view! { <p class="text-sm opacity-70">{format!("This screen is delivered in stage {stage}.")}</p> }
     .into_any();
-    let skeleton = view! {
-        <thaw::Skeleton>
-            <thaw::SkeletonItem />
-        </thaw::Skeleton>
+    view! {
+        <Title text=page_title />
+        <div class="p-6">
+            <thaw::Card>{heading}{note}</thaw::Card>
+        </div>
     }
-    .into_any();
-    let table = view! {
-        <thaw::Table>
-            <thaw::TableHeader>
-                <thaw::TableRow>
-                    <thaw::TableHeaderCell>"column"</thaw::TableHeaderCell>
-                </thaw::TableRow>
-            </thaw::TableHeader>
-            <thaw::TableBody>
-                <thaw::TableRow>
-                    <thaw::TableCell>"cell"</thaw::TableCell>
-                </thaw::TableRow>
-            </thaw::TableBody>
-        </thaw::Table>
+}
+
+/// The router's real 404 fallback: sets a distinct title and offers a link
+/// back to the dashboard.
+#[component]
+fn NotFound() -> impl IntoView {
+    view! {
+        <Title text="Not found · ehrbase-admin" />
+        <div class="p-6">
+            <thaw::Card>
+                <thaw::CardHeader>
+                    <thaw::Body1>"Page not found"</thaw::Body1>
+                </thaw::CardHeader>
+                <p class="text-sm opacity-70">
+                    "The page you requested does not exist. "
+                    <leptos_router::components::A href="/" attr:class="underline">
+                        "Return to the dashboard."
+                    </leptos_router::components::A>
+                </p>
+            </thaw::Card>
+        </div>
     }
-    .into_any();
-    view! { <thaw::Layout>{banner}{counter}{skeleton}{table}</thaw::Layout> }
 }

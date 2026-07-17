@@ -23,12 +23,23 @@ path = "src/main.rs"
 [dependencies]
 openehr-query = { path = "../../crates/openehr-query" }
 
+# spec crates used BFF-side only (OPT parsing + WebTemplate building for the
+# query-builder path catalog) — ssr-gated to keep them out of the WASM bundle
+openehr-flat = { path = "../../crates/openehr-flat", optional = true }
+openehr-its = { path = "../../crates/openehr-its", optional = true }
+
 leptos.workspace = true
 leptos_meta.workspace = true
 leptos_router.workspace = true
 thaw.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+# Isomorphic (compiles on both targets): `use_interval_fn` for the shell's
+# health poll; its default `storage` feature also enables `web-sys/Storage`,
+# which the dark-mode toggle uses (via leptos's `web_sys` re-export) to persist
+# the theme to `localStorage`.
+leptos-use = { workspace = true }
 
 thiserror.workspace = true
 
@@ -65,6 +76,12 @@ ssr = [
     "leptos_meta/ssr",
     "leptos_router/ssr",
     "thaw/ssr",
+    # leptos-use MUST get its `ssr` feature on the server target: without it
+    # its browser primitives (use_interval_fn's js-sys timer) compile the
+    # wasm path into the native binary and panic at SSR ("function not
+    # implemented on non-wasm32 targets") — caught by the W2 live smoke.
+    "leptos-use/ssr",
+    "leptos-use/axum",
     "dep:leptos_axum",
     "dep:axum",
     "dep:tokio",
@@ -79,7 +96,12 @@ ssr = [
     "dep:secrecy",
     "dep:urlencoding",
     "dep:http",
+    "dep:openehr-flat",
+    "dep:openehr-its",
 ]
+
+[dev-dependencies]
+indexmap.workspace = true
 
 [lints]
 workspace = true
