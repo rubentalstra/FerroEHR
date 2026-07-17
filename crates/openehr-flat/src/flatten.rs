@@ -65,7 +65,25 @@ fn type_matches(rm: &Value, rm_type: &str) -> bool {
 /// so it stays a path key (`master05 §COMPOSITION` `/category` row).
 fn covered_by_ctx(node: &WebTemplateNode, child: &WebTemplateNode) -> bool {
     if node.rm_type == "COMPOSITION" {
-        return matches!(child.id.as_str(), "language" | "territory" | "composer");
+        if matches!(child.id.as_str(), "language" | "territory" | "composer") {
+            return true;
+        }
+        // The `context` node the WebTemplate synthesizes for the standard
+        // EVENT_CONTEXT (`ITS-REST simplified_formats master04 §"Web Template
+        // Metadata"`, the `inContext` marker) round-trips entirely through the
+        // `ctx/` vocabulary (`master06-context_information.adoc`): its
+        // EVENT_CONTEXT fields and `_`-prefixed RM attributes are the `ctx/`
+        // shortcuts, not tree data. A `context` that constrains archetyped
+        // `other_context` IS tree data and is walked (its `other_context`
+        // content surfaces; the EVENT_CONTEXT step then skips the ctx/ fields).
+        if child.rm_type == "EVENT_CONTEXT"
+            && !child
+                .children
+                .iter()
+                .any(|c| c.aql_path.contains("other_context"))
+        {
+            return true;
+        }
     }
     // Standard EVENT_CONTEXT fields (start_time, setting, participations, …)
     // surface via ctx/; only archetyped other_context content is tree data.
