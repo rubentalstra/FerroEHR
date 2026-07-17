@@ -45,7 +45,6 @@ mod export;
 mod import;
 mod tdd;
 
-
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, ObjectClass};

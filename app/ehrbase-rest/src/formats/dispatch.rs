@@ -406,7 +406,7 @@ mod tests {
     }
 
     /// The template id is read from the `openehr-template-id` header
-    /// (case-insensitive) — never a query parameter (Requests_and_responses
+    /// (case-insensitive) — never a query parameter (`Requests_and_responses`
     /// §openehr-template-id).
     #[test]
     fn template_id_from_header_case_insensitive() {

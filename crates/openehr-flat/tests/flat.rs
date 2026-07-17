@@ -322,8 +322,7 @@ fn instruction_activity_from_flat_is_valid_rm() {
         .get("minimal_instruction.en.v1")
         .expect("minimal_instruction web template");
     let comp = load("minimal_instruction.json");
-    let rm =
-        composition_from_flat(&composition_to_flat(&comp, wt).unwrap(), wt, NOW).unwrap();
+    let rm = composition_from_flat(&composition_to_flat(&comp, wt).unwrap(), wt, NOW).unwrap();
     assert!(
         is_valid_rm(&rm),
         "minimal_instruction from_flat must deserialise as openehr-rm: {rm}"
