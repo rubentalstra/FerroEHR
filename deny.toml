@@ -38,6 +38,9 @@ allow = [
   "MIT",
   "BSD-2-Clause",
   "BSD-3-Clause",
+  # Boost Software License (OSI-approved, permissive): xxhash-rust via
+  # leptos server_fn (the admin console, 2026-07-18).
+  "BSL-1.0",
   "ISC",
   "Zlib",
   "Unicode-3.0",

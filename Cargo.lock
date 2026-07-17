@@ -2362,15 +2362,12 @@ dependencies = [
  "openehr-query",
  "openidconnect",
  "reqwest 0.13.4",
- "secrecy",
  "serde",
  "serde_json",
  "thaw",
  "thirtyfour",
  "thiserror 2.0.18",
  "tokio",
- "tower",
- "tower-http 0.7.0",
  "tower-sessions",
  "tracing",
  "tracing-subscriber",
@@ -7194,7 +7191,6 @@ version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
 dependencies = [
- "serde",
  "zeroize",
 ]
 
