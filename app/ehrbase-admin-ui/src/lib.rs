@@ -15,6 +15,10 @@ pub mod components;
 pub mod error;
 pub mod format;
 pub mod pages;
+pub mod queries_api;
+
+#[cfg(feature = "ssr")]
+pub mod groups;
 
 #[cfg(feature = "ssr")]
 pub mod cdr;
