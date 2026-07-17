@@ -124,6 +124,8 @@ cargo fmt --all
 cargo audit && cargo deny check
 # conformance runner (the acceptance instrument) — present and green:
 bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
+# admin-console gates: /ui-gates (both-target clippy, nextest, leptosfmt, cargo-leptos build)
+bash scripts/ui-e2e.sh        # the browser journey battery against the composed stack (merge gate in CI)
 ```
 
 ### Target-dir & warm-build discipline (owner rules 2026-07-12, tightened 2026-07-16)

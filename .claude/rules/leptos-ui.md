@@ -5,11 +5,12 @@ paths: ["app/ehrbase-admin-ui/**"]
 # Leptos admin-UI rules (`app/ehrbase-admin-ui` — and any Leptos code)
 
 Authored 2026-07-13 from a full read of the official Leptos book
-(leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates in
-`docs/design/ehrbase-admin-ui.md`. Citations are book chapters
-(`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack is pinned in
-the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
-`thaw 0.5.0-beta`, `leptos-struct-table`, `leptos-chartistry`.
+(leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates recorded
+in `app/ehrbase-admin-ui/CLAUDE.md`. Citations are book chapters
+(`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack pins live
+in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
+`cargo-leptos`, Tailwind v4, `thaw` (a pinned main rev until 0.5 stable),
+`leptos-struct-table`, `leptos-chartistry`.
 
 ## 0. Owner mandates (absolute)
 
@@ -23,7 +24,7 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
 - **REST boundary:** the console reaches the CDR only over ITS-REST from the
   BFF (server functions → `reqwest`). It may depend on `crates/openehr-*`;
   it must NEVER depend on `app/ehrbase`, `app/ehrbase-sm`, or
-  `app/ehrbase-rest` (design doc §5.2).
+  `app/ehrbase-rest` (the REST-only boundary in the crate CLAUDE.md).
 - **Server functions are a public HTTP API** (`server/25_server_functions`
   security warning). Every `#[server]` fn that touches the CDR or session
   state MUST enforce the console's auth (session/token check) inside the
@@ -231,7 +232,7 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   (`testing`). Components stay thin.
 - Component/browser tests: `wasm-bindgen-test` with `mount_to` — remember
   updates are async: `tick().await` before asserting.
-- **E2E is a merge gate** (design doc §8d): Rust-native only —
+- **E2E is a merge gate**: Rust-native only —
   `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
   against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
   `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs`, skip-with-

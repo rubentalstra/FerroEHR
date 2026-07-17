@@ -126,7 +126,7 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 [lints]
 workspace = true
 
-# cargo-leptos build config (design doc §8: Tailwind v4 standalone — pin the
+# cargo-leptos build config (Tailwind v4 standalone — pin the
 # binary with LEPTOS_TAILWIND_VERSION=v4.3.3 in CI/containers; no Node/npm).
 [package.metadata.leptos]
 output-name = "ehrbase-admin-ui"

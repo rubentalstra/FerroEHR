@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Admin-console E2E harness (design doc §8d): compose up the CDR stack +
+# Admin-console E2E harness: compose up the CDR stack +
 # Keycloak, build + run the console on the host, start chromedriver, run the
 # e2e journeys via nextest, tear down. Mirrors scripts/conformance.sh.
 #
