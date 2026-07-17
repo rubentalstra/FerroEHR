@@ -1,26 +1,35 @@
-//! Content negotiation between canonical JSON and canonical XML (ITS-REST).
+//! Content negotiation core (ITS-REST `Resources.md §Data representation` +
+//! §Simplified Formats).
 //!
-//! Request bodies and responses are negotiated via `openehr-its`
-//! (`to_canonical_json`/`from_canonical_json`, `to_canonical_xml`/
-//! `from_canonical_xml`). The generated server traits exchange
-//! `serde_json::Value` at the boundary, so:
+//! One [`WireFormat`] enum names every representation the server negotiates —
+//! canonical JSON/XML plus the Simplified Formats (FLAT, STRUCTURED, and the
+//! Web Template document). Two resolvers, both parameterized by the set of
+//! formats an endpoint allows, are the single negotiation seam every endpoint
+//! dispatches through:
 //!
-//! - **JSON** is wired end to end for every operation (request and response).
-//! - **XML request bodies** are decoded for the RM-typed write paths: the bytes
-//!   are parsed into the concrete `openehr-rm` type and re-emitted as the
-//!   canonical JSON `Value` the trait expects, so a handler never sees the wire
-//!   format. See [`rm_value`].
-//! - **XML responses** for the spec-typed RM objects are served by
-//!   [`respond_rm`]: the handler returns canonical JSON as usual, and for an XML
-//!   `Accept` the value is re-typed into its concrete `openehr-rm` type at the
-//!   response edge so the generated `ToXml` runs — the mirror of the [`rm_value`]
-//!   request path. This covers the single objects (composition, `ehr_status`,
-//!   ehr, folder) and the VERSION family — `ORIGINAL_VERSION<T>`,
-//!   `VERSIONED_OBJECT`, `REVISION_HISTORY` — whose canonical-XML shape ITS-XML
-//!   (`Version.xsd`/`Common.xsd`) defines and `emit-xml` generates.
-//!   Responses that are genuinely not a spec-typed RM value (collections, item
-//!   tags, terminology/query DTOs, the CONTRIBUTION wire DTO) have no
-//!   spec-defined canonical-XML shape and stay JSON-only via [`respond`].
+//! - [`content_type_format`] classifies a request `Content-Type` (unknown →
+//!   `None` → the caller answers `415`, Resources.md §Simplified Formats MUST).
+//! - [`resolve_accept`] parses `Accept` with RFC 9110 §12.5.1 quality values
+//!   and returns the highest-q allowed format (`None` → the caller answers
+//!   `406`, same MUST rule).
+//!
+//! The recognized media types are matched EXACTLY (`application/json`,
+//! `application/xml`, `application/openehr.wt.flat+json`,
+//! `application/openehr.wt.structured+json`, `application/openehr.wt+json`).
+//! The deprecated `…wt.flat.schema+json`/`…wt.structured.schema+json` names and
+//! the legacy `application/openehr.nc.flat+json` / `…tds2+xml` types are NOT
+//! recognized (Resources.md §Simplified Formats NOTE + §Alternative data
+//! formats) — they fall out as `406`/`415` like any other unsupported type.
+//!
+//! Request bodies and responses for the canonical formats are (de)serialized
+//! via `openehr-its` (`to_canonical_json`/`from_canonical_json`,
+//! `to_canonical_xml`/`from_canonical_xml`). The generated server traits
+//! exchange `serde_json::Value` at the boundary, so an XML body is decoded into
+//! its concrete `openehr-rm` type and re-emitted as the canonical JSON `Value`
+//! the trait expects (see [`rm_value`]), and an XML response re-types the
+//! canonical JSON into its `openehr-rm` type so the generated `ToXml` runs (see
+//! [`respond_rm`]). The Simplified-Formats payload conversion is the sibling
+//! `crate::formats` adapter.
 
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -33,57 +42,209 @@ use openehr_its::xml::{FromXml, ToXml};
 
 use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 
-/// A negotiated wire format.
+/// A negotiated wire representation of a resource (ITS-REST
+/// `Resources.md §Data representation` + §Simplified Formats).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Format {
-    Json,
-    Xml,
+pub(crate) enum WireFormat {
+    /// `application/json` — canonical openEHR JSON.
+    CanonicalJson,
+    /// `application/xml` (or `text/xml`) — canonical openEHR XML.
+    CanonicalXml,
+    /// `application/openehr.wt.flat+json` — Simplified FLAT (simSDT) JSON.
+    Flat,
+    /// `application/openehr.wt.structured+json` — Simplified STRUCTURED
+    /// (structSDT) JSON.
+    Structured,
+    /// `application/openehr.wt+json` — the Operational Template rendered as a
+    /// Web Template document (template resource only).
+    WebTemplate,
 }
 
 const APPLICATION_JSON: &str = "application/json";
 const APPLICATION_XML: &str = "application/xml";
-/// Better `web-template` JSON media type (interop format, `openehr-flat`).
+const TEXT_XML: &str = "text/xml";
+/// Web Template document media type (`master02 §MIME Types`, template only).
 const APPLICATION_WT_JSON: &str = "application/openehr.wt+json";
-/// Better `web-template` FLAT (simSDT) JSON media type (`openehr-flat`).
+/// Simplified FLAT (simSDT) media type.
 const APPLICATION_WT_FLAT_JSON: &str = "application/openehr.wt.flat+json";
-/// Better `web-template` STRUCTURED (structSDT) JSON media type (`openehr-flat`).
+/// Simplified STRUCTURED (structSDT) media type.
 const APPLICATION_WT_STRUCTURED_JSON: &str = "application/openehr.wt.structured+json";
 
-/// Whether the client asks for the FLAT (simSDT) format on `Accept`
-/// (`application/openehr.wt.flat+json`).
-pub(crate) fn wants_flat(headers: &HeaderMap) -> bool {
-    header_str(headers, header::ACCEPT).is_some_and(|accept| {
-        accept
-            .split(',')
-            .any(|r| r.trim().starts_with(APPLICATION_WT_FLAT_JSON))
-    })
+/// The canonical-only allowed set (`Accept_LOCATABLE` minus the simplified
+/// types) — the negotiation set for every canonical RM object endpoint.
+pub(crate) const CANONICAL: &[WireFormat] = &[WireFormat::CanonicalJson, WireFormat::CanonicalXml];
+
+// ── The negotiation core ─────────────────────────────────────────────────
+
+/// The media type token of a header range (parameters after `;` stripped).
+fn media_token(range: &str) -> &str {
+    range.split(';').next().unwrap_or(range).trim()
 }
 
-/// Whether the request body is a FLAT (simSDT) composition
-/// (`Content-Type: application/openehr.wt.flat+json`).
-pub(crate) fn is_flat_body(headers: &HeaderMap) -> bool {
-    header_str(headers, header::CONTENT_TYPE)
-        .is_some_and(|ct| ct.trim().starts_with(APPLICATION_WT_FLAT_JSON))
+/// Classify one media type (parameters stripped, ASCII-lowercased) into a
+/// [`WireFormat`]. Exact-match only — the deprecated `…schema+json` and legacy
+/// `…nc.flat+json`/`…tds2+xml` types are deliberately unrecognized
+/// (`Resources.md §Simplified Formats` NOTE + §Alternative data formats), so
+/// they return `None`.
+fn classify_media(media: &str) -> Option<WireFormat> {
+    match media {
+        APPLICATION_JSON => Some(WireFormat::CanonicalJson),
+        APPLICATION_XML | TEXT_XML => Some(WireFormat::CanonicalXml),
+        APPLICATION_WT_FLAT_JSON => Some(WireFormat::Flat),
+        APPLICATION_WT_STRUCTURED_JSON => Some(WireFormat::Structured),
+        APPLICATION_WT_JSON => Some(WireFormat::WebTemplate),
+        _ => None,
+    }
 }
 
-/// Whether the client asks for the STRUCTURED (structSDT) format on `Accept`
-/// (`application/openehr.wt.structured+json`).
-pub(crate) fn wants_structured(headers: &HeaderMap) -> bool {
-    header_str(headers, header::ACCEPT).is_some_and(|accept| {
-        accept
-            .split(',')
-            .any(|r| r.trim().starts_with(APPLICATION_WT_STRUCTURED_JSON))
-    })
+/// The [`WireFormat`] a request `Content-Type` declares, or `None` when the
+/// media type is not one this server recognizes (caller → `415`, Resources.md
+/// §Simplified Formats MUST). An absent `Content-Type` defaults to canonical
+/// JSON (`Resources.md §JSON Format`).
+pub(crate) fn content_type_format(headers: &HeaderMap) -> Option<WireFormat> {
+    match header_str(headers, header::CONTENT_TYPE) {
+        None => Some(WireFormat::CanonicalJson),
+        Some(ct) => classify_media(&media_token(&ct).to_ascii_lowercase()),
+    }
 }
 
-/// Whether the request body is a STRUCTURED (structSDT) composition
-/// (`Content-Type: application/openehr.wt.structured+json`).
-pub(crate) fn is_structured_body(headers: &HeaderMap) -> bool {
-    header_str(headers, header::CONTENT_TYPE)
-        .is_some_and(|ct| ct.trim().starts_with(APPLICATION_WT_STRUCTURED_JSON))
+/// Resolve the response [`WireFormat`] from `Accept` against `allowed`, per
+/// RFC 9110 §12.5.1 quality-value negotiation (`Resources.md §Data
+/// representation`): the highest-q media range that maps to an allowed format
+/// wins; a more specific range beats a wildcard at equal q; the endpoint
+/// `default` breaks any remaining tie and answers an absent (or empty)
+/// `Accept`. Returns `None` when no allowed format is acceptable (caller →
+/// `406`, Resources.md §Simplified Formats MUST).
+pub(crate) fn resolve_accept(
+    headers: &HeaderMap,
+    allowed: &[WireFormat],
+    default: WireFormat,
+) -> Option<WireFormat> {
+    let Some(accept) = header_str(headers, header::ACCEPT) else {
+        return Some(default);
+    };
+    if accept.trim().is_empty() {
+        return Some(default);
+    }
+    let mut best: Option<(WireFormat, f64, u8)> = None;
+    for &fmt in allowed {
+        let Some((q, spec)) = match_quality(&accept, fmt) else {
+            continue;
+        };
+        if q <= 0.0 {
+            // `;q=0` explicitly rejects the format (RFC 9110 §12.5.1).
+            continue;
+        }
+        let candidate = (fmt, q, spec);
+        best = Some(match best {
+            None => candidate,
+            Some(current) => choose(current, candidate, default),
+        });
+    }
+    best.map(|(fmt, _, _)| fmt)
 }
 
-/// Serve a pre-serialized STRUCTURED (structSDT) composition as
+/// The best `(quality, specificity)` an `Accept` header offers for `fmt`, or
+/// `None` if no media range matches it. specificity: `2` = exact type/subtype,
+/// `1` = a type wildcard (`application/*`, `text/*`), `0` = `*/*`.
+fn match_quality(accept: &str, fmt: WireFormat) -> Option<(f64, u8)> {
+    let mut best: Option<(f64, u8)> = None;
+    for range in accept.split(',') {
+        let range = range.trim();
+        if range.is_empty() {
+            continue;
+        }
+        let token = media_token(range).to_ascii_lowercase();
+        let Some(spec) = specificity_for(&token, fmt) else {
+            continue;
+        };
+        let q = quality_of(range);
+        best = Some(match best {
+            None => (q, spec),
+            Some((bq, bs)) if q > bq || (q >= bq && spec > bs) => (q, spec),
+            Some(current) => current,
+        });
+    }
+    best
+}
+
+/// The specificity with which `token` matches `fmt`, or `None` for no match.
+fn specificity_for(token: &str, fmt: WireFormat) -> Option<u8> {
+    match token {
+        "*/*" => Some(0),
+        // Every negotiated format has an `application/*` media type.
+        "application/*" => Some(1),
+        "text/*" => (fmt == WireFormat::CanonicalXml).then_some(1),
+        exact => (classify_media(exact) == Some(fmt)).then_some(2),
+    }
+}
+
+/// The quality value of a media range (`;q=` weight; default `1.0`, clamped to
+/// `[0, 1]`, RFC 9110 §12.5.1).
+fn quality_of(range: &str) -> f64 {
+    for param in range.split(';').skip(1) {
+        let param = param.trim();
+        if let Some(v) = param
+            .strip_prefix("q=")
+            .or_else(|| param.strip_prefix("Q="))
+        {
+            return v
+                .trim()
+                .parse::<f64>()
+                .map(|q| q.clamp(0.0, 1.0))
+                .unwrap_or(1.0);
+        }
+    }
+    1.0
+}
+
+/// Pick the winner of two candidates: higher q, then higher specificity, then
+/// the endpoint `default`, then a fixed preference order (canonical JSON
+/// first).
+fn choose(
+    a: (WireFormat, f64, u8),
+    b: (WireFormat, f64, u8),
+    default: WireFormat,
+) -> (WireFormat, f64, u8) {
+    if a.1 > b.1 {
+        return a;
+    }
+    if b.1 > a.1 {
+        return b;
+    }
+    if a.2 > b.2 {
+        return a;
+    }
+    if b.2 > a.2 {
+        return b;
+    }
+    if a.0 == default {
+        return a;
+    }
+    if b.0 == default {
+        return b;
+    }
+    if pref_rank(a.0) <= pref_rank(b.0) {
+        a
+    } else {
+        b
+    }
+}
+
+/// Fixed tie-break order: canonical JSON is the server's preferred default.
+fn pref_rank(fmt: WireFormat) -> u8 {
+    match fmt {
+        WireFormat::CanonicalJson => 0,
+        WireFormat::CanonicalXml => 1,
+        WireFormat::Flat => 2,
+        WireFormat::Structured => 3,
+        WireFormat::WebTemplate => 4,
+    }
+}
+
+// ── Simplified-Formats + Web Template body builders ────────────────────────
+
+/// Serve a pre-serialized STRUCTURED (structSDT) document as
 /// `application/openehr.wt.structured+json`.
 pub(crate) fn structured_json_body(status: StatusCode, json: String) -> Response {
     let mut resp = (status, json).into_response();
@@ -94,8 +255,7 @@ pub(crate) fn structured_json_body(status: StatusCode, json: String) -> Response
     resp
 }
 
-/// Serve a pre-serialized `WebTemplate` JSON document as
-/// `application/openehr.wt+json`.
+/// Serve a pre-serialized Web Template document as `application/openehr.wt+json`.
 pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
     let mut resp = (status, json).into_response();
     resp.headers_mut().insert(
@@ -105,7 +265,7 @@ pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
     resp
 }
 
-/// Serve a pre-serialized FLAT (simSDT) composition as
+/// Serve a pre-serialized FLAT (simSDT) document as
 /// `application/openehr.wt.flat+json`.
 pub(crate) fn flat_json_body(status: StatusCode, json: String) -> Response {
     let mut resp = (status, json).into_response();
@@ -116,48 +276,10 @@ pub(crate) fn flat_json_body(status: StatusCode, json: String) -> Response {
     resp
 }
 
-fn is_json(media: &str) -> bool {
-    let m = media.trim();
-    m.starts_with("application/json") || m.ends_with("+json")
-}
+// ── Body decoders ──────────────────────────────────────────────────────────
 
-fn is_xml(media: &str) -> bool {
-    let m = media.trim();
-    m.starts_with("application/xml") || m.starts_with("text/xml") || m.ends_with("+xml")
-}
-
-/// The format the client's `Content-Type` declares (defaults to JSON).
-fn request_format(headers: &HeaderMap) -> Format {
-    match header_str(headers, header::CONTENT_TYPE) {
-        Some(ct) if is_xml(&ct) => Format::Xml,
-        _ => Format::Json,
-    }
-}
-
-/// The format to render the response in, honouring `Accept`. JSON is preferred
-/// when the client accepts both or anything (`*/*`); XML only when explicitly
-/// and exclusively requested.
-pub(crate) fn response_format(headers: &HeaderMap) -> Format {
-    let Some(accept) = header_str(headers, header::ACCEPT) else {
-        return Format::Json;
-    };
-    let ranges: Vec<&str> = accept.split(',').collect();
-    let accepts_json = ranges
-        .iter()
-        .any(|r| is_json(r) || r.trim().starts_with("*/*"));
-    let accepts_xml = ranges.iter().any(|r| is_xml(r));
-    if accepts_json || !accepts_xml {
-        Format::Json
-    } else {
-        Format::Xml
-    }
-}
-
-/// Format a commit timestamp as an HTTP-date (RFC 7231 IMF-fixdate, always GMT)
-/// for the `Last-Modified` response header, e.g. `Wed, 22 Jul 2009 19:15:56 GMT`.
+/// Format an HTTP-date (RFC 7231 IMF-fixdate, always GMT) for `Last-Modified`.
 fn http_date(at: jiff::Timestamp) -> String {
-    // `Timestamp` formats in UTC; the fixed English weekday/month abbreviations
-    // and `GMT` zone give the IMF-fixdate the spec's example shows.
     at.strftime("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }
 
@@ -197,9 +319,7 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
 /// Decode a body the contract types as `Value` but which may arrive as another
 /// text format (e.g. an ADL/OPT XML template upload): parsed as JSON when it is
 /// JSON, otherwise wrapped as a JSON string so the (untyped) handler still
-/// receives the bytes. The DEFINITION service then parses the OPT 1.4 XML into
-/// `openehr_its::opt14` (P13 template ingestion), so no template-model parsing
-/// belongs here — this is only the transport decode.
+/// receives the bytes.
 pub(crate) fn lenient_value(body: &Bytes) -> Result<serde_json::Value, ApiError> {
     if let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) {
         return Ok(v);
@@ -207,20 +327,21 @@ pub(crate) fn lenient_value(body: &Bytes) -> Result<serde_json::Value, ApiError>
     Ok(serde_json::Value::String(text_body(body)?))
 }
 
-/// Decode an RM-typed body from either JSON or XML into the canonical JSON
-/// `Value` the trait expects. `T` is the concrete `openehr-rm` payload type for
-/// the operation (e.g. `Composition`).
+/// Decode an RM-typed body from canonical JSON or XML into the canonical JSON
+/// `Value` the trait expects. `T` is the concrete `openehr-rm` payload type.
 ///
 /// # Errors
-/// [`ApiError::BadRequest`] if the body cannot be parsed in the declared format;
-/// [`ApiError::UnsupportedMediaType`] for a content type that is neither JSON nor XML.
+/// [`ApiError::BadRequest`] if the body cannot be parsed in the declared
+/// format; [`ApiError::UnsupportedMediaType`] for any `Content-Type` other than
+/// canonical JSON or XML (a Simplified-Formats or unknown type on a canonical
+/// RM endpoint, Resources.md §Simplified Formats MUST).
 pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<serde_json::Value, ApiError>
 where
     T: FromXml + Serialize + DeserializeOwned,
 {
-    match request_format(headers) {
-        Format::Json => parse_json(body),
-        Format::Xml => {
+    match content_type_format(headers) {
+        Some(WireFormat::CanonicalJson) => parse_json(body),
+        Some(WireFormat::CanonicalXml) => {
             let xml = text_body(body)?;
             let value: T = openehr_its::xml::from_canonical_xml(&xml)
                 .map_err(|e| ApiError::BadRequest(format!("invalid canonical XML body: {e}")))?;
@@ -228,6 +349,10 @@ where
                 ApiError::Internal(format!("re-encoding XML body to JSON failed: {e}"))
             })
         }
+        _ => Err(ApiError::UnsupportedMediaType(format!(
+            "this operation accepts application/json or application/xml only, got {}",
+            header_str(headers, header::CONTENT_TYPE).unwrap_or_else(|| "<none>".to_owned())
+        ))),
     }
 }
 
@@ -245,16 +370,13 @@ where
     Ok(Some(rm_value::<T>(headers, body)?))
 }
 
+/// A JSON-only write op accepts only canonical JSON on the wire.
 fn require_json(headers: &HeaderMap) -> Result<(), ApiError> {
-    match header_str(headers, header::CONTENT_TYPE) {
-        // Absent or JSON content types are accepted; XML is not for these ops.
-        None => Ok(()),
-        Some(ct) if is_json(&ct) => Ok(()),
-        Some(ct) if is_xml(&ct) => Err(ApiError::UnsupportedMediaType(format!(
-            "operation accepts application/json only, got {ct}"
-        ))),
-        Some(ct) => Err(ApiError::UnsupportedMediaType(format!(
-            "unsupported Content-Type: {ct}"
+    match content_type_format(headers) {
+        Some(WireFormat::CanonicalJson) => Ok(()),
+        _ => Err(ApiError::UnsupportedMediaType(format!(
+            "this operation accepts application/json only, got {}",
+            header_str(headers, header::CONTENT_TYPE).unwrap_or_else(|| "<none>".to_owned())
         ))),
     }
 }
@@ -264,34 +386,33 @@ fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
         .map_err(|e| ApiError::BadRequest(format!("invalid JSON body: {e}")))
 }
 
-/// Render a serializable payload as a JSON response. Used for responses that are
-/// not a spec-typed RM value (`serde_json::Value` collections and DTOs: item
-/// tags, terminology/query results, the CONTRIBUTION wire DTO); if the client
-/// requested XML exclusively, this returns 406 since those payloads have no
-/// spec-defined canonical-XML shape. Spec-typed RM objects — including the
-/// VERSION family — use [`respond_rm`] instead.
+/// Render a serializable payload as a JSON response. Used for responses that
+/// are not a spec-typed RM value (`serde_json::Value` collections and DTOs:
+/// item tags, terminology/query results). If the client's `Accept` cannot be
+/// satisfied by canonical JSON, this returns `406` (those payloads have no
+/// spec-defined canonical-XML shape). Spec-typed RM objects use [`respond_rm`].
 pub(crate) fn respond<T: Serialize>(
     headers: &HeaderMap,
     status: StatusCode,
     value: &T,
 ) -> Response {
-    match response_format(headers) {
-        Format::Json => json_response(status, value),
-        Format::Xml => ApiError::NotAcceptable(
-            "this response has no canonical-XML representation; request application/json"
-                .to_owned(),
+    match resolve_accept(
+        headers,
+        &[WireFormat::CanonicalJson],
+        WireFormat::CanonicalJson,
+    ) {
+        Some(_) => json_response(status, value),
+        None => ApiError::NotAcceptable(
+            "this response is available as application/json only".to_owned(),
         )
         .into_response_body(),
     }
 }
 
 /// Render a canonical-JSON `Value` that IS a single spec-typed RM object,
-/// honouring `Accept` for JSON or canonical XML. `T` is the concrete
-/// `openehr-rm` type the value encodes (e.g. [`openehr_rm::prelude::Composition`]);
-/// `root_tag` is the XML root element name. For XML the value is re-typed into
-/// `T` so the generated `ToXml` runs — the mirror of how [`rm_value`] re-types
-/// request bodies. A JSON `null` value (e.g. a future minimal-return create with
-/// no body) renders as a bodyless response in either format.
+/// honouring `Accept` for canonical JSON or XML. `T` is the concrete
+/// `openehr-rm` type the value encodes; `root_tag` is the XML root element
+/// name. A JSON `null` value renders as a bodyless response.
 pub(crate) fn respond_rm<T>(
     headers: &HeaderMap,
     status: StatusCode,
@@ -301,9 +422,9 @@ pub(crate) fn respond_rm<T>(
 where
     T: DeserializeOwned + Serialize + ToXml,
 {
-    match response_format(headers) {
-        Format::Json => json_response(status, value),
-        Format::Xml => {
+    match resolve_accept(headers, CANONICAL, WireFormat::CanonicalJson) {
+        Some(WireFormat::CanonicalJson) => json_response(status, value),
+        Some(WireFormat::CanonicalXml) => {
             if value.is_null() {
                 return empty(status);
             }
@@ -317,18 +438,17 @@ where
                 }
             };
             match openehr_its::xml::to_canonical_xml(&typed, root_tag) {
-                Ok(xml) => {
-                    let mut resp = (status, xml).into_response();
-                    resp.headers_mut().insert(
-                        header::CONTENT_TYPE,
-                        HeaderValue::from_static(APPLICATION_XML),
-                    );
-                    resp
-                }
+                Ok(xml) => xml_body(status, xml),
                 Err(e) => ApiError::Internal(format!("XML serialization failed: {e}"))
                     .into_response_body(),
             }
         }
+        // Any other allowed format is impossible for `CANONICAL`; an
+        // unsatisfiable `Accept` is a `406` (Resources.md §Simplified Formats).
+        _ => ApiError::NotAcceptable(
+            "this resource is available as application/json or application/xml".to_owned(),
+        )
+        .into_response_body(),
     }
 }
 
@@ -337,9 +457,7 @@ pub(crate) fn empty(status: StatusCode) -> Response {
     status.into_response()
 }
 
-/// A bodyless success response carrying a `Location` header — the ITS-REST
-/// shape for a resource store/create whose body is empty (e.g. a stored-query
-/// store: `200 OK` + `Location: …/definition/query/{name}/{version}`).
+/// A bodyless success response carrying a `Location` header.
 pub(crate) fn empty_with_location(status: StatusCode, location: &str) -> Response {
     let mut resp = status.into_response();
     if let Ok(value) = HeaderValue::from_str(location) {
@@ -349,15 +467,9 @@ pub(crate) fn empty_with_location(status: StatusCode, location: &str) -> Respons
 }
 
 // ── ITS-REST response-header + `Prefer` handling ─────────────────────
-//
-// The header-bearing EHR operations carry a [`ServiceResponse`] (RM payload +
-// typed [`ResourceMeta`]) out of the service seam; these helpers turn that into
-// a negotiated response with the spec-mandated `ETag`/`Location` headers and the
-// `Prefer` `return=minimal` (default) vs `return=representation` body policy.
 
 /// Whether the client asked for the full representation on `Prefer`
-/// (`return=representation`). The ITS-REST default is `return=minimal`
-/// (`parameters/header/Prefer.yaml`) — a header-only response.
+/// (`return=representation`). The ITS-REST default is `return=minimal`.
 pub(crate) fn prefers_representation(headers: &HeaderMap) -> bool {
     headers
         .get("prefer")
@@ -369,9 +481,7 @@ pub(crate) fn prefers_representation(headers: &HeaderMap) -> bool {
 }
 
 /// Whether the client asked for `OBJECT_REF` resolution on `Prefer`
-/// (`resolve_refs` — ITS-REST `Requests_and_responses` §Representation details
-/// negotiation: "services that implement `OBJECT_REF` resolution SHOULD accept
-/// and honour it").
+/// (`resolve_refs`).
 pub(crate) fn prefers_resolve_refs(headers: &HeaderMap) -> bool {
     headers
         .get("prefer")
@@ -383,9 +493,7 @@ pub(crate) fn prefers_resolve_refs(headers: &HeaderMap) -> bool {
 }
 
 /// Whether the client asked for an identifier-only response on `Prefer`
-/// (`return=identifier`). Overview §"Prefer only identifier": a minimal response
-/// with a non-empty body containing only the affected resource's identifier
-/// (`{ "uid": … }`); status is `200 OK` or `201 Created`, never `204`.
+/// (`return=identifier`).
 pub(crate) fn prefers_identifier(headers: &HeaderMap) -> bool {
     headers
         .get("prefer")
@@ -397,9 +505,7 @@ pub(crate) fn prefers_identifier(headers: &HeaderMap) -> bool {
 }
 
 /// The return preference the server is honouring, for the `Preference-Applied`
-/// response header (overview §"Representation details negotiation": the service
-/// MAY confirm the honoured preference). Precedence mirrors the body branch in
-/// [`write_rm`]: representation, then identifier, then the `minimal` default.
+/// response header.
 fn applied_preference(headers: &HeaderMap) -> &'static str {
     if prefers_representation(headers) {
         "representation"
@@ -410,10 +516,7 @@ fn applied_preference(headers: &HeaderMap) -> &'static str {
     }
 }
 
-/// Emit `Preference-Applied: return=<kind>` on a write response (overview
-/// §"Representation details negotiation"; example line 147). A MAY — a courtesy
-/// so a client can detect which preference the server honoured, which matters
-/// once the default shifts toward `identifier` (§"Deprecated headers").
+/// Emit `Preference-Applied: return=<kind>` on a write response.
 fn set_preference_applied(resp: &mut Response, kind: &str) {
     if let Ok(value) = HeaderValue::from_str(&format!("return={kind}")) {
         resp.headers_mut()
@@ -421,10 +524,7 @@ fn set_preference_applied(resp: &mut Response, kind: &str) {
     }
 }
 
-/// The status for a `return=identifier` write: `201`/`200`, never `204`
-/// (overview §"Prefer only identifier"). A create keeps its `minimal_status`
-/// (`201`); an update whose minimal status is `204 No Content` uses the
-/// representation status (`200 OK`) so the identifier body is not dropped.
+/// The status for a `return=identifier` write: `201`/`200`, never `204`.
 fn identifier_status(minimal_status: StatusCode, repr_status: StatusCode) -> StatusCode {
     if minimal_status == StatusCode::NO_CONTENT {
         repr_status
@@ -433,34 +533,28 @@ fn identifier_status(minimal_status: StatusCode, repr_status: StatusCode) -> Sta
     }
 }
 
-/// Render a `return=identifier` response body: `{ "uid": "<uid>" }` in JSON
-/// (overview §"Prefer only identifier", example lines 313–319), or the `<uid>`
-/// element as the XML equivalent when XML is negotiated. The identifier is the
-/// affected resource's `version_uid` (`resp.meta.uid`).
+/// Render a `return=identifier` response body: `{ "uid": "<uid>" }` in JSON, or
+/// the `<uid>` element when XML is negotiated.
 fn identifier_response(headers: &HeaderMap, status: StatusCode, uid: &str) -> Response {
-    match response_format(headers) {
-        Format::Json => json_response(status, &serde_json::json!({ "uid": uid })),
-        Format::Xml => {
+    match resolve_accept(headers, CANONICAL, WireFormat::CanonicalJson) {
+        Some(WireFormat::CanonicalXml) => {
             // The OAS defines the identifier body only for JSON; the spec is
-            // silent on an XML shape for a bare identifier. We emit a minimal
-            // `<uid>` element as the direct XML equivalent of the JSON `{uid}`.
+            // silent on an XML shape, so we emit a minimal `<uid>` element as
+            // the direct XML equivalent of the JSON `{uid}`.
             xml_body(status, format!("<uid>{}</uid>", xml_escape(uid)))
         }
+        _ => json_response(status, &serde_json::json!({ "uid": uid })),
     }
 }
 
-/// Escape the XML text-content special characters. `OBJECT_VERSION_ID` values do
-/// not contain these, but escape defensively.
+/// Escape the XML text-content special characters.
 fn xml_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
 }
 
-/// Build the (path-absolute) `Location` URL for an EHR sub-resource under the
-/// configured base path (`headers/Location_*.yaml`). `segment` is the resource
-/// collection (`composition`/`ehr_status`/`directory`/`contribution`); `None`
-/// targets the EHR resource itself (`/ehr/{ehr_id}`).
+/// Build the (path-absolute) `Location` URL for an EHR sub-resource.
 pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid: &str) -> String {
     match segment {
         Some(seg) => format!("{base_path}/ehr/{ehr_id}/{seg}/{uid}"),
@@ -468,22 +562,14 @@ pub(crate) fn location(base_path: &str, ehr_id: &str, segment: Option<&str>, uid
     }
 }
 
-/// The `ETag` header value for a resource identifier: the weak form
-/// `W/"{uid}"`. The overview §"`ETag` and Last-Modified" makes the weak indicator
-/// a **MUST**: "all `ETag` headers that hold a resource identifier MUST include
-/// a weakness indicator `W/`" (§"Deprecated headers"). The `ETag` value is
-/// independent of the JSON/XML serialization, hence weak-typed.
+/// The `ETag` header value for a resource identifier: the weak form `W/"{uid}"`
+/// (overview §"ETag and Last-Modified" — the `W/` weakness indicator is a MUST).
 pub(crate) fn resource_etag(uid: &str) -> Option<HeaderValue> {
     HeaderValue::from_str(&format!("W/\"{uid}\"")).ok()
 }
 
-/// Set the versioning headers on a response: the weak `ETag`
-/// ([`resource_etag`]) and — when the metadata carries a commit time —
-/// `Last-Modified` (the version commit time
-/// `VERSION.commit_audit.time_committed.value`, overview §"`ETag` and
-/// Last-Modified", SHOULD-present on `VERSION`/`VERSIONED_OBJECT` responses).
-/// **No `Location`** — that is create/redirect-only ([`set_location`], overview
-/// §Location). Used by reads, deletes, and the `409`/`412` error path.
+/// Set the versioning headers on a response: the weak `ETag` and — when the
+/// metadata carries a commit time — `Last-Modified`. No `Location`.
 pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
     if let Some(etag) = resource_etag(&meta.uid) {
         resp.headers_mut().insert(header::ETAG, etag);
@@ -493,8 +579,6 @@ pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
     {
         resp.headers_mut().insert(header::LAST_MODIFIED, lm);
     }
-    // The single, generic ATNA hook for the participant object: surface the
-    // resource ids the envelope already carries for the audit layer (§8.2 step 3).
     resp.extensions_mut()
         .insert(crate::system_log::middleware::AuditObject {
             ehr_id: Some(meta.ehr_id.clone()),
@@ -502,11 +586,8 @@ pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
         });
 }
 
-/// Set the `Location` header for a newly created/updated resource. The overview
-/// §Location: "The `Location` header MUST ONLY be used for resource creation
-/// (e.g., `201 Created`) or redirect responses" — never to indicate an
-/// alternate representation of an existing resource (a `GET`), and it is
-/// deprecated from `DELETE` responses.
+/// Set the `Location` header for a newly created/updated resource
+/// (overview §Location — creation/redirect only).
 pub(crate) fn set_location(
     resp: &mut Response,
     base_path: &str,
@@ -518,11 +599,8 @@ pub(crate) fn set_location(
     }
 }
 
-/// Set the full create/update response headers: the versioning headers
-/// ([`set_versioning_headers`]) **plus** `Location` ([`set_location`]). Used by
-/// the write paths ([`write_rm`]/[`write_json`]) and the create responses of the
-/// extension surfaces. Reads and deletes use [`set_versioning_headers`] alone,
-/// so they no longer emit `Location` (overview §Location).
+/// Set the full create/update response headers: the versioning headers plus
+/// `Location`.
 pub(crate) fn set_resource_headers(
     resp: &mut Response,
     base_path: &str,
@@ -534,11 +612,7 @@ pub(crate) fn set_resource_headers(
 }
 
 /// Render a create/update response honouring `Prefer` and setting the
-/// versioning + `Location` headers. `return=representation` → `repr_status` with
-/// the RM body (JSON or canonical XML via `T`); `return=identifier` → an
-/// identifier-only body (`{ "uid": … }`) at a `200`/`201` status; the default
-/// `return=minimal` → `minimal_status` with no body. `Preference-Applied` echoes
-/// the honoured preference. `segment` is the `Location` resource collection.
+/// versioning + `Location` headers.
 pub(crate) fn write_rm<T>(
     headers: &HeaderMap,
     base_path: &str,
@@ -591,14 +665,8 @@ pub(crate) fn write_json(
     out
 }
 
-/// Render a `200 OK` read of a single spec-typed RM object, additionally setting
-/// the weak `ETag`/`Last-Modified` the operation's spec declares (e.g.
-/// `200_COMPOSITION_retrieved.yaml`, `200_EHR_STATUS_retrieved.yaml`). No
-/// `Location`: it "MUST NOT be used to indicate an alternate representation of
-/// an existing resource (e.g. via `GET` method)" (overview §Location).
-///
-/// `base_path`/`segment` are retained in the signature for the dispatch call
-/// sites; a read emits no `Location` so they are currently unused here.
+/// Render a `200 OK` read of a single spec-typed RM object, additionally
+/// setting the weak `ETag`/`Last-Modified`. No `Location` (overview §Location).
 pub(crate) fn read_rm<T>(
     headers: &HeaderMap,
     base_path: &str,
@@ -618,11 +686,7 @@ where
 }
 
 /// A `204 No Content` delete outcome carrying the deleted version's weak
-/// `ETag`/`Last-Modified` (`204_COMPOSITION_deleted.yaml`). No `Location`: it
-/// "was deprecated from responses of `DELETE` methods" (overview §Location).
-///
-/// `base_path`/`segment` are retained in the signature for the dispatch call
-/// sites; a delete emits no `Location` so they are currently unused here.
+/// `ETag`/`Last-Modified`. No `Location` (overview §Location).
 pub(crate) fn deleted_with_headers(
     base_path: &str,
     segment: Option<&str>,
@@ -637,13 +701,7 @@ pub(crate) fn deleted_with_headers(
 }
 
 /// Render an error response, additionally setting the latest-version `ETag` the
-/// spec requires on a `409`/`412` (the current `version_uid`;
-/// `409_COMPOSITION_with_uid_based_id.yaml`, `412_*.yaml`). The overview §If-Match
-/// asks only for the latest `version_uid` "in the `ETag` response headers" on a
-/// false precondition — no `Location` on the error path.
-///
-/// `base_path`/`segment` are retained in the signature for the dispatch call
-/// sites; the error path emits no `Location` so they are currently unused here.
+/// spec requires on a `409`/`412`. No `Location` on the error path.
 pub(crate) fn error_with_meta(
     error: ApiError,
     base_path: &str,
@@ -658,8 +716,7 @@ pub(crate) fn error_with_meta(
     out
 }
 
-/// Serve a pre-formed XML document (e.g. a stored OPT 1.4 operational template)
-/// verbatim as `application/xml`.
+/// Serve a pre-formed XML document verbatim as `application/xml`.
 pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
     let mut resp = (status, xml).into_response();
     resp.headers_mut().insert(
@@ -711,40 +768,167 @@ mod tests {
         h
     }
 
+    /// The prior `accept_selection` assertions, re-expressed against the
+    /// [`resolve_accept`] core (RFC 9110 §12.5.1): the same canonical
+    /// json-preferred-over-xml behaviour, plus `text/xml` → XML.
     #[test]
     fn accept_selection() {
-        assert_eq!(response_format(&HeaderMap::new()), Format::Json);
+        let json = Some(WireFormat::CanonicalJson);
+        let xml = Some(WireFormat::CanonicalXml);
         assert_eq!(
-            response_format(&headers(&[("accept", "*/*")])),
-            Format::Json
+            resolve_accept(&HeaderMap::new(), CANONICAL, WireFormat::CanonicalJson),
+            json
         );
         assert_eq!(
-            response_format(&headers(&[("accept", "application/xml")])),
-            Format::Xml
+            resolve_accept(
+                &headers(&[("accept", "*/*")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            json
         );
         assert_eq!(
-            response_format(&headers(&[("accept", "application/json, application/xml")])),
-            Format::Json
+            resolve_accept(
+                &headers(&[("accept", "application/xml")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            xml
         );
         assert_eq!(
-            response_format(&headers(&[("accept", "text/xml")])),
-            Format::Xml
+            resolve_accept(
+                &headers(&[("accept", "application/json, application/xml")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            json
         );
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "text/xml")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            xml
+        );
+    }
+
+    /// q-values pick the highest-weight acceptable format even when it is not
+    /// the server default (RFC 9110 §12.5.1).
+    #[test]
+    fn accept_qvalue_prefers_highest_weight() {
+        // XML at q=1 beats JSON at q=0.5.
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "application/json;q=0.5, application/xml;q=1.0")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            Some(WireFormat::CanonicalXml)
+        );
+        // A specific type beats a `*/*` wildcard at equal q.
+        let allowed = &[
+            WireFormat::CanonicalJson,
+            WireFormat::CanonicalXml,
+            WireFormat::Flat,
+            WireFormat::Structured,
+        ];
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "application/openehr.wt.flat+json, */*")]),
+                allowed,
+                WireFormat::CanonicalJson
+            ),
+            Some(WireFormat::Flat)
+        );
+        // `;q=0` explicitly rejects a format.
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "application/json;q=0, application/xml")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            Some(WireFormat::CanonicalXml)
+        );
+    }
+
+    /// The Simplified data-instance types resolve only where the endpoint
+    /// allows them; on a canonical-only endpoint they are unacceptable (`406`).
+    #[test]
+    fn accept_simplified_only_where_allowed() {
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "application/openehr.wt.flat+json")]),
+                CANONICAL,
+                WireFormat::CanonicalJson
+            ),
+            None
+        );
+        let with_flat = &[WireFormat::CanonicalJson, WireFormat::Flat];
+        assert_eq!(
+            resolve_accept(
+                &headers(&[("accept", "application/openehr.wt.flat+json")]),
+                with_flat,
+                WireFormat::CanonicalJson
+            ),
+            Some(WireFormat::Flat)
+        );
+    }
+
+    /// The deprecated `…schema+json` and legacy `…nc.flat+json` types are not
+    /// recognized (Resources.md §Simplified Formats NOTE + §Alternative data
+    /// formats): unacceptable on `Accept`, unsupported on `Content-Type`.
+    #[test]
+    fn deprecated_and_legacy_types_unrecognized() {
+        let all = &[
+            WireFormat::CanonicalJson,
+            WireFormat::CanonicalXml,
+            WireFormat::Flat,
+            WireFormat::Structured,
+            WireFormat::WebTemplate,
+        ];
+        for t in [
+            "application/openehr.wt.flat.schema+json",
+            "application/openehr.wt.structured.schema+json",
+            "application/openehr.nc.flat+json",
+            "application/openehr.tds2+xml",
+        ] {
+            assert_eq!(
+                resolve_accept(&headers(&[("accept", t)]), all, WireFormat::CanonicalJson),
+                None,
+                "{t} must not be an acceptable Accept"
+            );
+            assert_eq!(
+                content_type_format(&headers(&[("content-type", t)])),
+                None,
+                "{t} must not be a recognized Content-Type"
+            );
+        }
     }
 
     #[test]
     fn content_type_selection() {
-        assert_eq!(request_format(&HeaderMap::new()), Format::Json);
         assert_eq!(
-            request_format(&headers(&[(
+            content_type_format(&HeaderMap::new()),
+            Some(WireFormat::CanonicalJson)
+        );
+        assert_eq!(
+            content_type_format(&headers(&[(
                 "content-type",
                 "application/xml; charset=utf-8"
             )])),
-            Format::Xml
+            Some(WireFormat::CanonicalXml)
         );
         assert_eq!(
-            request_format(&headers(&[("content-type", "application/json")])),
-            Format::Json
+            content_type_format(&headers(&[("content-type", "application/json")])),
+            Some(WireFormat::CanonicalJson)
+        );
+        assert_eq!(
+            content_type_format(&headers(&[(
+                "content-type",
+                "application/openehr.wt.flat+json"
+            )])),
+            Some(WireFormat::Flat)
         );
     }
 
@@ -766,15 +950,24 @@ mod tests {
     }
 
     #[test]
+    fn rm_value_rejects_simplified_content_type() {
+        use openehr_rm::prelude::DvText;
+        let h = headers(&[("content-type", "application/openehr.wt.flat+json")]);
+        let err = rm_value::<DvText>(&h, &Bytes::from_static(b"{}")).expect_err("reject");
+        assert!(
+            matches!(err, ApiError::UnsupportedMediaType(_)),
+            "a simplified Content-Type on a canonical RM op is 415: {err:?}"
+        );
+    }
+
+    #[test]
     fn rm_body_decodes_from_both_json_and_xml() {
         use openehr_rm::prelude::DvText;
 
-        // A real RM value, obtained from its canonical JSON.
         let dv: DvText =
             serde_json::from_value(serde_json::json!({"_type": "DV_TEXT", "value": "hello"}))
                 .expect("dv_text");
 
-        // XML request body → canonical JSON Value (the shape the trait receives).
         let xml = openehr_its::xml::to_canonical_xml(&dv, "value").expect("to xml");
         let mut xml_headers = HeaderMap::new();
         xml_headers.insert(
@@ -784,7 +977,6 @@ mod tests {
         let from_xml = rm_value::<DvText>(&xml_headers, &Bytes::from(xml)).expect("xml decode");
         assert_eq!(from_xml["value"], "hello");
 
-        // JSON request body → the same canonical JSON Value.
         let json = serde_json::to_vec(&dv).expect("to json");
         let mut json_headers = HeaderMap::new();
         json_headers.insert(
@@ -824,6 +1016,15 @@ mod tests {
     }
 
     #[test]
+    fn respond_rm_rejects_simplified_accept_with_406() {
+        use openehr_rm::prelude::DvText;
+        let h = headers(&[("accept", "application/openehr.wt.flat+json")]);
+        let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
+        let resp = respond_rm::<DvText>(&h, StatusCode::OK, &value, "value");
+        assert_eq!(resp.status(), StatusCode::NOT_ACCEPTABLE);
+    }
+
+    #[test]
     fn respond_rm_null_is_bodyless() {
         use openehr_rm::prelude::DvText;
         let h = headers(&[("accept", "application/xml")]);
@@ -842,7 +1043,6 @@ mod tests {
         use http_body_util::BodyExt;
         use openehr_rm::prelude::DvText;
 
-        // The value the handler would return: a DV_TEXT as canonical JSON.
         let value = serde_json::json!({"_type": "DV_TEXT", "value": "hello"});
         let h = headers(&[("accept", "application/xml")]);
         let resp = respond_rm::<DvText>(&h, StatusCode::OK, &value, "value");
@@ -852,7 +1052,6 @@ mod tests {
 
         let bytes = resp.into_body().collect().await.expect("body").to_bytes();
         let xml = String::from_utf8(bytes.to_vec()).expect("utf8");
-        // Real canonical XML from the generated `ToXml`, not the JSON-as-text stub.
         assert!(xml.contains("<value"), "root element present: {xml}");
         assert!(xml.contains("hello"), "leaf value present: {xml}");
         assert!(!xml.contains("_type"), "not a serialized JSON blob: {xml}");
@@ -860,10 +1059,6 @@ mod tests {
 
     #[tokio::test]
     async fn respond_rm_renders_original_version_xml_with_signature() {
-        // F-05-06 / ECC-SIG-001: an ORIGINAL_VERSION response is served as
-        // canonical XML (its `ToXml` exists), carrying the `<signature>` element.
-        // `OriginalVersion<T>` is generic — `DvText` stands in for the versioned
-        // root here; the dispatch uses `OriginalVersion<Composition>`.
         use http_body_util::BodyExt;
         use openehr_rm::prelude::{DvText, OriginalVersion};
 
@@ -916,7 +1111,6 @@ mod tests {
 
     #[tokio::test]
     async fn respond_rm_renders_versioned_object_xml() {
-        // F-05-06 / ECC-COM-022: the VERSIONED_OBJECT container serves as XML.
         use http_body_util::BodyExt;
         use openehr_rm::prelude::VersionedComposition;
 
@@ -946,7 +1140,7 @@ mod tests {
         );
     }
 
-    // ── W2-A: header + `Prefer` handling ────────────────────────────────────
+    // ── header + `Prefer` handling ──────────────────────────────────────────
 
     const BASE: &str = "/ehrbase/rest/openehr/v1";
 
@@ -973,7 +1167,6 @@ mod tests {
 
     #[test]
     fn prefer_default_is_minimal() {
-        // Absent → minimal (spec default).
         assert!(!prefers_representation(&HeaderMap::new()));
         assert!(!prefers_representation(&headers(&[(
             "prefer",
@@ -983,7 +1176,6 @@ mod tests {
             "prefer",
             "return=representation"
         )])));
-        // Case-insensitive.
         assert!(prefers_representation(&headers(&[(
             "prefer",
             "RETURN=REPRESENTATION"
@@ -1008,7 +1200,6 @@ mod tests {
         use openehr_rm::prelude::Composition;
         let value = serde_json::json!({"_type": "COMPOSITION"});
         let resp = ServiceResponse::new(value, meta("e1", "v::s::1"));
-        // Default (no Prefer) → minimal: 201, no body, ETag + Location set.
         let out = write_rm::<Composition>(
             &HeaderMap::new(),
             BASE,
@@ -1019,16 +1210,12 @@ mod tests {
             "composition",
         );
         assert_eq!(out.status(), StatusCode::CREATED);
-        // the ETag carries the mandatory weak `W/` indicator.
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::1\""));
-        // A create keeps `Location` (overview §Location: creation-only).
         assert_eq!(
             loc(&out).as_deref(),
             Some(&*format!("{BASE}/ehr/e1/composition/v::s::1"))
         );
-        // Minimal → no content-type body header.
         assert_eq!(content_type(&out), None);
-        // `Preference-Applied` echoes the honoured (default) preference.
         assert_eq!(preference_applied(&out).as_deref(), Some("return=minimal"));
     }
 
@@ -1047,7 +1234,6 @@ mod tests {
             &resp,
             "composition",
         );
-        // Representation → 200 (repr status) with a JSON body + headers.
         assert_eq!(out.status(), StatusCode::OK);
         assert_eq!(content_type(&out).as_deref(), Some(APPLICATION_JSON));
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::2\""));
@@ -1063,7 +1249,6 @@ mod tests {
         let out = deleted_with_headers(BASE, Some("composition"), &resp);
         assert_eq!(out.status(), StatusCode::NO_CONTENT);
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::3\""));
-        // `Location` is deprecated from DELETE responses.
         assert!(loc(&out).is_none());
     }
 
@@ -1076,9 +1261,7 @@ mod tests {
             Some(&meta("e1", "v::s::5")),
         );
         assert_eq!(out.status(), StatusCode::PRECONDITION_FAILED);
-        // §If-Match: the latest `version_uid` goes in the `ETag`, weak-form.
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::5\""));
-        // No `Location` on the error path.
         assert!(loc(&out).is_none());
     }
 
@@ -1096,7 +1279,6 @@ mod tests {
         );
         assert_eq!(out.status(), StatusCode::OK);
         assert_eq!(etag(&out).as_deref(), Some("W/\"v::s::7\""));
-        // reads MUST NOT carry `Location` (overview §Location).
         assert!(loc(&out).is_none());
     }
 
@@ -1130,7 +1312,6 @@ mod tests {
         let value = serde_json::json!({"_type": "COMPOSITION"});
         let resp = ServiceResponse::new(value, meta("e1", "v::s::9"));
         let h = headers(&[("prefer", "return=identifier")]);
-        // Update semantics (minimal=204) → identifier promotes to 200, never 204.
         let out = write_rm::<Composition>(
             &h,
             BASE,
@@ -1154,15 +1335,12 @@ mod tests {
 
     #[test]
     fn http_date_is_imf_fixdate() {
-        // The overview spec's example: `Wed, 22 Jul 2009 19:15:56 GMT`.
         let ts: jiff::Timestamp = "2009-07-22T19:15:56Z".parse().unwrap();
         assert_eq!(http_date(ts), "Wed, 22 Jul 2009 19:15:56 GMT");
     }
 
     #[test]
     fn set_resource_headers_emits_last_modified() {
-        // §"ETag and Last-Modified": a versioned resource's commit time is
-        // surfaced as `Last-Modified` alongside `ETag`/`Location`.
         let ts: jiff::Timestamp = "2024-03-04T05:06:07Z".parse().unwrap();
         let m = ResourceMeta::new("e1".to_owned(), "v::s::1".to_owned()).with_last_modified(ts);
         let mut resp = empty(StatusCode::OK);

@@ -14,14 +14,16 @@
 //!
 //! # The matching rule (derived from the vendored corpus + `WebTemplate`)
 //!
-//! The [`WebTemplate`] tree ([`build_web_template`](crate::build_web_template))
-//! is the identity oracle. Each web-template node's `aqlPath` is the full RM path
+//! The [`WebTemplate`] tree
+//! ([`build_web_template`](crate::webtemplate::build_web_template)) is the
+//! identity oracle. Each web-template node's `aqlPath` is the full RM path
 //! from the versioned-object root **with the compacted wrapper node-ids kept**
 //! (e.g. `…/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value`), so it
 //! supplies every `archetype_node_id`, the concrete leaf RM type, and the wrapper
 //! chain to re-materialise. This converter therefore drives the build from the
-//! `WebTemplate` (the reverse of the FLAT builder [`from_flat`](crate::from_flat) —
-//! same `place`/wrapper-materialisation model) and sources each node's data from
+//! `WebTemplate` (the reverse of the FLAT builder
+//! [`composition_from_flat`](crate::convert::composition_from_flat) — same
+//! `place`/wrapper-materialisation model) and sources each node's data from
 //! the TDD:
 //!
 //! * A TDD element **matches** a web-template node when the element's local name
@@ -52,14 +54,15 @@
 //! * **Compacted-wrapper instance data is not carried.** Where the TDD spells out
 //!   a wrapper the `WebTemplate` compacted (`HISTORY.origin`, `EVENT.time`/`name`),
 //!   the re-materialised node takes the RM-mandatory default
-//!   ([`DEFAULT_TIME`](crate::flat)-equivalent), matching the FLAT reverse
+//!   ([`DEFAULT_TIME`]-equivalent), matching the FLAT reverse
 //!   converter — the *leaf data values* and the full composition/entry context
 //!   are faithful. Driving from the (uncompacted) OPT definition tree to recover
 //!   them is future work (the same BMM-RM-model dependency `from_flat` carries).
 //! * The multi-valued RM-attribute set used to re-materialise arrays is derived
 //!   from the generated BMM RM attribute model ([`is_multiple_attr`]) — the same
-//!   single source of truth the FLAT builder ([`from_flat`](crate::from_flat))
-//!   delegates to; no hard-coded list.
+//!   single source of truth the FLAT builder
+//!   ([`composition_from_flat`](crate::convert::composition_from_flat)) delegates
+//!   to; no hard-coded list.
 //! * A construct outside the corpus (e.g. an archetyped `other_context`, choice
 //!   leaves) is handled on a best-effort basis; the SM `import_tdd` envelope
 //!   rejects an unconvertible TDD with a typed error rather than committing a
@@ -71,8 +74,8 @@ use std::sync::LazyLock;
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value, json};
 
-use crate::FlatError;
-use crate::path;
+use crate::error::FlatError;
+use crate::rmpath;
 use crate::webtemplate::{WebTemplate, WebTemplateNode};
 
 /// The Ocean/Marand template-data XML namespace (the default `xmlns` on a TDD
@@ -467,7 +470,7 @@ fn build_node(
     // child is located in the TDD by name (scoped) and placed at its relative
     // aqlPath, re-materialising the wrapper chain the TDD/template compacted.
     for wc in &wt.children {
-        let rel = path::relative(path, &wc.aql_path);
+        let rel = rmpath::relative(path, &wc.aql_path);
         if rel.is_empty() {
             continue;
         }
@@ -507,7 +510,8 @@ fn leaf_value(el: &El, wc: &WebTemplateNode) -> Result<Value, FlatError> {
 
 /// RM attributes that are arrays (needed to re-materialise compacted structure),
 /// derived from the generated BMM RM attribute model — the single source of
-/// truth shared with the FLAT builder ([`from_flat`](crate::from_flat), which
+/// truth shared with the FLAT builder
+/// ([`composition_from_flat`](crate::convert::composition_from_flat), which
 /// delegates here). See [`is_multiple_attr`] for the derivation.
 fn is_multiple(attr: &str) -> bool {
     is_multiple_attr(attr)
@@ -564,7 +568,8 @@ pub(crate) fn is_multiple_attr(attr: &str) -> bool {
 }
 
 /// Insert `child_value` into `parent` at relative path `rel`, materialising the
-/// compacted RM structural nodes it passes through (mirrors `from_flat::place`).
+/// compacted RM structural nodes it passes through (mirrors the FLAT builder's
+/// `place`).
 fn place(
     parent: &mut Map<String, Value>,
     rel: &[PathSegment],
@@ -646,7 +651,7 @@ fn place_rec(
 }
 
 /// Create a compacted structural RM node for `seg` with its RM-mandatory fields
-/// filled (mirrors `from_flat::new_struct`, plus `archetype_details` for an
+/// filled (mirrors the FLAT builder's `new_struct`, plus `archetype_details` for an
 /// archetyped wrapper root the TDD omitted, e.g. an `ITEM_TREE` `description`).
 fn new_struct(seg: &PathSegment, next: Option<&PathSegment>, name: Option<&str>) -> Value {
     let rm_type = infer_type(&seg.attribute, next.map(|s| s.attribute.as_str()));

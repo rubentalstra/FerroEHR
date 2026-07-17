@@ -35,6 +35,10 @@ pub(super) async fn run(
     // The configured base path, for building `Location` URLs.
     let base = state.config().server.base_path.clone();
 
+    // EHR / EHR_STATUS have no Simplified-Formats mapping (they are not
+    // templated) — a simplified Content-Type/Accept is rejected uniformly.
+    crate::formats::dispatch::guard_non_templated(h)?;
+
     match op {
         "ehr_get_by_subject" => {
             let p = params::build::<EhrGetBySubjectParams>(&parts.path, q, h)?;

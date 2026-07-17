@@ -14,8 +14,7 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_flat::build_web_template;
-use openehr_flat::webtemplate::{WebTemplateInputType, WebTemplateNode};
+use openehr_flat::webtemplate::{WebTemplateInputType, WebTemplateNode, build_web_template};
 use openehr_its::opt14;
 
 fn manifest_dir() -> PathBuf {
@@ -49,7 +48,7 @@ fn opt_files(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// Parse an `OPT` and build a `WebTemplate`, returning any error as a string.
-fn build_from_file(path: &Path) -> Result<openehr_flat::WebTemplate, String> {
+fn build_from_file(path: &Path) -> Result<openehr_flat::webtemplate::WebTemplate, String> {
     let xml = std::fs::read_to_string(path).map_err(|e| format!("read: {e}"))?;
     let opt = opt14::from_xml(&xml).map_err(|e| format!("opt14 parse: {e}"))?;
     build_web_template(&opt).map_err(|e| format!("build: {e}"))

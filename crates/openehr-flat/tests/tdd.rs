@@ -15,7 +15,9 @@
 //! the TDD are exactly as expected.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use openehr_flat::{WebTemplate, build_web_template, from_tdd, validate_composition};
+use openehr_flat::tdd::from_tdd;
+use openehr_flat::validation::validate_composition;
+use openehr_flat::webtemplate::{WebTemplate, build_web_template};
 use openehr_its::opt14;
 use openehr_rm::prelude::Composition;
 use serde_json::Value;

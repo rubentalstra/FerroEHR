@@ -21,9 +21,14 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use openehr_flat::{WebTemplate, build_web_template, from_flat, to_flat};
+use openehr_flat::convert::{composition_from_flat, composition_to_flat};
+use openehr_flat::webtemplate::{WebTemplate, build_web_template};
 use openehr_its::opt14;
 use serde_json::Value;
+
+/// Fixed `ctx/time` default for the FLAT build direction (ITS-REST
+/// simplified_formats master04 §Context) so round-trips are deterministic.
+const NOW: &str = "2024-01-01T00:00:00Z";
 
 fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -140,24 +145,24 @@ fn flat_roundtrip_stable() {
         let Some(wt) = wts.get(tid) else { continue };
         paired += 1;
 
-        let flat0 = match to_flat(comp, wt) {
+        let flat0 = match composition_to_flat(comp, wt) {
             Ok(f) => f,
             Err(e) => {
                 failures.push(format!("{name}: to_flat: {e}"));
                 continue;
             }
         };
-        let rm1 = match from_flat(&to_map(&flat0), wt) {
+        let rm1 = match composition_from_flat(&to_map(&flat0), wt, NOW) {
             Ok(v) => v,
             Err(e) => {
                 failures.push(format!("{name}: from_flat: {e}"));
                 continue;
             }
         };
-        let flat1 = match to_flat(&rm1, wt) {
+        let flat1 = match composition_to_flat(&rm1, wt) {
             Ok(f) => f,
             Err(e) => {
-                failures.push(format!("{name}: to_flat(rm1): {e}"));
+                failures.push(format!("{name}: composition_to_flat(rm1): {e}"));
                 continue;
             }
         };
@@ -237,7 +242,8 @@ fn golden_flat(comp_file: &str, template_id: &str, snap: &str) {
         .unwrap_or_else(|e| panic!("read {comp_file}: {e}"));
     let comp: Value =
         serde_json::from_str(&text).unwrap_or_else(|e| panic!("parse {comp_file}: {e}"));
-    let flat = to_flat(&comp, wt).unwrap_or_else(|e| panic!("to_flat {comp_file}: {e}"));
+    let flat =
+        composition_to_flat(&comp, wt).unwrap_or_else(|e| panic!("to_flat {comp_file}: {e}"));
     let map: BTreeMap<String, Value> = flat.into_iter().collect();
     insta::assert_json_snapshot!(snap, map);
 }
@@ -264,7 +270,7 @@ fn demo_vitals_flat_key_shape() {
     let wt = wts.get("Demo Vitals").expect("Demo Vitals web template");
     let text = std::fs::read_to_string(composition_dir().join("demo_vitals_352.json")).unwrap();
     let comp: Value = serde_json::from_str(&text).unwrap();
-    let flat = to_flat(&comp, wt).expect("to_flat");
+    let flat = composition_to_flat(&comp, wt).expect("to_flat");
 
     // ctx keys present.
     assert!(flat.contains_key("ctx/language"), "ctx/language present");
@@ -314,7 +320,8 @@ fn instruction_activity_from_flat_is_valid_rm() {
         .get("minimal_instruction.en.v1")
         .expect("minimal_instruction web template");
     let comp = load("minimal_instruction.json");
-    let rm = from_flat(&to_map(&to_flat(&comp, wt).unwrap()), wt).unwrap();
+    let rm =
+        composition_from_flat(&to_map(&composition_to_flat(&comp, wt).unwrap()), wt, NOW).unwrap();
     assert!(
         is_valid_rm(&rm),
         "minimal_instruction from_flat must deserialise as openehr-rm: {rm}"
@@ -335,7 +342,7 @@ fn ctx_participation_shortcuts_round_trip() {
         .get("minimal_observation.en.v1")
         .expect("minimal_observation web template");
     let comp = load("minimal_observation.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     assert!(
         flat0
             .keys()
@@ -343,13 +350,13 @@ fn ctx_participation_shortcuts_round_trip() {
         "participation ctx emitted: {:?}",
         flat0.keys().collect::<Vec<_>>()
     );
-    let rm = from_flat(&to_map(&flat0), wt).unwrap();
+    let rm = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
     assert!(
         rm.pointer("/context/participations/0/performer").is_some(),
         "participations rebuilt in context: {rm}"
     );
     assert!(is_valid_rm(&rm), "participation round-trip valid RM: {rm}");
-    let flat1 = to_flat(&rm, wt).unwrap();
+    let flat1 = composition_to_flat(&rm, wt).unwrap();
     assert_eq!(
         sorted(&flat0),
         sorted(&flat1),
@@ -365,18 +372,21 @@ fn ctx_health_care_facility_round_trips() {
         return; // template not present in this checkout
     };
     let comp = load("cardinality_of_section__full.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     assert!(
         flat0.contains_key("ctx/health_care_facility|name"),
         "health_care_facility ctx emitted"
     );
-    let rm = from_flat(&to_map(&flat0), wt).unwrap();
+    let rm = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
     assert_eq!(
         rm.pointer("/context/health_care_facility/name"),
         comp.pointer("/context/health_care_facility/name"),
         "health_care_facility name rebuilt"
     );
-    assert_eq!(sorted(&flat0), sorted(&to_flat(&rm, wt).unwrap()));
+    assert_eq!(
+        sorted(&flat0),
+        sorted(&composition_to_flat(&rm, wt).unwrap())
+    );
 }
 
 /// DV_MULTIMEDIA (`|size` + uri) and DV_PARSABLE (`|formalism`) leaves rebuild
@@ -388,13 +398,13 @@ fn multimedia_and_parsable_leaves_are_valid_rm() {
         .get("minimal_action_3.en.v1")
         .expect("a web template with a DV_MULTIMEDIA leaf");
     let comp = load("minimal_with_optional_attribute.json");
-    let flat = to_flat(&comp, wt).unwrap();
+    let flat = composition_to_flat(&comp, wt).unwrap();
     assert!(
         flat.keys().any(|k| k.ends_with("|size")),
         "DV_MULTIMEDIA emits |size: {:?}",
         flat.keys().collect::<Vec<_>>()
     );
-    let rm = from_flat(&to_map(&flat), wt).unwrap();
+    let rm = composition_from_flat(&to_map(&flat), wt, NOW).unwrap();
     assert!(is_valid_rm(&rm), "multimedia from_flat valid RM: {rm}");
 }
 
@@ -408,7 +418,7 @@ fn terse_coded_text_parses() {
         .get("Corona_Anamnese")
         .expect("Corona_Anamnese web template");
     let comp = load("compo_corona.json");
-    let flat0 = to_flat(&comp, wt).unwrap();
+    let flat0 = composition_to_flat(&comp, wt).unwrap();
     // Find a TREE coded leaf's |code key (not a special-cased `ctx/…` or
     // root-level `category`/`language`/`territory` shortcut) and replace the
     // trio with the terse form.
@@ -444,8 +454,8 @@ fn terse_coded_text_parses() {
         base.clone(),
         serde_json::Value::String(format!("{terminology}::{code}|{value}|")),
     );
-    let rm = from_flat(&to_map(&terse), wt).expect("terse coded form parses");
-    let rm_regular = from_flat(&to_map(&flat0), wt).unwrap();
+    let rm = composition_from_flat(&to_map(&terse), wt, NOW).expect("terse coded form parses");
+    let rm_regular = composition_from_flat(&to_map(&flat0), wt, NOW).unwrap();
     assert_eq!(
         rm, rm_regular,
         "the terse and regular coded forms build the identical RM"
@@ -494,8 +504,8 @@ fn persistent_composition_round_trip_synthesises_no_context() {
     assert!(comp.get("context").is_none(), "fixture carries no context");
 
     let wt = persistent_wt();
-    let flat = to_flat(&comp, &wt).expect("to_flat");
-    let rebuilt = from_flat(&to_map(&flat), &wt).expect("from_flat");
+    let flat = composition_to_flat(&comp, &wt).expect("to_flat");
+    let rebuilt = composition_from_flat(&to_map(&flat), &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("431".to_owned())),
@@ -527,7 +537,7 @@ fn persistent_composition_keeps_explicitly_supplied_context() {
         "ctx/participation_name:0".to_owned(),
         Value::String("Dr Explicit".into()),
     );
-    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("431".to_owned()))
@@ -553,7 +563,7 @@ fn event_composition_still_gets_a_context() {
         format!("{root}/category|value"),
         Value::String("event".into()),
     );
-    let rebuilt = from_flat(&flat, &wt).expect("from_flat");
+    let rebuilt = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
     assert_eq!(
         rebuilt.pointer("/category/defining_code/code_string"),
         Some(&Value::String("433".to_owned()))

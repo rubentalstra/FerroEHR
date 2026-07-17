@@ -604,23 +604,27 @@ impl EhrbaseService {
             .map_err(|e| SmError::precondition(e.to_string()))?;
         let ehr_id = self.ensure_ehr_for_subject(subject).await?;
 
-        // 3. Build the FLAT map + the canonical COMPOSITION.
+        // 3. Build the FLAT map + the canonical COMPOSITION. `now` supplies the
+        //    ctx/time default (ITS-REST simplified_formats master04 §Context) and
+        //    the FEEDER_AUDIT provenance instant — one ingestion instant for both.
         let wt = self.web_template_for(&def.template_id).await?;
         let flat = mapping::build_flat(&a_resource, &def)
             .map_err(|e| SmError::precondition(e.to_string()))?;
-        let mut composition = openehr_flat::from_flat(&flat, &wt).map_err(|e| {
-            SmError::new(
-                CallStatusType::ContentInvalid,
-                format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
-            )
-        })?;
+        let now = feeder_audit::now_iso();
+        let mut composition = openehr_flat::convert::composition_from_flat(&flat, &wt, &now)
+            .map_err(|e| {
+                SmError::new(
+                    CallStatusType::ContentInvalid,
+                    format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
+                )
+            })?;
 
         // 4. Stamp FEEDER_AUDIT provenance.
         let feeder = feeder_audit::feeder_audit(
             &resource_type,
             &feeder_audit::resource_id(&a_resource, &resource_type),
             feeder_audit::resource_version(&a_resource).as_deref(),
-            &feeder_audit::now_iso(),
+            &now,
         );
         feeder_audit::inject_feeder_audit(&mut composition, feeder);
 

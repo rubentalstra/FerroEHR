@@ -102,7 +102,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "msg/tdd-import-commits",
             "TDD — import a TDD as a committed COMPOSITION",
             Capability::MessagingTds,
-            "SM I_TDD_SERVICE.import_tdd; TDD → COMPOSITION over OPT/WebTemplate (openehr_flat::from_tdd); CNF master13 §I_TDD.import_tdd (TBD stub)",
+            "SM I_TDD_SERVICE.import_tdd; TDD → COMPOSITION over OPT/WebTemplate (openehr_flat::tdd::from_tdd); CNF master13 §I_TDD.import_tdd (TBD stub)",
             "schedule stub (master13 §I_TDD.import_tdd TBD); derived from SM I_TDD_SERVICE.import_tdd",
             "I_TDD_SERVICE.import_tdd",
             skip_tdd_import_commits,
