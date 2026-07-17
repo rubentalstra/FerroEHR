@@ -74,12 +74,43 @@ impl Harness {
     /// # Panics
     /// When the element never appears — with the selector in the message.
     pub async fn wait_css(&self, css: &str) -> WebElement {
-        self.driver
+        match self
+            .driver
             .query(By::Css(css))
             .wait(Duration::from_secs(15), Duration::from_millis(200))
             .first()
             .await
-            .unwrap_or_else(|e| panic!("waiting for `{css}`: {e}"))
+        {
+            Ok(element) => element,
+            Err(e) => {
+                // Failure evidence: where the browser actually was.
+                let url = self
+                    .driver
+                    .current_url()
+                    .await
+                    .map(|u| u.to_string())
+                    .unwrap_or_default();
+                let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
+                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+                panic!("waiting for `{css}` at {url}: {e}");
+            }
+        }
+    }
+
+    /// Wait until the current URL no longer contains `fragment`.
+    ///
+    /// # Panics
+    /// When the URL still matches after 15 s.
+    pub async fn wait_url_not_contains(&self, fragment: &str) {
+        for _ in 0..75 {
+            let url = self.driver.current_url().await.expect("current url");
+            if !url.as_str().contains(fragment) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        let url = self.driver.current_url().await.expect("current url");
+        panic!("URL still contains `{fragment}` (last: {url})");
     }
 
     /// Wait until the current URL contains `fragment` (redirect chains).
@@ -165,7 +196,8 @@ pub async fn login_basic(h: &Harness) {
         .click()
         .await
         .expect("submit");
-    h.wait_url_contains("/").await;
-    // The shell footer is the "authenticated chrome rendered" marker.
+    // Off the login screen, then the shell footer as the
+    // authenticated-chrome marker.
+    h.wait_url_not_contains("/login").await;
     h.wait_css("footer").await;
 }
