@@ -10,8 +10,10 @@
 
 pub mod app;
 pub mod auth;
+pub mod builder;
 pub mod error;
 pub mod format;
+pub mod pages;
 
 #[cfg(feature = "ssr")]
 pub mod cdr;

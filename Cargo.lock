@@ -2321,6 +2321,7 @@ dependencies = [
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "openehr-query",
  "openidconnect",
  "reqwest 0.13.4",
  "secrecy",
