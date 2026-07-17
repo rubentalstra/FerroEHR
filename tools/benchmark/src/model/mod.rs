@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn build_capacity_is_deterministic() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         let a = build_capacity(&cap_spec(20, 1.0), window, warmup).expect("capacity");
         let b = build_capacity(&cap_spec(20, 1.0), window, warmup).expect("capacity");
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn build_capacity_compresses_onto_the_step_window() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         let w = build_capacity(&cap_spec(40, 1.0), window, warmup).expect("capacity");
         assert!(!w.ops.is_empty());
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn build_capacity_scales_ops_with_load_factor() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         // Same ward + seed, only L doubles → the rate-driven op count ~doubles.
         let l1 = build_capacity(&cap_spec(80, 1.0), window, warmup).expect("capacity");
@@ -307,7 +307,7 @@ mod tests {
         };
         let w = build_capacity(
             &smoke_spec,
-            Duration::from_secs(120),
+            Duration::from_mins(2),
             Duration::from_secs(15),
         )
         .expect("capacity");

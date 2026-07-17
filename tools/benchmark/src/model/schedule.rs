@@ -586,7 +586,7 @@ mod tests {
     fn smoke_profile_is_small() {
         let s = spec(Profile::Smoke, 4, 1);
         let ward = Ward::new(&s);
-        let ops = build_ops(&s, &ward, Duration::from_secs(120), Duration::from_secs(15))
+        let ops = build_ops(&s, &ward, Duration::from_mins(2), Duration::from_secs(15))
             .expect("smoke builds");
         // A handful of ops per patient — far smaller than the hour profile.
         assert!(!ops.is_empty());

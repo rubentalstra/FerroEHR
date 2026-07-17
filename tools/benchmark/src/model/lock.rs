@@ -157,7 +157,7 @@ mod tests {
         );
         let b = compute(
             &s,
-            Duration::from_secs(120),
+            Duration::from_mins(2),
             Duration::from_secs(15),
             &sources(),
         );
