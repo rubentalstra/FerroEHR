@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Guard: every committed adjudication register must load and validate — a
 //! malformed or uncited register would otherwise only surface mid-run.
 //!

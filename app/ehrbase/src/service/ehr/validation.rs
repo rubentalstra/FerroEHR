@@ -536,9 +536,14 @@ pub(in crate::service) fn validate_folder(folder: &Value) -> Result<(), ServiceE
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
-
     use serde_json::{Value, json};
 
     use super::{validate_ehr_access, validate_ehr_status, validate_folder};

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! `FhirTerminologyProvider` wire-contract tests (B4, `docs/terminology-validation.md`
 //! §5), driven by `wiremock` — a hermetic FHIR R4 terminology server: canned
 //! `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses + fault injection

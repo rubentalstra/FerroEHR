@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Parse the official openEHR AQL worked-example corpus (vendored under
 //! `vendor/examples/`, from specifications-QUERY). Every `----` listing block
 //! that is standard **AQL 1.1.0** must parse.

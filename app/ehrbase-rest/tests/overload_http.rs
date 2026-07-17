@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Ingress overload-shedding tests, driven through the fully assembled router
 //! over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`/parking
 //! hook is gone).

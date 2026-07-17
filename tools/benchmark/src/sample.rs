@@ -283,9 +283,16 @@ pub async fn settle_maintenance(db: &DbAccess) -> bool {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)]
+// test assertions/diagnostics/fixtures
+// The expected-value arithmetic mirrors the parser's own byte casts.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 mod tests {
-    // The expected-value arithmetic mirrors the parser's own byte casts.
-    #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     use super::*;
 
     #[test]

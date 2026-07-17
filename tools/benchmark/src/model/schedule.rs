@@ -399,7 +399,12 @@ fn diurnal_weight(tau: f64) -> f64 {
 }
 
 #[cfg(test)]
-#[allow(clippy::duration_suboptimal_units)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::collections::BTreeMap;
 
@@ -417,13 +422,8 @@ mod tests {
 
     fn build(spec: &WorkloadSpec) -> Vec<PlannedOp> {
         let ward = Ward::new(spec);
-        build_ops(
-            spec,
-            &ward,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
-        )
-        .expect("schedule builds")
+        build_ops(spec, &ward, Duration::from_hours(1), Duration::from_mins(5))
+            .expect("schedule builds")
     }
 
     #[test]
@@ -513,7 +513,7 @@ mod tests {
         let mut reads = 0u64;
         let mut writes = 0u64;
         for op in &ops {
-            if op.at < Duration::from_secs(300) {
+            if op.at < Duration::from_mins(5) {
                 continue; // warmup discarded
             }
             if op.class.is_read() {
@@ -586,7 +586,7 @@ mod tests {
     fn smoke_profile_is_small() {
         let s = spec(Profile::Smoke, 4, 1);
         let ward = Ward::new(&s);
-        let ops = build_ops(&s, &ward, Duration::from_secs(120), Duration::from_secs(15))
+        let ops = build_ops(&s, &ward, Duration::from_mins(2), Duration::from_secs(15))
             .expect("smoke builds");
         // A handful of ops per patient — far smaller than the hour profile.
         assert!(!ops.is_empty());

@@ -1,7 +1,15 @@
 //! Registration-side ADL2 validity tests: one spec-valid source, then one
 //! targeted mutation per enforced AOM2 rule code.
 
-use super::{Adl2Violation, validate_adl2_source};
+#![allow(
+    clippy::panic,
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+use ehrbase::validation::adl2::{Adl2Violation, validate_adl2_source};
 
 /// A minimal spec-valid ADL2 source archetype: header, HRID, language,
 /// definition, terminology (ADL2 master02 §Structure; the terminology carries
@@ -66,9 +74,8 @@ terminology
 "#;
 
 fn expect_code(src: &str, code: &str) {
-    let Adl2Violation { code: got, detail } = validate_adl2_source(src)
-        .err()
-        .expect("expected a violation");
+    let Adl2Violation { code: got, detail } =
+        validate_adl2_source(src).expect_err("expected a violation");
     assert_eq!(got, code, "expected {code}, got {got}: {detail}");
 }
 
@@ -240,9 +247,9 @@ fn specialised_artefact_meta() {
         Some("openEHR-EHR-OBSERVATION.parent.v1.0.0")
     );
     // VACSD: parent depth 0 → child depth must be 1.
-    super::check_specialisation_depth(&meta, 0).expect("depth 1 = 0 + 1");
+    ehrbase::validation::adl2::check_specialisation_depth(&meta, 0).expect("depth 1 = 0 + 1");
     assert_eq!(
-        super::check_specialisation_depth(&meta, 1)
+        ehrbase::validation::adl2::check_specialisation_depth(&meta, 1)
             .err()
             .map(|v| v.code),
         Some("VACSD")

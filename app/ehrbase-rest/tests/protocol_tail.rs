@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the MUST-level ITS-REST protocol tail (B6 cluster
 //! 4): the `openEHR-VERSION.*` / `openEHR-AUDIT_DETAILS.*` committal request
 //! headers (parse + merge), `If-Match` hardening (malformed → 400), the

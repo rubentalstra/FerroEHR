@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Behavioural tests for `#[derive(OpenEhrType)]`.
 #![allow(clippy::float_cmp, clippy::approx_constant)]
 

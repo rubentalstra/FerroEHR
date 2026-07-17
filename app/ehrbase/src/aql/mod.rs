@@ -242,6 +242,3 @@ fn collect_bind(b: &Bind, out: &mut BTreeSet<String>) {
         out.insert(p.clone());
     }
 }
-
-#[cfg(test)]
-mod tests;

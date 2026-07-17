@@ -162,7 +162,12 @@ fn source_descriptor(kind: TemplateKind) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::duration_suboptimal_units)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 
@@ -181,8 +186,8 @@ mod tests {
         assert!(!w.ops.is_empty());
         assert!(w.ops.windows(2).all(|p| p[0].at <= p[1].at));
         assert_eq!(w.lock.len(), 64);
-        assert_eq!(w.window, Duration::from_secs(3600));
-        assert_eq!(w.warmup, Duration::from_secs(300));
+        assert_eq!(w.window, Duration::from_hours(1));
+        assert_eq!(w.warmup, Duration::from_mins(5));
     }
 
     #[test]
@@ -241,7 +246,7 @@ mod tests {
 
     #[test]
     fn build_capacity_is_deterministic() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         let a = build_capacity(&cap_spec(20, 1.0), window, warmup).expect("capacity");
         let b = build_capacity(&cap_spec(20, 1.0), window, warmup).expect("capacity");
@@ -253,7 +258,7 @@ mod tests {
 
     #[test]
     fn build_capacity_compresses_onto_the_step_window() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         let w = build_capacity(&cap_spec(40, 1.0), window, warmup).expect("capacity");
         assert!(!w.ops.is_empty());
@@ -276,7 +281,7 @@ mod tests {
 
     #[test]
     fn build_capacity_scales_ops_with_load_factor() {
-        let window = Duration::from_secs(120);
+        let window = Duration::from_mins(2);
         let warmup = Duration::from_secs(15);
         // Same ward + seed, only L doubles → the rate-driven op count ~doubles.
         let l1 = build_capacity(&cap_spec(80, 1.0), window, warmup).expect("capacity");
@@ -300,12 +305,8 @@ mod tests {
             load_factor: 1.0,
             seed: 3,
         };
-        let w = build_capacity(
-            &smoke_spec,
-            Duration::from_secs(120),
-            Duration::from_secs(15),
-        )
-        .expect("capacity");
+        let w = build_capacity(&smoke_spec, Duration::from_mins(2), Duration::from_secs(15))
+            .expect("capacity");
         assert!(
             measured_small_writes(&w) > 200,
             "capacity must use the Hour rate shape, not the fixed smoke counts"

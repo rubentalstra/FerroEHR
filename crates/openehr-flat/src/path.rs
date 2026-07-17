@@ -24,7 +24,8 @@ use serde_json::Value;
 /// error (an unterminated predicate, or a general-comparison predicate that
 /// belongs to AQL rather than a `PATHABLE` path) resolves to no segments — the
 /// caller then treats the path as locating nothing, never panicking.
-pub(crate) fn parse(rel: &str) -> Vec<PathSegment> {
+#[must_use]
+pub fn parse(rel: &str) -> Vec<PathSegment> {
     rel.parse::<RmPath>()
         .map(|p| p.segments)
         .unwrap_or_default()
@@ -121,6 +122,12 @@ pub(crate) fn resolve<'a>(rm: &'a Value, segs: &[PathSegment]) -> Vec<&'a Value>
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

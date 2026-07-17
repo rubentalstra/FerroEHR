@@ -199,7 +199,7 @@ async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
     // tail latency per small response on some stacks. A failed setsockopt is
     // not fatal — the connection is served regardless.
     let listener = listener.tap_io(|io: &mut tokio::net::TcpStream| {
-        let _ = io.set_nodelay(true);
+        io.set_nodelay(true).ok();
     });
     axum::serve(listener, make)
         .with_graceful_shutdown(shutdown_signal())
@@ -210,7 +210,7 @@ async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
 /// Resolve when the process receives `SIGINT` (Ctrl-C) or, on Unix, `SIGTERM`.
 async fn shutdown_signal() {
     let ctrl_c = async {
-        let _ = tokio::signal::ctrl_c().await;
+        tokio::signal::ctrl_c().await.ok();
     };
     #[cfg(unix)]
     let terminate = async {

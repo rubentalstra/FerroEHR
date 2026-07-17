@@ -322,22 +322,8 @@ pub fn build_scope(
 
 // ── test-only inline renderers ─────────────────────────────────────────────
 
-/// Translate an AQL `LIKE` pattern to a SQL `LIKE` pattern (QUERY master03
-/// §Operators/LIKE) — the test surface of [`expr::aql_like_to_sql`].
 #[cfg(test)]
-pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
-    expr::aql_like_to_sql(pattern)
-}
-
-/// Render the `archetype_node_id` predicate for `value` to inline SQL text so
-/// tests can assert the emitted condition (the subsumption vs equality split,
-/// G-05).
-#[cfg(test)]
-pub(super) fn archetype_predicate_sql_for_tests(value: &str) -> String {
-    expr::archetype_predicate_sql(value)
-}
-
-#[cfg(test)]
+#[allow(clippy::panic)] // test assertions panic by design
 mod column_vocab {
     //! Pin the builder's storage-column vocabulary to the schema. Every column
     //! name the IR→SQL lowering emits (collected here, one group per table)

@@ -871,6 +871,12 @@ fn is_archetype_root(node_id: &str) -> bool {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod multiplicity_tests {
     use super::is_multiple_attr;
 

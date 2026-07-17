@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Version-tree branching + merge provenance, end-to-end against a real
 //! `PostgreSQL` 18 (testcontainers).
 //!

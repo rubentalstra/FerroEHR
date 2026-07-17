@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Tests for the generated static RM attribute/type model (`openehr_rm::model`,
 //! the AQL planner's oracle). These assert behaviour the
 //! planner relies on: inheritance-aware attribute resolution, descendant/ancestor

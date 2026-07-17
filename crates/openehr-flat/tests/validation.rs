@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end composition-validation tests (P15 PR-C).
 //!
 //! Oracle: the already-vendored, **Apache-2.0** `openEHR_SDK` corpus — canonical

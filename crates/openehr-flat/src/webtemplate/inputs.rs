@@ -660,6 +660,12 @@ iv_bounds!(iv_bounds_datetime, openehr_its::opt14::Intervalofdatetime);
 iv_bounds!(iv_bounds_time, openehr_its::opt14::Intervaloftime);
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::openehr_group;
 

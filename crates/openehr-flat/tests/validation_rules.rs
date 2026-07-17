@@ -2,11 +2,17 @@
 //! `WebTemplate` nodes + minimal instances (no OPT parsing) so each rule is
 //! exercised in isolation. End-to-end corpus tests live in `tests/validation.rs`.
 
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 use indexmap::IndexMap;
 use serde_json::{Value, json};
 
-use super::*;
-use crate::webtemplate::{
+use openehr_flat::validation::*;
+use openehr_flat::webtemplate::{
     WebTemplate, WebTemplateCardinality, WebTemplateCodedValue, WebTemplateExistence,
     WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
     WebTemplateValidation,
@@ -30,9 +36,18 @@ fn wt_of(tree: WebTemplateNode) -> WebTemplate {
 
 /// Run only the `WebTemplate` (archetype-conformance) pass for a matched root.
 fn walk_only(instance: &Value, root: &WebTemplateNode) -> Vec<ValidationMessage> {
-    let mut v = Validator::default();
-    v.walk(instance, root);
-    v.out
+    validate_archetype_conformance(instance, &wt_of(root.clone()))
+}
+
+/// Timing helper for the public-entry perf diagnostics.
+fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
+    let start = std::time::Instant::now();
+    let mut sink = 0usize;
+    for _ in 0..iters {
+        sink = sink.wrapping_add(f());
+    }
+    std::hint::black_box(sink);
+    start.elapsed().as_secs_f64() * 1e6 / f64::from(iters)
 }
 
 fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
@@ -128,12 +143,7 @@ fn cardinality_violation() {
 
 /// Run the archetype-conformance pass with the `553|incomplete|` relaxation.
 fn walk_incomplete(instance: &Value, root: &WebTemplateNode) -> Vec<ValidationMessage> {
-    let mut v = Validator {
-        relax_lower_bounds: true,
-        ..Validator::default()
-    };
-    v.walk(instance, root);
-    v.out
+    validate_archetype_conformance_incomplete(instance, &wt_of(root.clone()))
 }
 
 #[test]
@@ -662,8 +672,9 @@ fn existence_empty_array_counts_as_absent() {
 #[test]
 fn segment_parsing_respects_brackets() {
     // Parsing now routes through the single `openehr_rm::paths` implementation
-    // via `crate::path`; this asserts the validator sees the same segments.
-    let segs = crate::path::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
+    // via `openehr_flat::path`; this asserts the validator sees the same segments.
+    let segs =
+        openehr_flat::path::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
     assert_eq!(segs.len(), 3);
     assert_eq!(segs[0].attribute, "content");
     assert_eq!(
@@ -681,7 +692,7 @@ fn segment_parsing_respects_brackets() {
 
 // ── CNF-hardening additions (master15/16/17 truth tables) ────────────────────
 
-use crate::webtemplate::{WebTemplateCodeList, WebTemplateSlot};
+use openehr_flat::webtemplate::{WebTemplateCodeList, WebTemplateSlot};
 
 /// `1..*` container cardinality with zero members → Cardinality (master15
 /// CONT-COMP-content_card_1plus; AOM 1.4 §cardinality).
@@ -924,7 +935,7 @@ fn media_type_code_list() {
 
 // ── closed-archetype walk ─────────────────────────────────────────
 
-use crate::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
+use openehr_flat::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
 
 /// A COMPOSITION whose `content` is closed to `openEHR-EHR-SECTION.x.v1`: the
 /// defined section is accepted, a foreign OBSERVATION is rejected as unexpected
@@ -1501,62 +1512,6 @@ fn count_type_nodes(v: &Value) -> usize {
     }
 }
 
-/// Time `iters` runs of `f`, returning microseconds per run.
-fn time_pass(iters: u32, mut f: impl FnMut() -> usize) -> f64 {
-    let start = std::time::Instant::now();
-    let mut sink = 0usize;
-    for _ in 0..iters {
-        sink = sink.wrapping_add(f());
-    }
-    std::hint::black_box(sink);
-    start.elapsed().as_secs_f64() * 1e6 / f64::from(iters)
-}
-
-/// P20 overhead checklist item 15 — MEASUREMENT (not a correctness gate):
-/// quantify the pre-tx template-independent validation walk over the populated
-/// IPS example (~1.5k `_type` nodes). The RM-invariant and terminology passes
-/// each traverse the whole instance independently; this splits and times them so
-/// the P20 synthesis can weigh a single-traversal fusion against the DB-bound
-/// write path (~9–11 PG round trips + multi-second node/version INSERTs under
-/// load per the checklist). Ignored by default (timing, not correctness); run:
-/// `cargo nextest run -p openehr-flat --run-ignored all \
-///   -E 'test(measure_ips_validation_walk_cost)' --no-capture`.
-#[test]
-#[ignore = "measurement, not a correctness gate — run with --run-ignored all"]
-fn measure_ips_validation_walk_cost() {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
-    );
-    let comp: Value =
-        serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
-            .expect("parse IPS example");
-    let node_count = count_type_nodes(&comp);
-
-    // Warm up (allocator, branch predictors, the lazily-initialized bundle).
-    for _ in 0..5 {
-        std::hint::black_box(validate_rm_and_terminology(&comp).len());
-    }
-
-    let iters = 50;
-    let t_rm = time_pass(iters, || {
-        let mut v = Validator::default();
-        v.rm_invariant_pass(&comp, &mut String::new());
-        v.out.len()
-    });
-    let t_term = time_pass(iters, || {
-        let mut v = Validator::default();
-        v.terminology_pass(&comp, &mut String::new(), None);
-        v.out.len()
-    });
-    let t_both = time_pass(iters, || validate_rm_and_terminology(&comp).len());
-
-    eprintln!("IPS validation walk cost ({node_count} _type nodes, {iters} iters):");
-    eprintln!("  pass 1 rm_invariant_pass : {t_rm:>8.1} us/op");
-    eprintln!("  pass 2 terminology_pass  : {t_term:>8.1} us/op");
-    eprintln!("  combined (1+2)           : {t_both:>8.1} us/op");
-}
-
 /// P20 overhead checklist item 31 — MEASUREMENT (not a correctness gate):
 /// quantify the archetype-conformance **walk** (pass 3) over the populated IPS
 /// example against its OPT-built `WebTemplate`. Pass 3 is where item 31's
@@ -1578,7 +1533,7 @@ fn measure_ips_validation_full_cost() {
     let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
         .expect("read IPS OPT");
     let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
-    let wt = crate::build_web_template(&opt).expect("build IPS WebTemplate");
+    let wt = openehr_flat::build_web_template(&opt).expect("build IPS WebTemplate");
     let comp: Value = serde_json::from_str(
         &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
             .expect("read IPS example"),

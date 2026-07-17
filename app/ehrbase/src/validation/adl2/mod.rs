@@ -58,9 +58,9 @@ use odin::OdinValue;
 
 /// One registration-validity violation: the AOM2 rule code + a human detail.
 #[derive(Debug)]
-pub(crate) struct Adl2Violation {
-    pub(crate) code: &'static str,
-    pub(crate) detail: String,
+pub struct Adl2Violation {
+    pub code: &'static str,
+    pub detail: String,
 }
 
 impl Adl2Violation {
@@ -74,16 +74,17 @@ impl Adl2Violation {
 
 /// What the structural validation learns about an artefact — the upload path
 /// uses it for storage keys and the VACSD parent check.
-pub(crate) struct Adl2Meta {
+#[derive(Debug)]
+pub struct Adl2Meta {
     /// `archetype` / `template` / `template_overlay` / `operational_template`.
-    pub(crate) kind: &'static str,
+    pub kind: &'static str,
     /// The `ARCHETYPE_HRID` on the line after the header.
-    pub(crate) hrid: String,
+    pub hrid: String,
     /// The parent HRID from the `specialize` section, when present.
-    pub(crate) parent_hrid: Option<String>,
+    pub parent_hrid: Option<String>,
     /// Specialisation depth = extension count of the root node id
     /// (`id1` → 0, `id1.1` → 1, …).
-    pub(crate) depth: usize,
+    pub depth: usize,
 }
 
 /// Validate one ADL2 source at registration. Returns the artefact metadata or
@@ -93,7 +94,7 @@ pub(crate) struct Adl2Meta {
 /// # Errors
 ///
 /// The first [`Adl2Violation`] any phase finds (rule codes in the module doc).
-pub(crate) fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation> {
+pub fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation> {
     let text = src.trim_start_matches('\u{feff}');
     let sections = split_sections(text);
 
@@ -148,7 +149,7 @@ pub(crate) fn validate_adl2_source(src: &str) -> Result<Adl2Meta, Adl2Violation>
 ///
 /// An [`Adl2Violation`] with code `VACSD` when
 /// `meta.depth != parent_depth + 1`.
-pub(crate) fn check_specialisation_depth(
+pub fn check_specialisation_depth(
     meta: &Adl2Meta,
     parent_depth: usize,
 ) -> Result<(), Adl2Violation> {
@@ -735,6 +736,3 @@ fn is_local_code(token: &str) -> bool {
                 .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
     })
 }
-
-#[cfg(test)]
-mod tests;

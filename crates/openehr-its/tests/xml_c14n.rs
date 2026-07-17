@@ -1,4 +1,10 @@
 #![allow(clippy::doc_markdown)] // prose with proper nouns (openEHR, EHRbase, CNF, cabolabs)
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! C14N byte-parity gate for canonical XML.
 //!
 //! The other two XML gates (`xml_roundtrip`, `xml_ehrbase`) prove only internal
@@ -84,7 +90,8 @@ fn c14n(xml: &str, label: &str) -> Result<String, String> {
         .arg(&tmp)
         .output()
         .map_err(|e| format!("run xmllint: {e}"))?;
-    let _ = std::fs::remove_file(&tmp);
+    // Best-effort temp cleanup; a leftover file is harmless.
+    std::fs::remove_file(&tmp).ok();
     if !out.status.success() {
         return Err(format!(
             "xmllint --noblanks --c14n failed ({label}): {}",

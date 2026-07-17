@@ -67,6 +67,12 @@ impl Default for WebTemplateCache {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -128,7 +134,7 @@ mod tests {
         // Miss: `get` returns `None` and never builds.
         assert!(cache.get("t1").await.is_none(), "cold `get` is a miss");
         // After a build, `get` serves the cached entry without rebuilding.
-        let _ = cache
+        let _built = cache
             .get_or_build("t1", || Ok(stub_template("t1")))
             .await
             .expect("build");

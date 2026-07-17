@@ -78,7 +78,7 @@ struct AttrModel {
 
 /// Emit the `model/` files for `openehr-rm` from the merged BASE + RM model.
 #[must_use]
-pub fn emit_files(model: &Model) -> Vec<GenFile> {
+pub(crate) fn emit_files(model: &Model) -> Vec<GenFile> {
     let classes = build(model);
     vec![
         GenFile {

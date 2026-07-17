@@ -282,9 +282,14 @@ pub(crate) fn validate_relationship_for_commit(data: &Value) -> Result<(), Servi
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::expect_used)]
 mod tests {
-    #![allow(clippy::expect_used)]
-
     use serde_json::json;
 
     use super::*;

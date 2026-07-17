@@ -282,6 +282,12 @@ fn parse_attr_pairs(input: &str) -> Vec<(String, String)> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use ehrbase::service::version_update::UpdateAudit;

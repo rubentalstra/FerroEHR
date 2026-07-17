@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the terminology extension API group (SM
 //! `I_TERMINOLOGY_SERVICE`, wire design `docs/design/sm-platform/
 //! 08-target-architecture.md` §7): the config gate

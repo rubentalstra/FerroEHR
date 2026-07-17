@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the ADL2 template wire (SM-2, `I_DEFINITION_ADL2`):
 //! `POST /definition/template/adl2` (text/plain source upload, `Location` +
 //! `Prefer` body), `GET /definition/template/adl2/{template_id}` (text/plain

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the event-subscription admin extension API group:
 //! the config gate (`AppConfig::events_admin_api`), the `200`/`201`/`204`/`404`/
 //! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —

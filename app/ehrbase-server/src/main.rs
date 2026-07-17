@@ -93,6 +93,9 @@ async fn main() -> anyhow::Result<()> {
 }
 
 /// `ehrbase config check` / `ehrbase config default`.
+// The `config default|check` subcommands' PURPOSE is console output
+// (.claude/rules/reliability.md §tools).
+#[allow(clippy::print_stdout, clippy::print_stderr)]
 fn run_config(
     cmd: &ConfigCmd,
     config: Option<&Path>,

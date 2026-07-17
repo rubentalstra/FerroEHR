@@ -215,6 +215,12 @@ fn map_expand_error(e: SmError, service_api: &str, params_uri: &str) -> AqlError
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

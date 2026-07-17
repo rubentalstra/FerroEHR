@@ -320,6 +320,12 @@ fn spawn_reload(dir: PathBuf, schema: Arc<Schema>, policies: Arc<ArcSwap<PolicyS
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::extensions::access::authz::request::Attr;

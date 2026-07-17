@@ -16,7 +16,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 /// One spec schema paired with the crate prelude its types are re-exported from.
-pub struct XmlSchema<'a> {
+pub(crate) struct XmlSchema<'a> {
     pub model: &'a Model,
     pub schema: &'a BmmSchema,
     /// e.g. `openehr_rm::prelude` / `openehr_base::prelude`.
@@ -30,7 +30,7 @@ pub struct XmlSchema<'a> {
 /// Fails codegen (F-05-01 guard) if any emitted LOCATABLE subtype would serialize
 /// `archetype_node_id` as a child element rather than the required XML attribute
 /// (i.e. its XSD closure is missing, so it falls back to attribute-less BMM order).
-pub fn emit_file(
+pub(crate) fn emit_file(
     schemas: &[XmlSchema<'_>],
     xsd: &XsdModel,
     unmatched: &mut Vec<(String, String)>,
@@ -445,7 +445,7 @@ fn check_bmm_field_coverage(ty: &XmlType, xsd: &XsdModel, violations: &mut Vec<S
 
 /// Emit `impl ToXml` for one [`XmlType`]. Public so the OPT emitter
 /// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
-pub fn emit_to_xml(
+pub(crate) fn emit_to_xml(
     b: &mut String,
     ty: &XmlType,
     prelude: &str,
@@ -612,7 +612,7 @@ fn emit_write_field(b: &mut String, f: &XmlField) {
 
 /// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
 /// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
-pub fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
+pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
     match ty {
         XmlType::Struct {
             spec,
