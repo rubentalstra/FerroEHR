@@ -15,6 +15,7 @@ use uuid::Uuid;
 use super::EhrbaseService;
 use super::ehr;
 use super::error::ServiceError;
+use crate::ids::{EhrId, VoId};
 use crate::versioning::{CommitEnv, Kind, SigningCtx};
 
 #[async_trait::async_trait]
@@ -44,31 +45,31 @@ impl CommitEnv for EhrbaseService {
         EhrbaseService::validate_for_commit(self, kind, data, incomplete).await
     }
 
-    async fn ensure_ehr_exists(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+    async fn ensure_ehr_exists(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         EhrbaseService::ensure_ehr_exists(self, ehr_id).await
     }
 
-    async fn ensure_content_writable(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+    async fn ensure_content_writable(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         EhrbaseService::ensure_content_writable(self, ehr_id).await
     }
 
     async fn current_vo(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         kind: Kind,
-    ) -> Result<Option<(Uuid, i32)>, ServiceError> {
+    ) -> Result<Option<(VoId, i32)>, ServiceError> {
         Ok(EhrbaseService::current_vo(self, ehr_id, kind)
             .await?
             .map(|(vo_id, tree)| (vo_id, tree.trunk)))
     }
 
-    async fn invalidate_ehr_access(&self, ehr_id: Uuid) {
+    async fn invalidate_ehr_access(&self, ehr_id: EhrId) {
         EhrbaseService::invalidate_ehr_access(self, ehr_id).await;
     }
 
     async fn folder_root_exists(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         archetype_node_id: &str,
         name: &str,
     ) -> Result<bool, ServiceError> {
@@ -84,7 +85,7 @@ impl CommitEnv for EhrbaseService {
     async fn pre_composition_modify(
         &self,
         tx: &mut sqlx::PgConnection,
-        vo_id: Uuid,
+        vo_id: VoId,
         canonical: &Value,
     ) -> Result<(), ServiceError> {
         ehr::validation::check_versioned_composition_invariants(tx, vo_id, canonical).await
@@ -93,7 +94,7 @@ impl CommitEnv for EhrbaseService {
     async fn post_status_commit(
         &self,
         tx: &mut sqlx::PgConnection,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         status: &Value,
     ) -> Result<(), ServiceError> {
         self.sync_ehr_subject(tx, ehr_id, status).await

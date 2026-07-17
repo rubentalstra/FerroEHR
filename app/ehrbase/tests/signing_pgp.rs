@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! `OpenPGP`-mode integration tests (design §6.2): sign→verify round-trip with a
 //! generated key, tamper detection, armor-parse failures, and the fail-closed
 //! boot validation (missing path, garbled key, wrong passphrase).

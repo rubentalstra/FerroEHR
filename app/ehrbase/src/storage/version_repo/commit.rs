@@ -11,6 +11,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
@@ -36,9 +37,9 @@ pub struct AuditRow<'a> {
 /// versioning layer's documentation of what a stored version carries.
 #[derive(Debug)]
 pub struct VersionRow<'a> {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal — NOT the wire version number.
     pub sys_version: i32,
     pub trunk_version: i32,
@@ -71,7 +72,7 @@ pub struct VersionRow<'a> {
 // The preceding-version reads and the next-ordinal/next-branch computation that
 // surround this lock are the version-tree placement DECISION — they live in the
 // versioning layer (`versioning::change`), which calls this lock first.
-pub async fn advisory_lock(tx: &mut PgConnection, vo_id: Uuid) -> Result<(), StorageError> {
+pub async fn advisory_lock(tx: &mut PgConnection, vo_id: VoId) -> Result<(), StorageError> {
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))")
         .bind(vo_id)
         .execute(&mut *tx)
@@ -143,7 +144,7 @@ pub async fn insert_audit_at(
 /// [`write_contribution`].)
 pub async fn insert_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     audit_id: Uuid,
 ) -> Result<Uuid, StorageError> {
     let inserted: Option<Uuid> = sqlx::query_scalar(
@@ -185,7 +186,7 @@ pub async fn insert_contribution(
 /// else [`StorageError::Database`] on a driver/insert failure.
 pub async fn write_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     audit: &AuditRow<'_>,
     supplied: Option<Uuid>,
 ) -> Result<(Uuid, Uuid, jiff::Timestamp), StorageError> {
@@ -228,7 +229,7 @@ pub async fn write_contribution(
 /// Returns [`StorageError::Database`] on a driver/update failure.
 pub async fn close_ordinal_at_now(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     ordinal: i32,
 ) -> Result<(), StorageError> {
     sqlx::query(
@@ -259,9 +260,9 @@ pub async fn close_ordinal_at_now(
 /// rows for the lineage. Close-then-insert stays ordered (master06 §Version tree).
 #[derive(Debug)]
 pub struct FoldedVersion<'a> {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub sys_version: i32,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -429,8 +430,8 @@ pub async fn commit_version_into(
 /// Returns [`StorageError::Database`] on a driver/insert failure.
 pub async fn insert_ehr_folder_rank(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
-    vo_id: Uuid,
+    ehr_id: EhrId,
+    vo_id: VoId,
 ) -> Result<(), StorageError> {
     sqlx::query(
         "INSERT INTO ehr_folder (ehr_id, rank, vo_id) VALUES \
@@ -457,7 +458,7 @@ pub async fn insert_ehr_folder_rank(
 pub async fn write_outbox(
     tx: &mut PgConnection,
     contribution_id: Uuid,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     committed_at: jiff::Timestamp,
     versions: Vec<Value>,
 ) -> Result<(), StorageError> {

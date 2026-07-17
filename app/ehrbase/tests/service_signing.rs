@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end tests for version signing (`VERSION.signature`, RM common
 //! §"Digital Signature"; design `docs/design/version-signing.md` §6.3–6.4)
 //! against a real `PostgreSQL` 18 (testcontainers).

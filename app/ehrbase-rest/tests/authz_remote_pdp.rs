@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! `RemotePdp` wire-contract tests (`docs/enterprise/access-control.md` §9.3),
 //! driven by `wiremock`: URL = base + policy name; a flat JSON body with exactly
 //! the configured keys; 200 → permit, non-200 → deny; connect/timeout →

@@ -36,6 +36,7 @@ pub mod banner;
 pub mod config;
 pub mod db;
 pub mod extensions;
+pub mod ids;
 pub mod service;
 pub mod storage;
 pub mod system_log;

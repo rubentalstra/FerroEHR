@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end FHIR **outbound** emitter against a real broker (testcontainers
 //! `RabbitMQ`) + a real `PostgreSQL` 18
 //!

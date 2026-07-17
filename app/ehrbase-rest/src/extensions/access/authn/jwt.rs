@@ -226,6 +226,12 @@ impl RemoteJwks {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use crate::extensions::access::authz::roles::default_role_claims;
     use jsonwebtoken::{EncodingKey, Header, encode};

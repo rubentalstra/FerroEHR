@@ -39,6 +39,10 @@ workflow refuses a tag that has no matching section here.
   (previously some JSON-only endpoints leniently returned JSON), and the
   server's own generated OpenAPI now advertises the simplified media types
   on the composition, contribution, and template endpoints.
+- Release builds now abort on integer arithmetic overflow instead of
+  silently wrapping (`overflow-checks` enabled in the release profile) — a
+  corrupted-value class of fault becomes a crash-and-restart instead of
+  wrong clinical data.
 
 ### Removed
 

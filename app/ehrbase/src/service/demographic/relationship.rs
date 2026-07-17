@@ -22,6 +22,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::support;
 use crate::service::demographic::validate::validate_relationship_body;
@@ -41,7 +42,7 @@ use crate::versioning::{CommitEnv, Kind};
 /// and thread it through the `If-Match` compare and the existence / not-deleted
 /// gates. RM common master06 §Version Identification / §Logical Deletion.
 pub(super) struct CurrentRelationship {
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: TreeId,
     creating_system_id: String,
     deleted: bool,
@@ -68,7 +69,7 @@ impl EhrbaseService {
     /// wrong-kind or unknown id is `404`.
     async fn load_relationship_version(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<VersionRead, ServiceError> {
@@ -84,7 +85,7 @@ impl EhrbaseService {
 
     /// Confirm `vo_id` is a relationship (any version) — the check for the
     /// `versioned_party_relationship` reads. A non-relationship id is `404`.
-    async fn ensure_any_relationship(&self, vo_id: Uuid) -> Result<(), ServiceError> {
+    async fn ensure_any_relationship(&self, vo_id: VoId) -> Result<(), ServiceError> {
         match object_kind(&self.pool, vo_id).await? {
             Some(Kind::PartyRelationship) => Ok(()),
             _ => Err(ServiceError::NotFound(format!(
@@ -99,7 +100,7 @@ impl EhrbaseService {
     /// object.
     pub(super) async fn relationship_current(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Option<CurrentRelationship>, ServiceError> {
         let Some(current) = demographic_current(&self.pool, vo_id).await? else {
             return Ok(None);
@@ -120,7 +121,7 @@ impl EhrbaseService {
     /// the lean resolve, no node reassembly.
     pub(super) async fn relationship_current_meta(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         Ok(self
             .relationship_current(vo_id)
@@ -174,7 +175,7 @@ impl EhrbaseService {
     /// unknown or wrong-kind id is `404`.
     pub(super) async fn read_relationship(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
@@ -193,7 +194,7 @@ impl EhrbaseService {
     /// (from `If-Match`) enforces optimistic concurrency.
     pub(super) async fn update_relationship(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         body: Value,
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
@@ -316,7 +317,7 @@ impl EhrbaseService {
     /// No ITS-REST demographic contract governs this — our own extension by
     /// analogy with the EHR group (assembly + G-6 owner PORT NOTE in
     /// `support::versioned_wrapper`).
-    pub(super) async fn versioned_relationship(&self, vo_id: Uuid) -> Result<Value, ServiceError> {
+    pub(super) async fn versioned_relationship(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;
         self.versioned_wrapper(
             vo_id,
@@ -332,7 +333,7 @@ impl EhrbaseService {
     /// §Revision History). A non-relationship id is `404`.
     pub(super) async fn relationship_revision_history(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
     ) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;
         self.demographic_revision_history(vo_id).await
@@ -342,7 +343,7 @@ impl EhrbaseService {
     /// `ORIGINAL_VERSION` at a specific version. A non-relationship id is `404`.
     pub(super) async fn relationship_version(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;
@@ -354,7 +355,7 @@ impl EhrbaseService {
     /// `ETag`/`Location` metadata for the VERSION resource.
     pub(super) async fn relationship_version_at_time(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;

@@ -11,12 +11,13 @@
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
 /// One `item_tag` row.
 #[derive(Debug, Clone)]
 pub struct TagRow {
-    pub target_vo_id: Uuid,
+    pub target_vo_id: VoId,
     pub target_type: String,
     pub key: String,
     pub value: Option<String>,
@@ -50,8 +51,8 @@ fn tag_row(row: &sqlx::postgres::PgRow) -> Result<TagRow, StorageError> {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn list_tags(
     pool: &PgPool,
-    ehr_scope: Option<Uuid>,
-    target_vo_id: Option<Uuid>,
+    ehr_scope: Option<EhrId>,
+    target_vo_id: Option<VoId>,
     key: Option<&str>,
     value: Option<&str>,
     target_path: Option<&str>,
@@ -83,8 +84,8 @@ pub async fn list_tags(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn replace_tags(
     tx: &mut PgConnection,
-    ehr_scope: Option<Uuid>,
-    target_vo_id: Uuid,
+    ehr_scope: Option<EhrId>,
+    target_vo_id: VoId,
     tags: &[NewTag<'_>],
 ) -> Result<(), StorageError> {
     sqlx::query("DELETE FROM item_tag WHERE ehr_id IS NOT DISTINCT FROM $1 AND target_vo_id = $2")
@@ -137,8 +138,8 @@ pub async fn replace_tags(
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn delete_tag(
     pool: &PgPool,
-    ehr_scope: Option<Uuid>,
-    target_vo_id: Uuid,
+    ehr_scope: Option<EhrId>,
+    target_vo_id: VoId,
     key: &str,
 ) -> Result<bool, StorageError> {
     let deleted = sqlx::query(

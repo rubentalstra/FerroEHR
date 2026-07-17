@@ -12,6 +12,7 @@
 
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::SmError;
@@ -26,7 +27,9 @@ impl EhrbaseService {
     ///   (`has_ehr` false → `ehr_id_does_not_exist`).
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn admin_ehr_delete(&self, ehr_id: String) -> Result<(), SmError> {
-        Ok(self.delete_ehr(super::parse_uuid(&ehr_id, "EHR")?).await?)
+        Ok(self
+            .delete_ehr(EhrId(super::parse_uuid(&ehr_id, "EHR")?))
+            .await?)
     }
 
     /// The `admin_ehr_delete_all` extension: physically delete a set of EHRs
@@ -40,7 +43,10 @@ impl EhrbaseService {
     ///   (the whole bulk request is rejected before any deletion runs).
     /// - `exception` — a database fault while deleting.
     pub async fn admin_ehr_delete_all(&self, ehr_ids: Vec<String>) -> Result<u64, SmError> {
-        let ids = super::parse_uuid_list(&ehr_ids, "EHR")?;
+        let ids: Vec<EhrId> = super::parse_uuid_list(&ehr_ids, "EHR")?
+            .into_iter()
+            .map(EhrId)
+            .collect();
         Ok(self.delete_ehr_set(&ids).await?)
     }
 
@@ -56,7 +62,7 @@ impl EhrbaseService {
     /// - `exception` — a database fault mid-transaction (rolled back).
     pub async fn physical_party_delete(&self, a_party_id: String) -> Result<(), SmError> {
         Ok(self
-            .physical_delete_party(super::parse_uuid(&a_party_id, "party")?)
+            .physical_delete_party(VoId(super::parse_uuid(&a_party_id, "party")?))
             .await?)
     }
 
@@ -80,7 +86,7 @@ impl EhrbaseService {
     /// only abstractly (`ehr_id_does_not_exist`) with no HTTP binding): we map it
     /// to `NotFound` → HTTP `404`, the natural REST reading of an operation on a
     /// non-existent resource.
-    async fn delete_ehr(&self, ehr_id: Uuid) -> Result<(), ServiceError> {
+    async fn delete_ehr(&self, ehr_id: EhrId) -> Result<(), ServiceError> {
         // Our own extension (no openEHR spec governs multimedia offload): when
         // DV_MULTIMEDIA externalization is on, collect the blob keys this EHR's
         // nodes reference *before* deletion, so we can GC the ones no other node
@@ -138,13 +144,13 @@ impl EhrbaseService {
     /// bulk call, so the idempotent skip-missing semantics + returned count are
     /// our own design (no openEHR spec governs bulk-delete internals); a
     /// partial success is observable at the REST edge.
-    async fn delete_ehr_set(&self, ehr_ids: &[Uuid]) -> Result<u64, ServiceError> {
+    async fn delete_ehr_set(&self, ehr_ids: &[EhrId]) -> Result<u64, ServiceError> {
         // Chunking bounds each transaction's lock/WAL footprint on a
         // full-store wipe.
         const CHUNK: usize = 128;
         // An empty selector = the full EHR set (see `admin_ehr_delete_all`); a
         // non-empty selector deletes exactly the named EHRs.
-        let targets: Vec<Uuid> = if ehr_ids.is_empty() {
+        let targets: Vec<EhrId> = if ehr_ids.is_empty() {
             sqlx::query_scalar("SELECT id FROM ehr")
                 .fetch_all(&self.pool)
                 .await?
@@ -188,7 +194,7 @@ impl EhrbaseService {
     /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
     /// (empty when externalization is disabled) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
-    async fn collect_blob_keys_for(&self, ehr_ids: &[Uuid]) -> Result<Vec<String>, ServiceError> {
+    async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -209,7 +215,7 @@ impl EhrbaseService {
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
-    async fn collect_ehr_blob_keys(&self, ehr_id: Uuid) -> Result<Vec<String>, ServiceError> {
+    async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -285,7 +291,7 @@ impl EhrbaseService {
     /// (guarded — a row shared with a survivor is kept), and any `vo_archive`
     /// markers. `audit` has no FK from `vo_version` (NO ACTION), so those rows
     /// are swept explicitly, as in the EHR delete.
-    async fn physical_delete_party(&self, party_id: Uuid) -> Result<(), ServiceError> {
+    async fn physical_delete_party(&self, party_id: VoId) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
 
         // The target must be a demographic PARTY (ehr-less; any version exists).
@@ -305,7 +311,7 @@ impl EhrbaseService {
         // not LOCATABLE children), so their `id.value` — the party's
         // versioned-object id — is matched with a jsonb path extraction.
         let party_txt = party_id.to_string();
-        let rel_ids: Vec<Uuid> = sqlx::query_scalar(
+        let rel_ids: Vec<VoId> = sqlx::query_scalar(
             "SELECT DISTINCT n.vo_id FROM node n \
              JOIN vo_version v ON v.vo_id = n.vo_id AND v.sys_version = n.sys_version \
              WHERE v.kind = 'PARTY_RELATIONSHIP' \

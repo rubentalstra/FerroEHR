@@ -322,6 +322,12 @@ fn load_key(pem: &[u8]) -> io::Result<rustls::pki_types::PrivateKeyDer<'static>>
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

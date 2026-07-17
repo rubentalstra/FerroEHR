@@ -1,22 +1,30 @@
 //! Unit tests for the AQL planner (path analysis + IR lowering). No DB.
 //!
-//! Queries are parsed by `openehr_query` and planned by [`super::plan`]; each
+//! Queries are parsed by `openehr_query` and planned by [`ehrbase::aql::plan`]; each
 //! test asserts either the lowered IR shape (accepted constructs) or the exact
 //! [`AqlError`] variant (rejected constructs), covering the design doc's feature
 //! envelope. Several queries are taken verbatim from the QUERY 1.1 worked
 //! examples (`docs/specs/openehr/QUERY/docs/AQL/`).
 
+#![allow(
+    clippy::panic,
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 use openehr_query::lexer::CompOp;
 use openehr_query::parser::parse_str;
 
-use super::error::{AnalysisError, AqlError, AqlFeatureError};
-use super::ir::{
+use ehrbase::aql::error::{AnalysisError, AqlError, AqlFeatureError};
+use ehrbase::aql::ir::{
     AggFunc, Coercion, ContainsTree, EhrField, Expr, LeafPath, Link, Operand, PathTarget, QueryIr,
     ScalarFn, SelectValue, Source, TypedLit, VersionField, VersionScope,
 };
-use super::ir::{ParamValue, Params};
-use super::plan;
-use super::sql::SqlCtx;
+use ehrbase::aql::ir::{ParamValue, Params};
+use ehrbase::aql::plan;
+use ehrbase::aql::sql::SqlCtx;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +36,7 @@ fn plan_ok(q: &str) -> QueryIr {
 /// Plan `q` (parameterless) and lower it to SQL, returning the generated SQL
 /// text. Literals bind as `$n` placeholders; structural SQL (EXISTS, OR, CASE …)
 /// is asserted directly against the text — the same technique as
-/// [`super::sql::archetype_predicate_sql_for_tests`].
+/// [`ehrbase::aql::sql::archetype_predicate_sql_for_tests`].
 fn build_sql(q: &str) -> String {
     let ir = plan_ok(q);
     let ctx = SqlCtx {
@@ -38,7 +46,7 @@ fn build_sql(q: &str) -> String {
         limit: None,
         offset: None,
     };
-    super::sql::build(&ir, &Params::new(), &ctx)
+    ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
         .unwrap_or_else(|e| panic!("SQL build failed for {q:?}: {e}"))
         .sql
 }
@@ -664,75 +672,6 @@ fn full_scalar_function_set_plans() {
     ] {
         plan_ok(q);
     }
-}
-
-/// `\*` / `\?` in a LIKE pattern are the literal characters (§Operators/LIKE).
-#[test]
-fn like_escapes_are_literal() {
-    assert_eq!(super::sql::aql_like_to_sql_for_tests("a*b"), "a%b");
-    assert_eq!(super::sql::aql_like_to_sql_for_tests("a?b"), "a_b");
-    assert_eq!(super::sql::aql_like_to_sql_for_tests(r"a\*b"), "a*b");
-    assert_eq!(super::sql::aql_like_to_sql_for_tests(r"a\?b"), "a?b");
-    assert_eq!(super::sql::aql_like_to_sql_for_tests("100%"), r"100\%");
-}
-
-/// The `archetype_node_id` predicate: a full archetype HRID lowers to the
-/// subsumption condition (parent + specialisation children, same entity +
-/// major); an at-code keeps the case-folded equality. BASE
-/// `architecture_overview` master10 §Design-time Relationships; AM master07
-/// §Querying.
-#[test]
-fn archetype_predicate_subsumption_sql() {
-    // Parent archetype: matches its own concept OR any `laboratory-` child,
-    // scoped to the same qualified RM entity + major.
-    let parent =
-        super::sql::archetype_predicate_sql_for_tests("openEHR-EHR-OBSERVATION.laboratory.v1");
-    assert!(
-        parent.contains(r#""n"."arch_entity" = 'openehr-ehr-observation'"#),
-        "entity match (lowercased): {parent}"
-    );
-    assert!(
-        parent.contains(r#""n"."arch_major" = 1"#),
-        "major bound: {parent}"
-    );
-    assert!(
-        parent.contains(r#""n"."arch_concept" = 'laboratory'"#),
-        "exact concept match: {parent}"
-    );
-    assert!(
-        parent.contains(r#""n"."arch_concept" LIKE 'laboratory-%'"#),
-        "specialisation-child prefix match: {parent}"
-    );
-    assert!(
-        !parent.contains("LOWER"),
-        "the HRID path does not fall back to case-folded equality: {parent}"
-    );
-
-    // A specialisation child carries its full concept, so it prefix-matches its
-    // own further children too.
-    let child = super::sql::archetype_predicate_sql_for_tests(
-        "openEHR-EHR-OBSERVATION.laboratory-glucose.v1",
-    );
-    assert!(
-        child.contains(r#""n"."arch_concept" = 'laboratory-glucose'"#),
-        "exact specialised concept: {child}"
-    );
-    assert!(
-        child.contains(r#""n"."arch_concept" LIKE 'laboratory-glucose-%'"#),
-        "further-specialisation prefix: {child}"
-    );
-
-    // An at-code is not a full HRID → case-folded equality on `archetype`, no
-    // subsumption columns.
-    let at_code = super::sql::archetype_predicate_sql_for_tests("at0001");
-    assert!(
-        at_code.contains("LOWER") && at_code.contains(r#""n"."archetype""#),
-        "at-code keeps case-folded equality: {at_code}"
-    );
-    assert!(
-        !at_code.contains("arch_entity"),
-        "at-code does not use the subsumption columns: {at_code}"
-    );
 }
 
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────

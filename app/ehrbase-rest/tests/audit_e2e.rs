@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end ATNA audit over the real axum app (binding doc §8.5).
 //!
 //! Drives the assembled router (auth + audit + dispatch) with `tower`'s

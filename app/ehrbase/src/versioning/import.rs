@@ -24,6 +24,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::storage::codec::decompose;
 use crate::versioning::Kind;
@@ -43,7 +44,7 @@ struct ContainerState {
     /// The stored kind, if the `vo_id` already exists.
     kind: Option<Kind>,
     /// The owning EHR of the existing container.
-    owner: Option<Uuid>,
+    owner: Option<EhrId>,
     /// The highest trunk version currently held.
     max_trunk: i32,
     /// The highest storage ordinal currently held.
@@ -56,7 +57,7 @@ struct ContainerState {
 /// container with an unrecognized stored kind is a server fault.
 async fn container_state(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<ContainerState, ServiceError> {
     let row = crate::storage::version_repo::import::imported_container_state(tx, vo_id).await?;
     let kind = match row.kind {
@@ -120,7 +121,7 @@ impl ImportVersion {
 /// `VERSIONED_OBJECT` is created, with its uid set to the same value as the
 /// received `VERSION._uid.object_id()`"), its kind, and its versions.
 pub(crate) struct ImportContainer {
-    pub(crate) vo_id: Uuid,
+    pub(crate) vo_id: VoId,
     pub(crate) kind: Kind,
     pub(crate) versions: Vec<ImportVersion>,
 }
@@ -138,7 +139,7 @@ pub(crate) struct ImportContainer {
 /// [`ServiceError::Conflict`]; plus decompose/storage write errors.
 pub(crate) async fn commit_import(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
     outbox_enabled: bool,
@@ -194,7 +195,7 @@ pub(crate) async fn commit_demographic_import(
 #[allow(clippy::too_many_lines)] // one linear import transaction; splitting would obscure the replay order
 async fn commit_import_scoped(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     import_audit: &AuditInput,
     containers: Vec<ImportContainer>,
     skip_existing: bool,

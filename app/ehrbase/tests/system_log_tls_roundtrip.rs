@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! RFC 5425 TLS framing round-trip (§8.5): send an octet-counted syslog record
 //! over a real TLS connection to an in-process rustls listener that trusts a
 //! generated test CA, and assert the exact framed bytes arrive.

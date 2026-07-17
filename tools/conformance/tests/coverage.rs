@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! The ECC catalogue + case-metadata guard (the CI `cnf coverage guard`).
 //!
 //! Every registered case must have an allocated `ECC-<AREA>-<NNN>` number in

@@ -22,6 +22,10 @@
 //! `format!` to a `String`) and `cast_precision_loss` (metric math casts
 //! counts/latencies to `f64`; the loss is irrelevant at these magnitudes).
 #![allow(clippy::format_push_string, clippy::cast_precision_loss)]
+// Verification CLI: progress/diagnostics on the console ARE this tool's user
+// interface — the reliability deny-tier for shipped code deliberately relaxes
+// stdio here (.claude/rules/reliability.md §tools).
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 pub mod drive;
 pub mod measure;

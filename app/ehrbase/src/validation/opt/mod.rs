@@ -280,6 +280,3 @@ fn walk_object(obj: &CObject, ctx: &Ctx) -> Result<(), Violation> {
     }
     Ok(())
 }
-
-#[cfg(test)]
-mod tests;

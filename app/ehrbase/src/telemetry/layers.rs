@@ -33,7 +33,7 @@ type BoxedLayer = Box<dyn Layer<Base> + Send + Sync>;
 ///
 /// # Errors
 /// Returns [`TelemetryError::Subscriber`] if a global subscriber is already set.
-pub fn init_subscriber(
+pub(super) fn init_subscriber(
     format: super::config::LogFormat,
     boot_filter: &str,
     otel_tracer: Option<SdkTracer>,

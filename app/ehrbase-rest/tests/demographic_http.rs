@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the DEMOGRAPHIC group: the `demographic` routes
 //! served through the real [`DemographicService`] over a real `PostgreSQL`, with
 //! `ETag`/`Location`/`Prefer` and the deleted-read→`204` and precondition→`412`

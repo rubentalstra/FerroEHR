@@ -963,6 +963,7 @@ fn parse_locator_and_path(
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)] // test assertions/diagnostics
 mod tests {
     use super::*;
     use serde_json::json;

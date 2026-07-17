@@ -11,6 +11,7 @@
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::VoId;
 use crate::service::error::ServiceError;
 use crate::versioning::SigningCtx;
 use crate::versioning::audit::AuditInput;
@@ -39,7 +40,7 @@ pub(crate) fn sign_version(
     ctx: &SigningCtx<'_>,
     audit: &AuditInput,
     time_committed: jiff::Timestamp,
-    vo_id: Uuid,
+    vo_id: VoId,
     tree: TreeId,
     preceding_uid: Option<&str>,
     contribution_id: Uuid,

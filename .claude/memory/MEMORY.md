@@ -15,3 +15,4 @@ is not repeated here.
 - [Session workflow gotchas](session-workflow-gotchas.md) — background-task ~30min kill (nohup+caffeinate+Monitor), attribution-hook regex traps, changelog-guard label needs PR reopen
 - [Pre-production migrations: edit the baseline directly](pre-production-migrations-edit-baseline.md) — never append ALTER/DROP migrations while nothing is deployed; minimum migration files, update the count guard in the same change
 - [No task IDs in code](no-task-ids-in-code.md) — F-nn/S-nn/G-nn/W-nn tracker markers banned from all code/doc comments; only docs/specs/openehr citations
+- [Served OpenAPI is native](served-openapi-is-native.md) — ehrbase-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input + behavioural oracle, never imported/served; update our #[utoipa::path] in the same PR as any wire change

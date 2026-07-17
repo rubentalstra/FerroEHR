@@ -133,6 +133,12 @@ fn ehr_id_list(query: Option<&str>) -> Vec<String> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::ehr_id_list;
 

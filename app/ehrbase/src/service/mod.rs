@@ -52,6 +52,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::extensions::tenant_context::TenantContext;
+use crate::ids::EhrId;
 use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
 use crate::versioning::signature::signer::Signer;
@@ -150,7 +151,7 @@ pub struct EhrbaseService {
     /// or absent entry falls back to a full read, so it is invalidation-free by
     /// construction (an EHR's identity at creation is immutable). No openEHR
     /// spec governs it — our own performance design.
-    pub(in crate::service) created_ehr_repr: moka::future::Cache<Uuid, Value>,
+    pub(in crate::service) created_ehr_repr: moka::future::Cache<EhrId, Value>,
 }
 
 impl EhrbaseService {

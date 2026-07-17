@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the ADMIN dump/load API against a real
 //! `PostgreSQL` 18 (testcontainers).
 //!

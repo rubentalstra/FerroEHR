@@ -666,6 +666,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

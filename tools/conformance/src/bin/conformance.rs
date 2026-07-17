@@ -17,6 +17,10 @@
 //! `CONFORMANCE_STATEMENT.md`, `CONFORMANCE_CERTIFICATE.md` for our own SUT
 //! only, badges) into `--out/<sut-name>/`. Exit codes: `0` all pass · `1`
 //! failures (artefacts still written) · `2` runner/SUT error.
+// Verification CLI: progress/diagnostics on the console ARE this tool's user
+// interface — the reliability deny-tier for shipped code deliberately relaxes
+// stdio here (.claude/rules/reliability.md §tools).
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::path::{Path, PathBuf};
 

@@ -127,6 +127,12 @@ fn parse_annotation(b: &[u8], mut pos: usize) -> Option<usize> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::is_valid_units_string;
 

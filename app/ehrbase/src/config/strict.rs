@@ -16,7 +16,9 @@ use super::loader::ConfigError;
 /// suggestion. Deeper key typos inside a known section are caught at
 /// deserialize by `deny_unknown_fields`.
 #[must_use]
-pub fn strict_env<S: std::hash::BuildHasher>(env: &HashMap<String, String, S>) -> Vec<ConfigError> {
+pub(super) fn strict_env<S: std::hash::BuildHasher>(
+    env: &HashMap<String, String, S>,
+) -> Vec<ConfigError> {
     let mut errors = Vec::new();
     for key in env.keys() {
         if !key.starts_with("EHRBASE_") || ALLOWLIST.contains(&key.as_str()) {
@@ -72,7 +74,7 @@ pub fn strict_env<S: std::hash::BuildHasher>(env: &HashMap<String, String, S>) -
 /// The closest candidate within edit distance 2 (ties broken lexicographically),
 /// or `None` when nothing is close enough.
 #[must_use]
-pub fn did_you_mean(unknown: &str, candidates: &[&str]) -> Option<String> {
+pub(super) fn did_you_mean(unknown: &str, candidates: &[&str]) -> Option<String> {
     candidates
         .iter()
         .map(|c| (*c, damerau_levenshtein(unknown, c)))
@@ -85,7 +87,7 @@ pub fn did_you_mean(unknown: &str, candidates: &[&str]) -> Option<String> {
 /// insert/delete/substitute + adjacent transposition. ~byte-level; the config
 /// keys are ASCII.
 #[must_use]
-pub fn damerau_levenshtein(a: &str, b: &str) -> usize {
+pub(super) fn damerau_levenshtein(a: &str, b: &str) -> usize {
     let a: Vec<u8> = a.bytes().collect();
     let b: Vec<u8> = b.bytes().collect();
     let (n, m) = (a.len(), b.len());
@@ -115,6 +117,12 @@ pub fn damerau_levenshtein(a: &str, b: &str) -> usize {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

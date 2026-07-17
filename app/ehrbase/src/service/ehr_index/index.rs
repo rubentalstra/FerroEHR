@@ -10,6 +10,7 @@
 
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::status::SmError;
@@ -19,8 +20,10 @@ use super::{IndexError, location_json, parse_valid_time, require_association, ro
 /// Parse an `ehr_id` UUID. An unparseable id is a `400` precondition failure;
 /// a well-formed-but-unknown id surfaces as `ehr_id_does_not_exist` at the DB
 /// check (`i_ehr_index.adoc §Errors`).
-fn parse_ehr_id(raw: &str) -> Result<Uuid, SmError> {
-    Uuid::parse_str(raw).map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
+fn parse_ehr_id(raw: &str) -> Result<EhrId, SmError> {
+    Uuid::parse_str(raw)
+        .map(EhrId)
+        .map_err(|_| SmError::precondition(format!("invalid ehr id: {raw}")))
 }
 
 impl EhrbaseService {
@@ -231,7 +234,7 @@ impl EhrbaseService {
     /// Confirm an EHR exists ([`IndexError::EhrDoesNotExist`] →
     /// `ehr_id_does_not_exist` otherwise). This distinguishes an unknown EHR
     /// from an unknown association to the caller (`master07 §Errors`).
-    async fn index_ehr_exists(&self, ehr_id: Uuid) -> Result<(), IndexError> {
+    async fn index_ehr_exists(&self, ehr_id: EhrId) -> Result<(), IndexError> {
         let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = $1")
             .bind(ehr_id)
             .fetch_optional(&self.pool)

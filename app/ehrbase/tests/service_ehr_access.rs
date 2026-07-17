@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! `EHR_ACCESS` scheme-settings round trip end-to-end against a real
 //! `PostgreSQL` 18 (testcontainers).
 //!

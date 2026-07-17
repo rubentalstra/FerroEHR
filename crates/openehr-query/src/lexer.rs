@@ -302,6 +302,7 @@ pub struct LexError {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
 

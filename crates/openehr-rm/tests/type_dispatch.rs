@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Deserialization dispatch of abstract/polymorphic openEHR slots on the
 //! canonical-JSON `_type` discriminator (audit F-04-01/02/03).
 //!

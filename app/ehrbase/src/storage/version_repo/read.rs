@@ -13,6 +13,7 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::node_repo::read_version_canonical;
 
@@ -22,12 +23,12 @@ use crate::storage::node_repo::read_version_canonical;
 /// the audit fields are flattened (versioning rebuilds the `AUDIT_DETAILS`).
 #[derive(Debug, Clone)]
 pub struct StoredVersion {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     /// The `vo_version.kind` discriminator text (`COMPOSITION` / `EHR_STATUS` /
     /// `FOLDER` / …).
     pub kind: String,
     /// The owning EHR, or `None` for a demographic party (no EHR scope).
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal.
     pub sys_version: i32,
     pub trunk_version: i32,
@@ -91,7 +92,7 @@ macro_rules! version_select {
 /// lifecycle branch is needed here).
 async fn stored_version(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     row: &PgRow,
 ) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
@@ -143,7 +144,7 @@ async fn stored_version(
 /// Returns [`StorageError`] on a driver/reassembly failure.
 pub async fn read_current(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
     let Some(row) = sqlx::query(version_select!(
         "WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0"
@@ -165,7 +166,7 @@ pub async fn read_current(
 /// Returns [`StorageError`] on a driver/reassembly failure.
 pub async fn read_version_by_ordinal(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     ordinal: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
     let Some(row) = sqlx::query(version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2"))
@@ -186,7 +187,7 @@ pub async fn read_version_by_ordinal(
 /// Returns [`StorageError`] on a driver/reassembly failure.
 pub async fn read_version(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     trunk_version: i32,
     branch_number: i32,
     branch_version: i32,
@@ -215,7 +216,7 @@ pub async fn read_version(
 /// Returns [`StorageError`] on a driver/reassembly failure.
 pub async fn version_at(
     pool: &PgPool,
-    vo_id: Uuid,
+    vo_id: VoId,
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
     let Some(row) = sqlx::query(version_select!(

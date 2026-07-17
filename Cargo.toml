@@ -20,18 +20,29 @@ repository = "https://github.com/rubentalstra/ehrbase-rs"
 authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 
 [workspace.lints.clippy]
-# Start pragmatic; tighten at P17. `unwrap_used` is warn (deny in tests via cfg).
+# The reliability hard-rule set (.claude/rules/reliability.md, owner
+# 2026-07-17): deny-tier = fails every local clippy; warn-tier still fails
+# CI (-D warnings). Tests keep scoped #[allow]s for unwrap/expect.
 all = { level = "warn", priority = -1 }
 pedantic = { level = "warn", priority = -1 }
-unwrap_used = "warn"
-expect_used = "warn"
-todo = "deny"                       # owner rule 2026-07-12: no todo!() ever (the P1-P16 era is over)
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"                      # recoverable = Result; a panic is never a designed outcome
+unimplemented = "deny"
+todo = "deny"                       # owner rule 2026-07-12: no todo!() ever
+dbg_macro = "deny"
+print_stdout = "deny"               # libraries speak tracing; binaries/tools relax per-crate
+print_stderr = "deny"
 incompatible_msrv = "warn"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"              # server + spec crates should be safe; relax per-crate if ever needed
 missing_debug_implementations = "warn"
 dead_code = "deny"                  # owner rule 2026-07-12: no dead code, ever — delete or wire it
+let_underscore_drop = "deny"        # `let _ = lock/tx;` drops the guard immediately
+                                    # (must_use discards like `let _ = write!(String)` are the
+                                    #  infallible-fmt idiom — NOT denied; the guard class above is)
+unreachable_pub = "warn"            # visibility is deliberate (CI-deny via -D warnings)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # WORKSPACE DEPENDENCIES  (pinned; features set at the crate that enables them)
@@ -222,3 +233,10 @@ debug = "line-tables-only"
 
 [profile.dev.package."*"]
 debug = false
+
+# Clinical-grade release posture: integer overflow must FAIL LOUDLY (a panic
+# → the catch-panic layer's clean 500 + log), never wrap silently into a
+# wrong stored/served value. The few-percent CPU cost is accepted and is
+# carried by the benchmarks (measurements stay honest to production).
+[profile.release]
+overflow-checks = true

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Smoke test for the shared real-PG fixture: the assembled router answers on
 //! a spec route over a real service + database.
 

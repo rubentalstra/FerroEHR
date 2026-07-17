@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! FLAT (simSDT) `RM ⇄ FLAT` converter tests.
 //!
 //! Oracle strategy (see the report / NOTICE files): Better `web-template-tests`

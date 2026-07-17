@@ -46,6 +46,7 @@ use quick_xml::events::Event;
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
@@ -154,7 +155,7 @@ impl EhrbaseService {
     /// - `template_does_not_exist` — the referenced operational template is not
     ///   provisioned.
     /// - `exception` — a database fault while checking/committing.
-    pub async fn import_tdd(&self, an_ehr_id: Uuid, tdd: String) -> Result<String, SmError> {
+    pub async fn import_tdd(&self, an_ehr_id: EhrId, tdd: String) -> Result<String, SmError> {
         let composition = self.prepare_one_tdd(an_ehr_id, &tdd).await?;
         // The validated commit path (WebTemplate + RM-invariant + terminology
         // validation, contribution/audit).
@@ -175,7 +176,7 @@ impl EhrbaseService {
     /// rejects the batch before any commit).
     pub async fn import_tdds(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         tdds: Vec<String>,
     ) -> Result<Vec<String>, SmError> {
         let mut prepared = Vec::with_capacity(tdds.len());
@@ -200,7 +201,7 @@ impl EhrbaseService {
     /// `template_does_not_exist`); a body that does not conform to the template
     /// is `precondition_violation`. Splitting prepare from commit is what lets
     /// [`Self::import_tdds`] convert a whole batch before committing any.
-    async fn prepare_one_tdd(&self, ehr_id: Uuid, tdd: &str) -> Result<Value, SmError> {
+    async fn prepare_one_tdd(&self, ehr_id: EhrId, tdd: &str) -> Result<Value, SmError> {
         let envelope = parse_tdd_envelope(tdd)?;
 
         // Precondition: the target EHR exists (`has_ehr`).

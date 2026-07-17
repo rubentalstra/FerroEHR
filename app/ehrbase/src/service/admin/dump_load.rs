@@ -42,6 +42,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::admin::types::{DumpLoadFailReport, ExportFormat, ExportSpec};
 use crate::service::error::ServiceError;
@@ -93,12 +94,12 @@ struct EhrRecord {
 #[derive(Debug, Serialize, Deserialize)]
 struct FolderRankRow {
     rank: i32,
-    vo_id: Uuid,
+    vo_id: VoId,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EhrRow {
-    id: Uuid,
+    id: EhrId,
     system_id: String,
     time_created: String,
     subject_id: Option<String>,
@@ -123,7 +124,7 @@ struct ContributionRow {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct VersionRecord {
-    vo_id: Uuid,
+    vo_id: VoId,
     kind: String,
     sys_version: i32,
     /// `VERSION_TREE_ID` columns (0/0 = trunk row).
@@ -152,7 +153,7 @@ struct VersionRecord {
 #[derive(Debug, Serialize, Deserialize)]
 struct ItemTagRow {
     id: Uuid,
-    target_vo_id: Uuid,
+    target_vo_id: VoId,
     target_type: String,
     key: String,
     value: Option<String>,
@@ -162,7 +163,7 @@ struct ItemTagRow {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ArchiveRow {
-    vo_id: Uuid,
+    vo_id: VoId,
     archived_at: String,
     reason: Option<String>,
 }
@@ -420,7 +421,7 @@ impl EhrbaseService {
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.
-    async fn ehr_row_exists(&self, ehr_id: Uuid) -> Result<bool, ServiceError> {
+    async fn ehr_row_exists(&self, ehr_id: EhrId) -> Result<bool, ServiceError> {
         Ok(
             sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM ehr WHERE id = $1)")
                 .bind(ehr_id)
@@ -432,7 +433,7 @@ impl EhrbaseService {
     /// Read every EHR's content into export records (ordered by EHR id for a
     /// deterministic archive).
     async fn collect_ehr_records(&self) -> Result<Vec<EhrRecord>, ServiceError> {
-        let ehr_ids: Vec<Uuid> = sqlx::query_scalar("SELECT id FROM ehr ORDER BY id")
+        let ehr_ids: Vec<EhrId> = sqlx::query_scalar("SELECT id FROM ehr ORDER BY id")
             .fetch_all(&self.pool)
             .await?;
         let mut records = Vec::with_capacity(ehr_ids.len());
@@ -446,7 +447,7 @@ impl EhrbaseService {
     /// per-version canonical body is reassembled through the storage codec
     /// ([`node_repo::read_version_canonical`] — the codec's lossless inverse).
     #[allow(clippy::too_many_lines)] // one linear per-EHR collection pass
-    async fn collect_one_ehr(&self, ehr_id: Uuid) -> Result<EhrRecord, ServiceError> {
+    async fn collect_one_ehr(&self, ehr_id: EhrId) -> Result<EhrRecord, ServiceError> {
         let row = sqlx::query(
             "SELECT system_id, time_created::text, subject_id, subject_namespace \
              FROM ehr WHERE id = $1",
@@ -510,7 +511,7 @@ impl EhrbaseService {
         .await?;
         let mut versions = Vec::with_capacity(version_rows.len());
         for r in version_rows {
-            let vo_id: Uuid = r.try_get("vo_id")?;
+            let vo_id: VoId = r.try_get("vo_id")?;
             let sys_version: i32 = r.try_get("sys_version")?;
             let lifecycle_state: String = r.try_get("lifecycle_state")?;
             // A deleted version has no node rows; its body stays `null`.
@@ -741,7 +742,7 @@ impl EhrbaseService {
 /// re-decomposed here through the shared codec.
 async fn insert_version(
     tx: &mut PgConnection,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     v: &VersionRecord,
 ) -> Result<(), ServiceError> {
     version_repo::import::insert_version_verbatim(
@@ -778,6 +779,12 @@ async fn insert_version(
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::plan_segments;
 

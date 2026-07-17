@@ -10,6 +10,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
@@ -20,9 +21,9 @@ use crate::storage::version_repo::optional_json_array;
 /// §Copying).
 #[derive(Debug)]
 pub struct ImportedVersionRow<'a> {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Option<Uuid>,
+    pub ehr_id: Option<EhrId>,
     pub sys_version: i32,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -88,9 +89,9 @@ pub async fn insert_imported_vo_version(
 /// the `sys_period` is explicit.
 #[derive(Debug)]
 pub struct VerbatimVersionRow<'a> {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     pub kind: &'a str,
-    pub ehr_id: Uuid,
+    pub ehr_id: EhrId,
     pub sys_version: i32,
     pub trunk_version: i32,
     pub branch_number: i32,
@@ -159,7 +160,7 @@ pub async fn insert_version_verbatim(
 /// Returns [`StorageError::Database`] on a driver/update failure.
 pub async fn close_lineage_at(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
     lineage: &(String, i32, i32),
     at: jiff::Timestamp,
 ) -> Result<(), StorageError> {
@@ -199,7 +200,7 @@ pub struct ContainerStateRow {
     /// The stored kind text, if the `vo_id` already exists.
     pub kind: Option<String>,
     /// The owning EHR of the existing container.
-    pub owner: Option<Uuid>,
+    pub owner: Option<EhrId>,
     /// The highest trunk version currently held.
     pub max_trunk: i32,
     /// The highest storage ordinal currently held.
@@ -214,7 +215,7 @@ pub struct ContainerStateRow {
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn imported_container_state(
     tx: &mut PgConnection,
-    vo_id: Uuid,
+    vo_id: VoId,
 ) -> Result<ContainerStateRow, StorageError> {
     let row = sqlx::query(
         "SELECT max(trunk_version) FILTER (WHERE branch_number = 0) AS max_trunk, \
