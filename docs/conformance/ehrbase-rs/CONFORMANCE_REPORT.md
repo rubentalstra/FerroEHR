@@ -14,9 +14,9 @@
 | Edition policy | pinned (development) |
 | Spec versions | RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-17T06:14:05.832371Z |
+| Run started | 2026-07-17T14:27:42.936399Z |
 
-**370 case×format executions · 335 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
+**386 case×format executions · 351 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
 
 ## 2. Per-area matrix
 
@@ -37,6 +37,7 @@
 | SIG — Version signing | 5 | 5 | 0 | 0 | 1 | 0 |
 | MSG — Messaging | 10 | 0 | 0 | 0 | 10 | 0 |
 | TS — Terminology-server integration | 9 | 5 | 0 | 0 | 4 | 0 |
+| SF — Simplified Formats (FLAT / STRUCTURED / Web Template) | 16 | 16 | 0 | 0 | 0 | 0 |
 
 ## 3. Capability matrix
 
@@ -69,6 +70,7 @@ Cases grouped by capability; the evidence classification folds a transport error
 | AnonymousEhrs | 1 | 0 | 0 | 0 | 0 | pass |
 | Authentication | 2 | 0 | 0 | 0 | 0 | pass |
 | Terminology | 5 | 0 | 0 | 4 | 0 | pass |
+| SimplifiedFormats | 16 | 0 | 0 | 0 | 0 | pass |
 
 ## 4. Profile verdict (machine-computed)
 
@@ -123,6 +125,7 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 | AdminDemographicArchive | 0 | 0 | 1 | 0 | not evidenced |
 | MessagingEhrExtract | 0 | 0 | 7 | 0 | not evidenced |
 | MessagingTds | 0 | 0 | 3 | 0 | not evidenced |
+| SimplifiedFormats | 16 | 0 | 0 | 0 | pass |
 
 ## 5. Failures
 
@@ -150,11 +153,11 @@ _No failures in this run._
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged | 1 |
 | NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:51259 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:60235 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — the digest cases prove the Signing capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:51259 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:51259 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:51259 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60235 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60235 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:60235 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 | all 11 C/loaded_db goldens are dialect-routed or require id-substitution/binds | 1 |
 | master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
 | master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (register 02 G-2 edition probe). | 2 |
@@ -400,6 +403,22 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 - **ECC-TS-007** TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500) — no CNF schedule chapter for terminology integration; profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS); a fault-injecting tx cannot be wired into an external SUT over the HTTP-only ECC — fault→500 proven off-wire (MSG precedent)
 - **ECC-TS-008** TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500) — no CNF schedule chapter for terminology integration; profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS); a fault-injecting tx cannot be wired into an external SUT over the HTTP-only ECC — fault→500 proven off-wire (MSG precedent)
 - **ECC-TS-009** TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500) — no CNF schedule chapter for terminology integration; profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS); a fault-injecting tx cannot be wired into an external SUT over the HTTP-only ECC — fault→500 proven off-wire (MSG precedent)
+- **ECC-SF-001** FLAT commit then read-back as FLAT, canonical JSON, and STRUCTURED — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-002** STRUCTURED commit then read-back as STRUCTURED, canonical JSON, and FLAT — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-003** Accept q-values select the highest-weight simplified format; every non-204 carries Content-Type — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-004** Deprecated + legacy simplified media types are rejected on Accept (406) — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-005** Deprecated + legacy simplified media types are rejected on write Content-Type (415) — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-006** FLAT commit without openehr-template-id (and no payload template id) → 422 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-007** FLAT commit with an unknown field identifier → 422 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-008** FLAT commit with |other combined with |code on one coded leaf → 422 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-009** GET a template as a Web Template document (Accept application/openehr.wt+json) — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-010** GET a template example in each of the four Accept forms (json, xml, flat, structured) — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-011** GET a template example with an unsupported Accept → 406 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-012** CONTRIBUTION with a FLAT COMPOSITION inner payload: canonical envelope in, simplified read-back — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-013** EHR_STATUS has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-014** DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-015** Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-SF-016** FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
 
 ## 11. Detailed test report
 
@@ -775,10 +794,26 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 | ECC-TS-007 | Terminology | json | 0/0 | — | skipped |
 | ECC-TS-008 | Terminology | json | 0/0 | — | skipped |
 | ECC-TS-009 | Terminology | json | 0/0 | — | skipped |
+| ECC-SF-001 | SimplifiedFormats | json | 3/3 | — | PASS |
+| ECC-SF-002 | SimplifiedFormats | json | 3/3 | — | PASS |
+| ECC-SF-003 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-004 | SimplifiedFormats | json | 8/8 | — | PASS |
+| ECC-SF-005 | SimplifiedFormats | json | 8/8 | — | PASS |
+| ECC-SF-006 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-007 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-008 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-009 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-010 | SimplifiedFormats | json | 4/4 | — | PASS |
+| ECC-SF-011 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-012 | SimplifiedFormats | json | 1/1 | — | PASS |
+| ECC-SF-013 | SimplifiedFormats | json | 2/2 | — | PASS |
+| ECC-SF-014 | SimplifiedFormats | json | 2/2 | — | PASS |
+| ECC-SF-015 | SimplifiedFormats | json | 2/2 | — | PASS |
+| ECC-SF-016 | SimplifiedFormats | json | 2/2 | — | PASS |
 
 ## 12. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:51259`
+- Server: `http://127.0.0.1:60235`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):
