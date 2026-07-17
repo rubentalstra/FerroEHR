@@ -124,17 +124,38 @@ pub fn TemplateDetailPage() -> impl IntoView {
     let selected_node = RwSignal::new(None::<CatalogNode>);
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
 
-    let catalog: Resource<Result<CatalogNode, AdminUiError>> = Resource::new(
-        move || template_id.get(),
-        |id| async move { fetch_template_catalog(id).await },
+    // Each tab's resource is gated on the tab being active so only the
+    // visible pane fetches (the example fetch in particular triggers the
+    // CDR's example GENERATOR — never run it for a tab the user hasn't
+    // opened). The stable source keeps loaded state on re-show.
+    let catalog: Resource<Result<Option<CatalogNode>, AdminUiError>> = Resource::new(
+        move || (selected_tab.get() == "wt").then(|| template_id.get()),
+        |active| async move {
+            match active {
+                Some(id) => fetch_template_catalog(id).await.map(Some),
+                None => Ok(None),
+            }
+        },
     );
-    let opt: Resource<Result<String, AdminUiError>> = Resource::new(
-        move || template_id.get(),
-        |id| async move { fetch_template_opt(id).await },
+    let opt: Resource<Result<Option<String>, AdminUiError>> = Resource::new(
+        move || (selected_tab.get() == "opt").then(|| template_id.get()),
+        |active| async move {
+            match active {
+                Some(id) => fetch_template_opt(id).await.map(Some),
+                None => Ok(None),
+            }
+        },
     );
-    let example: Resource<Result<String, AdminUiError>> = Resource::new(
-        move || (template_id.get(), example_format.get()),
-        |(id, format)| async move { fetch_example(id, format).await },
+    let example: Resource<Result<Option<String>, AdminUiError>> = Resource::new(
+        move || {
+            (selected_tab.get() == "example").then(|| (template_id.get(), example_format.get()))
+        },
+        |active| async move {
+            match active {
+                Some((id, format)) => fetch_example(id, format).await.map(Some),
+                None => Ok(None),
+            }
+        },
     );
 
     let wt_pane = wt_tab(catalog, selected_node);
@@ -171,7 +192,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
 /// the node inspector (right), the latter driven by the shared selection
 /// signal.
 fn wt_tab(
-    catalog: Resource<Result<CatalogNode, AdminUiError>>,
+    catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
     selected: RwSignal<Option<CatalogNode>>,
 ) -> AnyView {
     view! {
@@ -184,7 +205,9 @@ fn wt_tab(
                     <Transition fallback=tree_skeleton>
                         <ErrorBoundary fallback=catalog_error>
                             {move || Suspend::new(async move {
-                                let root = catalog.await?;
+                                let Some(root) = catalog.await? else {
+                                    return Ok::<_, AdminUiError>(().into_any());
+                                };
                                 Ok::<
                                     _,
                                     AdminUiError,
@@ -444,12 +467,14 @@ fn code_chip_section(node: &CatalogNode) -> AnyView {
 
 /// The OPT tab: the raw canonical-XML operational template in the shared
 /// document pane.
-fn opt_tab(opt: Resource<Result<String, AdminUiError>>) -> AnyView {
+fn opt_tab(opt: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
     view! {
         <Transition fallback=tree_skeleton>
             <ErrorBoundary fallback=catalog_error>
                 {move || Suspend::new(async move {
-                    let xml = opt.await?;
+                    let Some(xml) = opt.await? else {
+                        return Ok::<_, AdminUiError>(().into_any());
+                    };
                     Ok::<
                         _,
                         AdminUiError,
@@ -468,7 +493,7 @@ fn opt_tab(opt: Resource<Result<String, AdminUiError>>) -> AnyView {
 /// shared selection signal — a change refetches the resource — plus the
 /// pretty-printed example composition in the document pane.
 fn example_tab(
-    example: Resource<Result<String, AdminUiError>>,
+    example: Resource<Result<Option<String>, AdminUiError>>,
     format: RwSignal<ReprFormat>,
 ) -> AnyView {
     let offered = vec![
@@ -483,7 +508,9 @@ fn example_tab(
             <Transition fallback=tree_skeleton>
                 <ErrorBoundary fallback=catalog_error>
                     {move || Suspend::new(async move {
-                        let raw = example.await?;
+                        let Some(raw) = example.await? else {
+                            return Ok::<_, AdminUiError>(().into_any());
+                        };
                         let pretty = crate::components::format_view::pretty_body(
                             &raw,
                             format.get_untracked(),
