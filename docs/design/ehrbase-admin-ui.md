@@ -1008,9 +1008,11 @@ file — never through the database.
 - read the browser console log (WebDriver `goog:loggingPrefs`) and **fail on
   any hydration error or panic** — the cheapest possible detector for the
   §8-class bugs, applied everywhere;
-- screenshot each numbered step (`j{NN}-{step}-{slug}.png`, the §8d stack
-  table row) — CI uploads the folder as the `ui-e2e-screenshots` artifact
-  on success *and* failure;
+- screenshot each numbered step (`{journey-name}-{step}-{slug}.png` — the
+  J-ids in this matrix are PLAN language and never appear in code, test
+  names, or file names; tests carry official behavioral names) — CI
+  uploads the folder as the `ui-e2e-screenshots` artifact on success *and*
+  failure;
 - explicit waits on elements/conditions only — a bare `sleep` in a journey
   is a review-rejected defect (flake discipline below).
 
@@ -1216,6 +1218,13 @@ whole crate at W6 — findings block the next stage, mirroring how
 7. The §8e screenshot set captured by `--docs-shots` and committed under
    `website/book/src/admin-ui/img/` (all 10 screens), embedded in the book
    chapter, with the `ui-screenshot-guard` job live in CI.
+8. **Plan-vocabulary scrub (owner, 2026-07-17):** no J-nn journey ids, W-nn
+   stage names, or references to this doc's § numbers anywhere in code,
+   test names, UI text, or file names — tests and screenshots carry
+   official behavioral names; the only surviving citations are
+   `docs/specs/openehr/…` + official external docs. Rule-file pointers at
+   this doc (`.claude/rules/leptos-ui.md` cites §8d/§5.2) are rewritten to
+   plain prose in the same close.
 
 ---
 
