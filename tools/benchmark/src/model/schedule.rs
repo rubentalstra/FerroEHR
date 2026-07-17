@@ -399,7 +399,12 @@ fn diurnal_weight(tau: f64) -> f64 {
 }
 
 #[cfg(test)]
-#[allow(clippy::duration_suboptimal_units)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::collections::BTreeMap;
 

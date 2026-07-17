@@ -259,7 +259,8 @@ pub struct WebTemplateNode {
 
 impl WebTemplateNode {
     /// A fresh node with the given rm type / aql path; all other fields empty.
-    pub(crate) fn new(rm_type: String, aql_path: String) -> Self {
+    #[must_use]
+    pub fn new(rm_type: String, aql_path: String) -> Self {
         Self {
             id: String::new(),
             name: None,
@@ -347,7 +348,8 @@ pub struct WebTemplateInput {
 }
 
 impl WebTemplateInput {
-    pub(crate) fn new(input_type: WebTemplateInputType, suffix: Option<&str>) -> Self {
+    #[must_use]
+    pub fn new(input_type: WebTemplateInputType, suffix: Option<&str>) -> Self {
         Self {
             suffix: suffix.map(str::to_owned),
             input_type,
@@ -388,7 +390,7 @@ pub struct WebTemplateCodedValue {
 }
 
 impl WebTemplateCodedValue {
-    pub(crate) fn new(value: impl Into<String>, label: Option<String>) -> Self {
+    pub fn new(value: impl Into<String>, label: Option<String>) -> Self {
         Self {
             value: value.into(),
             label,

@@ -10,13 +10,13 @@
 use serde_json::Value;
 
 /// A parsed `OpenAPI` document.
-pub struct Oas {
+pub(crate) struct Oas {
     root: Value,
 }
 
 /// One HTTP operation (a method on a path).
 #[allow(clippy::struct_field_names)] // `operation_id` mirrors the OAS field name
-pub struct Operation<'a> {
+pub(crate) struct Operation<'a> {
     pub method: &'a str,
     pub path: &'a str,
     /// `operationId`, e.g. `ehr_create` — the trait method name.
@@ -30,7 +30,7 @@ pub struct Operation<'a> {
 }
 
 /// One resolved operation parameter.
-pub struct Param {
+pub(crate) struct Param {
     pub name: String,
     /// `path` | `query` | `header`.
     pub location: String,
@@ -44,7 +44,7 @@ impl Oas {
     ///
     /// # Errors
     /// Returns an error if the file cannot be read or parsed.
-    pub fn parse_file(path: &std::path::Path) -> Result<Self, String> {
+    pub(crate) fn parse_file(path: &std::path::Path) -> Result<Self, String> {
         let text =
             std::fs::read_to_string(path).map_err(|e| format!("read {}: {e}", path.display()))?;
         let root: Value =
@@ -54,7 +54,7 @@ impl Oas {
 
     /// The component schemas (`#/components/schemas`), in document order.
     #[must_use]
-    pub fn schemas(&self) -> Vec<(String, &Value)> {
+    pub(crate) fn schemas(&self) -> Vec<(String, &Value)> {
         self.root
             .pointer("/components/schemas")
             .and_then(Value::as_object)
@@ -64,7 +64,7 @@ impl Oas {
 
     /// Resolve a local `$ref` (`#/components/...`) to the pointed-at value.
     #[must_use]
-    pub fn resolve<'a>(&'a self, value: &'a Value) -> &'a Value {
+    pub(crate) fn resolve<'a>(&'a self, value: &'a Value) -> &'a Value {
         let mut cur = value;
         // Follow chained single-level `$ref`s (parameters/responses → schema).
         while let Some(r) = cur.get("$ref").and_then(Value::as_str) {
@@ -80,7 +80,7 @@ impl Oas {
     /// The base name of a `$ref` (`#/components/schemas/Ehr` → `Ehr`), if this
     /// value is a direct ref.
     #[must_use]
-    pub fn ref_name(value: &Value) -> Option<String> {
+    pub(crate) fn ref_name(value: &Value) -> Option<String> {
         value
             .get("$ref")
             .and_then(Value::as_str)
@@ -90,7 +90,7 @@ impl Oas {
 
     /// All operations across all paths.
     #[must_use]
-    pub fn operations(&self) -> Vec<Operation<'_>> {
+    pub(crate) fn operations(&self) -> Vec<Operation<'_>> {
         const METHODS: &[&str] = &["get", "put", "post", "delete", "patch"];
         let mut out = Vec::new();
         let Some(paths) = self.root.get("paths").and_then(Value::as_object) else {

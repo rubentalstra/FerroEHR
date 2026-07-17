@@ -162,7 +162,12 @@ fn source_descriptor(kind: TemplateKind) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::duration_suboptimal_units)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

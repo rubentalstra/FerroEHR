@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end RBAC gate over the real axum app (§9.6 subset of
 //! `docs/enterprise/access-control.md`).
 //!

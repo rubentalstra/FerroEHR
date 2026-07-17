@@ -355,7 +355,7 @@ fn field_attr(field: &syn::Field, key: &str) -> syn::Result<Option<String>> {
                 Ok(())
             } else if KNOWN.iter().any(|k| meta.path.is_ident(k)) {
                 // Recognized elsewhere; consume its value and skip.
-                let _ = meta.value()?.parse::<LitStr>()?;
+                drop(meta.value()?.parse::<LitStr>()?);
                 Ok(())
             } else {
                 Err(meta.error("unknown openehr field attribute (expected `rename`/`default`)"))

@@ -38,6 +38,10 @@ binding after A1 closed:
   pass. NEVER stabilize intermediate steps — "then we create stubs to sort
   of make it work"; compatibility shims between steps are banned. The
   orchestrator (Fable) executes such rewrites in-session, not via workers.
+  Re-confirmed 2026-07-17 (Simplified Formats rewrite): this includes NOT
+  running nextest/clippy on freshly-authored foundation modules mid-rewrite
+  and NOT fixing lint/test fallout per-file — author ALL the code first,
+  then resolve everything in the single convergence pass.
 - **Specs over ADRs, always re-verify (owner, 2026-07-16).** When an
   analysis leans on an ADR's characterization of a spec, re-read the
   vendored spec text first-hand — an ADR-flavoured claim ("C contradicts

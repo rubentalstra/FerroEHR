@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! TDD (Ocean **Template Data Document**) → canonical `COMPOSITION` conversion,
 //! against the vendored CNF corpus TDD instances + their operational templates
 //! (`docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/`).

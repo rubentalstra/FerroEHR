@@ -369,3 +369,50 @@ fn in_order_subset(s: &str, order: &[char]) -> bool {
     }
     true
 }
+
+#[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+mod tests {
+    use super::{
+        valid_date_pattern, valid_date_time_pattern, valid_duration_pattern, valid_time_pattern,
+    };
+
+    #[test]
+    fn duration_pattern_syntax() {
+        // Every corpus form must validate; out-of-order or foreign designators must
+        // not.
+        for ok in [
+            "PD", "PDTH", "PDTHM", "PDTHMS", "PMTS", "PTH", "PTHMS", "PTM", "PTS", "PWD", "PWDTH",
+            "PY", "PYM", "PYMWD", "PYMWDTH",
+        ] {
+            assert!(valid_duration_pattern(ok), "{ok} must be valid");
+        }
+        for bad in ["P", "PT", "PDY", "PTMH", "PX", "YMD", "PYY"] {
+            assert!(!valid_duration_pattern(bad), "{bad} must be invalid");
+        }
+    }
+
+    #[test]
+    fn temporal_pattern_validity_forms() {
+        for ok in [
+            ("yyyy-mm-dd", "date"),
+            ("yyyy-??-??", "date"),
+            ("yyyy-mm-XX", "date"),
+            ("yyyy-??-XX", "date"),
+        ] {
+            assert!(valid_date_pattern(ok.0), "{} must be valid", ok.0);
+        }
+        assert!(!valid_date_pattern("yyyy-XX-??"));
+        assert!(valid_time_pattern("HH:MM:SS"));
+        assert!(valid_time_pattern("HH:??:XX"));
+        assert!(!valid_time_pattern("??:MM:SS"));
+        assert!(valid_date_time_pattern("yyyy-mm-ddTHH:MM:SS"));
+        assert!(valid_date_time_pattern("yyyy-??-??T??:??:??"));
+        assert!(!valid_date_time_pattern("yyyy-??-??THH:MM:SS"));
+    }
+}

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end AQL engine tests against a real PostgreSQL 18 (testcontainers):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the
 //! `QueryService` seam and assert on the assembled ITS-REST 1.0.3 `RESULT_SET`.

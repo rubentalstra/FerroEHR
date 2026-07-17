@@ -85,7 +85,12 @@ fn hex(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
-#[allow(clippy::duration_suboptimal_units)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::Profile;
@@ -109,8 +114,8 @@ mod tests {
     fn lock(spec: &WorkloadSpec) -> String {
         compute(
             spec,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
+            Duration::from_hours(1),
+            Duration::from_mins(5),
             &sources(),
         )
     }
@@ -131,18 +136,13 @@ mod tests {
         let s = spec(1);
         let base = compute(
             &s,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
+            Duration::from_hours(1),
+            Duration::from_mins(5),
             &sources(),
         );
         let mut extra = sources();
         extra.push("vital-signs|ckm.opt|ckm.json".to_owned());
-        let with_ckm = compute(
-            &s,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
-            &extra,
-        );
+        let with_ckm = compute(&s, Duration::from_hours(1), Duration::from_mins(5), &extra);
         assert_ne!(base, with_ckm, "adding a template must shift the lock");
     }
 
@@ -151,8 +151,8 @@ mod tests {
         let s = spec(1);
         let a = compute(
             &s,
-            Duration::from_secs(3600),
-            Duration::from_secs(300),
+            Duration::from_hours(1),
+            Duration::from_mins(5),
             &sources(),
         );
         let b = compute(

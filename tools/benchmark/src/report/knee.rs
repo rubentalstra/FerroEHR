@@ -240,6 +240,12 @@ pub fn render_markdown(r: &KneeResults) -> String {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use std::collections::BTreeMap;

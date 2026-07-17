@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! RM EHR-package cross-version + tag-scoping duties, end-to-end against a
 //! real `PostgreSQL` 18 (testcontainers) — A1 rm-ehr chapter.
 //!

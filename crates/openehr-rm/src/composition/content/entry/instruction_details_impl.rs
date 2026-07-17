@@ -17,6 +17,12 @@ impl Validate for InstructionDetails {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use openehr_base::base_types::identification::locatable_ref::LocatableRef;

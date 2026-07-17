@@ -65,7 +65,7 @@
 //!   to land with the `CONSTRAINT_REF` policy
 //!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology; blueprint 03-am §3).
 
-pub(crate) mod adl2;
+pub mod adl2;
 mod opt;
 mod structure;
 
@@ -129,6 +129,6 @@ pub(crate) fn check_specialisation_depth(
 /// `400`, what the CNF `I_DEFINITION_ADL14` upload/validate suites assert for
 /// an invalid OPT) carrying the AOM2 rule code in the message
 /// (`"<CODE>: <detail>"`).
-pub(crate) fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
+pub fn validate_opt_artefact(opt: &OperationalTemplate) -> Result<(), ServiceError> {
     opt::validate_opt_artefact(opt)
 }

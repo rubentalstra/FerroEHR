@@ -575,9 +575,14 @@ fn parse_imported_version(ov: &Value) -> Result<(Uuid, ImportVersion), SmError> 
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
-
     use serde_json::json;
 
     use super::*;

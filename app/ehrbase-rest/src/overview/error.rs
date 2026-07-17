@@ -196,9 +196,14 @@ impl IntoResponse for RestError {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
-    #![allow(clippy::unwrap_used, clippy::expect_used)]
-
     use axum::response::IntoResponse;
     use http::StatusCode;
     use http_body_util::BodyExt;

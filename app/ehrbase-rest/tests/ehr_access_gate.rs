@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end `EHR_ACCESS` gate over the real axum app.
 //!
 //! `EHR_ACCESS` is the spec-grounded access-decision authority ("All access

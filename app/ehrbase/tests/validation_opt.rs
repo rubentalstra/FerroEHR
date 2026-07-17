@@ -6,6 +6,12 @@
 //! carry), asserting the matching AOM2 rule code surfaces. The corpus guard
 //! asserts every vendored valid OPT still passes unchanged.
 
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 use std::path::{Path, PathBuf};
 
 use openehr_base::prelude::{CodePhrase, TerminologyId};
@@ -14,11 +20,8 @@ use openehr_its::opt14::{
     FlatArchetypeOntology, OperationalTemplate, TermBindingItem, Termbindingset,
 };
 
-use super::primitive::{
-    valid_date_pattern, valid_date_time_pattern, valid_duration_pattern, valid_time_pattern,
-};
-use super::validate_opt_artefact;
-use crate::service::error::ServiceError;
+use ehrbase::service::error::ServiceError;
+use ehrbase::validation::validate_opt_artefact;
 
 fn manifest() -> &'static str {
     env!("CARGO_MANIFEST_DIR")
@@ -420,40 +423,6 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
         },
     ));
     expect_code(&opt, "Pattern_validity");
-}
-
-#[test]
-fn duration_pattern_syntax() {
-    // Every corpus form must validate; out-of-order or foreign designators must
-    // not.
-    for ok in [
-        "PD", "PDTH", "PDTHM", "PDTHMS", "PMTS", "PTH", "PTHMS", "PTM", "PTS", "PWD", "PWDTH",
-        "PY", "PYM", "PYMWD", "PYMWDTH",
-    ] {
-        assert!(valid_duration_pattern(ok), "{ok} must be valid");
-    }
-    for bad in ["P", "PT", "PDY", "PTMH", "PX", "YMD", "PYY"] {
-        assert!(!valid_duration_pattern(bad), "{bad} must be invalid");
-    }
-}
-
-#[test]
-fn temporal_pattern_validity_forms() {
-    for ok in [
-        ("yyyy-mm-dd", "date"),
-        ("yyyy-??-??", "date"),
-        ("yyyy-mm-XX", "date"),
-        ("yyyy-??-XX", "date"),
-    ] {
-        assert!(valid_date_pattern(ok.0), "{} must be valid", ok.0);
-    }
-    assert!(!valid_date_pattern("yyyy-XX-??"));
-    assert!(valid_time_pattern("HH:MM:SS"));
-    assert!(valid_time_pattern("HH:??:XX"));
-    assert!(!valid_time_pattern("??:MM:SS"));
-    assert!(valid_date_time_pattern("yyyy-mm-ddTHH:MM:SS"));
-    assert!(valid_date_time_pattern("yyyy-??-??T??:??:??"));
-    assert!(!valid_date_time_pattern("yyyy-??-??THH:MM:SS"));
 }
 
 #[test]

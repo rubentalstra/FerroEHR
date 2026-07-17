@@ -291,9 +291,14 @@ pub(crate) fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, V
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
-
     use super::*;
 
     const VO: &str = "018f4a5e-9df1-7d1e-8b6f-2b8c00000001";

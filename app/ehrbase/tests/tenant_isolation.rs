@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! E2 multi-tenancy isolation integration tests, against a real
 //! `PostgreSQL` 18 via testcontainers.
 //!

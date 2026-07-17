@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the FHIR R4 connector API group (our own extension
 //! — no openEHR spec governs this; E3): the config gate
 //! (`AppConfig::fhir_api_enabled`), the starter-scope `501`, the inbound

@@ -179,6 +179,12 @@ pub(crate) async fn composition_structured_response(
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use axum::response::IntoResponse;
     use http::StatusCode;

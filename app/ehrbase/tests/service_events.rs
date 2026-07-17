@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Contribution-outbox eventing tests against a real `PostgreSQL` 18
 //! (testcontainers) — the transactional-outbox half of the eventing extension (tasks 2/3).
 //!

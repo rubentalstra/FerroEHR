@@ -976,6 +976,12 @@ fn reference_range_from(group: &[Entry], t: &str) -> Value {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::super::sub::parse_key;
     use super::*;
