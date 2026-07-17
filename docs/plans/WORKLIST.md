@@ -27,8 +27,8 @@ closed table at the bottom).
 
 | # | Item | Closed |
 |---|------|--------|
-| FLAT | Simplified Formats spec-exact greenfield rewrite (openehr-flat + REST negotiation from the STABLE ITS-REST spec; ECC-SF area added; plan file deleted per the lifecycle) | merged via `claude/flat-simplified-formats` (PR link on merge) |
-| W-16 | Issue #95 — format support via Accept header (subsumed by the FLAT rewrite: strict RFC 9110 negotiation on every relevant endpoint, 406/415 correctness, book docs updated) | merged via `claude/flat-simplified-formats` (PR link on merge) |
+| FLAT | Simplified Formats spec-exact greenfield rewrite (openehr-flat + REST negotiation from the STABLE ITS-REST spec; ECC-SF area added; plan file deleted per the lifecycle) | [PR #108](https://github.com/rubentalstra/ehrbase-rs/pull/108), 2026-07-17 |
+| W-16 | Issue #95 — format support via Accept header (subsumed by the FLAT rewrite: strict RFC 9110 negotiation on every relevant endpoint, 406/415 correctness, book docs updated) | [PR #108](https://github.com/rubentalstra/ehrbase-rs/pull/108), 2026-07-17 |
 | W-13 | Configuration redesign — one TOML file | merged [PR #96](https://github.com/rubentalstra/ehrbase-rs/pull/96), v3.0.2 |
 | W-5 | P20 profile-driven optimization (v3.0.3 measured pair: 631.6 vs 316.1 req/s, 2.0×; all 14 classes lower at p50/p99) | released v3.0.3, 2026-07-16; the two open leftovers (group-commit A/B, knee profiler) fold into W-14's close |
 | W-10/W-11/W-12 | Conformance instrument rewrite · hospital-day benchmark · overload shed layer | 2026-07-13/14 |
