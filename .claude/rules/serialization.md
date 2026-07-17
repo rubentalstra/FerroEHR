@@ -3,7 +3,7 @@ paths: ["crates/openehr-its/**", "crates/openehr-flat/**"]
 ---
 
 # Serialization rules — canonical JSON, canonical XML, FLAT/STRUCTURED
-(rewritten 2026-07-13; the patched-in ADR-002/005 supersession notes are folded in)
+(rewritten 2026-07-13)
 
 ## Spec sources (the oracle)
 
@@ -102,6 +102,6 @@ entry points.
 - At the wire, the ECC suite (`tools/conformance`) is the end-to-end
   acceptance instrument.
 
-Hand-written files here follow `rust-style.md` (annotation vocabulary; **no
-PORT STATUS trailer — that convention is retired**). Generated files carry
-`// @generated` and are never hand-edited.
+Hand-written files here follow `rust-style.md` (the official
+comment-annotation forms; there is no PORT STATUS trailer). Generated files
+carry `// @generated` and are never hand-edited.

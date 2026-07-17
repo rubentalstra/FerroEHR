@@ -39,8 +39,8 @@ error-handling/overflow chapters.)
   ch9 split: panic is for states that cannot happen, `Result` for
   everything that can.
 - **No panicking indexing on request paths**: prefer `.get(..)`/pattern
-  matching over `x[i]` and `&s[a..b]` (lint per the design-principles
-  register; `string_slice` can panic on a UTF-8 boundary — clinical text is
+  matching over `x[i]` and `&s[a..b]` (`indexing_slicing`/`string_slice`
+  lints; `string_slice` can panic on a UTF-8 boundary — clinical text is
   full of multi-byte content).
 - **Guards are never silently dropped**: `let _ = lock/tx/handle;` is
   denied (`let_underscore_drop`) — bind guards to named variables that live
@@ -54,10 +54,11 @@ error-handling/overflow chapters.)
   variant, not a substring match. String context belongs in the display
   text, not the discriminant. (Review-enforced at the seam; the
   status-mapping tests pin the wire outcome.)
-- **Ids are distinct types where confusion is fatal** (C-NEWTYPE): the
-  `EhrId`/`VoId` newtype wave is registered (design-principles register
-  D-8) — until it lands, treat any function with two adjacent `Uuid`
-  parameters as a review hotspot (review-enforced, temporary).
+- **Ids are distinct types where confusion is fatal** (C-NEWTYPE): distinct
+  id newtypes (`EhrId`, `VoId`, …) are used throughout, so the type system
+  rejects a swapped-argument mistake at compile time (tier 1). Never pass a
+  bare `Uuid` where a typed id belongs, and never add a function that takes
+  two adjacent bare `Uuid` parameters.
 - **Every public item: `Debug`, docs with concrete `# Errors`/`# Panics`**
   (C-DEBUG, C-FAILURE — `missing_debug_implementations` +
   `missing_errors_doc`/`missing_panics_doc` at CI-deny). **PHI caveat**
@@ -78,6 +79,19 @@ error-handling/overflow chapters.)
 - **Dependencies are pinned and vetted** (tier 4): workspace-table only,
   `cargo audit`/`deny` green at all times, no new dependency for what the
   pinned set already provides.
+- **Only the official comment-annotation forms** (owner ruling 2026-07-17):
+  unfinished work is `// TODO:` (or `// TODO(perf):` for a deferred
+  performance optimization); a deliberate spec-silent design decision is a
+  plain `// NOTE:` carrying the spec citation or the explicit "no openEHR
+  spec governs this — our own design/extension" flag; `unsafe` (none
+  expected) carries `// SAFETY:`. The bespoke `(port)` vocabulary
+  (`// PORT NOTE:`, `TODO(port)`, `PERF(port)`, the "PORT STATUS" trailer)
+  is deleted and must not reappear. **Explicit exception to this file's
+  rule-needs-a-check pattern:** there is NO CI grep gate for this (the owner
+  removed it) — the enforcement story is that the official `// TODO:` form is
+  the one the Rust toolchain and the IDE surface, so it is self-reinforcing;
+  the `(port)` forms simply have no tooling behind them and die of neglect.
+  (Review-enforced.)
 
 ## When a lint fights a legitimate case
 

@@ -3,10 +3,12 @@
 A pure-Rust, openEHR-spec-conformant CDR (ITS-REST 1.0.3 + AQL 1.1) with
 greenfield PG18-native internals. This file says what lives where and which
 document is authoritative for what. When two docs disagree, the **newer
-decision wins**. *(The former `blueprint/`, `design/`, `enterprise/`, and
+decision wins**. *(The former `ADRs/`, `blueprint/`, `enterprise/`, and
 `spec-audit/` layers were deleted 2026-07-16/17 — implemented or stale; the
 vendored specs are the only doc oracle, and live behaviour is documented in
-the code + the user website.)*
+the code + the user website. `design/` holds ONLY designs not yet
+implemented — currently the admin-console design — and each file there is
+deleted in the PR that implements it.)*
 
 ## Start here
 
@@ -20,18 +22,19 @@ the code + the user website.)*
 
 ## Decisions
 
-- `ADRs/` — architecture decision records (decision *history* only — code
-  cites specs, never ADRs). The load-bearing current set: **ADR-004** (spec
-  layer generated from BMM), **ADR-005** (ITS XML/REST generated),
-  **ADR-006** (app = idiomatic Rust on the generated crates), **ADR-008**
-  (greenfield PG18 storage + AQL; openEHR CNF conformance is the acceptance
-  target — *read first for internals*), **ADR-013** (enterprise schema
-  baseline), **ADR-014** (contribution-outbox eventing), **ADR-015**
-  (multi-tenancy), **ADR-016** (FHIR connectors), **ADR-017** (multimedia
-  externalization), **ADR-018** (the three-crate application consolidation:
-  `ehrbase` platform library + `ehrbase-rest` adapter + `ehrbase-server`
-  binary; zero re-exports). Earlier records are superseded-in-part or
-  narrow; each says so in its header.
+The former `ADRs/` layer has been **deleted** (owner ruling 2026-07-17 — the
+ADRs caused more confusion than value: they were superseded piecemeal and left
+stale claims behind). Architectural decisions now live inline, in the durable
+record: the living reference docs (`architecture.md`, this tree, `VERSIONS.md`),
+`PROGRESS.md`, `CHANGELOG.md`, and git history. **No document reads, writes, or
+cites an ADR; the only citable references are the vendored specs and official
+external documentation.** (The current design in brief: the spec + ITS layer is
+generated from the vendored machine-readable specs by `openehr-codegen`; the
+application is idiomatic Rust of our own design on those crates, with its own
+PG18-native storage and typed AQL engine, three app crates with zero
+re-exports, an SM-aligned service layer, and enterprise capabilities —
+eventing, multi-tenancy, FHIR connectors, multimedia externalization;
+acceptance is the openEHR conformance suite. See `architecture.md`.)
 
 ## The specs (the oracle — do not edit)
 

@@ -5,7 +5,7 @@ paths: ["crates/**", "app/**", "tools/**"]
 # Testing discipline
 
 Test discipline is non-negotiable (a standing hard rule; see `CLAUDE.md`). It
-applies to every crate — generated (ADR-004) and hand-written alike.
+applies to every crate — generated and hand-written alike.
 
 ## The hard rule
 
@@ -13,8 +13,8 @@ applies to every crate — generated (ADR-004) and hand-written alike.
   build pass.
 - **Never** edit a test to route around a runtime bug it exposes. If a test
   fails and the fix is unclear, leave it failing and record a
-  `// TODO(port):` — do not touch the test to make it green.
-- Conformance/corpus tests assert the **openEHR specifications** (ADR-008):
+  `// TODO:` — do not touch the test to make it green.
+- Conformance/corpus tests assert the **openEHR specifications**:
   cite the spec clause a test encodes; never adjust an expectation to match
   an implementation bug. ECC corpus/golden defects go through the
   adjudication registers (skip-with-reason), never through editing the case
@@ -45,7 +45,7 @@ applies to every crate — generated (ADR-004) and hand-written alike.
   numbering and generated data sets. Phase-close ECC runs must show **zero
   drift** vs the committed baseline
   (`docs/conformance/ehrbase-rs/results.json` — per-SUT artefact dirs since
-  W-10); the baseline only ratchets upward (blueprint §4 rule 4).
+  W-10); the baseline only ratchets upward.
 - **The vendored CNF text is the oracle the instrument derives from:**
   `docs/specs/openehr/CNF/docs/platform_test_schedule/` defines what a
   conformant server must do; the upstream Robot suites + fixtures under
@@ -71,8 +71,7 @@ Do not invent a third location.
 
 ## Target
 
-Full-ECC green is the standing bar (claimed at B6: CORE + STANDARD PASS) —
+Full-ECC green is the standing bar (CORE + STANDARD PASS) —
 every change preserves it; the baseline only ratchets upward. Every phase
-ships compiling, clippy-clean, tested increments (ADR-006 retired the old
-"phases need not compile" gate) — this whole rule is fully active at all
-times.
+ships compiling, clippy-clean, tested increments — this whole rule is fully
+active at all times.
