@@ -215,12 +215,26 @@ impl std::fmt::Debug for DriveOutcome {
 }
 
 /// A completion sample handed from a dispatch task to the recorder collector.
+/// The outcome of one planned op: a measured success, a SERVER-side error
+/// (unexpected status / transport / malformed success body), or a
+/// GENERATOR-side schedule-dependency miss (a prerequisite id never arrived)
+/// — reported separately, so the instrument never attributes its own
+/// scheduling debt to the SUT.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum OpOutcome {
+    Ok,
+    ServerErr,
+    DepMiss,
+}
+
 struct Sample {
     class: OpClass,
     /// The *planned* send offset from the run start (coordinated-omission base).
     planned: Duration,
     /// The completion offset from the run start, or `None` if the op errored.
     completion: Option<Duration>,
+    /// How the op ended ([`OpOutcome`]; `Ok` iff `completion` is `Some`).
+    outcome: OpOutcome,
     /// The business transaction (clinical-event occurrence) this step belongs
     /// to — folded into the event ledger for the completed-per-minute metric.
     event: EventInstance,
@@ -288,7 +302,10 @@ pub async fn drive(
             let ok = sample.completion.is_some();
             match sample.completion {
                 Some(completion) => recorder.record(sample.class, sample.planned, completion),
-                None => recorder.error(sample.class),
+                None => match sample.outcome {
+                    OpOutcome::DepMiss => recorder.dep_miss(sample.class, sample.planned),
+                    _ => recorder.error(sample.class, sample.planned),
+                },
             }
             ledger.observe(sample.event, ok);
         }
@@ -331,12 +348,13 @@ pub async fn drive(
         tasks.spawn(async move {
             let planned = op.at;
             let event = op.event;
-            let ok = execute_op(&client, &runtime, &op).await;
-            let completion = ok.then(|| run_start.elapsed());
+            let outcome = execute_op(&client, &runtime, &op).await;
+            let completion = (outcome == OpOutcome::Ok).then(|| run_start.elapsed());
             let _ = tx.send(Sample {
                 class: op.class,
                 planned,
                 completion,
+                outcome,
                 event,
             });
         });
@@ -480,14 +498,14 @@ impl Runtime {
 // ── Op execution ──────────────────────────────────────────────────────────────
 
 /// Execute one planned op against the SUT, updating the runtime table on
-/// success. Returns whether the op is a measured success (expected status), or
-/// `false` for a dependency miss / unexpected status / transport failure — all
-/// recorded as errors and debug-logged.
+/// success. Returns the [`OpOutcome`]: measured success (expected status),
+/// server-side error (unexpected status / transport / malformed success
+/// body), or generator-side schedule-dependency miss — recorded separately.
 // A flat dispatch over every `Action` variant; splitting the match would scatter
 // one op's request/id-resolution/runtime-update logic across helpers and read
 // worse, so the length is inherent to the enum's width.
 #[allow(clippy::too_many_lines)]
-async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bool {
+async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> OpOutcome {
     let patient = op.patient;
     match &op.action {
         Action::CreateEhr { status } => {
@@ -505,12 +523,12 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                             let mut p = runtime.patients.entry(patient).or_default();
                             p.ehr_id = Some(id);
                             p.status_ovid = status_ovid;
-                            true
+                            OpOutcome::Ok
                         }
                         None => miss("create-ehr: no ehr_id in response"),
                     }
                 }
-                None => false,
+                None => OpOutcome::ServerErr,
             }
         }
         Action::ReadEhr => match resolve_ehr(runtime, patient).await {
@@ -527,11 +545,11 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                 Some(resp) => match version_uid_from(&resp) {
                     Some(ovid) => {
                         record_composition(runtime, patient, *template, &ovid, false);
-                        true
+                        OpOutcome::Ok
                     }
                     None => miss("create-composition: no version uid in response"),
                 },
-                None => false,
+                None => OpOutcome::ServerErr,
             }
         }
         Action::UpdateComposition { template, payload } => {
@@ -552,11 +570,11 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                 Some(resp) => match version_uid_from(&resp) {
                     Some(ovid) => {
                         record_composition(runtime, patient, *template, &ovid, true);
-                        true
+                        OpOutcome::Ok
                     }
                     None => miss("update-composition: no version uid in response"),
                 },
-                None => false,
+                None => OpOutcome::ServerErr,
             }
         }
         Action::ReadLatestComposition => {
@@ -598,7 +616,7 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
             // No representation requested → 201 or 204 are both conformant
             // create-success forms (upstream EHRbase answers 204; the same
             // tolerance as the seeder).
-            send_expect(client, req, &[201, 204]).await.is_some()
+            outcome_of(send_expect(client, req, &[201, 204]).await.is_some())
         }
         Action::AqlPatient { query } => {
             let Some(ehr) = resolve_ehr(runtime, patient).await else {
@@ -650,9 +668,9 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                         p.directory_present = true;
                         p.directory_ovid = Some(ovid);
                     }
-                    true
+                    OpOutcome::Ok
                 }
-                None => false,
+                None => OpOutcome::ServerErr,
             }
         }
         Action::ReadRevisionHistory => {
@@ -687,9 +705,9 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                     if let Some(new_ovid) = version_uid_from(&resp) {
                         runtime.patients.entry(patient).or_default().status_ovid = Some(new_ovid);
                     }
-                    true
+                    OpOutcome::Ok
                 }
-                None => false,
+                None => OpOutcome::ServerErr,
             }
         }
         Action::UploadOpt { template } => {
@@ -697,7 +715,7 @@ async fn execute_op(client: &SutClient, runtime: &Runtime, op: &PlannedOp) -> bo
                 return miss("opt-upload: template fixture unreadable");
             };
             // Provisioning re-upload; the already-present 409/204 is expected.
-            upload_opt_xml(client, &xml).await.is_none()
+            outcome_of(upload_opt_xml(client, &xml).await.is_none())
         }
         Action::ListTemplates => {
             hit(
@@ -853,28 +871,42 @@ async fn send_expect(
     }
 }
 
-/// Send a bodyless request, returning success iff the status is expected.
-async fn hit(client: &SutClient, req: HttpRequest, expected: &[u16]) -> bool {
-    send_expect(client, req, expected).await.is_some()
+/// Send a bodyless request: [`OpOutcome::Ok`] iff the status is expected,
+/// else the server-side error outcome.
+async fn hit(client: &SutClient, req: HttpRequest, expected: &[u16]) -> OpOutcome {
+    outcome_of(send_expect(client, req, expected).await.is_some())
 }
 
-/// Send a JSON-body request, returning success iff the status is expected.
+/// Send a JSON-body request: [`OpOutcome::Ok`] iff the status is expected,
+/// else the server-side error outcome.
 async fn hit_body(
     client: &SutClient,
     method: Method,
     path: String,
     value: &Value,
     expected: &[u16],
-) -> bool {
-    send_expect(client, json_req(method, path, value), expected)
-        .await
-        .is_some()
+) -> OpOutcome {
+    outcome_of(
+        send_expect(client, json_req(method, path, value), expected)
+            .await
+            .is_some(),
+    )
 }
 
-/// Record a schedule-dependency miss (a prerequisite id never arrived).
-fn miss(reason: &str) -> bool {
+/// Map a success flag onto the server-attributed outcome pair.
+const fn outcome_of(ok: bool) -> OpOutcome {
+    if ok {
+        OpOutcome::Ok
+    } else {
+        OpOutcome::ServerErr
+    }
+}
+
+/// Record a schedule-dependency miss (a prerequisite id never arrived) — a
+/// GENERATOR-side outcome, never attributed to the SUT.
+fn miss(reason: &str) -> OpOutcome {
     eprintln!("bench: schedule-dependency miss — {reason}");
-    false
+    OpOutcome::DepMiss
 }
 
 // ── Response parsing ──────────────────────────────────────────────────────────
