@@ -175,7 +175,12 @@ fn is_structure(v: &Value) -> bool {
 /// `Value::Null` before calling this).
 pub fn reassemble<R: NodeContent>(rows: &[R]) -> Result<Value, StorageError> {
     let mut ordered: Vec<&R> = rows.iter().collect();
-    ordered.sort_by_key(|r| r.num());
+    // Both producers already deliver `num` order (the node read's ORDER BY;
+    // decompose's pre-order walk), so the usual case is a linear verification,
+    // not an O(N log N) sort.
+    if !ordered.is_sorted_by_key(|r| r.num()) {
+        ordered.sort_by_key(|r| r.num());
+    }
     let Some(root_row) = ordered.first() else {
         return Err(StorageError::InvalidRows("no rows".into()));
     };

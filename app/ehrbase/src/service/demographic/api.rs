@@ -19,7 +19,7 @@ use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
-use crate::service::version_update::UpdateVersion;
+use crate::service::version_update::{UpdateAudit, UpdateVersion};
 use crate::versioning::object_version_id::{
     components, expected_from_if_match, parse_uid_based_id, parse_version_uid,
 };
@@ -323,17 +323,15 @@ impl EhrbaseService {
         &self,
         kind: PartyKind,
         body: Value,
+        update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
-        let mut resp = self.commit_new_party(kind, body, None).await?;
-        // Surface the party's stored ITEM_TAGs on the response seam for the
-        // `openehr-item-tag`/`openehr-version-item-tag` response headers
-        // (person_create.yaml). A fresh party has none yet; the wire adapter
-        // persists any request-header tags and re-populates the seam afterwards.
-        if let Some(uid) = resp.meta.as_ref().map(|m| m.uid.clone()) {
-            let (vo_id, _) = parse_version_uid(&uid)?;
-            self.attach_party_item_tags(vo_id, &mut resp).await?;
-        }
-        Ok(resp)
+        // A freshly created party has no stored ITEM_TAGs by construction, so
+        // the response seam needs no tag read here; when the request carried
+        // `openehr-item-tag` header tags, the wire adapter persists them after
+        // the create and re-populates the seam itself (person_create.yaml).
+        Ok(self
+            .commit_new_party(kind, body, update_audit.as_ref())
+            .await?)
     }
 
     /// Read a party of the routed [`PartyKind`] by uid-based id (bare
@@ -383,6 +381,7 @@ impl EhrbaseService {
         uid_based_id: String,
         if_match: String,
         body: Value,
+        update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
         // Resolve the current version ONCE (lean, kind-checked): the same handle
@@ -395,7 +394,7 @@ impl EhrbaseService {
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
         Ok(self
-            .commit_party_update(current, body, expected, None)
+            .commit_party_update(current, body, expected, update_audit.as_ref())
             .await?)
     }
 
@@ -422,6 +421,7 @@ impl EhrbaseService {
         kind: PartyKind,
         uid_based_id: String,
         if_match: Option<String>,
+        update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
         // One lean resolve shared by the `If-Match` compare and the delete gate.
@@ -436,7 +436,9 @@ impl EhrbaseService {
         };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
-        Ok(self.commit_party_delete(current, expected, None).await?)
+        Ok(self
+            .commit_party_delete(current, expected, update_audit.as_ref())
+            .await?)
     }
 
     // ── VERSIONED_PARTY ──────────────────────────────────────────────────────
@@ -658,7 +660,9 @@ impl EhrbaseService {
         &self,
         a_version: UpdateVersion,
     ) -> Result<Uuid, SmError> {
-        let resp = self.create_relationship(a_version.data).await?;
+        let resp = self
+            .create_relationship(a_version.data, Some(&a_version.audit))
+            .await?;
         let (vo_id, _) = parse_version_uid(&version_uid(resp))?;
         Ok(vo_id)
     }
@@ -774,7 +778,12 @@ impl EhrbaseService {
             None => None,
         };
         let resp = self
-            .update_relationship(a_versioned_party_rel_id, a_version.data, expected)
+            .update_relationship(
+                a_versioned_party_rel_id,
+                a_version.data,
+                expected,
+                Some(&a_version.audit),
+            )
             .await?;
         Ok(version_uid(resp))
     }
@@ -804,7 +813,7 @@ impl EhrbaseService {
                     format!("party relationship {a_versioned_party_rel_id}"),
                 )
             })?;
-        let resp = self.commit_relationship_delete(current, None).await?;
+        let resp = self.commit_relationship_delete(current, None, None).await?;
         Ok(version_uid(resp))
     }
 
@@ -817,8 +826,14 @@ impl EhrbaseService {
     /// - [`SmError`] mapped from `422` — the body's `_type` is not
     ///   `PARTY_RELATIONSHIP` or fails RM validation.
     /// - [`SmError`] on a storage/database fault during the create transaction.
-    pub async fn party_relationship_create(&self, body: Value) -> Result<ServiceResponse, SmError> {
-        Ok(self.create_relationship(body).await?)
+    pub async fn party_relationship_create(
+        &self,
+        body: Value,
+        update_audit: Option<UpdateAudit>,
+    ) -> Result<ServiceResponse, SmError> {
+        Ok(self
+            .create_relationship(body, update_audit.as_ref())
+            .await?)
     }
 
     /// Read a relationship by uid-based id, optionally time-travelled to
@@ -859,6 +874,7 @@ impl EhrbaseService {
         uid_based_id: String,
         if_match: String,
         body: Value,
+        update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
         let current = self.relationship_current(vo_id).await?;
@@ -868,7 +884,7 @@ impl EhrbaseService {
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
         Ok(self
-            .commit_relationship_update(current, body, expected)
+            .commit_relationship_update(current, body, expected, update_audit.as_ref())
             .await?)
     }
 
@@ -891,6 +907,7 @@ impl EhrbaseService {
         &self,
         uid_based_id: String,
         if_match: Option<String>,
+        update_audit: Option<UpdateAudit>,
     ) -> Result<ServiceResponse, SmError> {
         let (vo_id, path_version) = parse_uid_based_id(&uid_based_id)?;
         // One lean resolve shared by the `If-Match` compare and the delete gate.
@@ -905,7 +922,9 @@ impl EhrbaseService {
         };
         let current =
             current.ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
-        Ok(self.commit_relationship_delete(current, expected).await?)
+        Ok(self
+            .commit_relationship_delete(current, expected, update_audit.as_ref())
+            .await?)
     }
 
     /// The `VERSIONED_OBJECT` wrapper for a relationship.

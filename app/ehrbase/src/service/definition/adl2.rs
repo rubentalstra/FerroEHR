@@ -365,17 +365,19 @@ impl EhrbaseService {
         .bind(limit)
         .fetch_all(&self.pool)
         .await?;
-        Ok(rows
-            .iter()
+        // NOT NULL columns decode infallibly on a healthy row; a decode fault
+        // is a real storage error and surfaces instead of blanking the field.
+        rows.iter()
             .map(|row| {
-                let hrid: String = row.try_get("hrid").unwrap_or_default();
+                let hrid: String = row.try_get("hrid")?;
                 let created = row
-                    .try_get::<jiff_sqlx::Timestamp, _>("created_at")
-                    .map(|t| t.to_jiff().to_string())
-                    .unwrap_or_default();
-                serde_json::json!({ "template_id": hrid, "created_timestamp": created })
+                    .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+                    .to_jiff()
+                    .to_string();
+                Ok(serde_json::json!({ "template_id": hrid, "created_timestamp": created }))
             })
-            .collect())
+            .collect::<Result<Vec<_>, sqlx::Error>>()
+            .map_err(ServiceError::from)
     }
 }
 

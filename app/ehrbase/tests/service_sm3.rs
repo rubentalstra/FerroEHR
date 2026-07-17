@@ -228,7 +228,7 @@ async fn relationship_lifecycle_end_to_end() {
 
     // create → v1
     let created = svc
-        .party_relationship_create(relationship("parent-of", src, tgt))
+        .party_relationship_create(relationship("parent-of", src, tgt), None)
         .await
         .expect("create relationship");
     assert_eq!(created.body["_type"], "PARTY_RELATIONSHIP");
@@ -273,6 +273,7 @@ async fn relationship_lifecycle_end_to_end() {
             vo.clone(),
             ovid_v1.clone(),
             relationship("guardian-of", src, tgt),
+            None,
         )
         .await
         .expect("update relationship");
@@ -289,7 +290,12 @@ async fn relationship_lifecycle_end_to_end() {
 
     // stale If-Match → 412
     let stale = svc
-        .party_relationship_update(vo.clone(), ovid_v1.clone(), relationship("stale", src, tgt))
+        .party_relationship_update(
+            vo.clone(),
+            ovid_v1.clone(),
+            relationship("stale", src, tgt),
+            None,
+        )
         .await;
     assert!(
         matches!(
@@ -329,7 +335,7 @@ async fn relationship_lifecycle_end_to_end() {
 
     // delete (mandatory OBJECT_VERSION_ID) → 204; subsequent get → 204 (Null)
     let deleted = svc
-        .party_relationship_delete(ovid_v2.clone(), None)
+        .party_relationship_delete(ovid_v2.clone(), None, None)
         .await
         .expect("delete");
     assert!(deleted.is_empty());
@@ -363,7 +369,7 @@ async fn relationship_error_cases() {
     // invalid content (missing target) → 422
     let mut bad = relationship("no-target", "src", "tgt");
     bad.as_object_mut().unwrap().remove("target");
-    let invalid = svc.party_relationship_create(bad).await;
+    let invalid = svc.party_relationship_create(bad, None).await;
     assert!(
         matches!(
             invalid,
@@ -377,7 +383,7 @@ async fn relationship_error_cases() {
 
     // a PERSON is not a relationship → wrong-kind get is 404
     let created = svc
-        .party_relationship_create(relationship("r", "a", "b"))
+        .party_relationship_create(relationship("r", "a", "b"), None)
         .await
         .expect("create");
     let vo = vo_uuid(&created.body);

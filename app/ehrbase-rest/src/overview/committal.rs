@@ -123,6 +123,22 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
     }
 }
 
+/// The audit attributes of the committal headers, when the request carried
+/// any — the demographic wire threads these into its commits (the ITS-REST
+/// overview merge requirement applies to every commit surface, not only the
+/// EHR APIs). `None` when no committal header is present, so a plain request
+/// keeps the server-default attribution path.
+pub(crate) fn committal_audit(
+    headers: &HeaderMap,
+) -> Option<ehrbase::service::version_update::UpdateAudit> {
+    if collect_attrs(headers).is_empty() {
+        return None;
+    }
+    let mut uv = UpdateVersion::direct(serde_json::Value::Null);
+    merge_committal_headers(&mut uv, headers);
+    Some(uv.audit)
+}
+
 /// Collect all committal-header attributes into `target → [(subkey, value)]`,
 /// deprecated forms first and the development-edition forms last so the new form
 /// wins on conflict.

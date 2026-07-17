@@ -170,9 +170,20 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         );
     }
 
-    let pool = db::connect(&config.db)
-        .await
-        .context("connecting to PostgreSQL")?;
+    // Multi-tenant mode swaps in the tenant-scoped pool: every checked-out
+    // connection is stamped with the request's `ehrbase.tenant_id` session
+    // GUC, which the RLS `tenant_isolation` policy reads (no openEHR spec
+    // governs multi-tenancy — our own deployment extension). Single-tenant
+    // deployments keep the plain pool and pay no per-acquire cost.
+    let pool = if config.tenancy.enabled {
+        db::connect_tenant_scoped(&config.db)
+            .await
+            .context("connecting to PostgreSQL (tenant-scoped)")?
+    } else {
+        db::connect(&config.db)
+            .await
+            .context("connecting to PostgreSQL")?
+    };
     db::run_migrations(&pool)
         .await
         .context("applying migrations")?;

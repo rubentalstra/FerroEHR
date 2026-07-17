@@ -410,3 +410,60 @@ async fn versioned_party_relationship_is_mounted() {
     assert_eq!(v["_type"], "VERSIONED_OBJECT");
     assert_eq!(v["owner_id"]["type"], "PARTY_RELATIONSHIP");
 }
+
+/// The ITS-REST overview committal-header merge requirement holds on the
+/// demographic wire exactly as on the EHR APIs: attributes supplied via
+/// `openEHR-AUDIT_DETAILS.*` request headers "MUST be merged with the default
+/// `VERSION` and `VERSION.audit_details` attributes on commit runtime". The
+/// persisted `ORIGINAL_VERSION`'s `commit_audit` must reflect the caller's
+/// description and committer (`change_type` stays operation-owned).
+#[tokio::test]
+async fn demographic_committal_headers_merge_into_the_commit() {
+    let (_pg, app) = app("dem_committal_merge").await;
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/person"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(
+            "openEHR-AUDIT_DETAILS.description",
+            "value=\"Registered at intake\"",
+        )
+        .header(
+            "openEHR-AUDIT_DETAILS.committer",
+            "name=\"John Doe\", external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\", \
+             external_ref.namespace=\"demographic\", external_ref.type=\"PERSON\"",
+        )
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED);
+    let v1 = etag_uid(&h);
+    let vo = vo_of(&v1).to_owned();
+
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/demographic/versioned_party/{vo}/version/{v1}"
+        ))
+        .header(header::ACCEPT, "application/json")
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    assert_eq!(ver["_type"], "ORIGINAL_VERSION");
+    let audit = &ver["commit_audit"];
+    assert_eq!(
+        audit["description"]["value"], "Registered at intake",
+        "openEHR-AUDIT_DETAILS.description merged: {ver}"
+    );
+    assert_eq!(
+        audit["committer"]["name"], "John Doe",
+        "openEHR-AUDIT_DETAILS.committer merged"
+    );
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "249",
+        "change_type stays operation-owned (creation)"
+    );
+}
