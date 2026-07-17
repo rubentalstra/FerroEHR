@@ -41,6 +41,10 @@ serde_json.workspace = true
 # the theme to `localStorage`.
 leptos-use = { workspace = true }
 
+# JsFuture for the browser-side OPT file read (thaw Upload custom_request);
+# compiles on both targets, only ever runs in the browser.
+wasm-bindgen-futures.workspace = true
+
 thiserror.workspace = true
 
 # server-only (behind `ssr`)

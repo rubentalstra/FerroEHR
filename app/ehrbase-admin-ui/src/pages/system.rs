@@ -1,4 +1,4 @@
-//! The `/system` screen (design doc §7A.10): a four-card operational panel
+//! The `/system` screen: a four-card operational panel
 //! over the CDR — server status, SMART service-discovery, the CDR's own
 //! served `OpenAPI` document (rendered by our own grouped-endpoint component,
 //! never a Swagger embed), and the activity log.

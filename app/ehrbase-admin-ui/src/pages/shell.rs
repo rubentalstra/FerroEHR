@@ -1,4 +1,4 @@
-//! The §7A.0 application shell: the session guard plus the persistent chrome
+//! The application shell: the session guard plus the persistent chrome
 //! (responsive nav drawer, topbar with the CDR health pill, user menu +
 //! scopes drawer, dark-mode toggle, footer) around the routed `<Outlet/>`.
 //!
