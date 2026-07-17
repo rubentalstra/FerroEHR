@@ -454,6 +454,7 @@ mod tests {
             ClassRecord {
                 count: 10,
                 errors: 0,
+                dep_misses: 0,
                 p50_us: p99 / 2,
                 p90_us: p99,
                 p99_us: p99,

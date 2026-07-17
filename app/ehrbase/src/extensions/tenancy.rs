@@ -176,7 +176,9 @@ impl EhrbaseService {
             // request carrying a bogus tenant header.
             None => None,
         };
-        self.tenant_cache.insert(key.to_owned(), outcome.clone()).await;
+        self.tenant_cache
+            .insert(key.to_owned(), outcome.clone())
+            .await;
         Ok(outcome)
     }
 

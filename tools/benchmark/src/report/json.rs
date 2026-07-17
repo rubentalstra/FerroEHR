@@ -180,8 +180,13 @@ fn harness_sha() -> String {
 pub struct ClassRecord {
     /// Measured (post-warmup) operations.
     pub count: u64,
-    /// Errored operations (excluded from the latency percentiles).
+    /// SERVER-attributed errored operations (excluded from the latency
+    /// percentiles; the error-rate numerator).
     pub errors: u64,
+    /// Generator-side schedule-dependency misses — the instrument's own
+    /// scheduling debt, reported beside (never inside) the error rate.
+    #[serde(default)]
+    pub dep_misses: u64,
     /// 50th-percentile latency (µs).
     pub p50_us: u64,
     /// 90th-percentile latency (µs).
@@ -203,6 +208,7 @@ impl ClassRecord {
         ClassRecord {
             count: s.count,
             errors: s.errors,
+            dep_misses: s.dep_misses,
             p50_us: s.p50_us,
             p90_us: s.p90_us,
             p99_us: s.p99_us,
@@ -345,6 +351,7 @@ mod tests {
             ClassRecord {
                 count: 100,
                 errors: 0,
+                dep_misses: 0,
                 p50_us: 4000,
                 p90_us: 6000,
                 p99_us: 9000,
