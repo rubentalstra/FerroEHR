@@ -33,16 +33,15 @@ Systematic conformance audit: our code vs the normative text. The output is a
    - ✅ conformant (evidence: file:line or passing test)
    - ❌ divergent (what the spec says vs what we do)
    - ⚠️ unimplemented / not yet in scope (name the phase that owns it)
-   - 📝 spec-silent → needs a `// PORT NOTE:` / ADR decision
+   - 📝 spec-silent → needs a `// NOTE:` decision
 4. **Report**: findings ranked by severity (wire-visible divergence > missing
    behaviour > internal), each with the spec citation
    (`docs/specs/openehr/<file>` + heading, or CNF test-case id) and the code
    location. State coverage honestly — list the spec chapters *not* audited.
 5. **Record**: for real divergences, offer to file them in
-   `docs/plans/WORKLIST.md` (the owner-mandated single tracker) and reflect
-   them in the blueprint §2 gap surface (plus the owning phase file, if one
-   exists) — never silently fix-and-forget; for spec-silent findings,
-   suggest the `// PORT NOTE:`/ADR text.
+   `docs/plans/WORKLIST.md` (the owner-mandated single tracker, plus the
+   owning phase file, if one exists) — never silently fix-and-forget; for
+   spec-silent findings, suggest the `// NOTE:` text.
 
 ## Rules
 

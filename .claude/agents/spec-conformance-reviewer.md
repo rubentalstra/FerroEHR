@@ -31,7 +31,7 @@ code (a diff, or named crates/modules) against two authorities, in order:
    `// @generated` files; app crates consume `openehr-*` types (no
    re-modelling/re-serializing); `thiserror` libs / `anyhow` binary; no
    `unwrap`/`expect` outside tests; tests never weakened; deliberate spec
-   gaps carry `// PORT NOTE:` with a reason.
+   gaps carry `// NOTE:` with a reason.
 
 Method: identify the spec surfaces the change touches; extract the concrete
 requirements from the vendored text (read the actual sections — do not review
@@ -43,13 +43,16 @@ required behaviour > discipline violation > style). Each finding: the defect
 in one sentence, a concrete failure scenario, the code location (file:line),
 and the spec citation (`docs/specs/openehr/<path>` + heading, or CNF
 test-case id). If the spec is silent on a disputed point, report that as its
-own finding (a `// PORT NOTE:`/ADR decision point), not as a violation.
+own finding (a `// NOTE:` decision point), not as a violation.
 State honestly what you did not review. You never edit files — findings only.
 
 ## Citation discipline (owner hard rule)
 
-Cite ONLY the openEHR specs (file + section) in code/schema/doc comments and
-findings — never an ADR (`ADR-NNN`). ADRs get superseded and leave stale
-claims; spec citations stay findable. Where the specs are silent, write the
-explicit flag "no openEHR spec governs this — our own design/extension".
-Treat any ADR citation you encounter as a defect to scrub in files you touch.
+Cite ONLY the vendored openEHR specs (file + section) or official external
+documentation (the PostgreSQL docs, the Rust book/reference, a pinned crate's
+docs) in code/schema/doc comments and findings — never an internal markdown
+file, because internal docs move or die. The ADR layer has been deleted;
+internal plan/design files are deleted in the PR that implements them and are
+never a citable authority. Where the specs are silent, write the explicit flag
+"no openEHR spec governs this — our own design/extension". Treat any ADR or
+internal-doc citation you encounter as a defect to scrub in files you touch.

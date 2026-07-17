@@ -37,9 +37,8 @@ The `/phase-done` checklist enforces it at phase close.
 
 - End-user voice: second person, task-first. Audiences are integrators,
   operators, and evaluators — never repo-internal.
-- **Never publish or link:** `docs/ADRs/**`, `docs/plans/**`,
-  `docs/PROGRESS.md`, `docs/specs/**`, `.claude/**`.
-  Paraphrase into user language instead.
+- **Never publish or link:** `docs/plans/**`, `docs/PROGRESS.md`,
+  `docs/specs/**`, `.claude/**`. Paraphrase into user language instead.
 - Callouts: mdBook 0.5 native `> [!NOTE]` / `[!WARNING]` / `[!TIP]` (no
   plugin syntax). Diagrams: ```mermaid fenced blocks. Long chapters get
   `<!-- toc -->` after the intro paragraph.

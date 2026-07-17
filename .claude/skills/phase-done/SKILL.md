@@ -26,7 +26,7 @@ decide the phase is done on your behalf.
    confirm a conformance pass happened (`/spec-audit` findings addressed or
    filed as tasks). If it never happened, stop and say so — that is an
    unmet exit criterion in spirit.
-3a. **ECC zero-drift gate (blueprint §4 rule 4):** confirm a full ECC run
+3a. **ECC zero-drift gate:** confirm a full ECC run
    (`/run-conformance`) happened at close and shows zero drift vs the
    committed baseline, and that the ratcheted `docs/conformance/` artifacts
    (results.json + report + badges) are in-branch. No green ECC run → the
@@ -38,9 +38,13 @@ decide the phase is done on your behalf.
    `.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
    exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
    If not, stop: both are part of the phase's deliverable.
-3c. **Blueprint maintenance (blueprint §4 rule 7):** confirm the affected
-   blueprint chapter + `00-THE-BLUEPRINT.md` §2 state rows were refreshed to
-   verified reality, and the phase's close note is recorded.
+3c. **Living-reference-doc maintenance:** confirm the living reference docs
+   (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`) were
+   refreshed to verified reality for anything this phase changed, and the
+   phase's close note is recorded. (There is no blueprint/design-doc layer —
+   internal plan/design files are deleted in the PR that implements them; the
+   durable record is `docs/PROGRESS.md`, `CHANGELOG.md`, git history, and
+   these living reference docs.)
 4. **Update `docs/PROGRESS.md`** with one line for this phase: phase number,
    title, completion date, and a short note (mirroring the phase file's
    `## Decisions made this phase`, if any). Append; never rewrite prior
@@ -50,7 +54,7 @@ decide the phase is done on your behalf.
    any placeholder text that is there.
 6. **Set the phase file's `Status` header to `done`.**
 7. **Advance `docs/plans/current-phase.md`** to point at the next phase file
-   in sequence (per the build order in `docs/blueprint/00-THE-BLUEPRINT.md` §3),
+   in sequence (per the build order in `ROADMAP.md` + the phase files),
    with a fresh session goal and next action for that phase's first task.
 8. **Remind the user to commit** as `phase-NN: phase complete` on the
    current `claude/phase-NN-*` branch — this skill edits files but does not

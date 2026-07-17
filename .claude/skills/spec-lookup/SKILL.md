@@ -46,5 +46,5 @@ Answer spec questions from the vendored normative text at
 5. **Answer with citations**: `docs/specs/openehr/<component>/docs/<file>.adoc`
    + the section heading (and CNF test-case ids where applicable). If the spec
    is genuinely silent or ambiguous, say so explicitly — that is the signal to
-   record a `// PORT NOTE:` / ADR decision, with EHRbase consulted only as
+   record a `// NOTE:` decision, with EHRbase consulted only as
    prior art.

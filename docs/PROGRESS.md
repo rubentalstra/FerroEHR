@@ -5,12 +5,12 @@ the per-phase files for detail. Status values: `not-started`, `in-progress`,
 `blocked`, `done`. Phase files were **renumbered (2026-07-04) into one clean
 `00→20, 99` sequence** so number = order.
 
-> **Three pivots shape this (read the ADRs):**
-> - **ADR-004** — the openEHR **spec layer is generated** from BMM, not
->   hand-transcribed (`openehr-base/rm/am/term/lang`).
-> - **ADR-005** — the **ITS layer is generated** (canonical XML `ToXml`/`FromXml`
+> **Three pivots shape this record:**
+> - The openEHR **spec layer is generated** from BMM, not hand-transcribed
+>   (`openehr-base/rm/am/term/lang`).
+> - The **ITS layer is generated** (canonical XML `ToXml`/`FromXml`
 >   + the ITS-REST contract, in `openehr-its`); JSON validation + fidelity gates green.
-> - **ADR-006** — the **EHRbase application** is a *modern idiomatic Rust service
+> - The **application** is a *modern idiomatic Rust service
 >   on top of the generated `openehr-*` crates* (not a 1:1 Java-structure port),
 >   with Basic + OAuth2/OIDC auth in Stage 1 (RBAC in Stage 2). App phases build
 >   as **compiling, tested increments**.

@@ -7,12 +7,12 @@ paths: ["app/ehrbase/**"]
 `ehrbase` is the only crate that talks to PostgreSQL, using `sqlx` 0.9 (driver,
 pool, migrations) + `sea-query` 1.0 + `sea-query-sqlx` (the dynamic SQL builder
 + binder; `sea-query-binder` is the obsolete sea-query-0.32 pairing — do not
-use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
+use it). **Not sea-orm.** Target PostgreSQL 18.4+.
 
-## Migrations (ADR-008)
+## Migrations
 
-- The schema is **our own PG18-native design** (ADR-008, re-authored
-  enterprise-grade at B7/ADR-013): the unified `node` table, the temporal
+- The schema is **our own PG18-native design** (re-authored
+  enterprise-grade): the unified `node` table, the temporal
   `vo_version` table, supporting tables, and our `ext` helper functions. It
   is live and ECC-verified — schema changes are migrations on top, never a
   rewrite of shipped history.
@@ -47,7 +47,7 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
 - One `sqlx::Transaction` per service-level write (composition create/update,
   contribution commit, EHR-status change), matching the openEHR
   contribution/commit semantics (one CONTRIBUTION per change set — the spec
-  is the authority; ADR-008).
+  is the authority).
 - Every write emits an `audit_details` + `contribution` row in the same
   transaction — an openEHR requirement: the versioning / CONTRIBUTION /
   audit semantics are defined in `docs/specs/openehr/RM/docs/common/`
@@ -62,4 +62,4 @@ use it). **Not sea-orm** (ADR-006). Target PostgreSQL 18.4+.
   that setup. See `testing.md` for the full test discipline.
 
 This file adds persistence-specific rules on top of `rust-style.md` (idiomatic
-app code, ADR-006) — no PORT STATUS trailer.
+app code).

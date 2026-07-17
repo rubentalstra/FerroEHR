@@ -12,7 +12,7 @@ argument-hint: (none)
 # /regen-codegen
 
 Regenerate everything `openehr-codegen` produces, in-session, and verify it is
-in sync with the vendored specs (ADR-004/005). Never hand-edit `// @generated`
+in sync with the vendored specs. Never hand-edit `// @generated`
 files — that is what this regenerates.
 
 ## Steps
@@ -23,7 +23,7 @@ files — that is what this regenerates.
    cargo run -p openehr-codegen -- emit-xml        # openehr-its XML ToXml/FromXml
    cargo run -p openehr-codegen -- emit-rest       # openehr-its ITS-REST contract
    cargo run -p openehr-codegen -- emit-opt         # openehr-its opt14 (OPT 1.4 model + XML codec)
-   cargo run -p openehr-codegen -- emit-rm-model    # openehr-rm src/model (static RM attribute/type model, ADR-008 §3)
+   cargo run -p openehr-codegen -- emit-rm-model    # openehr-rm src/model (static RM attribute/type model)
    ```
    (`emit` already emits `openehr-rm/src/model`; `emit-rm-model` refreshes just
    that subtree and is byte-identical, so run order does not matter.)

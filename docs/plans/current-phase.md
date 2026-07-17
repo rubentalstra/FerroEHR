@@ -10,10 +10,10 @@ navigation surface.)*
 
 ## Active work — W-14 full audit + platform rewrite
 
-Branch `claude/w14-audit`. The audit register is
-[`w14-audit.md`](w14-audit.md) (155 endpoint ops probed; findings
-F-1..F-54 with spec triage each); the rewrite tracker is
-[`w14-service-rewrite.md`](w14-service-rewrite.md).
+Branch `claude/w14-audit`. The full endpoint/path audit (155 endpoint ops
+probed) and the per-folder platform rewrite it drove are both done; the
+audit/rewrite register and tracker files have been pruned (their content is
+in git history and `docs/PROGRESS.md`).
 
 State (2026-07-16): the **full per-folder fresh rewrite of the platform is
 landed** — 13 folders re-authored from the governing spec sections (fresh
