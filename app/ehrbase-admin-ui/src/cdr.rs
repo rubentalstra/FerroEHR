@@ -55,7 +55,7 @@ impl CdrClient {
         )
     }
 
-    /// A URL directly under the CDR origin (`/rest/status`,
+    /// A URL directly under the CDR origin (`/ehrbase/rest/status`,
     /// `/.well-known/smart-configuration`, the served `openapi.json`).
     #[must_use]
     pub fn origin_url(&self, path: &str) -> String {
@@ -77,7 +77,7 @@ impl CdrClient {
         Self::finish(Self::authorize(request, credential)).await
     }
 
-    /// GET `url` without any credential (pre-auth surfaces: `/rest/status`,
+    /// GET `url` without any credential (pre-auth surfaces: `/ehrbase/rest/status`,
     /// the SMART discovery document).
     ///
     /// # Errors

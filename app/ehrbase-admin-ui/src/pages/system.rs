@@ -156,7 +156,7 @@ fn status_card() -> AnyView {
     card_shell("Status", false, body)
 }
 
-/// Render the parsed `/rest/status` document: an UP/DOWN pill plus every
+/// Render the parsed `/ehrbase/rest/status` document: an UP/DOWN pill plus every
 /// scalar field as a definition list.
 ///
 /// # Errors

@@ -245,23 +245,24 @@ fn counts_section() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { dashboard_counts().await });
     view! {
         <Suspense fallback=tiles_skeleton>
-            <ErrorBoundary fallback=error_bar>
-                {move || Suspend::new(async move {
-                    let (ehrs, compositions, templates) = resource.await?;
-                    Ok::<
-                        _,
-                        AdminUiError,
-                    >(
-                        view! {
-                            <>
-                                {stat_tile("EHRs", ehrs.to_string())}
-                                {stat_tile("Compositions", compositions.to_string())}
-                                {stat_tile("Templates", templates.to_string())}
-                            </>
-                        },
-                    )
-                })}
-            </ErrorBoundary>
+            {move || Suspend::new(async move {
+                // Resolve the Result INSIDE the suspense and render either
+                // branch as one erased view: hydrating an SSR'd
+                // ErrorBoundary fallback mismatches in leptos 0.8 (caught
+                // by the E2E console gate), and this keeps server/client
+                // structure identical while errors stay visible.
+                match resource.await {
+                    Ok((ehrs, compositions, templates)) => view! {
+                        <>
+                            {stat_tile("EHRs", ehrs.to_string())}
+                            {stat_tile("Compositions", compositions.to_string())}
+                            {stat_tile("Templates", templates.to_string())}
+                        </>
+                    }
+                        .into_any(),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
         </Suspense>
     }
     .into_any()

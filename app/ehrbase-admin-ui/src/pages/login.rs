@@ -80,6 +80,10 @@ pub fn LoginPage() -> impl IntoView {
                         view! {
                             <a
                                 href="/auth/oidc/login"
+                                // rel=external: the client router must NOT
+                                // intercept this same-origin anchor — it is a
+                                // BFF axum route, not a client route.
+                                rel="external"
                                 class="thaw-button thaw-button--secondary thaw-button--medium thaw-button--block"
                             >
                                 "Sign in with OIDC"

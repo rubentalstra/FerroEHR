@@ -49,6 +49,12 @@ async fn main() -> anyhow::Result<()> {
     let session_layer =
         tower_sessions::SessionManagerLayer::new(tower_sessions::MemoryStore::default())
             .with_secure(config.session.cookie_secure)
+            // Lax, not the Strict default: the OIDC callback arrives as a
+            // top-level cross-site redirect from the identity provider, and
+            // Strict would withhold the session cookie holding the PKCE/state
+            // — the flow would always fail "no login in progress". CSRF on
+            // the callback is covered by the state + PKCE checks.
+            .with_same_site(tower_sessions::cookie::SameSite::Lax)
             .with_expiry(tower_sessions::Expiry::OnInactivity(
                 tower_sessions::cookie::time::Duration::minutes(
                     i64::try_from(config.session.idle_minutes).unwrap_or(60),

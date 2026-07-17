@@ -16,7 +16,7 @@ use thaw::PopoverTrigger;
 
 use crate::auth::{Logout, SessionInfo, current_session, fetch_status};
 
-/// How often (ms) the topbar re-polls the CDR `/rest/status` health endpoint.
+/// How often (ms) the topbar re-polls the CDR `/ehrbase/rest/status` health endpoint.
 const HEALTH_POLL_MS: u64 = 30_000;
 
 /// The browser `localStorage` key the dark-mode preference persists under.
@@ -217,9 +217,14 @@ fn authed_shell(
     let user_menu = view! {
         <thaw::Popover trigger_type=thaw::PopoverTriggerType::Click>
             <PopoverTrigger slot>
-                <thaw::Button appearance=thaw::ButtonAppearance::Subtle>
-                    {trigger_label}
-                </thaw::Button>
+                // Stable wrapper id: the E2E journeys target the user-menu
+                // trigger deterministically (a bare `.thaw-button` selector
+                // would hit the nav hamburger first).
+                <div id="user-menu-trigger" class="inline-flex">
+                    <thaw::Button appearance=thaw::ButtonAppearance::Subtle>
+                        {trigger_label}
+                    </thaw::Button>
+                </div>
             </PopoverTrigger>
             <div class="flex flex-col gap-2 min-w-44">
                 <span class="text-sm font-medium">{identity}</span>

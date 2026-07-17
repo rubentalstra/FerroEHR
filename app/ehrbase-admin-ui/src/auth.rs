@@ -127,7 +127,7 @@ pub async fn login_modes() -> Result<(bool, bool), AdminUiError> {
     ))
 }
 
-/// The CDR `/rest/status` document (public endpoint), raw JSON — the
+/// The CDR `/ehrbase/rest/status` document (public endpoint), raw JSON — the
 /// shell's health pill and the system panel both read it.
 ///
 /// # Errors
@@ -137,7 +137,7 @@ pub async fn login_modes() -> Result<(bool, bool), AdminUiError> {
 pub async fn fetch_status() -> Result<String, AdminUiError> {
     crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
-    let url = state.cdr.origin_url("rest/status");
+    let url = state.cdr.origin_url("ehrbase/rest/status");
     let response = state.cdr.get_public(&url, "application/json").await?;
     Ok(crate::cdr::CdrClient::expect_success(response)?.body)
 }

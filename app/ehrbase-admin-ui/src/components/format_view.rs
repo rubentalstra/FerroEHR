@@ -61,6 +61,24 @@ pub fn DocumentPane(
     }
 }
 
+/// One domain error rendered as the standard inline error bar — used by
+/// data sections that resolve their `Result` inside `<Suspense>` (SSR'd
+/// `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
+/// sections render content-or-this directly; errors never render as
+/// nothing).
+#[must_use]
+pub fn inline_error(error: &crate::error::AdminUiError) -> AnyView {
+    let message = error.to_string();
+    view! {
+        <div class="py-2">
+            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
+                <thaw::MessageBarBody>{message}</thaw::MessageBarBody>
+            </thaw::MessageBar>
+        </div>
+    }
+    .into_any()
+}
+
 /// Pretty-print a JSON body for display; non-JSON (XML, FLAT with odd
 /// content types) passes through unchanged.
 #[must_use]

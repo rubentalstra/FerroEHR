@@ -125,12 +125,10 @@ async fn hydration_attaches_interactivity() {
     };
     login_basic(&h).await;
     h.shot(1, "shell-before-toggle").await;
-    // The scopes drawer opens on click — DOM state that only WASM can flip.
-    h.wait_css("button[aria-haspopup], .thaw-button").await;
-    let user_button = h.wait_css("header .thaw-button").await;
+    // The user-menu popover opens on click — DOM state only WASM can flip.
+    let user_button = h.wait_css("#user-menu-trigger button").await;
     user_button.click().await.expect("open user menu");
-    h.wait_css(".thaw-popover-surface, .thaw-drawer, [role=dialog]")
-        .await;
+    h.wait_css(".thaw-popover-surface").await;
     h.shot(2, "user-menu-open").await;
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;

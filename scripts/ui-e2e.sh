@@ -45,12 +45,13 @@ cleanup() {
 trap cleanup EXIT
 
 wait_http() { # url, tries
-  local url="$1" tries="${2:-60}"
+  local url="$1" tries="${2:-90}"
   for _ in $(seq 1 "$tries"); do
     if curl -sf -o /dev/null "$url"; then return 0; fi
     sleep 2
   done
-  echo "FATAL: $url not reachable" >&2
+  echo "FATAL: $url not reachable — recent service logs follow" >&2
+  docker compose logs --tail 40 ehrbase keycloak 2>/dev/null || true
   return 1
 }
 
@@ -59,7 +60,7 @@ if [ -z "${UI_E2E_NO_COMPOSE:-}" ]; then
   echo "── compose up (postgres + ehrbase + keycloak)"
   docker compose up -d --build ehrbase-postgres ehrbase keycloak
 fi
-wait_http "$CDR_URL/rest/status"
+wait_http "$CDR_URL/ehrbase/rest/status" 150
 wait_http "$KEYCLOAK_URL/auth/realms/ehrbase/.well-known/openid-configuration" 90
 
 # ── 2. Deterministic Keycloak test passwords (the shipped realm export holds
@@ -77,6 +78,31 @@ for pair in "ehrbase-admin:E2ePass-admin1!" "ehrbase-user:E2ePass-user1!"; do
     -d "{\"type\":\"password\",\"value\":\"$pass\",\"temporary\":false}" \
     "$KEYCLOAK_URL/auth/admin/realms/ehrbase/users/$uid/reset-password"
 done
+
+# Register the console's redirect URI on the realm client (the shipped
+# export's relative "/*" is rootUrl-relative and rejects our origin) — via
+# the admin API, never by editing the realm file.
+echo "── registering the console redirect URI on the ehrbase client"
+CLIENT_ID=$(curl -sf -H "Authorization: Bearer $KC_TOKEN" \
+  "$KEYCLOAK_URL/auth/admin/realms/ehrbase/clients?clientId=ehrbase" \
+  | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")
+curl -sf -H "Authorization: Bearer $KC_TOKEN" \
+  "$KEYCLOAK_URL/auth/admin/realms/ehrbase/clients/$CLIENT_ID" \
+  | CONSOLE_URL="$CONSOLE_URL" python3 -c "
+import json, os, sys
+c = json.load(sys.stdin)
+origin = os.environ['CONSOLE_URL']
+uris = set(c.get('redirectUris', []))
+uris.add(f'{origin}/*')
+c['redirectUris'] = sorted(uris)
+origins = set(c.get('webOrigins', []))
+origins.add(origin)
+c['webOrigins'] = sorted(origins)
+print(json.dumps(c))
+" > /tmp/kc-client.json
+curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: application/json" \
+  -d @/tmp/kc-client.json \
+  "$KEYCLOAK_URL/auth/admin/realms/ehrbase/clients/$CLIENT_ID"
 
 # ── 3. Build + run the console on the host (the same code the OCI image ships) ─
 echo "── building the console (cargo-leptos)"
@@ -116,6 +142,6 @@ UI_E2E_BASIC_USER="ehrbase" \
 UI_E2E_BASIC_PASS="ehrbase" \
 UI_E2E_OIDC_USER="ehrbase-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
-  cargo nextest run -p ehrbase-admin-ui --features ssr "${NEXTEST_FILTER[@]}"
+  cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 "${NEXTEST_FILTER[@]}"
 
 echo "── e2e complete; screenshots in $SHOTS_DIR"
