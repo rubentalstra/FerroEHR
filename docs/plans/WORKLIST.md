@@ -21,7 +21,7 @@ closed table at the bottom).
 | W-3 | **X1 — honest EHRbase vs ehrbase-rs comparison page**: ECC matrix (ours vs upstream 2.34.0), benchmark ladder + overlay curves, per-case upstream failure triage. Measured numbers only. (Plan file pruned 2026-07-16 — re-author at start.) | queued | this worklist |
 | W-4 | **ADL2 — full implementation, spec-exact**: ADL2/cADL2/ODIN source parser, the complete AOM2 semantic-validation catalogue, specialisation flattening, OPT2, template semantics. Oracle: `docs/specs/openehr/AM/docs/{ADL2,AOM2,OPT2}/`. | queued | plan to be authored |
 | W-3d | **SM platform chapter-register gap closure**: the remaining G-rows across the platform-service audit (register files pruned 2026-07-16 — re-derive open rows from the SM spec text at execution). | queued | `docs/specs/openehr/SM/` |
-| FLAT | **FLAT + STRUCTURED interop depth + EhrScape** (renamed from "phase 17", owner 2026-07-16): SIM-B/SDF transformation-rule audit + the EhrScape compatibility surface. | queued | `docs/plans/feature-flat-structured.md` |
+| FLAT | **Simplified Formats (FLAT + STRUCTURED) spec-exact greenfield rewrite** (plan redesigned 2026-07-17, owner-ruled: official specs only, no vendor oracle, no quirks gate, EhrScape cut): re-author `openehr-flat` + the REST negotiation matrix from the STABLE ITS-REST Simplified Formats spec; resolves issue #95. | queued | `docs/plans/feature-flat-structured.md` |
 
 ## Closed (recent; full history in `docs/PROGRESS.md` + git)
 
