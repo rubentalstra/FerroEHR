@@ -200,10 +200,14 @@ async fn commit_import_scoped(
     skip_existing: bool,
     outbox_enabled: bool,
 ) -> Result<Uuid, ServiceError> {
-    // One local instant anchors the whole import's temporal chain.
-    let base = jiff::Timestamp::now();
+    // One instant anchors the whole import's temporal chain — the DATABASE
+    // transaction timestamp (returned by the audit insert), never the app
+    // clock: under app↔DB skew an app-clock base could close an existing open
+    // lineage at an instant before that row's lower bound (an invalid
+    // tstzrange) and diverge from the audit's `import_time`.
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
+    let base = import_time;
     let contribution_id = crate::storage::version_repo::commit::insert_contribution(
         tx,
         ehr_id,

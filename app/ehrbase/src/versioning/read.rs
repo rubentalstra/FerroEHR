@@ -36,7 +36,6 @@ pub(crate) struct VersionRead {
     /// The mandatory `VERSION.commit_audit` (1..1).
     pub(crate) audit: AuditInput,
     pub(crate) time_committed: jiff::Timestamp,
-    pub(crate) template_id: Option<String>,
     /// The stored `VERSION.signature` (0..1; RM common master06 §Digital
     /// Signature), or `None` for versions committed before signing was enabled.
     pub(crate) signature: Option<String>,
@@ -83,7 +82,6 @@ fn version_read(stored: crate::storage::version_repo::read::StoredVersion) -> Ve
             committer: stored.audit_committer,
         },
         time_committed: stored.time_committed,
-        template_id: stored.template_id,
         signature: stored.signature,
         canonical: stored.canonical,
         attestations: stored.attestations,

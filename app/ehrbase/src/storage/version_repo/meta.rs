@@ -98,6 +98,45 @@ pub async fn time_created(
     .map(jiff_sqlx::Timestamp::to_jiff))
 }
 
+/// The stored `template_id` of one version of an object — the current open
+/// trunk version when `tree` is `None`, else the addressed `VERSION_TREE_ID`.
+/// A scalar `vo_version` read: the column is promoted at commit, so resolving
+/// a version's template never needs node reassembly. Outer `None` = no such
+/// version; inner `None` = the version carries no template (non-COMPOSITION).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn template_id_of(
+    pool: &PgPool,
+    vo_id: Uuid,
+    tree: Option<(i32, i32, i32)>,
+) -> Result<Option<Option<String>>, StorageError> {
+    let row = match tree {
+        Some((trunk, branch, branch_version)) => {
+            sqlx::query_scalar(
+                "SELECT template_id FROM vo_version WHERE vo_id = $1 \
+                 AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
+            )
+            .bind(vo_id)
+            .bind(trunk)
+            .bind(branch)
+            .bind(branch_version)
+            .fetch_optional(pool)
+            .await?
+        }
+        None => {
+            sqlx::query_scalar(
+                "SELECT template_id FROM vo_version WHERE vo_id = $1 \
+                 AND upper_inf(sys_period) AND branch_number = 0",
+            )
+            .bind(vo_id)
+            .fetch_optional(pool)
+            .await?
+        }
+    };
+    Ok(row)
+}
+
 // ── existence / kind / ownership ──────────────────────────────────────────────
 
 /// Whether the EHR row exists (the CONTRIBUTION-commit `Pre_has_ehr` precheck

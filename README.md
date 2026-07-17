@@ -174,8 +174,7 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up --bu
 # Grafana → http://localhost:3000
 ```
 
-Dashboards and alert rules live in [`docker/observability/`](docker/observability/);
-the design is documented in [`docs/design/observability.md`](docs/design/observability.md).
+Dashboards and alert rules live in [`docker/observability/`](docker/observability/).
 
 </details>
 
@@ -194,8 +193,8 @@ flowchart TB
 
     subgraph app ["app/* — the application (three crates, three roles)"]
         rest["ehrbase-rest<br/>ITS-REST 1.0.3 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
-        sm["ehrbase-sm<br/>the SM native API —<br/>the Platform Service Model,<br/>transcribed literally"]
-        core["ehrbase<br/>the platform: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing ·<br/>eventing · FHIR · multimedia · the server binary"]
+        core["ehrbase<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing ·<br/>eventing · FHIR · multimedia — one service module<br/>per SM Platform Service Model chapter"]
+        bin["ehrbase-server<br/>the wiring-only binary"]
     end
 
     subgraph tools ["tools/* — verification (not shipped)"]
@@ -204,8 +203,8 @@ flowchart TB
     end
 
     specs -- "openehr-codegen (deterministic, drift-checked in CI)" --> crates
-    rest -- "calls" --> sm
-    core -- "implements" --> sm
+    bin -- "wires" --> rest
+    rest -- "calls the concrete service" --> core
     app --> crates
     tools --> app
 ```
@@ -296,9 +295,9 @@ ways: two found handicapping *upstream* (a starved database `/dev/shm`,
 storm-contaminated rungs), three handicapping *ehrbase-rs* (an admission
 cap upstream doesn't have, cold-start timing charging our image build,
 payload quirks). Single-run numbers on one shared host — a lower bound,
-not a certified maximum. Reproduce with `scripts/benchmark.sh`; the
-methodology (pre-registered workload, CO-corrected latency, config-parity
-register) is in [docs/design/benchmarking.md](docs/design/benchmarking.md).
+not a certified maximum. Reproduce with `scripts/benchmark.sh` (the
+pre-registered workload, CO-corrected latency, and config-parity method is
+documented in the tool itself, `tools/benchmark/`).
 
 ## Deployment
 
@@ -307,9 +306,9 @@ helm install ehrbase-rs deploy/helm/ehrbase-rs \
   --set database.existingSecret=my-db-secret
 ```
 
-See the [deployment guide](docs/design/helm-deployment.md) for the production
-checklist: database role separation, TLS, backup and point-in-time recovery,
-and audit logging.
+See the [documentation website](https://rubentalstra.github.io/ehrbase-rs/)
+for the production checklist: database role separation, TLS, backup and
+point-in-time recovery, and audit logging.
 
 ## Building from source
 
@@ -334,7 +333,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Deployment guide](docs/design/helm-deployment.md) | Production operations |
+| [Endpoint map](docs/endpoint-map.md) | Every endpoint traced through its call chain to the SQL |
 | [Product roadmap](ROADMAP.md) | Where the product goes next |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |

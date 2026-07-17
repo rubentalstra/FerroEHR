@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A tenant-resolution failure (tenant registry unreachable) now fails the
+  request with `503` instead of silently serving it under the default
+  tenant; unknown tenant keys keep the documented unscoped behaviour and
+  are negative-cached.
 - Audits for authenticated writes that carry no committal headers are now
   attributed to the authenticated user (Basic username / token subject, with
   the mechanism recorded as the identifier type) instead of the generic
@@ -87,6 +91,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- External terminology providers cache their FHIR operation results
+  (`$validate-code`/`$expand`/`$subsumes`/`$lookup`) for a configurable TTL
+  (`[terminology.external.providers.<name>] cache_ttl_secs`, default 300 s,
+  `0` disables; `cache_capacity`, default 10000) — a validation burst over
+  the same codes costs one remote round trip per window instead of one per
+  code.
 - A new `atna_audit_serialize_failed_total` metric counts ATNA audit records
   dropped because the message failed to serialize, so audit loss is always
   metered.

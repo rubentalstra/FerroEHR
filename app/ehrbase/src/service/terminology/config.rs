@@ -127,6 +127,24 @@ pub struct FhirProviderConfig {
     /// ([`FhirTerminologyProvider::new`]).
     #[serde(default)]
     pub oauth2_client: Option<String>,
+    /// Result-cache TTL in seconds for this provider's FHIR operations
+    /// (`$validate-code`/`$expand`/`$subsumes`/`$lookup`). `0` disables the
+    /// cache. Bounded staleness against the remote server is the trade for
+    /// not paying one HTTPS round trip per validated code — no openEHR spec
+    /// governs terminology-server caching; our own design.
+    #[serde(default = "default_cache_ttl_secs")]
+    pub cache_ttl_secs: u64,
+    /// Maximum cached responses per provider.
+    #[serde(default = "default_cache_capacity")]
+    pub cache_capacity: u64,
+}
+
+const fn default_cache_ttl_secs() -> u64 {
+    300
+}
+
+const fn default_cache_capacity() -> u64 {
+    10_000
 }
 
 const fn default_connect_timeout_ms() -> u64 {
@@ -202,6 +220,8 @@ mod tests {
                 connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
                 request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
                 oauth2_client: None,
+                cache_ttl_secs: 300,
+                cache_capacity: 1024,
             },
         );
         let enabled = ExternalTerminologyConfig {
@@ -232,6 +252,8 @@ mod tests {
                 connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
                 request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
                 oauth2_client: None,
+                cache_ttl_secs: 300,
+                cache_capacity: 1024,
             },
         );
         let c = ExternalTerminologyConfig {
