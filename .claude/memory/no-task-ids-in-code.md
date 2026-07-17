@@ -16,7 +16,7 @@ deleted after their phase closes — a code comment citing one becomes a
 dangling pointer.
 
 **Why:** the tracker files are ephemeral; the owner ruled they pollute the
-docs. This extends the existing "cite ONLY the openEHR specs, never an ADR"
+docs. This extends the existing "cite ONLY the openEHR specs / official external docs, never internal markdown"
 rule to tracker IDs: the only legitimate reference in code is
 `docs/specs/openehr/...` (spec file + section), or the explicit
 "no openEHR spec governs this — our own design" flag.
