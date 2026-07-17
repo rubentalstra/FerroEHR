@@ -9,6 +9,15 @@ async fn main() -> anyhow::Result<()> {
     use leptos::prelude::LeptosOptions;
     use leptos_axum::LeptosRoutes;
 
+    // Console logs: env-filtered (RUST_LOG), stderr. Without a subscriber
+    // every server-side error is invisible — an operational defect.
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
     // `healthcheck` subcommand: the distroless image has no shell, so the
     // container healthcheck is the binary probing its own /login over HTTP
     // (exit 0 on 2xx/3xx). The bind address comes from LEPTOS_SITE_ADDR,

@@ -75,7 +75,17 @@ pub async fn run_aql(
         ));
     }
     let url = state.cdr.rest_v1("query/aql");
-    let body = crate::pages::ehrs::aql_request_body(&aql, &parameters, offset);
+    // ITS-REST forbids combining the `fetch`/`offset` request parameters
+    // with an AQL LIMIT/TOP clause (QUERY §Query structure/LIMIT) — when
+    // the query carries its own window, send it bare; otherwise page with
+    // fetch/offset as usual.
+    let has_own_window = openehr_query::parser::parse_str(&aql)
+        .is_ok_and(|q| q.limit.is_some() || q.select.top.is_some());
+    let body = if has_own_window {
+        serde_json::json!({ "q": aql, "query_parameters": parameters }).to_string()
+    } else {
+        crate::pages::ehrs::aql_request_body(&aql, &parameters, offset)
+    };
     let response = state
         .cdr
         .post(

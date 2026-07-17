@@ -97,20 +97,32 @@ impl Harness {
         }
     }
 
-    /// Wait until the current URL no longer contains `fragment`.
+    /// Explicit wait on an `XPath` (same budget + failure evidence as
+    /// [`Self::wait_css`]).
     ///
     /// # Panics
-    /// When the URL still matches after 15 s.
-    pub async fn wait_url_not_contains(&self, fragment: &str) {
-        for _ in 0..75 {
-            let url = self.driver.current_url().await.expect("current url");
-            if !url.as_str().contains(fragment) {
-                return;
+    /// When the element never appears.
+    pub async fn wait_xpath(&self, xpath: &str) -> WebElement {
+        match self
+            .driver
+            .query(By::XPath(xpath))
+            .wait(Duration::from_secs(15), Duration::from_millis(200))
+            .first()
+            .await
+        {
+            Ok(element) => element,
+            Err(e) => {
+                let url = self
+                    .driver
+                    .current_url()
+                    .await
+                    .map(|u| u.to_string())
+                    .unwrap_or_default();
+                let path = format!("{}/{}-fail.png", self.shots_dir, self.journey);
+                drop(self.driver.screenshot(std::path::Path::new(&path)).await);
+                panic!("waiting for xpath `{xpath}` at {url}: {e}");
             }
-            tokio::time::sleep(Duration::from_millis(200)).await;
         }
-        let url = self.driver.current_url().await.expect("current url");
-        panic!("URL still contains `{fragment}` (last: {url})");
     }
 
     /// Wait until the current URL contains `fragment` (redirect chains).
@@ -191,13 +203,51 @@ pub async fn login_basic(h: &Harness) {
         .send_keys(&pass)
         .await
         .expect("type pass");
-    h.wait_css("button[type=submit]")
-        .await
-        .click()
-        .await
-        .expect("submit");
-    // Off the login screen, then the shell footer as the
-    // authenticated-chrome marker.
-    h.wait_url_not_contains("/login").await;
+    // Submit with a bounded retry: a click landing exactly while hydration
+    // swaps the form can be lost (the ActionForm is valid both pre- and
+    // post-hydration, but the swap instant is a real race). Each attempt
+    // gets a short bounded wait; leaving /login ends the loop.
+    let mut attempts = 0;
+    loop {
+        h.wait_css("button[type=submit]")
+            .await
+            .click()
+            .await
+            .expect("submit");
+        for _ in 0..15 {
+            if !h
+                .driver
+                .current_url()
+                .await
+                .expect("current url")
+                .as_str()
+                .contains("/login")
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        let off_login = !h
+            .driver
+            .current_url()
+            .await
+            .expect("current url")
+            .as_str()
+            .contains("/login");
+        if off_login {
+            break;
+        }
+        attempts += 1;
+        if attempts >= 3 {
+            let path = format!("{}/{}-login-stuck.png", h.shots_dir, h.journey);
+            drop(h.driver.screenshot(std::path::Path::new(&path)).await);
+            let log = h.driver.get_log("browser").await.unwrap_or_default();
+            for entry in &log {
+                println!("console[{}]: {}", entry.level, entry.message);
+            }
+            panic!("login submit did not leave /login after 3 attempts");
+        }
+    }
+    // The shell footer is the authenticated-chrome marker.
     h.wait_css("footer").await;
 }

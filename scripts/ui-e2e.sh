@@ -133,7 +133,10 @@ wait_http "http://127.0.0.1:$DRIVER_PORT/status"
 
 # ── 5. The journeys ──────────────────────────────────────────────────────────
 echo "── running e2e journeys"
-NEXTEST_FILTER=(-E 'binary(/^e2e_/)')
+# The docs-screenshot binary (e2e_docs_shots) matches `binary(/^e2e_/)` too, so
+# exclude it here (nextest set-difference `-`); it runs only in the gated pass
+# below. An explicit FILTER arg scopes by test name and never picks it up.
+NEXTEST_FILTER=(-E 'binary(/^e2e_/) - binary(e2e_docs_shots)')
 [ -n "$FILTER" ] && NEXTEST_FILTER=(-E "test($FILTER)")
 UI_E2E_BASE_URL="$CONSOLE_URL" \
 UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
@@ -143,5 +146,20 @@ UI_E2E_BASIC_PASS="ehrbase" \
 UI_E2E_OIDC_USER="ehrbase-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
   cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 "${NEXTEST_FILTER[@]}"
+
+# ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
+# When UI_E2E_DOCS_SHOTS is set, capture the canonical per-screen screenshots
+# for website/book (writes into website/book/src/admin-ui/img). Runs after the
+# journeys so the browse journeys have seeded the fixture template.
+if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
+  echo "── capturing documentation screenshots"
+  UI_E2E_BASE_URL="$CONSOLE_URL" \
+  UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
+  UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
+  UI_E2E_BASIC_USER="ehrbase" \
+  UI_E2E_BASIC_PASS="ehrbase" \
+  UI_E2E_DOCS_SHOTS=1 \
+    cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 -E 'binary(e2e_docs_shots)'
+fi
 
 echo "── e2e complete; screenshots in $SHOTS_DIR"

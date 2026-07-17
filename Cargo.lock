@@ -2373,6 +2373,7 @@ dependencies = [
  "tower-http 0.7.0",
  "tower-sessions",
  "tracing",
+ "tracing-subscriber",
  "urlencoding",
  "wasm-bindgen",
  "wasm-bindgen-futures",
