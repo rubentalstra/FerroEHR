@@ -639,7 +639,12 @@ full platform rewrite):**
       the log + cursor skip — extensions rewrite).
 - [x] F-18 AMQP topology declared on connect/change only (DeclaredTopology
       diffing — extensions rewrite).
-- [ ] F-25 admin delete batching + indexed blob-reference GC.
+- [x] F-25 (2026-07-17): bulk EHR delete runs three set statements per
+      128-EHR chunk (bounded tx footprint; RETURNING counts; idempotent
+      skip-missing preserved) instead of a per-EHR transaction loop; the
+      blob GC's reference check is ONE node scan joined against the whole
+      candidate array instead of a full scan per blob (a blob_ref count
+      table stays the eventual scale nicety).
 - [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
 

@@ -148,16 +148,61 @@ impl EhrbaseService {
         } else {
             ehr_ids.to_vec()
         };
+        // Batched: three set statements per CHUNK instead of a per-EHR
+        // transaction loop. Chunking bounds each transaction's lock/WAL
+        // footprint on a full-store wipe; a missing id simply deletes zero
+        // rows (idempotent bulk, same semantics as before). `DELETE …
+        // RETURNING id` counts the EHRs actually removed.
+        const CHUNK: usize = 128;
         let mut deleted = 0u64;
-        for ehr_id in targets {
-            match self.delete_ehr(ehr_id).await {
-                Ok(()) => deleted += 1,
-                // A missing EHR is skipped, not an error (idempotent bulk).
-                Err(ServiceError::NotFound(_)) => {}
-                Err(e) => return Err(e),
+        for chunk in targets.chunks(CHUNK) {
+            let candidate_blobs = self.collect_blob_keys_for(chunk).await?;
+            let mut tx = self.pool.begin().await?;
+            let audit_ids: Vec<Uuid> = sqlx::query_scalar(
+                "SELECT audit_id FROM vo_version WHERE ehr_id = ANY($1) \
+                 UNION \
+                 SELECT audit_id FROM contribution WHERE ehr_id = ANY($1)",
+            )
+            .bind(chunk)
+            .fetch_all(&mut *tx)
+            .await?;
+            let removed: Vec<Uuid> =
+                sqlx::query_scalar("DELETE FROM ehr WHERE id = ANY($1) RETURNING id")
+                    .bind(chunk)
+                    .fetch_all(&mut *tx)
+                    .await?;
+            if !audit_ids.is_empty() {
+                sqlx::query("DELETE FROM audit WHERE id = ANY($1)")
+                    .bind(&audit_ids)
+                    .execute(&mut *tx)
+                    .await?;
             }
+            tx.commit().await?;
+            deleted += removed.len() as u64;
+            self.gc_unreferenced_blobs(candidate_blobs).await;
         }
         Ok(deleted)
+    }
+
+    /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
+    /// (empty when externalization is disabled) — one read for the whole
+    /// chunk. Our own extension — no openEHR spec governs multimedia offload.
+    async fn collect_blob_keys_for(&self, ehr_ids: &[Uuid]) -> Result<Vec<String>, ServiceError> {
+        let Some(engine) = &self.multimedia else {
+            return Ok(Vec::new());
+        };
+        let datas: Vec<serde_json::Value> =
+            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = ANY($1)")
+                .bind(ehr_ids)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut keys: Vec<String> = datas
+            .iter()
+            .flat_map(|d| engine.referenced_keys(d))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        Ok(keys)
     }
 
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
@@ -183,31 +228,44 @@ impl EhrbaseService {
 
     /// Delete each candidate blob no longer referenced by any surviving `node`.
     /// Our own extension — no openEHR spec governs multimedia offload. A
-    /// conservative scan-based GC (a `blob_ref` count table is a P20 scale
+    /// conservative scan-based GC (a `blob_ref` count table is a scale
     /// nicety); a blob-store failure is logged, not fatal (the delete has
     /// committed, an orphaned blob is harmless).
+    ///
+    /// The reference check is ONE pass over `node` for the whole candidate
+    /// set (the still-referenced keys fall out of a single scan joined
+    /// against the candidate array), never a scan per blob.
     async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
         let Some(engine) = &self.multimedia else {
             return;
         };
-        for hex in candidates {
-            let uri = engine.store().uri_for(&hex);
-            let still_referenced: Result<bool, _> = sqlx::query_scalar(
-                "SELECT EXISTS(SELECT 1 FROM node WHERE position($1 in data::text) > 0)",
-            )
-            .bind(&uri)
-            .fetch_one(&self.pool)
-            .await;
-            match still_referenced {
-                Ok(true) => {}
-                Ok(false) => {
-                    if let Err(e) = engine.store().delete(&hex).await {
-                        tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
-                    }
-                }
-                Err(e) => {
-                    tracing::warn!(blob = %hex, error = %e, "multimedia blob GC reference scan failed");
-                }
+        if candidates.is_empty() {
+            return;
+        }
+        let uris: Vec<String> = candidates
+            .iter()
+            .map(|hex| engine.store().uri_for(hex))
+            .collect();
+        let still_referenced: Vec<String> = match sqlx::query_scalar(
+            "SELECT DISTINCT k.uri FROM node n \
+             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
+        )
+        .bind(&uris)
+        .fetch_all(&self.pool)
+        .await
+        {
+            Ok(rows) => rows,
+            Err(e) => {
+                tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
+                return;
+            }
+        };
+        for (hex, uri) in candidates.iter().zip(&uris) {
+            if still_referenced.contains(uri) {
+                continue;
+            }
+            if let Err(e) = engine.store().delete(hex).await {
+                tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
             }
         }
     }
