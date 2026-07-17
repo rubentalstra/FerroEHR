@@ -213,7 +213,10 @@ fn detail_panel(aql: String) -> AnyView {
     let navigate = use_navigate();
     let aql_for_run = aql.clone();
     let on_run = move |_| {
-        let href = format!("/queries/aql?aql={}", encode_query_value(&aql_for_run));
+        let href = format!(
+            "/queries/aql?aql={}",
+            crate::urlq::encode_query_value(&aql_for_run)
+        );
         navigate(&href, NavigateOptions::default());
     };
     let body = Signal::derive(move || aql.clone());
@@ -510,48 +513,18 @@ fn group_card(
     .into_any()
 }
 
-/// Percent-encode a value for use inside a URL query string, per RFC 3986: the
-/// unreserved set (`ALPHA` / `DIGIT` / `-` / `_` / `.` / `~`) passes through;
-/// every other byte becomes `%XX` (uppercase hex, one escape per UTF-8 byte).
-/// The crate's `urlencoding` is server-only, so the browser navigation that
-/// carries a stored query into the raw-AQL screen's `?aql=` needs its own
-/// encoder.
-fn encode_query_value(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                out.push(char::from(byte));
-            }
-            other => {
-                out.push('%');
-                out.push(hex_digit(other >> 4));
-                out.push(hex_digit(other & 0x0f));
-            }
-        }
-    }
-    out
-}
-
-/// One uppercase hex digit for a nibble (0–15).
-fn hex_digit(nibble: u8) -> char {
-    char::from(if nibble < 10 {
-        b'0' + nibble
-    } else {
-        b'A' + (nibble - 10)
-    })
-}
-
 #[cfg(test)]
 mod tests {
-    use super::encode_query_value;
 
     #[test]
     fn encode_query_value_passes_unreserved_and_escapes_the_rest() {
-        assert_eq!(encode_query_value("Aa0-_.~"), "Aa0-_.~");
-        assert_eq!(encode_query_value("a b"), "a%20b");
-        assert_eq!(encode_query_value("c/name/value"), "c%2Fname%2Fvalue");
+        assert_eq!(crate::urlq::encode_query_value("Aa0-_.~"), "Aa0-_.~");
+        assert_eq!(crate::urlq::encode_query_value("a b"), "a%20b");
+        assert_eq!(
+            crate::urlq::encode_query_value("c/name/value"),
+            "c%2Fname%2Fvalue"
+        );
         // Multi-byte UTF-8 escapes per byte, uppercase hex.
-        assert_eq!(encode_query_value("é"), "%C3%A9");
+        assert_eq!(crate::urlq::encode_query_value("é"), "%C3%A9");
     }
 }

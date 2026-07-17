@@ -9,6 +9,26 @@ async fn main() -> anyhow::Result<()> {
     use leptos::prelude::LeptosOptions;
     use leptos_axum::LeptosRoutes;
 
+    // `healthcheck` subcommand: the distroless image has no shell, so the
+    // container healthcheck is the binary probing its own /login over HTTP
+    // (exit 0 on 2xx/3xx). The bind address comes from LEPTOS_SITE_ADDR,
+    // matching the serving path below.
+    if std::env::args().nth(1).as_deref() == Some("healthcheck") {
+        let addr =
+            std::env::var("LEPTOS_SITE_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".to_owned());
+        let addr = addr.replace("0.0.0.0", "127.0.0.1");
+        let status = reqwest::Client::new()
+            .get(format!("http://{addr}/login"))
+            .send()
+            .await?
+            .status();
+        anyhow::ensure!(
+            status.is_success() || status.is_redirection(),
+            "healthcheck: /login answered {status}"
+        );
+        return Ok(());
+    }
+
     let config =
         std::sync::Arc::new(ehrbase_admin_ui::config::load().map_err(|e| anyhow::anyhow!("{e}"))?);
     let cdr =

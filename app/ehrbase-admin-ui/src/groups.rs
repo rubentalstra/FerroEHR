@@ -36,7 +36,13 @@ pub fn write_group(path: &str, name: &str, members: Vec<String>) -> Result<(), A
     }
     let text = serde_json::to_string_pretty(&groups)
         .map_err(|e| AdminUiError::Internal(format!("groups serialize: {e}")))?;
-    std::fs::write(path, text)
+    // Atomic replace: write a sibling temp file, then rename over the store,
+    // so a crash mid-write never corrupts it (reliability rule: fail loud,
+    // never leave a half-written clinical-adjacent store).
+    let tmp = format!("{path}.tmp");
+    std::fs::write(&tmp, text)
+        .map_err(|e| AdminUiError::Internal(format!("groups file `{tmp}`: {e}")))?;
+    std::fs::rename(&tmp, path)
         .map_err(|e| AdminUiError::Internal(format!("groups file `{path}`: {e}")))
 }
 
