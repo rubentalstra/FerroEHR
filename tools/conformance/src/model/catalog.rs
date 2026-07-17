@@ -60,11 +60,13 @@ pub enum Area {
     Msg,
     /// Terminology-server integration (AQL TERMINOLOGY family + FHIR-tx).
     Ts,
+    /// Simplified Formats wire surface (FLAT / STRUCTURED / Web Template).
+    Sf,
 }
 
 impl Area {
     /// Every area, in catalogue order.
-    pub const ALL: [Area; 16] = [
+    pub const ALL: [Area; 17] = [
         Area::Ehr,
         Area::Sta,
         Area::Com,
@@ -81,6 +83,7 @@ impl Area {
         Area::Sig,
         Area::Msg,
         Area::Ts,
+        Area::Sf,
     ];
 
     /// The id segment (`EHR`, `STA`, …).
@@ -103,6 +106,7 @@ impl Area {
             Area::Sig => "SIG",
             Area::Msg => "MSG",
             Area::Ts => "TS",
+            Area::Sf => "SF",
         }
     }
 
@@ -126,6 +130,7 @@ impl Area {
             Area::Sig => "Version signing",
             Area::Msg => "Messaging",
             Area::Ts => "Terminology-server integration",
+            Area::Sf => "Simplified Formats (FLAT / STRUCTURED / Web Template)",
         }
     }
 
