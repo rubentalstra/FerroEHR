@@ -477,7 +477,7 @@ fn prune_child_nodes(value: &Value) -> Value {
 /// (returns without appending). The composition validator calls this per
 /// node and prefixes the absolute RM path onto each [`InvariantViolation`].
 ///
-/// Two tiers (PERF: the RM-invariant pass visits every `_type` node of a
+/// Two tiers (performance: the RM-invariant pass visits every `_type` node of a
 /// commit, ~1.5k for a populated composition, so the per-node cost is
 /// load-bearing — measured via `openehr-flat`'s
 /// `measure_ips_validation_walk_cost` harness):
