@@ -437,7 +437,10 @@ fn ctx_health_care_facility_round_trips() {
         "ctx/health_care_facility|id".to_owned(),
         Value::String("9091".into()),
     );
-    shortcut.insert("ctx/id_namespace".to_owned(), Value::String("HOSPITAL-NS".into()));
+    shortcut.insert(
+        "ctx/id_namespace".to_owned(),
+        Value::String("HOSPITAL-NS".into()),
+    );
     let _ = root;
     let rm = composition_from_flat(&shortcut, wt, NOW).expect("ctx facility shortcut builds");
     assert_eq!(

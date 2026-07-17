@@ -64,16 +64,16 @@ fn type_matches(rm: &Value, rm_type: &str) -> bool {
 /// `category` is deliberately absent — `master06` defines no `ctx/category`,
 /// so it stays a path key (`master05 §COMPOSITION` `/category` row).
 fn covered_by_ctx(node: &WebTemplateNode, child: &WebTemplateNode) -> bool {
-    if node.rm_type == "COMPOSITION" {
-        if matches!(child.id.as_str(), "language" | "territory" | "composer") {
-            return true;
-        }
-        // The `context` child is ALWAYS walked: its standard EVENT_CONTEXT
-        // leaf fields surface as ctx/ scalars (the inner EVENT_CONTEXT rule
-        // below keeps them out of the tree), while its archetyped
-        // `other_context` content and the lossless `_`-attribute families
-        // (`_health_care_facility`, `_participation:i` — master05
-        // §EVENT_CONTEXT) emit as path keys.
+    // Composition-level in-context shortcuts (master06). The `context`
+    // child is ALWAYS walked: its standard EVENT_CONTEXT leaf fields
+    // surface as ctx/ scalars (the inner EVENT_CONTEXT rule below keeps
+    // them out of the tree), while its archetyped `other_context` content
+    // and the lossless `_`-attribute families (`_health_care_facility`,
+    // `_participation:i` — master05 §EVENT_CONTEXT) emit as path keys.
+    if node.rm_type == "COMPOSITION"
+        && matches!(child.id.as_str(), "language" | "territory" | "composer")
+    {
+        return true;
     }
     // Standard EVENT_CONTEXT fields (start_time, setting, participations, …)
     // surface via ctx/; only archetyped other_context content is tree data.
