@@ -1,5 +1,6 @@
 ---
 source: crates/openehr-flat/tests/webtemplate.rs
+assertion_line: 199
 expression: wt
 ---
 {
@@ -25,6 +26,51 @@ expression: wt
       "en": "A list of the ongoing medications prescribed to this person."
     },
     "children": [
+      {
+        "id": "context",
+        "rmType": "EVENT_CONTEXT",
+        "nodeId": "",
+        "min": 1,
+        "max": 1,
+        "aqlPath": "/context",
+        "children": [
+          {
+            "id": "start_time",
+            "name": "Start_time",
+            "localizedName": "Start_time",
+            "rmType": "DV_DATE_TIME",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/context/start_time",
+            "inputs": [
+              {
+                "type": "DATETIME"
+              }
+            ]
+          },
+          {
+            "id": "setting",
+            "name": "Setting",
+            "localizedName": "Setting",
+            "rmType": "DV_CODED_TEXT",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/context/setting",
+            "inputs": [
+              {
+                "suffix": "code",
+                "type": "TEXT"
+              },
+              {
+                "suffix": "value",
+                "type": "TEXT"
+              }
+            ]
+          }
+        ]
+      },
       {
         "id": "medication_order",
         "name": "Medication order",
@@ -1395,6 +1441,54 @@ expression: wt
                 ]
               }
             ]
+          },
+          {
+            "id": "language",
+            "name": "Language",
+            "localizedName": "Language",
+            "rmType": "CODE_PHRASE",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/content[openEHR-EHR-INSTRUCTION.medication.v1]/language"
+          },
+          {
+            "id": "encoding",
+            "name": "Encoding",
+            "localizedName": "Encoding",
+            "rmType": "CODE_PHRASE",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/content[openEHR-EHR-INSTRUCTION.medication.v1]/encoding"
+          },
+          {
+            "id": "subject",
+            "name": "Subject",
+            "localizedName": "Subject",
+            "rmType": "PARTY_PROXY",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/content[openEHR-EHR-INSTRUCTION.medication.v1]/subject",
+            "inputs": [
+              {
+                "suffix": "id",
+                "type": "TEXT"
+              },
+              {
+                "suffix": "id_scheme",
+                "type": "TEXT"
+              },
+              {
+                "suffix": "id_namespace",
+                "type": "TEXT"
+              },
+              {
+                "suffix": "name",
+                "type": "TEXT"
+              }
+            ]
           }
         ]
       },
@@ -1415,6 +1509,54 @@ expression: wt
               }
             ],
             "terminology": "openehr"
+          }
+        ]
+      },
+      {
+        "id": "language",
+        "name": "Language",
+        "localizedName": "Language",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/language"
+      },
+      {
+        "id": "territory",
+        "name": "Territory",
+        "localizedName": "Territory",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/territory"
+      },
+      {
+        "id": "composer",
+        "name": "Composer",
+        "localizedName": "Composer",
+        "rmType": "PARTY_PROXY",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/composer",
+        "inputs": [
+          {
+            "suffix": "id",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "id_scheme",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "id_namespace",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "name",
+            "type": "TEXT"
           }
         ]
       }

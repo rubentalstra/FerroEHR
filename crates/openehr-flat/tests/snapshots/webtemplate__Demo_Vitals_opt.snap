@@ -1,5 +1,6 @@
 ---
 source: crates/openehr-flat/tests/webtemplate.rs
+assertion_line: 199
 expression: wt
 ---
 {
@@ -25,7 +26,44 @@ expression: wt
         "rmType": "EVENT_CONTEXT",
         "min": 1,
         "max": 1,
-        "aqlPath": "/context"
+        "aqlPath": "/context",
+        "children": [
+          {
+            "id": "start_time",
+            "name": "Start_time",
+            "localizedName": "Start_time",
+            "rmType": "DV_DATE_TIME",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/context/start_time",
+            "inputs": [
+              {
+                "type": "DATETIME"
+              }
+            ]
+          },
+          {
+            "id": "setting",
+            "name": "Setting",
+            "localizedName": "Setting",
+            "rmType": "DV_CODED_TEXT",
+            "min": 1,
+            "max": 1,
+            "inContext": true,
+            "aqlPath": "/context/setting",
+            "inputs": [
+              {
+                "suffix": "code",
+                "type": "TEXT"
+              },
+              {
+                "suffix": "value",
+                "type": "TEXT"
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "vitals",
@@ -263,6 +301,21 @@ expression: wt
                         "type": "TEXT"
                       }
                     ]
+                  },
+                  {
+                    "id": "time",
+                    "name": "Time",
+                    "localizedName": "Time",
+                    "rmType": "DV_DATE_TIME",
+                    "min": 1,
+                    "max": 1,
+                    "inContext": true,
+                    "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.lab_test-hba1c.v1]/data[at0001]/events[at0002]/time",
+                    "inputs": [
+                      {
+                        "type": "DATETIME"
+                      }
+                    ]
                   }
                 ]
               },
@@ -355,6 +408,54 @@ expression: wt
                 "inputs": [
                   {
                     "type": "DATETIME"
+                  }
+                ]
+              },
+              {
+                "id": "language",
+                "name": "Language",
+                "localizedName": "Language",
+                "rmType": "CODE_PHRASE",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.lab_test-hba1c.v1]/language"
+              },
+              {
+                "id": "encoding",
+                "name": "Encoding",
+                "localizedName": "Encoding",
+                "rmType": "CODE_PHRASE",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.lab_test-hba1c.v1]/encoding"
+              },
+              {
+                "id": "subject",
+                "name": "Subject",
+                "localizedName": "Subject",
+                "rmType": "PARTY_PROXY",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.lab_test-hba1c.v1]/subject",
+                "inputs": [
+                  {
+                    "suffix": "id",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "id_scheme",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "id_namespace",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "name",
+                    "type": "TEXT"
                   }
                 ]
               }
@@ -587,6 +688,21 @@ expression: wt
                         "listOpen": false
                       }
                     ]
+                  },
+                  {
+                    "id": "time",
+                    "name": "Time",
+                    "localizedName": "Time",
+                    "rmType": "DV_DATE_TIME",
+                    "min": 1,
+                    "max": 1,
+                    "inContext": true,
+                    "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.body_temperature-zn.v1]/data[at0002]/events[at0003]/time",
+                    "inputs": [
+                      {
+                        "type": "DATETIME"
+                      }
+                    ]
                   }
                 ]
               },
@@ -742,6 +858,54 @@ expression: wt
                     "type": "TEXT"
                   }
                 ]
+              },
+              {
+                "id": "language",
+                "name": "Language",
+                "localizedName": "Language",
+                "rmType": "CODE_PHRASE",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.body_temperature-zn.v1]/language"
+              },
+              {
+                "id": "encoding",
+                "name": "Encoding",
+                "localizedName": "Encoding",
+                "rmType": "CODE_PHRASE",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.body_temperature-zn.v1]/encoding"
+              },
+              {
+                "id": "subject",
+                "name": "Subject",
+                "localizedName": "Subject",
+                "rmType": "PARTY_PROXY",
+                "min": 1,
+                "max": 1,
+                "inContext": true,
+                "aqlPath": "/content[openEHR-EHR-SECTION.ispek_dialog.v1,'Vitals']/items[openEHR-EHR-OBSERVATION.body_temperature-zn.v1]/subject",
+                "inputs": [
+                  {
+                    "suffix": "id",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "id_scheme",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "id_namespace",
+                    "type": "TEXT"
+                  },
+                  {
+                    "suffix": "name",
+                    "type": "TEXT"
+                  }
+                ]
               }
             ]
           }
@@ -764,6 +928,54 @@ expression: wt
               }
             ],
             "terminology": "openehr"
+          }
+        ]
+      },
+      {
+        "id": "language",
+        "name": "Language",
+        "localizedName": "Language",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/language"
+      },
+      {
+        "id": "territory",
+        "name": "Territory",
+        "localizedName": "Territory",
+        "rmType": "CODE_PHRASE",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/territory"
+      },
+      {
+        "id": "composer",
+        "name": "Composer",
+        "localizedName": "Composer",
+        "rmType": "PARTY_PROXY",
+        "min": 1,
+        "max": 1,
+        "inContext": true,
+        "aqlPath": "/composer",
+        "inputs": [
+          {
+            "suffix": "id",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "id_scheme",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "id_namespace",
+            "type": "TEXT"
+          },
+          {
+            "suffix": "name",
+            "type": "TEXT"
           }
         ]
       }

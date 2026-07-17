@@ -197,10 +197,24 @@ fn build(node: &WebTemplateNode, sim: &SimNode, path: &str) -> Result<Value, Fla
             continue;
         }
         // Composition-level in-context attributes arrive via ctx resolution
-        // (`ctx::resolve` also reads their path spellings).
+        // (`ctx::resolve` also reads their path spellings); `context` comes from
+        // `apply_composition_ctx` (master06 §Context). `category` is real tree
+        // data (master05 §COMPOSITION) and still builds.
         if node.rm_type == "COMPOSITION"
-            && matches!(child.id.as_str(), "language" | "territory" | "composer")
+            && matches!(
+                child.id.as_str(),
+                "language" | "territory" | "composer" | "context"
+            )
         {
+            continue;
+        }
+        // ENTRY-level `language`/`encoding` default from the composition context
+        // (master06 §"Language and Territory"); they are filled by
+        // `apply_entry_defaults`, never rebuilt from a per-entry path key (the
+        // synthesized CODE_PHRASE in-context nodes carry no leaf inputs). `subject`
+        // is NOT skipped — a non-`PARTY_SELF` subject is real data
+        // (master05 §OBSERVATION `/subject`) and builds as a leaf.
+        if is_entry_family(&node.rm_type) && matches!(child.id.as_str(), "language" | "encoding") {
             continue;
         }
         let Some(sim_child) = sim.children.get(&child.id).or_else(|| {
@@ -431,6 +445,16 @@ fn concrete_type(rm_type: &str) -> &str {
 
 fn base_type(rm_type: &str) -> &str {
     rm_type.split('<').next().unwrap_or(rm_type)
+}
+
+/// The ENTRY family (`RM/docs/UML/classes/org.openehr.rm.composition.*`): the
+/// concrete ENTRY subtypes that carry the RM-mandatory
+/// `language`/`encoding`/`subject` in-context attributes.
+fn is_entry_family(rm_type: &str) -> bool {
+    matches!(
+        rm_type,
+        "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" | "GENERIC_ENTRY"
+    )
 }
 
 /// The `name` value for a locatable node: a DV_CODED_TEXT carrying the
