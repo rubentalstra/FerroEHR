@@ -1,0 +1,536 @@
+//! Lowering [`crate::builder::model::BuilderQuery`] into the
+//! `openehr_query` AST. Paths are parsed by the real AQL grammar (a probe
+//! `SELECT` through `openehr_query::parser`), constraints become typed
+//! `WHERE` fragments, and the result renders via
+//! `openehr_query::printer::to_aql` — invalid input is a typed
+//! [`BuilderError`], never a malformed query string.
+
+use openehr_query::ast::{
+    ClassExprOperand, ColumnExpr, CompareOperand, ContainsConstraint, ContainsExpr, IdentifiedExpr,
+    IdentifiedPath, Limit, MatchesOperand, OrderByExpr, Primitive, SelectClause, SelectExpr,
+    SelectQuery, SortOrder, Terminal, ValueListItem, WhereExpr,
+};
+use openehr_query::lexer::CompOp;
+use openehr_query::printer::escape_string;
+
+use crate::builder::model::{
+    BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, QueryShape,
+};
+
+/// Everything that can be wrong with a builder state.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error, serde::Serialize, serde::Deserialize)]
+pub enum BuilderError {
+    /// A criterion group has no children.
+    #[error("a criterion group is empty — add a condition or remove the group")]
+    EmptyGroup,
+    /// Data-value shape without any selected column.
+    #[error("select at least one column for a data-value query")]
+    NoColumns,
+    /// A path failed to parse under the AQL grammar.
+    #[error("path `{path}` is not valid AQL: {detail}")]
+    InvalidPath {
+        /// The offending path.
+        path: String,
+        /// Parser diagnostic.
+        detail: String,
+    },
+    /// A coded criterion with no codes.
+    #[error("a coded-text condition needs at least one code")]
+    EmptyCodeList,
+    /// An ordinal criterion with no values.
+    #[error("an ordinal condition needs at least one value")]
+    EmptyOrdinalList,
+    /// A range with neither bound.
+    #[error("a range condition needs at least one bound")]
+    EmptyRange,
+    /// A column alias that is not a valid AQL identifier.
+    #[error("alias `{0}` is not a valid AQL identifier")]
+    InvalidAlias(String),
+}
+
+/// The variable bound to the EHR.
+const EHR_VAR: &str = "e";
+/// The variable bound to the COMPOSITION — all builder paths are relative
+/// to it (the Web Template's `aqlPath` is COMPOSITION-rooted).
+const COMP_VAR: &str = "c";
+
+/// Lower a builder state to the AQL AST.
+///
+/// # Errors
+/// A [`BuilderError`] naming the first invalid part of the state.
+pub fn lower(query: &BuilderQuery) -> Result<SelectQuery, BuilderError> {
+    let columns = select_columns(query)?;
+    let where_ = where_clause(query)?;
+    let order_by = query
+        .order_by
+        .iter()
+        .map(|rule| {
+            Ok(OrderByExpr {
+                path: parse_path(COMP_VAR, &rule.aql_path)?,
+                order: Some(if rule.descending {
+                    SortOrder::Descending
+                } else {
+                    SortOrder::Ascending
+                }),
+            })
+        })
+        .collect::<Result<Vec<_>, BuilderError>>()?;
+
+    Ok(SelectQuery {
+        select: SelectClause {
+            distinct: false,
+            top: None,
+            columns,
+        },
+        from: ContainsExpr::Contained {
+            operand: ClassExprOperand::Class {
+                rm_type: "EHR".to_owned(),
+                variable: Some(EHR_VAR.to_owned()),
+                predicate: None,
+            },
+            contains: Some(Box::new(ContainsConstraint {
+                negated: false,
+                expr: ContainsExpr::Contained {
+                    operand: ClassExprOperand::Class {
+                        rm_type: "COMPOSITION".to_owned(),
+                        variable: Some(COMP_VAR.to_owned()),
+                        predicate: None,
+                    },
+                    contains: None,
+                },
+            })),
+        },
+        where_,
+        order_by,
+        limit: query.limit.map(|n| Limit {
+            limit: i64::from(n),
+            offset: None,
+        }),
+    })
+}
+
+/// Lower and render in one step.
+///
+/// # Errors
+/// See [`lower`].
+pub fn to_aql(query: &BuilderQuery) -> Result<String, BuilderError> {
+    Ok(openehr_query::printer::to_aql(&lower(query)?))
+}
+
+fn select_columns(query: &BuilderQuery) -> Result<Vec<SelectExpr>, BuilderError> {
+    match query.shape {
+        QueryShape::Compositions => Ok(vec![SelectExpr {
+            column: ColumnExpr::Path(IdentifiedPath {
+                root: COMP_VAR.to_owned(),
+                predicate: None,
+                path: None,
+            }),
+            alias: None,
+        }]),
+        QueryShape::Count => Ok(vec![SelectExpr {
+            column: ColumnExpr::Aggregate(openehr_query::ast::AggregateCall::Count {
+                distinct: false,
+                path: None,
+            }),
+            alias: None,
+        }]),
+        QueryShape::DataValues => {
+            if query.columns.is_empty() {
+                return Err(BuilderError::NoColumns);
+            }
+            query
+                .columns
+                .iter()
+                .map(|col| {
+                    let alias = if col.alias.is_empty() {
+                        None
+                    } else if is_identifier(&col.alias) {
+                        Some(col.alias.clone())
+                    } else {
+                        return Err(BuilderError::InvalidAlias(col.alias.clone()));
+                    };
+                    Ok(SelectExpr {
+                        column: ColumnExpr::Path(parse_path(COMP_VAR, &col.aql_path)?),
+                        alias,
+                    })
+                })
+                .collect()
+        }
+    }
+}
+
+fn where_clause(query: &BuilderQuery) -> Result<Option<WhereExpr>, BuilderError> {
+    let mut conjuncts: Vec<WhereExpr> = Vec::new();
+    if !query.template_id.is_empty() {
+        conjuncts.push(compare_str(
+            "archetype_details/template_id/value",
+            CompOp::Eq,
+            &query.template_id,
+        )?);
+    }
+    if let Some(tree) = &query.criteria {
+        conjuncts.push(criterion_node(tree)?);
+    }
+    Ok(conjuncts
+        .into_iter()
+        .reduce(|a, b| WhereExpr::And(Box::new(a), Box::new(b))))
+}
+
+fn criterion_node(node: &CriterionNode) -> Result<WhereExpr, BuilderError> {
+    match node {
+        CriterionNode::Leaf(criterion) => {
+            let expr = leaf(criterion)?;
+            Ok(if criterion.negated {
+                WhereExpr::Not(Box::new(expr))
+            } else {
+                expr
+            })
+        }
+        CriterionNode::Group {
+            op,
+            negated,
+            children,
+        } => {
+            if children.is_empty() {
+                return Err(BuilderError::EmptyGroup);
+            }
+            let lowered = children
+                .iter()
+                .map(criterion_node)
+                .collect::<Result<Vec<_>, _>>()?;
+            let joined = lowered
+                .into_iter()
+                .reduce(|a, b| match op {
+                    BoolOp::And => WhereExpr::And(Box::new(a), Box::new(b)),
+                    BoolOp::Or => WhereExpr::Or(Box::new(a), Box::new(b)),
+                })
+                .unwrap_or_else(|| unreachable!("children checked non-empty"));
+            Ok(if *negated {
+                WhereExpr::Not(Box::new(joined))
+            } else {
+                joined
+            })
+        }
+    }
+}
+
+/// Join range parts with `AND`; no parts at all is a typed error.
+fn all_of(parts: Vec<WhereExpr>) -> Result<WhereExpr, BuilderError> {
+    parts
+        .into_iter()
+        .reduce(|a, b| WhereExpr::And(Box::new(a), Box::new(b)))
+        .ok_or(BuilderError::EmptyRange)
+}
+
+fn leaf(criterion: &Criterion) -> Result<WhereExpr, BuilderError> {
+    let at = |suffix: &str| format!("{}/{suffix}", criterion.aql_path.trim_matches('/'));
+    match &criterion.kind {
+        CriterionKind::QuantityRange { min, max, units } => {
+            let mut parts = Vec::new();
+            if let Some(min) = min {
+                parts.push(compare_real(&at("value/magnitude"), CompOp::Ge, *min)?);
+            }
+            if let Some(max) = max {
+                parts.push(compare_real(&at("value/magnitude"), CompOp::Le, *max)?);
+            }
+            if !units.is_empty() {
+                parts.push(compare_str(&at("value/units"), CompOp::Eq, units)?);
+            }
+            all_of(parts)
+        }
+        CriterionKind::CodedIn { codes, terminology } => {
+            coded_in(&at("value/defining_code"), codes, terminology)
+        }
+        CriterionKind::TextEquals { text } => compare_str(&at("value/value"), CompOp::Eq, text),
+        CriterionKind::TextLike { pattern } => Ok(WhereExpr::Identified(IdentifiedExpr::Like {
+            path: parse_path(COMP_VAR, &at("value/value"))?,
+            operand: openehr_query::ast::LikeOperand::String(escape_string(pattern)),
+        })),
+        CriterionKind::DateTimeRange { from, to } => {
+            let mut parts = Vec::new();
+            if !from.is_empty() {
+                parts.push(compare_str(&at("value/value"), CompOp::Ge, from)?);
+            }
+            if !to.is_empty() {
+                parts.push(compare_str(&at("value/value"), CompOp::Le, to)?);
+            }
+            all_of(parts)
+        }
+        CriterionKind::CountRange { min, max } => {
+            let mut parts = Vec::new();
+            if let Some(min) = min {
+                parts.push(compare_int(&at("value/magnitude"), CompOp::Ge, *min)?);
+            }
+            if let Some(max) = max {
+                parts.push(compare_int(&at("value/magnitude"), CompOp::Le, *max)?);
+            }
+            all_of(parts)
+        }
+        CriterionKind::OrdinalIn { values } => {
+            if values.is_empty() {
+                return Err(BuilderError::EmptyOrdinalList);
+            }
+            Ok(WhereExpr::Identified(IdentifiedExpr::Matches {
+                path: parse_path(COMP_VAR, &at("value/value"))?,
+                operand: MatchesOperand::ValueList(
+                    values
+                        .iter()
+                        .map(|v| ValueListItem::Primitive(Primitive::Integer(*v)))
+                        .collect(),
+                ),
+            }))
+        }
+        CriterionKind::BooleanIs { value } => Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
+            lhs: CompareOperand::Path(parse_path(COMP_VAR, &at("value/value"))?),
+            op: CompOp::Eq,
+            rhs: Terminal::Primitive(Primitive::Boolean(*value)),
+        })),
+        CriterionKind::ProportionNumeratorRange { min, max } => {
+            let mut parts = Vec::new();
+            if let Some(min) = min {
+                parts.push(compare_real(&at("value/numerator"), CompOp::Ge, *min)?);
+            }
+            if let Some(max) = max {
+                parts.push(compare_real(&at("value/numerator"), CompOp::Le, *max)?);
+            }
+            all_of(parts)
+        }
+        CriterionKind::Exists => Ok(WhereExpr::Identified(IdentifiedExpr::Exists(parse_path(
+            COMP_VAR,
+            &criterion.aql_path,
+        )?))),
+    }
+}
+
+/// `<defining_code>/code_string MATCHES {codes}` plus an optional
+/// terminology-id equality.
+fn coded_in(
+    defining_code: &str,
+    codes: &[String],
+    terminology: &str,
+) -> Result<WhereExpr, BuilderError> {
+    if codes.is_empty() {
+        return Err(BuilderError::EmptyCodeList);
+    }
+    let matches = WhereExpr::Identified(IdentifiedExpr::Matches {
+        path: parse_path(COMP_VAR, &format!("{defining_code}/code_string"))?,
+        operand: MatchesOperand::ValueList(
+            codes
+                .iter()
+                .map(|code| ValueListItem::Primitive(Primitive::String(escape_string(code))))
+                .collect(),
+        ),
+    });
+    if terminology.is_empty() {
+        Ok(matches)
+    } else {
+        Ok(WhereExpr::And(
+            Box::new(matches),
+            Box::new(compare_str(
+                &format!("{defining_code}/terminology_id/value"),
+                CompOp::Eq,
+                terminology,
+            )?),
+        ))
+    }
+}
+
+fn compare_str(relative: &str, op: CompOp, value: &str) -> Result<WhereExpr, BuilderError> {
+    Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
+        lhs: CompareOperand::Path(parse_path(COMP_VAR, relative)?),
+        op,
+        rhs: Terminal::Primitive(Primitive::String(escape_string(value))),
+    }))
+}
+
+fn compare_real(path: &str, op: CompOp, value: f64) -> Result<WhereExpr, BuilderError> {
+    Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
+        lhs: CompareOperand::Path(parse_path(COMP_VAR, path)?),
+        op,
+        rhs: Terminal::Primitive(Primitive::Real(value)),
+    }))
+}
+
+fn compare_int(path: &str, op: CompOp, value: i64) -> Result<WhereExpr, BuilderError> {
+    Ok(WhereExpr::Identified(IdentifiedExpr::Compare {
+        lhs: CompareOperand::Path(parse_path(COMP_VAR, path)?),
+        op,
+        rhs: Terminal::Primitive(Primitive::Integer(value)),
+    }))
+}
+
+/// Parse `var/relative-path` into an [`IdentifiedPath`] using the real AQL
+/// grammar (probe `SELECT`), so path validity is the parser's judgement.
+fn parse_path(var: &str, relative: &str) -> Result<IdentifiedPath, BuilderError> {
+    parse_path_rooted(&format!("{var}/{}", relative.trim_matches('/')))
+}
+
+/// Parse an already-rooted path text (`c/a/b[at0001]/c`).
+fn parse_path_rooted(rooted: &str) -> Result<IdentifiedPath, BuilderError> {
+    let probe = format!("SELECT {rooted} FROM EHR {EHR_VAR}");
+    let parsed =
+        openehr_query::parser::parse_str(&probe).map_err(|e| BuilderError::InvalidPath {
+            path: rooted.to_owned(),
+            detail: e,
+        })?;
+    match parsed.select.columns.into_iter().next() {
+        Some(SelectExpr {
+            column: ColumnExpr::Path(path),
+            ..
+        }) => Ok(path),
+        _ => Err(BuilderError::InvalidPath {
+            path: rooted.to_owned(),
+            detail: "did not parse as a data path".to_owned(),
+        }),
+    }
+}
+
+fn is_identifier(s: &str) -> bool {
+    let mut chars = s.chars();
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{BuilderError, to_aql};
+    use crate::builder::model::{
+        BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, OrderRule, QueryShape,
+        SelectedColumn,
+    };
+
+    const TEMP_PATH: &str = "content[openEHR-EHR-OBSERVATION.body_temperature.v2]/data[at0002]/events[at0003]/data[at0001]/items[at0004]";
+
+    fn leaf(kind: CriterionKind) -> CriterionNode {
+        CriterionNode::Leaf(Criterion {
+            aql_path: TEMP_PATH.to_owned(),
+            negated: false,
+            kind,
+        })
+    }
+
+    #[test]
+    fn composition_query_with_quantity_range_renders() {
+        let mut q = BuilderQuery::new("vitals.v1".to_owned());
+        q.criteria = Some(leaf(CriterionKind::QuantityRange {
+            min: Some(36.0),
+            max: Some(38.5),
+            units: "°C".to_owned(),
+        }));
+        let aql = to_aql(&q).unwrap();
+        assert_eq!(
+            aql,
+            format!(
+                "SELECT c FROM EHR e CONTAINS COMPOSITION c \
+                 WHERE c/archetype_details/template_id/value='vitals.v1' \
+                 AND c/{TEMP_PATH}/value/magnitude>=36.0 \
+                 AND c/{TEMP_PATH}/value/magnitude<=38.5 \
+                 AND c/{TEMP_PATH}/value/units='°C' LIMIT 50"
+            )
+        );
+        // And the emitted text is grammar-valid.
+        openehr_query::parser::parse_str(&aql).unwrap();
+    }
+
+    #[test]
+    fn datavalue_shape_selects_aliased_columns_and_orders() {
+        let mut q = BuilderQuery::new(String::new());
+        q.shape = QueryShape::DataValues;
+        q.columns = vec![SelectedColumn {
+            aql_path: format!("{TEMP_PATH}/value/magnitude"),
+            alias: "temperature".to_owned(),
+        }];
+        q.order_by = vec![OrderRule {
+            aql_path: "context/start_time/value".to_owned(),
+            descending: true,
+        }];
+        q.limit = None;
+        let aql = to_aql(&q).unwrap();
+        assert_eq!(
+            aql,
+            format!(
+                "SELECT c/{TEMP_PATH}/value/magnitude AS temperature \
+                 FROM EHR e CONTAINS COMPOSITION c \
+                 ORDER BY c/context/start_time/value DESC"
+            )
+        );
+        openehr_query::parser::parse_str(&aql).unwrap();
+    }
+
+    #[test]
+    fn nested_groups_negation_and_coded_sets_render_with_parens() {
+        let mut q = BuilderQuery::new(String::new());
+        q.shape = QueryShape::Count;
+        q.limit = None;
+        q.criteria = Some(CriterionNode::Group {
+            op: BoolOp::And,
+            negated: false,
+            children: vec![
+                leaf(CriterionKind::CodedIn {
+                    codes: vec!["at0037".to_owned(), "at0038".to_owned()],
+                    terminology: "local".to_owned(),
+                }),
+                CriterionNode::Group {
+                    op: BoolOp::Or,
+                    negated: true,
+                    children: vec![
+                        leaf(CriterionKind::BooleanIs { value: true }),
+                        leaf(CriterionKind::Exists),
+                    ],
+                },
+            ],
+        });
+        let aql = to_aql(&q).unwrap();
+        assert_eq!(
+            aql,
+            format!(
+                "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c \
+                 WHERE c/{TEMP_PATH}/value/defining_code/code_string MATCHES {{'at0037', 'at0038'}} \
+                 AND c/{TEMP_PATH}/value/defining_code/terminology_id/value='local' \
+                 AND NOT (c/{TEMP_PATH}/value/value=true OR EXISTS c/{TEMP_PATH})"
+            )
+        );
+        openehr_query::parser::parse_str(&aql).unwrap();
+    }
+
+    #[test]
+    fn validation_errors_are_typed() {
+        let mut q = BuilderQuery::new(String::new());
+        q.shape = QueryShape::DataValues;
+        assert_eq!(to_aql(&q).unwrap_err(), BuilderError::NoColumns);
+
+        let mut q = BuilderQuery::new(String::new());
+        q.criteria = Some(CriterionNode::Group {
+            op: BoolOp::And,
+            negated: false,
+            children: vec![],
+        });
+        assert_eq!(to_aql(&q).unwrap_err(), BuilderError::EmptyGroup);
+
+        let mut q = BuilderQuery::new(String::new());
+        q.criteria = Some(leaf(CriterionKind::QuantityRange {
+            min: None,
+            max: None,
+            units: String::new(),
+        }));
+        assert_eq!(to_aql(&q).unwrap_err(), BuilderError::EmptyRange);
+
+        let mut q = BuilderQuery::new(String::new());
+        q.criteria = Some(CriterionNode::Leaf(Criterion {
+            aql_path: "not a ]] path".to_owned(),
+            negated: false,
+            kind: CriterionKind::Exists,
+        }));
+        assert!(matches!(
+            to_aql(&q).unwrap_err(),
+            BuilderError::InvalidPath { .. }
+        ));
+
+        // O'Neil-style quoting survives escaping and stays parseable.
+        let q = BuilderQuery::new("O'Neil template".to_owned());
+        let aql = to_aql(&q).unwrap();
+        openehr_query::parser::parse_str(&aql).unwrap();
+    }
+}
