@@ -1,4 +1,4 @@
-//! End-to-end composition-validation tests (P15 PR-C).
+//! End-to-end composition-validation tests.
 //!
 //! Oracle: the already-vendored, **Apache-2.0** `openEHR_SDK` corpus — canonical
 //! JSON compositions in `openehr-its/tests/vendor/openehr_sdk/…` paired with the
@@ -23,9 +23,13 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use openehr_flat::{ValidationKind, ValidationMessage, WebTemplate, build_web_template};
+use indexmap::IndexMap;
+use openehr_flat::validation::{
+    ValidationKind, ValidationMessage, validate_composition, validate_rm_and_terminology,
+};
+use openehr_flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template};
 use openehr_its::opt14;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -97,7 +101,7 @@ fn validate(name: &str, wts: &HashMap<String, WebTemplate>) -> Vec<ValidationMes
     let wt = wts
         .get(&tid)
         .unwrap_or_else(|| panic!("no WebTemplate for template id {tid:?} (composition {name})"));
-    openehr_flat::validate_composition(&c, wt)
+    validate_composition(&c, wt)
 }
 
 fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
@@ -119,7 +123,7 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 /// - `rawdb_composition.json` — its `composer.external_ref` is a `PARTY_REF`
 ///   missing the mandatory `type` (`PARTY_REF.type [1]`, RM support) whose `id`
 ///   is a `GENERIC_ID` missing the mandatory `value` (`OBJECT_ID.value [1]`, RM
-///   support). Strict typed validation surfaces both (phase S2-04, T1).
+///   support). Strict typed validation surfaces both.
 const CLEAN_COMPOSITIONS: &[&str] = &[
     "all_types_no_multimedia.json",
     "choice_validation_test.json",
@@ -162,11 +166,10 @@ fn valid_corpus_compositions_validate_clean() {
     );
 }
 
-/// Strict mandatory-attribute enforcement (phase S2-04, T1, finding F-open-3):
-/// removing the mandatory `COMPOSITION.composer [1]` must be rejected. The
-/// The node codec stores raw canonical JSON with no schema enforcement at
-/// commit, so before this fix `openehr-rm::validate::run` silently swallowed the
-/// typed-deserialize failure and the composition committed 201; now it surfaces
+/// Strict mandatory-attribute enforcement: removing the mandatory
+/// `COMPOSITION.composer [1]` must be rejected. The node codec stores raw
+/// canonical JSON with no schema enforcement at commit, so a typed-deserialize
+/// failure that was once silently swallowed (committing 201) must now surface
 /// the failure → 422.
 #[test]
 fn missing_mandatory_composer_is_rejected() {
@@ -175,16 +178,16 @@ fn missing_mandatory_composer_is_rejected() {
     let tid = template_id(&c);
     let wt = wts.get(&tid).expect("WebTemplate for nested.en.v1");
     assert!(
-        openehr_flat::validate_composition(&c, wt).is_empty(),
+        validate_composition(&c, wt).is_empty(),
         "baseline nested.en.v1 must validate clean"
     );
     c.as_object_mut()
         .expect("composition object")
         .remove("composer");
-    let msgs = openehr_flat::validate_composition(&c, wt);
+    let msgs = validate_composition(&c, wt);
     assert!(
         !msgs.is_empty(),
-        "a COMPOSITION with no composer must be rejected (F-open-3)"
+        "a COMPOSITION with no composer must be rejected"
     );
     assert!(
         msgs.iter()
@@ -231,7 +234,7 @@ fn dropping_mandatory_content_reports_required() {
     let wt = wts.get("International Patient Summary").expect("IPS wt");
     let mut c = composition("ips_canonical.json");
     c["content"] = serde_json::json!([]);
-    let msgs = openehr_flat::validate_composition(&c, wt);
+    let msgs = validate_composition(&c, wt);
     assert!(
         msgs.iter().any(|m| m.kind == ValidationKind::Required),
         "expected Required for the dropped mandatory sections, got {msgs:?}"
@@ -245,7 +248,7 @@ fn wrong_root_type_is_rejected() {
     let wt = wts.get("Demo Vitals").expect("Demo Vitals wt");
     let mut c = composition("demo_vitals_352.json");
     c["_type"] = Value::String("OBSERVATION".to_owned());
-    let msgs = openehr_flat::validate_composition(&c, wt);
+    let msgs = validate_composition(&c, wt);
     assert!(
         msgs.iter()
             .any(|m| m.kind == ValidationKind::WrongType && m.path.is_empty()),
@@ -260,7 +263,7 @@ fn bad_composition_category_reports_terminology() {
     let wt = wts.get("Demo Vitals").expect("Demo Vitals wt");
     let mut c = composition("demo_vitals_352.json");
     c["category"]["defining_code"]["code_string"] = Value::String("99999".to_owned());
-    let msgs = openehr_flat::validate_composition(&c, wt);
+    let msgs = validate_composition(&c, wt);
     assert!(
         msgs.iter()
             .any(|m| m.kind == ValidationKind::Terminology
@@ -277,7 +280,7 @@ fn out_of_range_magnitude_reports_range_error() {
     let mut c = composition("ips_canonical.json");
     let mutated = inflate_first_quantity(&mut c);
     assert!(mutated, "expected at least one DV_QUANTITY to mutate");
-    let msgs = openehr_flat::validate_composition(&c, wt);
+    let msgs = validate_composition(&c, wt);
     assert!(
         msgs.iter().any(|m| m.kind == ValidationKind::RangeError),
         "expected a RangeError after inflating a magnitude, got {msgs:?}"
@@ -346,7 +349,7 @@ fn inconsistent_history_period_surfaces_period_consistency() {
             }
         }]
     });
-    let msgs = openehr_flat::validate_rm_and_terminology(&comp);
+    let msgs = validate_rm_and_terminology(&comp);
     assert!(
         msgs.iter().any(|m| m.kind == ValidationKind::Invariant
             && m.message == "Invariant Period_consistency failed on type HISTORY"),
@@ -380,7 +383,7 @@ fn inverted_dv_interval_surfaces_limits_consistent() {
             }
         }]
     });
-    let msgs = openehr_flat::validate_rm_and_terminology(&comp);
+    let msgs = validate_rm_and_terminology(&comp);
     assert!(
         msgs.iter().any(|m| m.kind == ValidationKind::Invariant
             && m.message == "Invariant Limits_consistent failed on type DV_INTERVAL"),
@@ -456,7 +459,7 @@ fn neurologist_both_sensorum_siblings_validate_clean() {
             ]
         }]
     });
-    let unexpected: Vec<ValidationMessage> = openehr_flat::validate_composition(&comp, wt)
+    let unexpected: Vec<ValidationMessage> = validate_composition(&comp, wt)
         .into_iter()
         .filter(|m| m.kind == ValidationKind::Unexpected)
         .collect();
@@ -492,4 +495,401 @@ fn matched_violation_paths_are_archetype_paths() {
             m.path
         );
     }
+}
+
+// ── per-rule public-seam tests (hand-shaped WebTemplate nodes / instances) ─────
+//
+// These exercise the public validation entry points ([`validate_composition`],
+// [`validate_rm_and_terminology`]) on minimal hand-built inputs so each rule is
+// checked in isolation without an OPT fixture.
+
+fn node(rm: &str, path: &str) -> WebTemplateNode {
+    WebTemplateNode::new(rm.to_owned(), path.to_owned())
+}
+
+fn wt_of(tree: WebTemplateNode) -> WebTemplate {
+    WebTemplate {
+        template_id: "t".to_owned(),
+        sem_ver: None,
+        version: "2.3".to_owned(),
+        default_language: "en".to_owned(),
+        languages: vec!["en".to_owned()],
+        tree,
+        other_details: IndexMap::new(),
+    }
+}
+
+/// A bare `CODE_PHRASE` node for an external (ISO/IANA) code-set slot.
+fn code_phrase(terminology: &str, code: &str) -> Value {
+    json!({
+        "_type": "CODE_PHRASE",
+        "terminology_id": {"_type": "TERMINOLOGY_ID", "value": terminology},
+        "code_string": code,
+    })
+}
+
+fn coded_text(terminology: &str, code: &str) -> Value {
+    json!({
+        "_type": "DV_CODED_TEXT", "value": "x",
+        "defining_code": code_phrase(terminology, code),
+    })
+}
+
+// ── RM invariant surfacing (full pipeline) ───────────────────────────────────
+
+#[test]
+fn rm_invariant_surfaces() {
+    // An ELEMENT with both value AND null_flavour violates Inv_null_flavour_indicated.
+    let wt = wt_of(node("COMPOSITION", ""));
+    let inst = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "content": [{
+            "_type": "ELEMENT", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "e"},
+            "value": {"_type": "DV_TEXT", "value": "v"},
+            "null_flavour": {"_type": "DV_CODED_TEXT", "value": "unknown",
+                "defining_code": {"_type": "CODE_PHRASE",
+                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
+                    "code_string": "253"}}
+        }]
+    });
+    let msgs = validate_composition(&inst, &wt);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Invariant
+            && m.message.contains("Inv_null_flavour_indicated")),
+        "expected the ELEMENT XOR invariant, got {msgs:?}"
+    );
+}
+
+// ── openEHR-terminology group (full pipeline) ────────────────────────────────
+
+#[test]
+fn bad_composition_category_reported() {
+    let wt = wt_of(node("COMPOSITION", ""));
+    let inst = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "archetype_details": {"_type": "ARCHETYPED",
+            "archetype_id": {"_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.x.v1"},
+            "rm_version": "1.0.2"},
+        "category": {"_type": "DV_CODED_TEXT", "value": "bogus",
+            "defining_code": {"_type": "CODE_PHRASE",
+                "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
+                "code_string": "99999"}}
+    });
+    let msgs = validate_composition(&inst, &wt);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology
+                && m.message.contains("composition category")),
+        "expected a bad-category Terminology violation, got {msgs:?}"
+    );
+}
+
+#[test]
+fn valid_composition_category_is_clean_of_terminology() {
+    let wt = wt_of(node("COMPOSITION", ""));
+    let inst = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "category": {"_type": "DV_CODED_TEXT", "value": "event",
+            "defining_code": {"_type": "CODE_PHRASE",
+                "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
+                "code_string": "433"}}
+    });
+    let msgs = validate_composition(&inst, &wt);
+    assert!(
+        !kinds(&msgs).contains(&ValidationKind::Terminology),
+        "valid category 433 should not trip terminology, got {msgs:?}"
+    );
+}
+
+// ── terminology: code-set slots (ISO / IANA) ─────────────────────────────────
+
+#[test]
+fn dv_text_bad_language_and_encoding_reported() {
+    // DV_TEXT.language (ISO 639-1) and .encoding (IANA character sets).
+    let bad_lang = json!({
+        "_type": "DV_TEXT", "value": "hi",
+        "language": code_phrase("ISO_639-1", "zz"),
+    });
+    let msgs = validate_rm_and_terminology(&bad_lang);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology && m.message.contains("language")),
+        "expected a bad-language Terminology violation, got {msgs:?}"
+    );
+
+    let bad_enc = json!({
+        "_type": "DV_TEXT", "value": "hi",
+        "encoding": code_phrase("IANA_character-sets", "NOT-A-CHARSET"),
+    });
+    let msgs = validate_rm_and_terminology(&bad_enc);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology && m.message.contains("character set")),
+        "expected a bad-encoding Terminology violation, got {msgs:?}"
+    );
+
+    // Valid language + encoding: clean.
+    let good = json!({
+        "_type": "DV_TEXT", "value": "hi",
+        "language": code_phrase("ISO_639-1", "en"),
+        "encoding": code_phrase("IANA_character-sets", "UTF-8"),
+    });
+    assert!(
+        !kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Terminology),
+        "valid en/UTF-8 should be clean"
+    );
+}
+
+#[test]
+fn composition_bad_territory_reported() {
+    // COMPOSITION.territory (ISO 3166-1 countries).
+    let inst = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "x",
+        "language": code_phrase("ISO_639-1", "en"),
+        "territory": code_phrase("ISO_3166-1", "ZZ"),
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology && m.message.contains("country")),
+        "expected a bad-territory Terminology violation, got {msgs:?}"
+    );
+}
+
+#[test]
+fn entry_bad_encoding_reported() {
+    // ENTRY (OBSERVATION) encoding (IANA character sets).
+    let inst = json!({
+        "_type": "OBSERVATION", "archetype_node_id": "a",
+        "language": code_phrase("ISO_639-1", "en"),
+        "encoding": code_phrase("IANA_character-sets", "BOGUS-CHARSET"),
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology && m.message.contains("character set")),
+        "expected a bad-encoding Terminology violation on the ENTRY, got {msgs:?}"
+    );
+}
+
+// ── terminology: openEHR-group slots ─────────────────────────────────────────
+
+#[test]
+fn ism_transition_bad_transition_reported() {
+    // ISM_TRANSITION.transition (instruction_transitions group).
+    let inst = json!({
+        "_type": "ISM_TRANSITION",
+        "current_state": coded_text("openehr", "245"), // active (valid)
+        "transition": coded_text("openehr", "99999"),  // invalid
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Terminology
+            && m.message.contains("instruction transition")),
+        "expected a bad-transition Terminology violation, got {msgs:?}"
+    );
+}
+
+#[test]
+fn term_mapping_bad_purpose_reported() {
+    // TERM_MAPPING.purpose (term_mapping_purpose group), reached via a
+    // DV_TEXT.mappings[].
+    let inst = json!({
+        "_type": "DV_TEXT", "value": "hi",
+        "mappings": [{
+            "_type": "TERM_MAPPING", "match": "=",
+            "purpose": coded_text("openehr", "99999"),
+            "target": code_phrase("SNOMED-CT", "123"),
+        }]
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology
+                && m.message.contains("term mapping purpose")),
+        "expected a bad-purpose Terminology violation, got {msgs:?}"
+    );
+}
+
+#[test]
+fn party_related_bad_relationship_reported() {
+    // PARTY_RELATED.relationship (subject_relationship group).
+    let inst = json!({
+        "_type": "PARTY_RELATED",
+        "relationship": coded_text("openehr", "99999"),
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology
+                && m.message.contains("subject relationship")),
+        "expected a bad-relationship Terminology violation, got {msgs:?}"
+    );
+}
+
+#[test]
+fn dv_ordered_bad_normal_status_reported() {
+    // DV_ORDERED.normal_status (normal_statuses code set) — checked on
+    // any node carrying `normal_status`.
+    let inst = json!({
+        "_type": "DV_QUANTITY", "magnitude": 1.0, "units": "kg",
+        "normal_status": code_phrase("openehr", "X"),
+    });
+    let msgs = validate_rm_and_terminology(&inst);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Terminology && m.message.contains("normal status")),
+        "expected a bad-normal-status Terminology violation, got {msgs:?}"
+    );
+    // A valid normal status ("N") is clean.
+    let good = json!({
+        "_type": "DV_QUANTITY", "magnitude": 1.0, "units": "kg",
+        "normal_status": code_phrase("openehr", "N"),
+    });
+    assert!(!kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Terminology));
+}
+
+// ── LOCATABLE.Archetyped_valid ───────────────────────────────────────────────
+
+/// A non-root node — `archetype_node_id` an `at`/`id` term code — must not
+/// carry `archetype_details` (`locatable.adoc` §`Archetyped_valid`); an
+/// archetype-HRID node carrying them, and a nested archetype root *without*
+/// them (the CNF-corpus-sanctioned shape), both stay valid.
+#[test]
+fn non_root_node_with_archetype_details_rejected() {
+    let details = json!({"_type": "ARCHETYPED",
+        "archetype_id": {"_type": "ARCHETYPE_ID", "value": "openEHR-EHR-CLUSTER.x.v1"},
+        "rm_version": "1.0.2"});
+    for bad_id in ["at0001", "id42", "at0001.1"] {
+        let inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": bad_id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "archetype_details": details,
+            "items": []
+        });
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            msgs.iter()
+                .any(|m| m.kind == ValidationKind::Invariant
+                    && m.message.contains("Archetyped_valid")),
+            "expected an Archetyped_valid violation for {bad_id}, got {msgs:?}"
+        );
+    }
+    // Root shapes stay valid: HRID with details, and HRID without details
+    // (nested archetype root as the CNF corpus ships it).
+    for (id, with_details) in [
+        ("openEHR-EHR-CLUSTER.x.v1", true),
+        ("openEHR-EHR-CLUSTER.x.v1", false),
+    ] {
+        let mut inst = json!({
+            "_type": "CLUSTER", "archetype_node_id": id,
+            "name": {"_type": "DV_TEXT", "value": "c"},
+            "items": []
+        });
+        if with_details {
+            inst.as_object_mut()
+                .unwrap()
+                .insert("archetype_details".into(), details.clone());
+        }
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            !msgs.iter().any(|m| m.message.contains("Archetyped_valid")),
+            "root shape (details={with_details}) must not violate Archetyped_valid: {msgs:?}"
+        );
+    }
+}
+
+// ── "present implies non-empty" list invariants ──────────────────────────────
+
+/// `COMPOSITION.Content_valid` / `SECTION.Items_valid` /
+/// `INSTRUCTION.Activities_valid` etc.: a PRESENT empty list violates the
+/// invariant; an absent list does not (`composition.adoc` §Invariants and
+/// siblings).
+#[test]
+fn present_empty_lists_are_rejected() {
+    let base = json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.x.v1",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    // Absent content: no Content_valid violation.
+    assert!(
+        !validate_rm_and_terminology(&base)
+            .iter()
+            .any(|m| m.message.contains("Content_valid")),
+        "absent content must not violate Content_valid"
+    );
+    // Present-empty content: violation.
+    let mut empty = base.clone();
+    empty
+        .as_object_mut()
+        .unwrap()
+        .insert("content".into(), json!([]));
+    let msgs = validate_rm_and_terminology(&empty);
+    assert!(
+        msgs.iter()
+            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Content_valid")),
+        "present-empty content must violate Content_valid, got {msgs:?}"
+    );
+    // A nested SECTION with empty items: Items_valid violation at its path.
+    let mut nested = base;
+    nested.as_object_mut().unwrap().insert(
+        "content".into(),
+        json!([{
+            "_type": "SECTION", "archetype_node_id": "at0001",
+            "name": {"_type": "DV_TEXT", "value": "s"},
+            "items": []
+        }]),
+    );
+    let msgs = validate_rm_and_terminology(&nested);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("Items_valid") && m.path.contains("content")),
+        "present-empty SECTION.items must violate Items_valid, got {msgs:?}"
+    );
+}
+
+// ── data-structure shape duties ──────────────────────────────────────────────
+
+/// `CLUSTER.items` is 1..1 (`cluster.adoc`; the ITS-JSON CLUSTER schema
+/// requires it) and one `HISTORY`'s events must all carry the same
+/// `ITEM_STRUCTURE` subtype in `data` (RM `data_structures` master06 §History).
+#[test]
+fn data_structure_shapes_are_enforced() {
+    // CLUSTER without items → violation.
+    let cluster = json!({
+        "_type": "CLUSTER", "archetype_node_id": "at0001",
+        "name": {"_type": "DV_TEXT", "value": "c"}
+    });
+    let msgs = validate_rm_and_terminology(&cluster);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("CLUSTER.items is mandatory")),
+        "items-less CLUSTER must be rejected, got {msgs:?}"
+    );
+
+    // HISTORY mixing ITEM_TREE and ITEM_LIST event data → violation.
+    let history = json!({
+        "_type": "HISTORY", "archetype_node_id": "at0002",
+        "name": {"_type": "DV_TEXT", "value": "h"},
+        "origin": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+        "events": [
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e1"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z"},
+              "data": {"_type": "ITEM_TREE", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} },
+            { "_type": "POINT_EVENT", "archetype_node_id": "at0003",
+              "name": {"_type": "DV_TEXT", "value": "e2"},
+              "time": {"_type": "DV_DATE_TIME", "value": "2026-01-01T01:00:00Z"},
+              "data": {"_type": "ITEM_LIST", "archetype_node_id": "at0004",
+                       "name": {"_type": "DV_TEXT", "value": "d"}, "items": []} }
+        ]
+    });
+    let msgs = validate_rm_and_terminology(&history);
+    assert!(
+        msgs.iter()
+            .any(|m| m.message.contains("same ITEM_STRUCTURE") && m.path.contains("events[1]")),
+        "a HISTORY mixing event data types must be rejected, got {msgs:?}"
+    );
 }

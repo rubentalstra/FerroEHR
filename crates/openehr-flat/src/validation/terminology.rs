@@ -27,8 +27,7 @@
 //! `docs/specs/openehr/RM/docs/UML/classes/` (`composition`, `entry`, `dv_text`,
 //! `ism_transition`, `term_mapping`, `dv_ordered`, `dv_multimedia`,
 //! `party_related`, `audit_details`, `attestation`), resolved against the
-//! terminology bundle in [`openehr_term::bundle`] (TERM 3.1.0). Findings F-07-03,
-//! F-11-02, F-11-03, F-11-04, F-11-05.
+//! terminology bundle in [`openehr_term::bundle`] (TERM 3.1.0).
 
 use openehr_term::bundle::{OpenehrTerminology, openehr};
 use serde_json::Value;
@@ -143,11 +142,10 @@ enum Binding {
 }
 
 impl Validator {
-    // `path` is the single reusable running-path buffer pushed/popped per step
-    // (P20 item 31), mirroring [`super::Validator::rm_invariant_pass`]: a segment
-    // is appended before a coded-slot check or a recursion and truncated back
-    // after, so the full path string is materialized only when a violation is
-    // recorded.
+    // `path` is the single reusable running-path buffer pushed/popped per step,
+    // mirroring [`super::Validator::rm_invariant_pass`]: a segment is appended
+    // before a coded-slot check or a recursion and truncated back after, so the
+    // full path string is materialized only when a violation is recorded.
     pub(super) fn terminology_pass(
         &mut self,
         v: &Value,
@@ -158,7 +156,7 @@ impl Validator {
         let Some(obj) = v.as_object() else { return };
         // One projection pass over the entries collects the fields every node
         // is probed for, so the unconditional probes below pay no hashed map
-        // lookup (P20 item 32); only a `_type`-matched slot still `get`s.
+        // lookup; only a `_type`-matched slot still `get`s.
         let mut this_type = None;
         let mut null_flavour = None;
         let mut normal_status = None;
