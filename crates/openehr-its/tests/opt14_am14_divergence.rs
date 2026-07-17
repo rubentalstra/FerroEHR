@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! opt14 ↔ am14 constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
@@ -22,7 +28,7 @@
 mod opt14_inventory {
     use openehr_its::opt14 as opt;
 
-    pub fn c_object_variants(v: &opt::CObject) -> &'static str {
+    fn c_object_variants(v: &opt::CObject) -> &'static str {
         match v {
             opt::CObject::ArchetypeInternalRef(_) => "ARCHETYPE_INTERNAL_REF",
             opt::CObject::ArchetypeSlot(_) => "ARCHETYPE_SLOT",
@@ -40,14 +46,14 @@ mod opt14_inventory {
         }
     }
 
-    pub fn c_attribute_variants(v: &opt::CAttribute) -> &'static str {
+    fn c_attribute_variants(v: &opt::CAttribute) -> &'static str {
         match v {
             opt::CAttribute::CMultipleAttribute(_) => "C_MULTIPLE_ATTRIBUTE",
             opt::CAttribute::CSingleAttribute(_) => "C_SINGLE_ATTRIBUTE",
         }
     }
 
-    pub fn c_primitive_variants(v: &opt::CPrimitive) -> &'static str {
+    fn c_primitive_variants(v: &opt::CPrimitive) -> &'static str {
         match v {
             opt::CPrimitive::CBoolean(_) => "C_BOOLEAN",
             opt::CPrimitive::CDate(_) => "C_DATE",
@@ -60,7 +66,7 @@ mod opt14_inventory {
         }
     }
 
-    pub fn c_domain_type_variants(v: &opt::CDomainType) -> &'static str {
+    fn c_domain_type_variants(v: &opt::CDomainType) -> &'static str {
         match v {
             opt::CDomainType::CCodePhrase(_) => "C_CODE_PHRASE",
             opt::CDomainType::CCodeReference(_) => "C_CODE_REFERENCE",
@@ -76,7 +82,7 @@ mod opt14_inventory {
 mod am14_inventory {
     use openehr_am::am14::prelude as am;
 
-    pub fn c_object_variants(v: &am::CObject) -> &'static str {
+    fn c_object_variants(v: &am::CObject) -> &'static str {
         match v {
             am::CObject::ArchetypeInternalRef(_) => "ARCHETYPE_INTERNAL_REF",
             am::CObject::ArchetypeSlot(_) => "ARCHETYPE_SLOT",
@@ -89,14 +95,14 @@ mod am14_inventory {
         }
     }
 
-    pub fn c_attribute_variants(v: &am::CAttribute) -> &'static str {
+    fn c_attribute_variants(v: &am::CAttribute) -> &'static str {
         match v {
             am::CAttribute::CMultipleAttribute(_) => "C_MULTIPLE_ATTRIBUTE",
             am::CAttribute::CSingleAttribute(_) => "C_SINGLE_ATTRIBUTE",
         }
     }
 
-    pub fn c_primitive_variants(v: &am::CPrimitive) -> &'static str {
+    fn c_primitive_variants(v: &am::CPrimitive) -> &'static str {
         match v {
             am::CPrimitive::CBoolean(_) => "C_BOOLEAN",
             am::CPrimitive::CDate(_) => "C_DATE",
@@ -109,7 +115,7 @@ mod am14_inventory {
         }
     }
 
-    pub fn c_domain_type_variants(v: &am::CDomainType) -> &'static str {
+    fn c_domain_type_variants(v: &am::CDomainType) -> &'static str {
         match v {
             am::CDomainType::CCodedText(_) => "C_CODED_TEXT",
             am::CDomainType::COrdinal(_) => "C_ORDINAL",

@@ -15,6 +15,7 @@
 
 use sea_query::extension::postgres::PgExpr as _;
 use sea_query::{Alias, Expr, ExprTrait as _, Query, SelectStatement};
+use uuid::Uuid;
 
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{
@@ -338,7 +339,8 @@ impl Builder<'_> {
         // single-`ehr_id` REST case is just the one-element set. Empty = no
         // explicit scope (the population gate takes over).
         if !self.ctx.ehr_ids.is_empty() {
-            let ids = self.ctx.ehr_ids.clone();
+            // sea-query bind boundary: the `ehr_id` column is a plain `uuid`.
+            let ids: Vec<Uuid> = self.ctx.ehr_ids.iter().map(|id| id.0).collect();
             for root in self.group_roots.clone() {
                 self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
             }

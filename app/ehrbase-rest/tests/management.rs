@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Integration tests for the management surface (binding doc §6): the
 //! access-level matrix, the Prometheus exposition + route-template label +
 //! cardinality guard, and separate-port isolation.

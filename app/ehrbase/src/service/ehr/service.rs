@@ -8,6 +8,7 @@
 //! §Folders. The EHR-table and folder-membership SQL is a storage seam (G-10;
 //! no openEHR spec governs the schema — our own design).
 
+use crate::ids::EhrId;
 use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::{ResourceMeta, ServiceResponse};
@@ -40,7 +41,7 @@ impl EhrbaseService {
     /// a storage failure.
     pub(in crate::service) async fn commit_new_ehr(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         status: Value,
     ) -> Result<ServiceResponse, ServiceError> {
         // The supplied EHR_STATUS must be a structurally valid RM instance
@@ -158,7 +159,7 @@ impl EhrbaseService {
     /// key order mirrors `ehr_summary`.
     fn ehr_object_from_committed(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         time_created: jiff::Timestamp,
         committed: &[crate::versioning::change::Committed],
     ) -> Value {
@@ -231,7 +232,7 @@ impl EhrbaseService {
     /// not exist; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn ehr_summary(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<ServiceResponse, ServiceError> {
         // ONE statement for the whole representation (the former four serial
         // reads — header, EHR_STATUS identity, EHR_ACCESS ref, folder
@@ -317,7 +318,7 @@ impl EhrbaseService {
     /// not exist; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn summarize_ehr(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<EhrSummary, ServiceError> {
         let (stored_system_id, time_created) =
             crate::storage::ehr_repo::ehr_header(&self.pool, ehr_id)
@@ -364,7 +365,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// [`SmError`] if the existence read fails (a missing EHR is `Ok(false)`).
-    pub async fn has_ehr(&self, ehr_id: Uuid) -> Result<bool, SmError> {
+    pub async fn has_ehr(&self, ehr_id: EhrId) -> Result<bool, SmError> {
         match self.ensure_ehr_exists(ehr_id).await {
             Ok(()) => Ok(true),
             Err(ServiceError::NotFound(_)) => Ok(false),
@@ -395,7 +396,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
     /// the subject already owns an EHR (409-equivalent), or storage fails.
-    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<Uuid, SmError> {
+    pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<EhrId, SmError> {
         // PORT NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
         // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
         // the id-only create paths. `POST /ehr` intentionally accepts a
@@ -405,7 +406,7 @@ impl EhrbaseService {
         // a 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats
         // a supplied anonymous-or-identified subject as the EHR's subject
         // rather than rejecting it. Recorded, not silently guessed.
-        let ehr_id = Uuid::now_v7();
+        let ehr_id = EhrId::new();
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
         self.commit_new_ehr(ehr_id, status).await?;
         Ok(ehr_id)
@@ -419,9 +420,9 @@ impl EhrbaseService {
     /// invalid, the subject already owns an EHR, or storage fails.
     pub async fn create_ehr_with_id(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<EhrId, SmError> {
         // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
         self.commit_new_ehr(an_ehr_id, status).await?;
@@ -438,8 +439,8 @@ impl EhrbaseService {
         &self,
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
-        let ehr_id = Uuid::now_v7();
+    ) -> Result<EhrId, SmError> {
+        let ehr_id = EhrId::new();
         let status = status_for_subject(
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
@@ -456,10 +457,10 @@ impl EhrbaseService {
     /// EHR, the status is invalid, or storage fails.
     pub async fn create_ehr_for_subject_with_id(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_subject_id: SubjectRef,
         an_ehr_status: Option<Value>,
-    ) -> Result<Uuid, SmError> {
+    ) -> Result<EhrId, SmError> {
         let status = status_for_subject(
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
@@ -473,7 +474,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR does not exist (404-equivalent) or a read
     /// fails.
-    pub async fn get_ehr(&self, an_ehr_id: Uuid) -> Result<EhrSummary, SmError> {
+    pub async fn get_ehr(&self, an_ehr_id: EhrId) -> Result<EhrSummary, SmError> {
         Ok(self.summarize_ehr(an_ehr_id).await?)
     }
 
@@ -499,6 +500,7 @@ impl EhrbaseService {
                     .pointer("/ehr_id/value")
                     .and_then(Value::as_str)
                     .and_then(|v| Uuid::parse_str(v).ok())
+                    .map(EhrId)
                     .ok_or_else(|| SmError::exception("EHR body carries no ehr_id"))?;
                 Ok(vec![self.summarize_ehr(ehr_id).await?])
             }
@@ -513,7 +515,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the EHR or its current `EHR_STATUS` does not exist, or
     /// a read fails.
-    pub async fn ehr_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_object(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         Ok(self.ehr_summary(an_ehr_id).await?.body)
     }
 
@@ -523,7 +525,7 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] when the fallback full read finds no such EHR, or a read
     /// fails.
-    pub async fn ehr_created_object(&self, an_ehr_id: Uuid) -> Result<Value, SmError> {
+    pub async fn ehr_created_object(&self, an_ehr_id: EhrId) -> Result<Value, SmError> {
         // Serve the create-time representation from the stash the commit path
         // populated (built from `Committed`, no re-read); a popped entry cannot
         // be reused. Fall back to a full read when the entry has been evicted
@@ -553,6 +555,12 @@ impl EhrbaseService {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::default_ehr_status;
 

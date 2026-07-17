@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! STRUCTURED (structSDT) `RM ⇄ STRUCTURED` converter tests.
 //!
 //! STRUCTURED composes the pure nesting transform

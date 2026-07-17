@@ -88,7 +88,7 @@ fn dto_type(raw: &str) -> String {
 }
 
 /// Names emitted by the RM and BASE crates, to resolve OAS `$ref`s to preludes.
-pub struct RmNames {
+pub(crate) struct RmNames {
     pub rm: BTreeSet<String>,
     pub base: BTreeSet<String>,
 }
@@ -96,7 +96,7 @@ pub struct RmNames {
 /// Emit the generated module for one API group. `dtos` is the set of component
 /// schema names this group defines that are *not* RM types (i.e. real DTOs).
 #[must_use]
-pub fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
+pub(crate) fn emit_group(oas: &Oas, group: &str, names: &RmNames) -> String {
     let trait_name = format!("{}Api", naming::type_name(group));
     // Component schemas split into RM-resolved vs local DTOs.
     let dtos: BTreeSet<String> = oas

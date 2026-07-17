@@ -47,7 +47,10 @@ const CORPUS_ROOT: &str = concat!(
 /// fixtures). **Private** — accessed only through `owned:` manifest keys.
 const OWNED_FIXTURES_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/testdata/fixtures");
 
-/// The committed fixture manifest, parsed once.
+/// The committed fixture manifest, parsed once. A corrupt committed manifest
+/// must abort the conformance CLI loudly — there is no meaningful run without
+/// it (the documented tool exception, reliability.md §tools).
+#[allow(clippy::panic)]
 static MANIFEST: LazyLock<Manifest> = LazyLock::new(|| match Manifest::load_default() {
     Ok(manifest) => manifest,
     Err(e) => panic!("committed MANIFEST.tsv must parse: {e}"),
@@ -657,6 +660,12 @@ fn set_type(node: &mut Value, ty: &str) {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

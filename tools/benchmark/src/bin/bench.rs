@@ -24,6 +24,9 @@
 //! ascending load-factor ladder on short fixed windows (register 01 §3), stops
 //! at the first step past the SLO (p99 > 1 s) or the 0.1% error flag, and writes
 //! `knee.json` + `KNEE.md` + `charts/knee.svg`. Exit: `0` ok · `2` failure.
+// Benchmark CLI: progress/diagnostics on the console ARE this tool's user
+// interface (.claude/rules/reliability.md §tools).
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -589,7 +592,7 @@ async fn cmd_run(args: RunArgs) -> i32 {
         Ok(o) => o,
         Err(e) => {
             eprintln!("error driving workload: {e}");
-            let _ = sampler.stop().await;
+            sampler.stop().await.ok();
             return 2;
         }
     };
@@ -1040,6 +1043,12 @@ fn cmd_report(args: &ReportArgs) -> i32 {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

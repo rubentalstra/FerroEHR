@@ -32,6 +32,7 @@ use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
+use crate::ids::EhrId;
 use crate::service::ehr_index::types::{
     EhrIndexEntry, LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
@@ -51,7 +52,7 @@ use crate::service::status::{CallStatusType, SmError};
 pub enum IndexError {
     /// `ehr_id_does_not_exist` — the addressed EHR is unknown.
     #[error("EHR {0} does not exist (ehr_id_does_not_exist)")]
-    EhrDoesNotExist(Uuid),
+    EhrDoesNotExist(EhrId),
     /// `subject_id_does_not_exist` — no such subject / association.
     #[error("subject {}@{} is not associated (subject_id_does_not_exist)", .0.id, .0.namespace)]
     SubjectDoesNotExist(SubjectRef),
@@ -132,7 +133,7 @@ fn require_association(affected: u64, subject: &SubjectRef) -> Result<(), IndexE
 
 /// Reassemble one [`EhrIndexEntry`] from an `ehr_index` row.
 fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Error> {
-    let ehr_id: Uuid = row.try_get("ehr_id")?;
+    let ehr_id: EhrId = row.try_get("ehr_id")?;
     let subject = SubjectRef {
         id: row.try_get("subject_id")?,
         namespace: row.try_get("subject_namespace")?,
@@ -171,9 +172,14 @@ fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Erro
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used)]
 mod tests {
-    #![allow(clippy::unwrap_used)]
-
     use super::*;
 
     /// The two declared EHR-index errors map to their dedicated SM statuses
@@ -181,7 +187,7 @@ mod tests {
     /// `versioned_object_does_not_exist`.
     #[test]
     fn index_errors_map_to_dedicated_statuses() {
-        let ehr = Uuid::now_v7();
+        let ehr = EhrId::new();
         let ehr_sm: SmError = IndexError::EhrDoesNotExist(ehr).into();
         assert_eq!(ehr_sm.status, CallStatusType::EhrIdDoesNotExist);
 

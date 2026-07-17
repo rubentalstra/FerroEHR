@@ -216,17 +216,17 @@ mod result_set {
     use serde_json::Value;
 
     /// `meta._type` (`"RESULTSET"` on a well-formed result set).
-    pub fn meta_type(body: &Value) -> Option<&str> {
+    pub(super) fn meta_type(body: &Value) -> Option<&str> {
         body.pointer("/meta/_type").and_then(Value::as_str)
     }
 
     /// The `columns` array.
-    pub fn columns(body: &Value) -> Option<&Vec<Value>> {
+    pub(super) fn columns(body: &Value) -> Option<&Vec<Value>> {
         body.get("columns").and_then(Value::as_array)
     }
 
     /// The `rows` array length (0 when absent).
-    pub fn row_count(body: &Value) -> usize {
+    pub(super) fn row_count(body: &Value) -> usize {
         body.get("rows")
             .and_then(Value::as_array)
             .map_or(0, Vec::len)
@@ -234,7 +234,7 @@ mod result_set {
 
     /// The first column's `path` (ITS-REST allows omitting `path` for EHR
     /// pseudo-attribute projections; `None` is a legitimate shape, not a fault).
-    pub fn first_column_path(body: &Value) -> Option<&str> {
+    pub(super) fn first_column_path(body: &Value) -> Option<&str> {
         columns(body)
             .and_then(|c| c.first())
             .and_then(|c| c.get("path"))
@@ -242,7 +242,7 @@ mod result_set {
     }
 
     /// One projected cell (`rows[row][col]`), `None` when absent.
-    pub fn cell(body: &Value, row: usize, col: usize) -> Option<&Value> {
+    pub(super) fn cell(body: &Value, row: usize, col: usize) -> Option<&Value> {
         body.get("rows")?.as_array()?.get(row)?.as_array()?.get(col)
     }
 }

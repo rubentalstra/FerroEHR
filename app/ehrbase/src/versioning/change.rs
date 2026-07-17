@@ -15,6 +15,7 @@ use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::storage::codec::{decompose, reassemble};
 use crate::storage::row::NodeRow;
@@ -29,7 +30,7 @@ use crate::versioning::{Kind, SigningCtx, integrity};
 #[derive(Debug, Clone)]
 #[allow(clippy::struct_field_names)] // `time_committed` is the master06 domain term, not a suffix echo
 pub struct Committed {
-    pub vo_id: Uuid,
+    pub vo_id: VoId,
     /// The per-vo storage commit ordinal of the written row (the node /
     /// attestation key) — NOT the wire version number.
     pub sys_version: i32,
@@ -103,7 +104,7 @@ pub(crate) enum Change {
     },
     /// Commit a new version of an existing object.
     Modify {
-        vo_id: Uuid,
+        vo_id: VoId,
         kind: Kind,
         canonical: Value,
         expected: Option<TreeId>,
@@ -119,7 +120,7 @@ pub(crate) enum Change {
     /// Logically delete an object (a content-less `deleted` version — master06
     /// §Logical Deletion).
     Delete {
-        vo_id: Uuid,
+        vo_id: VoId,
         kind: Kind,
         expected: Option<TreeId>,
         signature: Option<String>,
@@ -157,7 +158,7 @@ pub(crate) struct WriteEnvelope {
 /// the storage row (`crate::storage::version_repo::placement::next_placement`).
 #[derive(Debug, Clone)]
 struct PrecedingTip {
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     kind: Kind,
     ordinal: i32,
     tree: TreeId,
@@ -228,8 +229,8 @@ struct NextVersion {
 ///   does not exist or has been superseded (a closed lineage tip).
 async fn next_version(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    ehr_id: Option<EhrId>,
+    vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
     local_system_id: &str,
@@ -327,8 +328,8 @@ enum ContributionCtx {
 /// placement) and the input to the shared write ([`commit_resolved`]).
 struct ResolvedWrite {
     kind: Kind,
-    vo_id: Uuid,
-    ehr_id: Option<Uuid>,
+    vo_id: VoId,
+    ehr_id: Option<EhrId>,
     /// The per-vo storage commit ordinal.
     ordinal: i32,
     tree: TreeId,
@@ -384,7 +385,7 @@ struct ResolvedWrite {
 #[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
 async fn apply_change(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     contribution: ContributionCtx,
     audit: &AuditInput,
     ctx: &SigningCtx<'_>,
@@ -419,7 +420,7 @@ async fn apply_change(
             };
             ResolvedWrite {
                 kind,
-                vo_id: Uuid::now_v7(),
+                vo_id: VoId::new(),
                 ehr_id,
                 ordinal: 1,
                 tree: TreeId::trunk(1),
@@ -685,7 +686,7 @@ async fn write_single_outbox(
     tx: &mut PgConnection,
     ctx: &SigningCtx<'_>,
     contribution_id: Uuid,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     committed: &Committed,
 ) -> Result<(), ServiceError> {
     if ctx.outbox_enabled {
@@ -711,7 +712,7 @@ async fn write_single_outbox(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn create(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     kind: Kind,
     canonical: Value,
     template_id: Option<&str>,
@@ -751,8 +752,8 @@ pub(crate) async fn create(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn update(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    ehr_id: Option<EhrId>,
+    vo_id: VoId,
     kind: Kind,
     canonical: Value,
     expected: Option<TreeId>,
@@ -796,8 +797,8 @@ pub(crate) async fn update(
 #[allow(clippy::too_many_arguments)] // the write parameters; a struct would not read clearer
 pub(crate) async fn delete(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
-    vo_id: Uuid,
+    ehr_id: Option<EhrId>,
+    vo_id: VoId,
     kind: Kind,
     expected: Option<TreeId>,
     audit: &AuditInput,
@@ -842,7 +843,7 @@ pub(crate) async fn delete(
 /// target; the storage errors of the contribution/outbox writes.
 pub(crate) async fn commit_contribution(
     tx: &mut PgConnection,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     supplied_uid: Option<Uuid>,
     contribution_audit: &AuditInput,
     changes: Vec<(AuditInput, Change)>,

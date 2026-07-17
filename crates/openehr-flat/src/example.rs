@@ -794,6 +794,7 @@ fn fnv1a64(data: &[u8], basis: u64) -> u64 {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)] // test assertions panic by design
 mod tests {
     use super::*;
     use crate::webtemplate::build_web_template;

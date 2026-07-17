@@ -198,6 +198,12 @@ fn place(cur: &mut Value, segments: &[(&str, Option<usize>)], value: Value) {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use std::path::PathBuf;
 

@@ -7,7 +7,7 @@
 /// `DV_QUANTITY` → `DvQuantity`, `ISO_OID` → `IsoOid`, `Iso8601_date` →
 /// `Iso8601Date`, `EHR_STATUS` → `EhrStatus`.
 #[must_use]
-pub fn type_name(spec: &str) -> String {
+pub(crate) fn type_name(spec: &str) -> String {
     spec.split('_')
         .filter(|s| !s.is_empty())
         .map(|seg| {
@@ -26,7 +26,7 @@ pub fn type_name(spec: &str) -> String {
 /// escaping Rust keywords. Returns the identifier to emit; pair with
 /// [`serde_rename`] to keep the wire name correct.
 #[must_use]
-pub fn field_ident(spec: &str) -> String {
+pub(crate) fn field_ident(spec: &str) -> String {
     match spec {
         // Keywords that cannot be raw identifiers (`crate`/`self`/`super`/`Self`),
         // and `use` which we deliberately suffix for readability by convention.
@@ -66,7 +66,7 @@ fn is_raw_escapable_keyword(s: &str) -> bool {
 /// Raw identifiers (`r#type`) serialize as the bare keyword, so they need no
 /// rename; suffixed ones (`use_`) do.
 #[must_use]
-pub fn serde_rename(spec: &str, ident: &str) -> Option<String> {
+pub(crate) fn serde_rename(spec: &str, ident: &str) -> Option<String> {
     let wire = ident.strip_prefix("r#").unwrap_or(ident);
     if wire == spec {
         None
@@ -76,6 +76,12 @@ pub fn serde_rename(spec: &str, ident: &str) -> Option<String> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

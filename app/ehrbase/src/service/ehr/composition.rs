@@ -9,6 +9,7 @@
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 
+use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
@@ -47,7 +48,7 @@ impl EhrbaseService {
     /// failure.
     pub async fn create_composition(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         version: UpdateVersion,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (audit, envelope) = resolve_envelope(
@@ -100,8 +101,8 @@ impl EhrbaseService {
     /// to another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn read_composition(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: Option<TreeId>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = match version {
@@ -126,8 +127,8 @@ impl EhrbaseService {
     /// failure.
     pub(in crate::service) async fn composition_at_time(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         at: jiff::Timestamp,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = version_at(&self.pool, vo_id, at)
@@ -147,8 +148,8 @@ impl EhrbaseService {
     /// another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn versioned_composition(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
     ) -> Result<Value, ServiceError> {
         // Ownership gate only — one scalar read (`vo_version.ehr_id`), never
         // the full current-version reassembly this metadata-shaped response
@@ -167,8 +168,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn composition_revision_history_value(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
     ) -> Result<Value, ServiceError> {
         revision_history(&self.pool, ehr_id, vo_id).await
     }
@@ -180,8 +181,8 @@ impl EhrbaseService {
     /// to another EHR; [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn composition_version(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
         let read = read_version(&self.pool, vo_id, version)
@@ -202,8 +203,8 @@ impl EhrbaseService {
     /// failure.
     pub(in crate::service) async fn composition_version_at_time_read(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = match at {
@@ -245,8 +246,8 @@ impl EhrbaseService {
     /// failure.
     pub async fn update_composition(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
         version: UpdateVersion,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let Some(current) =
@@ -351,8 +352,8 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the metadata read fails.
     pub(in crate::service) async fn composition_current_meta(
         &self,
-        ehr_id: Uuid,
-        vo_id: Uuid,
+        ehr_id: EhrId,
+        vo_id: VoId,
     ) -> Result<Option<ResourceMeta>, ServiceError> {
         // Lean `vo_version`⋈`audit` read scoped to the EHR: the
         // `ETag`/`If-Match` compare needs only the full `OBJECT_VERSION_ID` +
@@ -390,7 +391,7 @@ impl EhrbaseService {
     /// read-back.
     pub async fn template_of_version(
         &self,
-        vo_id: Uuid,
+        vo_id: VoId,
         version: Option<&str>,
     ) -> Result<Option<String>, ServiceError> {
         // One scalar read of the promoted `vo_version.template_id` column —
@@ -422,7 +423,7 @@ impl EhrbaseService {
     /// a storage failure.
     pub async fn delete_composition(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
         a_version_uid: &ObjectVersionId,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
@@ -491,7 +492,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the existence read fails.
     pub(in crate::service) async fn ensure_ehr_exists(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<(), ServiceError> {
         if crate::storage::version_repo::meta::ehr_exists(&self.pool, ehr_id).await? {
             Ok(())
@@ -515,7 +516,7 @@ impl EhrbaseService {
     /// [`ServiceError::Database`] if the read fails.
     pub(in crate::service) async fn ensure_ehr_content_writable(
         &self,
-        ehr_id: Uuid,
+        ehr_id: EhrId,
     ) -> Result<(), ServiceError> {
         let (exists, is_modifiable) =
             crate::storage::ehr_repo::ehr_writability(&self.pool, ehr_id).await?;
@@ -542,7 +543,7 @@ impl EhrbaseService {
     /// missing version is `Ok(false)`).
     pub async fn has_composition(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<bool, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
@@ -561,8 +562,8 @@ impl EhrbaseService {
     /// (404-equivalent) or a read fails.
     pub async fn get_composition_latest(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
         Ok(self
             .read_composition(an_ehr_id, a_versioned_object_uid, None)
@@ -578,8 +579,8 @@ impl EhrbaseService {
     /// version at that instant (404-equivalent), or a read failure.
     pub async fn get_composition_at_time(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
         match a_time.as_deref() {
@@ -606,7 +607,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a read failure.
     pub async fn get_composition_at_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
@@ -624,8 +625,8 @@ impl EhrbaseService {
     /// (404-equivalent) or a read fails.
     pub async fn get_versioned_composition(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
         Ok(self
             .versioned_composition(an_ehr_id, a_versioned_object_uid)
@@ -640,8 +641,8 @@ impl EhrbaseService {
     /// (404-equivalent) or a read fails.
     pub async fn composition_revision_history(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
         Ok(self
             .composition_revision_history_value(an_ehr_id, a_versioned_object_uid)
@@ -657,8 +658,8 @@ impl EhrbaseService {
     /// version at that instant (404-equivalent), or a read failure.
     pub async fn composition_version_at_time(
         &self,
-        an_ehr_id: Uuid,
-        a_versioned_object_uid: Uuid,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
         let at = a_time.as_deref().map(super::parse_at_time).transpose()?;
@@ -676,7 +677,7 @@ impl EhrbaseService {
     /// (404-equivalent), or a read failure.
     pub async fn composition_original_version(
         &self,
-        an_ehr_id: Uuid,
+        an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;

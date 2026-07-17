@@ -38,11 +38,11 @@ mod predicate;
 mod select;
 mod value;
 
+use crate::ids::EhrId;
 use std::collections::HashMap;
 
 use sea_query::{Alias, PostgresQueryBuilder, Query, SelectStatement, Value};
 use sea_query_sqlx::{SqlxBinder as _, SqlxValues};
-use uuid::Uuid;
 
 use super::error::{AqlError, SqlError};
 use super::ir::{Bind, Coercion, ParamValue, Params, QueryIr};
@@ -61,7 +61,7 @@ pub struct SqlCtx {
     /// `docs/specs/openehr/SM/docs/UML/classes/i_query_service.adoc`). The
     /// ITS-REST single `ehr_id` parameter is the one-element case. Empty = no
     /// explicit scope (the population gate over `is_queryable` EHRs applies).
-    pub ehr_ids: Vec<Uuid>,
+    pub ehr_ids: Vec<EhrId>,
     /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
     /// §6.4 — no openEHR spec governs this, our own extension): when set, every
     /// VO root is restricted to EHRs whose `subject_id` equals it, so rows the
@@ -322,22 +322,8 @@ pub fn build_scope(
 
 // ── test-only inline renderers ─────────────────────────────────────────────
 
-/// Translate an AQL `LIKE` pattern to a SQL `LIKE` pattern (QUERY master03
-/// §Operators/LIKE) — the test surface of [`expr::aql_like_to_sql`].
 #[cfg(test)]
-pub(super) fn aql_like_to_sql_for_tests(pattern: &str) -> String {
-    expr::aql_like_to_sql(pattern)
-}
-
-/// Render the `archetype_node_id` predicate for `value` to inline SQL text so
-/// tests can assert the emitted condition (the subsumption vs equality split,
-/// G-05).
-#[cfg(test)]
-pub(super) fn archetype_predicate_sql_for_tests(value: &str) -> String {
-    expr::archetype_predicate_sql(value)
-}
-
-#[cfg(test)]
+#[allow(clippy::panic)] // test assertions panic by design
 mod column_vocab {
     //! Pin the builder's storage-column vocabulary to the schema. Every column
     //! name the IR→SQL lowering emits (collected here, one group per table)

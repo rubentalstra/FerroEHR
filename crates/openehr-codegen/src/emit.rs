@@ -23,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// A merged BMM model (e.g. BASE + RM) used for ancestor flattening and type
 /// resolution across schema boundaries.
-pub struct Model {
+pub(crate) struct Model {
     classes: BTreeMap<String, BmmClass>,
 }
 
@@ -32,7 +32,7 @@ pub struct Model {
 /// that crate's prelude (e.g. `openehr_base::prelude::Uid`) instead of
 /// degrading to `serde_json::Value`.
 #[derive(Default)]
-pub struct External {
+pub(crate) struct External {
     /// Each entry: the set of spec class names a dependency exports, and the
     /// Rust path to import them from (its prelude).
     deps: Vec<(BTreeSet<String>, String)>,
@@ -40,7 +40,7 @@ pub struct External {
 
 impl External {
     /// Register a dependency crate's exported spec names under a prelude path.
-    pub fn with(mut self, specs: BTreeSet<String>, prelude_path: &str) -> Self {
+    pub(crate) fn with(mut self, specs: BTreeSet<String>, prelude_path: &str) -> Self {
         self.deps.push((specs, prelude_path.to_string()));
         self
     }
@@ -61,7 +61,7 @@ impl External {
 /// The spec class names a schema will actually emit (non-skipped), for building
 /// the [`External`] index a downstream crate resolves against.
 #[must_use]
-pub fn emittable_specs(model: &Model, schema: &BmmSchema) -> BTreeSet<String> {
+pub(crate) fn emittable_specs(model: &Model, schema: &BmmSchema) -> BTreeSet<String> {
     let used = model.used_as_type();
     schema
         .classes
@@ -120,7 +120,7 @@ impl Model {
     /// Merge several schemas into one class map (later schemas override earlier
     /// on name collision — pass BASE before RM).
     #[must_use]
-    pub fn merged(schemas: &[&BmmSchema]) -> Self {
+    pub(crate) fn merged(schemas: &[&BmmSchema]) -> Self {
         let mut classes = BTreeMap::new();
         for s in schemas {
             for (name, class) in &s.classes {
@@ -636,7 +636,7 @@ fn collect_param_uses(t: &BmmType, declared: &BTreeSet<&str>, out: &mut BTreeSet
 }
 
 /// A generated Rust source file (path relative to the crate `src/`, plus body).
-pub struct GenFile {
+pub(crate) struct GenFile {
     /// Relative path under the crate `src/`, e.g. `data_types/quantity/dv_quantity.rs`.
     pub path: String,
     /// The Rust source.
@@ -816,7 +816,7 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
 /// Emit a single-version crate (`openehr-base`): one schema, top-level modules,
 /// crate `prelude`, and `lib.rs`. `external` resolves dependency-crate types.
 #[must_use]
-pub fn emit_crate(
+pub(crate) fn emit_crate(
     model: &Model,
     schema: &BmmSchema,
     external: &External,
@@ -831,7 +831,7 @@ pub fn emit_crate(
 /// Emit a multi-version crate (`openehr-am`): each `(prefix, model, schema)`
 /// becomes a top-level version module (`am14`, `am24`) with its own prelude.
 #[must_use]
-pub fn emit_multi_crate(
+pub(crate) fn emit_multi_crate(
     versions: &[(&str, &Model, &BmmSchema)],
     external: &External,
     crate_doc: &str,
@@ -1607,7 +1607,7 @@ fn to_snake(spec: &str) -> String {
 /// openEHR property name (`wire_name`); the Rust accessor is `rust_name`.
 /// `target` is the spec type of the value (item type for containers), passed as
 /// the declared type so a polymorphic value emits `xsi:type`.
-pub struct XmlField {
+pub(crate) struct XmlField {
     pub wire_name: String,
     pub rust_name: String,
     pub optional: bool,
@@ -1625,7 +1625,7 @@ pub struct XmlField {
 
 /// One variant of an untagged enum, for the forwarding `ToXml`/`FromXml` impl.
 #[allow(dead_code)] // `spec` consumed by the FromXml pass (landing next)
-pub struct XmlVariant {
+pub(crate) struct XmlVariant {
     /// Rust variant identifier (`DvCodedText`, or the enum's own name for the
     /// polymorphic-concrete self-data variant).
     pub ident: String,
@@ -1638,7 +1638,7 @@ pub struct XmlVariant {
 // `spec` is consumed by the `FromXml` pass (xsi:type → variant dispatch), landing
 // next; keep it now so the type is stable across both directions.
 #[allow(dead_code)]
-pub enum XmlType {
+pub(crate) enum XmlType {
     /// A struct: a plain `Struct` class, or a `PolyEnum`'s `{Name}Data`.
     Struct {
         spec: String,
@@ -1668,7 +1668,7 @@ impl Model {
     /// The flattened fields of a concrete class for XML emission (same order and
     /// flattening as struct emission).
     #[must_use]
-    pub fn xml_fields(&self, class_name: &str) -> Vec<XmlField> {
+    pub(crate) fn xml_fields(&self, class_name: &str) -> Vec<XmlField> {
         let Some(class) = self.get(class_name) else {
             return Vec::new();
         };
@@ -1753,7 +1753,7 @@ impl Model {
 
     /// Generic parameter names a type exposes (`Version<T>` → `["T"]`).
     #[must_use]
-    pub fn xml_generics(&self, class_name: &str) -> Vec<String> {
+    pub(crate) fn xml_generics(&self, class_name: &str) -> Vec<String> {
         self.used_generic_params(class_name)
             .into_iter()
             .map(|(n, _)| n)
@@ -1762,7 +1762,7 @@ impl Model {
 
     /// The instantiable XML types of a schema, in class order.
     #[must_use]
-    pub fn xml_types(&self, schema: &BmmSchema) -> Vec<XmlType> {
+    pub(crate) fn xml_types(&self, schema: &BmmSchema) -> Vec<XmlType> {
         let used = self.used_as_type();
         let mut out = Vec::new();
         for (name, class) in &schema.classes {

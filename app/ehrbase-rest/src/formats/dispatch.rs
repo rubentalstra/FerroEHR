@@ -365,6 +365,12 @@ pub(crate) fn is_simplified_body(headers: &HeaderMap) -> bool {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use axum::response::IntoResponse;
     use http::{HeaderMap, HeaderValue, StatusCode, header};

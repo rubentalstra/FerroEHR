@@ -13,6 +13,7 @@
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::list::Page;
 use crate::versioning::attestation::PendingAttest;
@@ -169,7 +170,7 @@ fn classify(
 struct PlannedVersion {
     action: Action,
     /// The parsed `preceding_version_uid` target (modify/delete/attest).
-    target: Option<(Uuid, TreeId)>,
+    target: Option<(VoId, TreeId)>,
     /// `data` (`null` ≙ absent — the deleted-version shape).
     data: Option<Value>,
     audit: AuditInput,
@@ -205,7 +206,7 @@ struct PlannedVersion {
 #[allow(clippy::too_many_lines)] // the per-version classify + change-build loop
 pub(crate) async fn commit_version_set(
     cx: &impl CommitEnv,
-    ehr_id: Option<Uuid>,
+    ehr_id: Option<EhrId>,
     body: &Value,
     party_only: bool,
 ) -> Result<Uuid, ServiceError> {
@@ -336,13 +337,13 @@ pub(crate) async fn commit_version_set(
     }
 
     // ── ONE batched target read ────────────────────────────────────────────
-    let mut target_ids: Vec<Uuid> = plan
+    let mut target_ids: Vec<VoId> = plan
         .iter()
         .filter_map(|v| v.target.map(|(vo_id, _)| vo_id))
         .collect();
     target_ids.sort_unstable();
     target_ids.dedup();
-    let target_kinds: std::collections::HashMap<Uuid, Kind> =
+    let target_kinds: std::collections::HashMap<VoId, Kind> =
         crate::storage::version_repo::meta::object_kinds(cx.pool(), &target_ids)
             .await
             .map_err(ServiceError::from)?
@@ -354,7 +355,7 @@ pub(crate) async fn commit_version_set(
     // `400_CONTRIBUTION` scope — the ITS-REST `contribution_create` operation
     // declares `404` only for an unknown `ehr_id` (the URI resource), never for
     // content the committed CONTRIBUTION refers to.
-    let require_kind = |vo_id: Uuid| -> Result<Kind, ServiceError> {
+    let require_kind = |vo_id: VoId| -> Result<Kind, ServiceError> {
         target_kinds.get(&vo_id).copied().ok_or_else(|| {
             ServiceError::BadRequest(format!(
                 "modification target does not exist: versioned object {vo_id} \
@@ -582,7 +583,7 @@ pub(crate) async fn commit_version_set(
 /// already-live same-identity folder hierarchy; the `CommitEnv` lookup errors.
 async fn reject_duplicate_singleton(
     cx: &impl CommitEnv,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     kind: Kind,
     data: &Value,
 ) -> Result<(), ServiceError> {
@@ -743,7 +744,7 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
 /// # Errors
 /// [`ServiceError::Unprocessable`] when absent/`null` on a modify/delete/attest
 /// item, or when the value is not a valid `OBJECT_VERSION_ID`.
-fn parse_preceding(version: &Value) -> Result<(Uuid, TreeId), ServiceError> {
+fn parse_preceding(version: &Value) -> Result<(VoId, TreeId), ServiceError> {
     let raw = version
         .get("preceding_version_uid")
         // Treat a JSON `null` as absent (the SM glue serializes `None` to
@@ -783,7 +784,7 @@ fn attestation_partials(version: &Value) -> Vec<Value> {
 pub(crate) async fn get_contribution(
     pool: &sqlx::PgPool,
     signer: &Signer,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     contribution_id: Uuid,
     resolve_refs: bool,
 ) -> Result<Value, ServiceError> {
@@ -850,7 +851,7 @@ pub(crate) async fn get_contribution(
 /// error of the list query.
 pub(crate) async fn list_contributions(
     pool: &sqlx::PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     time_range: TimeRange,
     page: Page,
 ) -> Result<Vec<Uuid>, ServiceError> {
@@ -874,7 +875,7 @@ pub(crate) async fn list_contributions(
 /// error of the count query.
 pub(crate) async fn count_contributions(
     pool: &sqlx::PgPool,
-    ehr_id: Uuid,
+    ehr_id: EhrId,
     time_range: TimeRange,
 ) -> Result<i64, ServiceError> {
     ensure_ehr_exists(pool, ehr_id).await?;
@@ -890,7 +891,7 @@ pub(crate) async fn count_contributions(
 ///
 /// Storage exposes the read (`version_repo::meta::ehr_exists`) so versioning stays
 /// self-contained.
-async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: Uuid) -> Result<(), ServiceError> {
+async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: EhrId) -> Result<(), ServiceError> {
     if crate::storage::version_repo::meta::ehr_exists(pool, ehr_id).await? {
         Ok(())
     } else {
@@ -915,6 +916,12 @@ fn body_target_not_found_is_bad_request(e: ServiceError) -> ServiceError {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

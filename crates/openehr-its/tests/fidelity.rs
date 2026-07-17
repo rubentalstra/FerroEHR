@@ -1,4 +1,10 @@
 #![allow(clippy::doc_markdown)] // prose with spec/crate proper nouns
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Interop fidelity gate — deserialize the real EHRbase / openEHR_SDK canonical
 //! JSON corpus (`tests/vendor/`) into our **generated** `openehr-rm` types.
 //!

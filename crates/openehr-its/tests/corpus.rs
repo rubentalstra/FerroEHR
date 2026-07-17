@@ -1,4 +1,10 @@
 #![allow(clippy::doc_markdown)] // prose with spec/crate proper nouns
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Sanity + wiring for the vendored ITS material: the EHRbase canonical-JSON
 //! corpus (`tests/vendor/`) and the ITS-JSON schema (`schemas/`).
 //!
@@ -40,7 +46,7 @@ fn corpus_is_present_and_valid_json() {
     );
     for f in &files {
         let txt = fs::read_to_string(f).unwrap();
-        let _: serde_json::Value = serde_json::from_str(&txt)
+        let _parsed: serde_json::Value = serde_json::from_str(&txt)
             .unwrap_or_else(|e| panic!("corpus file {} is not valid JSON: {e}", f.display()));
     }
 }
@@ -48,6 +54,6 @@ fn corpus_is_present_and_valid_json() {
 #[test]
 fn its_json_schema_is_valid_json() {
     // The vendored ITS-JSON RM schema parses (wiring of `json::RM_SCHEMA_JSON`).
-    let _: serde_json::Value = serde_json::from_str(openehr_its::json::RM_SCHEMA_JSON)
+    let _schema: serde_json::Value = serde_json::from_str(openehr_its::json::RM_SCHEMA_JSON)
         .expect("vendored ITS-JSON schema must be valid JSON");
 }

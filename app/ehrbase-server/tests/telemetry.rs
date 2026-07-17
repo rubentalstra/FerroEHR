@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Telemetry tests (binding doc §6): the metric-name + bucket registry snapshot
 //! (renames become deliberate), the OTLP export smokes for traces AND metrics
 //! push (against in-memory exporters — the export pipeline is exercised without

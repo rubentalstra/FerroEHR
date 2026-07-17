@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end ABAC PEP over the real axum app (§9.6 of
 //! `docs/enterprise/access-control.md`): the fine-grained layer through the
 //! assembled router (auth → RBAC → dispatch → ABAC pre/post checks → backend)

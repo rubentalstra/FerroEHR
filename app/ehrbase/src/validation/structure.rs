@@ -100,6 +100,12 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::validate_opt_structure;
 

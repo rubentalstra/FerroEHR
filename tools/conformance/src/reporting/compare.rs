@@ -176,6 +176,12 @@ fn render_capability_matrix(out: &mut String, runs: &[RunResults]) {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
     use crate::edition::EditionPolicy;

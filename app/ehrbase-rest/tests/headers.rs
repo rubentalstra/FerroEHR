@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
 //! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a
 //! weakness indicator `W/` prefix"); the bare quoted form is deprecated.

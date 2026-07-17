@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end SM-3 tests against a real PostgreSQL 18 (testcontainers): the
 //! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision
 //! history + error cases (driven through the `PartyRelationshipService` seam),

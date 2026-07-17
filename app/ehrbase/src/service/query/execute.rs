@@ -11,6 +11,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use crate::ids::EhrId;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -236,7 +237,7 @@ impl EhrbaseService {
     /// (precondition), a database fault during the existence check
     /// (exception), or a listed EHR that does not exist
     /// (`ehr_id_does_not_exist`).
-    async fn resolve_ehr_ids(&self, ehr_ids: &[String]) -> Result<Vec<Uuid>, Failure> {
+    async fn resolve_ehr_ids(&self, ehr_ids: &[String]) -> Result<Vec<EhrId>, Failure> {
         if ehr_ids.is_empty() {
             return Ok(Vec::new());
         }
@@ -245,10 +246,10 @@ impl EhrbaseService {
             let uuid = Uuid::parse_str(id).map_err(|_| {
                 Failure::analysis(SmError::precondition(format!("invalid ehr_id `{id}`")))
             })?;
-            ids.push(uuid);
+            ids.push(EhrId(uuid));
         }
         // Verify existence in one round-trip; report the first absent id.
-        let present: Vec<Uuid> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = ANY($1)")
+        let present: Vec<EhrId> = sqlx::query_scalar("SELECT id FROM ehr WHERE id = ANY($1)")
             .bind(&ids)
             .fetch_all(&self.pool)
             .await

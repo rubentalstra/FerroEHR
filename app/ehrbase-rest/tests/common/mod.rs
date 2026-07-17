@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! Shared test fixture: the REST router over a **real** `EhrbaseService` on a
 //! **real `PostgreSQL` 18** (testcontainers).
 //!
@@ -28,14 +34,14 @@ use testcontainers_modules::postgres::Postgres;
 
 /// A per-test `PostgreSQL` 18 container. Keep it alive for the pool's
 /// lifetime — dropping it stops the container (the reaping).
-pub struct Pg {
+pub(crate) struct Pg {
     _container: ContainerAsync<Postgres>,
     host: String,
     port: u16,
 }
 
 impl Pg {
-    pub async fn start() -> Self {
+    pub(crate) async fn start() -> Self {
         let container = Postgres::default()
             .with_tag("18")
             .start()
@@ -53,7 +59,7 @@ impl Pg {
 
 /// A fresh, fully-migrated database named `name` on a fresh container.
 /// Returns the container guard with the pool — hold both.
-pub async fn migrated_pool(name: &str) -> (Pg, PgPool) {
+pub(crate) async fn migrated_pool(name: &str) -> (Pg, PgPool) {
     let pg = Pg::start().await;
     let admin = format!(
         "postgres://postgres:postgres@{}:{}/postgres",
@@ -77,7 +83,7 @@ pub async fn migrated_pool(name: &str) -> (Pg, PgPool) {
 ///
 /// `name` must be a unique, SQL-identifier-safe string per test (it becomes
 /// the database name).
-pub async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
+pub(crate) async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
     let (pg, pool) = migrated_pool(name).await;
     (pg, Arc::new(EhrbaseService::new(pool)))
 }
@@ -85,7 +91,7 @@ pub async fn test_service(name: &str) -> (Pg, Arc<EhrbaseService>) {
 /// The assembled router over a real service with the given configuration —
 /// the same wiring as [`ehrbase_rest::build_with`], split open so tests can
 /// hand-tune `AppConfig` (auth modes, admin/extension toggles).
-pub fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Router {
+pub(crate) fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Router {
     let authenticator = Authenticator::new(config.auth.clone()).expect("test auth config is valid");
     let state = AppState::with_backend(config, service);
     ehrbase_rest::router::router(state, authenticator)
@@ -94,7 +100,7 @@ pub fn router_with(config: AppConfig, service: Arc<EhrbaseService>) -> axum::Rou
 /// The assembled router over a real service with authentication disabled —
 /// the baseline most HTTP tests want (auth-specific tests build their own
 /// [`AppConfig`] via [`router_with`]).
-pub async fn test_router(name: &str) -> (Pg, axum::Router) {
+pub(crate) async fn test_router(name: &str) -> (Pg, axum::Router) {
     let mut config = AppConfig::default();
     config.auth.enabled = false;
     let (pg, service) = test_service(name).await;

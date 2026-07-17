@@ -29,7 +29,7 @@ use std::collections::BTreeMap;
 
 /// A loaded BMM schema (one vendored `*.bmm.json` file).
 #[derive(Debug, Clone)]
-pub struct BmmSchema {
+pub(crate) struct BmmSchema {
     /// `schema_name`, e.g. `"rm"`.
     pub schema_name: String,
     /// `rm_release`, e.g. `"1.1.0"`.
@@ -46,7 +46,7 @@ pub struct BmmSchema {
 
 /// A BMM package node in the package tree.
 #[derive(Debug, Clone)]
-pub struct BmmPackage {
+pub(crate) struct BmmPackage {
     /// Dotted package name, e.g. `"org.openehr.rm.common"` or a leaf `"archetyped"`.
     pub name: String,
     /// Class names declared directly in this package.
@@ -57,7 +57,7 @@ pub struct BmmPackage {
 
 /// A BMM class definition.
 #[derive(Debug, Clone)]
-pub struct BmmClass {
+pub(crate) struct BmmClass {
     /// Class name, e.g. `"DV_QUANTITY"`.
     pub name: String,
     /// Class documentation (verbatim), if any.
@@ -74,7 +74,7 @@ pub struct BmmClass {
 
 /// A generic parameter of a class, e.g. `T conforms_to DV_ORDERED`.
 #[derive(Debug, Clone)]
-pub struct BmmGenericParam {
+pub(crate) struct BmmGenericParam {
     /// Parameter name, e.g. `"T"`.
     pub name: String,
     /// The `conforms_to_type` bound, if any.
@@ -83,7 +83,7 @@ pub struct BmmGenericParam {
 
 /// A BMM property (attribute) of a class.
 #[derive(Debug, Clone)]
-pub struct BmmProperty {
+pub(crate) struct BmmProperty {
     /// Property name, e.g. `"magnitude"`.
     pub name: String,
     /// Property documentation (verbatim), if any.
@@ -96,7 +96,7 @@ pub struct BmmProperty {
 
 /// The shape of a [`BmmProperty`].
 #[derive(Debug, Clone)]
-pub enum BmmPropKind {
+pub(crate) enum BmmPropKind {
     /// A single-valued property (`P_BMM_SINGLE_PROPERTY`,
     /// `P_BMM_SINGLE_PROPERTY_OPEN`, or `P_BMM_GENERIC_PROPERTY`).
     Single(BmmType),
@@ -113,7 +113,7 @@ pub enum BmmPropKind {
 
 /// A structured container cardinality (`{lower, upper_unbounded, upper}`).
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BmmCardinality {
+pub(crate) struct BmmCardinality {
     /// Lower bound (default 0).
     pub lower: u32,
     /// Upper bound, or `None` if unbounded.
@@ -122,7 +122,7 @@ pub struct BmmCardinality {
 
 /// A BMM type reference: a named type, or a generic instantiation.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BmmType {
+pub(crate) enum BmmType {
     /// A simple named type (`Real`, `DV_TEXT`, or a generic parameter like `T`).
     Simple(String),
     /// A generic instantiation, e.g. `DV_INTERVAL<DV_QUANTITY>`.
@@ -137,7 +137,7 @@ pub enum BmmType {
 impl BmmType {
     /// The underlying root/simple type name (ignoring generic args).
     #[must_use]
-    pub fn root_name(&self) -> &str {
+    pub(crate) fn root_name(&self) -> &str {
         match self {
             BmmType::Simple(s) => s,
             BmmType::Generic { root, .. } => root,
@@ -150,14 +150,14 @@ impl BmmSchema {
     ///
     /// # Errors
     /// Returns [`serde_json::Error`] if the JSON does not parse.
-    pub fn parse_json(src: &str) -> Result<Self, serde_json::Error> {
+    pub(crate) fn parse_json(src: &str) -> Result<Self, serde_json::Error> {
         let doc: Value = serde_json::from_str(src)?;
         Ok(Self::from_value(&doc))
     }
 
     /// Build a schema from an already-parsed JSON value.
     #[must_use]
-    pub fn from_value(doc: &Value) -> Self {
+    pub(crate) fn from_value(doc: &Value) -> Self {
         let s = |k: &str| {
             doc.get(k)
                 .and_then(Value::as_str)
@@ -212,7 +212,7 @@ impl BmmSchema {
     /// / `EXPR_*` file and a BMM-object-model / `EL_*` file — and a single crate
     /// must emit the union of both.
     #[must_use]
-    pub fn combined(mut self, other: &BmmSchema) -> Self {
+    pub(crate) fn combined(mut self, other: &BmmSchema) -> Self {
         for (name, class) in &other.classes {
             self.classes
                 .entry(name.clone())
@@ -225,7 +225,7 @@ impl BmmSchema {
     /// A map from class name to its leaf package name (the innermost package
     /// that directly lists the class), for deriving the module layout.
     #[must_use]
-    pub fn class_packages(&self) -> BTreeMap<String, String> {
+    pub(crate) fn class_packages(&self) -> BTreeMap<String, String> {
         let mut out = BTreeMap::new();
         for p in &self.packages {
             collect_class_packages(p, &mut out);
@@ -445,6 +445,12 @@ fn parse_generic_param(x: &Value) -> BmmType {
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
 

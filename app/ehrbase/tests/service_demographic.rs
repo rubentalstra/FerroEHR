@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end DEMOGRAPHIC service tests against a real PostgreSQL 18
 //! (testcontainers): the party CRUD + versioning + VERSIONED_PARTY +
 //! contribution + tags lifecycle, driven through the `DemographicService`

@@ -1,3 +1,9 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the ADMIN API group (physical EHR delete): the
 //! config gate (`AppConfig::admin.enabled`) and the `204`/`404` wire outcomes —
 //! driven through the assembled router over a **real** `AdminService` on a real
