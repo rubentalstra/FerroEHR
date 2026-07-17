@@ -122,9 +122,18 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   expensive branches → `<Show when fallback>` (memoized, renders each branch
   once — `view/06_control_flow`). Divergent branch types → `Either`/
   `EitherOf3…` or `.into_any()`.
-- `Result` renders through `<ErrorBoundary fallback=|errors| …>`
-  (`view/07_errors`); every data-bearing page section that can error gets a
-  boundary — errors must never silently render as nothing.
+- Errors must never silently render as nothing — but in SSR'd data
+  sections do NOT reach for `<ErrorBoundary>` inside `<Suspense>`:
+  **hydrating a server-rendered ErrorBoundary fallback mismatches in
+  Leptos 0.8** (proven live by the E2E console gate, 2026-07-17). The
+  standing pattern: resolve the `Result` INSIDE the `Suspend` and render
+  content-or-`format_view::inline_error(&e)` as one `.into_any()`-erased
+  view (see any `*_section` fn in the console pages). `<ErrorBoundary>`
+  remains fine for non-suspense render-time `Result`s (`view/07_errors`).
+- **Anchors to BFF axum routes need `rel="external"`** (e.g. the OIDC
+  login link): after hydration the client router intercepts same-origin
+  anchors and 404s routes it doesn't own — flakily, depending on click
+  timing vs WASM load (found live 2026-07-17).
 
 ## 5. Forms
 
