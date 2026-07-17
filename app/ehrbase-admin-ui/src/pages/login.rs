@@ -143,15 +143,28 @@ fn basic_login_form(
                 <label class="text-sm font-medium" r#for="login-username">
                     "Username"
                 </label>
-                <thaw::Input id="login-username" name="username" placeholder="Username" />
+                // Plain UNCONTROLLED inputs: a controlled (signal-driven)
+                // input resets to its empty signal at hydration, wiping
+                // anything the user typed before WASM attached — on the
+                // login form that silently swallows credentials (found by
+                // the E2E battery as intermittent empty-credential posts).
+                <input
+                    id="login-username"
+                    name="username"
+                    placeholder="Username"
+                    autocomplete="username"
+                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                />
                 <label class="text-sm font-medium" r#for="login-password">
                     "Password"
                 </label>
-                <thaw::Input
+                <input
                     id="login-password"
                     name="password"
-                    input_type=thaw::InputType::Password
+                    type="password"
                     placeholder="Password"
+                    autocomplete="current-password"
+                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
                 />
                 <input type="hidden" name="next" value=move || next.get() />
                 <thaw::Button

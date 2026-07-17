@@ -2,7 +2,8 @@
     clippy::panic,
     clippy::expect_used,
     clippy::print_stdout,
-    unreachable_pub
+    unreachable_pub,
+    dead_code // each test binary uses a subset of the shared harness methods
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)

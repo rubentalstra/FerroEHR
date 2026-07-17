@@ -376,6 +376,7 @@ fn terminal(out: &mut String, term: &Terminal) {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)] // round-trip diagnostics carry the offending AQL text
 mod tests {
     use crate::parser::parse_str;
     use crate::printer::{escape_string, to_aql};
