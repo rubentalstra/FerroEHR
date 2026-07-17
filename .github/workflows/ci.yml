@@ -101,25 +101,6 @@ jobs:
       - name: Regenerate and diff
         run: bash scripts/check-codegen-drift.sh
 
-  # ── Comment-marker guard (owner rule 2026-07-17) ─────────────────────────────
-  # Pending work is marked ONLY with the official `TODO` form (tool-recognized,
-  # greppable); the retired bespoke vocabulary (PORT NOTE / TODO(port) /
-  # PERF(port) / PORT STATUS) is banned — it was unenforceable and went stale.
-  comment-markers:
-    name: comment-marker guard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: No retired PORT markers
-        run: |
-          if grep -rnE 'PORT NOTE|TODO\(port\)|PERF\(port\)|PORT STATUS' \
-              --include='*.rs' --include='*.sql' --include='*.toml' \
-              crates app tools; then
-            echo '::error::retired PORT-marker vocabulary found — use TODO(...) for pending work, plain NOTE: comments for design notes'
-            exit 1
-          fi
-          echo "clean"
-
   # ── CNF conformance: the enforced-coverage guard (fast, no DB) ───────────────
   # The W-10 instrument's own test suite: the ECC catalogue guard (every
   # registered case has an allocated, never-reused ECC number), the

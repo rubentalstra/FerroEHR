@@ -200,7 +200,7 @@ fn generic_any_slot(class: &str, attr: &str) -> bool {
 /// means "cannot vouch" (not "invalid") — the caller falls back to the typed
 /// path, which decides authoritatively.
 ///
-/// PERF: iterates the node's entries once and matches attribute names by
+/// Performance: iterates the node's entries once and matches attribute names by
 /// static-string compare instead of one hashed `obj.get` per attribute — this
 /// runs for every `_type` node of every commit, and the map hashing was the
 /// measured residual cost. Mandatory-presence is closed out by counting the
@@ -303,7 +303,7 @@ fn class_slot_conforms(v: &Value, declared: &str, shallow: bool) -> bool {
         return false;
     };
     // Canonical JSON emits `_type` as the first key; peek there before paying
-    // a hashed lookup (PERF — this runs per nested slot of every node).
+    // a hashed lookup (performance: this runs per nested slot of every node).
     let tag = match obj.iter().next() {
         Some((k, v)) if k == "_type" => Some(v),
         _ => obj.get("_type"),
@@ -334,7 +334,7 @@ fn class_slot_conforms(v: &Value, declared: &str, shallow: bool) -> bool {
 
 /// Linear-scan field access: an RM node has ≤ ~10 keys, so a sequential
 /// static-string compare beats the map's hashed lookup on this hot path
-/// (PERF — same reasoning as the entry iteration in [`node_conforms`]).
+/// (performance: same reasoning as the entry iteration in [`node_conforms`]).
 fn field<'a>(obj: &'a Map<String, Value>, key: &str) -> Option<&'a Value> {
     obj.iter().find_map(|(k, v)| (k == key).then_some(v))
 }
