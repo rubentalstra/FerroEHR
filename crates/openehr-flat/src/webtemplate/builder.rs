@@ -893,8 +893,9 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
 /// are governed by *occurrences* (checked in the walk), and container membership
 /// by *cardinality* — existence covers exactly the remaining case: a mandatory
 /// plain RM attribute field (e.g. an ELEMENT `value`, a `HISTORY.events`,
-/// `COMPOSITION.language`) that must be present. `name` is excluded (a Better
-/// `SKIP_PATH`, matched by the archetype-node predicate instead).
+/// `COMPOSITION.language`) that must be present. `name` is excluded (it names the
+/// node — master04 §"Field Identifiers" — and is matched by the archetype-node
+/// predicate instead).
 ///
 /// PORT NOTE: AOM 1.4 (`master04-constraint_model_package.adoc` §existence) makes
 /// existence "always required" with an unstated default of `{1..1}`; the OPT XML
@@ -972,7 +973,7 @@ fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttr
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "name" {
-            continue; // Better SKIP_PATH; the name is matched by predicate, not closure.
+            continue; // The name is matched by predicate, not closure (master04 §"Field Identifiers").
         }
         // An unresolved internal-ref / constraint-ref makes the admissible set
         // uncertain (target resolution is a documented builder scope gap); leave
@@ -1199,8 +1200,9 @@ fn collect_nested_roots<'a>(co: &'a CObject, out: &mut Vec<&'a CArchetypeRoot>) 
 }
 
 /// Collect every archetype root's inline `term_bindings`, keyed by archetype id
-/// (Better attaches these to the archetype-root `AmNode`, inherited by
-/// descendants). First root wins for a repeated archetype id.
+/// (a node inherits its owning archetype root's bindings, surfaced as the
+/// `termBindings` map of master04 §"Web Template Metadata"). First root wins for a
+/// repeated archetype id.
 fn collect_term_bindings(opt: &OperationalTemplate) -> TermBindings {
     let mut out: TermBindings = HashMap::new();
     collect_root_bindings(&opt.definition, &mut out);
@@ -1236,7 +1238,8 @@ fn other_details(opt: &OperationalTemplate) -> IndexMap<String, String> {
     if let Some(desc) = &opt.description
         && let Some(details) = &desc.other_details
     {
-        // Better `extractOtherDetails` keeps only `is_singleton`.
+        // `otherDetails` keeps only `is_singleton`. No openEHR spec governs this
+        // root field — our own design/extension.
         if let Some(v) = details.get("is_singleton") {
             out.insert("is_singleton".to_owned(), v.clone());
         }
