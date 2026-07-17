@@ -645,7 +645,12 @@ full platform rewrite):**
       blob GC's reference check is ONE node scan joined against the whole
       candidate array instead of a full scan per blob (a blob_ref count
       table stays the eventual scale nicety).
-- [ ] F-17 benchmark: split server vs generator errors, warmup-filter both.
+- [x] F-17 (2026-07-17): the instrument splits SERVER-attributed errors
+      (unexpected status / transport / malformed success body) from
+      GENERATOR-side schedule-dependency misses (`OpOutcome`; `dep_misses`
+      beside `errors` in summaries + results.json), and BOTH now face the
+      same warmup discard window as successes — the error rate no longer
+      overstates, and the SUT is never charged the generator's debt.
 - [ ] F-23 optional template warm at startup; ADL2 compiled-form cache.
 
 **Structural wave — B+C EXECUTED 2026-07-16** (big-bang, converged once):
