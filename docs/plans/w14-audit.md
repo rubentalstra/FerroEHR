@@ -616,8 +616,10 @@ full platform rewrite):**
 - [ ] F-26 push matching-list filters into SQL. — [x] F-38 template example
       cold-cache double read eliminated (templates rewrite; store write path
       also folded 3→1 statements). — [ ] F-21/F-33 tenant seam redesign
-      (negative cache, targeted invalidation, error ≠ unscoped). — [ ] F-39
-      TTL cache on the FHIR terminology provider.
+      (negative cache, targeted invalidation, error ≠ unscoped). — [x] F-39
+      TTL response cache at the FHIR provider seam (config knobs, wiremock
+      expect(1) test; 2026-07-17 — also the safe form of F-10's win: the
+      remote round trips are what re-expansion cost).
 - [ ] F-10 plan-cache for terminology queries (post-expansion keying).
 
 **Wave 4 — background/admin + instrument:**

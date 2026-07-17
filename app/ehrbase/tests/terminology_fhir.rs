@@ -22,6 +22,24 @@ fn provider(base: &str, operation: FhirOperation) -> FhirTerminologyProvider {
         connect_timeout_ms: 500,
         request_timeout_ms: 800,
         oauth2_client: None,
+        // Cache off: these tests assert exact per-call server interactions.
+        cache_ttl_secs: 0,
+        cache_capacity: 0,
+    };
+    FhirTerminologyProvider::new("test", &cfg).expect("build provider")
+}
+
+/// As [`provider`], with the response cache on (the production default).
+fn cached_provider(base: &str, operation: FhirOperation) -> FhirTerminologyProvider {
+    let cfg = FhirProviderConfig {
+        kind: ProviderKind::Fhir,
+        url: base.to_owned(),
+        operation,
+        connect_timeout_ms: 500,
+        request_timeout_ms: 800,
+        oauth2_client: None,
+        cache_ttl_secs: 300,
+        cache_capacity: 1024,
     };
     FhirTerminologyProvider::new("test", &cfg).expect("build provider")
 }
@@ -306,4 +324,49 @@ async fn timeout_is_an_exception() {
         .await
         .expect_err("timeout → exception");
     assert_eq!(err.status, CallStatusType::Exception);
+}
+
+/// With the response cache on (the production default), a repeated operation
+/// costs ONE remote round trip per TTL window — the wiremock mounts with
+/// `expect(1)` and the second identical call is served from the cache,
+/// including the negative (`404` unknown-resource) outcome.
+#[tokio::test]
+async fn repeated_operations_are_served_from_the_cache() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ValueSet/$validate-code"))
+        .and(query_param("url", SURFACE_VS))
+        .and(query_param("code", "B"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "resourceType": "Parameters",
+            "parameter": [{"name": "result", "valueBoolean": true}]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/ValueSet/$expand"))
+        .and(query_param("url", "http://example.org/ValueSet/missing"))
+        .respond_with(ResponseTemplate::new(404))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let p = cached_provider(&server.uri(), FhirOperation::ValidateCode);
+    for _ in 0..2 {
+        let ok = p
+            .value_set_validate(SURFACE_SYS, SURFACE_VS, "B", None)
+            .await
+            .expect("validate");
+        assert!(ok);
+    }
+    for _ in 0..2 {
+        let missing = p
+            .get_value_set("sys", "http://example.org/ValueSet/missing")
+            .await;
+        assert!(
+            missing.is_err(),
+            "unknown value set stays a not-found error"
+        );
+    }
 }

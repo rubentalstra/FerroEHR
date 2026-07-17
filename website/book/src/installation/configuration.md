@@ -388,7 +388,11 @@ extension API.
 `[terminology.external.providers.<name>]` (conventionally `default`): `type`
 (enum{fhir}, `fhir`), `url` (string, required), `operation`
 (enum{validate_code,expand}, `validate_code`), `connect_timeout_ms` (int,
-`2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset).
+`2000`), `request_timeout_ms` (int, `10000`), `oauth2_client` (string, unset),
+`cache_ttl_secs` (int, `300` — TTL of the per-provider response cache; a
+repeated validate/expand/subsumes/lookup within the window is served locally
+instead of one HTTPS round trip per validated code; `0` disables),
+`cache_capacity` (int, `10000` — maximum cached responses per provider).
 
 ## `[multimedia]`
 
