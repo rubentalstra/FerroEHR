@@ -101,10 +101,31 @@ this stream) — designed, promised, and never built.
 | 20 | **Activity log view** (design §7.1/§7A.10) | The CDR's ATNA system log is emit-only today — needs a small CDR-side read surface (admin API, our own extension; no openEHR spec governs it) before the tile can render events; "endpoint absent" stays a first-class rendered state. |
 | 21 | **i18n layer** (design §7A conventions) | Keys-not-literals with a single `en` catalog at v1 — groundwork, not translations. |
 
+### B3. Cabolabs-parity sweep (owner directive 2026-07-18 — every §Appendix-A
+"Adopt" feature lands or carries a written adjudication)
+
+| # | Feature (Appendix A source) | Status |
+|---|---|--------|
+| 22 | **Audit/activity log over REST** (A.4 "Full audit / activity log") | The CDR gains an **admin-only read endpoint** for the ATNA system log (task UI-2e: an optional DB sink for audit events + `GET /admin/system_log` with paging/filtering, admin-authenticated; our own extension — no openEHR spec governs it); the console's activity panel renders it. |
+| 23 | **Directory editing + folder templates** (A.1 "Directory / folders + folder templates") | Console gains directory create/edit (PUT /ehr/{id}/directory — spec-standard) and console-local folder templates (named FOLDER-tree shapes applied on create; our own extension). |
+| 24 | **Usage statistics** (A.4 "Dashboard + usage stats") | Per-template composition counts + repo totals on the dashboard/system panel; CDR-side stats endpoint if the AQL route is too slow (measure first). |
+| 25 | **Runtime configuration view** (A.4 "Runtime configuration") | Read-only, redacted effective-config panel; needs a CDR admin config endpoint (our own extension, secrets never serialized). |
+| — | Query sharing (A.3 `QueryShare`) | **Adjudicated N/A at Stage 1**: stored queries are already CDR-global and the console has no per-user ownership to share between; revisit with Stage-2 RBAC/multi-user. |
+| — | Template activate/deactivate (A.2) | **Adjudicated out** (design §7A.3): ITS-REST has no template state; idea-source only. |
+| — | SNOMED-expression criteria (A.3) | **Deferred** until the CDR's AQL `TERMINOLOGY()` family lands (no open row). |
+| — | Data-value indexing, OPT storage backends, sync/VNA, notifications, commit-log repos, multitenancy/billing (A.1/A.2/A.4) | **CDR-side or Stage-2** per the design §7.3 — not console work. |
+
+Coverage cross-check (Adopt items already landed or in flight): versioned
+compositions browse/audit ✓ · EHR list/show/create (create in flight) ·
+directory browse ✓ · composition viewer ✓ · template manager
+upload/list/inspect ✓ · builder + typed criteria + AND/OR + shapes ✓ ·
+stored queries save/run ✓ + export/loaded-mode (in flight) + delete
+(task UI-2e) · query groups ✓ · cohort/EHR queries (B11) · grouping→chart
+(B12) · raw AQL ✓ · XML+JSON ✓ · dashboard ✓.
+
 Deliberately out of scope (unchanged from the original design §7.3):
-template activate/deactivate (not in ITS-REST), SNOMED-expression criteria
-(needs CDR-side AQL terminology support), GROUP BY/aggregates beyond
-COUNT, proportion denominator, islands mode, multitenancy/accounts UI.
+GROUP BY/aggregates beyond COUNT, proportion denominator, islands mode,
+multitenancy/accounts UI.
 
 ## B2. Image-based E2E (owner directive 2026-07-18 — "the true experience")
 
