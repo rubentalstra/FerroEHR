@@ -198,8 +198,9 @@ impl EhrbaseService {
     /// contract defines only the by-uid CONTRIBUTION GET
     /// (`operations/contribution_get.yaml`); a paged contribution list is not
     /// part of the openEHR REST API. `committer` is the audit committer
-    /// `PARTY_PROXY`'s `name` (the same PARTY the by-uid GET returns), `change_type`
-    /// its stored `audit_change_type` code. `offset`/`fetch` are already clamped
+    /// `PARTY_PROXY`'s `name` — the name OF the party the by-uid GET returns in
+    /// full (a summary string, not the same rendering); `change_type` is the
+    /// stored `audit.change_type` code. `offset`/`fetch` are already clamped
     /// by the protocol adapter (defaults 0/20, `fetch` capped at 100).
     ///
     /// # Errors

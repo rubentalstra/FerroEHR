@@ -5,14 +5,14 @@
 Upload ADL 1.4 operational templates (the CDR's validation diagnostics
 surface verbatim on rejection) and browse what is installed.
 
-![Templates](img/templates.png)
+![Templates](img/templates/templates.png)
 
 The template detail screen shows the **path catalog** — the template's tree
 with each node's archetype path, RM type, and constrained value sets — plus
 the raw OPT XML and a CDR-generated example composition in any supported
 format.
 
-![Template detail](img/template-detail.png)
+![Template detail](img/templates/template-detail.png)
 
 The list also shows each template's root **archetype id**, and the detail
 screen opens with an identity card — concept, version, default language,
@@ -25,12 +25,12 @@ Find an EHR by id (or browse the most recent), then work through its tabs:
 EHR status, the folder directory, the composition list, and contribution
 lookup.
 
-![EHRs](img/ehrs.png)
+![EHRs](img/ehrs/ehrs.png)
 
 The EHR detail screen resolves the EHR status (queryable / modifiable) and
 lists the EHR's compositions with their template, time, and version count.
 
-![EHR detail](img/ehr-detail.png)
+![EHR detail](img/ehrs/ehr-detail.png)
 
 ### Creating EHRs and committing compositions
 
@@ -49,7 +49,7 @@ STRUCTURED — switch freely; the CDR converts. The version dropdown walks
 the revision history, and each version's audit (committer, time, change
 type) is shown alongside.
 
-![Composition viewer](img/composition-viewer.png)
+![Composition viewer](img/ehrs/composition-viewer.png)
 
 **Edit as new version** opens the currently displayed canonical JSON in
 an editor and commits it as the next version (`If-Match` on the latest
@@ -59,18 +59,18 @@ A version **timeline strip** walks the revision history at a glance, and
 the **At time** picker resolves whichever version was current at a chosen
 moment (`version_at_time`).
 
-![Composition editor](img/composition-editor.png)
+![Composition editor](img/ehrs/composition-editor.png)
 
 The EHR detail's contributions tab lists the EHR's contributions — id,
 commit time, committer, change type — with the by-uid lookup kept
 underneath.
 
-![Contributions](img/ehr-detail-contributions.png)
+![Contributions](img/ehrs/ehr-detail-contributions.png)
 
 The commit form accepts canonical JSON, canonical XML, or FLAT:
 
-![Commit composition](img/composition-commit.png)
+![Commit composition](img/ehrs/composition-commit.png)
 
 The EHR status tab renders the full `EHR_STATUS` document:
 
-![EHR status](img/ehr-detail-status.png)
+![EHR status](img/ehrs/ehr-detail-status.png)

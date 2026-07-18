@@ -128,6 +128,9 @@ pub async fn list_contribution_summaries(
         "SELECT c.id, a.time_committed, a.change_type, a.committer #>> '{name}' AS committer_name \
          FROM contribution c JOIN audit a ON a.id = c.audit_id \
          WHERE c.ehr_id = $1 \
+         -- newest-first: this extension is an activity feed (the sibling SM
+         -- list_contributions stays oldest-first; a deliberate divergence for
+         -- a UI-facing summary — our own extension, no openEHR spec governs it)
          ORDER BY a.time_committed DESC, c.id DESC \
          OFFSET $2 LIMIT $3",
     )
