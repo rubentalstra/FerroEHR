@@ -38,6 +38,8 @@
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
+//! - [`fhir`] — the FHIR R4 `AuditEvent` rendering per the IHE BALP content
+//!   profiles (the modern half of the dual format).
 //! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
 //! - [`sender`] — the bounded-mpsc sender + background drain + fail modes.
 //! - [`config`] — the `[atna]` section struct ([`config::AuditConfig`]).
@@ -45,6 +47,7 @@
 pub mod codes;
 pub mod config;
 pub mod event;
+pub mod fhir;
 pub mod message;
 pub mod sender;
 
