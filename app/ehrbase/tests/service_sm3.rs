@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end SM-3 tests against a real PostgreSQL 18 (testcontainers): the
+//! End-to-end SM-3 tests against a real PostgreSQL 18 (shared testkit harness): the
 //! `PARTY_RELATIONSHIP` CRUD + versioning + `VERSIONED_OBJECT` + revision
 //! history + error cases (driven through the `PartyRelationshipService` seam),
 //! and the EHR Index N:M / duplicate-management lifecycle (through the
@@ -18,62 +18,15 @@
 )]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::ehr_index::types::{
     LocationDesc, ResourceInstanceType, ResourceStatus, SubjectRef,
 };
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::version_update::UpdateVersion;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        // Runs every migration including 0007 (party relationship + ehr_index).
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn ovid(v: &Value) -> &str {
@@ -88,7 +41,7 @@ fn vo_uuid(v: &Value) -> String {
 /// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
 /// probes MUST anchor their reference instant on this server clock — the same
 /// clock that stamps `vo_version.sys_period` — never on the test-process wall
-/// clock: a client/DB clock skew under parallel-load testcontainers would race
+/// clock: a client/DB clock skew under parallel test load would race
 /// the at-time read against the version validity intervals.
 async fn db_now(pool: &PgPool) -> jiff::Timestamp {
     sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
@@ -154,8 +107,8 @@ fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
 /// (`i_party_relationship.adoc`).
 #[tokio::test]
 async fn relationship_sm_calls_round_trip() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_sm_calls").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let src = "11111111-1111-4111-8111-111111111111";
     let tgt = "22222222-2222-4222-8222-222222222222";
@@ -225,8 +178,8 @@ async fn relationship_sm_calls_round_trip() {
 
 #[tokio::test]
 async fn relationship_lifecycle_end_to_end() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sm3_rel_life").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     let src = "11111111-1111-4111-8111-111111111111";
@@ -354,8 +307,8 @@ async fn relationship_lifecycle_end_to_end() {
 
 #[tokio::test]
 async fn relationship_error_cases() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_err").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // unknown id → 404
     let unknown = svc
@@ -410,8 +363,8 @@ async fn relationship_error_cases() {
 
 #[tokio::test]
 async fn relationship_via_demographic_contribution() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sm3_rel_contrib").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // A demographic CONTRIBUTION accepts a PARTY_RELATIONSHIP version (the
     // ehr-less scope now covers relationships as well as party roots).
@@ -449,8 +402,8 @@ async fn relationship_via_demographic_contribution() {
 
 #[tokio::test]
 async fn ehr_index_add_defaults_primary_and_reads() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sm3_index_add").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr = seed_ehr(&pool).await;
     let subject = SubjectRef::person("PID-1", "mpi");
@@ -479,8 +432,8 @@ async fn ehr_index_add_defaults_primary_and_reads() {
 
 #[tokio::test]
 async fn ehr_index_n_to_m() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sm3_index_nm").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     let ehr_a = seed_ehr(&pool).await;
@@ -522,8 +475,8 @@ async fn ehr_index_n_to_m() {
 
 #[tokio::test]
 async fn ehr_index_update_status_loc_and_remove() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sm3_index_upd").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr = seed_ehr(&pool).await;
     let subject = SubjectRef::person("PID-9", "mpi");
@@ -592,8 +545,8 @@ async fn ehr_index_update_status_loc_and_remove() {
 
 #[tokio::test]
 async fn ehr_index_remove_subject_wide_and_unknown_ehr() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sm3_index_wide").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr_a = seed_ehr(&pool).await;
     let ehr_b = seed_ehr(&pool).await;

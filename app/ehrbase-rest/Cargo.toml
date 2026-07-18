@@ -82,6 +82,7 @@ utoipa-axum = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
 
 [dev-dependencies]
+testkit = { path = "../../tools/testkit" }
 sqlx.workspace = true
 testcontainers.workspace = true
 testcontainers-modules.workspace = true

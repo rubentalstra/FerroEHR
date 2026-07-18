@@ -1,0 +1,32 @@
+[package]
+name = "testkit"
+version.workspace = true
+description = "Shared test-database harness: one PostgreSQL 18 server + template-database cloning for every DB-backed test"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+# The platform library supplies the pool builder + the embedded migrators
+# (`db::connect`, `db::run_migrations`, `db::migration_fingerprint`), so the
+# template database is migrated by exactly the code the binary ships. The
+# app crates' own tests consume `testkit` as a dev-dependency — a
+# dev-dependency cycle, which cargo explicitly permits (dev-dependencies are
+# not part of the release dependency graph; see the Cargo book, "Specifying
+# Dependencies § Development dependencies").
+ehrbase = { path = "../../app/ehrbase" }
+
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+# `reusable-containers` (experimental upstream) keeps ONE named PG container
+# alive across nextest's process-per-test model and across whole runs.
+testcontainers = { workspace = true, features = ["reusable-containers"] }
+testcontainers-modules = { workspace = true }
+
+[lints]
+workspace = true

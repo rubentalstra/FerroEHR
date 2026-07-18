@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end AQL `TERMINOLOGY('expand', …)` tests (B4 stage (a)) against a real
-//! PostgreSQL 18 (testcontainers): seed COMPOSITIONs with a coded ELEMENT leaf,
+//! PostgreSQL 18 (shared testkit harness): seed COMPOSITIONs with a coded ELEMENT leaf,
 //! then run `matches TERMINOLOGY('expand', …)` / `matches {…, TERMINOLOGY(…)}`
 //! through the `QueryService` seam and assert the expansion is merged into the
 //! generated `IN (…)` predicate.
@@ -28,17 +28,12 @@
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::query::request::AqlQueryRequest;
 use ehrbase::service::status::CallStatusType;
@@ -52,48 +47,6 @@ const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// `.../value/defining_code/code_string` — the master03 example path).
 const CODE_PATH: &str =
     "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/defining_code/code_string";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// An `openehr` terminology code (for the audit change type / lifecycle state).
 fn term(code: &str) -> TerminologyCode {
@@ -217,8 +170,8 @@ fn names(result: &Value) -> Vec<String> {
 
 #[tokio::test]
 async fn terminology_expand_bundle_merges_group_codes() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_bundle").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = create_ehr(&svc).await;
 
     // `249` (creation) is in the `audit_change_type` group; `433` (event) is a
@@ -251,8 +204,8 @@ async fn terminology_expand_bundle_merges_group_codes() {
 
 #[tokio::test]
 async fn terminology_expand_unknown_service_is_bad_request() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_unknown_svc").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "x", "openehr", "249").await;
 
@@ -272,8 +225,8 @@ async fn terminology_expand_unknown_service_is_bad_request() {
 
 #[tokio::test]
 async fn terminology_expand_unknown_value_set_is_bad_request() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_unknown_vs").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "x", "openehr", "249").await;
 
@@ -332,8 +285,8 @@ fn fhir_provider(base: &str) -> FhirTerminologyProvider {
 #[tokio::test]
 async fn terminology_expand_fhir_merges_expansion_codes() {
     let server = fhir_expand_server().await;
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_fhir").await)
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool())
         .with_external_terminology(Arc::new(fhir_provider(&server.uri())));
     let ehr = create_ehr(&svc).await;
 
@@ -361,8 +314,8 @@ async fn terminology_expand_fhir_merges_expansion_codes() {
 /// governs the cache; this asserts the semantics-preserving bypass.
 #[tokio::test]
 async fn terminology_query_is_never_cached() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_term_no_cache").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = create_ehr(&svc).await;
     create_coded(&svc, &ehr, "in-group", "openehr", "249").await;
 

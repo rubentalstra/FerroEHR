@@ -20,7 +20,7 @@ const BASE: &str = "/ehrbase/rest/openehr/v1";
 
 #[tokio::test]
 async fn ehr_get_unknown_is_404_and_create_roundtrips() {
-    let (_pg, app) = common::test_router("fixture_smoke").await;
+    let (_pg, app) = common::test_router().await;
 
     let resp = app
         .clone()

@@ -92,7 +92,7 @@ fn extensions_doc_is_non_empty() {
 
 #[tokio::test]
 async fn every_documented_path_routes() {
-    let app = full_app("ext_openapi_routes").await;
+    let app = full_app().await;
 
     // Warm the HTTP metrics so `/management/metrics/{name}` has a real metric to
     // resolve (an unknown metric legitimately 404s — that would be a false
@@ -148,7 +148,7 @@ async fn every_documented_path_routes() {
 /// a fully-enabled server.
 #[tokio::test]
 async fn every_family_document_is_non_empty() {
-    let app = full_app("ext_openapi_family").await;
+    let app = full_app().await;
     // The family slugs offered by `FAMILIES` in `extensions::openapi` (private
     // there; the selector URLs are the stable public contract).
     for slug in [
@@ -194,7 +194,7 @@ async fn every_family_document_is_non_empty() {
 /// pure serving-mechanics change, no content change.
 #[tokio::test]
 async fn served_openapi_json_equals_fresh_document() {
-    let app = full_app("ext_openapi_served").await;
+    let app = full_app().await;
     let resp = app
         .clone()
         .oneshot(get("/ehrbase/rest/api-docs/openapi.json"))
@@ -313,7 +313,7 @@ fn app_config() -> AppConfig {
 
 /// A server with auth off and every extension surface enabled, so every
 /// documented path is mounted.
-async fn full_app(name: &str) -> Router {
+async fn full_app() -> Router {
     let config = app_config();
     let public = EndpointLevels {
         health: AccessLevel::Public,
@@ -336,6 +336,6 @@ async fn full_app(name: &str) -> Router {
         build_info: BuildInfo::current(),
         ..Observability::default()
     };
-    let (_pg, service) = common::test_service(name).await;
+    let (_pg, service) = common::test_service().await;
     ehrbase_rest::build_full(config, service, None, observability).expect("build")
 }

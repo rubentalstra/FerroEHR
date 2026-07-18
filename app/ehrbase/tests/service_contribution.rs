@@ -7,7 +7,7 @@
 //! End-to-end tests for ATTESTATION support in the CONTRIBUTION path
 //! (RM common `master06-change_control_package.adoc` §Change Control /
 //! §Attestation; ITS-REST `UpdateVersion.yaml` + `UpdateAttestation.yaml`)
-//! against a real `PostgreSQL` 18 (testcontainers).
+//! against a real `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Covers: attestations committed with a NEW version
 //! (`UPDATE_VERSION.attestations`, "Signing content at committal"); a later
@@ -18,7 +18,6 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
@@ -28,52 +27,6 @@ use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// An `openehr` terminology code (audit change type / lifecycle state).
 fn term(code: &str) -> TerminologyCode {
@@ -197,8 +150,8 @@ fn vo_of(ovid: &str) -> String {
 
 #[tokio::test]
 async fn accompanying_attestation_then_standalone_666_attestation() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("attestation_flow").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
 
     // (1) A CONTRIBUTION that creates a COMPOSITION carrying an attestation
@@ -298,8 +251,8 @@ async fn accompanying_attestation_then_standalone_666_attestation() {
 
 #[tokio::test]
 async fn attestation_error_cases() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("attestation_errors").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
 
     // A real composition to attest.
@@ -469,8 +422,8 @@ fn ehr_status(queryable: bool) -> Value {
 /// `ehr_summary.adoc`.
 #[tokio::test]
 async fn contribution_listing_count_and_ehr_summary() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribution_listing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Unknown EHR → NotFound (SM ehr_does_not_exist) for every native call.
     let ghost = "00000000-0000-7000-8000-0000000000ff";
@@ -606,8 +559,8 @@ async fn contribution_listing_count_and_ehr_summary() {
 /// committer / `change_type`), pagination, and the unknown-EHR 404.
 #[tokio::test]
 async fn ehr_contribution_list_page_extension() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribution_list_page").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Unknown EHR → NotFound (404), like the sibling EHR reads.
     let ghost = "00000000-0000-7000-8000-0000000000ee";
@@ -710,8 +663,8 @@ async fn contribution_honors_the_five_lifecycle_states() {
     // lifecycle_state on create/modify is stored + served faithfully for every
     // normative code; only the delete path is forced to 523. 553/800/801 are
     // NOT deletions — the version is readable with its data.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("lifecycle_states").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
 
     // (1) Create v1 as incomplete (553).
@@ -884,8 +837,8 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
     // system_id/committer "should be copied into the corresponding attributes
     // of the commit_audit of each VERSION" when the version item omits them; a
     // version item that supplies its own values keeps them verbatim.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("audit_copy").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
 
     let created = svc
@@ -953,8 +906,8 @@ async fn version_commit_audit_defaults_from_the_contribution_audit() {
 /// of `OBJECT_REF`s; the unresolved form is unchanged.
 #[tokio::test]
 async fn contribution_resolve_refs() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribution_resolve").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1005,8 +958,8 @@ async fn contribution_resolve_refs() {
 /// (ITS-REST `contribution_create`; RM common master06 §CONTRIBUTION `uid`).
 #[tokio::test]
 async fn contribution_supplied_uid() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribution_uid").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1050,8 +1003,8 @@ async fn contribution_supplied_uid() {
 /// §EHR Active Status.
 #[tokio::test]
 async fn create_composition_gate_error_surface_survives_the_writability_fold() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("writability_fold").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // (1) Unknown EHR → 404 VersionedObjectDoesNotExist (the existence signal of
     // the folded query), never a conflict and never a driver error.
@@ -1116,8 +1069,8 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
 /// with the same lineage-pair query the admin archive load audits with.
 #[tokio::test]
 async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("no_overlap_invariant").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     let ehr_id = create_ehr(&svc).await;

@@ -10,66 +10,19 @@
 //! events emitted through the sender land in the local store, and the outbox
 //! worker POSTs each stored FHIR R4 `AuditEvent` to the ARR
 //! (`{url}/AuditEvent`, `application/fhir+json`) and stamps
-//! `delivered_fhir_feed_at` — a real `PostgreSQL` 18 (testcontainers) plus a
+//! `delivered_fhir_feed_at` — a real `PostgreSQL` 18 (shared testkit harness) plus a
 //! `wiremock` ARR.
 
 use std::time::Duration;
 
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::system_log::config::{AuditConfig, FhirFeedConfig, StoreConfig};
 use ehrbase::system_log::event::{
     AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
 };
 use ehrbase::system_log::sender;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn config(arr_url: &str) -> AuditConfig {
     AuditConfig {
@@ -119,8 +72,8 @@ where
 
 #[tokio::test]
 async fn stored_records_are_fed_to_the_fhir_arr_and_stamped() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("audit_feed_ok").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     let arr = MockServer::start().await;
     Mock::given(method("POST"))
@@ -162,8 +115,8 @@ async fn stored_records_are_fed_to_the_fhir_arr_and_stamped() {
 
 #[tokio::test]
 async fn arr_outage_leaves_rows_pending_then_delivers_on_recovery() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("audit_feed_outage").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     let arr = MockServer::start().await;
     // Outage first: the ARR answers 503; the row must stay pending (durable).

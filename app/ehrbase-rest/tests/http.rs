@@ -86,8 +86,8 @@ fn config(enabled: bool) -> AppConfig {
 }
 
 /// Build the router over a fresh real service (unique database per test).
-async fn app(enabled: bool, db: &str) -> (common::Pg, Router) {
-    let (pg, service) = common::test_service(db).await;
+async fn app(enabled: bool) -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
     (pg, common::router_with(config(enabled), service))
 }
 
@@ -168,7 +168,7 @@ fn get(path: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn unauthenticated_request_is_401_with_challenge() {
-    let (_pg, app) = app(true, "http_unauth_401").await;
+    let (_pg, app) = app(true).await;
     let (status, headers, body) = send(app, get(&format!("{BASE}/ehr/abc"))).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     assert!(headers.contains_key(header::WWW_AUTHENTICATE));
@@ -183,7 +183,7 @@ async fn unauthenticated_request_is_401_with_challenge() {
 
 #[tokio::test]
 async fn status_endpoint_is_public() {
-    let (_pg, app) = app(true, "http_status_public").await;
+    let (_pg, app) = app(true).await;
     let (status, _h, body) = send(app, get("/ehrbase/rest/status")).await;
     assert_eq!(status, StatusCode::OK);
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
@@ -195,7 +195,7 @@ async fn status_endpoint_is_public() {
 
 #[tokio::test]
 async fn health_endpoint_is_public() {
-    let (_pg, app) = app(true, "http_health_public").await;
+    let (_pg, app) = app(true).await;
     let (status, _h, body) = send(app, get("/health")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(body, "OK");
@@ -206,7 +206,7 @@ async fn valid_basic_reaches_handler() {
     // RE-TARGET: the old Mock backend answered a blanket `501`; the real EHR
     // service answers `404` for a syntactically valid but non-existent EHR —
     // which still proves the authenticated request reached the real handler.
-    let (_pg, app) = app(true, "http_basic_reaches").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/ehr/{EHR}"))
@@ -219,7 +219,7 @@ async fn valid_basic_reaches_handler() {
 
 #[tokio::test]
 async fn wrong_basic_password_is_401() {
-    let (_pg, app) = app(true, "http_wrong_basic_401").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/ehr/abc"))
@@ -234,7 +234,7 @@ async fn wrong_basic_password_is_401() {
 async fn valid_bearer_reaches_handler() {
     // RE-TARGET: was a Mock `501`; the real handler answers `404` for the
     // non-existent EHR (the bearer token reached the handler).
-    let (_pg, app) = app(true, "http_bearer_reaches").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/ehr/{EHR}"))
@@ -253,7 +253,7 @@ async fn admin_route_reachable_without_rbac() {
     // admin delete physically removes a real EHR → `204`, proving the route is
     // reachable and not RBAC-gated. The role-based admin gate is exercised
     // end-to-end in `rbac_e2e`.
-    let (_pg, app) = app(true, "http_admin_reachable").await;
+    let (_pg, app) = app(true).await;
 
     // Create a real EHR (authenticated), then physically delete it via admin.
     let create = Request::builder()
@@ -287,7 +287,7 @@ async fn json_composition_body_is_accepted_and_reaches_handler() {
     // RE-TARGET: was a Mock `501`. The JSON body is decoded and the handler
     // reached; the EHR does not exist so the real service answers `404` (not a
     // 400/415 negotiation error — which is what "reaches the handler" asserts).
-    let (_pg, app) = app(true, "http_json_comp_reaches").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr/{EHR}/composition"))
@@ -301,7 +301,7 @@ async fn json_composition_body_is_accepted_and_reaches_handler() {
 
 #[tokio::test]
 async fn malformed_xml_composition_body_is_400() {
-    let (_pg, app) = app(true, "http_bad_xml_400").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr/{EHR}/composition"))
@@ -317,7 +317,7 @@ async fn malformed_xml_composition_body_is_400() {
 
 #[tokio::test]
 async fn unknown_route_is_404() {
-    let (_pg, app) = app(true, "http_unknown_route_404").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/nonexistent"))
@@ -332,7 +332,7 @@ async fn unknown_route_is_404() {
 async fn auth_disabled_lets_requests_through() {
     // RE-TARGET: was a Mock `501`; with auth disabled the request reaches the
     // real handler, which answers `404` for the non-existent EHR.
-    let (_pg, app) = app(false, "http_auth_disabled").await;
+    let (_pg, app) = app(false).await;
     let (status, _h, _b) = send(app, get(&format!("{BASE}/ehr/{EHR}"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
@@ -342,7 +342,7 @@ async fn auth_disabled_lets_requests_through() {
 
 #[tokio::test]
 async fn query_group_is_mounted_and_authenticated() {
-    let (_pg, app) = app(true, "http_query_mounted").await;
+    let (_pg, app) = app(true).await;
     let (status, _h, _b) = send(app.clone(), get(&format!("{BASE}/query/aql?q=SELECT%20c"))).await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
 
@@ -363,7 +363,7 @@ async fn query_group_is_mounted_and_authenticated() {
 async fn demographic_group_is_mounted() {
     // RE-TARGET: was a Mock `501`; the real demographic service answers `404`
     // for a non-existent agent (the request reached the real handler).
-    let (_pg, app) = app(true, "http_demographic_mounted").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/demographic/agent/{EHR}"))
@@ -406,7 +406,7 @@ async fn implemented_groups_are_reachable() {
             StatusCode::NOT_FOUND,
         ),
     ];
-    let (_pg, app) = app(true, "http_groups_reachable").await;
+    let (_pg, app) = app(true).await;
     for (method, uri, scope, body, expected) in cases {
         let mut builder = Request::builder()
             .method(method)
@@ -430,7 +430,7 @@ async fn definition_group_is_mounted_with_dotted_route() {
     // Exercises the dotted path segment (`adl1.4`) and dotted operation id.
     // RE-TARGET: was a Mock `501`; the real definition service lists the stored
     // OPT 1.4 templates → `200` with an empty JSON array on a fresh database.
-    let (_pg, app) = app(true, "http_definition_dotted").await;
+    let (_pg, app) = app(true).await;
     let req = Request::builder()
         .method("GET")
         .uri(format!("{BASE}/definition/template/adl1.4"))
@@ -450,7 +450,7 @@ async fn definition_group_is_mounted_with_dotted_route() {
 /// supplies).
 #[tokio::test]
 async fn authenticated_write_attributes_the_default_committer() {
-    let (_pg, app) = app(true, "http_committer_attribution").await;
+    let (_pg, app) = app(true).await;
 
     // Create an EHR as `alice` (Basic), no committal headers.
     let req = Request::builder()

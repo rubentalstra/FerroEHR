@@ -111,8 +111,8 @@ async fn seed(
 }
 
 /// The app + store over a fresh DB; `with_store` controls the ITI-81 gate.
-async fn app(name: &str, with_store: bool, rbac: bool) -> (common::Pg, Router, AuditStore) {
-    let (pg, pool) = common::migrated_pool(name).await;
+async fn app(with_store: bool, rbac: bool) -> (testkit::TestDb, Router, AuditStore) {
+    let (pg, pool) = common::migrated_pool().await;
     let store = AuditStore::new(pool.clone());
     let mut svc = EhrbaseService::new(pool);
     if with_store {
@@ -146,7 +146,7 @@ async fn body_json(resp: axum::response::Response) -> Value {
 
 #[tokio::test]
 async fn searchset_bundle_with_filters_and_paging() {
-    let (_pg, app, store) = app("iti81_search", true, false).await;
+    let (_pg, app, store) = app(true, false).await;
     seed(
         &store,
         "2026-07-10T08:00:00Z",
@@ -244,7 +244,7 @@ async fn searchset_bundle_with_filters_and_paging() {
 
 #[tokio::test]
 async fn disabled_store_answers_404() {
-    let (_pg, app, _store) = app("iti81_disabled", false, false).await;
+    let (_pg, app, _store) = app(false, false).await;
     let resp = app
         .oneshot(get("/fhir/r4/AuditEvent", &basic("root")))
         .await
@@ -256,7 +256,7 @@ async fn disabled_store_answers_404() {
 
 #[tokio::test]
 async fn rbac_gates_the_audit_surface_to_admins() {
-    let (_pg, app, store) = app("iti81_rbac", true, true).await;
+    let (_pg, app, store) = app(true, true).await;
     seed(
         &store,
         "2026-07-10T08:00:00Z",

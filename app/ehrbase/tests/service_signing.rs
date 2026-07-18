@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end tests for version signing (`VERSION.signature`, RM common
 //! §"Digital Signature"; design `docs/design/version-signing.md` §6.3–6.4)
-//! against a real `PostgreSQL` 18 (testcontainers).
+//! against a real `PostgreSQL` 18 (shared testkit harness).
 //!
 //! The strongest assertion (§6.3): the digest recomputes from the **served**
 //! `ORIGINAL_VERSION`'s `canonical_form` — proving commit-time and read-time
@@ -18,7 +18,6 @@
 
 use std::sync::Arc;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
@@ -30,52 +29,7 @@ use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
+use sqlx::{PgPool, Row};
 
 fn uid(v: &Value) -> &str {
     v["uid"]["value"].as_str().expect("uid.value")
@@ -205,8 +159,8 @@ async fn create_ehr(svc: &EhrbaseService) -> String {
 
 #[tokio::test]
 async fn composition_version_is_signed_and_digest_recomputes_from_served_version() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("signing_comp").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -239,8 +193,8 @@ async fn composition_version_is_signed_and_digest_recomputes_from_served_version
 
 #[tokio::test]
 async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("signing_status").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -300,8 +254,8 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
 
 #[tokio::test]
 async fn contribution_versions_are_signed() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("signing_contrib").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -337,8 +291,8 @@ async fn client_supplied_signature_is_stored_verbatim() {
     // stored verbatim, never re-signed (design §3.3).
     const CLIENT_SIG: &str =
         "-----BEGIN PGP SIGNATURE-----\nauthored-elsewhere\n-----END PGP SIGNATURE-----";
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("signing_client").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
 
@@ -374,8 +328,8 @@ async fn client_supplied_signature_is_stored_verbatim() {
 
 #[tokio::test]
 async fn strict_verify_on_read_rejects_a_tampered_row() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("signing_strict").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     // A strict-verify service: a signature that does not match the served
     // canonical form is a 5xx integrity failure (design §3.5).
     let config = SigningConfig {
@@ -493,8 +447,8 @@ fn signing_disabled(pool: PgPool) -> EhrbaseService {
 
 #[tokio::test]
 async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("signing_off_fold").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = signing_disabled(pool.clone());
     let ehr_id = create_ehr(&svc).await;
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -616,8 +570,8 @@ async fn creating_system_id_and_signature_survive_a_system_id_change() {
     // storage, never from the live service config. A later `with_system_id`
     // change must not mutate a historical version's uid nor invalidate the
     // signature that was computed over it.
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("signing_csid").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     // Commit a composition under system id "sys-origin".
     let svc_a = EhrbaseService::new(pool.clone()).with_system_id("sys-origin");

@@ -257,6 +257,38 @@ const BOOTSTRAP: &[&str] = &[
     "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
 ];
 
+/// A stable fingerprint of the complete embedded migration state: the
+/// bootstrap statements plus every migrator's (version, checksum) sequence,
+/// in application order. Two builds with identical migrations produce the
+/// same value; any migration change produces a new one. Test infrastructure
+/// keys its migrated template databases on this (no openEHR spec governs
+/// test infrastructure — our own design).
+#[must_use]
+pub fn migration_fingerprint() -> String {
+    // FNV-1a over the bootstrap text + each migration's version/checksum —
+    // collision-resistant enough for a cache key with a handful of live
+    // values, with no hashing dependency.
+    const OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+    let mut hash = OFFSET;
+    let mut eat = |bytes: &[u8]| {
+        for &b in bytes {
+            hash ^= u64::from(b);
+            hash = hash.wrapping_mul(PRIME);
+        }
+    };
+    for statement in BOOTSTRAP {
+        eat(statement.as_bytes());
+    }
+    for migrator in [&EXT_MIGRATOR, &EHR_MIGRATOR, &AUDIT_MIGRATOR] {
+        for migration in migrator.iter() {
+            eat(&migration.version.to_le_bytes());
+            eat(&migration.checksum);
+        }
+    }
+    format!("{hash:016x}")
+}
+
 /// Bootstrap schemas/extensions and apply the migration sets, `ext` before
 /// `ehr`.
 ///

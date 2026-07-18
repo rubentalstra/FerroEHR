@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the SM-6 Subject Proxy Service
 //! (`I_SUBJECT_PROXY_SERVICE` + `I_DATA_BINDING`) against a real `PostgreSQL` 18
-//! (testcontainers).
+//! (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/openehr_platform/master10-subject_proxy_service.adoc`
 //! and its `UML/classes/*.adoc`; design
@@ -20,14 +20,10 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 
 use std::sync::Arc;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::CallStatusType;
 use ehrbase::service::subject_proxy::config::{SpFhirSystem, SubjectProxyConfig};
@@ -42,48 +38,6 @@ use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 // ── committed-data helpers (mirror service_aql.rs) ───────────────────────────
 
@@ -178,8 +132,8 @@ fn variable(name: &str, frame_id: &str) -> SubjectVariable {
 /// then pull the variable through the openEHR frame (AQL via the Query service).
 #[tokio::test]
 async fn subject_proxy_pulls_variable_through_openehr_frame() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sps_openehr_frame").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Committed data: an EHR with one COMPOSITION named "vitals".
     let ehr = svc.create_ehr(None).await.expect("ehr");
@@ -236,8 +190,8 @@ async fn subject_proxy_pulls_variable_through_openehr_frame() {
 /// `remove_application` drops it (with `has_application` gating).
 #[tokio::test]
 async fn subject_proxy_application_data_set_round_trip() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sps_data_set").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let subject = ehr.to_string();
@@ -320,8 +274,8 @@ async fn subject_proxy_application_data_set_round_trip() {
 /// `NotImplemented` (the "FHIR/HL7v2 frame seams stubbed as typed rejections").
 #[tokio::test]
 async fn subject_proxy_fhir_frame_is_typed_rejection() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sps_fhir_stub").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     svc.register_binding(EnvBinding {
         env_id: "prod".to_owned(),
@@ -363,8 +317,8 @@ async fn subject_proxy_fhir_frame_is_typed_rejection() {
 /// (`not has_binding`); and `reset()` returns the service to virgin state.
 #[tokio::test]
 async fn subject_proxy_preconditions_and_reset() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("sps_preconditions").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Unknown subject: add_subject_variable / get_variable both reject.
     let err = svc
@@ -492,8 +446,8 @@ async fn subject_proxy_fhir_frame_extracts_via_json_pointer() {
         .mount(&server)
         .await;
 
-    let pg = Pg::start().await;
-    let svc = service_with_fhir(pg.migrated_pool("sps_fhir_ok").await, "pas", &server.uri());
+    let db = testkit::db().await.expect("testkit database");
+    let svc = service_with_fhir(db.pool(), "pas", &server.uri());
 
     svc.register_binding(EnvBinding {
         env_id: "prod".to_owned(),
@@ -534,13 +488,9 @@ async fn subject_proxy_fhir_frame_extracts_via_json_pointer() {
 #[tokio::test]
 async fn subject_proxy_fhir_unknown_system_is_typed_rejection() {
     let server = MockServer::start().await;
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     // Only "pas" is configured; the frame targets "other".
-    let svc = service_with_fhir(
-        pg.migrated_pool("sps_fhir_unknown").await,
-        "pas",
-        &server.uri(),
-    );
+    let svc = service_with_fhir(db.pool(), "pas", &server.uri());
     svc.register_binding(EnvBinding {
         env_id: "prod".to_owned(),
         description: None,
@@ -578,12 +528,8 @@ async fn subject_proxy_fhir_500_runs_fallback() {
         .mount(&server)
         .await;
 
-    let pg = Pg::start().await;
-    let svc = service_with_fhir(
-        pg.migrated_pool("sps_fhir_fallback").await,
-        "pas",
-        &server.uri(),
-    );
+    let db = testkit::db().await.expect("testkit database");
+    let svc = service_with_fhir(db.pool(), "pas", &server.uri());
 
     let frame = DataFrame {
         id: "fhir::with_fallback".to_owned(),

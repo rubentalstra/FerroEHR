@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! E2 multi-tenancy isolation integration tests, against a real
-//! `PostgreSQL` 18 via testcontainers.
+//! `PostgreSQL` 18 via the shared testkit harness.
 //!
 //! Proves the engine-enforced tenant isolation the tenancy extension specifies:
 //!   * RLS is ENABLED **and** FORCED on every scoping table (catalog assertion);
@@ -22,18 +22,13 @@
 //! login role that is a member of `ehrbase_app` — which is exactly how a
 //! production deployment runs (never as superuser).
 //!
-//! Requires Docker. The container is dropped when the test finishes.
+//! Requires Docker (the shared testkit `PostgreSQL` server).
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use ehrbase::db::{self, DbConfig};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::{AssertSqlSafe, Connection, PgConnection, Row};
 use uuid::Uuid;
-
-const PG_TAG: &str = "18";
 
 /// Every table the tenancy extension puts under tenant scope + RLS FORCE.
 const SCOPED_TABLES: &[&str] = &[
@@ -57,72 +52,30 @@ const SCOPED_TABLES: &[&str] = &[
     "fhir_mapping",
 ];
 
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
+/// Rewrite the userinfo of a testkit clone DSN so a test can connect to the
+/// same database as a different login role (scheme/host/port/database
+/// preserved) — the RLS tests must connect as a non-superuser role rather than
+/// the harness's owner role.
+fn with_role(base_url: &str, user: &str, password: &str) -> String {
+    let (scheme, rest) = base_url.split_once("://").expect("dsn scheme");
+    let host_and_path = rest.split_once('@').map_or(rest, |(_, tail)| tail);
+    format!("{scheme}://{user}:{password}@{host_and_path}")
 }
 
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag(PG_TAG)
-            .start()
-            .await
-            .expect("start postgres:18 container (is Docker running?)");
-        let host = container
-            .get_host()
-            .await
-            .expect("container host")
-            .to_string();
-        let port = container
-            .get_host_port_ipv4(5432)
-            .await
-            .expect("mapped 5432");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin_url = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin_url)
-            .await
-            .expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create database");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrations apply");
-        pool
-    }
-
-    /// A fresh connection as the non-superuser `rls_tester` login role (created
-    /// by the test), with the application search path — so RLS is in force.
-    async fn tester_conn(&self, db: &str) -> PgConnection {
-        let url = format!(
-            "postgres://rls_tester:testpw@{}:{}/{db}",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&url)
-            .await
-            .expect("rls_tester connect");
-        sqlx::query("SET search_path TO ehr, ext, public")
-            .execute(&mut conn)
-            .await
-            .expect("search_path");
-        conn
-    }
+/// A fresh connection as a non-superuser login role (created by the test),
+/// with the application search path — so RLS is in force. Roles are
+/// cluster-global on the shared testkit server, so each test derives its
+/// role name from its clone's database name (`<clone>_tester` — unique per
+/// test, reaped by the testkit sweep).
+async fn tester_conn(base_url: &str, role: &str) -> PgConnection {
+    let mut conn = PgConnection::connect(&with_role(base_url, role, "testpw"))
+        .await
+        .expect("tester role connect");
+    sqlx::query("SET search_path TO ehr, ext, public")
+        .execute(&mut conn)
+        .await
+        .expect("search_path");
+    conn
 }
 
 /// Set the session tenant on a tester connection (empty string = unset ⇒ the
@@ -144,8 +97,8 @@ async fn count(conn: &mut PgConnection, sql: &str) -> i64 {
 
 #[tokio::test]
 async fn rls_is_enabled_and_forced_on_every_scoping_table() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("rls_flags").await;
+    let testdb = testkit::db().await.expect("testkit database");
+    let pool = testdb.pool();
 
     for table in SCOPED_TABLES {
         let row = sqlx::query(
@@ -166,9 +119,8 @@ async fn rls_is_enabled_and_forced_on_every_scoping_table() {
 
 #[tokio::test]
 async fn tenants_are_isolated_end_to_end() {
-    let pg = Pg::start().await;
-    let db = "rls_isolation";
-    let pool = pg.migrated_pool(db).await;
+    let testdb = testkit::db().await.expect("testkit database");
+    let pool = testdb.pool();
 
     // Two tenants (as the superuser — the tenant registry is not RLS-scoped).
     let (tenant_a, tenant_b) = (Uuid::now_v7(), Uuid::now_v7());
@@ -181,13 +133,17 @@ async fn tenants_are_isolated_end_to_end() {
     .await
     .expect("seed tenants");
 
-    // A non-superuser login role that RLS actually applies to.
-    sqlx::query("CREATE ROLE rls_tester LOGIN PASSWORD 'testpw' IN ROLE ehrbase_app")
-        .execute(&pool)
-        .await
-        .expect("create rls_tester");
+    // A non-superuser login role that RLS actually applies to (per-clone
+    // name: roles are cluster-global on the shared testkit server).
+    let tester = format!("{}_tester", testdb.name());
+    sqlx::query(AssertSqlSafe(format!(
+        "CREATE ROLE {tester} LOGIN PASSWORD 'testpw' IN ROLE ehrbase_app"
+    )))
+    .execute(&pool)
+    .await
+    .expect("create tester role");
 
-    let mut conn = pg.tester_conn(db).await;
+    let mut conn = tester_conn(testdb.url(), &tester).await;
     let (a, b) = (tenant_a.to_string(), tenant_b.to_string());
 
     // ── As tenant A: write EHR + template + stored query. ────────────────────
@@ -324,9 +280,8 @@ async fn scoped_pool_isolates_tenants_through_the_service() {
     use ehrbase::extensions::tenant_context::{self, TenantContext};
     use ehrbase::service::EhrbaseService;
 
-    let pg = Pg::start().await;
-    let db_name = "rls_seam";
-    let pool = pg.migrated_pool(db_name).await;
+    let testdb = testkit::db().await.expect("testkit database");
+    let pool = testdb.pool();
 
     let (tenant_a, tenant_b) = (Uuid::now_v7(), Uuid::now_v7());
     sqlx::query(
@@ -337,15 +292,15 @@ async fn scoped_pool_isolates_tenants_through_the_service() {
     .execute(&pool)
     .await
     .expect("seed tenants");
-    sqlx::query("CREATE ROLE rls_seam_app LOGIN PASSWORD 'testpw' IN ROLE ehrbase_app")
-        .execute(&pool)
-        .await
-        .expect("create app role");
+    let app_role = format!("{}_app", testdb.name());
+    sqlx::query(AssertSqlSafe(format!(
+        "CREATE ROLE {app_role} LOGIN PASSWORD 'testpw' IN ROLE ehrbase_app"
+    )))
+    .execute(&pool)
+    .await
+    .expect("create app role");
 
-    let scoped = DbConfig::new(format!(
-        "postgres://rls_seam_app:testpw@{}:{}/{db_name}",
-        pg.host, pg.port
-    ));
+    let scoped = DbConfig::new(with_role(testdb.url(), &app_role, "testpw"));
     let service = EhrbaseService::new(
         db::connect_tenant_scoped(&scoped)
             .await
@@ -409,12 +364,9 @@ async fn scoped_pool_isolates_tenants_through_the_service() {
 async fn scoped_pool_stamps_connections_opened_during_acquire() {
     use ehrbase::extensions::tenant_context::{self, TenantContext};
 
-    let pg = Pg::start().await;
-    // No migrations needed: GUC stamping is a pure pool-hook property.
-    let scoped = DbConfig::new(format!(
-        "postgres://postgres:postgres@{}:{}/postgres",
-        pg.host, pg.port
-    ));
+    let testdb = testkit::db().await.expect("testkit database");
+    // GUC stamping is a pure pool-hook property; the shared testkit database serves.
+    let scoped = DbConfig::new(testdb.url().to_owned());
     let pool = db::connect_tenant_scoped(&scoped)
         .await
         .expect("tenant-scoped pool");
