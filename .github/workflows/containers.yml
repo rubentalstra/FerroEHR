@@ -216,18 +216,29 @@ jobs:
 
       # The site bundle (wasm32 + Tailwind CSS + JS glue) — built once, on
       # amd64 only; it is byte-identical regardless of the server arch.
+      # NEVER `cargo install cargo-leptos` here: it unconditionally builds
+      # OpenSSL from vendored C source (its cargo-generate dependency pins
+      # `vendored-openssl`), which needs perl/make and failed inside the slim
+      # image. Prebuilt release binaries keep the pipeline Rust-toolchain-only
+      # — the same taiki-e path the ci.yml ui-e2e job uses.
+      - name: Install curl for the tool downloads (amd64 only)
+        if: matrix.platform == 'amd64'
+        run: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+
+      - uses: taiki-e/install-action@v2
+        if: matrix.platform == 'amd64'
+        with:
+          tool: cargo-leptos@0.3.7,wasm-bindgen@0.2.126
+
       - name: Build the site bundle (amd64 only)
         if: matrix.platform == 'amd64'
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
           rustup target add wasm32-unknown-unknown
           curl -sSfL -o /usr/local/bin/tailwindcss \
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
-          cargo install cargo-leptos --version 0.3.7 --locked
-          cargo install wasm-bindgen-cli --version 0.2.126 --locked
           cd app/ehrbase-admin-ui
           LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build --release
 
