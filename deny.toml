@@ -21,6 +21,10 @@ ignore = [
   # path uses quick-xml 0.41 (fixed). Re-check on the next object_store release.
   { id = "RUSTSEC-2026-0194", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
   { id = "RUSTSEC-2026-0195", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
+  # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a
+  # build-time proc-macro dependency of leptos_macro 0.8 — goes away when
+  # leptos drops it upstream. Re-check at the next leptos bump.
+  { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (admin console), no runtime exposure" },
   # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
   # utoipa-axum 0.2.0 (the LATEST release of the official utoipa axum
   # bindings; no paste-free release exists). Compile-time-only token pasting,
@@ -38,6 +42,9 @@ allow = [
   "MIT",
   "BSD-2-Clause",
   "BSD-3-Clause",
+  # Boost Software License (OSI-approved, permissive): xxhash-rust via
+  # leptos server_fn (the admin console, 2026-07-18).
+  "BSL-1.0",
   "ISC",
   "Zlib",
   "Unicode-3.0",
@@ -67,4 +74,8 @@ skip-tree = []
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
+# thaw (admin console UI kit): pinned to a main rev because the only Leptos-0.8
+# crates.io release (0.5.0-beta) lacks `#![recursion_limit = "256"]` and fails
+# non-erase_components codegen on rustc 1.96; main has the fix (2026-07-17).
+# Remove when thaw 0.5 stable ships and the pin returns to crates.io.
+allow-git = ["https://github.com/thaw-ui/thaw"]

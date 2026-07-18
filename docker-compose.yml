@@ -101,6 +101,29 @@ services:
       retries: 5
       start_period: 20s
 
+  # The admin console (ehrbase-admin-ui): a standalone Leptos SSR web app +
+  # BFF that consumes the CDR strictly over ITS-REST — never the database.
+  # Basic login proxies the CDR's dev users (ehrbase/ehrbase); for OIDC set
+  # the EHRBASE_ADMIN__AUTH__OIDC__* variables at the Keycloak realm below.
+  ehrbase-admin-ui:
+    image: ${EHRBASE_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-admin-ui:local}
+    build:
+      context: .
+      dockerfile: docker/admin-ui/Dockerfile
+    depends_on:
+      ehrbase:
+        condition: service_healthy
+    environment:
+      EHRBASE_ADMIN__CDR__BASE_URL: http://ehrbase:8080
+    ports:
+      - "${EHRBASE_ADMIN_UI_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   # SeaweedFS S3 gateway for DV_MULTIMEDIA externalization (ADR-017) —
   # DEV/TEST ONLY. Externalization is OFF by default, so the app does NOT depend
   # on this. To try it, enable it and point the app at the gateway (or set the

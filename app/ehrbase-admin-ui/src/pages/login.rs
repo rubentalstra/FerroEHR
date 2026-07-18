@@ -1,0 +1,181 @@
+//! The `/login` screen: dual Basic + OIDC authentication.
+//!
+//! The Basic path is an `<ActionForm>` bound to the [`crate::auth::LoginBasic`]
+//! server action, so it submits and redirects even before WASM loads
+//! (progressive enhancement — the inputs are named exactly `username`,
+//! `password`, `next`, matching the server-fn arguments). The OIDC path is a
+//! plain `<a>` to the BFF's `/auth/oidc/login` axum route, styled as a `thaw`
+//! button. Which paths appear is decided by [`crate::auth::login_modes`]. The
+//! post-login destination is carried through the `next` query parameter.
+
+use leptos::prelude::*;
+
+use crate::auth::{LoginBasic, login_modes};
+
+/// The login screen.
+///
+/// Renders a `thaw` Card with the Basic credential form and/or the OIDC
+/// button, gated on the CDR's enabled auth modes (read once via a `Resource`
+/// under `<Suspense>`). The action's error value renders in a MessageBar; the
+/// submit button shows the action's pending state.
+#[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
+#[allow(clippy::too_many_lines)] // action/resource setup plus the Basic + OIDC view — one cohesive component
+#[component]
+pub fn LoginPage() -> impl IntoView {
+    let action = ServerAction::<LoginBasic>::new();
+    let modes = Resource::new(|| (), |()| login_modes());
+    let pending = action.pending();
+    let value = action.value();
+
+    // The post-login destination, taken from `?next=…` (default the shell
+    // root). Deterministic from the URL, so hydration-safe.
+    let query = leptos_router::hooks::use_query_map();
+    let next = Signal::derive(move || {
+        query
+            .with(|q| q.get("next"))
+            .unwrap_or_else(|| "/".to_owned())
+    });
+
+    let error_bar = view! {
+        {move || {
+            value
+                .get()
+                .and_then(Result::err)
+                .map(|err| {
+                    view! {
+                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
+                            <thaw::MessageBarBody>{err.to_string()}</thaw::MessageBarBody>
+                        </thaw::MessageBar>
+                    }
+                })
+        }}
+    }
+    .into_any();
+
+    let forms = view! {
+        <Suspense fallback=|| {
+            view! {
+                <div class="flex justify-center py-4">
+                    <thaw::Spinner />
+                </div>
+            }
+        }>
+            {move || {
+                Suspend::new(async move {
+                    let (basic, oidc) = modes.await.unwrap_or((true, false));
+                    let basic_form = if basic {
+                        basic_login_form(action, pending, next).into_any()
+                    } else {
+                        ().into_any()
+                    };
+                    let separator = if basic && oidc {
+                        view! { <thaw::Divider>"or"</thaw::Divider> }.into_any()
+                    } else {
+                        ().into_any()
+                    };
+                    let oidc_button = if oidc {
+                        // A plain anchor to the BFF's axum route, styled as a
+                        // secondary block `thaw` button (an <a> — nesting a
+                        // <button> inside would be invalid HTML, rules §8).
+                        view! {
+                            <a
+                                href="/auth/oidc/login"
+                                // rel=external: the client router must NOT
+                                // intercept this same-origin anchor — it is a
+                                // BFF axum route, not a client route.
+                                rel="external"
+                                class="thaw-button thaw-button--secondary thaw-button--medium thaw-button--block"
+                            >
+                                "Sign in with OIDC"
+                            </a>
+                        }
+                            .into_any()
+                    } else {
+                        ().into_any()
+                    };
+                    view! {
+                        <div class="flex flex-col gap-4">
+                            {basic_form} {separator} {oidc_button}
+                        </div>
+                    }
+                        .into_any()
+                })
+            }}
+        </Suspense>
+    }
+        .into_any();
+
+    view! {
+        <leptos_meta::Title text="Sign in · ehrbase-admin" />
+        <main class="min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-sm">
+                <thaw::Card>
+                    <div class="flex flex-col gap-4 p-2">
+                        <h1 class="text-center text-lg font-semibold">"ehrbase-admin"</h1>
+                        {error_bar}
+                        {forms}
+                    </div>
+                </thaw::Card>
+            </div>
+        </main>
+    }
+}
+
+/// The Basic credential form: username + password inputs, a hidden `next`
+/// field, and a pending-aware submit button, all inside an `<ActionForm>`
+/// bound to the login action. Named inputs (`username`/`password`/`next`)
+/// mirror the [`crate::auth::login_basic`] arguments so the form submits
+/// correctly without JavaScript.
+fn basic_login_form(
+    action: ServerAction<LoginBasic>,
+    pending: Memo<bool>,
+    next: Signal<String>,
+) -> impl IntoView {
+    view! {
+        <ActionForm action=action>
+            <div class="flex flex-col gap-3">
+                // Plain labels + explicit stable input ids: thaw::Field
+                // hardwires its <label for> to a per-render random UUID,
+                // which breaks SSR↔hydration determinism (leptos-ui.md §8);
+                // an explicit id on thaw::Input wins over the Field context
+                // (thaw field.rs use_id_and_name), so the association stays
+                // correct and deterministic without Field.
+                <label class="text-sm font-medium" r#for="login-username">
+                    "Username"
+                </label>
+                // Plain UNCONTROLLED inputs: a controlled (signal-driven)
+                // input resets to its empty signal at hydration, wiping
+                // anything the user typed before WASM attached — on the
+                // login form that silently swallows credentials (found by
+                // the E2E battery as intermittent empty-credential posts).
+                <input
+                    id="login-username"
+                    name="username"
+                    placeholder="Username"
+                    autocomplete="username"
+                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                />
+                <label class="text-sm font-medium" r#for="login-password">
+                    "Password"
+                </label>
+                <input
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    autocomplete="current-password"
+                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                />
+                <input type="hidden" name="next" value=move || next.get() />
+                <thaw::Button
+                    button_type=thaw::ButtonType::Submit
+                    appearance=thaw::ButtonAppearance::Primary
+                    block=true
+                    loading=pending
+                >
+                    "Sign in"
+                </thaw::Button>
+            </div>
+        </ActionForm>
+    }
+}

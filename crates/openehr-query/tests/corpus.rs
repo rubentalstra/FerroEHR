@@ -118,7 +118,23 @@ fn official_aql_corpus_parses() {
                 wrap_fragment(&block)
             };
             match openehr_query::parser::parse_str(&query) {
-                Ok(_) => parsed += 1,
+                Ok(ast) => {
+                    parsed += 1;
+                    // Printer round-trip: parse → print → parse must
+                    // reproduce the same AST for the whole official corpus.
+                    let printed = openehr_query::printer::to_aql(&ast);
+                    match openehr_query::parser::parse_str(&printed) {
+                        Ok(reparsed) if reparsed == ast => {}
+                        Ok(_) => failures.push((
+                            query.clone(),
+                            format!("printer round-trip drifted the AST via: {printed}"),
+                        )),
+                        Err(e) => failures.push((
+                            query.clone(),
+                            format!("printed AQL failed to reparse: {printed}\n  {e}"),
+                        )),
+                    }
+                }
                 Err(e) => failures.push((query, e)),
             }
         }
