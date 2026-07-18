@@ -75,5 +75,27 @@ bearer tokens never reach the browser.
   stored-query management. See [Dashboard & queries](queries.md).
 - **EHRs** — browse EHRs, folders, compositions, and version history. See
   [Templates & EHR browsing](browsing.md).
+- **Audit log** — browse the CDR's ATNA security audit trail (see below).
 - **System** — CDR status, SMART discovery, and the server's own OpenAPI
   document. ![System](img/system/system.png)
+
+## Audit log
+
+The **Audit log** screen browses the CDR's security audit trail — who
+accessed what, with what outcome — through the standard IHE ITI-81
+retrieval (`GET /fhir/r4/AuditEvent`; see the
+[Audit trail chapter](../audit.md)). Filter by event-time window, patient,
+principal, outcome, or action; every filter lives in the URL, so a filtered
+view is shareable and refresh-safe. Each row opens the full stored FHIR
+`AuditEvent` record.
+
+The audit trail is an operator surface: under role-based access control the
+screen requires the CDR's admin role, and when the CDR's local audit store
+is disabled the screen says so instead of erroring.
+
+![Audit log](img/audit/audit.png)
+
+A filter that matches nothing renders a distinct empty state, so "no
+records" is always visibly different from "records you haven't found":
+
+![Audit log — no matches](img/audit/audit-empty.png)

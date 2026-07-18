@@ -2,6 +2,7 @@
 //! per screen; components stay thin — data flows through the `#[server]`
 //! fns each module co-locates.
 
+pub mod audit;
 pub mod composition;
 pub mod dashboard;
 pub mod ehr_detail;

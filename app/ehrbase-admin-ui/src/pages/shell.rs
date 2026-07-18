@@ -174,11 +174,12 @@ fn AuthedChrome(
 }
 
 /// One sidebar entry: route, label, Lucide icon.
-const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 5] = [
+const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 6] = [
     ("/", "Dashboard", icondata_lu::LuLayoutDashboard),
     ("/templates", "Templates", icondata_lu::LuFileCode2),
     ("/queries", "Queries", icondata_lu::LuSearchCode),
     ("/ehrs", "EHRs", icondata_lu::LuDatabase),
+    ("/audit", "Audit log", icondata_lu::LuShieldCheck),
     ("/system", "System", icondata_lu::LuServer),
 ];
 
