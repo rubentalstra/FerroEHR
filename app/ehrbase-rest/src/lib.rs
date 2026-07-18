@@ -196,6 +196,7 @@ async fn run_server(
 ) -> Result<(), ServeError> {
     use std::net::SocketAddr;
 
+    use axum::serve::ListenerExt as _;
     use tower::Layer;
     use tower_http::normalize_path::NormalizePathLayer;
 
@@ -227,7 +228,6 @@ async fn run_server(
         return Ok(());
     }
 
-    use axum::serve::ListenerExt as _;
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, "ehrbase-rest listening");
     // `TCP_NODELAY` on every accepted socket: small responses (the
@@ -260,8 +260,8 @@ pub fn tls_server_config(
 
     use ehrbase::config::server::ClientAuth;
 
-    fn required<'a>(value: &'a Option<String>, key: &str) -> Result<&'a str, std::io::Error> {
-        value.as_deref().ok_or_else(|| {
+    fn required<'a>(value: Option<&'a String>, key: &str) -> Result<&'a str, std::io::Error> {
+        value.map(String::as_str).ok_or_else(|| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("server.tls.{key} is required when TLS is enabled"),
@@ -272,8 +272,8 @@ pub fn tls_server_config(
         std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string())
     }
 
-    let cert_pem = std::fs::read(required(&tls.cert_file, "cert_file")?)?;
-    let key_pem = std::fs::read(required(&tls.key_file, "key_file")?)?;
+    let cert_pem = std::fs::read(required(tls.cert_file.as_ref(), "cert_file")?)?;
+    let key_pem = std::fs::read(required(tls.key_file.as_ref(), "key_file")?)?;
     let certs = rustls::pki_types::CertificateDer::pem_slice_iter(&cert_pem)
         .collect::<Result<Vec<_>, _>>()
         .map_err(invalid)?;
@@ -290,7 +290,7 @@ pub fn tls_server_config(
     let builder = match tls.client_auth {
         ClientAuth::Off => builder.with_no_client_auth(),
         ClientAuth::Optional | ClientAuth::Required => {
-            let ca_pem = std::fs::read(required(&tls.client_ca_file, "client_ca_file")?)?;
+            let ca_pem = std::fs::read(required(tls.client_ca_file.as_ref(), "client_ca_file")?)?;
             let mut roots = rustls::RootCertStore::empty();
             for cert in rustls::pki_types::CertificateDer::pem_slice_iter(&ca_pem) {
                 roots.add(cert.map_err(invalid)?).map_err(invalid)?;
