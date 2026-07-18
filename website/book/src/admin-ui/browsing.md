@@ -22,9 +22,16 @@ lookup.
 
 ![EHRs](img/ehrs.png)
 
+The EHR detail screen resolves the EHR status (queryable / modifiable) and
+lists the EHR's compositions with their template, time, and version count.
+
+![EHR detail](img/ehr-detail.png)
+
 ## Composition viewer
 
 Any composition renders in canonical JSON, canonical XML, FLAT, or
 STRUCTURED — switch freely; the CDR converts. The version dropdown walks
 the revision history, and each version's audit (committer, time, change
 type) is shown alongside.
+
+![Composition viewer](img/composition-viewer.png)

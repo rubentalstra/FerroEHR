@@ -127,12 +127,40 @@ async fn capture_documentation_screenshots() {
     capture(&h, &dir, "/ehrs", "ehrs", Some("#ehr-lookup")).await;
     capture(&h, &dir, "/system", "system", None).await;
 
-    // The ehr-detail and composition-viewer screens need seeded EHR + version
-    // data (no error-state stand-in makes presentable documentation), so they
-    // are left for a data-seeded capture pass.
-    println!(
-        "TODO docs-shots: not captured (need seeded EHR + composition data): ehr-detail, composition-viewer"
-    );
+    // The ehr-detail and composition-viewer screens render the EHR + the
+    // two-version composition scripts/ui-e2e.sh seeds over REST.
+    if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
+        // The EHR detail shot shows the compositions tab (the seeded row),
+        // reached the way the journey proves works: navigate, open the tab,
+        // wait for the seeded composition's link.
+        h.goto(&format!("/ehrs/{ehr_id}")).await;
+        h.wait_css("footer").await;
+        h.wait_xpath("//button[contains(., 'Compositions')]")
+            .await
+            .click()
+            .await
+            .expect("open the compositions tab");
+        h.wait_css(&format!("a[href*='{vo_id}']")).await;
+        let out = dir.join("ehr-detail.png");
+        h.driver
+            .screenshot(&out)
+            .await
+            .expect("write the documentation screenshot");
+        println!("captured ehr-detail -> {}", out.display());
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}/compositions/{vo_id}"),
+            "composition-viewer",
+            Some("pre"),
+        )
+        .await;
+    } else {
+        println!(
+            "SKIP docs-shots: ehr-detail + composition-viewer not captured \
+             (UI_E2E_SEEDED_EHR_ID/UI_E2E_SEEDED_VO_ID unset — run scripts/ui-e2e.sh)"
+        );
+    }
 
     h.finish().await;
 }
