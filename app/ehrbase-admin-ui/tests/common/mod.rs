@@ -288,6 +288,19 @@ impl Harness {
 pub async fn login_basic(h: &Harness) {
     let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ehrbase".to_owned());
     let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ehrbase".to_owned());
+    login_basic_as(h, &user, &pass).await;
+}
+
+/// [`login_basic`] with explicit credentials — for journeys that need a
+/// specific dev user (the audit screens require the CDR's admin role:
+/// `UI_E2E_ADMIN_USER`/`UI_E2E_ADMIN_PASS`, defaulting to the quickstart
+/// `ehrbase-admin`/`ehrbase` Basic user).
+///
+/// # Panics
+/// When the login flow does not land on the dashboard.
+pub async fn login_basic_as(h: &Harness, user: &str, pass: &str) {
+    let user = user.to_owned();
+    let pass = pass.to_owned();
     h.goto("/login").await;
     h.wait_css("#login-username")
         .await

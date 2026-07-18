@@ -104,6 +104,7 @@ pub fn App() -> impl IntoView {
                             path=path!("ehrs/:ehr_id/compositions/:uid")
                             view=crate::pages::composition::CompositionPage
                         />
+                        <Route path=path!("audit") view=crate::pages::audit::AuditPage />
                         <Route path=path!("system") view=crate::pages::system::SystemPage />
                     </ParentRoute>
                 </Routes>

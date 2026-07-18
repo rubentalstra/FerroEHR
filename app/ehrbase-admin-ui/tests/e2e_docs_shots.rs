@@ -17,7 +17,7 @@ mod common;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, login_basic};
+use common::{Harness, env, login_basic, login_basic_as};
 use thirtyfour::prelude::*;
 
 /// The detail-route id of the fixture template the browse journeys upload; its
@@ -387,6 +387,27 @@ async fn capture_documentation_screenshots() {
         .click()
         .await
         .expect("dark off");
+
+    h.finish().await;
+
+    // The audit-log screen is admin-only (the ATNA trail is an operator
+    // surface), so its captures run in a fresh session as the quickstart
+    // admin user: first the POPULATED table (the stack's own audited
+    // activity — every journey request lands in the trail), then the
+    // first-class EMPTY state via a filter that cannot match, so the book
+    // shows both faces of the screen.
+    let Some(h) = Harness::start("docs-shots-audit").await else {
+        return;
+    };
+    let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ehrbase-admin".to_owned());
+    let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ehrbase".to_owned());
+    login_basic_as(&h, &admin_user, &admin_pass).await;
+    capture(&h, &dir, "/audit", "audit/audit", Some("table tbody tr")).await;
+    h.goto("/audit?patient=docs-shots-no-such-patient").await;
+    h.wait_css("footer").await;
+    h.wait_xpath("//*[contains(text(), 'No audit records match')]")
+        .await;
+    shot_to(&h, &dir, "audit/audit-empty").await;
 
     h.finish().await;
 }

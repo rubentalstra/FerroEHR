@@ -74,7 +74,11 @@ config = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true, features = ["memory-store"] }
 csv = { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true }
-urlencoding = { workspace = true, optional = true }
+# Percent-encoding is ALWAYS the `urlencoding` crate (owner hard rule —
+# never hand-rolled). Non-optional: the audit screen builds
+# filter-preserving pagination hrefs on every target (ssr, hydrate, and
+# plain featureless test builds); the crate is tiny and wasm-clean.
+urlencoding = { workspace = true }
 http = { workspace = true, optional = true }
 
 # browser-only (behind `hydrate`)
@@ -113,7 +117,6 @@ ssr = [
     "dep:tower-sessions",
     "dep:csv",
     "dep:openidconnect",
-    "dep:urlencoding",
     "dep:http",
     "dep:openehr-flat",
     "dep:openehr-its",
@@ -125,6 +128,9 @@ indexmap.workspace = true
 # the console gate reads the browser log via thirtyfour's legacy-log API.
 thirtyfour.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+# The docs-shots journey seeds stored queries over the Definition API
+# directly (bypassing the UI) — a plain HTTP client for test setup.
+reqwest = { workspace = true }
 
 [lints]
 workspace = true
