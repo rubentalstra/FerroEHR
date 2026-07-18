@@ -7,10 +7,16 @@
 //! path panels.
 //!
 //! The working tree is one `RwSignal<serde_json::Value>` seeded from the
-//! loaded FOLDER; every mutation goes through the pure [`super::edit`]
-//! helpers, and every rendered datum reads the tree reactively by node path,
-//! so `<For>` rows (keyed by data-derived path keys — rules §4) always show
-//! current content even as indices shift on delete.
+//! loaded FOLDER, then stamped with an ephemeral, client-only `_key` identity
+//! on every folder ([`super::edit::stamp_keys`]); every mutation goes through
+//! the pure [`super::edit`] helpers, and every rendered datum reads the tree
+//! reactively. `<For>` rows and the collapse / rename / picker UI state are
+//! keyed by that stable, data-derived `_key` (never a positional path — rules
+//! §4), so a folder keeps its own state and row after a sibling delete shifts
+//! indices; a folder's positional path is re-derived from its `_key`
+//! ([`super::edit::find_path_by_key`]) for each read and mutation. The `_key`
+//! is stripped ([`super::edit::strip_keys`]) from every body sent to the CDR
+//! and from the advanced-JSON view — it never leaves the console.
 
 use leptos::prelude::*;
 use serde_json::Value;
@@ -21,9 +27,9 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
 use crate::pages::ehr_detail::directory::edit::{
-    add_item, add_subfolder, child_keys, count_tree, delete_folder, item_keys, item_summary,
-    key_of, node_name, object_ref, parse_item_key, parse_key, remove_item, rename_folder,
-    versioned_object_id,
+    add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_path_by_key,
+    item_count, item_summary, node_key_at, node_name, object_ref, remove_item, rename_folder,
+    stamp_keys, strip_keys, versioned_object_id,
 };
 use crate::pages::ehr_detail::directory::{DirectoryState, PickerResource};
 use crate::pages::ehrs::cell_text;
@@ -34,22 +40,35 @@ const ICON_BTN: &str = "inline-flex items-center justify-center rounded-control 
 /// A small square destructive icon button (node delete).
 const ICON_BTN_DANGER: &str = "inline-flex items-center justify-center rounded-control p-1 text-ink-muted hover:bg-danger-subtle hover:text-danger focus:outline-none focus:ring-2 focus:ring-danger";
 
+/// Serialize the working tree for the CDR with the ephemeral `_key` identity
+/// stripped (rules §4 contract — console-local identity never leaves the BFF).
+fn strip_keys_to_string(tree: &Value) -> String {
+    let mut stripped = tree.clone();
+    strip_keys(&mut stripped);
+    serde_json::to_string(&stripped).unwrap_or_default()
+}
+
 /// The editor's shared, `Copy` handle threaded through the recursive render:
 /// the working tree plus its UI state and the composition picker.
 #[derive(Clone, Copy)]
 struct TreeEditor {
     /// The working FOLDER tree (mutated in place; the single source of truth).
+    /// Every folder carries an ephemeral `_key` identity (see the module doc).
     tree: RwSignal<Value>,
-    /// Path keys of collapsed folders (a folder is expanded unless listed).
+    /// Ephemeral `_key`s of collapsed folders (expanded unless listed).
     collapsed: RwSignal<std::collections::HashSet<String>>,
-    /// The path key of the folder currently being renamed, if any.
+    /// The ephemeral `_key` of the folder currently being renamed, if any.
     renaming: RwSignal<Option<String>>,
     /// The in-progress rename text.
     rename_draft: RwSignal<String>,
+    /// The next free `_key` ordinal, advanced as folders are added (see
+    /// [`super::edit::stamp_keys`]); persisted across clicks for uniqueness.
+    counter: StoredValue<u64>,
     /// The composition list for the "add item" picker (created outside the
     /// Suspend, read here — rules §4).
     picker: PickerResource,
-    /// The path key of the folder awaiting an item (also opens the picker).
+    /// The ephemeral `_key` of the folder awaiting an item (also opens the
+    /// picker).
     picker_target: RwSignal<Option<String>>,
 }
 
@@ -63,20 +82,31 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     state: &DirectoryState,
     ehr_id: Signal<String>,
     update: Action<(String, String, String), Result<String, AdminUiError>>,
+    force_save: Action<(String, String), Result<String, AdminUiError>>,
+    reload: RwSignal<u32>,
     picker: PickerResource,
     picker_target: RwSignal<Option<String>>,
 ) -> AnyView {
-    let doc: Value = match serde_json::from_str(&state.body) {
+    let mut doc: Value = match serde_json::from_str(&state.body) {
         Ok(value) => value,
         Err(e) => {
             return inline_error(&AdminUiError::Internal(format!("directory JSON: {e}")));
         }
     };
     let version_uid = state.version_uid.clone();
+    // The advanced-JSON draft shows the STRIPPED tree; the server body already
+    // carries no `_key`, so seeding it directly is correct (rules §4 contract).
     let pretty = pretty_body(&state.body, ReprFormat::CanonicalJson);
 
+    // Stamp every folder with its ephemeral `_key` identity ONCE, then seed
+    // both the working tree and the pristine baseline from the SAME stamped
+    // copy so `dirty` stays a plain equality compare (rules §4; see
+    // [`super::edit::stamp_keys`]).
+    let mut seed_counter = 0u64;
+    stamp_keys(&mut doc, &mut seed_counter);
     let tree = RwSignal::new(doc.clone());
     let original = StoredValue::new(doc);
+    let counter = StoredValue::new(seed_counter);
     let collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
     let renaming = RwSignal::new(Option::<String>::None);
     let rename_draft = RwSignal::new(String::new());
@@ -86,18 +116,32 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
 
     let dirty = Memo::new(move |_| tree.with(|t| original.with_value(|o| t != o)));
 
+    // A `412` on THIS loaded version (completions after this editor's
+    // creation baseline): the refetch trigger deliberately ignores failed
+    // writes so the working tree survives — this banner offers the two
+    // explicit ways out (discard-and-reload, or informed overwrite).
+    let editor_baseline = update.version().get_untracked();
+    let conflicted = Memo::new(move |_| {
+        update.version().get() > editor_baseline
+            && update
+                .value()
+                .with(|v| matches!(v, Some(Err(e)) if super::is_conflict(e)))
+    });
+
     let ed = TreeEditor {
         tree,
         collapsed,
         renaming,
         rename_draft,
+        counter,
         picker,
         picker_target,
     };
 
-    // Save the working tree as a new version (PUT + If-Match).
+    // Save the working tree as a new version (PUT + If-Match). The ephemeral
+    // `_key` identity is stripped from the wire body (rules §4 contract).
     let on_save = move |_| {
-        let body = serde_json::to_string(&tree.get()).unwrap_or_default();
+        let body = tree.with(strip_keys_to_string);
         update.dispatch((ehr_id.get(), version_uid.clone(), body));
     };
     let on_discard = move |_| {
@@ -106,21 +150,26 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
         json_error.set(None);
     };
 
-    // Advanced mode: toggling on seeds the JSON draft from the current tree;
-    // "Apply" parses it back into the working tree.
+    // Advanced mode: toggling on seeds the JSON draft from the current tree
+    // (with `_key` stripped — the user never sees console-local identity);
+    // "Apply" parses it back into the working tree and re-stamps.
     let on_toggle_advanced = move |_| {
         advanced.update(|open| {
             *open = !*open;
             if *open {
-                let text = tree
-                    .with(|t| serde_json::to_string_pretty(t).unwrap_or_else(|_| "{}".to_owned()));
+                let text = tree.with(|t| {
+                    let mut stripped = t.clone();
+                    strip_keys(&mut stripped);
+                    serde_json::to_string_pretty(&stripped).unwrap_or_else(|_| "{}".to_owned())
+                });
                 json_draft.set(text);
                 json_error.set(None);
             }
         });
     };
     let on_apply_json = move |_| match serde_json::from_str::<Value>(&json_draft.get()) {
-        Ok(value) => {
+        Ok(mut value) => {
+            counter.update_value(|c| stamp_keys(&mut value, c));
             tree.set(value);
             json_error.set(None);
         }
@@ -183,6 +232,36 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
                 </div>
             </div>
 
+            // The optimistic-concurrency conflict banner: shown after a 412
+            // on this loaded version; the unsaved tree is intact.
+            <div
+                id="directory-conflict"
+                class="mt-3 flex flex-wrap items-center gap-3 rounded-control border border-danger/40 bg-danger-subtle px-3 py-2"
+                class:hidden=move || !conflicted.get()
+            >
+                <span class="text-sm text-danger">
+                    "This directory changed on the server since it was loaded. Your unsaved edits are still here."
+                </span>
+                <button
+                    type="button"
+                    class=BTN_PRIMARY
+                    disabled=Signal::derive(move || force_save.pending().get())
+                    on:click=move |_| {
+                        let body = tree.with(strip_keys_to_string);
+                        force_save.dispatch((ehr_id.get(), body));
+                    }
+                >
+                    "Save anyway (overwrite the server change)"
+                </button>
+                <button
+                    type="button"
+                    class=BTN_SECONDARY
+                    on:click=move |_| reload.update(|n| *n = n.wrapping_add(1))
+                >
+                    "Discard my edits and load the server version"
+                </button>
+            </div>
+
             // Sticky save bar — visible only when the working tree is dirty.
             <div
                 class="sticky bottom-0 mt-3 flex flex-wrap items-center gap-3 border-t border-edge bg-raised/95 py-3 backdrop-blur"
@@ -213,27 +292,28 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     .into_any()
 }
 
-/// The root of the editable tree (the root folder rendered from path `[]`).
+/// The root of the editable tree (the root folder, addressed by its ephemeral
+/// `_key`). The root is always present and stamped at seed.
 fn tree_view(ed: TreeEditor) -> AnyView {
-    render_folder(ed, &[])
+    let root_key = ed.tree.with(|t| node_key_at(t, &[])).unwrap_or_default();
+    render_folder(ed, root_key, true)
 }
 
-/// Render one FOLDER node (at `path`) with its actions, its child folders, and
-/// its item references. Every dynamic datum reads the tree reactively by path,
-/// so `<For>` rows always reflect the current tree (rules §4).
-fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
-    let key = key_of(path);
-    let is_root = path.is_empty();
-
-    let key_collapsed = key.clone();
+/// Render one FOLDER node, identified by its ephemeral `_key` (`node_key`).
+/// Its live positional `path` is re-derived from that `_key` on every reactive
+/// read and mutation ([`find_path_by_key`]) so the row stays correct after a
+/// sibling delete shifts indices; `<For>` rows and the collapse / rename UI
+/// state key on `node_key`, never a positional path (rules §4).
+fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
+    let key_collapsed = node_key.clone();
     let is_collapsed = move || ed.collapsed.with(|c| c.contains(&key_collapsed));
 
-    let path_icon = path.to_vec();
-    let key_icon = key.clone();
+    let key_icon = node_key.clone();
     let folder_icon = Signal::derive(move || {
         let expanded = ed.collapsed.with(|c| !c.contains(&key_icon));
         let has_content = ed.tree.with(|t| {
-            !child_keys(t, &path_icon).is_empty() || !item_keys(t, &path_icon).is_empty()
+            find_path_by_key(t, &key_icon)
+                .is_some_and(|p| !child_node_keys(t, &p).is_empty() || item_count(t, &p) > 0)
         });
         if expanded && has_content {
             icondata_lu::LuFolderOpen
@@ -241,7 +321,7 @@ fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
             icondata_lu::LuFolder
         }
     });
-    let key_chevron = key.clone();
+    let key_chevron = node_key.clone();
     let chevron = Signal::derive(move || {
         if ed.collapsed.with(|c| c.contains(&key_chevron)) {
             icondata_lu::LuChevronRight
@@ -250,7 +330,7 @@ fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
         }
     });
 
-    let key_toggle = key.clone();
+    let key_toggle = node_key.clone();
     let on_toggle = move |_| {
         ed.collapsed.update(|c| {
             if !c.remove(&key_toggle) {
@@ -259,11 +339,11 @@ fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
         });
     };
 
-    let name_area = name_area(ed, path, key.clone());
-    let actions = folder_actions(ed, path, &key, is_root);
+    let name_area = name_area(ed, node_key.clone());
+    let actions = folder_actions(ed, node_key.clone(), is_root);
 
-    let path_children = path.to_vec();
-    let path_items = path.to_vec();
+    let key_children = node_key.clone();
+    let key_items = node_key;
 
     view! {
         <li class="py-0.5">
@@ -277,18 +357,32 @@ fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
             </div>
             <ul class="ml-2 border-l border-edge pl-4" class:hidden=is_collapsed>
                 <For
-                    each=move || ed.tree.with(|t| child_keys(t, &path_children))
+                    each=move || {
+                        ed.tree
+                            .with(|t| {
+                                find_path_by_key(t, &key_children)
+                                    .map(|p| child_node_keys(t, &p))
+                                    .unwrap_or_default()
+                            })
+                    }
                     key=|k: &String| k.clone()
                     let:child_key
                 >
-                    {render_folder(ed, &parse_key(&child_key))}
+                    {render_folder(ed, child_key, false)}
                 </For>
                 <For
-                    each=move || ed.tree.with(|t| item_keys(t, &path_items))
-                    key=|k: &String| k.clone()
-                    let:item_key
+                    each=move || {
+                        ed.tree
+                            .with(|t| {
+                                let count = find_path_by_key(t, &key_items)
+                                    .map_or(0, |p| item_count(t, &p));
+                                (0..count).map(|i| (key_items.clone(), i)).collect::<Vec<_>>()
+                            })
+                    }
+                    key=|(parent, idx): &(String, usize)| format!("{parent}#{idx}")
+                    let:item
                 >
-                    {render_item(ed, &item_key)}
+                    {render_item(ed, item.0, item.1)}
                 </For>
             </ul>
         </li>
@@ -298,15 +392,21 @@ fn render_folder(ed: TreeEditor, path: &[usize]) -> AnyView {
 
 /// The name cell: the folder name, or an inline rename input when this folder
 /// is being renamed (a single reactive closure over `renaming` + `tree`).
-fn name_area(ed: TreeEditor, path: &[usize], key: String) -> AnyView {
-    let path = path.to_vec();
+/// Identity is the folder's ephemeral `_key`; the path is re-derived per use.
+fn name_area(ed: TreeEditor, node_key: String) -> AnyView {
     let inner = move || {
-        if ed.renaming.with(|r| r.as_deref() == Some(key.as_str())) {
-            let confirm_path = path.clone();
+        if ed
+            .renaming
+            .with(|r| r.as_deref() == Some(node_key.as_str()))
+        {
+            let confirm_key = node_key.clone();
             let on_confirm = move |_| {
                 let draft = ed.rename_draft.get();
-                ed.tree
-                    .update(|t| rename_folder(t, &confirm_path, draft.trim()));
+                ed.tree.update(|t| {
+                    if let Some(p) = find_path_by_key(t, &confirm_key) {
+                        rename_folder(t, &p, draft.trim());
+                    }
+                });
                 ed.renaming.set(None);
             };
             let on_cancel = move |_| ed.renaming.set(None);
@@ -338,8 +438,11 @@ fn name_area(ed: TreeEditor, path: &[usize], key: String) -> AnyView {
             }
             .into_any()
         } else {
-            let path_name = path.clone();
-            let name = ed.tree.with(|t| node_name(t, &path_name));
+            let name_key = node_key.clone();
+            let name = ed.tree.with(|t| {
+                find_path_by_key(t, &name_key)
+                    .map_or_else(|| "(folder)".to_owned(), |p| node_name(t, &p))
+            });
             view! { <span class="font-medium text-ink">{name}</span> }.into_any()
         }
     };
@@ -347,34 +450,46 @@ fn name_area(ed: TreeEditor, path: &[usize], key: String) -> AnyView {
 }
 
 /// The per-folder action buttons: add subfolder, add item, rename, and (for
-/// non-root folders) delete.
-fn folder_actions(ed: TreeEditor, path: &[usize], key: &str, is_root: bool) -> AnyView {
-    let key = key.to_owned();
-    let path = path.to_vec();
-    let add_folder_path = path.clone();
-    let add_folder_key = key.clone();
+/// non-root folders) delete. The folder is identified by its ephemeral `_key`;
+/// each mutation re-derives the live path from it before calling the pure
+/// path-based [`super::edit`] helpers (rules §4).
+fn folder_actions(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
+    let add_folder_key = node_key.clone();
     let on_add_folder = move |_| {
-        ed.tree
-            .update(|t| add_subfolder(t, &add_folder_path, "New folder"));
+        // Append the subfolder, then stamp the (only) unstamped folder with a
+        // fresh `_key` so the new row gets a stable identity too.
+        ed.counter.update_value(|c| {
+            ed.tree.update(|t| {
+                if let Some(p) = find_path_by_key(t, &add_folder_key) {
+                    add_subfolder(t, &p, "New folder");
+                    stamp_keys(t, c);
+                }
+            });
+        });
         ed.collapsed.update(|c| {
             c.remove(&add_folder_key);
         });
     };
 
-    let picker_key = key.clone();
+    let picker_key = node_key.clone();
     let on_add_item = move |_| ed.picker_target.set(Some(picker_key.clone()));
 
-    let rename_path = path.clone();
-    let rename_key = key.clone();
+    let rename_key = node_key.clone();
     let on_rename = move |_| {
-        ed.rename_draft
-            .set(ed.tree.with(|t| node_name(t, &rename_path)));
+        let current = ed.tree.with(|t| {
+            find_path_by_key(t, &rename_key).map_or_else(String::new, |p| node_name(t, &p))
+        });
+        ed.rename_draft.set(current);
         ed.renaming.set(Some(rename_key.clone()));
     };
 
-    let delete_path = path.clone();
+    let delete_key = node_key;
     let on_delete = move |_| {
-        ed.tree.update(|t| delete_folder(t, &delete_path));
+        ed.tree.update(|t| {
+            if let Some(p) = find_path_by_key(t, &delete_key) {
+                delete_folder(t, &p);
+            }
+        });
     };
 
     let delete_button = (!is_root).then(|| {
@@ -427,11 +542,24 @@ fn folder_actions(ed: TreeEditor, path: &[usize], key: &str, is_root: bool) -> A
 }
 
 /// One item reference row: the ref type + id value, with a remove button.
-fn render_item(ed: TreeEditor, item_key_str: &str) -> AnyView {
-    let (folder_path, idx) = parse_item_key(item_key_str);
-    let (ref_type, id) = ed.tree.with(|t| item_summary(t, &folder_path, idx));
+/// Keyed by the owning folder's ephemeral `_key` plus the item index (items
+/// carry no per-row state, so a positional index is a fine tiebreaker — rules
+/// §4). The folder path is re-derived from `parent_key` for the reactive read
+/// and the remove mutation.
+fn render_item(ed: TreeEditor, parent_key: String, idx: usize) -> AnyView {
+    let summary_key = parent_key.clone();
+    let (ref_type, id) = ed.tree.with(|t| {
+        find_path_by_key(t, &summary_key).map_or_else(
+            || ("OBJECT".to_owned(), "(ref)".to_owned()),
+            |p| item_summary(t, &p, idx),
+        )
+    });
     let on_remove = move |_| {
-        ed.tree.update(|t| remove_item(t, &folder_path, idx));
+        ed.tree.update(|t| {
+            if let Some(p) = find_path_by_key(t, &parent_key) {
+                remove_item(t, &p, idx);
+            }
+        });
     };
     view! {
         <li class="flex items-center gap-1 py-0.5 text-ink-muted">
@@ -466,14 +594,17 @@ fn picker_modal(ed: TreeEditor) -> AnyView {
 
     let add_manual = move |_| {
         if let Some(key) = ed.picker_target.get() {
-            let path = parse_key(&key);
             let item = object_ref(
                 manual_namespace.get().trim(),
                 manual_type.get().trim(),
                 manual_id_type.get().trim(),
                 manual_id.get().trim(),
             );
-            ed.tree.update(|t| add_item(t, &path, item));
+            ed.tree.update(|t| {
+                if let Some(p) = find_path_by_key(t, &key) {
+                    add_item(t, &p, item);
+                }
+            });
             ed.collapsed.update(|c| {
                 c.remove(&key);
             });
@@ -593,9 +724,12 @@ fn composition_choice(ed: TreeEditor, row: &[Value]) -> AnyView {
     let uid_display = uid.clone();
     let on_add = move |_| {
         if let Some(key) = ed.picker_target.get() {
-            let path = parse_key(&key);
             let item = object_ref("local", "COMPOSITION", "HIER_OBJECT_ID", &object_id);
-            ed.tree.update(|t| add_item(t, &path, item));
+            ed.tree.update(|t| {
+                if let Some(p) = find_path_by_key(t, &key) {
+                    add_item(t, &p, item);
+                }
+            });
             ed.collapsed.update(|c| {
                 c.remove(&key);
             });

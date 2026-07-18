@@ -381,6 +381,30 @@ pub async fn ehr_writability(
     Ok((is_modifiable.is_some(), is_modifiable))
 }
 
+/// Whether ANY live (non-deleted) folder hierarchy is indexed for the EHR —
+/// the `POST /directory` conflict probe. Deliberately ignores logically
+/// deleted hierarchies: after a `523|deleted|` version the container remains
+/// (RM common master06 §Logical Deletion) but the directory slot is vacant,
+/// so a new hierarchy may be created (RM ehr master04 §Folders — "an
+/// entirely new Folder hierarchy may be added"); only a LIVE occupant
+/// conflicts (CNF master09 E.2 requires the error only for an EHR *with* a
+/// directory).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS( \
+           SELECT 1 FROM ehr_folder f \
+           JOIN vo_version v ON v.vo_id = f.vo_id \
+             AND upper_inf(v.sys_period) AND v.branch_number = 0 \
+           WHERE f.ehr_id = $1 AND v.lifecycle_state <> '523')",
+    )
+    .bind(ehr_id)
+    .fetch_one(pool)
+    .await?)
+}
+
 /// Whether the EHR already has a LIVE folder hierarchy whose root carries the
 /// given `archetype_node_id` AND name — the LOCATABLE identity pair that
 /// distinguishes same-archetype siblings (RM common, paths: the name predicate
