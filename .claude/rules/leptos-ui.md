@@ -5,11 +5,12 @@ paths: ["app/ehrbase-admin-ui/**"]
 # Leptos admin-UI rules (`app/ehrbase-admin-ui` — and any Leptos code)
 
 Authored 2026-07-13 from a full read of the official Leptos book
-(leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates in
-`docs/design/ehrbase-admin-ui.md`. Citations are book chapters
-(`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack is pinned in
-the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
-`thaw 0.5.0-beta`, `leptos-struct-table`, `leptos-chartistry`.
+(leptos-rs/book `main`, targets Leptos 0.8) + the owner mandates recorded
+in `app/ehrbase-admin-ui/CLAUDE.md`. Citations are book chapters
+(`view/04_iteration`, `ssr/24_hydration_bugs`, …). The UI stack pins live
+in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
+`cargo-leptos`, Tailwind v4, `thaw` (a pinned main rev until 0.5 stable),
+`leptos-struct-table`, `leptos-chartistry`.
 
 ## 0. Owner mandates (absolute)
 
@@ -23,7 +24,7 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
 - **REST boundary:** the console reaches the CDR only over ITS-REST from the
   BFF (server functions → `reqwest`). It may depend on `crates/openehr-*`;
   it must NEVER depend on `app/ehrbase`, `app/ehrbase-sm`, or
-  `app/ehrbase-rest` (design doc §5.2).
+  `app/ehrbase-rest` (the REST-only boundary in the crate CLAUDE.md).
 - **Server functions are a public HTTP API** (`server/25_server_functions`
   security warning). Every `#[server]` fn that touches the CDR or session
   state MUST enforce the console's auth (session/token check) inside the
@@ -53,6 +54,14 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   client-compiled paths (monomorphization bloat — factor a concrete inner
   fn). `--cfg=erase_components` in dev only (cargo-leptos ≥0.2.40 does it
   automatically), never release.
+- **Section-boundary type erasure (learned W0, 2026-07-17):** plain
+  `cargo build`/`cargo test` runs have NO `erase_components`, and deeply
+  nested thaw view trees then blow rustc's layout-recursion depth at
+  codegen (thaw main needs `#![recursion_limit = "256"]` for its own
+  `Layout` alone). Every screen therefore breaks its view into sections
+  bound to locals erased with `.into_any()` (see `app.rs::SmokeTest`) —
+  never one monolithic `view!` tree — so `cargo nextest`/CI builds stay
+  compilable regardless of cfg.
 
 ## 2. Reactivity
 
@@ -114,9 +123,18 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   expensive branches → `<Show when fallback>` (memoized, renders each branch
   once — `view/06_control_flow`). Divergent branch types → `Either`/
   `EitherOf3…` or `.into_any()`.
-- `Result` renders through `<ErrorBoundary fallback=|errors| …>`
-  (`view/07_errors`); every data-bearing page section that can error gets a
-  boundary — errors must never silently render as nothing.
+- Errors must never silently render as nothing — but in SSR'd data
+  sections do NOT reach for `<ErrorBoundary>` inside `<Suspense>`:
+  **hydrating a server-rendered ErrorBoundary fallback mismatches in
+  Leptos 0.8** (proven live by the E2E console gate, 2026-07-17). The
+  standing pattern: resolve the `Result` INSIDE the `Suspend` and render
+  content-or-`format_view::inline_error(&e)` as one `.into_any()`-erased
+  view (see any `*_section` fn in the console pages). `<ErrorBoundary>`
+  remains fine for non-suspense render-time `Result`s (`view/07_errors`).
+- **Anchors to BFF axum routes need `rel="external"`** (e.g. the OIDC
+  login link): after hydration the client router intercepts same-origin
+  anchors and 404s routes it doesn't own — flakily, depending on click
+  timing vs WASM load (found live 2026-07-17).
 
 ## 5. Forms
 
@@ -214,7 +232,7 @@ the design doc §4: Leptos 0.8 SSR/full-stack, `cargo-leptos`, Tailwind v4,
   (`testing`). Components stay thin.
 - Component/browser tests: `wasm-bindgen-test` with `mount_to` — remember
   updates are async: `tick().await` before asserting.
-- **E2E is a merge gate** (design doc §8d): Rust-native only —
+- **E2E is a merge gate**: Rust-native only —
   `thirtyfour` (WebDriver, built on `fantoccini`) driving headless Chromium
   against the composed stack (`scripts/ui-e2e.sh`); journeys are plain
   `#[tokio::test]`s in `app/ehrbase-admin-ui/tests/e2e_*.rs`, skip-with-

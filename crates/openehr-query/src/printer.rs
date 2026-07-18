@@ -1,0 +1,422 @@
+//! Canonical AQL text rendering of the [`crate::ast`] — the inverse of the
+//! parser, for programmatic query construction (a visual builder assembles
+//! the AST and renders it here; the grammar authority is
+//! `docs/specs/openehr/QUERY/docs/AQL/`). Keywords render in canonical
+//! uppercase; paths and predicates reuse the source-preserving `Display`
+//! impls in [`crate::ast`]. The invariant (corpus-verified): for every AST
+//! the parser produces, `parse(to_aql(ast)) == ast`.
+
+use std::fmt::Write;
+
+use crate::ast::{
+    AggregateCall, ClassExprOperand, ColumnExpr, CompareOperand, ContainsExpr, FunctionCall,
+    IdentifiedExpr, IdentifiedPath, LikeOperand, MatchesOperand, SelectQuery, StatFunc, Terminal,
+    TerminologyFunction, TopDirection, ValueListItem, VersionPredicate, WhereExpr, comp_op_text,
+};
+
+/// Render a whole query as canonical AQL text.
+#[must_use]
+pub fn to_aql(query: &SelectQuery) -> String {
+    let mut out = String::new();
+    select_clause(&mut out, query);
+    out.push_str(" FROM ");
+    contains_expr(&mut out, &query.from, ContainsCtx::Top);
+    if let Some(where_) = &query.where_ {
+        out.push_str(" WHERE ");
+        where_expr(&mut out, where_, WhereCtx::Or);
+    }
+    if !query.order_by.is_empty() {
+        out.push_str(" ORDER BY ");
+        for (i, ob) in query.order_by.iter().enumerate() {
+            if i > 0 {
+                out.push_str(", ");
+            }
+            identified_path(&mut out, &ob.path);
+            if let Some(order) = ob.order {
+                out.push_str(match order {
+                    crate::ast::SortOrder::Ascending => " ASC",
+                    crate::ast::SortOrder::Descending => " DESC",
+                });
+            }
+        }
+    }
+    if let Some(limit) = &query.limit {
+        let _ = write!(out, " LIMIT {}", limit.limit);
+        if let Some(offset) = limit.offset {
+            let _ = write!(out, " OFFSET {offset}");
+        }
+    }
+    out
+}
+
+/// Escape a raw string for embedding in an AQL single-quoted literal
+/// (backslash escapes per the AQL lexer): use this when CONSTRUCTING
+/// [`Primitive::String`] from user input — the printer emits stored string
+/// content verbatim (parser round-trip keeps source escapes intact).
+#[must_use]
+pub fn escape_string(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for c in raw.chars() {
+        match c {
+            '\\' => out.push_str("\\\\"),
+            '\'' => out.push_str("\\'"),
+            other => out.push(other),
+        }
+    }
+    out
+}
+
+fn select_clause(out: &mut String, query: &SelectQuery) {
+    out.push_str("SELECT ");
+    if query.select.distinct {
+        out.push_str("DISTINCT ");
+    }
+    if let Some(top) = &query.select.top {
+        let _ = write!(out, "TOP {}", top.count);
+        match top.direction {
+            Some(TopDirection::Forward) => out.push_str(" FORWARD"),
+            Some(TopDirection::Backward) => out.push_str(" BACKWARD"),
+            None => {}
+        }
+        out.push(' ');
+    }
+    for (i, col) in query.select.columns.iter().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        column_expr(out, &col.column);
+        if let Some(alias) = &col.alias {
+            let _ = write!(out, " AS {alias}");
+        }
+    }
+}
+
+fn column_expr(out: &mut String, col: &ColumnExpr) {
+    match col {
+        ColumnExpr::Path(p) => identified_path(out, p),
+        ColumnExpr::Primitive(p) => primitive(out, p),
+        ColumnExpr::Aggregate(a) => aggregate(out, a),
+        ColumnExpr::Function(f) => function_call(out, f),
+    }
+}
+
+/// Render a literal so it reparses as the same variant: a whole-valued
+/// `Real` must keep its decimal point (`36.0`, not `36`, which would
+/// reparse as an `Integer`); everything else uses the source-preserving
+/// `Display`.
+fn primitive(out: &mut String, p: &crate::ast::Primitive) {
+    match p {
+        crate::ast::Primitive::Real(r) if r.fract() == 0.0 && r.is_finite() => {
+            let _ = write!(out, "{r:?}");
+        }
+        other => {
+            let _ = write!(out, "{other}");
+        }
+    }
+}
+
+fn aggregate(out: &mut String, agg: &AggregateCall) {
+    match agg {
+        AggregateCall::Count { distinct, path } => {
+            out.push_str("COUNT(");
+            if *distinct {
+                out.push_str("DISTINCT ");
+            }
+            match path {
+                Some(p) => identified_path(out, p),
+                None => out.push('*'),
+            }
+            out.push(')');
+        }
+        AggregateCall::Stat { func, path } => {
+            out.push_str(match func {
+                StatFunc::Min => "MIN(",
+                StatFunc::Max => "MAX(",
+                StatFunc::Sum => "SUM(",
+                StatFunc::Avg => "AVG(",
+            });
+            identified_path(out, path);
+            out.push(')');
+        }
+    }
+}
+
+fn function_call(out: &mut String, call: &FunctionCall) {
+    match call {
+        FunctionCall::Named { name, args } => {
+            let _ = write!(out, "{name}(");
+            for (i, arg) in args.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                terminal(out, arg);
+            }
+            out.push(')');
+        }
+        FunctionCall::Terminology(t) => terminology(out, t),
+    }
+}
+
+fn terminology(out: &mut String, t: &TerminologyFunction) {
+    let _ = write!(
+        out,
+        "TERMINOLOGY('{}', '{}', '{}')",
+        t.operation, t.arg2, t.arg3
+    );
+}
+
+fn identified_path(out: &mut String, path: &IdentifiedPath) {
+    out.push_str(&path.root);
+    if let Some(pred) = &path.predicate {
+        let _ = write!(out, "[{pred}]");
+    }
+    if let Some(object_path) = &path.path {
+        let _ = write!(out, "/{object_path}");
+    }
+}
+
+/// Where a contains expression sits, for parenthesisation.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ContainsCtx {
+    /// Directly after `FROM` — no parens needed at any operator.
+    Top,
+    /// Inside an `AND` — an `OR` child needs parens.
+    And,
+    /// Directly after `CONTAINS` — any boolean child needs parens.
+    Nested,
+}
+
+fn contains_expr(out: &mut String, expr: &ContainsExpr, ctx: ContainsCtx) {
+    match expr {
+        ContainsExpr::Contained { operand, contains } => {
+            class_operand(out, operand);
+            if let Some(constraint) = contains {
+                if constraint.negated {
+                    out.push_str(" NOT CONTAINS ");
+                } else {
+                    out.push_str(" CONTAINS ");
+                }
+                contains_expr(out, &constraint.expr, ContainsCtx::Nested);
+            }
+        }
+        ContainsExpr::And(a, b) => {
+            let parens = ctx == ContainsCtx::Nested;
+            if parens {
+                out.push('(');
+            }
+            contains_expr(out, a, ContainsCtx::And);
+            out.push_str(" AND ");
+            contains_expr(out, b, ContainsCtx::And);
+            if parens {
+                out.push(')');
+            }
+        }
+        ContainsExpr::Or(a, b) => {
+            let parens = matches!(ctx, ContainsCtx::And | ContainsCtx::Nested);
+            if parens {
+                out.push('(');
+            }
+            contains_expr(out, a, ContainsCtx::Top);
+            out.push_str(" OR ");
+            contains_expr(out, b, ContainsCtx::Top);
+            if parens {
+                out.push(')');
+            }
+        }
+    }
+}
+
+fn class_operand(out: &mut String, operand: &ClassExprOperand) {
+    match operand {
+        ClassExprOperand::Class {
+            rm_type,
+            variable,
+            predicate,
+        } => {
+            out.push_str(rm_type);
+            if let Some(v) = variable {
+                let _ = write!(out, " {v}");
+            }
+            if let Some(p) = predicate {
+                let _ = write!(out, "[{p}]");
+            }
+        }
+        ClassExprOperand::Version {
+            variable,
+            predicate,
+        } => {
+            out.push_str("VERSION");
+            if let Some(v) = variable {
+                let _ = write!(out, " {v}");
+            }
+            match predicate {
+                Some(VersionPredicate::Latest) => out.push_str("[LATEST_VERSION]"),
+                Some(VersionPredicate::All) => out.push_str("[ALL_VERSIONS]"),
+                Some(VersionPredicate::Standard(s)) => {
+                    let _ = write!(out, "[{s}]");
+                }
+                None => {}
+            }
+        }
+    }
+}
+
+/// Precedence context inside a WHERE tree.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum WhereCtx {
+    /// Top level / right under an `OR` — nothing needs parens.
+    Or,
+    /// Under an `AND` — an `OR` child needs parens.
+    And,
+    /// Under a `NOT` — any boolean child needs parens.
+    Not,
+}
+
+fn where_expr(out: &mut String, expr: &WhereExpr, ctx: WhereCtx) {
+    match expr {
+        WhereExpr::Identified(leaf) => identified_expr(out, leaf),
+        WhereExpr::Not(inner) => {
+            out.push_str("NOT ");
+            where_expr(out, inner, WhereCtx::Not);
+        }
+        WhereExpr::And(a, b) => {
+            let parens = ctx == WhereCtx::Not;
+            if parens {
+                out.push('(');
+            }
+            where_expr(out, a, WhereCtx::And);
+            out.push_str(" AND ");
+            where_expr(out, b, WhereCtx::And);
+            if parens {
+                out.push(')');
+            }
+        }
+        WhereExpr::Or(a, b) => {
+            let parens = matches!(ctx, WhereCtx::And | WhereCtx::Not);
+            if parens {
+                out.push('(');
+            }
+            where_expr(out, a, WhereCtx::Or);
+            out.push_str(" OR ");
+            where_expr(out, b, WhereCtx::Or);
+            if parens {
+                out.push(')');
+            }
+        }
+    }
+}
+
+fn identified_expr(out: &mut String, expr: &IdentifiedExpr) {
+    match expr {
+        IdentifiedExpr::Exists(path) => {
+            out.push_str("EXISTS ");
+            identified_path(out, path);
+        }
+        IdentifiedExpr::Compare { lhs, op, rhs } => {
+            match lhs {
+                CompareOperand::Path(p) => identified_path(out, p),
+                CompareOperand::Function(f) => function_call(out, f),
+            }
+            out.push_str(comp_op_text(*op));
+            terminal(out, rhs);
+        }
+        IdentifiedExpr::Like { path, operand } => {
+            identified_path(out, path);
+            out.push_str(" LIKE ");
+            match operand {
+                LikeOperand::String(s) => {
+                    let _ = write!(out, "'{s}'");
+                }
+                LikeOperand::Parameter(p) => out.push_str(p),
+            }
+        }
+        IdentifiedExpr::Matches { path, operand } => {
+            identified_path(out, path);
+            out.push_str(" MATCHES ");
+            matches_operand(out, operand);
+        }
+        // Never parser-produced (semantic-analysis artifact); render as the
+        // equivalent boolean literal comparison so output stays parseable.
+        IdentifiedExpr::Resolved(value) => {
+            let _ = write!(out, "{value}={value}");
+        }
+    }
+}
+
+fn matches_operand(out: &mut String, operand: &MatchesOperand) {
+    match operand {
+        MatchesOperand::ValueList(items) => {
+            out.push('{');
+            for (i, item) in items.iter().enumerate() {
+                if i > 0 {
+                    out.push_str(", ");
+                }
+                match item {
+                    ValueListItem::Primitive(p) => primitive(out, p),
+                    ValueListItem::Parameter(p) => out.push_str(p),
+                    ValueListItem::Terminology(t) => terminology(out, t),
+                }
+            }
+            out.push('}');
+        }
+        MatchesOperand::Terminology(t) => terminology(out, t),
+        MatchesOperand::Uri(uri) => {
+            let _ = write!(out, "{{{uri}}}");
+        }
+    }
+}
+
+fn terminal(out: &mut String, term: &Terminal) {
+    match term {
+        Terminal::Primitive(p) => primitive(out, p),
+        Terminal::Parameter(p) => out.push_str(p),
+        Terminal::Path(p) => identified_path(out, p),
+        Terminal::Function(f) => function_call(out, f),
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::panic)] // round-trip diagnostics carry the offending AQL text
+mod tests {
+    use crate::parser::parse_str;
+    use crate::printer::{escape_string, to_aql};
+
+    /// parse → print → parse must reproduce the same AST.
+    fn round_trips(src: &str) {
+        let first = parse_str(src).expect("original parses");
+        let printed = to_aql(&first);
+        let second = parse_str(&printed)
+            .unwrap_or_else(|e| panic!("printed AQL failed to parse: {printed}\n  {e}"));
+        assert_eq!(first, second, "AST drift through print for: {printed}");
+    }
+
+    #[test]
+    fn simple_and_shaped_queries_round_trip() {
+        round_trips("SELECT e/ehr_id/value FROM EHR e");
+        round_trips(
+            "SELECT c/uid/value AS uid, o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude \
+             FROM EHR e[ehr_id/value=$ehrUid] CONTAINS COMPOSITION c \
+             CONTAINS OBSERVATION o[openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+             WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= 140 \
+             AND (c/context/start_time/value < '2026-01-01' OR EXISTS c/context/end_time) \
+             ORDER BY c/context/start_time/value DESC LIMIT 10 OFFSET 20",
+        );
+        round_trips(
+            "SELECT COUNT(*) FROM EHR e CONTAINS (COMPOSITION a OR COMPOSITION b[openEHR-EHR-COMPOSITION.report.v1])",
+        );
+        round_trips(
+            "SELECT c FROM VERSION v[LATEST_VERSION] CONTAINS COMPOSITION c \
+             WHERE c/name/value MATCHES {'Vitals', 'Encounter'} AND NOT (c/language/code_string = 'de' OR c/language/code_string = 'fr')",
+        );
+        round_trips(
+            "SELECT DISTINCT e/ehr_id/value FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value LIKE 'Vit*'",
+        );
+    }
+
+    #[test]
+    fn escape_string_makes_lexer_valid_literals() {
+        assert_eq!(escape_string("plain"), "plain");
+        assert_eq!(escape_string("O'Neil"), "O\\'Neil");
+        assert_eq!(escape_string("a\\b"), "a\\\\b");
+    }
+}
