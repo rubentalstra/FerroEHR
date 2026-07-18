@@ -324,6 +324,85 @@ async fn rbac_deny_is_audited() {
     );
 }
 
+// ── GET /admin/config — the redacted effective configuration ───────────────────
+
+/// A GET request with no `Authorization` header (the unauthenticated probe).
+fn get_unauth(path: &str) -> Request<Body> {
+    Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}{path}"))
+        .body(Body::empty())
+        .expect("request")
+}
+
+/// Build the app with a populated redacted config snapshot in the observability
+/// bundle, so `GET /admin/config` returns a real body. The snapshot is produced
+/// by the production redaction method (`EhrbaseConfig::to_redacted_json`).
+async fn app_with_config_snapshot(name: &str, snapshot: serde_json::Value) -> (common::Pg, Router) {
+    let (pg, svc) = service(name, None).await;
+    let obs = ehrbase_rest::extensions::management::Observability {
+        env_snapshot: Arc::new(snapshot),
+        ..Default::default()
+    };
+    let app = ehrbase_rest::build_full(rest_config(), svc, authz(true), obs).expect("build app");
+    (pg, app)
+}
+
+#[tokio::test]
+async fn admin_config_unauthenticated_is_401() {
+    let (_pg, app) = app("admin_config_unauth", true, None).await;
+    let s = status(&app, get_unauth("/admin/config")).await;
+    assert_eq!(
+        s,
+        StatusCode::UNAUTHORIZED,
+        "an unauthenticated caller must not read /admin/config"
+    );
+}
+
+#[tokio::test]
+async fn admin_config_forbidden_for_user_role() {
+    let (_pg, app) = app("admin_config_user", true, None).await;
+    let s = status(&app, req("GET", "/admin/config", &basic("user"))).await;
+    assert_eq!(
+        s,
+        StatusCode::FORBIDDEN,
+        "a USER must not reach the admin config view"
+    );
+}
+
+#[tokio::test]
+async fn admin_config_admin_gets_redacted_snapshot() {
+    // The production redaction method builds the snapshot from a config whose
+    // DB DSN carries a credential; the admin caller receives the tree with the
+    // credential masked (structural `SecretUrl` redaction), never the secret.
+    let mut cfg = ehrbase::config::EhrbaseConfig::default();
+    cfg.db.url = ehrbase::config::secret::SecretUrl::new(
+        "postgres://dbuser:TOP_SECRET_PW@db.internal:5432/ehrbase",
+    );
+    let snapshot = cfg.to_redacted_json().expect("redacted json");
+
+    let (_pg, app) = app_with_config_snapshot("admin_config_admin", snapshot).await;
+    let resp = app
+        .clone()
+        .oneshot(req("GET", "/admin/config", &basic("root")))
+        .await
+        .expect("oneshot");
+    assert_eq!(resp.status(), StatusCode::OK, "ADMIN clears the gate");
+    let bytes = http_body_util::BodyExt::collect(resp.into_body())
+        .await
+        .expect("body")
+        .to_bytes();
+    let body = String::from_utf8_lossy(&bytes);
+    assert!(
+        !body.contains("TOP_SECRET_PW"),
+        "the DB credential must not leak: {body}"
+    );
+    assert!(
+        body.contains("postgres://***@db.internal:5432/ehrbase"),
+        "the DSN must be present with credentials masked: {body}"
+    );
+}
+
 // ── base64 helper ─────────────────────────────────────────────────────────────
 
 fn base64_encode(bytes: &[u8]) -> String {

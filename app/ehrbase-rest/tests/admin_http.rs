@@ -82,6 +82,14 @@ fn delete(uri: String) -> Request<Body> {
         .unwrap()
 }
 
+fn get(uri: String) -> Request<Body> {
+    Request::builder()
+        .method("GET")
+        .uri(uri)
+        .body(Body::empty())
+        .unwrap()
+}
+
 /// Create a real EHR through the wire; return its server-assigned id.
 async fn create_ehr(app: &Router) -> String {
     let req = Request::builder()
@@ -182,6 +190,26 @@ async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
         !ehr_exists(&app, &b).await,
         "second repeated ehr_id deleted"
     );
+}
+
+#[tokio::test]
+async fn disabled_admin_config_is_404() {
+    // The config view shares the group gate: with the admin API disabled it
+    // answers 404 as if unmounted (never a 403), like the deletes.
+    let (_pg, app) = app(false, "admin_config_disabled_404").await;
+    let (status, _) = send(&app, get(format!("{BASE}/admin/config"))).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn enabled_admin_config_is_200_json() {
+    // With the admin API enabled (and auth off in this fixture) the config view
+    // returns 200 with a JSON body. The redaction of every secret field is
+    // proven by the unit test on `EhrbaseConfig::to_redacted_json`; here the
+    // point is the route is mounted and served under the enabled gate.
+    let (_pg, app) = app(true, "admin_config_enabled_200").await;
+    let (status, _body) = send(&app, get(format!("{BASE}/admin/config"))).await;
+    assert_eq!(status, StatusCode::OK);
 }
 
 #[tokio::test]

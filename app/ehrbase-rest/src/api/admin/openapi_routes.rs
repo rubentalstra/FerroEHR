@@ -34,6 +34,31 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(admin_ehr_delete))
         .routes(routes!(admin_template_delete))
         .routes(routes!(admin_query_delete))
+        .routes(routes!(admin_config))
+}
+
+/// The redacted effective configuration as a JSON tree.
+///
+/// OUR OWN EXTENSION — no openEHR spec governs configuration (the ITS-REST
+/// Admin API defines only EHR deletes). Same admin gate as the sibling deletes
+/// (`AppConfig::admin.enabled` → `404` when off; RBAC Admin class by the
+/// `/admin/` path → `401` unauthenticated / `403` non-admin). Every
+/// secret-bearing leaf is redacted structurally by its `Secret`/`SecretUrl`
+/// type before it ever reaches this handler (see
+/// [`ehrbase::config::EhrbaseConfig::to_redacted_json`]).
+#[utoipa::path(
+    get, path = "/admin/config", tag = "ADMIN",
+    responses(
+        (status = 200, description = "The redacted effective configuration.", body = serde_json::Value),
+        (status = 404, description = "Admin API disabled.")
+    )
+)]
+pub(crate) async fn admin_config(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "admin_config", parts, super::dispatch::dispatch).await
 }
 
 /// Physically delete every EHR named in the `ehr_id` query parameter.

@@ -30,6 +30,7 @@
 //! The group is config-gated (`AppConfig::admin.enabled`, default false): when
 //! disabled every admin route answers `404` without touching the backend.
 
+use axum::Json;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 
@@ -98,6 +99,17 @@ async fn run(
                 .admin_query_delete(qualified_name, version)
                 .await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
+        }
+        "admin_config" => {
+            // The redacted effective configuration (OUR OWN EXTENSION — no
+            // openEHR spec governs configuration). The binary builds this
+            // snapshot as `EhrbaseConfig::to_redacted_json` at boot, so every
+            // secret leaf is already `***`/`scheme://***@…` by its own
+            // `Secret`/`SecretUrl` type — no secret substring is present here to
+            // leak. Serving the pre-built snapshot (never the raw config) keeps
+            // the redaction a structural property of the config tree.
+            let snapshot = state.observability().env_snapshot.as_ref().clone();
+            Ok((StatusCode::OK, Json(snapshot)).into_response())
         }
         "admin_ehr_delete_all" => {
             // The generated `AdminEhrDeleteAllParams.ehr_id: Option<String>`

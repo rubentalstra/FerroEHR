@@ -169,6 +169,41 @@ impl EhrbaseConfig {
         toml::to_string_pretty(self)
             .map_err(|e| ConfigError::semantic(format!("rendering config as TOML: {e}")))
     }
+
+    /// The effective configuration as a redacted JSON tree — the source of the
+    /// `GET /admin/config` admin endpoint and the `/management/env` snapshot the
+    /// binary builds at boot. No openEHR spec governs configuration — our own
+    /// design/extension.
+    ///
+    /// # Redaction is structural (fail-closed by construction)
+    ///
+    /// Redaction is a property of the **leaf type**, never of a key-name scan:
+    /// every secret-bearing field in the tree is typed [`secret::Secret`] (whose
+    /// [`Serialize`] emits the fixed [`secret::REDACTED`] placeholder) or
+    /// [`secret::SecretUrl`] (whose [`Serialize`] masks the URL `userinfo`
+    /// component, keeping the connection form). Serializing `self` therefore
+    /// yields a tree in which every secret leaf is already `***`/`scheme://***@…`
+    /// — no post-hoc traversal renames or matches anything, so a field cannot
+    /// leak by being renamed and a secret nested anywhere is masked by its own
+    /// type.
+    ///
+    /// This is **fail-closed for a newly-added secret**: the configuration
+    /// discipline (`.claude/rules/configuration.md` P-6) requires every secret
+    /// to be a `Secret`/`SecretUrl` with a `*_file` sibling, so a correctly
+    /// typed new secret is redacted automatically with no change here. A secret
+    /// smuggled in as a bare `String` would be a P-6 violation; the
+    /// `redacted_json_masks_every_secret_field` test enumerates the current
+    /// secret set as the standing CI backstop. Non-secret identifiers (a Basic
+    /// user's `username`/`roles`, `multimedia.access_key_id`, an OIDC `issuer`,
+    /// `auth.oidc.jwks_json` public verification material) are deliberately left
+    /// visible — they are not credentials.
+    ///
+    /// # Errors
+    /// [`ConfigError`] if the tree cannot be serialized to JSON.
+    pub fn to_redacted_json(&self) -> Result<serde_json::Value, ConfigError> {
+        serde_json::to_value(self)
+            .map_err(|e| ConfigError::semantic(format!("rendering config as JSON: {e}")))
+    }
 }
 
 /// The port component of a `host:port` bind string, if parseable.
@@ -454,6 +489,80 @@ mod tests {
         let file =
             toml_file("[signing]\nkey_passphrase = \"a\"\nkey_passphrase_file = \"/dev/null\"\n");
         assert!(assemble(Some(file.path()), &env(&[]), &[]).is_err());
+    }
+
+    /// `to_redacted_json` masks EVERY secret-bearing leaf in the whole config
+    /// tree — the body `GET /admin/config` returns. Each secret is populated
+    /// with a unique high-entropy sentinel; none may appear in the rendered
+    /// JSON, while non-secret siblings (a Basic user's `username`/`roles`) stay
+    /// visible. This is the standing enumeration of the current secret set: a
+    /// new secret field added without redaction (a P-6 violation) is caught here
+    /// once wired into the fixture.
+    #[test]
+    fn redacted_json_masks_every_secret_field() {
+        use crate::config::auth::{BasicConfig, BasicUser, OidcConfig};
+        use crate::config::secret::{Secret, SecretUrl};
+
+        // Each sentinel is unique so a leak is unambiguously attributable.
+        const DB_PW: &str = "DB_PW_SENTINEL_9a1c";
+        const BASIC_HASH: &str = "$argon2id$BASIC_HASH_SENTINEL_7b2d";
+        const HMAC: &str = "HMAC_SENTINEL_4e3f";
+        const PASSPHRASE: &str = "PASSPHRASE_SENTINEL_1d5a";
+        const S3_KEY: &str = "S3_SECRET_SENTINEL_8c6b";
+        const EVENTS_PW: &str = "EVENTS_PW_SENTINEL_2f7e";
+        const FHIR_PW: &str = "FHIR_PW_SENTINEL_6a9d";
+
+        let mut c = EhrbaseConfig::default();
+        c.db.url = SecretUrl::new(format!(
+            "postgres://dbuser:{DB_PW}@db.internal:5432/ehrbase"
+        ));
+        c.auth.basic = Some(BasicConfig {
+            users: vec![BasicUser {
+                username: "alice".to_owned(),
+                password_hash: Secret::new(BASIC_HASH),
+                roles: vec!["ADMIN".to_owned()],
+            }],
+        });
+        c.auth.oidc = Some(OidcConfig {
+            issuer: "https://idp.example".to_owned(),
+            hmac_secret: Some(Secret::new(HMAC)),
+            ..OidcConfig::default()
+        });
+        c.signing.key_passphrase = Some(Secret::new(PASSPHRASE));
+        c.multimedia.secret_access_key = Some(Secret::new(S3_KEY));
+        c.multimedia.access_key_id = Some("AKIA_PUBLIC_ID".to_owned());
+        c.events.url = SecretUrl::new(format!("amqp://mq:{EVENTS_PW}@broker:5672/vh"));
+        c.fhir.outbound.url = SecretUrl::new(format!("amqps://fhir:{FHIR_PW}@bus:5671/vh"));
+
+        let value = c.to_redacted_json().expect("render redacted json");
+        let rendered = serde_json::to_string(&value).expect("stringify");
+
+        for sentinel in [
+            DB_PW, BASIC_HASH, HMAC, PASSPHRASE, S3_KEY, EVENTS_PW, FHIR_PW,
+        ] {
+            assert!(
+                !rendered.contains(sentinel),
+                "secret leaked into GET /admin/config body: {sentinel} in {rendered}"
+            );
+        }
+
+        // Structural placeholders present where a secret was set.
+        assert_eq!(value["auth"]["basic"]["users"][0]["password_hash"], "***");
+        assert_eq!(value["auth"]["oidc"]["hmac_secret"], "***");
+        assert_eq!(value["signing"]["key_passphrase"], "***");
+        assert_eq!(value["multimedia"]["secret_access_key"], "***");
+        assert_eq!(
+            value["db"]["url"],
+            "postgres://***@db.internal:5432/ehrbase"
+        );
+        assert_eq!(value["events"]["url"], "amqp://***@broker:5672/vh");
+        assert_eq!(value["fhir"]["outbound"]["url"], "amqps://***@bus:5671/vh");
+
+        // Non-secret identifiers stay visible (they are not credentials).
+        assert_eq!(value["auth"]["basic"]["users"][0]["username"], "alice");
+        assert_eq!(value["auth"]["basic"]["users"][0]["roles"][0], "ADMIN");
+        assert_eq!(value["auth"]["oidc"]["issuer"], "https://idp.example");
+        assert_eq!(value["multimedia"]["access_key_id"], "AKIA_PUBLIC_ID");
     }
 
     // ── 6. Template sync (§5.5) ───────────────────────────────────────────────

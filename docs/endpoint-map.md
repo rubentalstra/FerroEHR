@@ -833,6 +833,20 @@ EHR deletes). Admin-gated as above. Deletes exactly one `(name, version)` row (t
 `I_DEFINITION_QUERY.delete_query` deletes every version by name; this admin surface is
 single-version). 204 on success; unknown name/version → 404.
 
+### GET /admin/config
+chain: `admin_config` (openapi_routes.rs) → spine: standard api/** dispatch →
+`admin::dispatch::run` → serves `state.observability().env_snapshot` (the redacted
+effective-config JSON the binary builds at boot via
+`EhrbaseConfig::to_redacted_json`)
+sql: none — no database access; reads the in-memory boot-time config snapshot only.
+notes: OUR OWN EXTENSION — no openEHR spec governs configuration (the ITS-REST Admin API
+defines only EHR deletes). Admin-gated as above (`AppConfig::admin.enabled` → 404 when off;
+RBAC Admin class by the `/admin/` path → 401 unauthenticated / 403 non-admin). 200 returns
+the effective configuration tree as JSON with every secret-bearing leaf redacted
+**structurally** — redaction is a property of the `Secret`/`SecretUrl` leaf types
+(`***` / `scheme://***@host`), never a key-name scan, so it is fail-closed for any new
+secret that follows the config discipline (`Secret`/`SecretUrl` + `*_file` sibling).
+
 ---
 
 ## 2. EXTENSIONS
